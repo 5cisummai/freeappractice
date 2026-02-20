@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify Email - Free AP Practice</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/css/index.css">
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/settings-modal.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--space-lg);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        #footer-container {
+            margin-top: auto;
+        }
+
+        .login-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-3xl);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--space-3xl);
+        }
+
+        .login-header h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+        }
+
+        .btn-login { width:100%; padding: var(--space-lg); background: var(--accent-color); color: white; border:none; border-radius:8px; font-size:var(--font-size-base); }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="login-wrapper">
+            <div class="login-container">
+                <div class="login-header">
+                    <h1>Verify your email</h1>
+                    <p class="login-sub">Confirm your account to continue</p>
+                </div>
+
+                <div id="status" class="status">Verifying…</div>
+                <div id="actions" style="margin-top:12px"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/authorization.js"></script>
+    <script>
+        // Apply theme on page load
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        // Load theme from localStorage or default to 'system'
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        applyTheme(savedTheme);
+
+        // Listen for system theme changes if using 'system' mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const currentTheme = localStorage.getItem('theme') || 'system';
+            if (currentTheme === 'system') {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+        
+        (async function(){
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            const statusEl = document.getElementById('status');
+            const actions = document.getElementById('actions');
+
+            if (!token) {
+                statusEl.textContent = 'Verification token not found in the URL.';
+                statusEl.classList.add('error');
+                actions.innerHTML = '<a class="button" href="/auth/login/">Go to Login</a>';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/auth/verify-email?token=' + encodeURIComponent(token));
+                if (resp.ok) {
+                    const data = await resp.json();
+                    statusEl.textContent = data.message || 'Email verified successfully.';
+                    statusEl.classList.add('success');
+
+                    // If the server returned a token and user, auto-login then redirect to app
+                    if (data.token && data.user) {
+                        try {
+                            if (typeof setAuthToken === 'function') {
+                                setAuthToken(data.token);
+                                if (typeof setUserData === 'function') setUserData(data.user);
+                            } else {
+                                // fallback: write directly to localStorage using the same keys
+                                localStorage.setItem('auth_token', data.token);
+                                localStorage.setItem('user_data', JSON.stringify(data.user));
+                            }
+                            window.location.href = '/app/';
+                            return;
+                        } catch (e) {
+                            console.warn('Auto-login failed', e);
+                        }
+                    }
+
+                    actions.innerHTML = '<a class="button" href="/auth/login/">Continue to Login</a>';
+                } else {
+                    const err = await resp.json().catch(()=>({ error: 'Failed to verify' }));
+                    statusEl.textContent = err.error || 'Failed to verify email.';
+                    statusEl.classList.add('error');
+                    actions.innerHTML = '<a class="button" href="/">Return to Home</a>';
+                }
+            } catch (e) {
+                console.error('verify error', e);
+                statusEl.textContent = 'Network error while verifying email.';
+                statusEl.classList.add('error');
+                actions.innerHTML = '<a class="button" href="/">Return to Home</a>';
+            }
+        })();
+    </script>
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+</body>
+</html>

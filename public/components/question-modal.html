@@ -1,0 +1,47 @@
+<!-- Question Modal Component -->
+<div class="question-modal-overlay" id="questionModalOverlay" role="dialog" aria-modal="true" aria-labelledby="questionModalQuestion">
+  <div class="question-modal-content">
+    <!-- Header -->
+    <div class="question-modal-header">
+      <div class="question-modal-meta">
+        <span class="question-modal-course" id="questionModalCourse"></span>
+        <span class="question-modal-unit" id="questionModalUnit"></span>
+      </div>
+      <button class="question-modal-close" id="questionModalClose" aria-label="Close question modal">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="question-modal-body">
+      <!-- Question -->
+      <div class="question-modal-section">
+        <h2 id="questionModalQuestion" class="question-modal-question"></h2>
+      </div>
+
+      <!-- Options (Multiple Choice) -->
+      <div class="question-modal-options" id="questionModalOptions"></div>
+
+      <!-- Actions -->
+      <div class="question-modal-actions">
+        <button class="question-modal-btn-secondary" id="questionModalClose2">Close</button>
+        <button class="question-modal-btn-primary" id="questionModalShowAnswer">Show Answer</button>
+      </div>
+
+      <!-- Answer Section (hidden by default) -->
+      <div class="question-modal-answer" id="questionModalAnswerSection" style="display: none;">
+        <div class="question-modal-divider"></div>
+        <div class="question-modal-section">
+          <h3 class="question-modal-answer-label">Answer</h3>
+          <div class="question-modal-answer-content" id="questionModalAnswer"></div>
+        </div>
+        <div class="question-modal-section">
+          <h3 class="question-modal-answer-label">Explanation</h3>
+          <div class="question-modal-explanation-content" id="questionModalExplanation"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Password - Free AP Practice</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/css/index.css">
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/settings-modal.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--space-lg);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        #footer-container {
+            margin-top: auto;
+        }
+
+        .login-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-3xl);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--space-3xl);
+        }
+
+        .login-header h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+        }
+
+        label { display:block; margin-bottom: var(--space-md); color:var(--text-primary); }
+        input[type="password"] { width:100%; padding: var(--space-lg); border:1px solid var(--border-color); border-radius:8px; background:var(--bg-primary); color:var(--text-primary); }
+        .btn-login { width:100%; padding: var(--space-lg); background: var(--accent-color); color: white; border:none; border-radius:8px; font-size:var(--font-size-base); }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="login-wrapper">
+            <div class="login-container">
+                <div class="login-header">
+                    <h1>Reset your password</h1>
+                    <p class="login-sub">Set a new secure password for your account</p>
+                </div>
+
+                <div id="info">Loading…</div>
+                <form id="resetForm" style="display:none">
+                    <label for="password">New password</label>
+                    <input id="password" type="password" autocomplete="new-password" required minlength="8" />
+
+                    <label for="confirm">Confirm new password</label>
+                    <input id="confirm" type="password" autocomplete="new-password" required minlength="8" />
+
+                    <button type="submit" class="btn-login">Set new password</button>
+                </form>
+                <div id="result"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/authorization.js"></script>
+    <script>
+        // Apply theme on page load
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        // Load theme from localStorage or default to 'system'
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        applyTheme(savedTheme);
+
+        // Listen for system theme changes if using 'system' mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const currentTheme = localStorage.getItem('theme') || 'system';
+            if (currentTheme === 'system') {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+        
+        (function(){
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            const info = document.getElementById('info');
+            const form = document.getElementById('resetForm');
+            const result = document.getElementById('result');
+
+            if (!token) {
+                info.textContent = 'Reset token not found in the URL.';
+                info.className = 'msg error';
+                return;
+            }
+
+            // Show form
+            info.textContent = '';
+            form.style.display = 'block';
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                result.textContent = '';
+                const pw = document.getElementById('password').value;
+                const conf = document.getElementById('confirm').value;
+                if (!pw || pw.length < 8) {
+                    result.textContent = 'Password must be at least 8 characters.';
+                    result.className = 'msg error';
+                    return;
+                }
+                if (pw !== conf) {
+                    result.textContent = 'Passwords do not match.';
+                    result.className = 'msg error';
+                    return;
+                }
+
+                try {
+                    const resp = await fetch('/api/auth/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token, newPassword: pw })
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        result.textContent = data.message || 'Password reset successful. You may now log in.';
+                        result.className = 'msg success';
+                        form.style.display = 'none';
+                        result.insertAdjacentHTML('beforeend', '<div style="margin-top:12px"><a href="/auth/login/">Go to login</a></div>');
+                    } else {
+                        const err = await resp.json().catch(()=>({ error: 'Failed to reset password' }));
+                        result.textContent = err.error || 'Failed to reset password.';
+                        result.className = 'msg error';
+                    }
+                } catch (e) {
+                    console.error('reset error', e);
+                    result.textContent = 'Network error while resetting password.';
+                    result.className = 'msg error';
+                }
+            });
+        })();
+    </script>
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+</body>
+</html>

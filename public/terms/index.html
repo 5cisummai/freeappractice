@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    
+    <title>Terms of Service</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'system';
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = saved === 'system' ? (prefersDark ? 'dark' : 'light') : saved;
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <!-- Shared components -->
+    <script src="/components/topbar.js"></script>
+    <script src="/js/authorization.js"></script>
+    <script src="/components/settings-modal.js"></script>
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+</head>
+<body>
+    <topbar-component auth-state="guest" active-page="home"></topbar-component>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const topbar = document.querySelector('topbar-component');
+            if (!topbar || typeof isLoggedIn !== 'function') return;
+
+            function syncAuthState() {
+                if (isLoggedIn()) {
+                    topbar.setAttribute('auth-state', 'authenticated');
+                    topbar.setAuthState?.('authenticated');
+                    const storedUser = (typeof getUserData === 'function') ? getUserData() : null;
+                    if (storedUser?.name) {
+                        topbar.setUserName(storedUser.name);
+                    }
+                } else {
+                    topbar.setAttribute('auth-state', 'guest');
+                    topbar.setAuthState?.('guest');
+                }
+            }
+
+            syncAuthState();
+            window.addEventListener('auth:login', syncAuthState);
+            window.addEventListener('auth:logout', syncAuthState);
+        });
+    </script>
+
+    <main class="legal-main">
+        <div class="legal-container">
+            <a href="/" class="legal-back-link" aria-label="Back to home">← Back to Home</a>
+            
+            <h1>Terms of Service</h1>
+            <p class="last-updated">Last Updated: January 22, 2026</p>
+
+        <h2>1. Agreement to Terms</h2>
+        <p>
+            By accessing and using Freeappractice.org (the "Service", "we", "us", or "our"), you accept and agree to be bound by and comply with these Terms of Service. If you do not agree to these terms, please do not use the Service.
+        </p>
+
+        <h2>2. Accounts and Eligibility</h2>
+        <p>
+            Certain features (such as cross-device progress syncing and saved preferences) require creating an account. You must provide accurate information and keep your account credentials secure. You are responsible for all activity under your account. We may refuse service or terminate accounts for violations of these Terms.
+        </p>
+
+        <h2>3. Use License</h2>
+        <p>
+            Permission is granted to temporarily download one copy of the materials for personal, non-commercial study purposes only. This is a license, not a transfer of title. You may not use the Service for commercial redistribution or reverse engineering of protected components.
+        </p>
+
+        <h2>4. User Content and Rights</h2>
+        <p>
+            Content you submit (profile data, preferences, feedback) remains your property. By submitting content, you grant us a non-exclusive license to use that content to provide and improve the Service, subject to our Privacy Policy.
+        </p>
+
+        <h2>5. Data Storage and AWS S3</h2>
+        <p>
+            We store user data and generated question content on our servers. Generated questions and related metadata may be stored in AWS S3 for durability, analysis, and debugging. Access to S3 is restricted; data is encrypted at rest. See our Privacy Policy for details on retention and deletion.
+        </p>
+
+        <h2>6. Acceptable Use</h2>
+        <p>
+            You agree not to misuse the Service. Prohibited activities include harassment, illegal activity, distributing malware, unauthorized access attempts, scraping data at scale, and abusing the AI generation functionality for disallowed content. We reserve the right to suspend accounts that violate these rules.
+        </p>
+
+        <h2>7. Payment and Commercial Use</h2>
+        <p>
+            Currently the Service is free. If we introduce paid features in the future, additional terms will apply and will be communicated prior to billing.
+        </p>
+
+        <h2>8. Disclaimers and Limitations</h2>
+        <p>
+            The Service and all materials are provided "as is" without warranties. We are not responsible for AI-generated inaccuracies. To the maximum extent permitted by law, we disclaim liability for indirect, incidental, or consequential damages.
+        </p>
+
+        <h2>9. Termination</h2>
+        <p>
+            We may terminate or suspend accounts for violations of these Terms or for operational reasons. You may request account deletion; deletion request will remove personal data from primary systems within a reasonable timeframe but may not remove data from backups immediately.
+        </p>
+
+        <h2>10. Governing Law and Disputes</h2>
+        <p>
+            These Terms are governed by the laws of the United States. Disputes shall be resolved via arbitration or other lawful means as described in our legal policy.
+        </p>
+
+        <h2>11. Changes to Terms</h2>
+        <p>
+            We may modify these Terms. Material changes will be communicated to registered users when feasible. Continued use after modifications constitutes acceptance of the updated terms.
+        </p>
+
+        <h2>12. Contact Information</h2>
+        <p>
+            If you have questions about these Terms, contact us:
+        </p>
+        <p>
+            <strong>Website:</strong> <a href="https://freeappractice.org">freeappractice.org</a><br>
+            <strong>Email:</strong> <a href="mailto:support@freeappractice.org">support@freeappractice.org</a>
+        </p>
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+</body>
+</html>

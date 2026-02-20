@@ -1,0 +1,41 @@
+<div class="settings-modal" id="settingsModal">
+  <div class="settings-content">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button class="close-settings" id="closeSettings">&times;</button>
+    </div>
+    <div class="settings-body">
+      <div class="setting-item">
+        <label for="themeSelect">Theme</label>
+        <select id="themeSelect">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+        <p class="setting-description">Choose your preferred color theme</p>
+      </div>
+
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid var(--border-color,#e6e6e6);" />
+
+      <div class="setting-item" id="cookiesSection">
+        <label>Privacy & Cookies</label>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" data-consent-toggle="analytics" />
+            <span>Analytics cookies</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" data-consent-toggle="ads" />
+            <span>Advertising cookies</span>
+          </label>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button type="button" data-consent-action="accept-all" style="background:#077bff; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;">Accept all</button>
+            <button type="button" data-consent-action="reject-all" style="background:transparent; border:1px solid var(--border-color,#e6e6e6); padding:8px 12px; border-radius:8px; cursor:pointer;">Reject all</button>
+            <a href="/privacy/" style="margin-left:auto; text-decoration:underline; color:inherit;">Privacy policy</a>
+          </div>
+          <p class="setting-description">Necessary cookies are always on. Manage optional analytics and ads cookies. Changes apply immediately.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

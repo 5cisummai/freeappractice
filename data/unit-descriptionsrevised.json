@@ -1,0 +1,1424 @@
+{
+  "generated_on": "2025-12-16",
+  "note": "Course/unit descriptions sourced from College Board AP course pages (see per-course sources). Each unit entry uses College Board wording 'Topics may include' where applicable.",
+  "courses": [
+    {
+      "course_code": "APCALC-AB",
+      "course_name": "AP Calculus AB",
+      "overview": "Single-variable calculus emphasizing limits, derivatives, integrals, differential equations, and applications; organized into 8 commonly taught units.",
+      "important_notes": "AP Calculus AB scope only—no BC-only topics like series, Taylor/Maclaurin, or polar/parametric integration. Use College Board notation, justify with MVT/IVT and FTC language, and keep modeling to single-variable calculus with clear units and context for rates of change.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-calculus-ab?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Limits and Continuity",
+          "keywords": [
+            "Limit notation",
+            "One-sided limits",
+            "Continuity",
+            "Removable discontinuities",
+            "Infinite discontinuities",
+            "Asymptotes"
+          ],
+          "exam_weighting_mc": "10%–12%",
+          "description": "Conceptual and computational foundations of limits and continuity; using limits to reason about instantaneous change and function behavior.",
+          "topics_may_include": [
+            "Understanding limits conceptually and numerically; one-sided limits",
+            "Algebraic techniques for evaluating limits (factoring, conjugates)",
+            "Limits at infinity and horizontal asymptotes",
+            "Squeeze Theorem and limit proofs (informal)",
+            "Definition and properties of continuity; Intermediate Value Theorem"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Differentiation: Definition and Fundamental Properties",
+          "keywords": [
+            "Derivative definition",
+            "Power rule",
+            "Product rule",
+            "Quotient rule",
+            "Chain rule",
+            "Derivatives of trig and log functions"
+          ],
+          "exam_weighting_mc": "10%–12%",
+          "description": "Derivative as limit and instantaneous rate of change; basic derivative rules and interpretations.",
+          "topics_may_include": [
+            "Definition of derivative at a point and as a function (limit of difference quotient)",
+            "Relationship between differentiability and continuity",
+            "Basic derivative rules for power, exponential, logarithmic, trigonometric functions",
+            "Derivative interpretation: velocity, slope of tangent",
+            "Using derivative notation and units"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Differentiation: Composite, Implicit, and Inverse Functions",
+          "keywords": [
+            "Critical points",
+            "First derivative test",
+            "Second derivative test",
+            "Concavity",
+            "Inflection points",
+            "Related rates",
+            "Optimization"
+          ],
+          "exam_weighting_mc": "9%–13%",
+          "description": "Techniques for differentiating more complex functions including chain rule, implicit differentiation, and higher-order derivatives.",
+          "topics_may_include": [
+            "Chain rule for composite functions",
+            "Implicit differentiation and related rates",
+            "Derivatives of inverse functions",
+            "Higher-order derivatives and interpretation (concavity, jerk)",
+            "Applications of differentiation rules in multiple representations"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Contextual Applications of Differentiation",
+          "keywords": [
+            "Antiderivatives",
+            "Indefinite integrals",
+            "Definite integrals",
+            "Fundamental theorem",
+            "U-substitution",
+            "Integration by parts"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Modeling and solving real-world problems using derivatives: rates, optimization, and interpretation of derivatives in context.",
+          "topics_may_include": [
+            "Instantaneous rate of change in applications",
+            "Related rates problems",
+            "Interpreting derivative sign, increasing/decreasing behavior",
+            "Linearization and differentials",
+            "Use of derivatives to model motion and growth/decay"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Analytical Applications of Differentiation",
+          "keywords": [
+            "Area under curves",
+            "Area between curves",
+            "Volume of solids",
+            "Average value",
+            "Accumulation functions"
+          ],
+          "exam_weighting_mc": "15%–18%",
+          "description": "Techniques for analyzing function behavior using derivatives: extrema, Mean Value Theorem, curve sketching.",
+          "topics_may_include": [
+            "Critical points, local/global extrema",
+            "First and second derivative tests",
+            "Mean Value Theorem and Rolle’s Theorem",
+            "Sketching graphs using limits, derivatives, asymptotes, and concavity",
+            "Applications to optimization problems"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Integration and Accumulation of Change",
+          "exam_weighting_mc": "17%–20%",
+          "description": "Definite and indefinite integrals, Fundamental Theorem of Calculus, accumulation functions, and antiderivative techniques.",
+          "topics_may_include": [
+            "Definite integrals as limits of Riemann sums and accumulated change",
+            "Fundamental Theorem of Calculus (parts I & II)",
+            "Antiderivatives and indefinite integrals",
+            "Integration techniques: substitution, basic integrals",
+            "Area between curves and interpretation of integrals in context"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Differential Equations",
+          "exam_weighting_mc": "6%–12%",
+          "description": "Solving and interpreting simple differential equations; growth/decay models, slope fields, and separable equations.",
+          "topics_may_include": [
+            "Separable differential equations and solving initial value problems",
+            "Slope (direction) fields and qualitative solution behavior",
+            "Exponential growth and decay models",
+            "Differential equation modeling of context-based rates of change",
+            "Using integrals to solve accumulation/area problems arising from differential equations"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Applications of Integration",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Applied uses of integration: volumes, average value, accumulation in physical contexts and additional applied problem solving.",
+          "topics_may_include": [
+            "Volumes of revolution (disk/washer, shell methods—basic)",
+            "Average value of a function on an interval",
+            "Accumulated change in physics/economics contexts",
+            "Work and net change applications (basic)",
+            "Integration in motion problems (position/velocity/acceleration)"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APCALC-BC",
+      "course_name": "AP Calculus BC",
+      "overview": "All AP Calculus AB content plus extended topics: parametric/vector functions, polar coordinates, and infinite sequences and series; organized into 10 commonly taught units.",
+      "important_notes": "Include BC-specific content: parametric/polar calculus, vector motion, Taylor/Maclaurin series, power series convergence tests, and error bounds. Calculus must use derivatives and integrals; keep within single-variable contexts and avoid multivariable/linear algebra.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-calculus-bc?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Limits and Continuity",
+          "exam_weighting_mc": "4%–7%",
+          "description": "Same foundational limit and continuity concepts as AB with emphasis on readiness for series and advanced function behaviors.",
+          "topics_may_include": [
+            "Limit computations, continuity, asymptotic behavior",
+            "One-sided limits and limits at infinity",
+            "Applications toward series convergence tests"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Differentiation: Definition and Fundamental Properties",
+          "exam_weighting_mc": "4%–7%",
+          "description": "Derivative definitions and basic rules extended to functions needed for later BC topics.",
+          "topics_may_include": [
+            "Derivative as limit, basic derivative rules, differentiability vs continuity"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Differentiation: Composite, Implicit, and Inverse Functions",
+          "exam_weighting_mc": "4%–7%",
+          "description": "Advanced differentiation techniques (chain rule, implicit), preparing for parametric and polar derivatives.",
+          "topics_may_include": [
+            "Chain rule, implicit differentiation, inverse function derivatives",
+            "Higher-order derivatives and applications"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Contextual Applications of Differentiation",
+          "exam_weighting_mc": "6%–9%",
+          "description": "Applied derivative problems, optimization, and modeling in varied contexts.",
+          "topics_may_include": [
+            "Related rates, optimization, modeling with derivatives"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Analytical Applications of Differentiation",
+          "exam_weighting_mc": "8%–11%",
+          "description": "Function analysis, curve sketching, and theorems about derivatives.",
+          "topics_may_include": [
+            "Extrema, Mean Value Theorem, concavity and inflection points"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Integration and Accumulation of Change",
+          "exam_weighting_mc": "17%–20%",
+          "description": "Definite/indefinite integrals, Fundamental Theorem of Calculus, and integration techniques.",
+          "topics_may_include": [
+            "Riemann sums, FTC, u-substitution, applications to accumulation"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Differential Equations",
+          "exam_weighting_mc": "6%–9%",
+          "description": "Separable and other first-order differential equations and applications including logistic growth; slope fields.",
+          "topics_may_include": [
+            "Separable ODEs, exponential/logistic growth, slope fields"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Applications of Integration",
+          "exam_weighting_mc": "6%–9%",
+          "description": "Applied integration problems including advanced volume and physical applications.",
+          "topics_may_include": [
+            "Volumes by slicing/shells, work, arc length (introductory contexts)"
+          ]
+        },
+        {
+          "unit_number": 9,
+          "unit_title": "Parametric Equations, Polar Coordinates, and Vector-Valued Functions",
+          "exam_weighting_mc": "11%–12%",
+          "description": "Representation and calculus for parametric, polar, and vector functions; derivatives and integrals in these systems.",
+          "topics_may_include": [
+            "Parametric equations: derivatives, arc length, area",
+            "Polar coordinates: r(θ), area and slope in polar",
+            "Vector-valued functions, velocity and acceleration in parametric form"
+          ]
+        },
+        {
+          "unit_number": 10,
+          "unit_title": "Infinite Sequences and Series",
+          "exam_weighting_mc": "17%–18%",
+          "description": "Convergence tests and power series including Taylor and Maclaurin series and approximations.",
+          "topics_may_include": [
+            "Sequences and infinite series, geometric series",
+            "Tests for convergence: nth-term, integral, comparison, ratio, alternating series",
+            "Power series, radius/interval of convergence",
+            "Taylor and Maclaurin series and polynomial approximations"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APSTAT",
+      "course_name": "AP Statistics",
+      "overview": "Introductory, non-calculus college-level statistics course organized into nine commonly taught units (note: College Board announced future revisions for 2026–27).",
+      "important_notes": "Always keep answers in context of the study. State conditions (randomization, independence, normal/large n) before inference; use correct symbols (p, \u03bc, \\hat{p}, \\bar{x}), hypotheses, and interpretations of p-values/intervals. No calculus; rely on AP-approved inference procedures and clear communication of conclusions.",
+      "sources": [
+        "([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-statistics?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Exploring One-Variable Data",
+          "keywords": [
+            "Categorical data",
+            "Quantitative data",
+            "Distributions",
+            "Measures of center",
+            "Measures of spread",
+            "Normal distribution"
+          ],
+          "exam_weighting": "15%–23%",
+          "description": "Fundamentals of describing and summarizing distributions of single variables; central tendency, spread, and graphical displays.",
+          "topics_may_include": [
+            "Types of variables (categorical vs quantitative)",
+            "Graphical displays: histograms, dotplots, stemplots, bar charts",
+            "Measures of center and spread (mean, median, IQR, standard deviation)",
+            "Shape descriptions, outliers, and robust statistics",
+            "Normal distribution and z-scores"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Exploring Two-Variable Data",
+          "keywords": [
+            "Correlation",
+            "Regression lines",
+            "Residuals",
+            "R-squared",
+            "Chi-square goodness of fit",
+            "Chi-square independence"
+          ],
+          "exam_weighting": "5%–7%",
+          "description": "Analyzing relationships between two variables using association measures and models.",
+          "topics_may_include": [
+            "Comparing two categorical variables (contingency tables)",
+            "Scatterplots, correlation coefficient (r)",
+            "Least-squares regression, interpreting slope and intercept",
+            "Residuals and diagnostics, departures from linearity"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Collecting Data",
+          "keywords": [
+            "Sampling methods",
+            "Bias",
+            "Experiments",
+            "Observational studies",
+            "Confounding variables",
+            "Randomization"
+          ],
+          "exam_weighting": "12%–15%",
+          "description": "Principles of study design, sampling methods, and sources of bias to support valid inference.",
+          "topics_may_include": [
+            "Sampling designs: simple random, stratified, cluster, multistage",
+            "Experiments vs observational studies, randomization, control, blocking",
+            "Bias, confounding, and ethical considerations",
+            "Designing studies to support causal inference when appropriate"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Probability, Random Variables, and Probability Distributions",
+          "keywords": [
+            "Probability rules",
+            "Independence",
+            "Conditional probability",
+            "Binomial distribution",
+            "Geometric distribution"
+          ],
+          "exam_weighting": "10%–20%",
+          "description": "Probability rules and modeling randomness with discrete and continuous distributions as foundation for inference.",
+          "topics_may_include": [
+            "Probability rules (addition, multiplication, conditional probability, independence)",
+            "Random variables, expectation, variance",
+            "Binomial and geometric distributions (and applications)",
+            "Law of large numbers and use of simulation"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Sampling Distributions",
+          "keywords": [
+            "Confidence intervals",
+            "Hypothesis testing",
+            "Type I and Type II errors",
+            "P-values",
+            "One-sample t-tests",
+            "Two-sample t-tests"
+          ],
+          "exam_weighting": "7%–12%",
+          "description": "Sampling variability and the Central Limit Theorem; sampling distributions of statistics as basis for inference.",
+          "topics_may_include": [
+            "Sampling distribution of a sample mean and sample proportion",
+            "Central Limit Theorem and its conditions",
+            "Standard error and interpretation",
+            "Bias vs sampling variability"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Inference for Categorical Data: Proportions",
+          "exam_weighting": "12%–15%",
+          "description": "Confidence intervals and hypothesis tests for proportions including comparing two proportions.",
+          "topics_may_include": [
+            "Constructing and interpreting confidence intervals for a proportion",
+            "One- and two-sample proportion tests (z-tests)",
+            "p-value interpretation and Type I/II errors",
+            "Conditions for validity of methods"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Inference for Quantitative Data: Means",
+          "exam_weighting": "10%–18%",
+          "description": "CI and hypothesis testing for means and comparing two means (t-procedures where appropriate).",
+          "topics_may_include": [
+            "t-distribution and one-sample t procedures",
+            "Two-sample t-tests and pooled/unpooled reasoning",
+            "Confidence intervals for means and mean differences",
+            "Assumptions and robustness"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Inference for Categorical Data: Chi-Square",
+          "exam_weighting": "2%–5%",
+          "description": "Chi-square tests for goodness-of-fit, homogeneity, and independence for categorical data analysis.",
+          "topics_may_include": [
+            "Chi-square goodness-of-fit test",
+            "Chi-square test of independence and homogeneity",
+            "Selecting appropriate categorical inference procedures",
+            "Interpreting chi-square statistics and limitations"
+          ]
+        },
+        {
+          "unit_number": 9,
+          "unit_title": "Inference for Quantitative Data: Slopes",
+          "exam_weighting": "2%–5%",
+          "description": "Inference about the slope in regression models: confidence intervals and hypothesis tests for slope.",
+          "topics_may_include": [
+            "Inference for slope using t-distribution",
+            "Interpreting slope as estimated effect",
+            "Conditions for regression inference"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APCSA",
+      "course_name": "AP Computer Science A",
+      "overview": "Introductory college-level programming using a subset of Java; revised framework (effective 2025–26) organizes content into 4 units emphasizing objects, control structures, class creation, and data collections.",
+      "important_notes": "Use Java only with the AP subset: classes/objects, inheritance basics, arrays/ArrayList, recursion, and control structures. Avoid libraries beyond java.lang and java.util.ArrayList; no lambdas/streams or GUI/IO. Use standard AP Java syntax and avoid AP CSP pseudocode.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-computer-science-a?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Using Objects and Methods",
+          "exam_weighting_mc": "15%–25%",
+          "description": "Fundamentals of Java, objects, methods, primitive types, and basic API usage.",
+          "topics_may_include": [
+            "Primitive types (int, double, boolean) and expressions",
+            "Variables, assignment, evaluation order",
+            "Creating and using objects and calling methods",
+            "String objects and common String methods",
+            "Static methods (Math) and simple I/O"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Selection and Iteration",
+          "exam_weighting_mc": "25%–35%",
+          "description": "Control flow: conditionals and loops for algorithm implementation and problem solving.",
+          "topics_may_include": [
+            "if, if-else, nested conditionals",
+            "for, while, do-while loops and loop invariants",
+            "Combining selection and iteration to implement algorithms",
+            "Debugging and tracing control flow"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Class Creation",
+          "exam_weighting_mc": "10%–18%",
+          "description": "Designing classes, constructors, instance variables, methods, and encapsulation (object-oriented basics as required by the course).",
+          "topics_may_include": [
+            "Defining classes with fields and methods",
+            "Constructors, overloading, and object state",
+            "Access control, instance vs class (static) members",
+            "Designing methods to implement behavior and abstraction"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Data Collections",
+          "exam_weighting_mc": "30%–40%",
+          "description": "Using and implementing common data structures and algorithms to store and process collections of data.",
+          "topics_may_include": [
+            "Arrays and array processing algorithms",
+            "ArrayList and other collection usage patterns",
+            "Searching and sorting basics (selection, insertion, simple sorts)",
+            "Traversing and manipulating collections; iteration patterns",
+            "Text files and datasets (added in 2025–26 revisions)"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APCSP",
+      "course_name": "AP Computer Science Principles",
+      "overview": "Introductory computing course covering breadth of computer science: creativity, data, algorithms/programming, systems/networks, and societal impact.",
+      "important_notes": "Use AP CSP pseudocode (not Java/JavaScript). Emphasize abstraction, algorithms, data representation, the internet, cybersecurity, and computing impacts. Keep math light; focus on reasoning about algorithms, data, and societal context rather than language-specific syntax.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-computer-science-principles?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "big_idea": 1,
+          "title": "Creative Development",
+          "exam_weighting_mc": "10%–13%",
+          "description": "Design and development process for computational artifacts; decomposition and abstraction in problem solving.",
+          "topics_may_include": [
+            "Problem definition and ideation",
+            "Design methodology and development cycles",
+            "Abstraction to manage complexity",
+            "Creating computational artifacts and portfolios"
+          ]
+        },
+        {
+          "big_idea": 2,
+          "title": "Data",
+          "exam_weighting_mc": "17%–22%",
+          "description": "Using data to discover knowledge: collection, representation, analysis, and ethical considerations.",
+          "topics_may_include": [
+            "Data collection and sampling considerations",
+            "Data representation (tables, visualizations) and transformation",
+            "Analyzing data to draw conclusions, data-driven decision making",
+            "Privacy, security, and ethical uses of data"
+          ]
+        },
+        {
+          "big_idea": 3,
+          "title": "Algorithms and Programming",
+          "exam_weighting_mc": "30%–35%",
+          "description": "Core algorithmic thinking and programming constructs to develop and evaluate solutions.",
+          "topics_may_include": [
+            "Algorithm design and problem decomposition",
+            "Programming constructs: variables, control flow, procedures/functions",
+            "Testing, debugging, and algorithmic efficiency (basic)",
+            "Implementing algorithms to solve computational problems"
+          ]
+        },
+        {
+          "big_idea": 4,
+          "title": "Computer Systems and Networks",
+          "exam_weighting_mc": "11%–15%",
+          "description": "Fundamentals of how computing systems operate and how networks enable distributed computing.",
+          "topics_may_include": [
+            "Hardware vs software, system architecture basics",
+            "How networks and the internet transmit data",
+            "Representation of data in binary and abstractions built on it"
+          ]
+        },
+        {
+          "big_idea": 5,
+          "title": "Impact of Computing",
+          "exam_weighting_mc": "21%–26%",
+          "description": "Social, ethical, and economic impacts of computing and how computing innovations shape society.",
+          "topics_may_include": [
+            "Positive and negative societal impacts of computing",
+            "Ethics, privacy, equity, and intellectual property",
+            "Evaluation of claims about computing technologies"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APBIO",
+      "course_name": "AP Biology",
+      "overview": "Two-semester, college-level biology course for majors; organized into 8 commonly taught units covering chemistry of life through ecology and evolution.",
+      "important_notes": "Frame questions around experimental or data-based scenarios; emphasize evolution/natural selection evidence, energy transfer, cell communication, and gene expression/regulation. Use correct biology terminology and simple quantitative tools (chi-square, Hardy–Weinberg reasoning) without heavy math. Avoid anatomy trivia not in the framework. Avoid Chemistry and physics equations and instead focus on biological concepts.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-biology?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Chemistry of Life",
+          "keywords": [
+            "Atoms and elements",
+            "Chemical bonding",
+            "Properties of water",
+            "pH concepts, not equations or equilibria",
+            "Carbohydrates",
+            "Lipids",
+            "Proteins",
+            "Nucleic acids"
+          ],
+          "exam_weighting_mc": "8%–11%",
+          "description": "Biochemical foundations: water properties, macromolecules, and chemical reactions vital to living systems.",
+          "topics_may_include": [
+            "Properties of water, pH, buffers",
+            "Structure and function of macromolecules: carbohydrates, lipids, proteins, nucleic acids",
+            "Basic energetics of biochemical reactions"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Cells",
+          "keywords": [
+            "Prokaryotic vs eukaryotic cell structure",
+            "Membrane structure, passive and active transport",
+            "Organelles and cellular compartmentalization",
+            "Prokaryotic cells",
+            "Eukaryotic cells",
+            "Cell organelles",
+            "Cell membrane",
+            "Transport mechanisms",
+            "Surface area to volume ratio"
+          ],
+          "exam_weighting_mc": "10%–13%",
+          "description": "Cell structure and function, membranes, transport, and cellular organization.",
+          "topics_may_include": [
+            "Prokaryotic vs eukaryotic cell structure",
+            "Membrane structure, passive and active transport",
+            "Organelles and cellular compartmentalization"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Cellular Energetics",
+          "keywords": [
+            "Glycolysis",
+            "Citric acid cycle",
+            "Electron transport chain",
+            "Light reactions",
+            "Calvin cycle",
+            "ATP and energy",
+            "Photosynthesis",
+            "Fermentation"
+          ],
+          "exam_weighting_mc": "12%–16%",
+          "description": "Metabolic pathways: photosynthesis, cellular respiration, and energy transfer.",
+          "topics_may_include": [
+            "Glycolysis, Krebs cycle, oxidative phosphorylation",
+            "Light-dependent and light-independent reactions of photosynthesis",
+            "ATP, enzymes, and regulation of metabolic pathways"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Cell Communication and Cell Cycle",
+          "keywords": [
+            "Cell signaling",
+            "Signal transduction",
+            "Cell cycle",
+            "Checkpoints",
+            "Mitosis",
+            "Meiosis",
+            "Cancer",
+            "Apoptosis"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Signal transduction, cell-to-cell communication, and regulation of cell division.",
+          "topics_may_include": [
+            "Signal reception, transduction pathways, second messengers",
+            "Cell cycle phases, checkpoints, mitosis and meiosis overview",
+            "Apoptosis and cancer basics"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Heredity",
+          "keywords": [
+            "Mendelian genetics",
+            "Monohybrid crosses",
+            "Dihybrid crosses",
+            "Sex-linked traits",
+            "Multiple alleles",
+            "Incomplete dominance",
+            "Codominance",
+            "Gene mapping",
+            "Pedigrees"
+          ],
+          "exam_weighting_mc": "8%–11%",
+          "description": "Mendelian genetics, inheritance patterns, and chromosomal basis of heredity.",
+          "topics_may_include": [
+            "Mendelian crosses, probability in inheritance",
+            "Complex inheritance: linked genes, sex linkage, epistasis",
+            "Chromosomal abnormalities and pedigree analysis"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Gene Expression and Regulation",
+          "keywords": [
+            "DNA structure",
+            "DNA replication",
+            "Transcription",
+            "Translation",
+            "Gene regulation",
+            "Mutations",
+            "Gene expression",
+            "Biotechnology basics"
+          ],
+          "exam_weighting_mc": "12%–16%",
+          "description": "Molecular genetics: DNA structure/function, transcription, translation, and regulation.",
+          "topics_may_include": [
+            "DNA replication, transcription, RNA processing",
+            "Translation, genetic code, mutations",
+            "Gene regulation mechanisms (prokaryotes/eukaryotes), biotechnology basics"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Natural Selection",
+          "keywords": [
+            "Evolution",
+            "Natural selection",
+            "Populations",
+            "Allele frequencies",
+            "Hardy–Weinberg equilibrium",
+            "Genetic drift",
+            "Gene flow",
+            "Mutation",
+            "Speciation"
+          ],
+          "exam_weighting_mc": "13%–20%",
+          "description": "Evolutionary mechanisms, population genetics, speciation, and phylogenetics.",
+          "topics_may_include": [
+            "Natural selection, genetic drift, gene flow, mutation",
+            "Hardy–Weinberg equilibrium and application",
+            "Speciation processes and evolutionary trees"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Ecology",
+          "keywords": [
+            "Ecosystems",
+            "Energy flow",
+            "Food webs",
+            "Nutrient cycles",
+            "Population dynamics",
+            "Community ecology",
+            "Biomes",
+            "Conservation"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Interactions among organisms and with their environments, ecosystems, energy flow, and conservation.",
+          "topics_may_include": [
+            "Ecosystem structure and energy transfer (food webs, trophic levels)",
+            "Population ecology, carrying capacity, and community interactions",
+            "Biogeochemical cycles and human impacts on ecosystems"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APCHEM",
+      "course_name": "AP Chemistry",
+      "overview": "One-year introductory college general chemistry course organized into 9 commonly taught units spanning atomic to electrochemical concepts.",
+      "important_notes": "Use particulate representations and balanced units; emphasize stoichiometry, thermodynamics, equilibrium, kinetics, electrochemistry, and acid–base behavior. Distinguish strong vs weak electrolytes and typical lab/graph interpretations; avoid organic mechanisms and graduate-level quantum details.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-chemistry?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Atomic Structure and Properties",
+          "keywords": [
+            "Atomic structure",
+            "Periodic trends",
+            "Electron configuration",
+            "Orbital diagrams",
+            "Quantum numbers",
+            "Ionization energy",
+            "Electronegativity"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Atomic theory, electron configuration, periodic trends, and mole concept.",
+          "topics_may_include": [
+            "Atomic models, quantum numbers, electron configuration",
+            "Periodic trends: ionization energy, electronegativity, atomic radius",
+            "Mole concept and molar mass; mass spectrometry basics"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Compound Structure and Properties",
+          "keywords": [
+            "Ionic bonding",
+            "Covalent bonding",
+            "Metallic bonding",
+            "Lewis structures",
+            "VSEPR theory",
+            "Molecular geometry",
+            "Polarity",
+            "Intermolecular forces"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Bonding theories and molecular structure as determinants of physical and chemical properties.",
+          "topics_may_include": [
+            "Ionic vs covalent bonding, Lewis structures, resonance",
+            "VSEPR theory, hybridization, molecular polarity",
+            "Intermolecular forces and solids/liquids properties"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Properties of Substances and Mixtures",
+          "keywords": [
+            "Pure substances",
+            "Mixtures",
+            "Solubility",
+            "Molarity",
+            "Dilution",
+            "Colligative properties",
+            "Osmotic pressure",
+            "Gas laws"
+          ],
+          "exam_weighting_mc": "18%–22%",
+          "description": "States of matter, solutions, colligative properties, and phase behavior.",
+          "topics_may_include": [
+            "Gas laws and kinetic molecular theory",
+            "Properties of liquids and solids, phase changes",
+            "Solutions, concentration units, solubility, colligative properties"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Chemical Reactions",
+          "keywords": [
+            "Reaction types",
+            "Balancing equations",
+            "Stoichiometry",
+            "Limiting reagents",
+            "Percent yield",
+            "Oxidation states",
+            "Redox reactions"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Types of chemical reactions, stoichiometry, and quantitative reaction analysis.",
+          "topics_may_include": [
+            "Balancing chemical equations, reaction stoichiometry",
+            "Limiting reagent, percent yield, reaction classification (redox, acid–base, precipitation)"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Kinetics",
+          "keywords": [
+            "Reaction rates",
+            "Rate laws",
+            "Order of reaction",
+            "Rate constants",
+            "Collision theory",
+            "Activation energy",
+            "Catalysts"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Rates of reaction, rate laws, reaction mechanisms, and factors affecting rates.",
+          "topics_may_include": [
+            "Rate laws and reaction order determination",
+            "Collision theory, activation energy, temperature dependence (Arrhenius concept)",
+            "Interpretation of rate data and mechanism inference"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Thermochemistry",
+          "keywords": [
+            "Heat and temperature",
+            "Calorimetry",
+            "Enthalpy",
+            "Thermochemical equations",
+            "Hess's law",
+            "Bond energy"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Energy changes in chemical processes, enthalpy, calorimetry, and heat transfer.",
+          "topics_may_include": [
+            "Endothermic vs exothermic processes, enthalpy changes",
+            "Calorimetry and heat capacity calculations",
+            "Hess’s Law and enthalpy of formation"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Equilibrium",
+          "keywords": [
+            "Equilibrium constant",
+            "Reaction quotient",
+            "Le Chatelier's principle",
+            "Equilibrium calculations",
+            "Shifts in equilibrium"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Chemical equilibrium concepts, equilibrium constants, Le Chatelier’s principle.",
+          "topics_may_include": [
+            "Equilibrium constant expressions (Kc, Kp)",
+            "Solving equilibrium problems, ICE tables",
+            "Le Chatelier’s principle and shifts in equilibrium"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Acids and Bases",
+          "keywords": [
+            "Acid-base definitions",
+            "pH and pOH",
+            "Strong acids and bases",
+            "Weak acids and bases",
+            "Buffers",
+            "Titrations",
+            "Hydrolysis"
+          ],
+          "exam_weighting_mc": "11%–15%",
+          "description": "Acid–base theories, pH/pOH calculations, titrations, buffers, and polyprotic species.",
+          "topics_may_include": [
+            "Strong vs weak acids/bases, pH and pOH calculations",
+            "Buffer systems and Henderson–Hasselbalch equation",
+            "Titration curves and equivalence point analysis"
+          ]
+        },
+        {
+          "unit_number": 9,
+          "unit_title": "Thermodynamics and Electrochemistry",
+          "keywords": [
+            "Entropy",
+            "Free energy",
+            "Spontaneous reactions",
+            "Gibbs free energy",
+            "Galvanic cells",
+            "Cell potential",
+            "Electroplating"
+          ],
+          "exam_weighting_mc": "7%–9%",
+          "description": "Entropy, Gibbs free energy, spontaneity, and redox electrochemistry including galvanic/electrolytic cells.",
+          "topics_may_include": [
+            "Entropy and Gibbs free energy; relationship to equilibrium",
+            "Electrochemical cells: cell notation, standard reduction potentials",
+            "Calculations of cell potential and Faraday’s laws (basic)"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APPHYS1",
+      "course_name": "AP Physics 1 (Algebra-Based)",
+      "overview": "Algebra-based introductory college-level physics covering mechanics and basic waves/fluids, organized into 8 commonly taught units.",
+      "important_notes": "Algebra-based only—no calculus. Emphasize free-body diagrams, sign conventions, unit consistency, and qualitative reasoning. Focus on kinematics/dynamics, energy/momentum, rotation/torque, SHM, waves, and basic circuits/fluids; avoid AP Physics 2 or C-only topics.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-1?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Kinematics",
+          "keywords": [
+            "Displacement",
+            "Velocity",
+            "Acceleration",
+            "Kinematic equations (v = v0 + a t; Δx = v0 t + 1/2 a t^2; v^2 = v0^2 + 2 a Δx)",
+            "Constant acceleration (uniform a)",
+            "Projectile motion",
+            "Circular motion",
+            "No calculus"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Describing motion in one and two dimensions: displacement, velocity, acceleration, and representations. Use 10 for gravity.",
+          "topics_may_include": [
+            "Scalars and vectors, displacement vs distance",
+            "Constant and variable acceleration motion equations",
+            "Projectile motion and relative motion",
+            "Graphical representations of motion"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Force and Translational Dynamics",
+          "keywords": [
+            "Newton's first law",
+            "Newton's second law",
+            "Newton's third law",
+            "Friction",
+            "Applied forces",
+            "Free body diagrams"
+          ],
+          "exam_weighting_mc": "18%–23%",
+          "description": "Newton’s laws, free-body diagrams, friction, circular motion, and dynamics of systems.",
+          "topics_may_include": [
+            "Newton’s three laws of motion",
+            "Free-body diagrams and solving force problems",
+            "Friction (static and kinetic), tension, normal force",
+            "Circular motion and centripetal acceleration"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Work, Energy, and Power",
+          "keywords": [
+            "Work",
+            "Kinetic energy",
+            "Potential energy",
+            "Work-energy theorem",
+            "Conservation of energy",
+            "Power"
+          ],
+          "exam_weighting_mc": "18%–23%",
+          "description": "Work–energy theorem, kinetic/potential energy, conservation of energy, and power calculations.",
+          "topics_may_include": [
+            "Work definition and calculation",
+            "Kinetic and potential energy, conservative forces",
+            "Energy conservation and energy diagrams",
+            "Power and energy transfer"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Linear Momentum",
+          "keywords": [
+            "Momentum",
+            "Impulse",
+            "Conservation of momentum",
+            "Elastic collisions",
+            "Inelastic collisions"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Momentum, impulse, and conservation in collisions (elastic and inelastic).",
+          "topics_may_include": [
+            "Linear momentum and impulse",
+            "Momentum conservation in isolated systems",
+            "Elastic vs inelastic collisions and center-of-mass concepts"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Torque and Rotational Dynamics",
+          "keywords": [
+            "Angular displacement",
+            "Angular velocity",
+            "Angular acceleration",
+            "Torque",
+            "Moment of inertia",
+            "Rotational dynamics"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Rotational kinematics and dynamics: torque, rotational inertia, and rotational analogs of linear motion.",
+          "topics_may_include": [
+            "Torque, lever arm, and rotational equilibrium",
+            "Moment of inertia concepts and angular acceleration",
+            "Relationship between torque and angular acceleration"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Energy and Momentum of Rotating Systems",
+          "keywords": [
+            "Rotational kinetic energy",
+            "Rotational work",
+            "Angular momentum",
+            "Conservation of angular momentum"
+          ],
+          "exam_weighting_mc": "5%–8%",
+          "description": "Rotational energy, angular momentum, and conservation in rotating systems.",
+          "topics_may_include": [
+            "Rotational kinetic energy, work by torques",
+            "Angular momentum and its conservation"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Oscillations",
+          "keywords": [
+            "Simple harmonic motion",
+            "Spring systems",
+            "Pendulums",
+            "Energy in oscillations",
+            "Damping"
+          ],
+          "exam_weighting_mc": "5%–8%",
+          "description": "Simple harmonic motion, pendulums, and mass–spring systems.",
+          "topics_may_include": [
+            "Simple harmonic motion equations and energy in oscillators",
+            "Period and frequency of mass–spring systems and pendulums",
+            "Damping and qualitative behavior"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Fluids",
+          "keywords": [
+            "Density",
+            "Pressure",
+            "Buoyancy",
+            "Archimedes' principle",
+            "Continuity equation",
+            "Bernoulli's equation"
+          ],
+          "exam_weighting_mc": "10%–15%",
+          "description": "Fluid statics and dynamics including pressure, buoyancy, and continuity/Bernoulli applications.",
+          "topics_may_include": [
+            "Pressure and hydrostatic laws",
+            "Archimedes’ principle and buoyant force",
+            "Continuity equation and Bernoulli’s principle (qualitative)"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APPHYS2",
+      "course_name": "AP Physics 2 (Algebra-Based)",
+      "overview": "Continuation of algebra-based physics focusing on fluids, thermodynamics, electricity, magnetism, optics, waves, and modern physics; organized into seven commonly taught units.",
+      "important_notes": "Algebra-based only—no calculus. Cover fluids, thermo, electrostatics, circuits (RC), magnetism, optics, waves, and introductory modern physics. Use correct units and sign conventions; keep math to algebra/trig and avoid Physics C-style derivations.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-2?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 9,
+          "unit_title": "Thermodynamics",
+          "exam_weighting_mc": "15%–18%",
+          "description": "Heat, temperature, heat transfer, and the laws of thermodynamics.",
+          "topics_may_include": [
+            "Temperature vs heat, calorimetry",
+            "First law of thermodynamics and internal energy",
+            "Heat engines and efficiency (qualitative)"
+          ]
+        },
+        {
+          "unit_number": 10,
+          "unit_title": "Electric Force, Field, and Potential",
+          "exam_weighting_mc": "15%–18%",
+          "description": "Electrostatics: Coulomb’s law, electric field and potential, and superposition.",
+          "topics_may_include": [
+            "Coulomb’s law and electric field calculations",
+            "Electric potential and potential energy of charge configurations",
+            "Conductors and insulators (qualitative)"
+          ]
+        },
+        {
+          "unit_number": 11,
+          "unit_title": "Electric Circuits",
+          "exam_weighting_mc": "15%–18%",
+          "description": "DC circuit analysis: current, resistance, Ohm’s law, series and parallel networks.",
+          "topics_may_include": [
+            "Ohm’s law, Kirchhoff’s rules (basic)",
+            "Series and parallel resistor networks",
+            "Capacitors in circuits (qualitative and basic quantitative)"
+          ]
+        },
+        {
+          "unit_number": 12,
+          "unit_title": "Magnetism and Electromagnetism",
+          "exam_weighting_mc": "12%–15%",
+          "description": "Magnetic fields, forces on moving charges and currents, and basic electromagnetic induction principles.",
+          "topics_may_include": [
+            "Magnetic field of currents, force on moving charges",
+            "Biot–Savart and right-hand rule (qualitative use)",
+            "Electromagnetic induction overview (Faraday, Lenz)"
+          ]
+        },
+        {
+          "unit_number": 13,
+          "unit_title": "Geometric Optics",
+          "exam_weighting_mc": "12%–15%",
+          "description": "Ray optics: reflection, refraction, lenses, mirrors, and image formation.",
+          "topics_may_include": [
+            "Law of reflection and refraction (Snell’s law)",
+            "Lens and mirror equations, magnification",
+            "Ray tracing for simple systems"
+          ]
+        },
+        {
+          "unit_number": 14,
+          "unit_title": "Waves, Sound, and Physical Optics",
+          "exam_weighting_mc": "12%–15%",
+          "description": "Wave properties, interference, superposition, standing waves, and sound.",
+          "topics_may_include": [
+            "Wave parameters: wavelength, frequency, speed, amplitude",
+            "Interference and superposition, standing waves",
+            "Sound waves, Doppler effect (qualitative)"
+          ]
+        },
+        {
+          "unit_number": 15,
+          "unit_title": "Modern Physics",
+          "exam_weighting_mc": "12%–15%",
+          "description": "Introductory modern physics topics such as quantum phenomena and atomic models.",
+          "topics_may_include": [
+            "Photoelectric effect and particle–wave duality (introductory)",
+            "Atomic models and basic nuclear concepts"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APPHYSC-M",
+      "course_name": "AP Physics C: Mechanics",
+      "overview": "Calculus-based mechanics course covering kinematics, Newtonian dynamics, energy, momentum, rotation, oscillations; commonly taught as college first-semester physics for STEM majors.",
+      "important_notes": "Calculus-based: derivatives/integrals are appropriate. Emphasize vector notation, sign conventions, and free-body diagrams. Focus on mechanics topics (kinematics, dynamics, energy, momentum, rotation, oscillations, gravitation) and avoid electricity/magnetism content here.",
+      "sources": [
+        "([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "Kinematics",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Position, velocity, and acceleration in one and two dimensions with calculus-based formulations.",
+          "topics_may_include": [
+            "Vector kinematics, projectile motion with calculus",
+            "Differential relations among position, velocity, acceleration"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "Force and Translational Dynamics",
+          "exam_weighting_mc": "20%–25%",
+          "description": "Newton’s laws applied with calculus; forces, center of mass, circular motion, and gravitation.",
+          "topics_may_include": [
+            "Newton’s laws in calculus form, free-body diagrams",
+            "Systems and center of mass, gravitation, circular dynamics"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Work, Energy, and Power",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Work–energy theorem, potential energy functions, and conservation principles using calculus.",
+          "topics_may_include": [
+            "Work integrals, conservative forces, energy conservation",
+            "Gravitational/elastic potential energy and work–energy relationships"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Systems of Particles and Linear Momentum",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Momentum conservation for particles and systems, collisions, and impulse with calculus-based treatment.",
+          "topics_may_include": [
+            "Linear momentum, impulse, center-of-mass motion",
+            "Elastic and inelastic collisions in one and two dimensions"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Rotation",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Rotational kinematics and dynamics, torque, moment of inertia, and rotational energy.",
+          "topics_may_include": [
+            "Angular kinematics, torque, rotational analogs of Newton’s laws",
+            "Moment of inertia calculations and rotational kinetic energy"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Oscillations and Gravitation",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Simple harmonic motion and gravitational systems analyzed with calculus tools.",
+          "topics_may_include": [
+            "Simple harmonic motion derivations, pendulums, energy in oscillators",
+            "Orbital motion and gravitational potential in calculus context"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APPHYSC-E",
+      "course_name": "AP Physics C: Electricity & Magnetism",
+      "overview": "Calculus-based course on electrostatics, circuits, magnetism, and electromagnetic induction; typically taught as second-semester calculus-based physics.",
+      "important_notes": "Calculus-based: line/surface integrals and derivatives are appropriate. Emphasize Gauss’s/Ampère’s laws, potential/field relationships, RC transients, induction (Faraday/Lenz), and field superposition. Use vector notation and units; avoid optics/modern physics which belong to Physics 2.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 8,
+          "unit_title": "Electric Charges, Fields, and Gauss's Law",
+          "exam_weighting_mc": "15%–25%",
+          "description": "Coulomb’s law, electric field computations, and application of Gauss’s Law to symmetric charge distributions.",
+          "topics_may_include": [
+            "Coulomb’s law and superposition for point charges",
+            "Electric field of continuous charge distributions (calculus-based)",
+            "Electric flux and Gauss’s Law applications"
+          ]
+        },
+        {
+          "unit_number": 9,
+          "unit_title": "Electric Potential",
+          "exam_weighting_mc": "10%–20%",
+          "description": "Electric potential and potential energy due to charge distributions; work and energy perspectives.",
+          "topics_may_include": [
+            "Electric potential of point charges and continuous distributions",
+            "Relation between electric field and potential (gradients), potential energy"
+          ]
+        },
+        {
+          "unit_number": 10,
+          "unit_title": "Conductors and Capacitors",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Behavior of conductors, charging, capacitors, dielectrics, and related energy storage concepts.",
+          "topics_may_include": [
+            "Electrostatics in conductors, shielding, surface charge distribution",
+            "Parallel plate capacitors, capacitance, dielectrics, energy stored in capacitors"
+          ]
+        },
+        {
+          "unit_number": 11,
+          "unit_title": "Electric Circuits",
+          "exam_weighting_mc": "15%–25%",
+          "description": "DC circuit analysis including capacitance and energy considerations; calculus where needed for charge/current relationships.",
+          "topics_may_include": [
+            "Current, resistance, Ohm’s law; RC circuits and transient analysis",
+            "Series and parallel circuits and energy calculations"
+          ]
+        },
+        {
+          "unit_number": 12,
+          "unit_title": "Magnetic Fields and Electromagnetism",
+          "exam_weighting_mc": "10%–20%",
+          "description": "Magnetic forces on charges and currents, fields from currents, and Ampère/Biot–Savart laws.",
+          "topics_may_include": [
+            "Lorentz force on moving charges, force on current-carrying wires",
+            "Magnetic field of a long straight wire, loop; Biot–Savart and Ampère’s Law (applications)"
+          ]
+        },
+        {
+          "unit_number": 13,
+          "unit_title": "Electromagnetic Induction",
+          "exam_weighting_mc": "10%–20%",
+          "description": "Faraday’s Law, Lenz’s Law, inductance, and basic AC/DC induction phenomena.",
+          "topics_may_include": [
+            "Faraday’s Law of induction, induced emf, Lenz’s Law",
+            "Inductance, LR circuits, and energy in magnetic fields"
+          ]
+        }
+      ]
+    },
+    {
+      "course_code": "APENVSCI",
+      "course_name": "AP Environmental Science",
+      "overview": "Interdisciplinary environmental science course covering ecosystems, resources, pollution, and global change; organized into 9 commonly taught units.",
+      "important_notes": "Use real-world environmental data/graphs and common units (ppm, ppb, kWh, hectares). Emphasize systems thinking: energy flow, biogeochemical cycles, population dynamics, pollution sources/mitigation, and policy trade-offs. Calculations should be simple (rates, proportions); avoid heavy chemistry/physics derivations.",
+      "sources": [
+        "([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-environmental-science?utm_source=openai))"
+      ],
+      "units": [
+        {
+          "unit_number": 1,
+          "unit_title": "The Living World: Ecosystems",
+          "exam_weighting_mc": "6%–8%",
+          "description": "Ecosystem structure, energy flow, productivity, and biogeochemical cycles.",
+          "topics_may_include": [
+            "Ecosystem concepts, food chains/webs, trophic levels",
+            "Primary productivity, energy transfer (10% rule)",
+            "Carbon, nitrogen, phosphorus, and water cycles"
+          ]
+        },
+        {
+          "unit_number": 2,
+          "unit_title": "The Living World: Biodiversity",
+          "exam_weighting_mc": "6%–8%",
+          "description": "Importance of biodiversity, species interactions, and conservation principles.",
+          "topics_may_include": [
+            "Species diversity and ecosystem services",
+            "Island biogeography, ecological tolerance, and resilience"
+          ]
+        },
+        {
+          "unit_number": 3,
+          "unit_title": "Populations",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Population ecology, growth models, carrying capacity, and human population dynamics.",
+          "topics_may_include": [
+            "Population growth models (exponential, logistic)",
+            "Carrying capacity, population regulation, age structure"
+          ]
+        },
+        {
+          "unit_number": 4,
+          "unit_title": "Earth Systems and Resources",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Geological processes, soil, freshwater resources, and resource cycling.",
+          "topics_may_include": [
+            "Plate tectonics, rock cycle, soil formation",
+            "Water resources, groundwater, watershed management"
+          ]
+        },
+        {
+          "unit_number": 5,
+          "unit_title": "Land and Water Use",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Human uses of land and water, agriculture, urban development, and sustainability issues.",
+          "topics_may_include": [
+            "Agricultural practices, irrigation, sustainable land use",
+            "Urbanization, land-use change, wetland and riparian impacts"
+          ]
+        },
+        {
+          "unit_number": 6,
+          "unit_title": "Energy Resources and Consumption",
+          "exam_weighting_mc": "10%–15%",
+          "description": "Energy types, extraction, consumption patterns, and alternatives/renewables.",
+          "topics_may_include": [
+            "Fossil fuels, nuclear energy, renewable energy sources",
+            "Energy efficiency, life-cycle impacts, and trade-offs"
+          ]
+        },
+        {
+          "unit_number": 7,
+          "unit_title": "Atmospheric Pollution",
+          "exam_weighting_mc": "7%–10%",
+          "description": "Air pollution sources, atmospheric chemistry, smog, and mitigation strategies.",
+          "topics_may_include": [
+            "Primary and secondary pollutants, photochemical smog",
+            "Acid rain, indoor air pollution, control technologies"
+          ]
+        },
+        {
+          "unit_number": 8,
+          "unit_title": "Aquatic and Terrestrial Pollution",
+          "exam_weighting_mc": "7%–10%",
+          "description": "Pollution impacts on terrestrial and aquatic ecosystems, waste management, and remediation.",
+          "topics_may_include": [
+            "Sources of pollution, point vs non-point sources",
+            "Solid waste disposal, sewage treatment, eutrophication, bioaccumulation"
+          ]
+        },
+        {
+          "unit_number": 9,
+          "unit_title": "Global Change",
+          "exam_weighting_mc": "15%–20%",
+          "description": "Large-scale environmental changes including climate change, ozone depletion, invasive species, and mitigation/adaptation.",
+          "topics_may_include": [
+            "Climate change science, greenhouse gases, mitigation and adaptation",
+            "Ozone depletion, ocean acidification, invasive species and global impacts"
+          ]
+        }
+      ]
+    }
+  ]
+}

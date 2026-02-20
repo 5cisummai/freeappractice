@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Free AP Practice</title>
+  <link rel="icon" type="image/png" href="/assets/icon.png">
+  <link rel="stylesheet" href="/css/index.css">
+  <link rel="stylesheet" href="/components/topbar.css">
+  <!-- Load topbar component script in head before body -->
+  <script src="/components/topbar.js"></script>
+  <script>
+    // Apply theme immediately on load to prevent flash
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      function applyTheme(theme) {
+        if (theme === 'system') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      }
+      applyTheme(savedTheme);
+    })();
+  </script>
+  <link rel="stylesheet" href="/components/question-generator.css">
+  <link rel="stylesheet" href="/components/ai-tutor.css">
+  <link rel="stylesheet" href="/components/question-modal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+  <style>
+    main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0; }
+    .dash-title { font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); }
+    .dash-subtitle { color: var(--text-secondary); margin-top: 6px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+    .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm); }
+    .card h3 { margin-bottom: 8px; font-size: var(--font-size-xl); }
+    .card p { color: var(--text-secondary); margin-bottom: 16px; }
+    .card .btn { display: inline-block; background: var(--accent-color); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; text-decoration: none; font-weight: var(--font-weight-medium); }
+    .list { margin-top: 20px; color: var(--text-secondary); }
+    .dash-title[data-greeting-loading="true"] #greetingName {
+      visibility: hidden;
+    }
+    
+    @media (max-width: 768px) {
+      main { padding: 0 8px; }
+    }
+    
+    @media (max-width: 480px) {
+      main { padding: 0 8px; }
+      .dash-header { margin: 16px 8px; }
+      .cards { margin-left: 8px; margin-right: 8px; gap: 12px; }
+      .card { padding: 16px; }
+    }
+  </style>
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+</head>
+<body> 
+  <topbar-component active-page="dashboard" auth-state="authenticated"></topbar-component>
+
+  <main>
+    <section class="dash-header">
+      <div>
+        <div class="dash-title" data-greeting-loading="true">
+          Welcome back, <span id="greetingName"></span> 👋
+        </div>
+        <div class="dash-subtitle">Pick up where you left off or start a new practice session.</div>
+      </div>
+    </section>
+
+    <section class="cards">
+      <div class="card">
+        <h3>Quick Practice</h3>
+        <p>Jump straight into generating AP questions.</p>
+        <a class="btn" href="#main-content">Start Practicing</a>
+      </div>
+      <div class="card">
+        <h3>Progress</h3>
+        <p>View your progress dashboard and track improvements.</p>
+        <a class="btn" href="/app/progress/">See Progress</a>
+      </div>
+      <div class="card">
+        <h3>Theme</h3>
+        <p>Switch between light, dark, or follow your system.</p>
+        <a class="btn" href="#" id="openSettingsCTA">Open Settings</a>
+      </div>
+    </section>
+
+    <!-- Progress Sidebar (reused) -->
+    <div id="progressPanel" class="progress-panel" aria-live="polite"></div>
+
+    <!-- Main Content: Question Generator + Answer Section -->
+    <section id="main-content" style="margin-top: 48px;">
+      <h2 class="visually-hidden">Generate AP Practice Questions</h2>
+      <!-- Question Generator Component -->
+      <div id="question-generator-mount"></div>
+    </section>
+
+    <!-- Bug Report Modal -->
+    <div class="bug-modal" id="bugReportModal" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
+      <div class="bug-modal-content">
+          <button class="bug-modal-close" id="bugReportClose" aria-label="Close bug report form">×</button>
+          <h3 id="bug-report-title">Report a bug</h3>
+          <p>Tell us what went wrong so we can fix it.</p>
+          <form id="bugReportForm">
+              <label for="bugDescription">Description</label>
+              <textarea id="bugDescription" rows="5" required placeholder="Describe the issue or unexpected behavior"></textarea>
+              <button type="submit">Submit report</button>
+              <p id="bugReportFeedback" class="bug-report-feedback" role="status" aria-live="polite"></p>
+          </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings Modal loaded via component -->
+
+  <!-- Core utilities and managers -->
+  <script src="/js/utils.js"></script>
+  <script src="/js/katex-renderer.js"></script>
+  <script src="/js/storage-manager.js"></script>
+  <script src="/js/theme-manager.js"></script>
+  <script src="/js/authorization.js"></script>
+  
+  <!-- Main question app -->
+  <script src="/js/question-app.js"></script>
+  
+  <!-- External libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+  
+  <!-- Components -->
+  <script src="/components/question-generator.js"></script>
+  <script src="/components/ai-tutor.js"></script>
+  <script src="/components/question-modal.js"></script>
+  <script src="/components/settings-modal.js"></script>
+  <script>
+    // Apply theme on load
+    function applyTheme(theme) {
+      if (theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+    }
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    applyTheme(savedTheme);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      const currentTheme = localStorage.getItem('theme') || 'system';
+      if (currentTheme === 'system') document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    });
+
+    // Auth guard: redirect to login if not logged in
+    (async function guard() {
+      if (!isLoggedIn()) { window.location.replace('/auth/login/'); return; }
+      const user = await getCurrentUser();
+      if (!user) { window.location.replace('/auth/login/'); return; }
+      const nameElement = document.getElementById('greetingName');
+      const displayName = (user.name && user.name.trim()) ? user.name.trim() : 'Student';
+      if (nameElement) {
+        nameElement.textContent = displayName;
+        const titleWrapper = nameElement.closest('.dash-title');
+        if (titleWrapper) titleWrapper.removeAttribute('data-greeting-loading');
+      }
+      
+      // Set user name in topbar component
+      const topbar = document.querySelector('topbar-component');
+      if (topbar) {
+        topbar.setUserName(user.name || 'Account');
+      }
+    })();
+
+    // Dropdown + settings wiring are now handled by topbar component
+    // Settings modal CTA
+    const openSettingsCTA = document.getElementById('openSettingsCTA');
+    if (openSettingsCTA) {
+      openSettingsCTA.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        if (typeof openSettings === 'function') openSettings(); 
+      });
+    }
+  </script>
+  <div id="footer-container"></div>
+  <script src="/components/footer.js"></script>
+</body>
+</html>

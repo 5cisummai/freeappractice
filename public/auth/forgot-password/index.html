@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Forgot Password - Free AP Practice</title>
+  <link rel="icon" type="image/png" href="/assets/icon.png">
+  <link rel="stylesheet" href="/css/index.css">
+  <script src="/js/cookies.js"></script>
+  <script src="/components/cookie-banner.js"></script>
+  <script src="/components/settings-modal.js"></script>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding: 0;
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: var(--space-lg);
+      }
+
+      .login-wrapper {
+        width: 100%;
+        max-width: 420px;
+      }
+
+      #footer-container {
+        margin-top: auto;
+      }
+
+      .login-container {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg);
+        padding: var(--space-3xl);
+      }
+
+      .login-header {
+        text-align: center;
+        margin-bottom: var(--space-3xl);
+      }
+
+      .login-header h1 {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--text-primary);
+        margin-bottom: var(--space-md);
+      }
+
+      .login-header p {
+        color: var(--text-secondary);
+        font-size: var(--font-size-base);
+      }
+
+      label { display:block; margin-bottom: var(--space-md); color:var(--text-primary); }
+      input[type="email"] { width:100%; padding: var(--space-lg); border:1px solid var(--border-color); border-radius:8px; background:var(--bg-primary); color:var(--text-primary); }
+      .btn-login { width:100%; padding: var(--space-lg); background: var(--accent-color); color: white; border:none; border-radius:8px; font-size:var(--font-size-base); }
+    </style>
+</head>
+<body>
+  <main>
+    <div class="login-wrapper">
+      <div class="login-container">
+        <div class="login-header">
+          <h1>Forgot your password?</h1>
+          <p class="login-sub">Enter the email associated with your account and we'll send reset instructions.</p>
+        </div>
+
+        <form id="forgotForm">
+          <label for="email">Email address</label>
+          <input id="email" type="email" placeholder="you@example.com" required />
+          <button type="submit" class="btn-login">Send reset email</button>
+        </form>
+
+        <div id="result"></div>
+
+        <div class="signin-link" style="margin-top:12px">
+          <a href="/auth/login/">Back to sign in</a> · <a href="/auth/register/">Create account</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/js/authorization.js"></script>
+  <script>
+    (function(){
+      const form = document.getElementById('forgotForm');
+      const result = document.getElementById('result');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        result.textContent = '';
+        result.className = '';
+
+        const email = document.getElementById('email').value.trim();
+        if (!email) return;
+
+        try {
+          const resp = await fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+
+          const data = await resp.json().catch(()=>({ message: resp.ok ? 'OK' : 'Request failed' }));
+
+          result.textContent = data.message || 'If that email is registered, a reset link has been sent.';
+          result.className = 'msg success';
+          form.style.display = 'none';
+        } catch (err) {
+          console.error('forgot error', err);
+          result.textContent = 'Network error while requesting reset.';
+          result.className = 'msg error';
+        }
+      });
+    })();
+  </script>
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+</body>
+</html>

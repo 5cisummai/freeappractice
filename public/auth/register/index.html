@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Free AP Practice</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--space-lg);
+        }
+
+        .register-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        #footer-container {
+            margin-top: auto;
+        }
+
+        .register-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-3xl);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: var(--space-3xl);
+        }
+
+        .register-header h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        .register-header p {
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-xl);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--space-md);
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        input[type="email"],
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: var(--space-lg) var(--space-lg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: var(--font-size-base);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="email"]::placeholder,
+        input[type="text"]::placeholder,
+        input[type="password"]::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        input[type="email"]:focus,
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+        }
+
+        .password-requirements {
+            display: none;
+        }
+
+        .requirement {
+            display: none;
+        }
+
+        .requirement-icon {
+            display: none;
+        }
+
+        .requirement.unmet .requirement-icon {
+            display: none;
+        }
+
+        .requirement.met .requirement-icon {
+            display: none;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: var(--space-xl);
+            gap: var(--space-md);
+        }
+
+        .terms-checkbox input[type="checkbox"] {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-color);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .terms-text {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .terms-text a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .terms-text a:hover {
+            opacity: 0.8;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: var(--space-lg);
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-register:hover:not(:disabled) {
+            opacity: 0.8;
+        }
+
+        .btn-register:active:not(:disabled) {
+            opacity: 0.7;
+        }
+
+        .btn-register:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .signin-link {
+            text-align: center;
+            margin-top: var(--space-2xl);
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+
+        .signin-link a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: var(--font-weight-medium);
+            transition: opacity 0.2s;
+        }
+
+        .signin-link a:hover {
+            opacity: 0.8;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: var(--font-size-xs);
+            margin-top: var(--space-sm);
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+</head>
+<body>
+    <main>
+    <div class="register-wrapper">
+        <div class="register-container">
+            <div class="register-header">
+                <h1>Create Account</h1>
+                <p>Join Free AP Practice today</p>
+            </div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="Your name" required>
+                    <div class="error-message" id="nameError">Please enter your name</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                    <div class="error-message" id="emailError">Please enter a valid email</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <div class="error-message" id="passwordError">Password is required</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password-confirm">Confirm Password</label>
+                    <input type="password" id="password-confirm" name="password-confirm" placeholder="Confirm your password" required>
+                    <div class="error-message" id="confirmError">Passwords don't match</div>
+                </div>
+
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms" class="terms-text">
+                        I agree to the <a href="/terms/" target="_blank">Terms of Service</a> and <a href="/privacy/" target="_blank">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-register">Create Account</button>
+            </form>
+
+            <div class="signin-link">
+                Already have an account? <a href="/auth/login/">Sign in</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/authorization.js"></script>
+    <script>
+        // Apply theme on page load
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        // Load theme from localStorage or default to 'system'
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        applyTheme(savedTheme);
+
+        // Listen for system theme changes if using 'system' mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const currentTheme = localStorage.getItem('theme') || 'system';
+            if (currentTheme === 'system') {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+
+        const form = document.getElementById('registerForm');
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('password-confirm');
+        const submitButton = form.querySelector('.btn-register');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = passwordInput.value;
+            const confirmPassword = confirmInput.value;
+            const terms = document.getElementById('terms').checked;
+
+            const nameError = document.getElementById('nameError');
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+            const confirmError = document.getElementById('confirmError');
+
+            // Reset errors
+            [nameError, emailError, passwordError, confirmError].forEach(el => el.classList.remove('show'));
+
+            let isValid = true;
+
+            // Validate name
+            if (!name) {
+                nameError.textContent = 'Please enter your name';
+                nameError.classList.add('show');
+                isValid = false;
+            }
+
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                emailError.classList.add('show');
+                isValid = false;
+            }
+
+            // Validate password
+            if (password.length < 6) {
+                passwordError.textContent = 'Password must be at least 6 characters';
+                passwordError.classList.add('show');
+                isValid = false;
+            }
+
+            // Validate confirm password
+            if (password !== confirmPassword) {
+                confirmError.classList.add('show');
+                isValid = false;
+            }
+
+            // Validate terms
+            if (!terms) {
+                const termsCheckbox = document.getElementById('terms');
+                termsCheckbox.focus();
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Disable button and show loading state
+                submitButton.disabled = true;
+                submitButton.textContent = 'Creating Account...';
+
+                try {
+                    const data = await register(name, email, password);
+                    // Registration requires email verification: clear any token and show confirmation page
+                    if (typeof clearAuthToken === 'function') clearAuthToken();
+                    window.location.href = '/auth/email-sent/?email=' + encodeURIComponent(email);
+                } catch (err) {
+                    // Show error message
+                    emailError.textContent = err.message || 'Registration failed';
+                    emailError.classList.add('show');
+                    
+                    // Re-enable button
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Create Account';
+                }
+            }
+        });
+    </script>
+    </main>
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+</body>
+</html>

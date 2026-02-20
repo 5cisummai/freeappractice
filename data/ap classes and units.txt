@@ -1,0 +1,268 @@
+AP Courses and Units by Semester
+AP Biology
+Semester 1:
+Unit 1: Chemistry of Life[1]
+Unit 2: Cells[2]
+Unit 3: Cellular Energetics[3]
+Unit 4: Cell Communication and Cell Cycle[4]
+Semester 2:
+Unit 5: Heredity[5]
+Unit 6: Gene Expression and Regulation[6]
+Unit 7: Natural Selection[7]
+Unit 8: Ecology[8]
+AP Chemistry
+Semester 1:
+Unit 1: Atomic Structure and Properties
+Unit 2: Compound Structure and Properties
+Unit 3: Properties of Substances and Mixtures
+Unit 4: Chemical Reactions
+Semester 2:
+Unit 5: Kinetics
+Unit 6: Thermochemistry
+Unit 7: Equilibrium
+Unit 8: Acids and Bases
+Unit 9: Thermodynamics and Electrochemistry
+AP Physics 1
+Semester 1:
+Unit 1: Kinematics
+Unit 2: Force and Translational Dynamics
+Unit 3: Work, Energy, and Power
+Unit 4: Linear Momentum
+Semester 2:
+Unit 5: Torque and Rotational Dynamics
+Unit 6: Energy and Momentum of Rotating Systems
+Unit 7: Oscillations
+Unit 8: Fluids
+AP Physics 2
+Semester 1:
+Unit 9: Thermodynamics
+Unit 10: Electric Force, Field, and Potential
+Unit 11: Electric Circuits
+Semester 2:
+Unit 12: Magnetism and Electromagnetism
+Unit 13: Electromagnetic Induction
+Unit 14: Geometric Optics
+Unit 15: Waves, Sound, and Physical Optics
+AP Physics C: Mechanics
+Semester 1: (2nd-semester college physics)
+Unit 1: Kinematics
+Unit 2: Force and Translational Dynamics
+Unit 3: Work, Energy, and Power
+Unit 4: Linear Momentum
+Unit 5: Torque and Rotational Dynamics
+Unit 6: Energy and Momentum of Rotating Systems
+Unit 7: Oscillations
+AP Physics C: Electricity & Magnetism
+Semester 2: (2nd-semester college physics)
+Unit 8: Electric Charges, Fields, and Gauss’s Law
+Unit 9: Electric Potential
+Unit 10: Conductors and Capacitors
+Unit 11: Electric Circuits
+Unit 12: Magnetic Fields and Electromagnetism
+Unit 13: Electromagnetic Induction
+AP Environmental Science
+Semester 1:
+Unit 1: The Living World: Ecosystems
+Unit 2: The Living World: Biodiversity
+Unit 3: Populations
+Unit 4: Earth Systems and Resources
+Semester 2:
+Unit 5: Land and Water Use
+Unit 6: Energy Resources and Consumption
+Unit 7: Atmospheric Pollution
+Unit 8: Aquatic and Terrestrial Pollution
+Unit 9: Global Change
+AP Calculus AB
+Semester 1:
+Unit 1: Limits and Continuity
+Unit 2: Differentiation: Definition and Fundamental Properties
+Unit 3: Differentiation: Composite, Implicit, and Inverse Functions
+Unit 4: Contextual Applications of Differentiation
+Semester 2:
+Unit 5: Analytical Applications of Differentiation
+Unit 6: Integration and Accumulation of Change
+Unit 7: Differential Equations
+Unit 8: Applications of Integration
+AP Calculus BC
+Semester 1:
+Unit 1: Limits and Continuity
+Unit 2: Differentiation: Definition and Fundamental Properties
+Unit 3: Differentiation: Composite, Implicit, and Inverse Functions
+Unit 4: Contextual Applications of Differentiation
+Unit 5: Analytical Applications of Differentiation
+Semester 2:
+Unit 6: Integration and Accumulation of Change
+Unit 7: Differential Equations
+Unit 8: Applications of Integration
+Unit 9: Parametric Equations, Polar Coordinates, and Vector-Valued Functions
+Unit 10: Infinite Sequences and Series
+AP Statistics
+Semester 1:
+Unit 1: Exploring One-Variable Data
+Unit 2: Exploring Two-Variable Data
+Unit 3: Collecting Data
+Unit 4: Probability, Random Variables, and Probability Distributions
+Semester 2:
+Unit 5: Sampling Distributions
+Unit 6: Inference for Categorical Data: Proportions
+Unit 7: Inference for Quantitative Data: Means
+Unit 8: Inference for Categorical Data: Chi-Square
+Unit 9: Inference for Quantitative Data: Slopes
+AP Precalculus
+Semester 1:
+Unit 1: Polynomial and Rational Functions
+Unit 2: Exponential and Logarithmic Functions
+Semester 2:
+Unit 3: Trigonometric and Polar Functions
+Unit 4: Functions Involving Parameters, Vectors, and Matrices
+AP Computer Science A (Java)
+Semester 1:
+Unit 1: Using Objects and Methods
+Unit 2: Selection and Iteration
+Semester 2:
+Unit 3: Class Creation
+Unit 4: Data Collections
+AP Computer Science Principles
+Semester 1:
+Big Idea 1: Creative Development
+Big Idea 2: Data
+Big Idea 3: Algorithms and Programming
+Semester 2:
+Big Idea 4: Computer Systems and Networks
+Big Idea 5: Impact of Computing
+AP English Language and Composition
+Semester 1:
+Unit 1: The Rhetorical Situation
+Unit 2: Rhetorical Appeals
+Unit 3: Claims and Evidence
+Unit 4: Reasoning and Organization
+Semester 2:
+Unit 5: Style
+Unit 6: Argumentation
+Unit 7: Research and Synthesis
+Unit 8: Writing Process
+Unit 9: Revision and Reflection
+AP English Literature and Composition
+Semester 1:
+Unit 1: Short Fiction I[9]
+Unit 2: Poetry I[10]
+Unit 3: Longer Fiction or Drama I[11]
+Unit 4: Short Fiction II[12]
+Semester 2:
+Unit 5: Poetry II[13]
+Unit 6: Longer Fiction or Drama II[14]
+Unit 7: Short Fiction III[15]
+Unit 8: Poetry III[16]
+Unit 9: Longer Fiction or Drama III[17]
+AP U.S. History
+Semester 1:
+Unit 1: Period 1: 1491–1607[18]
+Unit 2: Period 2: 1607–1754[19]
+Unit 3: Period 3: 1754–1800[20]
+Unit 4: Period 4: 1800–1848[21]
+Semester 2:
+Unit 5: Period 5: 1844–1877[22]
+Unit 6: Period 6: 1865–1898[23]
+Unit 7: Period 7: 1890–1945[24]
+Unit 8: Period 8: 1945–1980[25]
+Unit 9: Period 9: 1980–Present[26]
+AP World History: Modern
+Semester 1:
+Unit 1: The Global Tapestry[27]
+Unit 2: Networks of Exchange[28]
+Unit 3: Land-Based Empires[29]
+Unit 4: Transoceanic Interconnections[30]
+Unit 5: Revolutions[31]
+Semester 2:
+Unit 6: Consequences of Industrialization[32]
+Unit 7: Global Conflict[33]
+Unit 8: Cold War and Decolonization[34]
+Unit 9: Globalization[35]
+AP European History
+Semester 1:
+Unit 1: Renaissance and Exploration[36]
+Unit 2: Age of Reformation[37]
+Unit 3: Absolutism and Constitutionalism[38]
+Unit 4: Scientific, Philosophical, and Political Developments[39]
+Unit 5: Conflict, Crisis, and Reaction in the Late 18th Century[40]
+Semester 2:
+Unit 6: Industrialization and Its Effects[41]
+Unit 7: 19th-Century Perspectives and Political Developments[42]
+Unit 8: 20th-Century Global Conflicts[43]
+Unit 9: Cold War and Contemporary Europe[44]
+AP U.S. Government and Politics
+Semester 1:
+Unit 1: Foundations of American Democracy[45]
+Unit 2: Interactions Among Branches of Government[46]
+Unit 3: Civil Liberties and Civil Rights[47]
+Unit 4: American Political Ideologies and Beliefs[48]
+Semester 2:
+Unit 5: Political Participation[49]
+AP Comparative Government and Politics
+Semester 1:
+Unit 1: Political Systems, Regimes, and Governments[50]
+Unit 2: Political Institutions[51]
+Unit 3: Political Culture and Participation[52]
+Unit 4: Party and Electoral Systems and Citizen Organizations[53]
+Semester 2:
+Unit 5: Political and Economic Changes and Development[54]
+AP Psychology
+Semester 1:
+Unit 1: Biological Bases of Behavior[55]
+Unit 2: Cognition[56]
+Unit 3: Development and Learning[57]
+Unit 4: Social Psychology and Personality[58]
+Semester 2:
+Unit 5: Mental and Physical Health[59]
+AP Human Geography
+Semester 1:
+Unit 1: Thinking Geographically[60]
+Unit 2: Population and Migration Patterns and Processes[61]
+Unit 3: Cultural Patterns and Processes[62]
+Unit 4: Political Patterns and Processes[63]
+Semester 2:
+Unit 5: Agriculture and Rural Land-Use Patterns and Processes[64]
+Unit 6: Cities and Urban Land-Use Patterns and Processes[65]
+Unit 7: Industrial and Economic Development Patterns and Processes[66]
+AP Macroeconomics
+Semester 1:
+Unit 1: Basic Economic Concepts[67]
+Unit 2: Economic Indicators and the Business Cycle[68]
+Unit 3: National Income and Price Determination[69]
+Semester 2:
+Unit 4: Financial Sector[70]
+Unit 5: Long-Run Consequences of Stabilization Policies[71]
+Unit 6: Open Economy—International Trade and Finance[72]
+AP Microeconomics
+Semester 1:
+Unit 1: Basic Economic Concepts[73]
+Unit 2: Supply and Demand[74]
+Unit 3: Production, Cost, and the Perfect Competition Model[75]
+Unit 4: Imperfect Competition[76]
+Semester 2:
+Unit 5: Factor Markets[77]
+Unit 6: Market Failure and the Role of Government[78]
+Sources: The unit names and numbers for each AP course are drawn from the College Board’s official AP course descriptions and frameworks[1][79][18][27][36][45][50][55][60][67][73]. Each list above is organized by likely first-semester versus second-semester coverage in a typical high school year.
+
+[1] [2] [3] [4] [5] [6] [7] [8] AP Biology – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-biology
+[9] [10] [11] [12] [13] [14] [15] [16] [17] [79] AP English Literature and Composition – AP Students
+https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition
+[18] [19] [20] [21] [22] [23] [24] [25] [26] AP United States History – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-united-states-history
+[27] [28] [29] [30] [31] [32] [33] [34] [35] AP World History: Modern – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-world-history-modern
+[36] [37] [38] [39] [40] [41] [42] [43] [44] AP European History – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-european-history
+[45] [46] [47] [48] [49] AP United States Government and Politics – AP Students
+https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics
+[50] [51] [52] [53] [54] AP Comparative Government and Politics – AP Students
+https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics
+[55] [56] [57] [58] [59] AP Psychology – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-psychology
+[60] [61] [62] [63] [64] [65] [66] AP Human Geography – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-human-geography
+[67] [68] [69] [70] [71] [72] AP Macroeconomics – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-macroeconomics
+[73] [74] [75] [76] [77] [78] AP Microeconomics – AP Students | College Board
+https://apstudents.collegeboard.org/courses/ap-microeconomics

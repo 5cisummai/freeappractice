@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    
+    <title>Changelog - FreeAPPractice</title>
+    <link rel="stylesheet" href="/css/index.css?v=1.1">
+    <script>
+        // Apply theme immediately on load to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'system';
+            function applyTheme(theme) {
+                if (theme === 'system') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+                } else {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+            }
+            applyTheme(savedTheme);
+        })();
+    </script>
+    <style>
+        .changelog-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+        .changelog-container h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        .changelog-container .last-updated {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        .changelog-entry {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .changelog-entry:last-child {
+            border-bottom: none;
+        }
+        .changelog-version {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+        }
+        .changelog-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        .changelog-entry h3 {
+            font-size: 1.1rem;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        .changelog-entry ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        .changelog-entry li {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <!-- Only load theme manager for changelog page -->
+    <script src="/js/storage-manager.js"></script>
+    <script src="/js/theme-manager.js"></script>
+    <script>
+        // Initialize theme on changelog page
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeSelect = document.getElementById('themeSelect');
+            ThemeManager.initialize(themeSelect);
+            
+            themeSelect?.addEventListener('change', (e) => {
+                StorageManager.setTheme(e.target.value);
+                ThemeManager.apply(e.target.value);
+            });
+        });
+    </script>
+    <!-- Shared components -->
+    <script src="/components/topbar.js"></script>
+    <script src="/components/settings-modal.js"></script>
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+
+    <div class="changelog-container">
+        <a href="/" class="back-link">← Back to Home</a>
+        
+        <h1>Changelog</h1>
+        <p class="last-updated">Last Updated: February 20, 2026</p>
+
+        <!-- New changelog entry v1.2.0 -->
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.2.0</div>
+            <div class="changelog-date">February 20, 2026</div>
+            <h3>Changes</h3>
+            <ul>
+                <li>Project is now Open-Source, repo at <a href="https://github.com/5cisummai/freeappractice">github.com/5cisummai/freeappractice</a> </li>
+                <li>Added optional cookies for analytics features that improve this site</li>
+            </ul>
+
+            <h3>Improvements</h3>
+            <ul>
+                <li>Optimized backend code, removing depricated features</li>
+                <li>Updated node modules to lastest versions</li>
+            </ul>
+
+        </div>
+
+        <!-- New changelog entry v1.1.1 -->
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.1.1</div>
+            <div class="changelog-date">January 25, 2026</div>
+            <h3>Fixes</h3>
+            <ul>
+                <li>Fixed UI errors and topbar consistency across pages</li>
+                <li>Improved SEO optimization across pages</li>
+            </ul>
+
+        </div>
+
+        <!-- New changelog entry v2.0.0 major release -->
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.1.0 - Update</div>
+            <div class="changelog-date">January 22, 2026</div>
+
+            <h3>New Features</h3>
+            <ul>
+                <li>User accounts: track progress and stats across devices</li>
+                <li>New AI Tutor: interactive assistant to help with questions and explanations</li>
+            </ul>
+
+            <h3>Fixes</h3>
+            <ul>
+                <li>Bug fix for question progress tracker</li>
+                <li>Mobile responsiveness fixes</li>
+                <li>Theme consistency and messy UI fixes</li>
+                <li>Fixed question caching consistency</li>
+            </ul>
+
+            <h3>Improvements</h3>
+            <ul>
+                <li>Greatly improved question generation accuracy</li>
+                <li>Performance improvements with dynamic JS loading and HTML components model</li>
+            </ul>
+
+            <h3>Technical</h3>
+            <ul>
+                <li>Server logging improved for better diagnostics and observability</li>
+                <li>Every-question storage now backed by AWS S3 (durable, searchable storage)</li>
+                <li>Updated privacy handling for account data and S3 storage guidance</li>
+                <li>Dependency and build improvements to reduce runtime module issues</li>
+            </ul>
+
+        </div>
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.0.2</div>
+            <div class="changelog-date">January 4, 2026</div>
+            <h3>Fixes</h3>
+            <ul>
+                <li>Fixed critical bug that prevented user from getting questions</li>
+            </ul>
+            <h3>Improvements</h3>
+            <ul>
+                <li>Fixed theme consistency across pages</li>
+                <li>Fixed UI consistency across pages.</li>
+                <li>Focus Mode UI improvements</li>
+            </ul>
+
+        </div>
+
+        <!-- New changelog entry v1.0.2 -->
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.0.2</div>
+            <div class="changelog-date">January 4, 2026</div>
+            <h3>Fixes</h3>
+            <ul>
+                <li>Fixed critical bug that prevented user from getting questions</li>
+            </ul>
+            <h3>Improvements</h3>
+            <ul>
+                <li>Fixed theme consistency across pages</li>
+                <li>Fixed UI consistency across pages.</li>
+                <li>Focus Mode UI improvements</li>
+            </ul>
+
+        </div>
+
+        <!-- New changelog entry v1.0.1 -->
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.0.1</div>
+            <div class="changelog-date">January 3, 2026</div>
+            <h3>Improvements</h3>
+            <ul>
+                <li>Fixed mobile responsiveness.</li>
+                <li>Cleaned up UI.</li>
+                <li>Theme settings now preload.</li>
+            </ul>
+
+        </div>
+
+
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.0.0 - Stable Release</div>
+            <div class="changelog-date">December 28, 2025</div>
+            
+            <h3>Major Features</h3>
+            <ul>
+                <li>Intelligent hybrid caching system: Instant first question from database cache, fresh AI-generated questions for subsequent requests</li>
+                <li>Smart prefetch system: Next question pre-generates in the background while you review the current one</li>
+                <li>Enhanced question variety: Each new question uses a random unit selection for maximum diversity</li>
+                <li>MongoDB question cache with automatic background refresh</li>
+                <li>Seamless provider fallback: Automatically switches from local to OpenAI if local model fails</li>
+            </ul>
+
+            <h3>Performance Improvements</h3>
+            <ul>
+                <li>First question now loads instantly from pre-cached database</li>
+                <li>Subsequent questions appear instantly from client-side prefetch cache</li>
+                <li>Background refresh keeps database cache up-to-date without blocking user requests</li>
+                <li>Optimized API architecture with service layer separation</li>
+                <li>Rate limiting (20 req/min) for OpenAI provider to manage costs</li>
+            </ul>
+
+            <h3>Bug Fixes</h3>
+            <ul>
+                <li>Fixed MongoDB connection errors with deprecated options</li>
+                <li>Resolved provider variable scope issues in error handling</li>
+                <li>Fixed LaTeX rendering issues with proper JSON escaping</li>
+                <li>Corrected cache key behavior when switching between classes/units</li>
+            </ul>
+
+            <h3>Technical Details</h3>
+            <ul>
+                <li>Refactored API to accept className and unit parameters directly</li>
+                <li>Implemented skipCache parameter for prefetch vs initial request control</li>
+                <li>Database cache always uses OpenAI for consistent quality</li>
+                <li>Client-side hasShownFirstQuestion flag for session state management</li>
+                <li>Unit range handling now correctly picks random units for variety</li>
+            </ul>
+            <h3>Warnings!</h3>
+            <ul>
+                <li>Some cached questions may be of lower quality as they were generated with earlier, less refined prompts. New questions generated after this update will use the latest improved prompts for better accuracy and relevance.</li>
+                <li>Some cached questions may contain formatting issues due to previous JSON escaping bugs. New questions will have correct formatting.</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
+            <div class="changelog-version">v0.9.4 - Beta</div>
+            <div class="changelog-date">December 19, 2025</div>
+            
+            <h3>Improvements</h3>
+            <ul>
+                <li>Questions are now more accurate per class and per unit</li>
+                <li>More data for questions to be created on</li>
+            </ul>
+
+            <h3>Changes</h3>
+            <ul>
+                <li>Added Advertisements to run when ever it is not testing times</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
+            <div class="changelog-version">v0.9.3 - Beta</div>
+            <div class="changelog-date">December 16, 2025</div>
+            <h3>Fixes</h3>
+            <ul>
+                <li>Changelog page now follows the correct color theme</li>
+                <li>Settings button now toggles the setting modal rather than just opening it</li>
+            </ul>
+            <h3>Changes</h3>
+            <ul>
+                <li>More complex subjects now use gpt-5-mini instead of o4-mini</li>
+                <li>Order of elements in footer changed</li>
+            </ul>
+            <h3>Improvements</h3>
+            <ul>
+                <li>New show/hide button for the progress sidebar</li>
+                <li>How to use section now more interactive</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
+            <div class="changelog-version">v0.9.2 - Beta</div>
+            <div class="changelog-date">December 15, 2025</div>
+            <h3>Changes</h3>
+            <ul>
+                <li>Removed info about AI provider while a question is showning</li> 
+            </ul>
+            <h3>Improvements</h3>
+            <ul>
+                <li>Improved prompt wording to enhance formatting in answer choices and explanations</li>
+                <li>Added a "Show Explanation" toggle for referring back to explanations</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
+            <div class="changelog-version">v0.9.1 - Beta</div>
+            <div class="changelog-date">December 15, 2025</div>
+            <h3>Improvements</h3>
+            <ul>
+                <li>Improved unit selection logic for "All Units" and custom range modes</li>
+                <li>Questions now randomly select a single unit from the range instead of trying to cover multiple units</li>
+                <li>Better question quality by focusing on specific unit content</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
+            <div class="changelog-version">v0.9.0 - Beta</div>
+            <div class="changelog-date">December 15, 2025</div>
+            <h3>Initial Release</h3>
+            <ul>
+                <li>Launch of FreeAPPractice.org (Beta)</li>
+                <li>Support for 20+ AP subjects</li>
+                <li>AI-powered question generation</li>
+                <li>Dual provider support: Local (LM Studio) and OpenAI</li>
+                <li>Real-time feedback and detailed explanations</li>
+                <li>Customizable theme (Light/Dark/System)</li>
+                <li>Local progress tracking</li>
+                <li>Focus Mode for distraction-free practice</li>
+                <li>Customizable unit range selection with range slider</li>
+                <li>Progress tracking sidebar showing performance metrics</li>
+                <li>Math rendering with KaTeX for equation display</li>
+                <li>Code syntax highlighting with Highlight.js</li>
+                <li>Question caching for improved performance</li>
+                <li>Responsive design for mobile and desktop devices</li>
+                <li>Comprehensive FAQ and documentation</li>
+                <li>Bug report feature for user feedback</li>
+                <li>Privacy-focused design with local data storage</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top">
+        <p>↑</p>
+    </button>
+</body>
+</html>

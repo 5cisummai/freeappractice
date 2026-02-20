@@ -1,0 +1,15 @@
+[
+  {
+    "id": "BR-1765672090030",
+    "status": "open",
+    "createdAt": "2025-12-14T00:28:10.030Z",
+    "title": "User reported bug",
+    "description": "the text{true} is not being formatted into correct latex",
+    "severity": "low",
+    "metadata": {
+      "class": "AP Computer Science A",
+      "unit": "Unit 2: Selection and Iteration",
+      "theme": "light"
+    }
+  }
+]

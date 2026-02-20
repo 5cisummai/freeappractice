@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Free AP Practice</title>
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--space-lg);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        #footer-container {
+            margin-top: auto;
+        }
+
+        .login-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-3xl);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--space-3xl);
+        }
+
+        .login-header h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-xl);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--space-md);
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: var(--space-lg) var(--space-lg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: var(--font-size-base);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--space-xl);
+            gap: var(--space-lg);
+        }
+
+        .remember-forgot a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .remember-forgot a:hover {
+            opacity: 0.8;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        input[type="checkbox"] {
+            margin-right: var(--space-md);
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-color);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: var(--space-lg);
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-login:hover {
+            opacity: 0.8;
+        }
+
+        .btn-login:active {
+            opacity: 0.7;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: var(--space-2xl);
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+
+        .signup-link a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: var(--font-weight-medium);
+            transition: opacity 0.2s;
+        }
+
+        .signup-link a:hover {
+            opacity: 0.8;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: var(--font-size-xs);
+            margin-top: var(--space-sm);
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+</head>
+<body>
+    <main>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Sign In</h1>
+                <p>Access your Free AP Practice account</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                    <div class="error-message" id="emailError">Please enter a valid email</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <div class="error-message" id="passwordError">Password is required</div>
+                </div>
+
+                <div class="remember-forgot">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember">
+                        Remember me
+                    </label>
+                    <a href="/auth/forgot-password/">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">Sign In</button>
+            </form>
+
+            <div class="signup-link">
+                Don't have an account? <a href="/auth/register/">Create one</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/authorization.js"></script>
+    <script>
+        // Apply theme on page load
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        // Load theme from localStorage or default to 'system'
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        applyTheme(savedTheme);
+
+        // Listen for system theme changes if using 'system' mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const currentTheme = localStorage.getItem('theme') || 'system';
+            if (currentTheme === 'system') {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+
+        const form = document.getElementById('loginForm');
+        const submitButton = form.querySelector('.btn-login');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const emailError = document.getElementById('emailError');
+            const passwordError = document.getElementById('passwordError');
+
+            // Reset errors
+            emailError.classList.remove('show');
+            passwordError.classList.remove('show');
+
+            let isValid = true;
+
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                emailError.classList.add('show');
+                isValid = false;
+            }
+
+            // Validate password
+            if (password.length < 6) {
+                passwordError.textContent = 'Password must be at least 6 characters';
+                passwordError.classList.add('show');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Disable button and show loading state
+                submitButton.disabled = true;
+                submitButton.textContent = 'Signing in...';
+
+                try {
+                    await login(email, password);
+                    // Redirect to dashboard on success
+                    window.location.href = '/app/';
+                } catch (err) {
+                    // Show error message
+                    passwordError.textContent = err.message || 'Login failed';
+                    passwordError.classList.add('show');
+                    
+                    // Re-enable button
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sign In';
+                }
+            }
+        });
+    </script>
+    </main>
+    <div id="footer-container"></div>
+    <script src="/components/footer.js"></script>
+</body>
+</html>

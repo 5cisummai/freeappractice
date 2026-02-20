@@ -1,0 +1,75 @@
+<!-- Align component markup to match homepage exactly -->
+<section>
+    <h2 class="visually-hidden">Generate AP Practice Questions</h2>
+    <form id="questionForm" aria-label="Question generation form">
+        <select id="classSelect" required>
+            <option value="">Select your AP Course</option>
+
+            <optgroup label="Sciences">
+                <option value="AP Biology">AP Biology</option>
+                <option value="AP Chemistry">AP Chemistry</option>
+                <option value="AP Physics 1">AP Physics 1</option>
+                <option value="AP Physics 2">AP Physics 2</option>
+                <option value="AP Physics C: Mechanics">AP Physics C: Mechanics</option>
+                <option value="AP Physics C: E&M">AP Physics C: E&M</option>
+                <option value="AP Environmental Science">AP Environmental Science</option>
+            </optgroup>
+
+            <optgroup label="Mathematics">
+                <option value="AP Calculus AB">AP Calculus AB</option>
+                <option value="AP Calculus BC">AP Calculus BC</option>
+                <option value="AP Statistics">AP Statistics</option>
+                <option value="AP Precalculus">AP Precalculus</option>
+            </optgroup>
+
+            <optgroup label="Computer Science">
+                <option value="AP Computer Science A">AP Computer Science A</option>
+                <option value="AP Computer Science Principles">AP Computer Science Principles</option>
+            </optgroup>
+
+            <optgroup label="English">
+                <option value="AP English Language">AP English Language</option>
+                <option value="AP English Literature">AP English Literature</option>
+            </optgroup>
+
+            <optgroup label="History & Social Sciences">
+                <option value="AP US History">AP US History</option>
+                <option value="AP World History">AP World History</option>
+                <option value="AP European History">AP European History</option>
+                <option value="AP US Government">AP US Government</option>
+                <option value="AP Comparative Government">AP Comparative Government</option>
+                <option value="AP Psychology">AP Psychology</option>
+                <option value="AP Human Geography">AP Human Geography</option>
+            </optgroup>
+
+            <optgroup label="Economics">
+                <option value="AP Macroeconomics">AP Macroeconomics</option>
+                <option value="AP Microeconomics">AP Microeconomics</option>
+            </optgroup>
+        </select>
+        <select id="unitSelect" disabled>
+            <option value="">Select your AP Course first</option>
+        </select>
+        <button type="submit">Generate Question</button>
+    </form>
+
+    <div id="rangeSliderContainer" style="display: none;">
+        <div class="range-slider-wrapper">
+            <div class="range-info">
+                <span class="range-label" id="fromLabel">Unit 1</span>
+                <span class="range-separator">to</span>
+                <span class="range-label" id="toLabel">Unit 8</span>
+            </div>
+            <div class="slider-track">
+                <div class="slider-range" id="sliderRange"></div>
+                <input type="range" id="fromSlider" class="slider" min="0" max="7" value="0">
+                <input type="range" id="toSlider" class="slider" min="0" max="7" value="7">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Answer Section (homepage style) -->
+<section id="answerSection" style="margin-top:20px;" aria-live="polite">
+    <div id="answerOutput"></div>
+</section>

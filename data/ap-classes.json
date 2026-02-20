@@ -1,0 +1,343 @@
+{
+  "courses": [
+    {
+      "name": "AP Biology",
+      "semester1": [
+        "Unit 1: Chemistry of Life",
+        "Unit 2: Cells",
+        "Unit 3: Cellular Energetics",
+        "Unit 4: Cell Communication and Cell Cycle"
+      ],
+      "semester2": [
+        "Unit 5: Heredity",
+        "Unit 6: Gene Expression and Regulation",
+        "Unit 7: Natural Selection",
+        "Unit 8: Ecology"
+      ]
+    },
+    {
+      "name": "AP Chemistry",
+      "semester1": [
+        "Unit 1: Atomic Structure and Properties",
+        "Unit 2: Compound Structure and Properties",
+        "Unit 3: Properties of Substances and Mixtures",
+        "Unit 4: Chemical Reactions"
+      ],
+      "semester2": [
+        "Unit 5: Kinetics",
+        "Unit 6: Thermochemistry",
+        "Unit 7: Equilibrium",
+        "Unit 8: Acids and Bases",
+        "Unit 9: Thermodynamics and Electrochemistry"
+      ]
+    },
+    {
+      "name": "AP Physics 1",
+      "semester1": [
+        "Unit 1: Kinematics",
+        "Unit 2: Force and Translational Dynamics",
+        "Unit 3: Work, Energy, and Power",
+        "Unit 4: Linear Momentum"
+      ],
+      "semester2": [
+        "Unit 5: Torque and Rotational Dynamics",
+        "Unit 6: Energy and Momentum of Rotating Systems",
+        "Unit 7: Oscillations",
+        "Unit 8: Fluids"
+      ]
+    },
+    {
+      "name": "AP Physics 2",
+      "semester1": [
+        "Unit 9: Thermodynamics",
+        "Unit 10: Electric Force, Field, and Potential",
+        "Unit 11: Electric Circuits"
+      ],
+      "semester2": [
+        "Unit 12: Magnetism and Electromagnetism",
+        "Unit 13: Electromagnetic Induction",
+        "Unit 14: Geometric Optics",
+        "Unit 15: Waves, Sound, and Physical Optics"
+      ]
+    },
+    {
+      "name": "AP Physics C: Mechanics",
+      "semester1": [
+        "Unit 1: Kinematics",
+        "Unit 2: Force and Translational Dynamics",
+        "Unit 3: Work, Energy, and Power",
+        "Unit 4: Linear Momentum",
+        "Unit 5: Torque and Rotational Dynamics",
+        "Unit 6: Energy and Momentum of Rotating Systems",
+        "Unit 7: Oscillations"
+      ],
+      "semester2": []
+    },
+    {
+      "name": "AP Physics C: E&M",
+      "semester1": [],
+      "semester2": [
+        "Unit 8: Electric Charges, Fields, and Gauss's Law",
+        "Unit 9: Electric Potential",
+        "Unit 10: Conductors and Capacitors",
+        "Unit 11: Electric Circuits",
+        "Unit 12: Magnetic Fields and Electromagnetism",
+        "Unit 13: Electromagnetic Induction"
+      ]
+    },
+    {
+      "name": "AP Environmental Science",
+      "semester1": [
+        "Unit 1: The Living World: Ecosystems",
+        "Unit 2: The Living World: Biodiversity",
+        "Unit 3: Populations",
+        "Unit 4: Earth Systems and Resources"
+      ],
+      "semester2": [
+        "Unit 5: Land and Water Use",
+        "Unit 6: Energy Resources and Consumption",
+        "Unit 7: Atmospheric Pollution",
+        "Unit 8: Aquatic and Terrestrial Pollution",
+        "Unit 9: Global Change"
+      ]
+    },
+    {
+      "name": "AP Calculus AB",
+      "semester1": [
+        "Unit 1: Limits and Continuity",
+        "Unit 2: Differentiation: Definition and Fundamental Properties",
+        "Unit 3: Differentiation: Composite, Implicit, and Inverse Functions",
+        "Unit 4: Contextual Applications of Differentiation"
+      ],
+      "semester2": [
+        "Unit 5: Analytical Applications of Differentiation",
+        "Unit 6: Integration and Accumulation of Change",
+        "Unit 7: Differential Equations",
+        "Unit 8: Applications of Integration"
+      ]
+    },
+    {
+      "name": "AP Calculus BC",
+      "semester1": [
+        "Unit 1: Limits and Continuity",
+        "Unit 2: Differentiation: Definition and Fundamental Properties",
+        "Unit 3: Differentiation: Composite, Implicit, and Inverse Functions",
+        "Unit 4: Contextual Applications of Differentiation",
+        "Unit 5: Analytical Applications of Differentiation"
+      ],
+      "semester2": [
+        "Unit 6: Integration and Accumulation of Change",
+        "Unit 7: Differential Equations",
+        "Unit 8: Applications of Integration",
+        "Unit 9: Parametric Equations, Polar Coordinates, and Vector-Valued Functions",
+        "Unit 10: Infinite Sequences and Series"
+      ]
+    },
+    {
+      "name": "AP Statistics",
+      "semester1": [
+        "Unit 1: Exploring One-Variable Data",
+        "Unit 2: Exploring Two-Variable Data",
+        "Unit 3: Collecting Data",
+        "Unit 4: Probability, Random Variables, and Probability Distributions"
+      ],
+      "semester2": [
+        "Unit 5: Sampling Distributions",
+        "Unit 6: Inference for Categorical Data: Proportions",
+        "Unit 7: Inference for Quantitative Data: Means",
+        "Unit 8: Inference for Categorical Data: Chi-Square",
+        "Unit 9: Inference for Quantitative Data: Slopes"
+      ]
+    },
+    {
+      "name": "AP Precalculus",
+      "semester1": [
+        "Unit 1: Polynomial and Rational Functions",
+        "Unit 2: Exponential and Logarithmic Functions"
+      ],
+      "semester2": [
+        "Unit 3: Trigonometric and Polar Functions",
+        "Unit 4: Functions Involving Parameters, Vectors, and Matrices"
+      ]
+    },
+    {
+      "name": "AP Computer Science A",
+      "semester1": [
+        "Unit 1: Using Objects and Methods",
+        "Unit 2: Selection and Iteration"
+      ],
+      "semester2": [
+        "Unit 3: Class Creation",
+        "Unit 4: Data Collections"
+      ]
+    },
+    {
+      "name": "AP Computer Science Principles",
+      "semester1": [
+        "Big Idea 1: Creative Development",
+        "Big Idea 2: Data",
+        "Big Idea 3: Algorithms and Programming"
+      ],
+      "semester2": [
+        "Big Idea 4: Computer Systems and Networks",
+        "Big Idea 5: Impact of Computing"
+      ]
+    },
+    {
+      "name": "AP English Language",
+      "semester1": [
+        "Unit 1: The Rhetorical Situation",
+        "Unit 2: Rhetorical Appeals",
+        "Unit 3: Claims and Evidence",
+        "Unit 4: Reasoning and Organization"
+      ],
+      "semester2": [
+        "Unit 5: Style",
+        "Unit 6: Argumentation",
+        "Unit 7: Research and Synthesis",
+        "Unit 8: Writing Process",
+        "Unit 9: Revision and Reflection"
+      ]
+    },
+    {
+      "name": "AP English Literature",
+      "semester1": [
+        "Unit 1: Short Fiction I",
+        "Unit 2: Poetry I",
+        "Unit 3: Longer Fiction or Drama I",
+        "Unit 4: Short Fiction II"
+      ],
+      "semester2": [
+        "Unit 5: Poetry II",
+        "Unit 6: Longer Fiction or Drama II",
+        "Unit 7: Short Fiction III",
+        "Unit 8: Poetry III",
+        "Unit 9: Longer Fiction or Drama III"
+      ]
+    },
+    {
+      "name": "AP US History",
+      "semester1": [
+        "Unit 1: Period 1: 1491–1607",
+        "Unit 2: Period 2: 1607–1754",
+        "Unit 3: Period 3: 1754–1800",
+        "Unit 4: Period 4: 1800–1848"
+      ],
+      "semester2": [
+        "Unit 5: Period 5: 1844–1877",
+        "Unit 6: Period 6: 1865–1898",
+        "Unit 7: Period 7: 1890–1945",
+        "Unit 8: Period 8: 1945–1980",
+        "Unit 9: Period 9: 1980–Present"
+      ]
+    },
+    {
+      "name": "AP World History",
+      "semester1": [
+        "Unit 1: The Global Tapestry",
+        "Unit 2: Networks of Exchange",
+        "Unit 3: Land-Based Empires",
+        "Unit 4: Transoceanic Interconnections",
+        "Unit 5: Revolutions"
+      ],
+      "semester2": [
+        "Unit 6: Consequences of Industrialization",
+        "Unit 7: Global Conflict",
+        "Unit 8: Cold War and Decolonization",
+        "Unit 9: Globalization"
+      ]
+    },
+    {
+      "name": "AP European History",
+      "semester1": [
+        "Unit 1: Renaissance and Exploration",
+        "Unit 2: Age of Reformation",
+        "Unit 3: Absolutism and Constitutionalism",
+        "Unit 4: Scientific, Philosophical, and Political Developments",
+        "Unit 5: Conflict, Crisis, and Reaction in the Late 18th Century"
+      ],
+      "semester2": [
+        "Unit 6: Industrialization and Its Effects",
+        "Unit 7: 19th-Century Perspectives and Political Developments",
+        "Unit 8: 20th-Century Global Conflicts",
+        "Unit 9: Cold War and Contemporary Europe"
+      ]
+    },
+    {
+      "name": "AP US Government",
+      "semester1": [
+        "Unit 1: Foundations of American Democracy",
+        "Unit 2: Interactions Among Branches of Government",
+        "Unit 3: Civil Liberties and Civil Rights",
+        "Unit 4: American Political Ideologies and Beliefs"
+      ],
+      "semester2": [
+        "Unit 5: Political Participation"
+      ]
+    },
+    {
+      "name": "AP Comparative Government",
+      "semester1": [
+        "Unit 1: Political Systems, Regimes, and Governments",
+        "Unit 2: Political Institutions",
+        "Unit 3: Political Culture and Participation",
+        "Unit 4: Party and Electoral Systems and Citizen Organizations"
+      ],
+      "semester2": [
+        "Unit 5: Political and Economic Changes and Development"
+      ]
+    },
+    {
+      "name": "AP Psychology",
+      "semester1": [
+        "Unit 1: Biological Bases of Behavior",
+        "Unit 2: Cognition",
+        "Unit 3: Development and Learning",
+        "Unit 4: Social Psychology and Personality"
+      ],
+      "semester2": [
+        "Unit 5: Mental and Physical Health"
+      ]
+    },
+    {
+      "name": "AP Human Geography",
+      "semester1": [
+        "Unit 1: Thinking Geographically",
+        "Unit 2: Population and Migration Patterns and Processes",
+        "Unit 3: Cultural Patterns and Processes",
+        "Unit 4: Political Patterns and Processes"
+      ],
+      "semester2": [
+        "Unit 5: Agriculture and Rural Land-Use Patterns and Processes",
+        "Unit 6: Cities and Urban Land-Use Patterns and Processes",
+        "Unit 7: Industrial and Economic Development Patterns and Processes"
+      ]
+    },
+    {
+      "name": "AP Macroeconomics",
+      "semester1": [
+        "Unit 1: Basic Economic Concepts",
+        "Unit 2: Economic Indicators and the Business Cycle",
+        "Unit 3: National Income and Price Determination"
+      ],
+      "semester2": [
+        "Unit 4: Financial Sector",
+        "Unit 5: Long-Run Consequences of Stabilization Policies",
+        "Unit 6: Open Economy—International Trade and Finance"
+      ]
+    },
+    {
+      "name": "AP Microeconomics",
+      "semester1": [
+        "Unit 1: Basic Economic Concepts",
+        "Unit 2: Supply and Demand",
+        "Unit 3: Production, Cost, and the Perfect Competition Model",
+        "Unit 4: Imperfect Competition"
+      ],
+      "semester2": [
+        "Unit 5: Factor Markets",
+        "Unit 6: Market Failure and the Role of Government"
+      ]
+    }
+  ]
+}

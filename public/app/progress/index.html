@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Progress - Free AP Practice</title>
+  <link rel="icon" type="image/png" href="/assets/icon.png">
+  <link rel="stylesheet" href="/css/index.css">
+  <link rel="stylesheet" href="/components/question-modal.css">
+  <link rel="stylesheet" href="/components/topbar.css">
+  <!-- Load topbar component script in head before body -->
+  <script src="/components/topbar.js"></script>
+  <script>
+    // Apply theme immediately on load to prevent flash
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'system';
+      function applyTheme(theme) {
+        if (theme === 'system') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      }
+      applyTheme(savedTheme);
+    })();
+  </script>
+  <style>
+    main { 
+      max-width: 1100px; 
+      margin: 0 auto; 
+      padding: 24px; 
+    }
+    
+    .progress-header { 
+      margin: 24px 0; 
+    }
+    .progress-title { 
+      font-size: var(--font-size-3xl); 
+      font-weight: var(--font-weight-bold); 
+    }
+    .progress-subtitle { 
+      color: var(--text-secondary); 
+      margin-top: 6px;
+    }
+
+    /* Stats Overview Cards */
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+      gap: 16px; 
+      margin-top: 24px;
+      margin-bottom: 48px; 
+    }
+    .stat-card { 
+      background: var(--bg-secondary); 
+      border: 1px solid var(--border-color); 
+      border-radius: 12px; 
+      padding: 20px; 
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .stat-label { 
+      color: var(--text-secondary); 
+      font-size: var(--font-size-sm); 
+      font-weight: var(--font-weight-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .stat-value { 
+      font-size: var(--font-size-3xl); 
+      font-weight: var(--font-weight-bold); 
+      color: var(--text-primary);
+    }
+    .stat-description { 
+      color: var(--text-secondary); 
+      font-size: var(--font-size-sm); 
+      margin-top: 4px;
+    }
+    .stat-card.highlight {
+      border-color: var(--accent-color);
+    }
+
+    /* Filters */
+    .filters-section { 
+      background: var(--bg-secondary); 
+      border: 1px solid var(--border-color); 
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-width: 200px;
+    }
+    .filter-label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--text-secondary);
+    }
+    .filter-select {
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 16px;
+      padding-right: 32px;
+    }
+    .filter-select:hover {
+      border-color: var(--accent-color);
+    }
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+    }
+    .filter-select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 48px 0 16px;
+    }
+    .section-title {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-primary);
+    }
+    .view-toggle {
+      display: flex;
+      gap: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 4px;
+    }
+    .view-toggle-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: var(--font-size-sm);
+      transition: all 0.2s;
+    }
+    .view-toggle-btn.active {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    /* Question History List */
+    .history-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .history-empty {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+    .history-empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    .question-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+    .question-item:hover {
+      border-color: var(--accent-color);
+      box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+      transform: translateY(-2px);
+    }
+    .question-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .question-item-left {
+      flex: 1;
+      min-width: 0;
+    }
+    .question-item-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .question-result-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .badge-correct {
+      background: rgba(40, 167, 69, 0.15);
+      color: #28a745;
+      border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    .badge-incorrect {
+      background: rgba(220, 53, 69, 0.15);
+      color: #dc3545;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    .question-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .question-course-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--accent-color);
+      color: white;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      letter-spacing: 0.02em;
+    }
+    .question-unit-text {
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+    .question-date {
+      color: var(--text-tertiary);
+      font-size: var(--font-size-xs);
+      white-space: nowrap;
+    }
+    .question-text-preview {
+      color: var(--text-primary);
+      font-size: var(--font-size-sm);
+      line-height: 1.5;
+      margin-bottom: 12px;
+      font-weight: var(--font-weight-medium);
+    }
+    .question-stats-row {
+      display: flex;
+      gap: 24px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+    .question-stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .question-stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: var(--font-weight-medium);
+    }
+    .question-stat-value {
+      font-size: var(--font-size-sm);
+      color: var(--text-primary);
+      font-weight: var(--font-weight-semibold);
+    }
+
+    /* Grid View Styles */
+    .history-container.grid-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+    }
+    .history-container.grid-view .question-item-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .history-container.grid-view .question-item-right {
+      width: 100%;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .history-container.grid-view .question-text-preview {
+      display: -webkit-box;
+      line-clamp: 2;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .history-container.grid-view .question-stats-row {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Chart Styles */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .chart-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .chart-title {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .chart-placeholder {
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      font-size: var(--font-size-sm);
+    }
+
+    /* Subject Breakdown */
+    .subject-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .subject-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .subject-name {
+      min-width: 150px;
+      font-weight: var(--font-weight-medium);
+      color: var(--text-primary);
+      font-size: var(--font-size-sm);
+    }
+    .subject-bar-container {
+      flex: 1;
+      height: 24px;
+      background: var(--bg-primary);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .subject-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-color), rgba(0, 113, 227, 0.7));
+      border-radius: 6px;
+      transition: width 0.3s ease;
+    }
+    .subject-percentage {
+      min-width: 50px;
+      text-align: right;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      main { 
+        padding: 16px; 
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .filters-section {
+        gap: 12px;
+        padding: 16px;
+      }
+      .filter-group {
+        flex: 1 1 100%;
+        min-width: 100%;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      .chart-card {
+        padding: 16px;
+      }
+      .question-header {
+        flex-direction: column;
+      }
+      .subject-name {
+        min-width: 100px;
+        font-size: var(--font-size-xs);
+      }
+    }
+
+    @media (max-width: 480px) {
+      main { 
+        padding: 0 8px; 
+      }
+      .progress-header {
+        margin: 16px 8px;
+      }
+      .progress-title {
+        font-size: var(--font-size-2xl);
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-left: 8px;
+        margin-right: 8px;
+      }
+      .stat-card {
+        padding: 16px;
+      }
+      .stat-value {
+        font-size: var(--font-size-2xl);
+      }
+      .filters-section {
+        padding: 16px;
+        margin-left: 8px;
+        margin-right: 8px;
+      }
+      .chart-card {
+        padding: 16px;
+      }
+      .chart-title {
+        font-size: var(--font-size-base);
+      }
+      .section-title {
+        font-size: var(--font-size-xl);
+      }
+      .section-header {
+        margin: 32px 8px 12px;
+      }
+      .history-container {
+        gap: 8px;
+        margin-left: 8px;
+        margin-right: 8px;
+      }
+      .question-item {
+        padding: 12px;
+        border-radius: 8px;
+      }
+      .question-item-header {
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .question-item-right {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .question-meta-row {
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .question-course-badge {
+        padding: 3px 8px;
+        font-size: 10px;
+      }
+      .question-unit-text {
+        font-size: 11px;
+      }
+      .question-text-preview {
+        font-size: 12px;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .question-result-badge {
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+      .question-date {
+        font-size: 10px;
+      }
+      .question-stats-row {
+        gap: 12px;
+        padding-top: 8px;
+      }
+      .question-stat-item {
+        flex: 1;
+        min-width: calc(50% - 6px);
+      }
+      .question-stat-label {
+        font-size: 9px;
+      }
+      .question-stat-value {
+        font-size: 11px;
+      }
+    }
+  </style>
+    <script src="/js/cookies.js"></script>
+    <script src="/components/cookie-banner.js"></script>
+</head>
+<body>
+  <topbar-component active-page="progress" auth-state="authenticated"></topbar-component>
+
+  <main>
+    <section class="progress-header">
+      <h1 class="progress-title">Your Progress</h1>
+      <p class="progress-subtitle">Track your performance and see how you're improving</p>
+    </section>
+
+    <!-- Stats Overview -->
+    <section class="stats-grid">
+      <div class="stat-card highlight">
+        <div class="stat-label">Total Questions</div>
+        <div class="stat-value" id="totalQuestions">0</div>
+        <div class="stat-description">Questions attempted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Accuracy</div>
+        <div class="stat-value" id="accuracy">0%</div>
+        <div class="stat-description">Correct answers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Current Streak</div>
+        <div class="stat-value" id="streak">0</div>
+        <div class="stat-description">Days in a row</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Time</div>
+        <div class="stat-value" id="totalTime">0h</div>
+        <div class="stat-description">Time spent practicing</div>
+      </div>
+    </section>
+
+    
+
+    <!-- Performance Charts -->
+    <section class="section-header">
+      <h2 class="section-title">Performance Overview</h2>
+    </section>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3 class="chart-title">Accuracy by Subject</h3>
+        <div class="subject-list" id="subjectBreakdown">
+          <div class="subject-item">
+            <div class="subject-name">AP Calculus AB</div>
+            <div class="subject-bar-container">
+              <div class="subject-bar" style="width: 0%"></div>
+            </div>
+            <div class="subject-percentage">0%</div>
+          </div>
+          <div class="subject-item">
+            <div class="subject-name">AP Biology</div>
+            <div class="subject-bar-container">
+              <div class="subject-bar" style="width: 0%"></div>
+            </div>
+            <div class="subject-percentage">0%</div>
+          </div>
+          <div class="subject-item">
+            <div class="subject-name">AP Chemistry</div>
+            <div class="subject-bar-container">
+              <div class="subject-bar" style="width: 0%"></div>
+            </div>
+            <div class="subject-percentage">0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">Progress Over Time</h3>
+        <div class="chart-placeholder">Chart will display your progress trends</div>
+      </div>
+    </div>
+    
+
+    <!-- Filters -->
+    <section class="filters-section">
+      <div class="filter-group">
+        <label class="filter-label" for="filterClass">Filter by Class</label>
+        <select id="filterClass" class="filter-select">
+          <option value="all">All Classes</option>
+          <option value="AP Calculus AB">AP Calculus AB</option>
+          <option value="AP Biology">AP Biology</option>
+          <option value="AP Chemistry">AP Chemistry</option>
+          <option value="AP Physics 1">AP Physics 1</option>
+          <option value="AP US History">AP US History</option>
+          <option value="AP World History">AP World History</option>
+          <option value="AP English Language">AP English Language</option>
+          <option value="AP Computer Science A">AP Computer Science A</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="filterResult">Filter by Result</label>
+        <select id="filterResult" class="filter-select">
+          <option value="all">All Results</option>
+          <option value="correct">Correct Only</option>
+          <option value="incorrect">Incorrect Only</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label" for="filterDate">Time Period</label>
+        <select id="filterDate" class="filter-select">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Question History -->
+    <section class="section-header">
+      <h2 class="section-title">Question History</h2>
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" data-view="list">List</button>
+        <button class="view-toggle-btn" data-view="grid">Grid</button>
+      </div>
+    </section>
+    <div class="history-container" id="questionHistory">
+      <div class="history-empty">
+        <div class="history-empty-icon">📚</div>
+        <p><strong>No questions answered yet</strong></p>
+        <p>Start practicing to see your history here</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings Modal loaded via component -->
+
+  <div id="footer-container"></div>
+  <script src="/components/footer.js"></script>
+  <script src="/components/settings-modal.js"></script>
+  <script src="/components/question-modal.js"></script>
+
+  <script src="/js/authorization.js"></script>
+  <script>
+    // Authentication check
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const userData = await getCurrentUser();
+        if (!userData) {
+          window.location.href = '/auth/login/';
+          return;
+        }
+        
+        // Set user name in topbar component
+        const topbar = document.querySelector('topbar-component');
+        if (topbar) {
+          topbar.setUserName(userData.name);
+        }
+        
+        // Fetch comprehensive progress data from new API
+        await loadUserProgressFromAPI();
+      } catch (error) {
+        console.error('Auth error:', error);
+        window.location.href = '/auth/login/';
+      }
+    });
+
+    // Load progress data from API
+    async function loadUserProgressFromAPI() {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          window.location.href = '/auth/login/';
+          return;
+        }
+
+        // Fetch comprehensive stats
+        const statsResponse = await authFetch('/api/auth/stats');
+
+        if (!statsResponse.ok) {
+          throw new Error('Failed to fetch stats');
+        }
+
+        const statsData = await statsResponse.json();
+        
+        // Fetch detailed question history (includes full question data from S3)
+        const historyResponse = await authFetch('/api/auth/history?limit=500');
+        if (!historyResponse.ok) {
+          throw new Error('Failed to fetch question history');
+        }
+        const historyData = await historyResponse.json();
+        const historyList = historyData.history || [];
+
+        // Update UI with fetched data
+        updateStatsUI(statsData);
+        updateSubjectBreakdown(statsData.subjectBreakdown);
+        renderQuestionHistory(historyList);
+        setupFilters(historyList);
+
+      } catch (error) {
+        console.error('Error loading progress:', error);
+        // Show error message to user
+        document.getElementById('questionHistory').innerHTML = `
+          <div class="history-empty">
+            <div class="history-empty-icon">⚠️</div>
+            <p><strong>Failed to load progress data</strong></p>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Update stats cards
+    function updateStatsUI(statsData) {
+      const { overview, recentPerformance } = statsData;
+      
+      document.getElementById('totalQuestions').textContent = overview.totalQuestions || 0;
+      document.getElementById('accuracy').textContent = (overview.accuracy || 0) + '%';
+      document.getElementById('streak').textContent = overview.currentStreak || 0;
+      document.getElementById('totalTime').textContent = (overview.totalTimeHours || 0) + 'h';
+    }
+
+    // Update subject breakdown visualization
+    function updateSubjectBreakdown(subjectBreakdown) {
+      const container = document.getElementById('subjectBreakdown');
+      
+      if (!subjectBreakdown || subjectBreakdown.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-tertiary); text-align: center; padding: 20px;">No subject data yet</p>';
+        return;
+      }
+
+      container.innerHTML = subjectBreakdown.slice(0, 5).map(subject => `
+        <div class="subject-item">
+          <div class="subject-name">${subject.subject}</div>
+          <div class="subject-bar-container">
+            <div class="subject-bar" style="width: ${subject.accuracy}%"></div>
+          </div>
+          <div class="subject-percentage">${subject.accuracy}%</div>
+        </div>
+      `).join('');
+    }
+
+    // User dropdown and mobile menu are now handled by topbar component
+
+    // Load User Progress
+    async function loadUserProgress(userData) {
+      const history = userData.questionHistory || [];
+      
+      // Calculate stats
+      const totalQuestions = history.length;
+      const correctAnswers = history.filter(q => q.wasCorrect).length;
+      const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+      const totalTimeMs = history.reduce((sum, q) => sum + (q.timeTakenMs || 0), 0);
+      const totalTimeHours = Math.round(totalTimeMs / 1000 / 60 / 60 * 10) / 10;
+
+      // Calculate streak (simplified - would need date comparison)
+      const streak = 0; // TODO: Implement streak calculation
+
+      // Update stat cards
+      document.getElementById('totalQuestions').textContent = totalQuestions;
+      document.getElementById('accuracy').textContent = accuracy + '%';
+      document.getElementById('streak').textContent = streak;
+      document.getElementById('totalTime').textContent = totalTimeHours + 'h';
+
+      // Calculate subject breakdown
+      const subjectStats = {};
+      history.forEach(q => {
+        if (!subjectStats[q.apClass]) {
+          subjectStats[q.apClass] = { total: 0, correct: 0 };
+        }
+        subjectStats[q.apClass].total++;
+        if (q.wasCorrect) subjectStats[q.apClass].correct++;
+      });
+
+      // Update subject bars
+      const subjectBreakdown = document.getElementById('subjectBreakdown');
+      if (Object.keys(subjectStats).length > 0) {
+        subjectBreakdown.innerHTML = Object.entries(subjectStats)
+          .sort((a, b) => b[1].total - a[1].total)
+          .slice(0, 5)
+          .map(([subject, stats]) => {
+            const percentage = Math.round((stats.correct / stats.total) * 100);
+            return `
+              <div class="subject-item">
+                <div class="subject-name">${subject}</div>
+                <div class="subject-bar-container">
+                  <div class="subject-bar" style="width: ${percentage}%"></div>
+                </div>
+                <div class="subject-percentage">${percentage}%</div>
+              </div>
+            `;
+          }).join('');
+      }
+
+      // Render question history
+      renderQuestionHistory(history);
+
+      // Setup filters
+      setupFilters(history);
+    }
+
+    function renderQuestionHistory(history, filters = {}) {
+      const container = document.getElementById('questionHistory');
+      
+      if (!history || history.length === 0) {
+        container.innerHTML = `
+          <div class="history-empty">
+            <div class="history-empty-icon">📚</div>
+            <p><strong>No questions answered yet</strong></p>
+            <p>Start practicing to see your history here</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Apply filters
+      let filteredHistory = [...history];
+      
+      if (filters.class && filters.class !== 'all') {
+        filteredHistory = filteredHistory.filter(q => q.apClass === filters.class);
+      }
+      
+      if (filters.result && filters.result !== 'all') {
+        filteredHistory = filteredHistory.filter(q => 
+          filters.result === 'correct' ? q.wasCorrect : !q.wasCorrect
+        );
+      }
+
+      if (filters.date && filters.date !== 'all') {
+        const now = new Date();
+        const filterDate = new Date(now);
+        
+        if (filters.date === 'today') {
+          filterDate.setHours(0, 0, 0, 0);
+        } else if (filters.date === 'week') {
+          filterDate.setDate(now.getDate() - 7);
+        } else if (filters.date === 'month') {
+          filterDate.setMonth(now.getMonth() - 1);
+        }
+        
+        filteredHistory = filteredHistory.filter(q => new Date(q.attemptedAt) >= filterDate);
+      }
+
+      // Sort by most recent first
+      filteredHistory.sort((a, b) => new Date(b.attemptedAt) - new Date(a.attemptedAt));
+
+      // Store for modal access
+      window.currentFilteredHistory = filteredHistory;
+
+      if (filteredHistory.length === 0) {
+        container.innerHTML = `
+          <div class="history-empty">
+            <div class="history-empty-icon">🔍</div>
+            <p><strong>No questions match your filters</strong></p>
+            <p>Try adjusting your filter settings</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredHistory.map(q => {
+        const date = new Date(q.attemptedAt);
+        const timeAgo = getTimeAgo(date);
+        const timeSeconds = Math.round((q.timeTakenMs || 0) / 1000);
+
+        // Prefer the full question object returned by the history API
+        const qObj = q.question || q;
+        const questionPreview = (qObj.question || qObj.questionText) || 'Question preview not available';
+
+        // Build correct answer from question object if available
+        const correctAnswer = qObj.correctAnswer || qObj.correct_answer || q.correctAnswer || 'N/A';
+        
+        return `
+          <div class="question-item" data-question-index="${filteredHistory.indexOf(q)}">
+            <div class="question-item-header">
+              <div class="question-item-left">
+                <div class="question-meta-row">
+                  <span class="question-course-badge">${q.apClass}</span>
+                  <span class="question-unit-text">${q.unit}</span>
+                </div>
+                <div class="question-text-preview">${questionPreview.substring(0, 150)}${questionPreview.length > 150 ? '...' : ''}</div>
+              </div>
+              <div class="question-item-right">
+                <span class="question-result-badge ${q.wasCorrect ? 'badge-correct' : 'badge-incorrect'}">
+                  ${q.wasCorrect ? '✓ Correct' : '✗ Incorrect'}
+                </span>
+                <span class="question-date">${timeAgo}</span>
+              </div>
+            </div>
+            <div class="question-stats-row">
+              <div class="question-stat-item">
+                <span class="question-stat-label">Your Answer</span>
+                <span class="question-stat-value">${q.selectedAnswer}</span>
+              </div>
+              ${!q.wasCorrect ? `
+              <div class="question-stat-item">
+                <span class="question-stat-label">Correct Answer</span>
+                <span class="question-stat-value" style="color: #28a745;">${correctAnswer}</span>
+              </div>` : ''}
+              <div class="question-stat-item">
+                <span class="question-stat-label">Time Taken</span>
+                <span class="question-stat-value">${timeSeconds}s</span>
+              </div>
+              <div class="question-stat-item">
+                <span class="question-stat-label">Difficulty</span>
+                <span class="question-stat-value">${q.difficulty || 'Medium'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Add click handlers to open modal
+      setTimeout(() => {
+        const questionItems = container.querySelectorAll('.question-item');
+        questionItems.forEach((item) => {
+          item.style.cursor = 'pointer';
+          item.addEventListener('click', async () => {
+            const index = parseInt(item.getAttribute('data-question-index'));
+            const historyItem = filteredHistory[index];
+            if (!historyItem || !window.questionModal) return;
+
+            // If the history item already contains a full question object, use it.
+            if (historyItem.question) {
+              openModalWithSource(historyItem, historyItem.question);
+              return;
+            }
+
+            // If missing, try fetching the question by id from the server
+            const qId = historyItem.questionId || historyItem.questionId || historyItem.question_id || historyItem.questionId;
+            if (qId) {
+              try {
+                const resp = await authFetch(`/api/question/${encodeURIComponent(qId)}`);
+                if (resp.ok) {
+                  const fetched = await resp.json();
+                  openModalWithSource(historyItem, fetched);
+                  return;
+                } else if (resp.status === 404) {
+                  // Show friendly placeholder when question not found
+                  openModalWithSource(historyItem, { question: 'Question not available', explanation: 'This question could not be loaded from storage.' });
+                  return;
+                } else {
+                  console.warn('Unexpected status fetching question by id', resp.status);
+                }
+              } catch (err) {
+                // Fall through to using historyItem as source
+                console.warn('Failed to fetch question by id', err);
+              }
+            }
+
+            // Fallback to using the history item itself
+            openModalWithSource(historyItem, historyItem);
+          });
+        });
+      }, 0);
+    }
+
+    function openModalWithSource(historyItem, source) {
+      // Build options array from optionA..D if present, otherwise use any provided array
+      const options = [];
+      if (source.optionA || source.optionB || source.optionC || source.optionD) {
+        if (source.optionA) options.push(source.optionA);
+        if (source.optionB) options.push(source.optionB);
+        if (source.optionC) options.push(source.optionC);
+        if (source.optionD) options.push(source.optionD);
+      } else if (Array.isArray(source.options)) {
+        options.push(...source.options);
+      }
+
+      const modalData = {
+        question: source.question || source.questionText || 'Question',
+        options: options,
+        answer: source.correctAnswer || source.correct_answer || historyItem.correctAnswer || 'N/A',
+        explanation: source.explanation || historyItem.explanation || 'No explanation available.',
+        difficulty: source.difficulty || historyItem.difficulty || 'Medium',
+        course: historyItem.apClass || source.apClass,
+        unit: historyItem.unit || source.unit
+      };
+      window.questionModal.display(modalData);
+    }
+
+    function setupFilters(history) {
+      const filterClass = document.getElementById('filterClass');
+      const filterResult = document.getElementById('filterResult');
+      const filterDate = document.getElementById('filterDate');
+
+      const applyFilters = () => {
+        const filters = {
+          class: filterClass.value,
+          result: filterResult.value,
+          date: filterDate.value
+        };
+        renderQuestionHistory(history, filters);
+      };
+
+      filterClass.addEventListener('change', applyFilters);
+      filterResult.addEventListener('change', applyFilters);
+      filterDate.addEventListener('change', applyFilters);
+    }
+
+    // View toggle (list/grid)
+    document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const view = btn.getAttribute('data-view');
+        const container = document.getElementById('questionHistory');
+        
+        if (view === 'grid') {
+          container.classList.add('grid-view');
+        } else {
+          container.classList.remove('grid-view');
+        }
+      });
+    });
+
+    // Utility function for time ago
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+      if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+      
+      return date.toLocaleDateString();
+    }
+  </script>
+</body>
+</html>
