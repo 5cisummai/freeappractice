@@ -7,10 +7,17 @@ const questionStorageService = require('../../services/questionStorageService');
 const logger = require('../../utils/logger');
 const { generateRandomToken } = require('../../utils/cryptoToken');
 const { sendConfirmationEmail, sendResetEmail } = require('../../services/emailService');
-
+const rateLimit = require('express-rate-limit');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRY = '14d';
+
+const passwordResetLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 password reset requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 // Verify middleware moved to `middleware/verifyAuth.js`
 const verifyToken = require('../../middleware/verifyAuth');
@@ -175,7 +182,7 @@ router.post('/login', async (req, res) => {
     }
 });
 // POST /api/auth/forgot-password - Initiate password reset
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     try {
         const { email } = req.body;
 
@@ -206,7 +213,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 // POST /api/auth/reset-password - Complete password reset
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', passwordResetLimiter, async (req, res) => {
     try {
         const { token, newPassword } = req.body;
         
