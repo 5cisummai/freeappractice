@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const logger = require('./utils/logger');
 const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const connectDb = require('./config/dbConn');
@@ -23,6 +24,19 @@ app.use((req, res, next) => {
     }
     next();
 });
+
+// API rate limiting
+const apiRateLimiter = rateLimit({
+    windowMs: parseInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+    max: parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: 'Too many requests from this IP, please try again later.'
+    }
+});
+
+app.use('/api/', apiRateLimiter);
 
 // Request logging
 app.use((req, res, next) => {

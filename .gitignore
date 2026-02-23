@@ -3,3 +3,4 @@
 .env.production
 *.log
 node_modules
+.vscode/

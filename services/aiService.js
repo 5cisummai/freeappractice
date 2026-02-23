@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
 const OPENAI_BASE_URL = process.env.OPENAI_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 const OPENAI_API_KEY = process.env.OPEN_AI_KEY || process.env.OPENAI_API_KEY || '';
 
-// Load unit descriptions - prefer revised file
+// Load unit descriptions from the revised JSON (legacy data is no longer supported)
 let revisedUnitDescriptions = null;
 
 // Try to load revised descriptions first (preferred)
@@ -61,11 +61,7 @@ function getUnitContextData(className, unitIdentifier) {
         }
     }
 
-    if (legacyUnitDescriptions && legacyUnitDescriptions[className] && legacyUnitDescriptions[className][unitIdentifier]) {
-        const unitData = legacyUnitDescriptions[className][unitIdentifier];
-        const topics = unitData.key_topics || unitData.topics || [];
-        return { description: unitData.description || '', topics };
-    }
+    // No legacy descriptions support – if nothing found in revised data, return null
 
     return null;
 }
@@ -217,4 +213,4 @@ OUTPUT:
     }
 }
 
-module.exports = { generateAPQuestion };
+module.exports = { generateAPQuestion, getUnitContextData, selectModelForClass };

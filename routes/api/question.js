@@ -1,52 +1,29 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 
-// Rate limiting for OpenAI requests
-const openaiRateLimits = new Map(); // Map of IP -> { count, resetTime }
-const OPENAI_RATE_LIMIT = 15; // requests per minute
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
-
-function checkOpenAIRateLimit(ip) {
-    const now = Date.now();
-    const userLimit = openaiRateLimits.get(ip);
-
-    if (!userLimit || now > userLimit.resetTime) {
-        // No existing limit or window expired - reset
-        openaiRateLimits.set(ip, {
-            count: 1,
-            resetTime: now + RATE_LIMIT_WINDOW
-        });
-        return { allowed: true, remaining: OPENAI_RATE_LIMIT - 1 };
-    }
-
-    if (userLimit.count >= OPENAI_RATE_LIMIT) {
-        // Rate limit exceeded
-        const resetIn = Math.ceil((userLimit.resetTime - now) / 1000);
-        return { 
-            allowed: false, 
-            remaining: 0, 
-            resetIn,
-            message: `OpenAI rate limit exceeded. Please wait ${resetIn} seconds before making another OpenAI request.`
-        };
-    }
-
-    // Increment count
-    userLimit.count++;
-    return { allowed: true, remaining: OPENAI_RATE_LIMIT - userLimit.count };
-}
-
-// Cleanup old rate limit entries every 5 minutes
-setInterval(() => {
-    const now = Date.now();
-    for (const [ip, limit] of openaiRateLimits.entries()) {
-        if (now > limit.resetTime) {
-            openaiRateLimits.delete(ip);
-        }
-    }
-}, 5 * 60 * 1000);
-
-// Provider configuration
 const DEFAULT_PROVIDER = 'openai';
+const OPENAI_RATE_LIMIT = parseInt(process.env.OPENAI_RATE_LIMIT_MAX, 10) || 15;
+const OPENAI_RATE_WINDOW = parseInt(process.env.OPENAI_RATE_LIMIT_WINDOW_MS, 10) || 60 * 1000;
+
+const questionRateLimiter = rateLimit({
+    windowMs: OPENAI_RATE_WINDOW,
+    max: OPENAI_RATE_LIMIT,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        const resetIn = req.rateLimit && req.rateLimit.resetTime
+            ? Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)
+            : Math.ceil(OPENAI_RATE_WINDOW / 1000);
+        res.set('Retry-After', resetIn.toString());
+        return res.status(429).json({
+            error: 'Rate limit exceeded',
+            details: `OpenAI rate limit exceeded. Please wait ${resetIn} seconds before making another OpenAI request.`,
+            resetIn,
+            provider: DEFAULT_PROVIDER
+        });
+    }
+});
 
 // GET /api/question/cache/stats - Get cache statistics
 router.get('/cache/stats', async (req, res) => {
@@ -60,7 +37,7 @@ router.get('/cache/stats', async (req, res) => {
 });
 
 // POST /api/question/cache/generate - Manually generate and cache a question
-router.post('/cache/generate', async (req, res) => {
+router.post('/cache/generate', questionRateLimiter, async (req, res) => {
     try {
         const { className, unit } = req.body;
         if (!className) {
@@ -75,33 +52,13 @@ router.post('/cache/generate', async (req, res) => {
 });
 
 // POST /api/question - Handle question and return answer
-router.post('/', async (req, res) => {
+router.post('/', questionRateLimiter, async (req, res) => {
     try {
         const { className, unit, skipCache } = req.body;
 
         if (!className) {
             return res.status(400).json({ error: 'className is required' });
         }
-
-        const provider = DEFAULT_PROVIDER;
-        const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
-        const rateLimitCheck = checkOpenAIRateLimit(clientIp);
-        
-        if (!rateLimitCheck.allowed) {
-            return res.status(429).json({ 
-                error: 'Rate limit exceeded',
-                details: rateLimitCheck.message,
-                resetIn: rateLimitCheck.resetIn,
-                provider
-            });
-        }
-        
-        // Add rate limit headers
-        res.set({
-            'X-RateLimit-Limit': OPENAI_RATE_LIMIT,
-            'X-RateLimit-Remaining': rateLimitCheck.remaining,
-            'X-RateLimit-Reset': Math.ceil(Date.now() / 1000) + 60
-        });
 
         let result;
 
