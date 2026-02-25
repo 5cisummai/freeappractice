@@ -100,6 +100,26 @@
     min-height: 44px;
 }
 
+/* Guest settings icon (gear) */
+.settings-icon-btn {
+    display: none; /* controlled by JS */
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: var(--space-sm);
+    margin-right: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.settings-icon-btn:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
 .mobile-menu-btn:hover {
     background: var(--hover-bg);
     color: var(--text-primary);
@@ -132,7 +152,9 @@
 }
 
 .user-icon {
-    color: var(--text-tertiary);
+    width: 20px;
+    height: 20px;
+    display: inline-block;
 }
 
 .user-name {

@@ -58,7 +58,7 @@ Your role:
 - Reference the specific AP course and unit when relevant
 - Use simple, student-friendly language
 
-Keep your responses brief (2-3 paragraphs max) unless the student asks for more detail.`;
+Keep your responses brief (2-3 sentences max) unless the student asks for more detail.`;
 
             const messages = [
                 { role: 'system', content: systemPrompt },

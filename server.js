@@ -13,17 +13,24 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 //Conect to MongoDB
 connectDb();
 
-// Security headers
-app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    if (NODE_ENV === 'production') {
-        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-    }
-    next();
-});
+const helmet = require('helmet');
+
+// Security headers (migrated to helmet)
+// helmet sets a sane default set of protections including the headers
+// previously configured manually.  Additional configuration is applied
+// for HSTS in production to match the earlier behavior.
+app.use(helmet());
+
+if (NODE_ENV === 'production') {
+    // express-rate-limit already disables the legacy headers; helmet.hsts only
+    // needs to be enabled when running over HTTPS in production.
+    app.use(
+        helmet.hsts({
+            maxAge: 31536000,
+            includeSubDomains: true,
+        })
+    );
+}
 
 // API rate limiting
 const apiRateLimiter = rateLimit({

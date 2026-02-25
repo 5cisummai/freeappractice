@@ -1,29 +1,12 @@
 const express = require('express');
-const rateLimit = require('express-rate-limit');
+// Global API rate limiting is configured in server.js.  We no longer apply
+// per-route or OpenAI-specific limits here – the express-rate-limit middleware
+// attached at `/api/` handles all endpoints and can be driven by environment
+// variables.
 const router = express.Router();
 
 const DEFAULT_PROVIDER = 'openai';
-const OPENAI_RATE_LIMIT = parseInt(process.env.OPENAI_RATE_LIMIT_MAX, 10) || 15;
-const OPENAI_RATE_WINDOW = parseInt(process.env.OPENAI_RATE_LIMIT_WINDOW_MS, 10) || 60 * 1000;
 
-const questionRateLimiter = rateLimit({
-    windowMs: OPENAI_RATE_WINDOW,
-    max: OPENAI_RATE_LIMIT,
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-        const resetIn = req.rateLimit && req.rateLimit.resetTime
-            ? Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)
-            : Math.ceil(OPENAI_RATE_WINDOW / 1000);
-        res.set('Retry-After', resetIn.toString());
-        return res.status(429).json({
-            error: 'Rate limit exceeded',
-            details: `OpenAI rate limit exceeded. Please wait ${resetIn} seconds before making another OpenAI request.`,
-            resetIn,
-            provider: DEFAULT_PROVIDER
-        });
-    }
-});
 
 // GET /api/question/cache/stats - Get cache statistics
 router.get('/cache/stats', async (req, res) => {
@@ -37,7 +20,7 @@ router.get('/cache/stats', async (req, res) => {
 });
 
 // POST /api/question/cache/generate - Manually generate and cache a question
-router.post('/cache/generate', questionRateLimiter, async (req, res) => {
+router.post('/cache/generate', async (req, res) => {
     try {
         const { className, unit } = req.body;
         if (!className) {
@@ -52,7 +35,7 @@ router.post('/cache/generate', questionRateLimiter, async (req, res) => {
 });
 
 // POST /api/question - Handle question and return answer
-router.post('/', questionRateLimiter, async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { className, unit, skipCache } = req.body;
 

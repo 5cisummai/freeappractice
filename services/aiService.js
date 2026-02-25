@@ -163,8 +163,8 @@ QUESTION QUALITY:
 - Avoid "all of the above" or "none of the above"
 
 FORMATTING:
-- Use proper markdown formatting for any math/science notation and code
-- Use tables or lists if needed for clarity, this is very important for complex questions.
+- Use perfect markdown formatting for any math/science notation and code
+- Use tables or lists if needed for clarity, this is especially important for complex questions.
 
 EXPLANATION:
 - Explain why the correct answer is right

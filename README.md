@@ -62,9 +62,9 @@ Currently deployed on **Render.com** (backend service runs the Express API with 
 - AWS credentials follow the default provider chain to keep secrets out of source control.
 
 ## Security & reliability
-- Production config enforces `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, and HSTS.
+- Security headers are now managed by [helmet](https://www.npmjs.com/package/helmet); production mode still enforces HSTS along with other defaults (previously X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, etc.).
 - Body payloads capped at 1 MB, request logging writes to `logs/` via `utils/logger`.
-- Rate limit layer tracks IPs (15 OpenAI requests/min) and exposes `X-RateLimit-*` headers.
+- All API endpoints under `/api/` are protected by a global express-rate-limit middleware.  Limits and window size can be configured with `API_RATE_LIMIT_MAX` and `API_RATE_LIMIT_WINDOW_MS` environment variables.  (Older per-route/OpenAI-specific code has been removed.)
 - Global error handler sanitizes responses in production and writes full details to the logger.
 - Graceful shutdown is wired to `SIGINT`/`SIGTERM`.
 

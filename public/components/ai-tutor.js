@@ -319,10 +319,7 @@ class AITutor {
         messageEl.className = 'user-message';
         messageEl.innerHTML = `
             <div class="user-message-avatar">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.6667 17.5V15.8333C16.6667 14.9493 16.3155 14.1014 15.6904 13.4763C15.0652 12.8512 14.2174 12.5 13.3333 12.5H6.66667C5.78261 12.5 4.93477 12.8512 4.30964 13.4763C3.68452 14.1014 3.33333 14.9493 3.33333 15.8333V17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M10 9.16667C11.8409 9.16667 13.3333 7.67428 13.3333 5.83333C13.3333 3.99238 11.8409 2.5 10 2.5C8.15905 2.5 6.66667 3.99238 6.66667 5.83333C6.66667 7.67428 8.15905 9.16667 10 9.16667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <img src="/assets/icons/user-solid.svg" alt="user" width="16" height="16" />
             </div>
             <div class="user-message-content">
                 <p>${this.escapeHtml(message)}</p>
@@ -349,10 +346,7 @@ class AITutor {
         messageEl.className = 'tutor-message';
         messageEl.innerHTML = `
             <div class="tutor-message-avatar">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <img src="/assets/icons/mortarboard.svg" alt="tutor" width="16" height="16" />
             </div>
             <div class="ai-tutor-message-content tutor-message-content">
                 ${message ? this.formatMessage(message) : ''}
@@ -373,10 +367,7 @@ class AITutor {
         loadingEl.id = 'tutorLoading';
         loadingEl.innerHTML = `
             <div class="tutor-message-avatar">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <img src="/assets/icons/mortarboard.svg" alt="tutor" width="16" height="16" />
             </div>
             <div class="tutor-message-content">
                 <div class="tutor-message-loading">

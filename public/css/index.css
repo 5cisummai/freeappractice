@@ -1373,6 +1373,18 @@ footer a:hover {
     fill: var(--text-primary);
 }
 
+/* when using image-based icons */
+.social-link img {
+    width: 18px;
+    height: 18px;
+}
+
+/* user icon image size */
+.user-icon {
+    width: 20px;
+    height: 20px;
+}
+
 .social-link:hover,
 .social-link:focus-visible {
     background: var(--hover-bg);
