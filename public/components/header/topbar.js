@@ -42,7 +42,7 @@ class TopbarComponent extends HTMLElement {
 
   async loadTemplate() {
     try {
-      const response = await fetch('/components/topbar.html');
+      const response = await fetch('/components/header/topbar.html');
       const html = await response.text();
       this.innerHTML = html;
     } catch (error) {
@@ -74,6 +74,12 @@ class TopbarComponent extends HTMLElement {
     const userProfile = this.querySelector('.user-profile');
     if (userProfile) {
       userProfile.style.display = authState === 'authenticated' ? 'flex' : 'none';
+    }
+
+    // Show settings icon for guests (not signed in)
+    const guestSettings = this.querySelector('#topbarSettingsIcon');
+    if (guestSettings) {
+      guestSettings.style.display = authState === 'guest' ? 'block' : 'none';
     }
   }
 
@@ -130,18 +136,22 @@ class TopbarComponent extends HTMLElement {
       });
     }
 
-    // Settings button
+    // Settings button (dropdown) and guest icon
     const openSettingsBtn = this.querySelector('#topbarOpenSettings');
+    const guestSettings = this.querySelector('#topbarSettingsIcon');
+    const triggerSettings = () => {
+      userDropdown?.classList.remove('show');
+      if (typeof window.openSettings === 'function') {
+        window.openSettings();
+      } else if (window.settingsModal && typeof window.settingsModal.open === 'function') {
+        window.settingsModal.open();
+      }
+    };
     if (openSettingsBtn) {
-      openSettingsBtn.addEventListener('click', () => {
-        userDropdown?.classList.remove('show');
-        // Trigger settings modal if available (settings-modal exposes window.openSettings)
-        if (typeof window.openSettings === 'function') {
-          window.openSettings();
-        } else if (window.settingsModal && typeof window.settingsModal.open === 'function') {
-          window.settingsModal.open();
-        }
-      });
+      openSettingsBtn.addEventListener('click', triggerSettings);
+    }
+    if (guestSettings) {
+      guestSettings.addEventListener('click', triggerSettings);
     }
 
     // Logout button

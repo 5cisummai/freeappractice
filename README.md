@@ -1,4 +1,4 @@
-# FreeAPPractice.org
+# Freeappractice.org
 
 AI-powered practice question generator and tutoring backend tailored to AP® courses. OpenAI models create authentic, scope-driven questions, questions are cached + stored on S3, and student attempt history is tracked for review and analytics.
 
@@ -62,9 +62,9 @@ Currently deployed on **Render.com** (backend service runs the Express API with 
 - AWS credentials follow the default provider chain to keep secrets out of source control.
 
 ## Security & reliability
-- Production config enforces `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, and HSTS.
+- Security headers are now managed by [helmet](https://www.npmjs.com/package/helmet); production mode still enforces HSTS along with other defaults (previously X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, etc.).
 - Body payloads capped at 1 MB, request logging writes to `logs/` via `utils/logger`.
-- Rate limit layer tracks IPs (15 OpenAI requests/min) and exposes `X-RateLimit-*` headers.
+- All API endpoints under `/api/` are protected by a global express-rate-limit middleware.  Limits and window size can be configured with `API_RATE_LIMIT_MAX` and `API_RATE_LIMIT_WINDOW_MS` environment variables.  (Older per-route/OpenAI-specific code has been removed.)
 - Global error handler sanitizes responses in production and writes full details to the logger.
 - Graceful shutdown is wired to `SIGINT`/`SIGTERM`.
 
@@ -89,7 +89,7 @@ All live traffic currently routes through the Render-hosted service name for thi
 - Keep the OpenAI key scoped to only necessary models for billing control.
 
 ## Additional notes
-- Feel free to provide me any suggestions to improve this resource for students. I'm open to feedback and contributions! 🚀
+- Feel free to provide me any suggestions to improve this resource for students. I'm open to feedback and contributions!
 
 ## License
 MIT

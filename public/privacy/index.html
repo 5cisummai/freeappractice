@@ -10,20 +10,13 @@
     
     <title>Privacy Policy</title>
     <link rel="stylesheet" href="/css/index.css">
-    <script>
-        (function() {
-            const saved = localStorage.getItem('theme') || 'system';
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = saved === 'system' ? (prefersDark ? 'dark' : 'light') : saved;
-            document.documentElement.setAttribute('data-theme', theme);
-        })();
-    </script>
+    <script src="/js/theme-init.js"></script>
     <!-- Shared components -->
-    <script src="/components/topbar.js"></script>
+    <script src="/components/header/topbar.js"></script>
     <script src="/js/authorization.js"></script>
-    <script src="/components/settings-modal.js"></script>
+    <script src="/components/settings/settings-modal.js"></script>
     <script src="/js/cookies.js"></script>
-    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/cookies/cookie-banner.js"></script>
 </head>
 <body>
     <topbar-component auth-state="guest" active-page="home"></topbar-component>
@@ -155,6 +148,6 @@
     </main>
 
     <div id="footer-container"></div>
-    <script src="/components/footer.js"></script>
+    <script src="/components/footer/footer.js"></script>
 </body>
 </html>

@@ -6,25 +6,11 @@
   <title>My Progress - Free AP Practice</title>
   <link rel="icon" type="image/png" href="/assets/icon.png">
   <link rel="stylesheet" href="/css/index.css">
-  <link rel="stylesheet" href="/components/question-modal.css">
-  <link rel="stylesheet" href="/components/topbar.css">
+  <link rel="stylesheet" href="/components/question-modal/question-modal.css">
+  <link rel="stylesheet" href="/components/header/topbar.css">
   <!-- Load topbar component script in head before body -->
-  <script src="/components/topbar.js"></script>
-  <script>
-    // Apply theme immediately on load to prevent flash
-    (function() {
-      const savedTheme = localStorage.getItem('theme') || 'system';
-      function applyTheme(theme) {
-        if (theme === 'system') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        } else {
-          document.documentElement.setAttribute('data-theme', theme);
-        }
-      }
-      applyTheme(savedTheme);
-    })();
-  </script>
+  <script src="/components/header/topbar.js"></script>
+  <script src="/js/theme-init.js"></script>
   <style>
     main { 
       max-width: 1100px; 
@@ -537,7 +523,7 @@
     }
   </style>
     <script src="/js/cookies.js"></script>
-    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/cookies/cookie-banner.js"></script>
 </head>
 <body>
   <topbar-component active-page="progress" auth-state="authenticated"></topbar-component>
@@ -667,9 +653,9 @@
   <!-- Settings Modal loaded via component -->
 
   <div id="footer-container"></div>
-  <script src="/components/footer.js"></script>
-  <script src="/components/settings-modal.js"></script>
-  <script src="/components/question-modal.js"></script>
+  <script src="/components/footer/footer.js"></script>
+  <script src="/components/settings/settings-modal.js"></script>
+  <script src="/components/question-modal/question-modal.js"></script>
 
   <script src="/js/authorization.js"></script>
   <script>

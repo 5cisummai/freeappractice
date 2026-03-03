@@ -12,6 +12,15 @@ async function ensureDbConnection() {
 }
 
 /**
+ * Normalize unit values for DB cache keys.
+ * Mongoose `required: true` for strings rejects empty string values.
+ */
+function normalizeUnitForCache(unit) {
+    if (typeof unit === 'string' && unit.trim()) return unit.trim();
+    return 'all-units';
+}
+
+/**
  * Generate a new question using AI service and store it in the database
  * @param {string} className - The AP class name
  * @param {string} unit - The unit identifier
@@ -21,10 +30,18 @@ async function ensureDbConnection() {
 async function generateAndStoreQuestion(className, unit, provider = 'openai') {
     await ensureDbConnection();
 
+    // Defensive validation to ensure only literal string values are used in queries
+    if (typeof className !== 'string' || !className.trim()) {
+        throw new Error('Invalid className: must be a non-empty string');
+    }
+
+    const cacheClassName = className.trim();
+    const cacheUnit = normalizeUnitForCache(unit);
+
     try {
         // Generate question using AI service
         const result = await aiService.generateAPQuestion({
-            className,
+            className: cacheClassName,
             unit,
             provider
         });
@@ -39,10 +56,10 @@ async function generateAndStoreQuestion(className, unit, provider = 'openai') {
 
         // Update or create the cached question in database
         const cachedQuestion = await Question.findOneAndUpdate(
-            { apClass: className, unit: unit },
+            { apClass: cacheClassName, unit: cacheUnit },
             {
-                apClass: className,
-                unit: unit,
+                apClass: cacheClassName,
+                unit: cacheUnit,
                 question: questionData.question,
                 optionA: questionData.optionA,
                 optionB: questionData.optionB,
@@ -97,10 +114,11 @@ function refreshQuestionBackground(className, unit) {
  */
 async function getCachedQuestion(className, unit = '', provider = 'openai') {
     await ensureDbConnection();
+    const cacheUnit = normalizeUnitForCache(unit);
 
     try {
         // Try to find cached question
-        const cached = await Question.findOne({ apClass: className, unit: unit });
+        const cached = await Question.findOne({ apClass: className, unit: cacheUnit });
 
         if (cached) {
             // Return cached question immediately
@@ -116,7 +134,7 @@ async function getCachedQuestion(className, unit = '', provider = 'openai') {
 
             // Trigger background refresh to generate new question for next time
             if (process.env.NODE_ENV !== 'production') {
-                console.log(`🔄 Triggering background refresh for ${className} - ${unit} (using ${provider})`);
+                console.log(`🔄 Triggering background refresh for ${className} - ${cacheUnit} (using ${provider})`);
             }
             setImmediate(() => {
                 refreshQuestionBackground(className, unit, provider);
@@ -131,7 +149,7 @@ async function getCachedQuestion(className, unit = '', provider = 'openai') {
             };
         } else {
             // No cached question - generate immediately
-            console.log(`No cached question for ${className} - ${unit}, generating new one with ${provider}`);
+            console.log(`No cached question for ${className} - ${cacheUnit}, generating new one with ${provider}`);
             return await generateAndStoreQuestion(className, unit, provider);
         }
     } catch (error) {
@@ -148,7 +166,8 @@ async function getCachedQuestion(className, unit = '', provider = 'openai') {
  */
 async function isCached(className, unit = '') {
     await ensureDbConnection();
-    const count = await Question.countDocuments({ apClass: className, unit: unit });
+    const cacheUnit = normalizeUnitForCache(unit);
+    const count = await Question.countDocuments({ apClass: className, unit: cacheUnit });
     return count > 0;
 }
 

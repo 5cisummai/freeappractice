@@ -224,13 +224,14 @@ class UIManager {
             closeSettings: document.getElementById('closeSettings'),
             authButton: document.getElementById('authButton'),
             userProfile: document.getElementById('userProfile'),
+            focusClassStep: document.querySelector('.step-focus-class'),
             bugReportModal: document.getElementById('bugReportModal'),
             bugReportForm: document.getElementById('bugReportForm'),
             bugReportClose: document.getElementById('bugReportClose')
         };
     }
 
-    showLoading(message = 'Generating question...') {
+    showLoading(message = 'Getting question...') {
         if (this.elements.answerOutput) {
             this.elements.answerOutput.innerHTML = `
                 <div class="loading">
@@ -506,6 +507,19 @@ class APStudyApp {
             StorageManager.setTheme(e.target.value);
             ThemeManager.apply(e.target.value);
         });
+
+        // Focus class select from the "How to Use" step (no inline handlers for CSP)
+        if (this.ui.elements.focusClassStep) {
+            this.ui.elements.focusClassStep.addEventListener('click', () => {
+                this.ui.elements.classSelect?.focus();
+            });
+            this.ui.elements.focusClassStep.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    this.ui.elements.classSelect?.focus();
+                }
+            });
+        }
 
         // Settings modal
         this.ui.elements.settingsBtn?.addEventListener('click', () => {

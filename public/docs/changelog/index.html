@@ -10,21 +10,7 @@
     
     <title>Changelog - FreeAPPractice</title>
     <link rel="stylesheet" href="/css/index.css?v=1.1">
-    <script>
-        // Apply theme immediately on load to prevent flash
-        (function() {
-            const savedTheme = localStorage.getItem('theme') || 'system';
-            function applyTheme(theme) {
-                if (theme === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-                } else {
-                    document.documentElement.setAttribute('data-theme', theme);
-                }
-            }
-            applyTheme(savedTheme);
-        })();
-    </script>
+    <script src="/js/theme-init.js"></script>
     <style>
         .changelog-container {
             max-width: 900px;
@@ -102,18 +88,47 @@
         });
     </script>
     <!-- Shared components -->
-    <script src="/components/topbar.js"></script>
-    <script src="/components/settings-modal.js"></script>
+    <script src="/components/header/topbar.js"></script>
+    <script src="/components/settings/settings-modal.js"></script>
     <script src="/js/cookies.js"></script>
-    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/cookies/cookie-banner.js"></script>
 
     <div class="changelog-container">
         <a href="/" class="back-link">← Back to Home</a>
         
         <h1>Changelog</h1>
-        <p class="last-updated">Last Updated: February 20, 2026</p>
+        <p class="last-updated">Last Updated: March 2, 2026</p>
 
-        <!-- New changelog entry v1.2.0 -->
+        <div class="changelog-entry">
+            <div class="changelog-version">v1.2.1</div>
+            <div class="changelog-date">March 2, 2026</div>
+            <h3>Fixes</h3>
+            <ul>
+                <li>Fixed UI errors and topbar consistency across pages</li>
+                <li>Fixed no settings button when not logged in</li>
+                <li>Fixed questions not being saved properly</li>
+            </ul>
+            <h3>Changes</h3>
+            <ul>
+                <li>Code now renders using highlight.js with tokyo night theme</li>
+                <li>Icons changed to consistent solid svgs</li>
+                <li>Icons changed to consistent solid svgs</li>
+            </ul>
+
+            <h3>Improvements</h3>
+            <ul>
+                <li>Optimized more code, and also cleaned it up</li>
+                <li>Improved prompting for tutor responses, prohibiting it from giving answers</li>
+                <li>404 error directs to "Not Found" page</li>
+            </ul>
+            <h3>Technical</h3>
+            <ul>
+                <li>Changed server security to helmet.js</li>
+                <li>Changed logging requests to use morgan</li>
+            </ul>
+
+        </div>
+
         <div class="changelog-entry">
             <div class="changelog-version">v1.2.0</div>
             <div class="changelog-date">February 20, 2026</div>
@@ -357,7 +372,7 @@
     </div>
 
     <div id="footer-container"></div>
-    <script src="/components/footer.js"></script>
+    <script src="/components/footer/footer.js"></script>
 
     <!-- Scroll to Top Button -->
     <button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top">
