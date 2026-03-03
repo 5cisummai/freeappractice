@@ -23,11 +23,14 @@ router.get('/cache/stats', async (req, res) => {
 router.post('/cache/generate', async (req, res) => {
     try {
         const { className, unit } = req.body;
-        if (!className) {
-            return res.status(400).json({ error: 'className is required' });
+        if (typeof className !== 'string' || !className.trim()) {
+            return res.status(400).json({ error: 'className is required and must be a non-empty string' });
+        }
+        if (unit !== undefined && typeof unit !== 'string') {
+            return res.status(400).json({ error: 'unit must be a string if provided' });
         }
         const questionCache = require('../../services/questionCache');
-        const result = await questionCache.generateAndStoreQuestion(className, unit || '', DEFAULT_PROVIDER);
+        const result = await questionCache.generateAndStoreQuestion(className.trim(), unit || '', DEFAULT_PROVIDER);
         res.json({ success: true, message: 'Question generated and cached', data: result });
     } catch (error) {
         res.status(500).json({ error: 'Failed to generate question', details: error.message });
@@ -39,8 +42,11 @@ router.post('/', async (req, res) => {
     try {
         const { className, unit, skipCache } = req.body;
 
-        if (!className) {
-            return res.status(400).json({ error: 'className is required' });
+        if (typeof className !== 'string' || !className.trim()) {
+            return res.status(400).json({ error: 'className is required and must be a non-empty string' });
+        }
+        if (unit !== undefined && typeof unit !== 'string') {
+            return res.status(400).json({ error: 'unit must be a string if provided' });
         }
 
         let result;

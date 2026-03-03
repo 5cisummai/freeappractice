@@ -29,12 +29,19 @@ function normalizeUnitForCache(unit) {
  */
 async function generateAndStoreQuestion(className, unit, provider = 'openai') {
     await ensureDbConnection();
+
+    // Defensive validation to ensure only literal string values are used in queries
+    if (typeof className !== 'string' || !className.trim()) {
+        throw new Error('Invalid className: must be a non-empty string');
+    }
+
+    const cacheClassName = className.trim();
     const cacheUnit = normalizeUnitForCache(unit);
 
     try {
         // Generate question using AI service
         const result = await aiService.generateAPQuestion({
-            className,
+            className: cacheClassName,
             unit,
             provider
         });
@@ -49,9 +56,9 @@ async function generateAndStoreQuestion(className, unit, provider = 'openai') {
 
         // Update or create the cached question in database
         const cachedQuestion = await Question.findOneAndUpdate(
-            { apClass: className, unit: cacheUnit },
+            { apClass: cacheClassName, unit: cacheUnit },
             {
-                apClass: className,
+                apClass: cacheClassName,
                 unit: cacheUnit,
                 question: questionData.question,
                 optionA: questionData.optionA,
