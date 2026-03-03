@@ -7,7 +7,7 @@
 
 async function loadQuestionGenerator(mountSelector = '#question-generator-mount') {
     try {
-        const response = await fetch('/components/question-generator.html');
+        const response = await fetch('/components/question/question-generator.html');
         if (!response.ok) {
             throw new Error(`Failed to load question generator component: ${response.status}`);
         }

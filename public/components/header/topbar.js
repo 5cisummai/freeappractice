@@ -42,7 +42,7 @@ class TopbarComponent extends HTMLElement {
 
   async loadTemplate() {
     try {
-      const response = await fetch('/components/topbar.html');
+      const response = await fetch('/components/header/topbar.html');
       const html = await response.text();
       this.innerHTML = html;
     } catch (error) {

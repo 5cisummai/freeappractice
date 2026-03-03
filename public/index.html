@@ -49,7 +49,7 @@
     <meta name="adsense-client" content="ca-pub-9609730506370011">
 
         <script src="/js/cookies.js"></script>
-    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/cookies/cookie-banner.js"></script>
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -227,25 +227,22 @@
     </script>
     
     <link rel="stylesheet" href="/css/index.css?v=1.1">
-    <link rel="stylesheet" href="/components/ai-tutor.css">
+    <link rel="stylesheet" href="/components/header/topbar.css">
+    <link rel="stylesheet" href="/components/question/question-generator.css">
+    <link rel="stylesheet" href="/components/settings/settings-modal.css">
+    <link rel="stylesheet" href="/components/bug-report.css">
+    <link rel="stylesheet" href="/components/footer/footer.css">
+    <link rel="stylesheet" href="/components/ai-tutor/ai-tutor.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/tokyo-night-dark.min.css">
     <!-- Preload theme to prevent flash on refresh -->
-    <script>
-        (function() {
-            const theme = localStorage.getItem('theme') || 'system';
-            if (theme === 'system') {
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-            } else {
-                document.documentElement.setAttribute('data-theme', theme);
-            }
-        })();
-    </script>
+    <script src="/js/theme-init.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+    <script>hljs.highlightAll();</script>
     
     <!-- Core utilities and managers -->
     <script src="/js/utils.js"></script>
@@ -256,9 +253,9 @@
     
     <!-- Main question app -->
     <script src="/js/question-app.js"></script>
-    <script src="/components/ai-tutor.js"></script>
-    <script src="/components/topbar.js"></script>
-    <script src="/components/settings-modal.js"></script>
+    <script src="/components/ai-tutor/ai-tutor.js"></script>
+    <script src="/components/header/topbar.js"></script>
+    <script src="/components/settings/settings-modal.js"></script>
 </head>
 <body>
     <!-- Skip to main content for accessibility and SEO -->
@@ -277,14 +274,14 @@
             <h1 class="main-title">Ace your AP Exams</h1>
             <p class="tagline">Generate and practice High Quality AP questions with instant feedback</p>
             <div class="feature-badges">
-                <span class="feature-badge">20+ AP Subjects 📚</span>
-            <span class="feature-badge">100% Free Forever 💸</span>
-            <span class="feature-badge">Student Developed 🎓</span>
+                <span class="feature-badge">20+ AP Subjects</span>
+            <span class="feature-badge">100% Free Forever</span>
+            <span class="feature-badge">Student Developed</span>
         </div>
         
         <h2 class="small-h1-text">How to Use</h2>
         <div class="steps-container">
-            <div class="step" role="button" tabindex="0" onclick="document.getElementById('classSelect')?.focus();" onkeydown="if(event.key==='Enter' || event.key===' '){ event.preventDefault(); document.getElementById('classSelect')?.focus(); }" style="cursor: pointer;">
+            <div class="step step-focus-class" role="button" tabindex="0" style="cursor: pointer;">
                 <div class="step-number">1</div>
             <p><strong>Select a Course</strong> Choose your AP subject</p>
             </div>
@@ -437,7 +434,7 @@
     </main>
     
     <div id="footer-container"></div>
-    <script src="/components/footer.js"></script>
+    <script src="/components/footer/footer.js"></script>
     <div class="bug-modal" id="bugReportModal" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
         <div class="bug-modal-content">
             <button class="bug-modal-close" id="bugReportClose" aria-label="Close bug report form">×</button>

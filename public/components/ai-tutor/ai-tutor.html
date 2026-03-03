@@ -1,0 +1,50 @@
+<!-- AI Tutor Component -->
+
+
+<div class="ai-tutor-container" id="aiTutorContainer" style="display: none;">
+    <button class="ai-tutor-toggle" id="aiTutorToggle" aria-label="Open AI Tutor" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="24" height="24" role="img" aria-label="chat"><path d="M64 416L64 192C64 139 107 96 160 96L480 96C533 96 576 139 576 192L576 416C576 469 533 512 480 512L360 512C354.8 512 349.8 513.7 345.6 516.8L230.4 603.2C226.2 606.3 221.2 608 216 608C202.7 608 192 597.3 192 584L192 512L160 512C107 512 64 469 64 416z"/></svg>
+        <span>Ask Tutor</span>
+    </button>
+
+    <div class="ai-tutor-modal" id="aiTutorModal">
+        <div class="ai-tutor-content">
+            <div class="ai-tutor-header">
+                <div class="ai-tutor-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="20" height="20" role="img" aria-label="AI Tutor"><path d="M80 259.8L289.2 345.9C299 349.9 309.4 352 320 352C330.6 352 341 349.9 350.8 345.9L593.2 246.1C602.2 242.4 608 233.7 608 224C608 214.3 602.2 205.6 593.2 201.9L350.8 102.1C341 98.1 330.6 96 320 96C309.4 96 299 98.1 289.2 102.1L46.8 201.9C37.8 205.6 32 214.3 32 224L32 520C32 533.3 42.7 544 56 544C69.3 544 80 533.3 80 520L80 259.8zM128 331.5L128 448C128 501 214 544 320 544C426 544 512 501 512 448L512 331.4L369.1 390.3C353.5 396.7 336.9 400 320 400C303.1 400 286.5 396.7 270.9 390.3L128 331.4z"/></svg>
+                    <h3>AI Tutor</h3>
+                    
+                </div>
+                <button class="ai-tutor-close" id="aiTutorClose" aria-label="Close AI Tutor">&times;</button>
+            </div>
+            
+            <div class="ai-tutor-messages" id="aiTutorMessages">
+                <div class="tutor-message">
+                    <div class="tutor-message-avatar">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="16" height="16" role="img" aria-label="tutor"><path d="M80 259.8L289.2 345.9C299 349.9 309.4 352 320 352C330.6 352 341 349.9 350.8 345.9L593.2 246.1C602.2 242.4 608 233.7 608 224C608 214.3 602.2 205.6 593.2 201.9L350.8 102.1C341 98.1 330.6 96 320 96C309.4 96 299 98.1 289.2 102.1L46.8 201.9C37.8 205.6 32 214.3 32 224L32 520C32 533.3 42.7 544 56 544C69.3 544 80 533.3 80 520L80 259.8zM128 331.5L128 448C128 501 214 544 320 544C426 544 512 501 512 448L512 331.4L369.1 390.3C353.5 396.7 336.9 400 320 400C303.1 400 286.5 396.7 270.9 390.3L128 331.4z"/></svg>
+                    </div>
+                    <div class="tutor-message-content">
+                        <p>Hi! I'm here to help you understand this question. What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-tutor-input-container">
+                <textarea 
+                    id="aiTutorInput" 
+                    class="ai-tutor-input" 
+                    placeholder="Ask me anything about this question..."
+                    rows="1"
+                ></textarea>
+                <button class="ai-tutor-send" id="aiTutorSend" disabled aria-label="Send message">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="20" height="20" role="img" aria-label="send"><path d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+

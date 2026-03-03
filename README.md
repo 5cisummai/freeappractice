@@ -1,4 +1,4 @@
-# FreeAPPractice.org
+# Freeappractice.org
 
 AI-powered practice question generator and tutoring backend tailored to AP® courses. OpenAI models create authentic, scope-driven questions, questions are cached + stored on S3, and student attempt history is tracked for review and analytics.
 
@@ -89,7 +89,7 @@ All live traffic currently routes through the Render-hosted service name for thi
 - Keep the OpenAI key scoped to only necessary models for billing control.
 
 ## Additional notes
-- Feel free to provide me any suggestions to improve this resource for students. I'm open to feedback and contributions! 🚀
+- Feel free to provide me any suggestions to improve this resource for students. I'm open to feedback and contributions!
 
 ## License
 MIT

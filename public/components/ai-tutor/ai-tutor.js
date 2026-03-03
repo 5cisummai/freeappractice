@@ -50,7 +50,7 @@ class AITutor {
      */
     async loadComponent() {
         try {
-            const response = await fetch('/components/ai-tutor.html');
+            const response = await fetch('/components/ai-tutor/ai-tutor.html');
             if (!response.ok) throw new Error('Failed to load AI tutor component');
             
             const html = await response.text();
@@ -319,7 +319,7 @@ class AITutor {
         messageEl.className = 'user-message';
         messageEl.innerHTML = `
             <div class="user-message-avatar">
-                <img src="/assets/icons/user-solid.svg" alt="user" width="16" height="16" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="16" height="16" role="img" aria-label="user"><path d="M320 312C386.3 312 440 258.3 440 192C440 125.7 386.3 72 320 72C253.7 72 200 125.7 200 192C200 258.3 253.7 312 320 312zM290.3 368C191.8 368 112 447.8 112 546.3C112 562.7 125.3 576 141.7 576L498.3 576C514.7 576 528 562.7 528 546.3C528 447.8 448.2 368 349.7 368L290.3 368z"/></svg>
             </div>
             <div class="user-message-content">
                 <p>${this.escapeHtml(message)}</p>
@@ -346,7 +346,7 @@ class AITutor {
         messageEl.className = 'tutor-message';
         messageEl.innerHTML = `
             <div class="tutor-message-avatar">
-                <img src="/assets/icons/mortarboard.svg" alt="tutor" width="16" height="16" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="16" height="16" role="img" aria-label="tutor"><path d="M80 259.8L289.2 345.9C299 349.9 309.4 352 320 352C330.6 352 341 349.9 350.8 345.9L593.2 246.1C602.2 242.4 608 233.7 608 224C608 214.3 602.2 205.6 593.2 201.9L350.8 102.1C341 98.1 330.6 96 320 96C309.4 96 299 98.1 289.2 102.1L46.8 201.9C37.8 205.6 32 214.3 32 224L32 520C32 533.3 42.7 544 56 544C69.3 544 80 533.3 80 520L80 259.8zM128 331.5L128 448C128 501 214 544 320 544C426 544 512 501 512 448L512 331.4L369.1 390.3C353.5 396.7 336.9 400 320 400C303.1 400 286.5 396.7 270.9 390.3L128 331.4z"/></svg>
             </div>
             <div class="ai-tutor-message-content tutor-message-content">
                 ${message ? this.formatMessage(message) : ''}
@@ -367,7 +367,7 @@ class AITutor {
         loadingEl.id = 'tutorLoading';
         loadingEl.innerHTML = `
             <div class="tutor-message-avatar">
-                <img src="/assets/icons/mortarboard.svg" alt="tutor" width="16" height="16" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" width="16" height="16" role="img" aria-label="tutor"><path d="M80 259.8L289.2 345.9C299 349.9 309.4 352 320 352C330.6 352 341 349.9 350.8 345.9L593.2 246.1C602.2 242.4 608 233.7 608 224C608 214.3 602.2 205.6 593.2 201.9L350.8 102.1C341 98.1 330.6 96 320 96C309.4 96 299 98.1 289.2 102.1L46.8 201.9C37.8 205.6 32 214.3 32 224L32 520C32 533.3 42.7 544 56 544C69.3 544 80 533.3 80 520L80 259.8zM128 331.5L128 448C128 501 214 544 320 544C426 544 512 501 512 448L512 331.4L369.1 390.3C353.5 396.7 336.9 400 320 400C303.1 400 286.5 396.7 270.9 390.3L128 331.4z"/></svg>
             </div>
             <div class="tutor-message-content">
                 <div class="tutor-message-loading">

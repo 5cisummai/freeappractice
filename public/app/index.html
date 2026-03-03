@@ -6,29 +6,18 @@
   <title>Dashboard - Free AP Practice</title>
   <link rel="icon" type="image/png" href="/assets/icon.png">
   <link rel="stylesheet" href="/css/index.css">
-  <link rel="stylesheet" href="/components/topbar.css">
+  <script src="/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/components/header/topbar.css">
   <!-- Load topbar component script in head before body -->
-  <script src="/components/topbar.js"></script>
-  <script>
-    // Apply theme immediately on load to prevent flash
-    (function() {
-      const savedTheme = localStorage.getItem('theme') || 'system';
-      function applyTheme(theme) {
-        if (theme === 'system') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        } else {
-          document.documentElement.setAttribute('data-theme', theme);
-        }
-      }
-      applyTheme(savedTheme);
-    })();
-  </script>
-  <link rel="stylesheet" href="/components/question-generator.css">
-  <link rel="stylesheet" href="/components/ai-tutor.css">
-  <link rel="stylesheet" href="/components/question-modal.css">
+  <script src="/components/header/topbar.js"></script>
+  <link rel="stylesheet" href="/components/question/question-generator.css">
+  <link rel="stylesheet" href="/components/settings/settings-modal.css">
+  <link rel="stylesheet" href="/components/bug-report.css">
+  <link rel="stylesheet" href="/components/footer/footer.css">
+  <link rel="stylesheet" href="/components/ai-tutor/ai-tutor.css">
+  <link rel="stylesheet" href="/components/question-modal/question-modal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/tokyo-night-dark.min.css">
   <style>
     main { max-width: 1100px; margin: 0 auto; padding: 24px; }
     .dash-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0; }
@@ -56,7 +45,7 @@
     }
   </style>
     <script src="/js/cookies.js"></script>
-    <script src="/components/cookie-banner.js"></script>
+    <script src="/components/cookies/cookie-banner.js"></script>
 </head>
 <body> 
   <topbar-component active-page="dashboard" auth-state="authenticated"></topbar-component>
@@ -131,29 +120,17 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/go.min.js"></script>
+  <script>hljs.highlightAll();</script>
   
   <!-- Components -->
-  <script src="/components/question-generator.js"></script>
-  <script src="/components/ai-tutor.js"></script>
-  <script src="/components/question-modal.js"></script>
-  <script src="/components/settings-modal.js"></script>
+  <script src="/components/question/question-generator.js"></script>
+  <script src="/components/ai-tutor/ai-tutor.js"></script>
+  <script src="/components/question-modal/question-modal.js"></script>
+  <script src="/components/settings/settings-modal.js"></script>
   <script>
-    // Apply theme on load
-    function applyTheme(theme) {
-      if (theme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      } else {
-        document.documentElement.setAttribute('data-theme', theme);
-      }
-    }
-    const savedTheme = localStorage.getItem('theme') || 'system';
-    applyTheme(savedTheme);
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      const currentTheme = localStorage.getItem('theme') || 'system';
-      if (currentTheme === 'system') document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-    });
+    // Auth guard: redirect to login if not logged in
 
     // Auth guard: redirect to login if not logged in
     (async function guard() {
@@ -186,6 +163,6 @@
     }
   </script>
   <div id="footer-container"></div>
-  <script src="/components/footer.js"></script>
+  <script src="/components/footer/footer.js"></script>
 </body>
 </html>

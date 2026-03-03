@@ -4,7 +4,7 @@ This file documents the server API endpoints for this project. Base URL is the s
 
 ---
 
-## Authentication / User APIs 🔐
+## Authentication / User APIs
 
 All authenticated endpoints require an Authorization header:
 
@@ -91,7 +91,7 @@ Environment: JWTs are signed with `process.env.JWT_SECRET` (default: `your-secre
 
 ---
 
-## Question APIs ❓
+## Question APIs
 
 ### POST /api/question
 - Description: Generate or fetch a cached AP question (uses AI provider).
@@ -119,7 +119,7 @@ Environment: JWTs are signed with `process.env.JWT_SECRET` (default: `your-secre
 
 ---
 
-## Tutor APIs 💬
+## Tutor APIs
 
 ### POST /api/tutor/greeting
 - Description: Get an initial tutor greeting or short explanation
@@ -133,7 +133,7 @@ Environment: JWTs are signed with `process.env.JWT_SECRET` (default: `your-secre
 
 ---
 
-## S3 Presigned URLs (file upload/download) 🗂️
+## S3 Presigned URLs (file upload/download)
 
 All endpoints under `/api/s3` use body validation via Zod.
 
@@ -147,7 +147,7 @@ All endpoints under `/api/s3` use body validation via Zod.
 
 ---
 
-## Bug Reports 🐞
+## Bug Reports
 
 ### POST /api/bug-report
 - Description: Submit a bug report
@@ -168,7 +168,7 @@ All endpoints under `/api/s3` use body validation via Zod.
 
 ---
 
-## Error Handling & Notes ⚠️
+## Error Handling & Notes
 - Auth errors return 401 for missing/invalid tokens, 403 for unverified users.
 - Validation errors return 400 with error message(s).
 - Rate limited OpenAI requests return 429 with `resetIn` seconds and rate-limit headers.
@@ -176,7 +176,7 @@ All endpoints under `/api/s3` use body validation via Zod.
 
 ---
 
-## Environment / Important Keys 🔑
+## Environment / Important Keys
 - JWT_SECRET - secret for signing JWT tokens
 - ~~PROVIDER - 'local' or 'openai'~~ Important note: local model is depricated and the code is in the process of being removed
 - LOCAL_BASE_URL / LOCAL_AI_URL - local LM Studio URL

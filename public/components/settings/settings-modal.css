@@ -1,0 +1,108 @@
+/**
+ * Settings Modal Component Styles
+ */
+
+.settings-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--modal-backdrop);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.settings-modal.show {
+    display: flex;
+}
+
+.settings-content {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    transition: background-color 0.3s ease;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-xl);
+}
+
+.settings-header h2 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.close-settings {
+    background: none;
+    border: none;
+    font-size: var(--font-size-3xl);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.close-settings:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.settings-body {
+    padding: var(--space-xl);
+}
+
+.setting-item {
+    margin-bottom: var(--space-xl);
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.setting-item label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-sm);
+    color: var(--text-primary);
+}
+
+.setting-item select {
+    width: 100%;
+    padding: var(--space-md);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.3s ease;
+}
+
+.setting-item select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.setting-description {
+    margin-top: var(--space-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+}

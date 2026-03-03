@@ -11,8 +11,6 @@ const { sendConfirmationEmail, sendResetEmail } = require('../../services/emailS
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRY = '14d';
-
-// Verify middleware moved to `middleware/verifyAuth.js`
 const verifyToken = require('../../middleware/verifyAuth');
 
 // POST /api/auth/register - Register a new user

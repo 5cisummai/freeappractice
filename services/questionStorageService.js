@@ -14,6 +14,29 @@ function generateQuestionId() {
  * @param {Object} questionData - Full question data
  * @returns {Promise<string>} - Question ID (S3 key)
  */
+async function saveQuestionToS3(questionData) {
+  try {
+    const questionId = generateQuestionId();
+    const key = `questions/${questionId}.json`;
+
+    const payload = {
+      id: questionId,
+      ...questionData,
+      createdAt: new Date().toISOString()
+    };
+
+    await s3Service.putObject({
+      key,
+      body: JSON.stringify(payload),
+      contentType: 'application/json'
+    });
+
+    return questionId;
+  } catch (error) {
+    logger.error('Failed to save question to S3', { error: error.message });
+    throw new Error('Failed to save question to S3');
+  }
+}
 
 /**
  * Retrieve a question from S3 by ID
@@ -87,6 +110,7 @@ async function listUserQuestions(userId, maxKeys = 1000) {
 }
 
 module.exports = {
+  saveQuestionToS3,
   getQuestionFromS3,
   getQuestionsFromS3,
   listUserQuestions

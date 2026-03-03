@@ -6,7 +6,7 @@
 
 async function loadSettingsModal() {
     try {
-        const response = await fetch('/components/settings-modal.html');
+        const response = await fetch('/components/settings/settings-modal.html');
         if (!response.ok) {
             throw new Error(`Failed to load settings modal component: ${response.status}`);
         }

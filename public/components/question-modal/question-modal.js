@@ -36,7 +36,7 @@ class QuestionModal {
      */
     async loadComponent() {
         try {
-            const response = await fetch('/components/question-modal.html');
+            const response = await fetch('/components/question-modal/question-modal.html');
             if (!response.ok) {
                 throw new Error(`Failed to load question modal component: ${response.status}`);
             }
