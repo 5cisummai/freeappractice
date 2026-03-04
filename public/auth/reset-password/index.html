@@ -6,10 +6,10 @@
     <title>Reset Password - Free AP Practice</title>
     <link rel="icon" type="image/png" href="/assets/icon.png">
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/components/footer/footer.css">
     <script src="/js/theme-init.js"></script>
     <script src="/js/cookies.js"></script>
     <script src="/components/cookies/cookie-banner.js"></script>
-    <script src="/components/settings/settings-modal.js"></script>
     <style>
         body {
             display: flex;
@@ -63,6 +63,9 @@
         label { display:block; margin-bottom: var(--space-md); color:var(--text-primary); }
         input[type="password"] { width:100%; padding: var(--space-lg); border:1px solid var(--border-color); border-radius:8px; background:var(--bg-primary); color:var(--text-primary); }
         .btn-login { width:100%; padding: var(--space-lg); background: var(--accent-color); color: white; border:none; border-radius:8px; font-size:var(--font-size-base); }
+        #result { margin-top: 12px; }
+        .msg.success { color: var(--success-color, #1d7f3f); }
+        .msg.error { color: var(--error-color); }
     </style>
 </head>
 <body>
@@ -90,7 +93,7 @@
     </main>
 
     <script src="/js/authorization.js"></script>
-        
+    <script>
         (function(){
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');

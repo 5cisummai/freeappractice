@@ -6,6 +6,7 @@
     <title>Register - Free AP Practice</title>
     <link rel="icon" type="image/png" href="/assets/icon.png">
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/components/footer/footer.css">
     <script src="/js/theme-init.js"></script>
     <style>
         body {
@@ -258,7 +259,7 @@
     </div>
 
     <script src="/js/authorization.js"></script>
-
+      <script>
         const form = document.getElementById('registerForm');
         const passwordInput = document.getElementById('password');
         const confirmInput = document.getElementById('password-confirm');
@@ -310,7 +311,6 @@
                 isValid = false;
             }
 
-            // Validate terms
             if (!terms) {
                 const termsCheckbox = document.getElementById('terms');
                 termsCheckbox.focus();
@@ -318,21 +318,26 @@
             }
 
             if (isValid) {
-                // Disable button and show loading state
                 submitButton.disabled = true;
                 submitButton.textContent = 'Creating Account...';
 
                 try {
-                    const data = await register(name, email, password);
-                    // Registration requires email verification: clear any token and show confirmation page
-                    if (typeof clearAuthToken === 'function') clearAuthToken();
+                    await register(name, email, password);
                     window.location.href = '/auth/email-sent/?email=' + encodeURIComponent(email);
                 } catch (err) {
-                    // Show error message
-                    emailError.textContent = err.message || 'Registration failed';
-                    emailError.classList.add('show');
-                    
-                    // Re-enable button
+                    const message = err.message || 'Registration failed';
+
+                    if (/password/i.test(message)) {
+                        passwordError.textContent = message;
+                        passwordError.classList.add('show');
+                    } else if (/name/i.test(message)) {
+                        nameError.textContent = message;
+                        nameError.classList.add('show');
+                    } else {
+                        emailError.textContent = message;
+                        emailError.classList.add('show');
+                    }
+                } finally {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Create Account';
                 }

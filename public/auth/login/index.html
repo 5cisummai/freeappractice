@@ -6,6 +6,7 @@
     <title>Login - Free AP Practice</title>
     <link rel="icon" type="image/png" href="/assets/icon.png">
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/components/footer/footer.css">
     <script src="/js/theme-init.js"></script>
     <style>
         body {
@@ -230,7 +231,7 @@
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const emailError = document.getElementById('emailError');
             const passwordError = document.getElementById('passwordError');
@@ -248,9 +249,8 @@
                 isValid = false;
             }
 
-            // Validate password
-            if (password.length < 6) {
-                passwordError.textContent = 'Password must be at least 6 characters';
+            if (!password) {
+                passwordError.textContent = 'Password is required';
                 passwordError.classList.add('show');
                 isValid = false;
             }
@@ -268,8 +268,7 @@
                     // Show error message
                     passwordError.textContent = err.message || 'Login failed';
                     passwordError.classList.add('show');
-                    
-                    // Re-enable button
+                } finally {
                     submitButton.disabled = false;
                     submitButton.textContent = 'Sign In';
                 }
