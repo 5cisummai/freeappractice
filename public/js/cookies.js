@@ -189,6 +189,12 @@ Optional meta tags to provide IDs (defaults used if missing):
     window.dispatchEvent(new CustomEvent('cookieOptionalLoaded', { detail: { consent } }));
   }
 
+  // Apply current consent state to UI and optional integrations.
+  function applyConsent() {
+    updateUI();
+    loadOptionalScripts();
+  }
+
   // DOM binding for common controls
   function bindControls() {
     // Accept all

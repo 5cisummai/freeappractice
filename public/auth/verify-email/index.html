@@ -6,10 +6,10 @@
     <title>Verify Email - Free AP Practice</title>
     <link rel="icon" type="image/png" href="/assets/icon.png">
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/components/footer/footer.css">
     <script src="/js/theme-init.js"></script>
     <script src="/js/cookies.js"></script>
     <script src="/components/cookies/cookie-banner.js"></script>
-    <script src="/components/settings/settings-modal.js"></script>
     <style>
         body {
             display: flex;
@@ -61,6 +61,19 @@
         }
 
         .btn-login { width:100%; padding: var(--space-lg); background: var(--accent-color); color: white; border:none; border-radius:8px; font-size:var(--font-size-base); }
+        .status.success { color: var(--success-color, #1d7f3f); }
+        .status.error { color: var(--error-color); }
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: var(--accent-color);
+            color: #fff;
+            text-decoration: none;
+            font-weight: var(--font-weight-medium);
+        }
     </style>
 </head>
 <body>
@@ -79,12 +92,46 @@
     </main>
 
     <script src="/js/authorization.js"></script>
-        
+    <script>
         (async function(){
+            if (window.location.hostname === 'www.freeappractice.org') {
+                const target = 'https://freeappractice.org' + window.location.pathname + window.location.search + window.location.hash;
+                window.location.replace(target);
+                return;
+            }
+
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
             const statusEl = document.getElementById('status');
             const actions = document.getElementById('actions');
+            const tokenParam = 'token=' + encodeURIComponent(token || '');
+
+            async function fetchVerification() {
+                const endpointPaths = ['/api/auth/verify-email?' + tokenParam];
+                const host = window.location.hostname;
+
+                if (host === 'www.freeappractice.org') {
+                    endpointPaths.push('https://freeappractice.org/api/auth/verify-email?' + tokenParam);
+                } else if (host === 'freeappractice.org') {
+                    endpointPaths.push('https://www.freeappractice.org/api/auth/verify-email?' + tokenParam);
+                }
+
+                let lastError = null;
+
+                for (const endpoint of endpointPaths) {
+                    try {
+                        const resp = await fetch(endpoint, {
+                            method: 'GET',
+                            credentials: 'same-origin'
+                        });
+                        return resp;
+                    } catch (err) {
+                        lastError = err;
+                    }
+                }
+
+                throw lastError || new Error('Unable to reach verification endpoint');
+            }
 
             if (!token) {
                 statusEl.textContent = 'Verification token not found in the URL.';
@@ -94,7 +141,7 @@
             }
 
             try {
-                const resp = await fetch('/api/auth/verify-email?token=' + encodeURIComponent(token));
+                const resp = await fetchVerification();
                 if (resp.ok) {
                     const data = await resp.json();
                     statusEl.textContent = data.message || 'Email verified successfully.';
@@ -127,7 +174,7 @@
                 }
             } catch (e) {
                 console.error('verify error', e);
-                statusEl.textContent = 'Network error while verifying email.';
+                statusEl.textContent = 'Network error while verifying email. Please try again from https://freeappractice.org/auth/verify-email/?token=' + encodeURIComponent(token);
                 statusEl.classList.add('error');
                 actions.innerHTML = '<a class="button" href="/">Return to Home</a>';
             }

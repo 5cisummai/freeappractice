@@ -73,8 +73,8 @@ async function authFetch(url, options = {}) {
             // If unauthorized, clear token and redirect to login
             if (response.status === 401) {
                 clearAuthToken();
-                if (window.location.pathname !== '/auth/login.html') {
-                    window.location.href = '/auth/login.html';
+                if (!window.location.pathname.startsWith('/auth/login/')) {
+                    window.location.href = '/auth/login/';
                 }
             }
 
@@ -129,9 +129,6 @@ async function register(name, email, password) {
     if (!response.ok) {
         throw new Error(data.error || 'Registration failed');
     }
-    
-    setAuthToken(data.token);
-    setUserData(data.user);
     
     return data;
 }

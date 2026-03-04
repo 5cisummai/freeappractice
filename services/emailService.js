@@ -6,9 +6,17 @@ resend.domains.create({ name: 'freeappractice.org'});
 const FROM = process.env.RESEND_FROM || "Free AP Practice <noreply@freeappractice.org>";
 
 function getBaseUrl() {
-  // If NODE_ENV is exactly "development" → localhost
+  const configuredBase =
+    process.env.PUBLIC_BASE_URL ||
+    process.env.APP_BASE_URL ||
+    process.env.WEBSITE_URL;
+
+  if (configuredBase) {
+    return configuredBase.replace(/\/+$/, '');
+  }
+
   return process.env.NODE_ENV === "production"
-    ? "https://www.freeappractice.org"
+    ? "https://freeappractice.org"
     : "http://localhost:3000";
 }
 
