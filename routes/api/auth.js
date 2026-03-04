@@ -87,11 +87,11 @@ router.get('/verify-email', async (req, res) => {
     try {
         const { token } = req.query;
 
-        if (!token) {
+        if (!token || typeof token !== 'string') {
             return res.status(400).json({ error: 'Verification token is required' });
         }
 
-        const user = await User.findOne({ emailToken: token, emailTokenExpires: { $gt: Date.now() } });
+        const user = await User.findOne({ emailToken: { $eq: token }, emailTokenExpires: { $gt: Date.now() } });
 
         if (!user) {
             return res.status(400).json({ error: 'Invalid or expired verification token' });
