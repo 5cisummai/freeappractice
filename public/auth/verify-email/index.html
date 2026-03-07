@@ -153,10 +153,12 @@
                             if (typeof setAuthToken === 'function') {
                                 setAuthToken(data.token);
                                 if (typeof setUserData === 'function') setUserData(data.user);
+                                if (typeof clearPendingSignupToken === 'function') clearPendingSignupToken();
                             } else {
                                 // fallback: write directly to localStorage using the same keys
                                 localStorage.setItem('auth_token', data.token);
                                 localStorage.setItem('user_data', JSON.stringify(data.user));
+                                sessionStorage.removeItem('pending_signup_token');
                             }
                             window.location.href = '/app/';
                             return;

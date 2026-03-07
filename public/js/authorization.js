@@ -2,6 +2,7 @@
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const USER_DATA_KEY = 'user_data';
+const PENDING_SIGNUP_TOKEN_KEY = 'pending_signup_token';
 
 // Get stored token
 function getAuthToken() {
@@ -29,6 +30,19 @@ function clearAuthToken() {
     } catch (e) {
         // ignore
     }
+}
+
+function getPendingSignupToken() {
+    return sessionStorage.getItem(PENDING_SIGNUP_TOKEN_KEY);
+}
+
+function setPendingSignupToken(token) {
+    if (!token) return;
+    sessionStorage.setItem(PENDING_SIGNUP_TOKEN_KEY, token);
+}
+
+function clearPendingSignupToken() {
+    sessionStorage.removeItem(PENDING_SIGNUP_TOKEN_KEY);
 }
 
 // Get stored user data
@@ -129,6 +143,10 @@ async function register(name, email, password) {
     if (!response.ok) {
         throw new Error(data.error || 'Registration failed');
     }
+
+    if (data.pendingSignupToken) {
+        setPendingSignupToken(data.pendingSignupToken);
+    }
     
     return data;
 }
@@ -148,6 +166,7 @@ async function logout() {
     }
     
     clearAuthToken();
+    clearPendingSignupToken();
     window.location.href = '/';
 }
 
@@ -179,6 +198,9 @@ if (typeof module !== 'undefined' && module.exports) {
         getAuthToken,
         setAuthToken,
         clearAuthToken,
+        getPendingSignupToken,
+        setPendingSignupToken,
+        clearPendingSignupToken,
         getUserData,
         setUserData,
         isLoggedIn,

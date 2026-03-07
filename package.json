@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "test": "NODE_ENV=test jest",
     "clear-logs": "node scripts/clear-logs.js",
+    "cleanup-unverified": "node scripts/cleanupUnverifiedUsers.js",
     "populate-cache": "node scripts/populateQuestionCache.js",
     "test-s3": "node tests/test-s3.js",
     "test-email": "node tests/test-email.js"
