@@ -95,11 +95,15 @@ function refreshQuestionBackground(className, unit) {
     generateAndStoreQuestion(className, unit, 'openai')
         .then(() => {
             if (process.env.NODE_ENV !== 'production') {
-                console.log(`✅ Background refresh completed: ${className} - ${unit}`);
+                console.log('✅ Background refresh completed', { className, unit });
             }
         })
         .catch((error) => {
-            console.error(`❌ Background refresh failed for ${className} - ${unit}:`, error.message);
+            console.error('❌ Background refresh failed', {
+                className,
+                unit,
+                error: error.message
+            });
             // If it fails, log but don't crash - the old cached question will remain
         });
 }
@@ -134,7 +138,11 @@ async function getCachedQuestion(className, unit = '', provider = 'openai') {
 
             // Trigger background refresh to generate new question for next time
             if (process.env.NODE_ENV !== 'production') {
-                console.log(`🔄 Triggering background refresh for ${className} - ${cacheUnit} (using ${provider})`);
+                console.log('🔄 Triggering background refresh', {
+                    className,
+                    unit: cacheUnit,
+                    provider
+                });
             }
             setImmediate(() => {
                 refreshQuestionBackground(className, unit, provider);
@@ -149,7 +157,11 @@ async function getCachedQuestion(className, unit = '', provider = 'openai') {
             };
         } else {
             // No cached question - generate immediately
-            console.log(`No cached question for ${className} - ${cacheUnit}, generating new one with ${provider}`);
+            console.log('No cached question found, generating a new one', {
+                className,
+                unit: cacheUnit,
+                provider
+            });
             return await generateAndStoreQuestion(className, unit, provider);
         }
     } catch (error) {
