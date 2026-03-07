@@ -25,9 +25,9 @@ try {
 }
 
 // Configuration
-const PROVIDER = process.env.PROVIDER || 'openai'; // Use 'openai' by default for quality
+const PROVIDER = 'openai'; // Use 'openai' by default for quality
 const DELAY_BETWEEN_REQUESTS = 2000; // 2 seconds delay to avoid rate limits
-const MAX_CONCURRENT = 3; // Maximum concurrent requests
+const MAX_CONCURRENT = 3;
 
 // Sleep utility
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -81,7 +81,6 @@ async function main() {
     console.log(`Delay Between Batches: ${DELAY_BETWEEN_REQUESTS}ms`);
     console.log('═══════════════════════════════════════════════════════\n');
 
-    // Connect to database
     try {
         await connectDb();
         console.log('✓ Connected to MongoDB\n');
@@ -90,7 +89,6 @@ async function main() {
         process.exit(1);
     }
 
-    // Build list of all class/unit combinations
     const tasks = [];
     let taskIndex = 1;
 

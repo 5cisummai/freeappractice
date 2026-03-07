@@ -70,13 +70,11 @@ class TopbarComponent extends HTMLElement {
       }).join('');
     }
 
-    // Show/hide user profile based on auth state
     const userProfile = this.querySelector('.user-profile');
     if (userProfile) {
       userProfile.style.display = authState === 'authenticated' ? 'flex' : 'none';
     }
 
-    // Show settings icon for guests (not signed in)
     const guestSettings = this.querySelector('#topbarSettingsIcon');
     if (guestSettings) {
       guestSettings.style.display = authState === 'guest' ? 'block' : 'none';
@@ -84,7 +82,6 @@ class TopbarComponent extends HTMLElement {
   }
 
   setupEventListeners() {
-    // Mobile menu toggle
     const mobileMenuBtn = this.querySelector('#topbarMobileMenuBtn');
     const topbarNav = this.querySelector('.topbar-nav');
     
@@ -119,7 +116,6 @@ class TopbarComponent extends HTMLElement {
       });
     }
 
-    // User profile dropdown
     const userProfileBtn = this.querySelector('#topbarUserProfileBtn');
     const userDropdown = this.querySelector('#topbarUserDropdown');
     
@@ -154,7 +150,6 @@ class TopbarComponent extends HTMLElement {
       guestSettings.addEventListener('click', triggerSettings);
     }
 
-    // Logout button
     const logoutBtn = this.querySelector('#topbarLogoutBtn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', (e) => {
