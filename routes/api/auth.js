@@ -211,8 +211,12 @@ router.post('/reset-password', async (req, res) => {
         if (!token || !newPassword) {
             return res.status(400).json({ error: 'Token and new password are required' });
         }
+        // Ensure the token is a string and not a query object
+        if (typeof token !== 'string' || token.trim() === '') {
+            return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
         const user = await User.findOne({ 
-            resetPasswordToken: token, 
+            resetPasswordToken: { $eq: token }, 
             resetPasswordExpires: { $gt: Date.now() } 
         });
 
