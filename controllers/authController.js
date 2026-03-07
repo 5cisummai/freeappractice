@@ -3,13 +3,22 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const questionStorageService = require('../services/questionStorageService');
 const logger = require('../utils/logger');
+const { z } = require('zod');
 const { generateRandomToken } = require('../utils/cryptoToken');
 const { sendConfirmationEmail, sendResetEmail } = require('../services/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRY = '14d';
 const PENDING_SIGNUP_TOKEN_EXPIRY = '30m';
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailSchema = z.string().email();
+
+function normalizeAndValidateEmail(rawEmail) {
+    if (typeof rawEmail !== 'string') return null;
+    const normalizedEmail = rawEmail.trim().toLowerCase();
+    const parsed = emailSchema.safeParse(normalizedEmail);
+    if (!parsed.success) return null;
+    return normalizedEmail;
+}
 
 function createPendingSignupToken(userId, email) {
     return jwt.sign(
@@ -31,11 +40,12 @@ const register = async (req, res) => {
             return res.status(400).json({ error: 'Name, email, and password are required' });
         }
 
-        if (!emailRegex.test(email)) {
+        const normalizedEmail = normalizeAndValidateEmail(email);
+        if (!normalizedEmail) {
             return res.status(400).json({ error: 'Invalid email address' });
         }
 
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(409).json({ error: 'Email already registered' });
         }
@@ -47,7 +57,7 @@ const register = async (req, res) => {
 
         const user = new User({
             name,
-            email: email.toLowerCase(),
+            email: normalizedEmail,
             password: hashedPassword,
             verified: false,
             emailToken,
@@ -140,8 +150,8 @@ const updateVerificationEmail = async (req, res) => {
             return res.status(400).json({ error: 'New email is required' });
         }
 
-        const normalizedEmail = newEmail.trim().toLowerCase();
-        if (!emailRegex.test(normalizedEmail)) {
+        const normalizedEmail = normalizeAndValidateEmail(newEmail);
+        if (!normalizedEmail) {
             return res.status(400).json({ error: 'Invalid email address' });
         }
 
