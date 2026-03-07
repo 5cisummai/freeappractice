@@ -3,10 +3,6 @@
  * Dependencies: utils.js, katex-renderer.js, storage-manager.js, theme-manager.js, authorization.js
  */
 
-// ============================================================================
-// PROGRESS TRACKER
-// ============================================================================
-
 class ProgressTracker {
     constructor(classSelect, unitSelect, fromSlider, toSlider, currentUnits) {
         this.classSelect = classSelect;
@@ -84,10 +80,6 @@ class ProgressTracker {
     }
 }
 
-// ============================================================================
-// QUESTION MANAGER
-// ============================================================================
-
 class QuestionManager {
     constructor() {
         this.currentQuestion = null;
@@ -148,7 +140,6 @@ class QuestionManager {
         let unitDescription = '';
         const unitForCacheKey = selectedUnit;
 
-        // Randomly select unit for variety
         if (selectedUnit && selectedUnit.startsWith('__custom__')) {
             const parts = selectedUnit.split('|');
             const from = parseInt(parts[1]);
@@ -193,10 +184,6 @@ class QuestionManager {
         return await response.json();
     }
 }
-
-// ============================================================================
-// UI MANAGER
-// ============================================================================
 
 class UIManager {
     constructor() {
@@ -416,10 +403,6 @@ class UIManager {
     }
 }
 
-// ============================================================================
-// MAIN APPLICATION
-// ============================================================================
-
 class APStudyApp {
     constructor() {
         this.ui = new UIManager();
@@ -431,7 +414,6 @@ class APStudyApp {
     }
 
     async initialize() {
-        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             await new Promise(resolve => {
                 document.addEventListener('DOMContentLoaded', resolve);
@@ -466,7 +448,6 @@ class APStudyApp {
         // Try to initialize question section
         this.initQuestionSection();
 
-        // Expose global functions
         this.exposeGlobalFunctions();
     }
 
@@ -502,7 +483,6 @@ class APStudyApp {
     }
 
     setupEventListeners() {
-        // Theme change
         this.ui.elements.themeSelect?.addEventListener('change', (e) => {
             StorageManager.setTheme(e.target.value);
             ThemeManager.apply(e.target.value);
@@ -521,7 +501,6 @@ class APStudyApp {
             });
         }
 
-        // Settings modal
         this.ui.elements.settingsBtn?.addEventListener('click', () => {
             this.toggleSettingsModal();
         });
@@ -536,10 +515,8 @@ class APStudyApp {
             }
         });
 
-        // Progress panel toggle (click on hidden state or hide button)
         this.setupProgressPanelToggle();
 
-        // FAQ accordion
         document.querySelectorAll('.faq-question').forEach(button => {
             button.addEventListener('click', () => {
                 const faqItem = button.parentElement;
@@ -555,7 +532,6 @@ class APStudyApp {
             });
         });
 
-        // Bug report
         this.setupBugReportListeners();
     }
 
@@ -1219,10 +1195,6 @@ class APStudyApp {
         };
     }
 }
-
-// ============================================================================
-// INITIALIZE APP
-// ============================================================================
 
 const app = new APStudyApp();
 app.initialize();

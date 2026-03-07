@@ -4,6 +4,8 @@ const path = require("path");
 const logger = require("./utils/logger");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
+const helmet = require("helmet");
+const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,8 +13,6 @@ const connectDb = require("./config/dbConn");
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 connectDb();
-
-const helmet = require("helmet");
 
 app.use(
   helmet({
@@ -55,7 +55,20 @@ app.use(
   }),
 );
 
-app.use(morgan("combined"));
+const whitelist = ["http://localhost:3000", "https://freeappractice.org"];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS blocked: Origin not in whitelist"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 const apiRateLimiter = rateLimit({
   windowMs:
@@ -65,11 +78,12 @@ const apiRateLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     error: "Too many requests from this IP, please try again later.",
-  }
+  },
 });
 
 app.use("/api/", apiRateLimiter);
 
+app.use(morgan("combined"));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 

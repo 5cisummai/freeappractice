@@ -20,7 +20,6 @@ const ThemeManager = {
         }
         this.apply(savedTheme);
 
-        // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (StorageManager.getTheme() === 'system') {
                 document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
