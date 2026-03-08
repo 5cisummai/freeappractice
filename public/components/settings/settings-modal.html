@@ -2,38 +2,70 @@
   <div class="settings-content">
     <div class="settings-header">
       <h2>Settings</h2>
-      <button class="close-settings" id="closeSettings">&times;</button>
+      <button class="close-settings" id="closeSettings" aria-label="Close settings">&times;</button>
     </div>
+
+    <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+      <button class="settings-tab active" id="settingsTabAppearance" type="button" role="tab" aria-selected="true" aria-controls="settingsPanelAppearance" data-settings-tab="appearance">Appearance</button>
+      <button class="settings-tab" id="settingsTabAccount" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelAccount" data-settings-tab="account">Account</button>
+    </div>
+
     <div class="settings-body">
-      <div class="setting-item">
-        <label for="themeSelect">Theme</label>
-        <select id="themeSelect">
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-        <p class="setting-description">Choose your preferred color theme</p>
+      <div class="settings-panel active" id="settingsPanelAppearance" role="tabpanel" aria-labelledby="settingsTabAppearance" data-settings-panel="appearance">
+        <div class="setting-item" id="cookiesSection">
+          <label>Privacy & Cookies</label>
+          <div class="settings-stack">
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-consent-toggle="analytics" />
+              <span>Analytics cookies</span>
+            </label>
+            <label class="settings-toggle-row">
+              <input type="checkbox" data-consent-toggle="ads" />
+              <span>Advertising cookies</span>
+            </label>
+            <div class="settings-inline-actions">
+              <button type="button" data-consent-action="accept-all" class="settings-btn-primary">Accept all</button>
+              <button type="button" data-consent-action="reject-all" class="settings-btn-secondary">Reject all</button>
+              <a href="/privacy/" class="settings-link">Privacy policy</a>
+            </div>
+            <p class="setting-description">Necessary cookies are always on. Manage optional analytics and ads cookies. Changes apply immediately.</p>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label for="themeSelect">Theme</label>
+          <select id="themeSelect">
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+          <p class="setting-description">Choose your preferred color theme</p>
+        </div>
+        <div class="setting-item">
+          <label class="settings-toggle-row">
+            <input type="checkbox" id="reduceMotionToggle" />
+            <span>Reduce motion</span>
+          </label>
+          <p class="setting-description">Minimizes transitions and animations across the app.</p>
+        </div>
+        <div class="setting-item">
+          <label class="settings-toggle-row">
+            <input type="checkbox" id="largeTextToggle" />
+            <span>Larger text</span>
+          </label>
+          <p class="setting-description">Increases base text size for easier reading.</p>
+        </div>
       </div>
 
-      <div class="setting-item" id="cookiesSection">
-        <label>Privacy & Cookies</label>
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-          <label style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" data-consent-toggle="analytics" />
-            <span>Analytics cookies</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" data-consent-toggle="ads" />
-            <span>Advertising cookies</span>
-          </label>
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button type="button" data-consent-action="accept-all" style="background:#077bff; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;">Accept all</button>
-            <button type="button" data-consent-action="reject-all" style="background:transparent; border:1px solid var(--border-color,#e6e6e6); padding:8px 12px; border-radius:8px; cursor:pointer;">Reject all</button>
-            <a href="/privacy/" style="margin-left:auto; text-decoration:underline; color:inherit;">Privacy policy</a>
-          </div>
-          <p class="setting-description">Necessary cookies are always on. Manage optional analytics and ads cookies. Changes apply immediately.</p>
+      <div class="settings-panel" id="settingsPanelAccount" role="tabpanel" aria-labelledby="settingsTabAccount" data-settings-panel="account" hidden>
+        <div class="setting-item">
+          <label>Signed in as</label>
+          <p class="setting-description" id="settingsAccountIdentity">No account information available.</p>
+        </div>
+        <div class="settings-inline-actions">
+          <a href="/app/" class="settings-btn-secondary settings-action-link">Go to dashboard</a>
+          <button type="button" class="settings-btn-secondary" id="settingsSignOutBtn">Sign out</button>
         </div>
       </div>
     </div>
   </div>
-</div> 
+</div>
