@@ -28,7 +28,17 @@ function initializeSettingsModal() {
     const closeSettings = document.getElementById('closeSettings');
     const themeSelect = document.getElementById('themeSelect');
     const cookiesSection = document.getElementById('cookiesSection');
+    const reduceMotionToggle = document.getElementById('reduceMotionToggle');
+    const largeTextToggle = document.getElementById('largeTextToggle');
+    const settingsSignOutBtn = document.getElementById('settingsSignOutBtn');
+    const settingsAccountIdentity = document.getElementById('settingsAccountIdentity');
+    const accountTab = document.querySelector('[data-settings-tab="account"]');
+    const accountPanel = document.querySelector('[data-settings-panel="account"]');
+    const tabButtons = Array.from(document.querySelectorAll('[data-settings-tab]'));
+    const tabPanels = Array.from(document.querySelectorAll('[data-settings-panel]'));
     const COOKIE_STORAGE_KEY = 'cookieConsent:v1';
+    const REDUCE_MOTION_KEY = 'ui:reduce-motion';
+    const LARGE_TEXT_KEY = 'ui:large-text';
 
     if (!settingsModal || !closeSettings || !themeSelect) {
         console.warn('Settings modal elements not found');
@@ -74,22 +84,102 @@ function initializeSettingsModal() {
         applyThemeChoice(e.target.value);
     });
 
-    // Provider select (AI provider preference)
-    /*
-    const providerSelect = document.getElementById('providerSelect');
-    if (providerSelect) {
-        const savedProvider = localStorage.getItem('provider') || 'local';
-        providerSelect.value = savedProvider;
-        providerSelect.addEventListener('change', (e) => {
-            localStorage.setItem('provider', e.target.value);
-            // Let other modules react if needed
-            window.dispatchEvent(new CustomEvent('providerChange', { detail: e.target.value }));
+    function activateTab(name) {
+        tabButtons.forEach((button) => {
+            const isActive = button.dataset.settingsTab === name;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        tabPanels.forEach((panel) => {
+            const isActive = panel.dataset.settingsPanel === name;
+            panel.classList.toggle('active', isActive);
+            panel.hidden = !isActive;
         });
     }
-    */
-   
+
+    tabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activateTab(button.dataset.settingsTab);
+        });
+    });
+
+    function applyReducedMotion(enabled) {
+        localStorage.setItem(REDUCE_MOTION_KEY, enabled ? 'true' : 'false');
+        document.documentElement.toggleAttribute('data-reduce-motion', enabled);
+    }
+
+    function applyLargeText(enabled) {
+        localStorage.setItem(LARGE_TEXT_KEY, enabled ? 'true' : 'false');
+        document.documentElement.toggleAttribute('data-large-text', enabled);
+    }
+
+    const reduceMotionEnabled = localStorage.getItem(REDUCE_MOTION_KEY) === 'true';
+    const largeTextEnabled = localStorage.getItem(LARGE_TEXT_KEY) === 'true';
+
+    applyReducedMotion(reduceMotionEnabled);
+    applyLargeText(largeTextEnabled);
+
+    if (reduceMotionToggle) {
+        reduceMotionToggle.checked = reduceMotionEnabled;
+        reduceMotionToggle.addEventListener('change', (e) => {
+            applyReducedMotion(e.target.checked);
+        });
+    }
+
+    if (largeTextToggle) {
+        largeTextToggle.checked = largeTextEnabled;
+        largeTextToggle.addEventListener('change', (e) => {
+            applyLargeText(e.target.checked);
+        });
+    }
+
+    function getStoredUserData() {
+        try {
+            const raw = localStorage.getItem('user_data');
+            return raw ? JSON.parse(raw) : null;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function refreshAccountTabVisibility() {
+        const signedIn = typeof isLoggedIn === 'function'
+            ? isLoggedIn()
+            : !!localStorage.getItem('auth_token');
+        const user = getStoredUserData();
+
+        if (accountTab) accountTab.style.display = signedIn ? '' : 'none';
+        if (!signedIn && accountPanel && accountPanel.classList.contains('active')) {
+            activateTab('appearance');
+        }
+        if (settingsAccountIdentity) {
+            const name = user && user.name ? user.name : 'Unknown User';
+            const email = user && user.email ? user.email : 'No email on file';
+            settingsAccountIdentity.textContent = signedIn ? `${name} (${email})` : 'No account information available.';
+        }
+    }
+
+    if (settingsSignOutBtn) {
+        settingsSignOutBtn.addEventListener('click', async () => {
+            if (typeof logout === 'function') {
+                await logout();
+                return;
+            }
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
+            window.location.href = '/';
+        });
+    }
+
+    window.addEventListener('auth:login', refreshAccountTabVisibility);
+    window.addEventListener('auth:logout', refreshAccountTabVisibility);
+    refreshAccountTabVisibility();
+    activateTab('appearance');
+
     // Make openSettings function globally available
     window.openSettings = function() {
+        refreshAccountTabVisibility();
+        activateTab('appearance');
         settingsModal.classList.add('show');
     };
 
@@ -153,6 +243,7 @@ function initializeSettingsModal() {
 
     // Open when cookie preferences requested
     window.addEventListener('cookieOpenSettings', () => {
+        activateTab('appearance');
         settingsModal.classList.add('show');
         // If cookies section exists, bring it into view for convenience
         if (cookiesSection && typeof cookiesSection.scrollIntoView === 'function') {
