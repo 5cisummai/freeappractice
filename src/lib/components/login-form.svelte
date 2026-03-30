@@ -8,6 +8,7 @@
 		FieldDescription,
 		FieldSeparator
 	} from '$lib/components/ui/field/index.js';
+	import { resolve } from '$app/paths';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
@@ -39,7 +40,7 @@
 				return;
 			}
 			auth.setAuth(data.token, data.user);
-			goto('/app');
+			goto(resolve('/app'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -96,7 +97,7 @@
 					<Field>
 						<div class="flex items-center">
 							<FieldLabel for="password-{id}">Password</FieldLabel>
-							<a href="/forgot-password" class="ms-auto text-sm underline-offset-4 hover:underline">
+							<a href="{resolve('/forgot-password')}" class="ms-auto text-sm underline-offset-4 hover:underline">
 								Forgot your password?
 							</a>
 						</div>
@@ -107,7 +108,7 @@
 							{loading ? 'Signing in...' : 'Login'}
 						</Button>
 						<FieldDescription class="text-center">
-							Don't have an account? <a href="/signup" class="underline underline-offset-4"
+							Don't have an account? <a href="{resolve('/signup')}" class="underline underline-offset-4"
 								>Sign up</a
 							>
 						</FieldDescription>
@@ -117,9 +118,9 @@
 		</Card.Content>
 	</Card.Root>
 	<FieldDescription class="px-6 text-center">
-		By clicking continue, you agree to our <a href="/terms" class="underline underline-offset-4"
+		By clicking continue, you agree to our <a href="{resolve('/terms')}" class="underline underline-offset-4"
 			>Terms of Service</a
 		>
-		and <a href="/privacy" class="underline underline-offset-4">Privacy Policy</a>.
+		and <a href="{resolve('/privacy')}" class="underline underline-offset-4">Privacy Policy</a>.
 	</FieldDescription>
 </div>

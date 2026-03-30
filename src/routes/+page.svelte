@@ -18,7 +18,6 @@
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
-	let selectedProvider = $state('local');
 	let generateVersion = $state(0);
 
 	function handleSelectionChange(): void {
@@ -336,7 +335,6 @@
 							subject={selectedClass || 'Select AP Class'}
 							{selectedClass}
 							{selectedUnit}
-							{selectedProvider}
 							requestVersion={generateVersion}
 						/>
 					{/if}

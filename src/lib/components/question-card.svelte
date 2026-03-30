@@ -86,7 +86,6 @@
 		questionNumber?: string;
 		selectedClass?: string;
 		selectedUnit?: string;
-		selectedProvider?: string;
 		requestVersion?: number;
 		selectedOption?: string | null;
 		autoDetectLongQuestion?: boolean;
@@ -131,7 +130,6 @@
 		questionNumber = '1',
 		selectedClass = '',
 		selectedUnit = '',
-		selectedProvider = 'openai',
 		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
@@ -317,13 +315,12 @@
 
 	async function requestQuestion(
 		className: string,
-		unit: string,
-		provider: string
+		unit: string
 	): Promise<Record<string, unknown>> {
 		const response = await apiFetch('/api/question', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ className, unit, provider })
+			body: JSON.stringify({ className, unit })
 		});
 
 		return (await response.json()) as Record<string, unknown>;
@@ -373,16 +370,7 @@
 		else statusMessage = 'Loading question...';
 
 		try {
-			let response = await requestQuestion(selectedClass, selectedUnit, selectedProvider);
-
-			if (
-				selectedProvider === 'openai' &&
-				Boolean(response.shouldFallback) &&
-				typeof response.error === 'string'
-			) {
-				response = await requestQuestion(selectedClass, selectedUnit, 'local');
-				statusMessage = 'OpenAI provider failed, switched to local.';
-			}
+			const response = await requestQuestion(selectedClass, selectedUnit);
 
 			if (typeof response.error === 'string' && response.error.trim()) {
 				throw new Error(response.error);
@@ -705,7 +693,6 @@
 	$effect(() => {
 		void selectedClass;
 		void selectedUnit;
-		void selectedProvider;
 		currentQuestion = null;
 		resetInteractionState(true);
 		resetFRQState();
