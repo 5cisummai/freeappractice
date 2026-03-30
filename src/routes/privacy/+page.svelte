@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 </script>
@@ -28,20 +29,22 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a href="/" class="text-sm text-muted-foreground hover:text-foreground">← Back to Home</a>
+			<a href="{resolve('/')}" class="text-sm text-muted-foreground hover:text-foreground"
+				>← Back to Home</a
+			>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Privacy Policy</h1>
-				<p class="text-sm text-muted-foreground">Last Updated: January 22, 2026</p>
+				<p class="text-sm text-muted-foreground">Last Updated: March 29, 2026</p>
 			</div>
 
 			<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
 				<section>
 					<h2 class="text-xl font-semibold">1. Introduction</h2>
 					<p>
-						Welcome to Free AP Practice ("Service", "we", "us", or "our"). This Privacy Policy
-						explains how we collect, use, disclose, and safeguard information when you use our
-						website and services, including account-based features introduced in recent updates.
+						This Privacy Policy explains how Free AP Practice ("Service", "we", "us", or "our")
+						collects, uses, stores, and shares information when you use the website and related
+						features.
 					</p>
 				</section>
 
@@ -49,44 +52,57 @@
 					<h2 class="text-xl font-semibold">2. Information We Collect</h2>
 					<h3 class="text-lg font-medium">2.1 Information You Provide Directly</h3>
 					<ul class="list-disc space-y-1 pl-6">
-						<li><strong>Account data:</strong> name, email address, and password (hashed)</li>
+						<li><strong>Account data:</strong> name, email address, and password hash</li>
 						<li>
-							<strong>Practice data:</strong> answers submitted, question attempts, and bookmarks
+							<strong>Practice data:</strong> answers submitted, question attempts, FRQ responses,
+							progress, and bookmarks
 						</li>
-						<li><strong>Bug reports:</strong> text descriptions and related metadata you submit</li>
+						<li><strong>Bug reports and support requests:</strong> text and metadata you submit</li>
+						<li><strong>Transactional requests:</strong> password reset, verification, and account deletion requests</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
 					<ul class="list-disc space-y-1 pl-6">
-						<li>Basic server logs (IP address, request timestamps, HTTP status codes)</li>
-						<li>Browser type and device information via standard HTTP headers</li>
+						<li>Server logs such as IP address, request path, timestamps, and status codes</li>
+						<li>Browser and device information sent through standard HTTP headers</li>
+						<li>Usage information such as page visits, feature interactions, and authentication state</li>
+					</ul>
+					<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
+					<ul class="list-disc space-y-1 pl-6">
+						<li>Authentication token and basic user profile data</li>
+						<li>Theme and accessibility preferences</li>
+						<li>Draft or in-progress state needed to keep the app responsive between refreshes</li>
 					</ul>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">3. How We Use Your Information</h2>
 					<ul class="list-disc space-y-1 pl-6">
-						<li>To provide and improve the Service (question generation, progress tracking)</li>
-						<li>To authenticate your account and maintain session security</li>
-						<li>To send transactional emails (email verification, password reset)</li>
-						<li>To respond to bug reports and support requests</li>
-						<li>To analyze usage patterns and improve question quality</li>
+						<li>To create and serve practice questions, explanations, and tutor responses</li>
+						<li>To authenticate accounts, maintain sessions, and protect the Service</li>
+						<li>To track progress, bookmarks, attempts, and saved preferences</li>
+						<li>To send transactional emails such as verification and password reset emails</li>
+						<li>To respond to bug reports, account requests, and support inquiries</li>
+						<li>To analyze usage trends and improve reliability, quality, and performance</li>
 					</ul>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">4. Data Storage and Security</h2>
 					<p>
-						Your data is stored in MongoDB Atlas and files may be stored in AWS S3. Data at rest is
-						encrypted. Passwords are hashed with bcrypt and never stored in plain text. JWT tokens
-						are used for session authentication and expire after 14 days.
+						We store account and progress data in MongoDB Atlas and may store generated question
+						content and related files in AWS S3. Passwords are stored as hashes, not plain text. We
+						use bearer tokens for authentication, and those tokens expire after a limited period.
+						No method of transmission or storage is completely secure, so we cannot guarantee absolute
+						security.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
 					<p>
-						We use <code>localStorage</code> to persist your authentication token on your device. We do
-						not use third-party tracking cookies. Theme preference is stored locally in your browser.
+						We use local browser storage to keep you signed in and to save theme and accessibility
+						preferences. We do not use third-party advertising cookies. If you use a shared device,
+						you should sign out when finished.
 					</p>
 				</section>
 
@@ -94,58 +110,60 @@
 					<h2 class="text-xl font-semibold">6. Third-Party Services</h2>
 					<ul class="list-disc space-y-1 pl-6">
 						<li>
-							<strong>OpenAI:</strong> Question generation — prompts and responses are processed by OpenAI's
-							API
+							<strong>OpenAI:</strong> prompts and generated question content are processed by OpenAI's API
 						</li>
-						<li><strong>AWS S3:</strong> File storage for generated question content</li>
-						<li><strong>Resend:</strong> Transactional email delivery</li>
+						<li><strong>MongoDB Atlas:</strong> database hosting for user accounts and progress data</li>
+						<li><strong>AWS S3:</strong> file storage for generated question content and related assets</li>
+						<li><strong>Resend:</strong> delivery of verification and reset emails</li>
+						<li><strong>Vercel:</strong> website hosting and deployment infrastructure</li>
 					</ul>
 					<p class="mt-2">
-						Each third party has its own privacy policy. We do not sell your personal data to third
-						parties.
+						Each third party has its own terms and privacy practices. We do not sell your personal
+						information.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">7. Your Rights</h2>
 					<p>
-						You may request to access, correct, or delete your personal data at any time. To delete
-						your account, use the account settings page or contact us directly. We will remove your
-						data from primary systems within a reasonable timeframe.
+						Depending on your location, you may have rights to access, correct, export, or delete your
+						personal data. You can delete your account through the Service or contact us for help. We
+						will remove data from primary systems within a reasonable period, subject to legal or
+						operational retention requirements.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">8. Children's Privacy</h2>
 					<p>
-						The Service is intended for students of all ages. We do not knowingly collect personal
-						information from children under 13 without parental consent as required by applicable
-						law.
+						The Service is intended for students, but it is not directed to children under 13. We do
+						not knowingly collect personal information from children under 13 without verifiable
+						parental consent where required by law.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">9. International Transfers</h2>
 					<p>
-						Data stored on our servers and in S3 may be processed in the United States or other
-						jurisdictions. When transferring data internationally we take steps to protect it in
-						accordance with applicable law.
+						Your information may be processed in the United States or other countries where we or our
+						service providers operate. Where required, we take steps intended to protect the
+						information in accordance with applicable law.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">10. Changes to This Privacy Policy</h2>
 					<p>
-						We may update this Privacy Policy periodically. Material changes will be reflected in
-						the "Last Updated" date and, where feasible, communicated to registered users. Continued
-						use after changes constitutes acceptance of the updated policy.
+						We may update this Privacy Policy from time to time. Changes will be posted on this page
+						with a revised "Last Updated" date. Continued use of the Service after changes take effect
+						means you accept the updated policy.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">11. Contact Us</h2>
 					<p>
-						For questions about this policy or to exercise data rights, contact us at:<br />
+						For questions about this policy or to exercise your privacy rights, contact us at:<br />
 						Website: <strong>freeappractice.org</strong><br />
 						Email:
 						<a href="mailto:support@freeappractice.org" class="underline underline-offset-4"

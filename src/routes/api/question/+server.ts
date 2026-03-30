@@ -2,13 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getCachedQuestion } from '$lib/server/services/question-cache';
 import { dev } from '$app/environment';
-import { requireAuth } from '$lib/server/auth';
 
-export const POST: RequestHandler = async (event) => {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
-		await requireAuth(event);
-
-		const body = await event.request.json();
+		const body = await request.json();
 		const { className, unit } = body;
 
 		if (typeof className !== 'string' || !className.trim()) {

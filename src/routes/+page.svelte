@@ -321,6 +321,7 @@
 					<QuestionSelector
 						bind:selectedClass
 						bind:selectedUnit
+						hideQuestionTypeTabs={true}
 						isLoading={false}
 						onSelectionChange={handleSelectionChange}
 						onGenerate={handleGenerate}

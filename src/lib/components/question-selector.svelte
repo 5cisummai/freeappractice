@@ -20,6 +20,7 @@
 		selectedClass?: string;
 		selectedUnit?: string;
 		questionType?: 'mcq' | 'frq';
+		hideQuestionTypeTabs?: boolean;
 		isLoading?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
@@ -33,6 +34,7 @@
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
 		questionType = $bindable<'mcq' | 'frq'>('mcq'),
+		hideQuestionTypeTabs = false,
 		isLoading = false,
 		generateLabel = 'Generate Question',
 		onGenerate,
@@ -71,38 +73,40 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
-		<button
-			type="button"
-			onclick={() => {
-				questionType = 'mcq';
-				onTypeChange?.('mcq');
-			}}
-			class={cn(
-				'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-				questionType === 'mcq'
-					? 'bg-background text-foreground shadow-sm'
-					: 'text-muted-foreground hover:text-foreground'
-			)}
-		>
-			Multiple Choice
-		</button>
-		<button
-			type="button"
-			onclick={() => {
-				questionType = 'frq';
-				onTypeChange?.('frq');
-			}}
-			class={cn(
-				'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-				questionType === 'frq'
-					? 'bg-background text-foreground shadow-sm'
-					: 'text-muted-foreground hover:text-foreground'
-			)}
-		>
-			<TriangleAlert class="ml-1 inline-block size-4 text-yellow-500" /> (Alpha) Free Response
-		</button>
-	</div>
+	{#if !hideQuestionTypeTabs}
+		<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
+			<button
+				type="button"
+				onclick={() => {
+					questionType = 'mcq';
+					onTypeChange?.('mcq');
+				}}
+				class={cn(
+					'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+					questionType === 'mcq'
+						? 'bg-background text-foreground shadow-sm'
+						: 'text-muted-foreground hover:text-foreground'
+				)}
+			>
+				Multiple Choice
+			</button>
+			<button
+				type="button"
+				onclick={() => {
+					questionType = 'frq';
+					onTypeChange?.('frq');
+				}}
+				class={cn(
+					'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+					questionType === 'frq'
+						? 'bg-background text-foreground shadow-sm'
+						: 'text-muted-foreground hover:text-foreground'
+				)}
+			>
+				<TriangleAlert class="ml-1 inline-block size-4 text-yellow-500" /> (Alpha) Free Response
+			</button>
+		</div>
+	{/if}
 
 	<div class="flex flex-wrap items-end gap-4">
 		<div class="flex min-w-48 flex-1 flex-col gap-2">
