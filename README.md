@@ -1,95 +1,90 @@
-# Freeappractice.org
+# Free AP Practice
 
-AI-powered practice question generator and tutoring backend tailored to AP® courses. OpenAI models create authentic, scope-driven questions, questions are cached + stored on S3, and student attempt history is tracked for review and analytics.
+Free AP Practice is a SvelteKit app for generating AP practice questions, tracking progress, and helping students study with instant feedback. The project was refactored from the older backend-first implementation into a full SvelteKit application, and it is now intended to be deployed on Vercel.
 
-Currently deployed on **Render.com** (backend service runs the Express API with MongoDB and S3-backed storage configured through Render environment variables).
+## What’s included
 
-## Highlights
-- **Curriculum-aware question generation** via OpenAI (gpt-5-mini + gpt-4.1-mini for humanities classes) with JSON schema enforcement and proactive retry logic.
-- **Question cache service** keeps recently requested AP class/type material warm, supports manual regeneration, and attaches metadata (provider/model/cached flag).
-- **Tutor chat service** maintains a single OpenAI client instance, streams responses for on-demand guidance, and scaffolds a friendly, course-aware assistant.
-- **Persistent storage** keeps full questions in S3, only question IDs in MongoDB, and records each user attempt (answer, time taken, correctness) along with per-class progress.
-- **Rate limiting, logging, and health monitoring** protect OpenAI usage while capturing request metrics via the built-in logger.
+- A public landing page with AP practice entry points, FAQ, and onboarding.
+- Authenticated app pages for dashboard, practice, progress, and settings.
+- SvelteKit server routes for auth, question generation, tutoring, bug reports, S3 upload/download signing, and account history.
+- The same core API surface as the previous version, but implemented as route handlers inside SvelteKit.
 
 ## Tech stack
-- Node.js 18+ / Express
-- MongoDB + Mongoose (configured through `config/dbConn.js`)
-- OpenAI (chat completions via the `openai` SDK)
-- AWS S3 (question storage and pre-signed upload/download support)
-- Render.com for hosting, with health checks hitting `/health`
+
+- SvelteKit + Svelte 5
+- TypeScript
+- Tailwind CSS
+- MongoDB + Mongoose
+- OpenAI for question generation and tutor responses
+- Resend for email flows
+- AWS S3 for question storage and file transfer helpers
+- Vercel for deployment
 
 ## Getting started
 
-1. Copy and populate environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-   Required values: `OPEN_AI_KEY` (or `OPENAI_API_KEY`), `DATABASE_URI`, `JWT_SECRET`, `AWS_REGION`, `AWS_S3_BUCKET`, plus optional S3 credentials or IAM role.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Run locally:
-   ```bash
-   npm run dev
-   ```
-   (or `npm start` for production mode). The app listens on `PORT` (default 3000).
+1. Install dependencies:
+	```sh
+	pnpm install
+	```
+2. Create a local env file and add your secrets.
+3. Start the dev server:
+	```sh
+	pnpm dev
+	```
+4. Build for production:
+	```sh
+	pnpm build
+	```
+5. Run the smoke test suite:
+	```sh
+	pnpm test
+	```
 
-## Environment overview
-- `PORT` – server port (defaults to 3000)
-- `NODE_ENV` – `development`, `production`, or `test`
-- `OPEN_AI_KEY` / `OPENAI_API_KEY` – OpenAI API key for both question generation and tutor chat
-- `DATABASE_URI` – MongoDB connection string
-- `JWT_SECRET` – signing secret for `/api/auth` flows
-- `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_S3_ENDPOINT`, `AWS_S3_FORCE_PATH_STYLE` – control S3 uploads/downloads
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` – credentials (or rely on instance role / Render secrets)
-- email credentials for user flows (`RESEND_API_KEY`, `TEST_EMAIL`)
+## Environment variables
 
-## API summary
-- `POST /api/question` – generate or fetch cached AP question (uses rate limiting to protect OpenAI). Responds with `{ answer, provider, model, cached, questionId }`.
-- `POST /api/question/cache/generate` – manually prime cache for a class/unit.
-- `GET /api/question/cache/stats` – inspect cache hits/misses/age.
-- `POST /api/question/by-id` – fetch a stored question by its S3-backed ID.
-- `POST /api/auth/register`, `/api/auth/login`, `/api/auth/record-attempt` – standard auth + record attempts (records questionId, selected answer, correctness, duration).
-- `POST /api/tutor/chat` & `POST /api/tutor/greeting` – tutor assistant streaming chat and quick greeting.
-- `POST /api/s3/presign-upload` / `/api/s3/presign-download` – secure client uploads/downloads directly to/from S3.
-- `POST /api/bug-report` – capture runtime bug reports with metadata.
-- `GET /health` – health check for Render and load balancers.
+The server code reads private env values through SvelteKit. At minimum, you will need:
 
-## Storage + caching
-- Questions are persisted to S3 with unique IDs; Mongo stores only references (`questionId`) inside users, attempts, and bookmarks.
-- `services/questionCache.js` refreshes cached questions in the background and falls back to OpenAI when cache misses occur.
-- AWS credentials follow the default provider chain to keep secrets out of source control.
+- `DATABASE_URI` for MongoDB
+- `JWT_SECRET` for auth tokens
+- `OPEN_AI_KEY` for OpenAI access
+- `OPENAI_BASE_URL` or `OPENAI_URL` if you use a non-default OpenAI-compatible endpoint
+- `RESEND_API_KEY` for transactional email
 
-## Security & reliability
-- Security headers are now managed by [helmet](https://www.npmjs.com/package/helmet); production mode still enforces HSTS along with other defaults (previously X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, etc.).
-- Body payloads capped at 1 MB, request logging writes to `logs/` via `utils/logger`.
-- All API endpoints under `/api/` are protected by a global express-rate-limit middleware.  Limits and window size can be configured with `API_RATE_LIMIT_MAX` and `API_RATE_LIMIT_WINDOW_MS` environment variables.  (Older per-route/OpenAI-specific code has been removed.)
-- Global error handler sanitizes responses in production and writes full details to the logger.
-- Graceful shutdown is wired to `SIGINT`/`SIGTERM`.
+Depending on your deployment and storage setup, you may also need S3 credentials and any related storage settings used by the upload/download routes.
 
-## Deployment (Render.com)
-1. This repo is deployed as a Render Web Service (Node environment).
-2. Set Render environment variables to match `.env` fields (`OPEN_AI_KEY`, `DATABASE_URI`, `AWS_*`, `JWT_SECRET`, etc).
-3. Configure the service to run `npm start` and expose the desired `PORT`.
-4. Add health check URL `/health` so Render restarts unhealthy instances automatically.
-5. (Optional) Connect Render to the same AWS VPC or use secure IAM role for MongoDB access.
+## API overview
 
-All live traffic currently routes through the Render-hosted service name for this project.
+The main API routes now live under `src/routes/api` and are handled by SvelteKit server endpoints.
 
-## Observability
-- Logs stream to `logs/{combined,error,rejections}.log` and surface in Render’s log tail.
-- Health check endpoint ensures load balancers see `200` when ready.
-- Use `/api/question/cache/stats` for caching visibility and `/api/s3/presign-*` for S3 activity verification.
+- `POST /api/question` generates or returns a cached AP question.
+- `POST /api/question/frq` generates FRQ questions.
+- `POST /api/question/frq/grade` grades FRQ answers.
+- `POST /api/question/cache/generate` primes the question cache.
+- `GET /api/question/cache/stats` reports cache status.
+- `GET /api/question/[id]` fetches a stored question by ID.
+- `POST /api/auth/register`, `/api/auth/login`, `/api/auth/logout` handle authentication.
+- `GET /api/auth/current-user`, `/api/auth/stats`, `/api/auth/progress`, `/api/auth/progress-detailed`, `/api/auth/history` expose user state and analytics.
+- `POST /api/auth/bookmark`, `/api/auth/bookmarks` manage saved questions.
+- `POST /api/auth/record-attempt`, `/api/auth/record-frq-attempt` store answer history.
+- `POST /api/auth/forgot-password`, `/api/auth/reset-password`, `/api/auth/verify-email`, `/api/auth/verification/update-email` support account recovery and verification flows.
+- `POST /api/auth/delete-account` removes a user account.
+- `POST /api/tutor/chat`, `POST /api/tutor/greeting` provide the tutor assistant.
+- `POST /api/bug-report` submits bug reports.
+- `POST /api/s3/presign-upload`, `POST /api/s3/presign-download` create S3 signed URLs.
 
-## Next steps
-- Run `npm test` before opening PRs.
-- Check `package.json` for more tests, as well as dependencies and versions.
-- Update Render environment variables when secrets rotate.
-- Keep the OpenAI key scoped to only necessary models for billing control.
+## Deployment
 
-## Additional notes
-- Feel free to provide me any suggestions to improve this resource for students. I'm open to feedback and contributions!
+This project is meant to deploy to Vercel as a SvelteKit app. The current SvelteKit adapter setup is Vercel-compatible, so the usual flow is:
 
-## License
-MIT
+1. Connect the repository to Vercel.
+2. Set the production environment variables in Vercel.
+3. Let Vercel build the app with the standard SvelteKit build command.
+
+If you change hosting later, update the adapter and deployment notes together so the README stays accurate.
+
+## Notes
+
+- AP content, question generation, and grading are still API-driven, even though the UI now lives in SvelteKit.
+- The landing page automatically routes authenticated users into the app.
+- The repo includes changelog, privacy, terms, and password recovery pages alongside the core app.
+- `pnpm test` runs a Playwright smoke suite against the built app and checks the public pages, sitemap, robots file, and health endpoint.

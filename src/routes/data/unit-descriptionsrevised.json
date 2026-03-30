@@ -1,0 +1,3014 @@
+{
+	"generated_on": "2025-12-16",
+	"note": "Course/unit descriptions sourced from College Board AP course pages (see per-course sources). Each unit entry uses College Board wording 'Topics may include' where applicable.",
+	"courses": [
+		{
+			"course_code": "APCALC-AB",
+			"course_name": "AP Calculus AB",
+			"overview": "Single-variable calculus emphasizing limits, derivatives, integrals, differential equations, and applications; organized into 8 commonly taught units.",
+			"important_notes": "AP Calculus AB scope only—no BC-only topics like series, Taylor/Maclaurin, or polar/parametric integration. Use College Board notation, justify with MVT/IVT and FTC language, and keep modeling to single-variable calculus with clear units and context for rates of change.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-calculus-ab?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Limits and Continuity",
+					"keywords": [
+						"Limit notation",
+						"One-sided limits",
+						"Continuity",
+						"Removable discontinuities",
+						"Infinite discontinuities",
+						"Asymptotes"
+					],
+					"exam_weighting_mc": "10%–12%",
+					"description": "Conceptual and computational foundations of limits and continuity; using limits to reason about instantaneous change and function behavior.",
+					"topics_may_include": [
+						"Understanding limits conceptually and numerically; one-sided limits",
+						"Algebraic techniques for evaluating limits (factoring, conjugates)",
+						"Limits at infinity and horizontal asymptotes",
+						"Squeeze Theorem and limit proofs (informal)",
+						"Definition and properties of continuity; Intermediate Value Theorem"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Differentiation: Definition and Fundamental Properties",
+					"keywords": [
+						"Derivative definition",
+						"Power rule",
+						"Product rule",
+						"Quotient rule",
+						"Chain rule",
+						"Derivatives of trig and log functions"
+					],
+					"exam_weighting_mc": "10%–12%",
+					"description": "Derivative as limit and instantaneous rate of change; basic derivative rules and interpretations.",
+					"topics_may_include": [
+						"Definition of derivative at a point and as a function (limit of difference quotient)",
+						"Relationship between differentiability and continuity",
+						"Basic derivative rules for power, exponential, logarithmic, trigonometric functions",
+						"Derivative interpretation: velocity, slope of tangent",
+						"Using derivative notation and units"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Differentiation: Composite, Implicit, and Inverse Functions",
+					"keywords": [
+						"Critical points",
+						"First derivative test",
+						"Second derivative test",
+						"Concavity",
+						"Inflection points",
+						"Related rates",
+						"Optimization"
+					],
+					"exam_weighting_mc": "9%–13%",
+					"description": "Techniques for differentiating more complex functions including chain rule, implicit differentiation, and higher-order derivatives.",
+					"topics_may_include": [
+						"Chain rule for composite functions",
+						"Implicit differentiation and related rates",
+						"Derivatives of inverse functions",
+						"Higher-order derivatives and interpretation (concavity, jerk)",
+						"Applications of differentiation rules in multiple representations"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Contextual Applications of Differentiation",
+					"keywords": [
+						"Antiderivatives",
+						"Indefinite integrals",
+						"Definite integrals",
+						"Fundamental theorem",
+						"U-substitution",
+						"Integration by parts"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Modeling and solving real-world problems using derivatives: rates, optimization, and interpretation of derivatives in context.",
+					"topics_may_include": [
+						"Instantaneous rate of change in applications",
+						"Related rates problems",
+						"Interpreting derivative sign, increasing/decreasing behavior",
+						"Linearization and differentials",
+						"Use of derivatives to model motion and growth/decay"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Analytical Applications of Differentiation",
+					"keywords": [
+						"Area under curves",
+						"Area between curves",
+						"Volume of solids",
+						"Average value",
+						"Accumulation functions"
+					],
+					"exam_weighting_mc": "15%–18%",
+					"description": "Techniques for analyzing function behavior using derivatives: extrema, Mean Value Theorem, curve sketching.",
+					"topics_may_include": [
+						"Critical points, local/global extrema",
+						"First and second derivative tests",
+						"Mean Value Theorem and Rolle’s Theorem",
+						"Sketching graphs using limits, derivatives, asymptotes, and concavity",
+						"Applications to optimization problems"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Integration and Accumulation of Change",
+					"exam_weighting_mc": "17%–20%",
+					"description": "Definite and indefinite integrals, Fundamental Theorem of Calculus, accumulation functions, and antiderivative techniques.",
+					"topics_may_include": [
+						"Definite integrals as limits of Riemann sums and accumulated change",
+						"Fundamental Theorem of Calculus (parts I & II)",
+						"Antiderivatives and indefinite integrals",
+						"Integration techniques: substitution, basic integrals",
+						"Area between curves and interpretation of integrals in context"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Differential Equations",
+					"exam_weighting_mc": "6%–12%",
+					"description": "Solving and interpreting simple differential equations; growth/decay models, slope fields, and separable equations.",
+					"topics_may_include": [
+						"Separable differential equations and solving initial value problems",
+						"Slope (direction) fields and qualitative solution behavior",
+						"Exponential growth and decay models",
+						"Differential equation modeling of context-based rates of change",
+						"Using integrals to solve accumulation/area problems arising from differential equations"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Applications of Integration",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Applied uses of integration: volumes, average value, accumulation in physical contexts and additional applied problem solving.",
+					"topics_may_include": [
+						"Volumes of revolution (disk/washer, shell methods—basic)",
+						"Average value of a function on an interval",
+						"Accumulated change in physics/economics contexts",
+						"Work and net change applications (basic)",
+						"Integration in motion problems (position/velocity/acceleration)"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APCALC-BC",
+			"course_name": "AP Calculus BC",
+			"overview": "All AP Calculus AB content plus extended topics: parametric/vector functions, polar coordinates, and infinite sequences and series; organized into 10 commonly taught units.",
+			"important_notes": "Include BC-specific content: parametric/polar calculus, vector motion, Taylor/Maclaurin series, power series convergence tests, and error bounds. Calculus must use derivatives and integrals; keep within single-variable contexts and avoid multivariable/linear algebra.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-calculus-bc?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Limits and Continuity",
+					"exam_weighting_mc": "4%–7%",
+					"description": "Same foundational limit and continuity concepts as AB with emphasis on readiness for series and advanced function behaviors.",
+					"topics_may_include": [
+						"Limit computations, continuity, asymptotic behavior",
+						"One-sided limits and limits at infinity",
+						"Applications toward series convergence tests"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Differentiation: Definition and Fundamental Properties",
+					"exam_weighting_mc": "4%–7%",
+					"description": "Derivative definitions and basic rules extended to functions needed for later BC topics.",
+					"topics_may_include": [
+						"Derivative as limit, basic derivative rules, differentiability vs continuity"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Differentiation: Composite, Implicit, and Inverse Functions",
+					"exam_weighting_mc": "4%–7%",
+					"description": "Advanced differentiation techniques (chain rule, implicit), preparing for parametric and polar derivatives.",
+					"topics_may_include": [
+						"Chain rule, implicit differentiation, inverse function derivatives",
+						"Higher-order derivatives and applications"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Contextual Applications of Differentiation",
+					"exam_weighting_mc": "6%–9%",
+					"description": "Applied derivative problems, optimization, and modeling in varied contexts.",
+					"topics_may_include": ["Related rates, optimization, modeling with derivatives"]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Analytical Applications of Differentiation",
+					"exam_weighting_mc": "8%–11%",
+					"description": "Function analysis, curve sketching, and theorems about derivatives.",
+					"topics_may_include": ["Extrema, Mean Value Theorem, concavity and inflection points"]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Integration and Accumulation of Change",
+					"exam_weighting_mc": "17%–20%",
+					"description": "Definite/indefinite integrals, Fundamental Theorem of Calculus, and integration techniques.",
+					"topics_may_include": ["Riemann sums, FTC, u-substitution, applications to accumulation"]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Differential Equations",
+					"exam_weighting_mc": "6%–9%",
+					"description": "Separable and other first-order differential equations and applications including logistic growth; slope fields.",
+					"topics_may_include": ["Separable ODEs, exponential/logistic growth, slope fields"]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Applications of Integration",
+					"exam_weighting_mc": "6%–9%",
+					"description": "Applied integration problems including advanced volume and physical applications.",
+					"topics_may_include": [
+						"Volumes by slicing/shells, work, arc length (introductory contexts)"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Parametric Equations, Polar Coordinates, and Vector-Valued Functions",
+					"exam_weighting_mc": "11%–12%",
+					"description": "Representation and calculus for parametric, polar, and vector functions; derivatives and integrals in these systems.",
+					"topics_may_include": [
+						"Parametric equations: derivatives, arc length, area",
+						"Polar coordinates: r(θ), area and slope in polar",
+						"Vector-valued functions, velocity and acceleration in parametric form"
+					]
+				},
+				{
+					"unit_number": 10,
+					"unit_title": "Infinite Sequences and Series",
+					"exam_weighting_mc": "17%–18%",
+					"description": "Convergence tests and power series including Taylor and Maclaurin series and approximations.",
+					"topics_may_include": [
+						"Sequences and infinite series, geometric series",
+						"Tests for convergence: nth-term, integral, comparison, ratio, alternating series",
+						"Power series, radius/interval of convergence",
+						"Taylor and Maclaurin series and polynomial approximations"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APSTAT",
+			"course_name": "AP Statistics",
+			"overview": "Introductory, non-calculus college-level statistics course organized into nine commonly taught units (note: College Board announced future revisions for 2026–27).",
+			"important_notes": "Always keep answers in context of the study. State conditions (randomization, independence, normal/large n) before inference; use correct symbols (p, μ, \\hat{p}, \\bar{x}), hypotheses, and interpretations of p-values/intervals. No calculus; rely on AP-approved inference procedures and clear communication of conclusions.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-statistics?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Exploring One-Variable Data",
+					"keywords": [
+						"Categorical data",
+						"Quantitative data",
+						"Distributions",
+						"Measures of center",
+						"Measures of spread",
+						"Normal distribution"
+					],
+					"exam_weighting": "15%–23%",
+					"description": "Fundamentals of describing and summarizing distributions of single variables; central tendency, spread, and graphical displays.",
+					"topics_may_include": [
+						"Types of variables (categorical vs quantitative)",
+						"Graphical displays: histograms, dotplots, stemplots, bar charts",
+						"Measures of center and spread (mean, median, IQR, standard deviation)",
+						"Shape descriptions, outliers, and robust statistics",
+						"Normal distribution and z-scores"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Exploring Two-Variable Data",
+					"keywords": [
+						"Correlation",
+						"Regression lines",
+						"Residuals",
+						"R-squared",
+						"Chi-square goodness of fit",
+						"Chi-square independence"
+					],
+					"exam_weighting": "5%–7%",
+					"description": "Analyzing relationships between two variables using association measures and models.",
+					"topics_may_include": [
+						"Comparing two categorical variables (contingency tables)",
+						"Scatterplots, correlation coefficient (r)",
+						"Least-squares regression, interpreting slope and intercept",
+						"Residuals and diagnostics, departures from linearity"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Collecting Data",
+					"keywords": [
+						"Sampling methods",
+						"Bias",
+						"Experiments",
+						"Observational studies",
+						"Confounding variables",
+						"Randomization"
+					],
+					"exam_weighting": "12%–15%",
+					"description": "Principles of study design, sampling methods, and sources of bias to support valid inference.",
+					"topics_may_include": [
+						"Sampling designs: simple random, stratified, cluster, multistage",
+						"Experiments vs observational studies, randomization, control, blocking",
+						"Bias, confounding, and ethical considerations",
+						"Designing studies to support causal inference when appropriate"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Probability, Random Variables, and Probability Distributions",
+					"keywords": [
+						"Probability rules",
+						"Independence",
+						"Conditional probability",
+						"Binomial distribution",
+						"Geometric distribution"
+					],
+					"exam_weighting": "10%–20%",
+					"description": "Probability rules and modeling randomness with discrete and continuous distributions as foundation for inference.",
+					"topics_may_include": [
+						"Probability rules (addition, multiplication, conditional probability, independence)",
+						"Random variables, expectation, variance",
+						"Binomial and geometric distributions (and applications)",
+						"Law of large numbers and use of simulation"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Sampling Distributions",
+					"keywords": [
+						"Confidence intervals",
+						"Hypothesis testing",
+						"Type I and Type II errors",
+						"P-values",
+						"One-sample t-tests",
+						"Two-sample t-tests"
+					],
+					"exam_weighting": "7%–12%",
+					"description": "Sampling variability and the Central Limit Theorem; sampling distributions of statistics as basis for inference.",
+					"topics_may_include": [
+						"Sampling distribution of a sample mean and sample proportion",
+						"Central Limit Theorem and its conditions",
+						"Standard error and interpretation",
+						"Bias vs sampling variability"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Inference for Categorical Data: Proportions",
+					"exam_weighting": "12%–15%",
+					"description": "Confidence intervals and hypothesis tests for proportions including comparing two proportions.",
+					"topics_may_include": [
+						"Constructing and interpreting confidence intervals for a proportion",
+						"One- and two-sample proportion tests (z-tests)",
+						"p-value interpretation and Type I/II errors",
+						"Conditions for validity of methods"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Inference for Quantitative Data: Means",
+					"exam_weighting": "10%–18%",
+					"description": "CI and hypothesis testing for means and comparing two means (t-procedures where appropriate).",
+					"topics_may_include": [
+						"t-distribution and one-sample t procedures",
+						"Two-sample t-tests and pooled/unpooled reasoning",
+						"Confidence intervals for means and mean differences",
+						"Assumptions and robustness"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Inference for Categorical Data: Chi-Square",
+					"exam_weighting": "2%–5%",
+					"description": "Chi-square tests for goodness-of-fit, homogeneity, and independence for categorical data analysis.",
+					"topics_may_include": [
+						"Chi-square goodness-of-fit test",
+						"Chi-square test of independence and homogeneity",
+						"Selecting appropriate categorical inference procedures",
+						"Interpreting chi-square statistics and limitations"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Inference for Quantitative Data: Slopes",
+					"exam_weighting": "2%–5%",
+					"description": "Inference about the slope in regression models: confidence intervals and hypothesis tests for slope.",
+					"topics_may_include": [
+						"Inference for slope using t-distribution",
+						"Interpreting slope as estimated effect",
+						"Conditions for regression inference"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APCSA",
+			"course_name": "AP Computer Science A",
+			"overview": "Introductory college-level programming using a subset of Java; revised framework (effective 2025–26) organizes content into 4 units emphasizing objects, control structures, class creation, and data collections.",
+			"important_notes": "Use Java only with the AP subset: classes/objects, inheritance basics, arrays/ArrayList, recursion, and control structures. Avoid libraries beyond java.lang and java.util.ArrayList; no lambdas/streams or GUI/IO. Use standard AP Java syntax and avoid AP CSP pseudocode.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-computer-science-a?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Using Objects and Methods",
+					"exam_weighting_mc": "15%–25%",
+					"description": "Fundamentals of Java, objects, methods, primitive types, and basic API usage.",
+					"topics_may_include": [
+						"Primitive types (int, double, boolean) and expressions",
+						"Variables, assignment, evaluation order",
+						"Creating and using objects and calling methods",
+						"String objects and common String methods",
+						"Static methods (Math) and simple I/O"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Selection and Iteration",
+					"exam_weighting_mc": "25%–35%",
+					"description": "Control flow: conditionals and loops for algorithm implementation and problem solving.",
+					"topics_may_include": [
+						"if, if-else, nested conditionals",
+						"for, while, do-while loops and loop invariants",
+						"Combining selection and iteration to implement algorithms",
+						"Debugging and tracing control flow"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Class Creation",
+					"exam_weighting_mc": "10%–18%",
+					"description": "Designing classes, constructors, instance variables, methods, and encapsulation (object-oriented basics as required by the course).",
+					"topics_may_include": [
+						"Defining classes with fields and methods",
+						"Constructors, overloading, and object state",
+						"Access control, instance vs class (static) members",
+						"Designing methods to implement behavior and abstraction"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Data Collections",
+					"exam_weighting_mc": "30%–40%",
+					"description": "Using and implementing common data structures and algorithms to store and process collections of data.",
+					"topics_may_include": [
+						"Arrays and array processing algorithms",
+						"ArrayList and other collection usage patterns",
+						"Searching and sorting basics (selection, insertion, simple sorts)",
+						"Traversing and manipulating collections; iteration patterns",
+						"Text files and datasets (added in 2025–26 revisions)"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APCSP",
+			"course_name": "AP Computer Science Principles",
+			"overview": "Introductory computing course covering breadth of computer science: creativity, data, algorithms/programming, systems/networks, and societal impact.",
+			"important_notes": "Use AP CSP pseudocode (not Java/JavaScript). Emphasize abstraction, algorithms, data representation, the internet, cybersecurity, and computing impacts. Keep math light; focus on reasoning about algorithms, data, and societal context rather than language-specific syntax.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-computer-science-principles?utm_source=openai))"
+			],
+			"units": [
+				{
+					"big_idea": 1,
+					"title": "Creative Development",
+					"exam_weighting_mc": "10%–13%",
+					"description": "Design and development process for computational artifacts; decomposition and abstraction in problem solving.",
+					"topics_may_include": [
+						"Problem definition and ideation",
+						"Design methodology and development cycles",
+						"Abstraction to manage complexity",
+						"Creating computational artifacts and portfolios"
+					]
+				},
+				{
+					"big_idea": 2,
+					"title": "Data",
+					"exam_weighting_mc": "17%–22%",
+					"description": "Using data to discover knowledge: collection, representation, analysis, and ethical considerations.",
+					"topics_may_include": [
+						"Data collection and sampling considerations",
+						"Data representation (tables, visualizations) and transformation",
+						"Analyzing data to draw conclusions, data-driven decision making",
+						"Privacy, security, and ethical uses of data"
+					]
+				},
+				{
+					"big_idea": 3,
+					"title": "Algorithms and Programming",
+					"exam_weighting_mc": "30%–35%",
+					"description": "Core algorithmic thinking and programming constructs to develop and evaluate solutions.",
+					"topics_may_include": [
+						"Algorithm design and problem decomposition",
+						"Programming constructs: variables, control flow, procedures/functions",
+						"Testing, debugging, and algorithmic efficiency (basic)",
+						"Implementing algorithms to solve computational problems"
+					]
+				},
+				{
+					"big_idea": 4,
+					"title": "Computer Systems and Networks",
+					"exam_weighting_mc": "11%–15%",
+					"description": "Fundamentals of how computing systems operate and how networks enable distributed computing.",
+					"topics_may_include": [
+						"Hardware vs software, system architecture basics",
+						"How networks and the internet transmit data",
+						"Representation of data in binary and abstractions built on it"
+					]
+				},
+				{
+					"big_idea": 5,
+					"title": "Impact of Computing",
+					"exam_weighting_mc": "21%–26%",
+					"description": "Social, ethical, and economic impacts of computing and how computing innovations shape society.",
+					"topics_may_include": [
+						"Positive and negative societal impacts of computing",
+						"Ethics, privacy, equity, and intellectual property",
+						"Evaluation of claims about computing technologies"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APBIO",
+			"course_name": "AP Biology",
+			"overview": "Two-semester, college-level biology course for majors; organized into 8 commonly taught units covering chemistry of life through ecology and evolution.",
+			"important_notes": "Frame questions around experimental or data-based scenarios; emphasize evolution/natural selection evidence, energy transfer, cell communication, and gene expression/regulation. Use correct biology terminology and simple quantitative tools (chi-square, Hardy–Weinberg reasoning) without heavy math. Avoid anatomy trivia not in the framework. Avoid Chemistry and physics equations and instead focus on biological concepts.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-biology?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Chemistry of Life",
+					"keywords": [
+						"Atoms and elements",
+						"Chemical bonding",
+						"Properties of water",
+						"pH concepts, not equations or equilibria",
+						"Carbohydrates",
+						"Lipids",
+						"Proteins",
+						"Nucleic acids"
+					],
+					"exam_weighting_mc": "8%–11%",
+					"description": "Biochemical foundations: water properties, macromolecules, and chemical reactions vital to living systems.",
+					"topics_may_include": [
+						"Properties of water, pH, buffers",
+						"Structure and function of macromolecules: carbohydrates, lipids, proteins, nucleic acids",
+						"Basic energetics of biochemical reactions"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Cells",
+					"keywords": [
+						"Prokaryotic vs eukaryotic cell structure",
+						"Membrane structure, passive and active transport",
+						"Organelles and cellular compartmentalization",
+						"Prokaryotic cells",
+						"Eukaryotic cells",
+						"Cell organelles",
+						"Cell membrane",
+						"Transport mechanisms",
+						"Surface area to volume ratio"
+					],
+					"exam_weighting_mc": "10%–13%",
+					"description": "Cell structure and function, membranes, transport, and cellular organization.",
+					"topics_may_include": [
+						"Prokaryotic vs eukaryotic cell structure",
+						"Membrane structure, passive and active transport",
+						"Organelles and cellular compartmentalization"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Cellular Energetics",
+					"keywords": [
+						"Glycolysis",
+						"Citric acid cycle",
+						"Electron transport chain",
+						"Light reactions",
+						"Calvin cycle",
+						"ATP and energy",
+						"Photosynthesis",
+						"Fermentation"
+					],
+					"exam_weighting_mc": "12%–16%",
+					"description": "Metabolic pathways: photosynthesis, cellular respiration, and energy transfer.",
+					"topics_may_include": [
+						"Glycolysis, Krebs cycle, oxidative phosphorylation",
+						"Light-dependent and light-independent reactions of photosynthesis",
+						"ATP, enzymes, and regulation of metabolic pathways"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Cell Communication and Cell Cycle",
+					"keywords": [
+						"Cell signaling",
+						"Signal transduction",
+						"Cell cycle",
+						"Checkpoints",
+						"Mitosis",
+						"Meiosis",
+						"Cancer",
+						"Apoptosis"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Signal transduction, cell-to-cell communication, and regulation of cell division.",
+					"topics_may_include": [
+						"Signal reception, transduction pathways, second messengers",
+						"Cell cycle phases, checkpoints, mitosis and meiosis overview",
+						"Apoptosis and cancer basics"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Heredity",
+					"keywords": [
+						"Mendelian genetics",
+						"Monohybrid crosses",
+						"Dihybrid crosses",
+						"Sex-linked traits",
+						"Multiple alleles",
+						"Incomplete dominance",
+						"Codominance",
+						"Gene mapping",
+						"Pedigrees"
+					],
+					"exam_weighting_mc": "8%–11%",
+					"description": "Mendelian genetics, inheritance patterns, and chromosomal basis of heredity.",
+					"topics_may_include": [
+						"Mendelian crosses, probability in inheritance",
+						"Complex inheritance: linked genes, sex linkage, epistasis",
+						"Chromosomal abnormalities and pedigree analysis"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Gene Expression and Regulation",
+					"keywords": [
+						"DNA structure",
+						"DNA replication",
+						"Transcription",
+						"Translation",
+						"Gene regulation",
+						"Mutations",
+						"Gene expression",
+						"Biotechnology basics"
+					],
+					"exam_weighting_mc": "12%–16%",
+					"description": "Molecular genetics: DNA structure/function, transcription, translation, and regulation.",
+					"topics_may_include": [
+						"DNA replication, transcription, RNA processing",
+						"Translation, genetic code, mutations",
+						"Gene regulation mechanisms (prokaryotes/eukaryotes), biotechnology basics"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Natural Selection",
+					"keywords": [
+						"Evolution",
+						"Natural selection",
+						"Populations",
+						"Allele frequencies",
+						"Hardy–Weinberg equilibrium",
+						"Genetic drift",
+						"Gene flow",
+						"Mutation",
+						"Speciation"
+					],
+					"exam_weighting_mc": "13%–20%",
+					"description": "Evolutionary mechanisms, population genetics, speciation, and phylogenetics.",
+					"topics_may_include": [
+						"Natural selection, genetic drift, gene flow, mutation",
+						"Hardy–Weinberg equilibrium and application",
+						"Speciation processes and evolutionary trees"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Ecology",
+					"keywords": [
+						"Ecosystems",
+						"Energy flow",
+						"Food webs",
+						"Nutrient cycles",
+						"Population dynamics",
+						"Community ecology",
+						"Biomes",
+						"Conservation"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Interactions among organisms and with their environments, ecosystems, energy flow, and conservation.",
+					"topics_may_include": [
+						"Ecosystem structure and energy transfer (food webs, trophic levels)",
+						"Population ecology, carrying capacity, and community interactions",
+						"Biogeochemical cycles and human impacts on ecosystems"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APCHEM",
+			"course_name": "AP Chemistry",
+			"overview": "One-year introductory college general chemistry course organized into 9 commonly taught units spanning atomic to electrochemical concepts.",
+			"important_notes": "Use particulate representations and balanced units; emphasize stoichiometry, thermodynamics, equilibrium, kinetics, electrochemistry, and acid–base behavior. Distinguish strong vs weak electrolytes and typical lab/graph interpretations; avoid organic mechanisms and graduate-level quantum details.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-chemistry?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Atomic Structure and Properties",
+					"keywords": [
+						"Atomic structure",
+						"Periodic trends",
+						"Electron configuration",
+						"Orbital diagrams",
+						"Quantum numbers",
+						"Ionization energy",
+						"Electronegativity"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Atomic theory, electron configuration, periodic trends, and mole concept.",
+					"topics_may_include": [
+						"Atomic models, quantum numbers, electron configuration",
+						"Periodic trends: ionization energy, electronegativity, atomic radius",
+						"Mole concept and molar mass; mass spectrometry basics"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Compound Structure and Properties",
+					"keywords": [
+						"Ionic bonding",
+						"Covalent bonding",
+						"Metallic bonding",
+						"Lewis structures",
+						"VSEPR theory",
+						"Molecular geometry",
+						"Polarity",
+						"Intermolecular forces"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Bonding theories and molecular structure as determinants of physical and chemical properties.",
+					"topics_may_include": [
+						"Ionic vs covalent bonding, Lewis structures, resonance",
+						"VSEPR theory, hybridization, molecular polarity",
+						"Intermolecular forces and solids/liquids properties"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Properties of Substances and Mixtures",
+					"keywords": [
+						"Pure substances",
+						"Mixtures",
+						"Solubility",
+						"Molarity",
+						"Dilution",
+						"Colligative properties",
+						"Osmotic pressure",
+						"Gas laws"
+					],
+					"exam_weighting_mc": "18%–22%",
+					"description": "States of matter, solutions, colligative properties, and phase behavior.",
+					"topics_may_include": [
+						"Gas laws and kinetic molecular theory",
+						"Properties of liquids and solids, phase changes",
+						"Solutions, concentration units, solubility, colligative properties"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Chemical Reactions",
+					"keywords": [
+						"Reaction types",
+						"Balancing equations",
+						"Stoichiometry",
+						"Limiting reagents",
+						"Percent yield",
+						"Oxidation states",
+						"Redox reactions"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Types of chemical reactions, stoichiometry, and quantitative reaction analysis.",
+					"topics_may_include": [
+						"Balancing chemical equations, reaction stoichiometry",
+						"Limiting reagent, percent yield, reaction classification (redox, acid–base, precipitation)"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Kinetics",
+					"keywords": [
+						"Reaction rates",
+						"Rate laws",
+						"Order of reaction",
+						"Rate constants",
+						"Collision theory",
+						"Activation energy",
+						"Catalysts"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Rates of reaction, rate laws, reaction mechanisms, and factors affecting rates.",
+					"topics_may_include": [
+						"Rate laws and reaction order determination",
+						"Collision theory, activation energy, temperature dependence (Arrhenius concept)",
+						"Interpretation of rate data and mechanism inference"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Thermochemistry",
+					"keywords": [
+						"Heat and temperature",
+						"Calorimetry",
+						"Enthalpy",
+						"Thermochemical equations",
+						"Hess's law",
+						"Bond energy"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Energy changes in chemical processes, enthalpy, calorimetry, and heat transfer.",
+					"topics_may_include": [
+						"Endothermic vs exothermic processes, enthalpy changes",
+						"Calorimetry and heat capacity calculations",
+						"Hess’s Law and enthalpy of formation"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Equilibrium",
+					"keywords": [
+						"Equilibrium constant",
+						"Reaction quotient",
+						"Le Chatelier's principle",
+						"Equilibrium calculations",
+						"Shifts in equilibrium"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Chemical equilibrium concepts, equilibrium constants, Le Chatelier’s principle.",
+					"topics_may_include": [
+						"Equilibrium constant expressions (Kc, Kp)",
+						"Solving equilibrium problems, ICE tables",
+						"Le Chatelier’s principle and shifts in equilibrium"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Acids and Bases",
+					"keywords": [
+						"Acid-base definitions",
+						"pH and pOH",
+						"Strong acids and bases",
+						"Weak acids and bases",
+						"Buffers",
+						"Titrations",
+						"Hydrolysis"
+					],
+					"exam_weighting_mc": "11%–15%",
+					"description": "Acid–base theories, pH/pOH calculations, titrations, buffers, and polyprotic species.",
+					"topics_may_include": [
+						"Strong vs weak acids/bases, pH and pOH calculations",
+						"Buffer systems and Henderson–Hasselbalch equation",
+						"Titration curves and equivalence point analysis"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Thermodynamics and Electrochemistry",
+					"keywords": [
+						"Entropy",
+						"Free energy",
+						"Spontaneous reactions",
+						"Gibbs free energy",
+						"Galvanic cells",
+						"Cell potential",
+						"Electroplating"
+					],
+					"exam_weighting_mc": "7%–9%",
+					"description": "Entropy, Gibbs free energy, spontaneity, and redox electrochemistry including galvanic/electrolytic cells.",
+					"topics_may_include": [
+						"Entropy and Gibbs free energy; relationship to equilibrium",
+						"Electrochemical cells: cell notation, standard reduction potentials",
+						"Calculations of cell potential and Faraday’s laws (basic)"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APPHYS1",
+			"course_name": "AP Physics 1",
+			"overview": "Algebra-based introductory college-level physics covering mechanics and basic waves/fluids, organized into 8 commonly taught units.",
+			"important_notes": "Algebra-based only—no calculus. Emphasize free-body diagrams, sign conventions, unit consistency, and qualitative reasoning. Focus on kinematics/dynamics, energy/momentum, rotation/torque, SHM, waves, and basic circuits/fluids; avoid AP Physics 2 or C-only topics.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-1?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Kinematics",
+					"keywords": [
+						"Displacement",
+						"Velocity",
+						"Acceleration",
+						"Kinematic equations (v = v0 + a t; Δx = v0 t + 1/2 a t^2; v^2 = v0^2 + 2 a Δx)",
+						"Constant acceleration (uniform a)",
+						"Projectile motion",
+						"Circular motion",
+						"No calculus"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Describing motion in one and two dimensions: displacement, velocity, acceleration, and representations. Use 10 for gravity.",
+					"topics_may_include": [
+						"Scalars and vectors, displacement vs distance",
+						"Constant and variable acceleration motion equations",
+						"Projectile motion and relative motion",
+						"Graphical representations of motion"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Force and Translational Dynamics",
+					"keywords": [
+						"Newton's first law",
+						"Newton's second law",
+						"Newton's third law",
+						"Friction",
+						"Applied forces",
+						"Free body diagrams"
+					],
+					"exam_weighting_mc": "18%–23%",
+					"description": "Newton’s laws, free-body diagrams, friction, circular motion, and dynamics of systems.",
+					"topics_may_include": [
+						"Newton’s three laws of motion",
+						"Free-body diagrams and solving force problems",
+						"Friction (static and kinetic), tension, normal force",
+						"Circular motion and centripetal acceleration"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Work, Energy, and Power",
+					"keywords": [
+						"Work",
+						"Kinetic energy",
+						"Potential energy",
+						"Work-energy theorem",
+						"Conservation of energy",
+						"Power"
+					],
+					"exam_weighting_mc": "18%–23%",
+					"description": "Work–energy theorem, kinetic/potential energy, conservation of energy, and power calculations.",
+					"topics_may_include": [
+						"Work definition and calculation",
+						"Kinetic and potential energy, conservative forces",
+						"Energy conservation and energy diagrams",
+						"Power and energy transfer"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Linear Momentum",
+					"keywords": [
+						"Momentum",
+						"Impulse",
+						"Conservation of momentum",
+						"Elastic collisions",
+						"Inelastic collisions"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Momentum, impulse, and conservation in collisions (elastic and inelastic).",
+					"topics_may_include": [
+						"Linear momentum and impulse",
+						"Momentum conservation in isolated systems",
+						"Elastic vs inelastic collisions and center-of-mass concepts"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Torque and Rotational Dynamics",
+					"keywords": [
+						"Angular displacement",
+						"Angular velocity",
+						"Angular acceleration",
+						"Torque",
+						"Moment of inertia",
+						"Rotational dynamics"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Rotational kinematics and dynamics: torque, rotational inertia, and rotational analogs of linear motion.",
+					"topics_may_include": [
+						"Torque, lever arm, and rotational equilibrium",
+						"Moment of inertia concepts and angular acceleration",
+						"Relationship between torque and angular acceleration"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Energy and Momentum of Rotating Systems",
+					"keywords": [
+						"Rotational kinetic energy",
+						"Rotational work",
+						"Angular momentum",
+						"Conservation of angular momentum"
+					],
+					"exam_weighting_mc": "5%–8%",
+					"description": "Rotational energy, angular momentum, and conservation in rotating systems.",
+					"topics_may_include": [
+						"Rotational kinetic energy, work by torques",
+						"Angular momentum and its conservation"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Oscillations",
+					"keywords": [
+						"Simple harmonic motion",
+						"Spring systems",
+						"Pendulums",
+						"Energy in oscillations",
+						"Damping"
+					],
+					"exam_weighting_mc": "5%–8%",
+					"description": "Simple harmonic motion, pendulums, and mass–spring systems.",
+					"topics_may_include": [
+						"Simple harmonic motion equations and energy in oscillators",
+						"Period and frequency of mass–spring systems and pendulums",
+						"Damping and qualitative behavior"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Fluids",
+					"keywords": [
+						"Density",
+						"Pressure",
+						"Buoyancy",
+						"Archimedes' principle",
+						"Continuity equation",
+						"Bernoulli's equation"
+					],
+					"exam_weighting_mc": "10%–15%",
+					"description": "Fluid statics and dynamics including pressure, buoyancy, and continuity/Bernoulli applications.",
+					"topics_may_include": [
+						"Pressure and hydrostatic laws",
+						"Archimedes’ principle and buoyant force",
+						"Continuity equation and Bernoulli’s principle (qualitative)"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APPHYS2",
+			"course_name": "AP Physics 2",
+			"overview": "Continuation of algebra-based physics focusing on fluids, thermodynamics, electricity, magnetism, optics, waves, and modern physics; organized into seven commonly taught units.",
+			"important_notes": "Algebra-based only—no calculus. Cover fluids, thermo, electrostatics, circuits (RC), magnetism, optics, waves, and introductory modern physics. Use correct units and sign conventions; keep math to algebra/trig and avoid Physics C-style derivations.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-2?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 9,
+					"unit_title": "Thermodynamics",
+					"exam_weighting_mc": "15%–18%",
+					"description": "Heat, temperature, heat transfer, and the laws of thermodynamics.",
+					"topics_may_include": [
+						"Temperature vs heat, calorimetry",
+						"First law of thermodynamics and internal energy",
+						"Heat engines and efficiency (qualitative)"
+					]
+				},
+				{
+					"unit_number": 10,
+					"unit_title": "Electric Force, Field, and Potential",
+					"exam_weighting_mc": "15%–18%",
+					"description": "Electrostatics: Coulomb’s law, electric field and potential, and superposition.",
+					"topics_may_include": [
+						"Coulomb’s law and electric field calculations",
+						"Electric potential and potential energy of charge configurations",
+						"Conductors and insulators (qualitative)"
+					]
+				},
+				{
+					"unit_number": 11,
+					"unit_title": "Electric Circuits",
+					"exam_weighting_mc": "15%–18%",
+					"description": "DC circuit analysis: current, resistance, Ohm’s law, series and parallel networks.",
+					"topics_may_include": [
+						"Ohm’s law, Kirchhoff’s rules (basic)",
+						"Series and parallel resistor networks",
+						"Capacitors in circuits (qualitative and basic quantitative)"
+					]
+				},
+				{
+					"unit_number": 12,
+					"unit_title": "Magnetism and Electromagnetism",
+					"exam_weighting_mc": "12%–15%",
+					"description": "Magnetic fields, forces on moving charges and currents, and basic electromagnetic induction principles.",
+					"topics_may_include": [
+						"Magnetic field of currents, force on moving charges",
+						"Biot–Savart and right-hand rule (qualitative use)",
+						"Electromagnetic induction overview (Faraday, Lenz)"
+					]
+				},
+				{
+					"unit_number": 13,
+					"unit_title": "Geometric Optics",
+					"exam_weighting_mc": "12%–15%",
+					"description": "Ray optics: reflection, refraction, lenses, mirrors, and image formation.",
+					"topics_may_include": [
+						"Law of reflection and refraction (Snell’s law)",
+						"Lens and mirror equations, magnification",
+						"Ray tracing for simple systems"
+					]
+				},
+				{
+					"unit_number": 14,
+					"unit_title": "Waves, Sound, and Physical Optics",
+					"exam_weighting_mc": "12%–15%",
+					"description": "Wave properties, interference, superposition, standing waves, and sound.",
+					"topics_may_include": [
+						"Wave parameters: wavelength, frequency, speed, amplitude",
+						"Interference and superposition, standing waves",
+						"Sound waves, Doppler effect (qualitative)"
+					]
+				},
+				{
+					"unit_number": 15,
+					"unit_title": "Modern Physics",
+					"exam_weighting_mc": "12%–15%",
+					"description": "Introductory modern physics topics such as quantum phenomena and atomic models.",
+					"topics_may_include": [
+						"Photoelectric effect and particle–wave duality (introductory)",
+						"Atomic models and basic nuclear concepts"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APPHYSC-M",
+			"course_name": "AP Physics C: Mechanics",
+			"overview": "Calculus-based mechanics course covering kinematics, Newtonian dynamics, energy, momentum, rotation, oscillations; commonly taught as college first-semester physics for STEM majors.",
+			"important_notes": "Calculus-based: derivatives/integrals are appropriate. Emphasize vector notation, sign conventions, and free-body diagrams. Focus on mechanics topics (kinematics, dynamics, energy, momentum, rotation, oscillations, gravitation) and avoid electricity/magnetism content here.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-physics-c-mechanics?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Kinematics",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Position, velocity, and acceleration in one and two dimensions with calculus-based formulations.",
+					"topics_may_include": [
+						"Vector kinematics, projectile motion with calculus",
+						"Differential relations among position, velocity, acceleration"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Force and Translational Dynamics",
+					"exam_weighting_mc": "20%–25%",
+					"description": "Newton’s laws applied with calculus; forces, center of mass, circular motion, and gravitation.",
+					"topics_may_include": [
+						"Newton’s laws in calculus form, free-body diagrams",
+						"Systems and center of mass, gravitation, circular dynamics"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Work, Energy, and Power",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Work–energy theorem, potential energy functions, and conservation principles using calculus.",
+					"topics_may_include": [
+						"Work integrals, conservative forces, energy conservation",
+						"Gravitational/elastic potential energy and work–energy relationships"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Systems of Particles and Linear Momentum",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Momentum conservation for particles and systems, collisions, and impulse with calculus-based treatment.",
+					"topics_may_include": [
+						"Linear momentum, impulse, center-of-mass motion",
+						"Elastic and inelastic collisions in one and two dimensions"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Rotation",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Rotational kinematics and dynamics, torque, moment of inertia, and rotational energy.",
+					"topics_may_include": [
+						"Angular kinematics, torque, rotational analogs of Newton’s laws",
+						"Moment of inertia calculations and rotational kinetic energy"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Oscillations and Gravitation",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Simple harmonic motion and gravitational systems analyzed with calculus tools.",
+					"topics_may_include": [
+						"Simple harmonic motion derivations, pendulums, energy in oscillators",
+						"Orbital motion and gravitational potential in calculus context"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APPHYSC-E",
+			"course_name": "AP Physics C: E&M",
+			"overview": "Calculus-based course on electrostatics, circuits, magnetism, and electromagnetic induction; typically taught as second-semester calculus-based physics.",
+			"important_notes": "Calculus-based: line/surface integrals and derivatives are appropriate. Emphasize Gauss’s/Ampère’s laws, potential/field relationships, RC transients, induction (Faraday/Lenz), and field superposition. Use vector notation and units; avoid optics/modern physics which belong to Physics 2.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 8,
+					"unit_title": "Electric Charges, Fields, and Gauss's Law",
+					"exam_weighting_mc": "15%–25%",
+					"description": "Coulomb’s law, electric field computations, and application of Gauss’s Law to symmetric charge distributions.",
+					"topics_may_include": [
+						"Coulomb’s law and superposition for point charges",
+						"Electric field of continuous charge distributions (calculus-based)",
+						"Electric flux and Gauss’s Law applications"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Electric Potential",
+					"exam_weighting_mc": "10%–20%",
+					"description": "Electric potential and potential energy due to charge distributions; work and energy perspectives.",
+					"topics_may_include": [
+						"Electric potential of point charges and continuous distributions",
+						"Relation between electric field and potential (gradients), potential energy"
+					]
+				},
+				{
+					"unit_number": 10,
+					"unit_title": "Conductors and Capacitors",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Behavior of conductors, charging, capacitors, dielectrics, and related energy storage concepts.",
+					"topics_may_include": [
+						"Electrostatics in conductors, shielding, surface charge distribution",
+						"Parallel plate capacitors, capacitance, dielectrics, energy stored in capacitors"
+					]
+				},
+				{
+					"unit_number": 11,
+					"unit_title": "Electric Circuits",
+					"exam_weighting_mc": "15%–25%",
+					"description": "DC circuit analysis including capacitance and energy considerations; calculus where needed for charge/current relationships.",
+					"topics_may_include": [
+						"Current, resistance, Ohm’s law; RC circuits and transient analysis",
+						"Series and parallel circuits and energy calculations"
+					]
+				},
+				{
+					"unit_number": 12,
+					"unit_title": "Magnetic Fields and Electromagnetism",
+					"exam_weighting_mc": "10%–20%",
+					"description": "Magnetic forces on charges and currents, fields from currents, and Ampère/Biot–Savart laws.",
+					"topics_may_include": [
+						"Lorentz force on moving charges, force on current-carrying wires",
+						"Magnetic field of a long straight wire, loop; Biot–Savart and Ampère’s Law (applications)"
+					]
+				},
+				{
+					"unit_number": 13,
+					"unit_title": "Electromagnetic Induction",
+					"exam_weighting_mc": "10%–20%",
+					"description": "Faraday’s Law, Lenz’s Law, inductance, and basic AC/DC induction phenomena.",
+					"topics_may_include": [
+						"Faraday’s Law of induction, induced emf, Lenz’s Law",
+						"Inductance, LR circuits, and energy in magnetic fields"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APENVSCI",
+			"course_name": "AP Environmental Science",
+			"overview": "Interdisciplinary environmental science course covering ecosystems, resources, pollution, and global change; organized into 9 commonly taught units.",
+			"important_notes": "Use real-world environmental data/graphs and common units (ppm, ppb, kWh, hectares). Emphasize systems thinking: energy flow, biogeochemical cycles, population dynamics, pollution sources/mitigation, and policy trade-offs. Calculations should be simple (rates, proportions); avoid heavy chemistry/physics derivations.",
+			"sources": [
+				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-environmental-science?utm_source=openai))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "The Living World: Ecosystems",
+					"exam_weighting_mc": "6%–8%",
+					"description": "Ecosystem structure, energy flow, productivity, and biogeochemical cycles.",
+					"topics_may_include": [
+						"Ecosystem concepts, food chains/webs, trophic levels",
+						"Primary productivity, energy transfer (10% rule)",
+						"Carbon, nitrogen, phosphorus, and water cycles"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "The Living World: Biodiversity",
+					"exam_weighting_mc": "6%–8%",
+					"description": "Importance of biodiversity, species interactions, and conservation principles.",
+					"topics_may_include": [
+						"Species diversity and ecosystem services",
+						"Island biogeography, ecological tolerance, and resilience"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Populations",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Population ecology, growth models, carrying capacity, and human population dynamics.",
+					"topics_may_include": [
+						"Population growth models (exponential, logistic)",
+						"Carrying capacity, population regulation, age structure"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Earth Systems and Resources",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Geological processes, soil, freshwater resources, and resource cycling.",
+					"topics_may_include": [
+						"Plate tectonics, rock cycle, soil formation",
+						"Water resources, groundwater, watershed management"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Land and Water Use",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Human uses of land and water, agriculture, urban development, and sustainability issues.",
+					"topics_may_include": [
+						"Agricultural practices, irrigation, sustainable land use",
+						"Urbanization, land-use change, wetland and riparian impacts"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Energy Resources and Consumption",
+					"exam_weighting_mc": "10%–15%",
+					"description": "Energy types, extraction, consumption patterns, and alternatives/renewables.",
+					"topics_may_include": [
+						"Fossil fuels, nuclear energy, renewable energy sources",
+						"Energy efficiency, life-cycle impacts, and trade-offs"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Atmospheric Pollution",
+					"exam_weighting_mc": "7%–10%",
+					"description": "Air pollution sources, atmospheric chemistry, smog, and mitigation strategies.",
+					"topics_may_include": [
+						"Primary and secondary pollutants, photochemical smog",
+						"Acid rain, indoor air pollution, control technologies"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Aquatic and Terrestrial Pollution",
+					"exam_weighting_mc": "7%–10%",
+					"description": "Pollution impacts on terrestrial and aquatic ecosystems, waste management, and remediation.",
+					"topics_may_include": [
+						"Sources of pollution, point vs non-point sources",
+						"Solid waste disposal, sewage treatment, eutrophication, bioaccumulation"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Global Change",
+					"exam_weighting_mc": "15%–20%",
+					"description": "Large-scale environmental changes including climate change, ozone depletion, invasive species, and mitigation/adaptation.",
+					"topics_may_include": [
+						"Climate change science, greenhouse gases, mitigation and adaptation",
+						"Ozone depletion, ocean acidification, invasive species and global impacts"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APPRECALC",
+			"course_name": "AP Precalculus",
+			"overview": "College-level precalculus emphasizing function families, modeling, trigonometric/polar analysis, and advanced representations; organized into 4 commonly taught units.",
+			"important_notes": "Focus on functions and modeling with clear interpretation of multiple representations (symbolic, graphical, tabular, verbal). Emphasize precision, domain/range constraints, and reasonableness of models. Unit 4 topics are part of course learning but are not assessed on the AP Exam.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-precalculus))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Polynomial and Rational Functions",
+					"description": "Analysis of polynomial and rational functions through algebraic structure, transformations, zeros, rates of change, and modeling.",
+					"topics_may_include": [
+						"Factoring, synthetic division, and solving polynomial equations",
+						"Behavior near vertical/horizontal/slant asymptotes and discontinuities",
+						"Modeling with polynomial and rational functions in context"
+					],
+					"keywords": [
+						"Polynomial functions",
+						"Rational functions",
+						"Zeros and multiplicity",
+						"Asymptotes and end behavior",
+						"Function transformations",
+						"Equivalent representations"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Exponential and Logarithmic Functions",
+					"description": "Exponential and logarithmic functions, inverses, equations, and applications to growth, decay, and scaling.",
+					"topics_may_include": [
+						"Solving exponential and logarithmic equations analytically and graphically",
+						"Interpreting parameters in growth/decay models including doubling/half-life",
+						"Using logarithmic scales and transformations to compare rates of change"
+					],
+					"keywords": [
+						"Exponential growth and decay",
+						"Logarithmic functions",
+						"Inverse functions",
+						"Base e",
+						"Logarithm properties",
+						"Linearization"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Trigonometric and Polar Functions",
+					"description": "Trigonometric and polar representations with emphasis on periodic behavior, identities, and modeling.",
+					"topics_may_include": [
+						"Graphing and transforming sine, cosine, tangent, and inverse trig functions",
+						"Using identities and equations to simplify and solve trigonometric expressions",
+						"Modeling cyclic phenomena and interpreting polar curves"
+					],
+					"keywords": [
+						"Unit circle",
+						"Trigonometric functions",
+						"Periodicity and amplitude",
+						"Trigonometric identities",
+						"Inverse trig",
+						"Polar coordinates"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Functions Involving Parameters, Vectors, and Matrices",
+					"description": "Functions with parameters, vectors, and matrices for advanced representation and modeling (course-only AP Precalculus content).",
+					"topics_may_include": [
+						"Modeling with parameterized function families and interpreting parameter effects",
+						"Vector magnitude, direction, components, and geometric interpretation",
+						"Matrix methods for solving systems and representing transformations"
+					],
+					"keywords": [
+						"Parametric representations",
+						"Vectors in the plane",
+						"Matrix operations",
+						"Systems of equations",
+						"Transformations",
+						"Model interpretation"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APENGLANG",
+			"course_name": "AP English Language",
+			"overview": "College-level rhetoric and composition course centered on analysis of nonfiction arguments and evidence-based writing; organized into 9 commonly taught units.",
+			"important_notes": "Prioritize rhetorical analysis, argument quality, and synthesis of sources. Keep prompts grounded in claims, evidence, reasoning, and audience/purpose rather than literary interpretation frameworks used in AP Literature.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-english-language-and-composition))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "The Rhetorical Situation",
+					"description": "Rhetorical situation analysis focused on purpose, audience, exigence, and context in nonfiction.",
+					"topics_may_include": [
+						"Identifying purpose and constraints in argumentative and persuasive texts",
+						"Analyzing how context and audience shape rhetorical choices",
+						"Evaluating credibility and stance in nonfiction prose"
+					],
+					"keywords": [
+						"Rhetorical situation",
+						"Exigence",
+						"Audience",
+						"Purpose",
+						"Context",
+						"Speaker persona"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Rhetorical Appeals",
+					"description": "How writers use rhetorical appeals and strategies to build effective arguments.",
+					"topics_may_include": [
+						"Distinguishing and evaluating claims supported by logical, ethical, and emotional appeals",
+						"Analyzing tone, word choice, and arrangement to influence audience",
+						"Comparing appeal strategies across genres and time periods"
+					],
+					"keywords": ["Ethos", "Pathos", "Logos", "Appeals", "Diction", "Tone"]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Claims and Evidence",
+					"description": "Developing and evaluating claims through evidence quality, relevance, and reasoning.",
+					"topics_may_include": [
+						"Assessing sufficiency and credibility of evidence in arguments",
+						"Connecting textual evidence to defensible claims and interpretations",
+						"Addressing counterarguments and limitations in reasoning"
+					],
+					"keywords": [
+						"Claim",
+						"Evidence",
+						"Line of reasoning",
+						"Commentary",
+						"Counterclaim",
+						"Sourcing"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Reasoning and Organization",
+					"description": "Reasoning patterns and organizational structures that strengthen argument clarity and coherence.",
+					"topics_may_include": [
+						"Evaluating argument structure and logical flow",
+						"Using rhetorical organization patterns to support thesis development",
+						"Diagnosing logical fallacies and weak warrants"
+					],
+					"keywords": [
+						"Organization",
+						"Logical progression",
+						"Cause and effect",
+						"Comparison",
+						"Concession and refutation",
+						"Transitions"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Style",
+					"description": "Stylistic choices that shape voice, clarity, emphasis, and rhetorical effectiveness.",
+					"topics_may_include": [
+						"Analyzing syntax and sentence-level choices for rhetorical impact",
+						"Revising prose for precision, concision, and persuasive force",
+						"Using figurative and rhetorical devices strategically in argument"
+					],
+					"keywords": ["Style", "Syntax", "Diction", "Imagery", "Parallelism", "Sentence variety"]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Argumentation",
+					"description": "Construction of original arguments with defensible claims, evidence, and reasoning.",
+					"topics_may_include": [
+						"Building nuanced claims that account for complexity",
+						"Integrating evidence and commentary to sustain line of reasoning",
+						"Evaluating and refining arguments for coherence and audience impact"
+					],
+					"keywords": [
+						"Argumentation",
+						"Thesis",
+						"Warrant",
+						"Counterargument",
+						"Refutation",
+						"Qualification"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Research and Synthesis",
+					"description": "Research-based synthesis of multiple sources into a coherent, evidence-driven argument.",
+					"topics_may_include": [
+						"Selecting and integrating sources to support a unified argument",
+						"Comparing perspectives and reconciling conflicting evidence",
+						"Maintaining source attribution and avoiding patchwork summary"
+					],
+					"keywords": [
+						"Synthesis",
+						"Source integration",
+						"Citation",
+						"Corroboration",
+						"Perspective",
+						"Evidence selection"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Writing Process",
+					"description": "Writing as an iterative process from planning to drafting and revision.",
+					"topics_may_include": [
+						"Using planning strategies to align claims, evidence, and structure",
+						"Revising drafts for argument strength and rhetorical effectiveness",
+						"Editing for style, grammar, and clarity without weakening voice"
+					],
+					"keywords": [
+						"Prewriting",
+						"Drafting",
+						"Revision",
+						"Editing",
+						"Rhetorical purpose",
+						"Audience awareness"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Revision and Reflection",
+					"description": "Reflective revision practices to improve rhetorical choices and argument quality over time.",
+					"topics_may_include": [
+						"Using feedback to prioritize high-impact revisions",
+						"Reflecting on rhetorical decisions and their audience effects",
+						"Transferring effective writing moves across tasks and genres"
+					],
+					"keywords": [
+						"Metacognition",
+						"Revision strategy",
+						"Reflection",
+						"Transfer",
+						"Feedback",
+						"Self-assessment"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APENGLIT",
+			"course_name": "AP English Literature",
+			"overview": "College-level literary analysis course organized into 9 genre-based units across short fiction, poetry, and longer fiction/drama.",
+			"important_notes": "Use close reading and defensible literary claims supported by textual evidence. Emphasize interpretation, figurative language, structure, and narrative/poetic techniques; avoid formulaic plot summary.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-english-literature-and-composition))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Short Fiction I",
+					"description": "Close reading of short fiction with emphasis on narrative techniques and interpretation.",
+					"topics_may_include": [
+						"Analyzing narrative voice, structure, and point of view",
+						"Interpreting characterization and conflict to build thematic claims",
+						"Using textual evidence to support literary analysis paragraphs"
+					],
+					"keywords": [
+						"Narrative perspective",
+						"Characterization",
+						"Setting",
+						"Conflict",
+						"Symbolism",
+						"Theme"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Poetry I",
+					"description": "Interpretation of poetry through form, sound, imagery, and figurative language.",
+					"topics_may_include": [
+						"Analyzing how diction and imagery shape tone and meaning",
+						"Interpreting figurative language and sound devices in context",
+						"Comparing poetic forms and their rhetorical/literary effects"
+					],
+					"keywords": ["Imagery", "Figurative language", "Tone", "Poetic form", "Meter", "Syntax"]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Longer Fiction or Drama I",
+					"description": "Analysis of longer fiction or drama with sustained attention to structure and meaning.",
+					"topics_may_include": [
+						"Tracking how plot and structure develop central conflicts",
+						"Analyzing dramatic conventions or narrative framing in longer works",
+						"Building defensible arguments from patterns across passages"
+					],
+					"keywords": [
+						"Plot structure",
+						"Dramatic technique",
+						"Motif",
+						"Character arc",
+						"Context",
+						"Interpretive claim"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Short Fiction II",
+					"description": "Advanced short fiction analysis with deeper attention to complexity and ambiguity.",
+					"topics_may_include": [
+						"Evaluating ambiguous narration and unreliable perspectives",
+						"Interpreting irony and subtext in relation to theme",
+						"Comparing short fiction texts for shared or divergent concerns"
+					],
+					"keywords": [
+						"Ambiguity",
+						"Irony",
+						"Narrative reliability",
+						"Subtext",
+						"Motif",
+						"Interpretation"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Poetry II",
+					"description": "Poetry analysis at greater complexity, including shifts, structure, and argument of the poem.",
+					"topics_may_include": [
+						"Tracing shifts in tone, speaker stance, and argument",
+						"Analyzing line breaks, syntax, and form as meaning-making tools",
+						"Interpreting allusions and connotations with textual support"
+					],
+					"keywords": [
+						"Volta",
+						"Lineation",
+						"Form and structure",
+						"Speaker",
+						"Connotation",
+						"Allusion"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Longer Fiction or Drama II",
+					"description": "Sustained interpretation of longer fiction/drama with thematic and structural synthesis.",
+					"topics_may_include": [
+						"Synthesizing recurring symbols and motifs across chapters/scenes",
+						"Analyzing character relationships and their thematic significance",
+						"Developing thesis-driven essays on complex literary works"
+					],
+					"keywords": [
+						"Theme development",
+						"Foil",
+						"Dramatic irony",
+						"Narrative design",
+						"Symbolic pattern",
+						"Complex characterization"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Short Fiction III",
+					"description": "Capstone short fiction analysis emphasizing comparative and argumentative sophistication.",
+					"topics_may_include": [
+						"Comparing authorial choices across short fiction passages",
+						"Developing nuanced interpretations with qualified claims",
+						"Integrating quotations effectively into literary argument"
+					],
+					"keywords": [
+						"Comparative analysis",
+						"Narrative method",
+						"Perspective",
+						"Interpretive tension",
+						"Evidence integration",
+						"Literary argument"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Poetry III",
+					"description": "Capstone poetry interpretation with precision in language, form, and thematic inference.",
+					"topics_may_include": [
+						"Examining prosody and sound for rhetorical and thematic effect",
+						"Interpreting layered figurative language in complex poems",
+						"Constructing evidence-based thesis statements for poetry essays"
+					],
+					"keywords": [
+						"Prosody",
+						"Figurative density",
+						"Symbolic pattern",
+						"Structure",
+						"Voice",
+						"Theme"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Longer Fiction or Drama III",
+					"description": "Final synthesis for longer fiction/drama emphasizing thesis development and textual substantiation.",
+					"topics_may_include": [
+						"Formulating defensible thesis statements about literary complexity",
+						"Sustaining line of reasoning across multi-paragraph analysis",
+						"Selecting evidence that demonstrates structural and thematic patterns"
+					],
+					"keywords": [
+						"Literary complexity",
+						"Argument thesis",
+						"Textual support",
+						"Interpretive coherence",
+						"Contextual reading",
+						"Thematic synthesis"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APUSH",
+			"course_name": "AP US History",
+			"overview": "Survey of U.S. history from pre-Columbian societies to the present, emphasizing historical reasoning, argumentation, and evidence across 9 period-based units.",
+			"important_notes": "Keep responses historically situated with precise dates, developments, and contextualization. Use evidence and causation/comparison/continuity-change reasoning; avoid presentist claims or unsupported generalizations.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-united-states-history))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Period 1: 1491–1607",
+					"description": "Native societies, European contact, and early Atlantic interactions through 1607.",
+					"topics_may_include": [
+						"Regional diversity of Indigenous societies before European contact",
+						"Economic and demographic effects of the Columbian Exchange",
+						"Early imperial competition and labor practices in the Americas"
+					],
+					"keywords": [
+						"Columbian Exchange",
+						"Native American societies",
+						"Spanish colonization",
+						"Atlantic world",
+						"Labor systems",
+						"Cultural encounters"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Period 2: 1607–1754",
+					"description": "British colonial development and imperial competition, 1607–1754.",
+					"topics_may_include": [
+						"Comparing New England, Middle, and Southern colonies",
+						"Imperial governance, trade systems, and colonial resistance patterns",
+						"Social and religious movements shaping colonial identity"
+					],
+					"keywords": [
+						"Colonial regions",
+						"Mercantilism",
+						"Salutary neglect",
+						"Enslavement",
+						"Great Awakening",
+						"Colonial society"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Period 3: 1754–1800",
+					"description": "Revolutionary era and early republic, 1754–1800.",
+					"topics_may_include": [
+						"Causes and consequences of colonial resistance and independence",
+						"Debates over constitutional ratification and federal power",
+						"Development of party politics and early national institutions"
+					],
+					"keywords": [
+						"American Revolution",
+						"Articles of Confederation",
+						"Constitution",
+						"Federalists",
+						"Jeffersonian republic",
+						"Early foreign policy"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Period 4: 1800–1848",
+					"description": "Expansion, market change, and reform in the early 19th century, 1800–1848.",
+					"topics_may_include": [
+						"Economic transformation and transportation revolutions",
+						"Political democratization and limits of participation",
+						"Reform efforts related to abolition, women, and social institutions"
+					],
+					"keywords": [
+						"Market Revolution",
+						"Jacksonian democracy",
+						"Westward expansion",
+						"Reform movements",
+						"Second Great Awakening",
+						"Sectionalism"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Period 5: 1844–1877",
+					"description": "Sectional conflict, Civil War, and Reconstruction, 1844–1877.",
+					"topics_may_include": [
+						"Territorial expansion and intensification of slavery debates",
+						"Military, political, and social turning points of the Civil War",
+						"Reconstruction policies and contested outcomes for citizenship rights"
+					],
+					"keywords": [
+						"Manifest Destiny",
+						"Civil War",
+						"Emancipation",
+						"Reconstruction",
+						"Federal authority",
+						"Race relations"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Period 6: 1865–1898",
+					"description": "Industrialization, migration, and Gilded Age transformations, 1865–1898.",
+					"topics_may_include": [
+						"Growth of corporations, technology, and labor organization",
+						"Immigration patterns and urban social change",
+						"Government policy toward farmers, workers, and western peoples"
+					],
+					"keywords": [
+						"Industrial capitalism",
+						"Labor conflict",
+						"Immigration",
+						"Urbanization",
+						"Populism",
+						"Westward policy"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Period 7: 1890–1945",
+					"description": "Progressivism, global conflict, and economic crisis, 1890–1945.",
+					"topics_may_include": [
+						"Reform politics and expanded governmental role",
+						"U.S. participation in global wars and foreign policy shifts",
+						"Economic collapse and policy responses in the New Deal era"
+					],
+					"keywords": [
+						"Progressive Era",
+						"Imperialism",
+						"World Wars",
+						"Great Depression",
+						"New Deal",
+						"Civil liberties"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Period 8: 1945–1980",
+					"description": "Cold War America, domestic change, and social movements, 1945–1980.",
+					"topics_may_include": [
+						"Cold War strategy and geopolitical confrontations",
+						"Postwar prosperity, culture, and demographic shifts",
+						"Civil rights, feminist, and other social movements"
+					],
+					"keywords": [
+						"Containment",
+						"Civil Rights Movement",
+						"Suburbanization",
+						"Vietnam War",
+						"Great Society",
+						"Conservative resurgence"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Period 9: 1980–Present",
+					"description": "Late 20th-century to contemporary U.S. developments, 1980–present.",
+					"topics_may_include": [
+						"Economic and political realignment since the 1980s",
+						"Globalization and U.S. international role after the Cold War",
+						"Shifts in domestic politics, society, and culture in recent decades"
+					],
+					"keywords": [
+						"Reagan era",
+						"Globalization",
+						"Technology economy",
+						"Post-Cold War policy",
+						"Partisanship",
+						"Demographic change"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APWORLD",
+			"course_name": "AP World History",
+			"overview": "Modern world history (c. 1200 to present) focusing on global patterns, state-building, trade, ideas, and conflict across 9 units.",
+			"important_notes": "Center global interconnections and comparisons across regions. Anchor claims in period-specific developments and use historical reasoning (causation, comparison, continuity/change) with concrete evidence.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-world-history-modern))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "The Global Tapestry",
+					"description": "State formation and cultural developments across major regions c. 1200–1450.",
+					"topics_may_include": [
+						"Comparing political systems in East Asia, Islamic states, and Europe",
+						"Role of religion and ideology in legitimizing authority",
+						"Continuities and changes in social hierarchies across regions"
+					],
+					"keywords": [
+						"Song China",
+						"Dar al-Islam",
+						"Feudal Europe",
+						"State-building",
+						"Belief systems",
+						"Cultural exchange"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Networks of Exchange",
+					"description": "Transregional networks linking Afro-Eurasia and beyond c. 1200–1450.",
+					"topics_may_include": [
+						"Commercial practices and innovations across major trade routes",
+						"Effects of exchange on religions, languages, and technologies",
+						"Disease transmission and demographic consequences"
+					],
+					"keywords": [
+						"Silk Roads",
+						"Indian Ocean trade",
+						"Trans-Saharan trade",
+						"Diasporic communities",
+						"Technology transfer",
+						"Cultural diffusion"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Land-Based Empires",
+					"description": "Gunpowder empires and imperial governance c. 1450–1750.",
+					"topics_may_include": [
+						"Administrative strategies used by land-based empires",
+						"Methods of military expansion and state consolidation",
+						"Relations between rulers, elites, and subject populations"
+					],
+					"keywords": [
+						"Ottoman Empire",
+						"Safavid Empire",
+						"Mughal Empire",
+						"Qing expansion",
+						"Imperial bureaucracy",
+						"Religious tolerance/intolerance"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Transoceanic Interconnections",
+					"description": "Maritime empires and global exchange c. 1450–1750.",
+					"topics_may_include": [
+						"European maritime expansion and imperial competition",
+						"Economic and ecological effects of Atlantic and Pacific exchanges",
+						"Labor systems including coerced and enslaved labor"
+					],
+					"keywords": [
+						"Columbian Exchange",
+						"Mercantilism",
+						"Atlantic slave trade",
+						"Joint-stock companies",
+						"Colonial labor systems",
+						"Silver flows"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Revolutions",
+					"description": "Atlantic revolutions and industrial transformation c. 1750–1900.",
+					"topics_may_include": [
+						"Political revolutions and their ideological foundations",
+						"Industrialization’s economic and social consequences",
+						"Responses to imperialism and changing global power"
+					],
+					"keywords": [
+						"Enlightenment",
+						"Atlantic revolutions",
+						"Nationalism",
+						"Industrial Revolution",
+						"Imperial expansion",
+						"Social reform"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Consequences of Industrialization",
+					"description": "Industrial-era imperialism, migration, and social change c. 1750–1900.",
+					"topics_may_include": [
+						"Global labor migrations and changing demographic patterns",
+						"Expansion of empire and resistance movements",
+						"Industrial society, class tensions, and reform initiatives"
+					],
+					"keywords": [
+						"Second Industrial Revolution",
+						"Migration",
+						"Indentured labor",
+						"Imperialism",
+						"Urbanization",
+						"Class formation"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Global Conflict",
+					"description": "World wars, mass violence, and ideological conflict c. 1900–present.",
+					"topics_may_include": [
+						"Causes and outcomes of global wars",
+						"State violence, nationalism, and ideological extremism",
+						"Postwar efforts to build international cooperation"
+					],
+					"keywords": [
+						"World War I",
+						"World War II",
+						"Totalitarianism",
+						"Genocide",
+						"Global depression",
+						"International organizations"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "Cold War and Decolonization",
+					"description": "Cold War competition and decolonization c. 1900–present.",
+					"topics_may_include": [
+						"Superpower rivalry and regional proxy conflicts",
+						"Paths and consequences of decolonization across regions",
+						"Development challenges in newly independent states"
+					],
+					"keywords": [
+						"Cold War blocs",
+						"Decolonization",
+						"National liberation",
+						"Proxy wars",
+						"Nonalignment",
+						"State-building"
+					]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Globalization",
+					"description": "Contemporary globalization and transnational challenges c. 1900–present.",
+					"topics_may_include": [
+						"Economic integration and uneven development",
+						"Cultural exchange, media, and identity in a global era",
+						"Global responses to health, climate, and security issues"
+					],
+					"keywords": [
+						"Global institutions",
+						"Neoliberal reforms",
+						"Migration networks",
+						"Digital globalization",
+						"Environmental issues",
+						"Cultural hybridization"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APEURO",
+			"course_name": "AP European History",
+			"overview": "Survey of European history from c. 1450 to present emphasizing political, social, cultural, and economic transformations across 9 units.",
+			"important_notes": "Use precise periodization and contextualization in European settings. Prioritize historical argumentation with specific evidence; include cross-period continuity and change when relevant.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-european-history))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Renaissance and Exploration",
+					"description": "Renaissance, exploration, and early modern state and cultural change.",
+					"topics_may_include": [
+						"Humanist thought and artistic developments in early modern Europe",
+						"European maritime expansion and global consequences",
+						"Centralization of state power in major kingdoms"
+					],
+					"keywords": [
+						"Italian Renaissance",
+						"Humanism",
+						"New monarchies",
+						"Age of Exploration",
+						"Printing press",
+						"Scientific inquiry"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Age of Reformation",
+					"description": "Reformation movements and confessional conflict in Europe.",
+					"topics_may_include": [
+						"Doctrinal and institutional challenges to Catholic authority",
+						"Political consequences of religious fragmentation",
+						"Attempts at religious settlement and social discipline"
+					],
+					"keywords": [
+						"Protestant Reformation",
+						"Catholic Reformation",
+						"Religious wars",
+						"State churches",
+						"Confessionalization",
+						"Tolerance debates"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Absolutism and Constitutionalism",
+					"description": "Competing models of absolutism and constitutionalism.",
+					"topics_may_include": [
+						"Comparing state-building in France, Britain, and other powers",
+						"Conflict between representative institutions and monarchs",
+						"Military finance and administrative centralization"
+					],
+					"keywords": [
+						"Absolutism",
+						"Constitutional monarchy",
+						"Parliamentary power",
+						"Divine right",
+						"Bureaucracy",
+						"Fiscal-military state"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Scientific, Philosophical, and Political Developments",
+					"description": "Scientific Revolution, Enlightenment, and political transformations.",
+					"topics_may_include": [
+						"New methods of knowledge and challenges to tradition",
+						"Enlightenment critiques of authority and society",
+						"Political reform efforts inspired by philosophical ideas"
+					],
+					"keywords": [
+						"Scientific Revolution",
+						"Enlightenment",
+						"Public sphere",
+						"Natural rights",
+						"Social contract",
+						"Reform absolutism"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Conflict, Crisis, and Reaction in the Late 18th Century",
+					"description": "Revolutionary crisis and reaction in the late 18th and early 19th centuries.",
+					"topics_may_include": [
+						"Causes and phases of the French Revolution",
+						"Napoleonic reforms and continental impact",
+						"Restoration politics and ideological contestation"
+					],
+					"keywords": [
+						"French Revolution",
+						"Napoleon",
+						"Congress of Vienna",
+						"Conservatism",
+						"Liberalism",
+						"Nationalism"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Industrialization and Its Effects",
+					"description": "Industrialization and its social, political, and economic consequences.",
+					"topics_may_include": [
+						"Technological and economic drivers of industrial growth",
+						"Living and working conditions in industrial cities",
+						"Policy and ideological responses to industrial society"
+					],
+					"keywords": [
+						"Industrial Revolution",
+						"Urban labor",
+						"Capitalism",
+						"Socialism",
+						"Class conflict",
+						"Public health"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "19th-Century Perspectives and Political Developments",
+					"description": "19th-century nationalism, liberal reform, and imperial competition.",
+					"topics_may_include": [
+						"Nation-state formation in Italy and Germany",
+						"Expansion of suffrage and party politics",
+						"European imperial ambitions and domestic implications"
+					],
+					"keywords": [
+						"Unification movements",
+						"Mass politics",
+						"Realpolitik",
+						"Imperialism",
+						"Feminism",
+						"National identity"
+					]
+				},
+				{
+					"unit_number": 8,
+					"unit_title": "20th-Century Global Conflicts",
+					"description": "20th-century crises including world wars and authoritarian regimes.",
+					"topics_may_include": [
+						"Political and economic origins of major conflicts",
+						"Rise and operation of authoritarian states",
+						"Social and moral consequences of total war and genocide"
+					],
+					"keywords": ["World wars", "Fascism", "Communism", "Total war", "Resistance", "Holocaust"]
+				},
+				{
+					"unit_number": 9,
+					"unit_title": "Cold War and Contemporary Europe",
+					"description": "Cold War division and contemporary European integration and change.",
+					"topics_may_include": [
+						"Division and realignment of Europe after 1945",
+						"Growth of integration institutions and policy cooperation",
+						"Demographic, political, and economic challenges in contemporary Europe"
+					],
+					"keywords": [
+						"European integration",
+						"Welfare state",
+						"Cold War Europe",
+						"Decolonization effects",
+						"Post-1989 transitions",
+						"European Union"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APGOV-US",
+			"course_name": "AP US Government",
+			"overview": "Study of U.S. constitutional design, institutions, civil rights/liberties, ideology, and participation across 5 units.",
+			"important_notes": "Reference foundational documents and Supreme Court cases where appropriate. Distinguish constitutional structure, policy processes, and behavior-based explanations; prioritize political-science reasoning over opinion.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-united-states-government-and-politics))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Foundations of American Democracy",
+					"description": "Constitutional foundations, democratic principles, and competing interpretations of government power.",
+					"topics_may_include": [
+						"Principles from key founding documents and debates",
+						"Federalism dynamics between national and state governments",
+						"Competing constitutional interpretations in AP Gov cases"
+					],
+					"keywords": [
+						"Federalism",
+						"Separation of powers",
+						"Checks and balances",
+						"Constitutionalism",
+						"Foundational documents",
+						"Popular sovereignty"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Interactions Among Branches of Government",
+					"description": "Institutions of national government and their interactions in policymaking.",
+					"topics_may_include": [
+						"Legislative, executive, and judicial powers and constraints",
+						"How institutions compete and cooperate in policy outcomes",
+						"Role of bureaucracy and courts in implementation and interpretation"
+					],
+					"keywords": [
+						"Congress",
+						"Presidency",
+						"Bureaucracy",
+						"Judiciary",
+						"Policy-making process",
+						"Interbranch relations"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Civil Liberties and Civil Rights",
+					"description": "Civil liberties and civil rights in constitutional and judicial context.",
+					"topics_may_include": [
+						"Balancing individual freedoms and governmental interests",
+						"Civil rights protections and equal protection applications",
+						"Analyzing major Supreme Court decisions and constitutional tests"
+					],
+					"keywords": [
+						"Bill of Rights",
+						"Selective incorporation",
+						"Due process",
+						"Equal protection",
+						"First Amendment",
+						"Supreme Court precedents"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "American Political Ideologies and Beliefs",
+					"description": "American political values, ideology, and public opinion in policy debates.",
+					"topics_may_include": [
+						"Formation and measurement of political beliefs",
+						"Relationship between ideology, values, and policy positions",
+						"Limits of polling and interpretation of survey data"
+					],
+					"keywords": [
+						"Political socialization",
+						"Ideology",
+						"Public opinion",
+						"Policy preferences",
+						"Political culture",
+						"Polling"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Political Participation",
+					"description": "Participation channels including parties, elections, media, and interest groups.",
+					"topics_may_include": [
+						"Factors influencing turnout and voting decisions",
+						"Structures and strategies of campaigns, parties, and groups",
+						"Media ecosystems and their effects on participation and agenda setting"
+					],
+					"keywords": [
+						"Voting behavior",
+						"Elections",
+						"Political parties",
+						"Interest groups",
+						"Campaign finance",
+						"Media effects"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APCOMPGOV",
+			"course_name": "AP Comparative Government",
+			"overview": "Comparative political science course analyzing institutions, political behavior, and policy in six required country contexts across 5 units.",
+			"important_notes": "Use comparative methods and explicit country evidence. Distinguish regime type, institutions, legitimacy, participation, and policy outcomes; avoid U.S.-centric assumptions.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-comparative-government-and-politics))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Political Systems, Regimes, and Governments",
+					"description": "Comparative frameworks for regimes, state legitimacy, and sovereignty.",
+					"topics_may_include": [
+						"Comparing democratic, authoritarian, and hybrid regimes",
+						"Sources of legitimacy and state capacity",
+						"Processes of regime change and consolidation"
+					],
+					"keywords": [
+						"Regime type",
+						"State legitimacy",
+						"Sovereignty",
+						"Authority",
+						"Democratization",
+						"Political stability"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Political Institutions",
+					"description": "Institutions and structures shaping governance across countries.",
+					"topics_may_include": [
+						"Institutional design and policy-making differences across systems",
+						"Power distribution between national and subnational units",
+						"Formal institutions versus informal political practices"
+					],
+					"keywords": [
+						"Executives",
+						"Legislatures",
+						"Judiciaries",
+						"Bureaucracy",
+						"Electoral systems",
+						"Civil-military relations"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Political Culture and Participation",
+					"description": "Political culture, identity, and modes of participation.",
+					"topics_may_include": [
+						"How identity and social cleavages shape participation patterns",
+						"Role of civil society organizations and movements",
+						"Cross-country variation in participation opportunities and constraints"
+					],
+					"keywords": [
+						"Political culture",
+						"Political efficacy",
+						"Social cleavages",
+						"Participation",
+						"Civil society",
+						"Social movements"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Party and Electoral Systems and Citizen Organizations",
+					"description": "Party systems, elections, and collective action by citizens and groups.",
+					"topics_may_include": [
+						"Comparing party competition and electoral system incentives",
+						"Citizen organizations as channels for representation and accountability",
+						"Patterns of mobilization in democratic and non-democratic settings"
+					],
+					"keywords": [
+						"Party systems",
+						"Elections",
+						"Interest aggregation",
+						"Clientelism",
+						"NGOs",
+						"Representation"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Political and Economic Changes and Development",
+					"description": "Political and economic development, reform, and policy outcomes.",
+					"topics_may_include": [
+						"Development strategies and trade-offs in different regimes",
+						"Impact of globalization on domestic politics and policy",
+						"Evaluating reform outcomes using comparative evidence"
+					],
+					"keywords": [
+						"Development indicators",
+						"Economic liberalization",
+						"Policy reform",
+						"Globalization",
+						"State capacity",
+						"Inequality"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APPSYCH",
+			"course_name": "AP Psychology",
+			"overview": "Introductory psychology course covering biological, cognitive, developmental, social, and mental-health perspectives in 5 units.",
+			"important_notes": "Use psychological terminology and research-informed reasoning. Distinguish major perspectives, methods, and ethical constraints; avoid informal pop-psych claims.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-psychology))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Biological Bases of Behavior",
+					"description": "Biological systems and processes that influence behavior and mental function.",
+					"topics_may_include": [
+						"Neural communication and major neurotransmitter functions",
+						"Brain regions and associated cognitive/behavioral roles",
+						"Genetic and environmental influences on behavior"
+					],
+					"keywords": [
+						"Neurons and neurotransmitters",
+						"Central nervous system",
+						"Endocrine system",
+						"Brain structures",
+						"Neuroplasticity",
+						"Genetics and behavior"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Cognition",
+					"description": "Mental processes including perception, memory, thinking, language, and intelligence.",
+					"topics_may_include": [
+						"Encoding, storage, retrieval, and memory errors",
+						"Attention, sensation, and perceptual interpretation",
+						"Reasoning heuristics and decision-making biases"
+					],
+					"keywords": [
+						"Perception",
+						"Memory systems",
+						"Learning",
+						"Problem solving",
+						"Language",
+						"Cognitive biases"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Development and Learning",
+					"description": "Human development across the lifespan and core learning theories.",
+					"topics_may_include": [
+						"Major developmental theories and milestones",
+						"Learning mechanisms and behavior modification principles",
+						"Social and biological factors shaping development"
+					],
+					"keywords": [
+						"Developmental stages",
+						"Attachment",
+						"Classical conditioning",
+						"Operant conditioning",
+						"Observational learning",
+						"Motivation"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Social Psychology and Personality",
+					"description": "Social behavior, personality theories, and interaction between individual and group processes.",
+					"topics_may_include": [
+						"Group influence, conformity, and obedience effects",
+						"Major personality frameworks and assessment approaches",
+						"Social cognition and behavior in interpersonal contexts"
+					],
+					"keywords": [
+						"Attribution",
+						"Conformity",
+						"Attitudes",
+						"Personality traits",
+						"Identity",
+						"Interpersonal behavior"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Mental and Physical Health",
+					"description": "Psychological disorders, treatment approaches, stress, and health behavior.",
+					"topics_may_include": [
+						"Classification of disorders and diagnostic considerations",
+						"Evidence-based treatment modalities and therapeutic goals",
+						"Stress physiology, coping strategies, and health outcomes"
+					],
+					"keywords": [
+						"Psychopathology",
+						"Diagnosis",
+						"Therapies",
+						"Stress response",
+						"Health psychology",
+						"Resilience"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APHUG",
+			"course_name": "AP Human Geography",
+			"overview": "Human geography course examining spatial patterns, population, culture, politics, agriculture, urbanization, and development across 7 units.",
+			"important_notes": "Explain spatial patterns using geographic models, scale, and place-based evidence. Emphasize map/data interpretation and interaction between human systems and environment.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-human-geography))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Thinking Geographically",
+					"description": "Geographic thinking tools, scales, and spatial analysis methods.",
+					"topics_may_include": [
+						"Reading and interpreting thematic maps and geospatial data",
+						"Applying diffusion and scale concepts to human patterns",
+						"Using regional frameworks for geographic comparison"
+					],
+					"keywords": [
+						"Spatial patterns",
+						"Scale of analysis",
+						"Maps and GIS",
+						"Diffusion",
+						"Regionalization",
+						"Place"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Population and Migration Patterns and Processes",
+					"description": "Population dynamics and migration processes at multiple scales.",
+					"topics_may_include": [
+						"Population distribution, density, and growth models",
+						"Causes and consequences of internal and international migration",
+						"Policy responses to fertility, aging, and migration trends"
+					],
+					"keywords": [
+						"Demographic transition",
+						"Population pyramids",
+						"Migration push/pull",
+						"Refugees",
+						"Carrying capacity",
+						"Population policy"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Cultural Patterns and Processes",
+					"description": "Cultural landscapes, language, religion, and identity formation.",
+					"topics_may_include": [
+						"Patterns of language and religion across space",
+						"Processes of cultural diffusion, assimilation, and acculturation",
+						"Identity, ethnicity, and conflict in cultural geography"
+					],
+					"keywords": [
+						"Cultural diffusion",
+						"Language families",
+						"Religious landscapes",
+						"Ethnicity",
+						"Cultural hearths",
+						"Globalization of culture"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Political Patterns and Processes",
+					"description": "Political geography including states, boundaries, and geopolitical processes.",
+					"topics_may_include": [
+						"Territoriality and forms of political organization",
+						"Boundary disputes, enclaves/exclaves, and border dynamics",
+						"Centripetal and centrifugal forces affecting state stability"
+					],
+					"keywords": [
+						"Nation-state",
+						"Sovereignty",
+						"Boundaries",
+						"Supranationalism",
+						"Devolution",
+						"Geopolitics"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Agriculture and Rural Land-Use Patterns and Processes",
+					"description": "Agriculture systems, rural land use, and food production patterns.",
+					"topics_may_include": [
+						"Agricultural practices and their environmental/economic effects",
+						"Rural land-use models and global commodity chains",
+						"Challenges of food access, sustainability, and rural livelihoods"
+					],
+					"keywords": [
+						"Subsistence farming",
+						"Commercial agriculture",
+						"Von Thunen model",
+						"Green Revolution",
+						"Agribusiness",
+						"Food security"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Cities and Urban Land-Use Patterns and Processes",
+					"description": "Urbanization patterns, city structure models, and urban challenges.",
+					"topics_may_include": [
+						"Urban growth, suburbanization, and metropolitan patterns",
+						"Comparing classic urban structure models",
+						"Housing, transportation, and sustainability in cities"
+					],
+					"keywords": [
+						"Urban hierarchy",
+						"Megacities",
+						"Bid-rent theory",
+						"Gentrification",
+						"Informal settlements",
+						"Urban planning"
+					]
+				},
+				{
+					"unit_number": 7,
+					"unit_title": "Industrial and Economic Development Patterns and Processes",
+					"description": "Industrial location, development theories, and global economic change.",
+					"topics_may_include": [
+						"Industrial location factors and deindustrialization patterns",
+						"Economic development models and regional disparities",
+						"Globalization effects on labor, production, and environment"
+					],
+					"keywords": [
+						"Industrialization",
+						"Global supply chains",
+						"Development indicators",
+						"Core-periphery",
+						"Special economic zones",
+						"Labor geography"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APMACRO",
+			"course_name": "AP Macroeconomics",
+			"overview": "Principles-level macroeconomics course on aggregate measures, policy, growth, and international finance across 6 units.",
+			"important_notes": "Use macroeconomic models and graphs (AD-AS, money market, loanable funds, foreign exchange) with correctly labeled axes and shifts. State short-run vs long-run effects and policy trade-offs clearly.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-macroeconomics))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Basic Economic Concepts",
+					"description": "Foundational economic principles, trade-offs, and market coordination at the macro level.",
+					"topics_may_include": [
+						"Modeling trade-offs and efficiency with PPC analysis",
+						"Specialization and gains from trade using comparative advantage",
+						"Normative versus positive economic reasoning"
+					],
+					"keywords": [
+						"Scarcity",
+						"Opportunity cost",
+						"Comparative advantage",
+						"Production possibilities curve",
+						"Economic systems",
+						"Marginal analysis"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Economic Indicators and the Business Cycle",
+					"description": "Measurement of macroeconomic performance and business-cycle behavior.",
+					"topics_may_include": [
+						"Calculating and interpreting national income accounts",
+						"Reading unemployment and inflation indicators over time",
+						"Analyzing recession/expansion phases and policy relevance"
+					],
+					"keywords": [
+						"GDP",
+						"Real vs nominal",
+						"Unemployment",
+						"Inflation",
+						"Business cycle",
+						"Price indices"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "National Income and Price Determination",
+					"description": "Aggregate demand and supply models for output, price level, and stabilization.",
+					"topics_may_include": [
+						"Graphing AD-AS shifts and short-run/long-run adjustments",
+						"Determinants of aggregate demand and supply changes",
+						"Fiscal policy tools and multiplier effects"
+					],
+					"keywords": [
+						"Aggregate demand",
+						"Short-run aggregate supply",
+						"Long-run aggregate supply",
+						"Equilibrium output",
+						"Multiplier",
+						"Fiscal policy"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Financial Sector",
+					"description": "Money, banking, and monetary policy in the financial sector.",
+					"topics_may_include": [
+						"Money creation, reserve requirements, and banking behavior",
+						"Monetary policy transmission through interest rates and spending",
+						"Interactions among money market, loanable funds, and AD-AS"
+					],
+					"keywords": [
+						"Money market",
+						"Loanable funds",
+						"Banking system",
+						"Federal Reserve",
+						"Interest rates",
+						"Monetary policy"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Long-Run Consequences of Stabilization Policies",
+					"description": "Economic growth and long-run policy consequences including inflation and debt trade-offs.",
+					"topics_may_include": [
+						"Determinants of long-run growth and productivity",
+						"Trade-offs of expansionary/contractionary stabilization policy",
+						"Inflation, unemployment, and long-run macroeconomic constraints"
+					],
+					"keywords": [
+						"Economic growth",
+						"Productivity",
+						"Inflation expectations",
+						"Crowding out",
+						"Public debt",
+						"Policy lags"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Open Economy—International Trade and Finance",
+					"description": "International trade, exchange rates, and open-economy macro linkages.",
+					"topics_may_include": [
+						"Currency appreciation/depreciation and net exports effects",
+						"Balance of payments components and external imbalances",
+						"Open-economy policy analysis with FX and macro models"
+					],
+					"keywords": [
+						"Balance of payments",
+						"Foreign exchange market",
+						"Exchange rates",
+						"Comparative advantage",
+						"Capital flows",
+						"Trade policy"
+					]
+				}
+			]
+		},
+		{
+			"course_code": "APMICRO",
+			"course_name": "AP Microeconomics",
+			"overview": "Principles-level microeconomics course on decision-making, markets, firm behavior, factor markets, and policy across 6 units.",
+			"important_notes": "Use marginal analysis and market models with clear graph interpretation. Distinguish competition structures, efficiency, equity, and government intervention effects in specific market contexts.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-microeconomics))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Basic Economic Concepts",
+					"description": "Micro foundations: scarcity, opportunity cost, gains from trade, and basic modeling.",
+					"topics_may_include": [
+						"Individual and firm decision-making under constraints",
+						"Specialization and exchange in product markets",
+						"Using marginal reasoning to evaluate choices"
+					],
+					"keywords": [
+						"Scarcity",
+						"Opportunity cost",
+						"Comparative advantage",
+						"PPC",
+						"Marginal analysis",
+						"Economic decision-making"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Supply and Demand",
+					"description": "Market equilibrium, elasticity, and the effects of interventions.",
+					"topics_may_include": [
+						"Determinants and shifts of demand/supply curves",
+						"Elasticity calculations and revenue implications",
+						"Welfare effects of taxes, price floors, and price ceilings"
+					],
+					"keywords": [
+						"Demand and supply",
+						"Equilibrium",
+						"Elasticity",
+						"Price controls",
+						"Taxes and subsidies",
+						"Consumer and producer surplus"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Production, Cost, and the Perfect Competition Model",
+					"description": "Firm production and cost behavior in perfectly competitive markets.",
+					"topics_may_include": [
+						"Short-run and long-run cost curves and relationships",
+						"Output and pricing decisions where MR = MC",
+						"Entry/exit dynamics and long-run equilibrium in competitive markets"
+					],
+					"keywords": [
+						"Perfect competition",
+						"Marginal cost",
+						"Average total cost",
+						"Profit maximization",
+						"Shutdown rule",
+						"Productive efficiency"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Imperfect Competition",
+					"description": "Market power, pricing behavior, and efficiency under imperfect competition.",
+					"topics_may_include": [
+						"Comparing output/price outcomes across market structures",
+						"Strategic behavior and interdependence in oligopoly",
+						"Efficiency costs and regulation of market power"
+					],
+					"keywords": [
+						"Monopoly",
+						"Monopolistic competition",
+						"Oligopoly",
+						"Game theory",
+						"Price discrimination",
+						"Deadweight loss"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Factor Markets",
+					"description": "Labor and resource markets with factor pricing and employment outcomes.",
+					"topics_may_include": [
+						"Derived demand for factors and MRP-based hiring",
+						"Competitive versus imperfectly competitive factor markets",
+						"Policies affecting wages, employment, and productivity"
+					],
+					"keywords": [
+						"Factor demand",
+						"Marginal revenue product",
+						"Labor market equilibrium",
+						"Monopsony",
+						"Human capital",
+						"Wage determination"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Market Failure and the Role of Government",
+					"description": "Externalities, public goods, and policy responses to market failure.",
+					"topics_may_include": [
+						"Negative and positive externalities with corrective policies",
+						"Provision challenges for public goods and common resources",
+						"Evaluating taxes, subsidies, regulation, and property-rights solutions"
+					],
+					"keywords": [
+						"Externalities",
+						"Public goods",
+						"Common resources",
+						"Asymmetric information",
+						"Cost-benefit analysis",
+						"Government intervention"
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,207 @@
+<script lang="ts">
+	import apClassesData from '../../routes/data/ap-classes.json';
+	import { tick } from 'svelte';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import { cn } from '$lib/utils.js';
+
+	type Course = {
+		name: string;
+		semester1: string[];
+		semester2: string[];
+	};
+
+	type QuestionSelectorProps = {
+		selectedClass?: string;
+		selectedUnit?: string;
+		questionType?: 'mcq' | 'frq';
+		isLoading?: boolean;
+		generateLabel?: string;
+		onGenerate?: () => void;
+		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
+		onTypeChange?: (type: 'mcq' | 'frq') => void;
+	};
+
+	const courses = (apClassesData.courses ?? []) as Course[];
+
+	let {
+		selectedClass = $bindable(''),
+		selectedUnit = $bindable(''),
+		questionType = $bindable<'mcq' | 'frq'>('mcq'),
+		isLoading = false,
+		generateLabel = 'Generate Question',
+		onGenerate,
+		onSelectionChange,
+		onTypeChange
+	}: QuestionSelectorProps = $props();
+
+	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
+	const unitOptions = $derived(
+		selectedCourse ? [...selectedCourse.semester1, ...selectedCourse.semester2] : []
+	);
+
+	let classOpen = $state(false);
+	let unitOpen = $state(false);
+	let classTriggerRef = $state<HTMLButtonElement>(null!);
+	let unitTriggerRef = $state<HTMLButtonElement>(null!);
+
+	function notifySelectionChange(): void {
+		onSelectionChange?.(selectedClass, selectedUnit);
+	}
+
+	function selectClass(name: string): void {
+		selectedClass = name;
+		selectedUnit = '';
+		classOpen = false;
+		tick().then(() => classTriggerRef?.focus());
+		notifySelectionChange();
+	}
+
+	function selectUnit(unit: string): void {
+		selectedUnit = unit;
+		unitOpen = false;
+		tick().then(() => unitTriggerRef?.focus());
+		notifySelectionChange();
+	}
+</script>
+
+<div class="space-y-4">
+	<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
+		<button
+			type="button"
+			onclick={() => {
+				questionType = 'mcq';
+				onTypeChange?.('mcq');
+			}}
+			class={cn(
+				'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+				questionType === 'mcq'
+					? 'bg-background text-foreground shadow-sm'
+					: 'text-muted-foreground hover:text-foreground'
+			)}
+		>
+			Multiple Choice
+		</button>
+		<button
+			type="button"
+			onclick={() => {
+				questionType = 'frq';
+				onTypeChange?.('frq');
+			}}
+			class={cn(
+				'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+				questionType === 'frq'
+					? 'bg-background text-foreground shadow-sm'
+					: 'text-muted-foreground hover:text-foreground'
+			)}
+		>
+			<TriangleAlert class="ml-1 inline-block size-4 text-yellow-500" /> (Alpha) Free Response
+		</button>
+	</div>
+
+	<div class="flex flex-wrap items-end gap-4">
+		<div class="flex min-w-48 flex-1 flex-col gap-2">
+			<Label>AP Class</Label>
+			<Popover.Root bind:open={classOpen}>
+				<Popover.Trigger bind:ref={classTriggerRef}>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							variant="outline"
+							role="combobox"
+							aria-expanded={classOpen}
+							class="w-full justify-between font-normal"
+						>
+							<span class="truncate">{selectedClass || 'Select a course'}</span>
+							<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+						</Button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Content class="p-0">
+					<Command.Root>
+						<Command.Input placeholder="Search courses..." />
+						<Command.List>
+							<Command.Empty>No course found.</Command.Empty>
+							<Command.Group>
+								{#each courses as course (course.name)}
+									<Command.Item value={course.name} onSelect={() => selectClass(course.name)}>
+										<CheckIcon
+											class={cn(
+												'mr-2 size-4 shrink-0',
+												selectedClass !== course.name && 'text-transparent'
+											)}
+										/>
+										{course.name}
+									</Command.Item>
+								{/each}
+							</Command.Group>
+						</Command.List>
+					</Command.Root>
+				</Popover.Content>
+			</Popover.Root>
+		</div>
+
+		<div class="flex min-w-48 flex-1 flex-col gap-2">
+			<Label>Unit</Label>
+			<Popover.Root bind:open={unitOpen}>
+				<Popover.Trigger bind:ref={unitTriggerRef}>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							variant="outline"
+							role="combobox"
+							aria-expanded={unitOpen}
+							disabled={!selectedClass}
+							class="w-full justify-between font-normal"
+						>
+							<span class="truncate">
+								{selectedUnit || (selectedClass ? 'All Units' : 'Select a course first')}
+							</span>
+							<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+						</Button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Content class="p-0">
+					<Command.Root>
+						<Command.Input placeholder="Search units..." />
+						<Command.List>
+							<Command.Empty>No unit found.</Command.Empty>
+							<Command.Group>
+								<Command.Item value="" onSelect={() => selectUnit('')}>
+									<CheckIcon
+										class={cn('mr-2 size-4 shrink-0', selectedUnit !== '' && 'text-transparent')}
+									/>
+									All Units
+								</Command.Item>
+								{#each unitOptions as unit (unit)}
+									<Command.Item value={unit} onSelect={() => selectUnit(unit)}>
+										<CheckIcon
+											class={cn(
+												'mr-2 size-4 shrink-0',
+												selectedUnit !== unit && 'text-transparent'
+											)}
+										/>
+										{unit}
+									</Command.Item>
+								{/each}
+							</Command.Group>
+						</Command.List>
+					</Command.Root>
+				</Popover.Content>
+			</Popover.Root>
+		</div>
+
+		<Button
+			onclick={onGenerate}
+			disabled={isLoading || !selectedClass}
+			class="h-10 shrink-0 px-4 text-sm"
+		>
+			{isLoading ? 'Generating...' : generateLabel}
+		</Button>
+	</div>
+</div>
