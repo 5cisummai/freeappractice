@@ -131,7 +131,7 @@
 		questionNumber = '1',
 		selectedClass = '',
 		selectedUnit = '',
-		selectedProvider = 'local',
+		selectedProvider = 'openai',
 		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
@@ -376,12 +376,12 @@
 			let response = await requestQuestion(selectedClass, selectedUnit, selectedProvider);
 
 			if (
-				selectedProvider === 'local' &&
+				selectedProvider === 'openai' &&
 				Boolean(response.shouldFallback) &&
 				typeof response.error === 'string'
 			) {
-				response = await requestQuestion(selectedClass, selectedUnit, 'openai');
-				statusMessage = 'Local provider failed, switched to OpenAI.';
+				response = await requestQuestion(selectedClass, selectedUnit, 'local');
+				statusMessage = 'OpenAI provider failed, switched to local.';
 			}
 
 			if (typeof response.error === 'string' && response.error.trim()) {
