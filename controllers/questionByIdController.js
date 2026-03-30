@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const questionStorageService = require('../services/questionStorageService');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const verifyQuestionAccessToken = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
