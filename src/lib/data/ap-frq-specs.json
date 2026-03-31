@@ -1,0 +1,1599 @@
+{
+	"generated_on": "2026-03-29",
+	"note": "FRQ specifications for AP courses. Describes question formats, rubric conventions, scoring structures, common task verbs, and writing expectations by subject to guide AI question generation. Intended as a companion to the AP course data JSON. Sources: 2024 College Board FRQ scoring guidelines, sample questions, AP Course and Exam Descriptions, and Chief Reader reports.",
+	"global_frq_principles": {
+		"task_verbs": {
+			"calculate": "Show all work step-by-step; include correct units; answers without supporting work receive no credit even if numerically correct.",
+			"compare": "Address both similarities and differences; one-sided responses receive partial credit at best.",
+			"describe": "State relevant characteristics with enough specificity to show understanding; a thesis is not required.",
+			"derive": "Show a logical sequence of steps from a stated fundamental principle or equation; must begin with the principle, not the result.",
+			"design": "Propose a method or experiment with enough detail for independent replication; specify variables, equipment, and measurement strategy.",
+			"evaluate": "Make a judgment and support it with evidence; must demonstrate critical assessment rather than summary.",
+			"explain": "Provide a mechanism, cause-and-effect relationship, or reasoning chain; mere identification is insufficient.",
+			"identify": "Name or select; typically a word or phrase; no explanation required unless the prompt specifies.",
+			"interpret": "State the meaning of a result in context; must connect the value to the real-world scenario, including units.",
+			"justify": "Support a claim with specific evidence and reasoning; must connect evidence to the claim explicitly.",
+			"sketch": "Draw a labeled graph or diagram with key features correct; approximation acceptable; axes, units, and labels required.",
+			"state": "Give a fact or principle without elaboration; used interchangeably with 'identify' in some courses."
+		},
+		"universal_errors_to_avoid": [
+			"Restating the prompt or question as the answer",
+			"Vague mechanistic language ('it affects the result') without specificity",
+			"Contradicting a correct answer elsewhere in the same response — contradictions negate the credit",
+			"Providing more answers than the prompt requests when a specific number is asked for; only the first N are scored",
+			"Writing in bullet points when prose is required (AP English, AP History essay questions)",
+			"Omitting units on quantitative answers in science and math FRQs",
+			"Skipping 'show your work' in math and science FRQs — setup steps earn partial credit even with a wrong final answer",
+			"Proving a claim with qualitative language when quantitative justification is requested",
+			"Using casual or informal register in humanities essay responses"
+		]
+	},
+	"courses": [
+		{
+			"course_code": "APCALC-AB",
+			"course_name": "AP Calculus AB",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 6,
+				"total_points": 54,
+				"points_per_question": 9,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 90,
+				"part_a": {
+					"questions": 2,
+					"calculator": true,
+					"time_minutes": 30,
+					"notes": "Calculator-active. Students must still show mathematical setup. Decimal approximations must be correct to three decimal places."
+				},
+				"part_b": {
+					"questions": 4,
+					"calculator": false,
+					"time_minutes": 60,
+					"notes": "No calculator. Algebraic precision required. Answers need not be simplified unless the prompt asks for it."
+				}
+			},
+			"question_types": [
+				{
+					"type": "Rate and accumulation in context (tabular data)",
+					"typical_position": "FRQ 1 (calculator-active)",
+					"description": "A real-world scenario given as a data table. Students approximate integrals with Riemann sums, interpret accumulation, and use FTC.",
+					"common_parts": [
+						"Compute a left/right/midpoint/trapezoid Riemann sum and state whether it is an over- or underestimate",
+						"Interpret the meaning of a definite integral in context with correct units",
+						"Use FTC Part II with a given antiderivative plus initial condition",
+						"Justify increasing/decreasing behavior or average rate of change from the table"
+					],
+					"scoring_notes": [
+						"Interpretation point requires correct units and a contextual statement — not just the numerical value",
+						"Riemann sum setup earns one point; numerical answer earns a second — incorrect setup cannot earn the answer point",
+						"At most one point lost per question for a consistent arithmetic error carried forward"
+					]
+				},
+				{
+					"type": "Function defined by an integral / accumulation function",
+					"typical_position": "FRQ 2 or 3–4",
+					"description": "g(x) is defined as the integral from a constant to x of f(t) dt. Students analyze g using properties of f given graphically or analytically.",
+					"common_parts": [
+						"Evaluate g at a specific point using FTC",
+						"Find intervals where g is increasing or decreasing using sign of f",
+						"Find and classify relative extrema using the first or second derivative test",
+						"Determine concavity of g from behavior of f"
+					],
+					"scoring_notes": [
+						"Extrema must be justified with a sign analysis of g'(x) = f(x), not just setting equal to zero",
+						"FTC Part I: g'(x) = f(x) must be explicitly invoked"
+					]
+				},
+				{
+					"type": "Differential equations and slope fields",
+					"typical_position": "FRQ 4–6 (no calculator)",
+					"description": "Students solve separable differential equations, sketch slope fields, and interpret solutions.",
+					"common_parts": [
+						"Verify a given function satisfies the differential equation",
+						"Separate variables and integrate to find the general solution",
+						"Apply an initial condition to find the particular solution",
+						"Sketch a solution curve through a point on a given slope field"
+					],
+					"scoring_notes": [
+						"Separation must be explicit: variables on separate sides before integrating",
+						"Constant of integration that is immediately discarded without use loses the 'C' point",
+						"Particular solution must numerically satisfy the initial condition"
+					]
+				},
+				{
+					"type": "Analytical function analysis",
+					"typical_position": "FRQ 3–6 (no calculator)",
+					"description": "A function defined analytically. Students use calculus to analyze extrema, concavity, tangent lines, MVT, and area.",
+					"common_parts": [
+						"Find critical points and classify as relative min/max",
+						"Determine intervals of concavity and find inflection points",
+						"Write the equation of a tangent line at a point",
+						"Apply MVT or IVT by name with explicit conditions stated",
+						"Compute area between curves or volume"
+					],
+					"scoring_notes": [
+						"MVT/IVT usage requires explicit statement of conditions (continuous on [a,b], differentiable on (a,b))",
+						"Area between curves must show the integral expression with limits before computing",
+						"Answers to 'find all values where...' must include all valid values"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each FRQ is 9 points distributed across parts",
+				"partial_credit": "Correct setup with arithmetic error typically earns all but the final answer point",
+				"follow_through": "At most one follow-through error per question",
+				"simplification": "Answers need not be simplified unless the prompt says so",
+				"units": "Required on final answers in context problems; incorrect unit loses the point",
+				"decimal_accuracy": "Three decimal places required for decimal approximations"
+			},
+			"important_notes": [
+				"Show all setup steps even in calculator-active parts",
+				"Justifications using theorems must name the theorem and state its conditions",
+				"Each part scored independently — wrong answer in (a) does not prevent full credit in (b)"
+			]
+		},
+		{
+			"course_code": "APCALC-BC",
+			"course_name": "AP Calculus BC",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 6,
+				"total_points": 54,
+				"weight_of_exam": "50%",
+				"part_a": { "questions": 2, "calculator": true, "time_minutes": 30 },
+				"part_b": { "questions": 4, "calculator": false, "time_minutes": 60 }
+			},
+			"question_types": [
+				{
+					"type": "All AB question types",
+					"notes": "AB question types appear on BC with the same conventions and scoring structure."
+				},
+				{
+					"type": "Parametric / vector-valued functions",
+					"typical_position": "FRQ 2 or 5",
+					"description": "A particle moves along a parametric curve. Students compute velocity, speed, arc length, and position.",
+					"common_parts": [
+						"Find velocity vector and speed at a given time",
+						"Determine direction of motion",
+						"Find position using initial conditions and integration",
+						"Compute arc length over an interval"
+					],
+					"scoring_notes": [
+						"Speed = magnitude of velocity vector; sqrt((dx/dt)^2 + (dy/dt)^2) must be shown",
+						"Arc length integral setup must appear even in calculator-active parts"
+					]
+				},
+				{
+					"type": "Taylor / Maclaurin series",
+					"typical_position": "FRQ 6 (no calculator)",
+					"description": "Students find Taylor/Maclaurin polynomial approximations, determine convergence, and bound errors.",
+					"common_parts": [
+						"Write the first n terms of a Taylor series centered at a given point",
+						"Determine the radius or interval of convergence using the Ratio Test",
+						"Apply Lagrange or alternating series error bounds",
+						"Identify known series (e^x, sin x, cos x, 1/(1-x)) within a transformed expression"
+					],
+					"scoring_notes": [
+						"General term must show correct factorial and power pattern",
+						"Interval of convergence requires checking endpoints separately",
+						"Lagrange error bound requires an explicit maximum of the (n+1)th derivative"
+					]
+				}
+			],
+			"rubric_conventions": "Same as AP Calculus AB",
+			"important_notes": [
+				"All AB scoring conventions apply to BC",
+				"Series FRQs always appear on BC and never on AB",
+				"Parametric arc length requires the integral form"
+			]
+		},
+		{
+			"course_code": "APSTAT",
+			"course_name": "AP Statistics",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 6,
+				"total_points": 50,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 90,
+				"structure": {
+					"questions_1_5": "Five shorter FRQs (~13 minutes each)",
+					"question_6": "Investigative Task (~25 minutes; worth more points)"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Exploring data and graphical displays",
+					"description": "Describe or compare distributions using given graphs.",
+					"common_parts": [
+						"Describe distribution using shape, center, spread, and unusual features (SCSF)",
+						"Compare two groups using parallel structure with explicit comparative language",
+						"Construct a requested graph from a table"
+					],
+					"scoring_notes": [
+						"Comparative statements must use explicit language ('the median of A is higher than B') — separate statements earn no comparison point",
+						"Shape must use statistical vocabulary: symmetric, skewed left/right, bimodal, uniform"
+					]
+				},
+				{
+					"type": "Inference: hypothesis test",
+					"description": "A scenario requires a hypothesis test for means, proportions, chi-square, or slope.",
+					"common_parts": [
+						"State H0 and Ha in terms of the parameter using correct symbols (μ, p, β1)",
+						"Name the test and check conditions with evidence from the problem",
+						"Calculate the test statistic and p-value",
+						"State conclusion in context using non-definitive language relative to alpha"
+					],
+					"scoring_notes": [
+						"Scored in three sections: (1) hypotheses + test name, (2) conditions + statistic + p-value, (3) conclusion",
+						"Each section rated E/P/I; final 0–4 score from combination table",
+						"Definitive language ('proves,' 'accepts,' 'no evidence') in conclusion — even if otherwise correct — loses the conclusion point",
+						"Conditions must be verified with problem-specific evidence"
+					]
+				},
+				{
+					"type": "Inference: confidence interval",
+					"description": "Construct and interpret a confidence interval for a parameter.",
+					"common_parts": [
+						"Identify procedure and check conditions",
+						"Compute the interval (point estimate ± margin of error)",
+						"Interpret in context with parameter, confidence level, and context all present",
+						"Use the interval to make a conclusion"
+					],
+					"scoring_notes": [
+						"Generic interpretations lose the point — must reference the parameter and the specific context",
+						"Interval-based conclusions must explicitly state the reasoning"
+					]
+				},
+				{
+					"type": "Study design",
+					"description": "Identify or design a study, discussing randomization, control, and bias.",
+					"scoring_notes": [
+						"Causation can only be claimed from random assignment in an experiment",
+						"Blocking must reference a specific variable that introduces variability"
+					]
+				},
+				{
+					"type": "Probability and random variables",
+					"description": "Calculate probabilities using rules, distributions, or simulation.",
+					"scoring_notes": [
+						"Binomial: must confirm fixed n, binary outcomes, independence, and constant p",
+						"Expected value calculations must show the formula explicitly"
+					]
+				},
+				{
+					"type": "Investigative Task (FRQ 6)",
+					"description": "Multi-part, data-rich question requiring integration of multiple statistical concepts. Often involves dataset analysis, output interpretation, or statistical claim evaluation.",
+					"scoring_notes": [
+						"Longer and worth more than questions 1–5",
+						"May span data collection, inference, and interpretation",
+						"Same E/P/I rubric per part"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Each part rated E (Essentially Correct), P (Partially Correct), or I (Incorrect); combined into 0–4 integer score per question",
+				"language_requirements": "Use parameter symbols (μ, p, σ, β1); avoid 'prove' or 'accept' in conclusions; always contextualize",
+				"partial_credit": "P earns partial point value; correct conditions but wrong statistic may still earn P on that section"
+			},
+			"important_notes": [
+				"All answers must be in the context of the study",
+				"State and verify conditions with problem evidence before doing inference",
+				"p-value: 'probability of observing a result as extreme as the sample result, assuming H0 is true'",
+				"Never use 'prove,' 'accept,' or 'there is no evidence' in a conclusion"
+			]
+		},
+		{
+			"course_code": "APBIO",
+			"course_name": "AP Biology",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 6,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 90,
+				"structure": {
+					"long_frq": "FRQ 1–2: 8–9 points each, ~22 min each; FRQ 1 = experimental data interpretation; FRQ 2 = construct a graph from data",
+					"short_frq": "FRQ 3–6: 4 points each, ~11 min each; types include lab investigation, concept with disruption, visual analysis, data analysis"
+				},
+				"calculator": "Four-function, scientific, or graphing calculator permitted; equations sheet provided"
+			},
+			"question_types": [
+				{
+					"type": "Experimental data interpretation with experimental design (Long FRQ 1)",
+					"description": "Experimental scenario with graph or table results. Students interpret data, identify procedures, and evaluate hypotheses.",
+					"common_parts": [
+						"Describe a relationship in the data with specific values",
+						"Identify independent/dependent variables and control",
+						"Evaluate whether data support or refute a hypothesis",
+						"Describe a design modification to test a new variable",
+						"Predict and justify results of a follow-up experiment"
+					],
+					"scoring_notes": [
+						"Each sub-part earns 0 or 1 point; no partial credit within a sub-part",
+						"Data descriptions must reference specific values from the graph/table",
+						"Justifications must connect to a stated biological mechanism, not just restate data"
+					]
+				},
+				{
+					"type": "Constructing a graph (Long FRQ 2)",
+					"description": "Data provided in a table; students draw an appropriate graph.",
+					"common_parts": [
+						"Label axes with variable name and units",
+						"Apply a reasonable, consistent scale",
+						"Plot all data points accurately",
+						"Draw a best-fit line or curve (not connect-the-dots)",
+						"Include error bars if provided"
+					],
+					"scoring_notes": [
+						"Axes need variable name AND units to earn the label point",
+						"Connecting data points instead of best-fit line loses the trend point",
+						"Compressed scales that waste graph space lose the scale point"
+					]
+				},
+				{
+					"type": "Concept with disruption (Short FRQ)",
+					"description": "A biological concept is described; a disruption is introduced. Explain, predict, justify.",
+					"common_parts": [
+						"Describe or explain the normal biological concept",
+						"Predict what happens when the disruption occurs",
+						"Justify the prediction using mechanistic biological reasoning"
+					]
+				},
+				{
+					"type": "Lab investigation (Short FRQ)",
+					"description": "A lab procedure is described; students demonstrate biological understanding and predict results.",
+					"common_parts": [
+						"Identify independent, dependent, and control variables",
+						"Explain the underlying biological concept",
+						"Predict and justify expected results"
+					]
+				},
+				{
+					"type": "Visual/image analysis (Short FRQ)",
+					"description": "A diagram or micrograph is provided; students describe components and explain relationships.",
+					"common_parts": [
+						"Identify labeled components",
+						"Explain relationships between components",
+						"Connect to a broader biological concept"
+					]
+				},
+				{
+					"type": "Data analysis (Short FRQ)",
+					"description": "A graph or table is given; describe patterns, evaluate a hypothesis, connect to biology.",
+					"common_parts": [
+						"Describe trends with specific values",
+						"Evaluate whether data support a stated hypothesis",
+						"Explain relation to a broader biological principle"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each sub-part earns 0 or 1; no partial credit within a sub-part",
+				"justification": "Predictions require mechanistic biological justification, not just data restatement",
+				"context_required": "Generic definitions without application to the scenario earn no credit"
+			},
+			"important_notes": [
+				"Use correct biological terminology",
+				"Graph construction: label axes with name AND units; best-fit line, not connect-the-dots",
+				"Experimental design: specify what is measured and with what equipment",
+				"Read task verbs: 'describe' = characteristics; 'explain' = mechanism; 'justify' = evidence + reasoning",
+				"Avoid chemistry or physics equations — use biological concepts"
+			]
+		},
+		{
+			"course_code": "APCHEM",
+			"course_name": "AP Chemistry",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 7,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 105,
+				"calculator": "Scientific or graphing calculator allowed and encouraged",
+				"structure": {
+					"long_frq": "FRQ 1–3: 10 points each, ~23 min each",
+					"short_frq": "FRQ 4–7: 4 points each, ~9 min each"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Acid-base / titration (Long FRQ)",
+					"description": "A titration experiment; stoichiometric, thermodynamic, and conceptual questions.",
+					"common_parts": [
+						"Calculate moles at various titration stages",
+						"Sketch or describe a titration curve with labeled equivalence point",
+						"Mark half-equivalence point and justify pKa = pH there",
+						"Identify appropriate indicator",
+						"Use Henderson-Hasselbalch or ICE table to calculate pH"
+					],
+					"scoring_notes": [
+						"Titration curve must show correct initial/final pH range and S-shape",
+						"All calculations must show the method — numerical answers alone earn no credit"
+					]
+				},
+				{
+					"type": "Kinetics (Short or Long FRQ)",
+					"description": "Rate data given; students determine rate law, order, rate constant, and mechanism.",
+					"common_parts": [
+						"Determine rate law from initial rates data",
+						"Calculate rate constant with correct units",
+						"Find rate of appearance/disappearance of a species",
+						"Identify the rate-determining step from a mechanism"
+					],
+					"scoring_notes": [
+						"Rate law must be justified by holding concentrations constant across trials",
+						"Units of k depend on overall order and must be stated"
+					]
+				},
+				{
+					"type": "Thermodynamics / Gibbs free energy (Short or Long FRQ)",
+					"description": "Evaluate spontaneity, calculate ΔG, ΔH, ΔS, relate to equilibrium.",
+					"common_parts": [
+						"Calculate ΔH using bond energies or Hess's Law",
+						"Determine sign of ΔS using particle-level reasoning",
+						"Predict spontaneity at different temperatures",
+						"Relate ΔG to K and cell potential"
+					],
+					"scoring_notes": [
+						"Entropy reasoning must reference moles of gas, degree of disorder, or particle-level change",
+						"Hess's Law steps must be shown with visible cancellations"
+					]
+				},
+				{
+					"type": "Molecular structure / bonding (Short FRQ)",
+					"description": "Lewis structures, VSEPR, periodic trends via Coulomb's Law, IMF comparisons.",
+					"scoring_notes": [
+						"Coulomb's Law reasoning must explicitly reference charge and distance",
+						"Geometry must follow from electron geometry, not just bond angle"
+					]
+				},
+				{
+					"type": "Equilibrium and Le Chatelier (Short FRQ)",
+					"description": "Write Kc/Kp expressions, set up ICE tables, apply Le Chatelier's principle.",
+					"scoring_notes": [
+						"Q vs K: must state Q < K or Q > K and specify which direction the reaction shifts",
+						"ICE tables must show all three rows explicitly"
+					]
+				},
+				{
+					"type": "Electrochemistry (Short FRQ)",
+					"description": "Galvanic/electrolytic cells, cell potential, relation to thermodynamics and Faraday's law.",
+					"common_parts": [
+						"Identify cathode and anode; write half-reactions",
+						"Calculate standard cell potential",
+						"Relate E°cell to ΔG° and K",
+						"Apply Faraday's law for electrolysis"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Long FRQs 10 pts, short FRQs 4 pts; each part-answer 0 or 1 point",
+				"justification_requirement": "Agree/disagree statements must always be followed by reasoning referencing chemical principles",
+				"show_work": "All calculations must show method and steps — answer alone earns 0"
+			},
+			"important_notes": [
+				"Only provide the number of examples requested — extra examples not scored",
+				"State the option given in the prompt when choosing among listed options",
+				"Particulate-level reasoning required for entropy and kinetics — describe particle behavior",
+				"Justify Lewis resonance by showing delocalization; do not just assert it"
+			]
+		},
+		{
+			"course_code": "APPHYS1",
+			"course_name": "AP Physics 1",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 4,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 100,
+				"calculator": "Graphing calculator permitted; equation sheet provided",
+				"structure": {
+					"experimental_design": "1 long question (~25 min, ~12 pts): design or critique an experiment, describe measurements, propose graphical analysis",
+					"qualitative_quantitative_translation": "1 long question (~25 min, ~12 pts): connect qualitative reasoning to quantitative expressions; derive from first principles",
+					"paragraph_argument": "1 short question (~20 min, ~7 pts): written justification in complete sentences",
+					"short_answer": "1 short question (~20 min, ~7 pts): focused calculation or representation interpretation"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Experimental Design and Analysis",
+					"description": "Design a procedure to investigate a physical relationship; specify what to measure; propose linearized graphical analysis; analyze provided data.",
+					"common_parts": [
+						"List quantities to measure and define symbols",
+						"Describe experimental procedure with enough detail for replication",
+						"Specify what to plot to produce a linear graph and how slope relates to the target quantity",
+						"Sketch and label a best-fit line on given axes",
+						"Calculate slope and connect to the target quantity with correct units"
+					],
+					"scoring_notes": [
+						"Graphing plan must specify exact quantities on each axis — not just 'y vs. x'",
+						"Use best-fit line points (not data points) to calculate slope",
+						"Linearization: for nonlinear relationships, transform variables (e.g., T^2 vs. L for pendulum)"
+					]
+				},
+				{
+					"type": "Qualitative/Quantitative Translation",
+					"description": "Justify a qualitative claim, then derive or manipulate a quantitative expression — or vice versa.",
+					"common_parts": [
+						"Provide qualitative explanation of a physical outcome",
+						"Derive an expression starting from a stated fundamental principle",
+						"Verify derived expression is consistent with qualitative reasoning",
+						"Predict how changing one variable affects the outcome"
+					],
+					"scoring_notes": [
+						"Derivation must begin with a stated fundamental equation from the reference sheet — starting from a result earns no credit",
+						"Qualitative justifications must reference a physical mechanism, not just cite an equation",
+						"Consistency check must explicitly confirm agreement"
+					]
+				},
+				{
+					"type": "Paragraph Argument",
+					"description": "Construct a written argument to explain a physical phenomenon. Must be in complete sentences.",
+					"scoring_notes": [
+						"Must use complete sentences — bullet points earn no credit",
+						"Must reference relevant physical principles and connect to scenario",
+						"Contradictions in the paragraph negate the credit for the contradicted claim"
+					]
+				},
+				{
+					"type": "Translation Between Representations",
+					"description": "Interpret or construct FBDs, energy bar charts, momentum tables, or motion graphs.",
+					"common_parts": [
+						"Draw FBD with all forces labeled by type and agent, with relative magnitudes",
+						"Interpret a graph (slope = rate of change; area = accumulated quantity)",
+						"Sketch a graph based on a described scenario",
+						"Convert between representations"
+					],
+					"scoring_notes": [
+						"FBDs must label each force by type and agent; relative magnitudes must be shown",
+						"Graph sketches must show correct qualitative shape",
+						"Axes must be labeled with variable and units"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"derivation_rule": "All derivations must begin with a stated principle; results-first derivations earn 0",
+				"justification_standard": "Physical reasoning must reference forces, energy, momentum, or other physics concepts — equations alone earn partial or no credit for explanation parts",
+				"graph_standards": "Labels, scales, best-fit lines, and units are each separately scorable"
+			},
+			"important_notes": [
+				"Algebra-based only — no calculus",
+				"Use g = 10 m/s² unless specified otherwise",
+				"FBD: include all forces; label by type and agent; do not include net force as a separate vector",
+				"Experimental design: specify instruments and exact quantities, not just general methods",
+				"Paragraph argument: clarity and correctness of physical reasoning are scored, not grammar"
+			]
+		},
+		{
+			"course_code": "APPHYSC-M",
+			"course_name": "AP Physics C: Mechanics",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 45,
+				"calculator": "Graphing calculator permitted; equation sheet provided",
+				"notes": "Calculus-based. Derivations may use integration and differentiation. All questions are equal weight."
+			},
+			"question_types": [
+				{
+					"type": "Mechanics derivation and application (all FRQs)",
+					"description": "Multi-part problems spanning kinematics, dynamics, energy, momentum, rotation, and oscillations. Calculus tools (integration, differentiation) are expected.",
+					"common_parts": [
+						"Derive an expression from a stated equation or principle using calculus",
+						"Draw and use a free-body diagram to set up Newton's second law in translational or rotational form",
+						"Integrate velocity to find position, or force to find work",
+						"Apply conservation of energy or momentum with correct setup",
+						"Analyze simple harmonic motion using differential equations or known results"
+					],
+					"scoring_notes": [
+						"Derivations must begin with a stated principle — not with the result",
+						"Integrals must show limits of integration",
+						"Rotational dynamics: must distinguish torque equation (Στ = Iα) from translational (ΣF = ma)"
+					]
+				}
+			],
+			"important_notes": [
+				"Calculus required — use derivatives and integrals appropriately",
+				"Show all setup: FBD, axis definitions, coordinate system",
+				"Dimensional analysis and unit checks are expected",
+				"Do not mix up rotational and translational quantities without explicit conversion"
+			]
+		},
+		{
+			"course_code": "APPHYSC-E",
+			"course_name": "AP Physics C: E&M",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 45,
+				"calculator": "Graphing calculator permitted; equation sheet provided",
+				"notes": "Calculus-based. Line and surface integrals, Gauss's Law, Ampere's Law, Faraday's Law are all expected."
+			},
+			"question_types": [
+				{
+					"type": "Gauss's Law application",
+					"description": "Determine electric field of a symmetric charge distribution using Gauss's Law.",
+					"common_parts": [
+						"Draw a Gaussian surface appropriate to the symmetry",
+						"Apply Gauss's Law (closed surface integral of E dot dA = Q_enc / ε0)",
+						"Identify Q_enc for regions inside and outside the distribution",
+						"Find E as a function of r"
+					],
+					"scoring_notes": [
+						"Must explicitly state Gauss's Law before using it",
+						"Gaussian surface must be justified (why this surface, why this size)"
+					]
+				},
+				{
+					"type": "RC circuit transient analysis",
+					"description": "Analyze charging or discharging of a capacitor in an RC circuit using calculus.",
+					"common_parts": [
+						"Write the differential equation governing current or charge",
+						"Solve the ODE to find exponential decay or growth",
+						"Calculate the time constant τ = RC",
+						"Sketch I(t) or V(t) and describe long-run behavior"
+					]
+				},
+				{
+					"type": "Electromagnetic induction",
+					"description": "Apply Faraday's Law and Lenz's Law to find induced EMF, current, and forces.",
+					"common_parts": [
+						"Calculate magnetic flux through a loop",
+						"Apply Faraday's Law: EMF = -dΦ/dt",
+						"Determine direction of induced current using Lenz's Law",
+						"Analyze LR circuits and inductance"
+					]
+				}
+			],
+			"important_notes": [
+				"Calculus required — surface integrals, line integrals, and time derivatives",
+				"State each law by name before applying it (Gauss's Law, Faraday's Law, Ampere's Law)",
+				"Justify symmetry assumptions explicitly before applying Gauss's or Ampere's Law",
+				"Direction of induced current must reference Lenz's Law"
+			]
+		},
+		{
+			"course_code": "APPHYS2",
+			"course_name": "AP Physics 2",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 4,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 90,
+				"calculator": "Graphing calculator permitted; equation sheet provided",
+				"notes": "Algebra-based. Same question types as Physics 1 (Experimental Design, QQT, Paragraph Argument, Short Answer) but covering thermodynamics, E&M, optics, waves, and modern physics topics."
+			},
+			"question_types": [
+				{
+					"type": "Experimental Design and Analysis",
+					"notes": "Same format as AP Physics 1. Common topics: electric circuits, optics (ray tracing), fluid pressure."
+				},
+				{
+					"type": "Qualitative/Quantitative Translation",
+					"notes": "Same format as AP Physics 1. Common topics: electric field and potential, thermodynamic processes, wave interference."
+				},
+				{
+					"type": "Paragraph Argument",
+					"notes": "Complete sentences required. Common topics: conceptual explanations of circuit behavior, thermodynamic reasoning, photoelectric effect."
+				},
+				{
+					"type": "Representation Translation",
+					"notes": "Interpreting or drawing circuits, ray diagrams, pressure-volume diagrams, wave diagrams."
+				}
+			],
+			"important_notes": [
+				"Algebra-based only — no calculus",
+				"Use same scoring conventions as AP Physics 1",
+				"Common Physics 2 FRQ themes: Ohm's law in circuit networks, ray optics using lens/mirror equations, thermodynamic process reasoning"
+			]
+		},
+		{
+			"course_code": "APENGLANG",
+			"course_name": "AP English Language",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "55%",
+				"time_total_minutes": 135,
+				"reading_time": "15 minutes suggested for synthesis sources",
+				"structure": {
+					"question_1": "Synthesis Essay (~40 minutes)",
+					"question_2": "Rhetorical Analysis Essay (~40 minutes)",
+					"question_3": "Argument Essay (~40 minutes)"
+				},
+				"scoring_per_essay": "0–6 points (Thesis 0–1, Evidence/Commentary 0–4, Sophistication 0–1)"
+			},
+			"question_types": [
+				{
+					"type": "Synthesis Essay (FRQ 1)",
+					"description": "Students read 6–7 short nonfiction sources on a topic and write an argument incorporating evidence from at least 3 sources.",
+					"requirements": [
+						"Defensible position thesis — not a pros/cons summary",
+						"Evidence from at least 3 provided sources, clearly cited",
+						"Commentary connecting evidence to the thesis",
+						"Awareness of rhetorical situation (audience, purpose, context)"
+					],
+					"rubric_structure": {
+						"thesis": "0–1: Defensible position; may not restate prompt or present both sides without a claim",
+						"evidence_and_commentary": "0–4: Evidence from 3+ sources with commentary; 4-point responses sustain a consistent line of reasoning",
+						"sophistication": "0–1: Genuine complexity of thought — qualifies argument, acknowledges tensions, or demonstrates purposeful style"
+					},
+					"scoring_notes": [
+						"Sophistication point earned by only ~5–15% of students; requires genuine complexity, not sophisticated vocabulary",
+						"Sources must be clearly attributed by letter (Source A, B, etc.) or description",
+						"'Pros and cons without a position' thesis earns 0"
+					]
+				},
+				{
+					"type": "Rhetorical Analysis Essay (FRQ 2)",
+					"description": "Read a nonfiction passage; analyze how the author's rhetorical choices serve the purpose. Analyzes the text — does not argue for the author's position.",
+					"requirements": [
+						"Thesis analyzing rhetorical choices (not a summary; not your opinion on the topic)",
+						"Evidence from the passage with commentary explaining the rhetorical function of each choice",
+						"Awareness of rhetorical situation"
+					],
+					"rubric_structure": {
+						"thesis": "0–1: Analyzes rhetorical choices; must not merely state the topic or list devices without effect",
+						"evidence_and_commentary": "0–4: Specific textual evidence + commentary explaining HOW each choice contributes to purpose",
+						"sophistication": "0–1: Explains significance of choices; may contextualize historically or consider alternative readings"
+					},
+					"scoring_notes": [
+						"Most common error: naming devices (ethos, anaphora) without explaining their effect — earns at most 2/4",
+						"Thesis must address rhetorical choices; 'King argues for civil rights' is not a rhetorical analysis thesis",
+						"Evidence must be specific; paraphrase alone without textual reference earns partial credit"
+					]
+				},
+				{
+					"type": "Argument Essay (FRQ 3)",
+					"description": "A claim, quotation, or prompt is given; students write an original argument. No sources provided — evidence comes from student's own reading, experience, and observation.",
+					"requirements": [
+						"Defensible thesis with a clear position",
+						"Specific, developed evidence from student's own knowledge",
+						"Commentary connecting evidence to thesis",
+						"Acknowledgment and response to counterarguments"
+					],
+					"rubric_structure": {
+						"thesis": "0–1: Defensible claim with a position",
+						"evidence_and_commentary": "0–4: Appropriate evidence + commentary; 4-point responses demonstrate consistent reasoning",
+						"sophistication": "0–1: Qualifies argument, acknowledges complexity, or employs compelling style"
+					},
+					"scoring_notes": [
+						"Vague references to 'many experts' or 'society' without specific examples earn low evidence scores",
+						"Qualification woven throughout can contribute to sophistication — not just a closing sentence"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Analytic rubric: Thesis (0–1) + Evidence/Commentary (0–4) + Sophistication (0–1) = 6 max per essay",
+				"thesis_requirements": "Defensible; cannot restate prompt; can appear anywhere in response; can be multiple sentences if in close proximity",
+				"grammar": "Errors interfering with communication prevent earning the 4th Evidence/Commentary point"
+			},
+			"important_notes": [
+				"Three distinct essay types appear in this order: Synthesis → Rhetorical Analysis → Argument",
+				"Rhetorical Analysis: explain HOW choices create effect — naming devices without effect analysis earns low scores",
+				"Synthesis: cite at least 3 sources with clear attribution",
+				"Argument: choose specific, developed evidence — no sources are provided",
+				"Sophistication point requires genuine complexity, not just advanced vocabulary"
+			]
+		},
+		{
+			"course_code": "APENGLIT",
+			"course_name": "AP English Literature",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "55%",
+				"time_total_minutes": 120,
+				"structure": {
+					"question_1": "Poetry Analysis Essay (~40 minutes): poem provided (100–300 words)",
+					"question_2": "Prose Fiction Analysis Essay (~40 minutes): fiction/drama passage provided (500–700 words)",
+					"question_3": "Literary Argument Essay (~40 minutes): no text provided; student selects a work of literary merit"
+				},
+				"scoring_per_essay": "0–6 points using the same analytic rubric as AP Lang (Thesis 0–1, Evidence/Commentary 0–4, Sophistication 0–1)",
+				"note": "Switched from holistic 9-point scale to analytic 6-point rubric. AP Lit thesis must present an 'interpretation'; AP Lang thesis must present a 'position.'"
+			},
+			"question_types": [
+				{
+					"type": "Poetry Analysis Essay (FRQ 1)",
+					"description": "Analyze how poetic literary elements and techniques develop the poem's meaning as directed by the prompt.",
+					"requirements": [
+						"Defensible interpretation of the poem connected to the prompt focus",
+						"Specific evidence (diction, imagery, figurative language, structure, sound, syntax) with commentary explaining function",
+						"Sustained line of reasoning"
+					],
+					"rubric_structure": {
+						"thesis": "0–1: Defensible interpretation; must go beyond identifying the topic or paraphrasing",
+						"evidence_and_commentary": "0–4: Specific textual evidence + commentary explaining HOW each element develops meaning",
+						"sophistication": "0–1: Explores complexity, tension, or ambiguity in the poem; may account for alternative interpretations"
+					},
+					"scoring_notes": [
+						"Must analyze specific poetic elements — not merely paraphrase the poem",
+						"Commentary must explain WHY and HOW the technique creates meaning — not just name it",
+						"Thesis must present an interpretation, not just the subject ('this poem is about...')"
+					]
+				},
+				{
+					"type": "Prose Fiction Analysis Essay (FRQ 2)",
+					"description": "Analyze how literary elements and techniques convey meaning or a character's perspective in a fiction or drama passage.",
+					"requirements": [
+						"Defensible interpretation of the passage's literary significance",
+						"Specific textual evidence with commentary explaining how it supports the interpretation",
+						"Analysis of narrative techniques: POV, diction, syntax, imagery, characterization, setting, tone"
+					],
+					"scoring_notes": [
+						"Plot summary is not analysis — responses that only recount events earn 0–1",
+						"Multiple instances of the same technique may be cited if each contributes independently",
+						"Unlike AP Lang, focuses on fiction — rhetorical choices become literary choices"
+					]
+				},
+				{
+					"type": "Literary Argument Essay (FRQ 3)",
+					"description": "A thematic or conceptual prompt is given; students write an essay using a self-chosen work of literary merit (novel, play, or other appropriate work).",
+					"requirements": [
+						"Defensible, arguable interpretation connected to the prompt",
+						"Specific evidence from the chosen work (characters, events, language, structure) with commentary",
+						"Sustained argument in which evidence builds the case"
+					],
+					"scoring_notes": [
+						"Student must choose a work of sufficient literary complexity",
+						"General knowledge is insufficient — specific textual details are required",
+						"Essay must connect the chosen work to the literary concept through analysis, not biography or history"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"key_difference_from_lang": "AP Lit focuses on literary/fictional texts and themes; AP Lang focuses on nonfiction and rhetoric. Lit thesis must present an 'interpretation'; Lang must present a 'position'",
+				"grammar": "Errors interfering with communication prevent earning the 4th Evidence/Commentary point"
+			},
+			"important_notes": [
+				"All three essays share the same 6-point analytic rubric",
+				"Q1 (Poetry) and Q2 (Prose) analyze provided texts; Q3 uses a student-chosen work",
+				"Analysis = explaining HOW and WHY techniques create meaning — naming devices alone earns low scores",
+				"Sophistication: often involves recognizing tension, ambiguity, or complexity in the text",
+				"Q3: choose a complex literary work; avoid films, TV shows, or simplistic texts"
+			]
+		},
+		{
+			"course_code": "APUSH",
+			"course_name": "AP US History",
+			"frq_overview": {
+				"weight_of_exam": "60% (SAQ 20%, DBQ 25%, LEQ 15%)",
+				"structure": {
+					"saq": "Short-Answer Questions: 3 questions (40 minutes); 3 parts (a, b, c) per question; 1 point per part; 3 points per question; students choose between Q3 and Q4",
+					"dbq": "Document-Based Question: 1 question (60 min including 15-min reading); 7 documents; worth 7 points",
+					"leq": "Long Essay Question: choose 1 of 3 prompts (40 minutes); worth 6 points"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Short-Answer Question (SAQ)",
+					"description": "Brief focused responses demonstrating historical knowledge. No thesis required. Approximately 3–7 sentences per part.",
+					"common_structures": [
+						"Describe one cause/effect/similarity/difference and support with evidence",
+						"Evaluate the validity of a historical argument",
+						"Identify a development and explain its significance",
+						"Provide evidence that supports or challenges a given interpretation"
+					],
+					"scoring_notes": [
+						"Each part (a, b, c) earns 1 point — no partial credit within a part",
+						"Must be historically defensible and specific",
+						"No essay format required; direct responses are acceptable"
+					]
+				},
+				{
+					"type": "Document-Based Question (DBQ)",
+					"description": "Essay using 7 provided documents as primary evidence. Analyze documents as historical sources, not just quote them.",
+					"rubric_structure": {
+						"thesis": "1 pt: Historically defensible thesis with a line of reasoning (not a restatement)",
+						"contextualization": "1 pt: Developed broader historical context — must explain the connection to the argument, not just mention background",
+						"evidence_document_content": "2 pts: 1 pt for describing content from 3+ docs; 2 pts for using 6+ docs to support an argument",
+						"evidence_outside": "1 pt: Specific evidence not found in the documents",
+						"document_analysis_happ": "2 pts: For 2+ documents, explain how historical situation, audience, purpose, or point of view is relevant to the argument",
+						"complexity": "1 pt: Complex understanding — corroboration, qualification, multiple causes, or connection across periods/scales"
+					},
+					"scoring_notes": [
+						"Contextualization must be a developed paragraph — a brief mention earns 0",
+						"Complexity must be sustained throughout, not just mentioned in passing",
+						"HAPP: must explain RELEVANCE to the argument, not just identify the factor"
+					]
+				},
+				{
+					"type": "Long Essay Question (LEQ)",
+					"description": "Independent essay using historical reasoning (causation, comparison, or CCOT) with no documents provided.",
+					"rubric_structure": {
+						"thesis": "1 pt: Defensible thesis with a line of reasoning",
+						"contextualization": "1 pt: Developed broader context",
+						"evidence": "2 pts: 1 pt for specific relevant evidence; 2 pts for evidence used to support an argument addressing the prompt",
+						"historical_reasoning": "2 pts: 1 pt for using a reasoning skill; 2 pts for demonstrating complex understanding through that skill"
+					},
+					"scoring_notes": [
+						"Three options given covering different time periods; students choose one",
+						"Evidence must be specific — named events, people, laws",
+						"Historical reasoning must frame the essay's structure"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"shared_with": "AP World History and AP European History — same SAQ/DBQ/LEQ rubric structure",
+				"independence_of_points": "Each rubric point is earned independently — a weak thesis does not prevent earning evidence points",
+				"grammar": "Errors not penalized unless they obscure the argument's meaning",
+				"accuracy": "Historically inaccurate claims used to advance the argument negate credit for that component"
+			},
+			"important_notes": [
+				"Contextualization must be a full developed paragraph — brief mentions earn 0",
+				"Thesis must make a historically defensible claim with a line of reasoning",
+				"HAPP sourcing must explain WHY the factor is relevant to the argument",
+				"Use specific, named evidence: people, events, dates, laws",
+				"All three AP History courses use the same rubric structure"
+			]
+		},
+		{
+			"course_code": "APWORLD",
+			"course_name": "AP World History",
+			"frq_overview": "Same SAQ/DBQ/LEQ format and rubric as APUSH. See APUSH frq_overview.",
+			"format_differences_from_apush": {
+				"saq": "Q1 uses a secondary source; Q2 uses a primary source; Q3 has no source. Q1 and Q2 required; choose between Q3 and Q4.",
+				"dbq": "7 documents; focuses on topics from 1450 to 2001",
+				"leq": "3 options: c.1200–1750, c.1450–1900, c.1750–2001"
+			},
+			"content_emphasis": [
+				"Use comparative analysis across regions — avoid treating one region's experience as universal",
+				"Apply world historical thinking skills: comparison, causation, CCOT",
+				"Reference specific empires, trade networks, and global exchanges by name",
+				"HAPP sourcing must connect document's historical context to the argument"
+			]
+		},
+		{
+			"course_code": "APEURO",
+			"course_name": "AP European History",
+			"frq_overview": "Same SAQ/DBQ/LEQ format and rubric as APUSH. See APUSH frq_overview.",
+			"format_differences_from_apush": {
+				"saq": "Q1 uses a visual or primary source from c.1600–2001; Q1 and Q2 required; choose between Q3 and Q4",
+				"dbq": "7 documents from c.1600–2001",
+				"leq": "3 options: c.1450–1700, c.1648–1914, c.1815–2001"
+			},
+			"content_emphasis": [
+				"Use specific European nations, rulers, institutions, and events",
+				"Apply European periodization: early modern, 19th century, 20th century distinctions matter",
+				"HAPP sourcing emphasizes ideological or institutional context of European historical sources"
+			]
+		},
+		{
+			"course_code": "APPSYCH",
+			"course_name": "AP Psychology",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 2,
+				"weight_of_exam": "33%",
+				"time_total_minutes": 50,
+				"structure_2025_forward": {
+					"frq_1": "Article Analysis Question (~25 minutes): analyze a summarized peer-reviewed study",
+					"frq_2": "Evidence-Based Question (~25 minutes): apply psychological concepts to a given scenario"
+				},
+				"note": "Updated for 2025: replaced the old Concept Application and Research Design FRQ types."
+			},
+			"question_types": [
+				{
+					"type": "Article Analysis Question (FRQ 1)",
+					"description": "Students read a brief summary of a real psychological study and answer structured sub-parts on research design, variables, ethics, statistics, and generalizability.",
+					"common_parts": [
+						"Identify independent and dependent variables",
+						"Identify the research method and justify",
+						"Explain an ethical consideration",
+						"Interpret a statistic in context",
+						"Evaluate generalizability based on sampling and population"
+					],
+					"scoring_notes": [
+						"Identification must be specific to the study — generic definitions earn no credit",
+						"Research method justification must reference the study's characteristics",
+						"Generalizability reasoning must reference sample size, sampling method, or population"
+					]
+				},
+				{
+					"type": "Evidence-Based Question (FRQ 2)",
+					"description": "A scenario describes a person's behavior or experience. Students apply psychological terms by defining them AND explaining how they apply to the specific scenario.",
+					"common_parts": [
+						"Apply a psychological concept: define it AND explain how it applies to the scenario",
+						"Explain how a psychological process accounts for observed behavior",
+						"Predict an outcome based on psychological principles"
+					],
+					"scoring_notes": [
+						"Definition alone earns 0 — definition plus application required",
+						"Application must be correct and specific to the scenario",
+						"Each sub-part earns 0 or 1 point independently"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each sub-part earns 0 or 1; no partial credit within a sub-part",
+				"prose_required": "Complete sentences required — bullet points or fragments receive no credit"
+			},
+			"important_notes": [
+				"Use correct psychological terminology — casual synonyms earn no credit",
+				"Required structure: define the concept + apply it to the specific scenario",
+				"Task verbs: 'describe' = characteristics; 'explain' = mechanism; 'identify' = name only; 'propose' = suggest with rationale",
+				"Exam updated 2025: no longer uses old Concept Application or Research Design formats"
+			]
+		},
+		{
+			"course_code": "APMACRO",
+			"course_name": "AP Macroeconomics",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 60,
+				"structure": {
+					"long_frq": "FRQ 1: ~25 minutes, 10 points",
+					"short_frq_1": "FRQ 2: ~12 minutes, 5 points",
+					"short_frq_2": "FRQ 3: ~12 minutes, 5 points"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Macroeconomic model application (Long FRQ)",
+					"description": "A scenario describes changing conditions; students shift models and explain effects.",
+					"common_parts": [
+						"Draw, label, and shift a model graph (AD-AS, money market, loanable funds, foreign exchange)",
+						"Identify direction of change in output, price level, or interest rates in short run",
+						"Explain long-run self-adjustment or policy response",
+						"Connect shifts across markets"
+					],
+					"scoring_notes": [
+						"Graphs must include labeled axes, original curve, shifted curve (subscripted), and new equilibrium labeled",
+						"Short-run and long-run effects must be distinguished when both are asked",
+						"Wrong graph shift negates dependent effect points"
+					]
+				},
+				{
+					"type": "Policy effects (Short FRQ)",
+					"description": "Identify a fiscal or monetary policy tool; explain transmission; state effect on target variable.",
+					"scoring_notes": [
+						"Use correct directional language ('increases,' 'decreases')",
+						"Transmission must trace the chain: tool → money supply/spending → AD → output/price"
+					]
+				},
+				{
+					"type": "International trade / exchange rates (Short FRQ)",
+					"description": "Exchange rate determination, balance of payments, and effects on net exports.",
+					"common_parts": [
+						"Explain how interest rate or income changes affect exchange rate",
+						"Determine appreciation or depreciation",
+						"Explain effect on net exports and aggregate demand"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"graph_requirements": "Each model graph: axis labels, original curves labeled, shifted curves subscripted (e.g., AD1), new equilibrium labeled (P1, Y1)",
+				"no_partial_credit": "Wrong shift direction earns 0 on that point even with partially correct reasoning"
+			},
+			"important_notes": [
+				"Label all axes and curves on every graph",
+				"Distinguish short-run from long-run effects when both are asked",
+				"Correct model names: AD-AS, Money Market, Loanable Funds Market, Foreign Exchange Market",
+				"Crowding out: fiscal expansion → loanable funds demand up → interest rate up → private investment down"
+			]
+		},
+		{
+			"course_code": "APMICRO",
+			"course_name": "AP Microeconomics",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 60,
+				"structure": {
+					"long_frq": "FRQ 1: ~25 minutes, 10 points",
+					"short_frq_1": "FRQ 2: ~12 minutes, 5 points",
+					"short_frq_2": "FRQ 3: ~12 minutes, 5 points"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Market equilibrium and welfare analysis (Long FRQ)",
+					"description": "A market scenario with supply/demand shifts or government intervention. Students analyze welfare effects.",
+					"common_parts": [
+						"Draw and label supply-demand diagram with original and shifted curves and equilibria",
+						"Identify new equilibrium price and quantity",
+						"Show consumer surplus, producer surplus, and deadweight loss areas",
+						"Analyze welfare effects of tax, subsidy, price floor, or ceiling"
+					],
+					"scoring_notes": [
+						"Graphs must show P* and Q* (original) and P1, Q1 (new) clearly labeled",
+						"Consumer surplus: above price, below demand; producer surplus: below price, above supply",
+						"Tax: show the wedge between price paid by consumers and received by producers"
+					]
+				},
+				{
+					"type": "Firm behavior and profit maximization (Short FRQ)",
+					"description": "Analyze cost and revenue curves to determine profit-maximizing output and long-run adjustments.",
+					"common_parts": [
+						"Identify profit-maximizing output where MR = MC",
+						"Determine profit or loss by comparing P to ATC",
+						"Draw and label correctly shaped cost curve diagram",
+						"Explain long-run entry/exit in perfect competition"
+					],
+					"scoring_notes": [
+						"Shutdown condition: produce if P >= AVC; shut down if P < AVC — must reference AVC",
+						"Monopoly: MR must be drawn below demand with steeper slope"
+					]
+				},
+				{
+					"type": "Market failure and externalities (Short FRQ)",
+					"description": "Identify externalities, show social vs. market optimum, evaluate corrective policies.",
+					"common_parts": [
+						"Identify whether externality is positive or negative and explain the market failure",
+						"Show socially optimal vs. market output on a diagram",
+						"Evaluate a corrective policy"
+					]
+				}
+			],
+			"rubric_conventions": "Same point-based, graph-heavy structure as AP Macroeconomics",
+			"important_notes": [
+				"MR = MC is the universal profit-maximizing rule for all market structures",
+				"For perfect competition: P = MR = AR; for monopoly: P > MR",
+				"Draw ATC and AVC as U-shaped with AVC below ATC",
+				"Label all intersection points and axes on every diagram"
+			]
+		},
+		{
+			"course_code": "APGOV-US",
+			"course_name": "AP US Government and Politics",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 4,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 100,
+				"structure": {
+					"concept_application": "FRQ 1: ~20 minutes, 3 points",
+					"scotus_comparison": "FRQ 2: ~20 minutes, 4 points",
+					"argument_essay": "FRQ 3: ~40 minutes, 6 points",
+					"quantitative_analysis": "FRQ 4: ~20 minutes, 4 points"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Concept Application (FRQ 1)",
+					"description": "A political scenario is described; students identify a relevant concept, explain how it applies, and connect to a broader pattern.",
+					"scoring_notes": [
+						"Must name the correct concept — vague references earn no credit",
+						"Application must be specific to the scenario, not generic",
+						"1 point per part (a, b, c)"
+					]
+				},
+				{
+					"type": "SCOTUS Comparison (FRQ 2)",
+					"description": "A non-required Supreme Court case is described; students compare to a required Court case from the course.",
+					"common_parts": [
+						"Identify the constitutional provision or principle at issue",
+						"Describe the holding/reasoning of the required case",
+						"Explain whether the provided case would be decided similarly or differently and justify",
+						"Explain impact on governmental action or individual rights"
+					],
+					"scoring_notes": [
+						"Must reference the required case by name",
+						"Comparison must address HOW the constitutional reasoning is similar or different — not just outcomes"
+					]
+				},
+				{
+					"type": "Argument Essay (FRQ 3)",
+					"description": "Defend a claim about a political science concept using required foundational documents as evidence.",
+					"requirements": [
+						"Specific defensible claim (thesis) responding to the prompt",
+						"Evidence from at least one required foundational document by name",
+						"Evidence from a second source (document, required SCOTUS case, or course content)",
+						"Reasoning connecting evidence to the claim",
+						"Acknowledgment and response to a counterclaim"
+					],
+					"scoring_notes": [
+						"Foundational documents must be specifically named and accurately referenced",
+						"Counterclaim must be responded to — acknowledgment alone earns partial credit"
+					]
+				},
+				{
+					"type": "Quantitative Analysis (FRQ 4)",
+					"description": "Students analyze a visual stimulus (graph, table, chart, map) related to political behavior or policy.",
+					"common_parts": [
+						"Describe a trend or pattern with specific data values",
+						"Explain how data relate to a political science concept",
+						"Draw a conclusion or prediction from the data",
+						"Identify a limitation of the data"
+					],
+					"scoring_notes": [
+						"Data descriptions must reference specific values — not just general trends",
+						"Conclusions must be grounded in the data shown, not general political knowledge"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"required_documents": "Argument essays must cite required foundational documents by name and characterize their content accurately",
+				"political_science_language": "Use discipline vocabulary: federalism, separation of powers, electoral college, incumbency advantage, etc."
+			},
+			"important_notes": [
+				"Know the required foundational documents (Federalist 10, 51, 70, 78; Constitution; Brutus 1; Declaration; etc.) and their arguments",
+				"Know the 15 required SCOTUS cases and their holdings",
+				"SCOTUS comparison: apply constitutional reasoning from the required case to the unfamiliar new case",
+				"Argument essay: cite foundational documents by name and author/source"
+			]
+		},
+		{
+			"course_code": "APENVSCI",
+			"course_name": "AP Environmental Science",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 70,
+				"structure": {
+					"question_1": "Long FRQ (~35 minutes, 10 points): data analysis plus free-response parts",
+					"question_2": "Short FRQ (~17 minutes, 4 points)",
+					"question_3": "Short FRQ (~17 minutes, 4 points)"
+				},
+				"calculator": "Four-function calculator permitted"
+			},
+			"question_types": [
+				{
+					"type": "Data analysis and environmental interpretation (Long FRQ 1)",
+					"description": "A data set (graph, table, or map) related to an environmental issue is provided. Students describe trends, perform calculations, and propose solutions.",
+					"common_parts": [
+						"Describe a trend or pattern in the provided data with specific values",
+						"Perform a calculation (e.g., rate of change, percentage, energy units)",
+						"Identify an environmental cause or consequence of the shown trend",
+						"Propose a strategy to mitigate a described environmental problem and justify",
+						"Evaluate a trade-off between environmental and economic/social factors"
+					],
+					"scoring_notes": [
+						"Data descriptions must reference specific values — not just 'it increased'",
+						"Calculations must show setup and units; answer alone earns partial credit only",
+						"Mitigation strategies must be specific and connected to the problem's mechanism"
+					]
+				},
+				{
+					"type": "Environmental systems and processes (Short FRQ)",
+					"description": "Questions about biogeochemical cycles, energy flow, pollution, or population dynamics.",
+					"common_parts": [
+						"Explain a step in a biogeochemical cycle or energy transfer",
+						"Identify a pollutant, its source, and its environmental effect",
+						"Explain a population growth concept (carrying capacity, exponential vs. logistic growth)",
+						"Describe an environmental consequence of a described human activity"
+					]
+				},
+				{
+					"type": "Environmental solutions and policy (Short FRQ)",
+					"description": "Students evaluate or propose environmental solutions and consider trade-offs.",
+					"common_parts": [
+						"Propose a realistic strategy to reduce a named pollutant or environmental harm",
+						"Identify a negative consequence or trade-off of a proposed solution",
+						"Explain how a specific law or regulation addresses an environmental problem"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each sub-part earns 0 or 1",
+				"calculation_requirement": "Calculations must show the setup and correct units; answer alone is insufficient",
+				"specificity": "Generic answers ('pollution is bad') earn no credit — responses must be specific to the scenario"
+			},
+			"important_notes": [
+				"Use environmental units correctly: ppm, ppb, kWh, hectares, kg CO2 eq",
+				"Show calculation setups including unit conversions",
+				"Mitigation strategies must directly address the mechanism of the problem, not just general solutions",
+				"Trade-off analysis must name both the benefit and the cost"
+			]
+		},
+		{
+			"course_code": "APCSA",
+			"course_name": "AP Computer Science A",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 4,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 90,
+				"calculator": "None permitted",
+				"notes": "All FRQs require writing Java code by hand. No IDE. Questions test ability to write, trace, and reason about Java code."
+			},
+			"question_types": [
+				{
+					"type": "Methods and Control Structures",
+					"description": "Students write Java methods using loops, conditionals, and basic operations on primitive types and Strings.",
+					"common_parts": [
+						"Write a method body that produces a specified output given input parameters",
+						"Trace through a provided code segment and determine the output",
+						"Identify and correct an error in a code segment",
+						"Write a loop (for, while) to process a sequence of values"
+					],
+					"scoring_notes": [
+						"Syntax errors do not automatically lose a point if intent is clear — but missing semicolons and unclosed braces can lose points",
+						"Off-by-one errors in loop bounds typically lose the loop boundary point",
+						"Return statements must match the declared return type"
+					]
+				},
+				{
+					"type": "Class Design (Writing a Class)",
+					"description": "Students write an entire Java class or significant portions of it, including constructors, instance variables, and methods.",
+					"common_parts": [
+						"Declare instance variables with appropriate types and access modifiers",
+						"Write a constructor that initializes instance variables",
+						"Write accessor (getter) and mutator (setter) methods",
+						"Write a method that implements specified behavior using instance variables"
+					],
+					"scoring_notes": [
+						"Instance variables must be declared private",
+						"Constructor must use the correct parameter types and assign them to instance variables",
+						"Methods must use correct return types and match specified signatures"
+					]
+				},
+				{
+					"type": "Array/ArrayList Manipulation",
+					"description": "Students write code that traverses, searches, or manipulates arrays or ArrayLists.",
+					"common_parts": [
+						"Traverse an array or ArrayList with a for or for-each loop",
+						"Search for an element meeting a condition and return it or its index",
+						"Add, remove, or update elements in an ArrayList",
+						"Write a nested loop to process a 2D array"
+					],
+					"scoring_notes": [
+						"ArrayList removal during traversal: must use iterator or traverse backwards to avoid IndexOutOfBoundsException",
+						"2D array access: must use correct row/column indexing (arr[row][col])"
+					]
+				},
+				{
+					"type": "Inheritance and Interfaces",
+					"description": "Students write code involving superclass/subclass relationships, method overriding, and polymorphism.",
+					"common_parts": [
+						"Write a subclass that extends a given superclass",
+						"Call super() in a subclass constructor",
+						"Override a method and call super.method() where appropriate",
+						"Use polymorphism to call an overridden method through a superclass reference"
+					],
+					"scoring_notes": [
+						"super() must be the first statement in a subclass constructor if used",
+						"Method override must match the exact signature of the superclass method"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each algorithmic component (loop structure, condition, return, method call) earns 1 point",
+				"syntax_tolerance": "Minor syntax errors that do not affect correctness are often not penalized; however, missing braces, wrong types, or wrong method names do lose points",
+				"no_credit_for_intent": "Code that does not compile due to significant errors earns 0 for correctness-based points"
+			},
+			"important_notes": [
+				"Use only the AP Java subset: classes, arrays, ArrayList, String methods, Math class",
+				"Write syntactically correct Java — no pseudocode",
+				"Declare types explicitly: int, double, boolean, String, int[], ArrayList<Type>",
+				"Do not use Java 8+ features (lambdas, streams) or GUI/IO libraries",
+				"Partial credit is available for correct logic even with minor syntax issues"
+			]
+		},
+		{
+			"course_code": "APCSP",
+			"course_name": "AP Computer Science Principles",
+			"frq_overview": {
+				"assessment_type": "AP CSP uses a Create Performance Task (portfolio project) rather than traditional FRQs on the exam. The exam includes MCQs only.",
+				"create_performance_task": {
+					"description": "Students design and develop a program that solves a problem or accomplishes a task of personal interest. The artifact is submitted for scoring alongside written responses.",
+					"written_responses": [
+						"Describe the overall purpose of the program",
+						"Describe the function of the code segment that implements an algorithm",
+						"Describe how the algorithm includes sequencing, selection, and iteration",
+						"Describe what the code segment does and how it contributes to the overall program",
+						"Identify and explain how a list is used to manage complexity",
+						"Describe an error you tested for and how you fixed it or would fix it"
+					],
+					"scoring_notes": [
+						"Must include at least one algorithm that includes sequencing, selection, and iteration",
+						"Must use a list (or similar collection) and explain how it manages complexity",
+						"Written responses must describe the student's own code — not copied or AI-generated code",
+						"Program must show evidence of running successfully"
+					]
+				},
+				"exam_frq_note": "The AP CSP exam (MCQ section) does not have traditional written FRQs. The performance task is the primary free-response component. Exam MCQs include reading CSP pseudocode and answering questions about algorithm behavior."
+			},
+			"pseudocode_conventions": {
+				"description": "AP CSP uses a specific pseudocode notation for exam questions; students must be able to read and interpret it.",
+				"key_constructs": [
+					"DISPLAY(expression) — outputs a value",
+					"INPUT() — gets user input",
+					"IF (condition) { } ELSE { } — conditional",
+					"REPEAT n TIMES { } — counted loop",
+					"REPEAT UNTIL (condition) { } — conditional loop",
+					"PROCEDURE name(parameters) { } — defining a procedure",
+					"RETURN(expression) — returns a value from a procedure",
+					"list[i] — list access by index (1-indexed in CSP pseudocode)",
+					"FOR EACH item IN list { } — list iteration",
+					"INSERT(list, i, value) / APPEND(list, value) / REMOVE(list, i) — list operations"
+				]
+			},
+			"important_notes": [
+				"AP CSP pseudocode is not Java or Python — do not use language-specific syntax",
+				"Performance Task: code must be student-written and show evidence of testing",
+				"Written response: must describe code specifically — generic statements earn no credit",
+				"Algorithm must include all three: sequencing, selection (IF), and iteration (loop)"
+			]
+		},
+		{
+			"course_code": "APHUG",
+			"course_name": "AP Human Geography",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 3,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 75,
+				"structure": {
+					"question_1": "~25 minutes, multi-part",
+					"question_2": "~25 minutes, multi-part",
+					"question_3": "~25 minutes, multi-part"
+				}
+			},
+			"question_types": [
+				{
+					"type": "Concept application with stimulus",
+					"description": "A map, graph, photograph, or data set is provided. Students describe a geographic pattern, apply a geographic model or concept, and explain spatial relationships.",
+					"common_parts": [
+						"Describe a spatial pattern visible in the provided stimulus",
+						"Identify a geographic model that explains the pattern (e.g., Von Thunen, demographic transition, bid-rent)",
+						"Explain how a geographic concept or process caused or influences the pattern",
+						"Propose a consequence of the pattern for a specific group or region"
+					],
+					"scoring_notes": [
+						"Pattern descriptions must be spatially specific — reference regions, directions, or locations visible in the stimulus",
+						"Model application must name the model and connect it correctly to the observed pattern",
+						"Explanations must show causation, not just correlation"
+					]
+				},
+				{
+					"type": "Geographic concept explanation",
+					"description": "Students explain geographic concepts, theories, and processes using examples.",
+					"common_parts": [
+						"Define a geographic concept and explain how it operates",
+						"Provide a real-world or hypothetical example that illustrates the concept",
+						"Explain the relationship between two geographic concepts or processes",
+						"Compare geographic outcomes across regions"
+					]
+				},
+				{
+					"type": "Policy and consequence analysis",
+					"description": "Students evaluate geographic consequences of political, economic, or social decisions.",
+					"common_parts": [
+						"Explain how a policy or human action produces a geographic consequence",
+						"Identify who benefits and who is harmed by a spatial arrangement or policy",
+						"Propose a geographic solution and evaluate its trade-offs"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each sub-part earns 0 or 1 point",
+				"specificity": "Generic answers earn no credit — must reference specific models, regions, processes, or examples",
+				"scale_awareness": "Responses must match the scale of analysis asked — local, national, and global contexts require different evidence"
+			},
+			"important_notes": [
+				"Use geographic vocabulary: spatial, diffusion, hearth, push/pull factors, centrality, primate city, etc.",
+				"Reference named geographic models when explaining patterns (demographic transition model, Von Thunen model, gravity model, etc.)",
+				"Include real-world examples — general statements without examples earn limited credit",
+				"Stimulus-based questions: reference specific features visible in the map, graph, or image"
+			]
+		},
+		{
+			"course_code": "APCOMPGOV",
+			"course_name": "AP Comparative Government",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 8,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 100,
+				"structure": {
+					"short_answer": "5 Short-Answer Questions (~5 minutes each, 3 points each): concept identification, description, explanation",
+					"concept_application": "1 Conceptual Analysis Question (~25 minutes, 5 points): apply a concept across multiple countries",
+					"country_context": "1 Country Context Question (~25 minutes, 5 points): analyze a stimulus in the context of one or more of the 6 required countries",
+					"argument_essay": "1 Argument Essay (~25 minutes, 5 points): develop and defend an argument using comparative evidence"
+				},
+				"required_countries": ["United Kingdom", "Mexico", "Russia", "China", "Iran", "Nigeria"]
+			},
+			"question_types": [
+				{
+					"type": "Short-Answer Questions",
+					"description": "Identify and describe political science concepts; explain their application to required countries.",
+					"scoring_notes": [
+						"Answers must use political science vocabulary and country-specific evidence",
+						"Generic answers without country-specific reference earn reduced or no credit"
+					]
+				},
+				{
+					"type": "Conceptual Analysis (Comparative Essay)",
+					"description": "Apply a political science concept across multiple required countries using comparative evidence.",
+					"common_parts": [
+						"Define or describe the concept",
+						"Apply it to at least two of the required countries with specific evidence",
+						"Explain similarities and differences in how the concept manifests across countries"
+					]
+				},
+				{
+					"type": "Country Context Question",
+					"description": "Analyze a political stimulus (graph, table, or text) in the context of specific required countries.",
+					"scoring_notes": [
+						"Data descriptions must reference values from the stimulus",
+						"Connections to countries must use course-specific knowledge about those countries"
+					]
+				},
+				{
+					"type": "Argument Essay",
+					"description": "Develop and defend a claim about a political science concept using comparative evidence.",
+					"requirements": [
+						"Defensible thesis with a line of reasoning",
+						"Evidence from at least two of the required countries",
+						"Explanation of how evidence supports the claim",
+						"Acknowledge a complexity, limitation, or alternative interpretation"
+					]
+				}
+			],
+			"important_notes": [
+				"All responses must draw on the 6 required countries: UK, Mexico, Russia, China, Iran, Nigeria",
+				"Use comparative political science vocabulary: legitimacy, sovereignty, regime type, political culture, civil society, etc.",
+				"Avoid U.S.-centric assumptions — compare explicitly rather than using the US as an unstated baseline",
+				"Regime type distinctions matter: liberal democracy, illiberal democracy, authoritarian, and hybrid regimes have distinct institutional features"
+			]
+		},
+		{
+			"course_code": "APPRECALC",
+			"course_name": "AP Precalculus",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 4,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 60,
+				"structure": {
+					"part_a": "FRQ 1 and 2: calculator-active (30 minutes)",
+					"part_b": "FRQ 3 and 4: no calculator (30 minutes)"
+				},
+				"note": "Unit 4 topics (parametric, vectors, matrices) are taught in the course but NOT assessed on the AP exam."
+			},
+			"question_types": [
+				{
+					"type": "Function analysis and modeling",
+					"description": "Students analyze functions across multiple representations (graphical, algebraic, tabular, verbal) and interpret key features in context.",
+					"common_parts": [
+						"Identify domain, range, zeros, end behavior, and asymptotes of a function",
+						"Interpret the meaning of function values or rates of change in context",
+						"Determine whether a table of values represents a particular function family",
+						"Write a function rule that models a described situation"
+					],
+					"scoring_notes": [
+						"Context interpretations must include units and a description of what the value represents",
+						"Function identification must reference the key feature that distinguishes the family (e.g., constant ratio for exponential, constant second difference for quadratic)"
+					]
+				},
+				{
+					"type": "Trigonometric and periodic function analysis",
+					"description": "Students analyze sine and cosine functions, interpret parameters, and model periodic phenomena.",
+					"common_parts": [
+						"Identify amplitude, period, midline, and phase shift from a graph or equation",
+						"Write a sine or cosine function that models a described situation",
+						"Solve a trigonometric equation over a specified interval",
+						"Verify a trigonometric identity or simplify an expression"
+					]
+				},
+				{
+					"type": "Exponential and logarithmic analysis",
+					"description": "Students solve equations, interpret parameters, and model growth/decay.",
+					"common_parts": [
+						"Solve an exponential or logarithmic equation analytically",
+						"Interpret the meaning of parameters (initial value, growth rate, base) in context",
+						"Determine doubling time or half-life from an exponential model",
+						"Use logarithms to linearize exponential data and interpret the result"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Point-based; each algorithmic step, interpretation, or feature earns 0 or 1 point",
+				"context": "Interpretations in context must include units and a description of what the value means in the situation",
+				"multiple_representations": "Questions often require working across representations — an algebraic answer should match graphical behavior"
+			},
+			"important_notes": [
+				"Unit 4 (vectors, parametric, matrices) is NOT on the AP exam",
+				"Always interpret function values in context with units",
+				"Calculator-active parts may require regression, evaluating functions, or finding zeros numerically",
+				"No-calculator parts require algebraic precision with exact values (e.g., ln, π, exact fractions)"
+			]
+		}
+	]
+}
