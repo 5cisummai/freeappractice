@@ -56,18 +56,27 @@ const ALLOWED_ORIGINS = [
 	'http://localhost:3000'
 ];
 
+const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
+const CORS_HEADERS = 'Content-Type, Authorization';
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// ── CORS ──────────────────────────────────────────────────
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
 	if (event.request.method === 'OPTIONS') {
+		if (!isAllowedOrigin) {
+			return new Response(null, { status: 403 });
+		}
+
 		return new Response(null, {
 			headers: {
-				'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '',
-				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-				'Access-Control-Max-Age': '86400'
+				'Access-Control-Allow-Origin': origin,
+				'Access-Control-Allow-Methods': CORS_METHODS,
+				'Access-Control-Allow-Headers': CORS_HEADERS,
+				'Access-Control-Allow-Credentials': 'true',
+				'Access-Control-Max-Age': '86400',
+				Vary: 'Origin'
 			}
 		});
 	}
@@ -116,6 +125,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (isAllowedOrigin) {
 		response.headers.set('Access-Control-Allow-Origin', origin);
+		response.headers.set('Access-Control-Allow-Credentials', 'true');
+		response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
+		response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS);
+		response.headers.set('Vary', 'Origin');
 	}
 
 	// ── Request logging ──────────────────────────────────────

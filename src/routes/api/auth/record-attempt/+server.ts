@@ -51,7 +51,9 @@ export const POST: RequestHandler = async (event) => {
 				completed: false,
 				mastery: 0,
 				totalAttempts: 0,
-				correctAttempts: 0
+				correctAttempts: 0,
+				frqTotalAttempts: 0,
+				frqTotalScore: 0
 			});
 			progressEntry = user.progress[user.progress.length - 1];
 		}

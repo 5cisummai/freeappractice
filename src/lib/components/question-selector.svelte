@@ -1,9 +1,11 @@
 <script lang="ts">
 	import apClassesData from '../../routes/data/ap-classes.json';
 	import { tick } from 'svelte';
+	import BugIcon from '@lucide/svelte/icons/bug';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Command from '$lib/components/ui/command/index.js';
@@ -51,6 +53,7 @@
 	let unitOpen = $state(false);
 	let classTriggerRef = $state<HTMLButtonElement>(null!);
 	let unitTriggerRef = $state<HTMLButtonElement>(null!);
+	let bugReportOpen = $state(false);
 
 	function notifySelectionChange(): void {
 		onSelectionChange?.(selectedClass, selectedUnit);
@@ -207,5 +210,16 @@
 		>
 			{isLoading ? 'Generating...' : generateLabel}
 		</Button>
+		<Button
+			type="button"
+			variant="ghost"
+			onclick={() => (bugReportOpen = true)}
+			class="h-10 shrink-0 px-3 text-sm text-muted-foreground hover:text-foreground"
+		>
+			<BugIcon class="mr-1.5 size-4" />
+			Report bug
+		</Button>
 	</div>
 </div>
+
+<BugReportDialog bind:open={bugReportOpen} {selectedClass} {selectedUnit} />

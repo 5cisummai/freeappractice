@@ -337,6 +337,7 @@
 							{selectedClass}
 							{selectedUnit}
 							requestVersion={generateVersion}
+
 						/>
 					{/if}
 				</div>

@@ -7,6 +7,7 @@
 	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
 	import logo from '$lib/assets/logo.png';
+	import { resolve } from '$app/paths';
 
 	const token = $derived(page.url.searchParams.get('token') ?? '');
 
@@ -42,7 +43,7 @@
 				return;
 			}
 			auth.setAuth(data.token, data.user);
-			goto('/app');
+			goto(resolve('/app'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -70,9 +71,9 @@
 	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
 </svelte:head>
 
-<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg p-6 md:p-10">
 	<div class="flex w-full max-w-sm flex-col gap-6">
-		<a href="/" class="flex items-center gap-2 self-center font-medium">
+		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
 			Free AP Practice
 		</a>
@@ -86,7 +87,7 @@
 				{#if !token}
 					<div class="space-y-4 text-center">
 						<p class="text-sm text-destructive">Invalid or missing reset token.</p>
-						<a href="/forgot-password" class="text-sm underline underline-offset-4"
+						<a href={resolve('/forgot-password')} class="text-sm underline underline-offset-4"
 							>Request a new link</a
 						>
 					</div>

@@ -4,6 +4,8 @@
 	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
 	import logo from '$lib/assets/logo.png';
+	import { resolve } from '$app/paths';
+
 
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');
@@ -26,7 +28,7 @@
 			}
 			auth.setAuth(data.token, data.user);
 			status = 'success';
-			setTimeout(() => goto('/app'), 2000);
+			setTimeout(() => goto(resolve('/app')), 2000);
 		} catch {
 			status = 'error';
 			errorMessage = 'Network error. Please try again.';
@@ -53,9 +55,9 @@
 	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
 </svelte:head>
 
-<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg p-6 md:p-10">
 	<div class="flex w-full max-w-sm flex-col gap-6 text-center">
-		<a href="/" class="flex items-center gap-2 self-center font-medium">
+		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
 			Free AP Practice
 		</a>
@@ -89,8 +91,8 @@
 				<h1 class="text-xl font-semibold">Verification failed</h1>
 				<p class="text-sm text-destructive">{errorMessage}</p>
 				<div class="flex flex-col gap-2">
-					<a href="/login" class="text-sm underline underline-offset-4">Go to sign in</a>
-					<a href="/signup" class="text-sm underline underline-offset-4">Create new account</a>
+					<a href={resolve('/login')} class="text-sm underline underline-offset-4">Go to sign in</a>
+					<a href={resolve('/signup')} class="text-sm underline underline-offset-4">Create new account</a>
 				</div>
 			</div>
 		{/if}

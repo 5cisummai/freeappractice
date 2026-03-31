@@ -113,6 +113,7 @@
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
 	import QuestionCardSkeleton from '$lib/components/question-card-skeleton.svelte';
 	import RichText from '$lib/components/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
@@ -127,7 +128,7 @@
 	let {
 		class: className,
 		mode = 'mcq',
-		questionNumber = '1',
+		questionNumber = '',
 		selectedClass = '',
 		selectedUnit = '',
 		requestVersion = 0,
@@ -159,9 +160,12 @@
 	let showExplanation = $state(false);
 	let startedAtMs = $state(Date.now());
 	let isLoading = $state(false);
-	let questionCount = $state(1);
+	let questionCount = $state(0);
 	let statusMessage = $state('Choose the best answer and then check your response.');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
+	let bugReportOpen = $state(false);
+	let bugReportContext = $state<BugReportContext | null>(null);
+	let isMobileViewport = $state(false);
 
 	// FRQ state
 	let frqQuestion = $state<FRQQuestion | null>(null);
@@ -172,9 +176,9 @@
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
 	const effectiveTwoColumn = $derived(
-		currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion)
+		!isMobileViewport && (currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
 	);
-	const expandedTwoColumn = $derived(isExpanded || effectiveTwoColumn);
+	const expandedTwoColumn = $derived(!isMobileViewport && (isExpanded || effectiveTwoColumn));
 	const tutorAnswerChoices = $derived.by(() => {
 		if (!currentQuestion?.options) return null;
 		const map: Record<string, string> = {};
@@ -440,7 +444,7 @@
 	}
 
 	function handleReportBugAction(): void {
-		onReportBug?.({
+		const ctx: BugReportContext = {
 			questionId: currentQuestion?.questionId,
 			questionNumber: effectiveQuestionNumber,
 			selectedClass,
@@ -448,7 +452,10 @@
 			prompt: currentQuestion?.prompt,
 			correctAnswer: currentQuestion?.correctAnswer,
 			hasStimulus: Boolean(currentQuestion?.hasStimulus)
-		});
+		};
+		onReportBug?.(ctx);
+		bugReportContext = ctx;
+		bugReportOpen = true;
 	}
 
 	function optionButtonClasses(optionId: string): string {
@@ -672,13 +679,16 @@
 	}
 
 	onMount(() => {
-		const onResize = () => detectLongQuestionLayout();
+		const onResize = () => {
+			isMobileViewport = window.innerWidth < 768;
+			detectLongQuestionLayout();
+		};
 		const onKeydown = (e: KeyboardEvent) => {
 			if (e.key === 'Escape' && isExpanded) isExpanded = false;
 		};
 		window.addEventListener('resize', onResize);
 		window.addEventListener('keydown', onKeydown);
-		requestAnimationFrame(() => detectLongQuestionLayout());
+		onResize();
 		return () => {
 			window.removeEventListener('resize', onResize);
 			window.removeEventListener('keydown', onKeydown);
@@ -694,6 +704,7 @@
 		void selectedClass;
 		void selectedUnit;
 		currentQuestion = null;
+		questionCount = 0;
 		resetInteractionState(true);
 		resetFRQState();
 		statusMessage =
@@ -739,7 +750,7 @@
 			</Card.Footer>
 		</Card.Root>
 	{:else}
-		<QuestionCardSkeleton isTwoColumn={currentQuestion?.hasStimulus} class={className} />
+		<QuestionCardSkeleton isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)} class={className} />
 	{/if}
 {:else}
 	{#snippet cardInner(expanded: boolean)}
@@ -776,7 +787,7 @@
 
 			{#if mode === 'frq' && frqQuestion}
 				{@const q = frqQuestion}
-				{#if frqHasContext}
+				{#if frqHasContext && !isMobileViewport}
 					<div
 						class={cn(
 							'overflow-hidden rounded-lg border border-border/70',
@@ -913,7 +924,7 @@
 						</div>
 					</div>
 				{/if}
-			{:else if currentQuestion?.hasStimulus}
+			{:else if currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
 						'overflow-hidden rounded-lg border border-border/70',
@@ -1190,4 +1201,6 @@
 			answerChoices={tutorAnswerChoices}
 		/>
 	{/if}
+
+	<BugReportDialog bind:open={bugReportOpen} context={bugReportContext} {selectedClass} {selectedUnit} />
 {/if}
