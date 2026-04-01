@@ -28,10 +28,8 @@
 		<AppSidebar />
 		<Sidebar.Inset>
 			<!-- Top header with trigger -->
-			<header class="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
+			<header class="flex h-14 shrink-0 items-center gap-2 px-4">
 				<SidebarTrigger class="-ml-1" />
-				<div class="h-4 w-px bg-border" aria-hidden="true"></div>
-				<span class="text-sm font-medium text-muted-foreground">Free AP Practice</span>
 			</header>
 			<!-- Page content -->
 			{@render children()}

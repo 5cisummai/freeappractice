@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 </script>
 
-<footer class="border-t border-border bg-card/80">
+<footer class="border-t border-border bg">
 	<div
 		class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
 	>

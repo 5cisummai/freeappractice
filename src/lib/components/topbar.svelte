@@ -24,12 +24,12 @@
 			await fetch('/api/auth/logout', { method: 'POST' });
 		} finally {
 			auth.clearAuth();
-			goto('/');
+			goto(resolve('/'));
 		}
 	}
 </script>
 
-<header class="topbar border-b border-border/70 bg-card/90 backdrop-blur-sm">
+<header class="topbar border-b border-border/70 bg backdrop-blur-sm">
 	<div
 		class="mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
 	>

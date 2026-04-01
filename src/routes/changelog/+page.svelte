@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import { resolve } from '$app/paths';
 
 	const changelog = [
 		{
@@ -368,7 +369,7 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a href="/" class="text-sm text-muted-foreground hover:text-foreground">← Back to Home</a>
+			<a href="{resolve('/')}" class="text-sm text-muted-foreground hover:text-foreground">← Back to Home</a>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Changelog</h1>

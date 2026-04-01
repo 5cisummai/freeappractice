@@ -7,6 +7,7 @@
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -43,7 +44,7 @@
 				return;
 			}
 			auth.setAuth(data.token, data.user);
-			goto('/email-sent');
+			goto(resolve('/email-sent'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -101,7 +102,7 @@
 							{loading ? 'Creating account...' : 'Create Account'}
 						</Button>
 						<Field.Description class="text-center">
-							Already have an account? <a href="/login" class="underline underline-offset-4"
+							Already have an account? <a href={resolve('/login')} class="underline underline-offset-4"
 								>Sign in</a
 							>
 						</Field.Description>
@@ -111,9 +112,9 @@
 		</Card.Content>
 	</Card.Root>
 	<Field.Description class="px-6 text-center">
-		By clicking continue, you agree to our <a href="/terms" class="underline underline-offset-4"
+		By clicking continue, you agree to our <a href={resolve('/terms')} class="underline underline-offset-4"
 			>Terms of Service</a
 		>
-		and <a href="/privacy" class="underline underline-offset-4">Privacy Policy</a>.
+		and <a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 	</Field.Description>
 </div>
