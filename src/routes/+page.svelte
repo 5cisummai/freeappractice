@@ -72,7 +72,7 @@
 	<meta property="og:image" content="https://freeappractice.org/assets/icon.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="FreeAPPractice.org - Free AI-Powered AP Exam Prep" />
+	<meta property="og:image:alt" content="FreeAPPractice.org - Free AP® Practice Questions Generator" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 
@@ -84,7 +84,7 @@
 		content="Generate unlimited free AP® practice questions with instant AI feedback. Master all 20+ AP® subjects. No sign-up required."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
-	<meta name="twitter:image:alt" content="FreeAPPractice.org - AI-Powered AP Exam Prep" />
+	<meta name="twitter:image:alt" content="FreeAPPractice.org - Free AP® Practice Questions Generator" />
 	<meta name="twitter:creator" content="@freeappractice" />
 	<meta name="twitter:site" content="@freeappractice" />
 	<meta name="adsense-client" content="ca-pub-9609730506370011" />
@@ -96,7 +96,7 @@
 			"name": "Free AP Practice",
 			"alternateName": "Free AP Practice",
 			"url": "https://freeappractice.org",
-			"description": "Free AI-powered AP® practice question generator covering 20+ Advanced Placement subjects with instant feedback and detailed explanations",
+			"description": "Free AP® practice question generator covering 20+ Advanced Placement subjects with instant feedback and detailed explanations",
 			"logo": "https://freeappractice.org/assets/icon.png",
 			"image": "https://freeappractice.org/assets/icon.png",
 			"applicationCategory": "EducationalApplication",
@@ -115,9 +115,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.0.1",
+			"softwareVersion": "1.3.0",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-2-5",
+			"dateModified": "2026-3-31",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": ["Test Preparation", "Self Study", "Exam Review"],
@@ -174,7 +174,7 @@
 					"name": "What is this website?",
 					"acceptedAnswer": {
 						"@type": "Answer",
-						"text": "This is a free AP practice question generator that uses AI to create multiple-choice questions for various AP subjects. It helps students prepare for their AP exams with unlimited practice questions."
+						"text": "This is a free AP practice question generator that utilizes AI to create multiple-choice questions for various AP subjects. It helps students prepare for their AP exams with unlimited practice questions."
 					}
 				},
 				{
