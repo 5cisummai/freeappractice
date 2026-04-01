@@ -167,7 +167,7 @@
 				<h2 class="mb-4 text-lg font-semibold">Subject Performance</h2>
 				<Card.Root>
 					<div class="divide-y divide-border">
-						{#each statsData.subjectBreakdown as subject}
+						{#each statsData.subjectBreakdown as subject (subject.subject)}
 							<div class="flex items-center gap-4 px-5 py-3.5">
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium">{subject.subject}</p>
