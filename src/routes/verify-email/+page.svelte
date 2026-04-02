@@ -45,14 +45,14 @@
 	<meta property="og:url" content="https://freeappractice.org/verify-email" />
 	<meta property="og:title" content="Verify Email – Free AP Practice" />
 	<meta property="og:description" content="Verify your Free AP Practice account email address." />
-	<meta property="og:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/verify-email" />
 	<meta name="twitter:title" content="Verify Email – Free AP Practice" />
 	<meta name="twitter:description" content="Verify your Free AP Practice account email address." />
-	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
 <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg p-6 md:p-10">

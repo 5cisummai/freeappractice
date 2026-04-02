@@ -7,6 +7,19 @@
 <svelte:head>
   <title>About – Free AP Practice</title>
   <meta name="description" content="About Free AP Practice: mission, approach, and core features." />
+  <link rel="canonical" href="https://freeappractice.org/about" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://freeappractice.org/about" />
+  <meta property="og:title" content="About – Free AP Practice" />
+  <meta property="og:description" content="About Free AP Practice: mission, approach, and core features." />
+  <meta property="og:image" content="https://freeappractice.org/icon.png" />
+  <meta property="og:site_name" content="FreeAPPractice.org" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://freeappractice.org/about" />
+  <meta name="twitter:title" content="About – Free AP Practice" />
+  <meta name="twitter:description" content="About Free AP Practice: mission, approach, and core features." />
+  <meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">
@@ -47,7 +60,7 @@
           <li>• AI question generation across 20+ AP subjects</li>
           <li>• Randomized unit-based practice for improved retention</li>
           <li>• Local and OpenAI provider fallback for stability</li>
-          <li>• Your progress saved locally—including explanations and strong/weak tracking</li>
+          <li>• Your progress saved locally-including explanations and strong/weak tracking</li>
         </ul>
       </article>
 

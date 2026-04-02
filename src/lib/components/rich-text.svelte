@@ -58,10 +58,10 @@
 			return Math.min(dollarIdx, p);
 		},
 		tokenizer(src: string) {
-			// \( ... \) takes priority — unambiguous
+			// \( ... \) takes priority - unambiguous
 			let match = src.match(/^\\\(([\s\S]+?)\\\)/);
 			if (match) return { type: 'inlineMath', raw: match[0], tex: match[1].trim() };
-			// Single $ ... $ — must not be preceded or followed by another $
+			// Single $ ... $ - must not be preceded or followed by another $
 			match = src.match(/^\$([^$\n][^$\n]*?)\$/);
 			if (match && !match[0].startsWith('$$')) {
 				return { type: 'inlineMath', raw: match[0], tex: match[1].trim() };
@@ -105,7 +105,7 @@
 						? hljs.highlight(rawCode, { language: validLang }).value
 						: hljs.highlightAuto(rawCode).value;
 				} catch {
-					// hljs failed — escape manually and render unstyled
+					// hljs failed - escape manually and render unstyled
 					highlighted = rawCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 				}
 
@@ -116,7 +116,7 @@
 	});
 
 	// ── DOMPurify config ──────────────────────────────────────
-	// hljs emits <span class="hljs-*"> inside <code> — we must explicitly
+	// hljs emits <span class="hljs-*"> inside <code> - we must explicitly
 	// allow those tags AND their class attributes, or DOMPurify strips them.
 	const DOMPURIFY_CONFIG: Parameters<typeof DOMPurify.sanitize>[1] = {
 		ADD_TAGS: [
@@ -201,12 +201,14 @@
 </script>
 
 {#if inline}
+	// eslint-disable-next-line svelte/no-at-html-tags
 	<span class="rich-text {className}">{@html renderedHtml}</span>
 {:else}
+	// eslint-disable-next-line svelte/no-at-html-tags
 	<div class="rich-text {className}">{@html renderedHtml}</div>
 {/if}
 
-<style>
+<style lang="postcss">
 	@reference "../../routes/layout.css";
 
 	.rich-text :global(p) {

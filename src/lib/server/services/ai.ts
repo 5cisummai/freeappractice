@@ -330,7 +330,7 @@ OUTPUT:
 		completionTokens: completion.usage?.completion_tokens
 	});
 
-	// Fire-and-forget S3 save — don't block the response
+	// Fire-and-forget S3 save - don't block the response
 	let questionId: string | undefined;
 	saveQuestionToS3(Object.assign({}, parsed, { apClass: className, unit: unit ?? 'General' }))
 		.then((id) => {
@@ -439,7 +439,7 @@ QUALITY:
 - Select a question type from the known types listed above that best fits the unit; mirror its common parts and depth
 - Match authentic AP exam FRQ style and difficulty
 - The first sub-part should be the easiest; each subsequent part increases in difficulty and builds logically on previous parts
-- Scoring criteria must be specific, rubric-aligned, and unambiguous — use the rubric conventions above
+- Scoring criteria must be specific, rubric-aligned, and unambiguous - use the rubric conventions above
 - Model answers must be complete and earn full credit
 - Use LaTeX for all math/science notation`;
 

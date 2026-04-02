@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
+import { listPublishedBlogEntries } from '$lib/server/services/blog';
 
 type SitemapEntry = {
 	path: string;
@@ -9,6 +10,8 @@ type SitemapEntry = {
 
 const entries: SitemapEntry[] = [
 	{ path: '/', changefreq: 'daily', priority: '1.0' },
+	{ path: '/blog', changefreq: 'weekly', priority: '0.8' },
+	{ path: '/about', changefreq: 'weekly', priority: '0.8' },
 	{ path: '/changelog', changefreq: 'weekly', priority: '0.7' },
 	{ path: '/login', changefreq: 'monthly', priority: '0.5' },
 	{ path: '/signup', changefreq: 'monthly', priority: '0.5' },
@@ -25,8 +28,18 @@ function getBaseUrl(requestUrl: URL): string {
 	return (configured ?? requestUrl.origin).replace(/\/+$/, '');
 }
 
-function buildSitemapXml(baseUrl: string): string {
-	const urls = entries
+async function buildSitemapXml(baseUrl: string): Promise<string> {
+	// Add dynamic blog posts
+	const blogEntries = await listPublishedBlogEntries();
+	const dynamicEntries: SitemapEntry[] = blogEntries.map((post) => ({
+		path: `/blog/${post.slug}`,
+		changefreq: 'weekly',
+		priority: '0.6'
+	}));
+
+	const allEntries = [...entries, ...dynamicEntries];
+
+	const urls = allEntries
 		.map(
 			({ path, changefreq, priority }) => `
   <url>
@@ -42,8 +55,8 @@ function buildSitemapXml(baseUrl: string): string {
 </urlset>`;
 }
 
-export const GET: RequestHandler = ({ url }) => {
-	const sitemap = buildSitemapXml(getBaseUrl(url));
+export const GET: RequestHandler = async ({ url }) => {
+	const sitemap = await buildSitemapXml(getBaseUrl(url));
 
 	return new Response(sitemap, {
 		headers: {

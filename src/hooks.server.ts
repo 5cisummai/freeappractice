@@ -111,7 +111,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 				event.locals.userId = decoded.userId;
 			}
 		} catch {
-			// Invalid token — locals.userId stays null
+			// Invalid token - locals.userId stays null
 		}
 	}
 

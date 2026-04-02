@@ -5,6 +5,29 @@
 
 	const changelog = [
 		{
+			version: '1.3.1',
+			date: 'April 1, 2026',
+			sections: [
+				{
+					title: 'New Additions',
+					items: [
+						'Added a blog with 4 articles so far',
+						'Added an about page'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Fixed mobile responsive design on the topbar and sidebar',
+						'Fixed inconsistent design for logged in users',
+						'Improved accessibility with better ARIA attributes and keyboard navigation',
+						'Improved consistency of UI elements across pages, including buttons and links',
+						'Improved SEO optimization with better meta tags and structured data'
+					]
+				}
+			]
+		},
+		{
 			version: '1.3.0',
 			date: 'March 31, 2026',
 			sections: [
@@ -354,14 +377,14 @@
 	<meta property="og:url" content="https://freeappractice.org/changelog" />
 	<meta property="og:title" content="Changelog – Free AP Practice" />
 	<meta property="og:description" content="Changelog and release notes for Free AP Practice" />
-	<meta property="og:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/changelog" />
 	<meta name="twitter:title" content="Changelog – Free AP Practice" />
 	<meta name="twitter:description" content="Changelog and release notes for Free AP Practice" />
-	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">

@@ -6,7 +6,7 @@
 			"course_code": "APCALC-AB",
 			"course_name": "AP Calculus AB",
 			"overview": "Single-variable calculus emphasizing limits, derivatives, integrals, differential equations, and applications; organized into 8 commonly taught units.",
-			"important_notes": "AP Calculus AB scope only—no BC-only topics like series, Taylor/Maclaurin, or polar/parametric integration. Use College Board notation, justify with MVT/IVT and FTC language, and keep modeling to single-variable calculus with clear units and context for rates of change.",
+			"important_notes": "AP Calculus AB scope only-no BC-only topics like series, Taylor/Maclaurin, or polar/parametric integration. Use College Board notation, justify with MVT/IVT and FTC language, and keep modeling to single-variable calculus with clear units and context for rates of change.",
 			"sources": [
 				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-calculus-ab?utm_source=openai))"
 			],
@@ -148,7 +148,7 @@
 					"exam_weighting_mc": "10%–15%",
 					"description": "Applied uses of integration: volumes, average value, accumulation in physical contexts and additional applied problem solving.",
 					"topics_may_include": [
-						"Volumes of revolution (disk/washer, shell methods—basic)",
+						"Volumes of revolution (disk/washer, shell methods-basic)",
 						"Average value of a function on an interval",
 						"Accumulated change in physics/economics contexts",
 						"Work and net change applications (basic)",
@@ -614,7 +614,7 @@
 					"exam_weighting_mc": "12%–16%",
 					"description": "Metabolic pathways: photosynthesis, cellular respiration, and energy transfer.",
 					"topics_may_include": [
-						"Glycolysis, Krebs cycle, oxidative phosphorylation",
+						"Glycolysis, Citric acid cycle, oxidative phosphorylation",
 						"Light-dependent and light-independent reactions of photosynthesis",
 						"ATP, enzymes, and regulation of metabolic pathways"
 					]
@@ -921,7 +921,7 @@
 			"course_code": "APPHYS1",
 			"course_name": "AP Physics 1",
 			"overview": "Algebra-based introductory college-level physics covering mechanics and basic waves/fluids, organized into 8 commonly taught units.",
-			"important_notes": "Algebra-based only—no calculus. Emphasize free-body diagrams, sign conventions, unit consistency, and qualitative reasoning. Focus on kinematics/dynamics, energy/momentum, rotation/torque, SHM, waves, and basic circuits/fluids; avoid AP Physics 2 or C-only topics.",
+			"important_notes": "Algebra-based only-no calculus. Emphasize free-body diagrams, sign conventions, unit consistency, and qualitative reasoning. Focus on kinematics/dynamics, energy/momentum, rotation/torque, SHM, waves, and basic circuits/fluids; avoid AP Physics 2 or C-only topics.",
 			"sources": [
 				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-1?utm_source=openai))"
 			],
@@ -1084,7 +1084,7 @@
 			"course_code": "APPHYS2",
 			"course_name": "AP Physics 2",
 			"overview": "Continuation of algebra-based physics focusing on fluids, thermodynamics, electricity, magnetism, optics, waves, and modern physics; organized into seven commonly taught units.",
-			"important_notes": "Algebra-based only—no calculus. Cover fluids, thermo, electrostatics, circuits (RC), magnetism, optics, waves, and introductory modern physics. Use correct units and sign conventions; keep math to algebra/trig and avoid Physics C-style derivations.",
+			"important_notes": "Algebra-based only-no calculus. Cover fluids, thermo, electrostatics, circuits (RC), magnetism, optics, waves, and introductory modern physics. Use correct units and sign conventions; keep math to algebra/trig and avoid Physics C-style derivations.",
 			"sources": [
 				"([apcentral.collegeboard.org](https://apcentral.collegeboard.org/courses/ap-physics-2?utm_source=openai))"
 			],
@@ -2873,7 +2873,7 @@
 				},
 				{
 					"unit_number": 6,
-					"unit_title": "Open Economy—International Trade and Finance",
+					"unit_title": "Open Economy-International Trade and Finance",
 					"description": "International trade, exchange rates, and open-economy macro linkages.",
 					"topics_may_include": [
 						"Currency appreciation/depreciation and net exports effects",

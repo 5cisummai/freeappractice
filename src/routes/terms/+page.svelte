@@ -14,14 +14,14 @@
 	<meta property="og:url" content="https://freeappractice.org/terms" />
 	<meta property="og:title" content="Terms of Service – Free AP Practice" />
 	<meta property="og:description" content="Terms of Service for Free AP Practice" />
-	<meta property="og:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/terms" />
 	<meta name="twitter:title" content="Terms of Service – Free AP Practice" />
 	<meta name="twitter:description" content="Terms of Service for Free AP Practice" />
-	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">

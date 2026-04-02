@@ -126,7 +126,7 @@
 		property="og:description"
 		content="Generate unlimited free AP® practice questions with instant AI feedback. Master all 20+ AP® subjects including Biology, Chemistry, Physics, Calculus, Computer Science, and History. No sign-up required."
 	/>
-	<meta property="og:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
 	<meta property="og:image:alt" content="FreeAPPractice.org - Free AP® Practice Questions Generator" />
@@ -140,7 +140,7 @@
 		name="twitter:description"
 		content="Generate unlimited free AP® practice questions with instant AI feedback. Master all 20+ AP® subjects. No sign-up required."
 	/>
-	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 	<meta name="twitter:image:alt" content="FreeAPPractice.org - Free AP® Practice Questions Generator" />
 	<meta name="twitter:creator" content="@freeappractice" />
 	<meta name="twitter:site" content="@freeappractice" />
@@ -154,8 +154,8 @@
 			"alternateName": "Free AP Practice",
 			"url": "https://freeappractice.org",
 			"description": "Free AP® practice question generator covering 20+ Advanced Placement subjects with instant feedback and detailed explanations",
-			"logo": "https://freeappractice.org/assets/icon.png",
-			"image": "https://freeappractice.org/assets/icon.png",
+			"logo": "https://freeappractice.org/icon.png",
+			"image": "https://freeappractice.org/icon.png",
 			"applicationCategory": "EducationalApplication",
 			"aggregateRating": {
 				"@type": "AggregateRating",
@@ -193,7 +193,7 @@
 				"name": "FreeAPPractice.org",
 				"logo": {
 					"@type": "ImageObject",
-					"url": "https://freeappractice.org/assets/icon.png"
+					"url": "https://freeappractice.org/icon.png"
 				}
 			},
 			"featureList": [
@@ -284,7 +284,7 @@
 			"@type": "Organization",
 			"name": "Free AP Practice",
 			"url": "https://freeappractice.org",
-			"logo": "https://freeappractice.org/assets/icon.png",
+			"logo": "https://freeappractice.org/icon.png",
 			"description": "Free AI-powered AP practice question generator for students",
 			"founder": {
 				"@type": "Person",

@@ -15,7 +15,7 @@
 		property="og:description"
 		content="Check your inbox for the next step in Free AP Practice account setup."
 	/>
-	<meta property="og:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
@@ -25,7 +25,7 @@
 		name="twitter:description"
 		content="Check your inbox for the next step in Free AP Practice account setup."
 	/>
-	<meta name="twitter:image" content="https://freeappractice.org/assets/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
 <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
