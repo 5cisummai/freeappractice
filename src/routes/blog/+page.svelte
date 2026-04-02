@@ -37,7 +37,7 @@
 	<Topbar />
 
 	<main class="flex-1">
-		<div class="blog-serif mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+		<div class=" mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<div class="mb-10 space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Blog</h1>
 				<p class="text-muted-foreground">Tips, updates, and study guides from the team.</p>

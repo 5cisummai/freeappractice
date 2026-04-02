@@ -46,7 +46,7 @@
 	<Topbar />
 
 	<main class="flex-1">
-		<article class="blog-serif mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+		<article class="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<!-- Back link -->
 			<a
 				href={resolve('/blog')}
