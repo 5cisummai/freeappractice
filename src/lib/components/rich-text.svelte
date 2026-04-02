@@ -201,12 +201,14 @@
 </script>
 
 {#if inline}
+	// eslint-disable-next-line svelte/no-at-html-tags
 	<span class="rich-text {className}">{@html renderedHtml}</span>
 {:else}
+	// eslint-disable-next-line svelte/no-at-html-tags
 	<div class="rich-text {className}">{@html renderedHtml}</div>
 {/if}
 
-<style>
+<style lang="postcss">
 	@reference "../../routes/layout.css";
 
 	.rich-text :global(p) {

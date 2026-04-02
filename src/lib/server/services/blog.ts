@@ -1,7 +1,5 @@
 import { BlogPost, type IBlogPost } from '$lib/server/models/blog-post';
 import { connectDb } from '$lib/server/db';
-import { readdir, readFile, stat } from 'node:fs/promises';
-import path from 'node:path';
 
 export interface BlogPostData {
 	title: string;
@@ -36,7 +34,11 @@ type ParsedMarkdownPost = {
 	content: string;
 };
 
-const BLOG_MARKDOWN_DIR = path.join(process.cwd(), 'src', 'content', 'blog');
+const markdownFiles = import.meta.glob('/src/content/blog/*.md', {
+	query: '?raw',
+	import: 'default',
+	eager: true
+}) as Record<string, string>;
 
 function normalizeSlug(value: string): string {
 	const withoutExtension = value.trim().toLowerCase().replace(/\.[^.]+$/, '');
@@ -90,7 +92,7 @@ function parseTags(value: string | undefined): string[] | undefined {
 	const cleaned = value.replace(/^\[/, '').replace(/\]$/, '');
 	const tags = cleaned
 		.split(',')
-		.map((tag) => tag.trim().replace(/^['\"]|['\"]$/g, ''))
+		.map((tag) => tag.trim().replace(/^['"]|['"]$/g, ''))
 		.filter(Boolean);
 	return tags.length > 0 ? tags : undefined;
 }
@@ -123,50 +125,39 @@ function parseMarkdownPost(raw: string): ParsedMarkdownPost {
 }
 
 async function listMarkdownPosts(): Promise<BlogEntry[]> {
-	let fileNames: string[] = [];
-	try {
-		fileNames = await readdir(BLOG_MARKDOWN_DIR);
-	} catch {
-		return [];
-	}
+	const posts = Object.entries(markdownFiles).map(([filePath, raw]) => {
+		const fileName = filePath.split('/').pop() ?? '';
+		const parsed = parseMarkdownPost(raw);
 
-	const markdownFiles = fileNames.filter((name) => name.toLowerCase().endsWith('.md'));
-	const posts = await Promise.all(
-		markdownFiles.map(async (fileName) => {
-			const fullPath = path.join(BLOG_MARKDOWN_DIR, fileName);
-			const stats = await stat(fullPath);
-			const raw = await readFile(fullPath, 'utf8');
-			const parsed = parseMarkdownPost(raw);
+		const slugFromFile = normalizeSlug(fileName);
+		const published = parsed.published ?? true;
+		if (!published || !slugFromFile) return null;
 
-			const slugFromFile = normalizeSlug(fileName);
-			const published = parsed.published ?? true;
-			if (!published || !slugFromFile) return null;
+		const title = parsed.title?.trim() || extractTitleFromMarkdown(parsed.content) || humanizeSlug(slugFromFile);
+		const excerpt = parsed.excerpt?.trim() || summarizeMarkdown(parsed.content);
 
-			const title = parsed.title?.trim() || extractTitleFromMarkdown(parsed.content) || humanizeSlug(slugFromFile);
-			const excerpt = parsed.excerpt?.trim() || summarizeMarkdown(parsed.content);
+		const createdAt = parsed.publishedAt ?? new Date();
+		const publishedAt = parsed.publishedAt ?? createdAt;
 
-			const createdAt = stats.birthtime ?? stats.mtime ?? new Date();
-			const publishedAt = parsed.publishedAt ?? createdAt;
-
-			return {
-				_id: `file:${slugFromFile}`,
-				title,
-				slug: slugFromFile,
-				excerpt,
-				content: parsed.content,
-				...(parsed.coverImage ? { coverImage: parsed.coverImage } : {}),
-				tags: parsed.tags ?? [],
-				publishedAt,
-				createdAt,
-				source: 'file' as const
-			};
-		})
-	);
+		return {
+			_id: `file:${slugFromFile}`,
+			title,
+			slug: slugFromFile,
+			excerpt,
+			content: parsed.content,
+			...(parsed.coverImage ? { coverImage: parsed.coverImage } : {}),
+			tags: parsed.tags ?? [],
+			publishedAt,
+			createdAt,
+			source: 'file' as const
+		};
+	});
 
 	const validPosts: BlogEntry[] = [];
 	for (const post of posts) {
 		if (post) validPosts.push(post);
 	}
+
 	return validPosts;
 }
 
