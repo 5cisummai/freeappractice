@@ -46,7 +46,7 @@
 	<Topbar />
 
 	<main class="flex-1">
-		<article class="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+		<article class="blog-serif mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<!-- Back link -->
 			<a
 				href={resolve('/blog')}
@@ -135,11 +135,30 @@
 </div>
 
 <style>
+	.blog-serif {
+		font-family:
+			'Iowan Old Style',
+			'Palatino Linotype',
+			Palatino,
+			'Book Antiqua',
+			Georgia,
+			'Times New Roman',
+			serif;
+	}
+
 	/* Prose styles since @tailwindcss/typography may not be installed */
 	:global(.prose) {
 		color: oklch(var(--foreground));
 		line-height: 1.75;
 		font-size: 1rem;
+		font-family:
+			'Iowan Old Style',
+			'Palatino Linotype',
+			Palatino,
+			'Book Antiqua',
+			Georgia,
+			'Times New Roman',
+			serif;
 	}
 	:global(.prose h1),
 	:global(.prose h2),
