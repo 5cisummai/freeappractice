@@ -5,6 +5,29 @@
 
 	const changelog = [
 		{
+			version: '1.3.1',
+			date: 'April 1, 2026',
+			sections: [
+				{
+					title: 'New Additions',
+					items: [
+						'Added a blog with 4 articles so far',
+						'Added an about page'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Fixed mobile responsive design on the topbar and sidebar',
+						'Fixed inconsistent design for logged in users',
+						'Improved accessibility with better ARIA attributes and keyboard navigation',
+						'Improved consistency of UI elements across pages, including buttons and links',
+						'Improved SEO optimization with better meta tags and structured data'
+					]
+				}
+			]
+		},
+		{
 			version: '1.3.0',
 			date: 'March 31, 2026',
 			sections: [
