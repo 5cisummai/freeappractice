@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { auth, apiFetch } from '$lib/client/auth.svelte.js';
 	import QuestionCard, {
 		type AnswerResult,
@@ -10,6 +12,15 @@
 	let selectedUnit = $state('');
 	let questionType = $state<'mcq' | 'frq'>('mcq');
 	let requestVersion = $state(0);
+	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
+	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
+
+	onMount(() => {
+		if (!presetClass) return;
+		selectedClass = presetClass;
+		selectedUnit = presetUnit;
+		requestVersion = 1;
+	});
 
 	function handleSelectionChange(_cls: string, _unit: string) {
 		requestVersion = 0;
@@ -64,7 +75,7 @@
 	}
 </script>
 
-<div class="mx-auto w-full max-w-7xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
+<div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
 	<div class="space-y-1">
 		<h1 class="text-2xl font-semibold tracking-tight">Practice</h1>
 		<p class="text-sm text-muted-foreground">Select a course and unit, then generate a question.</p>

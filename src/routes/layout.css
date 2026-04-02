@@ -39,6 +39,7 @@
 	--sidebar-ring: oklch(0.546 0.235 256);
 }
 
+
 body.high-contrast {
 	--foreground: black;
 	--primary: #0000ff;

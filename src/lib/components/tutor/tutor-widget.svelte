@@ -38,6 +38,8 @@
 	let hasGreeted = $state(false);
 	let scrollContainer = $state<HTMLDivElement | null>(null);
 	let inputElement = $state<HTMLTextAreaElement | null>(null);
+	let viewportWidth = $state(0);
+	let viewportHeight = $state(0);
 
 	// Drag state for the floating button
 	let btnX = $state(0);
@@ -47,8 +49,56 @@
 	let dragOffsetX = 0;
 	let dragOffsetY = 0;
 
-	// Position chat panel above button when there's enough space above
-	const chatAbove = $derived(btnY > 200);
+	const BUTTON_SIZE = 48;
+	const PANEL_WIDTH = 340;
+	const PANEL_HEIGHT = 480;
+	const VIEWPORT_MARGIN = 12;
+	const PANEL_GAP = 8;
+
+	function clamp(value: number, min: number, max: number) {
+		return Math.min(max, Math.max(min, value));
+	}
+
+	function clampButtonPosition(x: number, y: number) {
+		if (!viewportWidth || !viewportHeight) return { x, y };
+		const maxX = Math.max(VIEWPORT_MARGIN, viewportWidth - BUTTON_SIZE - VIEWPORT_MARGIN);
+		const maxY = Math.max(VIEWPORT_MARGIN, viewportHeight - BUTTON_SIZE - VIEWPORT_MARGIN);
+		return {
+			x: clamp(x, VIEWPORT_MARGIN, maxX),
+			y: clamp(y, VIEWPORT_MARGIN, maxY)
+		};
+	}
+
+	const panelWidth = $derived.by(() => {
+		if (!viewportWidth) return PANEL_WIDTH;
+		return Math.min(PANEL_WIDTH, Math.max(0, viewportWidth - VIEWPORT_MARGIN * 2));
+	});
+
+	const panelHeight = $derived.by(() => {
+		if (!viewportHeight) return PANEL_HEIGHT;
+		return Math.min(PANEL_HEIGHT, Math.max(0, viewportHeight - VIEWPORT_MARGIN * 2));
+	});
+
+	const panelLeft = $derived.by(() => {
+		if (!viewportWidth) return VIEWPORT_MARGIN;
+		const preferredLeft = btnX + BUTTON_SIZE - panelWidth;
+		return clamp(preferredLeft, VIEWPORT_MARGIN, viewportWidth - panelWidth - VIEWPORT_MARGIN);
+	});
+
+	const chatAbove = $derived.by(() => {
+		if (!viewportHeight) return true;
+		const availableAbove = btnY - PANEL_GAP;
+		const availableBelow = viewportHeight - (btnY + BUTTON_SIZE + PANEL_GAP);
+		return availableAbove >= panelHeight || availableAbove >= availableBelow;
+	});
+
+	const panelTop = $derived.by(() => {
+		if (!viewportHeight) return VIEWPORT_MARGIN;
+		const aboveTop = btnY - PANEL_GAP - panelHeight;
+		const belowTop = btnY + BUTTON_SIZE + PANEL_GAP;
+		const preferredTop = chatAbove ? aboveTop : belowTop;
+		return clamp(preferredTop, VIEWPORT_MARGIN, viewportHeight - panelHeight - VIEWPORT_MARGIN);
+	});
 
 	async function fetchGreeting() {
 		if (hasGreeted || !question) return;
@@ -166,9 +216,9 @@
 	function onBtnPointerMove(e: PointerEvent) {
 		if (!isDragging) return;
 		hasDragged = true;
-		const BTN = 48;
-		btnX = Math.max(0, Math.min(window.innerWidth - BTN, e.clientX - dragOffsetX));
-		btnY = Math.max(0, Math.min(window.innerHeight - BTN, e.clientY - dragOffsetY));
+		const clamped = clampButtonPosition(e.clientX - dragOffsetX, e.clientY - dragOffsetY);
+		btnX = clamped.x;
+		btnY = clamped.y;
 	}
 
 	function onBtnPointerUp() {
@@ -176,8 +226,23 @@
 	}
 
 	onMount(() => {
-		btnX = window.innerWidth - 64;
-		btnY = window.innerHeight - 64;
+		const updateViewport = () => {
+			viewportWidth = window.innerWidth;
+			viewportHeight = window.innerHeight;
+			const clamped = clampButtonPosition(btnX, btnY);
+			btnX = clamped.x;
+			btnY = clamped.y;
+		};
+
+		viewportWidth = window.innerWidth;
+		viewportHeight = window.innerHeight;
+		btnX = viewportWidth - BUTTON_SIZE - VIEWPORT_MARGIN;
+		btnY = viewportHeight - BUTTON_SIZE - VIEWPORT_MARGIN;
+
+		window.addEventListener('resize', updateViewport);
+		return () => {
+			window.removeEventListener('resize', updateViewport);
+		};
 	});
 
 	// Auto-scroll to bottom when messages update
@@ -204,17 +269,15 @@
 	});
 </script>
 
-<!-- Anchor div: fixed at the button's dragged position -->
-<div class="fixed z-50" style="left: {btnX}px; top: {btnY}px;">
-	<!-- Chat panel: absolute, opens above or below the button -->
+	<!-- Chat panel: clamped to viewport, opens above or below the button -->
 	{#if isOpen}
 		<div
-			class="absolute flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
+			class="fixed z-50 flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
 			style="
-				right: 0;
-				{chatAbove ? 'bottom: 56px;' : 'top: 56px;'}
-				width: 340px;
-				height: 480px;
+				left: {panelLeft}px;
+				top: {panelTop}px;
+				width: {panelWidth}px;
+				height: {panelHeight}px;
 				overflow: hidden;
 			"
 			transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
@@ -314,8 +377,8 @@
 				handleOpen();
 			}
 		}}
-		class="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
-		style="cursor: {isDragging ? 'grabbing' : 'grab'};"
+		class="fixed z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
+		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
 		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
 	>
 		{#if isOpen}
@@ -324,4 +387,3 @@
 			<MessageSquareIcon class="h-5 w-5" />
 		{/if}
 	</button>
-</div>
