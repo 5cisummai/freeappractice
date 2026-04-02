@@ -3,7 +3,7 @@ title: The Science of Studying: What the Research Actually Says About Passing AP
 excerpt: Evidence-backed AP study strategies that improve retention, retrieval, and exam performance.
 tags: studying, learning-science, ap-prep
 published: true
-date: 2026-03-24
+date: 2026-03-31
 ---
 
 # The Science of Studying: What the Research Actually Says About Passing AP Exams

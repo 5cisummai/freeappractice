@@ -3,7 +3,7 @@ title: Why Most Students Fail the FRQ (And the Research-Backed Method to Fix It)
 excerpt: A practical FRQ playbook for thesis writing, evidence, and complexity points.
 tags: frq, writing, ap-prep
 published: true
-date: 2026-03-25
+date: 2026-03-31
 ---
 
 # Why Most Students Fail the FRQ (And the Research-Backed Method to Fix It)

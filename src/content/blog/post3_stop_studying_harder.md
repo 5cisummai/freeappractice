@@ -1,9 +1,9 @@
 ---
-title: 'Stop Studying "Harder" for AP Exams. Start Studying Like This Instead.'
+title: Stop Studying "Harder" for AP Exams. Start Studying Like This Instead.
 excerpt: A direct, AP-specific study plan built around retrieval, spacing, and exam structure.
 tags: studying, scheduling, ap-prep
 published: true
-date: 2026-03-26
+date: 2026-03-31
 ---
 
 # Stop Studying "Harder" for AP Exams. Start Studying Like This Instead.
