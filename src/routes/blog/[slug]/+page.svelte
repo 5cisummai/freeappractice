@@ -93,6 +93,10 @@
 				{data.post.title}
 			</h1>
 
+			<p class="mb-4 text-base leading-relaxed text-muted-foreground">
+				{data.post.excerpt}
+			</p>
+
 			<p class="mb-8 text-sm text-muted-foreground">
 				{formatDate(data.post.publishedAt ?? data.post.createdAt)}
 			</p>

@@ -39,12 +39,10 @@ type ParsedMarkdownPost = {
 const BLOG_MARKDOWN_DIR = path.join(process.cwd(), 'src', 'content', 'blog');
 
 function normalizeSlug(value: string): string {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/\.[^.]+$/, '')
-		.replace(/[^a-z0-9\s-]/g, '')
-		.replace(/\s+/g, '-')
+	const withoutExtension = value.trim().toLowerCase().replace(/\.[^.]+$/, '');
+	return withoutExtension
+		.replace(/[_\s]+/g, '-')
+		.replace(/[^a-z0-9-]/g, '')
 		.replace(/-+/g, '-')
 		.replace(/^-|-$/g, '');
 }

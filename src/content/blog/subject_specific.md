@@ -1,12 +1,11 @@
 ---
 title: The Subject-Specific AP Study Guide Nobody Wrote (Until Now)
 excerpt: How AP Bio, APUSH, Calc, Lang, Chem, and Psych each reward different prep habits.
+summary: Subject-by-subject AP prep guidance so you can study for each exam according to the skills it actually rewards.
 tags: ap-biology, apush, ap-calculus, ap-lang, ap-chemistry, ap-psych
 published: true
 date: 2026-03-31
 ---
-
-# The Subject-Specific AP Study Guide Nobody Wrote (Until Now)
 
 *Generic advice is everywhere. Here's what's actually different about prepping for AP Bio vs. AP Lang vs. AP Calc - and how to use those differences.*
 
@@ -24,7 +23,7 @@ This guide gets specific.
 
 The most common mistake AP Bio students make is treating it like a memory test. It is not. The College Board redesigned AP Biology specifically to move away from rote recall, and the exam now overwhelmingly favors students who can *apply* concepts to unfamiliar scenarios - not students who have memorized the most facts.
 
-What this means practically: reading your notes on cellular respiration and being able to recite the steps of the Krebs cycle is worth less than being able to answer the question, "A researcher inhibits Complex III of the electron transport chain. What happens to the membrane potential, the oxygen consumption rate, and ATP production, and why?"
+What this means practically: reading your notes on cellular respiration and being able to recite the steps of the Citric acid cycle is worth less than being able to answer the question, "A researcher inhibits Complex III of the electron transport chain. What happens to the membrane potential, the oxygen consumption rate, and ATP production, and why?"
 
 That question requires you to *reason through* a system you understand - it doesn't require memorization. And it's exactly the kind of question the AP Bio FRQ section asks.
 

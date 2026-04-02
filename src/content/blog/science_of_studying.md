@@ -1,12 +1,11 @@
 ---
 title: The Science of Studying: What the Research Actually Says About Passing AP Exams
 excerpt: Evidence-backed AP study strategies that improve retention, retrieval, and exam performance.
+summary: Learn the science-backed study methods that actually raise AP scores, including spacing, retrieval practice, and interleaving.
 tags: studying, learning-science, ap-prep
 published: true
 date: 2026-03-31
 ---
-
-# The Science of Studying: What the Research Actually Says About Passing AP Exams
 
 *Most students study wrong. Here's the evidence - and how to fix it.*
 

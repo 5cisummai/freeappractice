@@ -1,12 +1,11 @@
 ---
 title: Stop Studying "Harder" for AP Exams. Start Studying Like This Instead.
 excerpt: A direct, AP-specific study plan built around retrieval, spacing, and exam structure.
+summary: Replace vague AP prep habits with a concrete schedule and evidence-based routines that improve long-term retention.
 tags: studying, scheduling, ap-prep
 published: true
 date: 2026-03-31
 ---
-
-# Stop Studying "Harder" for AP Exams. Start Studying Like This Instead.
 
 *A practical, opinionated guide to organizing your AP prep - without the generic advice that doesn't actually work.*
 
