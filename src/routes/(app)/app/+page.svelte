@@ -33,14 +33,47 @@
 		}>;
 	}
 
+	interface ProgressEntry {
+		apClass: string;
+		unit: string;
+		totalAttempts: number;
+		mastery: number;
+	}
+
 	let statsData = $state<StatsData | null>(null);
+	let progressData = $state<ProgressEntry[]>([]);
 	let loading = $state(true);
+
+	const nextBestUnit = $derived(() => {
+		if (!progressData.length) return null;
+		return [...progressData]
+			.filter((entry) => !!entry.apClass)
+			.sort((a, b) => a.mastery - b.mastery || a.totalAttempts - b.totalAttempts)[0] ?? null;
+	});
+
+	const recommendedPracticeHref = $derived(() => {
+		const recommendation = nextBestUnit();
+		if (!recommendation) return resolve('/app/practice');
+		const basePath = resolve('/app/practice');
+		const classParam = `apClass=${encodeURIComponent(recommendation.apClass)}`;
+		const unitParam = recommendation.unit
+			? `&unit=${encodeURIComponent(recommendation.unit)}`
+			: '';
+		return `${basePath}?${classParam}${unitParam}`;
+	});
 
 	onMount(async () => {
 		try {
-			const res = await apiFetch('/api/auth/stats');
-			if (res.ok) {
-				statsData = await res.json();
+			const [statsRes, progressRes] = await Promise.all([
+				apiFetch('/api/auth/stats'),
+				apiFetch('/api/auth/progress')
+			]);
+			if (statsRes.ok) {
+				statsData = await statsRes.json();
+			}
+			if (progressRes.ok) {
+				const data = await progressRes.json();
+				progressData = data.progress ?? [];
 			}
 		} catch {
 			// Stats are optional
@@ -66,6 +99,32 @@
 			></div>
 		</div>
 	{:else}
+		<!-- Study plan -->
+		<Card.Root class="border-primary/30 bg-primary/3 p-5">
+			<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+				<div class="space-y-1.5">
+					<p class="text-sm font-medium text-primary">Your Next Best Unit</p>
+					{#if nextBestUnit()}
+						<p class="text-base font-semibold">
+							{nextBestUnit()?.apClass}
+							{#if nextBestUnit()?.unit}
+								- {nextBestUnit()?.unit}
+							{/if}
+						</p>
+						<p class="text-sm text-muted-foreground">
+							Mastery {nextBestUnit()?.mastery}% across {nextBestUnit()?.totalAttempts} attempts.
+						</p>
+					{:else}
+						<p class="text-base font-semibold">Start your first focused practice session</p>
+						<p class="text-sm text-muted-foreground">
+							We'll personalize this recommendation once you complete a few attempts.
+						</p>
+					{/if}
+				</div>
+				<Button href={recommendedPracticeHref()}>Start Recommended Practice</Button>
+			</div>
+		</Card.Root>
+
 		<!-- Stats grid -->
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
 			<Card.Root class="p-4">

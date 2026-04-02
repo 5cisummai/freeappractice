@@ -7,17 +7,19 @@
 		class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
 	>
 		<div class="flex flex-col gap-1.5">
-			<p class="font-semibold text-foreground">Free AP Practice</p>
+			<p class="font-semibold text-foreground"><a href="{resolve('/')}" class="underline-offset-2 hover:text-foreground hover:underline">Free AP Practice</a></p>
 			<p class="max-w-md text-xs leading-5 text-muted-foreground">
-				AP® is a registered trademark of the College Board, which is not affiliated with, and does
-				not endorse, this site.
+				Created by students, for students.
 			</p>
 		</div>
 
 		<nav
 			class="flex flex-wrap gap-x-4 gap-y-2 text-muted-foreground"
 			aria-label="Footer navigation"
-		>
+		>	
+			<a href={resolve('/about')} class="underline-offset-2 hover:text-foreground hover:underline"
+				>About</a
+			>
 			<a href={resolve('/privacy')} class="underline-offset-2 hover:text-foreground hover:underline"
 				>Privacy</a
 			>

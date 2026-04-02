@@ -1191,7 +1191,7 @@
 		</div>
 	{/if}
 
-	{#if mode === 'mcq' && currentQuestion}
+	{#if mode === 'mcq' && currentQuestion && !isExpanded}
 		<TutorWidget
 			question={currentQuestion.prompt}
 			answer={currentQuestion.correctAnswer ?? ''}

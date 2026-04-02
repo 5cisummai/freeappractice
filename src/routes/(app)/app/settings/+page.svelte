@@ -42,10 +42,10 @@
 
 <Toaster />
 
-<div class="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-	<div class="mb-8 flex flex-col items-center gap-2 text-center">
-		<h1 class="text-3xl font-bold tracking-tight">Settings</h1>
-		<p class="text-muted-foreground">Manage your account and app preferences.</p>
+<div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
+	<div class="space-y-1">
+		<h1 class="text-2xl font-semibold tracking-tight">Settings</h1>
+		<p class="text-sm text-muted-foreground">Manage your account and app preferences.</p>
 	</div>
 
 	<Tabs.Root bind:value={activeTab} class="mx-auto w-full max-w-2xl space-y-6">

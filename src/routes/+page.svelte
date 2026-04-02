@@ -9,6 +9,35 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 
+	function observeElement(element: Element) {
+		const onAnimationEnd = () => {
+			element.classList.add('fade-in-done');
+		};
+		element.addEventListener('animationend', onAnimationEnd, { once: true });
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						entry.target.classList.add('fade-in-visible');
+						observer.unobserve(entry.target);
+					}
+				});
+			},
+			{ threshold: 0.1, rootMargin: '0px 0px -100px 0px' }
+		);
+
+		observer.observe(element);
+
+		return {
+			destroy() {
+				observer.disconnect();
+				element.removeEventListener('animationend', onAnimationEnd);
+			}
+		};
+	}
+
+	const showHowToUse = false;
 	const howToSteps = [
 		{ number: '1', title: 'Select a Course', description: 'Choose your AP subject' },
 		{ number: '2', title: 'Pick a Unit', description: 'Select a unit' },
@@ -35,6 +64,34 @@
 		}
 	});
 </script>
+
+<style>
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	:global(.fade-in-section) {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+
+	:global(.fade-in-section.fade-in-visible) {
+		animation: fadeIn 0.6s ease-out forwards;
+	}
+
+	:global(.fade-in-section.fade-in-done) {
+		opacity: 1;
+		transform: none;
+		animation: none;
+	}
+</style>
 
 <svelte:head>
 	<title>Free AP Practice Questions 2026 - AI-Powered AP Exam Prep</title>
@@ -275,7 +332,7 @@
 
 	<main class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-16 px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-			<section class="how-to-use mx-auto max-w-5xl space-y-10 text-center">
+			<section class="fade-in-section how-to-use mx-auto max-w-5xl space-y-10 text-center" use:observeElement>
 				<div class="space-y-4">
 					<h1 class="text-4xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
 						Ace your AP Exams
@@ -296,6 +353,7 @@
 					</div>
 				</div>
 
+				{#if showHowToUse}
 				<div class="space-y-6">
 					<h2 class="text-3xl font-semibold">How to Use</h2>
 					<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -314,10 +372,11 @@
 						{/each}
 					</div>
 				</div>
+				{/if}
 			</section>
 
 			<section>
-				<div class="mx-auto max-w-5xl">
+				<div class="fade-in-section mx-auto max-w-5xl" use:observeElement>
 					<QuestionSelector
 						bind:selectedClass
 						bind:selectedUnit
@@ -330,20 +389,19 @@
 			</section>
 
 			<section>
-				<div class="mx-auto max-w-6xl">
+				<div class="fade-in-section mx-auto max-w-6xl min-h-10" use:observeElement>
 					{#if generateVersion > 0}
 						<QuestionCard
 							subject={selectedClass || 'Select AP Class'}
 							{selectedClass}
 							{selectedUnit}
 							requestVersion={generateVersion}
-
 						/>
 					{/if}
 				</div>
 			</section>
 
-			<section class="mx-auto w-full max-w-3xl space-y-4">
+			<section class="fade-in-section mx-auto w-full max-w-3xl space-y-4" use:observeElement>
 				<div class="space-y-1">
 					<h2 class="text-2xl font-semibold tracking-tight">FAQ</h2>
 				</div>
