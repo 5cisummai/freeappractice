@@ -9,6 +9,8 @@ import frqSpecs from '$lib/data/ap-frq-specs.json';
 import { logger } from '$lib/server/logger';
 
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? env.OPENAI_URL ?? 'https://api.openai.com/v1';
+const ADVANCED_MODEL = env.ADVANCED_MODEL ?? 'gpt-5-mini';
+const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-nano';
 
 // ── Unit context lookup ─────────────────────────────────────
 interface UnitContext {
@@ -199,8 +201,8 @@ function selectModelForClass(className: string): string {
 		'literature',
 		'computer science principles'
 	];
-	if (wideModel.some((kw) => normalized.includes(kw))) return 'gpt-4.1-mini';
-	return 'gpt-5-mini';
+	if (wideModel.some((kw) => normalized.includes(kw))) return BASIC_MODEL;
+	return ADVANCED_MODEL;
 }
 
 function buildClient(): OpenAI {
@@ -308,7 +310,7 @@ OUTPUT:
 		],
 		response_format: zodResponseFormat(APQuestion, 'ap_question')
 	};
-	if (model === 'gpt-5-mini') {
+	if (model === ADVANCED_MODEL) {
 		(completionParams as unknown as Record<string, unknown>).reasoning_effort = 'low';
 	}
 
@@ -454,11 +456,9 @@ QUALITY:
 			{ role: 'system', content: systemPrompt },
 			{ role: 'user', content: userMessage }
 		],
-		response_format: zodResponseFormat(FRQQuestion, 'frq_question')
+		response_format: zodResponseFormat(FRQQuestion, 'frq_question'),
+		reasoning_effort: 'low'
 	};
-	if (model === 'gpt-5-mini') {
-		(completionParams as unknown as Record<string, unknown>).reasoning_effort = 'low';
-	}
 
 	const doneAiCall = logger.aiCall('generateFRQQuestion', model, { className, unit });
 	let completion;

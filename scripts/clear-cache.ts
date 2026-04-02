@@ -1,0 +1,66 @@
+/**
+ * scripts/clear-cache.ts
+ *
+ * Drops every pre-generated question from the cache pool.
+ *
+ *   pnpm cache:clear
+ *
+ * Add --dry-run to print the count without deleting.
+ */
+
+import 'dotenv/config';
+import mongoose from 'mongoose';
+
+// ── Bootstrap ───────────────────────────────────────────────
+const DATABASE_URI = process.env.DATABASE_URI;
+if (!DATABASE_URI) {
+	console.error('Error: DATABASE_URI is not set in your environment / .env file.');
+	process.exit(1);
+}
+
+const isDryRun = process.argv.includes('--dry-run');
+
+// ── Minimal inline schema (mirrors src/lib/server/models/question.ts) ─
+const questionSchema = new mongoose.Schema(
+	{
+		apClass: String,
+		unit: String,
+		question: String,
+		optionA: String,
+		optionB: String,
+		optionC: String,
+		optionD: String,
+		correctAnswer: String,
+		explanation: String,
+		lastServedAt: Date
+	},
+	{ timestamps: true }
+);
+
+const Question =
+	(mongoose.models['Question'] as mongoose.Model<mongoose.Document>) ??
+	mongoose.model('Question', questionSchema);
+
+// ── Main ───────────────────────────────────────────────────
+async function main() {
+	console.log(`Connecting to MongoDB…`);
+	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
+	console.log('Connected.');
+
+	const total = await Question.countDocuments({});
+	console.log(`Cache contains ${total} question(s).`);
+
+	if (isDryRun) {
+		console.log('Dry-run mode — nothing deleted.');
+	} else {
+		const result = await Question.deleteMany({});
+		console.log(`✓ Deleted ${result.deletedCount} question(s) from the cache.`);
+	}
+}
+
+main()
+	.catch((err) => {
+		console.error('Script failed:', err);
+		process.exitCode = 1;
+	})
+	.finally(() => mongoose.disconnect());

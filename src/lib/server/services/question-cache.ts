@@ -5,13 +5,14 @@ import { logger } from '$lib/server/logger';
 
 /**
  * Number of questions to keep in the pool per class+unit combo.
- * When the pool drops below this, background replenishment kicks in.
+ * Configurable via the CACHE_POOL_SIZE environment variable; defaults to 5.
  */
-const POOL_SIZE = 5;
+function getPoolSize(): number {
+	return Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
+}
 
 function normalizeUnit(unit?: string): string {
-	if (typeof unit === 'string' && unit.trim()) return unit.trim();
-	return 'all-units';
+	return typeof unit === 'string' ? unit.trim() : '';
 }
 
 // ── Track in-flight replenishments to avoid duplicate work ──
@@ -57,14 +58,18 @@ function replenishPool(className: string, unit: string): void {
 		try {
 			await connectDb();
 			const cacheUnit = normalizeUnit(unit);
-			const count = await Question.countDocuments({ apClass: className, unit: cacheUnit });
-			const needed = POOL_SIZE - count;
-			if (needed <= 0) return;
+			const poolSize = getPoolSize();
 
-			logger.info(`[cache] replenishing ${needed} question(s)`, { className, unit: cacheUnit });
+			// Re-check count before each generation so multiple concurrent serverless
+			// instances converge on the same target and don't over-generate.
+			for (let i = 0; i < poolSize; i++) {
+				const current = await Question.countDocuments({ apClass: className, unit: cacheUnit });
+				if (current >= poolSize) break;
 
-			// Generate sequentially to avoid overwhelming the AI provider
-			for (let i = 0; i < needed; i++) {
+				logger.info(`[cache] replenishing slot ${current + 1}/${poolSize}`, {
+					className,
+					unit: cacheUnit
+				});
 				await generateAndInsert(className, unit);
 			}
 
