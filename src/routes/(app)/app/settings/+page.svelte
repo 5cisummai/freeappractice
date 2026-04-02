@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -17,8 +18,9 @@
 	import UserIcon from '@lucide/svelte/icons/user';
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import AccessibilityIcon from '@lucide/svelte/icons/accessibility';
+	import InfoIcon from '@lucide/svelte/icons/info';
 
-	type SettingsTab = 'appearance' | 'accessibility' | 'account';
+	type SettingsTab = 'appearance' | 'accessibility' | 'account' | 'about';
 
 	let activeTab = $state<SettingsTab>('appearance');
 	let deleteAccountOpen = $state(false);
@@ -26,6 +28,7 @@
 		name: auth.user?.name || '',
 		email: auth.user?.email || ''
 	});
+	const appVersion = '1.3.1';
 
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();
@@ -49,7 +52,7 @@
 	</div>
 
 	<Tabs.Root bind:value={activeTab} class="mx-auto w-full max-w-2xl space-y-6">
-		<Tabs.List class="grid w-full grid-cols-3">
+		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
 			<Tabs.Trigger value="appearance" class="flex items-center gap-2">
 				<PaintbrushIcon class="h-4 w-4" />
 				Appearance
@@ -61,6 +64,10 @@
 			<Tabs.Trigger value="account" class="flex items-center gap-2">
 				<UserIcon class="h-4 w-4" />
 				Account
+			</Tabs.Trigger>
+			<Tabs.Trigger value="about" class="flex items-center gap-2">
+				<InfoIcon class="h-4 w-4" />
+				About
 			</Tabs.Trigger>
 		</Tabs.List>
 
@@ -196,6 +203,38 @@
 						Delete Account
 					</Button>
 				</Card.Footer>
+			</Card.Root>
+		</Tabs.Content>
+
+		<Tabs.Content value="about">
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>About</Card.Title>
+					<Card.Description>Version details and policy links for Free AP Practice.</Card.Description>
+				</Card.Header>
+				<Card.Content class="space-y-6">
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div class="rounded-lg border border-border bg-muted/30 p-4">
+							<p class="text-xs uppercase tracking-wide text-muted-foreground">App version</p>
+							<p class="mt-1 text-lg font-semibold">{appVersion}</p>
+							<p class="mt-1 text-sm text-muted-foreground">Current release installed in this workspace.</p>
+						</div>
+						<div class="rounded-lg border border-border bg-muted/30 p-4">
+							<p class="text-xs uppercase tracking-wide text-muted-foreground">Build</p>
+							<p class="mt-1 text-lg font-semibold">SvelteKit</p>
+							<p class="mt-1 text-sm text-muted-foreground">Versioned app experience for AP practice.</p>
+						</div>
+					</div>
+
+					<div class="space-y-3 border-t border-border pt-4">
+						<p class="text-sm font-medium text-foreground">Policies</p>
+						<div class="flex flex-wrap gap-3">
+							<Button variant="outline" href={resolve('/privacy')}>Privacy Policy</Button>
+							<Button variant="outline" href={resolve('/terms')}>Terms of Service</Button>
+							<Button variant="ghost" href={resolve('/changelog')}>Changelog</Button>
+						</div>
+					</div>
+				</Card.Content>
 			</Card.Root>
 		</Tabs.Content>
 	</Tabs.Root>

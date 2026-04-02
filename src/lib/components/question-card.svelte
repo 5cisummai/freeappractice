@@ -121,6 +121,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { cn } from '$lib/utils.js';
 	import { apiFetch } from '$lib/client/auth.svelte.js';
+	import apClassesData from '$lib/data/ap-classes.json';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import TutorWidget from '$lib/components/tutor/tutor-widget.svelte';
@@ -317,6 +318,16 @@
 		};
 	}
 
+	/** When "All Units" is selected (unit === ''), pick a random real unit for the class. */
+	function resolveEffectiveUnit(cls: string, unit: string): string {
+		if (unit.trim()) return unit.trim();
+		const course = (apClassesData.courses as { name: string; semester1: string[]; semester2: string[] }[]).find((c) => c.name === cls);
+		if (!course) return '';
+		const allUnits = [...course.semester1, ...course.semester2];
+		if (!allUnits.length) return '';
+		return allUnits[Math.floor(Math.random() * allUnits.length)];
+	}
+
 	async function requestQuestion(
 		className: string,
 		unit: string
@@ -374,7 +385,8 @@
 		else statusMessage = 'Loading question...';
 
 		try {
-			const response = await requestQuestion(selectedClass, selectedUnit);
+			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit);
+			const response = await requestQuestion(selectedClass, effectiveUnit);
 
 			if (typeof response.error === 'string' && response.error.trim()) {
 				throw new Error(response.error);

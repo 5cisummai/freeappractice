@@ -9,6 +9,7 @@
 
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
+	import CompassIcon from '@lucide/svelte/icons/compass';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
@@ -19,6 +20,7 @@
 		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
 		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
 		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
+		{ href: '/app/resources', label: 'Resources', icon: CompassIcon },
 		{ href: '/app/settings', label: 'Settings', icon: SettingsIcon }
 	];
 
