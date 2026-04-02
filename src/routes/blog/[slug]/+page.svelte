@@ -20,12 +20,26 @@
 <svelte:head>
 	<title>{data.post.title} – Free AP Practice Blog</title>
 	<meta name="description" content={data.post.excerpt} />
+	<link rel="canonical" href={`https://freeappractice.org/blog/${data.post.slug}`} />
+	<meta property="og:url" content={`https://freeappractice.org/blog/${data.post.slug}`} />
 	{#if data.post.coverImage}
 		<meta property="og:image" content={data.post.coverImage} />
+	{:else}
+		<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	{/if}
 	<meta property="og:title" content={data.post.title} />
 	<meta property="og:description" content={data.post.excerpt} />
 	<meta property="og:type" content="article" />
+	<meta property="og:site_name" content="FreeAPPractice.org" />
+	<meta property="og:locale" content="en_US" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:url" content={`https://freeappractice.org/blog/${data.post.slug}`} />
+	<meta name="twitter:title" content={data.post.title} />
+	<meta name="twitter:description" content={data.post.excerpt} />
+	<meta
+		name="twitter:image"
+		content={data.post.coverImage ? data.post.coverImage : 'https://freeappractice.org/icon.png'}
+	/>
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">
