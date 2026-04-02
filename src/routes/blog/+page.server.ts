@@ -1,11 +1,11 @@
-import { listPosts } from '$lib/server/services/blog';
+import { listPublishedBlogEntries } from '$lib/server/services/blog';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	const posts = await listPosts(true);
+	const posts = await listPublishedBlogEntries();
 	return {
 		posts: posts.map((p) => ({
-			_id: String(p._id),
+			_id: p._id,
 			title: p.title,
 			slug: p.slug,
 			excerpt: p.excerpt,

@@ -1,5 +1,7 @@
 import { BlogPost, type IBlogPost } from '$lib/server/models/blog-post';
 import { connectDb } from '$lib/server/db';
+import { readdir, readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
 
 export interface BlogPostData {
 	title: string;
@@ -9,6 +11,209 @@ export interface BlogPostData {
 	coverImage?: string;
 	tags?: string[];
 	published?: boolean;
+}
+
+export type BlogEntry = {
+	_id: string;
+	title: string;
+	slug: string;
+	excerpt: string;
+	content: string;
+	coverImage?: string;
+	tags: string[];
+	publishedAt?: Date;
+	createdAt: Date;
+	source: 'db' | 'file';
+};
+
+type ParsedMarkdownPost = {
+	title?: string;
+	excerpt?: string;
+	coverImage?: string;
+	tags?: string[];
+	published?: boolean;
+	publishedAt?: Date;
+	content: string;
+};
+
+const BLOG_MARKDOWN_DIR = path.join(process.cwd(), 'src', 'content', 'blog');
+
+function normalizeSlug(value: string): string {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/\.[^.]+$/, '')
+		.replace(/[^a-z0-9\s-]/g, '')
+		.replace(/\s+/g, '-')
+		.replace(/-+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
+function humanizeSlug(slug: string): string {
+	return slug
+		.split('-')
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
+}
+
+function extractTitleFromMarkdown(content: string): string | undefined {
+	const match = content.match(/^#\s+(.+)$/m);
+	return match?.[1]?.trim();
+}
+
+function summarizeMarkdown(content: string): string {
+	const cleaned = content
+		.replace(/^#{1,6}\s+/gm, '')
+		.replace(/^---$/gm, '')
+		.replace(/\r/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	if (!cleaned) return '';
+	return cleaned.slice(0, 180) + (cleaned.length > 180 ? '…' : '');
+}
+
+function parseBoolean(value: string | undefined): boolean | undefined {
+	if (!value) return undefined;
+	const normalized = value.toLowerCase();
+	if (normalized === 'true') return true;
+	if (normalized === 'false') return false;
+	return undefined;
+}
+
+function parseDate(value: string | undefined): Date | undefined {
+	if (!value) return undefined;
+	const date = new Date(value);
+	return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function parseTags(value: string | undefined): string[] | undefined {
+	if (!value) return undefined;
+	const cleaned = value.replace(/^\[/, '').replace(/\]$/, '');
+	const tags = cleaned
+		.split(',')
+		.map((tag) => tag.trim().replace(/^['\"]|['\"]$/g, ''))
+		.filter(Boolean);
+	return tags.length > 0 ? tags : undefined;
+}
+
+function parseMarkdownPost(raw: string): ParsedMarkdownPost {
+	const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+	if (!match) {
+		return { content: raw.trim() };
+	}
+
+	const [, frontmatterRaw, contentRaw] = match;
+	const frontmatter: Record<string, string> = {};
+	for (const line of frontmatterRaw.split('\n')) {
+		const separator = line.indexOf(':');
+		if (separator === -1) continue;
+		const key = line.slice(0, separator).trim().toLowerCase();
+		const value = line.slice(separator + 1).trim();
+		frontmatter[key] = value;
+	}
+
+	return {
+		title: frontmatter.title,
+		excerpt: frontmatter.excerpt,
+		coverImage: frontmatter.coverimage ?? frontmatter.cover_image,
+		tags: parseTags(frontmatter.tags),
+		published: parseBoolean(frontmatter.published),
+		publishedAt: parseDate(frontmatter.publisheddate ?? frontmatter.published_at ?? frontmatter.date),
+		content: contentRaw.trim()
+	};
+}
+
+async function listMarkdownPosts(): Promise<BlogEntry[]> {
+	let fileNames: string[] = [];
+	try {
+		fileNames = await readdir(BLOG_MARKDOWN_DIR);
+	} catch {
+		return [];
+	}
+
+	const markdownFiles = fileNames.filter((name) => name.toLowerCase().endsWith('.md'));
+	const posts = await Promise.all(
+		markdownFiles.map(async (fileName) => {
+			const fullPath = path.join(BLOG_MARKDOWN_DIR, fileName);
+			const stats = await stat(fullPath);
+			const raw = await readFile(fullPath, 'utf8');
+			const parsed = parseMarkdownPost(raw);
+
+			const slugFromFile = normalizeSlug(fileName);
+			const published = parsed.published ?? true;
+			if (!published || !slugFromFile) return null;
+
+			const title = parsed.title?.trim() || extractTitleFromMarkdown(parsed.content) || humanizeSlug(slugFromFile);
+			const excerpt = parsed.excerpt?.trim() || summarizeMarkdown(parsed.content);
+
+			const createdAt = stats.birthtime ?? stats.mtime ?? new Date();
+			const publishedAt = parsed.publishedAt ?? createdAt;
+
+			return {
+				_id: `file:${slugFromFile}`,
+				title,
+				slug: slugFromFile,
+				excerpt,
+				content: parsed.content,
+				...(parsed.coverImage ? { coverImage: parsed.coverImage } : {}),
+				tags: parsed.tags ?? [],
+				publishedAt,
+				createdAt,
+				source: 'file' as const
+			};
+		})
+	);
+
+	const validPosts: BlogEntry[] = [];
+	for (const post of posts) {
+		if (post) validPosts.push(post);
+	}
+	return validPosts;
+}
+
+function mapDbPostToEntry(post: IBlogPost): BlogEntry {
+	return {
+		_id: String(post._id),
+		title: post.title,
+		slug: post.slug,
+		excerpt: post.excerpt,
+		content: post.content,
+		coverImage: post.coverImage,
+		tags: post.tags,
+		publishedAt: post.publishedAt,
+		createdAt: post.createdAt,
+		source: 'db'
+	};
+}
+
+export async function listPublishedBlogEntries(): Promise<BlogEntry[]> {
+	const [dbPosts, markdownPosts] = await Promise.all([listPosts(true), listMarkdownPosts()]);
+	const merged = [...dbPosts.map(mapDbPostToEntry), ...markdownPosts];
+
+	const bySlug = new Map<string, BlogEntry>();
+	for (const post of merged) {
+		if (!bySlug.has(post.slug) || post.source === 'db') {
+			bySlug.set(post.slug, post);
+		}
+	}
+
+	return Array.from(bySlug.values()).sort((a, b) => {
+		const aTime = (a.publishedAt ?? a.createdAt).getTime();
+		const bTime = (b.publishedAt ?? b.createdAt).getTime();
+		return bTime - aTime;
+	});
+}
+
+export async function getPublishedBlogEntryBySlug(slug: string): Promise<BlogEntry | null> {
+	const normalizedSlug = normalizeSlug(slug);
+	if (!normalizedSlug) return null;
+
+	const dbPost = await getPostBySlug(normalizedSlug, true);
+	if (dbPost) return mapDbPostToEntry(dbPost);
+
+	const markdownPosts = await listMarkdownPosts();
+	return markdownPosts.find((post) => post.slug === normalizedSlug) ?? null;
 }
 
 export async function listPosts(publishedOnly = true): Promise<IBlogPost[]> {

@@ -1177,7 +1177,7 @@
 		{@render cardInner(false)}
 	</Card.Root>
 
-	<!-- Fullscreen overlay — scales in/out smoothly -->
+	<!-- Fullscreen overlay - scales in/out smoothly -->
 	{#if isExpanded}
 		<div
 			class="fixed inset-0 z-50 flex flex-col"

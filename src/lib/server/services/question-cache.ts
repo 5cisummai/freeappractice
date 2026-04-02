@@ -46,7 +46,7 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 
 /**
  * Replenish the pool for a given class+unit until it has POOL_SIZE questions.
- * Runs in the background — never blocks a user request.
+ * Runs in the background - never blocks a user request.
  */
 function replenishPool(className: string, unit: string): void {
 	const key = `${className}::${normalizeUnit(unit)}`;
@@ -69,7 +69,7 @@ function replenishPool(className: string, unit: string): void {
 			}
 
 			const after = await Question.countDocuments({ apClass: className, unit: cacheUnit });
-			logger.info(`[cache] replenish done — pool now has ${after} question(s)`, {
+			logger.info(`[cache] replenish done - pool now has ${after} question(s)`, {
 				className,
 				unit: cacheUnit
 			});

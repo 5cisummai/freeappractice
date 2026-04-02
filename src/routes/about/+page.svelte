@@ -60,7 +60,7 @@
           <li>• AI question generation across 20+ AP subjects</li>
           <li>• Randomized unit-based practice for improved retention</li>
           <li>• Local and OpenAI provider fallback for stability</li>
-          <li>• Your progress saved locally—including explanations and strong/weak tracking</li>
+          <li>• Your progress saved locally-including explanations and strong/weak tracking</li>
         </ul>
       </article>
 

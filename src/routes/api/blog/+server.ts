@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
-import { listPosts, createPost } from '$lib/server/services/blog';
+import { listPublishedBlogEntries, createPost } from '$lib/server/services/blog';
 import { requireBlogAdminKey } from '$lib/server/blog-admin-auth';
 
 const createSchema = z.object({
@@ -20,17 +20,18 @@ const createSchema = z.object({
 
 export const GET: RequestHandler = async () => {
 	try {
-		const posts = await listPosts(true);
+		const posts = await listPublishedBlogEntries();
 		return json(
 			posts.map((p) => ({
-				_id: String(p._id),
+				_id: p._id,
 				title: p.title,
 				slug: p.slug,
 				excerpt: p.excerpt,
 				coverImage: p.coverImage,
 				tags: p.tags,
 				publishedAt: p.publishedAt,
-				createdAt: p.createdAt
+				createdAt: p.createdAt,
+				source: p.source
 			}))
 		);
 	} catch (err) {
@@ -42,15 +43,25 @@ export const GET: RequestHandler = async () => {
 export const POST: RequestHandler = async (event) => {
 	try {
 		requireBlogAdminKey(event.request);
+
 		const body = await event.request.json();
 		const data = createSchema.parse(body);
 		const post = await createPost(data);
 		return json({ ok: true, slug: post.slug }, { status: 201 });
 	} catch (err) {
+		if (err instanceof SyntaxError) {
+			return json({ error: 'Invalid JSON payload' }, { status: 400 });
+		}
 		if (err instanceof z.ZodError) {
 			return json({ error: 'Validation failed', details: err.issues }, { status: 400 });
 		}
 		if (err instanceof Response) throw err;
+
+		const possibleMongo = err as { code?: number };
+		if (possibleMongo?.code === 11000) {
+			return json({ error: 'A post with this slug already exists' }, { status: 409 });
+		}
+
 		console.error('Blog create error:', err);
 		return json({ error: 'Failed to create post' }, { status: 500 });
 	}

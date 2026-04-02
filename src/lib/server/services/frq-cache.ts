@@ -52,7 +52,7 @@ function replenishPool(className: string, unit: string): void {
 			}
 
 			const after = await FRQQuestion.countDocuments({ apClass: className, unit: cacheUnit });
-			logger.info(`[frq-cache] replenish done — pool now has ${after} FRQ(s)`, {
+			logger.info(`[frq-cache] replenish done - pool now has ${after} FRQ(s)`, {
 				className,
 				unit: cacheUnit
 			});

@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPostBySlug } from '$lib/server/services/blog';
+import { getPublishedBlogEntryBySlug } from '$lib/server/services/blog';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
@@ -55,14 +55,14 @@ marked.use(
 );
 
 export const load: PageServerLoad = async ({ params }) => {
-	const post = await getPostBySlug(params.slug, true);
+	const post = await getPublishedBlogEntryBySlug(params.slug);
 	if (!post) error(404, 'Post not found');
 
 	const htmlContent = await marked(post.content);
 
 	return {
 		post: {
-			_id: String(post._id),
+			_id: post._id,
 			title: post.title,
 			slug: post.slug,
 			excerpt: post.excerpt,

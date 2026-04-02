@@ -45,7 +45,7 @@
 
 			{#if data.posts.length === 0}
 				<div class="rounded-xl border border-border/70 bg-card px-8 py-16 text-center">
-					<p class="text-muted-foreground">No posts yet — check back soon!</p>
+					<p class="text-muted-foreground">No posts yet - check back soon!</p>
 				</div>
 			{:else}
 				<ul class="space-y-6">

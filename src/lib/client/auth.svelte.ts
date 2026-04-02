@@ -66,7 +66,7 @@ function createAuthState() {
 export const auth = createAuthState();
 
 /**
- * Authenticated fetch — automatically injects the Bearer token.
+ * Authenticated fetch - automatically injects the Bearer token.
  */
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
 	const headers = new Headers(init.headers);

@@ -19,11 +19,11 @@
 		"universal_errors_to_avoid": [
 			"Restating the prompt or question as the answer",
 			"Vague mechanistic language ('it affects the result') without specificity",
-			"Contradicting a correct answer elsewhere in the same response — contradictions negate the credit",
+			"Contradicting a correct answer elsewhere in the same response - contradictions negate the credit",
 			"Providing more answers than the prompt requests when a specific number is asked for; only the first N are scored",
 			"Writing in bullet points when prose is required (AP English, AP History essay questions)",
 			"Omitting units on quantitative answers in science and math FRQs",
-			"Skipping 'show your work' in math and science FRQs — setup steps earn partial credit even with a wrong final answer",
+			"Skipping 'show your work' in math and science FRQs - setup steps earn partial credit even with a wrong final answer",
 			"Proving a claim with qualitative language when quantitative justification is requested",
 			"Using casual or informal register in humanities essay responses"
 		]
@@ -64,8 +64,8 @@
 						"Justify increasing/decreasing behavior or average rate of change from the table"
 					],
 					"scoring_notes": [
-						"Interpretation point requires correct units and a contextual statement — not just the numerical value",
-						"Riemann sum setup earns one point; numerical answer earns a second — incorrect setup cannot earn the answer point",
+						"Interpretation point requires correct units and a contextual statement - not just the numerical value",
+						"Riemann sum setup earns one point; numerical answer earns a second - incorrect setup cannot earn the answer point",
 						"At most one point lost per question for a consistent arithmetic error carried forward"
 					]
 				},
@@ -129,7 +129,7 @@
 			"important_notes": [
 				"Show all setup steps even in calculator-active parts",
 				"Justifications using theorems must name the theorem and state its conditions",
-				"Each part scored independently — wrong answer in (a) does not prevent full credit in (b)"
+				"Each part scored independently - wrong answer in (a) does not prevent full credit in (b)"
 			]
 		},
 		{
@@ -211,7 +211,7 @@
 						"Construct a requested graph from a table"
 					],
 					"scoring_notes": [
-						"Comparative statements must use explicit language ('the median of A is higher than B') — separate statements earn no comparison point",
+						"Comparative statements must use explicit language ('the median of A is higher than B') - separate statements earn no comparison point",
 						"Shape must use statistical vocabulary: symmetric, skewed left/right, bimodal, uniform"
 					]
 				},
@@ -227,7 +227,7 @@
 					"scoring_notes": [
 						"Scored in three sections: (1) hypotheses + test name, (2) conditions + statistic + p-value, (3) conclusion",
 						"Each section rated E/P/I; final 0–4 score from combination table",
-						"Definitive language ('proves,' 'accepts,' 'no evidence') in conclusion — even if otherwise correct — loses the conclusion point",
+						"Definitive language ('proves,' 'accepts,' 'no evidence') in conclusion - even if otherwise correct - loses the conclusion point",
 						"Conditions must be verified with problem-specific evidence"
 					]
 				},
@@ -241,7 +241,7 @@
 						"Use the interval to make a conclusion"
 					],
 					"scoring_notes": [
-						"Generic interpretations lose the point — must reference the parameter and the specific context",
+						"Generic interpretations lose the point - must reference the parameter and the specific context",
 						"Interval-based conclusions must explicitly state the reasoning"
 					]
 				},
@@ -377,7 +377,7 @@
 				"Graph construction: label axes with name AND units; best-fit line, not connect-the-dots",
 				"Experimental design: specify what is measured and with what equipment",
 				"Read task verbs: 'describe' = characteristics; 'explain' = mechanism; 'justify' = evidence + reasoning",
-				"Avoid chemistry or physics equations — use biological concepts"
+				"Avoid chemistry or physics equations - use biological concepts"
 			]
 		},
 		{
@@ -407,7 +407,7 @@
 					],
 					"scoring_notes": [
 						"Titration curve must show correct initial/final pH range and S-shape",
-						"All calculations must show the method — numerical answers alone earn no credit"
+						"All calculations must show the method - numerical answers alone earn no credit"
 					]
 				},
 				{
@@ -468,12 +468,12 @@
 			"rubric_conventions": {
 				"scoring_method": "Long FRQs 10 pts, short FRQs 4 pts; each part-answer 0 or 1 point",
 				"justification_requirement": "Agree/disagree statements must always be followed by reasoning referencing chemical principles",
-				"show_work": "All calculations must show method and steps — answer alone earns 0"
+				"show_work": "All calculations must show method and steps - answer alone earns 0"
 			},
 			"important_notes": [
-				"Only provide the number of examples requested — extra examples not scored",
+				"Only provide the number of examples requested - extra examples not scored",
 				"State the option given in the prompt when choosing among listed options",
-				"Particulate-level reasoning required for entropy and kinetics — describe particle behavior",
+				"Particulate-level reasoning required for entropy and kinetics - describe particle behavior",
 				"Justify Lewis resonance by showing delocalization; do not just assert it"
 			]
 		},
@@ -505,14 +505,14 @@
 						"Calculate slope and connect to the target quantity with correct units"
 					],
 					"scoring_notes": [
-						"Graphing plan must specify exact quantities on each axis — not just 'y vs. x'",
+						"Graphing plan must specify exact quantities on each axis - not just 'y vs. x'",
 						"Use best-fit line points (not data points) to calculate slope",
 						"Linearization: for nonlinear relationships, transform variables (e.g., T^2 vs. L for pendulum)"
 					]
 				},
 				{
 					"type": "Qualitative/Quantitative Translation",
-					"description": "Justify a qualitative claim, then derive or manipulate a quantitative expression — or vice versa.",
+					"description": "Justify a qualitative claim, then derive or manipulate a quantitative expression - or vice versa.",
 					"common_parts": [
 						"Provide qualitative explanation of a physical outcome",
 						"Derive an expression starting from a stated fundamental principle",
@@ -520,7 +520,7 @@
 						"Predict how changing one variable affects the outcome"
 					],
 					"scoring_notes": [
-						"Derivation must begin with a stated fundamental equation from the reference sheet — starting from a result earns no credit",
+						"Derivation must begin with a stated fundamental equation from the reference sheet - starting from a result earns no credit",
 						"Qualitative justifications must reference a physical mechanism, not just cite an equation",
 						"Consistency check must explicitly confirm agreement"
 					]
@@ -529,7 +529,7 @@
 					"type": "Paragraph Argument",
 					"description": "Construct a written argument to explain a physical phenomenon. Must be in complete sentences.",
 					"scoring_notes": [
-						"Must use complete sentences — bullet points earn no credit",
+						"Must use complete sentences - bullet points earn no credit",
 						"Must reference relevant physical principles and connect to scenario",
 						"Contradictions in the paragraph negate the credit for the contradicted claim"
 					]
@@ -552,11 +552,11 @@
 			],
 			"rubric_conventions": {
 				"derivation_rule": "All derivations must begin with a stated principle; results-first derivations earn 0",
-				"justification_standard": "Physical reasoning must reference forces, energy, momentum, or other physics concepts — equations alone earn partial or no credit for explanation parts",
+				"justification_standard": "Physical reasoning must reference forces, energy, momentum, or other physics concepts - equations alone earn partial or no credit for explanation parts",
 				"graph_standards": "Labels, scales, best-fit lines, and units are each separately scorable"
 			},
 			"important_notes": [
-				"Algebra-based only — no calculus",
+				"Algebra-based only - no calculus",
 				"Use g = 10 m/s² unless specified otherwise",
 				"FBD: include all forces; label by type and agent; do not include net force as a separate vector",
 				"Experimental design: specify instruments and exact quantities, not just general methods",
@@ -586,14 +586,14 @@
 						"Analyze simple harmonic motion using differential equations or known results"
 					],
 					"scoring_notes": [
-						"Derivations must begin with a stated principle — not with the result",
+						"Derivations must begin with a stated principle - not with the result",
 						"Integrals must show limits of integration",
 						"Rotational dynamics: must distinguish torque equation (Στ = Iα) from translational (ΣF = ma)"
 					]
 				}
 			],
 			"important_notes": [
-				"Calculus required — use derivatives and integrals appropriately",
+				"Calculus required - use derivatives and integrals appropriately",
 				"Show all setup: FBD, axis definitions, coordinate system",
 				"Dimensional analysis and unit checks are expected",
 				"Do not mix up rotational and translational quantities without explicit conversion"
@@ -647,7 +647,7 @@
 				}
 			],
 			"important_notes": [
-				"Calculus required — surface integrals, line integrals, and time derivatives",
+				"Calculus required - surface integrals, line integrals, and time derivatives",
 				"State each law by name before applying it (Gauss's Law, Faraday's Law, Ampere's Law)",
 				"Justify symmetry assumptions explicitly before applying Gauss's or Ampere's Law",
 				"Direction of induced current must reference Lenz's Law"
@@ -683,7 +683,7 @@
 				}
 			],
 			"important_notes": [
-				"Algebra-based only — no calculus",
+				"Algebra-based only - no calculus",
 				"Use same scoring conventions as AP Physics 1",
 				"Common Physics 2 FRQ themes: Ohm's law in circuit networks, ray optics using lens/mirror equations, thermodynamic process reasoning"
 			]
@@ -709,7 +709,7 @@
 					"type": "Synthesis Essay (FRQ 1)",
 					"description": "Students read 6–7 short nonfiction sources on a topic and write an argument incorporating evidence from at least 3 sources.",
 					"requirements": [
-						"Defensible position thesis — not a pros/cons summary",
+						"Defensible position thesis - not a pros/cons summary",
 						"Evidence from at least 3 provided sources, clearly cited",
 						"Commentary connecting evidence to the thesis",
 						"Awareness of rhetorical situation (audience, purpose, context)"
@@ -717,7 +717,7 @@
 					"rubric_structure": {
 						"thesis": "0–1: Defensible position; may not restate prompt or present both sides without a claim",
 						"evidence_and_commentary": "0–4: Evidence from 3+ sources with commentary; 4-point responses sustain a consistent line of reasoning",
-						"sophistication": "0–1: Genuine complexity of thought — qualifies argument, acknowledges tensions, or demonstrates purposeful style"
+						"sophistication": "0–1: Genuine complexity of thought - qualifies argument, acknowledges tensions, or demonstrates purposeful style"
 					},
 					"scoring_notes": [
 						"Sophistication point earned by only ~5–15% of students; requires genuine complexity, not sophisticated vocabulary",
@@ -727,7 +727,7 @@
 				},
 				{
 					"type": "Rhetorical Analysis Essay (FRQ 2)",
-					"description": "Read a nonfiction passage; analyze how the author's rhetorical choices serve the purpose. Analyzes the text — does not argue for the author's position.",
+					"description": "Read a nonfiction passage; analyze how the author's rhetorical choices serve the purpose. Analyzes the text - does not argue for the author's position.",
 					"requirements": [
 						"Thesis analyzing rhetorical choices (not a summary; not your opinion on the topic)",
 						"Evidence from the passage with commentary explaining the rhetorical function of each choice",
@@ -739,14 +739,14 @@
 						"sophistication": "0–1: Explains significance of choices; may contextualize historically or consider alternative readings"
 					},
 					"scoring_notes": [
-						"Most common error: naming devices (ethos, anaphora) without explaining their effect — earns at most 2/4",
+						"Most common error: naming devices (ethos, anaphora) without explaining their effect - earns at most 2/4",
 						"Thesis must address rhetorical choices; 'King argues for civil rights' is not a rhetorical analysis thesis",
 						"Evidence must be specific; paraphrase alone without textual reference earns partial credit"
 					]
 				},
 				{
 					"type": "Argument Essay (FRQ 3)",
-					"description": "A claim, quotation, or prompt is given; students write an original argument. No sources provided — evidence comes from student's own reading, experience, and observation.",
+					"description": "A claim, quotation, or prompt is given; students write an original argument. No sources provided - evidence comes from student's own reading, experience, and observation.",
 					"requirements": [
 						"Defensible thesis with a clear position",
 						"Specific, developed evidence from student's own knowledge",
@@ -760,7 +760,7 @@
 					},
 					"scoring_notes": [
 						"Vague references to 'many experts' or 'society' without specific examples earn low evidence scores",
-						"Qualification woven throughout can contribute to sophistication — not just a closing sentence"
+						"Qualification woven throughout can contribute to sophistication - not just a closing sentence"
 					]
 				}
 			],
@@ -771,9 +771,9 @@
 			},
 			"important_notes": [
 				"Three distinct essay types appear in this order: Synthesis → Rhetorical Analysis → Argument",
-				"Rhetorical Analysis: explain HOW choices create effect — naming devices without effect analysis earns low scores",
+				"Rhetorical Analysis: explain HOW choices create effect - naming devices without effect analysis earns low scores",
 				"Synthesis: cite at least 3 sources with clear attribution",
-				"Argument: choose specific, developed evidence — no sources are provided",
+				"Argument: choose specific, developed evidence - no sources are provided",
 				"Sophistication point requires genuine complexity, not just advanced vocabulary"
 			]
 		},
@@ -808,8 +808,8 @@
 						"sophistication": "0–1: Explores complexity, tension, or ambiguity in the poem; may account for alternative interpretations"
 					},
 					"scoring_notes": [
-						"Must analyze specific poetic elements — not merely paraphrase the poem",
-						"Commentary must explain WHY and HOW the technique creates meaning — not just name it",
+						"Must analyze specific poetic elements - not merely paraphrase the poem",
+						"Commentary must explain WHY and HOW the technique creates meaning - not just name it",
 						"Thesis must present an interpretation, not just the subject ('this poem is about...')"
 					]
 				},
@@ -822,9 +822,9 @@
 						"Analysis of narrative techniques: POV, diction, syntax, imagery, characterization, setting, tone"
 					],
 					"scoring_notes": [
-						"Plot summary is not analysis — responses that only recount events earn 0–1",
+						"Plot summary is not analysis - responses that only recount events earn 0–1",
 						"Multiple instances of the same technique may be cited if each contributes independently",
-						"Unlike AP Lang, focuses on fiction — rhetorical choices become literary choices"
+						"Unlike AP Lang, focuses on fiction - rhetorical choices become literary choices"
 					]
 				},
 				{
@@ -837,7 +837,7 @@
 					],
 					"scoring_notes": [
 						"Student must choose a work of sufficient literary complexity",
-						"General knowledge is insufficient — specific textual details are required",
+						"General knowledge is insufficient - specific textual details are required",
 						"Essay must connect the chosen work to the literary concept through analysis, not biography or history"
 					]
 				}
@@ -849,7 +849,7 @@
 			"important_notes": [
 				"All three essays share the same 6-point analytic rubric",
 				"Q1 (Poetry) and Q2 (Prose) analyze provided texts; Q3 uses a student-chosen work",
-				"Analysis = explaining HOW and WHY techniques create meaning — naming devices alone earns low scores",
+				"Analysis = explaining HOW and WHY techniques create meaning - naming devices alone earns low scores",
 				"Sophistication: often involves recognizing tension, ambiguity, or complexity in the text",
 				"Q3: choose a complex literary work; avoid films, TV shows, or simplistic texts"
 			]
@@ -876,7 +876,7 @@
 						"Provide evidence that supports or challenges a given interpretation"
 					],
 					"scoring_notes": [
-						"Each part (a, b, c) earns 1 point — no partial credit within a part",
+						"Each part (a, b, c) earns 1 point - no partial credit within a part",
 						"Must be historically defensible and specific",
 						"No essay format required; direct responses are acceptable"
 					]
@@ -886,14 +886,14 @@
 					"description": "Essay using 7 provided documents as primary evidence. Analyze documents as historical sources, not just quote them.",
 					"rubric_structure": {
 						"thesis": "1 pt: Historically defensible thesis with a line of reasoning (not a restatement)",
-						"contextualization": "1 pt: Developed broader historical context — must explain the connection to the argument, not just mention background",
+						"contextualization": "1 pt: Developed broader historical context - must explain the connection to the argument, not just mention background",
 						"evidence_document_content": "2 pts: 1 pt for describing content from 3+ docs; 2 pts for using 6+ docs to support an argument",
 						"evidence_outside": "1 pt: Specific evidence not found in the documents",
 						"document_analysis_happ": "2 pts: For 2+ documents, explain how historical situation, audience, purpose, or point of view is relevant to the argument",
-						"complexity": "1 pt: Complex understanding — corroboration, qualification, multiple causes, or connection across periods/scales"
+						"complexity": "1 pt: Complex understanding - corroboration, qualification, multiple causes, or connection across periods/scales"
 					},
 					"scoring_notes": [
-						"Contextualization must be a developed paragraph — a brief mention earns 0",
+						"Contextualization must be a developed paragraph - a brief mention earns 0",
 						"Complexity must be sustained throughout, not just mentioned in passing",
 						"HAPP: must explain RELEVANCE to the argument, not just identify the factor"
 					]
@@ -909,19 +909,19 @@
 					},
 					"scoring_notes": [
 						"Three options given covering different time periods; students choose one",
-						"Evidence must be specific — named events, people, laws",
+						"Evidence must be specific - named events, people, laws",
 						"Historical reasoning must frame the essay's structure"
 					]
 				}
 			],
 			"rubric_conventions": {
-				"shared_with": "AP World History and AP European History — same SAQ/DBQ/LEQ rubric structure",
-				"independence_of_points": "Each rubric point is earned independently — a weak thesis does not prevent earning evidence points",
+				"shared_with": "AP World History and AP European History - same SAQ/DBQ/LEQ rubric structure",
+				"independence_of_points": "Each rubric point is earned independently - a weak thesis does not prevent earning evidence points",
 				"grammar": "Errors not penalized unless they obscure the argument's meaning",
 				"accuracy": "Historically inaccurate claims used to advance the argument negate credit for that component"
 			},
 			"important_notes": [
-				"Contextualization must be a full developed paragraph — brief mentions earn 0",
+				"Contextualization must be a full developed paragraph - brief mentions earn 0",
 				"Thesis must make a historically defensible claim with a line of reasoning",
 				"HAPP sourcing must explain WHY the factor is relevant to the argument",
 				"Use specific, named evidence: people, events, dates, laws",
@@ -938,7 +938,7 @@
 				"leq": "3 options: c.1200–1750, c.1450–1900, c.1750–2001"
 			},
 			"content_emphasis": [
-				"Use comparative analysis across regions — avoid treating one region's experience as universal",
+				"Use comparative analysis across regions - avoid treating one region's experience as universal",
 				"Apply world historical thinking skills: comparison, causation, CCOT",
 				"Reference specific empires, trade networks, and global exchanges by name",
 				"HAPP sourcing must connect document's historical context to the argument"
@@ -985,7 +985,7 @@
 						"Evaluate generalizability based on sampling and population"
 					],
 					"scoring_notes": [
-						"Identification must be specific to the study — generic definitions earn no credit",
+						"Identification must be specific to the study - generic definitions earn no credit",
 						"Research method justification must reference the study's characteristics",
 						"Generalizability reasoning must reference sample size, sampling method, or population"
 					]
@@ -999,7 +999,7 @@
 						"Predict an outcome based on psychological principles"
 					],
 					"scoring_notes": [
-						"Definition alone earns 0 — definition plus application required",
+						"Definition alone earns 0 - definition plus application required",
 						"Application must be correct and specific to the scenario",
 						"Each sub-part earns 0 or 1 point independently"
 					]
@@ -1007,10 +1007,10 @@
 			],
 			"rubric_conventions": {
 				"scoring_method": "Point-based; each sub-part earns 0 or 1; no partial credit within a sub-part",
-				"prose_required": "Complete sentences required — bullet points or fragments receive no credit"
+				"prose_required": "Complete sentences required - bullet points or fragments receive no credit"
 			},
 			"important_notes": [
-				"Use correct psychological terminology — casual synonyms earn no credit",
+				"Use correct psychological terminology - casual synonyms earn no credit",
 				"Required structure: define the concept + apply it to the specific scenario",
 				"Task verbs: 'describe' = characteristics; 'explain' = mechanism; 'identify' = name only; 'propose' = suggest with rationale",
 				"Exam updated 2025: no longer uses old Concept Application or Research Design formats"
@@ -1115,7 +1115,7 @@
 						"Explain long-run entry/exit in perfect competition"
 					],
 					"scoring_notes": [
-						"Shutdown condition: produce if P >= AVC; shut down if P < AVC — must reference AVC",
+						"Shutdown condition: produce if P >= AVC; shut down if P < AVC - must reference AVC",
 						"Monopoly: MR must be drawn below demand with steeper slope"
 					]
 				},
@@ -1157,7 +1157,7 @@
 					"type": "Concept Application (FRQ 1)",
 					"description": "A political scenario is described; students identify a relevant concept, explain how it applies, and connect to a broader pattern.",
 					"scoring_notes": [
-						"Must name the correct concept — vague references earn no credit",
+						"Must name the correct concept - vague references earn no credit",
 						"Application must be specific to the scenario, not generic",
 						"1 point per part (a, b, c)"
 					]
@@ -1173,7 +1173,7 @@
 					],
 					"scoring_notes": [
 						"Must reference the required case by name",
-						"Comparison must address HOW the constitutional reasoning is similar or different — not just outcomes"
+						"Comparison must address HOW the constitutional reasoning is similar or different - not just outcomes"
 					]
 				},
 				{
@@ -1188,7 +1188,7 @@
 					],
 					"scoring_notes": [
 						"Foundational documents must be specifically named and accurately referenced",
-						"Counterclaim must be responded to — acknowledgment alone earns partial credit"
+						"Counterclaim must be responded to - acknowledgment alone earns partial credit"
 					]
 				},
 				{
@@ -1201,7 +1201,7 @@
 						"Identify a limitation of the data"
 					],
 					"scoring_notes": [
-						"Data descriptions must reference specific values — not just general trends",
+						"Data descriptions must reference specific values - not just general trends",
 						"Conclusions must be grounded in the data shown, not general political knowledge"
 					]
 				}
@@ -1244,7 +1244,7 @@
 						"Evaluate a trade-off between environmental and economic/social factors"
 					],
 					"scoring_notes": [
-						"Data descriptions must reference specific values — not just 'it increased'",
+						"Data descriptions must reference specific values - not just 'it increased'",
 						"Calculations must show setup and units; answer alone earns partial credit only",
 						"Mitigation strategies must be specific and connected to the problem's mechanism"
 					]
@@ -1272,7 +1272,7 @@
 			"rubric_conventions": {
 				"scoring_method": "Point-based; each sub-part earns 0 or 1",
 				"calculation_requirement": "Calculations must show the setup and correct units; answer alone is insufficient",
-				"specificity": "Generic answers ('pollution is bad') earn no credit — responses must be specific to the scenario"
+				"specificity": "Generic answers ('pollution is bad') earn no credit - responses must be specific to the scenario"
 			},
 			"important_notes": [
 				"Use environmental units correctly: ppm, ppb, kWh, hectares, kg CO2 eq",
@@ -1303,7 +1303,7 @@
 						"Write a loop (for, while) to process a sequence of values"
 					],
 					"scoring_notes": [
-						"Syntax errors do not automatically lose a point if intent is clear — but missing semicolons and unclosed braces can lose points",
+						"Syntax errors do not automatically lose a point if intent is clear - but missing semicolons and unclosed braces can lose points",
 						"Off-by-one errors in loop bounds typically lose the loop boundary point",
 						"Return statements must match the declared return type"
 					]
@@ -1359,7 +1359,7 @@
 			},
 			"important_notes": [
 				"Use only the AP Java subset: classes, arrays, ArrayList, String methods, Math class",
-				"Write syntactically correct Java — no pseudocode",
+				"Write syntactically correct Java - no pseudocode",
 				"Declare types explicitly: int, double, boolean, String, int[], ArrayList<Type>",
 				"Do not use Java 8+ features (lambdas, streams) or GUI/IO libraries",
 				"Partial credit is available for correct logic even with minor syntax issues"
@@ -1383,7 +1383,7 @@
 					"scoring_notes": [
 						"Must include at least one algorithm that includes sequencing, selection, and iteration",
 						"Must use a list (or similar collection) and explain how it manages complexity",
-						"Written responses must describe the student's own code — not copied or AI-generated code",
+						"Written responses must describe the student's own code - not copied or AI-generated code",
 						"Program must show evidence of running successfully"
 					]
 				},
@@ -1392,22 +1392,22 @@
 			"pseudocode_conventions": {
 				"description": "AP CSP uses a specific pseudocode notation for exam questions; students must be able to read and interpret it.",
 				"key_constructs": [
-					"DISPLAY(expression) — outputs a value",
-					"INPUT() — gets user input",
-					"IF (condition) { } ELSE { } — conditional",
-					"REPEAT n TIMES { } — counted loop",
-					"REPEAT UNTIL (condition) { } — conditional loop",
-					"PROCEDURE name(parameters) { } — defining a procedure",
-					"RETURN(expression) — returns a value from a procedure",
-					"list[i] — list access by index (1-indexed in CSP pseudocode)",
-					"FOR EACH item IN list { } — list iteration",
-					"INSERT(list, i, value) / APPEND(list, value) / REMOVE(list, i) — list operations"
+					"DISPLAY(expression) - outputs a value",
+					"INPUT() - gets user input",
+					"IF (condition) { } ELSE { } - conditional",
+					"REPEAT n TIMES { } - counted loop",
+					"REPEAT UNTIL (condition) { } - conditional loop",
+					"PROCEDURE name(parameters) { } - defining a procedure",
+					"RETURN(expression) - returns a value from a procedure",
+					"list[i] - list access by index (1-indexed in CSP pseudocode)",
+					"FOR EACH item IN list { } - list iteration",
+					"INSERT(list, i, value) / APPEND(list, value) / REMOVE(list, i) - list operations"
 				]
 			},
 			"important_notes": [
-				"AP CSP pseudocode is not Java or Python — do not use language-specific syntax",
+				"AP CSP pseudocode is not Java or Python - do not use language-specific syntax",
 				"Performance Task: code must be student-written and show evidence of testing",
-				"Written response: must describe code specifically — generic statements earn no credit",
+				"Written response: must describe code specifically - generic statements earn no credit",
 				"Algorithm must include all three: sequencing, selection (IF), and iteration (loop)"
 			]
 		},
@@ -1436,7 +1436,7 @@
 						"Propose a consequence of the pattern for a specific group or region"
 					],
 					"scoring_notes": [
-						"Pattern descriptions must be spatially specific — reference regions, directions, or locations visible in the stimulus",
+						"Pattern descriptions must be spatially specific - reference regions, directions, or locations visible in the stimulus",
 						"Model application must name the model and connect it correctly to the observed pattern",
 						"Explanations must show causation, not just correlation"
 					]
@@ -1463,13 +1463,13 @@
 			],
 			"rubric_conventions": {
 				"scoring_method": "Point-based; each sub-part earns 0 or 1 point",
-				"specificity": "Generic answers earn no credit — must reference specific models, regions, processes, or examples",
-				"scale_awareness": "Responses must match the scale of analysis asked — local, national, and global contexts require different evidence"
+				"specificity": "Generic answers earn no credit - must reference specific models, regions, processes, or examples",
+				"scale_awareness": "Responses must match the scale of analysis asked - local, national, and global contexts require different evidence"
 			},
 			"important_notes": [
 				"Use geographic vocabulary: spatial, diffusion, hearth, push/pull factors, centrality, primate city, etc.",
 				"Reference named geographic models when explaining patterns (demographic transition model, Von Thunen model, gravity model, etc.)",
-				"Include real-world examples — general statements without examples earn limited credit",
+				"Include real-world examples - general statements without examples earn limited credit",
 				"Stimulus-based questions: reference specific features visible in the map, graph, or image"
 			]
 		},
@@ -1529,7 +1529,7 @@
 			"important_notes": [
 				"All responses must draw on the 6 required countries: UK, Mexico, Russia, China, Iran, Nigeria",
 				"Use comparative political science vocabulary: legitimacy, sovereignty, regime type, political culture, civil society, etc.",
-				"Avoid U.S.-centric assumptions — compare explicitly rather than using the US as an unstated baseline",
+				"Avoid U.S.-centric assumptions - compare explicitly rather than using the US as an unstated baseline",
 				"Regime type distinctions matter: liberal democracy, illiberal democracy, authoritarian, and hybrid regimes have distinct institutional features"
 			]
 		},
@@ -1586,7 +1586,7 @@
 			"rubric_conventions": {
 				"scoring_method": "Point-based; each algorithmic step, interpretation, or feature earns 0 or 1 point",
 				"context": "Interpretations in context must include units and a description of what the value means in the situation",
-				"multiple_representations": "Questions often require working across representations — an algebraic answer should match graphical behavior"
+				"multiple_representations": "Questions often require working across representations - an algebraic answer should match graphical behavior"
 			},
 			"important_notes": [
 				"Unit 4 (vectors, parametric, matrices) is NOT on the AP exam",
