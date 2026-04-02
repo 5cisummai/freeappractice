@@ -36,6 +36,12 @@
 
 		<nav class="topbar-nav flex items-center gap-5 text-base" aria-label="Main navigation">
 			<a
+				href={resolve('/blog')}
+				class="nav-link text-muted-foreground transition-colors hover:text-foreground"
+			>
+				Blog
+			</a>
+			<a
 				href={resolve('/about')}
 				target="_blank"
 				rel="noopener noreferrer"
