@@ -11,7 +11,6 @@
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { auth } from '$lib/client/auth.svelte.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
-	import packageJson from '../../../../../package.json';
 
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import MoonIcon from '@lucide/svelte/icons/moon';
@@ -29,7 +28,7 @@
 		name: auth.user?.name || '',
 		email: auth.user?.email || ''
 	});
-	const appVersion = packageJson.version;
+	const appVersion = '1.3.1';
 
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();
