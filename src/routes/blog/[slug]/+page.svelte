@@ -3,7 +3,7 @@
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import type { PageData } from './$types';
-    import { resolve } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	let { data }: { data: PageData } = $props();
 
@@ -15,6 +15,34 @@
 			day: 'numeric'
 		});
 	}
+
+	const AP_EXAM_START = new Date(2026, 4, 4);
+
+	function getDaysUntilExamStart(): number {
+		const today = new Date();
+		const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+		const startOfExam = new Date(
+			AP_EXAM_START.getFullYear(),
+			AP_EXAM_START.getMonth(),
+			AP_EXAM_START.getDate()
+		);
+
+		const diffMs = startOfExam.getTime() - startOfToday.getTime();
+		return Math.max(0, Math.floor(diffMs / 86_400_000));
+	}
+
+	const daysUntilExamStart = getDaysUntilExamStart();
+
+	function goToPractice() {
+		window.location.href = resolve('/');
+	}
+
+	const popularPosts = [
+		{ title: 'The Science of Studying', slug: 'science_of_studying' },
+		{ title: 'A Simple FRQ Guide', slug: 'simple_frq_guide' },
+		{ title: 'Stop Studying Harder', slug: 'stop_studying_harder' },
+		{ title: 'Subject-Specific Tips', slug: 'subject_specific' }
+	];
 </script>
 
 <svelte:head>
@@ -46,8 +74,10 @@
 	<Topbar />
 
 	<main class="flex-1">
-		<article class="blog-serif mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-			<!-- Back link -->
+		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:py-16">
+		<div class="flex items-start justify-center gap-10">
+
+		<article class="w-full min-w-0 max-w-3xl">
 			<a
 				href={resolve('/blog')}
 				class="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -76,7 +106,6 @@
 				/>
 			{/if}
 
-			<!-- Tags -->
 			{#if data.post.tags.length > 0}
 				<div class="mb-4 flex flex-wrap gap-2">
 					{#each data.post.tags as tag (tag)}
@@ -101,12 +130,11 @@
 				{formatDate(data.post.publishedAt ?? data.post.createdAt)}
 			</p>
 
-			<!-- Markdown content -->
-			<div class="prose prose-neutral dark:prose-invert max-w-none">
+			<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
+			<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
 				{@html data.htmlContent}
 			</div>
 
-			<!-- Back link bottom -->
 			<div class="mt-12 border-t border-border/70 pt-8">
 				<a
 					href={resolve('/blog')}
@@ -129,6 +157,58 @@
 				</a>
 			</div>
 		</article>
+
+		<aside class="hidden w-64 shrink-0 lg:sticky lg:top-8 lg:block lg:self-start xl:w-72">
+			<div class="flex flex-col gap-4">
+
+				<div class="rounded-xl border border-border/60 bg-card p-4">
+					<p class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Free AP Practice</p>
+					<p class="mb-2 text-xs text-muted-foreground">No Strings Attached!</p>
+					<h2 class="mb-3 text-sm font-semibold leading-snug text-foreground">Ready to test yourself?</h2>
+					<button
+						onclick={goToPractice}
+						class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+					>
+						Start Practicing →
+					</button>
+				</div>
+
+				{#if daysUntilExamStart > 0}
+				<div class="rounded-xl border border-border/60 bg-card p-4 text-center">
+					<p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">AP Exams begin in</p>
+					<p class="mt-1 text-3xl font-bold tabular-nums text-foreground">{daysUntilExamStart}</p>
+					<p class="text-[11px] text-muted-foreground">{daysUntilExamStart === 1 ? 'day' : 'days'}</p>
+				</div>
+				{/if}
+
+				<div class="rounded-xl border border-border/60 bg-card p-4">
+					<p class="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Top Study Guides</p>
+					<ul class="flex flex-col gap-1.5">
+						{#each popularPosts.filter(p => p.slug !== data.post.slug) as post (post.slug)}
+							<li>
+								<a
+									href={resolve(`/blog/${post.slug}`)}
+									class="block rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
+								>
+									{post.title}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</div>
+
+				<div class="rounded-xl border border-border/60 bg-card p-4">
+					<p class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">About</p>
+					<p class="text-xs leading-relaxed text-muted-foreground">
+						FreeAPPractice.org is a free, student-built tool that utilizes AI to create unlimited AP-style practice questions across 20+ subjects to help students prepare.
+					</p>
+				</div>
+
+			</div>
+		</aside>
+
+		</div>
+		</div>
 	</main>
 
 	<SiteFooter />

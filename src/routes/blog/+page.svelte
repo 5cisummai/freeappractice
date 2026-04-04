@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -37,7 +38,7 @@
 	<Topbar />
 
 	<main class="flex-1">
-		<div class="blog-serif mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+		<div class=" mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<div class="mb-10 space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Blog</h1>
 				<p class="text-muted-foreground">Tips, updates, and study guides from the team.</p>
@@ -52,7 +53,7 @@
 					{#each data.posts as post (post._id)}
 						<li>
 							<a
-								href="/blog/{post.slug}"
+								href={resolve(`/blog/${post.slug}`)}
 								class="group block rounded-xl border border-border/70 bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
 							>
 								{#if post.coverImage}
@@ -98,21 +99,3 @@
 
 	<SiteFooter />
 </div>
-
-<style>
-	.blog-serif {
-		font-family:
-			'Iowan Old Style',
-			'Palatino Linotype',
-			Palatino,
-			'Book Antiqua',
-			Georgia,
-			'Times New Roman',
-			serif;
-	}
-
-	.blog-serif h1,
-	.blog-serif h2 {
-		line-height: 1.2;
-	}
-</style>

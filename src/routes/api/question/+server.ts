@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { getCachedQuestion } from '$lib/server/services/question-cache';
 import { dev } from '$app/environment';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const body = await request.json();
 		const { className, unit } = body;
@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'unit must be a string if provided' }, { status: 400 });
 		}
 
-		const result = await getCachedQuestion(className.trim(), unit ?? '');
+		const result = await getCachedQuestion(className.trim(), unit ?? '', locals.userId ?? null);
 
 		const answerStr =
 			typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer;

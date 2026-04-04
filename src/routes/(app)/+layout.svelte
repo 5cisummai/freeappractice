@@ -31,7 +31,7 @@
 			<header class="flex h-14 shrink-0 items-center gap-2 px-4">
 				<SidebarTrigger class="-ml-1" />
 			</header>
-			<!-- Page content -->
+			
 			{@render children()}
 		</Sidebar.Inset>
 	</Sidebar.Provider>

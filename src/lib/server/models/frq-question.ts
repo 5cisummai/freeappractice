@@ -15,6 +15,10 @@ export interface IFRQQuestion extends Document {
 	context?: string;
 	parts: IFRQPart[];
 	totalPoints: number;
+	/** SHA-256 of the normalized prompt text — used for exact-duplicate detection. */
+	contentHash?: string;
+	/** Brief description of the specific concept this FRQ tests — used for diversity tracking. */
+	topicsCovered?: string;
 	lastServedAt: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
@@ -39,12 +43,15 @@ const frqQuestionSchema = new Schema<IFRQQuestion>(
 		context: { type: String },
 		parts: { type: [frqPartSchema], required: true },
 		totalPoints: { type: Number, required: true, min: 1 },
+		contentHash: { type: String, sparse: true },
+		topicsCovered: { type: String },
 		lastServedAt: { type: Date, default: null }
 	},
 	{ timestamps: true }
 );
 
 frqQuestionSchema.index({ apClass: 1, unit: 1, lastServedAt: 1 });
+frqQuestionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
 
 export const FRQQuestion: Model<IFRQQuestion> =
 	(mongoose.models.FRQQuestion as Model<IFRQQuestion>) ??

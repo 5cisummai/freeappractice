@@ -80,15 +80,56 @@ class SettingsController {
 
 	async updateAccount(data: { name: string; email: string }) {
 		try {
-			// Update local state first to show immediate change
-			if (auth.user) {
-				const newUser = { ...auth.user, ...data };
-				// This assumes setAuth doesn't require a new token if we just want to update user data
-				// In a real app, you'd call an API here.
-				toast.success('Account updated successfully');
+			if (!auth.user || !auth.token) {
+				toast.error('You must be logged in to update your account');
+				return false;
 			}
+
+			const name = data.name.trim();
+			const email = data.email.trim().toLowerCase();
+
+			if (!name) {
+				toast.error('Name is required');
+				return false;
+			}
+			if (!email) {
+				toast.error('Email is required');
+				return false;
+			}
+
+			const response = await apiFetch('/api/auth/update-account', {
+				method: 'PATCH',
+				body: JSON.stringify({ name, email })
+			});
+
+			const payload = (await response.json().catch(() => null)) as
+				| {
+						error?: string;
+						message?: string;
+						requiresVerification?: boolean;
+						user?: { userId: string; name: string; email: string };
+				  }
+				| null;
+
+			if (!response.ok) {
+				throw new Error(payload?.error || 'Failed to update account');
+			}
+
+			if (payload?.user) {
+				auth.setAuth(auth.token, payload.user);
+			}
+
+			if (payload?.requiresVerification) {
+				toast.success(payload.message || 'Email updated. Please verify your new email.');
+				window.location.href = '/email-sent';
+				return true;
+			}
+
+			toast.success(payload?.message || 'Account updated successfully');
+			return true;
 		} catch (e) {
-			toast.error('Failed to update account');
+			toast.error(e instanceof Error ? e.message : 'Failed to update account');
+			return false;
 		}
 	}
 

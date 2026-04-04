@@ -5,6 +5,21 @@
 
 	const changelog = [
 		{
+			version: '1.3.2',
+			date: 'April 3, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Questions now rarely repeat the same topics within a unit',
+						'Improved mobile responsiveness for blog posts',
+						'Added quick actions to blog posts',
+						'Improved styling of the about page'
+					]
+				},
+			]
+		},
+		{
 			version: '1.3.1',
 			date: 'April 1, 2026',
 			sections: [
@@ -405,7 +420,7 @@
 						<div
 							class="flex flex-col space-y-1 sm:flex-row sm:items-baseline sm:justify-between sm:space-y-0"
 						>
-							<h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400">{entry.version}</h2>
+							<h2 class="text-2xl font-bold text-primary">{entry.version}</h2>
 							<time class="text-sm text-muted-foreground">{entry.date}</time>
 						</div>
 

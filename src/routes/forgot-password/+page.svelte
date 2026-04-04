@@ -4,6 +4,7 @@
 	import * as Field from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import logo from '$lib/assets/logo.png';
+	import { resolve } from '$app/paths';
 
 	let email = $state('');
 	let loading = $state(false);
@@ -57,7 +58,7 @@
 
 <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
 	<div class="flex w-full max-w-sm flex-col gap-6">
-		<a href="/" class="flex items-center gap-2 self-center font-medium">
+		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
 			Free AP Practice
 		</a>
@@ -74,7 +75,7 @@
 							If that email is registered, you'll receive a reset link within a few minutes. Check
 							your spam folder if it doesn't arrive.
 						</p>
-						<a href="/login" class="text-sm underline underline-offset-4">Back to sign in</a>
+						<a href={resolve('/login')} class="text-sm underline underline-offset-4">Back to sign in</a>
 					</div>
 				{:else}
 					<form onsubmit={handleSubmit}>
@@ -97,7 +98,7 @@
 									{loading ? 'Sending...' : 'Send reset link'}
 								</Button>
 								<Field.Description class="text-center">
-									<a href="/login" class="underline underline-offset-4">Back to sign in</a>
+									<a href={resolve('/login')} class="underline underline-offset-4">Back to sign in</a>
 								</Field.Description>
 							</Field.Field>
 						</Field.Group>

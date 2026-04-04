@@ -14,7 +14,7 @@
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
     "cache:clear": "tsx scripts/clear-cache.ts",
-    "cache:warm": "vite-node scripts/warm-cache.ts"
+    "cache:warm": "tsx scripts/warm-cache-simple.ts"
   },
   "devDependencies": {
     "@eslint/compat": "latest",
