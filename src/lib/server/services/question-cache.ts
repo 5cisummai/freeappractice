@@ -39,6 +39,22 @@ function computeHash(text: string): string {
 // ── Track in-flight replenishments to avoid duplicate work ──
 const replenishing = new Set<string>();
 
+// ── Per-process coalescer: absorbs thundering-herd cache misses within one instance ──
+const inFlightMiss = new Map<string, Promise<CachedResult>>();
+
+/** Duration a question holds 'serving' status before expiry and automatic lock reclaim. */
+const LOCK_WINDOW_MS = 10_000;
+
+// One-time startup migration: assign status fields to pre-existing documents (safe to re-run)
+connectDb()
+	.then(() =>
+		Question.updateMany(
+			{ status: { $exists: false } },
+			{ $set: { status: 'available', serveCount: 0, lockedUntil: null } }
+		).catch((err) => logger.error('[cache] startup migration failed', { error: err }))
+	)
+	.catch(() => {});
+
 /**
  * Fetch the topics covered by the most recent questions in the pool for this class+unit.
  * Used to guide the AI toward generating diverse content.
@@ -88,7 +104,10 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 			explanation: answer.explanation,
 			contentHash,
 			topicsCovered: answer.topicsCovered ?? '',
-			lastServedAt: null
+			lastServedAt: null,
+			status: 'available',
+			serveCount: 0,
+			lockedUntil: null
 		});
 		return doc._id.toString();
 	} catch (err: unknown) {
@@ -137,7 +156,8 @@ async function recordSeen(
 }
 
 /**
- * Replenish the pool for a given class+unit until it has POOL_SIZE questions.
+ * Replenish the pool for a given class+unit until it has POOL_SIZE available questions.
+ * Reclaims any expired serving locks first, then generates questions as needed.
  * Runs in the background — never blocks a user request.
  */
 function replenishPool(className: string, unit: string): void {
@@ -151,21 +171,39 @@ function replenishPool(className: string, unit: string): void {
 			const cacheUnit = normalizeUnit(unit);
 			const poolSize = getPoolSize();
 
-			// Re-check count before each generation so multiple concurrent serverless
-			// instances converge on the same target and don't over-generate.
-			for (let i = 0; i < poolSize; i++) {
-				const current = await Question.countDocuments({ apClass: className, unit: cacheUnit });
-				if (current >= poolSize) break;
+			// Reclaim questions stuck in 'serving' due to a crashed or timed-out request
+			await Question.updateMany(
+				{
+					apClass: className,
+					unit: cacheUnit,
+					status: 'serving',
+					lockedUntil: { $lt: new Date() }
+				},
+				{ $set: { status: 'available', lockedUntil: null } }
+			);
 
-				logger.info(`[cache] replenishing slot ${current + 1}/${poolSize}`, {
+			// Generate until the available pool reaches the target size
+			for (let i = 0; i < poolSize; i++) {
+				const available = await Question.countDocuments({
+					apClass: className,
+					unit: cacheUnit,
+					status: 'available'
+				});
+				if (available >= poolSize) break;
+
+				logger.info(`[cache] replenishing - available: ${available}/${poolSize}`, {
 					className,
 					unit: cacheUnit
 				});
 				await generateAndInsert(className, unit);
 			}
 
-			const after = await Question.countDocuments({ apClass: className, unit: cacheUnit });
-			logger.info(`[cache] replenish done - pool now has ${after} question(s)`, {
+			const after = await Question.countDocuments({
+				apClass: className,
+				unit: cacheUnit,
+				status: 'available'
+			});
+			logger.info(`[cache] replenish done - ${after} available question(s)`, {
 				className,
 				unit: cacheUnit
 			});
@@ -177,17 +215,49 @@ function replenishPool(className: string, unit: string): void {
 	})();
 }
 
+/**
+ * Atomically claim the least-recently-served available question.
+ * Uses findOneAndUpdate so the document is never removed from the pool.
+ * Returns the pre-update document (serveCount is the current value) or null on a miss.
+ */
+async function claimQuestion(filter: Record<string, unknown>) {
+	const lockedUntil = new Date(Date.now() + LOCK_WINDOW_MS);
+	return Question.findOneAndUpdate(
+		{ ...filter, status: 'available' },
+		{ $set: { status: 'serving', lockedUntil } },
+		{ sort: { lastServedAt: 1, createdAt: 1 } }
+	).exec();
+}
+
+/**
+ * Return a question to the pool after serving.
+ * Increments serveCount and retires the question once it reaches maxServeCount.
+ * Fire-and-forget — does not block the user response.
+ */
+function releaseQuestion(docId: string, currentServeCount: number, maxServeCount: number): void {
+	const nextServeCount = currentServeCount + 1;
+	const nextStatus: 'available' | 'retired' =
+		nextServeCount >= maxServeCount ? 'retired' : 'available';
+	Question.updateOne(
+		{ _id: docId },
+		{
+			$inc: { serveCount: 1 },
+			$set: { lastServedAt: new Date(), lockedUntil: null, status: nextStatus }
+		}
+	).catch(() => {});
+}
+
 export type CachedResult = GenerateResult & { cached: boolean };
 
 /**
  * Main entry point for the question API.
  *
- * 1. Pull the least-recently-served question from the DB pool, preferring
- *    questions the authenticated user has not seen before.
- * 2. Pop it atomically (findOneAndDelete) so no two requests get the same question.
+ * 1. Atomically claim the least-recently-served available question from the pool.
+ * 2. Release it back to the pool (or retire it) after serving — non-destructive.
  * 3. Record it in the user's seen-question history (non-blocking).
  * 4. Kick off background replenishment if the pool is low.
- * 5. If the DB fails entirely, fall back to a live AI generation.
+ * 5. On pool empty: coalesce concurrent misses into a single live AI call.
+ * 6. If the DB fails entirely, fall back to live AI generation.
  */
 export async function getCachedQuestion(
 	className: string,
@@ -216,9 +286,8 @@ export async function getCachedQuestion(
 			}
 		}
 
-		doc = await Question.findOneAndDelete(baseFilter, {
-			sort: { lastServedAt: 1, createdAt: 1 }
-		}).exec();
+		// Atomic non-destructive claim: marks question 'serving' with a soft expiry lock
+		doc = await claimQuestion(baseFilter);
 
 		// If all pooled questions were already seen by this user, fall back to any question
 		if (!doc && userId) {
@@ -227,10 +296,7 @@ export async function getCachedQuestion(
 				unit: cacheUnit,
 				userId
 			});
-			doc = await Question.findOneAndDelete(
-				{ apClass: className, unit: cacheUnit },
-				{ sort: { lastServedAt: 1, createdAt: 1 } }
-			).exec();
+			doc = await claimQuestion({ apClass: className, unit: cacheUnit });
 		}
 	} catch (err) {
 		// ── DB failure: fall back to live generation ──
@@ -244,6 +310,9 @@ export async function getCachedQuestion(
 	}
 
 	if (doc) {
+		// Release: increment serveCount and return to pool or retire when limit reached (fire-and-forget)
+		releaseQuestion(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
+
 		// Record seen history for authenticated users (fire-and-forget)
 		if (userId && doc.contentHash) {
 			recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
@@ -270,29 +339,42 @@ export async function getCachedQuestion(
 		};
 	}
 
-	// ── Cache miss (empty pool): generate live, also start replenishing ──
+	// ── Cache miss (empty pool): use per-process coalescer to cap live AI calls to 1 ──
+	const missKey = `miss::${className}::${cacheUnit}`;
+	if (inFlightMiss.has(missKey)) {
+		logger.info('[cache] coalescing duplicate cache miss', { className, unit: cacheUnit });
+		return inFlightMiss.get(missKey)!;
+	}
+
 	logger.info('[cache] pool empty, generating live question', { className, unit: cacheUnit });
 	replenishPool(className, unit ?? '');
 
-	try {
-		const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
-		const result = await generateAPQuestion({ className, unit: unit ?? '', recentTopics });
+	const livePromise: Promise<CachedResult> = (async (): Promise<CachedResult> => {
+		try {
+			const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
+			const result = await generateAPQuestion({ className, unit: unit ?? '', recentTopics });
 
-		// Record seen history for live-generated questions too
-		if (userId) {
-			const hash = computeHash(result.answer.question);
-			recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+			// Record seen history for live-generated questions too
+			if (userId) {
+				const hash = computeHash(result.answer.question);
+				recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+			}
+
+			return { ...result, cached: false };
+		} catch (err) {
+			logger.error('[cache] live generation also failed', {
+				className,
+				unit: cacheUnit,
+				error: err
+			});
+			throw err;
+		} finally {
+			inFlightMiss.delete(missKey);
 		}
+	})();
 
-		return { ...result, cached: false };
-	} catch (err) {
-		logger.error('[cache] live generation also failed', {
-			className,
-			unit: cacheUnit,
-			error: err
-		});
-		throw err;
-	}
+	inFlightMiss.set(missKey, livePromise);
+	return livePromise;
 }
 
 /**
@@ -331,7 +413,10 @@ export async function generateAndStoreQuestion(
 			explanation: answer.explanation,
 			contentHash,
 			topicsCovered: answer.topicsCovered ?? '',
-			lastServedAt: null
+			lastServedAt: null,
+			status: 'available',
+			serveCount: 0,
+			lockedUntil: null
 		});
 	} catch (err: unknown) {
 		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
@@ -350,7 +435,11 @@ export async function generateAndStoreQuestion(
 
 export async function isCached(className: string, unit?: string): Promise<boolean> {
 	await connectDb();
-	const count = await Question.countDocuments({ apClass: className, unit: normalizeUnit(unit) });
+	const count = await Question.countDocuments({
+		apClass: className,
+		unit: normalizeUnit(unit),
+		status: 'available'
+	});
 	return count > 0;
 }
 
@@ -360,9 +449,20 @@ export async function clearCache(): Promise<number> {
 	return result.deletedCount;
 }
 
-export async function getCacheStats(): Promise<{ total: number; classes: number }> {
+export async function getCacheStats(): Promise<{
+	total: number;
+	classes: number;
+	available: number;
+	serving: number;
+	retired: number;
+}> {
 	await connectDb();
-	const total = await Question.countDocuments();
-	const classes = (await Question.distinct('apClass')).length;
-	return { total, classes };
+	const [total, classes, available, serving, retired] = await Promise.all([
+		Question.countDocuments(),
+		Question.distinct('apClass').then((a) => a.length),
+		Question.countDocuments({ status: 'available' }),
+		Question.countDocuments({ status: 'serving' }),
+		Question.countDocuments({ status: 'retired' })
+	]);
+	return { total, classes, available, serving, retired };
 }

@@ -32,7 +32,11 @@ const questionSchema = new mongoose.Schema(
 		optionD: String,
 		correctAnswer: String,
 		explanation: String,
-		lastServedAt: Date
+		lastServedAt: Date,
+		status: String,
+		serveCount: Number,
+		maxServeCount: Number,
+		lockedUntil: Date
 	},
 	{ timestamps: true }
 );
@@ -47,8 +51,15 @@ async function main() {
 	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
 	console.log('Connected.');
 
-	const total = await Question.countDocuments({});
-	console.log(`Cache contains ${total} question(s).`);
+	const [total, available, serving, retired] = await Promise.all([
+		Question.countDocuments({}),
+		Question.countDocuments({ status: 'available' }),
+		Question.countDocuments({ status: 'serving' }),
+		Question.countDocuments({ status: 'retired' })
+	]);
+	console.log(
+		`Cache contains ${total} question(s): ${available} available, ${serving} serving, ${retired} retired.`
+	);
 
 	if (isDryRun) {
 		console.log('Dry-run mode — nothing deleted.');

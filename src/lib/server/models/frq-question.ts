@@ -20,6 +20,10 @@ export interface IFRQQuestion extends Document {
 	/** Brief description of the specific concept this FRQ tests — used for diversity tracking. */
 	topicsCovered?: string;
 	lastServedAt: Date | null;
+	status: 'available' | 'serving' | 'retired' | 'generating';
+	serveCount: number;
+	maxServeCount: number;
+	lockedUntil: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -43,14 +47,23 @@ const frqQuestionSchema = new Schema<IFRQQuestion>(
 		context: { type: String },
 		parts: { type: [frqPartSchema], required: true },
 		totalPoints: { type: Number, required: true, min: 1 },
-		contentHash: { type: String, sparse: true },
+		contentHash: { type: String },
 		topicsCovered: { type: String },
-		lastServedAt: { type: Date, default: null }
+		lastServedAt: { type: Date, default: null },
+		status: {
+			type: String,
+			enum: ['available', 'serving', 'retired', 'generating'],
+			default: 'available',
+			required: true
+		},
+		serveCount: { type: Number, default: 0 },
+		maxServeCount: { type: Number, default: 50 },
+		lockedUntil: { type: Date, default: null }
 	},
 	{ timestamps: true }
 );
 
-frqQuestionSchema.index({ apClass: 1, unit: 1, lastServedAt: 1 });
+frqQuestionSchema.index({ apClass: 1, unit: 1, status: 1, lastServedAt: 1 });
 frqQuestionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
 
 export const FRQQuestion: Model<IFRQQuestion> =
