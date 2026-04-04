@@ -224,7 +224,12 @@ const APQuestion = z.object({
 	correctAnswer: z.enum(['A', 'B', 'C', 'D']).describe('The letter of the correct answer'),
 	explanation: z
 		.string()
-		.describe('Detailed explanation of the correct answer and why distractors are wrong')
+		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
+	topicsCovered: z
+		.string()
+		.describe(
+			'1-2 sentence description of the specific concept, subtopic, or scenario this question tests (used for diversity tracking — be precise and distinct)'
+		)
 });
 
 export type APQuestionData = z.infer<typeof APQuestion>;
@@ -240,8 +245,9 @@ export interface GenerateResult {
 export async function generateAPQuestion(opts: {
 	className: string;
 	unit?: string;
+	recentTopics?: string[];
 }): Promise<GenerateResult> {
-	const { className, unit } = opts;
+	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
 	let question = `Create an AP-level practice question for ${className}`;
@@ -265,6 +271,11 @@ export async function generateAPQuestion(opts: {
 		}
 	}
 
+	const diversitySection =
+		recentTopics && recentTopics.length > 0
+			? `\nDIVERSITY REQUIREMENT — RECENTLY COVERED TOPICS (DO NOT REPEAT THESE):\n${recentTopics.map((t) => `  - ${t}`).join('\n')}\nYou MUST choose a DIFFERENT subtopic, concept, or scenario from those listed above. Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.\n`
+			: '';
+
 	const isBiology = className?.toLowerCase().includes('biology');
 	const difficultyGuidance = isBiology
 		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:
@@ -273,7 +284,7 @@ export async function generateAPQuestion(opts: {
 - Emphasize scientific practices over pure recall`
 		: '';
 
-	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${difficultyGuidance}
+	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
 
 CRITICAL UNIT SCOPE REQUIREMENT:
 - Your question MUST stay strictly within the unit's specified keywords and topics listed above
@@ -286,6 +297,7 @@ QUESTION QUALITY:
 - Plausible distractors reflecting common misconceptions
 - Options should be roughly equal in length
 - Avoid "all of the above" or "none of the above"
+- Vary the cognitive level: alternate between recall, application, analysis, and evaluation questions
 
 FORMATTING:
 - Use perfect markdown formatting for any math/science notation and for code blocks use the triple backtick syntax (\`\`\`) to enclose code.
@@ -366,7 +378,12 @@ const FRQQuestion = z.object({
 			'Optional stimulus or passage that all sub-parts reference, or null if not applicable'
 		),
 	parts: z.array(FRQPart).min(2).max(4).describe('The sub-parts of the FRQ'),
-	totalPoints: z.number().int().min(2).describe('Sum of all part point values')
+	totalPoints: z.number().int().min(2).describe('Sum of all part point values'),
+	topicsCovered: z
+		.string()
+		.describe(
+			'1-2 sentence description of the specific concept, scenario, or FRQ type this question tests (used for diversity tracking — be precise and distinct)'
+		)
 });
 
 export type FRQQuestionData = z.infer<typeof FRQQuestion>;
@@ -382,8 +399,9 @@ export interface GenerateFRQResult {
 export async function generateFRQQuestion(opts: {
 	className: string;
 	unit?: string;
+	recentTopics?: string[];
 }): Promise<GenerateFRQResult> {
-	const { className, unit } = opts;
+	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
 	let unitContext = '';
@@ -427,7 +445,12 @@ export async function generateFRQQuestion(opts: {
 			universalErrorsSection = `\nUNIVERSAL AP FRQ ERRORS TO AVOID in your generated question, scoring criteria, and model answers:\n${frqSpec.universalErrors}\n`;
 	}
 
-	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqOverviewSection}${questionTypesSection}${rubricSection}${importantNotesSection}${taskVerbsSection}${universalErrorsSection}
+	const frqDiversitySection =
+		recentTopics && recentTopics.length > 0
+			? `\nDIVERSITY REQUIREMENT — RECENTLY COVERED FRQ TOPICS (DO NOT REPEAT THESE):\n${recentTopics.map((t) => `  - ${t}`).join('\n')}\nYou MUST choose a DIFFERENT scenario, question type, or concept from those listed above. Select a fresh context or a less-common but exam-relevant FRQ type.\n`
+			: '';
+
+	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqOverviewSection}${questionTypesSection}${rubricSection}${importantNotesSection}${taskVerbsSection}${universalErrorsSection}${frqDiversitySection}
 
 CRITICAL UNIT SCOPE: Stay strictly within the specified unit's keywords and topics.
 

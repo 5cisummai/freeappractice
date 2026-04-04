@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import { Question } from '$lib/server/models/question';
+import { SeenQuestion } from '$lib/server/models/seen-question';
 import { connectDb } from '$lib/server/db';
 import { generateAPQuestion, type GenerateResult } from './ai';
 import { logger } from '$lib/server/logger';
@@ -15,17 +17,65 @@ function normalizeUnit(unit?: string): string {
 	return typeof unit === 'string' ? unit.trim() : '';
 }
 
+/**
+ * How many recently-served topics to pass to the AI for diversity guidance.
+ * Fetch more than the pool size so diversity spans across pool generations.
+ */
+const RECENT_TOPICS_WINDOW = 20;
+
+/**
+ * Maximum number of seen-question records kept per user per (class, unit) bucket.
+ * Once the bucket is full, the oldest entries are pruned so questions can eventually recycle.
+ */
+const MAX_SEEN_PER_BUCKET = 100;
+
+/** Normalize and hash the question text for deduplication. */
+function computeHash(text: string): string {
+	return createHash('sha256')
+		.update(text.trim().toLowerCase().replace(/\s+/g, ' '))
+		.digest('hex');
+}
+
 // ── Track in-flight replenishments to avoid duplicate work ──
 const replenishing = new Set<string>();
 
 /**
+ * Fetch the topics covered by the most recent questions in the pool for this class+unit.
+ * Used to guide the AI toward generating diverse content.
+ */
+async function getRecentTopics(className: string, unit: string): Promise<string[]> {
+	const docs = await Question.find(
+		{ apClass: className, unit, topicsCovered: { $exists: true, $ne: '' } },
+		{ topicsCovered: 1 },
+		{ sort: { createdAt: -1 }, limit: RECENT_TOPICS_WINDOW }
+	).lean();
+	return docs.map((d) => d.topicsCovered as string).filter(Boolean);
+}
+
+/**
  * Generate a single question and insert it into the database pool.
- * Returns the saved document's _id as a string, or null on failure.
+ * Skips insertion if an identical question (by hash) already exists.
+ * Returns the saved document's _id as a string, or null on failure/duplicate.
  */
 async function generateAndInsert(className: string, unit: string): Promise<string | null> {
 	try {
-		const result = await generateAPQuestion({ className, unit });
+		const recentTopics = await getRecentTopics(className, normalizeUnit(unit));
+		const result = await generateAPQuestion({ className, unit, recentTopics });
 		const { answer } = result;
+
+		const contentHash = computeHash(answer.question);
+
+		// Skip if this exact question is already in the pool
+		const exists = await Question.exists({ contentHash });
+		if (exists) {
+			logger.info('[cache] skipping duplicate question (hash collision)', {
+				className,
+				unit,
+				contentHash
+			});
+			return null;
+		}
+
 		const doc = await Question.create({
 			apClass: className,
 			unit: normalizeUnit(unit),
@@ -36,18 +86,59 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 			optionD: answer.optionD,
 			correctAnswer: answer.correctAnswer,
 			explanation: answer.explanation,
+			contentHash,
+			topicsCovered: answer.topicsCovered ?? '',
 			lastServedAt: null
 		});
 		return doc._id.toString();
-	} catch (err) {
+	} catch (err: unknown) {
+		// MongoDB duplicate-key error (E11000) — safe to ignore
+		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+			logger.info('[cache] duplicate key on insert, skipping', { className, unit });
+			return null;
+		}
 		logger.error('[cache] generateAndInsert failed', { className, unit, error: err });
 		return null;
 	}
 }
 
 /**
+ * Record that a user has seen a question (fire-and-forget).
+ * Automatically prunes the oldest entries if the bucket exceeds MAX_SEEN_PER_BUCKET.
+ */
+async function recordSeen(
+	userId: string,
+	contentHash: string,
+	apClass: string,
+	unit: string
+): Promise<void> {
+	try {
+		await SeenQuestion.updateOne(
+			{ userId, contentHash },
+			{ $setOnInsert: { userId, contentHash, apClass, unit, questionType: 'mcq' } },
+			{ upsert: true }
+		);
+
+		// Prune oldest entries if bucket is too large
+		const count = await SeenQuestion.countDocuments({ userId, apClass, unit, questionType: 'mcq' });
+		if (count > MAX_SEEN_PER_BUCKET) {
+			const excess = count - MAX_SEEN_PER_BUCKET;
+			const oldest = await SeenQuestion.find(
+				{ userId, apClass, unit, questionType: 'mcq' },
+				{ _id: 1 },
+				{ sort: { seenAt: 1 }, limit: excess }
+			).lean();
+			const ids = oldest.map((d) => d._id);
+			await SeenQuestion.deleteMany({ _id: { $in: ids } });
+		}
+	} catch {
+		// Non-critical — don't let history tracking affect the main request
+	}
+}
+
+/**
  * Replenish the pool for a given class+unit until it has POOL_SIZE questions.
- * Runs in the background - never blocks a user request.
+ * Runs in the background — never blocks a user request.
  */
 function replenishPool(className: string, unit: string): void {
 	const key = `${className}::${normalizeUnit(unit)}`;
@@ -91,24 +182,56 @@ export type CachedResult = GenerateResult & { cached: boolean };
 /**
  * Main entry point for the question API.
  *
- * 1. Pull the least-recently-served question from the DB pool.
- * 2. Mark it as served (update lastServedAt) and remove it from the pool.
- * 3. Kick off background replenishment if the pool is low.
- * 4. If the DB fails entirely, fall back to a live AI generation.
+ * 1. Pull the least-recently-served question from the DB pool, preferring
+ *    questions the authenticated user has not seen before.
+ * 2. Pop it atomically (findOneAndDelete) so no two requests get the same question.
+ * 3. Record it in the user's seen-question history (non-blocking).
+ * 4. Kick off background replenishment if the pool is low.
+ * 5. If the DB fails entirely, fall back to a live AI generation.
  */
-export async function getCachedQuestion(className: string, unit?: string): Promise<CachedResult> {
+export async function getCachedQuestion(
+	className: string,
+	unit?: string,
+	userId?: string | null
+): Promise<CachedResult> {
 	const cacheUnit = normalizeUnit(unit);
 
 	let doc;
 	try {
 		await connectDb();
 
-		// Pick the question that was served least recently (or never served).
-		// findOneAndDelete atomically pops it so no two requests get the same question.
-		doc = await Question.findOneAndDelete(
-			{ apClass: className, unit: cacheUnit },
-			{ sort: { lastServedAt: 1, createdAt: 1 } }
-		).exec();
+		const baseFilter: Record<string, unknown> = { apClass: className, unit: cacheUnit };
+
+		// If we know the user, exclude questions they have already seen
+		if (userId) {
+			const seenHashes = await SeenQuestion.find(
+				{ userId, apClass: className, unit: cacheUnit, questionType: 'mcq' },
+				{ contentHash: 1 }
+			)
+				.lean()
+				.then((docs) => docs.map((d) => d.contentHash));
+
+			if (seenHashes.length > 0) {
+				baseFilter['contentHash'] = { $nin: seenHashes };
+			}
+		}
+
+		doc = await Question.findOneAndDelete(baseFilter, {
+			sort: { lastServedAt: 1, createdAt: 1 }
+		}).exec();
+
+		// If all pooled questions were already seen by this user, fall back to any question
+		if (!doc && userId) {
+			logger.info('[cache] all pooled questions already seen by user, falling back to any', {
+				className,
+				unit: cacheUnit,
+				userId
+			});
+			doc = await Question.findOneAndDelete(
+				{ apClass: className, unit: cacheUnit },
+				{ sort: { lastServedAt: 1, createdAt: 1 } }
+			).exec();
+		}
 	} catch (err) {
 		// ── DB failure: fall back to live generation ──
 		logger.warn('[cache] DB read failed, falling back to live generation', {
@@ -121,6 +244,11 @@ export async function getCachedQuestion(className: string, unit?: string): Promi
 	}
 
 	if (doc) {
+		// Record seen history for authenticated users (fire-and-forget)
+		if (userId && doc.contentHash) {
+			recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
+		}
+
 		// Fire background replenishment (non-blocking)
 		replenishPool(className, unit ?? '');
 
@@ -132,7 +260,8 @@ export async function getCachedQuestion(className: string, unit?: string): Promi
 				optionC: doc.optionC,
 				optionD: doc.optionD,
 				correctAnswer: doc.correctAnswer,
-				explanation: doc.explanation
+				explanation: doc.explanation,
+				topicsCovered: doc.topicsCovered ?? ''
 			},
 			provider: 'cache',
 			model: 'cached',
@@ -146,7 +275,15 @@ export async function getCachedQuestion(className: string, unit?: string): Promi
 	replenishPool(className, unit ?? '');
 
 	try {
-		const result = await generateAPQuestion({ className, unit: unit ?? '' });
+		const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
+		const result = await generateAPQuestion({ className, unit: unit ?? '', recentTopics });
+
+		// Record seen history for live-generated questions too
+		if (userId) {
+			const hash = computeHash(result.answer.question);
+			recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+		}
+
 		return { ...result, cached: false };
 	} catch (err) {
 		logger.error('[cache] live generation also failed', {
@@ -170,21 +307,41 @@ export async function generateAndStoreQuestion(
 	}
 
 	await connectDb();
-	const result = await generateAPQuestion({ className: className.trim(), unit: unit ?? '' });
+
+	const recentTopics = await getRecentTopics(className, normalizeUnit(unit)).catch(() => []);
+	const result = await generateAPQuestion({
+		className: className.trim(),
+		unit: unit ?? '',
+		recentTopics
+	});
 	const { answer } = result;
 
-	await Question.create({
-		apClass: className.trim(),
-		unit: normalizeUnit(unit),
-		question: answer.question,
-		optionA: answer.optionA,
-		optionB: answer.optionB,
-		optionC: answer.optionC,
-		optionD: answer.optionD,
-		correctAnswer: answer.correctAnswer,
-		explanation: answer.explanation,
-		lastServedAt: null
-	});
+	const contentHash = computeHash(answer.question);
+
+	try {
+		await Question.create({
+			apClass: className.trim(),
+			unit: normalizeUnit(unit),
+			question: answer.question,
+			optionA: answer.optionA,
+			optionB: answer.optionB,
+			optionC: answer.optionC,
+			optionD: answer.optionD,
+			correctAnswer: answer.correctAnswer,
+			explanation: answer.explanation,
+			contentHash,
+			topicsCovered: answer.topicsCovered ?? '',
+			lastServedAt: null
+		});
+	} catch (err: unknown) {
+		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+			logger.info('[cache] generateAndStoreQuestion: duplicate hash, not re-storing', {
+				className
+			});
+		} else {
+			throw err;
+		}
+	}
 
 	return { ...result, cached: false };
 }

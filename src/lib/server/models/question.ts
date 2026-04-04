@@ -10,6 +10,10 @@ export interface IQuestion extends Document {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
+	/** SHA-256 of the normalized question text — used for exact-duplicate detection. */
+	contentHash?: string;
+	/** Brief description of the specific concept this question tests — used for diversity tracking. */
+	topicsCovered?: string;
 	lastServedAt: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
@@ -26,6 +30,8 @@ const questionSchema = new Schema<IQuestion>(
 		optionD: { type: String, required: true },
 		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
 		explanation: { type: String, required: true },
+		contentHash: { type: String, sparse: true },
+		topicsCovered: { type: String },
 		lastServedAt: { type: Date, default: null }
 	},
 	{ timestamps: true }
@@ -33,6 +39,8 @@ const questionSchema = new Schema<IQuestion>(
 
 // Compound index for efficient cache lookups
 questionSchema.index({ apClass: 1, unit: 1, lastServedAt: 1 });
+// Sparse unique index so only documents with a hash are deduplicated
+questionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
 
 // Prevent OverwriteModelError during hot-reload in dev
 export const Question: Model<IQuestion> =

@@ -6,7 +6,7 @@ import { dev } from '$app/environment';
 
 export const POST: RequestHandler = async (event) => {
 	try {
-		await requireAuth(event);
+		const userId = await requireAuth(event);
 
 		const body = await event.request.json();
 		const { className, unit } = body;
@@ -21,7 +21,7 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'unit must be a string if provided' }, { status: 400 });
 		}
 
-		const result = await getCachedFRQQuestion(className.trim(), unit ?? '');
+		const result = await getCachedFRQQuestion(className.trim(), unit ?? '', userId);
 
 		return json({
 			question: result.question,

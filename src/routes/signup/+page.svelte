@@ -1,6 +1,7 @@
 <script>
 	import logo from '$lib/assets/logo.png';
 	import SignupForm from '$lib/components/signup-form.svelte';
+	import { resolve } from '$app/paths';
 </script>
 
 <svelte:head>
@@ -24,7 +25,7 @@
 
 <div class="bg flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
 	<div class="flex w-full max-w-sm flex-col gap-6">
-		<a href="/" class="flex items-center gap-2 self-center font-medium">
+		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
 			Free AP Practice
 		</a>
