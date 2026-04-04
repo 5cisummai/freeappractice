@@ -102,6 +102,24 @@ This project is meant to deploy to Vercel as a SvelteKit app. The current Svelte
 
 If you change hosting later, update the adapter and deployment notes together so the README stays accurate.
 
+## Branding & usage
+
+The **Freeappractice** name, logo, and brand identity are proprietary and are exclusively reserved for Ajay Saravanan. The source code is open, but the brand is not.
+
+### What you are welcome to do
+
+- ⭐ Star or like the repository
+- 🍴 Fork the repository and use the code as a starting point for your own project
+- 🛠 Open pull requests, report bugs, and contribute improvements back to this repository
+
+### What is not permitted
+
+- Launching any public site, app, or service under the name **Freeappractice**, **Free AP Practice**, or any confusingly similar name or branding
+- Creating a derivative product that implies it is Freeappractice or a related official product
+- Claiming any affiliation, endorsement, or partnership with Freeappractice or Ajay Saravanan without explicit written permission
+
+If you fork the code to build something of your own, give it a completely different name and make it clear that it is an independent project unrelated to Freeappractice.
+
 ## Notes
 
 - AP content, question generation, and grading are still API-driven, even though the UI now lives in SvelteKit.
