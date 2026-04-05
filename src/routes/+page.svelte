@@ -546,11 +546,7 @@
 						>
 						<Accordion.Content>
 							<p>
-								Question may take longer to load when new options are chosen due to the AI
-								processing time required to generate customized questions. This site uses OpenAI's
-								reasoning model gpt-5-mini to generate high quality questions and provide accurate
-								feedback. After that, subsequent questions load faster thanks to caching, until new
-								options are selected.
+								Question may take longer to load as you may be generating a question for the specific unit and topic for the first time. This then helps helps everyone by adding new questions to the cache, which then provides sub second load times the next time. This is only expected to be a problem for newer users in the first few weeks, and will be resolved as more questions are generated and added to the cache.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
@@ -562,6 +558,15 @@
 								We support 20 AP® subjects including Sciences (Biology, Chemistry, Physics),
 								Mathematics (Calculus AB/BC, Statistics), Computer Science, English, History, Social
 								Sciences, and Economics.
+							</p>
+						</Accordion.Content>
+					</Accordion.Item>
+
+					<Accordion.Item value="what-ai-model-is-used">
+						<Accordion.Trigger level={3}>What AI model is used?</Accordion.Trigger>
+						<Accordion.Content>
+							<p>
+								For creating questions and explanations, we use a OpenAI's latest gpt-5-mini model and gpt-5.4-nano model. They are then prompt engineered specifically to create high quality, exam style AP questions that match the difficulty and format of actual AP exams.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
