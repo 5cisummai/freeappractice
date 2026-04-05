@@ -130,7 +130,10 @@
 					<Field>
 						<div class="flex items-center">
 							<FieldLabel for="password-{id}">Password</FieldLabel>
-							<a href="{resolve('/forgot-password')}" class="ms-auto text-sm underline-offset-4 hover:underline">
+							<a
+								href={resolve('/forgot-password')}
+								class="ms-auto text-sm underline-offset-4 hover:underline"
+							>
 								Forgot your password?
 							</a>
 						</div>
@@ -141,8 +144,9 @@
 							{loading ? 'Signing in...' : 'Login'}
 						</Button>
 						<FieldDescription class="text-center">
-							Don't have an account? <a href="{resolve('/signup')}" class="underline underline-offset-4"
-								>Sign up</a
+							Don't have an account? <a
+								href={resolve('/signup')}
+								class="underline underline-offset-4">Sign up</a
 							>
 						</FieldDescription>
 					</Field>
@@ -151,9 +155,10 @@
 		</Card.Content>
 	</Card.Root>
 	<FieldDescription class="px-6 text-center">
-		By clicking continue, you agree to our <a href="{resolve('/terms')}" class="underline underline-offset-4"
-			>Terms of Service</a
+		By clicking continue, you agree to our <a
+			href={resolve('/terms')}
+			class="underline underline-offset-4">Terms of Service</a
 		>
-		and <a href="{resolve('/privacy')}" class="underline underline-offset-4">Privacy Policy</a>.
+		and <a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 	</FieldDescription>
 </div>

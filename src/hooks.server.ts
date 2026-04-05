@@ -47,7 +47,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 		"font-src 'self' https://fonts.gstatic.com data:",
 		"img-src 'self' data: https:",
 		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com",
-		"frame-src https://accounts.google.com/gsi/ https://www.desmos.com"
+		'frame-src https://accounts.google.com/gsi/ https://www.desmos.com'
 	].join('; ')
 };
 

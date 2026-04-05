@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { GITHUB_BUG_REPORT_TOKEN } from '$env/static/private';
+import { logger } from '$lib/server/logger';
 
 const GITHUB_OWNER = '5cisummai';
 const GITHUB_REPO = 'freeappractice';
@@ -119,14 +120,14 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			console.error('GitHub Issues API error', { status: response.status, body: errorText });
+			logger.error('GitHub Issues API error', { status: response.status, body: errorText });
 			return json({ error: 'Failed to submit bug report' }, { status: 500 });
 		}
 
-		const issue = await response.json() as { number: number; html_url: string };
+		const issue = (await response.json()) as { number: number; html_url: string };
 		recentReportByIp.set(clientIp, now);
 
-		console.info('Bug report submitted as GitHub issue', {
+		logger.info('Bug report submitted as GitHub issue', {
 			issue: issue.number,
 			url: issue.html_url,
 			severity: parsed.severity,
@@ -138,7 +139,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		if (err instanceof z.ZodError) {
 			return json({ error: 'Validation failed', details: err.issues }, { status: 400 });
 		}
-		console.error('Bug report error:', err);
+		logger.error('Bug report error', { error: err });
 		return json({ error: 'Failed to submit bug report' }, { status: 500 });
 	}
 };

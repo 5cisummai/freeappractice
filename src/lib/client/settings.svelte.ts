@@ -1,6 +1,6 @@
 import { setMode } from 'mode-watcher';
 import { toast } from 'svelte-sonner';
-import { apiFetch, auth } from '$lib/client/auth.svelte.js';
+import { apiFetch, auth, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
 
 export type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
@@ -20,12 +20,11 @@ class SettingsController {
 	});
 
 	constructor() {
+		if (typeof window === 'undefined') return;
+
 		this.load();
 		setMode(this.settings.theme);
-		// Initial sync with mode-watcher if available
-		if (typeof window !== 'undefined') {
-			this.applyAccessibility();
-		}
+		this.applyAccessibility();
 	}
 
 	private load() {
@@ -35,15 +34,19 @@ class SettingsController {
 			try {
 				const data = JSON.parse(saved);
 				this.settings = { ...this.settings, ...data };
-			} catch (e) {
-				console.error('Failed to parse settings', e);
+			} catch {
+				localStorage.removeItem('fap_settings');
 			}
 		}
 	}
 
 	private save() {
 		if (typeof window === 'undefined') return;
-		localStorage.setItem('fap_settings', JSON.stringify(this.settings));
+		try {
+			localStorage.setItem('fap_settings', JSON.stringify(this.settings));
+		} catch {
+			// Keep the current in-memory settings even if persistence fails.
+		}
 		this.applyAccessibility();
 	}
 
@@ -102,17 +105,15 @@ class SettingsController {
 				body: JSON.stringify({ name, email })
 			});
 
-			const payload = (await response.json().catch(() => null)) as
-				| {
-						error?: string;
-						message?: string;
-						requiresVerification?: boolean;
-						user?: { userId: string; name: string; email: string };
-				  }
-				| null;
+			const payload = await readJsonOrNull<{
+				error?: string;
+				message?: string;
+				requiresVerification?: boolean;
+				user?: { userId: string; name: string; email: string };
+			}>(response);
 
 			if (!response.ok) {
-				throw new Error(payload?.error || 'Failed to update account');
+				throw new Error(getResponseMessage(payload, 'Failed to update account'));
 			}
 
 			if (payload?.user) {
@@ -140,8 +141,8 @@ class SettingsController {
 			});
 
 			if (!response.ok) {
-				const data = (await response.json().catch(() => null)) as { error?: string } | null;
-				throw new Error(data?.error || 'Failed to delete account');
+				const payload = await readJsonOrNull<{ error?: string }>(response);
+				throw new Error(getResponseMessage(payload, 'Failed to delete account'));
 			}
 
 			auth.clearAuth();

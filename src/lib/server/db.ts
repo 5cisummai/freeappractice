@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import { DATABASE_URI } from '$env/static/private';
+import { logger } from '$lib/server/logger';
 
 // Cached connection for serverless environments (Vercel/Cloudflare edge)
-let cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } = {
+const cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } = {
 	conn: null,
 	promise: null
 };
@@ -22,13 +23,13 @@ export async function connectDb(): Promise<typeof mongoose> {
 			.then((m) => {
 				// Handle unexpected disconnects
 				mongoose.connection.on('error', (err) => {
-					console.error('MongoDB connection error:', err);
+					logger.error('MongoDB connection error', { error: err });
 					cached.conn = null;
 					cached.promise = null;
 				});
 
 				mongoose.connection.on('disconnected', () => {
-					console.warn('MongoDB disconnected. Reconnecting...');
+					logger.warn('MongoDB disconnected. Reconnecting...');
 					cached.conn = null;
 					cached.promise = null;
 				});

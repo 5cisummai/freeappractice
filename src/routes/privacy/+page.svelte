@@ -29,7 +29,7 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a href="{resolve('/')}" class="text-sm text-muted-foreground hover:text-foreground"
+			<a href={resolve('/')} class="text-sm text-muted-foreground hover:text-foreground"
 				>← Back to Home</a
 			>
 
@@ -54,17 +54,22 @@
 					<ul class="list-disc space-y-1 pl-6">
 						<li><strong>Account data:</strong> name, email address, and password hash</li>
 						<li>
-							<strong>Practice data:</strong> answers submitted, question attempts, FRQ responses,
-							progress, and bookmarks
+							<strong>Practice data:</strong> answers submitted, question attempts, FRQ responses, progress,
+							and bookmarks
 						</li>
 						<li><strong>Bug reports and support requests:</strong> text and metadata you submit</li>
-						<li><strong>Transactional requests:</strong> password reset, verification, and account deletion requests</li>
+						<li>
+							<strong>Transactional requests:</strong> password reset, verification, and account deletion
+							requests
+						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
 					<ul class="list-disc space-y-1 pl-6">
 						<li>Server logs such as IP address, request path, timestamps, and status codes</li>
 						<li>Browser and device information sent through standard HTTP headers</li>
-						<li>Usage information such as page visits, feature interactions, and authentication state</li>
+						<li>
+							Usage information such as page visits, feature interactions, and authentication state
+						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
 					<ul class="list-disc space-y-1 pl-6">
@@ -91,8 +96,8 @@
 					<p>
 						We store account and progress data in MongoDB Atlas and may store generated question
 						content and related files in AWS S3. Passwords are stored as hashes, not plain text. We
-						use bearer tokens for authentication, and those tokens expire after a limited period.
-						No method of transmission or storage is completely secure, so we cannot guarantee absolute
+						use bearer tokens for authentication, and those tokens expire after a limited period. No
+						method of transmission or storage is completely secure, so we cannot guarantee absolute
 						security.
 					</p>
 				</section>
@@ -110,10 +115,15 @@
 					<h2 class="text-xl font-semibold">6. Third-Party Services</h2>
 					<ul class="list-disc space-y-1 pl-6">
 						<li>
-							<strong>OpenAI:</strong> prompts and generated question content are processed by OpenAI's API
+							<strong>OpenAI:</strong> prompts and generated question content are processed by OpenAI's
+							API
 						</li>
-						<li><strong>MongoDB Atlas:</strong> database hosting for user accounts and progress data</li>
-						<li><strong>AWS S3:</strong> file storage for generated question content and related assets</li>
+						<li>
+							<strong>MongoDB Atlas:</strong> database hosting for user accounts and progress data
+						</li>
+						<li>
+							<strong>AWS S3:</strong> file storage for generated question content and related assets
+						</li>
 						<li><strong>Resend:</strong> delivery of verification and reset emails</li>
 						<li><strong>Vercel:</strong> website hosting and deployment infrastructure</li>
 					</ul>
@@ -126,10 +136,10 @@
 				<section>
 					<h2 class="text-xl font-semibold">7. Your Rights</h2>
 					<p>
-						Depending on your location, you may have rights to access, correct, export, or delete your
-						personal data. You can delete your account through the Service or contact us for help. We
-						will remove data from primary systems within a reasonable period, subject to legal or
-						operational retention requirements.
+						Depending on your location, you may have rights to access, correct, export, or delete
+						your personal data. You can delete your account through the Service or contact us for
+						help. We will remove data from primary systems within a reasonable period, subject to
+						legal or operational retention requirements.
 					</p>
 				</section>
 
@@ -145,8 +155,8 @@
 				<section>
 					<h2 class="text-xl font-semibold">9. International Transfers</h2>
 					<p>
-						Your information may be processed in the United States or other countries where we or our
-						service providers operate. Where required, we take steps intended to protect the
+						Your information may be processed in the United States or other countries where we or
+						our service providers operate. Where required, we take steps intended to protect the
 						information in accordance with applicable law.
 					</p>
 				</section>
@@ -155,8 +165,8 @@
 					<h2 class="text-xl font-semibold">10. Changes to This Privacy Policy</h2>
 					<p>
 						We may update this Privacy Policy from time to time. Changes will be posted on this page
-						with a revised "Last Updated" date. Continued use of the Service after changes take effect
-						means you accept the updated policy.
+						with a revised "Last Updated" date. Continued use of the Service after changes take
+						effect means you accept the updated policy.
 					</p>
 				</section>
 

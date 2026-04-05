@@ -210,19 +210,24 @@
 			<Card.Root>
 				<Card.Header>
 					<Card.Title>About</Card.Title>
-					<Card.Description>Version details and policy links for Free AP Practice.</Card.Description>
+					<Card.Description>Version details and policy links for Free AP Practice.</Card.Description
+					>
 				</Card.Header>
 				<Card.Content class="space-y-6">
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div class="rounded-lg border border-border bg-muted/30 p-4">
-							<p class="text-xs uppercase tracking-wide text-muted-foreground">App version</p>
+							<p class="text-xs tracking-wide text-muted-foreground uppercase">App version</p>
 							<p class="mt-1 text-lg font-semibold">{appVersion}</p>
-							<p class="mt-1 text-sm text-muted-foreground">Current release installed in this workspace.</p>
+							<p class="mt-1 text-sm text-muted-foreground">
+								Current release installed in this workspace.
+							</p>
 						</div>
 						<div class="rounded-lg border border-border bg-muted/30 p-4">
-							<p class="text-xs uppercase tracking-wide text-muted-foreground">Build</p>
+							<p class="text-xs tracking-wide text-muted-foreground uppercase">Build</p>
 							<p class="mt-1 text-lg font-semibold">SvelteKit</p>
-							<p class="mt-1 text-sm text-muted-foreground">Versioned app experience for AP practice.</p>
+							<p class="mt-1 text-sm text-muted-foreground">
+								Versioned app experience for AP practice.
+							</p>
 						</div>
 					</div>
 

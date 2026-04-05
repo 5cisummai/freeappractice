@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 function normalizeUnit(unit: unknown): string {
 	return typeof unit === 'string' && unit.trim() ? unit.trim() : 'all-units';
@@ -42,7 +43,9 @@ export const POST: RequestHandler = async (event) => {
 		});
 
 		// Update or create progress entry
-		let progressEntry = user.progress.find((p) => p.apClass === apClass && p.unit === normalizedUnit);
+		let progressEntry = user.progress.find(
+			(p) => p.apClass === apClass && p.unit === normalizedUnit
+		);
 
 		if (!progressEntry) {
 			user.progress.push({
@@ -75,7 +78,7 @@ export const POST: RequestHandler = async (event) => {
 		});
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Record attempt error:', err);
+		logger.error('Record attempt error', { error: err });
 		return json({ error: 'Failed to record attempt' }, { status: 500 });
 	}
 };

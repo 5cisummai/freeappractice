@@ -69,8 +69,12 @@
 		String(daysUntilExamStart).length,
 		String(countdownStartValue).length
 	);
-	const countdownStartDigits = String(countdownStartValue).padStart(countdownDigitsLength, ' ').split('');
-	const countdownEndDigits = String(daysUntilExamStart).padStart(countdownDigitsLength, ' ').split('');
+	const countdownStartDigits = String(countdownStartValue)
+		.padStart(countdownDigitsLength, ' ')
+		.split('');
+	const countdownEndDigits = String(daysUntilExamStart)
+		.padStart(countdownDigitsLength, ' ')
+		.split('');
 
 	let countdownRolled = $state(false);
 
@@ -99,75 +103,6 @@
 	});
 </script>
 
-<style>
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(20px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	:global(.fade-in-section) {
-		opacity: 0;
-		transform: translateY(20px);
-	}
-
-	:global(.fade-in-section.fade-in-visible) {
-		animation: fadeIn 0.6s ease-out forwards;
-	}
-
-	:global(.fade-in-section.fade-in-done) {
-		opacity: 1;
-		transform: none;
-		animation: none;
-	}
-
-		.countdown-roller {
-			display: inline-flex;
-			align-items: flex-start;
-			gap: 0.04em;
-			line-height: 1;
-		}
-
-		.countdown-digit-window {
-			display: inline-flex;
-			height: 1em;
-			width: 0.68em;
-			overflow: hidden;
-			vertical-align: top;
-		}
-
-		.countdown-digit-strip {
-			display: flex;
-			flex-direction: column;
-			line-height: 1;
-			transform: translateY(0);
-		}
-
-		.countdown-digit-strip.roll-down {
-			animation: countdownRollDown 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-		}
-
-		.countdown-digit {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: 1em;
-			line-height: 1;
-			font-variant-numeric: tabular-nums;
-		}
-
-		@keyframes countdownRollDown {
-			to {
-				transform: translateY(-1em);
-			}
-		}
-</style>
-
 <svelte:head>
 	<title>Free AP Practice Questions 2026 - AI-Powered AP Exam Prep</title>
 	<meta
@@ -183,7 +118,10 @@
 		content="AP practice questions, AP exam prep, AP test prep, free AP questions, AP study guide, AP Biology, AP Chemistry, AP Physics, AP Calculus AB, AP Calculus BC, AP Computer Science A, AP Computer Science Principles, AP History, AP US History, AP World History, AP English Language, AP English Literature, college board AP, AP practice test, AP exam 2026, free AP study material, AP multiple choice questions, AP test practice online, AP review questions, AP mock exam, how to study for AP exams, best AP prep, AP question generator, AI study tool, free AP test prep, AP exam study tips"
 	/>
 	<meta name="author" content="FreeAPPractice.org" />
-	<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+	<meta
+		name="robots"
+		content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+	/>
 	<meta name="googlebot" content="index, follow" />
 	<meta name="language" content="English" />
 	<meta name="revisit-after" content="7 days" />
@@ -204,7 +142,10 @@
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="FreeAPPractice.org - Free AP® Practice Questions Generator" />
+	<meta
+		property="og:image:alt"
+		content="FreeAPPractice.org - Free AP® Practice Questions Generator"
+	/>
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 
@@ -216,7 +157,10 @@
 		content="Generate unlimited free AP® practice questions with instant AI feedback. Master all 20+ AP® subjects. No sign-up required."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
-	<meta name="twitter:image:alt" content="FreeAPPractice.org - Free AP® Practice Questions Generator" />
+	<meta
+		name="twitter:image:alt"
+		content="FreeAPPractice.org - Free AP® Practice Questions Generator"
+	/>
 	<meta name="twitter:creator" content="@freeappractice" />
 	<meta name="twitter:site" content="@freeappractice" />
 	<meta name="adsense-client" content="ca-pub-9609730506370011" />
@@ -407,7 +351,10 @@
 
 	<main class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-16 px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-			<section class="fade-in-section how-to-use mx-auto max-w-5xl space-y-10 text-center" use:observeElement>
+			<section
+				class="fade-in-section how-to-use mx-auto max-w-5xl space-y-10 text-center"
+				use:observeElement
+			>
 				<div class="space-y-4">
 					<h1 class="text-4xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
 						Ace your AP Exams
@@ -415,11 +362,16 @@
 					<p class="text-md mx-auto max-w-3xl leading-8 text-muted-foreground sm:text-lg">
 						Generate and practice High Quality AP questions with instant feedback
 					</p>
-					<div class="mx-auto inline-flex flex-nowrap items-center gap-2 whitespace-nowrap rounded-full border border-border/70 bg-card px-4 py-2 text-sm font-medium">
+					<div
+						class="mx-auto inline-flex flex-nowrap items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-2 text-sm font-medium whitespace-nowrap"
+					>
 						<span class="text-muted-foreground">AP exams start May 4, 2026</span>
 						<span aria-hidden="true" class="text-muted-foreground">•</span>
-						<span class="inline-flex items-center whitespace-nowrap tabular-nums text-foreground">
-							<span class="countdown-roller" aria-label={`${daysUntilExamStart} ${daysUntilExamStart === 1 ? 'day' : 'days'} left`}>
+						<span class="inline-flex items-center whitespace-nowrap text-foreground tabular-nums">
+							<span
+								class="countdown-roller"
+								aria-label={`${daysUntilExamStart} ${daysUntilExamStart === 1 ? 'day' : 'days'} left`}
+							>
 								{#each countdownEndDigits as endDigit, index (index)}
 									{@const startDigit = countdownStartDigits[index]}
 									<span class="countdown-digit-window" aria-hidden="true">
@@ -455,24 +407,24 @@
 				</div>
 
 				{#if showHowToUse}
-				<div class="space-y-6">
-					<h2 class="text-3xl font-semibold">How to Use</h2>
-					<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						{#each howToSteps as step (step.number)}
-							<div
-								class="step flex h-full flex-col rounded-2xl border border-border/70 bg-background/80 p-5 text-left shadow-sm"
-							>
-								<div class="mb-3 flex items-center justify-center text-2xl font-semibold">
-									{step.number}
+					<div class="space-y-6">
+						<h2 class="text-3xl font-semibold">How to Use</h2>
+						<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+							{#each howToSteps as step (step.number)}
+								<div
+									class="step flex h-full flex-col rounded-2xl border border-border/70 bg-background/80 p-5 text-left shadow-sm"
+								>
+									<div class="mb-3 flex items-center justify-center text-2xl font-semibold">
+										{step.number}
+									</div>
+									<p class="text-base leading-7">
+										<strong>{step.title}</strong>
+										{step.description}
+									</p>
 								</div>
-								<p class="text-base leading-7">
-									<strong>{step.title}</strong>
-									{step.description}
-								</p>
-							</div>
-						{/each}
+							{/each}
+						</div>
 					</div>
-				</div>
 				{/if}
 			</section>
 
@@ -490,14 +442,16 @@
 			</section>
 
 			<section>
-				<div class="fade-in-section mx-auto max-w-6xl min-h-10" use:observeElement>
+				<div class="fade-in-section mx-auto min-h-10 max-w-6xl" use:observeElement>
 					{#if generateVersion > 0}
-						<QuestionCard
-							subject={selectedClass || 'Select AP Class'}
-							{selectedClass}
-							{selectedUnit}
-							requestVersion={generateVersion}
-						/>
+						{#key `${selectedClass}:${selectedUnit}:${generateVersion}`}
+							<QuestionCard
+								subject={selectedClass || 'Select AP Class'}
+								{selectedClass}
+								{selectedUnit}
+								requestVersion={generateVersion}
+							/>
+						{/key}
 					{/if}
 				</div>
 			</section>
@@ -546,7 +500,11 @@
 						>
 						<Accordion.Content>
 							<p>
-								Question may take longer to load as you may be generating a question for the specific unit and topic for the first time. This then helps helps everyone by adding new questions to the cache, which then provides sub second load times the next time. This is only expected to be a problem for newer users in the first few weeks, and will be resolved as more questions are generated and added to the cache.
+								Question may take longer to load as you may be generating a question for the
+								specific unit and topic for the first time. This then helps helps everyone by adding
+								new questions to the cache, which then provides sub second load times the next time.
+								This is only expected to be a problem for newer users in the first few weeks, and
+								will be resolved as more questions are generated and added to the cache.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
@@ -566,7 +524,10 @@
 						<Accordion.Trigger level={3}>What AI model is used?</Accordion.Trigger>
 						<Accordion.Content>
 							<p>
-								For creating questions and explanations, we use a OpenAI's latest gpt-5-mini model and gpt-5.4-nano model. They are then prompt engineered specifically to create high quality, exam style AP questions that match the difficulty and format of actual AP exams.
+								For creating questions and explanations, we use a OpenAI's latest gpt-5-mini model
+								and gpt-5.4-nano model. They are then prompt engineered specifically to create high
+								quality, exam style AP questions that match the difficulty and format of actual AP
+								exams.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
@@ -577,3 +538,72 @@
 
 	<SiteFooter />
 </div>
+
+<style>
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	:global(.fade-in-section) {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+
+	:global(.fade-in-section.fade-in-visible) {
+		animation: fadeIn 0.6s ease-out forwards;
+	}
+
+	:global(.fade-in-section.fade-in-done) {
+		opacity: 1;
+		transform: none;
+		animation: none;
+	}
+
+	.countdown-roller {
+		display: inline-flex;
+		align-items: flex-start;
+		gap: 0.04em;
+		line-height: 1;
+	}
+
+	.countdown-digit-window {
+		display: inline-flex;
+		height: 1em;
+		width: 0.68em;
+		overflow: hidden;
+		vertical-align: top;
+	}
+
+	.countdown-digit-strip {
+		display: flex;
+		flex-direction: column;
+		line-height: 1;
+		transform: translateY(0);
+	}
+
+	.countdown-digit-strip.roll-down {
+		animation: countdownRollDown 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+	}
+
+	.countdown-digit {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 1em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	@keyframes countdownRollDown {
+		to {
+			transform: translateY(-1em);
+		}
+	}
+</style>

@@ -31,9 +31,7 @@ const MAX_SEEN_PER_BUCKET = 100;
 
 /** Normalize and hash the question text for deduplication. */
 function computeHash(text: string): string {
-	return createHash('sha256')
-		.update(text.trim().toLowerCase().replace(/\s+/g, ' '))
-		.digest('hex');
+	return createHash('sha256').update(text.trim().toLowerCase().replace(/\s+/g, ' ')).digest('hex');
 }
 
 // ── Track in-flight replenishments to avoid duplicate work ──

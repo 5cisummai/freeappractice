@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getGreeting } from '$lib/server/services/tutor';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -12,7 +13,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const message = await getGreeting(question);
 		return json({ message });
 	} catch (err) {
-		console.error('Tutor greeting error:', err);
+		logger.error('Tutor greeting error', { error: err });
 		return json(
 			{
 				error: 'Failed to get tutor greeting',

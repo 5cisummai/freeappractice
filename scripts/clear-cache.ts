@@ -72,7 +72,6 @@ async function main() {
 		const FRQQuestion =
 			(mongoose.models['FRQQuestion'] as mongoose.Model<mongoose.Document>) ??
 			mongoose.model('FRQQuestion', frqSchema);
-		const frqTotal = await FRQQuestion.countDocuments({});
 		const frqResult = await FRQQuestion.deleteMany({});
 		console.log(`✓ Deleted ${frqResult.deletedCount} question(s) from the FRQ cache.`);
 

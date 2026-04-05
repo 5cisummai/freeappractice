@@ -120,7 +120,7 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { cn } from '$lib/utils.js';
-	import { apiFetch } from '$lib/client/auth.svelte.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
 	import apClassesData from '$lib/data/ap-classes.json';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
@@ -157,7 +157,7 @@
 		onFRQAnswered
 	}: QuestionCardProps = $props();
 
-	let promptElement = $state<HTMLDivElement | null>(null);
+	let promptElement: HTMLDivElement | null = null;
 	let isLongQuestion = $state(false);
 	let hasCheckedAnswer = $state(false);
 	let isExpanded = $state(false);
@@ -172,6 +172,7 @@
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
+	let persistenceWarning = $state('');
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
 
@@ -186,6 +187,27 @@
 		calculator: 'none' | 'scientific' | 'graphing';
 		referenceSheet: { title: string; sections: { heading: string; content: string }[] } | null;
 	};
+	type ApiErrorPayload = {
+		error?: string;
+		message?: string;
+	};
+	type QuestionApiResponse = Record<string, unknown> & {
+		error?: string;
+		questionId?: string;
+		answer?: unknown;
+	};
+	type FRQQuestionApiResponse = ApiErrorPayload & {
+		question?: {
+			prompt: string;
+			context?: string | null;
+			parts: FRQPart[];
+			totalPoints: number;
+		};
+		questionId?: string;
+	};
+	type FRQGradeApiResponse = ApiErrorPayload & {
+		grade?: FRQGrade;
+	};
 	const toolConfig = $derived(
 		(subjectToolsData as Record<string, SubjectToolEntry>)[selectedClass] ??
 			({ calculator: 'none', referenceSheet: null } as SubjectToolEntry)
@@ -195,7 +217,8 @@
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
 	const effectiveTwoColumn = $derived(
-		!isMobileViewport && (currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
+		!isMobileViewport &&
+			(currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
 	);
 	const expandedTwoColumn = $derived(!isMobileViewport && (isExpanded || effectiveTwoColumn));
 	const tutorAnswerChoices = $derived.by(() => {
@@ -339,33 +362,64 @@
 	/** When "All Units" is selected (unit === ''), pick a random real unit for the class. */
 	function resolveEffectiveUnit(cls: string, unit: string): string {
 		if (unit.trim()) return unit.trim();
-		const course = (apClassesData.courses as { name: string; semester1: string[]; semester2: string[] }[]).find((c) => c.name === cls);
+		const course = (
+			apClassesData.courses as { name: string; semester1: string[]; semester2: string[] }[]
+		).find((c) => c.name === cls);
 		if (!course) return '';
 		const allUnits = [...course.semester1, ...course.semester2];
 		if (!allUnits.length) return '';
 		return allUnits[Math.floor(Math.random() * allUnits.length)];
 	}
 
-	async function requestQuestion(
-		className: string,
-		unit: string
-	): Promise<Record<string, unknown>> {
+	async function requestQuestion(className: string, unit: string): Promise<QuestionApiResponse> {
 		const response = await apiFetch('/api/question', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ className, unit })
 		});
 
-		return (await response.json()) as Record<string, unknown>;
+		const payload = await readJsonOrNull<QuestionApiResponse>(response);
+		if (!response.ok || !payload) {
+			throw new Error(getResponseMessage(payload, 'Failed to load question.'));
+		}
+
+		return payload;
 	}
 
-	function detectLongQuestionLayout(): void {
+	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		const textLength = currentQuestion?.prompt.length ?? 0;
 		const hasCodeBlock = /```|\n\s{2,}|<code/i.test(currentQuestion?.prompt ?? '');
-		const questionHeight = promptElement?.scrollHeight ?? 0;
+		const questionHeight = node?.scrollHeight ?? 0;
 		const threshold = Math.min(window.innerHeight * 0.7, 600);
 		isLongQuestion =
 			textLength > longQuestionThresholdChars || hasCodeBlock || questionHeight > threshold;
+	}
+
+	function observePromptLayout(node: HTMLDivElement, promptText: string) {
+		void promptText;
+		promptElement = node;
+
+		const measure = () => {
+			detectLongQuestionLayout(node);
+		};
+
+		let frame = requestAnimationFrame(measure);
+		const resizeObserver = new ResizeObserver(measure);
+		resizeObserver.observe(node);
+
+		return {
+			update() {
+				cancelAnimationFrame(frame);
+				frame = requestAnimationFrame(measure);
+			},
+			destroy() {
+				resizeObserver.disconnect();
+				cancelAnimationFrame(frame);
+				if (promptElement === node) {
+					promptElement = null;
+				}
+			}
+		};
 	}
 
 	function resetInteractionState(clearSelection = true): void {
@@ -416,7 +470,11 @@
 				if (raw.startsWith('```')) {
 					raw = raw.replace(/```json|```/g, '').trim();
 				}
-				payload = JSON.parse(raw);
+				try {
+					payload = JSON.parse(raw);
+				} catch {
+					throw new Error('Question service returned an invalid question payload.');
+				}
 			}
 
 			const normalized = normalizeQuestionPayload(payload, String(response.questionId ?? ''));
@@ -545,16 +603,15 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ className: selectedClass, unit: selectedUnit })
 			});
+			const data = await readJsonOrNull<FRQQuestionApiResponse>(response);
 
 			if (!response.ok) {
-				const err = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-				throw new Error(typeof err.error === 'string' ? err.error : 'Failed to load question');
+				throw new Error(getResponseMessage(data, 'Failed to load question'));
 			}
 
-			const data = (await response.json()) as {
-				question: { prompt: string; context?: string; parts: FRQPart[]; totalPoints: number };
-				questionId?: string;
-			};
+			if (!data?.question) {
+				throw new Error('Question service returned an invalid response.');
+			}
 
 			frqQuestion = {
 				questionId: data.questionId,
@@ -591,13 +648,16 @@
 					responses: frqResponses
 				})
 			});
+			const data = await readJsonOrNull<FRQGradeApiResponse>(response);
 
 			if (!response.ok) {
-				const err = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-				throw new Error(typeof err.error === 'string' ? err.error : 'Failed to grade response');
+				throw new Error(getResponseMessage(data, 'Failed to grade response'));
 			}
 
-			const data = (await response.json()) as { grade: FRQGrade };
+			if (!data?.grade) {
+				throw new Error('Grading service returned an invalid response.');
+			}
+
 			frqGrade = data.grade;
 			hasSubmitted = true;
 			statusMessage = `Score: ${frqGrade.totalScore}/100`;
@@ -672,8 +732,10 @@
 					})
 				);
 			}
+			persistenceWarning = '';
 		} catch {
-			/* non-critical */
+			persistenceWarning =
+				'Progress could not be saved locally. Your current attempt is still active.';
 		}
 	}
 
@@ -703,36 +765,15 @@
 				startedAtMs = typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now();
 				questionCount = typeof data.questionCount === 'number' ? data.questionCount : questionCount;
 			}
+			persistenceWarning = '';
 		} catch {
-			/* non-critical */
+			localStorage.removeItem(key);
+			persistenceWarning =
+				'Saved progress could not be restored, so a fresh practice session was started.';
 		}
 	}
 
 	onMount(() => {
-		const onResize = () => {
-			isMobileViewport = window.innerWidth < 768;
-			detectLongQuestionLayout();
-		};
-		const onKeydown = (e: KeyboardEvent) => {
-			if (e.key === 'Escape' && isExpanded) isExpanded = false;
-		};
-		window.addEventListener('resize', onResize);
-		window.addEventListener('keydown', onKeydown);
-		onResize();
-		return () => {
-			window.removeEventListener('resize', onResize);
-			window.removeEventListener('keydown', onKeydown);
-		};
-	});
-
-	$effect(() => {
-		void currentQuestion?.prompt;
-		requestAnimationFrame(() => detectLongQuestionLayout());
-	});
-
-	$effect(() => {
-		void selectedClass;
-		void selectedUnit;
 		currentQuestion = null;
 		questionCount = 0;
 		resetInteractionState(true);
@@ -744,9 +785,18 @@
 				? 'Write your response for each part, then submit.'
 				: 'Choose the best answer and then check your response.';
 		loadFromStorage();
-	});
 
-	$effect(() => {
+		const onResize = () => {
+			isMobileViewport = window.innerWidth < 768;
+			detectLongQuestionLayout();
+		};
+		const onKeydown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape' && isExpanded) isExpanded = false;
+		};
+		window.addEventListener('resize', onResize);
+		window.addEventListener('keydown', onKeydown);
+		onResize();
+
 		if (requestVersion > 0) {
 			if (mode === 'frq') {
 				void loadFRQQuestion();
@@ -754,6 +804,11 @@
 				void loadQuestion();
 			}
 		}
+
+		return () => {
+			window.removeEventListener('resize', onResize);
+			window.removeEventListener('keydown', onKeydown);
+		};
 	});
 </script>
 
@@ -782,7 +837,10 @@
 			</Card.Footer>
 		</Card.Root>
 	{:else}
-		<QuestionCardSkeleton isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)} class={className} />
+		<QuestionCardSkeleton
+			isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)}
+			class={className}
+		/>
 	{/if}
 {:else}
 	{#snippet cardInner(expanded: boolean)}
@@ -978,7 +1036,10 @@
 						</Resizable.Pane>
 						<Resizable.Handle withHandle />
 						<Resizable.Pane defaultSize={46} minSize={30} class="min-w-0">
-							<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5" bind:this={promptElement}>
+							<div
+								use:observePromptLayout={currentQuestion?.prompt ?? ''}
+								class="h-full space-y-3 overflow-y-auto p-4 sm:p-5"
+							>
 								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 									{currentQuestion.rightPanel?.title ?? 'Prompt'}
 								</p>
@@ -1029,7 +1090,10 @@
 				>
 					<Resizable.PaneGroup direction="horizontal" class="h-full">
 						<Resizable.Pane defaultSize={56} minSize={35} class="min-w-0">
-							<div class="h-full overflow-y-auto p-4 sm:p-5" bind:this={promptElement}>
+							<div
+								use:observePromptLayout={currentQuestion?.prompt ?? ''}
+								class="h-full overflow-y-auto p-4 sm:p-5"
+							>
 								<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 									Question
 								</p>
@@ -1076,7 +1140,7 @@
 					</Resizable.PaneGroup>
 				</div>
 			{:else}
-				<div bind:this={promptElement}>
+				<div use:observePromptLayout={currentQuestion?.prompt ?? ''}>
 					<RichText
 						text={currentQuestion?.prompt ?? ''}
 						class="text-base leading-7 text-foreground/90"
@@ -1130,8 +1194,13 @@
 			<Card.Footer
 				class="flex flex-col gap-3 border-t border-border/70 bg-muted/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
 			>
-				<div class="flex flex-wrap items-center gap-2">
-					<p class="text-sm text-muted-foreground">{statusMessage}</p>
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+					<div class="min-w-0 space-y-1">
+						<p class="text-sm text-muted-foreground">{statusMessage}</p>
+						{#if persistenceWarning}
+							<p class="text-xs text-amber-600 dark:text-amber-400">{persistenceWarning}</p>
+						{/if}
+					</div>
 					{#if hasCalculator || hasReferenceSheet}
 						<div class="flex gap-0.5">
 							{#if hasCalculator}
@@ -1177,8 +1246,13 @@
 			</Card.Footer>
 		{:else}
 			<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div class="flex flex-wrap items-center gap-2">
-					<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+					<div class="min-w-0 space-y-1">
+						<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
+						{#if persistenceWarning}
+							<p class="text-xs text-amber-600 dark:text-amber-400">{persistenceWarning}</p>
+						{/if}
+					</div>
 					{#if hasCalculator || hasReferenceSheet}
 						<div class="flex gap-0.5">
 							{#if hasCalculator}
@@ -1284,14 +1358,16 @@
 	{/if}
 
 	{#if mode === 'mcq' && currentQuestion && !isExpanded}
-		<TutorWidget
-			question={currentQuestion.prompt}
-			answer={currentQuestion.correctAnswer ?? ''}
-			explanation={currentQuestion.explanation ?? ''}
-			apClass={selectedClass}
-			unit={selectedUnit}
-			answerChoices={tutorAnswerChoices}
-		/>
+		{#key currentQuestion.questionId ?? currentQuestion.prompt}
+			<TutorWidget
+				question={currentQuestion.prompt}
+				answer={currentQuestion.correctAnswer ?? ''}
+				explanation={currentQuestion.explanation ?? ''}
+				apClass={selectedClass}
+				unit={selectedUnit}
+				answerChoices={tutorAnswerChoices}
+			/>
+		{/key}
 	{/if}
 
 	{#if calculatorOpen}
@@ -1303,5 +1379,10 @@
 
 	<ReferenceSheet bind:open={referenceSheetOpen} subject={selectedClass} />
 
-	<BugReportDialog bind:open={bugReportOpen} context={bugReportContext} {selectedClass} {selectedUnit} />
+	<BugReportDialog
+		bind:open={bugReportOpen}
+		context={bugReportContext}
+		{selectedClass}
+		{selectedUnit}
+	/>
 {/if}

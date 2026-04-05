@@ -41,7 +41,10 @@ const markdownFiles = import.meta.glob('/src/content/blog/*.md', {
 }) as Record<string, string>;
 
 function normalizeSlug(value: string): string {
-	const withoutExtension = value.trim().toLowerCase().replace(/\.[^.]+$/, '');
+	const withoutExtension = value
+		.trim()
+		.toLowerCase()
+		.replace(/\.[^.]+$/, '');
 	return withoutExtension
 		.replace(/[_\s]+/g, '-')
 		.replace(/[^a-z0-9-]/g, '')
@@ -119,7 +122,9 @@ function parseMarkdownPost(raw: string): ParsedMarkdownPost {
 		coverImage: frontmatter.coverimage ?? frontmatter.cover_image,
 		tags: parseTags(frontmatter.tags),
 		published: parseBoolean(frontmatter.published),
-		publishedAt: parseDate(frontmatter.publisheddate ?? frontmatter.published_at ?? frontmatter.date),
+		publishedAt: parseDate(
+			frontmatter.publisheddate ?? frontmatter.published_at ?? frontmatter.date
+		),
 		content: contentRaw.trim()
 	};
 }
@@ -133,7 +138,10 @@ async function listMarkdownPosts(): Promise<BlogEntry[]> {
 		const published = parsed.published ?? true;
 		if (!published || !slugFromFile) return null;
 
-		const title = parsed.title?.trim() || extractTitleFromMarkdown(parsed.content) || humanizeSlug(slugFromFile);
+		const title =
+			parsed.title?.trim() ||
+			extractTitleFromMarkdown(parsed.content) ||
+			humanizeSlug(slugFromFile);
 		const excerpt = parsed.excerpt?.trim() || summarizeMarkdown(parsed.content);
 
 		const createdAt = parsed.publishedAt ?? new Date();

@@ -4,6 +4,33 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
 
+	type DesmosCalculatorInstance = {
+		destroy: () => void;
+	};
+
+	type DesmosApi = {
+		GraphingCalculator: (
+			element: HTMLDivElement,
+			options: {
+				keypad: boolean;
+				keypadActivated?: boolean;
+				expressions?: boolean;
+				settingsMenu: boolean;
+			}
+		) => DesmosCalculatorInstance;
+		ScientificCalculator: (
+			element: HTMLDivElement,
+			options: {
+				keypad: boolean;
+				settingsMenu: boolean;
+			}
+		) => DesmosCalculatorInstance;
+	};
+
+	type DesmosWindow = Window & {
+		Desmos?: DesmosApi;
+	};
+
 	type DesmosCalculatorProps = {
 		type: 'scientific' | 'graphing';
 		onClose: () => void;
@@ -23,9 +50,10 @@
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
 
-	let calculatorContainer = $state<HTMLDivElement | null>(null);
-	let calculatorInstance: { destroy: () => void } | null = null;
+	let calculatorContainer: HTMLDivElement | null = null;
+	let calculatorInstance: DesmosCalculatorInstance | null = null;
 	let loadError = $state(false);
+	let loadErrorMessage = $state('Could not load the Desmos calculator.');
 	let isReady = $state(false);
 	let destroyed = false;
 
@@ -36,8 +64,16 @@
 	function clampPosition(x: number, y: number) {
 		if (!viewportWidth || !viewportHeight) return { x, y };
 		return {
-			x: clamp(x, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, viewportWidth - PANEL_WIDTH - VIEWPORT_MARGIN)),
-			y: clamp(y, VIEWPORT_MARGIN, Math.max(VIEWPORT_MARGIN, viewportHeight - PANEL_HEIGHT - VIEWPORT_MARGIN))
+			x: clamp(
+				x,
+				VIEWPORT_MARGIN,
+				Math.max(VIEWPORT_MARGIN, viewportWidth - PANEL_WIDTH - VIEWPORT_MARGIN)
+			),
+			y: clamp(
+				y,
+				VIEWPORT_MARGIN,
+				Math.max(VIEWPORT_MARGIN, viewportHeight - PANEL_HEIGHT - VIEWPORT_MARGIN)
+			)
 		};
 	}
 
@@ -60,23 +96,44 @@
 		isDragging = false;
 	}
 
+	function captureCalculatorContainer(node: HTMLDivElement) {
+		calculatorContainer = node;
+
+		return {
+			destroy() {
+				if (calculatorContainer === node) {
+					calculatorContainer = null;
+				}
+			}
+		};
+	}
+
 	function loadDesmosScript(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			if ((window as any).Desmos) {
+			const desmosWindow = window as DesmosWindow;
+			if (desmosWindow.Desmos) {
 				resolve();
 				return;
 			}
 			const existing = document.getElementById('desmos-api-script');
-			if (existing) {
+			if (existing instanceof HTMLScriptElement) {
+				if (existing.dataset.loaded === 'true') {
+					resolve();
+					return;
+				}
 				existing.addEventListener('load', () => resolve(), { once: true });
-				existing.addEventListener('error', () => reject(new Error('Desmos failed to load')), { once: true });
+				existing.addEventListener('error', () => reject(new Error('Desmos failed to load')), {
+					once: true
+				});
 				return;
 			}
 			const script = document.createElement('script');
 			script.id = 'desmos-api-script';
 			script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${env.PUBLIC_DESMOS_API_KEY ?? ''}`;
-			script.onload = () => resolve();
+			script.onload = () => {
+				script.dataset.loaded = 'true';
+				resolve();
+			};
 			script.onerror = () => reject(new Error('Desmos failed to load'));
 			document.head.appendChild(script);
 		});
@@ -84,8 +141,7 @@
 
 	function initCalculator() {
 		if (destroyed || !calculatorContainer) return;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const D = (window as any).Desmos;
+		const D = (window as DesmosWindow).Desmos;
 		if (!D) return;
 		try {
 			if (type === 'graphing') {
@@ -102,8 +158,13 @@
 				});
 			}
 			isReady = true;
-		} catch {
+			loadError = false;
+		} catch (error) {
 			loadError = true;
+			loadErrorMessage =
+				error instanceof Error && error.message
+					? error.message
+					: 'Could not load the Desmos calculator.';
 		}
 	}
 
@@ -127,8 +188,14 @@
 
 		loadDesmosScript()
 			.then(() => initCalculator())
-			.catch(() => {
-				if (!destroyed) loadError = true;
+			.catch((error) => {
+				if (!destroyed) {
+					loadError = true;
+					loadErrorMessage =
+						error instanceof Error && error.message
+							? error.message
+							: 'Could not load the Desmos calculator.';
+				}
 			});
 
 		return () => {
@@ -148,7 +215,7 @@
 >
 	<!-- Drag handle / title bar -->
 	<div
-		class="flex cursor-grab select-none items-center justify-between border-b border-border bg-muted/60 px-3 py-2 active:cursor-grabbing"
+		class="flex cursor-grab items-center justify-between border-b border-border bg-muted/60 px-3 py-2 select-none active:cursor-grabbing"
 		role="toolbar"
 		tabindex="0"
 		aria-label="Calculator drag handle"
@@ -174,14 +241,18 @@
 	<!-- Calculator container -->
 	<div class="relative min-h-0 flex-1">
 		<!-- Always in DOM and visible so Desmos initialises in a properly laid-out element -->
-		<div bind:this={calculatorContainer} class="h-full w-full"></div>
+		<div use:captureCalculatorContainer class="h-full w-full"></div>
 		{#if loadError}
-			<div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-sm text-muted-foreground">
-				<p>Could not load the Desmos calculator.</p>
+			<div
+				class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-sm text-muted-foreground"
+			>
+				<p>{loadErrorMessage}</p>
 				<p class="text-xs">Check your network connection and try again.</p>
 			</div>
 		{:else if !isReady}
-			<div class="absolute inset-0 flex items-center justify-center bg-card text-sm text-muted-foreground">
+			<div
+				class="absolute inset-0 flex items-center justify-center bg-card text-sm text-muted-foreground"
+			>
 				Loading calculator...
 			</div>
 		{/if}

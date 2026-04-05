@@ -6,7 +6,6 @@
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 
-
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');
 
@@ -55,7 +54,7 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg p-6 md:p-10">
+<div class="bg flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
 	<div class="flex w-full max-w-sm flex-col gap-6 text-center">
 		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
@@ -92,7 +91,9 @@
 				<p class="text-sm text-destructive">{errorMessage}</p>
 				<div class="flex flex-col gap-2">
 					<a href={resolve('/login')} class="text-sm underline underline-offset-4">Go to sign in</a>
-					<a href={resolve('/signup')} class="text-sm underline underline-offset-4">Create new account</a>
+					<a href={resolve('/signup')} class="text-sm underline underline-offset-4"
+						>Create new account</a
+					>
 				</div>
 			</div>
 		{/if}

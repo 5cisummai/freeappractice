@@ -37,7 +37,8 @@ export const GET: RequestHandler = async ({ url }) => {
 		}
 
 		const fileBuffer = await readFile(join(dataDirectoryPath, requestedFile));
-		const contentType = contentTypes[extname(requestedFile).toLowerCase()] ?? 'application/octet-stream';
+		const contentType =
+			contentTypes[extname(requestedFile).toLowerCase()] ?? 'application/octet-stream';
 
 		return new Response(fileBuffer, {
 			status: 200,

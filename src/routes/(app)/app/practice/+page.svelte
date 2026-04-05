@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { auth, apiFetch } from '$lib/client/auth.svelte.js';
+	import { auth, apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
 	import QuestionCard, {
 		type AnswerResult,
 		type FRQAnswerResult
 	} from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
+	import { toast } from 'svelte-sonner';
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
@@ -15,6 +16,8 @@
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
 
+	type ApiErrorPayload = { error?: string };
+
 	onMount(() => {
 		if (!presetClass) return;
 		selectedClass = presetClass;
@@ -22,7 +25,7 @@
 		requestVersion = 1;
 	});
 
-	function handleSelectionChange(_cls: string, _unit: string) {
+	function handleSelectionChange() {
 		requestVersion = 0;
 	}
 
@@ -35,43 +38,60 @@
 		requestVersion += 1;
 	}
 
+	async function syncAttempt(
+		path: string,
+		body: Record<string, unknown>,
+		fallbackMessage: string
+	): Promise<void> {
+		try {
+			const response = await apiFetch(path, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+
+			if (!response.ok) {
+				const payload = await readJsonOrNull<ApiErrorPayload>(response);
+				throw new Error(getResponseMessage(payload, fallbackMessage));
+			}
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : fallbackMessage, {
+				id: 'practice-sync-error'
+			});
+		}
+	}
+
 	function handleAnswered(result: AnswerResult) {
 		if (!auth.isAuthenticated) return;
-		void apiFetch('/api/auth/record-attempt', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
+		void syncAttempt(
+			'/api/auth/record-attempt',
+			{
 				questionId: result.questionId,
 				apClass: selectedClass,
 				unit: selectedUnit,
 				selectedAnswer: result.selectedAnswer,
 				wasCorrect: result.isCorrect,
 				timeTakenMs: result.timeTakenMs
-			})
-		}).catch(() => {
-			// Non-critical
-		});
+			},
+			'Could not save this attempt to your progress history.'
+		);
 	}
 
 	async function handleFRQAnswered(result: FRQAnswerResult) {
 		if (!auth.isAuthenticated) return;
-		try {
-			await apiFetch('/api/auth/record-frq-attempt', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					questionId: result.questionId,
-					apClass: selectedClass,
-					unit: selectedUnit,
-					aiScore: result.aiScore,
-					pointsEarned: result.pointsEarned,
-					totalPoints: result.totalPoints,
-					timeTakenMs: result.timeTakenMs
-				})
-			});
-		} catch {
-			// Non-critical
-		}
+		await syncAttempt(
+			'/api/auth/record-frq-attempt',
+			{
+				questionId: result.questionId,
+				apClass: selectedClass,
+				unit: selectedUnit,
+				aiScore: result.aiScore,
+				pointsEarned: result.pointsEarned,
+				totalPoints: result.totalPoints,
+				timeTakenMs: result.timeTakenMs
+			},
+			'Could not save this FRQ result to your progress history.'
+		);
 	}
 </script>
 
@@ -91,14 +111,16 @@
 			onGenerate={handleGenerate}
 		/>
 		{#if requestVersion > 0}
-			<QuestionCard
-				mode={questionType}
-				{selectedClass}
-				{selectedUnit}
-				{requestVersion}
-				onAnswered={handleAnswered}
-				onFRQAnswered={handleFRQAnswered}
-			/>
+			{#key `${questionType}:${selectedClass}:${selectedUnit}:${requestVersion}`}
+				<QuestionCard
+					mode={questionType}
+					{selectedClass}
+					{selectedUnit}
+					{requestVersion}
+					onAnswered={handleAnswered}
+					onFRQAnswered={handleFRQAnswered}
+				/>
+			{/key}
 		{/if}
 	</div>
 </div>

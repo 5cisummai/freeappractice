@@ -35,7 +35,10 @@ function normalize(value: unknown): unknown {
 
 	if (value && typeof value === 'object') {
 		return Object.fromEntries(
-			Object.entries(value as Record<string, unknown>).map(([key, entry]) => [key, normalize(entry)])
+			Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+				key,
+				normalize(entry)
+			])
 		);
 	}
 
@@ -50,6 +53,18 @@ function formatMeta(meta: unknown): string {
 		breakLength: 100,
 		sorted: true
 	});
+}
+
+function toLogObject(value: unknown): Record<string, unknown> {
+	if (value && typeof value === 'object' && !Array.isArray(value)) {
+		return value as Record<string, unknown>;
+	}
+
+	if (typeof value === 'undefined') {
+		return {};
+	}
+
+	return { result: value };
 }
 
 function write(level: LogLevel, message: string, meta?: unknown): void {
@@ -76,18 +91,14 @@ export const logger = {
 	 * Log the start of an AI provider call.
 	 * Returns a function to call on completion with the result details.
 	 */
-	aiCall(
-		service: string,
-		model: string,
-		meta?: unknown
-	): (result?: unknown) => void {
+	aiCall(service: string, model: string, meta?: unknown): (result?: unknown) => void {
 		const start = Date.now();
 		write('info', `[ai] ${service} → ${model} started`, meta);
 		return (result?: unknown) => {
 			const durationMs = Date.now() - start;
 			write('info', `[ai] ${service} → ${model} completed in ${durationMs}ms`, {
 				durationMs,
-				...result
+				...toLogObject(result)
 			});
 		};
 	}

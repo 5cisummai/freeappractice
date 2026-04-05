@@ -32,22 +32,22 @@ The project is founded and maintained by Ajay Saravanan. The goal is straightfor
 ## Getting started
 
 1. Install dependencies:
-	```sh
-	pnpm install
-	```
+   ```sh
+   pnpm install
+   ```
 2. Create a local env file and add your secrets.
 3. Start the dev server:
-	```sh
-	pnpm dev
-	```
+   ```sh
+   pnpm dev
+   ```
 4. Build for production:
-	```sh
-	pnpm build
-	```
+   ```sh
+   pnpm build
+   ```
 5. Run the smoke test suite:
-	```sh
-	pnpm test
-	```
+   ```sh
+   pnpm test
+   ```
 
 ## Environment variables
 

@@ -22,11 +22,10 @@
 		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
 		{ href: '/app/resources', label: 'Resources', icon: CompassIcon },
 		{ href: '/app/settings', label: 'Settings', icon: SettingsIcon }
-	];
+	] as const;
 
-	function isActive(href: string): boolean {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		return page.url.pathname === resolve(href as any);
+	function isActive(href: (typeof navItems)[number]['href']): boolean {
+		return page.url.pathname === resolve(href);
 	}
 
 	async function handleSignOut() {
@@ -64,9 +63,8 @@
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton isActive={isActive(item.href)} tooltipContent={item.label}>
 								{#snippet child({ props })}
-									<!-- eslint-disable-next-line @typescript-eslint/no-explicit-any -->
 									<a
-										href={resolve(item.href as any)}
+										href={resolve(item.href)}
 										aria-current={isActive(item.href) ? 'page' : undefined}
 										{...props}
 									>

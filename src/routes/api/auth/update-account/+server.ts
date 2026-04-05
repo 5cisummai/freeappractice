@@ -5,13 +5,15 @@ import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
 import { generateRandomToken } from '$lib/server/crypto-token';
 import { sendConfirmationEmail } from '$lib/server/services/email';
+import { logger } from '$lib/server/logger';
 
 export const PATCH: RequestHandler = async (event) => {
 	try {
 		const userId = await requireAuth(event);
-		const body = (await event.request.json().catch(() => null)) as
-			| { name?: unknown; email?: unknown }
-			| null;
+		const body = (await event.request.json().catch(() => null)) as {
+			name?: unknown;
+			email?: unknown;
+		} | null;
 
 		const name = typeof body?.name === 'string' ? body.name.trim() : '';
 		const emailRaw = typeof body?.email === 'string' ? body.email : '';
@@ -80,7 +82,7 @@ export const PATCH: RequestHandler = async (event) => {
 		});
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Update account error:', err);
+		logger.error('Update account error', { error: err });
 		return json({ error: 'Failed to update account' }, { status: 500 });
 	}
 };

@@ -16,7 +16,7 @@
 		errorMessage = '';
 		loading = true;
 		try {
-			const res = await fetch('/api/auth/forgot-password', {
+			await fetch('/api/auth/forgot-password', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email })
@@ -75,7 +75,9 @@
 							If that email is registered, you'll receive a reset link within a few minutes. Check
 							your spam folder if it doesn't arrive.
 						</p>
-						<a href={resolve('/login')} class="text-sm underline underline-offset-4">Back to sign in</a>
+						<a href={resolve('/login')} class="text-sm underline underline-offset-4"
+							>Back to sign in</a
+						>
 					</div>
 				{:else}
 					<form onsubmit={handleSubmit}>
@@ -98,7 +100,9 @@
 									{loading ? 'Sending...' : 'Send reset link'}
 								</Button>
 								<Field.Description class="text-center">
-									<a href={resolve('/login')} class="underline underline-offset-4">Back to sign in</a>
+									<a href={resolve('/login')} class="underline underline-offset-4"
+										>Back to sign in</a
+									>
 								</Field.Description>
 							</Field.Field>
 						</Field.Group>
