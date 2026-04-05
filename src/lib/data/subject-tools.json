@@ -1,0 +1,330 @@
+{
+	"AP Biology": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Biology Formula Sheet",
+			"sections": [
+				{
+					"heading": "Population Genetics (Hardy-Weinberg)",
+					"content": "**Allele frequencies:**\n\n$$p + q = 1$$\n\n**Genotype frequencies:**\n\n$$p^2 + 2pq + q^2 = 1$$\n\n$p$ = frequency of dominant allele, $q$ = frequency of recessive allele, $p^2$ = homozygous dominant, $2pq$ = heterozygous, $q^2$ = homozygous recessive"
+				},
+				{
+					"heading": "Water Potential",
+					"content": "$$\\psi = \\psi_s + \\psi_p$$\n\n$\\psi$ = water potential, $\\psi_s$ = solute (osmotic) potential, $\\psi_p$ = pressure potential\n\n**Solute potential:**\n\n$$\\psi_s = -iCRT$$\n\n$i$ = ionization constant, $C$ = molar concentration, $R$ = pressure constant (0.0831 L·bar/mol·K), $T$ = temperature (K)"
+				},
+				{
+					"heading": "Chi-Square Test",
+					"content": "$$\\chi^2 = \\sum \\frac{(o - e)^2}{e}$$\n\n$o$ = observed value, $e$ = expected value\n\nDegrees of freedom = number of categories $- 1$"
+				},
+				{
+					"heading": "Population Dynamics",
+					"content": "**Exponential growth:**\n\n$$\\frac{dN}{dt} = rN$$\n\n**Logistic growth:**\n\n$$\\frac{dN}{dt} = rN\\left(\\frac{K - N}{K}\\right)$$\n\n$N$ = population size, $r$ = per capita growth rate, $K$ = carrying capacity\n\n**Net reproductive rate:** $R_0 = \\sum l_x m_x$ where $l_x$ = survivorship, $m_x$ = fecundity"
+				},
+				{
+					"heading": "Surface Area & Volume",
+					"content": "**Sphere:** $SA = 4\\pi r^2$, $V = \\frac{4}{3}\\pi r^3$\n\n**Cylinder:** $SA = 2\\pi r^2 + 2\\pi rh$, $V = \\pi r^2 h$\n\nSA:V ratio decreases as size increases — limits cell size."
+				}
+			]
+		}
+	},
+	"AP Chemistry": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Chemistry Formula Sheet",
+			"sections": [
+				{
+					"heading": "Gas Laws",
+					"content": "**Ideal Gas Law:**\n\n$$PV = nRT$$\n\n$R = 8.314\\text{ J/mol·K} = 0.08206\\text{ L·atm/mol·K}$\n\n**Boyle's Law:** $P_1V_1 = P_2V_2$\n\n**Charles's Law:** $\\displaystyle\\frac{V_1}{T_1} = \\frac{V_2}{T_2}$\n\n**Combined:** $\\displaystyle\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}$\n\n**Dalton's Law:** $P_{total} = P_1 + P_2 + \\cdots$"
+				},
+				{
+					"heading": "Thermodynamics",
+					"content": "$$\\Delta G^\\circ = \\Delta H^\\circ - T\\Delta S^\\circ$$\n\n$$\\Delta G^\\circ = -RT\\ln K$$\n\n$$\\Delta G = \\Delta G^\\circ + RT\\ln Q$$\n\n**Hess's Law:** $\\Delta H_{rxn} = \\sum \\Delta H_f^\\circ(\\text{products}) - \\sum \\Delta H_f^\\circ(\\text{reactants})$"
+				},
+				{
+					"heading": "Equilibrium & Acids/Bases",
+					"content": "**Equilibrium constant:** $K_c = \\dfrac{[\\text{products}]^x}{[\\text{reactants}]^y}$\n\n**Reaction quotient:** $Q = \\dfrac{[\\text{products}]^x}{[\\text{reactants}]^y}$\n\n**Water:** $K_w = [H^+][OH^-] = 1.0 \\times 10^{-14}$ at 25°C\n\n$$\\text{pH} = -\\log[H^+] \\qquad \\text{pOH} = -\\log[OH^-]$$\n\n$$\\text{pH} + \\text{pOH} = 14$$\n\n**Henderson–Hasselbalch:**\n\n$$\\text{pH} = \\text{p}K_a + \\log\\frac{[A^-]}{[HA]}$$"
+				},
+				{
+					"heading": "Electrochemistry",
+					"content": "$$\\Delta G^\\circ = -nFE^\\circ$$\n\n**Nernst Equation:**\n\n$$E = E^\\circ - \\frac{RT}{nF}\\ln Q$$\n\nAt 25°C: $E = E^\\circ - \\dfrac{0.0592}{n}\\log Q$\n\n$F = 96485$ C/mol, $n$ = moles of electrons transferred"
+				},
+				{
+					"heading": "Kinetics",
+					"content": "**Rate law:** $\\text{rate} = k[A]^m[B]^n$\n\n**First-order integrated:** $\\ln[A]_t = -kt + \\ln[A]_0$\n\n**Half-life (1st order):** $t_{1/2} = \\dfrac{0.693}{k}$\n\n**Second-order integrated:** $\\dfrac{1}{[A]_t} = kt + \\dfrac{1}{[A]_0}$\n\n**Arrhenius:** $k = Ae^{-E_a/RT}$"
+				},
+				{
+					"heading": "Colligative Properties",
+					"content": "**Molarity:** $M = \\dfrac{\\text{mol solute}}{\\text{L solution}}$\n\n**Molality:** $m = \\dfrac{\\text{mol solute}}{\\text{kg solvent}}$\n\n**Boiling point elevation:** $\\Delta T_b = K_b \\cdot m \\cdot i$\n\n**Freezing point depression:** $\\Delta T_f = K_f \\cdot m \\cdot i$"
+				}
+			]
+		}
+	},
+	"AP Physics 1": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Physics 1 Formula Sheet",
+			"sections": [
+				{
+					"heading": "Kinematics",
+					"content": "$$v = v_0 + at$$\n\n$$x = x_0 + v_0 t + \\tfrac{1}{2}at^2$$\n\n$$v^2 = v_0^2 + 2a\\Delta x$$\n\n$$\\bar{v} = \\frac{\\Delta x}{\\Delta t} \\qquad \\bar{a} = \\frac{\\Delta v}{\\Delta t}$$\n\n**Projectile (no air resistance):** horizontal $a = 0$, vertical $a = -g = -9.8$ m/s²"
+				},
+				{
+					"heading": "Newton's Laws & Forces",
+					"content": "$$\\sum \\vec{F} = m\\vec{a}$$\n\n**Friction:** $f \\leq \\mu_s N \\quad$ (static); $\\quad f_k = \\mu_k N$ (kinetic)\n\n**Gravitational force:** $F_g = mg$ (near Earth's surface)\n\n**Universal gravitation:** $F_g = \\dfrac{Gm_1m_2}{r^2}$, \\quad $G = 6.67 \\times 10^{-11}$ N·m²/kg²\n\n**Centripetal acceleration:** $a_c = \\dfrac{v^2}{r}$"
+				},
+				{
+					"heading": "Work, Energy & Power",
+					"content": "$$W = F d\\cos\\theta$$\n\n$$KE = \\tfrac{1}{2}mv^2 \\qquad PE_g = mgh$$\n\n**Spring PE:** $PE_s = \\tfrac{1}{2}kx^2$ \\quad (Hooke: $F_s = -kx$)\n\n**Work-Energy Theorem:** $W_{net} = \\Delta KE$\n\n**Power:** $P = \\dfrac{W}{\\Delta t} = Fv$"
+				},
+				{
+					"heading": "Momentum & Impulse",
+					"content": "$$\\vec{p} = m\\vec{v}$$\n\n**Impulse:** $\\vec{J} = \\vec{F}\\Delta t = \\Delta\\vec{p}$\n\n**Conservation of momentum:** $\\sum p_i = \\sum p_f$ (no net external force)\n\n**Elastic collision:** KE conserved; **Inelastic:** KE not conserved"
+				},
+				{
+					"heading": "Rotational Motion",
+					"content": "**Arc length:** $s = r\\theta$ \\qquad **Tangential velocity:** $v = r\\omega$\n\n**Torque:** $\\tau = rF\\sin\\theta = I\\alpha$\n\n**Rotational inertia (point mass):** $I = mr^2$\n\n**Angular momentum:** $L = I\\omega$ \\qquad **Conservation:** $L_i = L_f$\n\n$$\\tau_{net} = \\frac{\\Delta L}{\\Delta t}$$"
+				},
+				{
+					"heading": "Simple Harmonic Motion & Waves",
+					"content": "**Period of a spring:** $T = 2\\pi\\sqrt{\\dfrac{m}{k}}$\n\n**Period of a pendulum:** $T = 2\\pi\\sqrt{\\dfrac{l}{g}}$\n\n**Wave speed:** $v = f\\lambda$ \\qquad $f = \\dfrac{1}{T}$\n\n**Intensity:** $I \\propto A^2$ \\quad **Doppler:** $f' = f\\dfrac{v \\pm v_o}{v \\mp v_s}$"
+				}
+			]
+		}
+	},
+	"AP Physics 2": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Physics 2 Formula Sheet",
+			"sections": [
+				{
+					"heading": "Electrostatics",
+					"content": "**Coulomb's Law:** $F = k\\dfrac{q_1 q_2}{r^2}$, \\quad $k = 8.99 \\times 10^9$ N·m²/C²\n\n**Electric field:** $E = \\dfrac{F}{q} = k\\dfrac{Q}{r^2}$\n\n**Electric potential:** $V = k\\dfrac{Q}{r}$ \\qquad $W = q\\Delta V$\n\n**Capacitance:** $C = \\dfrac{Q}{V}$ \\qquad $U_C = \\tfrac{1}{2}CV^2$\n\n**Parallel-plate capacitor:** $C = \\dfrac{\\varepsilon_0 A}{d}$, \\quad $\\varepsilon_0 = 8.85 \\times 10^{-12}$ C²/N·m²"
+				},
+				{
+					"heading": "DC Circuits",
+					"content": "$$V = IR \\qquad P = IV = I^2R = \\frac{V^2}{R}$$\n\n**Series:** $R_{total} = R_1 + R_2 + \\cdots$ \\quad (same $I$)\n\n**Parallel:** $\\dfrac{1}{R_{total}} = \\dfrac{1}{R_1} + \\dfrac{1}{R_2} + \\cdots$ \\quad (same $V$)\n\n**Kirchhoff's Voltage Law (KVL):** $\\sum V = 0$ around any loop\n\n**Kirchhoff's Current Law (KCL):** $\\sum I_{in} = \\sum I_{out}$\n\n**RC time constant:** $\\tau = RC$"
+				},
+				{
+					"heading": "Magnetism",
+					"content": "**Magnetic force on charge:** $F = qvB\\sin\\theta$\n\n**Magnetic force on wire:** $F = BIL\\sin\\theta$\n\n**Magnetic flux:** $\\Phi_B = BA\\cos\\theta$\n\n**Faraday's Law:** $\\mathcal{E} = -\\dfrac{\\Delta\\Phi_B}{\\Delta t}$\n\n**Solenoid field:** $B = \\mu_0 nI$, \\quad $\\mu_0 = 4\\pi \\times 10^{-7}$ T·m/A"
+				},
+				{
+					"heading": "Optics",
+					"content": "**Snell's Law:** $n_1\\sin\\theta_1 = n_2\\sin\\theta_2$\n\n**Index of refraction:** $n = \\dfrac{c}{v}$, \\quad $c = 3 \\times 10^8$ m/s\n\n**Thin lens equation:** $\\dfrac{1}{f} = \\dfrac{1}{d_o} + \\dfrac{1}{d_i}$\n\n**Magnification:** $m = -\\dfrac{d_i}{d_o}$\n\nConverging lens: $f > 0$; Diverging lens: $f < 0$"
+				},
+				{
+					"heading": "Thermodynamics",
+					"content": "**First Law:** $\\Delta U = Q - W$\n\n**Ideal gas:** $PV = nRT$ \\quad ($R = 8.314$ J/mol·K)\n\n**Thermal expansion:** $\\Delta L = \\alpha L_0 \\Delta T$\n\n**Efficiency:** $e = \\dfrac{W}{Q_H}$ \\quad **Carnot efficiency:** $e_C = 1 - \\dfrac{T_C}{T_H}$"
+				}
+			]
+		}
+	},
+	"AP Physics C: Mechanics": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Physics C: Mechanics Formula Sheet",
+			"sections": [
+				{
+					"heading": "Kinematics (Calculus-Based)",
+					"content": "$$v = \\frac{dx}{dt} \\qquad a = \\frac{dv}{dt} = \\frac{d^2x}{dt^2}$$\n\n$$x = \\int v\\, dt \\qquad v = \\int a\\, dt$$"
+				},
+				{
+					"heading": "Newton's Laws",
+					"content": "$$\\vec{F}_{net} = m\\vec{a} = m\\frac{d^2\\vec{r}}{dt^2}$$\n\n**Work:** $W = \\int \\vec{F} \\cdot d\\vec{r}$\n\n**Work-Energy Theorem:** $W_{net} = \\Delta KE$\n\n**Power:** $P = \\vec{F}\\cdot\\vec{v} = \\dfrac{dW}{dt}$"
+				},
+				{
+					"heading": "Systems of Particles & Momentum",
+					"content": "**Center of mass:** $\\vec{r}_{cm} = \\dfrac{\\sum m_i \\vec{r}_i}{M}$\n\n$$\\vec{p} = m\\vec{v} \\qquad \\vec{F}_{net} = \\frac{d\\vec{p}}{dt}$$\n\n**Impulse:** $\\vec{J} = \\int \\vec{F}\\, dt = \\Delta\\vec{p}$"
+				},
+				{
+					"heading": "Rotation",
+					"content": "$$\\tau_{net} = I\\alpha = \\frac{dL}{dt}$$\n\n**Moment of inertia:** $I = \\int r^2\\, dm$\n\n**Common values:** $I_{solid\\ disk} = \\tfrac{1}{2}MR^2$; $I_{rod\\ (center)} = \\tfrac{1}{12}ML^2$; $I_{sphere} = \\tfrac{2}{5}MR^2$\n\n**Parallel axis theorem:** $I = I_{cm} + Md^2$\n\n**Angular momentum:** $L = I\\omega \\qquad \\vec{L} = \\vec{r}\\times\\vec{p}$\n\n**Rotational KE:** $KE_{rot} = \\tfrac{1}{2}I\\omega^2$"
+				},
+				{
+					"heading": "Oscillations & Gravitation",
+					"content": "**SHM:** $\\dfrac{d^2x}{dt^2} = -\\omega^2 x$ \\quad $\\omega = \\sqrt{k/m}$ (spring), $\\omega = \\sqrt{g/l}$ (pendulum)\n\n**Gravitational PE:** $U_g = -\\dfrac{GMm}{r}$\n\n**Orbital speed:** $v = \\sqrt{\\dfrac{GM}{r}}$ \\qquad **Escape speed:** $v_e = \\sqrt{\\dfrac{2GM}{r}}$\n\n**Kepler's 3rd Law:** $T^2 = \\dfrac{4\\pi^2}{GM}a^3$"
+				}
+			]
+		}
+	},
+	"AP Physics C: E&M": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Physics C: E&M Formula Sheet",
+			"sections": [
+				{
+					"heading": "Electrostatics",
+					"content": "**Coulomb's Law:** $\\vec{F} = k\\dfrac{q_1 q_2}{r^2}\\hat{r}$\n\n**Gauss's Law:** $\\oint \\vec{E}\\cdot d\\vec{A} = \\dfrac{Q_{enc}}{\\varepsilon_0}$\n\n**Electric field from potential:** $\\vec{E} = -\\nabla V$\n\n**Potential energy:** $U = k\\dfrac{q_1 q_2}{r}$"
+				},
+				{
+					"heading": "Capacitance & Dielectrics",
+					"content": "$$C = \\frac{Q}{V} \\qquad U_C = \\frac{1}{2}CV^2 = \\frac{Q^2}{2C}$$\n\n**Parallel plate:** $C = \\dfrac{\\varepsilon_0 A}{d}$ (with dielectric: $C = \\dfrac{\\kappa\\varepsilon_0 A}{d}$)\n\n**Series:** $\\dfrac{1}{C_{eq}} = \\displaystyle\\sum_i \\dfrac{1}{C_i}$ \\qquad **Parallel:** $C_{eq} = \\displaystyle\\sum_i C_i$"
+				},
+				{
+					"heading": "DC Circuits",
+					"content": "**Ohm's Law:** $V = IR$ \\qquad $P = IV$\n\n**RC circuit charging:** $q(t) = C\\mathcal{E}\\left(1 - e^{-t/RC}\\right)$\n\n**RC time constant:** $\\tau = RC$\n\n**RL circuit:** $i(t) = \\dfrac{\\mathcal{E}}{R}\\left(1 - e^{-Rt/L}\\right)$, \\quad $\\tau = L/R$\n\n**Inductor energy:** $U_L = \\tfrac{1}{2}LI^2$"
+				},
+				{
+					"heading": "Magnetism",
+					"content": "**Biot-Savart:** $d\\vec{B} = \\dfrac{\\mu_0}{4\\pi}\\dfrac{I\\,d\\vec{l}\\times\\hat{r}}{r^2}$\n\n**Ampere's Law:** $\\oint \\vec{B}\\cdot d\\vec{l} = \\mu_0 I_{enc}$\n\n**Lorentz force:** $\\vec{F} = q(\\vec{E} + \\vec{v}\\times\\vec{B})$\n\n**Faraday's Law:** $\\mathcal{E} = -\\dfrac{d\\Phi_B}{dt}$\n\n**Mutual inductance:** $\\mathcal{E}_2 = -M\\dfrac{dI_1}{dt}$"
+				}
+			]
+		}
+	},
+	"AP Environmental Science": {
+		"calculator": "scientific",
+		"referenceSheet": {
+			"title": "AP Environmental Science Formula Sheet",
+			"sections": [
+				{
+					"heading": "Population & Energy",
+					"content": "**Population growth rate:**\n\n$$r = (\\text{birth rate} + \\text{immigration rate}) - (\\text{death rate} + \\text{emigration rate})$$\n\n**Rule of 10:** Only ~10% of energy transfers between trophic levels\n\n$$\\text{Ecological efficiency} = \\frac{\\text{energy at higher level}}{\\text{energy at lower level}} \\times 100\\%$$\n\n**IPAT equation:** $I = P \\times A \\times T$\n\n$I$ = environmental impact, $P$ = population, $A$ = affluence, $T$ = technology"
+				},
+				{
+					"heading": "Water & Soil",
+					"content": "**Permeability** — how easily water flows through material\n\n**Porosity** — fraction of volume that is pore space\n\n**Residence time:** $\\text{residence time} = \\dfrac{\\text{reservoir size}}{\\text{flow rate}}$"
+				},
+				{
+					"heading": "Atmospheric & Energy Calculations",
+					"content": "**Parts per million (ppm):** $\\dfrac{\\text{mass of pollutant}}{\\text{total mass}} \\times 10^6$\n\n**Energy use / power:**\n\n$$\\text{Power (W)} = \\frac{\\text{Energy (J)}}{\\text{time (s)}}$$\n\n**Percent efficiency:** $\\eta = \\dfrac{\\text{useful energy out}}{\\text{total energy in}} \\times 100\\%$\n\n**Half-life:** $N(t) = N_0\\left(\\dfrac{1}{2}\\right)^{t/t_{1/2}}$"
+				},
+				{
+					"heading": "Pollution & Risk",
+					"content": "**LD50** — dose lethal to 50% of test population\n\n**Risk** = probability of harm × magnitude of harm\n\n**Dose-response relationship:** effect increases with dose (for most toxins)\n\n**Bioaccumulation** — buildup in one organism; **Biomagnification** — increase up food chain"
+				}
+			]
+		}
+	},
+	"AP Calculus AB": {
+		"calculator": "graphing",
+		"referenceSheet": null
+	},
+	"AP Calculus BC": {
+		"calculator": "graphing",
+		"referenceSheet": null
+	},
+	"AP Statistics": {
+		"calculator": "graphing",
+		"referenceSheet": {
+			"title": "AP Statistics Formula Sheet",
+			"sections": [
+				{
+					"heading": "Descriptive Statistics",
+					"content": "**Sample mean:** $\\bar{x} = \\dfrac{\\sum x_i}{n}$\n\n**Sample standard deviation:** $s_x = \\sqrt{\\dfrac{\\sum(x_i - \\bar{x})^2}{n - 1}}$\n\n**IQR:** $IQR = Q_3 - Q_1$\n\n**Outlier rule:** $< Q_1 - 1.5(IQR)$ or $> Q_3 + 1.5(IQR)$"
+				},
+				{
+					"heading": "Probability",
+					"content": "**Addition rule:** $P(A \\cup B) = P(A) + P(B) - P(A \\cap B)$\n\n**Multiplication rule:** $P(A \\cap B) = P(A) \\cdot P(B|A)$\n\n**Independence:** $P(A \\cap B) = P(A) \\cdot P(B)$\n\n**Conditional:** $P(A|B) = \\dfrac{P(A \\cap B)}{P(B)}$\n\n**Expected value:** $\\mu_X = \\sum x_i P(x_i)$\n\n**Variance:** $\\sigma_X^2 = \\sum(x_i - \\mu)^2 P(x_i)$"
+				},
+				{
+					"heading": "Distributions",
+					"content": "**Binomial:** $P(X = k) = \\binom{n}{k}p^k(1-p)^{n-k}$\n\n$\\mu = np$, $\\sigma = \\sqrt{np(1-p)}$\n\n**z-score:** $z = \\dfrac{x - \\mu}{\\sigma}$\n\n**Sampling distribution of $\\bar{x}$:**\n\n$$\\mu_{\\bar{x}} = \\mu \\qquad \\sigma_{\\bar{x}} = \\frac{\\sigma}{\\sqrt{n}}$$\n\n**Sampling distribution of $\\hat{p}$:**\n\n$$\\mu_{\\hat{p}} = p \\qquad \\sigma_{\\hat{p}} = \\sqrt{\\frac{p(1-p)}{n}}$$"
+				},
+				{
+					"heading": "Confidence Intervals",
+					"content": "**General form:** $\\text{statistic} \\pm z^* \\cdot SE$ (or $t^*$)\n\n**1-prop z-interval:** $\\hat{p} \\pm z^*\\sqrt{\\dfrac{\\hat{p}(1-\\hat{p})}{n}}$\n\n**1-sample t-interval:** $\\bar{x} \\pm t^*\\dfrac{s}{\\sqrt{n}}$ \\quad ($df = n-1$)\n\n**2-sample t-interval:** $(\\bar{x}_1 - \\bar{x}_2) \\pm t^*\\sqrt{\\dfrac{s_1^2}{n_1} + \\dfrac{s_2^2}{n_2}}$"
+				},
+				{
+					"heading": "Significance Tests",
+					"content": "**General:** $\\text{test statistic} = \\dfrac{\\text{statistic} - \\text{parameter}}{SE}$\n\n**z-test for proportion:** $z = \\dfrac{\\hat{p} - p_0}{\\sqrt{p_0(1-p_0)/n}}$\n\n**t-test for mean:** $t = \\dfrac{\\bar{x} - \\mu_0}{s/\\sqrt{n}}$\n\n**Chi-square (goodness of fit / independence):** $\\chi^2 = \\displaystyle\\sum \\dfrac{(O - E)^2}{E}$\n\n**Regression t-test:** $t = \\dfrac{b - 0}{SE_b}$"
+				},
+				{
+					"heading": "Linear Regression",
+					"content": "$$\\hat{y} = a + bx$$\n\n$$b = r\\frac{s_y}{s_x} \\qquad a = \\bar{y} - b\\bar{x}$$\n\n**Residual:** $e = y - \\hat{y}$\n\n**$r$** = correlation coefficient ($-1 \\leq r \\leq 1$)\n\n**$r^2$** = coefficient of determination (% variation in $y$ explained by $x$)"
+				}
+			]
+		}
+	},
+	"AP Precalculus": {
+		"calculator": "graphing",
+		"referenceSheet": {
+			"title": "AP Precalculus Formula Sheet",
+			"sections": [
+				{
+					"heading": "Trigonometric Identities",
+					"content": "**Pythagorean:**\n\n$$\\sin^2\\theta + \\cos^2\\theta = 1$$\n$$1 + \\tan^2\\theta = \\sec^2\\theta \\qquad 1 + \\cot^2\\theta = \\csc^2\\theta$$\n\n**Sum / Difference:**\n\n$$\\sin(A \\pm B) = \\sin A\\cos B \\pm \\cos A\\sin B$$\n$$\\cos(A \\pm B) = \\cos A\\cos B \\mp \\sin A\\sin B$$\n\n**Double Angle:**\n\n$$\\sin 2\\theta = 2\\sin\\theta\\cos\\theta$$\n$$\\cos 2\\theta = \\cos^2\\theta - \\sin^2\\theta = 1 - 2\\sin^2\\theta = 2\\cos^2\\theta - 1$$\n\n**Half Angle:**\n\n$$\\sin^2\\theta = \\frac{1 - \\cos 2\\theta}{2} \\qquad \\cos^2\\theta = \\frac{1 + \\cos 2\\theta}{2}$$"
+				},
+				{
+					"heading": "Logarithm & Exponential Properties",
+					"content": "$$\\log_b(xy) = \\log_b x + \\log_b y$$\n$$\\log_b\\!\\left(\\frac{x}{y}\\right) = \\log_b x - \\log_b y$$\n$$\\log_b(x^n) = n\\log_b x$$\n$$\\log_b x = \\frac{\\ln x}{\\ln b} \\qquad b^x = e^{x\\ln b}$$\n\n**Exponential growth/decay:** $f(t) = A \\cdot b^t = A \\cdot e^{kt}$"
+				},
+				{
+					"heading": "Conic Sections",
+					"content": "**Circle:** $(x-h)^2 + (y-k)^2 = r^2$\n\n**Ellipse:** $\\dfrac{(x-h)^2}{a^2} + \\dfrac{(y-k)^2}{b^2} = 1$ \\quad ($a > b$, $c^2 = a^2 - b^2$)\n\n**Hyperbola:** $\\dfrac{(x-h)^2}{a^2} - \\dfrac{(y-k)^2}{b^2} = 1$ \\quad ($c^2 = a^2 + b^2$)\n\n**Parabola:** $(y-k)^2 = 4p(x-h)$ or $(x-h)^2 = 4p(y-k)$"
+				},
+				{
+					"heading": "Sequences & Series",
+					"content": "**Arithmetic:** $a_n = a_1 + (n-1)d$ \\qquad $S_n = \\dfrac{n(a_1 + a_n)}{2}$\n\n**Geometric:** $a_n = a_1 r^{n-1}$ \\qquad $S_n = \\dfrac{a_1(1 - r^n)}{1 - r}$\n\n**Infinite geometric** ($|r| < 1$): $S = \\dfrac{a_1}{1-r}$\n\n**Binomial Theorem:** $(a+b)^n = \\displaystyle\\sum_{k=0}^n \\binom{n}{k}a^{n-k}b^k$"
+				}
+			]
+		}
+	},
+	"AP Computer Science A": {
+		"calculator": "none",
+		"referenceSheet": {
+			"title": "AP CS A — Java Quick Reference",
+			"sections": [
+				{
+					"heading": "Primitive Types",
+					"content": "| Type | Size | Range |\n|---|---|---|\n| `int` | 32-bit | $-2^{31}$ to $2^{31}-1$ |\n| `double` | 64-bit | ~$\\pm 1.8 \\times 10^{308}$ |\n| `boolean` | — | `true` / `false` |\n| `char` | 16-bit Unicode | `'A'` = 65 |\n\n**Integer division truncates:** `7 / 2 == 3`\n\n**Modulo:** `7 % 3 == 1`\n\n**Integer overflow** wraps silently — use `long` if needed."
+				},
+				{
+					"heading": "String Methods",
+					"content": "```java\nString s = \"Hello\";\ns.length()           // 5\ns.substring(1, 3)    // \"el\"  (start inclusive, end exclusive)\ns.substring(2)       // \"llo\"\ns.indexOf(\"ll\")      // 2  (-1 if not found)\ns.equals(\"Hello\")   // true  (never use ==)\ns.compareTo(\"World\") // negative (H < W)\ns.charAt(0)          // 'H'\n```"
+				},
+				{
+					"heading": "Arrays & ArrayList",
+					"content": "```java\n// Array (fixed size)\nint[] arr = new int[5];         // {0,0,0,0,0}\nint[] arr = {1, 2, 3};\narr.length                       // 3 (field, not method!)\n\n// ArrayList (dynamic, objects only)\nimport java.util.ArrayList;\nArrayList<Integer> list = new ArrayList<>();\nlist.add(42);           // append\nlist.add(0, 42);        // insert at index 0\nlist.get(i);            // access\nlist.set(i, val);       // update\nlist.remove(i);         // remove by index\nlist.size();            // length\n```"
+				},
+				{
+					"heading": "Control Flow",
+					"content": "```java\n// For-each loop (read-only)\nfor (int x : arr) { ... }\n\n// Traditional for loop\nfor (int i = 0; i < arr.length; i++) { ... }\n\n// While / do-while\nwhile (condition) { ... }\ndo { ... } while (condition);\n```\n\n**Short-circuit evaluation:** `&&` and `||` stop early when result is known."
+				},
+				{
+					"heading": "Classes & Inheritance",
+					"content": "```java\npublic class Animal {\n    private String name;\n    public Animal(String name) { this.name = name; }\n    public String getName() { return name; }\n    public String toString() { return \"Animal: \" + name; }\n}\n\npublic class Dog extends Animal {\n    public Dog(String name) { super(name); }\n    @Override\n    public String toString() { return \"Dog: \" + getName(); }\n}\n```\n\n`super(...)` — call parent constructor (must be first line)\n\n`instanceof` — check type at runtime"
+				},
+				{
+					"heading": "Math & Casting",
+					"content": "```java\nMath.abs(x)        // absolute value\nMath.pow(x, y)     // x^y (returns double)\nMath.sqrt(x)       // √x (returns double)\nMath.random()      // [0.0, 1.0)\n// Random int in [a, b]:\n(int)(Math.random() * (b - a + 1)) + a\n\n// Casting\n(int) 3.9    // 3  (truncates, not rounds)\n(double) 7 / 2  // 3.5\n```"
+				}
+			]
+		}
+	},
+	"AP Computer Science Principles": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP English Language": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP English Literature": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP US History": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP World History": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP European History": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP US Government": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP Comparative Government": {
+		"calculator": "none",
+		"referenceSheet": null
+	},
+	"AP Psychology": {
+		"calculator": "none",
+		"referenceSheet": null
+	}
+}

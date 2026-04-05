@@ -42,12 +42,12 @@ const SECURITY_HEADERS: Record<string, string> = {
 	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 	'Content-Security-Policy': [
 		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://www.desmos.com",
 		"style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
 		"font-src 'self' https://fonts.gstatic.com data:",
 		"img-src 'self' data: https:",
-		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com",
-		"frame-src https://accounts.google.com/gsi/"
+		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com",
+		"frame-src https://accounts.google.com/gsi/ https://www.desmos.com"
 	].join('; ')
 };
 

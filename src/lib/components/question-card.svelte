@@ -124,7 +124,12 @@
 	import apClassesData from '$lib/data/ap-classes.json';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
+	import CalculatorIcon from '@lucide/svelte/icons/calculator';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import TutorWidget from '$lib/components/tutor/tutor-widget.svelte';
+	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
+	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
+	import subjectToolsData from '$lib/data/subject-tools.json';
 
 	let {
 		class: className,
@@ -162,11 +167,13 @@
 	let startedAtMs = $state(Date.now());
 	let isLoading = $state(false);
 	let questionCount = $state(0);
-	let statusMessage = $state('Choose the best answer and then check your response.');
+	let statusMessage = $state('');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
+	let calculatorOpen = $state(false);
+	let referenceSheetOpen = $state(false);
 
 	// FRQ state
 	let frqQuestion = $state<FRQQuestion | null>(null);
@@ -174,6 +181,17 @@
 	let frqGrade = $state<FRQGrade | null>(null);
 	let isGrading = $state(false);
 	let hasSubmitted = $state(false);
+
+	type SubjectToolEntry = {
+		calculator: 'none' | 'scientific' | 'graphing';
+		referenceSheet: { title: string; sections: { heading: string; content: string }[] } | null;
+	};
+	const toolConfig = $derived(
+		(subjectToolsData as Record<string, SubjectToolEntry>)[selectedClass] ??
+			({ calculator: 'none', referenceSheet: null } as SubjectToolEntry)
+	);
+	const hasCalculator = $derived(toolConfig.calculator !== 'none');
+	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
 	const effectiveTwoColumn = $derived(
@@ -719,6 +737,8 @@
 		questionCount = 0;
 		resetInteractionState(true);
 		resetFRQState();
+		calculatorOpen = false;
+		referenceSheetOpen = false;
 		statusMessage =
 			mode === 'frq'
 				? 'Write your response for each part, then submit.'
@@ -1110,7 +1130,37 @@
 			<Card.Footer
 				class="flex flex-col gap-3 border-t border-border/70 bg-muted/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
 			>
-				<p class="text-sm text-muted-foreground">{statusMessage}</p>
+				<div class="flex flex-wrap items-center gap-2">
+					<p class="text-sm text-muted-foreground">{statusMessage}</p>
+					{#if hasCalculator || hasReferenceSheet}
+						<div class="flex gap-0.5">
+							{#if hasCalculator}
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-7 w-7 text-muted-foreground hover:text-foreground"
+									onclick={() => (calculatorOpen = !calculatorOpen)}
+									aria-label="Open Calculator"
+									title="Open Calculator"
+								>
+									<CalculatorIcon class="h-3.5 w-3.5" />
+								</Button>
+							{/if}
+							{#if hasReferenceSheet}
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-7 w-7 text-muted-foreground hover:text-foreground"
+									onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
+									aria-label="Reference Sheet"
+									title="Reference Sheet"
+								>
+									<BookOpenIcon class="h-3.5 w-3.5" />
+								</Button>
+							{/if}
+						</div>
+					{/if}
+				</div>
 				<div class="flex shrink-0 gap-2">
 					{#if hasSubmitted}
 						<Button onclick={handleFRQNext} class="h-9 px-4 text-sm">Next Question</Button>
@@ -1127,7 +1177,37 @@
 			</Card.Footer>
 		{:else}
 			<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
+				<div class="flex flex-wrap items-center gap-2">
+					<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
+					{#if hasCalculator || hasReferenceSheet}
+						<div class="flex gap-0.5">
+							{#if hasCalculator}
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-7 w-7 text-muted-foreground hover:text-foreground"
+									onclick={() => (calculatorOpen = !calculatorOpen)}
+									aria-label="Open Calculator"
+									title="Open Calculator"
+								>
+									<CalculatorIcon class="h-3.5 w-3.5" />
+								</Button>
+							{/if}
+							{#if hasReferenceSheet}
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-7 w-7 text-muted-foreground hover:text-foreground"
+									onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
+									aria-label="Reference Sheet"
+									title="Reference Sheet"
+								>
+									<BookOpenIcon class="h-3.5 w-3.5" />
+								</Button>
+							{/if}
+						</div>
+					{/if}
+				</div>
 				<div class="flex gap-2">
 					{#if hasCheckedAnswer && currentQuestion?.explanation}
 						<Button variant="outline" onclick={() => (showExplanation = true)}>
@@ -1213,6 +1293,15 @@
 			answerChoices={tutorAnswerChoices}
 		/>
 	{/if}
+
+	{#if calculatorOpen}
+		<DesmosCalculator
+			type={toolConfig.calculator as 'scientific' | 'graphing'}
+			onClose={() => (calculatorOpen = false)}
+		/>
+	{/if}
+
+	<ReferenceSheet bind:open={referenceSheetOpen} subject={selectedClass} />
 
 	<BugReportDialog bind:open={bugReportOpen} context={bugReportContext} {selectedClass} {selectedUnit} />
 {/if}
