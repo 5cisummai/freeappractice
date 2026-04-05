@@ -10,6 +10,30 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	interface Window {
+		google?: {
+			accounts: {
+				id: {
+					initialize: (config: {
+						client_id: string;
+						callback: (response: { credential: string }) => void;
+					}) => void;
+					prompt: () => void;
+					renderButton: (
+						parent: HTMLElement,
+						options: {
+							type?: string;
+							theme?: string;
+							size?: string;
+							width?: string | number;
+							text?: string;
+						}
+					) => void;
+				};
+			};
+		};
+	}
 }
 
 export {};
