@@ -8,6 +8,8 @@
 	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
+	import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -17,6 +19,54 @@
 	let confirmPassword = $state('');
 	let errorMessage = $state('');
 	let loading = $state(false);
+	let googleButtonDiv = $state<HTMLDivElement | null>(null);
+
+	async function handleGoogleCredential(credential: string) {
+		errorMessage = '';
+		try {
+			const res = await fetch('/api/auth/google', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ idToken: credential })
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				errorMessage = data.error ?? 'Google sign-in failed';
+				return;
+			}
+			auth.setAuth(data.token, data.user);
+			goto(resolve('/app'));
+		} catch {
+			errorMessage = 'Network error. Please try again.';
+		}
+	}
+
+	function initGoogleSignIn() {
+		if (!googleButtonDiv || !window.google?.accounts) return;
+		window.google.accounts.id.initialize({
+			client_id: PUBLIC_GOOGLE_CLIENT_ID,
+			callback: (response: { credential: string }) => {
+				handleGoogleCredential(response.credential);
+			}
+		});
+		window.google.accounts.id.renderButton(googleButtonDiv, {
+			type: 'standard',
+			theme: 'outline',
+			size: 'large',
+			width: String(googleButtonDiv.offsetWidth || 400)
+		});
+	}
+
+	onMount(() => {
+		if (window.google?.accounts) {
+			initGoogleSignIn();
+		} else {
+			const script = document.getElementById('google-gsi') as HTMLScriptElement | null;
+			if (script) {
+				script.addEventListener('load', initGoogleSignIn);
+			}
+		}
+	});
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
@@ -62,6 +112,12 @@
 		<Card.Content>
 			<form onsubmit={handleSubmit}>
 				<Field.Group>
+					<Field.Field>
+						<div bind:this={googleButtonDiv} class="flex w-full justify-center"></div>
+					</Field.Field>
+					<Field.Separator class="*:data-[slot=field-separator-content]:bg-card">
+						Or continue with email
+					</Field.Separator>
 					{#if errorMessage}
 						<p class="text-center text-sm text-destructive">{errorMessage}</p>
 					{/if}

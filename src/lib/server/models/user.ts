@@ -39,6 +39,8 @@ export interface IUser extends Document {
 	name: string;
 	email: string;
 	password: string;
+	googleId?: string | null;
+	authProvider: 'local' | 'google';
 	verified: boolean;
 	emailToken?: string | null;
 	emailTokenExpires?: Date | null;
@@ -101,7 +103,9 @@ const userSchema = new Schema<IUser>(
 	{
 		name: { type: String, required: true, trim: true },
 		email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
-		password: { type: String, required: true },
+		password: { type: String, default: null },
+		googleId: { type: String, default: null, sparse: true, index: true },
+		authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
 		verified: { type: Boolean, default: false },
 		emailToken: { type: String, default: null },
 		emailTokenExpires: { type: Date, default: null },
