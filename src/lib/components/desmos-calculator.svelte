@@ -91,6 +91,7 @@
 			if (type === 'graphing') {
 				calculatorInstance = D.GraphingCalculator(calculatorContainer, {
 					keypad: true,
+					keypadActivated: true,
 					expressions: true,
 					settingsMenu: false
 				});
@@ -162,6 +163,7 @@
 		<button
 			type="button"
 			onclick={onClose}
+			onpointerdown={(e) => e.stopPropagation()}
 			class="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
 			aria-label="Close calculator"
 		>
@@ -171,20 +173,17 @@
 
 	<!-- Calculator container -->
 	<div class="relative min-h-0 flex-1">
+		<!-- Always in DOM and visible so Desmos initialises in a properly laid-out element -->
+		<div bind:this={calculatorContainer} class="h-full w-full"></div>
 		{#if loadError}
-			<div class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
+			<div class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-sm text-muted-foreground">
 				<p>Could not load the Desmos calculator.</p>
 				<p class="text-xs">Check your network connection and try again.</p>
 			</div>
 		{:else if !isReady}
-			<div class="flex h-full items-center justify-center text-sm text-muted-foreground">
+			<div class="absolute inset-0 flex items-center justify-center bg-card text-sm text-muted-foreground">
 				Loading calculator...
 			</div>
 		{/if}
-		<div
-			bind:this={calculatorContainer}
-			class="h-full w-full"
-			class:invisible={!isReady}
-		></div>
 	</div>
 </div>
