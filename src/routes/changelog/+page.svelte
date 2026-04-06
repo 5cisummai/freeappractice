@@ -5,6 +5,26 @@
 
 	const changelog = [
 		{
+			version: '1.3.3',
+			date: 'April 6, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added enhancements to the calculator experience',
+						'Improved reference sheets with better navigation and display'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Optimized code for better performance and reuse across components',
+						'Refined FRQ handling with slight quality improvements'
+					]
+				}
+			]
+		},
+		{
 			version: '1.3.2',
 			date: 'April 3, 2026',
 			sections: [
