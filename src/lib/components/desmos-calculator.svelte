@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { env } from '$env/dynamic/public';
+	import { PUBLIC_DESMOS_API_KEY } from '$env/static/public';
 	import XIcon from '@lucide/svelte/icons/x';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
 
@@ -129,7 +129,7 @@
 			}
 			const script = document.createElement('script');
 			script.id = 'desmos-api-script';
-			script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${env.PUBLIC_DESMOS_API_KEY ?? ''}`;
+			script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${PUBLIC_DESMOS_API_KEY ?? ''}`;
 			script.onload = () => {
 				script.dataset.loaded = 'true';
 				resolve();
