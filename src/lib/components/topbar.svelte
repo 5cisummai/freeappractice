@@ -41,7 +41,13 @@
 		</div>
 
 		<div class="flex items-center gap-3">
-			<Button onclick={toggleMobileMenu} variant="ghost" size="icon" class="block sm:hidden" aria-label="Toggle navigation">
+			<Button
+				onclick={toggleMobileMenu}
+				variant="ghost"
+				size="icon"
+				class="block sm:hidden"
+				aria-label="Toggle navigation"
+			>
 				{#if mobileOpen}
 					<XIcon class="h-5 w-5" />
 				{:else}

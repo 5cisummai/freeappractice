@@ -717,7 +717,7 @@
 					"rubric_structure": {
 						"thesis": "0–1: Defensible position; may not restate prompt or present both sides without a claim",
 						"evidence_and_commentary": "0–4: Evidence from 3+ sources with commentary; 4-point responses sustain a consistent line of reasoning",
-						"sophistication": "0–1: Genuine complexity of thought - qualifies argument, acknowledges tensions, or demonstrates purposeful style"
+						"sophistication": "0–1: Genuine complexity of thought - qualifies argument, acknowledges tensions, or demonstrates purposeful style, hard to earn"
 					},
 					"scoring_notes": [
 						"Sophistication point earned by only ~5–15% of students; requires genuine complexity, not sophisticated vocabulary",
@@ -774,7 +774,8 @@
 				"Rhetorical Analysis: explain HOW choices create effect - naming devices without effect analysis earns low scores",
 				"Synthesis: cite at least 3 sources with clear attribution",
 				"Argument: choose specific, developed evidence - no sources are provided",
-				"Sophistication point requires genuine complexity, not just advanced vocabulary"
+				"Sophistication point requires genuine complexity, not just advanced vocabulary",
+				"use only a single part for the entire essay - do not split into multiple sections"
 			]
 		},
 		{

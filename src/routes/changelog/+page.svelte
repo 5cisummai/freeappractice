@@ -5,6 +5,26 @@
 
 	const changelog = [
 		{
+			version: '1.3.3',
+			date: 'April 6, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added enhancements to the calculator experience',
+						'Improved reference sheets with better navigation and display'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Optimized code for better performance and reuse across components',
+						'Refined FRQ handling with slight quality improvements'
+					]
+				}
+			]
+		},
+		{
 			version: '1.3.2',
 			date: 'April 3, 2026',
 			sections: [
@@ -16,7 +36,7 @@
 						'Added quick actions to blog posts',
 						'Improved styling of the about page'
 					]
-				},
+				}
 			]
 		},
 		{
@@ -25,10 +45,7 @@
 			sections: [
 				{
 					title: 'New Additions',
-					items: [
-						'Added a blog with 4 articles so far',
-						'Added an about page'
-					]
+					items: ['Added a blog with 4 articles so far', 'Added an about page']
 				},
 				{
 					title: 'Improvements',
@@ -48,10 +65,7 @@
 			sections: [
 				{
 					title: 'Major Changes',
-					items: [
-						'Migrated project to SvelteKit while keeping compatible APIs'
-					]
-
+					items: ['Migrated project to SvelteKit while keeping compatible APIs']
 				},
 				{
 					title: 'New Features',
@@ -65,7 +79,6 @@
 					items: [
 						'Optimized SvelteKit integration for faster page loads and better routing',
 						'Fixed awkward UI for practicing questions on mobile devices'
-
 					]
 				}
 			]
@@ -407,7 +420,9 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a href="{resolve('/')}" class="text-sm text-muted-foreground hover:text-foreground">← Back to Home</a>
+			<a href={resolve('/')} class="text-sm text-muted-foreground hover:text-foreground"
+				>← Back to Home</a
+			>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Changelog</h1>

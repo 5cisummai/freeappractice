@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 function calcStreak(history: Array<{ attemptedAt: Date }>): number {
 	if (!history.length) return 0;
@@ -98,7 +99,7 @@ export const GET: RequestHandler = async (event) => {
 		});
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Stats error:', err);
+		logger.error('Stats error', { error: err });
 		return json({ error: 'Failed to fetch statistics' }, { status: 500 });
 	}
 };

@@ -158,8 +158,9 @@
 							{loading ? 'Creating account...' : 'Create Account'}
 						</Button>
 						<Field.Description class="text-center">
-							Already have an account? <a href={resolve('/login')} class="underline underline-offset-4"
-								>Sign in</a
+							Already have an account? <a
+								href={resolve('/login')}
+								class="underline underline-offset-4">Sign in</a
 							>
 						</Field.Description>
 					</Field.Field>
@@ -168,8 +169,9 @@
 		</Card.Content>
 	</Card.Root>
 	<Field.Description class="px-6 text-center">
-		By clicking continue, you agree to our <a href={resolve('/terms')} class="underline underline-offset-4"
-			>Terms of Service</a
+		By clicking continue, you agree to our <a
+			href={resolve('/terms')}
+			class="underline underline-offset-4">Terms of Service</a
 		>
 		and <a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 	</Field.Description>

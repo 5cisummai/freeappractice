@@ -7,7 +7,7 @@ published: true
 date: 2026-03-31
 ---
 
-*The free response section separates 3s from 5s. Here's what the data says about how to approach it.*
+_The free response section separates 3s from 5s. Here's what the data says about how to approach it._
 
 ---
 
@@ -25,7 +25,7 @@ Here's the research-informed breakdown of why students struggle with FRQs - and 
 
 Most students encounter FRQ practice in one of two ways: either they skip it entirely until the last few weeks, or they do a handful of questions, check their answers, and move on. Neither approach builds the actual skill that the AP exam is testing.
 
-The testing effect (covered extensively in cognitive science research by Roediger, Karpicke, and colleagues) shows that retrieval practice must be *repeated and spaced* to produce durable gains. Doing one FRQ on photosynthesis in February and considering it "done" is almost guaranteed to collapse under pressure in May. You need to practice the same cognitive moves - evidence selection, reasoning, argument construction - across many different prompts over many weeks.
+The testing effect (covered extensively in cognitive science research by Roediger, Karpicke, and colleagues) shows that retrieval practice must be _repeated and spaced_ to produce durable gains. Doing one FRQ on photosynthesis in February and considering it "done" is almost guaranteed to collapse under pressure in May. You need to practice the same cognitive moves - evidence selection, reasoning, argument construction - across many different prompts over many weeks.
 
 Think of FRQ preparation less like studying content and more like training a skill. A basketball player doesn't shoot free throws once in October and then trust that the muscle memory will be there in April. They shoot hundreds. Repeatedly. Across months.
 
@@ -33,7 +33,7 @@ Think of FRQ preparation less like studying content and more like training a ski
 
 ## The Anatomy of an AP FRQ Score
 
-Before you can improve your FRQ score, you need to understand *how* it's actually graded.
+Before you can improve your FRQ score, you need to understand _how_ it's actually graded.
 
 Every AP FRQ is scored against a detailed rubric developed by the College Board. These rubrics award points for specific elements - not for "effort" or "sounding smart." In AP History subjects, this typically means:
 
@@ -53,7 +53,7 @@ In AP Science subjects, FRQs often award points for: correctly identifying varia
 
 ### Failure Mode 1: The Vague Thesis
 
-A thesis that says "The Industrial Revolution had many significant effects on American society" earns zero points on virtually every AP rubric. It's not wrong. It's just not a *claim*. It doesn't stake an intellectual position that the rest of the essay can defend.
+A thesis that says "The Industrial Revolution had many significant effects on American society" earns zero points on virtually every AP rubric. It's not wrong. It's just not a _claim_. It doesn't stake an intellectual position that the rest of the essay can defend.
 
 A scorable thesis takes a position: "While the Industrial Revolution created new economic opportunities for the American working class, it fundamentally undermined workers' autonomy and physical wellbeing through dangerous labor conditions and suppressed wages, generating class tensions that defined American politics through the Progressive Era."
 
@@ -65,7 +65,7 @@ That sentence is specific, defensible, and establishes a framework for an argume
 
 Dropping facts into an essay without connecting them to your argument is one of the most common mistakes in AP free response, and it costs students points they've technically "earned" by knowing the content.
 
-Writing "The Triangle Shirtwaist Factory fire occurred in 1911" does not earn an evidence point on its own. Writing "The Triangle Shirtwaist Factory fire of 1911 killed 146 workers, the majority of whom were young immigrant women, and directly demonstrated how factory owners prioritized profit over worker safety - catalyzing public outrage that accelerated the passage of protective labor legislation" earns the point, because the evidence is *explained in service of the argument*.
+Writing "The Triangle Shirtwaist Factory fire occurred in 1911" does not earn an evidence point on its own. Writing "The Triangle Shirtwaist Factory fire of 1911 killed 146 workers, the majority of whom were young immigrant women, and directly demonstrated how factory owners prioritized profit over worker safety - catalyzing public outrage that accelerated the passage of protective labor legislation" earns the point, because the evidence is _explained in service of the argument_.
 
 **Fix:** After writing any piece of evidence in a practice essay, force yourself to write one more sentence beginning with "This demonstrates that..." or "This supports my argument because..." If you can't, the evidence isn't earning its keep.
 
@@ -75,7 +75,7 @@ In AP History, the top-tier "complexity" point is designed to reward sophisticat
 
 It isn't optional if you're aiming for a 5.
 
-Complexity doesn't mean writing a longer essay. It means doing one of the following: explaining why your argument has *limits* and what those limits reveal; making a meaningful connection between your topic and a different time period or geographical area; explaining a corroborating or contradicting piece of evidence and what that tension means; or demonstrating how different groups experienced the same event differently.
+Complexity doesn't mean writing a longer essay. It means doing one of the following: explaining why your argument has _limits_ and what those limits reveal; making a meaningful connection between your topic and a different time period or geographical area; explaining a corroborating or contradicting piece of evidence and what that tension means; or demonstrating how different groups experienced the same event differently.
 
 **Fix:** Build your complexity move into the introduction or conclusion, not as an afterthought. Decide before you start writing what your complexity angle will be. It's a lot easier to execute deliberately than to bolt on at the end.
 
@@ -92,7 +92,7 @@ Pick an FRQ prompt from a past College Board exam. Set the timer for the officia
 Get the official scoring guidelines (available free on the College Board website for most years). Score yourself honestly, point by point. Don't give yourself partial credit for things that are close. This is where most students go easy on themselves and undermine the whole exercise.
 
 **Step 3: Analysis Session (The Step Everyone Skips)**
-For each point you missed, ask: *Why* did I miss this? Was it a content gap - I didn't know the material? Was it a structural gap - I knew the material but didn't present it correctly? Or was it a comprehension gap - I didn't understand what the rubric was asking for?
+For each point you missed, ask: _Why_ did I miss this? Was it a content gap - I didn't know the material? Was it a structural gap - I knew the material but didn't present it correctly? Or was it a comprehension gap - I didn't understand what the rubric was asking for?
 
 These are different problems with different fixes. A content gap means you need to revisit the source material. A structural gap means you need more FRQ practice specifically on that element (thesis, evidence, etc.). A comprehension gap means you need to study the rubric more carefully.
 
@@ -108,9 +108,9 @@ This is the spacing element most students skip. Come back to the same prompt two
 
 **AP US History / AP World History / AP European History:** DBQs require document analysis, not just document summary. For every document, ask: What's the point of view? What's the audience? What's the purpose? How does the historical context shape this document's content? Get in the habit of writing these questions in the margin of every document before you start writing.
 
-**AP Biology / AP Chemistry / AP Physics:** FRQs in lab-based sciences often ask you to *design* an experiment, not just recall information. Practice identifying independent variables, dependent variables, and controls. Practice constructing appropriate graphs (labeled axes, appropriate scale, correct plot type). These are skills, not facts.
+**AP Biology / AP Chemistry / AP Physics:** FRQs in lab-based sciences often ask you to _design_ an experiment, not just recall information. Practice identifying independent variables, dependent variables, and controls. Practice constructing appropriate graphs (labeled axes, appropriate scale, correct plot type). These are skills, not facts.
 
-**AP Language and Composition:** Rhetorical analysis FRQs require you to name and explain *how* specific rhetorical choices create specific effects - not just that an author "uses pathos to appeal to emotions." Be specific about the technique, be specific about the effect, and connect them explicitly.
+**AP Language and Composition:** Rhetorical analysis FRQs require you to name and explain _how_ specific rhetorical choices create specific effects - not just that an author "uses pathos to appeal to emotions." Be specific about the technique, be specific about the effect, and connect them explicitly.
 
 **AP Calculus AB/BC:** FRQ work should be shown completely - write out every step, even if it seems obvious. Points are awarded for correct reasoning at each stage, and a computational error partway through can still earn most of the points if your setup is right.
 
@@ -118,7 +118,7 @@ This is the spacing element most students skip. Come back to the same prompt two
 
 ## The Bottom Line
 
-FRQ preparation is an investment in the highest-leverage part of the AP exam. Because these sections are scored by humans following rubrics (not algorithms), they're also the section where understanding the *structure* of what earns points can directly increase your score even before you know more content.
+FRQ preparation is an investment in the highest-leverage part of the AP exam. Because these sections are scored by humans following rubrics (not algorithms), they're also the section where understanding the _structure_ of what earns points can directly increase your score even before you know more content.
 
 Start practicing FRQs early. Practice them under real conditions. Score yourself honestly. And come back to them again and again - spaced out, retrieved from memory, analyzed carefully.
 
@@ -126,4 +126,4 @@ That's how a 3 becomes a 5.
 
 ---
 
-*Looking for a bank of practice questions to build your retrieval practice foundation? [freeappractice.org](https://freeappractice.org) generates unlimited AP multiple choice questions across all 20+ subjects with instant feedback - free, no signup required.*
+_Looking for a bank of practice questions to build your retrieval practice foundation? [freeappractice.org](https://freeappractice.org) generates unlimited AP multiple choice questions across all 20+ subjects with instant feedback - free, no signup required._

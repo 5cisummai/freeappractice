@@ -7,11 +7,11 @@ published: true
 date: 2026-03-31
 ---
 
-*A practical, opinionated guide to organizing your AP prep - without the generic advice that doesn't actually work.*
+_A practical, opinionated guide to organizing your AP prep - without the generic advice that doesn't actually work._
 
 ---
 
-Most AP study guides will tell you to "make a schedule," "review your notes," and "get a good night's sleep." That advice isn't wrong, it's just useless. You already know that reviewing your notes is a good idea. What you don't know is *which* notes, *how*, *when*, and in *what order* - and those decisions determine whether you're spending hours that actually change your score or hours that just make you feel like you're studying.
+Most AP study guides will tell you to "make a schedule," "review your notes," and "get a good night's sleep." That advice isn't wrong, it's just useless. You already know that reviewing your notes is a good idea. What you don't know is _which_ notes, _how_, _when_, and in _what order_ - and those decisions determine whether you're spending hours that actually change your score or hours that just make you feel like you're studying.
 
 This guide is more opinionated. It's built on what actually works for the specific structure of AP exams, and it'll push back on some conventional wisdom along the way.
 
@@ -21,7 +21,7 @@ This guide is more opinionated. It's built on what actually works for the specif
 
 Before you build a study plan, you need to deeply understand the exam you're preparing for. This sounds obvious, but most students have only a fuzzy sense of how their AP exams are actually structured.
 
-Here's the thing: AP exams are designed to test *college-level* reasoning, not high school-level memorization. The College Board has been increasingly explicit about this. The shift toward "application" over "recall" means that the student who can retrieve 200 facts will often be outscored by the student who can do 50 things *with* those facts.
+Here's the thing: AP exams are designed to test _college-level_ reasoning, not high school-level memorization. The College Board has been increasingly explicit about this. The shift toward "application" over "recall" means that the student who can retrieve 200 facts will often be outscored by the student who can do 50 things _with_ those facts.
 
 Before doing anything else, download the Course and Exam Description (CED) for your specific AP subject from the College Board website. It's free. It contains the exact skills the exam tests, the exact units and their weighting, and often sample questions. This is the single most underused resource in AP prep, and reading it will immediately sharpen your study focus.
 
@@ -37,7 +37,7 @@ Key things to identify:
 
 Here's a diagnostic approach most students don't do: before committing to a study plan, take a timed, full practice exam in exam conditions. No notes. Timer on. All sections.
 
-Score it. Not to evaluate yourself - to *locate* yourself.
+Score it. Not to evaluate yourself - to _locate_ yourself.
 
 Most students avoid this because it's uncomfortable and because they fear a bad score will demoralize them. But the information a full practice exam gives you is irreplaceable. You get to know:
 
@@ -104,7 +104,7 @@ There are now strong free platforms for AP practice questions. [freeappractice.o
 
 Practice questions are only as valuable as the attention you bring to the explanation. The goal of a practice session isn't to get a high score - it's to understand why every answer is right or wrong, including the ones you got right by guessing or process-of-elimination. A student who does 10 practice questions and reads every explanation carefully will outperform a student who does 50 practice questions and just checks the score.
 
-When you get a question wrong, your job is to trace back to *why*: Was it a knowledge gap? A reasoning error? A misread? Log these in a notebook or spreadsheet. The pattern of your errors will reveal your real gaps more honestly than you could identify on your own.
+When you get a question wrong, your job is to trace back to _why_: Was it a knowledge gap? A reasoning error? A misread? Log these in a notebook or spreadsheet. The pattern of your errors will reveal your real gaps more honestly than you could identify on your own.
 
 ---
 

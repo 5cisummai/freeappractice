@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { chat } from '$lib/server/services/tutor';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -41,11 +42,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 					controller.enqueue(encoder.encode('data: [DONE]\n\n'));
 				} catch (err) {
-					console.error('Tutor stream error:', err);
+					logger.error('Tutor stream error', { error: err });
 					controller.enqueue(
-						new TextEncoder().encode(
-							`data: ${JSON.stringify({ error: 'Stream error occurred' })}\n\n`
-						)
+						encoder.encode(`data: ${JSON.stringify({ error: 'Stream error occurred' })}\n\n`)
 					);
 				} finally {
 					controller.close();
@@ -61,7 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		});
 	} catch (err) {
-		console.error('Tutor chat error:', err);
+		logger.error('Tutor chat error', { error: err });
 		return json({ error: 'Failed to start tutor chat' }, { status: 500 });
 	}
 };

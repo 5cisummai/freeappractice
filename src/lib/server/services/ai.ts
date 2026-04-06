@@ -12,6 +12,9 @@ const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? env.OPENAI_URL ?? 'https://api.op
 const ADVANCED_MODEL = env.ADVANCED_MODEL ?? 'gpt-5-mini';
 const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-nano';
 
+const LATEX_RULE =
+	'For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.';
+
 // ── Unit context lookup ─────────────────────────────────────
 interface UnitContext {
 	description: string;
@@ -210,6 +213,100 @@ function buildClient(): OpenAI {
 	return new OpenAI({ baseURL: OPENAI_BASE_URL, apiKey: OPEN_AI_KEY });
 }
 
+// ── Shared prompt-section builders ─────────────────────────
+
+interface UnitPromptSections {
+	unitContext: string;
+	keywordsContext: string;
+	courseNotesContext: string;
+}
+
+function buildUnitSections(
+	className: string,
+	unit: string | undefined,
+	questionLabel = 'question'
+): UnitPromptSections {
+	if (!className || !unit) return { unitContext: '', keywordsContext: '', courseNotesContext: '' };
+	const ctx = getUnitContextData(className, unit);
+	if (!ctx) return { unitContext: '', keywordsContext: '', courseNotesContext: '' };
+	return {
+		unitContext: `\nUNIT CONTEXT: ${unit}\n${ctx.description}\nKey Topics: ${ctx.topics.join(', ')}\n`,
+		keywordsContext:
+			ctx.keywords.length > 0
+				? `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your ${questionLabel} MUST focus ONLY on these specific keywords and topics. ***\n`
+				: '',
+		courseNotesContext: ctx.importantNotes ? `\nCOURSE-GUIDANCE: ${ctx.importantNotes}\n` : ''
+	};
+}
+
+function buildDiversitySection(
+	recentTopics: string[] | undefined,
+	opts: { label: string; avoidLabel: string; pickLabel: string }
+): string {
+	if (!recentTopics?.length) return '';
+	return (
+		`\nDIVERSITY REQUIREMENT — RECENTLY COVERED ${opts.label} (DO NOT REPEAT THESE):\n` +
+		recentTopics.map((t) => `  - ${t}`).join('\n') +
+		`\nYou MUST choose a DIFFERENT ${opts.avoidLabel} from those listed above. ${opts.pickLabel}\n`
+	);
+}
+
+function buildFRQSpecSections(frqSpec: FRQSpecContext | null): string {
+	if (!frqSpec) return '';
+	const sections: Array<[string, string]> = [
+		[
+			'\nFRQ EXAM OVERVIEW (use for point distribution and structure):\n',
+			frqSpec.frqOverview
+		],
+		[
+			'\nKNOWN FRQ QUESTION TYPES FOR THIS COURSE (choose the most relevant for the unit):\n',
+			frqSpec.questionTypes
+		],
+		['\nRUBRIC CONVENTIONS (follow strictly):\n', frqSpec.rubricConventions],
+		['\nCOURSE-SPECIFIC IMPORTANT NOTES:\n', frqSpec.importantNotes],
+		[
+			'\nAP TASK VERB DEFINITIONS (use the correct verb and match the expected depth of response):\n',
+			frqSpec.globalTaskVerbs
+		],
+		[
+			'\nUNIVERSAL AP FRQ ERRORS TO AVOID in your generated question, scoring criteria, and model answers:\n',
+			frqSpec.universalErrors
+		]
+	];
+	return sections
+		.filter(([, value]) => value)
+		.map(([header, value]) => header + value + '\n')
+		.join('');
+}
+
+// ── Shared OpenAI completion executor ──────────────────────
+
+async function runStructuredCompletion<T>(
+	callName: string,
+	params: Parameters<OpenAI['chat']['completions']['parse']>[0],
+	logContext: Record<string, unknown>
+): Promise<{ parsed: T; model: string }> {
+	const client = buildClient();
+	const doneAiCall = logger.aiCall(callName, params.model, logContext);
+	let completion;
+	try {
+		completion = await client.chat.completions.parse(params);
+	} catch (err) {
+		logger.error(`[ai] ${callName} failed`, { ...logContext, model: params.model, error: err });
+		throw err;
+	}
+	const msg = completion?.choices?.[0]?.message;
+	if (!msg) throw new Error('No message returned from provider');
+	if (msg.refusal) throw new Error('Content refused by provider');
+	const parsed = msg.parsed as T;
+	if (!parsed) throw new Error('No parsed output from structured response');
+	doneAiCall({
+		promptTokens: completion.usage?.prompt_tokens,
+		completionTokens: completion.usage?.completion_tokens
+	});
+	return { parsed, model: params.model };
+}
+
 // ── Zod schema for structured response ─────────────────────
 const APQuestion = z.object({
 	question: z
@@ -250,38 +347,21 @@ export async function generateAPQuestion(opts: {
 	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
-	let question = `Create an AP-level practice question for ${className}`;
-	if (unit) question += ` covering ${unit}`;
-	question += '.\n\nReturn ONLY the JSON object, no other text.';
+	const { unitContext, keywordsContext, courseNotesContext } = buildUnitSections(
+		className,
+		unit,
+		'question'
+	);
+	const diversitySection = buildDiversitySection(recentTopics, {
+		label: 'TOPICS',
+		avoidLabel: 'subtopic, concept, or scenario',
+		pickLabel:
+			'Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.'
+	});
 
-	let unitContext = '';
-	let keywordsContext = '';
-	let courseNotesContext = '';
-
-	if (className && unit) {
-		const ctx = getUnitContextData(className, unit);
-		if (ctx) {
-			unitContext = `\nUNIT CONTEXT: ${unit}\n${ctx.description}\nKey Topics: ${ctx.topics.join(', ')}\n`;
-			if (ctx.keywords.length > 0) {
-				keywordsContext = `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your question MUST focus ONLY on these specific keywords and topics. ***\n`;
-			}
-			if (ctx.importantNotes) {
-				courseNotesContext = `\nCOURSE-GUIDANCE: ${ctx.importantNotes}\n`;
-			}
-		}
-	}
-
-	const diversitySection =
-		recentTopics && recentTopics.length > 0
-			? `\nDIVERSITY REQUIREMENT — RECENTLY COVERED TOPICS (DO NOT REPEAT THESE):\n${recentTopics.map((t) => `  - ${t}`).join('\n')}\nYou MUST choose a DIFFERENT subtopic, concept, or scenario from those listed above. Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.\n`
-			: '';
-
-	const isBiology = className?.toLowerCase().includes('biology');
+	const isBiology = className.toLowerCase().includes('biology');
 	const difficultyGuidance = isBiology
-		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:
-- Focus on conceptual understanding and application, not memorization of obscure details
-- Match the difficulty of questions in the official AP Biology Course and Exam Description
-- Emphasize scientific practices over pure recall`
+		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Match the difficulty of questions in the official AP Biology Course and Exam Description\n- Emphasize scientific practices over pure recall`
 		: '';
 
 	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
@@ -300,7 +380,8 @@ QUESTION QUALITY:
 - Vary the cognitive level: alternate between recall, application, analysis, and evaluation questions
 
 FORMATTING:
-- Use perfect markdown formatting for any math/science notation and for code blocks use the triple backtick syntax (\`\`\`) to enclose code.
+- ${LATEX_RULE}
+- For code blocks use the triple backtick syntax (\`\`\`) to enclose code.
 
 EXPLANATION:
 - Explain why the correct answer is right
@@ -311,38 +392,27 @@ EXPLANATION:
 OUTPUT:
 - Return ONLY the JSON object matching the schema; no text before or after the JSON`;
 
-	const client = buildClient();
 	const model = selectModelForClass(className);
-
-	const completionParams: Parameters<typeof client.chat.completions.parse>[0] = {
+	const completionParams: Parameters<OpenAI['chat']['completions']['parse']>[0] = {
 		model,
 		messages: [
 			{ role: 'system', content: systemPrompt },
-			{ role: 'user', content: question }
+			{
+				role: 'user',
+				content: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
+			}
 		],
 		response_format: zodResponseFormat(APQuestion, 'ap_question')
 	};
 	if (model === ADVANCED_MODEL) {
-		(completionParams as unknown as Record<string, unknown>).reasoning_effort = 'low';
+		(completionParams as unknown as Record<string, unknown>).reasoning_effort = 'medium';
 	}
 
-	const doneAiCall = logger.aiCall('generateAPQuestion', model, { className, unit });
-	let completion;
-	try {
-		completion = await client.chat.completions.parse(completionParams);
-	} catch (err) {
-		logger.error('[ai] generateAPQuestion failed', { className, unit, model, error: err });
-		throw err;
-	}
-	const msg = completion?.choices?.[0]?.message;
-	if (!msg) throw new Error('No message returned from provider');
-	if (msg.refusal) throw new Error('Content refused by provider');
-	const parsed = msg.parsed;
-	if (!parsed) throw new Error('No parsed output from structured response');
-	doneAiCall({
-		promptTokens: completion.usage?.prompt_tokens,
-		completionTokens: completion.usage?.completion_tokens
-	});
+	const { parsed } = await runStructuredCompletion<APQuestionData>(
+		'generateAPQuestion',
+		completionParams,
+		{ className, unit }
+	);
 
 	// Fire-and-forget S3 save - don't block the response
 	let questionId: string | undefined;
@@ -404,53 +474,19 @@ export async function generateFRQQuestion(opts: {
 	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
-	let unitContext = '';
-	let keywordsContext = '';
-	let courseNotesContext = '';
+	const { unitContext, keywordsContext, courseNotesContext } = buildUnitSections(
+		className,
+		unit,
+		'FRQ'
+	);
+	const frqSpecSections = buildFRQSpecSections(getFRQSpecData(className));
+	const diversitySection = buildDiversitySection(recentTopics, {
+		label: 'FRQ TOPICS',
+		avoidLabel: 'scenario, question type, or concept',
+		pickLabel: 'Select a fresh context or a less-common but exam-relevant FRQ type.'
+	});
 
-	if (className && unit) {
-		const ctx = getUnitContextData(className, unit);
-		if (ctx) {
-			unitContext = `\nUNIT CONTEXT: ${unit}\n${ctx.description}\nKey Topics: ${ctx.topics.join(', ')}\n`;
-			if (ctx.keywords.length > 0) {
-				keywordsContext = `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your FRQ MUST focus ONLY on these specific keywords and topics. ***\n`;
-			}
-			if (ctx.importantNotes) {
-				courseNotesContext = `\nCOURSE-GUIDANCE: ${ctx.importantNotes}\n`;
-			}
-		}
-	}
-
-	const frqSpec = getFRQSpecData(className);
-
-	let frqOverviewSection = '';
-	let questionTypesSection = '';
-	let rubricSection = '';
-	let importantNotesSection = '';
-	let taskVerbsSection = '';
-	let universalErrorsSection = '';
-
-	if (frqSpec) {
-		if (frqSpec.frqOverview)
-			frqOverviewSection = `\nFRQ EXAM OVERVIEW (use for point distribution and structure):\n${frqSpec.frqOverview}\n`;
-		if (frqSpec.questionTypes)
-			questionTypesSection = `\nKNOWN FRQ QUESTION TYPES FOR THIS COURSE (choose the most relevant for the unit):\n${frqSpec.questionTypes}\n`;
-		if (frqSpec.rubricConventions)
-			rubricSection = `\nRUBRIC CONVENTIONS (follow strictly):\n${frqSpec.rubricConventions}\n`;
-		if (frqSpec.importantNotes)
-			importantNotesSection = `\nCOURSE-SPECIFIC IMPORTANT NOTES:\n${frqSpec.importantNotes}\n`;
-		if (frqSpec.globalTaskVerbs)
-			taskVerbsSection = `\nAP TASK VERB DEFINITIONS (use the correct verb and match the expected depth of response):\n${frqSpec.globalTaskVerbs}\n`;
-		if (frqSpec.universalErrors)
-			universalErrorsSection = `\nUNIVERSAL AP FRQ ERRORS TO AVOID in your generated question, scoring criteria, and model answers:\n${frqSpec.universalErrors}\n`;
-	}
-
-	const frqDiversitySection =
-		recentTopics && recentTopics.length > 0
-			? `\nDIVERSITY REQUIREMENT — RECENTLY COVERED FRQ TOPICS (DO NOT REPEAT THESE):\n${recentTopics.map((t) => `  - ${t}`).join('\n')}\nYou MUST choose a DIFFERENT scenario, question type, or concept from those listed above. Select a fresh context or a less-common but exam-relevant FRQ type.\n`
-			: '';
-
-	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqOverviewSection}${questionTypesSection}${rubricSection}${importantNotesSection}${taskVerbsSection}${universalErrorsSection}${frqDiversitySection}
+	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqSpecSections}${diversitySection}
 
 CRITICAL UNIT SCOPE: Stay strictly within the specified unit's keywords and topics.
 
@@ -466,40 +502,25 @@ QUALITY:
 - The first sub-part should be the easiest; each subsequent part increases in difficulty and builds logically on previous parts
 - Scoring criteria must be specific, rubric-aligned, and unambiguous - use the rubric conventions above
 - Model answers must be complete and earn full credit
-- Use LaTeX for all math/science notation`;
+- ${LATEX_RULE}`;
 
-	const userMessage = `Create an AP-level FRQ for ${className}${unit ? ` covering ${unit}` : ''}.`;
-
-	const client = buildClient();
 	const model = selectModelForClass(className);
-
-	const completionParams: Parameters<typeof client.chat.completions.parse>[0] = {
-		model,
-		messages: [
-			{ role: 'system', content: systemPrompt },
-			{ role: 'user', content: userMessage }
-		],
-		response_format: zodResponseFormat(FRQQuestion, 'frq_question'),
-		reasoning_effort: 'low'
-	};
-
-	const doneAiCall = logger.aiCall('generateFRQQuestion', model, { className, unit });
-	let completion;
-	try {
-		completion = await client.chat.completions.parse(completionParams);
-	} catch (err) {
-		logger.error('[ai] generateFRQQuestion failed', { className, unit, model, error: err });
-		throw err;
-	}
-	const msg = completion?.choices?.[0]?.message;
-	if (!msg) throw new Error('No message returned from provider');
-	if (msg.refusal) throw new Error('Content refused by provider');
-	const parsed = msg.parsed;
-	if (!parsed) throw new Error('No parsed output from structured response');
-	doneAiCall({
-		promptTokens: completion.usage?.prompt_tokens,
-		completionTokens: completion.usage?.completion_tokens
-	});
+	const { parsed } = await runStructuredCompletion<FRQQuestionData>(
+		'generateFRQQuestion',
+		{
+			model,
+			messages: [
+				{ role: 'system', content: systemPrompt },
+				{
+					role: 'user',
+					content: `Create an AP-level FRQ for ${className}${unit ? ` covering ${unit}` : ''}.`
+				}
+			],
+			response_format: zodResponseFormat(FRQQuestion, 'frq_question'),
+			reasoning_effort: 'medium'
+		},
+		{ className, unit }
+	);
 
 	return { question: parsed, provider: 'openai', model };
 }
@@ -555,37 +576,22 @@ Student Response: ${response}`;
 		})
 		.join('\n\n');
 
-	const systemPrompt = `You are an experienced AP exam grader. Grade the following student FRQ response for ${className}${unit ? `, ${unit}` : ''} strictly and fairly according to the scoring criteria provided. Award partial credit where appropriate.`;
-
-	const userMessage = `Grade the following FRQ attempt:\n\n${partsText}`;
-
-	const client = buildClient();
 	const model = 'gpt-4.1-mini';
-
-	const doneAiCall = logger.aiCall('gradeFRQResponse', model, { className, unit });
-	let completion;
-	try {
-		completion = await client.chat.completions.parse({
+	const { parsed } = await runStructuredCompletion<FRQGradeData>(
+		'gradeFRQResponse',
+		{
 			model,
 			messages: [
-				{ role: 'system', content: systemPrompt },
-				{ role: 'user', content: userMessage }
+				{
+					role: 'system',
+					content: `You are an experienced AP exam grader. Grade the following student FRQ response for ${className}${unit ? `, ${unit}` : ''} strictly and fairly according to the scoring criteria provided. Award partial credit where appropriate.`
+				},
+				{ role: 'user', content: `Grade the following FRQ attempt:\n\n${partsText}` }
 			],
 			response_format: zodResponseFormat(FRQGradeResult, 'frq_grade')
-		});
-	} catch (err) {
-		logger.error('[ai] gradeFRQResponse failed', { className, unit, model, error: err });
-		throw err;
-	}
-	const msg = completion?.choices?.[0]?.message;
-	if (!msg) throw new Error('No message returned from provider');
-	if (msg.refusal) throw new Error('Content refused by provider');
-	const parsed = msg.parsed;
-	if (!parsed) throw new Error('No parsed output from structured response');
-	doneAiCall({
-		promptTokens: completion.usage?.prompt_tokens,
-		completionTokens: completion.usage?.completion_tokens
-	});
+		},
+		{ className, unit }
+	);
 
 	return { grade: parsed, provider: 'openai', model };
 }

@@ -50,7 +50,10 @@ test.describe('public app smoke checks', () => {
 		await page.goto('/login');
 
 		await expect(page).toHaveTitle('Login – Free AP Practice');
-		await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+		await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+			'content',
+			'noindex, nofollow'
+		);
 		await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
 	});

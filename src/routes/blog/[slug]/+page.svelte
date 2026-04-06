@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
@@ -75,139 +74,157 @@
 
 	<main class="flex-1">
 		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:py-16">
-		<div class="flex items-start justify-center gap-10">
-
-		<article class="w-full min-w-0 max-w-3xl">
-			<a
-				href={resolve('/blog')}
-				class="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
-				>
-					<path d="m15 18-6-6 6-6" />
-				</svg>
-				All posts
-			</a>
-
-			{#if data.post.coverImage}
-				<img
-					src={data.post.coverImage}
-					alt={data.post.title}
-					class="mb-8 h-64 w-full rounded-xl object-cover sm:h-80"
-				/>
-			{/if}
-
-			{#if data.post.tags.length > 0}
-				<div class="mb-4 flex flex-wrap gap-2">
-					{#each data.post.tags as tag (tag)}
-						<span
-							class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground"
+			<div class="flex items-start justify-center gap-10">
+				<article class="w-full max-w-3xl min-w-0">
+					<a
+						href={resolve('/blog')}
+						class="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
 						>
-							{tag}
-						</span>
-					{/each}
-				</div>
-			{/if}
+							<path d="m15 18-6-6 6-6" />
+						</svg>
+						All posts
+					</a>
 
-			<h1 class="mb-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-				{data.post.title}
-			</h1>
+					{#if data.post.coverImage}
+						<img
+							src={data.post.coverImage}
+							alt={data.post.title}
+							class="mb-8 h-64 w-full rounded-xl object-cover sm:h-80"
+						/>
+					{/if}
 
-			<p class="mb-4 text-base leading-relaxed text-muted-foreground">
-				{data.post.excerpt}
-			</p>
-
-			<p class="mb-8 text-sm text-muted-foreground">
-				{formatDate(data.post.publishedAt ?? data.post.createdAt)}
-			</p>
-
-			<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
-			<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
-				{@html data.htmlContent}
-			</div>
-
-			<div class="mt-12 border-t border-border/70 pt-8">
-				<a
-					href={resolve('/blog')}
-					class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-4 w-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<path d="m15 18-6-6 6-6" />
-					</svg>
-					Back to Blog
-				</a>
-			</div>
-		</article>
-
-		<aside class="hidden w-64 shrink-0 lg:sticky lg:top-8 lg:block lg:self-start xl:w-72">
-			<div class="flex flex-col gap-4">
-
-				<div class="rounded-xl border border-border/60 bg-card p-4">
-					<p class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Free AP Practice</p>
-					<p class="mb-2 text-xs text-muted-foreground">No Strings Attached!</p>
-					<h2 class="mb-3 text-sm font-semibold leading-snug text-foreground">Ready to test yourself?</h2>
-					<button
-						onclick={goToPractice}
-						class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
-					>
-						Start Practicing →
-					</button>
-				</div>
-
-				{#if daysUntilExamStart > 0}
-				<div class="rounded-xl border border-border/60 bg-card p-4 text-center">
-					<p class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">AP Exams begin in</p>
-					<p class="mt-1 text-3xl font-bold tabular-nums text-foreground">{daysUntilExamStart}</p>
-					<p class="text-[11px] text-muted-foreground">{daysUntilExamStart === 1 ? 'day' : 'days'}</p>
-				</div>
-				{/if}
-
-				<div class="rounded-xl border border-border/60 bg-card p-4">
-					<p class="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Top Study Guides</p>
-					<ul class="flex flex-col gap-1.5">
-						{#each popularPosts.filter(p => p.slug !== data.post.slug) as post (post.slug)}
-							<li>
-								<a
-									href={resolve(`/blog/${post.slug}`)}
-									class="block rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
+					{#if data.post.tags.length > 0}
+						<div class="mb-4 flex flex-wrap gap-2">
+							{#each data.post.tags as tag (tag)}
+								<span
+									class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground"
 								>
-									{post.title}
-								</a>
-							</li>
-						{/each}
-					</ul>
-				</div>
+									{tag}
+								</span>
+							{/each}
+						</div>
+					{/if}
 
-				<div class="rounded-xl border border-border/60 bg-card p-4">
-					<p class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">About</p>
-					<p class="text-xs leading-relaxed text-muted-foreground">
-						FreeAPPractice.org is a free, student-built tool that utilizes AI to create unlimited AP-style practice questions across 20+ subjects to help students prepare.
+					<h1 class="mb-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+						{data.post.title}
+					</h1>
+
+					<p class="mb-4 text-base leading-relaxed text-muted-foreground">
+						{data.post.excerpt}
 					</p>
-				</div>
 
+					<p class="mb-8 text-sm text-muted-foreground">
+						{formatDate(data.post.publishedAt ?? data.post.createdAt)}
+					</p>
+
+					<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
+					<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html data.htmlContent}
+					</div>
+
+					<div class="mt-12 border-t border-border/70 pt-8">
+						<a
+							href={resolve('/blog')}
+							class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-4 w-4"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<path d="m15 18-6-6 6-6" />
+							</svg>
+							Back to Blog
+						</a>
+					</div>
+				</article>
+
+				<aside class="hidden w-64 shrink-0 lg:sticky lg:top-8 lg:block lg:self-start xl:w-72">
+					<div class="flex flex-col gap-4">
+						<div class="rounded-xl border border-border/60 bg-card p-4">
+							<p
+								class="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+							>
+								Free AP Practice
+							</p>
+							<p class="mb-2 text-xs text-muted-foreground">No Strings Attached!</p>
+							<h2 class="mb-3 text-sm leading-snug font-semibold text-foreground">
+								Ready to test yourself?
+							</h2>
+							<button
+								onclick={goToPractice}
+								class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+							>
+								Start Practicing →
+							</button>
+						</div>
+
+						{#if daysUntilExamStart > 0}
+							<div class="rounded-xl border border-border/60 bg-card p-4 text-center">
+								<p class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+									AP Exams begin in
+								</p>
+								<p class="mt-1 text-3xl font-bold text-foreground tabular-nums">
+									{daysUntilExamStart}
+								</p>
+								<p class="text-[11px] text-muted-foreground">
+									{daysUntilExamStart === 1 ? 'day' : 'days'}
+								</p>
+							</div>
+						{/if}
+
+						<div class="rounded-xl border border-border/60 bg-card p-4">
+							<p
+								class="mb-3 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+							>
+								Top Study Guides
+							</p>
+							<ul class="flex flex-col gap-1.5">
+								{#each popularPosts.filter((p) => p.slug !== data.post.slug) as post (post.slug)}
+									<li>
+										<a
+											href={resolve(`/blog/${post.slug}`)}
+											class="block rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
+										>
+											{post.title}
+										</a>
+									</li>
+								{/each}
+							</ul>
+						</div>
+
+						<div class="rounded-xl border border-border/60 bg-card p-4">
+							<p
+								class="mb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+							>
+								About
+							</p>
+							<p class="text-xs leading-relaxed text-muted-foreground">
+								FreeAPPractice.org is a free, student-built tool that utilizes AI to create
+								unlimited AP-style practice questions across 20+ subjects to help students prepare.
+							</p>
+						</div>
+					</div>
+				</aside>
 			</div>
-		</aside>
-
-		</div>
 		</div>
 	</main>
 
@@ -217,12 +234,7 @@
 <style>
 	.blog-serif {
 		font-family:
-			'Iowan Old Style',
-			'Palatino Linotype',
-			Palatino,
-			'Book Antiqua',
-			Georgia,
-			'Times New Roman',
+			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
 			serif;
 	}
 
@@ -232,12 +244,7 @@
 		line-height: 1.75;
 		font-size: 1rem;
 		font-family:
-			'Iowan Old Style',
-			'Palatino Linotype',
-			Palatino,
-			'Book Antiqua',
-			Georgia,
-			'Times New Roman',
+			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
 			serif;
 	}
 	:global(.prose h1),
@@ -250,10 +257,18 @@
 		margin-bottom: 0.75em;
 		color: inherit;
 	}
-	:global(.prose h1) { font-size: 2em; }
-	:global(.prose h2) { font-size: 1.5em; }
-	:global(.prose h3) { font-size: 1.25em; }
-	:global(.prose h4) { font-size: 1.1em; }
+	:global(.prose h1) {
+		font-size: 2em;
+	}
+	:global(.prose h2) {
+		font-size: 1.5em;
+	}
+	:global(.prose h3) {
+		font-size: 1.25em;
+	}
+	:global(.prose h4) {
+		font-size: 1.1em;
+	}
 	:global(.prose p) {
 		margin-top: 0;
 		margin-bottom: 1.25em;
@@ -263,15 +278,23 @@
 		text-decoration: underline;
 		text-underline-offset: 3px;
 	}
-	:global(.prose a:hover) { opacity: 0.8; }
+	:global(.prose a:hover) {
+		opacity: 0.8;
+	}
 	:global(.prose ul),
 	:global(.prose ol) {
 		padding-left: 1.5em;
 		margin-bottom: 1.25em;
 	}
-	:global(.prose ul) { list-style-type: disc; }
-	:global(.prose ol) { list-style-type: decimal; }
-	:global(.prose li) { margin-bottom: 0.4em; }
+	:global(.prose ul) {
+		list-style-type: disc;
+	}
+	:global(.prose ol) {
+		list-style-type: decimal;
+	}
+	:global(.prose li) {
+		margin-bottom: 0.4em;
+	}
 	:global(.prose blockquote) {
 		border-left: 3px solid oklch(var(--border));
 		padding-left: 1em;

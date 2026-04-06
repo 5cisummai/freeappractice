@@ -65,7 +65,9 @@
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Blog</Card.Title>
-				<Card.Description>Read the latest in-house study guides and AP strategy posts.</Card.Description>
+				<Card.Description
+					>Read the latest in-house study guides and AP strategy posts.</Card.Description
+				>
 			</Card.Header>
 			<Card.Content class="space-y-4">
 				<div class="space-y-3">

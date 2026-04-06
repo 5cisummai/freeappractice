@@ -28,7 +28,10 @@ function getArg(flag: string): string | undefined {
 }
 
 const BASE_URL = (
-	getArg('--url') ?? process.env.WARM_CACHE_URL ?? process.env.PUBLIC_BASE_URL ?? 'http://localhost:5173'
+	getArg('--url') ??
+	process.env.WARM_CACHE_URL ??
+	process.env.PUBLIC_BASE_URL ??
+	'http://localhost:5173'
 ).replace(/\/$/, '');
 const POOL_SIZE = Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
 const CONCURRENCY = Math.max(1, parseInt(getArg('--concurrency') ?? '5', 10));
@@ -38,10 +41,7 @@ const DATABASE_URI = process.env.DATABASE_URI;
 const GENERATE_URL = `${BASE_URL}/api/question/cache/generate`;
 
 // ── Minimal Mongoose schema to count current pool size ───────
-const questionSchema = new mongoose.Schema(
-	{ apClass: String, unit: String },
-	{ timestamps: true }
-);
+const questionSchema = new mongoose.Schema({ apClass: String, unit: String }, { timestamps: true });
 const Question = mongoose.models['Question'] || mongoose.model('Question', questionSchema);
 
 // ── Single slot: delegate to the real generate endpoint ──────
@@ -83,8 +83,16 @@ function createLimiter(max: number) {
 	}
 
 	return async function limit<T>(fn: () => Promise<T>): Promise<T> {
-		await new Promise<void>((resolve) => { queue.push(resolve); next(); });
-		try { return await fn(); } finally { running--; next(); }
+		await new Promise<void>((resolve) => {
+			queue.push(resolve);
+			next();
+		});
+		try {
+			return await fn();
+		} finally {
+			running--;
+			next();
+		}
 	};
 }
 

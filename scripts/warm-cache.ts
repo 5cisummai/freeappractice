@@ -57,7 +57,11 @@ function createLimiter(max: number) {
 }
 
 // ── Per class+unit fill logic ───────────────────────────────
-async function fillUnit(className: string, unit: string, stats: { generated: number; skipped: number; failed: number }) {
+async function fillUnit(
+	className: string,
+	unit: string,
+	stats: { generated: number; skipped: number; failed: number }
+) {
 	const current = await Question.countDocuments({ apClass: className, unit });
 
 	if (current >= POOL_SIZE) {
@@ -99,7 +103,9 @@ async function fillUnit(className: string, unit: string, stats: { generated: num
 			process.stdout.write(`  GEN   ${className} / ${unit} (${after}/${POOL_SIZE})\n`);
 		} catch (err) {
 			stats.failed++;
-			process.stderr.write(`  FAIL  ${className} / ${unit}: ${err instanceof Error ? err.message : String(err)}\n`);
+			process.stderr.write(
+				`  FAIL  ${className} / ${unit}: ${err instanceof Error ? err.message : String(err)}\n`
+			);
 			// Back off and continue to next unit rather than crashing the whole run
 			await new Promise((r) => setTimeout(r, 2000));
 		}
@@ -114,7 +120,11 @@ async function main() {
 	console.log(`  Dry run       : ${isDryRun}`);
 	console.log(`  Class filter  : ${filterClass ?? '(all)'}\n`);
 
-	let courses = (apClassesData.courses as { name: string; semester1: string[]; semester2: string[] }[]);
+	let courses = apClassesData.courses as {
+		name: string;
+		semester1: string[];
+		semester2: string[];
+	}[];
 	if (filterClass) {
 		courses = courses.filter((c) => c.name.toLowerCase() === filterClass.toLowerCase());
 		if (courses.length === 0) {
@@ -132,7 +142,9 @@ async function main() {
 		}
 	}
 
-	console.log(`Filling ${combos.length} class+unit combination(s) across ${courses.length} course(s).`);
+	console.log(
+		`Filling ${combos.length} class+unit combination(s) across ${courses.length} course(s).`
+	);
 
 	if (!isDryRun) {
 		console.log('Connecting to MongoDB…');
@@ -143,7 +155,9 @@ async function main() {
 	const stats = { generated: 0, skipped: 0, failed: 0 };
 	const limit = createLimiter(MAX_CONCURRENT);
 
-	await Promise.all(combos.map((combo) => limit(() => fillUnit(combo.className, combo.unit, stats))));
+	await Promise.all(
+		combos.map((combo) => limit(() => fillUnit(combo.className, combo.unit, stats)))
+	);
 
 	console.log('\n── Summary ──────────────────────────────');
 	console.log(`  Generated : ${stats.generated}`);

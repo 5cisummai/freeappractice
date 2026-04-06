@@ -46,9 +46,11 @@
 
 	const nextBestUnit = $derived(() => {
 		if (!progressData.length) return null;
-		return [...progressData]
-			.filter((entry) => !!entry.apClass)
-			.sort((a, b) => a.mastery - b.mastery || a.totalAttempts - b.totalAttempts)[0] ?? null;
+		return (
+			[...progressData]
+				.filter((entry) => !!entry.apClass)
+				.sort((a, b) => a.mastery - b.mastery || a.totalAttempts - b.totalAttempts)[0] ?? null
+		);
 	});
 
 	const recommendedPracticeHref = $derived(() => {
@@ -56,9 +58,7 @@
 		if (!recommendation) return resolve('/app/practice');
 		const basePath = resolve('/app/practice');
 		const classParam = `apClass=${encodeURIComponent(recommendation.apClass)}`;
-		const unitParam = recommendation.unit
-			? `&unit=${encodeURIComponent(recommendation.unit)}`
-			: '';
+		const unitParam = recommendation.unit ? `&unit=${encodeURIComponent(recommendation.unit)}` : '';
 		return `${basePath}?${classParam}${unitParam}`;
 	});
 

@@ -118,14 +118,14 @@
 			</div>
 		{:else}
 			<div class="space-y-6">
-				{#each grouped() as [apClass, units]}
+				{#each grouped() as [apClass, units] (apClass)}
 					<Card.Root>
 						<Card.Header>
 							<Card.Title>{apClass}</Card.Title>
 						</Card.Header>
 						<Card.Content>
 							<div class="space-y-3">
-								{#each units as unit}
+								{#each units as unit (`${apClass}:${unit.unit || 'all-units'}`)}
 									<div class="flex items-center gap-4">
 										<div class="min-w-0 flex-1">
 											<p class="truncate text-sm font-medium">{unit.unit || 'All Units'}</p>

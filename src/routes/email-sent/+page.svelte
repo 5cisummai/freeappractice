@@ -6,7 +6,10 @@
 
 <svelte:head>
 	<title>Email Sent – Free AP Practice</title>
-	<meta name="description" content="Check your inbox for the next step in Free AP Practice account setup." />
+	<meta
+		name="description"
+		content="Check your inbox for the next step in Free AP Practice account setup."
+	/>
 	<meta name="robots" content="noindex, nofollow" />
 	<link rel="canonical" href="https://freeappractice.org/email-sent" />
 	<meta property="og:type" content="website" />

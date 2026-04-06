@@ -16,9 +16,7 @@ function normalizeUnit(unit?: string): string {
 
 /** Normalize and hash the FRQ prompt text for deduplication. */
 function computeHash(text: string): string {
-	return createHash('sha256')
-		.update(text.trim().toLowerCase().replace(/\s+/g, ' '))
-		.digest('hex');
+	return createHash('sha256').update(text.trim().toLowerCase().replace(/\s+/g, ' ')).digest('hex');
 }
 
 const replenishing = new Set<string>();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
@@ -7,6 +7,7 @@
 	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/rich-text.svelte';
+	import { getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';
@@ -36,10 +37,10 @@
 	let inputText = $state('');
 	let isStreaming = $state(false);
 	let hasGreeted = $state(false);
-	let scrollContainer = $state<HTMLDivElement | null>(null);
-	let inputElement = $state<HTMLTextAreaElement | null>(null);
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
+	let activeStreamController: AbortController | null = null;
+	let activeStreamId = 0;
 
 	// Drag state for the floating button
 	let btnX = $state(0);
@@ -54,6 +55,13 @@
 	const PANEL_HEIGHT = 480;
 	const VIEWPORT_MARGIN = 12;
 	const PANEL_GAP = 8;
+	const STREAM_TIMEOUT_MS = 30000;
+	const GREETING_FALLBACK =
+		"Hi! I'm here to help you understand this question. What would you like to know?";
+	const scrollTrigger = $derived.by(() => {
+		const lastMessage = messages[messages.length - 1];
+		return `${messages.length}:${lastMessage?.content.length ?? 0}`;
+	});
 
 	function clamp(value: number, min: number, max: number) {
 		return Math.min(max, Math.max(min, value));
@@ -100,6 +108,42 @@
 		return clamp(preferredTop, VIEWPORT_MARGIN, viewportHeight - panelHeight - VIEWPORT_MARGIN);
 	});
 
+	function invalidateActiveStream() {
+		activeStreamId += 1;
+		activeStreamController?.abort();
+		activeStreamController = null;
+		isStreaming = false;
+	}
+
+	function autofocusInput(node: HTMLTextAreaElement) {
+		const frame = requestAnimationFrame(() => node.focus());
+
+		return {
+			destroy() {
+				cancelAnimationFrame(frame);
+			}
+		};
+	}
+
+	function autoScrollMessages(node: HTMLDivElement, trigger: string) {
+		void trigger;
+		const scrollToBottom = () => {
+			node.scrollTop = node.scrollHeight;
+		};
+
+		let frame = requestAnimationFrame(scrollToBottom);
+
+		return {
+			update() {
+				cancelAnimationFrame(frame);
+				frame = requestAnimationFrame(scrollToBottom);
+			},
+			destroy() {
+				cancelAnimationFrame(frame);
+			}
+		};
+	}
+
 	async function fetchGreeting() {
 		if (hasGreeted || !question) return;
 		hasGreeted = true;
@@ -109,17 +153,18 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ question })
 			});
-			const data = (await res.json()) as { message?: string };
+			const data = await readJsonOrNull<{ error?: string; message?: string }>(res);
+			if (!res.ok) {
+				throw new Error(getResponseMessage(data, GREETING_FALLBACK));
+			}
 			messages.push({
 				role: 'assistant',
-				content:
-					data.message ??
-					"Hi! I'm here to help you understand this question. What would you like to know?"
+				content: data?.message ?? GREETING_FALLBACK
 			});
 		} catch {
 			messages.push({
 				role: 'assistant',
-				content: "Hi! I'm here to help you understand this question. What would you like to know?"
+				content: GREETING_FALLBACK
 			});
 		}
 	}
@@ -127,7 +172,6 @@
 	function handleOpen() {
 		isOpen = true;
 		fetchGreeting();
-		setTimeout(() => inputElement?.focus(), 200);
 	}
 
 	async function sendMessage() {
@@ -140,6 +184,11 @@
 		messages.push({ role: 'user', content: text });
 		messages.push({ role: 'assistant', content: '' });
 		const assistantIdx = messages.length - 1;
+		const streamId = activeStreamId + 1;
+		activeStreamId = streamId;
+		const controller = new AbortController();
+		activeStreamController = controller;
+		const timeoutId = window.setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
 
 		isStreaming = true;
 
@@ -147,6 +196,7 @@
 			const res = await fetch('/api/tutor/chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
+				signal: controller.signal,
 				body: JSON.stringify({
 					question,
 					answer,
@@ -159,7 +209,10 @@
 				})
 			});
 
-			if (!res.ok || !res.body) throw new Error('Stream failed');
+			if (!res.ok || !res.body) {
+				const payload = await readJsonOrNull<{ error?: string }>(res);
+				throw new Error(getResponseMessage(payload, 'The tutor is unavailable right now.'));
+			}
 
 			const reader = res.body.getReader();
 			const decoder = new TextDecoder();
@@ -167,7 +220,7 @@
 
 			while (true) {
 				const { done, value } = await reader.read();
-				if (done) break;
+				if (done || streamId !== activeStreamId) break;
 				buffer += decoder.decode(value, { stream: true });
 				const lines = buffer.split('\n');
 				buffer = lines.pop() ?? '';
@@ -175,20 +228,30 @@
 					if (!line.startsWith('data: ')) continue;
 					const data = line.slice(6).trim();
 					if (data === '[DONE]') continue;
-					try {
-						const parsed = JSON.parse(data) as { content?: string };
-						if (parsed.content) {
-							messages[assistantIdx].content += parsed.content;
-						}
-					} catch {
-						// ignore parse errors on individual chunks
+					const parsed = JSON.parse(data) as { content?: string; error?: string };
+					if (parsed.error) {
+						throw new Error(parsed.error);
+					}
+					if (parsed.content && streamId === activeStreamId) {
+						messages[assistantIdx].content += parsed.content;
 					}
 				}
 			}
-		} catch {
-			messages[assistantIdx].content = 'Sorry, something went wrong. Please try again.';
+		} catch (error) {
+			if (streamId !== activeStreamId) return;
+
+			messages[assistantIdx].content =
+				error instanceof DOMException && error.name === 'AbortError'
+					? 'The tutor response timed out. Please try again.'
+					: error instanceof Error && error.message
+						? error.message
+						: 'Sorry, something went wrong. Please try again.';
 		} finally {
-			isStreaming = false;
+			window.clearTimeout(timeoutId);
+			if (streamId === activeStreamId) {
+				isStreaming = false;
+				activeStreamController = null;
+			}
 		}
 	}
 
@@ -245,145 +308,126 @@
 		};
 	});
 
-	// Auto-scroll to bottom when messages update
-	$effect(() => {
-		// Track message count and last message content for streaming scroll
-		void messages.length;
-		const last = messages[messages.length - 1];
-		void last?.content;
-		if (scrollContainer) {
-			requestAnimationFrame(() => {
-				if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
-			});
-		}
-	});
-
-	// Reset state when question changes
-	$effect(() => {
-		void question;
-		messages = [];
-		hasGreeted = false;
-		if (isOpen && question) {
-			setTimeout(fetchGreeting, 50);
-		}
+	onDestroy(() => {
+		invalidateActiveStream();
 	});
 </script>
 
-	<!-- Chat panel: clamped to viewport, opens above or below the button -->
-	{#if isOpen}
-		<div
-			class="fixed z-50 flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
-			style="
+<!-- Chat panel: clamped to viewport, opens above or below the button -->
+{#if isOpen}
+	<div
+		class="fixed z-50 flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
+		style="
 				left: {panelLeft}px;
 				top: {panelTop}px;
 				width: {panelWidth}px;
 				height: {panelHeight}px;
 				overflow: hidden;
 			"
-			transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
+		transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
+	>
+		<!-- Header -->
+		<div
+			class="flex shrink-0 items-center justify-between border-b border-border bg-primary px-4 py-3"
 		>
-			<!-- Header -->
-			<div
-				class="flex shrink-0 items-center justify-between border-b border-border bg-primary px-4 py-3"
+			<div class="flex items-center gap-2">
+				<SparklesIcon class="h-4 w-4 text-primary-foreground" />
+				<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
+			</div>
+			<button
+				onclick={() => (isOpen = false)}
+				class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
+				aria-label="Close AI Tutor"
 			>
-				<div class="flex items-center gap-2">
-					<SparklesIcon class="h-4 w-4 text-primary-foreground" />
-					<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
+				<XIcon class="h-4 w-4" />
+			</button>
+		</div>
+
+		<!-- Messages -->
+		<div
+			use:autoScrollMessages={scrollTrigger}
+			class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+		>
+			{#if messages.length === 0}
+				<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
+					<span>Loading...</span>
 				</div>
+			{/if}
+			{#each messages as message, i (i)}
+				<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+					{#if message.role === 'user'}
+						<div
+							class="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+						>
+							{message.content}
+						</div>
+					{:else}
+						<div class="max-w-[90%] text-sm text-foreground/90">
+							{#if message.content}
+								<RichText text={message.content} />
+							{:else if isStreaming && i === messages.length - 1}
+								<span class="inline-flex gap-1 text-muted-foreground">
+									<span class="animate-bounce" style="animation-delay: 0ms">·</span>
+									<span class="animate-bounce" style="animation-delay: 100ms">·</span>
+									<span class="animate-bounce" style="animation-delay: 200ms">·</span>
+								</span>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+
+		<!-- Input -->
+		<div class="shrink-0 border-t border-border p-3">
+			<div class="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2">
+				<textarea
+					use:autofocusInput
+					bind:value={inputText}
+					onkeydown={handleKeydown}
+					oninput={(e) => autoResize(e.currentTarget)}
+					rows={1}
+					placeholder="Ask a question…"
+					disabled={isStreaming}
+					class="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+					style="max-height: 80px; overflow-y: auto;"
+				></textarea>
 				<button
-					onclick={() => (isOpen = false)}
-					class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
-					aria-label="Close AI Tutor"
+					onclick={sendMessage}
+					disabled={!inputText.trim() || isStreaming}
+					class="shrink-0 rounded-lg p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+					aria-label="Send message"
 				>
-					<XIcon class="h-4 w-4" />
+					<SendHorizontalIcon class="h-4 w-4" />
 				</button>
 			</div>
-
-			<!-- Messages -->
-			<div
-				bind:this={scrollContainer}
-				class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
-			>
-				{#if messages.length === 0}
-					<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
-						<span>Loading...</span>
-					</div>
-				{/if}
-				{#each messages as message, i (i)}
-					<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-						{#if message.role === 'user'}
-							<div
-								class="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
-							>
-								{message.content}
-							</div>
-						{:else}
-							<div class="max-w-[90%] text-sm text-foreground/90">
-								{#if message.content}
-									<RichText text={message.content} />
-								{:else if isStreaming && i === messages.length - 1}
-									<span class="inline-flex gap-1 text-muted-foreground">
-										<span class="animate-bounce" style="animation-delay: 0ms">·</span>
-										<span class="animate-bounce" style="animation-delay: 100ms">·</span>
-										<span class="animate-bounce" style="animation-delay: 200ms">·</span>
-									</span>
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{/each}
-			</div>
-
-			<!-- Input -->
-			<div class="shrink-0 border-t border-border p-3">
-				<div class="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2">
-					<textarea
-						bind:this={inputElement}
-						bind:value={inputText}
-						onkeydown={handleKeydown}
-						oninput={(e) => autoResize(e.currentTarget)}
-						rows={1}
-						placeholder="Ask a question…"
-						disabled={isStreaming}
-						class="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
-						style="max-height: 80px; overflow-y: auto;"
-					></textarea>
-					<button
-						onclick={sendMessage}
-						disabled={!inputText.trim() || isStreaming}
-						class="shrink-0 rounded-lg p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
-						aria-label="Send message"
-					>
-						<SendHorizontalIcon class="h-4 w-4" />
-					</button>
-				</div>
-			</div>
 		</div>
-	{/if}
+	</div>
+{/if}
 
-	<!-- Floating toggle button -->
-	<button
-		onpointerdown={onBtnPointerDown}
-		onpointermove={onBtnPointerMove}
-		onpointerup={onBtnPointerUp}
-		onclick={() => {
-			if (hasDragged) {
-				hasDragged = false;
-				return;
-			}
-			if (isOpen) {
-				isOpen = false;
-			} else {
-				handleOpen();
-			}
-		}}
-		class="fixed z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
-		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
-		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
-	>
-		{#if isOpen}
-			<XIcon class="h-5 w-5" />
-		{:else}
-			<MessageSquareIcon class="h-5 w-5" />
-		{/if}
-	</button>
+<!-- Floating toggle button -->
+<button
+	onpointerdown={onBtnPointerDown}
+	onpointermove={onBtnPointerMove}
+	onpointerup={onBtnPointerUp}
+	onclick={() => {
+		if (hasDragged) {
+			hasDragged = false;
+			return;
+		}
+		if (isOpen) {
+			isOpen = false;
+		} else {
+			handleOpen();
+		}
+	}}
+	class="fixed z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
+	style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
+	aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
+>
+	{#if isOpen}
+		<XIcon class="h-5 w-5" />
+	{:else}
+		<MessageSquareIcon class="h-5 w-5" />
+	{/if}
+</button>
