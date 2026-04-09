@@ -108,7 +108,7 @@
 		};
 	}
 
-	function loadDesmosScript(): Promise<void> {
+	function loadDesmosScript(apiKey: string): Promise<void> {
 		return new Promise((resolve, reject) => {
 			const desmosWindow = window as DesmosWindow;
 			if (desmosWindow.Desmos) {
@@ -129,7 +129,7 @@
 			}
 			const script = document.createElement('script');
 			script.id = 'desmos-api-script';
-			script.src = `https://www.desmos.com/api/v1.11/calculator.js?apiKey=${PUBLIC_DESMOS_API_KEY ?? ''}`;
+			script.src = `https://www.desmos.com/api/v1.12/calculator.js?apiKey=${encodeURIComponent(apiKey)}`;
 			script.onload = () => {
 				script.dataset.loaded = 'true';
 				resolve();
@@ -185,8 +185,17 @@
 			panelY = clamped.y;
 		};
 		window.addEventListener('resize', updateViewport);
+		const removeResize = () => window.removeEventListener('resize', updateViewport);
 
-		loadDesmosScript()
+		const apiKey = PUBLIC_DESMOS_API_KEY?.trim();
+		if (!apiKey) {
+			loadError = true;
+			loadErrorMessage =
+				'Add PUBLIC_DESMOS_API_KEY to your .env file. Get a key at https://www.desmos.com/my-api';
+			return removeResize;
+		}
+
+		loadDesmosScript(apiKey)
 			.then(() => initCalculator())
 			.catch((error) => {
 				if (!destroyed) {
@@ -198,9 +207,7 @@
 				}
 			});
 
-		return () => {
-			window.removeEventListener('resize', updateViewport);
-		};
+		return removeResize;
 	});
 
 	onDestroy(() => {
