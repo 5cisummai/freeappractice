@@ -142,9 +142,7 @@
 						</a>
 					</div>
 
-					<div
-						class="mt-4 min-h-[40rem] overflow-hidden rounded-xl border border-border bg-background"
-					>
+					<div class="mt-4 min-h-160 overflow-hidden rounded-xl border border-border bg-background">
 						<iframe src={resolvedPdfUrl} title="Reference Sheet PDF" class="h-full w-full"></iframe>
 					</div>
 				</div>
