@@ -2,8 +2,7 @@
 	"AP Biology": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Biology Formula Sheet",
-			"sections": [
+			"title": "AP Biology Formula Sheet",		"pdf": "ap-biology-equations-and-formulas-sheet.pdf",			"sections": [
 				{
 					"heading": "Population Genetics (Hardy-Weinberg)",
 					"content": "$$p + q = 1$$\n\n$$p^2 + 2pq + q^2 = 1$$"
@@ -30,8 +29,7 @@
 	"AP Chemistry": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Chemistry Formula Sheet",
-			"sections": [
+			"title": "AP Chemistry Formula Sheet",		"pdf": "ap-chemistry-equations-sheet.pdf",			"sections": [
 				{
 					"heading": "Gas Laws",
 					"content": "$$PV = nRT$$\n\n**Boyle's Law:** $P_1V_1 = P_2V_2$\n\n**Charles's Law:** $\\displaystyle\\frac{V_1}{T_1} = \\frac{V_2}{T_2}$\n\n**Combined:** $\\displaystyle\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}$\n\n**Dalton's Law:** $P_{total} = P_1 + P_2 + \\cdots$"
@@ -62,8 +60,7 @@
 	"AP Physics 1": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Physics 1 Formula Sheet",
-			"sections": [
+			"title": "AP Physics 1 Formula Sheet",		"pdf": "ap-physics-1-equations-sheet.pdf",			"sections": [
 				{
 					"heading": "Kinematics",
 					"content": "$$v = v_0 + at$$\n\n$$x = x_0 + v_0 t + \\tfrac{1}{2}at^2$$\n\n$$v^2 = v_0^2 + 2a\\Delta x$$\n\n$$\\bar{v} = \\frac{\\Delta x}{\\Delta t} \\qquad \\bar{a} = \\frac{\\Delta v}{\\Delta t}$$\n\n**Projectile (no air resistance):** horizontal $a = 0$, vertical $a = -g = -9.8$ m/s²"
@@ -94,8 +91,7 @@
 	"AP Physics 2": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Physics 2 Formula Sheet",
-			"sections": [
+			"title": "AP Physics 2 Formula Sheet",		"pdf": "ap-physics-2-equations-sheet.pdf",			"sections": [
 				{
 					"heading": "Electrostatics",
 					"content": "**Coulomb's Law:** $F = k\\dfrac{q_1 q_2}{r^2}$\n\n**Electric field:** $E = \\dfrac{F}{q} = k\\dfrac{Q}{r^2}$\n\n**Electric potential:** $V = k\\dfrac{Q}{r}$ \\qquad $W = q\\Delta V$\n\n**Capacitance:** $C = \\dfrac{Q}{V}$ \\qquad $U_C = \\tfrac{1}{2}CV^2$\n\n**Parallel-plate capacitor:** $C = \\dfrac{\\varepsilon_0 A}{d}$"
@@ -122,8 +118,7 @@
 	"AP Physics C: Mechanics": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Physics C: Mechanics Formula Sheet",
-			"sections": [
+			"title": "AP Physics C: Mechanics Formula Sheet",		"pdf": "ap-physics-c-mechanics-equations-sheet.pdf",			"sections": [
 				{
 					"heading": "Kinematics (Calculus-Based)",
 					"content": "$$v = \\frac{dx}{dt} \\qquad a = \\frac{dv}{dt} = \\frac{d^2x}{dt^2}$$\n\n$$x = \\int v\\, dt \\qquad v = \\int a\\, dt$$"
@@ -150,8 +145,7 @@
 	"AP Physics C: E&M": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Physics C: E&M Formula Sheet",
-			"sections": [
+			"title": "AP Physics C: E&M Formula Sheet",		"pdf": "ap-physics-c-electricity-and-magnetism-equations-sheet.pdf",			"sections": [
 				{
 					"heading": "Electrostatics",
 					"content": "**Coulomb's Law:** $\\vec{F} = k\\dfrac{q_1 q_2}{r^2}\\hat{r}$\n\n**Gauss's Law:** $\\oint \\vec{E}\\cdot d\\vec{A} = \\dfrac{Q_{enc}}{\\varepsilon_0}$\n\n**Electric field from potential:** $\\vec{E} = -\\nabla V$\n\n**Potential energy:** $U = k\\dfrac{q_1 q_2}{r}$"
@@ -174,8 +168,7 @@
 	"AP Environmental Science": {
 		"calculator": "scientific",
 		"referenceSheet": {
-			"title": "AP Environmental Science Formula Sheet",
-			"sections": [
+			"title": "AP Environmental Science Formula Sheet",		"pdf": "ap-environmental-science-exam-reference-sheet.pdf",			"sections": [
 				{
 					"heading": "Population & Energy",
 					"content": "$$r = (\\text{birth rate} + \\text{immigration rate}) - (\\text{death rate} + \\text{emigration rate})$$\n\n$$\\text{Ecological efficiency} = \\frac{\\text{energy at higher level}}{\\text{energy at lower level}} \\times 100\\%$$\n\n**IPAT equation:** $I = P \\times A \\times T$"
@@ -206,8 +199,7 @@
 	"AP Statistics": {
 		"calculator": "graphing",
 		"referenceSheet": {
-			"title": "AP Statistics Formula Sheet",
-			"sections": [
+			"title": "AP Statistics Formula Sheet",		"pdf": "ap-statistics-formula-tables-sheet.pdf",			"sections": [
 				{
 					"heading": "Descriptive Statistics",
 					"content": "**Sample mean:** $\\bar{x} = \\dfrac{\\sum x_i}{n}$\n\n**Sample standard deviation:** $s_x = \\sqrt{\\dfrac{\\sum(x_i - \\bar{x})^2}{n - 1}}$\n\n**IQR:** $IQR = Q_3 - Q_1$\n\n**Outlier rule:** $< Q_1 - 1.5(IQR)$ or $> Q_3 + 1.5(IQR)$"
@@ -263,6 +255,7 @@
 		"calculator": "none",
 		"referenceSheet": {
 			"title": "AP CS A — Java Quick Reference",
+			"pdf": "ap-computer-science-a-java-quick-reference.pdf",
 			"sections": [
 				{
 					"heading": "Primitive Types",
@@ -293,7 +286,11 @@
 	},
 	"AP Computer Science Principles": {
 		"calculator": "none",
-		"referenceSheet": null
+		"referenceSheet": {
+			"title": "AP Computer Science Principles Reference Sheet",
+			"pdf": "ap-computer-science-principles-exam-reference-sheet.pdf",
+			"sections": []
+		}
 	},
 	"AP English Language": {
 		"calculator": "none",

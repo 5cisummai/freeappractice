@@ -4,6 +4,11 @@ import { getCachedFRQQuestion } from '$lib/server/services/frq-cache';
 import { requireAuth } from '$lib/server/auth';
 import { dev } from '$app/environment';
 
+/** Vercel serverless max duration (seconds); FRQ generation can be slower than MCQ. */
+export const config = {
+	maxDuration: 60
+};
+
 export const POST: RequestHandler = async (event) => {
 	try {
 		const userId = await requireAuth(event);

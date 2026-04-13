@@ -3,6 +3,11 @@ import type { RequestHandler } from './$types';
 import { getCachedQuestion } from '$lib/server/services/question-cache';
 import { dev } from '$app/environment';
 
+/** Vercel serverless max duration (seconds); raise on Pro if AI generation exceeds default. */
+export const config = {
+	maxDuration: 60
+};
+
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const body = await request.json();

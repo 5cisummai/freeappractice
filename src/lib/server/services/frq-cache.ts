@@ -4,8 +4,23 @@ import { SeenQuestion } from '$lib/server/models/seen-question';
 import { connectDb } from '$lib/server/db';
 import { generateFRQQuestion, type GenerateFRQResult } from './ai';
 import { logger } from '$lib/server/logger';
+import { runCacheMissClusterFlow } from './cache-miss-coordinator';
+import type { IFRQQuestion } from '$lib/server/models/frq-question';
 
-const POOL_SIZE = 3;
+/**
+ * FRQ pool size: CACHE_POOL_SIZE_FRQ, else CACHE_POOL_SIZE, else default 3 (legacy).
+ */
+function getFrqPoolSize(): number {
+	const explicit = process.env.CACHE_POOL_SIZE_FRQ;
+	if (explicit !== undefined && explicit !== '') {
+		return Math.max(1, parseInt(explicit, 10) || 3);
+	}
+	const shared = process.env.CACHE_POOL_SIZE;
+	if (shared !== undefined && shared !== '') {
+		return Math.max(1, parseInt(shared, 10) || 3);
+	}
+	return 3;
+}
 const RECENT_TOPICS_WINDOW = 15;
 const MAX_SEEN_PER_BUCKET = 100;
 
@@ -140,12 +155,13 @@ function replenishPool(className: string, unit: string): void {
 				{ $set: { status: 'available', lockedUntil: null } }
 			);
 
+			const poolSize = getFrqPoolSize();
 			const available = await FRQQuestion.countDocuments({
 				apClass: className,
 				unit: cacheUnit,
 				status: 'available'
 			});
-			const needed = POOL_SIZE - available;
+			const needed = poolSize - available;
 			if (needed <= 0) return;
 
 			logger.info(`[frq-cache] replenishing ${needed} FRQ(s)`, { className, unit: cacheUnit });
@@ -185,6 +201,104 @@ async function claimFRQ(filter: Record<string, unknown>) {
 	).exec();
 }
 
+async function claimFrqForUser(
+	className: string,
+	cacheUnit: string,
+	userId: string | null | undefined
+): Promise<IFRQQuestion | null> {
+	await connectDb();
+
+	const baseFilter: Record<string, unknown> = { apClass: className, unit: cacheUnit };
+
+	if (userId) {
+		const seenHashes = await SeenQuestion.find(
+			{ userId, apClass: className, unit: cacheUnit, questionType: 'frq' },
+			{ contentHash: 1 }
+		)
+			.lean()
+			.then((docs) => docs.map((d) => d.contentHash));
+
+		if (seenHashes.length > 0) {
+			baseFilter['contentHash'] = { $nin: seenHashes };
+		}
+	}
+
+	let doc = await claimFRQ(baseFilter);
+
+	if (!doc && userId) {
+		logger.info('[frq-cache] all pooled FRQs already seen by user, falling back to any', {
+			className,
+			unit: cacheUnit,
+			userId
+		});
+		doc = await claimFRQ({ apClass: className, unit: cacheUnit });
+	}
+
+	return doc;
+}
+
+function serveClaimedFrqDoc(
+	doc: IFRQQuestion,
+	className: string,
+	cacheUnit: string,
+	userId: string | null | undefined
+): CachedFRQResult {
+	releaseFRQ(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
+
+	if (userId && doc.contentHash) {
+		recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
+	}
+
+	replenishPool(className, cacheUnit);
+
+	return {
+		question: {
+			prompt: doc.prompt,
+			context: doc.context ?? null,
+			parts: doc.parts,
+			totalPoints: doc.totalPoints,
+			topicsCovered: doc.topicsCovered ?? ''
+		},
+		provider: 'cache',
+		model: 'cached',
+		cached: true,
+		questionId: doc._id.toString()
+	};
+}
+
+async function persistFrqToPool(
+	className: string,
+	cacheUnit: string,
+	result: GenerateFRQResult
+): Promise<void> {
+	const { question } = result;
+	const contentHash = computeHash(question.prompt);
+	const exists = await FRQQuestion.exists({ contentHash });
+	if (exists) return;
+
+	try {
+		await FRQQuestion.create({
+			apClass: className,
+			unit: cacheUnit,
+			prompt: question.prompt,
+			context: question.context ?? undefined,
+			parts: question.parts,
+			totalPoints: question.totalPoints,
+			contentHash,
+			topicsCovered: question.topicsCovered ?? '',
+			lastServedAt: null,
+			status: 'available',
+			serveCount: 0,
+			lockedUntil: null
+		});
+	} catch (err: unknown) {
+		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+			return;
+		}
+		throw err;
+	}
+}
+
 /**
  * Return an FRQ to the pool after serving.
  * Increments serveCount and retires the FRQ once it reaches maxServeCount.
@@ -212,38 +326,9 @@ export async function getCachedFRQQuestion(
 ): Promise<CachedFRQResult> {
 	const cacheUnit = normalizeUnit(unit);
 
-	let doc;
+	let doc: IFRQQuestion | null;
 	try {
-		await connectDb();
-
-		const baseFilter: Record<string, unknown> = { apClass: className, unit: cacheUnit };
-
-		// Prefer questions the user has not already seen
-		if (userId) {
-			const seenHashes = await SeenQuestion.find(
-				{ userId, apClass: className, unit: cacheUnit, questionType: 'frq' },
-				{ contentHash: 1 }
-			)
-				.lean()
-				.then((docs) => docs.map((d) => d.contentHash));
-
-			if (seenHashes.length > 0) {
-				baseFilter['contentHash'] = { $nin: seenHashes };
-			}
-		}
-
-		// Atomic non-destructive claim: marks FRQ 'serving' with a soft expiry lock
-		doc = await claimFRQ(baseFilter);
-
-		// Fall back to any question if user has seen everything in pool
-		if (!doc && userId) {
-			logger.info('[frq-cache] all pooled FRQs already seen by user, falling back to any', {
-				className,
-				unit: cacheUnit,
-				userId
-			});
-			doc = await claimFRQ({ apClass: className, unit: cacheUnit });
-		}
+		doc = await claimFrqForUser(className, cacheUnit, userId);
 	} catch (err) {
 		logger.warn('[frq-cache] DB read failed, falling back to live generation', {
 			className,
@@ -255,32 +340,12 @@ export async function getCachedFRQQuestion(
 	}
 
 	if (doc) {
-		// Release: increment serveCount and return to pool or retire when limit reached (fire-and-forget)
-		releaseFRQ(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
-
-		if (userId && doc.contentHash) {
-			recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
-		}
-
-		replenishPool(className, unit ?? '');
-
-		return {
-			question: {
-				prompt: doc.prompt,
-				context: doc.context ?? null,
-				parts: doc.parts,
-				totalPoints: doc.totalPoints,
-				topicsCovered: doc.topicsCovered ?? ''
-			},
-			provider: 'cache',
-			model: 'cached',
-			cached: true,
-			questionId: doc._id.toString()
-		};
+		return serveClaimedFrqDoc(doc, className, cacheUnit, userId);
 	}
 
-	// ── Cache miss (empty pool): use per-process coalescer to cap live AI calls to 1 ──
-	const missKey = `miss::${className}::${cacheUnit}`;
+	const missKey = `miss::frq::${className}::${cacheUnit}`;
+	const clusterLockKey = missKey;
+
 	if (inFlightMiss.has(missKey)) {
 		logger.info('[frq-cache] coalescing duplicate cache miss', { className, unit: cacheUnit });
 		return inFlightMiss.get(missKey)!;
@@ -291,15 +356,38 @@ export async function getCachedFRQQuestion(
 
 	const livePromise: Promise<CachedFRQResult> = (async (): Promise<CachedFRQResult> => {
 		try {
-			const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
-			const result = await generateFRQQuestion({ className, unit: unit ?? '', recentTopics });
+			const { result, meta } = await runCacheMissClusterFlow<CachedFRQResult>({
+				clusterLockKey,
+				tryClaim: async () => {
+					const claimed = await claimFrqForUser(className, cacheUnit, userId);
+					if (!claimed) return null;
+					return serveClaimedFrqDoc(claimed, className, cacheUnit, userId);
+				},
+				leaderRun: async () => {
+					const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
+					const gen = await generateFRQQuestion({
+						className,
+						unit: unit ?? '',
+						recentTopics
+					});
+					await persistFrqToPool(className, cacheUnit, gen);
+					if (userId) {
+						const hash = computeHash(gen.question.prompt);
+						recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+					}
+					return { ...gen, cached: false };
+				},
+				logScope: 'frq-cache'
+			});
 
-			if (userId) {
-				const hash = computeHash(result.question.prompt);
-				recordSeen(userId, hash, className, cacheUnit).catch(() => {});
-			}
+			logger.info('[frq-cache] cache_miss_cluster_complete', {
+				className,
+				unit: cacheUnit,
+				cache_miss_role: meta.role,
+				cache_miss_follower_wait_ms: meta.cache_miss_follower_wait_ms
+			});
 
-			return { ...result, cached: false };
+			return result;
 		} catch (err) {
 			logger.error('[frq-cache] live generation also failed', {
 				className,
