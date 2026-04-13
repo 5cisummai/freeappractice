@@ -4,6 +4,8 @@ import { SeenQuestion } from '$lib/server/models/seen-question';
 import { connectDb } from '$lib/server/db';
 import { generateAPQuestion, type GenerateResult } from './ai';
 import { logger } from '$lib/server/logger';
+import { runCacheMissClusterFlow } from './cache-miss-coordinator';
+import type { IQuestion } from '$lib/server/models/question';
 
 /**
  * Number of questions to keep in the pool per class+unit combo.
@@ -227,6 +229,111 @@ async function claimQuestion(filter: Record<string, unknown>) {
 	).exec();
 }
 
+async function claimMcqForUser(
+	className: string,
+	cacheUnit: string,
+	userId: string | null | undefined
+): Promise<IQuestion | null> {
+	await connectDb();
+
+	const baseFilter: Record<string, unknown> = { apClass: className, unit: cacheUnit };
+
+	if (userId) {
+		const seenHashes = await SeenQuestion.find(
+			{ userId, apClass: className, unit: cacheUnit, questionType: 'mcq' },
+			{ contentHash: 1 }
+		)
+			.lean()
+			.then((docs) => docs.map((d) => d.contentHash));
+
+		if (seenHashes.length > 0) {
+			baseFilter['contentHash'] = { $nin: seenHashes };
+		}
+	}
+
+	let doc = await claimQuestion(baseFilter);
+
+	if (!doc && userId) {
+		logger.info('[cache] all pooled questions already seen by user, falling back to any', {
+			className,
+			unit: cacheUnit,
+			userId
+		});
+		doc = await claimQuestion({ apClass: className, unit: cacheUnit });
+	}
+
+	return doc;
+}
+
+function serveClaimedMcqDoc(
+	doc: IQuestion,
+	className: string,
+	cacheUnit: string,
+	userId: string | null | undefined
+): CachedResult {
+	releaseQuestion(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
+
+	if (userId && doc.contentHash) {
+		recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
+	}
+
+	replenishPool(className, cacheUnit);
+
+	return {
+		answer: {
+			question: doc.question,
+			optionA: doc.optionA,
+			optionB: doc.optionB,
+			optionC: doc.optionC,
+			optionD: doc.optionD,
+			correctAnswer: doc.correctAnswer,
+			explanation: doc.explanation,
+			topicsCovered: doc.topicsCovered ?? ''
+		},
+		provider: 'cache',
+		model: 'cached',
+		cached: true,
+		questionId: doc._id.toString()
+	};
+}
+
+/** Insert a live-generated MCQ into the pool so other instances can claim it. */
+async function persistMcqToPool(
+	className: string,
+	cacheUnit: string,
+	result: GenerateResult
+): Promise<void> {
+	const { answer } = result;
+	const contentHash = computeHash(answer.question);
+	const exists = await Question.exists({ contentHash });
+	if (exists) return;
+
+	try {
+		await Question.create({
+			apClass: className,
+			unit: cacheUnit,
+			question: answer.question,
+			optionA: answer.optionA,
+			optionB: answer.optionB,
+			optionC: answer.optionC,
+			optionD: answer.optionD,
+			correctAnswer: answer.correctAnswer,
+			explanation: answer.explanation,
+			contentHash,
+			topicsCovered: answer.topicsCovered ?? '',
+			lastServedAt: null,
+			status: 'available',
+			serveCount: 0,
+			lockedUntil: null
+		});
+	} catch (err: unknown) {
+		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+			return;
+		}
+		throw err;
+	}
+}
+
 /**
  * Return a question to the pool after serving.
  * Increments serveCount and retires the question once it reaches maxServeCount.
@@ -264,38 +371,9 @@ export async function getCachedQuestion(
 ): Promise<CachedResult> {
 	const cacheUnit = normalizeUnit(unit);
 
-	let doc;
+	let doc: IQuestion | null;
 	try {
-		await connectDb();
-
-		const baseFilter: Record<string, unknown> = { apClass: className, unit: cacheUnit };
-
-		// If we know the user, exclude questions they have already seen
-		if (userId) {
-			const seenHashes = await SeenQuestion.find(
-				{ userId, apClass: className, unit: cacheUnit, questionType: 'mcq' },
-				{ contentHash: 1 }
-			)
-				.lean()
-				.then((docs) => docs.map((d) => d.contentHash));
-
-			if (seenHashes.length > 0) {
-				baseFilter['contentHash'] = { $nin: seenHashes };
-			}
-		}
-
-		// Atomic non-destructive claim: marks question 'serving' with a soft expiry lock
-		doc = await claimQuestion(baseFilter);
-
-		// If all pooled questions were already seen by this user, fall back to any question
-		if (!doc && userId) {
-			logger.info('[cache] all pooled questions already seen by user, falling back to any', {
-				className,
-				unit: cacheUnit,
-				userId
-			});
-			doc = await claimQuestion({ apClass: className, unit: cacheUnit });
-		}
+		doc = await claimMcqForUser(className, cacheUnit, userId);
 	} catch (err) {
 		// ── DB failure: fall back to live generation ──
 		logger.warn('[cache] DB read failed, falling back to live generation', {
@@ -308,37 +386,13 @@ export async function getCachedQuestion(
 	}
 
 	if (doc) {
-		// Release: increment serveCount and return to pool or retire when limit reached (fire-and-forget)
-		releaseQuestion(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
-
-		// Record seen history for authenticated users (fire-and-forget)
-		if (userId && doc.contentHash) {
-			recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
-		}
-
-		// Fire background replenishment (non-blocking)
-		replenishPool(className, unit ?? '');
-
-		return {
-			answer: {
-				question: doc.question,
-				optionA: doc.optionA,
-				optionB: doc.optionB,
-				optionC: doc.optionC,
-				optionD: doc.optionD,
-				correctAnswer: doc.correctAnswer,
-				explanation: doc.explanation,
-				topicsCovered: doc.topicsCovered ?? ''
-			},
-			provider: 'cache',
-			model: 'cached',
-			cached: true,
-			questionId: doc._id.toString()
-		};
+		return serveClaimedMcqDoc(doc, className, cacheUnit, userId);
 	}
 
-	// ── Cache miss (empty pool): use per-process coalescer to cap live AI calls to 1 ──
-	const missKey = `miss::${className}::${cacheUnit}`;
+	// ── Cache miss (empty pool): per-process coalescer + cluster lock for serverless ──
+	const missKey = `miss::mcq::${className}::${cacheUnit}`;
+	const clusterLockKey = missKey;
+
 	if (inFlightMiss.has(missKey)) {
 		logger.info('[cache] coalescing duplicate cache miss', { className, unit: cacheUnit });
 		return inFlightMiss.get(missKey)!;
@@ -349,16 +403,38 @@ export async function getCachedQuestion(
 
 	const livePromise: Promise<CachedResult> = (async (): Promise<CachedResult> => {
 		try {
-			const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
-			const result = await generateAPQuestion({ className, unit: unit ?? '', recentTopics });
+			const { result, meta } = await runCacheMissClusterFlow<CachedResult>({
+				clusterLockKey,
+				tryClaim: async () => {
+					const claimed = await claimMcqForUser(className, cacheUnit, userId);
+					if (!claimed) return null;
+					return serveClaimedMcqDoc(claimed, className, cacheUnit, userId);
+				},
+				leaderRun: async () => {
+					const recentTopics = await getRecentTopics(className, cacheUnit).catch(() => []);
+					const gen = await generateAPQuestion({
+						className,
+						unit: unit ?? '',
+						recentTopics
+					});
+					await persistMcqToPool(className, cacheUnit, gen);
+					if (userId) {
+						const hash = computeHash(gen.answer.question);
+						recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+					}
+					return { ...gen, cached: false };
+				},
+				logScope: 'cache'
+			});
 
-			// Record seen history for live-generated questions too
-			if (userId) {
-				const hash = computeHash(result.answer.question);
-				recordSeen(userId, hash, className, cacheUnit).catch(() => {});
-			}
+			logger.info('[cache] cache_miss_cluster_complete', {
+				className,
+				unit: cacheUnit,
+				cache_miss_role: meta.role,
+				cache_miss_follower_wait_ms: meta.cache_miss_follower_wait_ms
+			});
 
-			return { ...result, cached: false };
+			return result;
 		} catch (err) {
 			logger.error('[cache] live generation also failed', {
 				className,
