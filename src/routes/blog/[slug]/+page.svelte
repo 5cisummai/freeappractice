@@ -78,7 +78,7 @@
 				<article class="w-full max-w-3xl min-w-0">
 					<a
 						href={resolve('/blog')}
-						class="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+						class="mb-8 inline-block gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"

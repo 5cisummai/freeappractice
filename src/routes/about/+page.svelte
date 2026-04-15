@@ -35,7 +35,7 @@
 	<Topbar />
 
 	<main class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
-		<a href={resolve('/')} class="text-sm text-muted-foreground hover:text-foreground"
+		<a href={resolve('/')} class="inline-block text-sm text-muted-foreground hover:text-foreground"
 			>← Back to Home</a
 		>
 

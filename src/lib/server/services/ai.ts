@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { OPEN_AI_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { saveQuestionToS3 } from './question-storage';
+import { recordMcqGenerated } from './question-gen-stats';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import frqSpecs from '$lib/data/ap-frq-specs.json';
 import { logger } from '$lib/server/logger';
@@ -331,6 +332,34 @@ const APQuestion = z.object({
 
 export type APQuestionData = z.infer<typeof APQuestion>;
 
+/**
+ * Persists a generated MCQ to S3 and increments Mongo generation stats (per class, per unit, global unit rollup).
+ * Call this for every newly generated AP MCQ so counts stay accurate without scanning S3.
+ */
+export async function persistGeneratedMcqQuestion(
+	parsed: APQuestionData,
+	className: string,
+	unit: string | undefined
+): Promise<string> {
+	const unitLabel = unit ?? 'General';
+	const questionData = Object.assign({}, parsed, { apClass: className, unit: unitLabel });
+	const id = await saveQuestionToS3(questionData);
+	try {
+		await recordMcqGenerated({
+			apClass: className,
+			unit: unitLabel,
+			questionText: parsed.question
+		});
+	} catch (e) {
+		logger.error('recordMcqGenerated failed after S3 save', {
+			error: e instanceof Error ? e.message : String(e),
+			className,
+			unit: unitLabel
+		});
+	}
+	return id;
+}
+
 export interface GenerateResult {
 	answer: APQuestionData;
 	provider: string;
@@ -414,9 +443,9 @@ OUTPUT:
 		{ className, unit }
 	);
 
-	// Fire-and-forget S3 save - don't block the response
+	// Fire-and-forget persist (S3 + Mongo stats) — don't block the response
 	let questionId: string | undefined;
-	saveQuestionToS3(Object.assign({}, parsed, { apClass: className, unit: unit ?? 'General' }))
+	void persistGeneratedMcqQuestion(parsed, className, unit)
 		.then((id) => {
 			questionId = id;
 		})

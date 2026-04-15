@@ -63,7 +63,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
-const CORS_HEADERS = 'Content-Type, Authorization';
+const CORS_HEADERS = 'Content-Type, Authorization, X-Questions-Admin-Secret';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// ── CORS ──────────────────────────────────────────────────
