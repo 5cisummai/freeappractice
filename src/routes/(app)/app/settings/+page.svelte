@@ -28,7 +28,7 @@
 		name: auth.user?.name || '',
 		email: auth.user?.email || ''
 	});
-	const appVersion = '1.3.1';
+	const appVersion = '1.3.4';
 
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();
