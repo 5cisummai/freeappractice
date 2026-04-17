@@ -1,0 +1,25 @@
+{
+	"nav": {
+		"blog": "Blog",
+		"about": "Acerca de",
+		"privacy": "Privacidad",
+		"terms": "Términos",
+		"signIn": "Iniciar sesión",
+		"toggleTheme": "Cambiar tema",
+		"toggleNavigation": "Alternar navegación"
+	},
+	"footer": {
+		"tagline": "Creado por estudiantes, para estudiantes.",
+		"copyright": "© 2026 Free AP Practice"
+	},
+	"sidebar": {
+		"navigation": "Navegación",
+		"dashboard": "Panel",
+		"practice": "Práctica",
+		"progress": "Progreso",
+		"resources": "Recursos",
+		"settings": "Configuración",
+		"toggleTheme": "Cambiar tema",
+		"signOut": "Cerrar sesión"
+	}
+}

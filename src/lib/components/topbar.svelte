@@ -8,6 +8,7 @@
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { auth } from '$lib/client/auth.svelte.js';
+	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 
 	type TopbarProps = {
@@ -46,7 +47,7 @@
 				variant="ghost"
 				size="icon"
 				class="block sm:hidden"
-				aria-label="Toggle navigation"
+				aria-label={$t('nav.toggleNavigation')}
 			>
 				{#if mobileOpen}
 					<XIcon class="h-5 w-5" />
@@ -60,7 +61,7 @@
 					href={resolve('/blog')}
 					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
 				>
-					Blog
+					{$t('nav.blog')}
 				</a>
 				<a
 					href={resolve('/about')}
@@ -68,7 +69,7 @@
 					rel="noopener noreferrer"
 					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
 				>
-					About
+					{$t('nav.about')}
 				</a>
 				<a
 					href={resolve('/privacy')}
@@ -76,7 +77,7 @@
 					rel="noopener noreferrer"
 					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
 				>
-					Privacy
+					{$t('nav.privacy')}
 				</a>
 				<a
 					href={resolve('/terms')}
@@ -84,11 +85,11 @@
 					rel="noopener noreferrer"
 					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
 				>
-					Terms
+					{$t('nav.terms')}
 				</a>
 				{#if showSignIn}
 					<a href={resolve('/login')} class="nav-link nav-signin font-medium text-foreground">
-						Sign In
+						{$t('nav.signIn')}
 					</a>
 				{/if}
 				<Button onclick={toggleMode} variant="outline" size="icon" class="relative">
@@ -98,7 +99,7 @@
 					<MoonIcon
 						class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all! dark:scale-100 dark:rotate-0"
 					/>
-					<span class="sr-only">Toggle theme</span>
+					<span class="sr-only">{$t('nav.toggleTheme')}</span>
 				</Button>
 			</nav>
 		</div>
@@ -109,32 +110,37 @@
 			>
 				<a
 					href={resolve('/blog')}
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">Blog</a
+					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
+					>{$t('nav.blog')}</a
 				>
 				<a
 					href={resolve('/about')}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">About</a
+					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
+					>{$t('nav.about')}</a
 				>
 				<a
 					href={resolve('/privacy')}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
-					>Privacy</a
+					>{$t('nav.privacy')}</a
 				>
 				<a
 					href={resolve('/terms')}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">Terms</a
+					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
+					>{$t('nav.terms')}</a
 				>
 				{#if showSignIn}
-					<a href={resolve('/login')} class="block py-2 font-medium text-foreground">Sign In</a>
+					<a href={resolve('/login')} class="block py-2 font-medium text-foreground"
+						>{$t('nav.signIn')}</a
+					>
 				{/if}
 				<Button onclick={toggleMode} variant="outline" size="icon" class="mt-2 w-full">
-					<p>Toggle Theme</p>
+					<p>{$t('nav.toggleTheme')}</p>
 				</Button>
 			</div>
 		{/if}
