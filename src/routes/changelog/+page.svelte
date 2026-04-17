@@ -5,6 +5,30 @@
 
 	const changelog = [
 		{
+			version: '1.3.5',
+			date: 'April 24, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Custom topics: Enter your own desired topic(s) for questions',
+						'Added AP Spanish support'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: ['Bug fixes']
+				},
+				{
+					title: 'Security',
+					items: [
+						'Security hardening',
+						'Refactored Content Security Policy (CSP) handling for Svelte'
+					]
+				}
+			]
+		},
+		{
 			version: '1.3.4',
 			date: 'April 16, 2026',
 			sections: [

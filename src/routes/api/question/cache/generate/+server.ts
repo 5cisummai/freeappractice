@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { generateAndStoreQuestion } from '$lib/server/services/question-cache';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -19,7 +20,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const result = await generateAndStoreQuestion(className.trim(), unit ?? '');
 		return json({ success: true, message: 'Question generated and cached', data: result });
 	} catch (err) {
-		console.error('Generate cached question error:', err);
+		logger.error('Generate cached question error', { error: err });
 		return json({ error: 'Failed to generate question' }, { status: 500 });
 	}
 };

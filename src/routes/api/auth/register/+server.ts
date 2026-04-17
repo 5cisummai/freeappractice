@@ -6,12 +6,15 @@ import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { signToken, signPendingSignupToken } from '$lib/server/auth';
 import { sendConfirmationEmail } from '$lib/server/services/email';
-import { generateRandomToken } from '$lib/server/crypto-token';
+import { generateEmailToken, MIN_PASSWORD_LENGTH } from '$lib/server/utils';
+import { logger } from '$lib/server/logger';
 
 const registerSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
 	email: z.string().email('Invalid email address'),
-	password: z.string().min(6, 'Password must be at least 6 characters')
+	password: z
+		.string()
+		.min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`)
 });
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -36,8 +39,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
-		const emailToken = generateRandomToken();
-		const emailTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+		const { emailToken, emailTokenExpires } = generateEmailToken();
 
 		const user = new User({
 			name,
@@ -64,7 +66,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ status: 201 }
 		);
 	} catch (err) {
-		console.error('Register error:', err);
+		logger.error('Register error', { error: err });
 		return json({ error: 'Registration failed' }, { status: 500 });
 	}
 };

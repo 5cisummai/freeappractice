@@ -35,29 +35,19 @@ setInterval(() => {
 }, WINDOW_MS);
 
 // ── Security headers ────────────────────────────────────────
+// CSP is managed by SvelteKit's built-in csp config in svelte.config.js,
+// which automatically injects nonces for SSR and hashes for prerendered pages.
 const SECURITY_HEADERS: Record<string, string> = {
 	'X-Frame-Options': 'DENY',
 	'X-Content-Type-Options': 'nosniff',
 	'Referrer-Policy': 'strict-origin-when-cross-origin',
 	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-	'Content-Security-Policy': [
-		"default-src 'self'",
-		// 1. Added 'blob:' to script-src
-		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://www.desmos.com blob:",
-		"style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-		"font-src 'self' https://fonts.gstatic.com data:",
-		// 2. Added 'blob:' to img-src (needed for graph exporting/rendering)
-		"img-src 'self' data: https: blob:",
-		// 3. Added 'blob:' to connect-src
-		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com blob:",
-		'frame-src https://accounts.google.com/gsi/ https://www.desmos.com',
-		// 4. Added explicit worker-src (This is the specific fix for your error)
-		"worker-src 'self' blob:"
-	].join('; ')
+	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload'
 };
 
 const ALLOWED_ORIGINS = [
 	'https://freeappractice.org',
+	'https://www.freeappractice.org',
 	'http://localhost:5173',
 	'http://localhost:3000'
 ];
@@ -127,6 +117,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// ── Apply security headers ────────────────────────────────
 	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
 		response.headers.set(key, value);
+	}
+
+	// ── Cache-Control for API routes (prevent sensitive data caching) ──
+	if (event.url.pathname.startsWith('/api/')) {
+		response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+		response.headers.set('Pragma', 'no-cache');
 	}
 
 	if (isAllowedOrigin) {

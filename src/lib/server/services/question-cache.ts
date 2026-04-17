@@ -1,10 +1,15 @@
-import { createHash } from 'node:crypto';
 import { Question } from '$lib/server/models/question';
 import { SeenQuestion } from '$lib/server/models/seen-question';
 import { connectDb } from '$lib/server/db';
 import { generateAPQuestion, type GenerateResult } from './ai';
 import { logger } from '$lib/server/logger';
 import { runCacheMissClusterFlow } from './cache-miss-coordinator';
+import {
+	computeContentHash,
+	isDuplicateKeyError,
+	normalizeUnit,
+	recordSeenQuestion
+} from '$lib/server/utils';
 import type { IQuestion } from '$lib/server/models/question';
 
 /**
@@ -15,26 +20,11 @@ function getPoolSize(): number {
 	return Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
 }
 
-function normalizeUnit(unit?: string): string {
-	return typeof unit === 'string' ? unit.trim() : '';
-}
-
 /**
  * How many recently-served topics to pass to the AI for diversity guidance.
  * Fetch more than the pool size so diversity spans across pool generations.
  */
 const RECENT_TOPICS_WINDOW = 20;
-
-/**
- * Maximum number of seen-question records kept per user per (class, unit) bucket.
- * Once the bucket is full, the oldest entries are pruned so questions can eventually recycle.
- */
-const MAX_SEEN_PER_BUCKET = 100;
-
-/** Normalize and hash the question text for deduplication. */
-function computeHash(text: string): string {
-	return createHash('sha256').update(text.trim().toLowerCase().replace(/\s+/g, ' ')).digest('hex');
-}
 
 // ── Track in-flight replenishments to avoid duplicate work ──
 const replenishing = new Set<string>();
@@ -79,7 +69,7 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 		const result = await generateAPQuestion({ className, unit, recentTopics });
 		const { answer } = result;
 
-		const contentHash = computeHash(answer.question);
+		const contentHash = computeContentHash(answer.question);
 
 		// Skip if this exact question is already in the pool
 		const exists = await Question.exists({ contentHash });
@@ -111,47 +101,12 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 		});
 		return doc._id.toString();
 	} catch (err: unknown) {
-		// MongoDB duplicate-key error (E11000) — safe to ignore
-		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+		if (isDuplicateKeyError(err)) {
 			logger.info('[cache] duplicate key on insert, skipping', { className, unit });
 			return null;
 		}
 		logger.error('[cache] generateAndInsert failed', { className, unit, error: err });
 		return null;
-	}
-}
-
-/**
- * Record that a user has seen a question (fire-and-forget).
- * Automatically prunes the oldest entries if the bucket exceeds MAX_SEEN_PER_BUCKET.
- */
-async function recordSeen(
-	userId: string,
-	contentHash: string,
-	apClass: string,
-	unit: string
-): Promise<void> {
-	try {
-		await SeenQuestion.updateOne(
-			{ userId, contentHash },
-			{ $setOnInsert: { userId, contentHash, apClass, unit, questionType: 'mcq' } },
-			{ upsert: true }
-		);
-
-		// Prune oldest entries if bucket is too large
-		const count = await SeenQuestion.countDocuments({ userId, apClass, unit, questionType: 'mcq' });
-		if (count > MAX_SEEN_PER_BUCKET) {
-			const excess = count - MAX_SEEN_PER_BUCKET;
-			const oldest = await SeenQuestion.find(
-				{ userId, apClass, unit, questionType: 'mcq' },
-				{ _id: 1 },
-				{ sort: { seenAt: 1 }, limit: excess }
-			).lean();
-			const ids = oldest.map((d) => d._id);
-			await SeenQuestion.deleteMany({ _id: { $in: ids } });
-		}
-	} catch {
-		// Non-critical — don't let history tracking affect the main request
 	}
 }
 
@@ -274,7 +229,7 @@ function serveClaimedMcqDoc(
 	releaseQuestion(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
 
 	if (userId && doc.contentHash) {
-		recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
+		recordSeenQuestion(userId, doc.contentHash, className, cacheUnit, 'mcq').catch(() => {});
 	}
 
 	replenishPool(className, cacheUnit);
@@ -304,7 +259,7 @@ async function persistMcqToPool(
 	result: GenerateResult
 ): Promise<void> {
 	const { answer } = result;
-	const contentHash = computeHash(answer.question);
+	const contentHash = computeContentHash(answer.question);
 	const exists = await Question.exists({ contentHash });
 	if (exists) return;
 
@@ -327,7 +282,7 @@ async function persistMcqToPool(
 			lockedUntil: null
 		});
 	} catch (err: unknown) {
-		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+		if (isDuplicateKeyError(err)) {
 			return;
 		}
 		throw err;
@@ -353,6 +308,23 @@ function releaseQuestion(docId: string, currentServeCount: number, maxServeCount
 }
 
 export type CachedResult = GenerateResult & { cached: boolean };
+
+/**
+ * Live MCQ for a user-specified topic only — does not read or write the pooled cache.
+ */
+export async function generateLiveCustomTopicMcq(
+	className: string,
+	customTopic: string
+): Promise<CachedResult> {
+	const trimmed = customTopic.trim();
+	if (!trimmed) throw new Error('customTopic is required');
+	const result = await generateAPQuestion({
+		className,
+		unit: '',
+		customTopic: trimmed
+	});
+	return { ...result, cached: false };
+}
 
 /**
  * Main entry point for the question API.
@@ -419,8 +391,8 @@ export async function getCachedQuestion(
 					});
 					await persistMcqToPool(className, cacheUnit, gen);
 					if (userId) {
-						const hash = computeHash(gen.answer.question);
-						recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+						const hash = computeContentHash(gen.answer.question);
+						recordSeenQuestion(userId, hash, className, cacheUnit, 'mcq').catch(() => {});
 					}
 					return { ...gen, cached: false };
 				},
@@ -472,7 +444,7 @@ export async function generateAndStoreQuestion(
 	});
 	const { answer } = result;
 
-	const contentHash = computeHash(answer.question);
+	const contentHash = computeContentHash(answer.question);
 
 	try {
 		await Question.create({
@@ -493,7 +465,7 @@ export async function generateAndStoreQuestion(
 			lockedUntil: null
 		});
 	} catch (err: unknown) {
-		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+		if (isDuplicateKeyError(err)) {
 			logger.info('[cache] generateAndStoreQuestion: duplicate hash, not re-storing', {
 				className
 			});

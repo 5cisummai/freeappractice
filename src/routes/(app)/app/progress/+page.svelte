@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { apiFetch } from '$lib/client/auth.svelte.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 
 	interface ProgressEntry {
 		apClass: string;
@@ -70,6 +71,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Progress – Free AP Practice</title>
+</svelte:head>
+
 <div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
 	<div class="space-y-1">
 		<h1 class="text-2xl font-semibold tracking-tight">Your Progress</h1>
@@ -78,9 +83,7 @@
 
 	{#if loading}
 		<div class="flex justify-center py-16">
-			<div
-				class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-			></div>
+			<Spinner />
 		</div>
 	{:else if errorMessage}
 		<p class="text-sm text-destructive">{errorMessage}</p>

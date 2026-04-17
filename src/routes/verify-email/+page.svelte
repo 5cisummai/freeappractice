@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');
@@ -63,9 +64,7 @@
 
 		{#if status === 'loading'}
 			<div class="space-y-4">
-				<div
-					class="mx-auto size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-				></div>
+				<Spinner class="mx-auto" />
 				<p class="text-sm text-muted-foreground">Verifying your email...</p>
 			</div>
 		{:else if status === 'success'}

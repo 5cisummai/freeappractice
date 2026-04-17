@@ -4,10 +4,7 @@ import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
 import { logger } from '$lib/server/logger';
-
-function normalizeUnit(unit: unknown): string {
-	return typeof unit === 'string' && unit.trim() ? unit.trim() : 'all-units';
-}
+import { normalizeUnit, findOrCreateProgressEntry } from '$lib/server/utils';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -15,7 +12,7 @@ export const POST: RequestHandler = async (event) => {
 
 		const body = await event.request.json();
 		const { apClass, unit, questionId, selectedAnswer, wasCorrect, timeTakenMs } = body;
-		const normalizedUnit = normalizeUnit(unit);
+		const normalizedUnit = normalizeUnit(unit, 'all-units');
 
 		if (!apClass || !questionId || !selectedAnswer || typeof wasCorrect !== 'boolean') {
 			return json(
@@ -43,23 +40,7 @@ export const POST: RequestHandler = async (event) => {
 		});
 
 		// Update or create progress entry
-		let progressEntry = user.progress.find(
-			(p) => p.apClass === apClass && p.unit === normalizedUnit
-		);
-
-		if (!progressEntry) {
-			user.progress.push({
-				apClass,
-				unit: normalizedUnit,
-				completed: false,
-				mastery: 0,
-				totalAttempts: 0,
-				correctAttempts: 0,
-				frqTotalAttempts: 0,
-				frqTotalScore: 0
-			});
-			progressEntry = user.progress[user.progress.length - 1];
-		}
+		const progressEntry = findOrCreateProgressEntry(user.progress, apClass, normalizedUnit);
 
 		progressEntry.totalAttempts++;
 		if (wasCorrect) progressEntry.correctAttempts++;

@@ -19,13 +19,7 @@
 
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import apClassesData from '../src/lib/data/ap-classes.json';
-
-// ── Arg helpers ──────────────────────────────────────────────
-function getArg(flag: string): string | undefined {
-	const idx = process.argv.indexOf(flag);
-	return idx !== -1 && process.argv[idx + 1] ? process.argv[idx + 1] : undefined;
-}
+import { getArg, createLimiter, loadCombos } from './shared';
 
 const BASE_URL = (
 	getArg('--url') ??
@@ -71,31 +65,6 @@ async function generateSlot(
 	}
 }
 
-// ── Simple concurrency limiter ────────────────────────────────
-function createLimiter(max: number) {
-	let running = 0;
-	const queue: Array<() => void> = [];
-
-	function next() {
-		if (running >= max || queue.length === 0) return;
-		running++;
-		queue.shift()!();
-	}
-
-	return async function limit<T>(fn: () => Promise<T>): Promise<T> {
-		await new Promise<void>((resolve) => {
-			queue.push(resolve);
-			next();
-		});
-		try {
-			return await fn();
-		} finally {
-			running--;
-			next();
-		}
-	};
-}
-
 // ── Main ────────────────────────────────────────────────────
 async function main() {
 	// Verify the server is reachable before doing real work
@@ -117,24 +86,7 @@ async function main() {
 
 	await mongoose.connect(DATABASE_URI, { serverSelectionTimeoutMS: 10_000 });
 
-	type Course = { name: string; semester1: string[]; semester2: string[] };
-	let courses = (apClassesData as { courses: Course[] }).courses;
-
-	if (filterClass) {
-		courses = courses.filter((c) => c.name === filterClass);
-		if (courses.length === 0) {
-			console.error(`No course found matching "${filterClass}".`);
-			await mongoose.disconnect();
-			process.exit(1);
-		}
-	}
-
-	const combos: { className: string; unit: string }[] = [];
-	for (const course of courses) {
-		for (const unit of [...course.semester1, ...course.semester2]) {
-			combos.push({ className: course.name, unit });
-		}
-	}
+	const { combos } = loadCombos(filterClass);
 
 	console.log('\nWarm-cache');
 	console.log(`  Server      : ${BASE_URL}`);

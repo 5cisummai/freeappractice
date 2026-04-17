@@ -247,7 +247,7 @@ export async function updatePost(
 			update.publishedAt = new Date();
 		}
 	}
-	return BlogPost.findOneAndUpdate({ slug }, update, { new: true }).lean<IBlogPost>();
+	return BlogPost.findOneAndUpdate({ slug }, update, { returnDocument: 'after' }).lean<IBlogPost>();
 }
 
 export async function deletePost(slug: string): Promise<boolean> {

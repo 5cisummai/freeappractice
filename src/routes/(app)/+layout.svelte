@@ -6,6 +6,7 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 
 	let { children } = $props();
 
@@ -37,8 +38,6 @@
 	</Sidebar.Provider>
 {:else}
 	<div class="flex min-h-screen items-center justify-center bg-background">
-		<div
-			class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-		></div>
+		<Spinner />
 	</div>
 {/if}

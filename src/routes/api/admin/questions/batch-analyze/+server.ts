@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { verifyQuestionsAdminSecret } from '$lib/server/admin-question-batch';
 import { runBatchQuestionAnalysis } from '$lib/server/services/question-batch-analysis';
 import { env } from '$env/dynamic/private';
+import { logger } from '$lib/server/logger';
 
 /**
  * POST /api/admin/questions/batch-analyze
@@ -36,7 +37,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const result = await runBatchQuestionAnalysis({ maxSamples });
 		return json({ ok: true, result });
 	} catch (err) {
-		console.error('batch-analyze error:', err);
+		logger.error('Batch analyze error', { error: err });
 		return json({ error: 'Batch analysis failed' }, { status: 500 });
 	}
 };

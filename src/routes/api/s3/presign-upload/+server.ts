@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getPresignedUploadUrl } from '$lib/server/services/s3';
 import { requireAuth } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -16,7 +17,7 @@ export const POST: RequestHandler = async (event) => {
 		return json(result);
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Presign upload error:', err);
+		logger.error('Presign upload error', { error: err });
 		return json({ error: 'Failed to generate upload URL' }, { status: 500 });
 	}
 };

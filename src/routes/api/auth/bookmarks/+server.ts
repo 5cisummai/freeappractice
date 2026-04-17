@@ -4,6 +4,7 @@ import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { getQuestionsFromS3 } from '$lib/server/services/question-storage';
 import { requireAuth } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 export const GET: RequestHandler = async (event) => {
 	try {
@@ -19,7 +20,7 @@ export const GET: RequestHandler = async (event) => {
 		return json({ bookmarks: questions });
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Get bookmarks error:', err);
+		logger.error('Get bookmarks error', { error: err });
 		return json({ error: 'Failed to fetch bookmarks' }, { status: 500 });
 	}
 };
