@@ -47,6 +47,7 @@
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
+	let customTopic = $state('');
 	let generateVersion = $state(0);
 
 	const AP_EXAM_START = new Date(2026, 4, 4);
@@ -433,6 +434,7 @@
 					<QuestionSelector
 						bind:selectedClass
 						bind:selectedUnit
+						bind:customTopic
 						hideQuestionTypeTabs={true}
 						isLoading={false}
 						onSelectionChange={handleSelectionChange}
@@ -444,11 +446,12 @@
 			<section>
 				<div class="fade-in-section mx-auto min-h-10 max-w-6xl" use:observeElement>
 					{#if generateVersion > 0}
-						{#key `${selectedClass}:${selectedUnit}:${generateVersion}`}
+						{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
 							<QuestionCard
 								subject={selectedClass || 'Select AP Class'}
 								{selectedClass}
 								{selectedUnit}
+								{customTopic}
 								requestVersion={generateVersion}
 							/>
 						{/key}

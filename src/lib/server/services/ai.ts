@@ -372,32 +372,54 @@ export async function generateAPQuestion(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
+	/** When set, generates for this user-specified topic (not pooled/cached server-side). */
+	customTopic?: string;
 }): Promise<GenerateResult> {
-	const { className, unit, recentTopics } = opts;
+	const { className, unit, recentTopics, customTopic } = opts;
 	if (!className) throw new Error('className is required');
 
-	const { unitContext, keywordsContext, courseNotesContext } = buildUnitSections(
-		className,
-		unit,
-		'question'
-	);
-	const diversitySection = buildDiversitySection(recentTopics, {
-		label: 'TOPICS',
-		avoidLabel: 'subtopic, concept, or scenario',
-		pickLabel:
-			'Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.'
-	});
+	const ct = customTopic?.trim() ?? '';
+	const isCustom = ct.length > 0;
+
+	let unitContext: string;
+	let keywordsContext = '';
+	let courseNotesContext = '';
+	let diversitySection = '';
+
+	if (isCustom) {
+		unitContext = `
+USER-SPECIFIED TOPIC (PRIMARY — THE ENTIRE QUESTION MUST CENTER ON THIS):
+${ct}
+`;
+	} else {
+		const sections = buildUnitSections(className, unit, 'question');
+		unitContext = sections.unitContext;
+		keywordsContext = sections.keywordsContext;
+		courseNotesContext = sections.courseNotesContext;
+		diversitySection = buildDiversitySection(recentTopics, {
+			label: 'TOPICS',
+			avoidLabel: 'subtopic, concept, or scenario',
+			pickLabel:
+				'Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.'
+		});
+	}
 
 	const isBiology = className.toLowerCase().includes('biology');
 	const difficultyGuidance = isBiology
 		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Match the difficulty of questions in the official AP Biology Course and Exam Description\n- Emphasize scientific practices over pure recall`
 		: '';
 
+	const scopeBlock = isCustom
+		? `TOPIC SCOPE:
+- The question MUST assess understanding directly related to the user-specified topic above within ${className}.
+- Stay aligned with College Board standards for that course; do not drift into unrelated subjects.`
+		: `CRITICAL UNIT SCOPE REQUIREMENT:
+- Your question MUST stay strictly within the unit's specified keywords and topics listed above
+- DO NOT incorporate concepts from other units, even if they seem related`;
+
 	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
 
-CRITICAL UNIT SCOPE REQUIREMENT:
-- Your question MUST stay strictly within the unit's specified keywords and topics listed above
-- DO NOT incorporate concepts from other units, even if they seem related
+${scopeBlock}
 
 QUESTION QUALITY:
 - Match actual AP exam difficulty and style
@@ -422,13 +444,17 @@ OUTPUT:
 - Return ONLY the JSON object matching the schema; no text before or after the JSON`;
 
 	const model = selectModelForClass(className);
+	const userMessage = isCustom
+		? `Create an AP-level practice multiple-choice question for ${className} focused on this topic: ${ct}\n\nReturn ONLY the JSON object, no other text.`
+		: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+
 	const completionParams: Parameters<OpenAI['chat']['completions']['parse']>[0] = {
 		model,
 		messages: [
 			{ role: 'system', content: systemPrompt },
 			{
 				role: 'user',
-				content: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
+				content: userMessage
 			}
 		],
 		response_format: zodResponseFormat(APQuestion, 'ap_question')
@@ -440,12 +466,13 @@ OUTPUT:
 	const { parsed } = await runStructuredCompletion<APQuestionData>(
 		'generateAPQuestion',
 		completionParams,
-		{ className, unit }
+		{ className, unit, customTopic: isCustom ? ct : undefined }
 	);
 
+	const persistUnitLabel = isCustom ? `Custom: ${ct}` : unit;
 	// Fire-and-forget persist (S3 + Mongo stats) — don't block the response
 	let questionId: string | undefined;
-	void persistGeneratedMcqQuestion(parsed, className, unit)
+	void persistGeneratedMcqQuestion(parsed, className, persistUnitLabel)
 		.then((id) => {
 			questionId = id;
 		})
@@ -499,25 +526,45 @@ export async function generateFRQQuestion(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
+	customTopic?: string;
 }): Promise<GenerateFRQResult> {
-	const { className, unit, recentTopics } = opts;
+	const { className, unit, recentTopics, customTopic } = opts;
 	if (!className) throw new Error('className is required');
 
-	const { unitContext, keywordsContext, courseNotesContext } = buildUnitSections(
-		className,
-		unit,
-		'FRQ'
-	);
+	const ct = customTopic?.trim() ?? '';
+	const isCustom = ct.length > 0;
+
+	let unitContext: string;
+	let keywordsContext = '';
+	let courseNotesContext = '';
+	let diversitySection = '';
+
+	if (isCustom) {
+		unitContext = `
+USER-SPECIFIED TOPIC (PRIMARY — THE ENTIRE FRQ MUST CENTER ON THIS):
+${ct}
+`;
+	} else {
+		const sections = buildUnitSections(className, unit, 'FRQ');
+		unitContext = sections.unitContext;
+		keywordsContext = sections.keywordsContext;
+		courseNotesContext = sections.courseNotesContext;
+		diversitySection = buildDiversitySection(recentTopics, {
+			label: 'FRQ TOPICS',
+			avoidLabel: 'scenario, question type, or concept',
+			pickLabel: 'Select a fresh context or a less-common but exam-relevant FRQ type.'
+		});
+	}
+
 	const frqSpecSections = buildFRQSpecSections(getFRQSpecData(className));
-	const diversitySection = buildDiversitySection(recentTopics, {
-		label: 'FRQ TOPICS',
-		avoidLabel: 'scenario, question type, or concept',
-		pickLabel: 'Select a fresh context or a less-common but exam-relevant FRQ type.'
-	});
 
-	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqSpecSections}${diversitySection}
+	const scopeLine = isCustom
+		? `TOPIC SCOPE: The FRQ must assess skills and content related to the user-specified topic within ${className}. Stay aligned with College Board expectations for that course.`
+		: 'CRITICAL UNIT SCOPE: Stay strictly within the specified unit\'s keywords and topics.';
 
-CRITICAL UNIT SCOPE: Stay strictly within the specified unit's keywords and topics.
+	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit && !isCustom ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqSpecSections}${diversitySection}
+
+${scopeLine}
 
 FRQ STRUCTURE:
 - Write a main prompt/scenario (may include a stimulus such as a graph, data table, or passage in the "context" field)
@@ -534,6 +581,10 @@ QUALITY:
 - ${LATEX_RULE}`;
 
 	const model = selectModelForClass(className);
+	const frqUserMessage = isCustom
+		? `Create an AP-level FRQ for ${className} focused on this topic: ${ct}.`
+		: `Create an AP-level FRQ for ${className}${unit ? ` covering ${unit}` : ''}.`;
+
 	const { parsed } = await runStructuredCompletion<FRQQuestionData>(
 		'generateFRQQuestion',
 		{
@@ -542,13 +593,13 @@ QUALITY:
 				{ role: 'system', content: systemPrompt },
 				{
 					role: 'user',
-					content: `Create an AP-level FRQ for ${className}${unit ? ` covering ${unit}` : ''}.`
+					content: frqUserMessage
 				}
 			],
 			response_format: zodResponseFormat(FRQQuestion, 'frq_question'),
 			reasoning_effort: 'medium'
 		},
-		{ className, unit }
+		{ className, unit, customTopic: isCustom ? ct : undefined }
 	);
 
 	return { question: parsed, provider: 'openai', model };

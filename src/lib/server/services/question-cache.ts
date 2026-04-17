@@ -355,6 +355,23 @@ function releaseQuestion(docId: string, currentServeCount: number, maxServeCount
 export type CachedResult = GenerateResult & { cached: boolean };
 
 /**
+ * Live MCQ for a user-specified topic only — does not read or write the pooled cache.
+ */
+export async function generateLiveCustomTopicMcq(
+	className: string,
+	customTopic: string
+): Promise<CachedResult> {
+	const trimmed = customTopic.trim();
+	if (!trimmed) throw new Error('customTopic is required');
+	const result = await generateAPQuestion({
+		className,
+		unit: '',
+		customTopic: trimmed
+	});
+	return { ...result, cached: false };
+}
+
+/**
  * Main entry point for the question API.
  *
  * 1. Atomically claim the least-recently-served available question from the pool.

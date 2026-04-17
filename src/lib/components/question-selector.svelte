@@ -11,6 +11,8 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils.js';
+	import { CUSTOM_UNIT_VALUE } from '$lib/constants/custom-unit';
+	import { Input } from '$lib/components/ui/input/index.js';
 
 	type Course = {
 		name: string;
@@ -21,6 +23,8 @@
 	type QuestionSelectorProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
+		/** When the user picks "Custom" unit, they describe the topic here (sent to the API, not cached). */
+		customTopic?: string;
 		questionType?: 'mcq' | 'frq';
 		hideQuestionTypeTabs?: boolean;
 		isLoading?: boolean;
@@ -35,6 +39,7 @@
 	let {
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
+		customTopic = $bindable(''),
 		questionType = $bindable<'mcq' | 'frq'>('mcq'),
 		hideQuestionTypeTabs = false,
 		isLoading = false,
@@ -43,6 +48,8 @@
 		onSelectionChange,
 		onTypeChange
 	}: QuestionSelectorProps = $props();
+
+	const isCustomUnitSelected = $derived(selectedUnit === CUSTOM_UNIT_VALUE);
 
 	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
 	const unitOptions = $derived(
@@ -62,6 +69,7 @@
 	function selectClass(name: string): void {
 		selectedClass = name;
 		selectedUnit = '';
+		customTopic = '';
 		classOpen = false;
 		tick().then(() => classTriggerRef?.focus());
 		notifySelectionChange();
@@ -69,6 +77,7 @@
 
 	function selectUnit(unit: string): void {
 		selectedUnit = unit;
+		if (unit !== CUSTOM_UNIT_VALUE) customTopic = '';
 		unitOpen = false;
 		tick().then(() => unitTriggerRef?.focus());
 		notifySelectionChange();
@@ -167,7 +176,19 @@
 							class="w-full justify-between font-normal"
 						>
 							<span class="truncate">
-								{selectedUnit || (selectedClass ? 'All Units' : 'Select a course first')}
+								{#if !selectedClass}
+									Select a course first
+								{:else if !selectedUnit}
+									All Units
+								{:else if isCustomUnitSelected}
+									{customTopic.trim()
+										? customTopic.trim().length > 48
+											? `${customTopic.trim().slice(0, 48)}…`
+											: customTopic.trim()
+										: 'Custom topic'}
+								{:else}
+									{selectedUnit}
+								{/if}
 							</span>
 							<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
 						</Button>
@@ -196,6 +217,12 @@
 										{unit}
 									</Command.Item>
 								{/each}
+								<Command.Item value="custom-topic" onSelect={() => selectUnit(CUSTOM_UNIT_VALUE)}>
+									<CheckIcon
+										class={cn('mr-2 size-4 shrink-0', !isCustomUnitSelected && 'text-transparent')}
+									/>
+									Custom topic…
+								</Command.Item>
 							</Command.Group>
 						</Command.List>
 					</Command.Root>
@@ -205,7 +232,7 @@
 
 		<Button
 			onclick={onGenerate}
-			disabled={isLoading || !selectedClass}
+			disabled={isLoading || !selectedClass || (isCustomUnitSelected && !customTopic.trim())}
 			class="h-10 shrink-0 px-4 text-sm"
 		>
 			{isLoading ? 'Generating...' : generateLabel}
@@ -220,6 +247,20 @@
 			Report bug
 		</Button>
 	</div>
+
+	{#if selectedClass && isCustomUnitSelected}
+		<div class="space-y-2">
+			<Label for="custom-topic-input">Topic or subtopic</Label>
+			<Input
+				id="custom-topic-input"
+				placeholder="e.g. Cross-sectional volumes"
+				bind:value={customTopic}
+				class="max-w-xl"
+				autocomplete="off"
+			/>
+			<p class="text-xs text-muted-foreground">Generated on demand for this topic.</p>
+		</div>
+	{/if}
 </div>
 
-<BugReportDialog bind:open={bugReportOpen} {selectedClass} {selectedUnit} />
+<BugReportDialog bind:open={bugReportOpen} {selectedClass} {selectedUnit} {customTopic} />

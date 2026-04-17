@@ -319,6 +319,23 @@ function releaseFRQ(docId: string, currentServeCount: number, maxServeCount: num
 
 export type CachedFRQResult = GenerateFRQResult & { cached: boolean };
 
+/**
+ * Live FRQ for a user-specified topic only — does not read or write the pooled cache.
+ */
+export async function generateLiveCustomTopicFrq(
+	className: string,
+	customTopic: string
+): Promise<CachedFRQResult> {
+	const trimmed = customTopic.trim();
+	if (!trimmed) throw new Error('customTopic is required');
+	const result = await generateFRQQuestion({
+		className,
+		unit: '',
+		customTopic: trimmed
+	});
+	return { ...result, cached: false };
+}
+
 export async function getCachedFRQQuestion(
 	className: string,
 	unit?: string,

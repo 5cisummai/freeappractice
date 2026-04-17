@@ -24,6 +24,7 @@
 		questionNumber: string;
 		selectedClass?: string;
 		selectedUnit?: string;
+		customTopic?: string;
 		prompt?: string;
 		correctAnswer?: string;
 		hasStimulus: boolean;
@@ -86,6 +87,8 @@
 		questionNumber?: string;
 		selectedClass?: string;
 		selectedUnit?: string;
+		/** Required when selectedUnit is the custom-topic sentinel. */
+		customTopic?: string;
 		requestVersion?: number;
 		selectedOption?: string | null;
 		autoDetectLongQuestion?: boolean;
@@ -109,6 +112,7 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import { scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -130,6 +134,12 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
+	import {
+		CUSTOM_UNIT_VALUE,
+		hashTopicKey,
+		isCustomUnit,
+		unitForProgress
+	} from '$lib/constants/custom-unit';
 
 	let {
 		class: className,
@@ -137,6 +147,7 @@
 		questionNumber = '',
 		selectedClass = '',
 		selectedUnit = '',
+		customTopic = '',
 		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
@@ -183,6 +194,12 @@
 	let isGrading = $state(false);
 	let hasSubmitted = $state(false);
 
+	/** One-slot client prefetch for custom-topic flows only (next question while you work on the current one). */
+	let prefetchedCustomMcq = $state<{ key: string; question: GeneratedQuestion } | null>(null);
+	let prefetchedCustomFrq = $state<{ key: string; question: FRQQuestion } | null>(null);
+	let prefetchMcqInFlightKey = $state<string | null>(null);
+	let prefetchFrqInFlightKey = $state<string | null>(null);
+
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
 		referenceSheet: { title: string; sections: { heading: string; content: string }[] } | null;
@@ -216,6 +233,9 @@
 	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
+	const tutorUnitLabel = $derived(
+		isCustomUnit(selectedUnit) ? customTopic.trim() || 'Custom topic' : selectedUnit
+	);
 	const effectiveTwoColumn = $derived(
 		!isMobileViewport &&
 			(currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
@@ -242,6 +262,22 @@
 	const allPartsAnswered = $derived.by(() => {
 		if (!frqQuestion) return false;
 		return frqQuestion.parts.every((p) => (frqResponses[p.label] ?? '').trim().length > 0);
+	});
+
+	function customTopicCacheKey(): string {
+		return `${selectedClass}::${hashTopicKey(customTopic.trim())}`;
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		if (!isCustomUnit(selectedUnit) || !customTopic.trim()) {
+			prefetchedCustomMcq = null;
+			prefetchedCustomFrq = null;
+			return;
+		}
+		const k = customTopicCacheKey();
+		if (prefetchedCustomMcq && prefetchedCustomMcq.key !== k) prefetchedCustomMcq = null;
+		if (prefetchedCustomFrq && prefetchedCustomFrq.key !== k) prefetchedCustomFrq = null;
 	});
 
 	function getScoreColor(score: number): string {
@@ -371,11 +407,19 @@
 		return allUnits[Math.floor(Math.random() * allUnits.length)];
 	}
 
-	async function requestQuestion(className: string, unit: string): Promise<QuestionApiResponse> {
+	async function requestQuestion(
+		className: string,
+		unit: string,
+		topicOverride?: string
+	): Promise<QuestionApiResponse> {
+		const body: Record<string, string> = { className, unit };
+		const t = topicOverride?.trim();
+		if (t) body.customTopic = t;
+
 		const response = await apiFetch('/api/question', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ className, unit })
+			body: JSON.stringify(body)
 		});
 
 		const payload = await readJsonOrNull<QuestionApiResponse>(response);
@@ -384,6 +428,94 @@
 		}
 
 		return payload;
+	}
+
+	function parseQuestionPayloadFromResponse(response: QuestionApiResponse): GeneratedQuestion {
+		if (typeof response.error === 'string' && response.error.trim()) {
+			throw new Error(response.error);
+		}
+
+		let payload: unknown = response;
+		if (typeof response.answer === 'string') {
+			let raw = response.answer.trim();
+			if (raw.startsWith('```')) {
+				raw = raw.replace(/```json|```/g, '').trim();
+			}
+			try {
+				payload = JSON.parse(raw);
+			} catch {
+				throw new Error('Question service returned an invalid question payload.');
+			}
+		}
+
+		const normalized = normalizeQuestionPayload(payload, String(response.questionId ?? ''));
+		if (!normalized) {
+			throw new Error('Question API response was missing required fields.');
+		}
+		return normalized;
+	}
+
+	function prefetchNextCustomMcq(): void {
+		if (!browser || mode !== 'mcq') return;
+		if (!isCustomUnit(selectedUnit)) return;
+		const topicTrim = customTopic.trim();
+		if (!topicTrim || !selectedClass) return;
+		const key = customTopicCacheKey();
+		if (prefetchedCustomMcq?.key === key) return;
+		if (prefetchMcqInFlightKey === key) return;
+		prefetchMcqInFlightKey = key;
+		void (async () => {
+			try {
+				const response = await requestQuestion(selectedClass, '', topicTrim);
+				const normalized = parseQuestionPayloadFromResponse(response);
+				if (customTopicCacheKey() !== key || !isCustomUnit(selectedUnit)) return;
+				prefetchedCustomMcq = { key, question: normalized };
+			} catch {
+				// Prefetch is best-effort only.
+			} finally {
+				if (prefetchMcqInFlightKey === key) prefetchMcqInFlightKey = null;
+			}
+		})();
+	}
+
+	function prefetchNextCustomFrq(): void {
+		if (!browser || mode !== 'frq') return;
+		if (!isCustomUnit(selectedUnit)) return;
+		const topicTrim = customTopic.trim();
+		if (!topicTrim || !selectedClass) return;
+		const key = customTopicCacheKey();
+		if (prefetchedCustomFrq?.key === key) return;
+		if (prefetchFrqInFlightKey === key) return;
+		prefetchFrqInFlightKey = key;
+		void (async () => {
+			try {
+				const body: Record<string, string> = {
+					className: selectedClass,
+					unit: '',
+					customTopic: topicTrim
+				};
+				const response = await apiFetch('/api/question/frq', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(body)
+				});
+				const data = await readJsonOrNull<FRQQuestionApiResponse>(response);
+				if (!response.ok || !data?.question) return;
+				const fq: FRQQuestion = {
+					questionId: data.questionId,
+					prompt: data.question.prompt,
+					context: data.question.context ?? null,
+					parts: data.question.parts,
+					totalPoints: data.question.totalPoints
+				};
+				if (customTopicCacheKey() !== key || !isCustomUnit(selectedUnit)) return;
+				prefetchedCustomFrq = { key, question: fq };
+			} catch {
+				// Prefetch is best-effort only.
+			} finally {
+				if (prefetchFrqInFlightKey === key) prefetchFrqInFlightKey = null;
+			}
+		})();
 	}
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
@@ -450,6 +582,33 @@
 			return;
 		}
 
+		const custom = isCustomUnit(selectedUnit);
+		const topicTrim = customTopic.trim();
+		if (custom && !topicTrim) {
+			statusMessage = 'Enter a topic for your custom question.';
+			return;
+		}
+
+		// Instant path: one client-cached question for the same custom class+topic.
+		if (
+			custom &&
+			topicTrim &&
+			prefetchedCustomMcq &&
+			prefetchedCustomMcq.key === customTopicCacheKey()
+		) {
+			const cached = prefetchedCustomMcq.question;
+			prefetchedCustomMcq = null;
+			if (reason === 'skip') statusMessage = 'Skipped current question.';
+			else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
+			else statusMessage = 'Choose the best answer and then check your response.';
+			currentQuestion = cached;
+			questionCount += 1;
+			resetInteractionState(true);
+			saveToStorage();
+			prefetchNextCustomMcq();
+			return;
+		}
+
 		isLoading = true;
 
 		if (reason === 'skip') statusMessage = 'Skipped current question.';
@@ -457,36 +616,21 @@
 		else statusMessage = 'Loading question...';
 
 		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit);
-			const response = await requestQuestion(selectedClass, effectiveUnit);
+			const effectiveUnit = custom ? '' : resolveEffectiveUnit(selectedClass, selectedUnit);
+			const response = await requestQuestion(
+				selectedClass,
+				effectiveUnit,
+				custom ? topicTrim : undefined
+			);
 
-			if (typeof response.error === 'string' && response.error.trim()) {
-				throw new Error(response.error);
-			}
-
-			let payload: unknown = response;
-			if (typeof response.answer === 'string') {
-				let raw = response.answer.trim();
-				if (raw.startsWith('```')) {
-					raw = raw.replace(/```json|```/g, '').trim();
-				}
-				try {
-					payload = JSON.parse(raw);
-				} catch {
-					throw new Error('Question service returned an invalid question payload.');
-				}
-			}
-
-			const normalized = normalizeQuestionPayload(payload, String(response.questionId ?? ''));
-			if (!normalized) {
-				throw new Error('Question API response was missing required fields.');
-			}
+			const normalized = parseQuestionPayloadFromResponse(response);
 
 			currentQuestion = normalized;
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
 			saveToStorage();
+			if (custom && topicTrim) prefetchNextCustomMcq();
 		} catch (error) {
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
 		} finally {
@@ -537,6 +681,7 @@
 			questionNumber: effectiveQuestionNumber,
 			selectedClass,
 			selectedUnit,
+			customTopic,
 			prompt: currentQuestion?.prompt,
 			correctAnswer: currentQuestion?.correctAnswer,
 			hasStimulus: Boolean(currentQuestion?.hasStimulus)
@@ -593,15 +738,46 @@
 			return;
 		}
 
+		const custom = isCustomUnit(selectedUnit);
+		const topicTrim = customTopic.trim();
+		if (custom && !topicTrim) {
+			statusMessage = 'Enter a topic for your custom question.';
+			return;
+		}
+
+		if (
+			custom &&
+			topicTrim &&
+			prefetchedCustomFrq &&
+			prefetchedCustomFrq.key === customTopicCacheKey()
+		) {
+			const q = prefetchedCustomFrq.question;
+			prefetchedCustomFrq = null;
+			resetFRQState();
+			frqQuestion = q;
+			frqResponses = Object.fromEntries(q.parts.map((p) => [p.label, '']));
+			questionCount += 1;
+			statusMessage = 'Write your response for each part, then submit.';
+			saveToStorage();
+			prefetchNextCustomFrq();
+			return;
+		}
+
 		isLoading = true;
 		statusMessage = 'Loading question...';
 		resetFRQState();
 
 		try {
+			const body: Record<string, string> = {
+				className: selectedClass,
+				unit: custom ? '' : selectedUnit
+			};
+			if (custom) body.customTopic = topicTrim;
+
 			const response = await apiFetch('/api/question/frq', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ className: selectedClass, unit: selectedUnit })
+				body: JSON.stringify(body)
 			});
 			const data = await readJsonOrNull<FRQQuestionApiResponse>(response);
 
@@ -624,6 +800,7 @@
 			questionCount += 1;
 			statusMessage = 'Write your response for each part, then submit.';
 			saveToStorage();
+			if (custom && topicTrim) prefetchNextCustomFrq();
 		} catch (error) {
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
 		} finally {
@@ -643,7 +820,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					className: selectedClass,
-					unit: selectedUnit,
+					unit: unitForProgress(selectedUnit, customTopic),
 					parts: frqQuestion.parts,
 					responses: frqResponses
 				})
@@ -688,7 +865,10 @@
 	// ── localStorage persistence ─────────────────────────────
 
 	function getStorageKey(): string {
-		return `practice_q_${mode}_${selectedClass}_${selectedUnit}`;
+		const unitPart = isCustomUnit(selectedUnit)
+			? `${CUSTOM_UNIT_VALUE}_${hashTopicKey(customTopic.trim())}`
+			: selectedUnit;
+		return `practice_q_${mode}_${selectedClass}_${unitPart}`;
 	}
 
 	function saveToStorage(): void {
@@ -1364,7 +1544,7 @@
 				answer={currentQuestion.correctAnswer ?? ''}
 				explanation={currentQuestion.explanation ?? ''}
 				apClass={selectedClass}
-				unit={selectedUnit}
+				unit={tutorUnitLabel}
 				answerChoices={tutorAnswerChoices}
 			/>
 		{/key}
@@ -1384,5 +1564,6 @@
 		context={bugReportContext}
 		{selectedClass}
 		{selectedUnit}
+		{customTopic}
 	/>
 {/if}
