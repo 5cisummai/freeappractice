@@ -35,27 +35,14 @@ setInterval(() => {
 }, WINDOW_MS);
 
 // ── Security headers ────────────────────────────────────────
+// CSP is managed by SvelteKit's built-in csp config in svelte.config.js,
+// which automatically injects nonces for SSR and hashes for prerendered pages.
 const SECURITY_HEADERS: Record<string, string> = {
 	'X-Frame-Options': 'DENY',
 	'X-Content-Type-Options': 'nosniff',
 	'Referrer-Policy': 'strict-origin-when-cross-origin',
 	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
-	'Content-Security-Policy': [
-		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://www.desmos.com https://static.cloudflareinsights.com blob:",
-		"style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-		"font-src 'self' https://fonts.gstatic.com data:",
-		"img-src 'self' data: blob: https://freeappractice.org https://*.googleapis.com https://*.gstatic.com",
-		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com https://cloudflareinsights.com blob:",
-		'frame-src https://accounts.google.com/gsi/ https://www.desmos.com',
-		"worker-src 'self' blob:",
-		"base-uri 'self'",
-		"form-action 'self'",
-		"object-src 'none'",
-		"frame-ancestors 'none'",
-		'upgrade-insecure-requests'
-	].join('; ')
+	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload'
 };
 
 const ALLOWED_ORIGINS = [
