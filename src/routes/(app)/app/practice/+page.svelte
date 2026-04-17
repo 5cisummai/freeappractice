@@ -97,6 +97,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Practice – Free AP Practice</title>
+</svelte:head>
+
 <div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
 	<div class="space-y-1">
 		<h1 class="text-2xl font-semibold tracking-tight">Practice</h1>

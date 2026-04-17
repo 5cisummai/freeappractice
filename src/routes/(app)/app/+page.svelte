@@ -84,6 +84,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Dashboard – Free AP Practice</title>
+</svelte:head>
+
 <div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
 	<!-- Welcome -->
 	<div class="space-y-1">

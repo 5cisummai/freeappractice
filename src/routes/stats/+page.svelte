@@ -59,6 +59,10 @@
 	const unitsCount = $derived(Object.keys(generationStats?.byUnit ?? {}).length);
 </script>
 
+<svelte:head>
+	<title>Stats – Free AP Practice</title>
+</svelte:head>
+
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
