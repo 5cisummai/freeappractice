@@ -717,7 +717,7 @@
 					"rubric_structure": {
 						"thesis": "0–1: Defensible position; may not restate prompt or present both sides without a claim",
 						"evidence_and_commentary": "0–4: Evidence from 3+ sources with commentary; 4-point responses sustain a consistent line of reasoning",
-						"sophistication": "0–1: Genuine complexity of thought - qualifies argument, acknowledges tensions, or demonstrates purposeful style, hard to earn"
+						"sophistication": "0–1: Genuine complexity of thought - qualifies argument, acknowledges tensions, or demonstrates purposeful style"
 					},
 					"scoring_notes": [
 						"Sophistication point earned by only ~5–15% of students; requires genuine complexity, not sophisticated vocabulary",
@@ -774,8 +774,7 @@
 				"Rhetorical Analysis: explain HOW choices create effect - naming devices without effect analysis earns low scores",
 				"Synthesis: cite at least 3 sources with clear attribution",
 				"Argument: choose specific, developed evidence - no sources are provided",
-				"Sophistication point requires genuine complexity, not just advanced vocabulary",
-				"use only a single part for the entire essay - do not split into multiple sections"
+				"Sophistication point requires genuine complexity, not just advanced vocabulary"
 			]
 		},
 		{
@@ -1594,6 +1593,107 @@
 				"Always interpret function values in context with units",
 				"Calculator-active parts may require regression, evaluating functions, or finding zeros numerically",
 				"No-calculator parts require algebraic precision with exact values (e.g., ln, π, exact fractions)"
+			]
+		},
+		{
+			"course_code": "APSPANLANG",
+			"course_name": "AP Spanish Language",
+			"frq_overview": {
+				"section": "Section II",
+				"total_questions": 4,
+				"weight_of_exam": "50%",
+				"time_total_minutes": 83,
+				"structure": {
+					"part_a_writing": "Task 1: Email Reply (~15 minutes) and Task 2: Argumentative Essay (~55 minutes including 6 minutes of audio source material)",
+					"part_b_speaking": "Task 3: Simulated Conversation (~3 minutes, 20 seconds per response) and Task 4: Cultural Comparison (~6 minutes including 4-minute preparation and 2-minute presentation)"
+				},
+				"note": "All responses must be in Spanish. The exam assesses three modes of communication: Interpersonal Writing, Presentational Writing, Interpersonal Speaking, and Presentational Speaking."
+			},
+			"question_types": [
+				{
+					"type": "Email Reply (Interpersonal Writing)",
+					"typical_position": "Task 1",
+					"description": "Students read a prompt email and write a formal reply in Spanish. The reply must address all questions posed, ask for more details, and use a formal register (usted).",
+					"common_parts": [
+						"Address all questions or requests in the prompt email",
+						"Ask for additional information or clarification",
+						"Use formal register and appropriate salutations and closings",
+						"Demonstrate a range of vocabulary and grammatical structures"
+					],
+					"scoring_notes": [
+						"Scored on a 0–5 rubric: task completion, topic development, language use",
+						"Must maintain formal register throughout - tuteo or informal register lowers score",
+						"Failure to ask a question limits score to 3 maximum",
+						"Cultural appropriateness of greetings and closings is evaluated"
+					]
+				},
+				{
+					"type": "Argumentative Essay (Presentational Writing)",
+					"typical_position": "Task 2",
+					"description": "Students write a persuasive essay using three provided sources: a printed text, a chart/table/graph, and an audio recording. Must integrate all three sources to support a clear thesis.",
+					"common_parts": [
+						"Present a clear thesis with a defensible position",
+						"Integrate evidence from all three sources (print, data, audio)",
+						"Cite sources appropriately within the essay",
+						"Organize the essay with an introduction, body, and conclusion",
+						"Address counterarguments or alternative perspectives"
+					],
+					"scoring_notes": [
+						"Scored on a 0–5 rubric: thesis, evidence/source integration, persuasive strength, language control",
+						"Must cite all three sources - omitting one limits score to 3 maximum",
+						"Simply summarizing sources instead of building an argument limits the score",
+						"Cohesive devices (transitions, conjunctions) are expected for scores of 4–5",
+						"6 minutes of audio source time is included in the 55-minute allotment"
+					]
+				},
+				{
+					"type": "Simulated Conversation (Interpersonal Speaking)",
+					"typical_position": "Task 3",
+					"description": "Students participate in a simulated conversation by responding to audio prompts. There are 5 exchanges; each response must address the prompt within 20 seconds.",
+					"common_parts": [
+						"Respond appropriately to each conversational prompt",
+						"Initiate and sustain the conversation naturally",
+						"Use appropriate register (formal or informal based on context)",
+						"Demonstrate varied vocabulary and idiomatic expressions"
+					],
+					"scoring_notes": [
+						"Scored on a 0–5 rubric: task completion, delivery, language use",
+						"Each of 5 responses is approximately 20 seconds",
+						"Silence or off-topic responses for any exchange significantly lower the score",
+						"Self-correction is acceptable and does not penalize; pronunciation should be comprehensible"
+					]
+				},
+				{
+					"type": "Cultural Comparison (Presentational Speaking)",
+					"typical_position": "Task 4",
+					"description": "Students deliver a 2-minute oral presentation comparing a cultural practice, product, or perspective from a Spanish-speaking community to their own or another community.",
+					"common_parts": [
+						"Describe a cultural practice, product, or perspective from a Spanish-speaking community",
+						"Compare with the student's own community or another community",
+						"Support claims with specific examples and details",
+						"Demonstrate understanding of the target culture"
+					],
+					"scoring_notes": [
+						"Scored on a 0–5 rubric: task completion, delivery, language use",
+						"4 minutes preparation, 2 minutes speaking",
+						"Must make explicit comparison - describing only one culture limits score to 3",
+						"Specific cultural examples are required - generalizations lower the score",
+						"Organized structure (introduction, comparison, conclusion) expected for scores of 4–5"
+					]
+				}
+			],
+			"rubric_conventions": {
+				"scoring_method": "Holistic 0–5 rubric per task; total raw score converted to composite with MCQ",
+				"prose_required": "Writing tasks require connected prose in essay format; speaking tasks require sustained oral production",
+				"language_expectations": "All responses in Spanish; grammatical accuracy, vocabulary range, and idiomatic usage are weighted heavily at 4–5 score levels"
+			},
+			"important_notes": [
+				"All responses must be entirely in Spanish",
+				"Formal register (usted) is required for the email reply unless the prompt specifies otherwise",
+				"The argumentative essay must integrate all three sources and cite them",
+				"Cultural Comparison must include specific examples from a Spanish-speaking community - not just generalizations",
+				"Interpersonal tasks require both responding to prompts and initiating new elements (questions, elaboration)",
+				"Accent marks and spelling matter - consistent errors in conventions lower language-use scores"
 			]
 		}
 	]

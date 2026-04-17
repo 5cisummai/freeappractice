@@ -5,6 +5,7 @@ import { GOOGLE_CLIENT_ID } from '$env/static/private';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { signToken } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -72,7 +73,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			user: { userId: user._id, name: user.name, email: user.email }
 		});
 	} catch (err) {
-		console.error('Google auth error:', err);
+		logger.error('Google auth error', { error: err });
 		return json({ error: 'Authentication failed' }, { status: 500 });
 	}
 };

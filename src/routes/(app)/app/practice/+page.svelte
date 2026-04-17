@@ -8,9 +8,11 @@
 	} from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import { toast } from 'svelte-sonner';
+	import { unitForProgress } from '$lib/constants/custom-unit';
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
+	let customTopic = $state('');
 	let questionType = $state<'mcq' | 'frq'>('mcq');
 	let requestVersion = $state(0);
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
@@ -68,7 +70,7 @@
 			{
 				questionId: result.questionId,
 				apClass: selectedClass,
-				unit: selectedUnit,
+				unit: unitForProgress(selectedUnit, customTopic),
 				selectedAnswer: result.selectedAnswer,
 				wasCorrect: result.isCorrect,
 				timeTakenMs: result.timeTakenMs
@@ -84,7 +86,7 @@
 			{
 				questionId: result.questionId,
 				apClass: selectedClass,
-				unit: selectedUnit,
+				unit: unitForProgress(selectedUnit, customTopic),
 				aiScore: result.aiScore,
 				pointsEarned: result.pointsEarned,
 				totalPoints: result.totalPoints,
@@ -94,6 +96,10 @@
 		);
 	}
 </script>
+
+<svelte:head>
+	<title>Practice – Free AP Practice</title>
+</svelte:head>
 
 <div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
 	<div class="space-y-1">
@@ -105,17 +111,19 @@
 		<QuestionSelector
 			bind:selectedClass
 			bind:selectedUnit
+			bind:customTopic
 			bind:questionType
 			onSelectionChange={handleSelectionChange}
 			onTypeChange={handleTypeChange}
 			onGenerate={handleGenerate}
 		/>
 		{#if requestVersion > 0}
-			{#key `${questionType}:${selectedClass}:${selectedUnit}:${requestVersion}`}
+			{#key `${questionType}:${selectedClass}:${selectedUnit}:${customTopic}:${requestVersion}`}
 				<QuestionCard
 					mode={questionType}
 					{selectedClass}
 					{selectedUnit}
+					{customTopic}
 					{requestVersion}
 					onAnswered={handleAnswered}
 					onFRQAnswered={handleFRQAnswered}

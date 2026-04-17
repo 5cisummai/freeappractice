@@ -4,10 +4,10 @@ import {
 	QuestionGenUnitDetail,
 	QuestionGenUnitGlobal
 } from '$lib/server/models/question-generation-stats';
+import { normalizeUnit } from '$lib/server/utils';
 
 export function normalizeUnitLabel(unit?: string | null): string {
-	const t = (unit ?? '').trim();
-	return t || '(none)';
+	return normalizeUnit(unit, '(none)');
 }
 
 /**
@@ -27,17 +27,17 @@ export async function recordMcqGenerated(opts: {
 		QuestionGenClassTotal.findOneAndUpdate(
 			{ apClass: opts.apClass },
 			{ $inc: { count: 1, totalQuestionChars: len } },
-			{ upsert: true, new: true }
+			{ upsert: true, returnDocument: 'after' }
 		).exec(),
 		QuestionGenUnitDetail.findOneAndUpdate(
 			{ apClass: opts.apClass, unit },
 			{ $inc: { count: 1, totalQuestionChars: len } },
-			{ upsert: true, new: true }
+			{ upsert: true, returnDocument: 'after' }
 		).exec(),
 		QuestionGenUnitGlobal.findOneAndUpdate(
 			{ unit },
 			{ $inc: { count: 1, totalQuestionChars: len } },
-			{ upsert: true, new: true }
+			{ upsert: true, returnDocument: 'after' }
 		).exec()
 	]);
 }

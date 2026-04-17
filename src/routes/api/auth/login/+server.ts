@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { signToken } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -35,7 +36,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			user: { userId: user._id, name: user.name, email: user.email }
 		});
 	} catch (err) {
-		console.error('Login error:', err);
+		logger.error('Login error', { error: err });
 		return json({ error: 'Login failed' }, { status: 500 });
 	}
 };

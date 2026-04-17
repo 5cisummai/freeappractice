@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 export const DELETE: RequestHandler = async (event) => {
 	try {
@@ -16,7 +17,7 @@ export const DELETE: RequestHandler = async (event) => {
 		return json({ message: 'Account deleted successfully' });
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Delete account error:', err);
+		logger.error('Delete account error', { error: err });
 		return json({ error: 'Failed to delete account' }, { status: 500 });
 	}
 };

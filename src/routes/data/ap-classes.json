@@ -320,6 +320,19 @@
 				"Unit 4: Imperfect Competition"
 			],
 			"semester2": ["Unit 5: Factor Markets", "Unit 6: Market Failure and the Role of Government"]
+		},
+		{
+			"name": "AP Spanish Language",
+			"semester1": [
+				"Unit 1: Families and Communities",
+				"Unit 2: Personal and Public Identities",
+				"Unit 3: Beauty and Aesthetics"
+			],
+			"semester2": [
+				"Unit 4: Science and Technology",
+				"Unit 5: Contemporary Life",
+				"Unit 6: Global Challenges"
+			]
 		}
 	]
 }

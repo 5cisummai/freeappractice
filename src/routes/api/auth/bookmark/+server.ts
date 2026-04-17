@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -33,7 +34,7 @@ export const POST: RequestHandler = async (event) => {
 		});
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Bookmark error:', err);
+		logger.error('Bookmark error', { error: err });
 		return json({ error: 'Failed to bookmark question' }, { status: 500 });
 	}
 };

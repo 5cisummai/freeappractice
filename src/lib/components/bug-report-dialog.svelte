@@ -7,6 +7,7 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { NativeSelect } from '$lib/components/ui/native-select/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { unitForProgress } from '$lib/constants/custom-unit';
 
 	type BugReportSeverity = 'low' | 'medium' | 'high';
 
@@ -24,13 +25,15 @@
 		context?: BugReportContext | null;
 		selectedClass?: string;
 		selectedUnit?: string;
+		customTopic?: string;
 	};
 
 	let {
 		open = $bindable(false),
 		context = null,
 		selectedClass = '',
-		selectedUnit = ''
+		selectedUnit = '',
+		customTopic = ''
 	}: Props = $props();
 
 	let submitting = $state(false);
@@ -43,7 +46,10 @@
 
 	function formFromContext(ctx: BugReportContext): BugReportForm {
 		const classLabel = ctx.selectedClass || selectedClass || 'practice';
-		const unitLabel = ctx.selectedUnit || selectedUnit || 'the current unit';
+		const unitLabel = unitForProgress(
+			ctx.selectedUnit ?? selectedUnit ?? '',
+			ctx.customTopic ?? customTopic
+		);
 		const questionLabel = ctx.questionNumber
 			? `Question ${ctx.questionNumber}`
 			: 'the current question';
