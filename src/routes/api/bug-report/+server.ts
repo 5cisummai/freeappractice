@@ -10,14 +10,22 @@ const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_RE
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const recentReportByIp = new Map<string, number>();
 
+const SAFE_METADATA_KEY = /^[\w\s\-.:]+$/;
+
 const reportSchema = z.object({
-	title: z.string().min(5),
-	description: z.string().min(10),
-	steps: z.string().optional(),
-	expected: z.string().optional(),
+	title: z.string().min(5).max(200),
+	description: z.string().min(10).max(5000),
+	steps: z.string().max(5000).optional(),
+	expected: z.string().max(2000).optional(),
 	severity: z.enum(['low', 'medium', 'high']).default('low'),
-	email: z.string().email().optional(),
-	metadata: z.record(z.string(), z.unknown()).optional()
+	email: z.string().email().max(254).optional(),
+	metadata: z
+		.record(
+			z.string().max(50).regex(SAFE_METADATA_KEY, 'Metadata key contains invalid characters'),
+			z.unknown()
+		)
+		.refine((m) => Object.keys(m).length <= 20, 'Too many metadata keys')
+		.optional()
 });
 
 const SEVERITY_LABEL: Record<string, string> = {
@@ -26,26 +34,30 @@ const SEVERITY_LABEL: Record<string, string> = {
 	high: 'severity: high'
 };
 
+function escapeMarkdown(text: string): string {
+	return text.replace(/`/g, '\\`').replace(/\[/g, '\\[').replace(/</g, '&lt;');
+}
+
 function buildIssueBody(parsed: z.infer<typeof reportSchema>): string {
 	const lines: string[] = [];
 
-	lines.push(`## Description\n${parsed.description}`);
+	lines.push(`## Description\n${escapeMarkdown(parsed.description)}`);
 
 	if (parsed.steps?.trim()) {
-		lines.push(`## Steps to Reproduce\n${parsed.steps}`);
+		lines.push(`## Steps to Reproduce\n${escapeMarkdown(parsed.steps)}`);
 	}
 
 	if (parsed.expected?.trim()) {
-		lines.push(`## Expected Behavior\n${parsed.expected}`);
+		lines.push(`## Expected Behavior\n${escapeMarkdown(parsed.expected)}`);
 	}
 
 	if (parsed.email?.trim()) {
-		lines.push(`## Reporter\n${parsed.email}`);
+		lines.push(`## Reporter\n${escapeMarkdown(parsed.email)}`);
 	}
 
 	if (parsed.metadata && Object.keys(parsed.metadata).length > 0) {
 		const meta = Object.entries(parsed.metadata)
-			.map(([k, v]) => `- **${k}**: ${JSON.stringify(v)}`)
+			.map(([k, v]) => `- **${k}**: ${escapeMarkdown(JSON.stringify(v))}`)
 			.join('\n');
 		lines.push(`## Context\n${meta}`);
 	}
@@ -102,7 +114,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		const parsed = reportSchema.parse(body);
 
 		const issuePayload = {
-			title: `[Bug] ${parsed.title}`,
+			title: `[Bug] ${escapeMarkdown(parsed.title)}`,
 			body: buildIssueBody(parsed),
 			labels: ['bug', SEVERITY_LABEL[parsed.severity]]
 		};
