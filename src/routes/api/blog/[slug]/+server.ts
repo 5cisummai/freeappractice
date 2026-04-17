@@ -38,7 +38,7 @@ export const PATCH: RequestHandler = async (event) => {
 		return json({ ok: true, slug: post.slug });
 	} catch (err) {
 		if (err instanceof z.ZodError) {
-			return json({ error: 'Validation failed', details: err.issues }, { status: 400 });
+			return json({ error: 'Validation failed' }, { status: 400 });
 		}
 		if (err instanceof Response) throw err;
 		logger.error('Blog update error', { error: err });

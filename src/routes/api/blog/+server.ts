@@ -54,7 +54,7 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'Invalid JSON payload' }, { status: 400 });
 		}
 		if (err instanceof z.ZodError) {
-			return json({ error: 'Validation failed', details: err.issues }, { status: 400 });
+			return json({ error: 'Validation failed' }, { status: 400 });
 		}
 		if (err instanceof Response) throw err;
 

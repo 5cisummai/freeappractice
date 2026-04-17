@@ -110,8 +110,18 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			);
 		}
 
-		const body = await request.json();
-		const parsed = reportSchema.parse(body);
+		let body: unknown;
+		try {
+			body = await request.json();
+		} catch {
+			return json({ error: 'Invalid request body' }, { status: 400 });
+		}
+
+		const result = reportSchema.safeParse(body);
+		if (!result.success) {
+			return json({ error: 'Validation failed' }, { status: 400 });
+		}
+		const parsed = result.data;
 
 		const issuePayload = {
 			title: `[Bug] ${escapeMarkdown(parsed.title)}`,
@@ -148,9 +158,6 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
 		return json({ ok: true, id: `GH-${issue.number}` }, { status: 201 });
 	} catch (err) {
-		if (err instanceof z.ZodError) {
-			return json({ error: 'Validation failed', details: err.issues }, { status: 400 });
-		}
 		logger.error('Bug report error', { error: err });
 		return json({ error: 'Failed to submit bug report' }, { status: 500 });
 	}

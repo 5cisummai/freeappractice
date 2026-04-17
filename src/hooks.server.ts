@@ -40,19 +40,21 @@ const SECURITY_HEADERS: Record<string, string> = {
 	'X-Content-Type-Options': 'nosniff',
 	'Referrer-Policy': 'strict-origin-when-cross-origin',
 	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
 	'Content-Security-Policy': [
 		"default-src 'self'",
-		// 1. Added 'blob:' to script-src
 		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://www.desmos.com blob:",
 		"style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
 		"font-src 'self' https://fonts.gstatic.com data:",
-		// 2. Added 'blob:' to img-src (needed for graph exporting/rendering)
-		"img-src 'self' data: https: blob:",
-		// 3. Added 'blob:' to connect-src
+		"img-src 'self' data: blob: https://freeappractice.org https://*.googleapis.com https://*.gstatic.com",
 		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com blob:",
 		'frame-src https://accounts.google.com/gsi/ https://www.desmos.com',
-		// 4. Added explicit worker-src (This is the specific fix for your error)
-		"worker-src 'self' blob:"
+		"worker-src 'self' blob:",
+		"base-uri 'self'",
+		"form-action 'self'",
+		"object-src 'none'",
+		"frame-ancestors 'none'",
+		'upgrade-insecure-requests'
 	].join('; ')
 };
 
@@ -129,7 +131,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 		response.headers.set(key, value);
 	}
 
-	if (isAllowedOrigin) {
+	// ── Cache-Control for API routes (prevent sensitive data caching) ──
+	if (event.url.pathname.startsWith('/api/')) {
+		response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+		response.headers.set('Pragma', 'no-cache');
+	}
+
+	if (isAllowedOrigin && event.url.pathname.startsWith('/api/')) {
 		response.headers.set('Access-Control-Allow-Origin', origin);
 		response.headers.set('Access-Control-Allow-Credentials', 'true');
 		response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
