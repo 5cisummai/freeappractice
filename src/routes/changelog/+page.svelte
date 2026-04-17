@@ -5,6 +5,24 @@
 
 	const changelog = [
 		{
+			version: '1.3.4',
+			date: 'April 16, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: ['Added a stats API and a new stats page at /stats']
+				},
+				{
+					title: 'Fixes',
+					items: ['Fixed UI inconsistencies across various pages']
+				},
+				{
+					title: 'Removals',
+					items: ['Removed incorrect reference sheets']
+				}
+			]
+		},
+		{
 			version: '1.3.3',
 			date: 'April 6, 2026',
 			sections: [
