@@ -13,48 +13,16 @@
  * Requires DATABASE_URI and OPEN_AI_KEY in your .env.
  */
 
-import apClassesData from '../src/lib/data/ap-classes.json';
 import { connectDb } from '../src/lib/server/db';
 import { Question } from '../src/lib/server/models/question';
 import { generateAPQuestion } from '../src/lib/server/services/ai';
-
-// ── Arg parsing ─────────────────────────────────────────────
-function getArg(flag: string): string | undefined {
-	const idx = process.argv.indexOf(flag);
-	return idx !== -1 ? process.argv[idx + 1] : undefined;
-}
+import { getArg, createLimiter, loadCombos } from './shared';
 
 const isDryRun = process.argv.includes('--dry-run');
 const filterClass = getArg('--class');
 const concurrencyArg = parseInt(getArg('--concurrency') ?? '', 10);
 const MAX_CONCURRENT = isNaN(concurrencyArg) ? 3 : Math.max(1, concurrencyArg);
 const POOL_SIZE = Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
-
-// ── Simple concurrency limiter ──────────────────────────────
-function createLimiter(max: number) {
-	let running = 0;
-	const queue: Array<() => void> = [];
-
-	function next() {
-		if (running >= max || queue.length === 0) return;
-		running++;
-		const resolve = queue.shift()!;
-		resolve();
-	}
-
-	return async function limit<T>(fn: () => Promise<T>): Promise<T> {
-		await new Promise<void>((resolve) => {
-			queue.push(resolve);
-			next();
-		});
-		try {
-			return await fn();
-		} finally {
-			running--;
-			next();
-		}
-	};
-}
 
 // ── Per class+unit fill logic ───────────────────────────────
 async function fillUnit(
@@ -120,27 +88,7 @@ async function main() {
 	console.log(`  Dry run       : ${isDryRun}`);
 	console.log(`  Class filter  : ${filterClass ?? '(all)'}\n`);
 
-	let courses = apClassesData.courses as {
-		name: string;
-		semester1: string[];
-		semester2: string[];
-	}[];
-	if (filterClass) {
-		courses = courses.filter((c) => c.name.toLowerCase() === filterClass.toLowerCase());
-		if (courses.length === 0) {
-			console.error(`No course found matching "${filterClass}".`);
-			process.exit(1);
-		}
-	}
-
-	// Build the full list of class+unit combos
-	const combos: Array<{ className: string; unit: string }> = [];
-	for (const course of courses) {
-		const units = [...course.semester1, ...course.semester2];
-		for (const unit of units) {
-			combos.push({ className: course.name, unit });
-		}
-	}
+	let { courses, combos } = loadCombos(filterClass);
 
 	console.log(
 		`Filling ${combos.length} class+unit combination(s) across ${courses.length} course(s).`

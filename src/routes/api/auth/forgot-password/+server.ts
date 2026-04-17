@@ -3,7 +3,8 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { sendResetEmail } from '$lib/server/services/email';
-import { generateRandomToken } from '$lib/server/crypto-token';
+import { generateRandomToken } from '$lib/server/utils';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -32,7 +33,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		return json({ message: 'If that email exists, a reset link has been sent' });
 	} catch (err) {
-		console.error('Forgot password error:', err);
+		logger.error('Forgot password error', { error: err });
 		return json({ error: 'Failed to send reset email' }, { status: 500 });
 	}
 };

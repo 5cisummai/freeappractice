@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { requireAuth } from '$lib/server/auth';
-import { generateRandomToken } from '$lib/server/crypto-token';
+import { generateEmailToken } from '$lib/server/utils';
 import { sendConfirmationEmail } from '$lib/server/services/email';
 import { logger } from '$lib/server/logger';
 
@@ -55,8 +55,7 @@ export const PATCH: RequestHandler = async (event) => {
 				return json({ error: 'Email already in use' }, { status: 409 });
 			}
 
-			const emailToken = generateRandomToken();
-			const emailTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+			const { emailToken, emailTokenExpires } = generateEmailToken();
 
 			user.email = email;
 			user.verified = false;

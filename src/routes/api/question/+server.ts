@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { generateLiveCustomTopicMcq, getCachedQuestion } from '$lib/server/services/question-cache';
 import { dev } from '$app/environment';
+import { logger } from '$lib/server/logger';
 
 const MAX_CUSTOM_TOPIC_LEN = 500;
 
@@ -52,7 +53,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			questionId: result.questionId
 		});
 	} catch (err) {
-		console.error('Generate question error:', err);
+		logger.error('Generate question error', { error: err });
 		const details = dev
 			? err instanceof Error
 				? err.message

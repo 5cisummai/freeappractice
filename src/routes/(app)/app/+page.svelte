@@ -4,6 +4,7 @@
 	import { auth, apiFetch } from '$lib/client/auth.svelte.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import FlameIcon from '@lucide/svelte/icons/flame';
@@ -94,9 +95,7 @@
 
 	{#if loading}
 		<div class="flex justify-center py-16">
-			<div
-				class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-			></div>
+			<Spinner />
 		</div>
 	{:else}
 		<!-- Study plan -->

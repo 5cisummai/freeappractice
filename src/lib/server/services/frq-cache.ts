@@ -1,10 +1,15 @@
-import { createHash } from 'node:crypto';
 import { FRQQuestion } from '$lib/server/models/frq-question';
 import { SeenQuestion } from '$lib/server/models/seen-question';
 import { connectDb } from '$lib/server/db';
 import { generateFRQQuestion, type GenerateFRQResult } from './ai';
 import { logger } from '$lib/server/logger';
 import { runCacheMissClusterFlow } from './cache-miss-coordinator';
+import {
+	computeContentHash,
+	isDuplicateKeyError,
+	normalizeUnit as normalizeUnitBase,
+	recordSeenQuestion
+} from '$lib/server/utils';
 import type { IFRQQuestion } from '$lib/server/models/frq-question';
 
 /**
@@ -22,16 +27,10 @@ function getFrqPoolSize(): number {
 	return 3;
 }
 const RECENT_TOPICS_WINDOW = 15;
-const MAX_SEEN_PER_BUCKET = 100;
 
-function normalizeUnit(unit?: string): string {
-	if (typeof unit === 'string' && unit.trim()) return unit.trim();
-	return 'all-units';
-}
-
-/** Normalize and hash the FRQ prompt text for deduplication. */
-function computeHash(text: string): string {
-	return createHash('sha256').update(text.trim().toLowerCase().replace(/\s+/g, ' ')).digest('hex');
+/** FRQ cache uses 'all-units' as the default unit. */
+function normalizeUnit(unit?: string | null): string {
+	return normalizeUnitBase(unit, 'all-units');
 }
 
 const replenishing = new Set<string>();
@@ -62,42 +61,13 @@ async function getRecentTopics(className: string, unit: string): Promise<string[
 	return docs.map((d) => d.topicsCovered as string).filter(Boolean);
 }
 
-/** Record that a user has seen an FRQ (fire-and-forget). */
-async function recordSeen(
-	userId: string,
-	contentHash: string,
-	apClass: string,
-	unit: string
-): Promise<void> {
-	try {
-		await SeenQuestion.updateOne(
-			{ userId, contentHash },
-			{ $setOnInsert: { userId, contentHash, apClass, unit, questionType: 'frq' } },
-			{ upsert: true }
-		);
-
-		const count = await SeenQuestion.countDocuments({ userId, apClass, unit, questionType: 'frq' });
-		if (count > MAX_SEEN_PER_BUCKET) {
-			const excess = count - MAX_SEEN_PER_BUCKET;
-			const oldest = await SeenQuestion.find(
-				{ userId, apClass, unit, questionType: 'frq' },
-				{ _id: 1 },
-				{ sort: { seenAt: 1 }, limit: excess }
-			).lean();
-			await SeenQuestion.deleteMany({ _id: { $in: oldest.map((d) => d._id) } });
-		}
-	} catch {
-		// Non-critical
-	}
-}
-
 async function generateAndInsert(className: string, unit: string): Promise<string | null> {
 	try {
 		const recentTopics = await getRecentTopics(className, normalizeUnit(unit));
 		const result = await generateFRQQuestion({ className, unit, recentTopics });
 		const { question } = result;
 
-		const contentHash = computeHash(question.prompt);
+		const contentHash = computeContentHash(question.prompt);
 
 		const exists = await FRQQuestion.exists({ contentHash });
 		if (exists) {
@@ -125,7 +95,7 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 		});
 		return doc._id.toString();
 	} catch (err: unknown) {
-		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+		if (isDuplicateKeyError(err)) {
 			logger.info('[frq-cache] duplicate key on insert, skipping', { className, unit });
 			return null;
 		}
@@ -246,7 +216,7 @@ function serveClaimedFrqDoc(
 	releaseFRQ(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
 
 	if (userId && doc.contentHash) {
-		recordSeen(userId, doc.contentHash, className, cacheUnit).catch(() => {});
+		recordSeenQuestion(userId, doc.contentHash, className, cacheUnit, 'frq').catch(() => {});
 	}
 
 	replenishPool(className, cacheUnit);
@@ -272,7 +242,7 @@ async function persistFrqToPool(
 	result: GenerateFRQResult
 ): Promise<void> {
 	const { question } = result;
-	const contentHash = computeHash(question.prompt);
+	const contentHash = computeContentHash(question.prompt);
 	const exists = await FRQQuestion.exists({ contentHash });
 	if (exists) return;
 
@@ -292,7 +262,7 @@ async function persistFrqToPool(
 			lockedUntil: null
 		});
 	} catch (err: unknown) {
-		if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+		if (isDuplicateKeyError(err)) {
 			return;
 		}
 		throw err;
@@ -389,8 +359,8 @@ export async function getCachedFRQQuestion(
 					});
 					await persistFrqToPool(className, cacheUnit, gen);
 					if (userId) {
-						const hash = computeHash(gen.question.prompt);
-						recordSeen(userId, hash, className, cacheUnit).catch(() => {});
+						const hash = computeContentHash(gen.question.prompt);
+						recordSeenQuestion(userId, hash, className, cacheUnit, 'frq').catch(() => {});
 					}
 					return { ...gen, cached: false };
 				},

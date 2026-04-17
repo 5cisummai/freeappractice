@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { gradeFRQResponse } from '$lib/server/services/ai';
 import { requireAuth } from '$lib/server/auth';
 import { dev } from '$app/environment';
+import { logger } from '$lib/server/logger';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -34,7 +35,7 @@ export const POST: RequestHandler = async (event) => {
 		return json({ grade: result.grade, provider: result.provider, model: result.model });
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Grade FRQ error:', err);
+		logger.error('Grade FRQ error', { error: err });
 		const details = dev
 			? err instanceof Error
 				? err.message

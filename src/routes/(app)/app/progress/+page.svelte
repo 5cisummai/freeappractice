@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { apiFetch } from '$lib/client/auth.svelte.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import { Spinner } from '$lib/components/ui/spinner/index.js';
 
 	interface ProgressEntry {
 		apClass: string;
@@ -78,9 +79,7 @@
 
 	{#if loading}
 		<div class="flex justify-center py-16">
-			<div
-				class="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-			></div>
+			<Spinner />
 		</div>
 	{:else if errorMessage}
 		<p class="text-sm text-destructive">{errorMessage}</p>

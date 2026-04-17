@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { z } from 'zod';
 import { listPublishedBlogEntries, createPost } from '$lib/server/services/blog';
 import { requireBlogAdminKey } from '$lib/server/blog-admin-auth';
+import { logger } from '$lib/server/logger';
 
 const createSchema = z.object({
 	title: z.string().min(3).max(200),
@@ -35,7 +36,7 @@ export const GET: RequestHandler = async () => {
 			}))
 		);
 	} catch (err) {
-		console.error('Blog list error:', err);
+		logger.error('Blog list error', { error: err });
 		return json({ error: 'Failed to fetch posts' }, { status: 500 });
 	}
 };
@@ -62,7 +63,7 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'A post with this slug already exists' }, { status: 409 });
 		}
 
-		console.error('Blog create error:', err);
+		logger.error('Blog create error', { error: err });
 		return json({ error: 'Failed to create post' }, { status: 500 });
 	}
 };

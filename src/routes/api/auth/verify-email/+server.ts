@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { signToken } from '$lib/server/auth';
+import { logger } from '$lib/server/logger';
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
@@ -35,7 +36,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			user: { userId: user._id, name: user.name, email: user.email }
 		});
 	} catch (err) {
-		console.error('Email verification error:', err);
+		logger.error('Email verification error', { error: err });
 		return json({ error: 'Email verification failed' }, { status: 500 });
 	}
 };

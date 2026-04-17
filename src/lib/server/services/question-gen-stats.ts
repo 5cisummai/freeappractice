@@ -4,10 +4,10 @@ import {
 	QuestionGenUnitDetail,
 	QuestionGenUnitGlobal
 } from '$lib/server/models/question-generation-stats';
+import { normalizeUnit } from '$lib/server/utils';
 
 export function normalizeUnitLabel(unit?: string | null): string {
-	const t = (unit ?? '').trim();
-	return t || '(none)';
+	return normalizeUnit(unit, '(none)');
 }
 
 /**

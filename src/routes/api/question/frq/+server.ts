@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { generateLiveCustomTopicFrq, getCachedFRQQuestion } from '$lib/server/services/frq-cache';
 import { requireAuth } from '$lib/server/auth';
 import { dev } from '$app/environment';
+import { logger } from '$lib/server/logger';
 
 const MAX_CUSTOM_TOPIC_LEN = 500;
 
@@ -53,7 +54,7 @@ export const POST: RequestHandler = async (event) => {
 		});
 	} catch (err) {
 		if (err instanceof Response) return err;
-		console.error('Generate FRQ question error:', err);
+		logger.error('Generate FRQ question error', { error: err });
 		const details = dev
 			? err instanceof Error
 				? err.message
