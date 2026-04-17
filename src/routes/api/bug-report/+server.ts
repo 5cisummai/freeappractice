@@ -7,10 +7,8 @@ import { logger } from '$lib/server/logger';
 const GITHUB_OWNER = '5cisummai';
 const GITHUB_REPO = 'freeappractice';
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`;
-const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const recentReportByIp = new Map<string, number>();
-
-const SAFE_METADATA_KEY = /^[\w\s\-.:]+$/;
 
 const reportSchema = z.object({
 	title: z.string().min(5).max(200),
@@ -19,13 +17,7 @@ const reportSchema = z.object({
 	expected: z.string().max(2000).optional(),
 	severity: z.enum(['low', 'medium', 'high']).default('low'),
 	email: z.string().email().max(254).optional(),
-	metadata: z
-		.record(
-			z.string().max(50).regex(SAFE_METADATA_KEY, 'Metadata key contains invalid characters'),
-			z.unknown()
-		)
-		.refine((m) => Object.keys(m).length <= 20, 'Too many metadata keys')
-		.optional()
+	metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 const SEVERITY_LABEL: Record<string, string> = {
@@ -119,7 +111,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
 		const result = reportSchema.safeParse(body);
 		if (!result.success) {
-			return json({ error: 'Validation failed' }, { status: 400 });
+			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
 		}
 		const parsed = result.data;
 

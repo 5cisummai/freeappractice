@@ -3009,6 +3009,131 @@
 					]
 				}
 			]
+		},
+		{
+			"course_code": "APSPANLANG",
+			"course_name": "AP Spanish Language",
+			"overview": "AP Spanish Language and Culture course developing proficiency in interpersonal, interpretive, and presentational communication across 6 thematic units, all conducted in Spanish.",
+			"important_notes": "All content and assessment in Spanish. Emphasize three modes of communication (interpersonal, interpretive, presentational), cultural comparisons with Spanish-speaking communities, and formal vs. informal register. Use authentic sources and real-world contexts.",
+			"sources": [
+				"([apstudents.collegeboard.org](https://apstudents.collegeboard.org/courses/ap-spanish-language-and-culture))"
+			],
+			"units": [
+				{
+					"unit_number": 1,
+					"unit_title": "Families and Communities",
+					"description": "How individuals relate to families, communities, and social networks in Spanish-speaking cultures.",
+					"topics_may_include": [
+						"Family structures and values across Spanish-speaking societies",
+						"Roles and responsibilities within families and communities",
+						"Traditions, customs, and celebrations",
+						"Social networks and community engagement"
+					],
+					"keywords": [
+						"La familia",
+						"Las comunidades",
+						"Las tradiciones",
+						"La ciudadanía",
+						"Las costumbres",
+						"Las relaciones interpersonales"
+					]
+				},
+				{
+					"unit_number": 2,
+					"unit_title": "Personal and Public Identities",
+					"description": "How language, culture, and beliefs shape personal and public identity in Spanish-speaking contexts.",
+					"topics_may_include": [
+						"Self-image, identity formation, and personal beliefs",
+						"Language and identity in multilingual communities",
+						"National and ethnic identities in Spanish-speaking countries",
+						"How public figures and media shape cultural identity"
+					],
+					"keywords": [
+						"La identidad",
+						"Las creencias personales",
+						"La autoestima",
+						"El nacionalismo",
+						"La identidad cultural",
+						"Los héroes"
+					]
+				},
+				{
+					"unit_number": 3,
+					"unit_title": "Beauty and Aesthetics",
+					"description": "How perceptions of beauty and creativity are expressed in Spanish-speaking cultures through art, architecture, music, and literature.",
+					"topics_may_include": [
+						"Visual arts, music, and literary movements in Spanish-speaking countries",
+						"Architecture and design across historical periods",
+						"Standards of beauty and their cultural variation",
+						"The role of art in society and cultural expression"
+					],
+					"keywords": [
+						"El arte",
+						"La arquitectura",
+						"La música",
+						"La literatura",
+						"La moda",
+						"Las artes visuales"
+					]
+				},
+				{
+					"unit_number": 4,
+					"unit_title": "Science and Technology",
+					"description": "How scientific innovation and technology affect daily life, ethics, and access in Spanish-speaking communities.",
+					"topics_may_include": [
+						"Impact of technology on communication and daily life",
+						"Scientific discoveries and innovations from Spanish-speaking countries",
+						"Ethical questions surrounding technology and science",
+						"Access to and effects of technology across socioeconomic groups"
+					],
+					"keywords": [
+						"La tecnología",
+						"La ciencia",
+						"La innovación",
+						"El acceso a la tecnología",
+						"Los efectos de la tecnología",
+						"Los descubrimientos científicos"
+					]
+				},
+				{
+					"unit_number": 5,
+					"unit_title": "Contemporary Life",
+					"description": "How Spanish-speaking societies address education, careers, entertainment, travel, and quality of life.",
+					"topics_may_include": [
+						"Education systems and practices in Spanish-speaking countries",
+						"Work-life balance and career aspirations",
+						"Leisure activities, sports, and entertainment",
+						"Travel, tourism, and lifestyles across regions"
+					],
+					"keywords": [
+						"La educación",
+						"Las carreras profesionales",
+						"El entretenimiento",
+						"Los viajes",
+						"El ocio",
+						"Los estilos de vida"
+					]
+				},
+				{
+					"unit_number": 6,
+					"unit_title": "Global Challenges",
+					"description": "How Spanish-speaking communities confront environmental, political, social, and economic challenges.",
+					"topics_may_include": [
+						"Environmental issues and sustainability efforts",
+						"Economic disparities and development challenges",
+						"Human rights, social justice, and political movements",
+						"Health and well-being in diverse populations"
+					],
+					"keywords": [
+						"El medio ambiente",
+						"Los derechos humanos",
+						"La paz mundial",
+						"La salud",
+						"La pobreza",
+						"El bienestar social"
+					]
+				}
+			]
 		}
 	]
 }

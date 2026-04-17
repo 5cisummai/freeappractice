@@ -43,11 +43,11 @@ const SECURITY_HEADERS: Record<string, string> = {
 	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
 	'Content-Security-Policy': [
 		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://www.desmos.com blob:",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://www.desmos.com https://static.cloudflareinsights.com blob:",
 		"style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com",
 		"font-src 'self' https://fonts.gstatic.com data:",
 		"img-src 'self' data: blob: https://freeappractice.org https://*.googleapis.com https://*.gstatic.com",
-		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com blob:",
+		"connect-src 'self' https://accounts.google.com/gsi/ https://va.vercel-scripts.com https://www.desmos.com https://cloudflareinsights.com blob:",
 		'frame-src https://accounts.google.com/gsi/ https://www.desmos.com',
 		"worker-src 'self' blob:",
 		"base-uri 'self'",
@@ -60,6 +60,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 
 const ALLOWED_ORIGINS = [
 	'https://freeappractice.org',
+	'https://www.freeappractice.org',
 	'http://localhost:5173',
 	'http://localhost:3000'
 ];
@@ -137,7 +138,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		response.headers.set('Pragma', 'no-cache');
 	}
 
-	if (isAllowedOrigin && event.url.pathname.startsWith('/api/')) {
+	if (isAllowedOrigin) {
 		response.headers.set('Access-Control-Allow-Origin', origin);
 		response.headers.set('Access-Control-Allow-Credentials', 'true');
 		response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
