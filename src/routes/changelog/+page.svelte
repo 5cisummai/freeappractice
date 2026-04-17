@@ -5,6 +5,24 @@
 
 	const changelog = [
 		{
+			version: '1.3.4',
+			date: 'April 16, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: ['Added a stats API and a new stats page at /stats']
+				},
+				{
+					title: 'Fixes',
+					items: ['Fixed UI inconsistencies across various pages']
+				},
+				{
+					title: 'Removals',
+					items: ['Removed incorrect reference sheets']
+				}
+			]
+		},
+		{
 			version: '1.3.3',
 			date: 'April 6, 2026',
 			sections: [
@@ -420,8 +438,9 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a href={resolve('/')} class="text-sm text-muted-foreground hover:text-foreground"
-				>← Back to Home</a
+			<a
+				href={resolve('/')}
+				class="inline-block text-sm text-muted-foreground hover:text-foreground">← Back to Home</a
 			>
 
 			<div class="space-y-2">

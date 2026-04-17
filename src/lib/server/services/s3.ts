@@ -15,10 +15,23 @@ function createS3Client(): S3Client {
 	const endpoint = env.AWS_S3_ENDPOINT;
 	const forcePathStyle = env.AWS_S3_FORCE_PATH_STYLE === 'true';
 
+	// Use keys from SvelteKit private env so dev/prod reliably see `.env` (SDK default chain
+	// only reads `process.env`, which is not always populated the same way under Vite).
+	const accessKeyId = env.AWS_ACCESS_KEY_ID?.trim();
+	const secretAccessKey = env.AWS_SECRET_ACCESS_KEY?.trim();
+	const sessionToken = env.AWS_SESSION_TOKEN?.trim();
+
 	const cfg: ConstructorParameters<typeof S3Client>[0] = { region };
 	if (endpoint) {
 		cfg.endpoint = endpoint;
 		cfg.forcePathStyle = forcePathStyle;
+	}
+	if (accessKeyId && secretAccessKey) {
+		cfg.credentials = {
+			accessKeyId,
+			secretAccessKey,
+			...(sessionToken ? { sessionToken } : {})
+		};
 	}
 	return new S3Client(cfg);
 }
@@ -92,4 +105,30 @@ export async function listObjects(opts: {
 	});
 	const resp = await s3.send(cmd);
 	return resp.Contents ?? [];
+}
+
+/** Lists every object key under the prefix, following S3 continuation tokens. */
+export async function listAllObjectKeys(opts: {
+	prefix?: string;
+	bucket?: string;
+	maxKeysPerPage?: number;
+}): Promise<string[]> {
+	const keys: string[] = [];
+	let continuationToken: string | undefined;
+
+	do {
+		const cmd = new ListObjectsV2Command({
+			Bucket: resolveBucket(opts.bucket),
+			Prefix: opts.prefix ?? '',
+			MaxKeys: opts.maxKeysPerPage ?? 1000,
+			ContinuationToken: continuationToken
+		});
+		const resp = await s3.send(cmd);
+		for (const obj of resp.Contents ?? []) {
+			if (obj.Key) keys.push(obj.Key);
+		}
+		continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
+	} while (continuationToken);
+
+	return keys;
 }
