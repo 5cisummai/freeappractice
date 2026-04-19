@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-vercel';
 import { relative, sep } from 'node:path';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -14,9 +14,6 @@ const config = {
 		}
 	},
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		csp: {
 			// 'auto' uses hashes for prerendered pages and nonces for SSR pages,
@@ -31,9 +28,7 @@ const config = {
 					'https://accounts.google.com/gsi/client',
 					'https://cdn.jsdelivr.net',
 					'https://cdnjs.cloudflare.com',
-					'https://va.vercel-scripts.com',
 					'https://www.desmos.com',
-					'https://static.cloudflareinsights.com',
 					'blob:'
 				],
 				// Svelte transitions inject inline styles, so 'unsafe-inline' is still required here
@@ -57,9 +52,7 @@ const config = {
 				'connect-src': [
 					"'self'",
 					'https://accounts.google.com/gsi/',
-					'https://va.vercel-scripts.com',
 					'https://www.desmos.com',
-					'https://cloudflareinsights.com',
 					'blob:'
 				],
 				'frame-src': ['https://accounts.google.com/gsi/', 'https://www.desmos.com'],

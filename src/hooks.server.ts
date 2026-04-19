@@ -45,36 +45,85 @@ const SECURITY_HEADERS: Record<string, string> = {
 	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload'
 };
 
-const ALLOWED_ORIGINS = [
+const DEFAULT_ALLOWED_ORIGINS = [
 	'https://freeappractice.org',
 	'https://www.freeappractice.org',
+	'http://127.0.0.1:3000',
+	'http://127.0.0.1:4173',
+	'http://127.0.0.1:5173',
 	'http://localhost:5173',
+	'http://localhost:4173',
 	'http://localhost:3000'
 ];
 
 const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
 const CORS_HEADERS = 'Content-Type, Authorization, X-Questions-Admin-Secret';
 
+function toOrigin(value: string | undefined): string | null {
+	if (!value) return null;
+
+	try {
+		const normalized = value.includes('://') ? value : `https://${value}`;
+		return new URL(normalized).origin;
+	} catch {
+		return null;
+	}
+}
+
+function getAllowedOrigins(): Set<string> {
+	const origins = new Set(DEFAULT_ALLOWED_ORIGINS);
+	const configuredOrigins = [
+		env.PUBLIC_BASE_URL,
+		env.APP_BASE_URL,
+		env.WEBSITE_URL,
+		env.VERCEL_URL,
+		env.VERCEL_BRANCH_URL,
+		env.VERCEL_PROJECT_PRODUCTION_URL
+	];
+
+	for (const value of configuredOrigins) {
+		const origin = toOrigin(value);
+		if (origin) origins.add(origin);
+	}
+
+	return origins;
+}
+
+const ALLOWED_ORIGINS = getAllowedOrigins();
+
+function applyCorsHeaders(response: Response, origin: string | null): Response {
+	if (!origin || !ALLOWED_ORIGINS.has(origin)) {
+		return response;
+	}
+
+	response.headers.set('Access-Control-Allow-Origin', origin);
+	response.headers.set('Access-Control-Allow-Credentials', 'true');
+	response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
+	response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS);
+	response.headers.set('Vary', 'Origin');
+
+	return response;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// ── CORS ──────────────────────────────────────────────────
 	const origin = event.request.headers.get('origin');
-	const isAllowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
+	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
 
 	if (event.request.method === 'OPTIONS') {
 		if (!isAllowedOrigin) {
 			return new Response(null, { status: 403 });
 		}
 
-		return new Response(null, {
-			headers: {
-				'Access-Control-Allow-Origin': origin,
-				'Access-Control-Allow-Methods': CORS_METHODS,
-				'Access-Control-Allow-Headers': CORS_HEADERS,
-				'Access-Control-Allow-Credentials': 'true',
-				'Access-Control-Max-Age': '86400',
-				Vary: 'Origin'
-			}
-		});
+		return applyCorsHeaders(
+			new Response(null, {
+				status: 204,
+				headers: {
+					'Access-Control-Max-Age': '86400'
+				}
+			}),
+			origin
+		);
 	}
 
 	// ── Rate limiting for /api/* ──────────────────────────────
@@ -85,13 +134,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 			'unknown';
 
 		if (!checkRateLimit(ip)) {
-			return new Response(JSON.stringify({ error: 'Too many requests' }), {
-				status: 429,
-				headers: {
-					'Content-Type': 'application/json',
-					'Retry-After': String(Math.ceil(WINDOW_MS / 1000))
-				}
-			});
+			return applyCorsHeaders(
+				new Response(JSON.stringify({ error: 'Too many requests' }), {
+					status: 429,
+					headers: {
+						'Content-Type': 'application/json',
+						'Retry-After': String(Math.ceil(WINDOW_MS / 1000))
+					}
+				}),
+				origin
+			);
 		}
 	}
 
@@ -125,13 +177,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		response.headers.set('Pragma', 'no-cache');
 	}
 
-	if (isAllowedOrigin) {
-		response.headers.set('Access-Control-Allow-Origin', origin);
-		response.headers.set('Access-Control-Allow-Credentials', 'true');
-		response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
-		response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS);
-		response.headers.set('Vary', 'Origin');
-	}
+	applyCorsHeaders(response, origin);
 
 	// ── Request logging ──────────────────────────────────────
 	const requestTimeMs = Date.now() - requestStart;

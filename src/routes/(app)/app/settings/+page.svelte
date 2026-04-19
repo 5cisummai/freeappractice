@@ -114,12 +114,15 @@
 
 					<div class="space-y-4 border-t border-border pt-4">
 						<div class="flex items-center justify-between">
-							<Label>Font Size ({settingsController.settings.fontSize}px)</Label>
+							<Label for="font-size-slider">
+								Font Size ({settingsController.settings.fontSize}px)
+							</Label>
 							<Button variant="ghost" size="sm" onclick={() => settingsController.setFontSize(16)}
 								>Reset</Button
 							>
 						</div>
 						<Slider
+							id="font-size-slider"
 							type="single"
 							value={settingsController.settings.fontSize}
 							min={12}
@@ -142,10 +145,12 @@
 				<Card.Content class="space-y-6">
 					<div class="flex items-center justify-between">
 						<div class="space-y-0.5">
-							<Label>High Contrast</Label>
+							<Label for="high-contrast-toggle">High Contrast</Label>
 							<p class="text-sm text-muted-foreground">Increases visibility of elements.</p>
 						</div>
 						<Switch
+							id="high-contrast-toggle"
+							name="high-contrast"
 							checked={settingsController.settings.highContrast}
 							onCheckedChange={() => settingsController.toggleAccessibility('highContrast')}
 						/>
@@ -153,10 +158,12 @@
 
 					<div class="flex items-center justify-between border-t border-border pt-4">
 						<div class="space-y-0.5">
-							<Label>Reduce Motion</Label>
+							<Label for="reduce-motion-toggle">Reduce Motion</Label>
 							<p class="text-sm text-muted-foreground">Disables UI animations.</p>
 						</div>
 						<Switch
+							id="reduce-motion-toggle"
+							name="reduce-motion"
 							checked={settingsController.settings.reduceMotion}
 							onCheckedChange={() => settingsController.toggleAccessibility('reduceMotion')}
 						/>
@@ -164,10 +171,12 @@
 
 					<div class="flex items-center justify-between border-t border-border pt-4">
 						<div class="space-y-0.5">
-							<Label>Dyslexic Friendly Font</Label>
+							<Label for="dyslexic-font-toggle">Dyslexic Friendly Font</Label>
 							<p class="text-sm text-muted-foreground">Uses fonts optimized for readability.</p>
 						</div>
 						<Switch
+							id="dyslexic-font-toggle"
+							name="dyslexic-font"
 							checked={settingsController.settings.dyslexicFont}
 							onCheckedChange={() => settingsController.toggleAccessibility('dyslexicFont')}
 						/>
