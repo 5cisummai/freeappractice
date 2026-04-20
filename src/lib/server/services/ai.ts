@@ -9,14 +9,18 @@ import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import frqSpecs from '$lib/data/ap-frq-specs.json';
 import { logger } from '$lib/server/logger';
 
+/**
+ * Server-side AP question generation and FRQ grading via OpenAI’s structured-output API (`chat.completions.parse`).
+ *
+ * Flow: static JSON (`unit-descriptionsrevised`, `ap-frq-specs`) → prompt sections → Zod `response_format` → typed result.
+ * MCQ results are optionally persisted asynchronously so API latency does not wait on S3/Mongo.
+ */
+
+// `OPENAI_URL` supports local gateways (e.g. LM Studio); `OPENAI_BASE_URL` is the conventional name.
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? env.OPENAI_URL ?? 'https://api.openai.com/v1';
 const ADVANCED_MODEL = env.ADVANCED_MODEL ?? 'gpt-5-mini';
 const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-nano';
 
-const LATEX_RULE =
-	'For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.';
-
-// ── Unit context lookup ─────────────────────────────────────
 interface UnitContext {
 	description: string;
 	topics: string[];
@@ -24,6 +28,26 @@ interface UnitContext {
 	importantNotes: string;
 }
 
+interface FRQSpecContext {
+	frqOverview: string;
+	questionTypes: string;
+	rubricConventions: string;
+	importantNotes: string;
+	globalTaskVerbs: string;
+	universalErrors: string;
+}
+
+interface UnitPromptSections {
+	unitContext: string;
+	keywordsContext: string;
+	courseNotesContext: string;
+}
+
+/**
+ * Looks up `unitDescriptions` by fuzzy-matching `className` to course_code/course_name, then resolves the unit:
+ * prefer a digit in `unitIdentifier` against `unit_number` / title, else substring match on the unit title.
+ * Returns course-level notes alone when the course matches but no unit row fits (still useful for prompts).
+ */
 function getUnitContextData(className: string, unitIdentifier: string): UnitContext | null {
 	if (!className || !unitIdentifier) return null;
 	const norm = (s: string) => (s ?? '').toLowerCase().trim();
@@ -89,16 +113,10 @@ function getUnitContextData(className: string, unitIdentifier: string): UnitCont
 	return null;
 }
 
-// ── FRQ spec lookup ────────────────────────────────────────
-interface FRQSpecContext {
-	frqOverview: string;
-	questionTypes: string;
-	rubricConventions: string;
-	importantNotes: string;
-	globalTaskVerbs: string;
-	universalErrors: string;
-}
-
+/**
+ * Builds FRQ prompt text from `frqSpecs`: course-specific structure/rubric plus **global** AP task verbs and universal errors.
+ * Object fields are stringified for the model as plain text (consistent with how we feed JSON blobs into prompts elsewhere).
+ */
 function getFRQSpecData(className: string): FRQSpecContext | null {
 	if (!className) return null;
 	const norm = (s: string) => (s ?? '').toLowerCase().trim();
@@ -191,6 +209,10 @@ function getFRQSpecData(className: string): FRQSpecContext | null {
 	return null;
 }
 
+/**
+ * Humanities/social courses use `BASIC_MODEL`; STEM-style workloads use `ADVANCED_MODEL`.
+ * Intent: cheaper/faster generations where prompts are less math-notation heavy (tunable via env).
+ */
 function selectModelForClass(className: string): string {
 	const normalized = (className ?? '').toLowerCase();
 	const wideModel = [
@@ -214,14 +236,7 @@ function buildClient(): OpenAI {
 	return new OpenAI({ baseURL: OPENAI_BASE_URL, apiKey: OPEN_AI_KEY });
 }
 
-// ── Shared prompt-section builders ─────────────────────────
-
-interface UnitPromptSections {
-	unitContext: string;
-	keywordsContext: string;
-	courseNotesContext: string;
-}
-
+/** Injects unit description, optional keyword constraints, and course notes from `getUnitContextData`. */
 function buildUnitSections(
 	className: string,
 	unit: string | undefined,
@@ -240,6 +255,9 @@ function buildUnitSections(
 	};
 }
 
+/**
+ * `recentTopics` should be short summaries (aligned with `topicsCovered` on prior questions) so the model avoids repeating themes.
+ */
 function buildDiversitySection(
 	recentTopics: string[] | undefined,
 	opts: { label: string; avoidLabel: string; pickLabel: string }
@@ -252,13 +270,11 @@ function buildDiversitySection(
 	);
 }
 
+/** Concatenates non-empty FRQ spec blocks so we never send headers with blank bodies. */
 function buildFRQSpecSections(frqSpec: FRQSpecContext | null): string {
 	if (!frqSpec) return '';
 	const sections: Array<[string, string]> = [
-		[
-			'\nFRQ EXAM OVERVIEW (use for point distribution and structure):\n',
-			frqSpec.frqOverview
-		],
+		['\nFRQ EXAM OVERVIEW (use for point distribution and structure):\n', frqSpec.frqOverview],
 		[
 			'\nKNOWN FRQ QUESTION TYPES FOR THIS COURSE (choose the most relevant for the unit):\n',
 			frqSpec.questionTypes
@@ -280,8 +296,10 @@ function buildFRQSpecSections(frqSpec: FRQSpecContext | null): string {
 		.join('');
 }
 
-// ── Shared OpenAI completion executor ──────────────────────
-
+/**
+ * Single choke point for `completions.parse`: builds the client, logs usage, maps provider failures and refusals.
+ * Callers pass the Zod-backed `response_format` on `params`; `T` is the parsed message payload.
+ */
 async function runStructuredCompletion<T>(
 	callName: string,
 	params: Parameters<OpenAI['chat']['completions']['parse']>[0],
@@ -308,7 +326,7 @@ async function runStructuredCompletion<T>(
 	return { parsed, model: params.model };
 }
 
-// ── Zod schema for structured response ─────────────────────
+/** Structured MCQ; `topicsCovered` feeds future `recentTopics` / diversity, not the stored S3 payload alone. */
 const APQuestion = z.object({
 	question: z
 		.string()
@@ -331,6 +349,14 @@ const APQuestion = z.object({
 });
 
 export type APQuestionData = z.infer<typeof APQuestion>;
+
+export interface GenerateResult {
+	answer: APQuestionData;
+	provider: string;
+	model: string;
+	questionId?: string;
+	cached?: boolean;
+}
 
 /**
  * Persists a generated MCQ to S3 and increments Mongo generation stats (per class, per unit, global unit rollup).
@@ -360,14 +386,14 @@ export async function persistGeneratedMcqQuestion(
 	return id;
 }
 
-export interface GenerateResult {
-	answer: APQuestionData;
-	provider: string;
-	model: string;
-	questionId?: string;
-	cached?: boolean;
-}
+// Client UI renders math from `$...$` / `$$...$$` only; other LaTeX delimiters would display raw or break.
+const LATEX_RULE =
+	'For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.';
 
+/**
+ * MCQ generation: `customTopic` bypasses unit JSON and diversity lists (ad-hoc practice).
+ * `reasoning_effort` is applied only when using `ADVANCED_MODEL` — some mini models ignore or reject the field.
+ */
 export async function generateAPQuestion(opts: {
 	className: string;
 	unit?: string;
@@ -404,6 +430,7 @@ ${ct}
 		});
 	}
 
+	// Extra calibration block: Bio has distinct CED-style expectations worth spelling out in-system.
 	const isBiology = className.toLowerCase().includes('biology');
 	const difficultyGuidance = isBiology
 		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Match the difficulty of questions in the official AP Biology Course and Exam Description\n- Emphasize scientific practices over pure recall`
@@ -470,7 +497,7 @@ OUTPUT:
 	);
 
 	const persistUnitLabel = isCustom ? `Custom: ${ct}` : unit;
-	// Fire-and-forget persist (S3 + Mongo stats) — don't block the response
+	// Persist after success: user gets the question immediately; S3/Mongo failures must not fail the request.
 	let questionId: string | undefined;
 	void persistGeneratedMcqQuestion(parsed, className, persistUnitLabel)
 		.then((id) => {
@@ -483,8 +510,7 @@ OUTPUT:
 	return { answer: parsed, provider: 'openai', model, questionId };
 }
 
-// ── FRQ Zod schemas ─────────────────────────────────────────
-
+/** FRQ sub-parts are capped at 4 to stay within typical AP exam structure and keep grading tractable. */
 const FRQPart = z.object({
 	label: z.string().describe("Sub-part label: 'a', 'b', 'c', or 'd'"),
 	question: z.string().describe('The sub-part question text'),
@@ -522,6 +548,10 @@ export interface GenerateFRQResult {
 	cached?: boolean;
 }
 
+/**
+ * FRQs merge unit context, `getFRQSpecData` (overview + rubric), and optional diversity.
+ * Unlike MCQ, we always send `reasoning_effort: 'medium'` here — FRQs need coherent multi-part structure.
+ */
 export async function generateFRQQuestion(opts: {
 	className: string;
 	unit?: string;
@@ -560,7 +590,7 @@ ${ct}
 
 	const scopeLine = isCustom
 		? `TOPIC SCOPE: The FRQ must assess skills and content related to the user-specified topic within ${className}. Stay aligned with College Board expectations for that course.`
-		: 'CRITICAL UNIT SCOPE: Stay strictly within the specified unit\'s keywords and topics.';
+		: "CRITICAL UNIT SCOPE: Stay strictly within the specified unit's keywords and topics.";
 
 	const systemPrompt = `You are an expert AP exam question writer. Create a College Board–style Free Response Question (FRQ) for ${className}${unit && !isCustom ? `, ${unit}` : ''}.${unitContext}${keywordsContext}${courseNotesContext}${frqSpecSections}${diversitySection}
 
@@ -605,8 +635,7 @@ QUALITY:
 	return { question: parsed, provider: 'openai', model };
 }
 
-// ── FRQ Grading ─────────────────────────────────────────────
-
+/** Rubric-aligned grading output; scores are percentages per part plus an overall. */
 const FRQPartGrade = z.object({
 	label: z.string(),
 	pointsEarned: z.number().min(0),
@@ -631,6 +660,10 @@ export interface GradeFRQResult {
 	model: string;
 }
 
+/**
+ * Grading uses a fixed small model (`gpt-4.1-mini`) for cost/latency; it does not use `selectModelForClass`.
+ * The prompt embeds criteria + model answers so grading stays grounded in the same rubric shown to students.
+ */
 export async function gradeFRQResponse(opts: {
 	className: string;
 	unit?: string;

@@ -171,6 +171,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 		response.headers.set(key, value);
 	}
 
+	// ── Desmos sandbox: extend CSP with 'unsafe-eval' ─────────
+	// Desmos requires eval() to render its calculator. We confine that permission to
+	// the /desmos-sandbox route (served in an iframe) so the main app stays safe.
+	if (event.url.pathname.startsWith('/desmos-sandbox')) {
+		const csp = response.headers.get('Content-Security-Policy');
+		if (csp) {
+			// Add 'unsafe-eval' to script-src and allow same-origin framing for the iframe
+			const patched = csp
+				.replace(/(script-src\s)/, "$1'unsafe-eval' ")
+				.replace(/frame-ancestors\s+'none'/, "frame-ancestors 'self'");
+			response.headers.set('Content-Security-Policy', patched);
+		}
+		// Override X-Frame-Options so the page can be embedded in same-origin iframes
+		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+	}
+
 	// ── Cache-Control for API routes (prevent sensitive data caching) ──
 	if (event.url.pathname.startsWith('/api/')) {
 		response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');

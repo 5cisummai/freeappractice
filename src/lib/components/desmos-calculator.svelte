@@ -1,35 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { PUBLIC_DESMOS_API_KEY } from '$env/static/public';
+	import { onMount } from 'svelte';
 	import XIcon from '@lucide/svelte/icons/x';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
-
-	type DesmosCalculatorInstance = {
-		destroy: () => void;
-	};
-
-	type DesmosApi = {
-		GraphingCalculator: (
-			element: HTMLDivElement,
-			options: {
-				keypad: boolean;
-				keypadActivated?: boolean;
-				expressions?: boolean;
-				settingsMenu: boolean;
-			}
-		) => DesmosCalculatorInstance;
-		ScientificCalculator: (
-			element: HTMLDivElement,
-			options: {
-				keypad: boolean;
-				settingsMenu: boolean;
-			}
-		) => DesmosCalculatorInstance;
-	};
-
-	type DesmosWindow = Window & {
-		Desmos?: DesmosApi;
-	};
 
 	type DesmosCalculatorProps = {
 		type: 'scientific' | 'graphing';
@@ -50,12 +22,9 @@
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
 
-	let calculatorContainer: HTMLDivElement | null = null;
-	let calculatorInstance: DesmosCalculatorInstance | null = null;
 	let loadError = $state(false);
 	let loadErrorMessage = $state('Could not load the Desmos calculator.');
 	let isReady = $state(false);
-	let destroyed = false;
 
 	function clamp(value: number, min: number, max: number) {
 		return Math.min(max, Math.max(min, value));
@@ -96,78 +65,6 @@
 		isDragging = false;
 	}
 
-	function captureCalculatorContainer(node: HTMLDivElement) {
-		calculatorContainer = node;
-
-		return {
-			destroy() {
-				if (calculatorContainer === node) {
-					calculatorContainer = null;
-				}
-			}
-		};
-	}
-
-	function loadDesmosScript(apiKey: string): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const desmosWindow = window as DesmosWindow;
-			if (desmosWindow.Desmos) {
-				resolve();
-				return;
-			}
-			const existing = document.getElementById('desmos-api-script');
-			if (existing instanceof HTMLScriptElement) {
-				if (existing.dataset.loaded === 'true') {
-					resolve();
-					return;
-				}
-				existing.addEventListener('load', () => resolve(), { once: true });
-				existing.addEventListener('error', () => reject(new Error('Desmos failed to load')), {
-					once: true
-				});
-				return;
-			}
-			const script = document.createElement('script');
-			script.id = 'desmos-api-script';
-			script.src = `https://www.desmos.com/api/v1.12/calculator.js?apiKey=${encodeURIComponent(apiKey)}`;
-			script.onload = () => {
-				script.dataset.loaded = 'true';
-				resolve();
-			};
-			script.onerror = () => reject(new Error('Desmos failed to load'));
-			document.head.appendChild(script);
-		});
-	}
-
-	function initCalculator() {
-		if (destroyed || !calculatorContainer) return;
-		const D = (window as DesmosWindow).Desmos;
-		if (!D) return;
-		try {
-			if (type === 'graphing') {
-				calculatorInstance = D.GraphingCalculator(calculatorContainer, {
-					keypad: true,
-					keypadActivated: true,
-					expressions: true,
-					settingsMenu: false
-				});
-			} else {
-				calculatorInstance = D.ScientificCalculator(calculatorContainer, {
-					keypad: true,
-					settingsMenu: false
-				});
-			}
-			isReady = true;
-			loadError = false;
-		} catch (error) {
-			loadError = true;
-			loadErrorMessage =
-				error instanceof Error && error.message
-					? error.message
-					: 'Could not load the Desmos calculator.';
-		}
-	}
-
 	onMount(() => {
 		viewportWidth = window.innerWidth;
 		viewportHeight = window.innerHeight;
@@ -185,34 +82,23 @@
 			panelY = clamped.y;
 		};
 		window.addEventListener('resize', updateViewport);
-		const removeResize = () => window.removeEventListener('resize', updateViewport);
 
-		const apiKey = PUBLIC_DESMOS_API_KEY?.trim();
-		if (!apiKey) {
-			loadError = true;
-			loadErrorMessage =
-				'Add PUBLIC_DESMOS_API_KEY to your .env file. Get a key at https://www.desmos.com/my-api';
-			return removeResize;
-		}
+		// Listen for ready/error messages from the Desmos sandbox iframe
+		const onMessage = (e: MessageEvent) => {
+			if (e.data?.type === 'ready') {
+				isReady = true;
+				loadError = false;
+			} else if (e.data?.type === 'error') {
+				loadError = true;
+				loadErrorMessage = e.data.message ?? 'Could not load the Desmos calculator.';
+			}
+		};
+		window.addEventListener('message', onMessage);
 
-		loadDesmosScript(apiKey)
-			.then(() => initCalculator())
-			.catch((error) => {
-				if (!destroyed) {
-					loadError = true;
-					loadErrorMessage =
-						error instanceof Error && error.message
-							? error.message
-							: 'Could not load the Desmos calculator.';
-				}
-			});
-
-		return removeResize;
-	});
-
-	onDestroy(() => {
-		destroyed = true;
-		calculatorInstance?.destroy();
+		return () => {
+			window.removeEventListener('resize', updateViewport);
+			window.removeEventListener('message', onMessage);
+		};
 	});
 </script>
 
@@ -245,10 +131,15 @@
 		</button>
 	</div>
 
-	<!-- Calculator container -->
+	<!-- Calculator container: Desmos runs in an isolated iframe with its own CSP (unsafe-eval scoped there) -->
 	<div class="relative min-h-0 flex-1">
-		<!-- Always in DOM and visible so Desmos initialises in a properly laid-out element -->
-		<div use:captureCalculatorContainer class="h-full w-full"></div>
+		<iframe
+			src="/desmos-sandbox?type={type}"
+			title="{type === 'graphing' ? 'Graphing' : 'Scientific'} Calculator"
+			class="h-full w-full border-0"
+			sandbox="allow-scripts allow-same-origin"
+			loading="eager"
+		></iframe>
 		{#if loadError}
 			<div
 				class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-sm text-muted-foreground"

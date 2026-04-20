@@ -1,5 +1,15 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
+
+interface ImportMetaEnv {
+	/** Optional; set in `.env` when using Cloudflare Web Analytics beacon in `+layout.svelte`. */
+	readonly PUBLIC_CLOUDFLARE_WEB_ANALYTICS_TOKEN?: string;
+}
+
+interface ImportMeta {
+	readonly env: ImportMetaEnv;
+}
+
 declare global {
 	namespace App {
 		// interface Error {}
