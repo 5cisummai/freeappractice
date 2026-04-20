@@ -1,12 +1,4 @@
-import OpenAI from 'openai';
-import { OPEN_AI_KEY } from '$env/static/private';
-import { logger } from '$lib/server/logger';
-
-const MODEL = 'gpt-4o-mini';
-
-function getClient(): OpenAI {
-	return new OpenAI({ apiKey: OPEN_AI_KEY });
-}
+import { runChatCompletion, runStreamingChat, TUTOR_MODEL } from './ai';
 
 export interface TutorMessage {
 	role: 'user' | 'assistant' | 'system';
@@ -14,30 +6,19 @@ export interface TutorMessage {
 }
 
 export async function getGreeting(question: string): Promise<string> {
-	const client = getClient();
-	const doneAiCall = logger.aiCall('getGreeting', MODEL);
-	let response;
-	try {
-		response = await client.chat.completions.create({
-			model: MODEL,
-			messages: [
-				{
-					role: 'system',
-					content:
-						'You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.'
-				},
-				{ role: 'user', content: `The current question is: ${question}` }
-			],
-			max_completion_tokens: 150
-		});
-	} catch (err) {
-		logger.error('[ai] getGreeting failed', { model: MODEL, error: err });
-		throw err;
-	}
-	doneAiCall({ completionTokens: response.usage?.completion_tokens });
-	return (
-		response.choices[0]?.message?.content ?? "Hi! I'm here to help you understand this question."
-	);
+	const { content } = await runChatCompletion('getGreeting', {
+		model: TUTOR_MODEL,
+		messages: [
+			{
+				role: 'system',
+				content:
+					'You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.'
+			},
+			{ role: 'user', content: `The current question is: ${question}` }
+		],
+		max_completion_tokens: 150
+	});
+	return content || "Hi! I'm here to help you understand this question.";
 }
 
 export async function* chat(opts: {
@@ -85,32 +66,17 @@ Your role:
 
 Important: do NOT at any point give the answer to the question. Instead, guide the student to think critically.`;
 
-	const client = getClient();
-	const doneAiCall = logger.aiCall('chat', MODEL, { historyLength: conversationHistory.length });
-	let stream;
-	try {
-		stream = await client.chat.completions.create({
-			model: MODEL,
+	yield* runStreamingChat(
+		'chat',
+		{
+			model: TUTOR_MODEL,
 			messages: [
 				{ role: 'system', content: systemPrompt },
 				...conversationHistory,
 				{ role: 'user', content: userMessage }
 			],
-			max_completion_tokens: 500,
-			stream: true
-		});
-	} catch (err) {
-		logger.error('[ai] chat stream failed', { model: MODEL, error: err });
-		throw err;
-	}
-
-	let chunks = 0;
-	for await (const chunk of stream) {
-		const content = chunk.choices[0]?.delta?.content;
-		if (content) {
-			chunks++;
-			yield content;
-		}
-	}
-	doneAiCall({ chunks });
+			max_completion_tokens: 500
+		},
+		{ historyLength: conversationHistory.length }
+	);
 }
