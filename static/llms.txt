@@ -1,0 +1,53 @@
+# Free AP Practice
+
+> Free AI-powered AP practice question generator for 20+ Advanced Placement subjects. Generate unlimited practice questions with instant feedback and detailed explanations. No signup required.
+
+Practice for your AP exams with AI-generated questions. Select an AP subject, choose a unit or enter a custom topic, and generate practice questions. Questions are generated using OpenAI's gpt-5-mini model and cached for fast follow-up questions.
+
+## Features
+
+- AI question generation across 20+ AP subjects
+- Instant feedback with detailed explanations
+- Progress tracking and streak counting
+- Custom topic and unit selection
+- Privacy-first: progress saved locally
+- 100% free, no ads or subscriptions
+
+## Supported AP Subjects
+
+- Sciences: Biology, Chemistry, Physics 1, Physics 2, Physics C: Mechanics, Physics C: E&M, Environmental Science
+- Mathematics: Calculus AB, Calculus BC, Statistics, Precalculus
+- Computer Science: Computer Science A, Computer Science Principles
+- English: English Language, English Literature
+- History: AP US History, AP World History, AP European History
+- Social Sciences: Psychology, Human Geography, Government and Politics
+- Economics: Microeconomics, Macroeconomics
+
+## Reference Sheets
+
+- [AP Biology Equations and Formulas Sheet](/ap-biology-equations-and-formulas-sheet.pdf): Essential formulas for AP Biology exam
+- [AP Chemistry Equations Sheet](/ap-chemistry-equations-sheet.pdf): Key equations for AP Chemistry
+- [AP Physics 1 Equations Sheet](/ap-physics-1-equations-sheet.pdf): Physics 1 reference formulas
+- [AP Physics 2 Equations Sheet](/ap-physics-2-equations-sheet.pdf): Physics 2 reference formulas
+- [AP Physics C: Mechanics Equations Sheet](/ap-physics-c-mechanics-equations-sheet.pdf): Calculus-based mechanics
+- [AP Physics C: Electricity and Magnetism Equations Sheet](/ap-physics-c-electricity-and-magnetism-equations-sheet.pdf): E&M reference
+- [AP Environmental Science Exam Reference Sheet](/ap-environmental-science-exam-reference-sheet.pdf): Environmental science formulas
+- [AP Statistics Formula Tables Sheet](/ap-statistics-formula-tables-sheet.pdf): Statistics formulas
+- [AP Computer Science A: Java Quick Reference](/ap-computer-science-a-java-quick-reference.pdf): Java syntax reference
+- [AP Computer Science Principles Exam Reference Sheet](/ap-computer-science-principles-exam-reference-sheet.pdf): CSP reference
+
+## Pages
+
+- [Home](https://freeappractice.org/): Main question generator
+- [About](https://freeappractice.org/about): Mission and approach
+- [Blog](https://freeappractice.org/blog): Study tips and updates
+- [Stats](https://freeappractice.org/stats): Usage statistics
+- [Changelog](https://freeappractice.org/changelog): Feature updates
+
+## Optional
+
+- [Terms of Service](https://freeappractice.org/terms)
+- [Privacy Policy](https://freeappractice.org/privacy)
+- [Sign Up](https://freeappractice.org/signup)
+- [Login](https://freeappractice.org/login)
+- [Health Check](https://freeappractice.org/health)

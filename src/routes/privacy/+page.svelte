@@ -63,6 +63,8 @@
 							<strong>Transactional requests:</strong> password reset, verification, and account deletion
 							requests
 						</li>
+            <li>
+              <strong>User provided responses:</strong> AI tutor questions and FRQ responses may be sent to OPENAI, we are working to eventually keep this private in the future
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
 					<ul class="list-disc space-y-1 pl-6">
