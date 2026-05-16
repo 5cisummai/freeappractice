@@ -33,7 +33,8 @@ const config = {
 					// CSP2 fallbacks (ignored by CSP3 browsers when strict-dynamic is present)
 					'https://accounts.google.com/gsi/client',
 					'https://static.cloudflareinsights.com',
-					'blob:'
+					'blob:',
+					'unsafe-inline'
 				],
 				// Svelte transitions inject inline styles, so 'unsafe-inline' is still required here
 				'style-src': [
