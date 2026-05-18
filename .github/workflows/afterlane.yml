@@ -1,0 +1,25 @@
+# Triggers Afterlane deploy verification after each branch push.
+# Add repository secrets: AFTERLANE_PROJECT_ID, AFTERLANE_WEBHOOK_SECRET
+name: Afterlane verification
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  trigger-afterlane:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Afterlane verification
+        if: success()
+        run: |
+          curl -X POST "https://afterlane.co/api/webhooks/deploy/${{ secrets.AFTERLANE_PROJECT_ID }}?secret=${{ secrets.AFTERLANE_WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "provider": "github_actions",
+              "branch": "${{ github.ref_name }}",
+              "commitSha": "${{ github.sha }}",
+              "repository": "${{ github.repository }}",
+              "workflow": "${{ github.workflow }}"
+            }'
