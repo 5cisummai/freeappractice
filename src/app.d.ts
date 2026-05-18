@@ -6,11 +6,10 @@ interface ImportMetaEnv {
 	readonly PUBLIC_CLOUDFLARE_WEB_ANALYTICS_TOKEN?: string;
 }
 
-interface ImportMeta {
-	readonly env: ImportMetaEnv;
-}
-
 declare global {
+	interface ImportMeta {
+		readonly env: ImportMetaEnv;
+	}
 	namespace App {
 		// interface Error {}
 		interface Locals {

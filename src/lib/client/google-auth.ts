@@ -34,6 +34,7 @@ function ensureGoogleGsiScript(): Promise<void> {
 			if (settled) return;
 			settled = true;
 			gsiScriptPromise = null;
+			script?.remove();
 			reject(new Error('Failed to load Google Sign-In'));
 		};
 

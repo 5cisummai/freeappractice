@@ -2,7 +2,7 @@
 
 > Free AI-powered AP practice question generator for 20+ Advanced Placement subjects. Generate unlimited practice questions with instant feedback and detailed explanations. No signup required.
 
-Practice for your AP exams with AI-generated questions. Select an AP subject, choose a unit or enter a custom topic, and generate practice questions. Questions are generated using OpenAI's gpt-5-mini model and cached for fast follow-up questions.
+Practice for your AP exams with AI-generated questions. Select an AP subject, choose a unit or enter a custom topic, and generate practice questions. Questions are generated using OpenAI models configured by the service and cached for fast follow-up questions.
 
 ## Features
 
@@ -10,7 +10,7 @@ Practice for your AP exams with AI-generated questions. Select an AP subject, ch
 - Instant feedback with detailed explanations
 - Progress tracking and streak counting
 - Custom topic and unit selection
-- Privacy-first: progress saved locally
+- Privacy-first: progress is saved locally for anonymous use and can be stored to your account when signed in
 - 100% free, no ads or subscriptions
 
 ## Supported AP Subjects

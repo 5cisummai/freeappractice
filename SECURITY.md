@@ -32,7 +32,7 @@ Please email your vulnerability report to **security@freeappractice.org** with t
 
 - **Initial Response**: You can expect an acknowledgment of your report within 48 hours
 - **Updates**: We will provide status updates on your reported vulnerability at least every 7 days
-- **Resolution Timeline**: 
+- **Resolution Timeline**:
   - Critical vulnerabilities (data exposure, account compromise): 10 days
   - High-priority vulnerabilities (authentication bypass, XSS): 20 days
   - Medium-priority issues: 90 days
@@ -41,17 +41,20 @@ Please email your vulnerability report to **security@freeappractice.org** with t
 ### Outcomes
 
 **Accepted**: If we confirm the vulnerability, we will:
+
 - Develop and deploy a fix
 - Monitor for any exploitation attempts
 - Credit you in our security advisories (if you wish to be credited)
 
 **Declined**: If we determine the report is not a valid security concern, we will:
+
 - Explain our reasoning
 - Offer guidance if applicable
 
 ## Security Measures
 
 We protect user data through:
+
 - HTTPS encryption for all connections
 - Regular security audits and penetration testing
 - Secure password storage with industry-standard hashing
@@ -62,6 +65,7 @@ We protect user data through:
 ## User Security Responsibilities
 
 To help keep your account safe:
+
 - Use a strong, unique password
 - Never share your login credentials with anyone
 - Enable two-factor authentication (if available)

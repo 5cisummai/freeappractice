@@ -490,14 +490,11 @@ OUTPUT:
 
 	const persistUnitLabel = isCustom ? `Custom: ${ct}` : unit;
 	let questionId: string | undefined;
-	void persistGeneratedMcqQuestion(parsed, className, persistUnitLabel)
-		.then((id) => {
-			questionId = id;
-		})
-		.catch(() => {
-			/* non-critical */
-		});
-
+	try {
+		questionId = await persistGeneratedMcqQuestion(parsed, className, persistUnitLabel);
+	} catch {
+		/* non-critical */
+	}
 	return { answer: parsed, provider: 'openai', model, questionId };
 }
 

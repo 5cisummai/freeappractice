@@ -45,16 +45,17 @@ const SECURITY_HEADERS: Record<string, string> = {
 	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload'
 };
 
-const DEFAULT_ALLOWED_ORIGINS = [
-	'https://freeappractice.org',
-	'https://www.freeappractice.org',
-	'http://127.0.0.1:3000',
-	'http://127.0.0.1:4173',
-	'http://127.0.0.1:5173',
-	'http://localhost:5173',
-	'http://localhost:4173',
-	'http://localhost:3000'
-];
+const DEFAULT_ALLOWED_ORIGINS = ['https://freeappractice.org', 'https://www.freeappractice.org'];
+if (env.NODE_ENV === 'development') {
+	DEFAULT_ALLOWED_ORIGINS.push(
+		'http://127.0.0.1:3000',
+		'http://127.0.0.1:4173',
+		'http://127.0.0.1:5173',
+		'http://localhost:5173',
+		'http://localhost:4173',
+		'http://localhost:3000'
+	);
+}
 
 const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
 const CORS_HEADERS = 'Content-Type, Authorization, X-Questions-Admin-Secret';
@@ -95,12 +96,12 @@ function applyCorsHeaders(response: Response, origin: string | null): Response {
 	if (!origin || !ALLOWED_ORIGINS.has(origin)) {
 		return response;
 	}
-
 	response.headers.set('Access-Control-Allow-Origin', origin);
 	response.headers.set('Access-Control-Allow-Credentials', 'true');
 	response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
 	response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS);
-	response.headers.set('Vary', 'Origin');
+	const vary = response.headers.get('Vary');
+	response.headers.set('Vary', vary ? `${vary}, Origin` : 'Origin');
 
 	return response;
 }

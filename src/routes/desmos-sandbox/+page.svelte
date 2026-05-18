@@ -92,7 +92,10 @@
 
 		// Listen for re-init messages from parent (e.g. type switch)
 		const onMessage = (e: MessageEvent) => {
-			if (e.data?.type === 'init' && (e.data.calcType === 'graphing' || e.data.calcType === 'scientific')) {
+			if (
+				e.data?.type === 'init' &&
+				(e.data.calcType === 'graphing' || e.data.calcType === 'scientific')
+			) {
 				calcType = e.data.calcType;
 				initCalc(calcType);
 			}
