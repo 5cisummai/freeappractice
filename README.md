@@ -120,6 +120,36 @@ The **Freeappractice** name, logo, and brand identity are proprietary and are ex
 
 If you fork the code to build something of your own, give it a completely different name and make it clear that it is an independent project unrelated to Freeappractice.
 
+## Translations
+
+The app ships with English as its default language. Two translation layers are available:
+
+### Browser-native translation (zero config)
+
+Because `src/app.html` sets `lang="en"` on the root `<html>` element, Chrome, Edge, Firefox Translations, and similar tools automatically detect the page language and offer to translate it into the user's preferred language. No additional setup is required for this to work.
+
+### Programmatic i18n
+
+A lightweight built-in i18n module lives in `src/lib/i18n/`. It has no extra runtime dependencies — it uses Svelte stores and plain JSON locale files.
+
+**Adding a new language**
+
+1. Copy `src/lib/i18n/locales/en.json` to a new file, e.g. `src/lib/i18n/locales/fr.json`.
+2. Translate every value (keep the keys unchanged).
+3. Open `src/lib/i18n/index.ts` and follow the two-step comment at the top of the file (import the new JSON file and add the locale code to the `Locale` union + `SUPPORTED_LOCALES` array).
+
+**Using translations in a component**
+
+```svelte
+<script>
+  import { t } from '$lib/i18n';
+</script>
+
+<p>{$t('nav.blog')}</p>
+```
+
+The active locale is persisted in `localStorage` and updates the document `lang` attribute automatically so assistive technology stays in sync.
+
 ## Notes
 
 - AP content, question generation, and grading are still API-driven, even though the UI now lives in SvelteKit.
