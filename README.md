@@ -94,7 +94,7 @@ The in-app bug report form no longer writes to a local JSON file. It now creates
 
 ## Deployment
 
-This project is meant to deploy to Vercel as a SvelteKit app. The current SvelteKit adapter setup is Vercel-compatible, so the usual flow is:
+This project is meant to deploy to Vercel as a SvelteKit app and uses `@sveltejs/adapter-vercel`, so the usual flow is:
 
 1. Connect the repository to Vercel.
 2. Set the production environment variables in Vercel.

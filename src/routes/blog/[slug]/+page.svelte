@@ -3,6 +3,8 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 
 	let { data }: { data: PageData } = $props();
 
@@ -76,26 +78,10 @@
 		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:py-16">
 			<div class="flex items-start justify-center gap-10">
 				<article class="w-full max-w-3xl min-w-0">
-					<a
-						href={resolve('/blog')}
-						class="mb-8 inline-block gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							aria-hidden="true"
-						>
-							<path d="m15 18-6-6 6-6" />
-						</svg>
+					<Button variant="ghost" href={resolve('/blog')} class="mb-8">
+						<ArrowLeftIcon class="size-4" />
 						All posts
-					</a>
-
+					</Button>
 					{#if data.post.coverImage}
 						<img
 							src={data.post.coverImage}

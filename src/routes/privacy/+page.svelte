@@ -63,6 +63,11 @@
 							<strong>Transactional requests:</strong> password reset, verification, and account deletion
 							requests
 						</li>
+						<li>
+							<strong>User-provided responses:</strong> AI tutor prompts and FRQ responses may be sent
+							to OpenAI for AI processing and improvement. We intend to store these locally in the future;
+							please do not submit sensitive personal information.
+						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
 					<ul class="list-disc space-y-1 pl-6">

@@ -123,6 +123,7 @@
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
+	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
 	import apClassesData from '$lib/data/ap-classes.json';
@@ -1384,28 +1385,42 @@
 					{#if hasCalculator || hasReferenceSheet}
 						<div class="flex gap-0.5">
 							{#if hasCalculator}
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-7 w-7 text-muted-foreground hover:text-foreground"
-									onclick={() => (calculatorOpen = !calculatorOpen)}
-									aria-label="Open Calculator"
-									title="Open Calculator"
-								>
-									<CalculatorIcon class="h-3.5 w-3.5" />
-								</Button>
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										{#snippet child({ props })}
+											<Button
+												variant="ghost"
+												size="icon"
+												class="h-7 w-7 text-muted-foreground hover:text-foreground"
+												onclick={() => (calculatorOpen = !calculatorOpen)}
+												aria-label="Open Calculator"
+												{...props}
+											>
+												<CalculatorIcon class="h-3.5 w-3.5" />
+											</Button>
+										{/snippet}
+									</Tooltip.Trigger>
+									<Tooltip.Content side="top" sideOffset={6}>Open Calculator</Tooltip.Content>
+								</Tooltip.Root>
 							{/if}
 							{#if hasReferenceSheet}
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-7 w-7 text-muted-foreground hover:text-foreground"
-									onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
-									aria-label="Reference Sheet"
-									title="Reference Sheet"
-								>
-									<BookOpenIcon class="h-3.5 w-3.5" />
-								</Button>
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										{#snippet child({ props })}
+											<Button
+												variant="ghost"
+												size="icon"
+												class="h-7 w-7 text-muted-foreground hover:text-foreground"
+												onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
+												aria-label="Reference Sheet"
+												{...props}
+											>
+												<BookOpenIcon class="h-3.5 w-3.5" />
+											</Button>
+										{/snippet}
+									</Tooltip.Trigger>
+									<Tooltip.Content side="top" sideOffset={6}>Reference Sheet</Tooltip.Content>
+								</Tooltip.Root>
 							{/if}
 						</div>
 					{/if}
@@ -1436,28 +1451,42 @@
 					{#if hasCalculator || hasReferenceSheet}
 						<div class="flex gap-0.5">
 							{#if hasCalculator}
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-7 w-7 text-muted-foreground hover:text-foreground"
-									onclick={() => (calculatorOpen = !calculatorOpen)}
-									aria-label="Open Calculator"
-									title="Open Calculator"
-								>
-									<CalculatorIcon class="h-3.5 w-3.5" />
-								</Button>
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										{#snippet child({ props })}
+											<Button
+												variant="ghost"
+												size="icon"
+												class="h-7 w-7 text-muted-foreground hover:text-foreground"
+												onclick={() => (calculatorOpen = !calculatorOpen)}
+												aria-label="Open Calculator"
+												{...props}
+											>
+												<CalculatorIcon class="h-3.5 w-3.5" />
+											</Button>
+										{/snippet}
+									</Tooltip.Trigger>
+									<Tooltip.Content side="top" sideOffset={6}>Open Calculator</Tooltip.Content>
+								</Tooltip.Root>
 							{/if}
 							{#if hasReferenceSheet}
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-7 w-7 text-muted-foreground hover:text-foreground"
-									onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
-									aria-label="Reference Sheet"
-									title="Reference Sheet"
-								>
-									<BookOpenIcon class="h-3.5 w-3.5" />
-								</Button>
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										{#snippet child({ props })}
+											<Button
+												variant="ghost"
+												size="icon"
+												class="h-7 w-7 text-muted-foreground hover:text-foreground"
+												onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
+												aria-label="Reference Sheet"
+												{...props}
+											>
+												<BookOpenIcon class="h-3.5 w-3.5" />
+											</Button>
+										{/snippet}
+									</Tooltip.Trigger>
+									<Tooltip.Content side="top" sideOffset={6}>Reference Sheet</Tooltip.Content>
+								</Tooltip.Root>
 							{/if}
 						</div>
 					{/if}

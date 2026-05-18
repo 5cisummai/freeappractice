@@ -21,7 +21,9 @@ export type PerQuestionAnalysis = Record<string, unknown>;
  * Override or extend this in this file to run custom analytics over each stored question.
  * Default implementation records lightweight aggregates only.
  */
-export async function analyzeStoredQuestion(question: StoredQuestion): Promise<PerQuestionAnalysis> {
+export async function analyzeStoredQuestion(
+	question: StoredQuestion
+): Promise<PerQuestionAnalysis> {
 	const qLen = question.question?.length ?? 0;
 	return {
 		id: question.id,
@@ -45,7 +47,11 @@ export interface BatchAnalysisResult {
 
 const BATCH_SIZE = 12;
 
-async function mapInBatches<T, R>(items: T[], batchSize: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+async function mapInBatches<T, R>(
+	items: T[],
+	batchSize: number,
+	fn: (item: T) => Promise<R>
+): Promise<R[]> {
 	const out: R[] = [];
 	for (let i = 0; i < items.length; i += batchSize) {
 		const slice = items.slice(i, i + batchSize);

@@ -122,7 +122,7 @@
 
 	<div class="flex flex-wrap items-end gap-4">
 		<div class="flex min-w-48 flex-1 flex-col gap-2">
-			<Label>AP Class</Label>
+			<Label id="question-selector-class-label">AP Class</Label>
 			<Popover.Root bind:open={classOpen}>
 				<Popover.Trigger bind:ref={classTriggerRef}>
 					{#snippet child({ props })}
@@ -130,6 +130,7 @@
 							{...props}
 							variant="outline"
 							role="combobox"
+							aria-labelledby="question-selector-class-label"
 							aria-expanded={classOpen}
 							class="w-full justify-between font-normal"
 						>
@@ -140,7 +141,11 @@
 				</Popover.Trigger>
 				<Popover.Content class="p-0">
 					<Command.Root>
-						<Command.Input placeholder="Search courses..." />
+						<Command.Input
+							id="question-selector-class-search"
+							name="class-search"
+							placeholder="Search courses..."
+						/>
 						<Command.List>
 							<Command.Empty>No course found.</Command.Empty>
 							<Command.Group>
@@ -163,7 +168,7 @@
 		</div>
 
 		<div class="flex min-w-48 flex-1 flex-col gap-2">
-			<Label>Unit</Label>
+			<Label id="question-selector-unit-label">Unit</Label>
 			<Popover.Root bind:open={unitOpen}>
 				<Popover.Trigger bind:ref={unitTriggerRef}>
 					{#snippet child({ props })}
@@ -171,6 +176,7 @@
 							{...props}
 							variant="outline"
 							role="combobox"
+							aria-labelledby="question-selector-unit-label"
 							aria-expanded={unitOpen}
 							disabled={!selectedClass}
 							class="w-full justify-between font-normal"
@@ -196,7 +202,11 @@
 				</Popover.Trigger>
 				<Popover.Content class="p-0">
 					<Command.Root>
-						<Command.Input placeholder="Search units..." />
+						<Command.Input
+							id="question-selector-unit-search"
+							name="unit-search"
+							placeholder="Search units..."
+						/>
 						<Command.List>
 							<Command.Empty>No unit found.</Command.Empty>
 							<Command.Group>

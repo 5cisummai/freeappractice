@@ -5,6 +5,26 @@
 
 	const changelog = [
 		{
+			version: '1.3.6',
+			date: 'May 17, 2026',
+			sections: [
+				{
+					title: 'Fixes',
+					items: ['Bug fixes and edge-case handling across practice, FRQs, and account flows']
+				},
+				{
+					title: 'AI',
+					items: [
+						'Model upgrades for question generation, batch analysis, and tutor responses (gpt-5.4-mini)'
+					]
+				},
+				{
+					title: 'Stability',
+					items: ['Stability improvements for reliability, performance, and error recovery']
+				}
+			]
+		},
+		{
 			version: '1.3.5',
 			date: 'April 24, 2026',
 			sections: [

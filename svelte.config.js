@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-vercel';
 import { relative, sep } from 'node:path';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -14,35 +14,28 @@ const config = {
 		}
 	},
 	kit: {
-		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		csp: {
-			// 'auto' uses hashes for prerendered pages and nonces for SSR pages,
-			// which allows removing 'unsafe-inline' from script-src.
+			// 'auto' uses hashes for prerendered pages and nonces for SSR pages.
+			// This lets SvelteKit allow its own inline runtime scripts without keeping
+			// a broad script-src 'unsafe-inline' policy.
 			mode: 'auto',
 			directives: {
 				'default-src': ["'self'"],
 				'script-src': [
 					"'self'",
-					// 'unsafe-eval' is required by Desmos and some CDN-hosted scripts
-					"'unsafe-eval'",
-					'https://accounts.google.com/gsi/client',
-					'https://cdn.jsdelivr.net',
-					'https://cdnjs.cloudflare.com',
-					'https://va.vercel-scripts.com',
-					'https://www.desmos.com',
+					"'strict-dynamic'",
+					// CSP Level 2 fallbacks. CSP Level 3 browsers ignore these host sources
+					// when strict-dynamic is present and a nonce/hash is trusted.
+					'https://accounts.google.com',
 					'https://static.cloudflareinsights.com',
 					'blob:'
 				],
-				// Svelte transitions inject inline styles, so 'unsafe-inline' is still required here
+				// Svelte transitions and some third-party widgets inject inline styles.
 				'style-src': [
 					"'self'",
 					"'unsafe-inline'",
-					'https://accounts.google.com/gsi/client',
-					'https://cdn.jsdelivr.net',
-					'https://cdnjs.cloudflare.com',
+					'https://accounts.google.com',
 					'https://fonts.googleapis.com'
 				],
 				'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
@@ -56,13 +49,11 @@ const config = {
 				],
 				'connect-src': [
 					"'self'",
-					'https://accounts.google.com/gsi/',
-					'https://va.vercel-scripts.com',
-					'https://www.desmos.com',
+					'https://accounts.google.com',
 					'https://cloudflareinsights.com',
-					'blob:'
+					'https://static.cloudflareinsights.com'
 				],
-				'frame-src': ['https://accounts.google.com/gsi/', 'https://www.desmos.com'],
+				'frame-src': ["'self'", 'https://accounts.google.com'],
 				'worker-src': ["'self'", 'blob:'],
 				'base-uri': ["'self'"],
 				'form-action': ["'self'"],

@@ -32,8 +32,7 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'customTopic must be a string if provided' }, { status: 400 });
 		}
 
-		const topicTrim =
-			typeof customTopic === 'string' ? customTopic.trim() : '';
+		const topicTrim = typeof customTopic === 'string' ? customTopic.trim() : '';
 		if (topicTrim.length > MAX_CUSTOM_TOPIC_LEN) {
 			return json(
 				{ error: `customTopic must be at most ${MAX_CUSTOM_TOPIC_LEN} characters` },

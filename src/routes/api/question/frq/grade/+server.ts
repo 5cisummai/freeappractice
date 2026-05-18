@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { gradeFRQResponse } from '$lib/server/services/ai';
+import { gradeFRQResponse } from '$lib/server/services/question-generate';
 import { requireAuth } from '$lib/server/auth';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';

@@ -1,7 +1,7 @@
 import { FRQQuestion } from '$lib/server/models/frq-question';
 import { SeenQuestion } from '$lib/server/models/seen-question';
 import { connectDb } from '$lib/server/db';
-import { generateFRQQuestion, type GenerateFRQResult } from './ai';
+import { generateFRQQuestion, type GenerateFRQResult } from './question-generate';
 import { logger } from '$lib/server/logger';
 import { runCacheMissClusterFlow } from './cache-miss-coordinator';
 import {
