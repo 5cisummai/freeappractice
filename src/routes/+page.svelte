@@ -8,34 +8,8 @@
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-
-	function observeElement(element: Element) {
-		const onAnimationEnd = () => {
-			element.classList.add('fade-in-done');
-		};
-		element.addEventListener('animationend', onAnimationEnd, { once: true });
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						entry.target.classList.add('fade-in-visible');
-						observer.unobserve(entry.target);
-					}
-				});
-			},
-			{ threshold: 0.1, rootMargin: '0px 0px -100px 0px' }
-		);
-
-		observer.observe(element);
-
-		return {
-			destroy() {
-				observer.disconnect();
-				element.removeEventListener('animationend', onAnimationEnd);
-			}
-		};
-	}
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 
 	const showHowToUse = false;
 	const howToSteps = [
@@ -50,39 +24,6 @@
 	let customTopic = $state('');
 	let generateVersion = $state(0);
 
-	const AP_EXAM_START = new Date(2026, 4, 4);
-
-	function getDaysUntilExamStart(): number {
-		const today = new Date();
-		const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-		const startOfExam = new Date(
-			AP_EXAM_START.getFullYear(),
-			AP_EXAM_START.getMonth(),
-			AP_EXAM_START.getDate()
-		);
-		const diffMs = startOfExam.getTime() - startOfToday.getTime();
-		return Math.max(0, Math.floor(diffMs / 86_400_000));
-	}
-
-	const daysUntilExamStart = getDaysUntilExamStart();
-	const countdownStartValue = daysUntilExamStart + 1;
-	const countdownDigitsLength = Math.max(
-		String(daysUntilExamStart).length,
-		String(countdownStartValue).length
-	);
-	const countdownStartDigits = String(countdownStartValue)
-		.padStart(countdownDigitsLength, ' ')
-		.split('');
-	const countdownEndDigits = String(daysUntilExamStart)
-		.padStart(countdownDigitsLength, ' ')
-		.split('');
-
-	let countdownRolled = $state(false);
-
-	function displayDigit(digit: string): string {
-		return digit === ' ' ? '\u00A0' : digit;
-	}
-
 	function handleSelectionChange(): void {
 		generateVersion = 0;
 	}
@@ -96,11 +37,6 @@
 		if (auth.isAuthenticated) {
 			goto(resolve('/app'), { replaceState: true });
 		}
-		const timer = window.setTimeout(() => {
-			countdownRolled = true;
-		}, 150);
-
-		return () => window.clearTimeout(timer);
 	});
 </script>
 
@@ -352,48 +288,19 @@
 
 	<main class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-16 px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-			<section
-				class="fade-in-section how-to-use mx-auto max-w-5xl space-y-10 text-center"
-				use:observeElement
-			>
+			<section class="mx-auto max-w-5xl space-y-10 text-center">
 				<div class="space-y-4">
+					<Badge variant="outline" href={resolve('/blog/which-aps-to-take')} class="p-2">
+						Want to know what APs to take next?
+						<ArrowRightIcon class="size-4" />
+					</Badge>
 					<h1 class="text-4xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
 						Ace your AP Exams
 					</h1>
 					<p class="text-md mx-auto max-w-3xl leading-8 text-muted-foreground sm:text-lg">
 						Generate and practice High Quality AP questions with instant feedback
 					</p>
-					<div
-						class="mx-auto inline-flex flex-nowrap items-center gap-2 rounded-full border border-border/70 bg-card px-4 py-2 text-sm font-medium whitespace-nowrap"
-					>
-						<span class="text-muted-foreground">AP exams start May 4, 2026</span>
-						<span aria-hidden="true" class="text-muted-foreground">•</span>
-						<span class="inline-flex items-center whitespace-nowrap text-foreground tabular-nums">
-							<span
-								class="countdown-roller"
-								aria-label={`${daysUntilExamStart} ${daysUntilExamStart === 1 ? 'day' : 'days'} left`}
-							>
-								{#each countdownEndDigits as endDigit, index (index)}
-									{@const startDigit = countdownStartDigits[index]}
-									<span class="countdown-digit-window" aria-hidden="true">
-										{#if countdownRolled}
-											{#if startDigit !== endDigit}
-												<span class="countdown-digit-strip roll-down">
-													<span class="countdown-digit">{displayDigit(startDigit)}</span>
-													<span class="countdown-digit">{displayDigit(endDigit)}</span>
-												</span>
-											{:else}
-												<span class="countdown-digit">{displayDigit(endDigit)}</span>
-											{/if}
-										{:else}
-											<span class="countdown-digit">{displayDigit(startDigit)}</span>
-										{/if}
-									</span>
-								{/each}
-							</span>
-							<span class="ml-1">{daysUntilExamStart === 1 ? 'day' : 'days'} left</span>
-						</span>
-					</div>
+
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span class="rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
 							>20+ AP Subjects</span
@@ -430,7 +337,7 @@
 			</section>
 
 			<section>
-				<div class="fade-in-section mx-auto max-w-5xl" use:observeElement>
+				<div class="mx-auto max-w-5xl">
 					<QuestionSelector
 						bind:selectedClass
 						bind:selectedUnit
@@ -444,7 +351,7 @@
 			</section>
 
 			<section>
-				<div class="fade-in-section mx-auto min-h-10 max-w-6xl" use:observeElement>
+				<div class="mx-auto min-h-10 max-w-6xl">
 					{#if generateVersion > 0}
 						{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
 							<QuestionCard
@@ -459,7 +366,7 @@
 				</div>
 			</section>
 
-			<section class="fade-in-section mx-auto w-full max-w-3xl space-y-4" use:observeElement>
+			<section class="mx-auto w-full max-w-3xl space-y-4">
 				<div class="space-y-1">
 					<h2 class="text-2xl font-semibold tracking-tight">FAQ</h2>
 				</div>
@@ -541,72 +448,3 @@
 
 	<SiteFooter />
 </div>
-
-<style>
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(20px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	:global(.fade-in-section) {
-		opacity: 0;
-		transform: translateY(20px);
-	}
-
-	:global(.fade-in-section.fade-in-visible) {
-		animation: fadeIn 0.6s ease-out forwards;
-	}
-
-	:global(.fade-in-section.fade-in-done) {
-		opacity: 1;
-		transform: none;
-		animation: none;
-	}
-
-	.countdown-roller {
-		display: inline-flex;
-		align-items: flex-start;
-		gap: 0.04em;
-		line-height: 1;
-	}
-
-	.countdown-digit-window {
-		display: inline-flex;
-		height: 1em;
-		width: 0.68em;
-		overflow: hidden;
-		vertical-align: top;
-	}
-
-	.countdown-digit-strip {
-		display: flex;
-		flex-direction: column;
-		line-height: 1;
-		transform: translateY(0);
-	}
-
-	.countdown-digit-strip.roll-down {
-		animation: countdownRollDown 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-	}
-
-	.countdown-digit {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		height: 1em;
-		line-height: 1;
-		font-variant-numeric: tabular-nums;
-	}
-
-	@keyframes countdownRollDown {
-		to {
-			transform: translateY(-1em);
-		}
-	}
-</style>

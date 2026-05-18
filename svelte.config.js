@@ -16,32 +16,26 @@ const config = {
 	kit: {
 		adapter: adapter(),
 		csp: {
-			// 'auto' uses hashes for prerendered pages and nonces for SSR pages,
-			// which allows removing 'unsafe-inline' from script-src.
+			// 'auto' uses hashes for prerendered pages and nonces for SSR pages.
+			// This lets SvelteKit allow its own inline runtime scripts without keeping
+			// a broad script-src 'unsafe-inline' policy.
 			mode: 'auto',
 			directives: {
 				'default-src': ["'self'"],
-				// 'strict-dynamic' propagates nonce trust to dynamically loaded scripts
-				// (Google GSI, Cloudflare beacon) without needing explicit host allowlists.
-				// Host allowlists below are CSP Level 2 fallback for older browsers only —
-				// CSP Level 3 browsers ignore host sources when strict-dynamic is present.
-				// NOTE: 'unsafe-eval' is intentionally absent — Desmos runs in a sandboxed
-				// iframe at /desmos-sandbox which gets its own CSP override in hooks.server.ts.
 				'script-src': [
 					"'self'",
 					"'strict-dynamic'",
-					// CSP2 fallbacks (ignored by CSP3 browsers when strict-dynamic is present)
-					'https://accounts.google.com/gsi/client',
+					// CSP Level 2 fallbacks. CSP Level 3 browsers ignore these host sources
+					// when strict-dynamic is present and a nonce/hash is trusted.
+					'https://accounts.google.com',
 					'https://static.cloudflareinsights.com',
-					'blob:',
-					'unsafe-inline'
+					'blob:'
 				],
-				// Svelte transitions inject inline styles, so 'unsafe-inline' is still required here
+				// Svelte transitions and some third-party widgets inject inline styles.
 				'style-src': [
 					"'self'",
 					"'unsafe-inline'",
-					// Google Identity Services injects inline styles for the sign-in button
-					'https://accounts.google.com/gsi/client',
+					'https://accounts.google.com',
 					'https://fonts.googleapis.com'
 				],
 				'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
@@ -55,12 +49,10 @@ const config = {
 				],
 				'connect-src': [
 					"'self'",
-					// Google Sign-In / GSI network calls
 					'https://accounts.google.com',
-					// Cloudflare RUM beacon (manual snippet → cloudflareinsights.com)
-					'https://cloudflareinsights.com'
+					'https://cloudflareinsights.com',
+					'https://static.cloudflareinsights.com'
 				],
-				// Google One Tap / GSI renders in an iframe from accounts.google.com
 				'frame-src': ["'self'", 'https://accounts.google.com'],
 				'worker-src': ["'self'", 'blob:'],
 				'base-uri': ["'self'"],

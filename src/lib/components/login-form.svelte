@@ -85,6 +85,7 @@
 							placeholder="m@example.com"
 							required
 							bind:value={email}
+							autocomplete="email"
 						/>
 					</Field>
 					<Field>
@@ -97,7 +98,13 @@
 								Forgot your password?
 							</a>
 						</div>
-						<Input id="password-{id}" type="password" required bind:value={password} />
+						<Input
+							id="password-{id}"
+							type="password"
+							required
+							bind:value={password}
+							autocomplete="current-password"
+						/>
 					</Field>
 					<Field>
 						<Button type="submit" disabled={loading}>
