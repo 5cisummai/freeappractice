@@ -6,6 +6,8 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 
 	interface GenerationStats {
 		byApClass: Record<string, number>;
@@ -68,10 +70,10 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-6xl space-y-10 px-5 sm:px-8">
-			<a
-				href={resolve('/')}
-				class="inline-block text-sm text-muted-foreground hover:text-foreground">← Back to Home</a
-			>
+			<Button variant="ghost" href={resolve('/')}>
+				<ArrowLeftIcon class="size-4" />
+				Back to Home
+			</Button>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Question Generation Stats</h1>

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import { resolve } from '$app/paths';
 
 	const changelog = [
@@ -208,7 +210,7 @@
 					title: 'Changes',
 					items: [
 						'Project is now Open-Source, repo at github.com/5cisummai/freeappractice',
-						'Added optional cookies for analytics features that improve this site'
+							'Added optional analytics preference controls'
 					]
 				},
 				{
@@ -482,10 +484,10 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a
-				href={resolve('/')}
-				class="inline-block text-sm text-muted-foreground hover:text-foreground">← Back to Home</a
-			>
+			<Button variant="ghost" href={resolve('/')}>
+				<ArrowLeftIcon class="size-4" />
+				Back to Home
+			</Button>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Changelog</h1>

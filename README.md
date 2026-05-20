@@ -1,6 +1,6 @@
 # Free AP Practice
 
-Free AP Practice is a student-built SvelteKit app for generating AP practice questions, tracking progress, and helping students study with instant feedback. The project was refactored from the older backend-first implementation into a full SvelteKit application, and it is now intended to be deployed on Vercel.
+Free AP Practice is a personal, student-built SvelteKit app for generating AP practice questions, tracking progress, and helping students study with instant feedback. The project was refactored from the older backend-first implementation into a full SvelteKit application, and it is now intended to be deployed on Vercel.
 
 The project is founded and maintained by Ajay Saravanan. The goal is straightforward: make AP prep feel faster, more personalized, and more accessible for students who do not want to pay for another prep subscription just to get quality practice.
 
@@ -83,6 +83,7 @@ The main API routes now live under `src/routes/api` and are handled by SvelteKit
 - `POST /api/tutor/chat`, `POST /api/tutor/greeting` provide the tutor assistant.
 - `POST /api/bug-report` submits bug reports as GitHub Issues and applies a low per-IP rate limit.
 - `POST /api/s3/presign-upload`, `POST /api/s3/presign-download` create S3 signed URLs.
+- Optional analytics are enabled only after a user chooses to turn them on in the app.
 
 ## Bug reports
 

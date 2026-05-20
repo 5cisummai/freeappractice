@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import { resolve } from '$app/paths';
 </script>
 
@@ -35,9 +37,10 @@
 	<Topbar />
 
 	<main class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
-		<a href={resolve('/')} class="inline-block text-sm text-muted-foreground hover:text-foreground"
-			>← Back to Home</a
-		>
+		<Button variant="ghost" href={resolve('/')}>
+			<ArrowLeftIcon class="size-4" />
+			Back to Home
+		</Button>
 
 		<section class="mt-6 rounded-2xl border border-border bg-card p-8">
 			<h1 class="text text-3xl font-bold tracking-tight">About Free AP Practice</h1>

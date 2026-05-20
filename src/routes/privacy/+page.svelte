@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 </script>
 
 <svelte:head>
@@ -29,10 +31,10 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a
-				href={resolve('/')}
-				class=" inline-block text-sm text-muted-foreground hover:text-foreground">← Back to Home</a
-			>
+			<Button variant="ghost" href={resolve('/')}>
+				<ArrowLeftIcon class="size-4" />
+				Back to Home
+			</Button>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Privacy Policy</h1>
@@ -45,7 +47,7 @@
 					<p>
 						This Privacy Policy explains how Free AP Practice ("Service", "we", "us", or "our")
 						collects, uses, stores, and shares information when you use the website and related
-						features.
+						features. Free AP Practice is a personal project maintained by Ajay Saravanan.
 					</p>
 				</section>
 
@@ -65,8 +67,8 @@
 						</li>
 						<li>
 							<strong>User-provided responses:</strong> AI tutor prompts and FRQ responses may be sent
-							to OpenAI for AI processing and improvement. We intend to store these locally in the future;
-							please do not submit sensitive personal information.
+							to OpenAI for processing so the Service can generate responses. Please do not submit
+							sensitive personal information.
 						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
@@ -93,7 +95,8 @@
 						<li>To track progress, bookmarks, attempts, and saved preferences</li>
 						<li>To send transactional emails such as verification and password reset emails</li>
 						<li>To respond to bug reports, account requests, and support inquiries</li>
-						<li>To analyze usage trends and improve reliability, quality, and performance</li>
+						<li>To analyze usage trends and improve reliability, quality, and performance when optional
+							analytics are enabled</li>
 					</ul>
 				</section>
 
@@ -112,13 +115,24 @@
 					<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
 					<p>
 						We use local browser storage to keep you signed in and to save theme and accessibility
-						preferences. We do not use third-party advertising cookies. If you use a shared device,
-						you should sign out when finished.
+						preferences. We also use local storage to remember your optional analytics choice. We do
+						not use third-party advertising cookies. If you use a shared device, you should sign out
+						when finished.
 					</p>
 				</section>
 
 				<section>
-					<h2 class="text-xl font-semibold">6. Third-Party Services</h2>
+					<h2 class="text-xl font-semibold">6. Optional Analytics</h2>
+					<p>
+						Optional analytics may be provided by Vercel Analytics and Vercel Speed Insights. If you
+						choose to enable them, we may collect page views and performance-related signals to
+						understand how the Service is used and to improve reliability. You can change this
+						preference in Settings at any time.
+					</p>
+				</section>
+
+				<section>
+					<h2 class="text-xl font-semibold">7. Third-Party Services</h2>
 					<ul class="list-disc space-y-1 pl-6">
 						<li>
 							<strong>OpenAI:</strong> prompts and generated question content are processed by OpenAI's
@@ -130,6 +144,10 @@
 						<li>
 							<strong>AWS S3:</strong> file storage for generated question content and related assets
 						</li>
+						<li>
+							<strong>GitHub:</strong> bug reports are submitted as GitHub Issues when you use the
+							in-app bug report form
+						</li>
 						<li><strong>Resend:</strong> delivery of verification and reset emails</li>
 						<li><strong>Vercel:</strong> website hosting and deployment infrastructure</li>
 					</ul>
@@ -140,7 +158,7 @@
 				</section>
 
 				<section>
-					<h2 class="text-xl font-semibold">7. Your Rights</h2>
+					<h2 class="text-xl font-semibold">8. Your Rights</h2>
 					<p>
 						Depending on your location, you may have rights to access, correct, export, or delete
 						your personal data. You can delete your account through the Service or contact us for
@@ -150,7 +168,7 @@
 				</section>
 
 				<section>
-					<h2 class="text-xl font-semibold">8. Children's Privacy</h2>
+					<h2 class="text-xl font-semibold">9. Children's Privacy</h2>
 					<p>
 						The Service is intended for students, but it is not directed to children under 13. We do
 						not knowingly collect personal information from children under 13 without verifiable
@@ -159,7 +177,7 @@
 				</section>
 
 				<section>
-					<h2 class="text-xl font-semibold">9. International Transfers</h2>
+					<h2 class="text-xl font-semibold">10. International Transfers</h2>
 					<p>
 						Your information may be processed in the United States or other countries where we or
 						our service providers operate. Where required, we take steps intended to protect the
@@ -168,7 +186,7 @@
 				</section>
 
 				<section>
-					<h2 class="text-xl font-semibold">10. Changes to This Privacy Policy</h2>
+					<h2 class="text-xl font-semibold">11. Changes to This Privacy Policy</h2>
 					<p>
 						We may update this Privacy Policy from time to time. Changes will be posted on this page
 						with a revised "Last Updated" date. Continued use of the Service after changes take
@@ -177,9 +195,10 @@
 				</section>
 
 				<section>
-					<h2 class="text-xl font-semibold">11. Contact Us</h2>
+					<h2 class="text-xl font-semibold">12. Contact Us</h2>
 					<p>
 						For questions about this policy or to exercise your privacy rights, contact us at:<br />
+						Operator: <strong>Ajay Saravanan</strong><br />
 						Website: <strong>freeappractice.org</strong><br />
 						Email:
 						<a href="mailto:support@freeappractice.org" class="underline underline-offset-4"

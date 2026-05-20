@@ -7,7 +7,7 @@ This section outlines which versions of freeappractice.org are currently being m
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.3.x   | :white_check_mark: |
-| 1.2.3   | :white_check_mark: |
+| 1.2.3   | :x:                |
 | 1.1.x   | :x:                |
 | < 1.1   | :x:                |
 

@@ -9,6 +9,7 @@
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
+	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { auth } from '$lib/client/auth.svelte.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
 
@@ -20,7 +21,7 @@
 	import AccessibilityIcon from '@lucide/svelte/icons/accessibility';
 	import InfoIcon from '@lucide/svelte/icons/info';
 
-	type SettingsTab = 'appearance' | 'accessibility' | 'account' | 'about';
+	type SettingsTab = 'appearance' | 'accessibility' | 'privacy' | 'account' | 'about';
 
 	let activeTab = $state<SettingsTab>('appearance');
 	let deleteAccountOpen = $state(false);
@@ -56,7 +57,7 @@
 	</div>
 
 	<Tabs.Root bind:value={activeTab} class="mx-auto w-full max-w-2xl space-y-6">
-		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
+		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-5">
 			<Tabs.Trigger value="appearance" class="flex items-center gap-2">
 				<PaintbrushIcon class="h-4 w-4" />
 				Appearance
@@ -65,6 +66,7 @@
 				<AccessibilityIcon class="h-4 w-4" />
 				Accessibility
 			</Tabs.Trigger>
+			<Tabs.Trigger value="privacy" class="flex items-center gap-2">Privacy</Tabs.Trigger>
 			<Tabs.Trigger value="account" class="flex items-center gap-2">
 				<UserIcon class="h-4 w-4" />
 				Account
@@ -180,6 +182,45 @@
 							checked={settingsController.settings.dyslexicFont}
 							onCheckedChange={() => settingsController.toggleAccessibility('dyslexicFont')}
 						/>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		</Tabs.Content>
+
+		<Tabs.Content value="privacy">
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>Privacy</Card.Title>
+					<Card.Description>
+						Choose whether optional analytics may be used to improve the site.
+					</Card.Description>
+				</Card.Header>
+				<Card.Content class="space-y-6">
+					<div class="flex items-center justify-between gap-4">
+						<div class="space-y-0.5">
+							<Label for="analytics-toggle">Optional analytics</Label>
+							<p class="text-sm text-muted-foreground">
+								Used to understand traffic and performance on this personal project.
+							</p>
+						</div>
+						<Switch
+							id="analytics-toggle"
+							name="analytics"
+							checked={privacy.analyticsConsent === 'granted'}
+							onCheckedChange={(checked: boolean) =>
+								privacy.setAnalyticsConsent(checked ? 'granted' : 'denied')}
+						/>
+					</div>
+
+					<div class="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+						Current setting:
+						<strong class="text-foreground">
+							{privacy.analyticsConsent === 'granted'
+								? ' enabled'
+								: privacy.analyticsConsent === 'denied'
+									? ' disabled'
+									: ' not chosen'}
+						</strong>
 					</div>
 				</Card.Content>
 			</Card.Root>

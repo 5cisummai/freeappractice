@@ -1,6 +1,8 @@
 <script lang="ts">
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import { resolve } from '$app/paths';
 </script>
 
@@ -29,10 +31,10 @@
 
 	<main class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<a
-				href={resolve('/')}
-				class="inline-block text-sm text-muted-foreground hover:text-foreground">← Back to Home</a
-			>
+			<Button variant="ghost" href={resolve('/')}>
+				<ArrowLeftIcon class="size-4" />
+				Back to Home
+			</Button>
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Terms of Service</h1>
@@ -44,8 +46,8 @@
 					<h2 class="text-xl font-semibold">1. Agreement to Terms</h2>
 					<p>
 						By accessing or using Free AP Practice (the "Service", "we", "us", or "our"), you agree
-						to these Terms of Service and our Privacy Policy. If you do not agree, do not use the
-						Service.
+						to these Terms of Service and our Privacy Policy. Free AP Practice is a personal project
+						maintained by Ajay Saravanan. If you do not agree, do not use the Service.
 					</p>
 				</section>
 
@@ -105,8 +107,8 @@
 					<p>
 						The Service depends on third-party providers, including OpenAI for question generation,
 						MongoDB Atlas for database storage, AWS S3 for file storage, Resend for transactional
-						emails, and Vercel for hosting and deployment. Those providers may process data
-						according to their own terms and privacy policies.
+						emails, Vercel for hosting and deployment, and GitHub for bug-report handling. Those
+						providers may process data according to their own terms and privacy policies.
 					</p>
 				</section>
 
@@ -152,6 +154,7 @@
 					<h2 class="text-xl font-semibold">12. Contact Information</h2>
 					<p>
 						If you have questions about these Terms, contact us at:<br />
+						Operator: <strong>Ajay Saravanan</strong><br />
 						Website: <strong>freeappractice.org</strong><br />
 						Email:
 						<a href="mailto:support@freeappractice.org" class="underline underline-offset-4"

@@ -85,13 +85,35 @@ export const GET: RequestHandler = async ({ url }) => {
 			a:hover {
 				text-decoration: underline;
 			}
+			.back-home {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.375rem;
+				margin-top: 1.5rem;
+				padding: 0.5rem 0.625rem;
+				border-radius: 0.375rem;
+				color: inherit;
+				text-decoration: none;
+			}
+			.back-home:hover {
+				background: #f4f4f5;
+				text-decoration: none;
+			}
+			.back-home svg {
+				width: 1rem;
+				height: 1rem;
+				flex-shrink: 0;
+			}
 		</style>
 	</head>
 	<body>
 		<h1>Data Directory</h1>
 		<p>Select a file to download.</p>
 		<ul>${fileItems}</ul>
-        <a href="/">Back to Home</a>
+		<a href="/" class="back-home">
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+			Back to Home
+		</a>
 	</body>
 </html>`;
 
