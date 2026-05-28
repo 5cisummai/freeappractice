@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import PageShell from '$lib/components/page-shell.svelte';
 
 	const blogResources = [
 		{
@@ -53,14 +54,10 @@
 	/>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
-	<div class="space-y-2">
-		<h1 class="text-2xl font-semibold tracking-tight">Resources</h1>
-		<p class="text-sm text-muted-foreground">
-			Curated study guides from our blog and external links worth keeping in your AP toolkit.
-		</p>
-	</div>
-
+<PageShell
+	title="Resources"
+	description="Curated study guides from our blog and external links worth keeping in your AP toolkit."
+>
 	<div class="grid gap-6 lg:grid-cols-2">
 		<Card.Root class="h-full">
 			<Card.Header>
@@ -109,4 +106,4 @@
 			</Card.Content>
 		</Card.Root>
 	</div>
-</div>
+</PageShell>

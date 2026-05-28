@@ -4,6 +4,7 @@
 	import { apiFetch } from '$lib/client/auth.svelte.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import PageShell from '$lib/components/page-shell.svelte';
 
 	interface ProgressEntry {
 		apClass: string;
@@ -75,12 +76,7 @@
 	<title>Progress – Free AP Practice</title>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
-	<div class="space-y-1">
-		<h1 class="text-2xl font-semibold tracking-tight">Your Progress</h1>
-		<p class="text-sm text-muted-foreground">Track your performance across all AP subjects.</p>
-	</div>
-
+<PageShell title="Your Progress" description="Track your performance across all AP subjects.">
 	{#if loading}
 		<div class="flex justify-center py-16">
 			<Spinner />
@@ -155,4 +151,4 @@
 			</div>
 		{/if}
 	{/if}
-</div>
+</PageShell>

@@ -11,6 +11,7 @@
 	import TargetIcon from '@lucide/svelte/icons/target';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import ClockIcon from '@lucide/svelte/icons/clock';
+	import PageShell from '$lib/components/page-shell.svelte';
 
 	interface StatsData {
 		overview: {
@@ -88,15 +89,10 @@
 	<title>Dashboard – Free AP Practice</title>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
-	<!-- Welcome -->
-	<div class="space-y-1">
-		<h1 class="text-2xl font-semibold tracking-tight">
-			Welcome back, {auth.user?.name?.split(' ')[0] ?? 'Student'}
-		</h1>
-		<p class="text-sm text-muted-foreground">Here's an overview of your study progress.</p>
-	</div>
-
+<PageShell
+	title={`Welcome back, ${auth.user?.name?.split(' ')[0] ?? 'Student'}`}
+	description="Here's an overview of your study progress."
+>
 	{#if loading}
 		<div class="flex justify-center py-16">
 			<Spinner />
@@ -127,6 +123,17 @@
 				<Button href={recommendedPracticeHref()}>Start Recommended Practice</Button>
 			</div>
 		</Card.Root>
+
+		{#if (statsData?.overview.totalQuestions ?? 0) > 0}
+			<p class="text-sm text-muted-foreground">
+				<a
+					href={resolve('/app/history')}
+					class="underline underline-offset-4 hover:text-foreground"
+				>
+					View full question history →
+				</a>
+			</p>
+		{/if}
 
 		<!-- Stats grid -->
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -271,4 +278,4 @@
 			</Card.Root>
 		{/if}
 	{/if}
-</div>
+</PageShell>

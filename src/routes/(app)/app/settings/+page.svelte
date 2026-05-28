@@ -20,6 +20,7 @@
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import AccessibilityIcon from '@lucide/svelte/icons/accessibility';
 	import InfoIcon from '@lucide/svelte/icons/info';
+	import PageShell from '$lib/components/page-shell.svelte';
 
 	type SettingsTab = 'appearance' | 'accessibility' | 'privacy' | 'account' | 'about';
 
@@ -50,12 +51,7 @@
 
 <Toaster />
 
-<div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
-	<div class="space-y-1">
-		<h1 class="text-2xl font-semibold tracking-tight">Settings</h1>
-		<p class="text-sm text-muted-foreground">Manage your account and app preferences.</p>
-	</div>
-
+<PageShell title="Settings" description="Manage your account and app preferences.">
 	<Tabs.Root bind:value={activeTab} class="mx-auto w-full max-w-2xl space-y-6">
 		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-5">
 			<Tabs.Trigger value="appearance" class="flex items-center gap-2">
@@ -297,8 +293,9 @@
 			</Card.Root>
 		</Tabs.Content>
 	</Tabs.Root>
+</PageShell>
 
-	<AlertDialog.Root bind:open={deleteAccountOpen}>
+<AlertDialog.Root bind:open={deleteAccountOpen}>
 		<AlertDialog.Content>
 			<AlertDialog.Header>
 				<AlertDialog.Title>Delete your account?</AlertDialog.Title>
@@ -317,5 +314,4 @@
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
-	</AlertDialog.Root>
-</div>
+</AlertDialog.Root>

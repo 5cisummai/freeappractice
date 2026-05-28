@@ -9,6 +9,7 @@
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import { toast } from 'svelte-sonner';
 	import { unitForProgress } from '$lib/constants/custom-unit';
+	import PageShell from '$lib/components/page-shell.svelte';
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
@@ -101,12 +102,7 @@
 	<title>Practice – Free AP Practice</title>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 lg:px-10">
-	<div class="space-y-1">
-		<h1 class="text-2xl font-semibold tracking-tight">Practice</h1>
-		<p class="text-sm text-muted-foreground">Select a course and unit, then generate a question.</p>
-	</div>
-
+<PageShell title="Practice" description="Select a course and unit, then generate a question.">
 	<div class="mx-auto max-w-250 space-y-6">
 		<QuestionSelector
 			bind:selectedClass
@@ -131,4 +127,4 @@
 			{/key}
 		{/if}
 	</div>
-</div>
+</PageShell>
