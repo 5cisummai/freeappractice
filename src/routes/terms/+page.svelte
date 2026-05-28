@@ -38,7 +38,7 @@
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Terms of Service</h1>
-				<p class="text-sm text-muted-foreground">Last Updated: March 29, 2026</p>
+				<p class="text-sm text-muted-foreground">Last Updated: May 28, 2026</p>
 			</div>
 
 			<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -74,8 +74,8 @@
 					<h2 class="text-xl font-semibold">4. User Content and Rights</h2>
 					<p>
 						Content you submit, including profile information, answers, bookmarks, feedback, bug
-						reports, and support requests, remains yours. By submitting content, you grant us a
-						non-exclusive license to host, process, store, display, and analyze that content as
+						reports, and account-related requests, remains yours. By submitting content, you grant
+						us a non-exclusive license to host, process, store, display, and analyze that content as
 						reasonably necessary to operate, maintain, and improve the Service, subject to our
 						<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 					</p>
@@ -106,9 +106,10 @@
 					<h2 class="text-xl font-semibold">7. Third-Party Services</h2>
 					<p>
 						The Service depends on third-party providers, including OpenAI for question generation,
-						MongoDB Atlas for database storage, AWS S3 for file storage, Resend for transactional
-						emails, Vercel for hosting and deployment, and GitHub for bug-report handling. Those
-						providers may process data according to their own terms and privacy policies.
+						Google for sign-in, MongoDB for database storage, AWS S3 for file storage, Resend for
+						transactional emails, Vercel for hosting and deployment, and GitHub for bug-report
+						handling. Those providers may process data according to their own terms and privacy
+						policies.
 					</p>
 				</section>
 
@@ -127,8 +128,9 @@
 					<p>
 						We may suspend or terminate access to the Service at any time for violations of these
 						Terms, security concerns, or operational reasons. You may delete your account through
-						the Service or by contacting us. Deletion removes data from primary systems within a
-						reasonable period, although some information may remain in backups for a limited time.
+						the Service or by contacting us. Deletion removes the account record from our primary
+						database, although some information may remain in backups, logs, or third-party systems
+						for a limited time.
 					</p>
 				</section>
 

@@ -68,7 +68,7 @@
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
-	<main class="flex-1 py-12">
+	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-6xl space-y-10 px-5 sm:px-8">
 			<Button variant="ghost" href={resolve('/')}>
 				<ArrowLeftIcon class="size-4" />

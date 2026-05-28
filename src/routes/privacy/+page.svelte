@@ -38,7 +38,7 @@
 
 			<div class="space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Privacy Policy</h1>
-				<p class="text-sm text-muted-foreground">Last Updated: March 29, 2026</p>
+				<p class="text-sm text-muted-foreground">Last Updated: May 28, 2026</p>
 			</div>
 
 			<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -60,15 +60,15 @@
 							<strong>Practice data:</strong> answers submitted, question attempts, FRQ responses, progress,
 							and bookmarks
 						</li>
-						<li><strong>Bug reports and support requests:</strong> text and metadata you submit</li>
+						<li><strong>Bug reports and account requests:</strong> text and metadata you submit</li>
 						<li>
 							<strong>Transactional requests:</strong> password reset, verification, and account deletion
 							requests
 						</li>
 						<li>
 							<strong>User-provided responses:</strong> AI tutor prompts and FRQ responses may be sent
-							to OpenAI for processing so the Service can generate responses. Please do not submit
-							sensitive personal information.
+							to OpenAI for processing so the Service can generate responses. Please do not submit sensitive
+							personal information.
 						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
@@ -95,19 +95,21 @@
 						<li>To track progress, bookmarks, attempts, and saved preferences</li>
 						<li>To send transactional emails such as verification and password reset emails</li>
 						<li>To respond to bug reports, account requests, and support inquiries</li>
-						<li>To analyze usage trends and improve reliability, quality, and performance when optional
-							analytics are enabled</li>
+						<li>
+							To analyze usage trends and improve reliability, quality, and performance when
+							optional analytics are enabled
+						</li>
 					</ul>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">4. Data Storage and Security</h2>
 					<p>
-						We store account and progress data in MongoDB Atlas and may store generated question
-						content and related files in AWS S3. Passwords are stored as hashes, not plain text. We
-						use bearer tokens for authentication, and those tokens expire after a limited period. No
-						method of transmission or storage is completely secure, so we cannot guarantee absolute
-						security.
+						We store account and progress data in MongoDB, and generated question content may also
+						be stored in MongoDB and AWS S3 depending on the feature being used. Passwords are
+						stored as hashes, not plain text. We use bearer tokens for authentication, and those
+						tokens expire after a limited period. No method of transmission or storage is completely
+						secure, so we cannot guarantee absolute security.
 					</p>
 				</section>
 
@@ -115,9 +117,10 @@
 					<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
 					<p>
 						We use local browser storage to keep you signed in and to save theme and accessibility
-						preferences. We also use local storage to remember your optional analytics choice. We do
-						not use third-party advertising cookies. If you use a shared device, you should sign out
-						when finished.
+						preferences. We also use local storage to remember your optional analytics choice. In
+						addition, we use a first-party cookie to remember sidebar state. We do not use
+						third-party advertising cookies. If you use a shared device, you should sign out when
+						finished.
 					</p>
 				</section>
 
@@ -139,14 +142,18 @@
 							API
 						</li>
 						<li>
-							<strong>MongoDB Atlas:</strong> database hosting for user accounts and progress data
+							<strong>Google:</strong> sign-in flows may use Google Identity Services and Google ID tokens
+						</li>
+						<li>
+							<strong>MongoDB:</strong> database storage for user accounts, progress data, and cached
+							questions
 						</li>
 						<li>
 							<strong>AWS S3:</strong> file storage for generated question content and related assets
 						</li>
 						<li>
-							<strong>GitHub:</strong> bug reports are submitted as GitHub Issues when you use the
-							in-app bug report form
+							<strong>GitHub:</strong> bug reports are submitted as GitHub Issues when you use the in-app
+							bug report form
 						</li>
 						<li><strong>Resend:</strong> delivery of verification and reset emails</li>
 						<li><strong>Vercel:</strong> website hosting and deployment infrastructure</li>
@@ -162,7 +169,8 @@
 					<p>
 						Depending on your location, you may have rights to access, correct, export, or delete
 						your personal data. You can delete your account through the Service or contact us for
-						help. We will remove data from primary systems within a reasonable period, subject to
+						help. We will delete your account record from our primary database, and some information
+						may remain in backups, logs, or third-party systems for a limited period, subject to
 						legal or operational retention requirements.
 					</p>
 				</section>
@@ -171,8 +179,9 @@
 					<h2 class="text-xl font-semibold">9. Children's Privacy</h2>
 					<p>
 						The Service is intended for students, but it is not directed to children under 13. We do
-						not knowingly collect personal information from children under 13 without verifiable
-						parental consent where required by law.
+						not knowingly collect personal information from children under 13. If you believe a
+						child has provided us personal information, contact us and we will address the request
+						appropriately.
 					</p>
 				</section>
 

@@ -4,6 +4,7 @@
 	/* hljs light theme (default); dark overrides are in layout.css under .dark */
 	import 'highlight.js/styles/github.min.css';
 	import logo from '$lib/assets/logo.png';
+	import SkipToMain from '$lib/components/skip-to-main.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
 	import { onMount } from 'svelte';
@@ -18,6 +19,7 @@
 <svelte:head>
 	<link rel="icon" href={logo} />
 </svelte:head>
+<SkipToMain />
 <ModeWatcher />
 {@render children()}
 

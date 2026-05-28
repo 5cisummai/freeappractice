@@ -46,7 +46,7 @@
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
-	<main class="flex-1">
+	<main id="main-content" class="flex-1">
 		<div class=" mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<div class="mb-10 space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Blog</h1>

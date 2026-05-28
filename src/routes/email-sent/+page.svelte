@@ -32,7 +32,7 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-<div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+<main id="main-content" class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
 	<div class="flex w-full max-w-sm flex-col gap-6 text-center">
 		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
 			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
@@ -64,4 +64,4 @@
 			<a href={resolve('/login')} class="underline underline-offset-4">Back to sign in</a>
 		</div>
 	</div>
-</div>
+</main>

@@ -37,7 +37,7 @@
 		</Sidebar.Inset>
 	</Sidebar.Provider>
 {:else}
-	<div class="flex min-h-screen items-center justify-center bg-background">
+	<main id="main-content" class="flex min-h-screen items-center justify-center bg-background">
 		<Spinner />
-	</div>
+	</main>
 {/if}

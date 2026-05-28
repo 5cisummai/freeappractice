@@ -36,7 +36,7 @@
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
-	<main class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
+	<main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
 		<Button variant="ghost" href={resolve('/')}>
 			<ArrowLeftIcon class="size-4" />
 			Back to Home

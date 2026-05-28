@@ -286,7 +286,7 @@
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
-	<main class="flex-1">
+	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-16 px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<section class="mx-auto max-w-5xl space-y-10 text-center">
 				<div class="space-y-4">

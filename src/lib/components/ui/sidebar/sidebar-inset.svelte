@@ -11,6 +11,7 @@
 </script>
 
 <main
+	id="main-content"
 	bind:this={ref}
 	data-slot="sidebar-inset"
 	class={cn(
