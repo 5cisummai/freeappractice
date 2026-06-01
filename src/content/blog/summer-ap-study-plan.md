@@ -2,7 +2,6 @@
 title: A Realistic Summer AP Study Plan (Without Burning Out Before September)
 excerpt: How to preview your AP classes over the summer with about 15–30 minutes a day, Unit 1 first, and a clear point to stop so you still get a real break.
 summary: A practical summer schedule for students planning or starting AP classes, with pacing that builds habits without cramming.
-tags: summer, course-planning, ap-prep, high-school
 published: true
 date: 2026-06-01
 ---

@@ -67,7 +67,6 @@ export const load: PageServerLoad = async ({ params }) => {
 			slug: post.slug,
 			excerpt: post.excerpt,
 			coverImage: post.coverImage ?? null,
-			tags: post.tags,
 			publishedAt: post.publishedAt?.toISOString() ?? null,
 			createdAt: post.createdAt.toISOString()
 		},

@@ -6,16 +6,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const startHereTags = new Set(['summer', 'course-planning', 'high-school']);
+	const startHereSlugs = new Set(['which-aps-to-take', 'summer-ap-study-plan']);
 
-	const startHerePosts = $derived(
-		data.posts.filter(
-			(post) =>
-				post.slug === 'which-aps-to-take' ||
-				post.slug === 'summer-ap-study-plan' ||
-				post.tags.some((tag) => startHereTags.has(tag))
-		)
-	);
+	const startHerePosts = $derived(data.posts.filter((post) => startHereSlugs.has(post.slug)));
 
 	const startHereIds = $derived(new Set(startHerePosts.map((post) => post._id)));
 
@@ -89,15 +82,6 @@
 										class="group block rounded-xl border border-primary/30 bg-primary/5 p-6 shadow-sm transition-shadow hover:shadow-md"
 									>
 										<div class="space-y-2">
-											<div class="flex flex-wrap gap-2">
-												{#each post.tags as tag (tag)}
-													<span
-														class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground"
-													>
-														{tag}
-													</span>
-												{/each}
-											</div>
 											<h3
 												class="text-xl font-semibold tracking-tight transition-colors group-hover:text-primary"
 											>
@@ -137,16 +121,6 @@
 								{/if}
 
 								<div class="space-y-2">
-									<div class="flex flex-wrap gap-2">
-										{#each post.tags as tag (tag)}
-											<span
-												class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground"
-											>
-												{tag}
-											</span>
-										{/each}
-									</div>
-
 									<h2
 										class="text-xl font-semibold tracking-tight transition-colors group-hover:text-primary"
 									>

@@ -90,18 +90,6 @@
 						/>
 					{/if}
 
-					{#if data.post.tags.length > 0}
-						<div class="mb-4 flex flex-wrap gap-2">
-							{#each data.post.tags as tag (tag)}
-								<span
-									class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground"
-								>
-									{tag}
-								</span>
-							{/each}
-						</div>
-					{/if}
-
 					<h1 class="mb-3 text-3xl font-semibold tracking-tight sm:text-4xl">
 						{data.post.title}
 					</h1>

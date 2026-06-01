@@ -10,7 +10,6 @@ export const load: PageServerLoad = async () => {
 			slug: p.slug,
 			excerpt: p.excerpt,
 			coverImage: p.coverImage ?? null,
-			tags: p.tags,
 			publishedAt: p.publishedAt?.toISOString() ?? null,
 			createdAt: p.createdAt.toISOString()
 		}))

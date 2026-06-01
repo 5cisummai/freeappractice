@@ -2,7 +2,6 @@
 title: Which APs Should You Take? A Smarter Way to Plan After AP Exam Season
 excerpt: AP exams are over. Here's how to decide which AP classes are actually worth taking next year based on workload, college goals, and long-term payoff.
 summary: A research-backed and realistic guide to choosing AP classes after exam season ends.
-tags: ap-classes, high-school, college-prep, course-planning
 published: true
 date: 2026-05-17
 ---

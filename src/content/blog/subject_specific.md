@@ -2,7 +2,6 @@
 title: The Subject-Specific AP Study Guide Nobody Wrote (Until Now)
 excerpt: How AP Bio, APUSH, Calc, Lang, Chem, and Psych each reward different prep habits.
 summary: Subject-by-subject AP prep guidance so you can study for each exam according to the skills it actually rewards.
-tags: ap-biology, apush, ap-calculus, ap-lang, ap-chemistry, ap-psych
 published: true
 date: 2026-03-31
 ---
