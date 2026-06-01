@@ -1,12 +1,13 @@
 # Free AP Practice
 
-> Free AI-powered AP practice question generator for 20+ Advanced Placement subjects. Generate unlimited practice questions with instant feedback and detailed explanations. No signup required.
+> Free AP practice for high school students: plan which APs to take, preview Unit 1 over the summer, and generate unlimited practice questions with instant feedback. No signup required.
 
-Practice for your AP exams with AI-generated questions. Select an AP subject, choose a unit or enter a custom topic, and generate practice questions. Questions are generated using OpenAI models configured by the service and cached for fast follow-up questions.
+Use this site to choose AP classes wisely, build a summer study habit (about 15–30 minutes a day), and prepare for AP exams. Select an AP subject, choose a unit or custom topic, and generate practice questions with explanations.
 
 ## Features
 
 - AI question generation across 20+ AP subjects
+- AP course planning and summer study guides
 - Instant feedback with detailed explanations
 - Progress tracking and streak counting
 - Custom topic and unit selection
@@ -39,10 +40,16 @@ Practice for your AP exams with AI-generated questions. Select an AP subject, ch
 ## Pages
 
 - [Home](https://freeappractice.org/): Main question generator
+- [Summer AP Study Guide](https://freeappractice.org/summer): Plan APs and preview Unit 1 over the summer
 - [About](https://freeappractice.org/about): Mission and approach
-- [Blog](https://freeappractice.org/blog): Study tips and updates
+- [Blog](https://freeappractice.org/blog): Course planning, summer study, and exam prep guides
 - [Stats](https://freeappractice.org/stats): Usage statistics
 - [Changelog](https://freeappractice.org/changelog): Feature updates
+
+## Start Here (Blog)
+
+- [Which APs Should You Take?](https://freeappractice.org/blog/which-aps-to-take): Course planning after exam season and for next year
+- [Summer AP Study Plan](https://freeappractice.org/blog/summer-ap-study-plan): Realistic 4-week Unit 1 preview schedule
 
 ## Optional
 

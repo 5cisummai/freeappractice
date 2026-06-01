@@ -2,7 +2,7 @@
 title: Which APs Should You Take? A Smarter Way to Plan After AP Exam Season
 excerpt: AP exams are over. Here's how to decide which AP classes are actually worth taking next year based on workload, college goals, and long-term payoff.
 summary: A research-backed and realistic guide to choosing AP classes after exam season ends.
-tags: ap-classes, high-school, college-prep
+tags: ap-classes, high-school, college-prep, course-planning
 published: true
 date: 2026-05-17
 ---
@@ -45,7 +45,7 @@ The value comes from one of three things:
 2. It aligns with your future goals
 3. It demonstrates rigor in an area you genuinely care about
 
-If a course does none of those things, it may not actually be worth taking - even if it's considered prestigious.
+If a course does none of those things, it may not be worth taking, even if everyone else calls it prestigious.
 
 For example:
 
@@ -256,6 +256,6 @@ It's the one that:
 - aligns with your direction
 - and is sustainable for an entire year
 
-Because after AP exam season ends, the students who improve the fastest are usually the ones making deliberate decisions - not reactive ones.
+After AP exam season ends, the students who improve the fastest are usually the ones making deliberate decisions, not reactive ones.
 
-And that's the real next progression.
+That's the real next step.

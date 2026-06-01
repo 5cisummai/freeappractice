@@ -142,6 +142,17 @@
 		unitForProgress
 	} from '$lib/constants/custom-unit';
 
+	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
+	function withTooltipTriggerClick(
+		triggerProps: { onclick?: (e: MouseEvent) => void },
+		action: () => void
+	) {
+		return (e: MouseEvent) => {
+			triggerProps.onclick?.(e);
+			action();
+		};
+	}
+
 	let {
 		class: className,
 		mode = 'mcq',
@@ -1389,12 +1400,14 @@
 									<Tooltip.Trigger>
 										{#snippet child({ props })}
 											<Button
+												{...props}
 												variant="ghost"
 												size="icon"
 												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={() => (calculatorOpen = !calculatorOpen)}
+												onclick={withTooltipTriggerClick(props, () => {
+													calculatorOpen = !calculatorOpen;
+												})}
 												aria-label="Open Calculator"
-												{...props}
 											>
 												<CalculatorIcon class="h-3.5 w-3.5" />
 											</Button>
@@ -1408,12 +1421,14 @@
 									<Tooltip.Trigger>
 										{#snippet child({ props })}
 											<Button
+												{...props}
 												variant="ghost"
 												size="icon"
 												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
+												onclick={withTooltipTriggerClick(props, () => {
+													referenceSheetOpen = !referenceSheetOpen;
+												})}
 												aria-label="Reference Sheet"
-												{...props}
 											>
 												<BookOpenIcon class="h-3.5 w-3.5" />
 											</Button>
@@ -1455,12 +1470,14 @@
 									<Tooltip.Trigger>
 										{#snippet child({ props })}
 											<Button
+												{...props}
 												variant="ghost"
 												size="icon"
 												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={() => (calculatorOpen = !calculatorOpen)}
+												onclick={withTooltipTriggerClick(props, () => {
+													calculatorOpen = !calculatorOpen;
+												})}
 												aria-label="Open Calculator"
-												{...props}
 											>
 												<CalculatorIcon class="h-3.5 w-3.5" />
 											</Button>
@@ -1474,12 +1491,14 @@
 									<Tooltip.Trigger>
 										{#snippet child({ props })}
 											<Button
+												{...props}
 												variant="ghost"
 												size="icon"
 												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={() => (referenceSheetOpen = !referenceSheetOpen)}
+												onclick={withTooltipTriggerClick(props, () => {
+													referenceSheetOpen = !referenceSheetOpen;
+												})}
 												aria-label="Reference Sheet"
-												{...props}
 											>
 												<BookOpenIcon class="h-3.5 w-3.5" />
 											</Button>

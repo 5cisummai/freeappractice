@@ -13,10 +13,26 @@
 
 	const showHowToUse = false;
 	const howToSteps = [
-		{ number: '1', title: 'Select a Course', description: 'Choose your AP subject' },
-		{ number: '2', title: 'Pick a Unit', description: 'Select a unit' },
-		{ number: '3', title: 'Generate Question', description: 'Create a practice question' },
-		{ number: '4', title: 'Answer & Learn', description: 'Get instant feedback' }
+		{
+			number: '1',
+			title: 'Plan your year',
+			description: '— pick AP classes that fit your schedule and goals.'
+		},
+		{
+			number: '2',
+			title: 'Choose a subject',
+			description: '— select the AP you’re taking or previewing this summer.'
+		},
+		{
+			number: '3',
+			title: 'Start with Unit 1',
+			description: '— get ahead before the first day of class.'
+		},
+		{
+			number: '4',
+			title: 'Practice & learn',
+			description: '— generate questions and read instant explanations.'
+		}
 	];
 
 	let selectedClass = $state('');
@@ -41,18 +57,18 @@
 </script>
 
 <svelte:head>
-	<title>Free AP Practice Questions 2026 - AI-Powered AP Exam Prep</title>
+	<title>Free AP Practice – Plan APs, Study This Summer &amp; Ace Your Exams</title>
 	<meta
 		name="title"
-		content="Free AP Practice Questions 2026 - AI-Powered AP Exam Prep for All 20+ AP Classes"
+		content="Free AP Practice – Summer AP Study, Course Planning &amp; Exam Prep"
 	/>
 	<meta
 		name="description"
-		content="Freeappractice.org provides free AI-generated AP practice questions, instant feedback, streak tracking, customizable units, and a privacy-first study experience."
+		content="Free AP practice for high school students: plan which APs to take, preview Unit 1 over the summer, and generate unlimited questions with instant feedback. No signup required."
 	/>
 	<meta
 		name="keywords"
-		content="AP practice questions, AP exam prep, AP test prep, free AP questions, AP study guide, AP Biology, AP Chemistry, AP Physics, AP Calculus AB, AP Calculus BC, AP Computer Science A, AP Computer Science Principles, AP History, AP US History, AP World History, AP English Language, AP English Literature, college board AP, AP practice test, AP exam 2026, free AP study material, AP multiple choice questions, AP test practice online, AP review questions, AP mock exam, how to study for AP exams, best AP prep, AP question generator, AI study tool, free AP test prep, AP exam study tips"
+		content="summer AP study, AP course planning, first AP class, rising sophomore AP, AP practice questions, AP exam prep, free AP questions, AP study guide, preview AP class, high school summer study, AP question generator, how to choose AP classes"
 	/>
 	<meta name="author" content="FreeAPPractice.org" />
 	<meta
@@ -71,10 +87,13 @@
 
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/" />
-	<meta property="og:title" content="Free AP® Practice Questions Generator | AP® Exam Prep 2026" />
+	<meta
+		property="og:title"
+		content="Free AP Practice – Plan Your AP Year &amp; Study This Summer"
+	/>
 	<meta
 		property="og:description"
-		content="Generate unlimited free AP® practice questions with instant AI feedback. Master all 20+ AP® subjects including Biology, Chemistry, Physics, Calculus, Computer Science, and History. No sign-up required."
+		content="Plan which APs to take, preview Unit 1 this summer, and practice with unlimited free questions and instant feedback across 20+ AP subjects."
 	/>
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:image:width" content="1200" />
@@ -88,10 +107,10 @@
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/" />
-	<meta name="twitter:title" content="Free AP® Practice Questions Generator | AP® Exam Prep 2026" />
+	<meta name="twitter:title" content="Free AP Practice – Summer Study &amp; Exam Prep" />
 	<meta
 		name="twitter:description"
-		content="Generate unlimited free AP® practice questions with instant AI feedback. Master all 20+ AP® subjects. No sign-up required."
+		content="Plan your AP classes, preview Unit 1 this summer, and practice free with instant feedback across 20+ subjects."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 	<meta
@@ -109,7 +128,7 @@
 			"name": "Free AP Practice",
 			"alternateName": "Free AP Practice",
 			"url": "https://freeappractice.org",
-			"description": "Free AP® practice question generator covering 20+ Advanced Placement subjects with instant feedback and detailed explanations",
+			"description": "Free AP practice for planning your AP year, summer Unit 1 preview, and exam prep across 20+ subjects with instant feedback",
 			"logo": "https://freeappractice.org/icon.png",
 			"image": "https://freeappractice.org/icon.png",
 			"applicationCategory": "EducationalApplication",
@@ -133,7 +152,13 @@
 			"dateModified": "2026-3-31",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
-			"educationalUse": ["Test Preparation", "Self Study", "Exam Review"],
+			"educationalUse": [
+				"Test Preparation",
+				"Self Study",
+				"Exam Review",
+				"Course Planning",
+				"Summer Study"
+			],
 			"educationalLevel": "High School",
 			"learningResourceType": "Practice Quiz",
 			"audience": {
@@ -154,6 +179,8 @@
 			},
 			"featureList": [
 				"20+ AP Subjects Coverage",
+				"AP Course Planning Guides",
+				"Summer Unit 1 Preview",
 				"Unlimited Question Generation",
 				"Instant AI Feedback",
 				"Detailed Explanations",
@@ -187,7 +214,7 @@
 					"name": "What is this website?",
 					"acceptedAnswer": {
 						"@type": "Answer",
-						"text": "This is a free AP practice question generator that utilizes AI to create multiple-choice questions for various AP subjects. It helps students prepare for their AP exams with unlimited practice questions."
+						"text": "Free AP Practice helps high school students plan their AP year, preview courses over the summer, and prepare for AP exams with AI-generated practice questions and instant explanations."
 					}
 				},
 				{
@@ -229,6 +256,22 @@
 						"@type": "Answer",
 						"text": "Our questions are generated using OpenAI's advanced gpt-5-mini reasoning model, specifically designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
 					}
+				},
+				{
+					"@type": "Question",
+					"name": "Can I use this over the summer before my AP class starts?",
+					"acceptedAnswer": {
+						"@type": "Answer",
+						"text": "Yes. Many students use summer to preview Unit 1, build a daily practice habit, and plan which AP classes to take. See our Summer AP Study Guide for a realistic 4-week outline."
+					}
+				},
+				{
+					"@type": "Question",
+					"name": "I'm not in an AP class yet—can I still practice here?",
+					"acceptedAnswer": {
+						"@type": "Answer",
+						"text": "If you know which AP you might take next year, you can preview Unit 1 now. If you are still deciding, start with our guide on which APs to take before heavy practice."
+					}
 				}
 			]
 		}
@@ -264,8 +307,8 @@
 		{
 			"@context": "https://schema.org",
 			"@type": "Course",
-			"name": "AP Exam Preparation",
-			"description": "Comprehensive practice questions for 20+ Advanced Placement subjects",
+			"name": "AP Exam Preparation and Summer Preview",
+			"description": "Course planning, summer Unit 1 preview, and practice questions for 20+ Advanced Placement subjects",
 			"provider": {
 				"@type": "Organization",
 				"name": "Free AP Practice",
@@ -288,28 +331,43 @@
 
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-16 px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-			<section class="mx-auto max-w-5xl space-y-10 text-center">
-				<div class="space-y-4">
-					<Badge variant="outline" href={resolve('/blog/which-aps-to-take')} class="p-2">
-						Want to know what APs to take next?
-						<ArrowRightIcon class="size-4" />
-					</Badge>
-					<h1 class="text-4xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
-						Ace your AP Exams
+			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
+				<div class="mx-auto max-w-3xl space-y-4">
+					<div
+						class="flex flex-wrap justify-center gap-2 animate-in fade-in-0 slide-in-from-bottom-3 duration-500 fill-mode-both"
+					>
+						<Badge variant="ghost" href={resolve('/blog/which-aps-to-take')} class="p-2">
+							Planning your AP year?
+							<ArrowRightIcon class="size-4" />
+						</Badge>
+						<Badge variant="ghost" href={resolve('/summer')} class="p-2">
+							Summer study guide
+							<ArrowRightIcon class="size-4" />
+						</Badge>
+					</div>
+					<h1
+						class="animate-in fill-mode-both font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance fade-in-0 slide-in-from-bottom-4 duration-700 delay-150 sm:text-4xl lg:text-5xl"
+					>
+						Plan your AP year. Get ahead this summer.
 					</h1>
-					<p class="text-md mx-auto max-w-3xl leading-8 text-muted-foreground sm:text-lg">
-						Generate and practice High Quality AP questions with instant feedback
+					<p
+						class="text-md mx-auto max-w-3xl animate-in leading-8 text-balance text-muted-foreground fade-in-0 slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both sm:text-lg"
+					>
+						Start your AP journey with free practice questions and instant feedback.
 					</p>
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
-						<span class="rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
+						<span
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 fade-in-0 slide-in-from-bottom-2 duration-500 delay-500 fill-mode-both"
+							>Student Developed</span
+						>
+						<span
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 fade-in-0 slide-in-from-bottom-2 duration-500 delay-600 fill-mode-both"
 							>20+ AP Subjects</span
 						>
-						<span class="rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
-							>100% Free Forever</span
-						>
-						<span class="rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
-							>Student Developed</span
+						<span
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 fade-in-0 slide-in-from-bottom-2 duration-500 delay-700 fill-mode-both"
+							>100% Free</span
 						>
 					</div>
 				</div>
@@ -366,6 +424,20 @@
 				</div>
 			</section>
 
+			<section
+				class="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 rounded-2xl border border-border/70 bg-card px-6 py-8 text-center"
+			>
+				<h2 class="text-xl font-semibold tracking-tight">New to AP or studying this summer?</h2>
+				<p class="max-w-lg text-sm leading-relaxed text-muted-foreground">
+					See our step-by-step summer guide; plan your classes, preview Unit 1, and practice about
+					20 minutes a day.
+				</p>
+				<Badge variant="ghost" href={resolve('/summer')} class="p-2">
+					Summer AP study guide
+					<ArrowRightIcon class="size-4" />
+				</Badge>
+			</section>
+
 			<section class="mx-auto w-full max-w-3xl space-y-4">
 				<div class="space-y-1">
 					<h2 class="text-2xl font-semibold tracking-tight">FAQ</h2>
@@ -376,9 +448,20 @@
 						<Accordion.Trigger level={3}>What is this website?</Accordion.Trigger>
 						<Accordion.Content>
 							<p>
-								This is a free AP practice question generator that uses AI to create multiple-choice
-								questions for various AP subjects. It helps students prepare for their AP exams with
-								unlimited practice questions.
+								Free AP Practice helps high school students plan which AP classes to take, preview
+								courses over the summer, and prepare for AP exams. Generate unlimited practice
+								questions with instant explanations across 20+ subjects—no signup required.
+							</p>
+						</Accordion.Content>
+					</Accordion.Item>
+
+					<Accordion.Item value="which-subjects-supported">
+						<Accordion.Trigger level={3}>Which AP® subjects are supported?</Accordion.Trigger>
+						<Accordion.Content>
+							<p>
+								We support 20 AP® subjects including Sciences (Biology, Chemistry, Physics),
+								Mathematics (Calculus AB/BC, Statistics), Computer Science, English, History, Social
+								Sciences, and Economics.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
@@ -390,6 +473,40 @@
 								Select an AP class from the dropdown menu and click "Generate Question". The AI will
 								create a multiple-choice question with four options (A-D). After selecting your
 								answer, you'll receive immediate feedback and a detailed explanation.
+							</p>
+						</Accordion.Content>
+					</Accordion.Item>
+
+					<Accordion.Item value="summer-study">
+						<Accordion.Trigger level={3}>Can I use this over the summer?</Accordion.Trigger>
+						<Accordion.Content>
+							<p>
+								Yes. Summer is ideal for previewing Unit 1 and building a short daily habit before
+								school starts. See our
+								<a href={resolve('/summer')} class="underline underline-offset-2"
+									>Summer AP Study Guide</a
+								>
+								and
+								<a href={resolve('/blog/summer-ap-study-plan')} class="underline underline-offset-2"
+									>4-week study plan</a
+								>
+								for pacing that avoids burnout.
+							</p>
+						</Accordion.Content>
+					</Accordion.Item>
+
+					<Accordion.Item value="not-in-ap-yet">
+						<Accordion.Trigger level={3}
+							>I'm not in an AP class yet. Can I still use this?</Accordion.Trigger
+						>
+						<Accordion.Content>
+							<p>
+								If you know which AP you might take next year, start with Unit 1 to get familiar
+								with the material. If you're still deciding, read our guide on
+								<a href={resolve('/blog/which-aps-to-take')} class="underline underline-offset-2"
+									>which APs to take</a
+								>
+								before heavy practice.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
@@ -415,29 +532,6 @@
 								new questions to the cache, which then provides sub second load times the next time.
 								This is only expected to be a problem for newer users in the first few weeks, and
 								will be resolved as more questions are generated and added to the cache.
-							</p>
-						</Accordion.Content>
-					</Accordion.Item>
-
-					<Accordion.Item value="which-subjects-supported">
-						<Accordion.Trigger level={3}>Which AP® subjects are supported?</Accordion.Trigger>
-						<Accordion.Content>
-							<p>
-								We support 20 AP® subjects including Sciences (Biology, Chemistry, Physics),
-								Mathematics (Calculus AB/BC, Statistics), Computer Science, English, History, Social
-								Sciences, and Economics.
-							</p>
-						</Accordion.Content>
-					</Accordion.Item>
-
-					<Accordion.Item value="what-ai-model-is-used">
-						<Accordion.Trigger level={3}>What AI model is used?</Accordion.Trigger>
-						<Accordion.Content>
-							<p>
-								For creating questions and explanations, we use a OpenAI's latest gpt-5-mini model
-								and gpt-5.4-nano model. They are then prompt engineered specifically to create high
-								quality, exam style AP questions that match the difficulty and format of actual AP
-								exams.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>

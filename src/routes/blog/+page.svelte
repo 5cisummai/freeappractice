@@ -6,6 +6,21 @@
 
 	let { data }: { data: PageData } = $props();
 
+	const startHereTags = new Set(['summer', 'course-planning', 'high-school']);
+
+	const startHerePosts = $derived(
+		data.posts.filter(
+			(post) =>
+				post.slug === 'which-aps-to-take' ||
+				post.slug === 'summer-ap-study-plan' ||
+				post.tags.some((tag) => startHereTags.has(tag))
+		)
+	);
+
+	const startHereIds = $derived(new Set(startHerePosts.map((post) => post._id)));
+
+	const otherPosts = $derived(data.posts.filter((post) => !startHereIds.has(post._id)));
+
 	function formatDate(iso: string | null): string {
 		if (!iso) return '';
 		return new Date(iso).toLocaleDateString('en-US', {
@@ -20,7 +35,7 @@
 	<title>Blog – Free AP Practice</title>
 	<meta
 		name="description"
-		content="Tips, updates, and study guides from the Free AP Practice team."
+		content="AP course planning, summer study guides, and exam prep tips from the Free AP Practice team."
 	/>
 	<link rel="canonical" href="https://freeappractice.org/blog" />
 	<meta property="og:type" content="website" />
@@ -50,7 +65,9 @@
 		<div class=" mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
 			<div class="mb-10 space-y-2">
 				<h1 class="text-4xl font-semibold tracking-tight">Blog</h1>
-				<p class="text-muted-foreground">Tips, updates, and study guides from the team.</p>
+				<p class="text-muted-foreground">
+					Plan your AP year, study smarter over the summer, and prep for exam day.
+				</p>
 			</div>
 
 			{#if data.posts.length === 0}
@@ -58,8 +75,54 @@
 					<p class="text-muted-foreground">No posts yet - check back soon!</p>
 				</div>
 			{:else}
+				{#if startHerePosts.length > 0}
+					<section class="mb-12">
+						<h2 class="mb-2 text-2xl font-semibold tracking-tight">Start here</h2>
+						<p class="mb-6 text-sm text-muted-foreground">
+							New to AP or studying this summer? Begin with these guides.
+						</p>
+						<ul class="space-y-6">
+							{#each startHerePosts as post (post._id)}
+								<li>
+									<a
+										href={resolve(`/blog/${post.slug}`)}
+										class="group block rounded-xl border border-primary/30 bg-primary/5 p-6 shadow-sm transition-shadow hover:shadow-md"
+									>
+										<div class="space-y-2">
+											<div class="flex flex-wrap gap-2">
+												{#each post.tags as tag (tag)}
+													<span
+														class="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground"
+													>
+														{tag}
+													</span>
+												{/each}
+											</div>
+											<h3
+												class="text-xl font-semibold tracking-tight transition-colors group-hover:text-primary"
+											>
+												{post.title}
+											</h3>
+											<p class="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+												{post.excerpt}
+											</p>
+											<p class="text-xs text-muted-foreground/70">
+												{formatDate(post.publishedAt ?? post.createdAt)}
+											</p>
+										</div>
+									</a>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
+
+				{#if otherPosts.length > 0}
+					<h2 class="mb-6 text-2xl font-semibold tracking-tight">More articles</h2>
+				{/if}
+
 				<ul class="space-y-6">
-					{#each data.posts as post (post._id)}
+					{#each otherPosts as post (post._id)}
 						<li>
 							<a
 								href={resolve(`/blog/${post.slug}`)}

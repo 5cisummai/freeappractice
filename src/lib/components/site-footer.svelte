@@ -13,7 +13,7 @@
 				>
 			</p>
 			<p class="max-w-md text-xs leading-5 text-muted-foreground">
-				Created by students, for students.
+				Literally free AP practice questions.
 			</p>
 		</div>
 

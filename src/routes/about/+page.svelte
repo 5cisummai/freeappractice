@@ -10,7 +10,7 @@
 	<title>About – Free AP Practice</title>
 	<meta
 		name="description"
-		content="About Free AP Practice: mission, approach, and core features."
+		content="About Free AP Practice: helping high school students plan AP classes, study over the summer, and prepare for exams with free practice."
 	/>
 	<link rel="canonical" href="https://freeappractice.org/about" />
 	<meta property="og:type" content="website" />
@@ -45,9 +45,10 @@
 		<section class="mt-6 rounded-2xl border border-border bg-card p-8">
 			<h1 class="text text-3xl font-bold tracking-tight">About Free AP Practice</h1>
 			<p class="mt-4 text-base leading-relaxed text-muted-foreground">
-				Free AP Practice is built to support students preparing for AP exams with fast, accurate,
-				and adaptive question practice. Our platform blends on-demand AI question generation,
-				preloaded question caches, and useful progress tracking in a single experience.
+				Free AP Practice supports high school students at every stage of the AP journey—choosing
+				classes for next year, previewing Unit 1 over the summer, and preparing for exam day. Our
+				platform blends on-demand AI question generation, study guides, preloaded question caches,
+				and progress tracking in one free experience.
 			</p>
 		</section>
 
@@ -55,9 +56,9 @@
 			<article class="rounded-xl border border-border bg-card p-6">
 				<h2 class="text-xl font-semibold text-primary">Mission</h2>
 				<p class="mt-3 text-sm text-muted-foreground">
-					Make AP prep equitable by offering smarter, instant practice for all major AP subjects
-					with no subscription barrier or ads. We believe every student deserves access to
-					high-quality, personalized study tools that fit their needs.
+					Make AP prep equitable—from summer preview to exam week—with smarter, instant practice
+					for all major AP subjects and no subscription barrier. Every student deserves help
+					planning their AP year and building habits that last past August.
 				</p>
 			</article>
 
@@ -91,9 +92,15 @@
 		<section class="mt-10 rounded-xl border border-border bg-card p-6">
 			<h2 class="text-2xl font-semibold text-primary">How to Get Started</h2>
 			<ol class="mt-4 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
-				<li>Select your AP subject and preferred unit range.</li>
-				<li>Pick practice mode (timed, untimed, topic focused).</li>
-				<li>Answer and review explanations; repeat to track improvement.</li>
+				<li>
+					Still deciding? Read <a href={resolve('/blog/which-aps-to-take')} class="underline"
+						>which APs to take</a
+					>
+					or visit our
+					<a href={resolve('/summer')} class="underline">summer study guide</a>.
+				</li>
+				<li>Select your AP subject and start with Unit 1 if you're previewing over the summer.</li>
+				<li>Generate questions, review explanations, and repeat to build a daily habit.</li>
 			</ol>
 		</section>
 		<p class="mt-6 text-sm text-muted-foreground">Founded by Ajay Saravanan</p>
