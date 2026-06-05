@@ -16,7 +16,7 @@ export async function getGreeting(question: string): Promise<string> {
 			},
 			{ role: 'user', content: `The current question is: ${question}` }
 		],
-		max_completion_tokens: 150
+		maxOutputTokens: 150
 	});
 	return content || "Hi! I'm here to help you understand this question.";
 }
@@ -75,7 +75,7 @@ Important: do NOT at any point give the answer to the question. Instead, guide t
 				...conversationHistory,
 				{ role: 'user', content: userMessage }
 			],
-			max_completion_tokens: 500
+			maxOutputTokens: 500
 		},
 		{ historyLength: conversationHistory.length }
 	);

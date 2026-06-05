@@ -1,5 +1,3 @@
-import OpenAI from 'openai';
-import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { saveQuestionToS3 } from './question-storage';
 import { recordMcqGenerated } from './question-gen-stats';
@@ -467,24 +465,18 @@ OUTPUT:
 		? `Create an AP-level practice multiple-choice question for ${className} focused on this topic: ${ct}\n\nReturn ONLY the JSON object, no other text.`
 		: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
-	const completionParams: Parameters<OpenAI['chat']['completions']['parse']>[0] = {
-		model,
-		messages: [
-			{ role: 'system', content: systemPrompt },
-			{
-				role: 'user',
-				content: userMessage
-			}
-		],
-		response_format: zodResponseFormat(APQuestion, 'ap_question')
-	};
-	if (model === ADVANCED_MODEL) {
-		(completionParams as unknown as Record<string, unknown>).reasoning_effort = 'medium';
-	}
-
 	const { parsed } = await runStructuredCompletion<APQuestionData>(
 		'generateAPQuestion',
-		completionParams,
+		{
+			model,
+			messages: [
+				{ role: 'system', content: systemPrompt },
+				{ role: 'user', content: userMessage }
+			],
+			schema: APQuestion,
+			schemaName: 'ap_question',
+			reasoningEffort: model === ADVANCED_MODEL ? 'medium' : undefined
+		},
 		{ className, unit, customTopic: isCustom ? ct : undefined }
 	);
 
@@ -569,13 +561,11 @@ QUALITY:
 			model,
 			messages: [
 				{ role: 'system', content: systemPrompt },
-				{
-					role: 'user',
-					content: frqUserMessage
-				}
+				{ role: 'user', content: frqUserMessage }
 			],
-			response_format: zodResponseFormat(FRQQuestion, 'frq_question'),
-			reasoning_effort: 'medium'
+			schema: FRQQuestion,
+			schemaName: 'frq_question',
+			reasoningEffort: 'medium'
 		},
 		{ className, unit, customTopic: isCustom ? ct : undefined }
 	);
@@ -621,7 +611,8 @@ Student Response: ${response}`;
 				},
 				{ role: 'user', content: `Grade the following FRQ attempt:\n\n${partsText}` }
 			],
-			response_format: zodResponseFormat(FRQGradeResult, 'frq_grade')
+			schema: FRQGradeResult,
+			schemaName: 'frq_grade'
 		},
 		{ className, unit }
 	);

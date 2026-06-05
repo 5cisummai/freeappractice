@@ -24,5 +24,4 @@ vite.config.ts.timestamp-*
 
 /.vscode
 /test-results
-
-src/routes/make-me-a-post/
+.fallow

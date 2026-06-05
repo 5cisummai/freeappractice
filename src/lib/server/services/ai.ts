@@ -1,16 +1,10 @@
-import OpenAI from 'openai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { generateText, streamText, Output, NoObjectGeneratedError } from 'ai';
+import type { z } from 'zod';
 import { OPEN_AI_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { logger } from '$lib/server/logger';
 
-/**
- * AI abstraction layer: centralises OpenAI client creation, model configuration,
- * and the three completion primitives (structured, chat, streaming) used across
- * the backend.  All model names and base-URL are env-configurable with sensible
- * defaults — nothing is hard-coded outside this file.
- */
-
-// ── Configuration ──────────────────────────────────────────────
 export const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 export const ADVANCED_MODEL = env.ADVANCED_MODEL ?? 'gpt-5.4-mini';
 export const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-mini';
@@ -20,16 +14,18 @@ export const GRADING_MODEL = env.GRADING_MODEL ?? 'gpt-5.4-mini';
 export const LATEX_RULE =
 	'For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.';
 
-// ── Shared client ──────────────────────────────────────────────
-export function buildClient(): OpenAI {
+function getProvider() {
 	if (!OPEN_AI_KEY) throw new Error('OPEN_AI_KEY is not set');
-	return new OpenAI({ baseURL: OPENAI_BASE_URL, apiKey: OPEN_AI_KEY });
+	return createOpenAI({
+		apiKey: OPEN_AI_KEY,
+		baseURL: OPENAI_BASE_URL
+	});
 }
 
-// ── Model selection ────────────────────────────────────────────
-/**
- * Humanities/social courses use `BASIC_MODEL`; STEM-style workloads use `ADVANCED_MODEL`.
- */
+function model(id: string) {
+	return getProvider()(id);
+}
+
 export function selectModelForClass(className: string): string {
 	const normalized = (className ?? '').toLowerCase();
 	const basicKeywords = [
@@ -48,87 +44,114 @@ export function selectModelForClass(className: string): string {
 	return ADVANCED_MODEL;
 }
 
-// ── Completion primitives ──────────────────────────────────────
+export type ChatMessage = {
+	role: 'system' | 'user' | 'assistant';
+	content: string;
+};
 
-/**
- * Structured-output completion via `chat.completions.parse`.
- * Callers pass the Zod-backed `response_format` on `params`; `T` is the parsed payload.
- */
+export type ChatCompletionParams = {
+	model: string;
+	messages: ChatMessage[];
+	maxOutputTokens?: number;
+};
+
+export type StructuredCompletionParams<T> = {
+	model: string;
+	messages: ChatMessage[];
+	schema: z.ZodType<T>;
+	schemaName?: string;
+	reasoningEffort?: 'low' | 'medium' | 'high';
+};
+
 export async function runStructuredCompletion<T>(
 	callName: string,
-	params: Parameters<OpenAI['chat']['completions']['parse']>[0],
+	opts: StructuredCompletionParams<T>,
 	logContext: Record<string, unknown>
 ): Promise<{ parsed: T; model: string }> {
-	const client = buildClient();
-	const doneAiCall = logger.aiCall(callName, params.model, logContext);
-	let completion;
+	const doneAiCall = logger.aiCall(callName, opts.model, logContext);
 	try {
-		completion = await client.chat.completions.parse(params);
+		const result = await generateText({
+			model: model(opts.model),
+			messages: opts.messages,
+			output: Output.object({
+				name: opts.schemaName,
+				schema: opts.schema
+			}),
+			providerOptions: {
+				openai: {
+					forceReasoning: true,
+					...(opts.reasoningEffort != null && { reasoningEffort: opts.reasoningEffort })
+				}
+			}
+		});
+
+		const parsed = result.output;
+		if (!parsed) throw new Error('No parsed output from structured response');
+
+		doneAiCall({
+			promptTokens: result.usage.inputTokens,
+			completionTokens: result.usage.outputTokens
+		});
+		return { parsed, model: opts.model };
 	} catch (err) {
-		logger.error(`[ai] ${callName} failed`, { ...logContext, model: params.model, error: err });
+		if (NoObjectGeneratedError.isInstance(err)) {
+			logger.error(`[ai] ${callName} failed — no object generated`, {
+				...logContext,
+				model: opts.model,
+				text: err.text,
+				cause: err.cause
+			});
+			throw new Error('No parsed output from structured response', { cause: err });
+		}
+		logger.error(`[ai] ${callName} failed`, { ...logContext, model: opts.model, error: err });
 		throw err;
 	}
-	const msg = completion?.choices?.[0]?.message;
-	if (!msg) throw new Error('No message returned from provider');
-	if (msg.refusal) throw new Error('Content refused by provider');
-	const parsed = msg.parsed as T;
-	if (!parsed) throw new Error('No parsed output from structured response');
-	doneAiCall({
-		promptTokens: completion.usage?.prompt_tokens,
-		completionTokens: completion.usage?.completion_tokens
-	});
-	return { parsed, model: params.model };
 }
 
-/**
- * Non-streaming chat completion. Returns the assistant message content.
- */
 export async function runChatCompletion(
 	callName: string,
-	params: Omit<OpenAI.Chat.ChatCompletionCreateParamsNonStreaming, 'stream'>,
+	params: ChatCompletionParams,
 	logContext: Record<string, unknown> = {}
 ): Promise<{ content: string; model: string }> {
-	const client = buildClient();
 	const doneAiCall = logger.aiCall(callName, params.model, logContext);
-	let response;
 	try {
-		response = await client.chat.completions.create({ ...params, stream: false });
+		const result = await generateText({
+			model: model(params.model),
+			messages: params.messages,
+			maxOutputTokens: params.maxOutputTokens
+		});
+		doneAiCall({ completionTokens: result.usage.outputTokens });
+		return {
+			content: result.text,
+			model: params.model
+		};
 	} catch (err) {
 		logger.error(`[ai] ${callName} failed`, { ...logContext, model: params.model, error: err });
 		throw err;
 	}
-	doneAiCall({ completionTokens: response.usage?.completion_tokens });
-	return {
-		content: response.choices[0]?.message?.content ?? '',
-		model: params.model
-	};
 }
 
-/**
- * Streaming chat completion. Yields content delta strings.
- */
 export async function* runStreamingChat(
 	callName: string,
-	params: Omit<OpenAI.Chat.ChatCompletionCreateParamsStreaming, 'stream'>,
+	params: ChatCompletionParams,
 	logContext: Record<string, unknown> = {}
 ): AsyncGenerator<string> {
-	const client = buildClient();
 	const doneAiCall = logger.aiCall(callName, params.model, logContext);
-	let stream;
 	try {
-		stream = await client.chat.completions.create({ ...params, stream: true });
+		const result = streamText({
+			model: model(params.model),
+			messages: params.messages,
+			maxOutputTokens: params.maxOutputTokens
+		});
+
+		let chunks = 0;
+		for await (const chunk of result.textStream) {
+			chunks++;
+			yield chunk;
+		}
+		doneAiCall({ chunks });
 	} catch (err) {
 		logger.error(`[ai] ${callName} failed`, { ...logContext, model: params.model, error: err });
 		throw err;
 	}
-
-	let chunks = 0;
-	for await (const chunk of stream) {
-		const content = chunk.choices[0]?.delta?.content;
-		if (content) {
-			chunks++;
-			yield content;
-		}
-	}
-	doneAiCall({ chunks });
 }
