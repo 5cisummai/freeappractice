@@ -26,9 +26,9 @@
 	});
 </script>
 
-<header class="topbar bg border-b border-border/70 backdrop-blur-sm">
+<header class="topbar relative z-50 bg border-b border-border/70 backdrop-blur-sm">
 	<div
-		class="mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
+		class="relative mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
 	>
 		<div class="topbar-logo">
 			<a
