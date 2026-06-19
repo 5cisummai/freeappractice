@@ -1,4 +1,4 @@
-import { auth } from '$lib/client/auth.svelte.js';
+import { getStoredAuthToken } from '$lib/client/auth-storage.js';
 
 export interface ApiMessageResponse {
 	error?: string;
@@ -27,8 +27,9 @@ export function getResponseMessage(
 /** Authenticated fetch — automatically injects the Bearer token. */
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
 	const headers = new Headers(init.headers);
-	if (auth.token) {
-		headers.set('Authorization', `Bearer ${auth.token}`);
+	const token = getStoredAuthToken();
+	if (token) {
+		headers.set('Authorization', `Bearer ${token}`);
 	}
 	if (typeof init.body === 'string' && !headers.has('Content-Type')) {
 		headers.set('Content-Type', 'application/json');

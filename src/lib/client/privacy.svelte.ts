@@ -3,7 +3,7 @@ import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
 const ANALYTICS_CONSENT_KEY = 'fap_analytics_consent';
 
-export type AnalyticsConsent = 'granted' | 'denied' | null;
+type AnalyticsConsent = 'granted' | 'denied' | null;
 
 function createPrivacyState() {
 	let analyticsConsent = $state<AnalyticsConsent>(null);

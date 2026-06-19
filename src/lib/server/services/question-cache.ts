@@ -211,22 +211,6 @@ export async function generateAndStoreQuestion(
 	return { ...result, cached: false };
 }
 
-export async function isCached(className: string, unit?: string): Promise<boolean> {
-	await connectDb();
-	const count = await Question.countDocuments({
-		apClass: className,
-		unit: normalizeUnit(unit),
-		status: 'available'
-	});
-	return count > 0;
-}
-
-export async function clearCache(): Promise<number> {
-	await connectDb();
-	const result = await Question.deleteMany({});
-	return result.deletedCount;
-}
-
 export async function getCacheStats(): Promise<{
 	total: number;
 	classes: number;

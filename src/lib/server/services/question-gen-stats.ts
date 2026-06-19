@@ -6,7 +6,7 @@ import {
 } from '$lib/server/models/question-generation-stats';
 import { normalizeUnit } from '$lib/server/utils';
 
-export function normalizeUnitLabel(unit?: string | null): string {
+function normalizeUnitLabel(unit?: string | null): string {
 	return normalizeUnit(unit, '(none)');
 }
 

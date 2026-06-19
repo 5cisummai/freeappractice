@@ -3,10 +3,9 @@
  * Uses Svelte 5 runes in a .svelte.ts module for reactive shared state.
  */
 
-const TOKEN_KEY_NAME = 'fap_token';
-const USER_KEY_NAME = 'fap_user';
+import { TOKEN_KEY_NAME, USER_KEY_NAME } from '$lib/client/auth-storage.js';
 
-export interface AuthUser {
+interface AuthUser {
 	userId: string;
 	name: string;
 	email: string;
@@ -65,10 +64,3 @@ function createAuthState() {
 }
 
 export const auth = createAuthState();
-
-export {
-	apiFetch,
-	getResponseMessage,
-	readJsonOrNull,
-	type ApiMessageResponse
-} from '$lib/client/api.js';

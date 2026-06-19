@@ -5,9 +5,9 @@ import { OPEN_AI_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { logger } from '$lib/server/logger';
 
-export const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
+const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 export const ADVANCED_MODEL = env.ADVANCED_MODEL ?? 'gpt-5.4-mini';
-export const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-mini';
+const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-mini';
 export const TUTOR_MODEL = env.TUTOR_MODEL ?? 'gpt-4.1-mini';
 export const GRADING_MODEL = env.GRADING_MODEL ?? 'gpt-5.4-mini';
 

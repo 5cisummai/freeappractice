@@ -213,7 +213,7 @@ export async function getPublishedBlogEntryBySlug(slug: string): Promise<BlogEnt
 	return markdownPosts.find((post) => post.slug === normalizedSlug) ?? null;
 }
 
-export async function listPosts(publishedOnly = true): Promise<IBlogPost[]> {
+async function listPosts(publishedOnly = true): Promise<IBlogPost[]> {
 	await connectDb();
 	const filter = publishedOnly ? { published: true } : {};
 	return BlogPost.find(filter).sort({ publishedAt: -1, createdAt: -1 }).lean<IBlogPost[]>();

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { apiFetch } from '$lib/client/auth.svelte.js';
+	import { apiFetch } from '$lib/client/api.js';
 	import type { HistoryResponse } from '$lib/types/history.js';
 	import apClassesData from '$lib/data/ap-classes.json';
 	import HistoryEntry from '$lib/components/history/history-entry.svelte';

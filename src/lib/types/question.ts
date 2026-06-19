@@ -82,7 +82,6 @@ export type FRQAnswerResult = {
 export type QuestionCardProps = {
 	class?: string;
 	mode?: 'mcq' | 'frq';
-	subject?: string;
 	questionNumber?: string;
 	selectedClass?: string;
 	selectedUnit?: string;

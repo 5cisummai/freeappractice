@@ -37,6 +37,21 @@ export function getPracticeStorageKey(
 
 export type SavePracticeResult = { ok: true } | { ok: false; warning: string };
 
+function readPracticeStorageJson(key: string): {
+	data: Record<string, unknown> | null;
+	restoreFailed?: boolean;
+} {
+	if (typeof localStorage === 'undefined') return { data: null };
+	try {
+		const stored = localStorage.getItem(key);
+		if (!stored) return { data: null };
+		return { data: JSON.parse(stored) as Record<string, unknown> };
+	} catch {
+		localStorage.removeItem(key);
+		return { data: null, restoreFailed: true };
+	}
+}
+
 export function saveMcqPracticeState(
 	key: string,
 	state: McqPersistedState | null
@@ -81,56 +96,42 @@ export function loadMcqPracticeState(key: string): {
 	state: McqPersistedState | null;
 	restoreFailed?: boolean;
 } {
-	if (typeof localStorage === 'undefined') return { state: null };
-	try {
-		const stored = localStorage.getItem(key);
-		if (!stored) return { state: null };
-		const data = JSON.parse(stored) as Record<string, unknown>;
-		if (!data.currentQuestion) return { state: null };
-		return {
-			state: {
-				currentQuestion: data.currentQuestion as GeneratedQuestion,
-				hasCheckedAnswer: Boolean(data.hasCheckedAnswer),
-				checkedSelection: (data.checkedSelection as string | null) ?? null,
-				answerResult: (data.answerResult as AnswerResult | null) ?? null,
-				selectedOption: (data.selectedOption as string | null) ?? null,
-				showExplanation: Boolean(data.showExplanation),
-				statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
-				startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),
-				questionCount: typeof data.questionCount === 'number' ? data.questionCount : 0
-			}
-		};
-	} catch {
-		localStorage.removeItem(key);
-		return { state: null, restoreFailed: true };
-	}
+	const { data, restoreFailed } = readPracticeStorageJson(key);
+	if (!data?.currentQuestion) return { state: null, restoreFailed };
+	return {
+		state: {
+			currentQuestion: data.currentQuestion as GeneratedQuestion,
+			hasCheckedAnswer: Boolean(data.hasCheckedAnswer),
+			checkedSelection: (data.checkedSelection as string | null) ?? null,
+			answerResult: (data.answerResult as AnswerResult | null) ?? null,
+			selectedOption: (data.selectedOption as string | null) ?? null,
+			showExplanation: Boolean(data.showExplanation),
+			statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
+			startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),
+			questionCount: typeof data.questionCount === 'number' ? data.questionCount : 0
+		},
+		restoreFailed
+	};
 }
 
 export function loadFrqPracticeState(key: string): {
 	state: FrqPersistedState | null;
 	restoreFailed?: boolean;
 } {
-	if (typeof localStorage === 'undefined') return { state: null };
-	try {
-		const stored = localStorage.getItem(key);
-		if (!stored) return { state: null };
-		const data = JSON.parse(stored) as Record<string, unknown>;
-		if (!data.frqQuestion) return { state: null };
-		return {
-			state: {
-				frqQuestion: data.frqQuestion as FRQQuestion,
-				frqResponses: (data.frqResponses as Record<string, string>) ?? {},
-				frqGrade: (data.frqGrade as FRQGrade | null) ?? null,
-				hasSubmitted: Boolean(data.hasSubmitted),
-				statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
-				startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),
-				questionCount: typeof data.questionCount === 'number' ? data.questionCount : 0
-			}
-		};
-	} catch {
-		localStorage.removeItem(key);
-		return { state: null, restoreFailed: true };
-	}
+	const { data, restoreFailed } = readPracticeStorageJson(key);
+	if (!data?.frqQuestion) return { state: null, restoreFailed };
+	return {
+		state: {
+			frqQuestion: data.frqQuestion as FRQQuestion,
+			frqResponses: (data.frqResponses as Record<string, string>) ?? {},
+			frqGrade: (data.frqGrade as FRQGrade | null) ?? null,
+			hasSubmitted: Boolean(data.hasSubmitted),
+			statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
+			startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),
+			questionCount: typeof data.questionCount === 'number' ? data.questionCount : 0
+		},
+		restoreFailed
+	};
 }
 
 export const RESTORE_FAILED_WARNING =

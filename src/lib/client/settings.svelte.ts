@@ -1,8 +1,9 @@
 import { setMode } from 'mode-watcher';
 import { toast } from 'svelte-sonner';
-import { apiFetch, auth, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
+import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+import { auth } from '$lib/client/auth.svelte.js';
 
-export type SettingsData = {
+type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
 	fontSize: number;
 	highContrast: boolean;

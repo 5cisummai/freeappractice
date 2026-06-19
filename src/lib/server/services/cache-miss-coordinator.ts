@@ -4,16 +4,16 @@ import { logger } from '$lib/server/logger';
 import { isDuplicateKeyError } from '$lib/server/utils';
 
 /** How long the lock document lives if the leader never releases (crash / timeout). */
-export function getCacheMissLockTtlMs(): number {
+function getCacheMissLockTtlMs(): number {
 	return Math.max(10_000, parseInt(process.env.CACHE_MISS_LOCK_TTL_MS ?? '', 10) || 120_000);
 }
 
 /** How long followers retry pool claims (and lock steal) before fallback live generation. */
-export function getCacheMissFollowerMaxWaitMs(): number {
+function getCacheMissFollowerMaxWaitMs(): number {
 	return Math.max(5_000, parseInt(process.env.CACHE_MISS_FOLLOWER_MAX_WAIT_MS ?? '', 10) || 45_000);
 }
 
-export async function tryAcquireCacheMissLock(key: string, ttlMs: number): Promise<boolean> {
+async function tryAcquireCacheMissLock(key: string, ttlMs: number): Promise<boolean> {
 	await connectDb();
 	try {
 		await CacheMissLock.create({
@@ -27,7 +27,7 @@ export async function tryAcquireCacheMissLock(key: string, ttlMs: number): Promi
 	}
 }
 
-export async function releaseCacheMissLock(key: string): Promise<void> {
+async function releaseCacheMissLock(key: string): Promise<void> {
 	await connectDb();
 	await CacheMissLock.deleteOne({ key }).catch(() => {});
 }

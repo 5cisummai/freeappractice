@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 
-export const MAX_CUSTOM_TOPIC_LEN = 500;
+const MAX_CUSTOM_TOPIC_LEN = 500;
 
 export interface ValidatedQuestionRequest {
 	className: string;

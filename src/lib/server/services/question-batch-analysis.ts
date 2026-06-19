@@ -6,11 +6,11 @@ import { getQuestionFromS3 } from './question-storage';
 const CANONICAL_QUESTION_KEY =
 	/^questions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.json$/i;
 
-export function filterCanonicalQuestionKeys(allKeys: string[]): string[] {
+function filterCanonicalQuestionKeys(allKeys: string[]): string[] {
 	return allKeys.filter((k) => CANONICAL_QUESTION_KEY.test(k));
 }
 
-export function questionIdFromKey(key: string): string {
+function questionIdFromKey(key: string): string {
 	const base = key.replace(/^questions\//, '').replace(/\.json$/, '');
 	return base;
 }
@@ -21,7 +21,7 @@ export type PerQuestionAnalysis = Record<string, unknown>;
  * Override or extend this in this file to run custom analytics over each stored question.
  * Default implementation records lightweight aggregates only.
  */
-export async function analyzeStoredQuestion(
+async function analyzeStoredQuestion(
 	question: StoredQuestion
 ): Promise<PerQuestionAnalysis> {
 	const qLen = question.question?.length ?? 0;

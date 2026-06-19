@@ -93,20 +93,6 @@ export async function getObjectStream(opts: { key: string; bucket?: string }): P
 	return resp.Body as Readable;
 }
 
-export async function listObjects(opts: {
-	prefix?: string;
-	bucket?: string;
-	maxKeys?: number;
-}): Promise<Array<{ Key?: string }>> {
-	const cmd = new ListObjectsV2Command({
-		Bucket: resolveBucket(opts.bucket),
-		Prefix: opts.prefix ?? '',
-		MaxKeys: opts.maxKeys ?? 1000
-	});
-	const resp = await s3.send(cmd);
-	return resp.Contents ?? [];
-}
-
 /** Lists every object key under the prefix, following S3 continuation tokens. */
 export async function listAllObjectKeys(opts: {
 	prefix?: string;

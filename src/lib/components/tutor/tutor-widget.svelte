@@ -7,7 +7,7 @@
 	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/rich-text.svelte';
-	import { getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
+	import { getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';

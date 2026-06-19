@@ -78,7 +78,7 @@ function normalizeOptions(value: unknown): QuestionOption[] {
 		.filter((entry): entry is QuestionOption => Boolean(entry));
 }
 
-export function normalizeQuestionPayload(
+function normalizeQuestionPayload(
 	payload: unknown,
 	questionIdFromApi?: string
 ): GeneratedQuestion | null {

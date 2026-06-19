@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { auth, apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
+	import { auth } from '$lib/client/auth.svelte.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import QuestionCard, {
 		type AnswerResult,
 		type FRQAnswerResult

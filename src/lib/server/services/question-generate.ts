@@ -360,7 +360,7 @@ export interface GradeFRQResult {
 
 // ── Persistence ────────────────────────────────────────────────
 
-export async function persistGeneratedMcqQuestion(
+async function persistGeneratedMcqQuestion(
 	parsed: APQuestionData,
 	className: string,
 	unit: string | undefined

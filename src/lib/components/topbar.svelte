@@ -26,7 +26,7 @@
 	});
 </script>
 
-<header class="topbar relative z-50 bg border-b border-border/70 backdrop-blur-sm">
+<header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
 	<div
 		class="relative mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
 	>
@@ -91,7 +91,7 @@
 						Sign In
 					</a>
 				{/if}
-				<Button onclick={toggleMode} variant="outline" size="icon" class="relative">
+				<Button onclick={toggleMode} variant="ghost" size="icon" class="relative">
 					<SunIcon
 						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
 					/>
@@ -133,7 +133,7 @@
 				{#if showSignIn}
 					<a href={resolve('/login')} class="block py-2 font-medium text-foreground">Sign In</a>
 				{/if}
-				<Button onclick={toggleMode} variant="outline" size="icon" class="mt-2 w-full">
+				<Button onclick={toggleMode} variant="ghost" size="icon" class="mt-2 w-full">
 					<p>Toggle Theme</p>
 				</Button>
 			</div>

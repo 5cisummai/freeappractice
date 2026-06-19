@@ -66,7 +66,7 @@ function ensureGoogleGsiScript(): Promise<void> {
  * Handle a Google credential response: exchange it for a session token and navigate to /app.
  * Returns an error message string on failure, or null on success.
  */
-export async function handleGoogleCredential(credential: string): Promise<string | null> {
+async function handleGoogleCredential(credential: string): Promise<string | null> {
 	try {
 		const res = await fetch('/api/auth/google', {
 			method: 'POST',
@@ -89,7 +89,7 @@ export async function handleGoogleCredential(credential: string): Promise<string
  * Initialize the Google Sign-In button and render it into the given container.
  * Call from onMount or after the Google GSI script has loaded.
  */
-export function initGoogleSignIn(
+function initGoogleSignIn(
 	container: HTMLDivElement,
 	onError: (message: string) => void
 ): void {

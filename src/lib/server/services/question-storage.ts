@@ -50,14 +50,3 @@ export async function getQuestionsFromS3(questionIds: string[]): Promise<StoredQ
 	);
 	return results.filter((q): q is StoredQuestion => q !== null);
 }
-
-export async function listUserQuestions(userId: string, maxKeys = 1000): Promise<string[]> {
-	const prefix = `questions/users/${userId}/`;
-	const objects = await s3.listObjects({ prefix, maxKeys });
-	return objects
-		.map((obj) => {
-			const match = obj.Key?.match(/questions\/users\/[^/]+\/([^.]+)\.json/);
-			return match ? match[1] : null;
-		})
-		.filter((id): id is string => id !== null);
-}

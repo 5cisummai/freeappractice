@@ -334,7 +334,7 @@
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-4">
 					<div
-						class="flex flex-wrap justify-center gap-2 animate-in fade-in-0 slide-in-from-bottom-3 duration-500 fill-mode-both"
+						class="flex animate-in flex-wrap justify-center gap-2 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-3"
 					>
 						<Badge variant="ghost" href={resolve('/blog/which-aps-to-take')} class="p-2">
 							Planning your AP year?
@@ -346,27 +346,27 @@
 						</Badge>
 					</div>
 					<h1
-						class="animate-in fill-mode-both font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance fade-in-0 slide-in-from-bottom-4 duration-700 delay-150 sm:text-4xl lg:text-5xl"
+						class="animate-in font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-4xl lg:text-5xl"
 					>
 						Plan your AP year. Get ahead this summer.
 					</h1>
 					<p
-						class="text-md mx-auto max-w-3xl animate-in leading-8 text-balance text-muted-foreground fade-in-0 slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both sm:text-lg"
+						class="text-md mx-auto max-w-3xl animate-in leading-8 text-balance text-muted-foreground delay-300 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-lg"
 					>
 						Start your AP journey with free practice questions and instant feedback.
 					</p>
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 fade-in-0 slide-in-from-bottom-2 duration-500 delay-500 fill-mode-both"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>Student Developed</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 fade-in-0 slide-in-from-bottom-2 duration-500 delay-600 fill-mode-both"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>20+ AP Subjects</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 fade-in-0 slide-in-from-bottom-2 duration-500 delay-700 fill-mode-both"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>100% Free</span
 						>
 					</div>
@@ -413,7 +413,6 @@
 					{#if generateVersion > 0}
 						{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
 							<QuestionCard
-								subject={selectedClass || 'Select AP Class'}
 								{selectedClass}
 								{selectedUnit}
 								{customTopic}
@@ -422,20 +421,6 @@
 						{/key}
 					{/if}
 				</div>
-			</section>
-
-			<section
-				class="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 rounded-2xl border border-border/70 bg-card px-6 py-8 text-center"
-			>
-				<h2 class="text-xl font-semibold tracking-tight">New to AP or studying this summer?</h2>
-				<p class="max-w-lg text-sm leading-relaxed text-muted-foreground">
-					See our step-by-step summer guide; plan your classes, preview Unit 1, and practice about
-					20 minutes a day.
-				</p>
-				<Badge variant="ghost" href={resolve('/summer')} class="p-2">
-					Summer AP study guide
-					<ArrowRightIcon class="size-4" />
-				</Badge>
 			</section>
 
 			<section class="mx-auto w-full max-w-3xl space-y-4">

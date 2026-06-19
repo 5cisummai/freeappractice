@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import type { BugReportContext } from '$lib/types/question.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
