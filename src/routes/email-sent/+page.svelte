@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { auth } from '$lib/client/auth.svelte.js';
+	import { page } from '$app/state';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
+
+	const email = $derived(page.url.searchParams.get('email'));
 </script>
 
 <svelte:head>
@@ -33,13 +35,13 @@
 </svelte:head>
 
 <main id="main-content" class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-	<div class="flex w-full max-w-sm flex-col gap-6 text-center">
+	<div class="flex w-full max-w-sm flex-col gap-6">
 		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
-			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
+			<img src={logo} alt="Free AP Practice" class="size-8 rounded-sm" />
 			Free AP Practice
 		</a>
 
-		<div class="space-y-4">
+		<div class="flex flex-col gap-4 rounded-xl border bg-background p-6 text-center shadow-sm">
 			<div
 				class="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-100 text-2xl text-blue-600"
 			>
@@ -48,8 +50,8 @@
 			<h1 class="text-xl font-semibold">Check your email</h1>
 			<p class="text-sm text-muted-foreground">
 				We sent a verification link to
-				{#if auth.user?.email}
-					<strong>{auth.user.email}</strong>.
+				{#if email}
+					<strong>{email}</strong>.
 				{:else}
 					your email address.
 				{/if}

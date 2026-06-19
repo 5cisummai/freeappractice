@@ -7,9 +7,10 @@ import { createHash } from 'node:crypto';
 import crypto from 'crypto';
 import { json } from '@sveltejs/kit';
 import { connectDb } from '$lib/server/db';
-import { User } from '$lib/server/models/user';
 import { SeenQuestion } from '$lib/server/models/seen-question';
-import type { IUser } from '$lib/server/models/user';
+import { UserProfile } from '$lib/server/models/user-profile';
+import type { IUserProfile } from '$lib/server/models/user-profile';
+import { ensureUserProfile } from '$lib/server/user-profile';
 
 // ── Duplicate-key detection ────────────────────────────────
 
@@ -36,21 +37,20 @@ export function normalizeUnit(unit?: string | null, fallback = ''): string {
 	return trimmed || fallback;
 }
 
-// ── User lookup ────────────────────────────────────────────
+// ── User profile lookup ─────────────────────────────────────
 
-/**
- * Connect to DB, find user by ID, and return the document.
- * Returns a 404 JSON Response if the user doesn't exist.
- */
-export async function findUserOrFail(userId: string, select?: string): Promise<IUser> {
-	await connectDb();
-	const query = User.findById(userId);
+export async function findUserProfileOrFail(
+	userId: string,
+	select?: string
+): Promise<IUserProfile> {
+	await ensureUserProfile(userId);
+	const query = UserProfile.findOne({ userId });
 	if (select) query.select(select);
-	const user = await query;
-	if (!user) {
-		throw json({ error: 'User not found' }, { status: 404 });
+	const profile = await query;
+	if (!profile) {
+		throw json({ error: 'User profile not found' }, { status: 404 });
 	}
-	return user;
+	return profile;
 }
 
 // ── Email token generation ─────────────────────────────────

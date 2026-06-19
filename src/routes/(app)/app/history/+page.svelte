@@ -38,7 +38,7 @@
 				`limit=${PAGE_SIZE}`,
 				...(selectedApClass ? [`apClass=${encodeURIComponent(selectedApClass)}`] : [])
 			].join('&');
-			const response = await apiFetch(`/api/auth/history?${query}`);
+			const response = await apiFetch(`/api/me/history?${query}`);
 			if (!response.ok) {
 				const payload = await response.json().catch(() => ({}));
 				throw new Error(

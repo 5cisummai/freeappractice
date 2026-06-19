@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import QuestionCard, {
 		type AnswerResult,
@@ -66,9 +65,8 @@
 	}
 
 	function handleAnswered(result: AnswerResult) {
-		if (!auth.isAuthenticated) return;
 		void syncAttempt(
-			'/api/auth/record-attempt',
+			'/api/me/record-attempt',
 			{
 				questionId: result.questionId,
 				apClass: selectedClass,
@@ -82,9 +80,8 @@
 	}
 
 	async function handleFRQAnswered(result: FRQAnswerResult) {
-		if (!auth.isAuthenticated) return;
 		await syncAttempt(
-			'/api/auth/record-frq-attempt',
+			'/api/me/record-frq-attempt',
 			{
 				questionId: result.questionId,
 				apClass: selectedClass,

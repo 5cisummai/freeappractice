@@ -10,8 +10,8 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
+	import { onMount } from 'svelte';
 
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import MoonIcon from '@lucide/svelte/icons/moon';
@@ -22,25 +22,44 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import PageShell from '$lib/components/page-shell.svelte';
 
+	let { data } = $props();
+
 	type SettingsTab = 'appearance' | 'accessibility' | 'privacy' | 'account' | 'about';
 
 	let activeTab = $state<SettingsTab>('appearance');
 	let deleteAccountOpen = $state(false);
-	let accountForm = $state({
-		name: auth.user?.name || '',
-		email: auth.user?.email || ''
+	let accountForm = $state({ name: '', email: '' });
+	let passwordForm = $state({
+		currentPassword: '',
+		newPassword: '',
+		confirmPassword: ''
 	});
+	let deletePassword = $state('');
 	const appVersion = '1.4.0';
+
+	onMount(() => {
+		accountForm = { name: data.user.name, email: data.user.email };
+	});
 
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();
-		settingsController.updateAccount(accountForm);
+		settingsController.updateAccount(data.user, accountForm);
+	}
+
+	function handleChangePassword(e: SubmitEvent) {
+		e.preventDefault();
+		settingsController.changePassword(passwordForm).then((ok) => {
+			if (ok) {
+				passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+			}
+		});
 	}
 
 	async function handleDeleteAccount() {
-		const deleted = await settingsController.deleteAccount();
+		const deleted = await settingsController.deleteAccount(deletePassword || undefined);
 		if (deleted) {
 			deleteAccountOpen = false;
+			deletePassword = '';
 		}
 	}
 </script>
@@ -239,9 +258,50 @@
 							<Input id="email" type="email" bind:value={accountForm.email} />
 						</div>
 						<div class="flex gap-4 pt-4">
-							<Button type="submit">Save Changes</Button>
+							<Button type="submit" disabled={settingsController.accountPending}>
+								{settingsController.accountPending ? 'Saving...' : 'Save Changes'}
+							</Button>
 							<Button variant="outline" type="button">Reset</Button>
 						</div>
+					</form>
+
+					<form onsubmit={handleChangePassword} class="mt-8 space-y-4 border-t border-border pt-6">
+						<div class="space-y-1">
+							<p class="font-medium">Change password</p>
+							<p class="text-sm text-muted-foreground">
+								Update your password. Other sessions will be signed out.
+							</p>
+						</div>
+						<div class="space-y-2">
+							<Label for="current-password">Current password</Label>
+							<Input
+								id="current-password"
+								type="password"
+								autocomplete="current-password"
+								bind:value={passwordForm.currentPassword}
+							/>
+						</div>
+						<div class="space-y-2">
+							<Label for="new-password">New password</Label>
+							<Input
+								id="new-password"
+								type="password"
+								autocomplete="new-password"
+								bind:value={passwordForm.newPassword}
+							/>
+						</div>
+						<div class="space-y-2">
+							<Label for="confirm-new-password">Confirm new password</Label>
+							<Input
+								id="confirm-new-password"
+								type="password"
+								autocomplete="new-password"
+								bind:value={passwordForm.confirmPassword}
+							/>
+						</div>
+						<Button type="submit" variant="outline" disabled={settingsController.passwordPending}>
+							{settingsController.passwordPending ? 'Updating...' : 'Update password'}
+						</Button>
 					</form>
 				</Card.Content>
 				<Card.Footer class="flex flex-col items-start gap-4 border-t border-border pt-6">
@@ -304,13 +364,25 @@
 					undone.
 				</AlertDialog.Description>
 			</AlertDialog.Header>
+			<div class="px-6 pb-2">
+				<Label for="delete-password">Confirm your password</Label>
+				<Input
+					id="delete-password"
+					type="password"
+					autocomplete="current-password"
+					placeholder="Enter your password to confirm"
+					bind:value={deletePassword}
+					class="mt-2"
+				/>
+			</div>
 			<AlertDialog.Footer>
 				<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
 				<AlertDialog.Action
 					class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
 					onclick={handleDeleteAccount}
+					disabled={settingsController.deletePending}
 				>
-					Delete Account
+					{settingsController.deletePending ? 'Deleting...' : 'Delete Account'}
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
