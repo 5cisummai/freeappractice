@@ -73,7 +73,7 @@ The main API routes now live under `src/routes/api` and are handled by SvelteKit
 - `GET /api/question/cache/stats` reports cache status.
 - `GET /api/question/[id]` fetches a stored question by ID.
 - `POST /api/auth/register`, `/api/auth/login`, `/api/auth/logout` handle authentication.
-- `GET /api/auth/current-user`, `/api/auth/stats`, `/api/auth/progress`, `/api/auth/progress-detailed` expose user state and analytics.
+- `GET /api/auth/current-user`, `/api/auth/stats`, `/api/auth/progress` expose user state and analytics.
 - `GET /api/auth/history` returns paginated MCQ attempt history with hydrated question content from S3. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` filter. Response: `{ items: [{ attempt, question }], total, page, limit }` where `question` is null if the S3 object is missing.
 - `PATCH /api/auth/update-account` updates a signed-in user's name and email.
 - `POST /api/auth/bookmark`, `/api/auth/bookmarks` manage saved questions.

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { auth, apiFetch } from '$lib/client/auth.svelte.js';
+	import { auth } from '$lib/client/auth.svelte.js';
+	import { fetchDashboardData } from '$lib/client/dashboard.js';
+	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
@@ -12,35 +14,6 @@
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import PageShell from '$lib/components/page-shell.svelte';
-
-	interface StatsData {
-		overview: {
-			totalQuestions: number;
-			correctAnswers: number;
-			accuracy: number;
-			currentStreak: number;
-			totalTimeHours: number;
-			memberSince: string;
-		};
-		recentPerformance: {
-			questionsLast7Days: number;
-			accuracyLast7Days: number;
-		};
-		subjectBreakdown: Array<{
-			subject: string;
-			total: number;
-			correct: number;
-			accuracy: number;
-			avgTimeSeconds: number;
-		}>;
-	}
-
-	interface ProgressEntry {
-		apClass: string;
-		unit: string;
-		totalAttempts: number;
-		mastery: number;
-	}
 
 	let statsData = $state<StatsData | null>(null);
 	let progressData = $state<ProgressEntry[]>([]);
@@ -66,17 +39,9 @@
 
 	onMount(async () => {
 		try {
-			const [statsRes, progressRes] = await Promise.all([
-				apiFetch('/api/auth/stats'),
-				apiFetch('/api/auth/progress')
-			]);
-			if (statsRes.ok) {
-				statsData = await statsRes.json();
-			}
-			if (progressRes.ok) {
-				const data = await progressRes.json();
-				progressData = data.progress ?? [];
-			}
+			const { stats, progress } = await fetchDashboardData();
+			statsData = stats;
+			progressData = progress;
 		} catch {
 			// Stats are optional
 		} finally {

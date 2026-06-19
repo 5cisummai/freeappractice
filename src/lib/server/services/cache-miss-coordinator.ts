@@ -1,10 +1,7 @@
 import { connectDb } from '$lib/server/db';
 import { CacheMissLock } from '$lib/server/models/cache-miss-lock';
 import { logger } from '$lib/server/logger';
-
-function isDuplicateKeyError(err: unknown): boolean {
-	return typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
-}
+import { isDuplicateKeyError } from '$lib/server/utils';
 
 /** How long the lock document lives if the leader never releases (crash / timeout). */
 export function getCacheMissLockTtlMs(): number {

@@ -7,6 +7,11 @@ import type { RequestHandler } from './$types';
 const currentFilePath = fileURLToPath(import.meta.url);
 const dataDirectoryPath = dirname(currentFilePath);
 
+/** Canonical copy lives in $lib/data; served here for /data downloads. */
+const LIB_DATA_ALIASES: Record<string, string> = {
+	'ap-classes.json': join(dirname(currentFilePath), '..', '..', 'lib', 'data', 'ap-classes.json')
+};
+
 const contentTypes: Record<string, string> = {
 	'.json': 'application/json; charset=utf-8',
 	'.txt': 'text/plain; charset=utf-8'
@@ -24,10 +29,13 @@ function escapeHtml(value: string): string {
 export const GET: RequestHandler = async ({ url }) => {
 	const entries = await readdir(dataDirectoryPath, { withFileTypes: true });
 
-	const files = entries
+	const localFiles = entries
 		.filter((entry) => entry.isFile() && entry.name !== '+server.ts')
-		.map((entry) => entry.name)
-		.sort((left, right) => left.localeCompare(right));
+		.map((entry) => entry.name);
+
+	const files = [...new Set([...localFiles, ...Object.keys(LIB_DATA_ALIASES)])].sort(
+		(left, right) => left.localeCompare(right)
+	);
 
 	const requestedFile = url.searchParams.get('file');
 
@@ -36,7 +44,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			return new Response('File not found.', { status: 404 });
 		}
 
-		const fileBuffer = await readFile(join(dataDirectoryPath, requestedFile));
+		const filePath = LIB_DATA_ALIASES[requestedFile] ?? join(dataDirectoryPath, requestedFile);
+		const fileBuffer = await readFile(filePath);
 		const contentType =
 			contentTypes[extname(requestedFile).toLowerCase()] ?? 'application/octet-stream';
 

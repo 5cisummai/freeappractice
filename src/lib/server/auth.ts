@@ -33,6 +33,11 @@ export function extractToken(request: Request): string | null {
  * Throws a Response (401/403) if auth fails.
  */
 export async function requireAuth(event: RequestEvent): Promise<string> {
+	// hooks.server.ts already verified JWT + email for verified users
+	if (event.locals.userId) {
+		return event.locals.userId;
+	}
+
 	const token = extractToken(event.request);
 	if (!token) {
 		throw new Response(JSON.stringify({ error: 'No token provided' }), {

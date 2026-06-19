@@ -1,5 +1,5 @@
 <script lang="ts">
-	import apClassesData from '../../routes/data/ap-classes.json';
+	import apClassesData from '$lib/data/ap-classes.json';
 	import { tick } from 'svelte';
 	import BugIcon from '@lucide/svelte/icons/bug';
 	import CheckIcon from '@lucide/svelte/icons/check';

@@ -1,113 +1,5 @@
 <script lang="ts" module>
-	export type QuestionOption = {
-		id: string;
-		label: string;
-		text: string;
-	};
-
-	export type QuestionPanel = {
-		title: string;
-		content: string[];
-	};
-
-	export type AnswerResult = {
-		questionId?: string;
-		questionNumber: string;
-		selectedAnswer: string;
-		correctAnswer: string;
-		isCorrect: boolean;
-		timeTakenMs: number;
-	};
-
-	export type BugReportContext = {
-		questionId?: string;
-		questionNumber: string;
-		selectedClass?: string;
-		selectedUnit?: string;
-		customTopic?: string;
-		prompt?: string;
-		correctAnswer?: string;
-		hasStimulus: boolean;
-	};
-
-	export type GeneratedQuestion = {
-		questionId?: string;
-		prompt: string;
-		options: QuestionOption[];
-		correctAnswer?: string;
-		explanation?: string;
-		leftPanel?: QuestionPanel;
-		rightPanel?: QuestionPanel;
-		hasStimulus: boolean;
-	};
-
-	export type FRQPart = {
-		label: string;
-		question: string;
-		pointValue: number;
-		scoringCriteria: string;
-		modelAnswer: string;
-	};
-
-	export type FRQQuestion = {
-		questionId?: string;
-		prompt: string;
-		context?: string | null;
-		parts: FRQPart[];
-		totalPoints: number;
-	};
-
-	export type FRQPartGrade = {
-		label: string;
-		pointsEarned: number;
-		pointsAvailable: number;
-		score: number;
-		feedback: string;
-	};
-
-	export type FRQGrade = {
-		parts: FRQPartGrade[];
-		totalScore: number;
-		overallFeedback: string;
-	};
-
-	export type FRQAnswerResult = {
-		questionId?: string;
-		questionNumber: string;
-		aiScore: number;
-		pointsEarned: number;
-		totalPoints: number;
-		timeTakenMs: number;
-	};
-
-	export type QuestionCardProps = {
-		class?: string;
-		mode?: 'mcq' | 'frq';
-		subject?: string;
-		questionNumber?: string;
-		selectedClass?: string;
-		selectedUnit?: string;
-		/** Required when selectedUnit is the custom-topic sentinel. */
-		customTopic?: string;
-		requestVersion?: number;
-		selectedOption?: string | null;
-		autoDetectLongQuestion?: boolean;
-		longQuestionThresholdChars?: number;
-		autoShowExplanation?: boolean;
-		checkLabel?: string;
-		nextLabel?: string;
-		showExplanationLabel?: string;
-		showUtilityActions?: boolean;
-		skipLabel?: string;
-		notLearnedLabel?: string;
-		reportBugLabel?: string;
-		onCheckAnswer?: (selectedOption: string | null) => void;
-		onSkip?: () => void;
-		onNotLearned?: () => void;
-		onReportBug?: (context: BugReportContext) => void;
-		onAnswered?: (result: AnswerResult) => void;
-		onFRQAnswered?: (result: FRQAnswerResult) => void;
-	};
+	export type * from '$lib/types/question.js';
 </script>
 
 <script lang="ts">
@@ -118,15 +10,37 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
+	import FrqQuestionView from '$lib/components/frq-question-view.svelte';
+	import McqAnswerChoices from '$lib/components/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/question-card-skeleton.svelte';
 	import RichText from '$lib/components/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
-	import apClassesData from '$lib/data/ap-classes.json';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import {
+		parseQuestionPayloadFromResponse,
+		resolveEffectiveUnit,
+		type QuestionApiResponse
+	} from '$lib/client/question-payload.js';
+	import {
+		getPracticeStorageKey,
+		loadFrqPracticeState,
+		loadMcqPracticeState,
+		RESTORE_FAILED_WARNING,
+		saveFrqPracticeState,
+		saveMcqPracticeState
+	} from '$lib/client/question-storage.js';
+	import type {
+		AnswerResult,
+		BugReportContext,
+		FRQGrade,
+		FRQPart,
+		FRQQuestion,
+		GeneratedQuestion,
+		QuestionCardProps
+	} from '$lib/types/question';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
@@ -135,12 +49,7 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import {
-		CUSTOM_UNIT_VALUE,
-		hashTopicKey,
-		isCustomUnit,
-		unitForProgress
-	} from '$lib/constants/custom-unit';
+	import { hashTopicKey, isCustomUnit, unitForProgress } from '$lib/constants/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -220,11 +129,6 @@
 		error?: string;
 		message?: string;
 	};
-	type QuestionApiResponse = Record<string, unknown> & {
-		error?: string;
-		questionId?: string;
-		answer?: unknown;
-	};
 	type FRQQuestionApiResponse = ApiErrorPayload & {
 		question?: {
 			prompt: string;
@@ -269,8 +173,6 @@
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
 
-	// FRQ derived state
-	const frqHasContext = $derived(Boolean(frqQuestion?.context?.trim()));
 	const allPartsAnswered = $derived.by(() => {
 		if (!frqQuestion) return false;
 		return frqQuestion.parts.every((p) => (frqResponses[p.label] ?? '').trim().length > 0);
@@ -291,133 +193,6 @@
 		if (prefetchedCustomMcq && prefetchedCustomMcq.key !== k) prefetchedCustomMcq = null;
 		if (prefetchedCustomFrq && prefetchedCustomFrq.key !== k) prefetchedCustomFrq = null;
 	});
-
-	function getScoreColor(score: number): string {
-		if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
-		if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
-		return 'text-red-600 dark:text-red-400';
-	}
-
-	function getScoreBg(score: number): string {
-		if (score >= 80) return 'border-emerald-500/60 bg-emerald-500/10';
-		if (score >= 60) return 'border-yellow-500/60 bg-yellow-500/10';
-		return 'border-red-500/60 bg-red-500/10';
-	}
-
-	function parseParagraphs(value: unknown): string[] {
-		if (typeof value !== 'string') return [];
-		const lines = value.split('\n');
-		const segments: string[] = [];
-		let current: string[] = [];
-		let inFence = false;
-		let fenceChar = '';
-		let fenceLen = 0;
-		for (const line of lines) {
-			if (!inFence) {
-				const m = line.match(/^[ \t]*(`{3,}|~{3,})/);
-				if (m) {
-					inFence = true;
-					fenceChar = m[1][0];
-					fenceLen = m[1].length;
-					current.push(line);
-				} else if (line.trim() === '' && current.length > 0) {
-					segments.push(current.join('\n').trim());
-					current = [];
-				} else {
-					current.push(line);
-				}
-			} else {
-				const closeRe = new RegExp(`^[ \\t]*\\${fenceChar}{${fenceLen},}[ \\t]*$`);
-				current.push(line);
-				if (closeRe.test(line)) inFence = false;
-			}
-		}
-		if (current.length > 0) segments.push(current.join('\n').trim());
-		return segments.filter(Boolean);
-	}
-
-	function extractCorrectLetter(value: unknown): string | undefined {
-		if (typeof value !== 'string') return undefined;
-		const match = value.toUpperCase().match(/[A-D]/);
-		return match?.[0];
-	}
-
-	function normalizeOptions(value: unknown): QuestionOption[] {
-		if (Array.isArray(value)) {
-			return value
-				.slice(0, 4)
-				.map((entry, index) => {
-					if (typeof entry === 'string') {
-						const letter = String.fromCharCode(65 + index);
-						return { id: letter, label: letter, text: entry };
-					}
-					if (entry && typeof entry === 'object') {
-						const obj = entry as Record<string, unknown>;
-						const id = String(obj.id ?? obj.label ?? String.fromCharCode(65 + index)).toUpperCase();
-						const label = id;
-						const text = String(obj.text ?? obj.value ?? '');
-						return { id, label, text };
-					}
-					return null;
-				})
-				.filter((entry): entry is QuestionOption => Boolean(entry && entry.text));
-		}
-
-		if (!value || typeof value !== 'object') return [];
-
-		const obj = value as Record<string, unknown>;
-		return ['A', 'B', 'C', 'D']
-			.map((letter) => {
-				const text = obj[`option${letter}`];
-				if (typeof text !== 'string' || !text.trim()) return null;
-				return { id: letter, label: letter, text: text.trim() };
-			})
-			.filter((entry): entry is QuestionOption => Boolean(entry));
-	}
-
-	function normalizeQuestionPayload(
-		payload: unknown,
-		questionIdFromApi?: string
-	): GeneratedQuestion | null {
-		if (!payload || typeof payload !== 'object') return null;
-
-		const obj = payload as Record<string, unknown>;
-		const prompt = String(obj.question ?? obj.prompt ?? '').trim();
-		if (!prompt) return null;
-
-		const optionsFromObject = normalizeOptions(obj);
-		const options =
-			optionsFromObject.length > 0 ? optionsFromObject : normalizeOptions(obj.options);
-		if (options.length < 2) return null;
-
-		const stimulus = String(obj.stimulus ?? obj.passage ?? obj.context ?? '').trim();
-		const hasStimulus = stimulus.length > 0;
-
-		return {
-			questionId: String(obj.questionId ?? questionIdFromApi ?? '').trim() || undefined,
-			prompt,
-			options,
-			correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),
-			explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
-			leftPanel: hasStimulus
-				? { title: 'Stimulus', content: parseParagraphs(stimulus) }
-				: undefined,
-			rightPanel: hasStimulus ? { title: 'Prompt', content: parseParagraphs(prompt) } : undefined,
-			hasStimulus
-		};
-	}
-
-	/** When "All Units" is selected (unit === ''), pick a random real unit for the class. */
-	function resolveEffectiveUnit(cls: string, unit: string): string {
-		if (unit.trim()) return unit.trim();
-		const course = (
-			apClassesData.courses as { name: string; semester1: string[]; semester2: string[] }[]
-		).find((c) => c.name === cls);
-		if (!course) return '';
-		const allUnits = [...course.semester1, ...course.semester2];
-		if (!allUnits.length) return '';
-		return allUnits[Math.floor(Math.random() * allUnits.length)];
-	}
 
 	async function requestQuestion(
 		className: string,
@@ -440,31 +215,6 @@
 		}
 
 		return payload;
-	}
-
-	function parseQuestionPayloadFromResponse(response: QuestionApiResponse): GeneratedQuestion {
-		if (typeof response.error === 'string' && response.error.trim()) {
-			throw new Error(response.error);
-		}
-
-		let payload: unknown = response;
-		if (typeof response.answer === 'string') {
-			let raw = response.answer.trim();
-			if (raw.startsWith('```')) {
-				raw = raw.replace(/```json|```/g, '').trim();
-			}
-			try {
-				payload = JSON.parse(raw);
-			} catch {
-				throw new Error('Question service returned an invalid question payload.');
-			}
-		}
-
-		const normalized = normalizeQuestionPayload(payload, String(response.questionId ?? ''));
-		if (!normalized) {
-			throw new Error('Question API response was missing required fields.');
-		}
-		return normalized;
 	}
 
 	function prefetchNextCustomMcq(): void {
@@ -703,36 +453,6 @@
 		bugReportOpen = true;
 	}
 
-	function optionButtonClasses(optionId: string): string {
-		if (!hasCheckedAnswer) {
-			return selectedOption === optionId
-				? 'border-primary/70 bg-primary/8'
-				: 'border-border/70 bg-background hover:bg-muted/40';
-		}
-		if (currentQuestion?.correctAnswer && optionId === currentQuestion.correctAnswer) {
-			return 'border-emerald-500/70 bg-emerald-500/10';
-		}
-		if (checkedSelection === optionId && checkedSelection !== currentQuestion?.correctAnswer) {
-			return 'border-red-500/70 bg-red-500/10';
-		}
-		return 'border-border/60 bg-background/60 opacity-80';
-	}
-
-	function optionBadgeClasses(optionId: string): string {
-		if (!hasCheckedAnswer) {
-			return selectedOption === optionId
-				? 'border-primary bg-primary text-primary-foreground'
-				: 'border-border bg-muted/50 text-muted-foreground';
-		}
-		if (currentQuestion?.correctAnswer && optionId === currentQuestion.correctAnswer) {
-			return 'border-emerald-500 bg-emerald-500 text-white';
-		}
-		if (checkedSelection === optionId && checkedSelection !== currentQuestion?.correctAnswer) {
-			return 'border-red-500 bg-red-500 text-white';
-		}
-		return 'border-border bg-muted/40 text-muted-foreground';
-	}
-
 	// --- FRQ functions ---
 
 	function resetFRQState(): void {
@@ -874,95 +594,85 @@
 		await loadFRQQuestion();
 	}
 
-	// ── localStorage persistence ─────────────────────────────
-
-	function getStorageKey(): string {
-		const unitPart = isCustomUnit(selectedUnit)
-			? `${CUSTOM_UNIT_VALUE}_${hashTopicKey(customTopic.trim())}`
-			: selectedUnit;
-		return `practice_q_${mode}_${selectedClass}_${unitPart}`;
-	}
-
 	function saveToStorage(): void {
-		if (typeof localStorage === 'undefined') return;
-		const key = getStorageKey();
-		try {
-			if (mode === 'mcq') {
-				if (!currentQuestion) {
-					localStorage.removeItem(key);
-					return;
-				}
-				localStorage.setItem(
-					key,
-					JSON.stringify({
-						currentQuestion,
-						hasCheckedAnswer,
-						checkedSelection,
-						answerResult,
-						selectedOption,
-						showExplanation,
-						statusMessage,
-						startedAtMs,
-						questionCount
-					})
-				);
-			} else {
-				if (!frqQuestion) {
-					localStorage.removeItem(key);
-					return;
-				}
-				localStorage.setItem(
-					key,
-					JSON.stringify({
-						frqQuestion,
-						frqResponses,
-						frqGrade,
-						hasSubmitted,
-						statusMessage,
-						startedAtMs,
-						questionCount
-					})
-				);
-			}
-			persistenceWarning = '';
-		} catch {
-			persistenceWarning =
-				'Progress could not be saved locally. Your current attempt is still active.';
+		const key = getPracticeStorageKey(mode, selectedClass, selectedUnit, customTopic);
+		if (mode === 'mcq') {
+			const result = saveMcqPracticeState(
+				key,
+				currentQuestion
+					? {
+							currentQuestion,
+							hasCheckedAnswer,
+							checkedSelection,
+							answerResult,
+							selectedOption,
+							showExplanation,
+							statusMessage,
+							startedAtMs,
+							questionCount
+						}
+					: null
+			);
+			persistenceWarning = result.ok ? '' : result.warning;
+		} else {
+			const result = saveFrqPracticeState(
+				key,
+				frqQuestion
+					? {
+							frqQuestion,
+							frqResponses,
+							frqGrade,
+							hasSubmitted,
+							statusMessage,
+							startedAtMs,
+							questionCount
+						}
+					: null
+			);
+			persistenceWarning = result.ok ? '' : result.warning;
 		}
 	}
 
 	function loadFromStorage(): void {
-		if (typeof localStorage === 'undefined') return;
-		const key = getStorageKey();
-		try {
-			const stored = localStorage.getItem(key);
-			if (!stored) return;
-			const data = JSON.parse(stored) as Record<string, unknown>;
-			if (mode === 'mcq' && data.currentQuestion) {
-				currentQuestion = data.currentQuestion as GeneratedQuestion;
-				hasCheckedAnswer = Boolean(data.hasCheckedAnswer);
-				checkedSelection = (data.checkedSelection as string | null) ?? null;
-				answerResult = (data.answerResult as AnswerResult | null) ?? null;
-				selectedOption = (data.selectedOption as string | null) ?? null;
-				showExplanation = Boolean(data.showExplanation);
-				statusMessage = typeof data.statusMessage === 'string' ? data.statusMessage : statusMessage;
-				startedAtMs = typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now();
-				questionCount = typeof data.questionCount === 'number' ? data.questionCount : questionCount;
-			} else if (mode === 'frq' && data.frqQuestion) {
-				frqQuestion = data.frqQuestion as FRQQuestion;
-				frqResponses = (data.frqResponses as Record<string, string>) ?? {};
-				frqGrade = (data.frqGrade as FRQGrade | null) ?? null;
-				hasSubmitted = Boolean(data.hasSubmitted);
-				statusMessage = typeof data.statusMessage === 'string' ? data.statusMessage : statusMessage;
-				startedAtMs = typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now();
-				questionCount = typeof data.questionCount === 'number' ? data.questionCount : questionCount;
+		const key = getPracticeStorageKey(mode, selectedClass, selectedUnit, customTopic);
+		if (mode === 'mcq') {
+			const { state: stored, restoreFailed } = loadMcqPracticeState(key);
+			if (restoreFailed) {
+				persistenceWarning = RESTORE_FAILED_WARNING;
+				return;
 			}
+			if (!stored) return;
+			currentQuestion = stored.currentQuestion;
+			hasCheckedAnswer = stored.hasCheckedAnswer;
+			checkedSelection = stored.checkedSelection;
+			answerResult = stored.answerResult;
+			selectedOption = stored.selectedOption;
+			showExplanation = stored.showExplanation;
+			statusMessage = stored.statusMessage || statusMessage;
+			startedAtMs = stored.startedAtMs;
+			questionCount = stored.questionCount;
 			persistenceWarning = '';
-		} catch {
-			localStorage.removeItem(key);
-			persistenceWarning =
-				'Saved progress could not be restored, so a fresh practice session was started.';
+		} else {
+			const { state: stored, restoreFailed } = loadFrqPracticeState(key);
+			if (restoreFailed) {
+				persistenceWarning = RESTORE_FAILED_WARNING;
+				return;
+			}
+			if (!stored) return;
+			frqQuestion = stored.frqQuestion;
+			frqResponses = stored.frqResponses;
+			frqGrade = stored.frqGrade;
+			hasSubmitted = stored.hasSubmitted;
+			statusMessage = stored.statusMessage || statusMessage;
+			startedAtMs = stored.startedAtMs;
+			questionCount = stored.questionCount;
+			persistenceWarning = '';
 		}
+	}
+
+	function handleFrqResponseChange(label: string, value: string): void {
+		frqResponses[label] = value;
+		saveToStorage();
 	}
 
 	onMount(() => {
@@ -1068,144 +778,15 @@
 			</div>
 
 			{#if mode === 'frq' && frqQuestion}
-				{@const q = frqQuestion}
-				{#if frqHasContext && !isMobileViewport}
-					<div
-						class={cn(
-							'overflow-hidden rounded-lg border border-border/70',
-							expanded ? 'min-h-0 flex-1' : 'h-80'
-						)}
-					>
-						<Resizable.PaneGroup direction="horizontal" class="h-full">
-							<Resizable.Pane defaultSize={48} minSize={28} class="min-w-0">
-								<div class="h-full overflow-y-auto p-4 sm:p-5">
-									<p
-										class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-									>
-										Stimulus
-									</p>
-									<div class="space-y-3 text-sm leading-6 text-foreground/90">
-										<RichText text={q.context ?? ''} />
-									</div>
-								</div>
-							</Resizable.Pane>
-							<Resizable.Handle withHandle />
-							<Resizable.Pane defaultSize={52} minSize={30} class="min-w-0">
-								<div class="h-full space-y-5 overflow-y-auto p-4 sm:p-5">
-									<div>
-										<p
-											class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-										>
-											Prompt
-										</p>
-										<RichText text={q.prompt} class="text-sm leading-6 text-foreground/90" />
-									</div>
-									<div class="space-y-4">
-										{#each q.parts as part (part.label)}
-											{@const response = frqResponses[part.label] ?? ''}
-											<div class="space-y-1.5">
-												<div class="flex items-start gap-2">
-													<span
-														class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-xs font-semibold text-foreground"
-													>
-														{part.label}
-													</span>
-													<div class="flex min-w-0 flex-1 items-start justify-between gap-2">
-														<RichText
-															text={part.question}
-															class="text-sm leading-6 text-foreground/90"
-														/>
-														<span class="shrink-0 text-xs whitespace-nowrap text-muted-foreground">
-															{part.pointValue} pt{part.pointValue !== 1 ? 's' : ''}
-														</span>
-													</div>
-												</div>
-												<Textarea
-													disabled={hasSubmitted}
-													value={response}
-													oninput={(e) => {
-														frqResponses[part.label] = (
-															e.currentTarget as HTMLTextAreaElement
-														).value;
-														saveToStorage();
-													}}
-													placeholder="Write your response here..."
-													class="min-h-24 resize-y text-sm"
-												/>
-											</div>
-										{/each}
-									</div>
-								</div>
-							</Resizable.Pane>
-						</Resizable.PaneGroup>
-					</div>
-				{:else}
-					<div class="space-y-2 rounded-lg border border-border/70 bg-muted/10 p-4 sm:p-5">
-						<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-							Prompt
-						</p>
-						<RichText text={q.prompt} class="text-sm leading-6 text-foreground/90" />
-					</div>
-					<div class={cn('space-y-5', expanded && 'min-h-0 flex-1 overflow-y-auto pr-1')}>
-						{#each q.parts as part (part.label)}
-							{@const response = frqResponses[part.label] ?? ''}
-							<div class="space-y-2">
-								<div class="flex items-start gap-2">
-									<span
-										class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-xs font-semibold text-foreground"
-									>
-										{part.label}
-									</span>
-									<div class="flex min-w-0 flex-1 items-start justify-between gap-2">
-										<RichText text={part.question} class="text-sm leading-6 text-foreground/90" />
-										<span class="shrink-0 text-xs whitespace-nowrap text-muted-foreground">
-											{part.pointValue} pt{part.pointValue !== 1 ? 's' : ''}
-										</span>
-									</div>
-								</div>
-								<Textarea
-									disabled={hasSubmitted}
-									value={response}
-									oninput={(e) => {
-										frqResponses[part.label] = (e.currentTarget as HTMLTextAreaElement).value;
-										saveToStorage();
-									}}
-									placeholder="Write your response here..."
-									class="min-h-28 resize-y text-sm"
-								/>
-							</div>
-						{/each}
-					</div>
-				{/if}
-
-				{#if frqGrade}
-					<div class="space-y-4 rounded-lg border border-border/70 bg-muted/20 p-4 sm:p-5">
-						<div class="flex flex-wrap items-center gap-3">
-							<span
-								class={cn('text-2xl font-bold tabular-nums', getScoreColor(frqGrade.totalScore))}
-							>
-								{frqGrade.totalScore}/100
-							</span>
-							<span class="text-sm text-muted-foreground">&mdash;</span>
-							<span class="text-sm text-foreground/80">{frqGrade.overallFeedback}</span>
-						</div>
-						<div class="space-y-3">
-							{#each frqGrade.parts as partGrade (partGrade.label)}
-								<div class={cn('rounded-md border p-3 text-sm', getScoreBg(partGrade.score))}>
-									<div class="flex items-center gap-2 font-medium">
-										<span
-											class="flex size-5 shrink-0 items-center justify-center rounded-full bg-background/60 text-xs"
-										>
-											{partGrade.label}
-										</span>
-										<span>{partGrade.pointsEarned}/{partGrade.pointsAvailable} pts</span>
-									</div>
-									<p class="mt-1.5 text-xs leading-5 text-foreground/80">{partGrade.feedback}</p>
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
+				<FrqQuestionView
+					question={frqQuestion}
+					responses={frqResponses}
+					{hasSubmitted}
+					grade={frqGrade}
+					{isMobileViewport}
+					{expanded}
+					onResponseChange={handleFrqResponseChange}
+				/>
 			{:else if currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
@@ -1244,35 +825,14 @@
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
 				</div>
-				<div class="space-y-2" role="radiogroup" aria-label="Answer choices">
-					{#each currentQuestion?.options as option (option.id)}
-						<button
-							type="button"
-							role="radio"
-							aria-checked={selectedOption === option.id}
-							disabled={hasCheckedAnswer}
-							onclick={() => handleOptionSelect(option.id)}
-							class={cn(
-								'w-full rounded-lg border px-4 py-3 text-left transition-colors',
-								'focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none',
-								'disabled:cursor-not-allowed disabled:opacity-100',
-								optionButtonClasses(option.id)
-							)}
-						>
-							<div class="flex gap-3">
-								<span
-									class={cn(
-										'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
-										optionBadgeClasses(option.id)
-									)}
-								>
-									{option.label}
-								</span>
-								<RichText text={option.text} inline class="text-sm leading-6" />
-							</div>
-						</button>
-					{/each}
-				</div>
+				<McqAnswerChoices
+					options={currentQuestion.options}
+					{selectedOption}
+					{hasCheckedAnswer}
+					{checkedSelection}
+					correctAnswer={currentQuestion.correctAnswer}
+					onSelect={handleOptionSelect}
+				/>
 			{:else if expandedTwoColumn}
 				<div
 					class={cn(
@@ -1298,35 +858,15 @@
 						<Resizable.Handle withHandle />
 						<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
 							<div class="h-full overflow-y-auto p-4 sm:p-5">
-								<div class="space-y-2" role="radiogroup" aria-label="Answer choices">
-									{#each currentQuestion?.options ?? [] as option (option.id)}
-										<button
-											type="button"
-											role="radio"
-											aria-checked={selectedOption === option.id}
-											disabled={hasCheckedAnswer}
-											onclick={() => handleOptionSelect(option.id)}
-											class={cn(
-												'w-full rounded-lg border px-3 py-2.5 text-left transition-colors',
-												'focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none',
-												'disabled:cursor-not-allowed disabled:opacity-100',
-												optionButtonClasses(option.id)
-											)}
-										>
-											<div class="flex gap-3">
-												<span
-													class={cn(
-														'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
-														optionBadgeClasses(option.id)
-													)}
-												>
-													{option.label}
-												</span>
-												<RichText text={option.text} inline class="text-sm leading-6" />
-											</div>
-										</button>
-									{/each}
-								</div>
+								<McqAnswerChoices
+									options={currentQuestion?.options ?? []}
+									{selectedOption}
+									{hasCheckedAnswer}
+									{checkedSelection}
+									correctAnswer={currentQuestion?.correctAnswer}
+									onSelect={handleOptionSelect}
+									compact
+								/>
 							</div>
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
@@ -1338,35 +878,14 @@
 						class="text-base leading-7 text-foreground/90"
 					/>
 				</div>
-				<div class="space-y-2" role="radiogroup" aria-label="Answer choices">
-					{#each currentQuestion?.options ?? [] as option (option.id)}
-						<button
-							type="button"
-							role="radio"
-							aria-checked={selectedOption === option.id}
-							disabled={hasCheckedAnswer}
-							onclick={() => handleOptionSelect(option.id)}
-							class={cn(
-								'w-full rounded-lg border px-4 py-3 text-left transition-colors',
-								'focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:outline-none',
-								'disabled:cursor-not-allowed disabled:opacity-100',
-								optionButtonClasses(option.id)
-							)}
-						>
-							<div class="flex gap-3">
-								<span
-									class={cn(
-										'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
-										optionBadgeClasses(option.id)
-									)}
-								>
-									{option.label}
-								</span>
-								<RichText text={option.text} inline class="text-sm leading-6" />
-							</div>
-						</button>
-					{/each}
-				</div>
+				<McqAnswerChoices
+					options={currentQuestion?.options ?? []}
+					{selectedOption}
+					{hasCheckedAnswer}
+					{checkedSelection}
+					correctAnswer={currentQuestion?.correctAnswer}
+					onSelect={handleOptionSelect}
+				/>
 			{/if}
 
 			{#if mode === 'mcq' && showUtilityActions && !hasCheckedAnswer}

@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { apiFetch } from '$lib/client/auth.svelte.js';
 	import type { HistoryResponse } from '$lib/types/history.js';
-	import apClassesData from '../../../data/ap-classes.json';
+	import apClassesData from '$lib/data/ap-classes.json';
 	import HistoryEntry from '$lib/components/history/history-entry.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';

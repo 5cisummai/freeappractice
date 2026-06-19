@@ -1,23 +1,16 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
-import { requireAuth } from '$lib/server/auth';
-import { logger } from '$lib/server/logger';
+import { withAuthedHandler } from '$lib/server/route-helpers';
 
-export const DELETE: RequestHandler = async (event) => {
-	try {
-		const userId = await requireAuth(event);
-
+export const DELETE = withAuthedHandler(
+	async (_event, userId) => {
 		await connectDb();
 
 		const deleted = await User.findByIdAndDelete(userId);
 		if (!deleted) return json({ error: 'User not found' }, { status: 404 });
 
 		return json({ message: 'Account deleted successfully' });
-	} catch (err) {
-		if (err instanceof Response) return err;
-		logger.error('Delete account error', { error: err });
-		return json({ error: 'Failed to delete account' }, { status: 500 });
-	}
-};
+	},
+	{ logLabel: 'Delete account error', errorMessage: 'Failed to delete account' }
+);

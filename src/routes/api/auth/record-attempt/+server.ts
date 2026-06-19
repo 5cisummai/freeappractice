@@ -1,15 +1,9 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { connectDb } from '$lib/server/db';
-import { User } from '$lib/server/models/user';
-import { requireAuth } from '$lib/server/auth';
-import { logger } from '$lib/server/logger';
-import { normalizeUnit, findOrCreateProgressEntry } from '$lib/server/utils';
+import { withAuthedHandler } from '$lib/server/route-helpers';
+import { findOrCreateProgressEntry, findUserOrFail, normalizeUnit } from '$lib/server/utils';
 
-export const POST: RequestHandler = async (event) => {
-	try {
-		const userId = await requireAuth(event);
-
+export const POST = withAuthedHandler(
+	async (event, userId) => {
 		const body = await event.request.json();
 		const { apClass, unit, questionId, selectedAnswer, wasCorrect, timeTakenMs } = body;
 		const normalizedUnit = normalizeUnit(unit, 'all-units');
@@ -21,14 +15,8 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
-		await connectDb();
+		const user = await findUserOrFail(userId);
 
-		const user = await User.findById(userId);
-		if (!user) {
-			return json({ error: 'User not found' }, { status: 404 });
-		}
-
-		// Record attempt in history
 		user.questionHistory.push({
 			questionId,
 			apClass,
@@ -39,7 +27,6 @@ export const POST: RequestHandler = async (event) => {
 			attemptedAt: new Date()
 		});
 
-		// Update or create progress entry
 		const progressEntry = findOrCreateProgressEntry(user.progress, apClass, normalizedUnit);
 
 		progressEntry.totalAttempts++;
@@ -57,9 +44,6 @@ export const POST: RequestHandler = async (event) => {
 			mastery: progressEntry.mastery,
 			totalAttempts: progressEntry.totalAttempts
 		});
-	} catch (err) {
-		if (err instanceof Response) return err;
-		logger.error('Record attempt error', { error: err });
-		return json({ error: 'Failed to record attempt' }, { status: 500 });
-	}
-};
+	},
+	{ logLabel: 'Record attempt error', errorMessage: 'Failed to record attempt' }
+);

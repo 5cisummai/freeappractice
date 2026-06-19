@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/auth.svelte.js';
-	import type { BugReportContext } from '$lib/components/question-card.svelte';
+	import type { BugReportContext } from '$lib/types/question.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';

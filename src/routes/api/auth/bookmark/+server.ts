@@ -1,23 +1,15 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { connectDb } from '$lib/server/db';
-import { User } from '$lib/server/models/user';
-import { requireAuth } from '$lib/server/auth';
-import { logger } from '$lib/server/logger';
+import { withAuthedHandler } from '$lib/server/route-helpers';
+import { findUserOrFail } from '$lib/server/utils';
 
-export const POST: RequestHandler = async (event) => {
-	try {
-		const userId = await requireAuth(event);
-
+export const POST = withAuthedHandler(
+	async (event, userId) => {
 		const { questionId } = await event.request.json();
 		if (!questionId || typeof questionId !== 'string') {
 			return json({ error: 'questionId is required' }, { status: 400 });
 		}
 
-		await connectDb();
-
-		const user = await User.findById(userId);
-		if (!user) return json({ error: 'User not found' }, { status: 404 });
+		const user = await findUserOrFail(userId);
 
 		const index = user.bookmarkedQuestions.indexOf(questionId);
 		if (index > -1) {
@@ -32,9 +24,6 @@ export const POST: RequestHandler = async (event) => {
 			message: index > -1 ? 'Bookmark removed' : 'Bookmark added',
 			bookmarked: index === -1
 		});
-	} catch (err) {
-		if (err instanceof Response) return err;
-		logger.error('Bookmark error', { error: err });
-		return json({ error: 'Failed to bookmark question' }, { status: 500 });
-	}
-};
+	},
+	{ logLabel: 'Bookmark error', errorMessage: 'Failed to bookmark question' }
+);

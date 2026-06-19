@@ -1,15 +1,12 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
-import { requireAuth } from '$lib/server/auth';
-import { generateEmailToken } from '$lib/server/utils';
 import { sendConfirmationEmail } from '$lib/server/services/email';
-import { logger } from '$lib/server/logger';
+import { withAuthedHandler } from '$lib/server/route-helpers';
+import { findUserOrFail, generateEmailToken } from '$lib/server/utils';
 
-export const PATCH: RequestHandler = async (event) => {
-	try {
-		const userId = await requireAuth(event);
+export const PATCH = withAuthedHandler(
+	async (event, userId) => {
 		const body = (await event.request.json().catch(() => null)) as {
 			name?: unknown;
 			email?: unknown;
@@ -26,12 +23,7 @@ export const PATCH: RequestHandler = async (event) => {
 			return json({ error: 'Email is required' }, { status: 400 });
 		}
 
-		await connectDb();
-
-		const user = await User.findById(userId);
-		if (!user) {
-			return json({ error: 'User not found' }, { status: 404 });
-		}
+		const user = await findUserOrFail(userId);
 
 		const emailChanged = user.email !== email;
 		const nameChanged = user.name !== name;
@@ -47,6 +39,7 @@ export const PATCH: RequestHandler = async (event) => {
 		user.name = name;
 
 		if (emailChanged) {
+			await connectDb();
 			const existing = await User.findOne({
 				email: { $eq: email },
 				_id: { $ne: userId }
@@ -79,9 +72,6 @@ export const PATCH: RequestHandler = async (event) => {
 			requiresVerification: false,
 			user: { userId: user._id, name: user.name, email: user.email }
 		});
-	} catch (err) {
-		if (err instanceof Response) return err;
-		logger.error('Update account error', { error: err });
-		return json({ error: 'Failed to update account' }, { status: 500 });
-	}
-};
+	},
+	{ logLabel: 'Update account error', errorMessage: 'Failed to update account' }
+);

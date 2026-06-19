@@ -1,13 +1,9 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 import { getPresignedDownloadUrl } from '$lib/server/services/s3';
-import { requireAuth } from '$lib/server/auth';
-import { logger } from '$lib/server/logger';
+import { withAuthedHandler } from '$lib/server/route-helpers';
 
-export const POST: RequestHandler = async (event) => {
-	try {
-		await requireAuth(event);
-
+export const POST = withAuthedHandler(
+	async (event) => {
 		const { key } = await event.request.json();
 		if (!key) {
 			return json({ error: 'key is required' }, { status: 400 });
@@ -15,9 +11,6 @@ export const POST: RequestHandler = async (event) => {
 
 		const result = await getPresignedDownloadUrl({ key });
 		return json(result);
-	} catch (err) {
-		if (err instanceof Response) return err;
-		logger.error('Presign download error', { error: err });
-		return json({ error: 'Failed to generate download URL' }, { status: 500 });
-	}
-};
+	},
+	{ logLabel: 'Presign download error', errorMessage: 'Failed to generate download URL' }
+);

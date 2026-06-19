@@ -9,7 +9,7 @@ import { json } from '@sveltejs/kit';
 import { connectDb } from '$lib/server/db';
 import { User } from '$lib/server/models/user';
 import { SeenQuestion } from '$lib/server/models/seen-question';
-import type mongoose from 'mongoose';
+import type { IUser } from '$lib/server/models/user';
 
 // ── Duplicate-key detection ────────────────────────────────
 
@@ -42,10 +42,7 @@ export function normalizeUnit(unit?: string | null, fallback = ''): string {
  * Connect to DB, find user by ID, and return the document.
  * Returns a 404 JSON Response if the user doesn't exist.
  */
-export async function findUserOrFail(
-	userId: string,
-	select?: string
-): Promise<mongoose.Document & { _id: mongoose.Types.ObjectId }> {
+export async function findUserOrFail(userId: string, select?: string): Promise<IUser> {
 	await connectDb();
 	const query = User.findById(userId);
 	if (select) query.select(select);

@@ -1,41 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { apiFetch } from '$lib/client/auth.svelte.js';
+	import { fetchDashboardData } from '$lib/client/dashboard.js';
+	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import PageShell from '$lib/components/page-shell.svelte';
-
-	interface ProgressEntry {
-		apClass: string;
-		unit: string;
-		totalAttempts: number;
-		correctAttempts: number;
-		mastery: number;
-		lastAttemptAt?: string;
-	}
-
-	interface StatsData {
-		overview: {
-			totalQuestions: number;
-			correctAnswers: number;
-			accuracy: number;
-			currentStreak: number;
-			totalTimeHours: number;
-			memberSince: string;
-		};
-		recentPerformance: {
-			questionsLast7Days: number;
-			accuracyLast7Days: number;
-		};
-		subjectBreakdown: Array<{
-			subject: string;
-			total: number;
-			correct: number;
-			accuracy: number;
-			avgTimeSeconds: number;
-		}>;
-	}
 
 	let progressData = $state<ProgressEntry[]>([]);
 	let statsData = $state<StatsData | null>(null);
@@ -44,17 +14,9 @@
 
 	onMount(async () => {
 		try {
-			const [progressRes, statsRes] = await Promise.all([
-				apiFetch('/api/auth/progress'),
-				apiFetch('/api/auth/stats')
-			]);
-			if (progressRes.ok) {
-				const d = await progressRes.json();
-				progressData = d.progress ?? [];
-			}
-			if (statsRes.ok) {
-				statsData = await statsRes.json();
-			}
+			const { stats, progress } = await fetchDashboardData();
+			progressData = progress;
+			statsData = stats;
 		} catch {
 			errorMessage = 'Failed to load progress data.';
 		} finally {

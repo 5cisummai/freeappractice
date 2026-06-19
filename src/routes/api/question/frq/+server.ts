@@ -1,11 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { generateLiveCustomTopicFrq, getCachedFRQQuestion } from '$lib/server/services/frq-cache';
+import { validateQuestionRequest } from '$lib/server/question-request';
 import { requireAuth } from '$lib/server/auth';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
-
-const MAX_CUSTOM_TOPIC_LEN = 500;
 
 /** Vercel serverless max duration (seconds); FRQ generation can be slower than MCQ. */
 export const config = {
@@ -17,32 +16,14 @@ export const POST: RequestHandler = async (event) => {
 		const userId = await requireAuth(event);
 
 		const body = await event.request.json();
-		const { className, unit, customTopic } = body;
+		const validated = validateQuestionRequest(body);
+		if (!validated.ok) return validated.response;
 
-		if (typeof className !== 'string' || !className.trim()) {
-			return json(
-				{ error: 'className is required and must be a non-empty string' },
-				{ status: 400 }
-			);
-		}
-		if (unit !== undefined && typeof unit !== 'string') {
-			return json({ error: 'unit must be a string if provided' }, { status: 400 });
-		}
-		if (customTopic !== undefined && typeof customTopic !== 'string') {
-			return json({ error: 'customTopic must be a string if provided' }, { status: 400 });
-		}
+		const { className, unit, customTopic } = validated.value;
 
-		const topicTrim = typeof customTopic === 'string' ? customTopic.trim() : '';
-		if (topicTrim.length > MAX_CUSTOM_TOPIC_LEN) {
-			return json(
-				{ error: `customTopic must be at most ${MAX_CUSTOM_TOPIC_LEN} characters` },
-				{ status: 400 }
-			);
-		}
-
-		const result = topicTrim
-			? await generateLiveCustomTopicFrq(className.trim(), topicTrim)
-			: await getCachedFRQQuestion(className.trim(), unit ?? '', userId);
+		const result = customTopic
+			? await generateLiveCustomTopicFrq(className, customTopic)
+			: await getCachedFRQQuestion(className, unit, userId);
 
 		return json({
 			question: result.question,
