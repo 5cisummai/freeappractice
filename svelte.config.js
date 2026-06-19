@@ -21,26 +21,25 @@ const config = {
 			// a broad script-src 'unsafe-inline' policy.
 			mode: 'auto',
 			directives: {
-				'default-src': ["'self'"],
+				'default-src': ['self'],
 				'script-src': [
-					"'self'",
-					"'strict-dynamic'",
-					// CSP Level 2 fallbacks. CSP Level 3 browsers ignore these host sources
-					// when strict-dynamic is present and a nonce/hash is trusted.
+					'self',
 					'https://accounts.google.com',
 					'https://static.cloudflareinsights.com',
+					'https://va.vercel-scripts.com',
+					'unsafe-inline',
 					'blob:'
 				],
 				// Svelte transitions and some third-party widgets inject inline styles.
 				'style-src': [
-					"'self'",
-					"'unsafe-inline'",
+					'self',
+					'unsafe-inline',
 					'https://accounts.google.com',
 					'https://fonts.googleapis.com'
 				],
-				'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+				'font-src': ['self', 'https://fonts.gstatic.com', 'data:'],
 				'img-src': [
-					"'self'",
+					'self',
 					'data:',
 					'blob:',
 					'https://freeappractice.org',
@@ -48,17 +47,18 @@ const config = {
 					'https://*.gstatic.com'
 				],
 				'connect-src': [
-					"'self'",
+					'self',
 					'https://accounts.google.com',
 					'https://cloudflareinsights.com',
-					'https://static.cloudflareinsights.com'
+					'https://static.cloudflareinsights.com',
+					'https://va.vercel-scripts.com'
 				],
-				'frame-src': ["'self'", 'https://accounts.google.com'],
-				'worker-src': ["'self'", 'blob:'],
-				'base-uri': ["'self'"],
-				'form-action': ["'self'"],
-				'object-src': ["'none'"],
-				'frame-ancestors': ["'none'"],
+				'frame-src': ['self', 'https://accounts.google.com'],
+				'worker-src': ['self', 'blob:'],
+				'base-uri': ['self'],
+				'form-action': ['self'],
+				'object-src': ['none'],
+				'frame-ancestors': ['none'],
 				'upgrade-insecure-requests': true
 			}
 		}

@@ -74,11 +74,8 @@
 </script>
 
 <svelte:head>
-	<title>Free AP Practice – 2 Clicks to Practice, No Signup Required</title>
-	<meta
-		name="title"
-		content="Free AP Practice – Fastest AP Practice Online, 2 Clicks"
-	/>
+	<title>Free AP Practice – The Fastest Way to Practice AP Online</title>
+	<meta name="title" content="Free AP Practice – The Fastest Way to Practice AP Online" />
 	<meta
 		name="description"
 		content="The fastest free AP practice on the internet: pick a subject, click generate, and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
@@ -104,10 +101,7 @@
 
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/" />
-	<meta
-		property="og:title"
-		content="Free AP Practice – Start Practicing in 2 Clicks"
-	/>
+	<meta property="og:title" content="Free AP Practice – Start Practicing in 2 Clicks" />
 	<meta
 		property="og:description"
 		content="The fastest way to practice AP online: pick a subject, generate a question, get instant feedback. Free, unlimited, no signup across 20+ subjects."
@@ -166,7 +160,7 @@
 			"operatingSystem": "Any",
 			"softwareVersion": "1.4.0",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-3-31",
+			"dateModified": "2026-06-19",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
