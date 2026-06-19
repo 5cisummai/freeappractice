@@ -51,11 +51,11 @@
 			avatarClass: 'bg-rose-200 text-rose-900 dark:bg-rose-900 dark:text-rose-100'
 		},
 		{
-			name: 'Sofia M.',
-			detail: 'Junior · AP Chemistry',
+			name: 'Zarian R.',
+			detail: 'Senior · AP Physics C',
 			quote:
-				'No signup, no paywall—just open the site and practice. That low friction is exactly what I needed during a busy semester.',
-			initials: 'SM',
+				'No signup, no paywall—just open the site and practice. That low friction is exactly what I needed during a busy semester of AP Physics C.',
+			initials: 'ZR',
 			cardClass: 'bg-violet-100 dark:bg-violet-950/50',
 			avatarClass: 'bg-violet-200 text-violet-900 dark:bg-violet-900 dark:text-violet-100'
 		}

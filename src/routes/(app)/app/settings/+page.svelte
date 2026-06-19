@@ -30,7 +30,7 @@
 		name: auth.user?.name || '',
 		email: auth.user?.email || ''
 	});
-	const appVersion = '1.3.6';
+	const appVersion = '1.4.0';
 
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();

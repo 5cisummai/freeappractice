@@ -7,6 +7,46 @@
 
 	const changelog = [
 		{
+			version: '1.4.0',
+			date: 'June 18, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Question history page with pagination and subject filter for signed-in users',
+						'Summer study guide at /summer with a 4-week Unit 1 preview plan',
+						'Homepage aspiring-students section and refreshed messaging around course planning',
+						'AP Lunch😂 — a joke subject with cafeteria-themed practice questions',
+						'Two new blog posts: Which APs to take and Summer AP study plan',
+						'Skip-to-main-content link for keyboard and screen-reader users',
+						'PageShell layout component for consistent app page structure'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Migrated AI question generation and tutoring to the Vercel AI SDK',
+						'Refactored authenticated API routes with shared auth and error-handling helpers',
+						'Updated privacy and terms pages',
+						'Typography refresh across marketing pages',
+						'Switched package manager from pnpm to Bun',
+						'GitHub Actions workflow for Afterlane deploy verification'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'Fixed topbar menu stacking above animated hero content',
+						'Removed unused progress-detailed API endpoint and dead UI components'
+					]
+				},
+				{
+					title: 'Testing',
+					items: ['Playwright test ensuring unauthenticated users are redirected from history']
+				}
+			]
+		},
+		{
 			version: '1.3.6',
 			date: 'May 17, 2026',
 			sections: [
