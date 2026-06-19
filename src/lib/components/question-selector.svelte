@@ -34,7 +34,12 @@
 		onTypeChange?: (type: 'mcq' | 'frq') => void;
 	};
 
-	const courses = (apClassesData.courses ?? []) as Course[];
+	const rawCourses = (apClassesData.courses ?? []) as Course[];
+	const courses = $derived.by(() => {
+		const lunch = rawCourses.filter((c) => c.name.toLowerCase().includes('ap lunch'));
+		const rest = rawCourses.filter((c) => !c.name.toLowerCase().includes('ap lunch'));
+		return [...rest, ...lunch];
+	});
 
 	let {
 		selectedClass = $bindable(''),

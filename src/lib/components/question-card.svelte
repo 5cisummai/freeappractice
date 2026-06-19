@@ -178,6 +178,8 @@
 		return frqQuestion.parts.every((p) => (frqResponses[p.label] ?? '').trim().length > 0);
 	});
 
+	const showEmptyState = $derived(!isLoading && requestVersion === 0);
+
 	function customTopicCacheKey(): string {
 		return `${selectedClass}::${hashTopicKey(customTopic.trim())}`;
 	}
@@ -744,6 +746,19 @@
 			class={className}
 		/>
 	{/if}
+{:else if showEmptyState}
+	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
+		<Card.Content
+			class="relative flex min-h-40 flex-col items-center justify-center gap-2 px-6 pb-12 text-center"
+		>
+			<p class="text-lg font-medium text-muted-foreground sm:text-xl">
+				Your question will display here
+			</p>
+			<p class="max-w-sm text-sm text-muted-foreground/80">
+				Select a class and unit above, then generate a question to start practicing.
+			</p>
+		</Card.Content>
+	</Card.Root>
 {:else}
 	{#snippet cardInner(expanded: boolean)}
 		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
@@ -837,7 +852,7 @@
 				<div
 					class={cn(
 						'overflow-hidden rounded-lg border border-border/70',
-						expanded ? 'min-h-0 flex-1' : 'h-88'
+						expanded ? 'min-h-0 flex-1' : 'h-100'
 					)}
 				>
 					<Resizable.PaneGroup direction="horizontal" class="h-full">

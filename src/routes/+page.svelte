@@ -6,6 +6,7 @@
 	import QuestionCard from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
+	import AspiringStudentsSection from '$lib/components/aspiring-students-section.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
@@ -39,6 +40,15 @@
 	let selectedUnit = $state('');
 	let customTopic = $state('');
 	let generateVersion = $state(0);
+	let dotGridOffset = $state(0);
+
+	function updateDotGridParallax(): void {
+		if (typeof window === 'undefined') return;
+		const reduceMotion =
+			document.body.classList.contains('reduce-motion') ||
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		dotGridOffset = reduceMotion ? 0 : window.scrollY * -0.35;
+	}
 
 	function handleSelectionChange(): void {
 		generateVersion = 0;
@@ -53,22 +63,29 @@
 		if (auth.isAuthenticated) {
 			goto(resolve('/app'), { replaceState: true });
 		}
+
+		updateDotGridParallax();
+		window.addEventListener('scroll', updateDotGridParallax, { passive: true });
+
+		return () => {
+			window.removeEventListener('scroll', updateDotGridParallax);
+		};
 	});
 </script>
 
 <svelte:head>
-	<title>Free AP Practice – Plan APs, Study This Summer &amp; Ace Your Exams</title>
+	<title>Free AP Practice – 2 Clicks to Practice, No Signup Required</title>
 	<meta
 		name="title"
-		content="Free AP Practice – Summer AP Study, Course Planning &amp; Exam Prep"
+		content="Free AP Practice – Fastest AP Practice Online, 2 Clicks"
 	/>
 	<meta
 		name="description"
-		content="Free AP practice for high school students: plan which APs to take, preview Unit 1 over the summer, and generate unlimited questions with instant feedback. No signup required."
+		content="The fastest free AP practice on the internet: pick a subject, click generate, and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
 	/>
 	<meta
 		name="keywords"
-		content="summer AP study, AP course planning, first AP class, rising sophomore AP, AP practice questions, AP exam prep, free AP questions, AP study guide, preview AP class, high school summer study, AP question generator, how to choose AP classes"
+		content="fastest AP practice, AP practice no signup, instant AP questions, 2 click AP practice, free AP question generator, unlimited AP questions, AP exam prep, no account AP study, AP practice online, free AP questions"
 	/>
 	<meta name="author" content="FreeAPPractice.org" />
 	<meta
@@ -89,33 +106,33 @@
 	<meta property="og:url" content="https://freeappractice.org/" />
 	<meta
 		property="og:title"
-		content="Free AP Practice – Plan Your AP Year &amp; Study This Summer"
+		content="Free AP Practice – Start Practicing in 2 Clicks"
 	/>
 	<meta
 		property="og:description"
-		content="Plan which APs to take, preview Unit 1 this summer, and practice with unlimited free questions and instant feedback across 20+ AP subjects."
+		content="The fastest way to practice AP online: pick a subject, generate a question, get instant feedback. Free, unlimited, no signup across 20+ subjects."
 	/>
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
 	<meta
 		property="og:image:alt"
-		content="FreeAPPractice.org - Free AP® Practice Questions Generator"
+		content="FreeAPPractice.org – fastest free AP practice, 2 clicks to start"
 	/>
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/" />
-	<meta name="twitter:title" content="Free AP Practice – Summer Study &amp; Exam Prep" />
+	<meta name="twitter:title" content="Free AP Practice – 2 Clicks, No Signup" />
 	<meta
 		name="twitter:description"
-		content="Plan your AP classes, preview Unit 1 this summer, and practice free with instant feedback across 20+ subjects."
+		content="Fastest free AP practice online: pick a subject, click generate, get instant feedback. Unlimited questions across 20+ subjects."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 	<meta
 		name="twitter:image:alt"
-		content="FreeAPPractice.org - Free AP® Practice Questions Generator"
+		content="FreeAPPractice.org – fastest free AP practice, 2 clicks to start"
 	/>
 	<meta name="twitter:creator" content="@freeappractice" />
 	<meta name="twitter:site" content="@freeappractice" />
@@ -128,7 +145,7 @@
 			"name": "Free AP Practice",
 			"alternateName": "Free AP Practice",
 			"url": "https://freeappractice.org",
-			"description": "Free AP practice for planning your AP year, summer Unit 1 preview, and exam prep across 20+ subjects with instant feedback",
+			"description": "The fastest free AP practice online—start in 2 clicks with no signup. Unlimited AI-generated questions and instant feedback across 20+ subjects.",
 			"logo": "https://freeappractice.org/icon.png",
 			"image": "https://freeappractice.org/icon.png",
 			"applicationCategory": "EducationalApplication",
@@ -178,13 +195,13 @@
 				}
 			},
 			"featureList": [
-				"20+ AP Subjects Coverage",
-				"AP Course Planning Guides",
-				"Summer Unit 1 Preview",
+				"Practice in 2 Clicks",
+				"No Registration Required",
+				"Fastest Path to AP Questions",
 				"Unlimited Question Generation",
 				"Instant AI Feedback",
+				"20+ AP Subjects Coverage",
 				"Detailed Explanations",
-				"No Registration Required",
 				"100% Free"
 			],
 			"about": {
@@ -214,7 +231,7 @@
 					"name": "What is this website?",
 					"acceptedAnswer": {
 						"@type": "Answer",
-						"text": "Free AP Practice helps high school students plan their AP year, preview courses over the summer, and prepare for AP exams with AI-generated practice questions and instant explanations."
+						"text": "Free AP Practice is the fastest way to practice AP online: pick a subject, click generate, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects."
 					}
 				},
 				{
@@ -326,7 +343,14 @@
 	</script>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col bg-background text-foreground">
+<div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
+	<div
+		class="landing-dot-grid pointer-events-none fixed -z-10 w-full"
+		style:top="-15vh"
+		style:height="130vh"
+		style:transform={`translate3d(0, ${dotGridOffset}px, 0)`}
+		aria-hidden="true"
+	></div>
 	<Topbar />
 
 	<main id="main-content" class="flex-1">
@@ -409,19 +433,19 @@
 			</section>
 
 			<section>
-				<div class="mx-auto min-h-10 max-w-6xl">
-					{#if generateVersion > 0}
-						{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
-							<QuestionCard
-								{selectedClass}
-								{selectedUnit}
-								{customTopic}
-								requestVersion={generateVersion}
-							/>
-						{/key}
-					{/if}
+				<div class="mx-auto min-h-40 max-w-6xl">
+					{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
+						<QuestionCard
+							{selectedClass}
+							{selectedUnit}
+							{customTopic}
+							requestVersion={generateVersion}
+						/>
+					{/key}
 				</div>
 			</section>
+
+			<AspiringStudentsSection />
 
 			<section class="mx-auto w-full max-w-3xl space-y-4">
 				<div class="space-y-1">
@@ -527,3 +551,30 @@
 
 	<SiteFooter />
 </div>
+
+<style>
+	.landing-dot-grid {
+		left: 0;
+		background-image: radial-gradient(
+			circle,
+			color-mix(in oklch, var(--foreground) 10%, transparent) 1px,
+			transparent 1px
+		);
+		background-size: 2rem 2rem;
+		will-change: transform;
+	}
+
+	:global(.dark) .landing-dot-grid {
+		background-image: radial-gradient(
+			circle,
+			color-mix(in oklch, var(--foreground) 2%, transparent) 1px,
+			transparent 1px
+		);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.landing-dot-grid {
+			will-change: auto;
+		}
+	}
+</style>

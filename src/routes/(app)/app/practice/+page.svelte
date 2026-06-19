@@ -114,18 +114,16 @@
 			onTypeChange={handleTypeChange}
 			onGenerate={handleGenerate}
 		/>
-		{#if requestVersion > 0}
-			{#key `${questionType}:${selectedClass}:${selectedUnit}:${customTopic}:${requestVersion}`}
-				<QuestionCard
-					mode={questionType}
-					{selectedClass}
-					{selectedUnit}
-					{customTopic}
-					{requestVersion}
-					onAnswered={handleAnswered}
-					onFRQAnswered={handleFRQAnswered}
-				/>
-			{/key}
-		{/if}
+		{#key `${questionType}:${selectedClass}:${selectedUnit}:${customTopic}:${requestVersion}`}
+			<QuestionCard
+				mode={questionType}
+				{selectedClass}
+				{selectedUnit}
+				{customTopic}
+				{requestVersion}
+				onAnswered={handleAnswered}
+				onFRQAnswered={handleFRQAnswered}
+			/>
+		{/key}
 	</div>
 </PageShell>
