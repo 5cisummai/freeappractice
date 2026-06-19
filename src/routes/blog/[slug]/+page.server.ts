@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPublishedBlogEntryBySlug } from '$lib/server/services/blog';
+import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '$lib/server/services/blog';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
@@ -53,6 +53,11 @@ marked.use(
 		}
 	})
 );
+
+export async function entries() {
+	const posts = await listPublishedBlogEntries();
+	return posts.map((post) => ({ slug: post.slug }));
+}
 
 export const load: PageServerLoad = async ({ params }) => {
 	const post = await getPublishedBlogEntryBySlug(params.slug);

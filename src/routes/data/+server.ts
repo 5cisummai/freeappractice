@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import type { RequestHandler } from './$types';
 
+export const prerender = false;
+
 const currentFilePath = fileURLToPath(import.meta.url);
 const dataDirectoryPath = dirname(currentFilePath);
 

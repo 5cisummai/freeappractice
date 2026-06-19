@@ -49,6 +49,33 @@ export type ChatMessage = {
 	content: string;
 };
 
+type ConversationMessage = {
+	role: 'user' | 'assistant';
+	content: string;
+};
+
+/** Pull trusted server-side system prompts out of messages for the AI SDK `system` option. */
+function splitSystemMessages(messages: ChatMessage[]): {
+	system?: string;
+	messages: ConversationMessage[];
+} {
+	const systemParts: string[] = [];
+	const conversationMessages: ConversationMessage[] = [];
+
+	for (const message of messages) {
+		if (message.role === 'system') {
+			systemParts.push(message.content);
+		} else if (message.role === 'user' || message.role === 'assistant') {
+			conversationMessages.push({ role: message.role, content: message.content });
+		}
+	}
+
+	return {
+		...(systemParts.length > 0 && { system: systemParts.join('\n\n') }),
+		messages: conversationMessages
+	};
+}
+
 export type ChatCompletionParams = {
 	model: string;
 	messages: ChatMessage[];
@@ -69,10 +96,12 @@ export async function runStructuredCompletion<T>(
 	logContext: Record<string, unknown>
 ): Promise<{ parsed: T; model: string }> {
 	const doneAiCall = logger.aiCall(callName, opts.model, logContext);
+	const { system, messages } = splitSystemMessages(opts.messages);
 	try {
 		const result = await generateText({
 			model: model(opts.model),
-			messages: opts.messages,
+			...(system != null && { system }),
+			messages,
 			output: Output.object({
 				name: opts.schemaName,
 				schema: opts.schema
@@ -114,10 +143,12 @@ export async function runChatCompletion(
 	logContext: Record<string, unknown> = {}
 ): Promise<{ content: string; model: string }> {
 	const doneAiCall = logger.aiCall(callName, params.model, logContext);
+	const { system, messages } = splitSystemMessages(params.messages);
 	try {
 		const result = await generateText({
 			model: model(params.model),
-			messages: params.messages,
+			...(system != null && { system }),
+			messages,
 			maxOutputTokens: params.maxOutputTokens
 		});
 		doneAiCall({ completionTokens: result.usage.outputTokens });
@@ -137,10 +168,12 @@ export async function* runStreamingChat(
 	logContext: Record<string, unknown> = {}
 ): AsyncGenerator<string> {
 	const doneAiCall = logger.aiCall(callName, params.model, logContext);
+	const { system, messages } = splitSystemMessages(params.messages);
 	try {
 		const result = streamText({
 			model: model(params.model),
-			messages: params.messages,
+			...(system != null && { system }),
+			messages,
 			maxOutputTokens: params.maxOutputTokens
 		});
 

@@ -3,6 +3,8 @@ import type { RequestHandler } from './$types';
 import { listPublishedBlogEntries } from '$lib/server/services/blog';
 import { getAllPageSlugs, getPageBySlug, getSitemapPriority } from '$lib/practice-pages.js';
 
+export const prerender = true;
+
 type SitemapEntry = {
 	path: string;
 	changefreq: 'daily' | 'weekly' | 'monthly';
