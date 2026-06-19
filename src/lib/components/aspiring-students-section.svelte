@@ -43,7 +43,7 @@
 		},
 		{
 			name: 'Rohan K.',
-			detail: 'Junior',
+			detail: 'Freshman · AP Bio',
 			quote: 'Finally answered all of my questions.',
 			initials: 'RK',
 			cardClass: 'bg-cyan-100 dark:bg-cyan-950/50',
