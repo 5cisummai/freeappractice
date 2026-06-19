@@ -1139,7 +1139,7 @@
 		/>
 	{/if}
 
-	<ReferenceSheet bind:open={referenceSheetOpen} subject={selectedClass} />
+	<ReferenceSheet bind:open={referenceSheetOpen} referenceSheet={toolConfig.referenceSheet} />
 
 	<BugReportDialog
 		bind:open={bugReportOpen}

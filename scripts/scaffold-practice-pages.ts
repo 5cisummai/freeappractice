@@ -8,8 +8,6 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import apClassesData from '../src/lib/data/ap-classes.json';
 import unitDescriptionsData from '../src/lib/data/unit-descriptionsrevised.json';
-import subjectToolsData from '../src/lib/data/subject-tools.json';
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT = join(__dirname, '../src/lib/data/practice-pages.json');
 
@@ -113,19 +111,6 @@ function buildClassLinks(className: string, collegeBoardUrl: string | null): Pra
 			label: `${className} on AP Central`,
 			href: collegeBoardUrl,
 			kind: 'college-board'
-		});
-	}
-
-	const tools = subjectToolsData as Record<
-		string,
-		{ referenceSheet?: { title: string; pdf: string } | null }
-	>;
-	const tool = tools[className];
-	if (tool?.referenceSheet?.pdf) {
-		links.push({
-			label: tool.referenceSheet.title,
-			href: `/${tool.referenceSheet.pdf}`,
-			kind: 'subject-tool'
 		});
 	}
 

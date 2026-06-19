@@ -24,19 +24,6 @@ Use this site to choose AP classes wisely, build a summer study habit (about 15â
 - Social Sciences: Psychology, Human Geography, Government and Politics
 - Economics: Microeconomics, Macroeconomics
 
-## Reference Sheets
-
-- [AP Biology Equations and Formulas Sheet](/ap-biology-equations-and-formulas-sheet.pdf): Essential formulas for AP Biology exam
-- [AP Chemistry Equations Sheet](/ap-chemistry-equations-sheet.pdf): Key equations for AP Chemistry
-- [AP Physics 1 Equations Sheet](/ap-physics-1-equations-sheet.pdf): Physics 1 reference formulas
-- [AP Physics 2 Equations Sheet](/ap-physics-2-equations-sheet.pdf): Physics 2 reference formulas
-- [AP Physics C: Mechanics Equations Sheet](/ap-physics-c-mechanics-equations-sheet.pdf): Calculus-based mechanics
-- [AP Physics C: Electricity and Magnetism Equations Sheet](/ap-physics-c-electricity-and-magnetism-equations-sheet.pdf): E&M reference
-- [AP Environmental Science Exam Reference Sheet](/ap-environmental-science-exam-reference-sheet.pdf): Environmental science formulas
-- [AP Statistics Formula Tables Sheet](/ap-statistics-formula-tables-sheet.pdf): Statistics formulas
-- [AP Computer Science A: Java Quick Reference](/ap-computer-science-a-java-quick-reference.pdf): Java syntax reference
-- [AP Computer Science Principles Exam Reference Sheet](/ap-computer-science-principles-exam-reference-sheet.pdf): CSP reference
-
 ## Pages
 
 - [Home](https://freeappractice.org/): Main question generator

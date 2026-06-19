@@ -121,6 +121,17 @@
 		carouselEl.scrollTo({ left: page * getPageWidth(), behavior: 'smooth' });
 	}
 
+	function scrollToNextPage(): void {
+		if (!carouselEl) return;
+
+		const maxScrollLeft = carouselEl.scrollWidth - carouselEl.clientWidth;
+		if (carouselEl.scrollLeft < maxScrollLeft - 4) {
+			scrollByPage(1);
+		} else {
+			scrollToPage(0);
+		}
+	}
+
 	onMount(() => {
 		if (!carouselEl) return;
 
@@ -132,7 +143,10 @@
 		carouselEl.addEventListener('scroll', updateCarouselState, { passive: true });
 		updatePageCount();
 
+		const autoScrollInterval = setInterval(scrollToNextPage, 3000);
+
 		return () => {
+			clearInterval(autoScrollInterval);
 			resizeObserver.disconnect();
 			carouselEl?.removeEventListener('scroll', updateCarouselState);
 		};
