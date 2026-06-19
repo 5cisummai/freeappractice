@@ -35,7 +35,7 @@
 		confirmPassword: ''
 	});
 	let deletePassword = $state('');
-	const appVersion = '1.4.0';
+	const appVersion = '1.4.1';
 
 	onMount(() => {
 		accountForm = { name: data.user.name, email: data.user.email };
