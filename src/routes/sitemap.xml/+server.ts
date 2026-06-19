@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { listPublishedBlogEntries } from '$lib/server/services/blog';
+import { getAllPageSlugs, getPageBySlug, getSitemapPriority } from '$lib/practice-pages.js';
 
 type SitemapEntry = {
 	path: string;
@@ -38,7 +39,16 @@ async function buildSitemapXml(baseUrl: string): Promise<string> {
 		priority: '0.6'
 	}));
 
-	const allEntries = [...entries, ...dynamicEntries];
+	const practiceEntries: SitemapEntry[] = getAllPageSlugs().map((slug) => {
+		const page = getPageBySlug(slug);
+		return {
+			path: `/practice/${slug}`,
+			changefreq: 'monthly',
+			priority: page ? getSitemapPriority(page) : '0.7'
+		};
+	});
+
+	const allEntries = [...entries, ...dynamicEntries, ...practiceEntries];
 
 	const urls = allEntries
 		.map(

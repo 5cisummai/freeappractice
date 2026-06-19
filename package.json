@@ -14,7 +14,8 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"cache:clear": "tsx scripts/clear-cache.ts",
-		"cache:warm": "tsx scripts/warm-cache-simple.ts"
+		"cache:warm": "tsx scripts/warm-cache-simple.ts",
+		"scaffold:practice-pages": "tsx scripts/scaffold-practice-pages.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "latest",

@@ -200,7 +200,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const requestTimeMs = Date.now() - requestStart;
 	logger.info('http request', {
 		method: event.request.method,
-		url: event.url.pathname + event.url.search,
+		url: event.url.pathname,
 		status: response.status,
 		requestTimeMs,
 		ip:
