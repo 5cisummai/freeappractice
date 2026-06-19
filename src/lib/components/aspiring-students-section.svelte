@@ -42,6 +42,14 @@
 			avatarClass: 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
 		},
 		{
+			name: 'Rohan K.',
+			detail: 'Junior',
+			quote: 'Finally answered all of my questions.',
+			initials: 'RK',
+			cardClass: 'bg-cyan-100 dark:bg-cyan-950/50',
+			avatarClass: 'bg-cyan-200 text-cyan-900 dark:bg-cyan-900 dark:text-cyan-100'
+		},
+		{
 			name: 'Matijs S.',
 			detail: 'Senior · AP Calculus BC',
 			quote:
