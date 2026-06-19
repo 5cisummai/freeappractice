@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { listPublishedBlogEntries } from '$lib/server/services/blog';
 import { getAllPageSlugs, getPageBySlug, getSitemapPriority } from '$lib/practice-pages.js';
+import { getSiteUrl } from '$lib/site-url';
 
 export const prerender = true;
 
@@ -26,11 +26,6 @@ const entries: SitemapEntry[] = [
 	{ path: '/privacy', changefreq: 'monthly', priority: '0.4' },
 	{ path: '/terms', changefreq: 'monthly', priority: '0.4' }
 ];
-
-function getBaseUrl(requestUrl: URL): string {
-	const configured = env.PUBLIC_BASE_URL ?? env.APP_BASE_URL ?? env.WEBSITE_URL;
-	return (configured ?? requestUrl.origin).replace(/\/+$/, '');
-}
 
 async function buildSitemapXml(baseUrl: string): Promise<string> {
 	// Add dynamic blog posts
@@ -69,7 +64,7 @@ async function buildSitemapXml(baseUrl: string): Promise<string> {
 }
 
 export const GET: RequestHandler = async ({ url }) => {
-	const sitemap = await buildSitemapXml(getBaseUrl(url));
+	const sitemap = await buildSitemapXml(getSiteUrl(url.origin));
 
 	return new Response(sitemap, {
 		headers: {

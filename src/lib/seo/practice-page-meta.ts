@@ -1,6 +1,7 @@
 import type { PracticePage } from '$lib/practice-pages.js';
+import { PRODUCTION_SITE_URL } from '$lib/site-url';
 
-const BASE_URL = 'https://freeappractice.org';
+const BASE_URL = PRODUCTION_SITE_URL;
 
 export function practicePageUrl(slug: string): string {
 	return `${BASE_URL}/practice/${slug}`;

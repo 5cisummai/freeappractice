@@ -1,18 +1,13 @@
 import { Resend } from 'resend';
 import { RESEND_API_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
+import { getSiteUrl } from '$lib/site-url';
 
 const resend = new Resend(RESEND_API_KEY);
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
-function getBaseUrl(): string {
-	const configured = env.PUBLIC_BASE_URL ?? env.APP_BASE_URL ?? env.WEBSITE_URL;
-	if (configured) return configured.replace(/\/+$/, '');
-	return env.NODE_ENV === 'production' ? 'https://freeappractice.org' : 'http://localhost:5173';
-}
-
 export async function sendConfirmationEmail(email: string, token: string): Promise<void> {
-	const link = `${getBaseUrl()}/verify-email?token=${token}`;
+	const link = `${getSiteUrl()}/verify-email?token=${token}`;
 	await resend.emails.send({
 		from: FROM,
 		to: email,
@@ -27,7 +22,7 @@ export async function sendConfirmationEmail(email: string, token: string): Promi
 }
 
 export async function sendResetEmail(email: string, token: string): Promise<void> {
-	const link = `${getBaseUrl()}/reset-password?token=${token}`;
+	const link = `${getSiteUrl()}/reset-password?token=${token}`;
 	await resend.emails.send({
 		from: FROM,
 		to: email,
