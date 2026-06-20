@@ -20,6 +20,7 @@
 	let errorMessage = $state('');
 	let loading = $state(false);
 	let googleLoading = $state(false);
+
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		errorMessage = '';

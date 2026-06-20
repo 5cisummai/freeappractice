@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth/minimal';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
+import { oneTap } from 'better-auth/plugins';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { waitUntil } from '@vercel/functions';
 import { building } from '$app/environment';
@@ -130,5 +131,8 @@ export const auth = betterAuth({
 			}
 		}
 	},
-	plugins: [sveltekitCookies(getRequestEvent)]
+	plugins: [
+		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
+		sveltekitCookies(getRequestEvent)
+	]
 });
