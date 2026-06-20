@@ -1,18 +1,70 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import { resolve } from '$app/paths';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const startHereSlugs = new Set(['which-aps-to-take', 'summer-ap-study-plan']);
 
-	const startHerePosts = $derived(data.posts.filter((post) => startHereSlugs.has(post.slug)));
+	type BentoLayout = {
+		class: string;
+		gridClass: string;
+		showExcerpt: boolean;
+	};
 
-	const startHereIds = $derived(new Set(startHerePosts.map((post) => post._id)));
+	const bentoLayouts: BentoLayout[] = [
+		{
+			class: 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/60 dark:text-neutral-100',
+			gridClass: 'md:col-span-2 md:row-span-2',
+			showExcerpt: true
+		},
+		{
+			class: 'bg-emerald-100 text-emerald-950 dark:bg-emerald-950/50 dark:text-emerald-50',
+			gridClass: 'md:col-span-1 md:row-span-2',
+			showExcerpt: true
+		},
+		{
+			class: 'bg-orange-100 text-orange-950 dark:bg-orange-950/50 dark:text-orange-50',
+			gridClass: 'md:col-span-1 md:row-span-2',
+			showExcerpt: true
+		},
+		{
+			class: 'bg-rose-100 text-rose-950 dark:bg-rose-950/50 dark:text-rose-50',
+			gridClass: 'md:col-span-1 md:row-span-1',
+			showExcerpt: false
+		},
+		{
+			class: 'bg-sky-100 text-sky-950 dark:bg-sky-950/50 dark:text-sky-50',
+			gridClass: 'md:col-span-1 md:row-span-1',
+			showExcerpt: false
+		},
+		{
+			class: 'bg-neutral-200/80 text-neutral-900 dark:bg-neutral-800/60 dark:text-neutral-100',
+			gridClass: 'md:col-span-2 md:row-span-1',
+			showExcerpt: true
+		}
+	];
 
-	const otherPosts = $derived(data.posts.filter((post) => !startHereIds.has(post._id)));
+	const defaultLayout: BentoLayout = {
+		class: 'bg-violet-100 text-violet-950 dark:bg-violet-950/50 dark:text-violet-50',
+		gridClass: 'md:col-span-2',
+		showExcerpt: true
+	};
+
+	const orderedPosts = $derived.by(() => {
+		const startHere = data.posts.filter((post) => startHereSlugs.has(post.slug));
+		const startHereIds = new Set(startHere.map((post) => post._id));
+		const others = data.posts.filter((post) => !startHereIds.has(post._id));
+		return [...startHere, ...others];
+	});
+
+	function getLayout(index: number): BentoLayout {
+		return bentoLayouts[index % bentoLayouts.length] ?? defaultLayout;
+	}
 
 	function formatDate(iso: string | null): string {
 		if (!iso) return '';
@@ -55,86 +107,59 @@
 	<Topbar />
 
 	<main id="main-content" class="flex-1">
-		<div class=" mx-auto w-full max-w-4xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-			<div class="mb-10 space-y-2">
-				<h1 class="text-4xl font-semibold tracking-tight">Blog</h1>
-				<p class="text-muted-foreground">
-					Plan your AP year, study smarter over the summer, and prep for exam day.
-				</p>
-			</div>
+		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+			<PublicPageHero
+				class="mb-12"
+				title="Our Blog"
+				description="Plan your AP year, study smarter over the summer, and prep for exam day."
+			/>
 
 			{#if data.posts.length === 0}
-				<div class="rounded-xl border border-border/70 bg-card px-8 py-16 text-center">
-					<p class="text-muted-foreground">No posts yet - check back soon!</p>
+				<div class="rounded-3xl bg-muted/50 px-8 py-16 text-center">
+					<p class="text-muted-foreground">No posts yet — check back soon!</p>
 				</div>
 			{:else}
-				{#if startHerePosts.length > 0}
-					<section class="mb-12">
-						<h2 class="mb-2 text-2xl font-semibold tracking-tight">Start here</h2>
-						<p class="mb-6 text-sm text-muted-foreground">
-							New to AP or studying this summer? Begin with these guides.
-						</p>
-						<ul class="space-y-6">
-							{#each startHerePosts as post (post._id)}
-								<li>
-									<a
-										href={resolve(`/blog/${post.slug}`)}
-										class="group block rounded-xl border border-primary/30 bg-primary/5 p-6 shadow-sm transition-shadow hover:shadow-md"
-									>
-										<div class="space-y-2">
-											<h3
-												class="text-xl font-semibold tracking-tight transition-colors group-hover:text-primary"
-											>
-												{post.title}
-											</h3>
-											<p class="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-												{post.excerpt}
-											</p>
-											<p class="text-xs text-muted-foreground/70">
-												{formatDate(post.publishedAt ?? post.createdAt)}
-											</p>
-										</div>
-									</a>
-								</li>
-							{/each}
-						</ul>
-					</section>
-				{/if}
-
-				{#if otherPosts.length > 0}
-					<h2 class="mb-6 text-2xl font-semibold tracking-tight">More articles</h2>
-				{/if}
-
-				<ul class="space-y-6">
-					{#each otherPosts as post (post._id)}
-						<li>
+				<ul class="grid list-none auto-rows-fr grid-cols-1 gap-4 p-0 md:grid-cols-4 md:gap-5">
+					{#each orderedPosts as post, index (post._id)}
+						{@const layout = getLayout(index)}
+						<li class="min-h-0 {layout.gridClass}">
 							<a
 								href={resolve(`/blog/${post.slug}`)}
-								class="group block rounded-xl border border-border/70 bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
+								class="group flex h-full min-h-48 flex-col justify-between rounded-3xl p-6 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-7 {layout.class}"
 							>
-								{#if post.coverImage}
-									<img
-										src={post.coverImage}
-										alt={post.title}
-										class="mb-5 h-48 w-full rounded-lg object-cover"
-									/>
-								{/if}
+							<div class="space-y-3">
+								<h2
+									class="text-xl font-semibold leading-snug tracking-tight sm:text-2xl {layout.showExcerpt
+										? 'max-w-md'
+										: ''}"
+								>
+									{post.title}
+								</h2>
 
-								<div class="space-y-2">
-									<h2
-										class="text-xl font-semibold tracking-tight transition-colors group-hover:text-primary"
-									>
-										{post.title}
-									</h2>
-
-									<p class="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+								{#if layout.showExcerpt && post.excerpt}
+									<p class="line-clamp-3 max-w-md text-sm leading-relaxed opacity-80">
 										{post.excerpt}
 									</p>
+								{/if}
+							</div>
 
-									<p class="text-xs text-muted-foreground/70">
-										{formatDate(post.publishedAt ?? post.createdAt)}
-									</p>
-								</div>
+							<div class="mt-6 flex items-center justify-between gap-4">
+								{#if layout.showExcerpt}
+									<span
+										class="inline-flex items-center gap-1.5 text-sm font-medium transition-opacity group-hover:opacity-80"
+									>
+										Read More
+										<ArrowRightIcon class="size-4 transition-transform group-hover:translate-x-0.5" />
+									</span>
+								{/if}
+
+								<time
+									class="ml-auto text-xs opacity-60"
+									datetime={post.publishedAt ?? post.createdAt}
+								>
+									{formatDate(post.publishedAt ?? post.createdAt)}
+								</time>
+							</div>
 							</a>
 						</li>
 					{/each}

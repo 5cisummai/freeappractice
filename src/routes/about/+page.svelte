@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import { resolve } from '$app/paths';
@@ -42,15 +43,12 @@
 			Back to Home
 		</Button>
 
-		<section class="mt-6 rounded-2xl border border-border bg-card p-8">
-			<h1 class="text text-3xl font-bold tracking-tight">About Free AP Practice</h1>
-			<p class="mt-4 text-base leading-relaxed text-muted-foreground">
-				Free AP Practice supports high school students at every stage of the AP journey—choosing
-				classes for next year, previewing Unit 1 over the summer, and preparing for exam day. Our
-				platform blends on-demand AI question generation, study guides, preloaded question caches,
-				and progress tracking in one free experience.
-			</p>
-		</section>
+		<PublicPageHero
+			class="mt-6"
+			align="start"
+			title="About Free AP Practice"
+			description="Free AP Practice supports high school students at every stage of the AP journey—choosing classes for next year, previewing Unit 1 over the summer, and preparing for exam day. Our platform blends on-demand AI question generation, study guides, preloaded question caches, and progress tracking in one free experience."
+		/>
 
 		<section class="mt-8 grid gap-6 sm:grid-cols-2">
 			<article class="rounded-xl border border-border bg-card p-6">

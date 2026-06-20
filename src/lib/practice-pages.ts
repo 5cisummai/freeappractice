@@ -126,6 +126,12 @@ export function getPracticePageCount(): number {
 	return pages.length;
 }
 
+export function getClassPracticePages(): PracticePage[] {
+	return pages
+		.filter((page) => page.type === 'class')
+		.sort((a, b) => a.className.localeCompare(b.className));
+}
+
 export function getSitemapPriority(page: PracticePage): string {
 	if (page.type === 'class') return '0.8';
 	if (page.type === 'topic') return '0.75';

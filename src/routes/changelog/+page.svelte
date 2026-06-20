@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import { resolve } from '$app/paths';
@@ -552,10 +553,11 @@
 				Back to Home
 			</Button>
 
-			<div class="space-y-2">
-				<h1 class="text-4xl font-semibold tracking-tight">Changelog</h1>
-				<p class="text-sm text-muted-foreground">Last Updated: March 31, 2026</p>
-			</div>
+			<PublicPageHero
+				title="Changelog"
+				description="Release notes and updates for Free AP Practice."
+				meta="Last Updated: March 31, 2026"
+			/>
 
 			<div class="space-y-12 pt-8">
 				{#each changelog as entry (entry.version)}

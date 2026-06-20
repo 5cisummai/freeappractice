@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
@@ -87,26 +88,23 @@
 			Back to practice
 		</Button>
 
-		<section class="mt-6 space-y-4 text-center sm:text-left">
-			<Badge variant="outline" class="mx-auto sm:mx-0">Summer &amp; new school year</Badge>
-			<h1
-				class="font-display text-balance text-3xl leading-[1.12] font-medium tracking-tight sm:text-4xl lg:text-5xl"
-			>
-				Get ahead on AP this summer—without burning out
-			</h1>
-			<p class="max-w-2xl text-base leading-relaxed text-muted-foreground">
-				Whether you're picking your first AP, starting high school, or previewing a class before
-				September, use summer for <strong class="text-foreground">planning</strong> and
-				<strong class="text-foreground">Unit 1</strong>—not cramming the whole course.
-			</p>
-			<div class="flex flex-wrap justify-center gap-3 pt-2 sm:justify-start">
+		<PublicPageHero
+			class="mt-6"
+			align="start"
+			title="Get ahead on AP this summer—without burning out"
+			description="Whether you're picking your first AP, starting high school, or previewing a class before September, use summer for planning and Unit 1—not cramming the whole course."
+		>
+			{#snippet eyebrow()}
+				<Badge variant="outline">Summer &amp; new school year</Badge>
+			{/snippet}
+			{#snippet actions()}
 				<Button href={resolve('/')}>Start practicing</Button>
 				<Button variant="outline" href={resolve('/blog/summer-ap-study-plan')}>
 					Read the 4-week plan
 					<ArrowRightIcon class="size-4" />
 				</Button>
-			</div>
-		</section>
+			{/snippet}
+		</PublicPageHero>
 
 		<section class="mt-10 grid gap-6 sm:grid-cols-2">
 			<article class="rounded-xl border border-border bg-card p-6">

@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
@@ -75,12 +76,10 @@
 				Back to Home
 			</Button>
 
-			<div class="space-y-2">
-				<h1 class="text-4xl font-semibold tracking-tight">Question Generation Stats</h1>
-				<p class="text-sm text-muted-foreground">
-					Real-time data on questions generated per AP class and unit
-				</p>
-			</div>
+			<PublicPageHero
+				title="Question Generation Stats"
+				description="Real-time data on questions generated per AP class and unit."
+			/>
 
 			{#if loading}
 				<!-- Overview Cards Skeleton -->
