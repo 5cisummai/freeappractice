@@ -5,34 +5,11 @@
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/aspiring-students-section.svelte';
+	import BottomCtaSection from '$lib/components/bottom-cta-section.svelte';
+	import FeaturesSection from '$lib/components/features-section.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-
-	const showHowToUse = false;
-	const howToSteps = [
-		{
-			number: '1',
-			title: 'Plan your year',
-			description: '— pick AP classes that fit your schedule and goals.'
-		},
-		{
-			number: '2',
-			title: 'Choose a subject',
-			description: '— select the AP you’re taking or previewing this summer.'
-		},
-		{
-			number: '3',
-			title: 'Start with Unit 1',
-			description: '— get ahead before the first day of class.'
-		},
-		{
-			number: '4',
-			title: 'Practice & learn',
-			description: '— generate questions and read instant explanations.'
-		}
-	];
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
@@ -341,20 +318,15 @@
 	<Topbar />
 
 	<main id="main-content" class="flex-1">
-		<div class="mx-auto w-full max-w-7xl space-y-16 px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+		<div
+			class="mx-auto w-full max-w-7xl space-y-20 px-5 py-12 sm:px-8 lg:space-y-24 lg:px-10 lg:py-16"
+		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-4">
 					<div
 						class="flex animate-in flex-wrap justify-center gap-2 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-3"
 					>
-						<Badge variant="ghost" href={resolve('/blog/which-aps-to-take')} class="p-2">
-							Planning your AP year?
-							<ArrowRightIcon class="size-4" />
-						</Badge>
-						<Badge variant="ghost" href={resolve('/summer')} class="p-2">
-							Summer study guide
-							<ArrowRightIcon class="size-4" />
-						</Badge>
+						<Badge variant="ghost" class="p-2">New: AP Lunch Joke Subject 😂</Badge>
 					</div>
 					<h1
 						class="animate-in font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-4xl lg:text-5xl"
@@ -362,7 +334,7 @@
 						Plan your AP year. Get ahead this summer.
 					</h1>
 					<p
-						class="text-md mx-auto max-w-3xl animate-in leading-8 text-balance text-muted-foreground delay-300 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-lg"
+						class="text-md mx-auto max-w-2xl animate-in leading-8 text-balance text-muted-foreground delay-300 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-lg"
 					>
 						Start your AP journey with free practice questions and instant feedback.
 					</p>
@@ -382,27 +354,6 @@
 						>
 					</div>
 				</div>
-
-				{#if showHowToUse}
-					<div class="space-y-6">
-						<h2 class="text-3xl font-semibold">How to Use</h2>
-						<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-							{#each howToSteps as step (step.number)}
-								<div
-									class="step flex h-full flex-col rounded-2xl border border-border/70 bg-background/80 p-5 text-left shadow-sm"
-								>
-									<div class="mb-3 flex items-center justify-center text-2xl font-semibold">
-										{step.number}
-									</div>
-									<p class="text-base leading-7">
-										<strong>{step.title}</strong>
-										{step.description}
-									</p>
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
 			</section>
 
 			<section>
@@ -431,6 +382,8 @@
 					{/key}
 				</div>
 			</section>
+
+			<FeaturesSection />
 
 			<AspiringStudentsSection />
 
@@ -533,6 +486,8 @@
 					</Accordion.Item>
 				</Accordion.Root>
 			</section>
+
+			<BottomCtaSection />
 		</div>
 	</main>
 

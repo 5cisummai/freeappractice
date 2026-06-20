@@ -9,7 +9,6 @@ type SettingsData = {
 	fontSize: number;
 	highContrast: boolean;
 	reduceMotion: boolean;
-	dyslexicFont: boolean;
 };
 
 type AccountUser = {
@@ -22,8 +21,7 @@ class SettingsController {
 		theme: 'system',
 		fontSize: 16,
 		highContrast: false,
-		reduceMotion: false,
-		dyslexicFont: false
+		reduceMotion: false
 	});
 	accountPending = $state(false);
 	passwordPending = $state(false);
@@ -71,9 +69,7 @@ class SettingsController {
 		this.save();
 	}
 
-	toggleAccessibility(
-		key: keyof Pick<SettingsData, 'highContrast' | 'reduceMotion' | 'dyslexicFont'>
-	) {
+	toggleAccessibility(key: keyof Pick<SettingsData, 'highContrast' | 'reduceMotion'>) {
 		this.settings[key] = !this.settings[key];
 		this.save();
 	}
@@ -85,7 +81,6 @@ class SettingsController {
 		root.style.fontSize = `${this.settings.fontSize}px`;
 		document.body.classList.toggle('high-contrast', this.settings.highContrast);
 		document.body.classList.toggle('reduce-motion', this.settings.reduceMotion);
-		document.body.classList.toggle('dyslexic-font', this.settings.dyslexicFont);
 	}
 
 	async updateAccount(user: AccountUser, data: { name: string; email: string }) {

@@ -1,41 +1,7 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
+import type { IFRQAttempt, IProgress, IQuestionAttempt } from '$lib/server/models/user-records';
 
-// ── Sub-document types ─────────────────────────────────────
-export interface IProgress {
-	apClass: string;
-	unit: string;
-	completed: boolean;
-	mastery: number;
-	totalAttempts: number;
-	correctAttempts: number;
-	lastAttemptAt?: Date;
-	lastReviewedAt?: Date;
-	frqTotalAttempts: number;
-	frqTotalScore: number; // sum of aiScore values (0–100 each)
-}
-
-export interface IQuestionAttempt {
-	questionId: string;
-	apClass: string;
-	unit: string;
-	selectedAnswer: 'A' | 'B' | 'C' | 'D';
-	wasCorrect: boolean;
-	timeTakenMs?: number;
-	attemptedAt: Date;
-}
-
-export interface IFRQAttempt {
-	questionId: string;
-	apClass: string;
-	unit: string;
-	aiScore: number; // 0–100
-	pointsEarned: number;
-	totalPoints: number;
-	timeTakenMs?: number;
-	attemptedAt: Date;
-}
-
-export interface IUser extends Document {
+export interface ILegacyUser extends Document {
 	name: string;
 	email: string;
 	password: string;
@@ -54,7 +20,6 @@ export interface IUser extends Document {
 	updatedAt: Date;
 }
 
-// ── Sub-schemas ─────────────────────────────────────────────
 const progressSchema = new Schema<IProgress>(
 	{
 		apClass: { type: String, required: true, trim: true },
@@ -98,8 +63,7 @@ const frqAttemptSchema = new Schema<IFRQAttempt>(
 	{ _id: false }
 );
 
-// ── Main schema ─────────────────────────────────────────────
-const userSchema = new Schema<IUser>(
+const legacyUserSchema = new Schema<ILegacyUser>(
 	{
 		name: { type: String, required: true, trim: true },
 		email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
@@ -119,10 +83,10 @@ const userSchema = new Schema<IUser>(
 	{ timestamps: true }
 );
 
-userSchema.index({ 'progress.apClass': 1, 'progress.unit': 1 });
-userSchema.index({ 'questionHistory.attemptedAt': -1 });
-userSchema.index({ 'frqHistory.attemptedAt': -1 });
+legacyUserSchema.index({ 'progress.apClass': 1, 'progress.unit': 1 });
+legacyUserSchema.index({ 'questionHistory.attemptedAt': -1 });
+legacyUserSchema.index({ 'frqHistory.attemptedAt': -1 });
 
-// Prevent OverwriteModelError during hot-reload in dev
-export const User: Model<IUser> =
-	(mongoose.models.User as Model<IUser>) ?? mongoose.model<IUser>('User', userSchema);
+export const LegacyUser: Model<ILegacyUser> =
+	(mongoose.models.User as Model<ILegacyUser>) ??
+	mongoose.model<ILegacyUser>('User', legacyUserSchema);

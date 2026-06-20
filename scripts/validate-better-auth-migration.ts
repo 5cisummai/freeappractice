@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { MongoClient, ObjectId } from 'mongodb';
-import { User } from '../src/lib/server/models/user';
+import { LegacyUser } from '../src/lib/server/models/user-legacy';
 import { UserProfile } from '../src/lib/server/models/user-profile';
 
 const uri = process.env.DATABASE_URI;
@@ -26,16 +26,20 @@ async function main() {
 	const authAccounts = db.collection('authAccounts');
 	const seenQuestions = db.collection('seenquestions');
 
-	const sourceUsers = await User.find({}).lean();
+	const sourceUsers = await LegacyUser.find({}).lean();
 	const authUserCount = await authUsers.countDocuments();
 	const profileCount = await UserProfile.countDocuments();
 
 	const problems: string[] = [];
 	if (authUserCount < sourceUsers.length) {
-		problems.push(`authUsers count ${authUserCount} is less than source users ${sourceUsers.length}`);
+		problems.push(
+			`authUsers count ${authUserCount} is less than source users ${sourceUsers.length}`
+		);
 	}
 	if (profileCount < sourceUsers.length) {
-		problems.push(`UserProfile count ${profileCount} is less than source users ${sourceUsers.length}`);
+		problems.push(
+			`UserProfile count ${profileCount} is less than source users ${sourceUsers.length}`
+		);
 	}
 
 	for (const sourceUser of sourceUsers) {
@@ -68,7 +72,9 @@ async function main() {
 		if ((profile.frqHistory?.length ?? 0) !== (sourceUser.frqHistory?.length ?? 0)) {
 			problems.push(`FRQ history length mismatch for ${userId}`);
 		}
-		if ((profile.bookmarkedQuestions?.length ?? 0) !== (sourceUser.bookmarkedQuestions?.length ?? 0)) {
+		if (
+			(profile.bookmarkedQuestions?.length ?? 0) !== (sourceUser.bookmarkedQuestions?.length ?? 0)
+		) {
 			problems.push(`Bookmark count mismatch for ${userId}`);
 		}
 		if (sourceUser.password) {
@@ -82,7 +88,9 @@ async function main() {
 	}
 
 	const seenUserIds = await seenQuestions.distinct('userId');
-	const authUserIds = new Set((await authUsers.find({}, { projection: { id: 1 } }).toArray()).map((u) => u.id));
+	const authUserIds = new Set(
+		(await authUsers.find({}, { projection: { id: 1 } }).toArray()).map((u) => u.id)
+	);
 	for (const seenUserId of seenUserIds) {
 		if (!authUserIds.has(seenUserId)) {
 			problems.push(`seenquestions references unknown userId ${seenUserId}`);
@@ -91,11 +99,13 @@ async function main() {
 
 	const credentialCount = await authAccounts.countDocuments({ providerId: 'credential' });
 	const googleCount = await authAccounts.countDocuments({ providerId: 'google' });
-	const bothCount = await authAccounts.aggregate([
-		{ $group: { _id: '$userId', providers: { $addToSet: '$providerId' } } },
-		{ $match: { providers: { $all: ['credential', 'google'] } } },
-		{ $count: 'count' }
-	]).toArray();
+	const bothCount = await authAccounts
+		.aggregate([
+			{ $group: { _id: '$userId', providers: { $addToSet: '$providerId' } } },
+			{ $match: { providers: { $all: ['credential', 'google'] } } },
+			{ $count: 'count' }
+		])
+		.toArray();
 	const unverifiedCount = await authUsers.countDocuments({ emailVerified: false });
 
 	console.log({

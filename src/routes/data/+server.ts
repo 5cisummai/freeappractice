@@ -11,7 +11,23 @@ const dataDirectoryPath = dirname(currentFilePath);
 
 /** Canonical copy lives in $lib/data; served here for /data downloads. */
 const LIB_DATA_ALIASES: Record<string, string> = {
-	'ap-classes.json': join(dirname(currentFilePath), '..', '..', 'lib', 'data', 'ap-classes.json')
+	'ap-classes.json': join(dirname(currentFilePath), '..', '..', 'lib', 'data', 'ap-classes.json'),
+	'ap-frq-specs.json': join(
+		dirname(currentFilePath),
+		'..',
+		'..',
+		'lib',
+		'data',
+		'ap-frq-specs.json'
+	),
+	'unit-descriptionsrevised.json': join(
+		dirname(currentFilePath),
+		'..',
+		'..',
+		'lib',
+		'data',
+		'unit-descriptionsrevised.json'
+	)
 };
 
 const contentTypes: Record<string, string> = {

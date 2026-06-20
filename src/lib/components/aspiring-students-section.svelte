@@ -132,6 +132,20 @@
 		}
 	}
 
+	let autoScrollInterval: ReturnType<typeof setInterval> | undefined;
+
+	function startAutoScroll(): void {
+		stopAutoScroll();
+		autoScrollInterval = setInterval(scrollToNextPage, 3000);
+	}
+
+	function stopAutoScroll(): void {
+		if (autoScrollInterval !== undefined) {
+			clearInterval(autoScrollInterval);
+			autoScrollInterval = undefined;
+		}
+	}
+
 	onMount(() => {
 		if (!carouselEl) return;
 
@@ -141,14 +155,17 @@
 
 		resizeObserver.observe(carouselEl);
 		carouselEl.addEventListener('scroll', updateCarouselState, { passive: true });
+		carouselEl.addEventListener('mouseenter', stopAutoScroll);
+		carouselEl.addEventListener('mouseleave', startAutoScroll);
 		updatePageCount();
-
-		const autoScrollInterval = setInterval(scrollToNextPage, 3000);
+		startAutoScroll();
 
 		return () => {
-			clearInterval(autoScrollInterval);
+			stopAutoScroll();
 			resizeObserver.disconnect();
 			carouselEl?.removeEventListener('scroll', updateCarouselState);
+			carouselEl?.removeEventListener('mouseenter', stopAutoScroll);
+			carouselEl?.removeEventListener('mouseleave', startAutoScroll);
 		};
 	});
 </script>
@@ -222,7 +239,7 @@
 		{/each}
 	</div>
 
-	<div class="flex flex-col items-center gap-6">
+	<div class="flex justify-center">
 		<div class="flex items-center gap-2" role="tablist" aria-label="Carousel pages">
 			{#each Array.from({ length: pageCount }, (_, index) => index) as page (page)}
 				<button
@@ -237,7 +254,5 @@
 				></button>
 			{/each}
 		</div>
-
-		<Button href="#hero" size="lg">Start practicing free</Button>
 	</div>
 </section>

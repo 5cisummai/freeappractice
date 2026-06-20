@@ -185,19 +185,6 @@
 							onCheckedChange={() => settingsController.toggleAccessibility('reduceMotion')}
 						/>
 					</div>
-
-					<div class="flex items-center justify-between border-t border-border pt-4">
-						<div class="space-y-0.5">
-							<Label for="dyslexic-font-toggle">Dyslexic Friendly Font</Label>
-							<p class="text-sm text-muted-foreground">Uses fonts optimized for readability.</p>
-						</div>
-						<Switch
-							id="dyslexic-font-toggle"
-							name="dyslexic-font"
-							checked={settingsController.settings.dyslexicFont}
-							onCheckedChange={() => settingsController.toggleAccessibility('dyslexicFont')}
-						/>
-					</div>
 				</Card.Content>
 			</Card.Root>
 		</Tabs.Content>
@@ -227,7 +214,9 @@
 						/>
 					</div>
 
-					<div class="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+					<div
+						class="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground"
+					>
 						Current setting:
 						<strong class="text-foreground">
 							{privacy.analyticsConsent === 'granted'
@@ -356,34 +345,34 @@
 </PageShell>
 
 <AlertDialog.Root bind:open={deleteAccountOpen}>
-		<AlertDialog.Content>
-			<AlertDialog.Header>
-				<AlertDialog.Title>Delete your account?</AlertDialog.Title>
-				<AlertDialog.Description>
-					This will permanently delete your account and all associated data. This action cannot be
-					undone.
-				</AlertDialog.Description>
-			</AlertDialog.Header>
-			<div class="px-6 pb-2">
-				<Label for="delete-password">Confirm your password</Label>
-				<Input
-					id="delete-password"
-					type="password"
-					autocomplete="current-password"
-					placeholder="Enter your password to confirm"
-					bind:value={deletePassword}
-					class="mt-2"
-				/>
-			</div>
-			<AlertDialog.Footer>
-				<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-				<AlertDialog.Action
-					class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
-					onclick={handleDeleteAccount}
-					disabled={settingsController.deletePending}
-				>
-					{settingsController.deletePending ? 'Deleting...' : 'Delete Account'}
-				</AlertDialog.Action>
-			</AlertDialog.Footer>
-		</AlertDialog.Content>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Delete your account?</AlertDialog.Title>
+			<AlertDialog.Description>
+				This will permanently delete your account and all associated data. This action cannot be
+				undone.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<div class="px-6 pb-2">
+			<Label for="delete-password">Confirm your password</Label>
+			<Input
+				id="delete-password"
+				type="password"
+				autocomplete="current-password"
+				placeholder="Enter your password to confirm"
+				bind:value={deletePassword}
+				class="mt-2"
+			/>
+		</div>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+				onclick={handleDeleteAccount}
+				disabled={settingsController.deletePending}
+			>
+				{settingsController.deletePending ? 'Deleting...' : 'Delete Account'}
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
 </AlertDialog.Root>

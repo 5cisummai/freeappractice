@@ -1,5 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { IFRQAttempt, IProgress, IQuestionAttempt } from '$lib/server/models/user';
+import type { IFRQAttempt, IProgress, IQuestionAttempt } from '$lib/server/models/user-records';
 
 export interface IUserProfile extends Document {
 	userId: string;

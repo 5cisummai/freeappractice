@@ -4,8 +4,6 @@ import type { Session, User } from 'better-auth/db';
 // for information about these interfaces
 
 interface ImportMetaEnv {
-	/** Optional; set in `.env` when using Cloudflare Web Analytics beacon in `+layout.svelte`. */
-	readonly PUBLIC_CLOUDFLARE_WEB_ANALYTICS_TOKEN?: string;
 	/** Google OAuth client ID for One Tap sign-in on login/signup pages. */
 	readonly PUBLIC_GOOGLE_CLIENT_ID?: string;
 }

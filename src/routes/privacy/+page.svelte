@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 </script>
@@ -36,10 +37,11 @@
 				Back to Home
 			</Button>
 
-			<div class="space-y-2">
-				<h1 class="text-4xl font-semibold tracking-tight">Privacy Policy</h1>
-				<p class="text-sm text-muted-foreground">Last Updated: May 28, 2026</p>
-			</div>
+			<PublicPageHero
+				title="Privacy Policy"
+				description="How we collect, use, and protect your information when you use Free AP Practice."
+				meta="Last Updated: May 28, 2026"
+			/>
 
 			<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
 				<section>

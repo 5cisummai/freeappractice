@@ -38,8 +38,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 	'X-Frame-Options': 'DENY',
 	'X-Content-Type-Options': 'nosniff',
 	'Referrer-Policy': 'strict-origin-when-cross-origin',
-	'Permissions-Policy':
-		'camera=(), microphone=(), geolocation=(), identity-credentials-get=(self)',
+	'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), identity-credentials-get=(self)',
 	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload'
 };
 
@@ -62,7 +61,11 @@ function applyCorsHeaders(response: Response, origin: string | null): Response {
 	return response;
 }
 
-function postProcessResponse(response: Response, event: Parameters<Handle>[0]['event'], origin: string | null): Response {
+function postProcessResponse(
+	response: Response,
+	event: Parameters<Handle>[0]['event'],
+	origin: string | null
+): Response {
 	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
 		response.headers.set(key, value);
 	}
@@ -89,6 +92,15 @@ function postProcessResponse(response: Response, event: Parameters<Handle>[0]['e
 export const handle: Handle = async ({ event, resolve }) => {
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
+
+	if (event.url.pathname === '/favicon.ico') {
+		return new Response(null, {
+			status: 308,
+			headers: {
+				Location: '/favicon.png'
+			}
+		});
+	}
 
 	if (event.request.method === 'OPTIONS') {
 		if (!isAllowedOrigin) {

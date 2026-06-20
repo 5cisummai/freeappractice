@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
+	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -90,17 +91,13 @@
 						/>
 					{/if}
 
-					<h1 class="mb-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-						{data.post.title}
-					</h1>
-
-					<p class="mb-4 text-base leading-relaxed text-muted-foreground">
-						{data.post.excerpt}
-					</p>
-
-					<p class="mb-8 text-sm text-muted-foreground">
-						{formatDate(data.post.publishedAt ?? data.post.createdAt)}
-					</p>
+					<PublicPageHero
+						align="start"
+						class="mb-8"
+						title={data.post.title}
+						description={data.post.excerpt}
+						meta={formatDate(data.post.publishedAt ?? data.post.createdAt)}
+					/>
 
 					<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
 					<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">

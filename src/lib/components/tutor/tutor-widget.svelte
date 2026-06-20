@@ -379,8 +379,8 @@
 		</div>
 
 		<!-- Input -->
-		<div class="shrink-0 border-t border-border p-3">
-			<div class="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2">
+		<div class="shrink-0 p-3">
+			<div class="flex items-end gap-2 rounded-3xl border border-border bg-background px-3 py-2">
 				<textarea
 					use:autofocusInput
 					bind:value={inputText}
