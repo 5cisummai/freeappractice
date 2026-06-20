@@ -5,6 +5,8 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
+	import { authClient } from '$lib/auth-client.js';
+	import { authCallbackUrl } from '$lib/auth-callback-url.js';
 
 	let email = $state('');
 	let loading = $state(false);
@@ -16,10 +18,9 @@
 		errorMessage = '';
 		loading = true;
 		try {
-			await fetch('/api/auth/forgot-password', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email })
+			await authClient.requestPasswordReset({
+				email,
+				redirectTo: authCallbackUrl('/reset-password')
 			});
 			// Always show success to prevent email enumeration
 			success = true;

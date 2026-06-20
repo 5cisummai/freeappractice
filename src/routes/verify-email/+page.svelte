@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import { authClient } from '$lib/auth-client.js';
+	import { authCallbackUrl } from '$lib/auth-callback-url.js';
 
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');
@@ -19,14 +20,17 @@
 			return;
 		}
 		try {
-			const res = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
-			const data = await res.json();
-			if (!res.ok) {
+			const { error } = await authClient.verifyEmail({
+				query: {
+					token,
+					callbackURL: authCallbackUrl('/app')
+				}
+			});
+			if (error) {
 				status = 'error';
-				errorMessage = data.error ?? 'Verification failed';
+				errorMessage = error.message ?? 'Verification failed';
 				return;
 			}
-			auth.setAuth(data.token, data.user);
 			status = 'success';
 			setTimeout(() => goto(resolve('/app')), 2000);
 		} catch {

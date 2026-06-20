@@ -25,3 +25,5 @@ vite.config.ts.timestamp-*
 /.vscode
 /test-results
 .fallow
+
+emergency_migration_backup.gz

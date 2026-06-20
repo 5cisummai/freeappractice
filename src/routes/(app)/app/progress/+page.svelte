@@ -1,28 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { fetchDashboardData } from '$lib/client/dashboard.js';
 	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import PageShell from '$lib/components/page-shell.svelte';
 
-	let progressData = $state<ProgressEntry[]>([]);
-	let statsData = $state<StatsData | null>(null);
-	let loading = $state(true);
-	let errorMessage = $state('');
+	let { data } = $props();
 
-	onMount(async () => {
-		try {
-			const { stats, progress } = await fetchDashboardData();
-			progressData = progress;
-			statsData = stats;
-		} catch {
-			errorMessage = 'Failed to load progress data.';
-		} finally {
-			loading = false;
-		}
-	});
+	const progressData = $derived(data.progress as ProgressEntry[]);
+	const statsData = $derived(data.stats as StatsData);
 
 	const grouped = $derived(() => {
 		const map: Record<string, ProgressEntry[]> = {};
@@ -39,16 +24,8 @@
 </svelte:head>
 
 <PageShell title="Your Progress" description="Track your performance across all AP subjects.">
-	{#if loading}
-		<div class="flex justify-center py-16">
-			<Spinner />
-		</div>
-	{:else if errorMessage}
-		<p class="text-sm text-destructive">{errorMessage}</p>
-	{:else}
-		<!-- Overview stats -->
-		{#if statsData}
-			<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+	<!-- Overview stats -->
+	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
 				<Card.Root class="p-4 text-center">
 					<p class="text-2xl font-bold">{statsData.overview.totalQuestions}</p>
 					<p class="mt-1 text-xs text-muted-foreground">Questions Answered</p>
@@ -66,9 +43,8 @@
 					<p class="mt-1 text-xs text-muted-foreground">Last 7 Days</p>
 				</Card.Root>
 			</div>
-		{/if}
 
-		<!-- Per-subject breakdown -->
+	<!-- Per-subject breakdown -->
 		{#if grouped().length === 0}
 			<div class="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
 				<p>No progress yet. Go practice some questions!</p>
@@ -112,5 +88,4 @@
 				{/each}
 			</div>
 		{/if}
-	{/if}
 </PageShell>

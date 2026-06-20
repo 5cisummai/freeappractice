@@ -5,11 +5,11 @@
 	import * as Field from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { onMount } from 'svelte';
-	import { setupGoogleSignIn } from '$lib/client/google-auth.js';
+	import { authClient } from '$lib/auth-client.js';
+	import { authCallbackUrl } from '$lib/auth-callback-url.js';
+	import GoogleLogo from '$lib/components/google-logo.svelte';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -19,14 +19,7 @@
 	let confirmPassword = $state('');
 	let errorMessage = $state('');
 	let loading = $state(false);
-	let googleButtonDiv = $state<HTMLDivElement | null>(null);
-
-	onMount(() => {
-		setupGoogleSignIn(
-			() => googleButtonDiv,
-			(msg) => (errorMessage = msg)
-		);
-	});
+	let googleLoading = $state(false);
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
@@ -43,22 +36,38 @@
 
 		loading = true;
 		try {
-			const res = await fetch('/api/auth/register', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name, email, password })
+			const { error } = await authClient.signUp.email({
+				name,
+				email,
+				password,
+				callbackURL: authCallbackUrl('/app')
 			});
-			const data = await res.json();
-			if (!res.ok) {
-				errorMessage = data.error ?? 'Registration failed';
+			if (error) {
+				errorMessage = error.message ?? 'Registration failed';
 				return;
 			}
-			auth.setAuth(data.token, data.user);
-			goto(resolve('/email-sent'));
+			goto(`${resolve('/email-sent')}?email=${encodeURIComponent(email)}`);
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function handleGoogleSignIn() {
+		if (googleLoading) return;
+		errorMessage = '';
+		googleLoading = true;
+		try {
+			const { error } = await authClient.signIn.social({
+				provider: 'google',
+				callbackURL: authCallbackUrl('/app'),
+				errorCallbackURL: authCallbackUrl('/signup'),
+				newUserCallbackURL: authCallbackUrl('/app')
+			});
+			if (error) errorMessage = error.message ?? 'Google sign-in failed';
+		} finally {
+			googleLoading = false;
 		}
 	}
 </script>
@@ -73,7 +82,10 @@
 			<form onsubmit={handleSubmit}>
 				<Field.Group>
 					<Field.Field>
-						<div bind:this={googleButtonDiv} class="flex w-full justify-center"></div>
+						<Button type="button" variant="outline" onclick={handleGoogleSignIn} disabled={googleLoading}>
+							<GoogleLogo />
+							{googleLoading ? 'Redirecting...' : 'Continue with Google'}
+						</Button>
 					</Field.Field>
 					<Field.Separator class="*:data-[slot=field-separator-content]:bg-card">
 						Or continue with email
@@ -111,7 +123,7 @@
 								/>
 							</Field.Field>
 						</div>
-						<Field.Description>Must be at least 6 characters long.</Field.Description>
+						<Field.Description>Must be at least 8 characters long.</Field.Description>
 					</Field.Field>
 					<Field.Field>
 						<Button type="submit" disabled={loading}>

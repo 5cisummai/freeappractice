@@ -1,21 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
 
-	let { children } = $props();
-
-	onMount(() => {
-		auth.init();
-		if (!auth.isAuthenticated) {
-			goto(resolve('/login'));
-		}
-	});
+	let { data, children } = $props();
 </script>
 
 <svelte:head>
@@ -24,20 +12,13 @@
 	<link rel="canonical" href="https://freeappractice.org/app" />
 </svelte:head>
 
-{#if auth.isAuthenticated}
-	<Sidebar.Provider>
-		<AppSidebar />
-		<Sidebar.Inset>
-			<!-- Top header with trigger -->
-			<header class="flex h-14 shrink-0 items-center gap-2 px-4">
-				<SidebarTrigger class="-ml-1" />
-			</header>
+<Sidebar.Provider>
+	<AppSidebar user={data.user} />
+	<Sidebar.Inset>
+		<header class="flex h-14 shrink-0 items-center gap-2 px-4">
+			<SidebarTrigger class="-ml-1" />
+		</header>
 
-			{@render children()}
-		</Sidebar.Inset>
-	</Sidebar.Provider>
-{:else}
-	<main id="main-content" class="flex min-h-screen items-center justify-center bg-background">
-		<Spinner />
-	</main>
-{/if}
+		{@render children()}
+	</Sidebar.Inset>
+</Sidebar.Provider>

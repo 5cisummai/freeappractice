@@ -7,8 +7,6 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { auth } from '$lib/client/auth.svelte.js';
-	import { onMount } from 'svelte';
 
 	type TopbarProps = {
 		showSignIn?: boolean;
@@ -20,10 +18,6 @@
 	const toggleMobileMenu = () => {
 		mobileOpen = !mobileOpen;
 	};
-
-	onMount(() => {
-		auth.init();
-	});
 </script>
 
 <header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">

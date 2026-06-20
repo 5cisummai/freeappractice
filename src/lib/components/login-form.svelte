@@ -12,10 +12,10 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import { setupGoogleSignIn } from '$lib/client/google-auth.js';
+	import { authClient } from '$lib/auth-client.js';
+	import { authCallbackUrl } from '$lib/auth-callback-url.js';
+	import GoogleLogo from '$lib/components/google-logo.svelte';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -25,36 +25,46 @@
 	let password = $state('');
 	let errorMessage = $state('');
 	let loading = $state(false);
-	let googleButtonDiv = $state<HTMLDivElement | null>(null);
-
-	onMount(() => {
-		setupGoogleSignIn(
-			() => googleButtonDiv,
-			(msg) => (errorMessage = msg)
-		);
-	});
+	let googleLoading = $state(false);
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		errorMessage = '';
 		loading = true;
 		try {
-			const res = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password })
+			const { error } = await authClient.signIn.email({
+				email,
+				password,
+				callbackURL: authCallbackUrl('/app')
 			});
-			const data = await res.json();
-			if (!res.ok) {
-				errorMessage = data.error ?? 'Login failed';
+			if (error) {
+				errorMessage =
+					error.status === 403
+						? 'Please verify your email before signing in. Check your inbox for a verification link.'
+						: (error.message ?? 'Login failed');
 				return;
 			}
-			auth.setAuth(data.token, data.user);
 			goto(resolve('/app'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function handleGoogleSignIn() {
+		if (googleLoading) return;
+		errorMessage = '';
+		googleLoading = true;
+		try {
+			const { error } = await authClient.signIn.social({
+				provider: 'google',
+				callbackURL: authCallbackUrl('/app'),
+				errorCallbackURL: authCallbackUrl('/login')
+			});
+			if (error) errorMessage = error.message ?? 'Google sign-in failed';
+		} finally {
+			googleLoading = false;
 		}
 	}
 </script>
@@ -69,7 +79,10 @@
 			<form onsubmit={handleSubmit}>
 				<FieldGroup>
 					<Field>
-						<div bind:this={googleButtonDiv} class="flex w-full justify-center"></div>
+						<Button type="button" variant="outline" onclick={handleGoogleSignIn} disabled={googleLoading}>
+							<GoogleLogo />
+							{googleLoading ? 'Redirecting...' : 'Continue with Google'}
+						</Button>
 					</Field>
 					<FieldSeparator class="*:data-[slot=field-separator-content]:bg-card">
 						Or continue with

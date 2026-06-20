@@ -1,9 +1,13 @@
+import type { Session, User } from 'better-auth/db';
+
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 
 interface ImportMetaEnv {
 	/** Optional; set in `.env` when using Cloudflare Web Analytics beacon in `+layout.svelte`. */
 	readonly PUBLIC_CLOUDFLARE_WEB_ANALYTICS_TOKEN?: string;
+	/** Google OAuth client ID for One Tap sign-in on login/signup pages. */
+	readonly PUBLIC_GOOGLE_CLIENT_ID?: string;
 }
 
 declare global {
@@ -13,7 +17,9 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			userId: string | null;
+			userId?: string;
+			user?: User;
+			session?: Session;
 		}
 		// interface PageData {}
 		// interface PageState {}
@@ -21,14 +27,21 @@ declare global {
 	}
 
 	interface Window {
+		googleScriptInitialized?: boolean;
 		google?: {
 			accounts: {
 				id: {
 					initialize: (config: {
 						client_id: string;
 						callback: (response: { credential: string }) => void;
+						use_fedcm_for_prompt?: boolean;
+						itp_support?: boolean;
+						cancel_on_tap_outside?: boolean;
+						context?: 'signin' | 'signup' | 'use';
+						auto_select?: boolean;
 					}) => void;
-					prompt: () => void;
+					prompt: (callback?: (notification: GoogleOneTapPromptNotification) => void) => void;
+					cancel: () => void;
 					renderButton: (
 						parent: HTMLElement,
 						options: {
@@ -42,6 +55,12 @@ declare global {
 				};
 			};
 		};
+	}
+
+	interface GoogleOneTapPromptNotification {
+		isDismissedMoment?: () => boolean;
+		getDismissedReason?: () => string;
+		isSkippedMoment?: () => boolean;
 	}
 }
 

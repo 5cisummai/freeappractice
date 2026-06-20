@@ -5,6 +5,7 @@
 	import 'highlight.js/styles/github.min.css';
 	import logo from '$lib/assets/logo.png';
 	import SkipToMain from '$lib/components/skip-to-main.svelte';
+	import GoogleOneTapPrompt from '$lib/components/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
 	import { onMount } from 'svelte';
@@ -21,6 +22,7 @@
 </svelte:head>
 <SkipToMain />
 <ModeWatcher />
+<GoogleOneTapPrompt />
 {@render children()}
 
 {#if privacy.initialized && privacy.analyticsConsent === null}

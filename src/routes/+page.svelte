@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import QuestionCard from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
@@ -59,11 +57,6 @@
 	}
 
 	onMount(() => {
-		auth.init();
-		if (auth.isAuthenticated) {
-			goto(resolve('/app'), { replaceState: true });
-		}
-
 		updateDotGridParallax();
 		window.addEventListener('scroll', updateDotGridParallax, { passive: true });
 
@@ -158,7 +151,7 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.4.0",
+			"softwareVersion": "1.4.1",
 			"datePublished": "2025-12-12",
 			"dateModified": "2026-06-19",
 			"inLanguage": "en-US",

@@ -1,12 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { auth } from '$lib/client/auth.svelte.js';
-	import { fetchDashboardData } from '$lib/client/dashboard.js';
 	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import FlameIcon from '@lucide/svelte/icons/flame';
@@ -15,9 +11,10 @@
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import PageShell from '$lib/components/page-shell.svelte';
 
-	let statsData = $state<StatsData | null>(null);
-	let progressData = $state<ProgressEntry[]>([]);
-	let loading = $state(true);
+	let { data } = $props();
+
+	const statsData = $derived(data.stats as StatsData);
+	const progressData = $derived(data.progress as ProgressEntry[]);
 
 	const nextBestUnit = $derived(() => {
 		if (!progressData.length) return null;
@@ -36,18 +33,6 @@
 		const unitParam = recommendation.unit ? `&unit=${encodeURIComponent(recommendation.unit)}` : '';
 		return `${basePath}?${classParam}${unitParam}`;
 	});
-
-	onMount(async () => {
-		try {
-			const { stats, progress } = await fetchDashboardData();
-			statsData = stats;
-			progressData = progress;
-		} catch {
-			// Stats are optional
-		} finally {
-			loading = false;
-		}
-	});
 </script>
 
 <svelte:head>
@@ -55,15 +40,10 @@
 </svelte:head>
 
 <PageShell
-	title={`Welcome back, ${auth.user?.name?.split(' ')[0] ?? 'Student'}`}
+	title={`Welcome back, ${data.user.name.split(' ')[0] ?? 'Student'}`}
 	description="Here's an overview of your study progress."
 >
-	{#if loading}
-		<div class="flex justify-center py-16">
-			<Spinner />
-		</div>
-	{:else}
-		<!-- Study plan -->
+	<!-- Study plan -->
 		<Card.Root class="border-primary/30 bg-primary/3 p-5">
 			<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 				<div class="space-y-1.5">
@@ -242,5 +222,4 @@
 				</div>
 			</Card.Root>
 		{/if}
-	{/if}
 </PageShell>

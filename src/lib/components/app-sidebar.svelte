@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { auth } from '$lib/client/auth.svelte.js';
+	import { authClient } from '$lib/auth-client.js';
 	import { toggleMode } from 'mode-watcher';
 	import logo from '$lib/assets/logo.png';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
@@ -17,6 +16,8 @@
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
 
+	let { user }: { user: { name: string; email: string } } = $props();
+
 	const navItems = [
 		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
 		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
@@ -30,12 +31,21 @@
 		return page.url.pathname === resolve(href);
 	}
 
+	let signOutPending = $state(false);
+
 	async function handleSignOut() {
+		if (signOutPending) return;
+		signOutPending = true;
 		try {
-			await fetch('/api/auth/logout', { method: 'POST' });
+			await authClient.signOut({
+				fetchOptions: {
+					onSuccess: () => {
+						window.location.href = resolve('/');
+					}
+				}
+			});
 		} finally {
-			auth.clearAuth();
-			goto(resolve('/'));
+			signOutPending = false;
 		}
 	}
 </script>

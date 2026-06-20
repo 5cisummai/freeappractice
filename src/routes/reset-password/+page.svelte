@@ -4,8 +4,8 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Field from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { auth } from '$lib/client/auth.svelte.js';
 	import { goto } from '$app/navigation';
+	import { authClient } from '$lib/auth-client.js';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 
@@ -31,18 +31,12 @@
 
 		loading = true;
 		try {
-			const res = await fetch('/api/auth/reset-password', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ token, password })
-			});
-			const data = await res.json();
-			if (!res.ok) {
-				errorMessage = data.error ?? 'Reset failed';
+			const { error } = await authClient.resetPassword({ token, newPassword: password });
+			if (error) {
+				errorMessage = error.message ?? 'Reset failed';
 				return;
 			}
-			auth.setAuth(data.token, data.user);
-			goto(resolve('/app'));
+			goto(resolve('/login'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {

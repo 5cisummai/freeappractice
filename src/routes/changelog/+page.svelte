@@ -7,6 +7,29 @@
 
 	const changelog = [
 		{
+			version: '1.4.1',
+			date: 'June 19, 2026',
+			sections: [
+				{
+					title: 'Authentication',
+					items: [
+						'Migrated authentication fully to Better Auth, replacing custom JWT handling with secure session cookies',
+						'Google sign-in, email/password, verification, and password reset now flow through Better Auth',
+						'User data APIs moved from /api/auth/* to /api/me/*; legacy auth endpoints removed',
+						'Server-side session loading for app routes, with trusted-origin and callback URL hardening'
+					]
+				},
+				{
+					title: 'Infrastructure',
+					items: [
+						'Migration scripts and runbooks for moving existing users to Better Auth',
+						'Docker Compose config for local MongoDB during auth development',
+						'Updated environment variables and README for Better Auth setup'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.0',
 			date: 'June 18, 2026',
 			sections: [

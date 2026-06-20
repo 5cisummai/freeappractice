@@ -54,7 +54,7 @@ The project is founded and maintained by Ajay Saravanan. The goal is straightfor
 The server code reads private env values through SvelteKit. At minimum, you will need:
 
 - `DATABASE_URI` for MongoDB
-- `JWT_SECRET` for auth tokens
+- `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` for Better Auth sessions
 - `OPEN_AI_KEY` for OpenAI access
 - `OPENAI_BASE_URL` or `OPENAI_URL` if you use a non-default OpenAI-compatible endpoint
 - `RESEND_API_KEY` for transactional email

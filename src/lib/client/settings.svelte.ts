@@ -1,7 +1,8 @@
 import { setMode } from 'mode-watcher';
+import { invalidateAll } from '$app/navigation';
 import { toast } from 'svelte-sonner';
-import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-import { auth } from '$lib/client/auth.svelte.js';
+import { authClient } from '$lib/auth-client.js';
+import { authCallbackUrl } from '$lib/auth-callback-url.js';
 
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
@@ -9,6 +10,11 @@ type SettingsData = {
 	highContrast: boolean;
 	reduceMotion: boolean;
 	dyslexicFont: boolean;
+};
+
+type AccountUser = {
+	name: string;
+	email: string;
 };
 
 class SettingsController {
@@ -19,6 +25,9 @@ class SettingsController {
 		reduceMotion: false,
 		dyslexicFont: false
 	});
+	accountPending = $state(false);
+	passwordPending = $state(false);
+	deletePending = $state(false);
 
 	constructor() {
 		if (typeof window === 'undefined') return;
@@ -73,22 +82,16 @@ class SettingsController {
 		if (typeof document === 'undefined') return;
 		const root = document.documentElement;
 
-		// Font size
 		root.style.fontSize = `${this.settings.fontSize}px`;
-
-		// Body classes for styles
 		document.body.classList.toggle('high-contrast', this.settings.highContrast);
 		document.body.classList.toggle('reduce-motion', this.settings.reduceMotion);
 		document.body.classList.toggle('dyslexic-font', this.settings.dyslexicFont);
 	}
 
-	async updateAccount(data: { name: string; email: string }) {
+	async updateAccount(user: AccountUser, data: { name: string; email: string }) {
+		if (this.accountPending) return false;
+		this.accountPending = true;
 		try {
-			if (!auth.user || !auth.token) {
-				toast.error('You must be logged in to update your account');
-				return false;
-			}
-
 			const name = data.name.trim();
 			const email = data.email.trim().toLowerCase();
 
@@ -101,58 +104,82 @@ class SettingsController {
 				return false;
 			}
 
-			const response = await apiFetch('/api/auth/update-account', {
-				method: 'PATCH',
-				body: JSON.stringify({ name, email })
-			});
-
-			const payload = await readJsonOrNull<{
-				error?: string;
-				message?: string;
-				requiresVerification?: boolean;
-				user?: { userId: string; name: string; email: string };
-			}>(response);
-
-			if (!response.ok) {
-				throw new Error(getResponseMessage(payload, 'Failed to update account'));
+			if (name !== user.name) {
+				const { error } = await authClient.updateUser({ name });
+				if (error) throw new Error(error.message ?? 'Failed to update name');
 			}
 
-			if (payload?.user) {
-				auth.setAuth(auth.token, payload.user);
-			}
-
-			if (payload?.requiresVerification) {
-				toast.success(payload.message || 'Email updated. Please verify your new email.');
-				window.location.href = '/email-sent';
+			if (email !== user.email) {
+				const { error } = await authClient.changeEmail({
+					newEmail: email,
+					callbackURL: authCallbackUrl('/app/settings')
+				});
+				if (error) throw new Error(error.message ?? 'Failed to update email');
+				toast.success('Verification email sent to your new address.');
+				window.location.href = `/email-sent?email=${encodeURIComponent(email)}`;
 				return true;
 			}
 
-			toast.success(payload?.message || 'Account updated successfully');
+			await invalidateAll();
+			toast.success('Account updated successfully');
 			return true;
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Failed to update account');
 			return false;
+		} finally {
+			this.accountPending = false;
 		}
 	}
 
-	async deleteAccount(): Promise<boolean> {
+	async changePassword(data: {
+		currentPassword: string;
+		newPassword: string;
+		confirmPassword: string;
+	}): Promise<boolean> {
+		if (this.passwordPending) return false;
+		this.passwordPending = true;
 		try {
-			const response = await apiFetch('/api/auth/delete-account', {
-				method: 'DELETE'
-			});
-
-			if (!response.ok) {
-				const payload = await readJsonOrNull<{ error?: string }>(response);
-				throw new Error(getResponseMessage(payload, 'Failed to delete account'));
+			if (data.newPassword !== data.confirmPassword) {
+				toast.error('New passwords do not match');
+				return false;
+			}
+			if (data.newPassword.length < 8) {
+				toast.error('Password must be at least 8 characters');
+				return false;
 			}
 
-			auth.clearAuth();
+			const { error } = await authClient.changePassword({
+				currentPassword: data.currentPassword,
+				newPassword: data.newPassword,
+				revokeOtherSessions: true
+			});
+			if (error) throw new Error(error.message ?? 'Failed to change password');
+
+			toast.success('Password updated successfully');
+			return true;
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : 'Failed to change password');
+			return false;
+		} finally {
+			this.passwordPending = false;
+		}
+	}
+
+	async deleteAccount(password?: string): Promise<boolean> {
+		if (this.deletePending) return false;
+		this.deletePending = true;
+		try {
+			const { error } = await authClient.deleteUser(password ? { password } : undefined);
+			if (error) throw new Error(error.message ?? 'Failed to delete account');
+
 			toast.success('Account deleted successfully');
 			window.location.href = '/';
 			return true;
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Failed to delete account');
 			return false;
+		} finally {
+			this.deletePending = false;
 		}
 	}
 }

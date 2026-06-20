@@ -341,6 +341,7 @@
 	}
 
 	async function loadQuestion(reason?: 'skip' | 'not-learned' | 'next'): Promise<void> {
+		if (isLoading) return;
 		if (!selectedClass) {
 			statusMessage = 'Please choose a class before requesting a question.';
 			return;
@@ -467,6 +468,7 @@
 	}
 
 	async function loadFRQQuestion(): Promise<void> {
+		if (isLoading) return;
 		if (!selectedClass) {
 			statusMessage = 'Please choose a class before requesting a question.';
 			return;
@@ -905,8 +907,10 @@
 
 			{#if mode === 'mcq' && showUtilityActions && !hasCheckedAnswer}
 				<div class="flex flex-wrap gap-2">
-					<Button variant="ghost" size="sm" onclick={handleSkipQuestion}>{skipLabel}</Button>
-					<Button variant="ghost" size="sm" onclick={handleNotLearnedQuestion}>
+					<Button variant="ghost" size="sm" onclick={handleSkipQuestion} disabled={isLoading}
+						>{skipLabel}</Button
+					>
+					<Button variant="ghost" size="sm" onclick={handleNotLearnedQuestion} disabled={isLoading}>
 						{notLearnedLabel}
 					</Button>
 					<Button variant="ghost" size="sm" onclick={handleReportBugAction}>
@@ -976,7 +980,9 @@
 				</div>
 				<div class="flex shrink-0 gap-2">
 					{#if hasSubmitted}
-						<Button onclick={handleFRQNext} class="h-9 px-4 text-sm">Next Question</Button>
+						<Button onclick={handleFRQNext} class="h-9 px-4 text-sm" disabled={isLoading}
+							>Next Question</Button
+						>
 					{:else}
 						<Button
 							onclick={handleFRQSubmit}
@@ -1053,7 +1059,7 @@
 					<Button
 						variant="outline"
 						onclick={handleNextQuestion}
-						disabled={!hasCheckedAnswer && !selectedOption}
+						disabled={isLoading || (!hasCheckedAnswer && !selectedOption)}
 					>
 						{nextLabel}
 					</Button>

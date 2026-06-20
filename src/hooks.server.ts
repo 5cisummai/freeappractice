@@ -1,9 +1,8 @@
 import type { Handle } from '@sveltejs/kit';
-import { verifyToken, extractToken } from '$lib/server/auth';
-import { connectDb } from '$lib/server/db';
-import { User } from '$lib/server/models/user';
 import { env } from '$env/dynamic/private';
+import { auth } from '$lib/auth';
 import { logger } from '$lib/server/logger';
+import { getAllowedOrigins } from '$lib/server/trusted-origins';
 
 // ── In-memory rate limiter ──────────────────────────────────
 // TODO: For multi-instance (Vercel/Cloudflare) production deploys,
@@ -35,61 +34,18 @@ setInterval(() => {
 }, WINDOW_MS);
 
 // ── Security headers ────────────────────────────────────────
-// CSP is managed by SvelteKit's built-in csp config in svelte.config.js,
-// which automatically injects nonces for SSR and hashes for prerendered pages.
 const SECURITY_HEADERS: Record<string, string> = {
 	'X-Frame-Options': 'DENY',
 	'X-Content-Type-Options': 'nosniff',
 	'Referrer-Policy': 'strict-origin-when-cross-origin',
-	'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+	'Permissions-Policy':
+		'camera=(), microphone=(), geolocation=(), identity-credentials-get=(self)',
 	'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload'
 };
 
-const DEFAULT_ALLOWED_ORIGINS = ['https://freeappractice.org', 'https://www.freeappractice.org'];
-if (env.NODE_ENV === 'development') {
-	DEFAULT_ALLOWED_ORIGINS.push(
-		'http://127.0.0.1:3000',
-		'http://127.0.0.1:4173',
-		'http://127.0.0.1:5173',
-		'http://localhost:5173',
-		'http://localhost:4173',
-		'http://localhost:3000'
-	);
-}
-
 const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
 const CORS_HEADERS = 'Content-Type, Authorization, X-Questions-Admin-Secret';
-
-function toOrigin(value: string | undefined): string | null {
-	if (!value) return null;
-
-	try {
-		const normalized = value.includes('://') ? value : `https://${value}`;
-		return new URL(normalized).origin;
-	} catch {
-		return null;
-	}
-}
-
-function getAllowedOrigins(): Set<string> {
-	const origins = new Set(DEFAULT_ALLOWED_ORIGINS);
-	const configuredOrigins = [
-		env.PUBLIC_BASE_URL,
-		env.APP_BASE_URL,
-		env.WEBSITE_URL,
-		env.VERCEL_URL,
-		env.VERCEL_BRANCH_URL,
-		env.VERCEL_PROJECT_PRODUCTION_URL
-	];
-
-	for (const value of configuredOrigins) {
-		const origin = toOrigin(value);
-		if (origin) origins.add(origin);
-	}
-
-	return origins;
-}
-
+const MAINTENANCE_MODE = env.MAINTENANCE_MODE === 'true';
 const ALLOWED_ORIGINS = getAllowedOrigins();
 
 function applyCorsHeaders(response: Response, origin: string | null): Response {
@@ -106,8 +62,31 @@ function applyCorsHeaders(response: Response, origin: string | null): Response {
 	return response;
 }
 
+function postProcessResponse(response: Response, event: Parameters<Handle>[0]['event'], origin: string | null): Response {
+	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+		response.headers.set(key, value);
+	}
+
+	if (event.url.pathname.startsWith('/desmos-sandbox')) {
+		const csp = response.headers.get('Content-Security-Policy');
+		if (csp) {
+			const patched = csp
+				.replace(/(script-src\s)/, "$1'unsafe-eval' ")
+				.replace(/frame-ancestors\s+'none'/, "frame-ancestors 'self'");
+			response.headers.set('Content-Security-Policy', patched);
+		}
+		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+	}
+
+	if (event.url.pathname.startsWith('/api/')) {
+		response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+		response.headers.set('Pragma', 'no-cache');
+	}
+
+	return applyCorsHeaders(response, origin);
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
-	// ── CORS ──────────────────────────────────────────────────
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
 
@@ -127,8 +106,31 @@ export const handle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	// ── Rate limiting for /api/* ──────────────────────────────
-	if (event.url.pathname.startsWith('/api/')) {
+	if (
+		MAINTENANCE_MODE &&
+		event.url.pathname !== '/health' &&
+		!event.url.pathname.startsWith('/_app/') &&
+		!event.url.pathname.startsWith('/favicon')
+	) {
+		const isApi = event.url.pathname.startsWith('/api/');
+		return applyCorsHeaders(
+			new Response(
+				isApi
+					? JSON.stringify({ error: 'Maintenance mode' })
+					: 'Maintenance mode. Please try again shortly.',
+				{
+					status: 503,
+					headers: {
+						'Content-Type': isApi ? 'application/json' : 'text/plain; charset=utf-8',
+						'Retry-After': '3600'
+					}
+				}
+			),
+			origin
+		);
+	}
+
+	if (event.url.pathname.startsWith('/api/') && !event.url.pathname.startsWith('/api/auth/')) {
 		const ip =
 			event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
 			event.request.headers.get('x-real-ip') ??
@@ -148,55 +150,24 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// ── JWT extraction → populate locals ─────────────────────
-	event.locals.userId = null;
-	const token = extractToken(event.request);
-	if (token) {
-		try {
-			const decoded = verifyToken(token);
-			await connectDb();
-			const user = await User.findById(decoded.userId).select('verified');
-			if (user?.verified) {
-				event.locals.userId = decoded.userId;
-			}
-		} catch {
-			// Invalid token - locals.userId stays null
+	event.locals.userId = undefined;
+	event.locals.user = undefined;
+	event.locals.session = undefined;
+	try {
+		const session = await auth.api.getSession({ headers: event.request.headers });
+		if (session) {
+			event.locals.session = session.session;
+			event.locals.user = session.user;
+			event.locals.userId = session.user.id;
 		}
+	} catch (err) {
+		logger.error('Session lookup failed', { error: err, path: event.url.pathname });
 	}
 
 	const requestStart = Date.now();
-	const response = await resolve(event);
 
-	// ── Apply security headers ────────────────────────────────
-	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-		response.headers.set(key, value);
-	}
+	const response = postProcessResponse(await resolve(event), event, origin);
 
-	// ── Desmos sandbox: extend CSP with 'unsafe-eval' ─────────
-	// Desmos requires eval() to render its calculator. We confine that permission to
-	// the /desmos-sandbox route (served in an iframe) so the main app stays safe.
-	if (event.url.pathname.startsWith('/desmos-sandbox')) {
-		const csp = response.headers.get('Content-Security-Policy');
-		if (csp) {
-			// Add 'unsafe-eval' to script-src and allow same-origin framing for the iframe
-			const patched = csp
-				.replace(/(script-src\s)/, "$1'unsafe-eval' ")
-				.replace(/frame-ancestors\s+'none'/, "frame-ancestors 'self'");
-			response.headers.set('Content-Security-Policy', patched);
-		}
-		// Override X-Frame-Options so the page can be embedded in same-origin iframes
-		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-	}
-
-	// ── Cache-Control for API routes (prevent sensitive data caching) ──
-	if (event.url.pathname.startsWith('/api/')) {
-		response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-		response.headers.set('Pragma', 'no-cache');
-	}
-
-	applyCorsHeaders(response, origin);
-
-	// ── Request logging ──────────────────────────────────────
 	const requestTimeMs = Date.now() - requestStart;
 	logger.info('http request', {
 		method: event.request.method,
