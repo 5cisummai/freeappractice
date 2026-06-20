@@ -7,12 +7,6 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
-
-	type TopbarProps = {
-		showSignIn?: boolean;
-	};
-
-	let { showSignIn = true }: TopbarProps = $props();
 	let mobileOpen = $state(false);
 
 	const toggleMobileMenu = () => {
@@ -49,42 +43,15 @@
 				{/if}
 			</Button>
 
-			<nav class="hidden items-center gap-5 text-base sm:flex" aria-label="Main navigation">
-				<a
-					href={resolve('/blog')}
-					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
+			<nav class="hidden items-center gap-2 text-base sm:flex" aria-label="Main navigation">
+				<Button href={resolve('/subjects')} variant="ghost">Subjects</Button>
+				<Button href={resolve('/about')} variant="ghost">About</Button>
+				<Button href={resolve('/blog')} variant="ghost">Blog</Button>
+				<Button href={resolve('/stats')} variant="ghost">Stats</Button>
+				<Button href={resolve('/login')} variant="ghost">Sign In</Button>
+				<Button href={resolve('/signup')} variant="default" class="rounded-full "
+					>Sign Up Free</Button
 				>
-					Blog
-				</a>
-				<a
-					href={resolve('/about')}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
-				>
-					About
-				</a>
-				<a
-					href={resolve('/privacy')}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
-				>
-					Privacy
-				</a>
-				<a
-					href={resolve('/terms')}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="nav-link text-muted-foreground transition-colors hover:text-foreground"
-				>
-					Terms
-				</a>
-				{#if showSignIn}
-					<a href={resolve('/login')} class="nav-link nav-signin font-medium text-foreground">
-						Sign In
-					</a>
-				{/if}
 				<Button onclick={toggleMode} variant="ghost" size="icon" class="relative">
 					<SunIcon
 						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
@@ -124,9 +91,7 @@
 					rel="noopener noreferrer"
 					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">Terms</a
 				>
-				{#if showSignIn}
-					<a href={resolve('/login')} class="block py-2 font-medium text-foreground">Sign In</a>
-				{/if}
+				<a href={resolve('/login')} class="block py-2 font-medium text-foreground">Sign In</a>
 				<Button onclick={toggleMode} variant="ghost" size="icon" class="mt-2 w-full">
 					<p>Toggle Theme</p>
 				</Button>

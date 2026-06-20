@@ -1,4 +1,4 @@
-import type { IQuestionAttempt, IUser } from '$lib/server/models/user';
+import type { IQuestionAttempt } from '$lib/server/models/user-records';
 import { getQuestionsFromS3, type StoredQuestion } from '$lib/server/services/question-storage';
 
 export type McqHistoryItem = {
@@ -14,7 +14,7 @@ export type McqHistoryPageResult = {
 };
 
 export function getMcqHistoryPage(
-	user: Pick<IUser, 'questionHistory'>,
+	user: { questionHistory: IQuestionAttempt[] },
 	options: { page: number; limit: number; apClass?: string }
 ): McqHistoryPageResult {
 	const { page, limit, apClass } = options;

@@ -82,22 +82,19 @@
 			id="features-section-heading"
 			class="font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
 		>
-			Built from scratch for seamless AP practice
+			Built from scratch for <span
+				class="underline decoration-primary/70 decoration-2 underline-offset-4">seamless</span
+			> AP practice
 		</h2>
 		<p class="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
 			Using technology to make exam prep simpler, smarter, and more rewarding for every student.
 		</p>
 		<div class="flex flex-wrap items-center justify-center gap-3 pt-1">
-			<Button href="#hero" size="lg" class="rounded-full px-6">
+			<Button href="/signup" size="lg" class="rounded-full px-6">
 				<RocketIcon class="size-4" />
 				Get Started
 			</Button>
-			<Button
-				href={resolve('/blog/science_of_studying')}
-				variant="outline"
-				size="lg"
-				class="rounded-full px-6"
-			>
+			<Button href={resolve('/about')} variant="outline" size="lg" class="rounded-full px-6">
 				Learn More
 			</Button>
 		</div>
@@ -112,7 +109,7 @@
 				class="relative flex min-h-44 items-center justify-center overflow-hidden bg-muted/50 px-4 py-6 sm:px-5"
 			>
 				<div
-					class="flex max-w-[17rem] flex-wrap justify-center gap-1.5 [mask-image:linear-gradient(to_bottom,black_50%,transparent)]"
+					class="flex max-w-68 flex-wrap justify-center gap-1.5 mask-[linear-gradient(to_bottom,black_50%,transparent)]"
 					aria-label="20+ AP subjects including {subjectNames.slice(0, 6).join(', ')}, and more"
 				>
 					{#each visibleSubjects as { name, fade }, index (name)}
@@ -141,7 +138,7 @@
 			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm"
 		>
 			<div class="flex min-h-44 items-center justify-center bg-muted/50 px-4 py-6 sm:px-6">
-				<div class="w-full max-w-[15.5rem] space-y-3" aria-hidden="true">
+				<div class="w-full max-w-62 space-y-3" aria-hidden="true">
 					<div class="flex items-center justify-center gap-1.5">
 						{#each effortlessSteps as step, index (step.label)}
 							{#if index > 0}
@@ -189,7 +186,7 @@
 				class="relative flex min-h-44 items-center justify-center overflow-hidden bg-muted/50 px-4 py-6 sm:px-6"
 			>
 				<div
-					class="w-full max-w-[15.5rem] rounded-xl border border-border/70 bg-background p-3 shadow-sm"
+					class="w-full max-w-62 rounded-xl border border-border/70 bg-background p-3 shadow-sm"
 					aria-hidden="true"
 				>
 					<p class="mb-2.5 text-[0.65rem] leading-snug font-medium text-foreground">
@@ -299,7 +296,7 @@
 		>
 			<div class="relative flex min-h-52 items-center justify-center bg-muted/50 px-4 py-6 sm:px-6">
 				<div
-					class="w-full max-w-[15.5rem] overflow-hidden rounded-2xl border border-border/70 bg-background shadow-md"
+					class="w-full max-w-62 overflow-hidden rounded-2xl border border-border/70 bg-background shadow-md"
 					aria-hidden="true"
 				>
 					<div class="flex items-center gap-2 bg-primary px-3 py-2">

@@ -12,6 +12,10 @@ function createPrivacyState() {
 
 	function loadAnalytics() {
 		if (analyticsLoaded || typeof window === 'undefined') return;
+		if (import.meta.env.DEV) {
+			analyticsLoaded = true;
+			return;
+		}
 
 		injectAnalytics();
 		injectSpeedInsights();

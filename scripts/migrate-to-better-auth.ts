@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { MongoClient, ObjectId } from 'mongodb';
-import { User } from '../src/lib/server/models/user';
+import { LegacyUser } from '../src/lib/server/models/user-legacy';
 import { UserProfile } from '../src/lib/server/models/user-profile';
 
 const uri = process.env.DATABASE_URI;
@@ -42,7 +42,7 @@ async function main() {
 	const authAccounts = db.collection('authAccounts');
 	const migrationMap = db.collection('betterAuthMigrationMap');
 
-	const users = await User.find({}).sort({ createdAt: 1 }).lean();
+	const users = await LegacyUser.find({}).sort({ createdAt: 1 }).lean();
 	const selected = typeof limit === 'number' ? users.slice(0, limit) : users;
 
 	let migrated = 0;
@@ -123,14 +123,14 @@ async function main() {
 		);
 
 		for (const accountDoc of accountDocs) {
-			await authAccounts.updateOne(
-				{ id: accountDoc.id },
-				{ $set: accountDoc },
-				{ upsert: true }
-			);
+			await authAccounts.updateOne({ id: accountDoc.id }, { $set: accountDoc }, { upsert: true });
 		}
 
-		await UserProfile.updateOne({ userId: betterAuthUserId }, { $set: profileDoc }, { upsert: true });
+		await UserProfile.updateOne(
+			{ userId: betterAuthUserId },
+			{ $set: profileDoc },
+			{ upsert: true }
+		);
 
 		await migrationMap.updateOne(
 			{ legacyUserId },
@@ -150,7 +150,14 @@ async function main() {
 		migrated++;
 	}
 
-	console.log({ commit, resume, totalSource: users.length, selected: selected.length, migrated, skipped });
+	console.log({
+		commit,
+		resume,
+		totalSource: users.length,
+		selected: selected.length,
+		migrated,
+		skipped
+	});
 }
 
 main()

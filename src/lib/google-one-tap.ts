@@ -5,6 +5,8 @@ import { authClient, googleClientId, googleOneTapEnabled } from '$lib/auth-clien
 
 type OneTapContext = 'signin' | 'signup' | 'use';
 
+const PROMPT_SETTLE_TIMEOUT_MS = 60_000;
+
 const ONE_TAP_ROUTE_PATTERNS = [
 	/^\/$/,
 	/^\/about$/,
@@ -60,6 +62,8 @@ function loadGoogleScript(): Promise<void> {
 
 let activePromptPath: string | null = null;
 let promptInFlight = false;
+let googleIdentityInitialized = false;
+let activeCredentialHandler: ((credential: string) => void) | null = null;
 const promptedPaths = new Set<string>();
 
 async function submitOneTapCredential(idToken: string, pathname: string): Promise<boolean> {
@@ -74,45 +78,77 @@ async function submitOneTapCredential(idToken: string, pathname: string): Promis
 	return true;
 }
 
+function initializeGoogleIdentity(context: OneTapContext): void {
+	if (googleIdentityInitialized) return;
+
+	window.google?.accounts.id.initialize({
+		client_id: googleClientId,
+		use_fedcm_for_prompt: true,
+		itp_support: true,
+		cancel_on_tap_outside: true,
+		context,
+		callback: (response: { credential: string }) => {
+			const handler = activeCredentialHandler;
+			if (handler) {
+				handler(response.credential);
+				return;
+			}
+
+			void submitOneTapCredential(response.credential, window.location.pathname);
+		}
+	});
+
+	googleIdentityInitialized = true;
+}
+
 function runFedcmPrompt(context: OneTapContext, pathname: string): Promise<void> {
 	return new Promise((resolvePrompt) => {
 		let settled = false;
+		let timeout: ReturnType<typeof setTimeout> | null = null;
 
 		const finish = () => {
 			if (settled) return;
 			settled = true;
+			if (timeout) clearTimeout(timeout);
+			if (activeCredentialHandler === credentialHandler) {
+				activeCredentialHandler = null;
+			}
 			promptedPaths.add(pathname);
 			resolvePrompt();
 		};
 
-		window.google?.accounts.id.initialize({
-			client_id: googleClientId,
-			use_fedcm_for_prompt: true,
-			itp_support: true,
-			cancel_on_tap_outside: true,
-			context,
-			callback: async (response: { credential: string }) => {
+		const credentialHandler = (credential: string) => {
+			void (async () => {
 				try {
-					await submitOneTapCredential(response.credential, pathname);
+					await submitOneTapCredential(credential, pathname);
 				} finally {
 					finish();
 				}
-			}
-		});
+			})();
+		};
 
-		window.google?.accounts.id.prompt((notification: GoogleOneTapPromptNotification) => {
-			if (settled || activePromptPath !== pathname) return;
+		activeCredentialHandler = credentialHandler;
+		initializeGoogleIdentity(context);
 
-			// FedCM-compatible prompt lifecycle: only dismissed/skipped moments are supported.
-			if (notification.isDismissedMoment?.() || notification.isSkippedMoment?.()) {
-				finish();
-			}
-		});
+		timeout = setTimeout(finish, PROMPT_SETTLE_TIMEOUT_MS);
+		window.google?.accounts.id.prompt();
 	});
 }
 
+export function finishGoogleOneTapAttempt(pathname: string): void {
+	if (activePromptPath === pathname) {
+		if (activeCredentialHandler) {
+			activeCredentialHandler = null;
+		}
+		activePromptPath = null;
+	}
+}
+
 export function cancelGoogleOneTap(): void {
+	if (!browser) return;
+
 	window.google?.accounts.id?.cancel?.();
+	activeCredentialHandler = null;
 	activePromptPath = null;
 }
 

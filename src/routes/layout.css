@@ -61,10 +61,6 @@ body.reduce-motion * {
 	scroll-behavior: auto !important;
 }
 
-body.dyslexic-font {
-	font-family: 'OpenDyslexic', sans-serif !important;
-}
-
 .dark {
 	--background: oklch(0.141 0.005 285.823);
 	--foreground: oklch(0.985 0 0);

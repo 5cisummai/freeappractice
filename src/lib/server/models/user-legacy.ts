@@ -1,9 +1,17 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 import type { IFRQAttempt, IProgress, IQuestionAttempt } from '$lib/server/models/user-records';
 
-export interface IUserProfile extends Document {
-	userId: string;
-	legacyUserId?: string | null;
+export interface ILegacyUser extends Document {
+	name: string;
+	email: string;
+	password: string;
+	googleId?: string | null;
+	authProvider: 'local' | 'google';
+	verified: boolean;
+	emailToken?: string | null;
+	emailTokenExpires?: Date | null;
+	resetPasswordToken?: string | null;
+	resetPasswordExpires?: Date | null;
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	frqHistory: IFRQAttempt[];
@@ -55,10 +63,18 @@ const frqAttemptSchema = new Schema<IFRQAttempt>(
 	{ _id: false }
 );
 
-const userProfileSchema = new Schema<IUserProfile>(
+const legacyUserSchema = new Schema<ILegacyUser>(
 	{
-		userId: { type: String, required: true, unique: true, index: true },
-		legacyUserId: { type: String, default: null, index: true },
+		name: { type: String, required: true, trim: true },
+		email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+		password: { type: String, default: null },
+		googleId: { type: String, default: null, sparse: true, index: true },
+		authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+		verified: { type: Boolean, default: false },
+		emailToken: { type: String, default: null },
+		emailTokenExpires: { type: Date, default: null },
+		resetPasswordToken: { type: String, default: null },
+		resetPasswordExpires: { type: Date, default: null },
 		progress: { type: [progressSchema], default: [] },
 		questionHistory: { type: [questionAttemptSchema], default: [] },
 		frqHistory: { type: [frqAttemptSchema], default: [] },
@@ -67,10 +83,10 @@ const userProfileSchema = new Schema<IUserProfile>(
 	{ timestamps: true }
 );
 
-userProfileSchema.index({ 'progress.apClass': 1, 'progress.unit': 1 });
-userProfileSchema.index({ 'questionHistory.attemptedAt': -1 });
-userProfileSchema.index({ 'frqHistory.attemptedAt': -1 });
+legacyUserSchema.index({ 'progress.apClass': 1, 'progress.unit': 1 });
+legacyUserSchema.index({ 'questionHistory.attemptedAt': -1 });
+legacyUserSchema.index({ 'frqHistory.attemptedAt': -1 });
 
-export const UserProfile: Model<IUserProfile> =
-	(mongoose.models.UserProfile as Model<IUserProfile>) ??
-	mongoose.model<IUserProfile>('UserProfile', userProfileSchema);
+export const LegacyUser: Model<ILegacyUser> =
+	(mongoose.models.User as Model<ILegacyUser>) ??
+	mongoose.model<ILegacyUser>('User', legacyUserSchema);

@@ -2,8 +2,13 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { cancelGoogleOneTap, maybePromptGoogleOneTap } from '$lib/google-one-tap.js';
+	import { onDestroy } from 'svelte';
 
 	const PROMPT_DELAY_MS = 400;
+
+	onDestroy(() => {
+		cancelGoogleOneTap();
+	});
 
 	$effect(() => {
 		if (!browser) return;
@@ -15,7 +20,6 @@
 
 		return () => {
 			clearTimeout(timer);
-			cancelGoogleOneTap();
 		};
 	});
 </script>

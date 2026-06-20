@@ -5,10 +5,10 @@
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/aspiring-students-section.svelte';
+	import BottomCtaSection from '$lib/components/bottom-cta-section.svelte';
 	import FeaturesSection from '$lib/components/features-section.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 
 	let selectedClass = $state('');
@@ -326,14 +326,7 @@
 					<div
 						class="flex animate-in flex-wrap justify-center gap-2 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-3"
 					>
-						<Badge variant="ghost" href={resolve('/blog/which-aps-to-take')} class="p-2">
-							Planning your AP year?
-							<ArrowRightIcon class="size-4" />
-						</Badge>
-						<Badge variant="ghost" href={resolve('/summer')} class="p-2">
-							Summer study guide
-							<ArrowRightIcon class="size-4" />
-						</Badge>
+						<Badge variant="ghost" class="p-2">New: AP Lunch Joke Subject 😂</Badge>
 					</div>
 					<h1
 						class="animate-in font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-4xl lg:text-5xl"
@@ -493,6 +486,8 @@
 					</Accordion.Item>
 				</Accordion.Root>
 			</section>
+
+			<BottomCtaSection />
 		</div>
 	</main>
 
