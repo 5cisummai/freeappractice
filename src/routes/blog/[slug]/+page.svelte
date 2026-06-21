@@ -41,7 +41,6 @@
 
 	const popularPosts = [
 		{ title: 'The Science of Studying', slug: 'science_of_studying' },
-		{ title: 'A Simple FRQ Guide', slug: 'simple_frq_guide' },
 		{ title: 'Stop Studying Harder', slug: 'stop_studying_harder' },
 		{ title: 'Subject-Specific Tips', slug: 'subject_specific' }
 	];

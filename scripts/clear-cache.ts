@@ -65,15 +65,7 @@ async function main() {
 		console.log('Dry-run mode — nothing deleted.');
 	} else {
 		const result = await Question.deleteMany({});
-		console.log(`✓ Deleted ${result.deletedCount} question(s) from the MCQ cache.`);
-
-		// Also clear FRQ cache
-		const frqSchema = new mongoose.Schema({ apClass: String, unit: String });
-		const FRQQuestion =
-			(mongoose.models['FRQQuestion'] as mongoose.Model<mongoose.Document>) ??
-			mongoose.model('FRQQuestion', frqSchema);
-		const frqResult = await FRQQuestion.deleteMany({});
-		console.log(`✓ Deleted ${frqResult.deletedCount} question(s) from the FRQ cache.`);
+		console.log(`✓ Deleted ${result.deletedCount} question(s) from the cache.`);
 
 		// Also clear SeenQuestion history
 		const seenSchema = new mongoose.Schema({ userId: String });

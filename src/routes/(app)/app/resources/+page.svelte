@@ -14,11 +14,6 @@
 			href: resolve('/blog/science_of_studying'),
 			label: 'Science of Studying',
 			description: 'Research-backed strategies for spacing, retrieval, and retention.'
-		},
-		{
-			href: resolve('/blog/simple_frq_guide'),
-			label: 'FRQ Guide',
-			description: 'A practical framework for improving free-response scores.'
 		}
 	];
 

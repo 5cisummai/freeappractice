@@ -79,7 +79,6 @@
 						bind:selectedClass
 						bind:selectedUnit
 						bind:customTopic
-						hideQuestionTypeTabs={true}
 						isLoading={false}
 						onSelectionChange={handleSelectionChange}
 						onGenerate={handleGenerate}

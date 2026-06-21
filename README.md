@@ -67,8 +67,6 @@ Depending on your deployment and storage setup, you may also need S3 credentials
 The main API routes now live under `src/routes/api` and are handled by SvelteKit server endpoints.
 
 - `POST /api/question` generates or returns a cached AP question.
-- `POST /api/question/frq` generates FRQ questions.
-- `POST /api/question/frq/grade` grades FRQ answers.
 - `POST /api/question/cache/generate` primes the question cache.
 - `GET /api/question/cache/stats` reports cache status.
 - `GET /api/question/[id]` fetches a stored question by ID.
@@ -77,7 +75,7 @@ The main API routes now live under `src/routes/api` and are handled by SvelteKit
 - `GET /api/auth/history` returns paginated MCQ attempt history with hydrated question content from S3. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` filter. Response: `{ items: [{ attempt, question }], total, page, limit }` where `question` is null if the S3 object is missing.
 - `PATCH /api/auth/update-account` updates a signed-in user's name and email.
 - `POST /api/auth/bookmark`, `/api/auth/bookmarks` manage saved questions.
-- `POST /api/auth/record-attempt`, `/api/auth/record-frq-attempt` store answer history.
+- `POST /api/auth/record-attempt` stores answer history.
 - `POST /api/auth/forgot-password`, `/api/auth/reset-password`, `/api/auth/verify-email`, `/api/auth/verification/update-email` support account recovery and verification flows.
 - `POST /api/auth/delete-account` removes a user account.
 - `GET /api/blog`, `GET /api/blog/[slug]` expose published blog data.

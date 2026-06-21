@@ -28,7 +28,7 @@ export interface QuestionPoolConfig<
 	TDoc extends PoolDocument,
 	TCached extends { cached: boolean }
 > {
-	questionType: 'mcq' | 'frq';
+	questionType: 'mcq';
 	logScope: string;
 	defaultUnit: string;
 	getPoolSize: () => number;

@@ -76,7 +76,7 @@
 			sections: [
 				{
 					title: 'Fixes',
-					items: ['Bug fixes and edge-case handling across practice, FRQs, and account flows']
+					items: ['Bug fixes and edge-case handling across practice and account flows']
 				},
 				{
 					title: 'AI',
@@ -147,7 +147,7 @@
 					title: 'Improvements',
 					items: [
 						'Optimized code for better performance and reuse across components',
-						'Refined FRQ handling with slight quality improvements'
+						'Refined practice handling with slight quality improvements'
 					]
 				}
 			]
@@ -199,7 +199,7 @@
 					title: 'New Features',
 					items: [
 						'Added a new dashboard for loggin in users including a home, practice, progress and settings page',
-						'Added alpha support for FRQs for logged in users, does not affect progress statistics yet'
+						'Added practice improvements for logged in users'
 					]
 				},
 				{
@@ -274,7 +274,7 @@
 					title: 'Changes',
 					items: [
 						'Project is now Open-Source, repo at github.com/5cisummai/freeappractice',
-							'Added optional analytics preference controls'
+						'Added optional analytics preference controls'
 					]
 				},
 				{

@@ -6,7 +6,6 @@
 import { createHash } from 'node:crypto';
 import crypto from 'crypto';
 import { json } from '@sveltejs/kit';
-import { connectDb } from '$lib/server/db';
 import { SeenQuestion } from '$lib/server/models/seen-question';
 import { UserProfile } from '$lib/server/models/user-profile';
 import type { IUserProfile } from '$lib/server/models/user-profile';
@@ -103,8 +102,6 @@ interface ProgressEntry {
 	mastery: number;
 	totalAttempts: number;
 	correctAttempts: number;
-	frqTotalAttempts: number;
-	frqTotalScore: number;
 	lastAttemptAt?: Date;
 }
 
@@ -125,9 +122,7 @@ export function findOrCreateProgressEntry(
 			completed: false,
 			mastery: 0,
 			totalAttempts: 0,
-			correctAttempts: 0,
-			frqTotalAttempts: 0,
-			frqTotalScore: 0
+			correctAttempts: 0
 		});
 		entry = progress[progress.length - 1];
 	}
@@ -147,7 +142,7 @@ export async function recordSeenQuestion(
 	contentHash: string,
 	apClass: string,
 	unit: string,
-	questionType: 'mcq' | 'frq'
+	questionType: 'mcq'
 ): Promise<void> {
 	try {
 		await SeenQuestion.updateOne(

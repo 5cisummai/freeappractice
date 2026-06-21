@@ -1,5 +1,5 @@
 import { CUSTOM_UNIT_VALUE, hashTopicKey, isCustomUnit } from '$lib/constants/custom-unit';
-import type { AnswerResult, FRQGrade, FRQQuestion, GeneratedQuestion } from '$lib/types/question';
+import type { AnswerResult, GeneratedQuestion } from '$lib/types/question';
 
 export interface McqPersistedState {
 	currentQuestion: GeneratedQuestion;
@@ -13,18 +13,7 @@ export interface McqPersistedState {
 	questionCount: number;
 }
 
-export interface FrqPersistedState {
-	frqQuestion: FRQQuestion;
-	frqResponses: Record<string, string>;
-	frqGrade: FRQGrade | null;
-	hasSubmitted: boolean;
-	statusMessage: string;
-	startedAtMs: number;
-	questionCount: number;
-}
-
 export function getPracticeStorageKey(
-	mode: 'mcq' | 'frq',
 	selectedClass: string,
 	selectedUnit: string,
 	customTopic: string
@@ -32,7 +21,7 @@ export function getPracticeStorageKey(
 	const unitPart = isCustomUnit(selectedUnit)
 		? `${CUSTOM_UNIT_VALUE}_${hashTopicKey(customTopic.trim())}`
 		: selectedUnit;
-	return `practice_q_${mode}_${selectedClass}_${unitPart}`;
+	return `practice_q_mcq_${selectedClass}_${unitPart}`;
 }
 
 export type SavePracticeResult = { ok: true } | { ok: false; warning: string };
@@ -72,26 +61,6 @@ export function saveMcqPracticeState(
 	}
 }
 
-export function saveFrqPracticeState(
-	key: string,
-	state: FrqPersistedState | null
-): SavePracticeResult {
-	if (typeof localStorage === 'undefined') return { ok: true };
-	try {
-		if (!state) {
-			localStorage.removeItem(key);
-			return { ok: true };
-		}
-		localStorage.setItem(key, JSON.stringify(state));
-		return { ok: true };
-	} catch {
-		return {
-			ok: false,
-			warning: 'Progress could not be saved locally. Your current attempt is still active.'
-		};
-	}
-}
-
 export function loadMcqPracticeState(key: string): {
 	state: McqPersistedState | null;
 	restoreFailed?: boolean;
@@ -106,26 +75,6 @@ export function loadMcqPracticeState(key: string): {
 			answerResult: (data.answerResult as AnswerResult | null) ?? null,
 			selectedOption: (data.selectedOption as string | null) ?? null,
 			showExplanation: Boolean(data.showExplanation),
-			statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
-			startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),
-			questionCount: typeof data.questionCount === 'number' ? data.questionCount : 0
-		},
-		restoreFailed
-	};
-}
-
-export function loadFrqPracticeState(key: string): {
-	state: FrqPersistedState | null;
-	restoreFailed?: boolean;
-} {
-	const { data, restoreFailed } = readPracticeStorageJson(key);
-	if (!data?.frqQuestion) return { state: null, restoreFailed };
-	return {
-		state: {
-			frqQuestion: data.frqQuestion as FRQQuestion,
-			frqResponses: (data.frqResponses as Record<string, string>) ?? {},
-			frqGrade: (data.frqGrade as FRQGrade | null) ?? null,
-			hasSubmitted: Boolean(data.hasSubmitted),
 			statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
 			startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),
 			questionCount: typeof data.questionCount === 'number' ? data.questionCount : 0

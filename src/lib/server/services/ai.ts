@@ -9,7 +9,6 @@ const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 export const ADVANCED_MODEL = env.ADVANCED_MODEL ?? 'gpt-5.4-mini';
 const BASIC_MODEL = env.BASIC_MODEL ?? 'gpt-5.4-mini';
 export const TUTOR_MODEL = env.TUTOR_MODEL ?? 'gpt-4.1-mini';
-export const GRADING_MODEL = env.GRADING_MODEL ?? 'gpt-5.4-mini';
 
 export const LATEX_RULE =
 	'For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.';

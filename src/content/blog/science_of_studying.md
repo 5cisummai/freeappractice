@@ -56,7 +56,7 @@ Karpicke & Roediger (2008), in a landmark study published in _Science_, demonstr
 
 A direct comparison captured in the research puts it starkly: students who spent three hours re-reading retained 25% of the material after one month, while students who spent three hours on spaced retrieval practice retained 82% of the material after one month. The activities took the same time but produced vastly different outcomes.
 
-For AP prep, this means free response questions (FRQs) should be the _core_ of your study routine, not the final step before the exam. The College Board releases years of past FRQs for every AP subject. Do them under realistic conditions. Grade yourself against the scoring guidelines. Then figure out _why_ you missed what you missed.
+For AP prep, this means written-response questions (written-response questions) should be the _core_ of your study routine, not the final step before the exam. The College Board releases years of past written-response questions for every AP subject. Do them under realistic conditions. Grade yourself against the scoring guidelines. Then figure out _why_ you missed what you missed.
 
 Multiple choice practice works the same way - but only if you read the explanations for every question, including the ones you got right. Understanding _why_ A is correct and why C is wrong builds deeper knowledge than just tallying your score.
 
@@ -70,7 +70,7 @@ Interleaving - mixing different topics or problem types within a single study se
 
 For AP Calculus, this means doing a set of problems that mixes derivatives, integrals, and limits rather than 30 derivative problems in a row. For AP US History, it means pulling together essay prompts from different periods rather than drilling only the era you just finished in class.
 
-The College Board's AP exams are inherently interleaved - the multiple choice section jumps between units, and FRQs often require synthesizing information across time periods or conceptual areas. Studying in blocks trains you for a test that doesn't exist.
+The College Board's AP exams are inherently interleaved - the multiple choice section jumps between units, and written-response questions often require synthesizing information across time periods or conceptual areas. Studying in blocks trains you for a test that doesn't exist.
 
 ---
 
@@ -93,12 +93,12 @@ Here's a rough template for students 10–12 weeks out from AP exams:
 **Weeks 1–6 (Building Knowledge)**
 
 - Cover content by unit, but begin your Anki deck or retrieval practice immediately after each unit - don't wait until "review mode"
-- Do at least one set of FRQs per week, graded against official rubrics
+- Do at least one set of written-response questions per week, graded against official rubrics
 - Use resources like [freeappractice.org](https://freeappractice.org) for unlimited AI-generated practice questions that adapt to the units you're studying
 
 **Weeks 7–9 (Active Retrieval Phase)**
 
-- Shift the majority of study time to practice questions and FRQs
+- Shift the majority of study time to practice questions and written-response questions
 - Begin interleaving topics across units
 - Your Anki reviews should now be pulling in cards from all earlier units - don't suppress them
 

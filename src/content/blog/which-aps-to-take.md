@@ -10,7 +10,7 @@ _AP exams are finally over. Now comes the question every high school student ask
 
 ---
 
-Once the last FRQ is submitted and the College Board website closes for another year, most students fall into one of two categories.
+Once the last written-response is submitted and the College Board website closes for another year, most students fall into one of two categories.
 
 The first group says they'll "figure it out later."
 

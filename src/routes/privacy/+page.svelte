@@ -59,8 +59,7 @@
 					<ul class="list-disc space-y-1 pl-6">
 						<li><strong>Account data:</strong> name, email address, and password hash</li>
 						<li>
-							<strong>Practice data:</strong> answers submitted, question attempts, FRQ responses, progress,
-							and bookmarks
+							<strong>Practice data:</strong> answers submitted, question attempts, progress, and bookmarks
 						</li>
 						<li><strong>Bug reports and account requests:</strong> text and metadata you submit</li>
 						<li>
@@ -68,9 +67,8 @@
 							requests
 						</li>
 						<li>
-							<strong>User-provided responses:</strong> AI tutor prompts and FRQ responses may be sent
-							to OpenAI for processing so the Service can generate responses. Please do not submit sensitive
-							personal information.
+							<strong>User-provided responses:</strong> AI tutor prompts may be sent to OpenAI for processing
+							so the Service can generate responses. Please do not submit sensitive personal information.
 						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
