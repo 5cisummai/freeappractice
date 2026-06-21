@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import QuestionCard, { type AnswerResult } from '$lib/components/question-card.svelte';
-	import QuestionSelector from '$lib/components/question-selector.svelte';
+	import QuestionShell from '$lib/components/question-shell.svelte';
+	import type { AnswerResult } from '$lib/components/question-card.svelte';
 	import { toast } from 'svelte-sonner';
 	import { unitForProgress } from '$lib/constants/custom-unit';
 	import PageShell from '$lib/components/page-shell.svelte';
@@ -23,14 +23,6 @@
 		selectedUnit = presetUnit;
 		requestVersion = 1;
 	});
-
-	function handleSelectionChange() {
-		requestVersion = 0;
-	}
-
-	function handleGenerate() {
-		requestVersion += 1;
-	}
 
 	async function syncAttempt(
 		path: string,
@@ -76,22 +68,13 @@
 </svelte:head>
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">
-	<div class="mx-auto max-w-250 space-y-6">
-		<QuestionSelector
+	<div class="mx-auto max-w-250">
+		<QuestionShell
 			bind:selectedClass
 			bind:selectedUnit
 			bind:customTopic
-			onSelectionChange={handleSelectionChange}
-			onGenerate={handleGenerate}
+			bind:requestVersion
+			onAnswered={handleAnswered}
 		/>
-		{#key `${selectedClass}:${selectedUnit}:${customTopic}:${requestVersion}`}
-			<QuestionCard
-				{selectedClass}
-				{selectedUnit}
-				{customTopic}
-				{requestVersion}
-				onAnswered={handleAnswered}
-			/>
-		{/key}
 	</div>
 </PageShell>

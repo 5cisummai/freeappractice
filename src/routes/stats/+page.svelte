@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 
 	interface GenerationStats {
 		byApClass: Record<string, number>;
@@ -71,10 +69,7 @@
 
 	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-6xl space-y-10 px-5 sm:px-8">
-			<Button variant="ghost" href={resolve('/')}>
-				<ArrowLeftIcon class="size-4" />
-				Back to Home
-			</Button>
+			<BackToHome />
 
 			<PublicPageHero
 				title="Question Generation Stats"

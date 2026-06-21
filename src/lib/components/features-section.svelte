@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { twAnimateInView, twAnimateInViewSubtle } from '$lib/tw-animate';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import apClassesData from '$lib/data/ap-classes.json';
 	import RocketIcon from '@lucide/svelte/icons/rocket';
@@ -77,7 +78,7 @@
 		aria-hidden="true"
 	></div>
 
-	<div class="mx-auto max-w-3xl space-y-5 text-center">
+	<div class="mx-auto max-w-3xl space-y-5 text-center {twAnimateInView}">
 		<h2
 			id="features-section-heading"
 			class="font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
@@ -103,7 +104,7 @@
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 		<!-- Card 1: Subject coverage -->
 		<article
-			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm"
+			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md {twAnimateInViewSubtle}"
 		>
 			<div
 				class="relative flex min-h-44 items-center justify-center overflow-hidden bg-muted/50 px-4 py-6 sm:px-5"
@@ -135,7 +136,7 @@
 
 		<!-- Card 2: Effortless to use -->
 		<article
-			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm"
+			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md {twAnimateInViewSubtle}"
 		>
 			<div class="flex min-h-44 items-center justify-center bg-muted/50 px-4 py-6 sm:px-6">
 				<div class="w-full max-w-62 space-y-3" aria-hidden="true">
@@ -180,7 +181,7 @@
 
 		<!-- Card 3: Instant feedback -->
 		<article
-			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm sm:col-span-2 lg:col-span-1"
+			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md sm:col-span-2 lg:col-span-1 {twAnimateInViewSubtle}"
 		>
 			<div
 				class="relative flex min-h-44 items-center justify-center overflow-hidden bg-muted/50 px-4 py-6 sm:px-6"
@@ -235,7 +236,7 @@
 
 		<!-- Card 4: History & insights -->
 		<article
-			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm lg:col-span-2"
+			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md lg:col-span-2 {twAnimateInViewSubtle}"
 		>
 			<div class="flex min-h-52 items-center justify-center bg-muted/50 px-4 py-6 sm:px-8">
 				<div
@@ -292,7 +293,7 @@
 
 		<!-- Card 5: AI tutor -->
 		<article
-			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm"
+			class="flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md {twAnimateInViewSubtle}"
 		>
 			<div class="relative flex min-h-52 items-center justify-center bg-muted/50 px-4 py-6 sm:px-6">
 				<div

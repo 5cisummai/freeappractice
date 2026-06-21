@@ -1,10 +1,23 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
-	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import { publicAssetUrl } from '$lib/public-assets';
+	import { publicPageAssets } from '$lib/data/public-page-assets';
 	import { resolve } from '$app/paths';
+
+	const aboutImages = {
+		missionPlanning: publicAssetUrl(publicPageAssets.about.missionPlanning),
+		studyWorkspace: publicAssetUrl(publicPageAssets.about.studyWorkspace)
+	};
+
+	const stats = [
+		{ value: '20+', label: 'AP Subjects' },
+		{ value: '∞', label: 'Free Questions' },
+		{ value: '2', label: 'Clicks to Start' },
+		{ value: '100%', label: 'Always Free' }
+	];
 </script>
 
 <svelte:head>
@@ -37,71 +50,92 @@
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
-	<main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
-		<Button variant="ghost" href={resolve('/')}>
-			<ArrowLeftIcon class="size-4" />
-			Back to Home
-		</Button>
+	<main id="main-content" class="mx-auto w-full max-w-6xl flex-1 px-5 py-14 sm:px-8 sm:py-20">
+		<header class="mx-auto max-w-3xl space-y-5 text-center">
+			<h1
+				class="font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-5xl lg:text-[3.25rem]"
+			>
+				Why We Made Free AP Practice<br />
+				Our Mission, Plain and Simple
+			</h1>
 
-		<PublicPageHero
-			class="mt-6"
-			align="start"
-			title="About Free AP Practice"
-			description="Free AP Practice supports high school students at every stage of the AP journey—choosing classes for next year, previewing Unit 1 over the summer, and preparing for exam day. Our platform blends on-demand AI question generation, study guides, preloaded question caches, and progress tracking in one free experience."
-		/>
+			<p class="mx-auto max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
+				We built this site so every student can get ready for AP exams without stress, fees, or
+				obstacles, all with the least friction possible.
+			</p>
+		</header>
 
-		<section class="mt-8 grid gap-6 sm:grid-cols-2">
-			<article class="rounded-xl border border-border bg-card p-6">
-				<h2 class="text-xl font-semibold text-primary">Mission</h2>
-				<p class="mt-3 text-sm text-muted-foreground">
-					Make AP prep equitable—from summer preview to exam week—with smarter, instant practice
-					for all major AP subjects and no subscription barrier. Every student deserves help
-					planning their AP year and building habits that last past August.
-				</p>
+		<section class="mt-14 grid gap-6 lg:grid-cols-3 lg:gap-8">
+			<article
+				class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card lg:col-span-1"
+			>
+				<img
+					src={aboutImages.missionPlanning}
+					alt="Students planning their AP study schedule with notes and a calendar"
+					class="aspect-4/3 w-full object-cover"
+					loading="lazy"
+					decoding="async"
+				/>
+
+				<div class="flex flex-1 flex-col p-6 sm:p-8">
+					<h2 class="text-xl font-semibold tracking-tight sm:text-2xl">
+						Building Equitable AP Access
+					</h2>
+					<p class="mt-4 flex-1 text-sm leading-7 text-muted-foreground sm:text-base">
+						Free AP Practice helps students pick AP classes, get a summer head start, and practice
+						for exams, totally free, no subscriptions.
+					</p>
+					<div class="mt-8">
+						<Button href={resolve('/summer')}>
+							Read more
+							<ArrowRightIcon class="size-4" />
+						</Button>
+					</div>
+				</div>
 			</article>
 
-			<article class="rounded-xl border border-border bg-card p-6">
-				<h2 class="text-xl font-semibold text-primary">Approach</h2>
-				<p class="mt-3 text-sm text-muted-foreground">
-					Combining local AI models, cloud fallback, and intelligent caching so students get a fast
-					first question and high-quality follow-ups every session.
-				</p>
-			</article>
+			<article class="overflow-hidden rounded-2xl border border-border bg-card lg:col-span-2">
+				<div class="grid h-full lg:grid-cols-2">
+					<img
+						src={aboutImages.studyWorkspace}
+						alt="A focused study workspace with laptop and notes"
+						class="h-full min-h-56 w-full object-cover lg:min-h-full"
+						loading="lazy"
+						decoding="async"
+					/>
 
-			<article class="rounded-xl border border-border bg-card p-6">
-				<h2 class="text-xl font-semibold text-primary">Core Features</h2>
-				<ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-					<li>• AI question generation across 20+ AP subjects</li>
-					<li>• Randomized unit-based practice for improved retention</li>
-					<li>• Local and OpenAI provider fallback for stability</li>
-					<li>• Your progress saved locally-including explanations and strong/weak tracking</li>
-				</ul>
-			</article>
+					<div class="flex flex-col justify-center p-6 sm:p-8">
+						<h2 class="text-xl font-semibold tracking-tight sm:text-2xl">
+							Transforming How Students Practice
+						</h2>
+						<p class="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
+							AI makes questions as you practice. Guides and cached questions get you started fast,
+							with progress tracking built in. All free with all core features to remain that way.
+						</p>
 
-			<article class="rounded-xl border border-border bg-card p-6">
-				<h2 class="text-xl font-semibold text-primary">Community</h2>
-				<p class="mt-3 text-sm text-muted-foreground">
-					Feedback and bug reports are welcome. We continuously improve on user testing and
-					curriculum alignment so every update is better than the last.
-				</p>
+						<div class="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+							{#each stats as stat (stat.label)}
+								<div
+									class="rounded-xl border border-border bg-background px-4 py-5 sm:px-5 sm:py-6"
+								>
+									<p class="text-2xl font-semibold tracking-tight sm:text-3xl">{stat.value}</p>
+									<p class="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+								</div>
+							{/each}
+						</div>
+
+						<div class="mt-8">
+							<Button href={resolve('/app')}>
+								Read more
+								<ArrowRightIcon class="size-4" />
+							</Button>
+						</div>
+					</div>
+				</div>
 			</article>
 		</section>
 
-		<section class="mt-10 rounded-xl border border-border bg-card p-6">
-			<h2 class="text-2xl font-semibold text-primary">How to Get Started</h2>
-			<ol class="mt-4 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
-				<li>
-					Still deciding? Read <a href={resolve('/blog/which-aps-to-take')} class="underline"
-						>which APs to take</a
-					>
-					or visit our
-					<a href={resolve('/summer')} class="underline">summer study guide</a>.
-				</li>
-				<li>Select your AP subject and start with Unit 1 if you're previewing over the summer.</li>
-				<li>Generate questions, review explanations, and repeat to build a daily habit.</li>
-			</ol>
-		</section>
-		<p class="mt-6 text-sm text-muted-foreground">Founded by Ajay Saravanan</p>
+		<p class="mt-12 text-center text-sm text-muted-foreground">Founded by Ajay Saravanan</p>
 	</main>
 
 	<SiteFooter />

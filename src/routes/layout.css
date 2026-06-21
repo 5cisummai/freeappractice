@@ -40,27 +40,6 @@
 	--sidebar-ring: oklch(0.546 0.235 256);
 }
 
-body.high-contrast {
-	--foreground: black;
-	--primary: #0000ff;
-	--border: black;
-	--card-foreground: black;
-}
-
-body.high-contrast.dark {
-	--foreground: white;
-	--primary: #ffff00;
-	--border: white;
-	--card-foreground: white;
-}
-
-body.reduce-motion * {
-	animation-duration: 0.01ms !important;
-	animation-iteration-count: 1 !important;
-	transition-duration: 0.01ms !important;
-	scroll-behavior: auto !important;
-}
-
 .dark {
 	--background: oklch(0.141 0.005 285.823);
 	--foreground: oklch(0.985 0 0);

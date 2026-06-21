@@ -18,34 +18,7 @@
 		});
 	}
 
-	const AP_EXAM_START = new Date(2026, 4, 4);
-
-	function getDaysUntilExamStart(): number {
-		const today = new Date();
-		const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-		const startOfExam = new Date(
-			AP_EXAM_START.getFullYear(),
-			AP_EXAM_START.getMonth(),
-			AP_EXAM_START.getDate()
-		);
-
-		const diffMs = startOfExam.getTime() - startOfToday.getTime();
-		return Math.max(0, Math.floor(diffMs / 86_400_000));
-	}
-
-	const daysUntilExamStart = getDaysUntilExamStart();
-
-	function goToPractice() {
-		window.location.href = resolve('/');
-	}
-
-	const popularPosts = [
-		{ title: 'The Science of Studying', slug: 'science_of_studying' },
-		{ title: 'Stop Studying Harder', slug: 'stop_studying_harder' },
-		{ title: 'Subject-Specific Tips', slug: 'subject_specific' }
-	];
 </script>
-
 <svelte:head>
 	<title>{data.post.title} – Free AP Practice Blog</title>
 	<meta name="description" content={data.post.excerpt} />
@@ -75,126 +48,56 @@
 	<Topbar />
 
 	<main id="main-content" class="flex-1">
-		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:py-16">
-			<div class="flex items-start justify-center gap-10">
-				<article class="w-full max-w-3xl min-w-0">
-					<Button variant="ghost" href={resolve('/blog')} class="mb-8">
-						<ArrowLeftIcon class="size-4" />
-						All posts
-					</Button>
-					{#if data.post.coverImage}
-						<img
-							src={data.post.coverImage}
-							alt={data.post.title}
-							class="mb-8 h-64 w-full rounded-xl object-cover sm:h-80"
-						/>
-					{/if}
-
-					<PublicPageHero
-						align="start"
-						class="mb-8"
-						title={data.post.title}
-						description={data.post.excerpt}
-						meta={formatDate(data.post.publishedAt ?? data.post.createdAt)}
+		<div class="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:py-16">
+			<article class="w-full min-w-0">
+				<Button variant="ghost" href={resolve('/blog')} class="mb-8">
+					<ArrowLeftIcon class="size-4" />
+					All posts
+				</Button>
+				{#if data.post.coverImage}
+					<img
+						src={data.post.coverImage}
+						alt={data.post.title}
+						class="mb-8 h-64 w-full rounded-xl object-cover sm:h-80"
 					/>
+				{/if}
 
-					<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
-					<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html data.htmlContent}
-					</div>
+				<PublicPageHero
+					align="start"
+					class="mb-8"
+					title={data.post.title}
+					description={data.post.excerpt}
+					meta={formatDate(data.post.publishedAt ?? data.post.createdAt)}
+				/>
 
-					<div class="mt-12 border-t border-border/70 pt-8">
-						<a
-							href={resolve('/blog')}
-							class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+				<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
+				<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html data.htmlContent}
+				</div>
+
+				<div class="mt-12 border-t border-border/70 pt-8">
+					<a
+						href={resolve('/blog')}
+						class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
 						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								class="h-4 w-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								aria-hidden="true"
-							>
-								<path d="m15 18-6-6 6-6" />
-							</svg>
-							Back to Blog
-						</a>
-					</div>
-				</article>
-
-				<aside class="hidden w-64 shrink-0 lg:sticky lg:top-8 lg:block lg:self-start xl:w-72">
-					<div class="flex flex-col gap-4">
-						<div class="rounded-xl border border-border/60 bg-card p-4">
-							<p
-								class="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
-							>
-								Free AP Practice
-							</p>
-							<p class="mb-2 text-xs text-muted-foreground">No Strings Attached!</p>
-							<h2 class="mb-3 text-sm leading-snug font-semibold text-foreground">
-								Ready to test yourself?
-							</h2>
-							<button
-								onclick={goToPractice}
-								class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
-							>
-								Start Practicing →
-							</button>
-						</div>
-
-						{#if daysUntilExamStart > 0}
-							<div class="rounded-xl border border-border/60 bg-card p-4 text-center">
-								<p class="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-									AP Exams begin in
-								</p>
-								<p class="mt-1 text-3xl font-bold text-foreground tabular-nums">
-									{daysUntilExamStart}
-								</p>
-								<p class="text-[11px] text-muted-foreground">
-									{daysUntilExamStart === 1 ? 'day' : 'days'}
-								</p>
-							</div>
-						{/if}
-
-						<div class="rounded-xl border border-border/60 bg-card p-4">
-							<p
-								class="mb-3 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
-							>
-								Top Study Guides
-							</p>
-							<ul class="flex flex-col gap-1.5">
-								{#each popularPosts.filter((p) => p.slug !== data.post.slug) as post (post.slug)}
-									<li>
-										<a
-											href={resolve(`/blog/${post.slug}`)}
-											class="block rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
-										>
-											{post.title}
-										</a>
-									</li>
-								{/each}
-							</ul>
-						</div>
-
-						<div class="rounded-xl border border-border/60 bg-card p-4">
-							<p
-								class="mb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
-							>
-								About
-							</p>
-							<p class="text-xs leading-relaxed text-muted-foreground">
-								FreeAPPractice.org is a free, student-built tool that utilizes AI to create
-								unlimited AP-style practice questions across 20+ subjects to help students prepare.
-							</p>
-						</div>
-					</div>
-				</aside>
-			</div>
+							<path d="m15 18-6-6 6-6" />
+						</svg>
+						Back to Blog
+					</a>
+				</div>
+			</article>
 		</div>
 	</main>
 

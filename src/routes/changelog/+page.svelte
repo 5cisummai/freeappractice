@@ -2,9 +2,7 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
-	import { resolve } from '$app/paths';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 
 	const changelog = [
 		{
@@ -548,10 +546,7 @@
 
 	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<Button variant="ghost" href={resolve('/')}>
-				<ArrowLeftIcon class="size-4" />
-				Back to Home
-			</Button>
+			<BackToHome />
 
 			<PublicPageHero
 				title="Changelog"

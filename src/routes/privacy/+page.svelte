@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 </script>
 
 <svelte:head>
@@ -32,10 +30,7 @@
 
 	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<Button variant="ghost" href={resolve('/')}>
-				<ArrowLeftIcon class="size-4" />
-				Back to Home
-			</Button>
+			<BackToHome />
 
 			<PublicPageHero
 				title="Privacy Policy"
@@ -82,7 +77,7 @@
 					<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
 					<ul class="list-disc space-y-1 pl-6">
 						<li>Authentication token and basic user profile data</li>
-						<li>Theme and accessibility preferences</li>
+						<li>Theme preferences</li>
 						<li>Draft or in-progress state needed to keep the app responsive between refreshes</li>
 					</ul>
 				</section>
@@ -116,8 +111,7 @@
 				<section>
 					<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
 					<p>
-						We use local browser storage to keep you signed in and to save theme and accessibility
-						preferences. We also use local storage to remember your optional analytics choice. In
+						We use local browser storage to keep you signed in and to save theme preferences. We also use local storage to remember your optional analytics choice. In
 						addition, we use a first-party cookie to remember sidebar state. We do not use
 						third-party advertising cookies. If you use a shared device, you should sign out when
 						finished.

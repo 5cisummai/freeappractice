@@ -23,7 +23,8 @@
 		"auth:repair-ids": "tsx scripts/repair-auth-user-ids.ts --commit",
 		"auth:repair-ids:dry": "tsx scripts/repair-auth-user-ids.ts",
 		"auth:validate": "tsx scripts/validate-better-auth-migration.ts",
-		"auth:verify": "tsx scripts/validate-better-auth-migration.ts"
+		"auth:verify": "tsx scripts/validate-better-auth-migration.ts",
+		"assets:upload": "tsx scripts/upload-public-asset.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "latest",
@@ -66,6 +67,7 @@
 		"@aws-sdk/client-s3": "^3.1041.0",
 		"@aws-sdk/s3-request-presigner": "^3.1041.0",
 		"@better-auth/mongo-adapter": "^1.6.19",
+		"@tanstack/table-core": "^8.21.3",
 		"@vercel/analytics": "2.0.1",
 		"@vercel/functions": "^3.7.1",
 		"@vercel/speed-insights": "^2.0.0",

@@ -2,8 +2,7 @@
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/practice-pages.js';
@@ -40,10 +39,7 @@
 	<Topbar />
 
 	<main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
-		<Button variant="ghost" href={resolve('/')}>
-			<ArrowLeftIcon class="size-4" />
-			Back to Home
-		</Button>
+		<BackToHome />
 
 		<PublicPageHero
 			class="mt-6"

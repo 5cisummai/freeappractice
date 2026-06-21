@@ -1,23 +1,22 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
-	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
 	const weeklyPlan = [
 		{
 			week: 'Week 1',
 			title: 'Set up',
-			detail: 'Confirm your AP subject, skim the Unit 1 outline, and try a handful of practice questions.'
+			detail:
+				'Confirm your AP subject, skim the Unit 1 outline, and try a handful of practice questions.'
 		},
 		{
 			week: 'Week 2',
 			title: 'Learn Unit 1',
-			detail: 'Alternate reading or videos with short practice sets—focus on understanding, not volume.'
+			detail:
+				'Alternate reading or videos with short practice sets—focus on understanding, not volume.'
 		},
 		{
 			week: 'Week 3',
@@ -48,6 +47,10 @@
 			description: 'Why short, spaced practice beats cramming—especially before the school year.'
 		}
 	];
+
+	function goToPractice() {
+		window.location.href = resolve('/');
+	}
 </script>
 
 <svelte:head>
@@ -82,96 +85,195 @@
 <div class="flex min-h-screen flex-col bg-background text-foreground">
 	<Topbar />
 
-	<main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
-		<Button variant="ghost" href={resolve('/')}>
-			<ArrowLeftIcon class="size-4" />
-			Back to practice
-		</Button>
+	<main id="main-content" class="flex-1">
+		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:py-16">
+			<div class="flex items-start justify-center gap-10">
+				<article class="w-full max-w-3xl min-w-0">
+					<BackToHome label="Back to practice" class="mb-8" />
 
-		<PublicPageHero
-			class="mt-6"
-			align="start"
-			title="Get ahead on AP this summer—without burning out"
-			description="Whether you're picking your first AP, starting high school, or previewing a class before September, use summer for planning and Unit 1—not cramming the whole course."
-		>
-			{#snippet eyebrow()}
-				<Badge variant="outline">Summer &amp; new school year</Badge>
-			{/snippet}
-			{#snippet actions()}
-				<Button href={resolve('/')}>Start practicing</Button>
-				<Button variant="outline" href={resolve('/blog/summer-ap-study-plan')}>
-					Read the 4-week plan
-					<ArrowRightIcon class="size-4" />
-				</Button>
-			{/snippet}
-		</PublicPageHero>
+					<header class="mb-10 space-y-4">
+						<Badge variant="outline" class="rounded-full px-4 py-1 text-sm font-normal">
+							Study guide
+						</Badge>
 
-		<section class="mt-10 grid gap-6 sm:grid-cols-2">
-			<article class="rounded-xl border border-border bg-card p-6">
-				<h2 class="text-xl font-semibold text-primary">Who this is for</h2>
-				<ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-					<li>Students choosing AP classes for next year</li>
-					<li>Rising sophomores and juniors taking their first AP</li>
-					<li>Anyone previewing Unit 1 before school starts</li>
-					<li>Summer self-studiers who want low-pressure practice</li>
-				</ul>
-			</article>
-			<article class="rounded-xl border border-border bg-card p-6">
-				<h2 class="text-xl font-semibold text-primary">Daily habit (about 20 min)</h2>
-				<ol class="mt-3 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
-					<li>Pick your AP subject and Unit 1 on the home page.</li>
-					<li>Generate a few questions—no timer required.</li>
-					<li>Read explanations and note one topic to revisit tomorrow.</li>
-				</ol>
-			</article>
-		</section>
-
-		<section class="mt-10">
-			<h2 class="text-2xl font-semibold tracking-tight">4-week preview outline</h2>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Repeat or shorten this plan to match your summer. Details and pacing tips are in the
-				<a href={resolve('/blog/summer-ap-study-plan')} class="underline underline-offset-2"
-					>full study plan post</a
-				>.
-			</p>
-			<div class="mt-6 grid gap-4 sm:grid-cols-2">
-				{#each weeklyPlan as item (item.week)}
-					<div class="rounded-xl border border-border/70 bg-card p-5">
-						<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-							{item.week}
-						</p>
-						<h3 class="mt-1 text-lg font-semibold">{item.title}</h3>
-						<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{item.detail}</p>
-					</div>
-				{/each}
-			</div>
-		</section>
-
-		<section class="mt-10 rounded-xl border border-border bg-card p-6">
-			<h2 class="text-2xl font-semibold text-primary">Start here</h2>
-			<ul class="mt-4 space-y-4">
-				{#each resources as link (link.href)}
-					<li>
-						<a
-							href={link.href}
-							class="group block rounded-lg border border-border/60 p-4 transition-colors hover:bg-muted/40"
+						<h1
+							class="font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-5xl"
 						>
-							<p class="font-medium group-hover:text-primary">{link.title}</p>
-							<p class="mt-1 text-sm text-muted-foreground">{link.description}</p>
-						</a>
-					</li>
-				{/each}
-			</ul>
-		</section>
+							Summer AP Study Guide
+						</h1>
 
-		<section class="mt-10 rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
-			<h2 class="text-xl font-semibold">Ready to try a question?</h2>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Select an AP class, choose Unit 1, and generate your first practice question—free, no signup.
-			</p>
-			<Button class="mt-4" href={resolve('/')}>Go to practice</Button>
-		</section>
+						<p class="text-base leading-8 text-muted-foreground sm:text-lg">
+							Whether you're picking your first AP, starting high school, or previewing a class
+							before September, use summer for planning and Unit 1—not cramming the whole course.
+						</p>
+					</header>
+
+					<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
+						<h2>Who this is for</h2>
+						<p>
+							This guide is meant for students who want a light, realistic summer routine—not a
+							full-course sprint before school starts.
+						</p>
+						<ul>
+							<li>Students choosing AP classes for next year</li>
+							<li>Rising sophomores and juniors taking their first AP</li>
+							<li>Anyone previewing Unit 1 before school starts</li>
+							<li>Summer self-studiers who want low-pressure practice</li>
+						</ul>
+
+						<h2>Daily habit (about 20 minutes)</h2>
+						<p>
+							Consistency matters more than long sessions. A short daily block is enough to build
+							familiarity with the subject and the exam format.
+						</p>
+						<ol>
+							<li>Pick your AP subject and Unit 1 on the home page.</li>
+							<li>Generate a few questions—no timer required.</li>
+							<li>Read explanations and note one topic to revisit tomorrow.</li>
+						</ol>
+
+						<h2>4-week preview outline</h2>
+						<p>
+							Repeat or shorten this plan to match your summer. For daily pacing and more detail, see
+							the
+							<a href={resolve('/blog/summer-ap-study-plan')}>full study plan post</a>.
+						</p>
+
+						{#each weeklyPlan as item (item.week)}
+							<h3>{item.week}: {item.title}</h3>
+							<p>{item.detail}</p>
+						{/each}
+
+						<hr />
+
+						<p>
+							Ready to try a question? Select an AP class, choose Unit 1, and generate your first
+							practice question—free, no signup.
+							<a href={resolve('/')}>Go to practice</a>.
+						</p>
+					</div>
+				</article>
+
+				<aside class="hidden w-64 shrink-0 lg:sticky lg:top-8 lg:block lg:self-start xl:w-72">
+					<div class="flex flex-col gap-4">
+						<div class="rounded-xl border border-border/60 bg-card p-4">
+							<p
+								class="mb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+							>
+								Free AP Practice
+							</p>
+							<p class="mb-2 text-xs text-muted-foreground">No signup required</p>
+							<h2 class="mb-3 text-sm leading-snug font-semibold text-foreground">
+								Start with Unit 1
+							</h2>
+							<button
+								onclick={goToPractice}
+								class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-80"
+							>
+								Start practicing →
+							</button>
+						</div>
+
+						<div class="rounded-xl border border-border/60 bg-card p-4">
+							<p
+								class="mb-3 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+							>
+								Related reading
+							</p>
+							<ul class="flex flex-col gap-1.5">
+								{#each resources as link (link.href)}
+									<li>
+										<a
+											href={link.href}
+											class="block rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
+										>
+											{link.title}
+										</a>
+									</li>
+								{/each}
+							</ul>
+						</div>
+
+						<div class="rounded-xl border border-border/60 bg-card p-4">
+							<p
+								class="mb-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+							>
+								About
+							</p>
+							<p class="text-xs leading-relaxed text-muted-foreground">
+								FreeAPPractice.org helps high school students plan AP classes, preview coursework
+								over the summer, and practice with instant feedback—always free.
+							</p>
+						</div>
+					</div>
+				</aside>
+			</div>
+		</div>
 	</main>
 
 	<SiteFooter />
 </div>
+
+<style>
+	.blog-serif {
+		font-family:
+			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
+			serif;
+	}
+
+	:global(.prose) {
+		color: oklch(var(--foreground));
+		line-height: 1.75;
+		font-size: 1rem;
+		font-family:
+			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
+			serif;
+	}
+	:global(.prose h1),
+	:global(.prose h2),
+	:global(.prose h3),
+	:global(.prose h4) {
+		font-weight: 600;
+		letter-spacing: -0.025em;
+		margin-top: 2em;
+		margin-bottom: 0.75em;
+		color: inherit;
+	}
+	:global(.prose h2) {
+		font-size: 1.5em;
+	}
+	:global(.prose h3) {
+		font-size: 1.25em;
+	}
+	:global(.prose p) {
+		margin-top: 0;
+		margin-bottom: 1.25em;
+	}
+	:global(.prose a) {
+		color: oklch(var(--primary));
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	:global(.prose a:hover) {
+		opacity: 0.8;
+	}
+	:global(.prose ul),
+	:global(.prose ol) {
+		padding-left: 1.5em;
+		margin-bottom: 1.25em;
+	}
+	:global(.prose ul) {
+		list-style-type: disc;
+	}
+	:global(.prose ol) {
+		list-style-type: decimal;
+	}
+	:global(.prose li) {
+		margin-bottom: 0.4em;
+	}
+	:global(.prose hr) {
+		border: none;
+		border-top: 1px solid oklch(var(--border));
+		margin: 2em 0;
+	}
+</style>

@@ -7,8 +7,6 @@ import { authCallbackUrl } from '$lib/auth-callback-url.js';
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
 	fontSize: number;
-	highContrast: boolean;
-	reduceMotion: boolean;
 };
 
 type AccountUser = {
@@ -19,9 +17,7 @@ type AccountUser = {
 class SettingsController {
 	settings = $state<SettingsData>({
 		theme: 'system',
-		fontSize: 16,
-		highContrast: false,
-		reduceMotion: false
+		fontSize: 16
 	});
 	accountPending = $state(false);
 	passwordPending = $state(false);
@@ -32,7 +28,7 @@ class SettingsController {
 
 		this.load();
 		setMode(this.settings.theme);
-		this.applyAccessibility();
+		this.applyFontSize();
 	}
 
 	private load() {
@@ -55,7 +51,7 @@ class SettingsController {
 		} catch {
 			// Keep the current in-memory settings even if persistence fails.
 		}
-		this.applyAccessibility();
+		this.applyFontSize();
 	}
 
 	setTheme(theme: 'light' | 'dark' | 'system') {
@@ -69,18 +65,9 @@ class SettingsController {
 		this.save();
 	}
 
-	toggleAccessibility(key: keyof Pick<SettingsData, 'highContrast' | 'reduceMotion'>) {
-		this.settings[key] = !this.settings[key];
-		this.save();
-	}
-
-	private applyAccessibility() {
+	private applyFontSize() {
 		if (typeof document === 'undefined') return;
-		const root = document.documentElement;
-
-		root.style.fontSize = `${this.settings.fontSize}px`;
-		document.body.classList.toggle('high-contrast', this.settings.highContrast);
-		document.body.classList.toggle('reduce-motion', this.settings.reduceMotion);
+		document.documentElement.style.fontSize = `${this.settings.fontSize}px`;
 	}
 
 	async updateAccount(user: AccountUser, data: { name: string; email: string }) {
