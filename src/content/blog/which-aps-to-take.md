@@ -4,6 +4,7 @@ excerpt: AP exams are over. Here's how to decide which AP classes are actually w
 summary: A research-backed and realistic guide to choosing AP classes after exam season ends.
 published: true
 date: 2026-05-17
+coverImage: https://public.assets.freeappractice.org/marissa-grootes-flRm0z3MEoA-unsplash.jpg
 ---
 
 _AP exams are finally over. Now comes the question every high school student asks next: what should you take next year?_

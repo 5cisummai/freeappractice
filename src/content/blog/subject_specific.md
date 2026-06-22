@@ -4,6 +4,7 @@ excerpt: How AP Bio, APUSH, Calc, Lang, Chem, and Psych each reward different pr
 summary: Subject-by-subject AP prep guidance so you can study for each exam according to the skills it actually rewards.
 published: true
 date: 2026-03-31
+coverImage: https://public.assets.freeappractice.org/alexander-kaufmann-F-2jfXs2INI-unsplash.jpg
 ---
 
 _Generic advice is everywhere. Here's what's actually different about prepping for AP Bio vs. AP Lang vs. AP Calc - and how to use those differences._

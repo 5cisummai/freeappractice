@@ -4,7 +4,7 @@ export type QuestionOption = {
 	text: string;
 };
 
-export type QuestionPanel = {
+type QuestionPanel = {
 	title: string;
 	content: string[];
 };

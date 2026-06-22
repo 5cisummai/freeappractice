@@ -3,7 +3,7 @@ import { PRODUCTION_SITE_URL } from '$lib/site-url';
 
 const BASE_URL = PRODUCTION_SITE_URL;
 
-export function practicePageUrl(slug: string): string {
+function practicePageUrl(slug: string): string {
 	return `${BASE_URL}/practice/${slug}`;
 }
 
@@ -54,7 +54,9 @@ export function buildPracticePageJsonLd(page: PracticePage): Record<string, unkn
 	};
 }
 
-export function buildPracticeBreadcrumbs(page: PracticePage): Array<{ label: string; href?: string }> {
+export function buildPracticeBreadcrumbs(
+	page: PracticePage
+): Array<{ label: string; href?: string }> {
 	const crumbs: Array<{ label: string; href?: string }> = [{ label: 'Home', href: '/' }];
 
 	const classSlug = page.slug.split('/')[0]!;

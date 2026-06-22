@@ -1,22 +1,17 @@
 # Free AP Practice
 
-Free AP Practice is a personal, student-built SvelteKit app for generating AP practice questions, tracking progress, and helping students study with instant feedback. The project was refactored from the older backend-first implementation into a full SvelteKit application, and it is now intended to be deployed on Vercel.
+Free AP Practice is a student-built SvelteKit app for generating AP practice questions, tracking progress, and studying with instant feedback. The project is founded and maintained by Ajay Saravanan.
 
-The project is founded and maintained by Ajay Saravanan. The goal is straightforward: make AP prep feel faster, more personalized, and more accessible for students who do not want to pay for another prep subscription just to get quality practice.
+The goal is straightforward: make AP prep feel faster, more personalized, and more accessible for students who do not want to pay for another prep subscription just to get quality practice.
 
-## What’s included
+## What's included
 
-- A public landing page with AP practice entry points, FAQ, and onboarding.
-- Authenticated app pages for dashboard, practice, progress, and settings.
-- A public blog and blog API for study guides, site updates, and exam-prep content.
-- SvelteKit server routes for auth, question generation, tutoring, bug reports, S3 upload/download signing, account history, and blog content management.
-- The same core API surface as the previous version, but implemented as route handlers inside SvelteKit.
-
-## Project background
-
-- Built from the perspective of a student who wanted practice to be immediate instead of buried behind paywalls or slow classroom tools.
-- Designed to support both quick random practice and more intentional unit-based review.
-- Focused on keeping the product lightweight: fast question generation, minimal friction, and a clear path from reading content to actually practicing.
+- Public marketing pages: landing, about, subjects, summer study guide, blog, privacy, terms, and changelog.
+- Authenticated app at `/app` for dashboard, practice, progress, question history, resources, and settings.
+- Per-subject practice routes under `/practice/[...slug]`.
+- AI-generated MCQs with optional custom topics, an in-app tutor, bookmarks, and attempt history.
+- Better Auth for email/password and Google sign-in (including Google One Tap when configured).
+- SvelteKit API routes for questions, user data, tutoring, blog content, S3 storage helpers, and bug reports.
 
 ## Tech stack
 
@@ -24,83 +19,158 @@ The project is founded and maintained by Ajay Saravanan. The goal is straightfor
 - TypeScript
 - Tailwind CSS
 - MongoDB + Mongoose
-- OpenAI for question generation and tutor responses
-- Resend for email flows
-- AWS S3 for question storage and file transfer helpers
-- Vercel for deployment
+- [Better Auth](https://www.better-auth.com/) for sessions, email flows, and OAuth
+- [Vercel AI SDK](https://sdk.vercel.ai/) + OpenAI for question generation and tutor responses
+- Resend for transactional email
+- AWS S3 for private question storage
+- Vercel for deployment (`@sveltejs/adapter-vercel`)
 
 ## Getting started
 
+### Prerequisites
+
+- Node.js 20+
+- [pnpm](https://pnpm.io/)
+- MongoDB (Atlas or local via Docker Compose)
+
+### Setup
+
 1. Install dependencies:
+
    ```sh
    pnpm install
    ```
-2. Create a local env file and add your secrets.
-3. Start the dev server:
+
+2. Copy the example env file and fill in your values:
+
+   ```sh
+   cp .env.example .env
+   ```
+
+3. (Optional) Start a local MongoDB instance:
+
+   ```sh
+   docker compose up -d
+   ```
+
+   Then set `DATABASE_URI=mongodb://root:password@localhost:27017/freeappractice?authSource=admin` in `.env`.
+
+4. Start the dev server:
+
    ```sh
    pnpm dev
    ```
-4. Build for production:
+
+5. Build for production:
+
    ```sh
    pnpm build
    ```
-5. Run the smoke test suite:
+
+6. Run the Playwright smoke suite (builds the app and tests public pages, sitemap, robots, and `/health`):
+
    ```sh
    pnpm test
    ```
 
+### Useful scripts
+
+| Command | Purpose |
+|---------|---------|
+| `pnpm check` | Type-check with `svelte-check` |
+| `pnpm lint` / `pnpm format` | ESLint and Prettier |
+| `pnpm cache:clear` / `pnpm cache:warm` | Manage the question cache |
+| `pnpm auth:indexes` | Create Better Auth MongoDB indexes |
+| `pnpm auth:migrate:dry` / `pnpm auth:migrate` | Dry-run or run legacy-user migration to Better Auth |
+| `pnpm auth:validate` | Validate a completed auth migration |
+
 ## Environment variables
 
-The server code reads private env values through SvelteKit. At minimum, you will need:
+Copy `.env.example` to `.env`. Required for a working local setup:
 
-- `DATABASE_URI` for MongoDB
-- `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` for Better Auth sessions
-- `OPEN_AI_KEY` for OpenAI access
-- `OPENAI_BASE_URL` or `OPENAI_URL` if you use a non-default OpenAI-compatible endpoint
-- `RESEND_API_KEY` for transactional email
-- `GITHUB_BUG_REPORT_TOKEN` for creating GitHub Issues from the in-app bug report form
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URI` | MongoDB connection string |
+| `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | App base URL for auth callbacks (e.g. `http://localhost:5173`) |
+| `OPEN_AI_KEY` | OpenAI API key |
+| `OPENAI_BASE_URL` | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`) |
 
-Depending on your deployment and storage setup, you may also need S3 credentials and any related storage settings used by the upload/download routes.
+Commonly needed for full functionality:
+
+| Variable | Purpose |
+|----------|---------|
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
+| `PUBLIC_GOOGLE_CLIENT_ID` | Google One Tap on the client |
+| `RESEND_API_KEY` / `RESEND_FROM` | Transactional email |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches |
+ `PUBLIC_BASE_URL` | Canonical site URL |
+| `GITHUB_BUG_REPORT_TOKEN` | GitHub Issues API for in-app bug reports |
+| `PUBLIC_DESMOS_API_KEY` | Desmos calculator embeds |
+
+Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, rate-limit vars, `MAINTENANCE_MODE`, and `QUESTIONS_S3_ADMIN_SECRET` for the admin batch-analyze endpoint. See `.env.example` for defaults and comments.
 
 ## API overview
 
-The main API routes now live under `src/routes/api` and are handled by SvelteKit server endpoints.
+Routes live under `src/routes/api` as SvelteKit server endpoints.
 
-- `POST /api/question` generates or returns a cached AP question.
-- `POST /api/question/cache/generate` primes the question cache.
-- `GET /api/question/cache/stats` reports cache status.
-- `GET /api/question/[id]` fetches a stored question by ID.
-- `POST /api/auth/register`, `/api/auth/login`, `/api/auth/logout` handle authentication.
-- `GET /api/auth/current-user`, `/api/auth/stats`, `/api/auth/progress` expose user state and analytics.
-- `GET /api/auth/history` returns paginated MCQ attempt history with hydrated question content from S3. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` filter. Response: `{ items: [{ attempt, question }], total, page, limit }` where `question` is null if the S3 object is missing.
-- `PATCH /api/auth/update-account` updates a signed-in user's name and email.
-- `POST /api/auth/bookmark`, `/api/auth/bookmarks` manage saved questions.
-- `POST /api/auth/record-attempt` stores answer history.
-- `POST /api/auth/forgot-password`, `/api/auth/reset-password`, `/api/auth/verify-email`, `/api/auth/verification/update-email` support account recovery and verification flows.
-- `POST /api/auth/delete-account` removes a user account.
-- `GET /api/blog`, `GET /api/blog/[slug]` expose published blog data.
-- `POST /api/tutor/chat`, `POST /api/tutor/greeting` provide the tutor assistant.
-- `POST /api/bug-report` submits bug reports as GitHub Issues and applies a low per-IP rate limit.
-- `POST /api/s3/presign-upload`, `POST /api/s3/presign-download` create S3 signed URLs.
-- Optional analytics are enabled only after a user chooses to turn them on in the app.
+### Authentication (Better Auth)
+
+All auth flows are handled by Better Auth at `/api/auth/*` (sign-up, sign-in, sign-out, email verification, password reset, Google OAuth, session management, account deletion, and email change). Use the Better Auth client in `src/lib/auth-client.ts` from the browser; do not call legacy `/api/auth/register` or `/api/auth/login` endpoints — those were removed in v1.4.1.
+
+### Signed-in user data (`/api/me/*`)
+
+These routes require an active Better Auth session:
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/api/me/stats` | User practice statistics |
+| `GET` | `/api/me/progress` | Progress by subject/unit |
+| `GET` | `/api/me/history` | Paginated MCQ attempt history. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` |
+| `POST` | `/api/me/record-attempt` | Record an answer attempt |
+| `GET` | `/api/me/bookmarks` | List bookmarked questions |
+| `POST` | `/api/me/bookmark` | Add or remove a bookmark |
+
+### Questions
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/api/question` | Generate or return a cached AP question |
+| `GET` | `/api/question/[id]` | Fetch a stored question by ID |
+| `POST` | `/api/question/cache/generate` | Prime the question cache |
+| `GET` | `/api/question/cache/stats` | Cache status |
+| `GET` | `/api/question/generation-stats` | Public read-only generation counters |
+
+### Other
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/api/blog`, `/api/blog/[slug]` | Published blog data |
+| `POST` | `/api/tutor/chat`, `/api/tutor/greeting` | AI tutor assistant |
+| `POST` | `/api/bug-report` | Submit bug reports as GitHub Issues (rate-limited per IP) |
+| `POST` | `/api/s3/presign-upload`, `/api/s3/presign-download` | S3 signed URLs |
+| `POST` | `/api/admin/questions/batch-analyze` | Admin-only S3 batch analysis (`X-Questions-Admin-Secret` header) |
+| `GET` | `/health` | Health check |
+
+Optional Vercel Analytics are enabled only after a user opts in inside the app.
 
 ## Bug reports
 
-The in-app bug report form no longer writes to a local JSON file. It now creates GitHub Issues in the main repository using the GitHub Issues API.
+The in-app bug report form creates GitHub Issues in this repository via the GitHub Issues API.
 
 - Reports are labeled automatically with `bug` and a severity label.
-- A simple server-side per-IP rate limit is applied to reduce spam.
-- To enable this in development or production, set `GITHUB_BUG_REPORT_TOKEN` with `Issues: Read & Write` access to this repository.
+- A server-side per-IP rate limit reduces spam.
+- Set `GITHUB_BUG_REPORT_TOKEN` with **Issues: Read & Write** access scoped to this repository.
 
 ## Deployment
 
-This project is meant to deploy to Vercel as a SvelteKit app and uses `@sveltejs/adapter-vercel`, so the usual flow is:
+Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
-2. Set the production environment variables in Vercel.
-3. Let Vercel build the app with the standard SvelteKit build command.
+2. Set production environment variables (at minimum `DATABASE_URI`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
+3. Vercel runs `pnpm build` via the default SvelteKit integration.
 
-If you change hosting later, update the adapter and deployment notes together so the README stays accurate.
+`BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.
 
 ## Branding & usage
 
@@ -108,9 +178,9 @@ The **Freeappractice** name, logo, and brand identity are proprietary and are ex
 
 ### What you are welcome to do
 
-- ⭐ Star or like the repository
-- 🍴 Fork the repository and use the code as a starting point for your own project
-- 🛠 Open pull requests, report bugs, and contribute improvements back to this repository
+- Star or like the repository
+- Fork the repository and use the code as a starting point for your own project
+- Open pull requests, report bugs, and contribute improvements back to this repository
 
 ### What is not permitted
 
@@ -122,8 +192,7 @@ If you fork the code to build something of your own, give it a completely differ
 
 ## Notes
 
-- AP content, question generation, and grading are still API-driven, even though the UI now lives in SvelteKit.
-- The landing page automatically routes authenticated users into the app.
-- The blog is meant to bridge passive study reading with active question practice.
-- The repo includes changelog, privacy, terms, and password recovery pages alongside the core app.
-- `pnpm test` runs a Playwright smoke suite against the built app and checks the public pages, sitemap, robots file, and health endpoint.
+- Question generation and grading are API-driven; the UI is fully SvelteKit.
+- The landing page routes authenticated users into `/app`.
+- The blog and summer study guide are meant to bridge reading content with active practice.
+- Auth migration from the pre–Better Auth system is documented in the changelog and supported by the `pnpm auth:*` scripts.

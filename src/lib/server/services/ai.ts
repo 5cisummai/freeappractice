@@ -43,7 +43,7 @@ export function selectModelForClass(className: string): string {
 	return ADVANCED_MODEL;
 }
 
-export type ChatMessage = {
+type ChatMessage = {
 	role: 'system' | 'user' | 'assistant';
 	content: string;
 };

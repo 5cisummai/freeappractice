@@ -15,15 +15,13 @@ function questionIdFromKey(key: string): string {
 	return base;
 }
 
-export type PerQuestionAnalysis = Record<string, unknown>;
+type PerQuestionAnalysis = Record<string, unknown>;
 
 /**
  * Override or extend this in this file to run custom analytics over each stored question.
  * Default implementation records lightweight aggregates only.
  */
-async function analyzeStoredQuestion(
-	question: StoredQuestion
-): Promise<PerQuestionAnalysis> {
+async function analyzeStoredQuestion(question: StoredQuestion): Promise<PerQuestionAnalysis> {
 	const qLen = question.question?.length ?? 0;
 	return {
 		id: question.id,

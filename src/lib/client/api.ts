@@ -7,16 +7,6 @@ export interface ApiMessageResponse {
 	message?: string;
 }
 
-export class ApiError extends Error {
-	status: number;
-
-	constructor(message: string, status: number) {
-		super(message);
-		this.name = 'ApiError';
-		this.status = status;
-	}
-}
-
 export async function readJsonOrNull<T>(response: Response): Promise<T | null> {
 	const text = await response.text();
 	if (!text) return null;
@@ -51,20 +41,11 @@ export async function apiFetch(url: string, init: RequestInit = {}): Promise<Res
 	if (typeof init.body === 'string' && !headers.has('Content-Type')) {
 		headers.set('Content-Type', 'application/json');
 	}
-	const response = await fetch(url, { ...init, headers, credentials: init.credentials ?? 'same-origin' });
+	const response = await fetch(url, {
+		...init,
+		headers,
+		credentials: init.credentials ?? 'same-origin'
+	});
 	redirectToLoginIfNeeded(response);
 	return response;
-}
-
-/** Parse JSON and throw ApiError on non-OK responses. */
-export async function apiFetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
-	const response = await apiFetch(url, init);
-	const payload = await readJsonOrNull<T & ApiMessageResponse>(response);
-	if (!response.ok) {
-		throw new ApiError(getResponseMessage(payload, 'Request failed'), response.status);
-	}
-	if (payload === null) {
-		throw new ApiError('Empty response from server', response.status);
-	}
-	return payload;
 }

@@ -4,6 +4,7 @@ excerpt: A direct, AP-specific study plan built around retrieval, spacing, and e
 summary: Replace vague AP prep habits with a concrete schedule and evidence-based routines that improve long-term retention.
 published: true
 date: 2026-03-31
+coverImage: https://public.assets.freeappractice.org/sayan-majhi-pkTEvaaBS-U-unsplash.jpg
 ---
 
 _A practical, opinionated guide to organizing your AP prep - without the generic advice that doesn't actually work._

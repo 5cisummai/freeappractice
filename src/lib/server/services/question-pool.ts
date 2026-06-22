@@ -13,7 +13,7 @@ export interface PoolDocument {
 	maxServeCount?: number;
 }
 
-export interface PoolModel<TDoc extends PoolDocument> {
+interface PoolModel<TDoc extends PoolDocument> {
 	updateMany(filter: Record<string, unknown>, update: Record<string, unknown>): Promise<unknown>;
 	countDocuments(filter: Record<string, unknown>): Promise<number>;
 	findOneAndUpdate(

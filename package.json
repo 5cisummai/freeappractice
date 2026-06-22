@@ -23,8 +23,7 @@
 		"auth:repair-ids": "tsx scripts/repair-auth-user-ids.ts --commit",
 		"auth:repair-ids:dry": "tsx scripts/repair-auth-user-ids.ts",
 		"auth:validate": "tsx scripts/validate-better-auth-migration.ts",
-		"auth:verify": "tsx scripts/validate-better-auth-migration.ts",
-		"assets:upload": "tsx scripts/upload-public-asset.ts"
+		"auth:verify": "tsx scripts/validate-better-auth-migration.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "latest",
@@ -38,7 +37,6 @@
 		"@sveltejs/kit": "^2.59.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@tailwindcss/vite": "^4.2.4",
-		"@types/katex": "^0.16.8",
 		"@types/node": "^24.12.2",
 		"bits-ui": "^2.18.0",
 		"clsx": "^2.1.1",
@@ -66,7 +64,6 @@
 		"@ai-sdk/openai": "^3.0.68",
 		"@aws-sdk/client-s3": "^3.1041.0",
 		"@aws-sdk/s3-request-presigner": "^3.1041.0",
-		"@better-auth/mongo-adapter": "^1.6.19",
 		"@tanstack/table-core": "^8.21.3",
 		"@vercel/analytics": "2.0.1",
 		"@vercel/functions": "^3.7.1",

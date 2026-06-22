@@ -6,8 +6,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env as privateEnv } from '$env/dynamic/private';
-import { env as publicEnv } from '$env/dynamic/public';
-import { buildPublicAssetUrl, normalizePublicAssetKey } from '$lib/public-asset-url';
 import type { Readable } from 'stream';
 
 const DEFAULT_EXPIRES = 900; // 15 min
@@ -41,67 +39,8 @@ function createS3Client(): S3Client {
 const s3 = createS3Client();
 const defaultBucket = privateEnv.AWS_S3_BUCKET;
 
-function createR2Client(): S3Client {
-	const region = privateEnv.R2_REGION ?? 'auto';
-	const endpoint = privateEnv.R2_ENDPOINT?.trim();
-	const forcePathStyle =
-		privateEnv.R2_FORCE_PATH_STYLE === undefined
-			? true
-			: privateEnv.R2_FORCE_PATH_STYLE === 'true';
-
-	const accessKeyId = privateEnv.R2_ACCESS_KEY_ID?.trim();
-	const secretAccessKey = privateEnv.R2_SECRET_ACCESS_KEY?.trim();
-
-	const cfg: ConstructorParameters<typeof S3Client>[0] = { region };
-	if (endpoint) {
-		cfg.endpoint = endpoint;
-		cfg.forcePathStyle = forcePathStyle;
-	}
-	if (accessKeyId && secretAccessKey) {
-		cfg.credentials = { accessKeyId, secretAccessKey };
-	}
-	return new S3Client(cfg);
-}
-
-const r2 = createR2Client();
-const r2PublicBucket = privateEnv.R2_PUBLIC_BUCKET;
-
 function resolveBucket(bucket?: string): string {
 	return bucket ?? defaultBucket ?? '';
-}
-
-function resolveR2PublicBucket(): string {
-	const bucket = r2PublicBucket?.trim();
-	if (!bucket) {
-		throw new Error('R2_PUBLIC_BUCKET is not configured');
-	}
-	return bucket;
-}
-
-/** Public CDN URL for an object key in the public R2 bucket. */
-export function getPublicAssetUrl(key: string): string | null {
-	const base = publicEnv.PUBLIC_R2_ASSETS_URL?.trim();
-	if (!base) return null;
-	return buildPublicAssetUrl(base, normalizePublicAssetKey(key));
-}
-
-/** Upload a file to the public R2 bucket. */
-export async function putPublicAsset(opts: {
-	key: string;
-	body: string | Buffer;
-	contentType?: string;
-	cacheControl?: string;
-}): Promise<{ key: string; publicUrl: string | null }> {
-	const key = normalizePublicAssetKey(opts.key);
-	const cmd = new PutObjectCommand({
-		Bucket: resolveR2PublicBucket(),
-		Key: key,
-		Body: opts.body,
-		ContentType: opts.contentType,
-		CacheControl: opts.cacheControl ?? 'public, max-age=31536000, immutable'
-	});
-	await r2.send(cmd);
-	return { key, publicUrl: getPublicAssetUrl(key) };
 }
 
 export async function getPresignedUploadUrl(opts: {

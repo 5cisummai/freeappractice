@@ -4,7 +4,6 @@
  */
 
 import { createHash } from 'node:crypto';
-import crypto from 'crypto';
 import { json } from '@sveltejs/kit';
 import { SeenQuestion } from '$lib/server/models/seen-question';
 import { UserProfile } from '$lib/server/models/user-profile';
@@ -50,21 +49,6 @@ export async function findUserProfileOrFail(
 		throw json({ error: 'User profile not found' }, { status: 404 });
 	}
 	return profile;
-}
-
-// ── Email token generation ─────────────────────────────────
-
-/** Generate a random hex token (default 32 bytes = 64 hex chars). */
-export function generateRandomToken(length = 32): string {
-	return crypto.randomBytes(length).toString('hex');
-}
-
-/** Generate a verification/reset token and its 24-hour expiration date. */
-export function generateEmailToken(): { emailToken: string; emailTokenExpires: Date } {
-	return {
-		emailToken: generateRandomToken(),
-		emailTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
-	};
 }
 
 // ── Streak calculation ─────────────────────────────────────
@@ -165,7 +149,3 @@ export async function recordSeenQuestion(
 		// Non-critical — don't let history tracking affect the main request
 	}
 }
-
-// ── Password validation ────────────────────────────────────
-
-export const MIN_PASSWORD_LENGTH = 8;

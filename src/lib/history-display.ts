@@ -44,7 +44,3 @@ export function questionPreview(item: HistoryItem, maxLength = 120): string {
 	if (plain.length <= maxLength) return plain;
 	return `${plain.slice(0, maxLength)}…`;
 }
-
-export function historyRowId(item: HistoryItem, index: number): string {
-	return `${item.attempt.questionId}-${item.attempt.attemptedAt}-${index}`;
-}

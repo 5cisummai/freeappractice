@@ -32,7 +32,7 @@ async function releaseCacheMissLock(key: string): Promise<void> {
 	await CacheMissLock.deleteOne({ key }).catch(() => {});
 }
 
-export type CacheMissRole = 'leader' | 'follower';
+type CacheMissRole = 'leader' | 'follower';
 
 export type CacheMissClusterMeta = {
 	role: CacheMissRole;

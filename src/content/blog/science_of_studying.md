@@ -4,6 +4,7 @@ excerpt: Evidence-backed AP study strategies that improve retention, retrieval, 
 summary: Learn the science-backed study methods that actually raise AP scores, including spacing, retrieval practice, and interleaving.
 published: true
 date: 2026-03-31
+coverImage: https://public.assets.freeappractice.org/zoshua-colah-klbApl9mxr0-unsplash.jpg
 ---
 
 _Most students study wrong. Here's the evidence - and how to fix it._

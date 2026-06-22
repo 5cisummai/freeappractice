@@ -1,14 +1,5 @@
 import adapter from '@sveltejs/adapter-vercel';
-import { config as loadDotenv } from 'dotenv';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { relative, sep } from 'node:path';
-import { publicAssetCspOrigins } from './src/lib/public-asset-url.ts';
-
-const projectRoot = dirname(fileURLToPath(import.meta.url));
-loadDotenv({ path: join(projectRoot, '.env') });
-
-const publicAssetImgSrc = publicAssetCspOrigins(process.env.PUBLIC_R2_ASSETS_URL);
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -51,10 +42,9 @@ const config = {
 					'self',
 					'data:',
 					'blob:',
-					'https://freeappractice.org',
+					'https://public.assets.freeappractice.org',
 					'https://*.googleapis.com',
-					'https://*.gstatic.com',
-					...publicAssetImgSrc
+					'https://*.gstatic.com'
 				],
 				'connect-src': [
 					'self',

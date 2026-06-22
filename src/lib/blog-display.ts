@@ -1,6 +1,3 @@
-import { publicPageAssets } from '$lib/data/public-page-assets';
-import { publicAssetUrl, isPublicAssetsConfigured } from '$lib/public-assets';
-
 const DEFAULT_AUTHOR = 'Ajay Saravanan';
 
 const categoryBySlug: Record<string, string> = {
@@ -27,24 +24,4 @@ export function getBlogAuthor(author?: string | null): string {
 export function getBlogCategory(slug: string, tags: string[]): string {
 	if (tags[0]?.trim()) return tags[0];
 	return categoryBySlug[slug] ?? 'AP Prep';
-}
-
-export function resolveBlogCoverUrl(
-	slug: string,
-	coverImage?: string | null
-): string | null {
-	if (coverImage?.startsWith('http://') || coverImage?.startsWith('https://')) {
-		return coverImage;
-	}
-
-	if (coverImage?.trim() && isPublicAssetsConfigured()) {
-		return publicAssetUrl(coverImage);
-	}
-
-	const assetKey = publicPageAssets.blog[slug as keyof typeof publicPageAssets.blog];
-	if (assetKey && isPublicAssetsConfigured()) {
-		return publicAssetUrl(assetKey);
-	}
-
-	return null;
 }

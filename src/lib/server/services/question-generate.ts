@@ -152,7 +152,7 @@ const APQuestion = z.object({
 		)
 });
 
-export type APQuestionData = z.infer<typeof APQuestion>;
+type APQuestionData = z.infer<typeof APQuestion>;
 
 export interface GenerateResult {
 	answer: APQuestionData;

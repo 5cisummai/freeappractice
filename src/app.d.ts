@@ -6,8 +6,6 @@ import type { Session, User } from 'better-auth/db';
 interface ImportMetaEnv {
 	/** Google OAuth client ID for One Tap sign-in on login/signup pages. */
 	readonly PUBLIC_GOOGLE_CLIENT_ID?: string;
-	/** Public CDN origin for marketing and page images (R2 public bucket URL). */
-	readonly PUBLIC_R2_ASSETS_URL?: string;
 }
 
 declare global {

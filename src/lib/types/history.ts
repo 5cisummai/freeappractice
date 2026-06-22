@@ -1,4 +1,4 @@
-export type QuestionAttempt = {
+type QuestionAttempt = {
 	questionId: string;
 	apClass: string;
 	unit: string;
@@ -8,7 +8,7 @@ export type QuestionAttempt = {
 	attemptedAt: string;
 };
 
-export type StoredMcqQuestion = {
+type StoredMcqQuestion = {
 	id: string;
 	question: string;
 	optionA: string;
