@@ -3,7 +3,7 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 
-	const communityPortrait = 'https://pub-xxxxxxxx.r2.dev/pages/about/mission-planning.jpg';
+	const communityPortrait = '';
 
 	const socialLinks = [
 		{
@@ -88,7 +88,7 @@
 					<div class="overflow-hidden rounded-[1.75rem] bg-muted">
 						<img
 							src={communityPortrait}
-							alt="Students studying together for AP exams"
+							alt="Still Finding a good one to use"
 							class="aspect-4/5 w-full object-cover"
 							loading="lazy"
 							decoding="async"
@@ -134,21 +134,22 @@
 						<strong class="font-semibold text-foreground"
 							>AP prep shouldn't cost hundreds of dollars.</strong
 						>
-						I started this as a personal project when I saw classmates paying for subscriptions they couldn't
-						afford — and realized the real barrier wasn't motivation, it was access.
+						I started this as a personal project when I saw classmates not getting adequate support due
+						to other learning platforms being paid and realized the real barrier wasn't motivation, it
+						was access.
 					</p>
 
 					<p>
-						My approach is about removing <strong class="font-semibold text-foreground"
-							>every unnecessary step.</strong
-						>
+						My approach is about removing <strong class="font-semibold text-foreground">
+							every unnecessary step.
+						</strong>
 						Pick a subject, generate a question, get instant feedback. No signup wall, no paywall, no
 						friction between you and practice.
 					</p>
 
 					<p>
-						I'm obsessive about the details — question quality, instant feedback, progress tracking
-						— because I believe
+						I'm obsessive about the details: question quality, instant feedback, progress tracking,
+						because I believe
 						<strong class="font-semibold text-foreground"
 							>the little things are what turn studying from a chore into momentum.</strong
 						>
