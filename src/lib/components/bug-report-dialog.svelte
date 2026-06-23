@@ -8,8 +8,11 @@
 	import { NativeSelect } from '$lib/components/ui/native-select/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { unitForProgress } from '$lib/constants/custom-unit';
-
-	type BugReportSeverity = 'low' | 'medium' | 'high';
+	import {
+		bugReportSchema,
+		type BugReportPayload,
+		type BugReportSeverity
+	} from '$lib/schemas/bug-report';
 
 	type BugReportForm = {
 		title: string;
@@ -28,6 +31,17 @@
 		customTopic?: string;
 	};
 
+	type BugReportField = Exclude<keyof BugReportPayload, 'metadata'>;
+	type BugReportFieldErrors = Partial<Record<BugReportField, string>>;
+	type BugReportApiError = {
+		error?: string;
+		message?: string;
+		details?: {
+			fieldErrors?: Partial<Record<BugReportField, string[]>>;
+			formErrors?: string[];
+		};
+	};
+
 	let {
 		open = $bindable(false),
 		context = null,
@@ -38,6 +52,7 @@
 
 	let submitting = $state(false);
 	let error = $state('');
+	let fieldErrors = $state<BugReportFieldErrors>({});
 	let form = $state<BugReportForm>(emptyForm());
 
 	function emptyForm(): BugReportForm {
@@ -67,6 +82,7 @@
 	function resetDialogState() {
 		form = context ? formFromContext(context) : emptyForm();
 		error = '';
+		fieldErrors = {};
 		submitting = false;
 	}
 
@@ -82,39 +98,75 @@
 		};
 	}
 
+	function buildPayload(): unknown {
+		return {
+			title: form.title,
+			description: form.description,
+			steps: form.steps,
+			expected: form.expected,
+			severity: form.severity,
+			email: form.email,
+			metadata: context
+				? {
+						questionId: context.questionId,
+						questionNumber: context.questionNumber,
+						selectedClass: context.selectedClass ?? selectedClass,
+						selectedUnit: context.selectedUnit ?? selectedUnit,
+						prompt: context.prompt,
+						correctAnswer: context.correctAnswer,
+						hasStimulus: context.hasStimulus
+					}
+				: { selectedClass, selectedUnit }
+		};
+	}
+
+	function setFieldErrors(errors: Partial<Record<BugReportField, string[]>>) {
+		const nextErrors: BugReportFieldErrors = {};
+		for (const [field, messages] of Object.entries(errors) as [BugReportField, string[]][]) {
+			if (messages?.[0]) {
+				nextErrors[field] = messages[0];
+			}
+		}
+		fieldErrors = nextErrors;
+	}
+
+	function applyApiErrors(result: BugReportApiError | null) {
+		const apiFieldErrors = result?.details?.fieldErrors;
+		if (apiFieldErrors) {
+			setFieldErrors(apiFieldErrors);
+		}
+
+		const formError = result?.details?.formErrors?.[0];
+		error = formError || getResponseMessage(result, 'Failed to submit bug report.');
+	}
+
 	async function handleSubmit(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
+		if (submitting) return;
+
+		const validation = bugReportSchema.safeParse(buildPayload());
+		if (!validation.success) {
+			const errors = validation.error.flatten();
+			setFieldErrors(errors.fieldErrors);
+			error = errors.formErrors[0] ?? 'Fix the highlighted fields before submitting.';
+			return;
+		}
+
 		submitting = true;
 		error = '';
+		fieldErrors = {};
 
 		try {
 			const response = await apiFetch('/api/bug-report', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					title: form.title.trim(),
-					description: form.description.trim(),
-					steps: form.steps.trim() || undefined,
-					expected: form.expected.trim() || undefined,
-					severity: form.severity,
-					email: form.email.trim() || undefined,
-					metadata: context
-						? {
-								questionId: context.questionId,
-								questionNumber: context.questionNumber,
-								selectedClass: context.selectedClass ?? selectedClass,
-								selectedUnit: context.selectedUnit ?? selectedUnit,
-								prompt: context.prompt,
-								correctAnswer: context.correctAnswer,
-								hasStimulus: context.hasStimulus
-							}
-						: { selectedClass, selectedUnit }
-				})
+				body: JSON.stringify(validation.data)
 			});
 
-			const result = await readJsonOrNull<Record<string, unknown>>(response);
+			const result = await readJsonOrNull<BugReportApiError>(response);
 			if (!response.ok) {
-				throw new Error(getResponseMessage(result, 'Failed to submit bug report.'));
+				applyApiErrors(result);
+				return;
 			}
 
 			open = false;
@@ -162,7 +214,16 @@
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div class="space-y-2 sm:col-span-2">
 							<Label for="bug-title">Title</Label>
-							<Input id="bug-title" bind:value={form.title} required maxlength={120} />
+							<Input
+								id="bug-title"
+								bind:value={form.title}
+								required
+								maxlength={120}
+								aria-invalid={Boolean(fieldErrors.title)}
+							/>
+							{#if fieldErrors.title}
+								<p class="text-sm text-destructive">{fieldErrors.title}</p>
+							{/if}
 						</div>
 
 						<div class="space-y-2 sm:col-span-2">
@@ -173,7 +234,11 @@
 								required
 								rows={3}
 								class="min-h-20"
+								aria-invalid={Boolean(fieldErrors.description)}
 							/>
+							{#if fieldErrors.description}
+								<p class="text-sm text-destructive">{fieldErrors.description}</p>
+							{/if}
 						</div>
 
 						<div class="space-y-2">
@@ -184,7 +249,11 @@
 								rows={3}
 								placeholder="Optional, but helpful"
 								class="min-h-20"
+								aria-invalid={Boolean(fieldErrors.steps)}
 							/>
+							{#if fieldErrors.steps}
+								<p class="text-sm text-destructive">{fieldErrors.steps}</p>
+							{/if}
 						</div>
 
 						<div class="space-y-2">
@@ -195,21 +264,42 @@
 								rows={3}
 								placeholder="What should have happened?"
 								class="min-h-20"
+								aria-invalid={Boolean(fieldErrors.expected)}
 							/>
+							{#if fieldErrors.expected}
+								<p class="text-sm text-destructive">{fieldErrors.expected}</p>
+							{/if}
 						</div>
 
 						<div class="space-y-2">
 							<Label for="bug-severity">Severity</Label>
-							<NativeSelect id="bug-severity" bind:value={form.severity} class="w-full">
+							<NativeSelect
+								id="bug-severity"
+								bind:value={form.severity}
+								class="w-full"
+								aria-invalid={Boolean(fieldErrors.severity)}
+							>
 								<option value="low">Low</option>
 								<option value="medium">Medium</option>
 								<option value="high">High</option>
 							</NativeSelect>
+							{#if fieldErrors.severity}
+								<p class="text-sm text-destructive">{fieldErrors.severity}</p>
+							{/if}
 						</div>
 
 						<div class="space-y-2">
 							<Label for="bug-email">Email</Label>
-							<Input id="bug-email" type="email" bind:value={form.email} placeholder="Optional" />
+							<Input
+								id="bug-email"
+								type="email"
+								bind:value={form.email}
+								placeholder="Optional"
+								aria-invalid={Boolean(fieldErrors.email)}
+							/>
+							{#if fieldErrors.email}
+								<p class="text-sm text-destructive">{fieldErrors.email}</p>
+							{/if}
 						</div>
 					</div>
 

@@ -61,7 +61,7 @@
 		return 'bg-primary';
 	}
 
-	function practiceHref(apClass: string, unit?: string): string {
+	function practiceHref(apClass: string, unit: string | undefined = undefined): string {
 		const base = resolve('/app/practice');
 		const params = new URLSearchParams({ apClass });
 		if (unit) params.set('unit', unit);

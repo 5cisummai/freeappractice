@@ -1,11 +1,9 @@
 <script lang="ts">
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
-	import MessageCircleIcon from '@lucide/svelte/icons/message-circle';
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 
-	const founderPortrait =
-		'https://pub-xxxxxxxx.r2.dev/pages/about/mission-planning.jpg';
+	const communityPortrait = 'https://pub-xxxxxxxx.r2.dev/pages/about/mission-planning.jpg';
 
 	const socialLinks = [
 		{
@@ -58,51 +56,30 @@
 
 	<main id="main-content" class="mx-auto w-full max-w-6xl flex-1 px-5 py-14 sm:px-8 sm:py-20">
 		<header class="space-y-8">
-			<span
-				class="inline-flex rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground"
+			<div
+				class="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start lg:gap-12"
 			>
-				About me
-			</span>
-
-			<div class="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start lg:gap-12">
 				<h1
-					class="text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-5xl lg:text-[3.25rem]"
+					class="font-display text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-5xl lg:text-[3.25rem]"
 				>
-					Practice that meets you where you are.
-					<MessageCircleIcon
-						class="ml-1 inline-block size-7 translate-y-[-0.1em] text-muted-foreground/70 sm:size-8"
-						aria-hidden="true"
-					/>
+					A community built around free AP practice.
 				</h1>
 
 				<p class="max-w-md text-base leading-8 text-muted-foreground lg:pt-2 lg:text-[1.05rem]">
 					I built Free AP Practice so every student can get ready for exams without stress, fees, or
-					obstacles — with the least friction possible.
+					obstacles and with the least friction possible.
 				</p>
 			</div>
 
 			<div class="border-t border-border" aria-hidden="true"></div>
 		</header>
 
-		<section class="mt-12 grid gap-12 lg:mt-16 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16">
+		<section
+			class="mt-12 grid gap-12 lg:mt-16 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16"
+		>
 			<div class="space-y-5">
 				<div class="relative mx-auto max-w-md lg:mx-0 lg:max-w-none">
 					<div class="absolute -top-4 -left-4 z-10 size-24 sm:size-28" aria-hidden="true">
-						<svg viewBox="0 0 120 120" class="size-full drop-shadow-sm">
-							<defs>
-								<path
-									id="about-seal-ring"
-									d="M 60,60 m -50,0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0"
-								/>
-							</defs>
-							<circle cx="60" cy="60" r="56" fill="var(--background)" stroke="var(--border)" />
-							<text fill="var(--foreground)" font-size="8.5" font-weight="600" letter-spacing="1.5">
-								<textPath href="#about-seal-ring" startOffset="50%" text-anchor="middle">
-									Student Built AP Platform *
-								</textPath>
-							</text>
-							<circle cx="60" cy="60" r="34" fill="var(--foreground)" />
-						</svg>
 						<div class="absolute inset-0 flex items-center justify-center text-background">
 							<GraduationCapIcon class="size-5" strokeWidth={2.25} />
 						</div>
@@ -110,30 +87,19 @@
 
 					<div class="overflow-hidden rounded-[1.75rem] bg-muted">
 						<img
-							src={founderPortrait}
-							alt="Ajay Saravanan, founder of Free AP Practice"
+							src={communityPortrait}
+							alt="Students studying together for AP exams"
 							class="aspect-4/5 w-full object-cover"
 							loading="lazy"
 							decoding="async"
 						/>
 					</div>
-
-					<div
-						class="absolute inset-x-0 bottom-5 flex justify-center"
-					>
-						<span
-							class="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/95 px-3.5 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm"
-						>
-							<span class="size-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
-							Always free
-						</span>
-					</div>
 				</div>
 
 				<div class="flex items-end justify-between gap-4 px-1">
 					<div>
-						<p class="text-lg font-semibold tracking-tight">Ajay Saravanan</p>
-						<p class="text-sm text-muted-foreground">Founder, Free AP Practice</p>
+						<p class="text-lg font-semibold tracking-tight">Free AP Practice Community</p>
+						<p class="text-sm text-muted-foreground">Students helping students</p>
 					</div>
 
 					<nav class="flex items-center gap-3" aria-label="Social links">
@@ -161,13 +127,15 @@
 			</div>
 
 			<div class="flex flex-col justify-between gap-10 lg:py-2">
-				<div class="space-y-6 text-base leading-8 text-muted-foreground sm:text-[1.05rem] sm:leading-8">
+				<div
+					class="space-y-6 text-base leading-8 text-muted-foreground sm:text-[1.05rem] sm:leading-8"
+				>
 					<p>
 						<strong class="font-semibold text-foreground"
 							>AP prep shouldn't cost hundreds of dollars.</strong
 						>
-						I started this as a personal project when I saw classmates paying for subscriptions they
-						couldn't afford — and realized the real barrier wasn't motivation, it was access.
+						I started this as a personal project when I saw classmates paying for subscriptions they couldn't
+						afford — and realized the real barrier wasn't motivation, it was access.
 					</p>
 
 					<p>
@@ -179,8 +147,8 @@
 					</p>
 
 					<p>
-						I'm obsessive about the details — question quality, instant feedback, progress tracking —
-						because I believe
+						I'm obsessive about the details — question quality, instant feedback, progress tracking
+						— because I believe
 						<strong class="font-semibold text-foreground"
 							>the little things are what turn studying from a chore into momentum.</strong
 						>
@@ -189,7 +157,7 @@
 				</div>
 
 				<p
-					class="font-display self-end text-3xl font-medium tracking-tight text-foreground italic sm:text-4xl"
+					class="self-end font-display text-3xl font-medium tracking-tight text-foreground italic sm:text-4xl"
 					aria-label="Signature: Ajay Saravanan"
 				>
 					Ajay Saravanan

@@ -158,7 +158,7 @@
 	async function requestQuestion(
 		className: string,
 		unit: string,
-		topicOverride?: string
+		topicOverride: string | undefined = undefined
 	): Promise<QuestionApiResponse> {
 		const body: Record<string, string> = { className, unit };
 		const t = topicOverride?.trim();
@@ -259,7 +259,9 @@
 		};
 	}
 
-	async function loadQuestion(reason?: 'skip' | 'not-learned' | 'next'): Promise<void> {
+	async function loadQuestion(
+		reason: 'skip' | 'not-learned' | 'next' | undefined = undefined
+	): Promise<void> {
 		if (isLoading) return;
 		if (!selectedClass) {
 			statusMessage = 'Please choose a class before requesting a question.';

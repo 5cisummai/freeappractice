@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { z } from 'zod';
 import { GITHUB_BUG_REPORT_TOKEN } from '$env/static/private';
+import { bugReportSchema, type BugReportPayload } from '$lib/schemas/bug-report';
 import { logger } from '$lib/server/logger';
 
 const GITHUB_OWNER = '5cisummai';
@@ -9,16 +9,6 @@ const GITHUB_REPO = 'freeappractice';
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const recentReportByIp = new Map<string, number>();
-
-const reportSchema = z.object({
-	title: z.string().min(5).max(200),
-	description: z.string().min(10).max(5000),
-	steps: z.string().max(5000).optional(),
-	expected: z.string().max(2000).optional(),
-	severity: z.enum(['low', 'medium', 'high']).default('low'),
-	email: z.string().email().max(254).optional(),
-	metadata: z.record(z.string(), z.unknown()).optional()
-});
 
 const SEVERITY_LABEL: Record<string, string> = {
 	low: 'severity: low',
@@ -30,7 +20,7 @@ function escapeMarkdown(text: string): string {
 	return text.replace(/`/g, '\\`').replace(/\[/g, '\\[').replace(/</g, '&lt;');
 }
 
-function buildIssueBody(parsed: z.infer<typeof reportSchema>): string {
+function buildIssueBody(parsed: BugReportPayload): string {
 	const lines: string[] = [];
 
 	lines.push(`## Description\n${escapeMarkdown(parsed.description)}`);
@@ -109,7 +99,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			return json({ error: 'Invalid request body' }, { status: 400 });
 		}
 
-		const result = reportSchema.safeParse(body);
+		const result = bugReportSchema.safeParse(body);
 		if (!result.success) {
 			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
 		}
