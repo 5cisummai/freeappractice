@@ -237,6 +237,21 @@
 		};
 	}
 
+	function portalToBody(node: HTMLElement) {
+		if (!browser) return;
+
+		const originalOverflow = document.body.style.overflow;
+		document.body.appendChild(node);
+		document.body.style.overflow = 'hidden';
+
+		return {
+			destroy() {
+				document.body.style.overflow = originalOverflow;
+				node.remove();
+			}
+		};
+	}
+
 	function resetInteractionState(clearSelection = true): void {
 		hasCheckedAnswer = false;
 		checkedSelection = null;
@@ -723,6 +738,7 @@
 	<!-- Fullscreen overlay - scales in/out smoothly -->
 	{#if isExpanded}
 		<div
+			use:portalToBody
 			class="fixed inset-0 z-50 flex flex-col"
 			transition:scale={{ duration: 240, start: 0.97, opacity: 0, easing: quintOut }}
 		>
@@ -734,7 +750,7 @@
 		</div>
 	{/if}
 
-	{#if currentQuestion && !isExpanded}
+	{#if currentQuestion}
 		{#key currentQuestion.questionId ?? currentQuestion.prompt}
 			<TutorWidget
 				question={currentQuestion.prompt}

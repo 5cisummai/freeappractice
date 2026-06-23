@@ -115,6 +115,16 @@
 		isStreaming = false;
 	}
 
+	function portalToBody(node: HTMLElement) {
+		document.body.appendChild(node);
+
+		return {
+			destroy() {
+				node.remove();
+			}
+		};
+	}
+
 	function autofocusInput(node: HTMLTextAreaElement) {
 		const frame = requestAnimationFrame(() => node.focus());
 
@@ -313,121 +323,123 @@
 	});
 </script>
 
-<!-- Chat panel: clamped to viewport, opens above or below the button -->
-{#if isOpen}
-	<div
-		class="fixed z-50 flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
-		style="
-				left: {panelLeft}px;
-				top: {panelTop}px;
-				width: {panelWidth}px;
-				height: {panelHeight}px;
-				overflow: hidden;
-			"
-		transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
-	>
-		<!-- Header -->
+<div use:portalToBody>
+	<!-- Chat panel: clamped to viewport, opens above or below the button -->
+	{#if isOpen}
 		<div
-			class="flex shrink-0 items-center justify-between border-b border-border bg-primary px-4 py-3"
+			class="fixed z-[60] flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
+			style="
+					left: {panelLeft}px;
+					top: {panelTop}px;
+					width: {panelWidth}px;
+					height: {panelHeight}px;
+					overflow: hidden;
+				"
+			transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
 		>
-			<div class="flex items-center gap-2">
-				<SparklesIcon class="h-4 w-4 text-primary-foreground" />
-				<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
-			</div>
-			<button
-				onclick={() => (isOpen = false)}
-				class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
-				aria-label="Close AI Tutor"
+			<!-- Header -->
+			<div
+				class="flex shrink-0 items-center justify-between border-b border-border bg-primary px-4 py-3"
 			>
-				<XIcon class="h-4 w-4" />
-			</button>
-		</div>
-
-		<!-- Messages -->
-		<div
-			use:autoScrollMessages={scrollTrigger}
-			class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
-		>
-			{#if messages.length === 0}
-				<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
-					<span>Loading...</span>
+				<div class="flex items-center gap-2">
+					<SparklesIcon class="h-4 w-4 text-primary-foreground" />
+					<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
 				</div>
-			{/if}
-			{#each messages as message, i (i)}
-				<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-					{#if message.role === 'user'}
-						<div
-							class="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
-						>
-							{message.content}
-						</div>
-					{:else}
-						<div class="max-w-[90%] text-sm text-foreground/90">
-							{#if message.content}
-								<RichText text={message.content} />
-							{:else if isStreaming && i === messages.length - 1}
-								<span class="inline-flex gap-1 text-muted-foreground">
-									<span class="animate-bounce" style="animation-delay: 0ms">·</span>
-									<span class="animate-bounce" style="animation-delay: 100ms">·</span>
-									<span class="animate-bounce" style="animation-delay: 200ms">·</span>
-								</span>
-							{/if}
-						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
-
-		<!-- Input -->
-		<div class="shrink-0 p-3">
-			<div class="flex items-end gap-2 rounded-3xl border border-border bg-background px-3 py-2">
-				<textarea
-					use:autofocusInput
-					bind:value={inputText}
-					onkeydown={handleKeydown}
-					oninput={(e) => autoResize(e.currentTarget)}
-					rows={1}
-					placeholder="Ask a question…"
-					disabled={isStreaming}
-					class="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
-					style="max-height: 80px; overflow-y: auto;"
-				></textarea>
 				<button
-					onclick={sendMessage}
-					disabled={!inputText.trim() || isStreaming}
-					class="shrink-0 rounded-lg p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
-					aria-label="Send message"
+					onclick={() => (isOpen = false)}
+					class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
+					aria-label="Close AI Tutor"
 				>
-					<SendHorizontalIcon class="h-4 w-4" />
+					<XIcon class="h-4 w-4" />
 				</button>
 			</div>
-		</div>
-	</div>
-{/if}
 
-<!-- Floating toggle button -->
-<button
-	onpointerdown={onBtnPointerDown}
-	onpointermove={onBtnPointerMove}
-	onpointerup={onBtnPointerUp}
-	onclick={() => {
-		if (hasDragged) {
-			hasDragged = false;
-			return;
-		}
-		if (isOpen) {
-			isOpen = false;
-		} else {
-			handleOpen();
-		}
-	}}
-	class="fixed z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
-	style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
-	aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
->
-	{#if isOpen}
-		<XIcon class="h-5 w-5" />
-	{:else}
-		<MessageSquareIcon class="h-5 w-5" />
+			<!-- Messages -->
+			<div
+				use:autoScrollMessages={scrollTrigger}
+				class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+			>
+				{#if messages.length === 0}
+					<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
+						<span>Loading...</span>
+					</div>
+				{/if}
+				{#each messages as message, i (i)}
+					<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+						{#if message.role === 'user'}
+							<div
+								class="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+							>
+								{message.content}
+							</div>
+						{:else}
+							<div class="max-w-[90%] text-sm text-foreground/90">
+								{#if message.content}
+									<RichText text={message.content} />
+								{:else if isStreaming && i === messages.length - 1}
+									<span class="inline-flex gap-1 text-muted-foreground">
+										<span class="animate-bounce" style="animation-delay: 0ms">·</span>
+										<span class="animate-bounce" style="animation-delay: 100ms">·</span>
+										<span class="animate-bounce" style="animation-delay: 200ms">·</span>
+									</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/each}
+			</div>
+
+			<!-- Input -->
+			<div class="shrink-0 p-3">
+				<div class="flex items-end gap-2 rounded-3xl border border-border bg-background px-3 py-2">
+					<textarea
+						use:autofocusInput
+						bind:value={inputText}
+						onkeydown={handleKeydown}
+						oninput={(e) => autoResize(e.currentTarget)}
+						rows={1}
+						placeholder="Ask a question…"
+						disabled={isStreaming}
+						class="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+						style="max-height: 80px; overflow-y: auto;"
+					></textarea>
+					<button
+						onclick={sendMessage}
+						disabled={!inputText.trim() || isStreaming}
+						class="shrink-0 rounded-lg p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+						aria-label="Send message"
+					>
+						<SendHorizontalIcon class="h-4 w-4" />
+					</button>
+				</div>
+			</div>
+		</div>
 	{/if}
-</button>
+
+	<!-- Floating toggle button -->
+	<button
+		onpointerdown={onBtnPointerDown}
+		onpointermove={onBtnPointerMove}
+		onpointerup={onBtnPointerUp}
+		onclick={() => {
+			if (hasDragged) {
+				hasDragged = false;
+				return;
+			}
+			if (isOpen) {
+				isOpen = false;
+			} else {
+				handleOpen();
+			}
+		}}
+		class="fixed z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
+		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
+		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
+	>
+		{#if isOpen}
+			<XIcon class="h-5 w-5" />
+		{:else}
+			<MessageSquareIcon class="h-5 w-5" />
+		{/if}
+	</button>
+</div>
