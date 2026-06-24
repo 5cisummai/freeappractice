@@ -1,6 +1,7 @@
 <script lang="ts">
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
+	import PracticeHubNav from '$lib/components/practice-hub-nav.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
@@ -23,7 +24,7 @@
 	let { page }: { page: PracticePage } = $props();
 
 	const crumbs = $derived(buildPracticeBreadcrumbs(page));
-	const initial = getInitialSelection(page);
+	const initial = $derived(getInitialSelection(page));
 
 	function linkHref(href: string): string {
 		return href;
@@ -34,6 +35,13 @@
 			return 'noopener noreferrer';
 		}
 		return undefined;
+	}
+
+	function linkTarget(href: string, kind: PracticePage['links'][number]['kind']): string | undefined {
+		if (kind === 'internal' || kind === 'practice' || !href.startsWith('http')) {
+			return undefined;
+		}
+		return '_blank';
 	}
 </script>
 
@@ -68,7 +76,9 @@
 			</section>
 
 			<section class="mx-auto max-w-3xl">
-				<article class="prose prose-neutral dark:prose-invert max-w-none space-y-4">
+				<PracticeHubNav {page} />
+
+				<article class="prose prose-neutral dark:prose-invert mt-10 max-w-none space-y-4">
 					{#each page.article.paragraphs as paragraph, index (index)}
 						<p class="text-base leading-7 text-muted-foreground">{paragraph}</p>
 					{/each}
@@ -85,7 +95,7 @@
 									<a
 										href={linkHref(link.href)}
 										class="text-sm text-primary underline-offset-4 hover:underline"
-										target={link.href.startsWith('http') ? '_blank' : undefined}
+										target={linkTarget(link.href, link.kind)}
 										rel={linkRel(link.kind)}
 									>
 										{link.label}

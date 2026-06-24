@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import BackToHome from '$lib/components/back-to-home.svelte';
+	import { getClassPracticePageByClassName } from '$lib/catalog/practice-pages.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
@@ -185,7 +187,19 @@
 								<Table.Body>
 									{#each classTableData as row (row.subject)}
 										<Table.Row>
-											<Table.Cell class="font-medium">{row.subject}</Table.Cell>
+											<Table.Cell class="font-medium">
+												{@const classPage = getClassPracticePageByClassName(row.subject)}
+												{#if classPage}
+													<a
+														href={resolve(`/practice/${classPage.slug}`)}
+														class="underline-offset-2 hover:text-primary hover:underline"
+													>
+														{row.subject}
+													</a>
+												{:else}
+													{row.subject}
+												{/if}
+											</Table.Cell>
 											<Table.Cell class="text-right">{row.count.toLocaleString()}</Table.Cell>
 											<Table.Cell class="text-right">{row.percentage}%</Table.Cell>
 											<Table.Cell>

@@ -16,6 +16,7 @@
 		"cache:clear": "tsx scripts/clear-cache.ts",
 		"cache:warm": "tsx scripts/warm-cache-simple.ts",
 		"scaffold:practice-pages": "tsx scripts/scaffold-practice-pages.ts",
+		"audit:internal-links": "tsx scripts/audit-internal-links.ts",
 		"auth:indexes": "tsx scripts/create-better-auth-indexes.ts"
 	},
 	"devDependencies": {

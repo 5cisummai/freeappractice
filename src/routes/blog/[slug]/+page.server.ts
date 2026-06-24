@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '$lib/blog/service.server';
+import { getBlogProductCta, getBlogRelatedPosts } from '$lib/blog/related-links.js';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
@@ -34,7 +35,10 @@ marked.use({
 		link({ href, title, text }) {
 			const safeHref = href && isSafeUrl(href) ? href : '#';
 			const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
-			return `<a href="${escapeHtml(safeHref)}"${safeTitle} rel="noopener noreferrer nofollow">${text}</a>`;
+			const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
+			const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
+			const relAttr = rel ? ` rel="${rel}"` : '';
+			return `<a href="${escapeHtml(safeHref)}"${safeTitle}${relAttr}>${text}</a>`;
 		},
 		image({ href, title, text }) {
 			if (!href || !isSafeUrl(href)) return '';
@@ -75,6 +79,8 @@ export const load: PageServerLoad = async ({ params }) => {
 			publishedAt: post.publishedAt?.toISOString() ?? null,
 			createdAt: post.createdAt.toISOString()
 		},
-		htmlContent
+		htmlContent,
+		relatedPosts: getBlogRelatedPosts(post.slug),
+		productCta: getBlogProductCta(post.slug)
 	};
 };

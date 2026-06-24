@@ -3,6 +3,7 @@
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import BackToHome from '$lib/components/back-to-home.svelte';
+	import { resolve } from '$app/paths';
 </script>
 
 <svelte:head>
@@ -209,6 +210,10 @@
 						<a href="mailto:support@freeappractice.org" class="underline underline-offset-4"
 							>support@freeappractice.org</a
 						>
+					</p>
+					<p class="mt-4">
+						See also our
+						<a href={resolve('/terms')} class="underline underline-offset-4">Terms of Service</a>.
 					</p>
 				</section>
 			</div>

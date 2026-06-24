@@ -91,9 +91,12 @@
 			Using technology to make exam prep simpler, smarter, and more rewarding for every student.
 		</p>
 		<div class="flex flex-wrap items-center justify-center gap-3 pt-1">
-			<Button href="/signup" size="lg" class="rounded-full px-6">
+			<Button href={resolve('/signup')} size="lg" class="rounded-full px-6">
 				<RocketIcon class="size-4" />
 				Get Started
+			</Button>
+			<Button href={resolve('/subjects')} variant="outline" size="lg" class="rounded-full px-6">
+				Browse Subjects
 			</Button>
 			<Button href={resolve('/about')} variant="outline" size="lg" class="rounded-full px-6">
 				Learn More

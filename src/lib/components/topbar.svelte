@@ -7,6 +7,8 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { topbarAuthItems, topbarNavItems } from '$lib/site-nav.js';
+
 	let mobileOpen = $state(false);
 
 	const toggleMobileMenu = () => {
@@ -15,9 +17,6 @@
 </script>
 
 <header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
-	<!--<div id="top-banner" class=" bg-primary py-2 text-center text-sm text-primary-foreground">
-		We are sorry for any account issues. We are working to fix them as soon as possible.
-	</div>-->
 	<div
 		class="relative mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
 	>
@@ -47,14 +46,18 @@
 			</Button>
 
 			<nav class="hidden items-center gap-2 text-base sm:flex" aria-label="Main navigation">
-				<Button href={resolve('/subjects')} variant="ghost">Subjects</Button>
-				<Button href={resolve('/about')} variant="ghost">About</Button>
-				<Button href={resolve('/blog')} variant="ghost">Blog</Button>
-				<Button href={resolve('/stats')} variant="ghost">Stats</Button>
-				<Button href={resolve('/login')} variant="ghost">Sign In</Button>
-				<Button href={resolve('/signup')} variant="default" class="rounded-full px-4"
-					>Sign Up Free</Button
-				>
+				{#each topbarNavItems as item (item.href)}
+					<Button href={resolve(item.href)} variant="ghost">{item.label}</Button>
+				{/each}
+				{#each topbarAuthItems as item, index (item.href)}
+					<Button
+						href={resolve(item.href)}
+						variant={index === topbarAuthItems.length - 1 ? 'default' : 'ghost'}
+						class={index === topbarAuthItems.length - 1 ? 'rounded-full px-4' : undefined}
+					>
+						{item.label}
+					</Button>
+				{/each}
 				<Button onclick={toggleMode} variant="ghost" size="icon" class="relative">
 					<SunIcon
 						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
@@ -68,37 +71,42 @@
 		</div>
 
 		{#if mobileOpen}
-			<div
+			<nav
 				class="absolute top-full right-0 left-0 z-50 rounded-b-xl border border-border/70 bg-background px-5 py-3 shadow-lg sm:hidden"
+				aria-label="Mobile navigation"
 			>
-				<a
-					href={resolve('/blog')}
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">Blog</a
-				>
-				<a
-					href={resolve('/about')}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">About</a
-				>
+				{#each topbarNavItems as item (item.href)}
+					<a
+						href={resolve(item.href)}
+						class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
+					>
+						{item.label}
+					</a>
+				{/each}
 				<a
 					href={resolve('/privacy')}
-					target="_blank"
-					rel="noopener noreferrer"
 					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
-					>Privacy</a
 				>
+					Privacy
+				</a>
 				<a
 					href={resolve('/terms')}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground">Terms</a
+					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
 				>
-				<a href={resolve('/login')} class="block py-2 font-medium text-foreground">Sign In</a>
+					Terms
+				</a>
+				{#each topbarAuthItems as item (item.href)}
+					<a
+						href={resolve(item.href)}
+						class="block py-2 font-medium text-foreground transition-colors hover:text-primary"
+					>
+						{item.label}
+					</a>
+				{/each}
 				<Button onclick={toggleMode} variant="ghost" size="icon" class="mt-2 w-full">
 					<p>Toggle Theme</p>
 				</Button>
-			</div>
+			</nav>
 		{/if}
 	</div>
 </header>

@@ -259,3 +259,5 @@ It's the one that:
 After AP exam season ends, the students who improve the fastest are usually the ones making deliberate decisions, not reactive ones.
 
 That's the real next step.
+
+Ready to sample subjects before you commit? [Browse all AP subjects](/subjects) and try Unit 1 practice for the classes you're considering.

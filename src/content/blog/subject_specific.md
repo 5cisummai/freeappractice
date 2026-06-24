@@ -115,4 +115,4 @@ Go use it.
 
 ---
 
-_[freeappractice.org](https://freeappractice.org) offers free, unlimited AI-generated multiple choice questions for all 20+ AP subjects. Use it to drill subject-specific content - and, more importantly, to analyze the explanations behind every question._
+_[Browse all AP subjects](/subjects) for free, unlimited AI-generated multiple choice questions across 20+ courses. Use it to drill subject-specific content - and, more importantly, to analyze the explanations behind every question._
