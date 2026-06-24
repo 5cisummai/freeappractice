@@ -20,7 +20,6 @@ class SettingsController {
 		fontSize: 16
 	});
 	accountPending = $state(false);
-	passwordPending = $state(false);
 	deletePending = $state(false);
 
 	constructor() {
@@ -118,40 +117,6 @@ class SettingsController {
 			return false;
 		} finally {
 			this.accountPending = false;
-		}
-	}
-
-	async changePassword(data: {
-		currentPassword: string;
-		newPassword: string;
-		confirmPassword: string;
-	}): Promise<boolean> {
-		if (this.passwordPending) return false;
-		this.passwordPending = true;
-		try {
-			if (data.newPassword !== data.confirmPassword) {
-				toast.error('New passwords do not match');
-				return false;
-			}
-			if (data.newPassword.length < 8) {
-				toast.error('Password must be at least 8 characters');
-				return false;
-			}
-
-			const { error } = await authClient.changePassword({
-				currentPassword: data.currentPassword,
-				newPassword: data.newPassword,
-				revokeOtherSessions: true
-			});
-			if (error) throw new Error(error.message ?? 'Failed to change password');
-
-			toast.success('Password updated successfully');
-			return true;
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Failed to change password');
-			return false;
-		} finally {
-			this.passwordPending = false;
 		}
 	}
 

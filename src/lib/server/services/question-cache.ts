@@ -159,7 +159,7 @@ export async function generateLiveCustomTopicMcq(
 	return { ...result, cached: false };
 }
 
-export const getCachedQuestion = mcqPool.getCached;
+export const getQuestion = mcqPool.getQuestion;
 
 export async function generateAndStoreQuestion(
 	className: string,

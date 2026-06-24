@@ -29,11 +29,6 @@
 	let activeTab = $state<SettingsTab>('appearance');
 	let deleteAccountOpen = $state(false);
 	let accountForm = $state({ name: '', email: '' });
-	let passwordForm = $state({
-		currentPassword: '',
-		newPassword: '',
-		confirmPassword: ''
-	});
 	let deletePassword = $state('');
 
 	onMount(() => {
@@ -47,15 +42,6 @@
 
 	function resetAccountForm() {
 		accountForm = { name: data.user.name, email: data.user.email };
-	}
-
-	function handleChangePassword(e: SubmitEvent) {
-		e.preventDefault();
-		settingsController.changePassword(passwordForm).then((ok) => {
-			if (ok) {
-				passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
-			}
-		});
 	}
 
 	async function handleDeleteAccount() {
@@ -225,50 +211,6 @@
 								Reset
 							</Button>
 						</div>
-					</form>
-
-					<form onsubmit={handleChangePassword} class="mt-8 space-y-4 border-t border-border pt-6">
-						<div class="space-y-1">
-							<p class="font-medium">Change password</p>
-							<p class="text-sm text-muted-foreground">
-								Update your password. Other sessions will be signed out.
-							</p>
-						</div>
-						<div class="space-y-2">
-							<Label for="current-password">Current password</Label>
-							<Input
-								id="current-password"
-								type="password"
-								autocomplete="current-password"
-								bind:value={passwordForm.currentPassword}
-							/>
-						</div>
-						<div class="space-y-2">
-							<Label for="new-password">New password</Label>
-							<Input
-								id="new-password"
-								type="password"
-								autocomplete="new-password"
-								bind:value={passwordForm.newPassword}
-							/>
-						</div>
-						<div class="space-y-2">
-							<Label for="confirm-new-password">Confirm new password</Label>
-							<Input
-								id="confirm-new-password"
-								type="password"
-								autocomplete="new-password"
-								bind:value={passwordForm.confirmPassword}
-							/>
-						</div>
-						<Button
-							type="submit"
-							variant="outline"
-							class={appPrimaryButton}
-							disabled={settingsController.passwordPending}
-						>
-							{settingsController.passwordPending ? 'Updating...' : 'Update password'}
-						</Button>
 					</form>
 				</Card.Content>
 				<Card.Footer class="flex flex-col items-start gap-4 border-t border-border pt-6">

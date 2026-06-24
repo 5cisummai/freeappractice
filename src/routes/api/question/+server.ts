@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { generateLiveCustomTopicMcq, getCachedQuestion } from '$lib/server/services/question-cache';
+import { generateLiveCustomTopicMcq, getQuestion } from '$lib/server/services/question-cache';
 import { validateQuestionRequest } from '$lib/server/question-request';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const result = customTopic
 			? await generateLiveCustomTopicMcq(className, customTopic)
-			: await getCachedQuestion(className, unit, locals.userId ?? null);
+			: await getQuestion(className, unit, locals.userId ?? null);
 
 		const answerStr =
 			typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer;

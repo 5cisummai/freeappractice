@@ -22,12 +22,6 @@
 		resolveEffectiveUnit,
 		type QuestionApiResponse
 	} from '$lib/client/question-payload.js';
-	import {
-		getPracticeStorageKey,
-		loadMcqPracticeState,
-		RESTORE_FAILED_WARNING,
-		saveMcqPracticeState
-	} from '$lib/client/question-storage.js';
 	import type {
 		AnswerResult,
 		BugReportContext,
@@ -89,14 +83,13 @@
 	let showExplanation = $state(false);
 	let startedAtMs = $state(Date.now());
 	let isLoading = $state(false);
-	let storageReady = $state(!browser);
+	let mounted = $state(!browser);
 	let questionCount = $state(0);
 	let statusMessage = $state('');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
-	let persistenceWarning = $state('');
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
 
@@ -141,7 +134,7 @@
 	});
 
 	const showEmptyState = $derived(
-		storageReady && !isLoading && requestVersion === 0 && !currentQuestion
+		mounted && !isLoading && requestVersion === 0 && !currentQuestion
 	);
 
 	function customTopicCacheKey(): string {
@@ -308,7 +301,6 @@
 			currentQuestion = cached;
 			questionCount += 1;
 			resetInteractionState(true);
-			saveToStorage();
 			prefetchNextCustomMcq();
 			return;
 		}
@@ -333,7 +325,6 @@
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
-			saveToStorage();
 			if (custom && topicTrim) prefetchNextCustomMcq();
 		} catch (error) {
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
@@ -356,7 +347,6 @@
 		hasCheckedAnswer = true;
 		checkedSelection = result.selectedAnswer;
 		answerResult = result;
-		saveToStorage();
 
 		onAnswered?.(result);
 
@@ -395,47 +385,6 @@
 		bugReportOpen = true;
 	}
 
-	function saveToStorage(): void {
-		const key = getPracticeStorageKey(selectedClass, selectedUnit, customTopic);
-		const result = saveMcqPracticeState(
-			key,
-			currentQuestion
-				? {
-						currentQuestion,
-						hasCheckedAnswer,
-						checkedSelection,
-						answerResult,
-						selectedOption,
-						showExplanation,
-						statusMessage,
-						startedAtMs,
-						questionCount
-					}
-				: null
-		);
-		persistenceWarning = result.ok ? '' : result.warning;
-	}
-
-	function loadFromStorage(): void {
-		const key = getPracticeStorageKey(selectedClass, selectedUnit, customTopic);
-		const { state: stored, restoreFailed } = loadMcqPracticeState(key);
-		if (restoreFailed) {
-			persistenceWarning = RESTORE_FAILED_WARNING;
-			return;
-		}
-		if (!stored) return;
-		currentQuestion = stored.currentQuestion;
-		hasCheckedAnswer = stored.hasCheckedAnswer;
-		checkedSelection = stored.checkedSelection;
-		answerResult = stored.answerResult;
-		selectedOption = stored.selectedOption;
-		showExplanation = stored.showExplanation;
-		statusMessage = stored.statusMessage || statusMessage;
-		startedAtMs = stored.startedAtMs;
-		questionCount = stored.questionCount;
-		persistenceWarning = '';
-	}
-
 	onMount(() => {
 		currentQuestion = null;
 		questionCount = 0;
@@ -443,8 +392,7 @@
 		calculatorOpen = false;
 		referenceSheetOpen = false;
 		statusMessage = 'Choose the best answer and then check your response.';
-		loadFromStorage();
-		storageReady = true;
+		mounted = true;
 
 		const onResize = () => {
 			isMobileViewport = window.innerWidth < 768;
@@ -471,7 +419,7 @@
 	});
 </script>
 
-{#if !storageReady || isLoading}
+{#if !mounted || isLoading}
 	<QuestionCardSkeleton
 		isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)}
 		class={className}
@@ -631,9 +579,6 @@
 			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 				<div class="min-w-0 space-y-1">
 					<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
-					{#if persistenceWarning}
-						<p class="text-xs text-amber-600 dark:text-amber-400">{persistenceWarning}</p>
-					{/if}
 				</div>
 				{#if hasCalculator || hasReferenceSheet}
 					<div class="flex gap-0.5">

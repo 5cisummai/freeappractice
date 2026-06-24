@@ -194,7 +194,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		return config.serveClaimed(doc, className, cacheUnit, userId, replenishPool);
 	}
 
-	async function getCached(
+	async function getQuestion(
 		className: string,
 		unit?: string,
 		userId?: string | null
@@ -285,6 +285,6 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		claimForUser,
 		replenishPool,
 		releaseDoc,
-		getCached
+		getQuestion
 	};
 }
