@@ -17,8 +17,8 @@
 			day: 'numeric'
 		});
 	}
-
 </script>
+
 <svelte:head>
 	<title>{data.post.title} – Free AP Practice Blog</title>
 	<meta name="description" content={data.post.excerpt} />

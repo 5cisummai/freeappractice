@@ -27,7 +27,9 @@
 
 {#if privacy.initialized && privacy.analyticsConsent === null}
 	<div class="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-		<div class="w-full max-w-2xl rounded-2xl border border-border bg-background/95 p-4 shadow-lg backdrop-blur">
+		<div
+			class="w-full max-w-2xl rounded-2xl border border-border bg-background/95 p-4 shadow-lg backdrop-blur"
+		>
 			<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div class="space-y-1">
 					<p class="font-semibold text-foreground">Optional analytics</p>

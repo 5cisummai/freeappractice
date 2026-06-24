@@ -30,9 +30,7 @@
 				<EyeIcon class="size-4" />
 				View question
 			</DropdownMenu.Item>
-			<DropdownMenu.Item
-				onclick={() => navigator.clipboard.writeText(item.attempt.questionId)}
-			>
+			<DropdownMenu.Item onclick={() => navigator.clipboard.writeText(item.attempt.questionId)}>
 				Copy question ID
 			</DropdownMenu.Item>
 		</DropdownMenu.Group>

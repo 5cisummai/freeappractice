@@ -22,27 +22,23 @@ async function main() {
 		db.collection('authUsers').createIndex({ email: 1 }, { unique: true, name: 'email_unique' }),
 		db.collection('authSessions').createIndex({ token: 1 }, { unique: true, name: 'token_unique' }),
 		db.collection('authSessions').createIndex({ userId: 1 }, { name: 'userId_idx' }),
-		db.collection('authSessions').createIndex(
-			{ expiresAt: 1 },
-			{ expireAfterSeconds: 0, name: 'expiresAt_ttl' }
-		),
+		db
+			.collection('authSessions')
+			.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: 'expiresAt_ttl' }),
 		db.collection('authAccounts').createIndex({ userId: 1 }, { name: 'userId_idx' }),
-		db.collection('authAccounts').createIndex(
-			{ providerId: 1, accountId: 1 },
-			{ unique: true, name: 'provider_account_unique' }
-		),
-		db.collection('authVerifications').createIndex(
-			{ identifier: 1 },
-			{ name: 'identifier_idx' }
-		),
-		db.collection('betterAuthMigrationMap').createIndex(
-			{ legacyUserId: 1 },
-			{ unique: true, name: 'legacyUserId_unique' }
-		),
-		db.collection('betterAuthMigrationMap').createIndex(
-			{ betterAuthUserId: 1 },
-			{ unique: true, name: 'betterAuthUserId_unique' }
-		)
+		db
+			.collection('authAccounts')
+			.createIndex(
+				{ providerId: 1, accountId: 1 },
+				{ unique: true, name: 'provider_account_unique' }
+			),
+		db.collection('authVerifications').createIndex({ identifier: 1 }, { name: 'identifier_idx' }),
+		db
+			.collection('betterAuthMigrationMap')
+			.createIndex({ legacyUserId: 1 }, { unique: true, name: 'legacyUserId_unique' }),
+		db
+			.collection('betterAuthMigrationMap')
+			.createIndex({ betterAuthUserId: 1 }, { unique: true, name: 'betterAuthUserId_unique' })
 	]);
 
 	console.log('Better Auth indexes created.');

@@ -33,7 +33,9 @@ async function main() {
 		}
 	});
 
-	const validUserIds = new Set(users.map((user) => user.id).filter((id): id is string => typeof id === 'string'));
+	const validUserIds = new Set(
+		users.map((user) => user.id).filter((id): id is string => typeof id === 'string')
+	);
 	const orphanProfiles = (await userProfiles.find({}).toArray()).filter(
 		(profile) => typeof profile.userId === 'string' && !validUserIds.has(profile.userId)
 	);

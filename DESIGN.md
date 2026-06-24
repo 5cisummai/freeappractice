@@ -18,10 +18,10 @@ Design language derived from the landing page (`src/routes/+page.svelte`) and it
 
 ### Font families
 
-| Role | Token / class | Face |
-|------|---------------|------|
-| Body & UI | `font-sans` (default on `html`) | **Geist Variable** |
-| Display headings | `font-display` | **Fraunces Variable** (serif) |
+| Role             | Token / class                   | Face                          |
+| ---------------- | ------------------------------- | ----------------------------- |
+| Body & UI        | `font-sans` (default on `html`) | **Geist Variable**            |
+| Display headings | `font-display`                  | **Fraunces Variable** (serif) |
 
 Defined in `src/routes/layout.css`:
 
@@ -32,14 +32,14 @@ Defined in `src/routes/layout.css`:
 
 ### Heading scale
 
-| Level | Usage | Classes |
-|-------|-------|---------|
-| **Hero (h1)** | Page title, landing hero | `font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl` |
-| **Section (h2)** | Major sections | `font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl` |
-| **Subsection (h3)** | Card titles, FAQ triggers | `text-base font-semibold` or `text-xl font-semibold tracking-tight sm:text-2xl` |
-| **Body lead** | Hero / section intro | `text-base leading-8 text-muted-foreground sm:text-lg` with `max-w-2xl` |
-| **Body** | Paragraphs, accordion content | `text-base leading-7` |
-| **Small / meta** | Dates, captions, footer | `text-sm text-muted-foreground` or `text-xs` |
+| Level               | Usage                         | Classes                                                                                                |
+| ------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Hero (h1)**       | Page title, landing hero      | `font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl` |
+| **Section (h2)**    | Major sections                | `font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl`              |
+| **Subsection (h3)** | Card titles, FAQ triggers     | `text-base font-semibold` or `text-xl font-semibold tracking-tight sm:text-2xl`                        |
+| **Body lead**       | Hero / section intro          | `text-base leading-8 text-muted-foreground sm:text-lg` with `max-w-2xl`                                |
+| **Body**            | Paragraphs, accordion content | `text-base leading-7`                                                                                  |
+| **Small / meta**    | Dates, captions, footer       | `text-sm text-muted-foreground` or `text-xs`                                                           |
 
 ### Emphasis patterns
 
@@ -62,14 +62,14 @@ All colors use **OKLCH** CSS variables (shadcn/ui palette). Source of truth: `sr
 
 ### Semantic tokens
 
-| Token | Light | Purpose |
-|-------|-------|---------|
-| `--background` | White | Page background |
-| `--foreground` | Near-black | Primary text |
-| `--primary` | Blue-violet | CTAs, links, accents |
-| `--muted` / `--muted-foreground` | Gray | Secondary surfaces & text |
-| `--card` / `--border` | White / light gray | Cards, dividers |
-| `--destructive` | Red | Errors |
+| Token                            | Light              | Purpose                   |
+| -------------------------------- | ------------------ | ------------------------- |
+| `--background`                   | White              | Page background           |
+| `--foreground`                   | Near-black         | Primary text              |
+| `--primary`                      | Blue-violet        | CTAs, links, accents      |
+| `--muted` / `--muted-foreground` | Gray               | Secondary surfaces & text |
+| `--card` / `--border`            | White / light gray | Cards, dividers           |
+| `--destructive`                  | Red                | Errors                    |
 
 Dark mode is applied via `.dark` on `<html>` (handled by `mode-watcher`).
 
@@ -109,22 +109,22 @@ Apply behind content with `pointer-events-none absolute -z-10` — never as a fu
 
 ```html
 <div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-  <Topbar />
-  <main id="main-content" class="flex-1">
-    <!-- content -->
-  </main>
-  <SiteFooter />
+	<Topbar />
+	<main id="main-content" class="flex-1">
+		<!-- content -->
+	</main>
+	<SiteFooter />
 </div>
 ```
 
 ### Content width
 
-| Context | Max width | Horizontal padding |
-|---------|-----------|------------------|
-| Landing page sections | `max-w-7xl` | `px-5 sm:px-8 lg:px-10` |
-| Standard marketing page | `max-w-6xl` | `px-5 sm:px-8` |
-| Hero / prose column | `max-w-3xl` (centered with `mx-auto`) | — |
-| FAQ / narrow content | `max-w-3xl` | — |
+| Context                 | Max width                             | Horizontal padding      |
+| ----------------------- | ------------------------------------- | ----------------------- |
+| Landing page sections   | `max-w-7xl`                           | `px-5 sm:px-8 lg:px-10` |
+| Standard marketing page | `max-w-6xl`                           | `px-5 sm:px-8`          |
+| Hero / prose column     | `max-w-3xl` (centered with `mx-auto`) | —                       |
+| FAQ / narrow content    | `max-w-3xl`                           | —                       |
 
 ### Vertical rhythm
 
@@ -245,17 +245,17 @@ Hero uses `animate-in` from `tw-animate-css` with staggered delays instead of sc
 
 Reuse these components on marketing pages:
 
-| Component | Path | When to use |
-|-----------|------|-------------|
-| `Topbar` | `$lib/components/topbar.svelte` | All public pages |
-| `SiteFooter` | `$lib/components/site-footer.svelte` | All public pages |
-| `PublicPageHero` | `$lib/components/public-page-hero.svelte` | Utility pages (privacy, stats, subjects) |
-| `BackToHome` | `$lib/components/back-to-home.svelte` | Secondary pages with back navigation |
-| `FeaturesSection` | `$lib/components/features-section.svelte` | Landing only |
-| `AspiringStudentsSection` | `$lib/components/aspiring-students-section.svelte` | Landing only |
-| `BottomCtaSection` | `$lib/components/bottom-cta-section.svelte` | Landing / long-form pages |
-| `QuestionShell` | `$lib/components/question-shell.svelte` | Landing + practice pages |
-| `BlogPostCard` | `$lib/components/blog-post-card.svelte` | Blog index |
+| Component                 | Path                                               | When to use                              |
+| ------------------------- | -------------------------------------------------- | ---------------------------------------- |
+| `Topbar`                  | `$lib/components/topbar.svelte`                    | All public pages                         |
+| `SiteFooter`              | `$lib/components/site-footer.svelte`               | All public pages                         |
+| `PublicPageHero`          | `$lib/components/public-page-hero.svelte`          | Utility pages (privacy, stats, subjects) |
+| `BackToHome`              | `$lib/components/back-to-home.svelte`              | Secondary pages with back navigation     |
+| `FeaturesSection`         | `$lib/components/features-section.svelte`          | Landing only                             |
+| `AspiringStudentsSection` | `$lib/components/aspiring-students-section.svelte` | Landing only                             |
+| `BottomCtaSection`        | `$lib/components/bottom-cta-section.svelte`        | Landing / long-form pages                |
+| `QuestionShell`           | `$lib/components/question-shell.svelte`            | Landing + practice pages                 |
+| `BlogPostCard`            | `$lib/components/blog-post-card.svelte`            | Blog index                               |
 
 ### FAQ block
 
@@ -318,12 +318,12 @@ Auth pages (`/login`, `/signup`, etc.) currently use a minimal centered layout *
 
 ## Reference implementations
 
-| Page | Route | Notes |
-|------|-------|-------|
-| Landing (canonical) | `/` | Dot grid, hero animation, all section components |
-| Rich marketing | `/about`, `/summer`, `/blog` | Custom heroes, card grids, `font-display` |
-| Utility marketing | `/subjects`, `/stats`, `/privacy` | Topbar + `PublicPageHero` + `BackToHome` |
-| Practice hub | `/practice/*` | `PracticeLanding` — breadcrumbs, hero, `QuestionShell` |
+| Page                | Route                             | Notes                                                  |
+| ------------------- | --------------------------------- | ------------------------------------------------------ |
+| Landing (canonical) | `/`                               | Dot grid, hero animation, all section components       |
+| Rich marketing      | `/about`, `/summer`, `/blog`      | Custom heroes, card grids, `font-display`              |
+| Utility marketing   | `/subjects`, `/stats`, `/privacy` | Topbar + `PublicPageHero` + `BackToHome`               |
+| Practice hub        | `/practice/*`                     | `PracticeLanding` — breadcrumbs, hero, `QuestionShell` |
 
 When in doubt, match the landing page for **tokens, typography, and spacing**; match `/about` for **multi-section marketing layouts**.
 

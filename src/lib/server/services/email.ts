@@ -6,11 +6,7 @@ import { getSiteUrl } from '$lib/site-url';
 const resend = new Resend(RESEND_API_KEY);
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
-async function sendEmail(payload: {
-	to: string;
-	subject: string;
-	html: string;
-}): Promise<void> {
+async function sendEmail(payload: { to: string; subject: string; html: string }): Promise<void> {
 	await resend.emails.send({
 		from: FROM,
 		to: payload.to,

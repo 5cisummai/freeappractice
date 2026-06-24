@@ -22,8 +22,7 @@ const db = await getMongoDb();
 const client = await getMongoClient();
 
 const authSecret =
-	env.BETTER_AUTH_SECRET ??
-	(building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
+	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
 const authBaseUrl = env.BETTER_AUTH_URL;
 
 function runAuthBackgroundTask(promise: Promise<unknown>): void {

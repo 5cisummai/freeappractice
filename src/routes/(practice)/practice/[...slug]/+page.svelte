@@ -1,9 +1,6 @@
 <script lang="ts">
 	import PracticeLanding from '$lib/components/practice-landing.svelte';
-	import {
-		buildPracticePageJsonLd,
-		buildPracticePageMeta
-	} from '$lib/seo/practice-page-meta.js';
+	import { buildPracticePageJsonLd, buildPracticePageMeta } from '$lib/seo/practice-page-meta.js';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

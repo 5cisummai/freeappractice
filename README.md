@@ -75,38 +75,38 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command | Purpose |
-|---------|---------|
-| `pnpm check` | Type-check with `svelte-check` |
-| `pnpm lint` / `pnpm format` | ESLint and Prettier |
-| `pnpm cache:clear` / `pnpm cache:warm` | Manage the question cache |
-| `pnpm auth:indexes` | Create Better Auth MongoDB indexes |
+| Command                                       | Purpose                                             |
+| --------------------------------------------- | --------------------------------------------------- |
+| `pnpm check`                                  | Type-check with `svelte-check`                      |
+| `pnpm lint` / `pnpm format`                   | ESLint and Prettier                                 |
+| `pnpm cache:clear` / `pnpm cache:warm`        | Manage the question cache                           |
+| `pnpm auth:indexes`                           | Create Better Auth MongoDB indexes                  |
 | `pnpm auth:migrate:dry` / `pnpm auth:migrate` | Dry-run or run legacy-user migration to Better Auth |
-| `pnpm auth:validate` | Validate a completed auth migration |
+| `pnpm auth:validate`                          | Validate a completed auth migration                 |
 
 ## Environment variables
 
 Copy `.env.example` to `.env`. Required for a working local setup:
 
-| Variable | Purpose |
-|----------|---------|
-| `DATABASE_URI` | MongoDB connection string |
+| Variable             | Purpose                                                                        |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `DATABASE_URI`       | MongoDB connection string                                                      |
 | `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
-| `BETTER_AUTH_URL` | App base URL for auth callbacks (e.g. `http://localhost:5173`) |
-| `OPEN_AI_KEY` | OpenAI API key |
-| `OPENAI_BASE_URL` | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`) |
+| `BETTER_AUTH_URL`    | App base URL for auth callbacks (e.g. `http://localhost:5173`)                 |
+| `OPEN_AI_KEY`        | OpenAI API key                                                                 |
+| `OPENAI_BASE_URL`    | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`)       |
 
 Commonly needed for full functionality:
 
-| Variable | Purpose |
-|----------|---------|
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `PUBLIC_GOOGLE_CLIENT_ID` | Google One Tap on the client |
-| `RESEND_API_KEY` / `RESEND_FROM` | Transactional email |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches |
- `PUBLIC_BASE_URL` | Canonical site URL |
-| `GITHUB_BUG_REPORT_TOKEN` | GitHub Issues API for in-app bug reports |
-| `PUBLIC_DESMOS_API_KEY` | Desmos calculator embeds |
+| Variable                                                                       | Purpose                                  |
+| ------------------------------------------------------------------------------ | ---------------------------------------- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                             |
+| `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client             |
+| `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                      |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches   |
+| `PUBLIC_BASE_URL`                                                              | Canonical site URL                       |
+| `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports |
+| `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                 |
 
 Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, rate-limit vars, `MAINTENANCE_MODE`, and `QUESTIONS_S3_ADMIN_SECRET` for the admin batch-analyze endpoint. See `.env.example` for defaults and comments.
 
@@ -122,35 +122,35 @@ All auth flows are handled by Better Auth at `/api/auth/*` (sign-up, sign-in, si
 
 These routes require an active Better Auth session:
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/api/me/stats` | User practice statistics |
-| `GET` | `/api/me/progress` | Progress by subject/unit |
-| `GET` | `/api/me/history` | Paginated MCQ attempt history. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` |
-| `POST` | `/api/me/record-attempt` | Record an answer attempt |
-| `GET` | `/api/me/bookmarks` | List bookmarked questions |
-| `POST` | `/api/me/bookmark` | Add or remove a bookmark |
+| Method | Route                    | Description                                                                                                        |
+| ------ | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `GET`  | `/api/me/stats`          | User practice statistics                                                                                           |
+| `GET`  | `/api/me/progress`       | Progress by subject/unit                                                                                           |
+| `GET`  | `/api/me/history`        | Paginated MCQ attempt history. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` |
+| `POST` | `/api/me/record-attempt` | Record an answer attempt                                                                                           |
+| `GET`  | `/api/me/bookmarks`      | List bookmarked questions                                                                                          |
+| `POST` | `/api/me/bookmark`       | Add or remove a bookmark                                                                                           |
 
 ### Questions
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `POST` | `/api/question` | Generate or return a cached AP question |
-| `GET` | `/api/question/[id]` | Fetch a stored question by ID |
-| `POST` | `/api/question/cache/generate` | Prime the question cache |
-| `GET` | `/api/question/cache/stats` | Cache status |
-| `GET` | `/api/question/generation-stats` | Public read-only generation counters |
+| Method | Route                            | Description                             |
+| ------ | -------------------------------- | --------------------------------------- |
+| `POST` | `/api/question`                  | Generate or return a cached AP question |
+| `GET`  | `/api/question/[id]`             | Fetch a stored question by ID           |
+| `POST` | `/api/question/cache/generate`   | Prime the question cache                |
+| `GET`  | `/api/question/cache/stats`      | Cache status                            |
+| `GET`  | `/api/question/generation-stats` | Public read-only generation counters    |
 
 ### Other
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/api/blog`, `/api/blog/[slug]` | Published blog data |
-| `POST` | `/api/tutor/chat`, `/api/tutor/greeting` | AI tutor assistant |
-| `POST` | `/api/bug-report` | Submit bug reports as GitHub Issues (rate-limited per IP) |
-| `POST` | `/api/s3/presign-upload`, `/api/s3/presign-download` | S3 signed URLs |
-| `POST` | `/api/admin/questions/batch-analyze` | Admin-only S3 batch analysis (`X-Questions-Admin-Secret` header) |
-| `GET` | `/health` | Health check |
+| Method | Route                                                | Description                                                      |
+| ------ | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `GET`  | `/api/blog`, `/api/blog/[slug]`                      | Published blog data                                              |
+| `POST` | `/api/tutor/chat`, `/api/tutor/greeting`             | AI tutor assistant                                               |
+| `POST` | `/api/bug-report`                                    | Submit bug reports as GitHub Issues (rate-limited per IP)        |
+| `POST` | `/api/s3/presign-upload`, `/api/s3/presign-download` | S3 signed URLs                                                   |
+| `POST` | `/api/admin/questions/batch-analyze`                 | Admin-only S3 batch analysis (`X-Questions-Admin-Secret` header) |
+| `GET`  | `/health`                                            | Health check                                                     |
 
 Optional Vercel Analytics are enabled only after a user opts in inside the app.
 

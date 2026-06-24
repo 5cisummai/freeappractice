@@ -134,8 +134,8 @@
 
 						<h2>4-week preview outline</h2>
 						<p>
-							Repeat or shorten this plan to match your summer. For daily pacing and more detail, see
-							the
+							Repeat or shorten this plan to match your summer. For daily pacing and more detail,
+							see the
 							<a href={resolve('/blog/summer-ap-study-plan')}>full study plan post</a>.
 						</p>
 

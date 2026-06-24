@@ -79,7 +79,12 @@
 			<form onsubmit={handleSubmit}>
 				<FieldGroup>
 					<Field>
-						<Button type="button" variant="outline" onclick={handleGoogleSignIn} disabled={googleLoading}>
+						<Button
+							type="button"
+							variant="outline"
+							onclick={handleGoogleSignIn}
+							disabled={googleLoading}
+						>
 							<GoogleLogo />
 							{googleLoading ? 'Redirecting...' : 'Continue with Google'}
 						</Button>
