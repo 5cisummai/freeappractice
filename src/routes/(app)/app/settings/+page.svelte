@@ -19,8 +19,6 @@
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import PageShell from '$lib/components/page-shell.svelte';
-	import { appCard, appInsetPanel, appPrimaryButton } from '$lib/app-ui.js';
-	import { appVersion } from '$lib/app-version.js';
 
 	let { data } = $props();
 
@@ -76,7 +74,7 @@
 		</Tabs.List>
 
 		<Tabs.Content value="appearance">
-			<Card.Root class={appCard}>
+			<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
 				<Card.Header>
 					<Card.Title class="font-display text-lg font-medium tracking-tight">Appearance</Card.Title
 					>
@@ -138,7 +136,7 @@
 		</Tabs.Content>
 
 		<Tabs.Content value="privacy">
-			<Card.Root class={appCard}>
+			<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
 				<Card.Header>
 					<Card.Title class="font-display text-lg font-medium tracking-tight">Privacy</Card.Title>
 					<Card.Description>
@@ -162,7 +160,7 @@
 						/>
 					</div>
 
-					<div class="{appInsetPanel} text-sm text-muted-foreground">
+					<div class="rounded-xl border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
 						Current setting:
 						<strong class="text-foreground">
 							{privacy.analyticsConsent === 'granted'
@@ -177,7 +175,7 @@
 		</Tabs.Content>
 
 		<Tabs.Content value="account">
-			<Card.Root class={appCard}>
+			<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
 				<Card.Header>
 					<Card.Title class="font-display text-lg font-medium tracking-tight">
 						Account Settings
@@ -197,7 +195,7 @@
 						<div class="flex gap-4 pt-4">
 							<Button
 								type="submit"
-								class={appPrimaryButton}
+								class="rounded-full"
 								disabled={settingsController.accountPending}
 							>
 								{settingsController.accountPending ? 'Saving...' : 'Save Changes'}
@@ -205,7 +203,7 @@
 							<Button
 								variant="outline"
 								type="button"
-								class={appPrimaryButton}
+								class="rounded-full"
 								onclick={resetAccountForm}
 							>
 								Reset
@@ -226,7 +224,7 @@
 		</Tabs.Content>
 
 		<Tabs.Content value="about">
-			<Card.Root class={appCard}>
+			<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
 				<Card.Header>
 					<Card.Title class="font-display text-lg font-medium tracking-tight">About</Card.Title>
 					<Card.Description>Version details and policy links for Free AP Practice.</Card.Description
@@ -234,14 +232,14 @@
 				</Card.Header>
 				<Card.Content class="space-y-6">
 					<div class="grid gap-4 sm:grid-cols-2">
-						<div class={appInsetPanel}>
+						<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
 							<p class="text-xs tracking-wide text-muted-foreground uppercase">App version</p>
-							<p class="mt-1 text-lg font-semibold">{appVersion}</p>
+							<p class="mt-1 text-lg font-semibold">1.4.3</p>
 							<p class="mt-1 text-sm text-muted-foreground">
 								Current release installed in this workspace.
 							</p>
 						</div>
-						<div class={appInsetPanel}>
+						<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
 							<p class="text-xs tracking-wide text-muted-foreground uppercase">Build</p>
 							<p class="mt-1 text-lg font-semibold">SvelteKit</p>
 							<p class="mt-1 text-sm text-muted-foreground">
@@ -253,13 +251,13 @@
 					<div class="space-y-3 border-t border-border pt-4">
 						<p class="text-sm font-medium text-foreground">Policies</p>
 						<div class="flex flex-wrap gap-3">
-							<Button variant="outline" href={resolve('/privacy')} class={appPrimaryButton}>
+							<Button variant="outline" href={resolve('/privacy')} class="rounded-full">
 								Privacy Policy
 							</Button>
-							<Button variant="outline" href={resolve('/terms')} class={appPrimaryButton}>
+							<Button variant="outline" href={resolve('/terms')} class="rounded-full">
 								Terms of Service
 							</Button>
-							<Button variant="ghost" href={resolve('/changelog')} class={appPrimaryButton}>
+							<Button variant="ghost" href={resolve('/changelog')} class="rounded-full">
 								Changelog
 							</Button>
 						</div>

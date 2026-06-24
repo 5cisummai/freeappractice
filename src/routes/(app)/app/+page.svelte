@@ -10,13 +10,6 @@
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import PageShell from '$lib/components/page-shell.svelte';
-	import {
-		appCard,
-		appEmptyState,
-		appInteractiveCard,
-		appPrimaryButton,
-		appSectionTitle
-	} from '$lib/app-ui.js';
 
 	let { data } = $props();
 
@@ -56,7 +49,7 @@
 	title={`Welcome back, ${firstName}`}
 	description="Here's an overview of your study progress."
 >
-	<Card.Root class="{appCard} border-primary/30 bg-primary/3 p-5">
+	<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 border-primary/30 bg-primary/3 p-5">
 		<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 			<div class="space-y-1.5">
 				<p class="text-sm font-medium text-primary">Your Next Best Unit</p>
@@ -77,7 +70,7 @@
 					</p>
 				{/if}
 			</div>
-			<Button href={recommendedPracticeHref} class={appPrimaryButton}>
+			<Button href={recommendedPracticeHref} class="rounded-full">
 				Start Recommended Practice
 			</Button>
 		</div>
@@ -95,7 +88,7 @@
 	{/if}
 
 	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
 			<div class="flex items-center gap-3">
 				<div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<BookOpenIcon class="h-4 w-4" />
@@ -108,7 +101,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -121,7 +114,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -136,7 +129,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400"
@@ -154,10 +147,12 @@
 	</div>
 
 	<div>
-		<h2 class="{appSectionTitle} mb-4">Quick Actions</h2>
+		<h2 class="mb-4 font-display text-xl font-medium tracking-tight sm:text-2xl">Quick Actions</h2>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<a href={resolve('/app/practice')} class="block">
-				<Card.Root class="{appInteractiveCard} flex items-center gap-4 p-5 hover:bg-muted/20">
+				<Card.Root
+					class="flex items-center gap-4 rounded-2xl border border-border/60 p-5 shadow-sm ring-0 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/20 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
+				>
 					<div
 						class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
 					>
@@ -170,7 +165,9 @@
 				</Card.Root>
 			</a>
 			<a href={resolve('/app/progress')} class="block">
-				<Card.Root class="{appInteractiveCard} flex items-center gap-4 p-5 hover:bg-muted/20">
+				<Card.Root
+					class="flex items-center gap-4 rounded-2xl border border-border/60 p-5 shadow-sm ring-0 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/20 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
+				>
 					<div
 						class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
 					>
@@ -187,8 +184,10 @@
 
 	{#if statsData?.subjectBreakdown && statsData.subjectBreakdown.length > 0}
 		<div>
-			<h2 class="{appSectionTitle} mb-4">Subject Performance</h2>
-			<Card.Root class={appCard}>
+			<h2 class="mb-4 font-display text-xl font-medium tracking-tight sm:text-2xl">
+				Subject Performance
+			</h2>
+			<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
 				<div class="divide-y divide-border/70">
 					{#each statsData.subjectBreakdown as subject (subject.subject)}
 						<div class="flex items-center gap-4 px-5 py-3.5">
@@ -221,12 +220,14 @@
 	{/if}
 
 	{#if !statsData || statsData.overview.totalQuestions === 0}
-		<Card.Root class="{appEmptyState} {appCard} border-dashed p-10">
+		<Card.Root
+			class="rounded-2xl border border-dashed border-border/70 p-10 text-center text-muted-foreground shadow-sm ring-0"
+		>
 			<BookOpenIcon class="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
 			<p class="font-medium">No practice sessions yet</p>
 			<p class="mt-1 text-sm text-muted-foreground">Start practicing to see your stats here.</p>
 			<div class="mt-4">
-				<Button href={resolve('/app/practice')} class={appPrimaryButton}>Start Practicing</Button>
+				<Button href={resolve('/app/practice')} class="rounded-full">Start Practicing</Button>
 			</div>
 		</Card.Root>
 	{/if}
