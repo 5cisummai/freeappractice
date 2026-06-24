@@ -18,6 +18,7 @@ const SEVERITY_LABEL: Record<string, string> = {
 
 function escapeMarkdown(text: string): string {
 	return text
+		.replace(/\\/g, '\\\\')
 		.replace(/`/g, '\\`')
 		.replace(/\[/g, '\\[')
 		.replace(/</g, '&lt;')
