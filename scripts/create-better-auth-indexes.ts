@@ -32,13 +32,7 @@ async function main() {
 				{ providerId: 1, accountId: 1 },
 				{ unique: true, name: 'provider_account_unique' }
 			),
-		db.collection('authVerifications').createIndex({ identifier: 1 }, { name: 'identifier_idx' }),
-		db
-			.collection('betterAuthMigrationMap')
-			.createIndex({ legacyUserId: 1 }, { unique: true, name: 'legacyUserId_unique' }),
-		db
-			.collection('betterAuthMigrationMap')
-			.createIndex({ betterAuthUserId: 1 }, { unique: true, name: 'betterAuthUserId_unique' })
+		db.collection('authVerifications').createIndex({ identifier: 1 }, { name: 'identifier_idx' })
 	]);
 
 	console.log('Better Auth indexes created.');

@@ -209,21 +209,3 @@ export async function generateAndStoreQuestion(
 
 	return { ...result, cached: false };
 }
-
-export async function getCacheStats(): Promise<{
-	total: number;
-	classes: number;
-	available: number;
-	serving: number;
-	retired: number;
-}> {
-	await connectDb();
-	const [total, classes, available, serving, retired] = await Promise.all([
-		Question.countDocuments(),
-		Question.distinct('apClass').then((a) => a.length),
-		Question.countDocuments({ status: 'available' }),
-		Question.countDocuments({ status: 'serving' }),
-		Question.countDocuments({ status: 'retired' })
-	]);
-	return { total, classes, available, serving, retired };
-}

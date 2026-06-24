@@ -81,8 +81,6 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 | `pnpm lint` / `pnpm format`                   | ESLint and Prettier                                 |
 | `pnpm cache:clear` / `pnpm cache:warm`        | Manage the question cache                           |
 | `pnpm auth:indexes`                           | Create Better Auth MongoDB indexes                  |
-| `pnpm auth:migrate:dry` / `pnpm auth:migrate` | Dry-run or run legacy-user migration to Better Auth |
-| `pnpm auth:validate`                          | Validate a completed auth migration                 |
 
 ## Environment variables
 
@@ -108,7 +106,7 @@ Commonly needed for full functionality:
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports |
 | `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                 |
 
-Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, rate-limit vars, `MAINTENANCE_MODE`, and `QUESTIONS_S3_ADMIN_SECRET` for the admin batch-analyze endpoint. See `.env.example` for defaults and comments.
+Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, and rate-limit vars. See `.env.example` for defaults and comments.
 
 ## API overview
 
@@ -116,7 +114,7 @@ Routes live under `src/routes/api` as SvelteKit server endpoints.
 
 ### Authentication (Better Auth)
 
-All auth flows are handled by Better Auth at `/api/auth/*` (sign-up, sign-in, sign-out, email verification, password reset, Google OAuth, session management, account deletion, and email change). Use the Better Auth client in `src/lib/auth-client.ts` from the browser; do not call legacy `/api/auth/register` or `/api/auth/login` endpoints — those were removed in v1.4.1.
+All auth flows are handled by Better Auth at `/api/auth/*` (sign-up, sign-in, sign-out, email verification, password reset, Google OAuth, session management, account deletion, and email change). Use the Better Auth client in `src/lib/auth/client.ts` from the browser; do not call legacy `/api/auth/register` or `/api/auth/login` endpoints — those were removed in v1.4.1.
 
 ### Signed-in user data (`/api/me/*`)
 
@@ -136,21 +134,16 @@ These routes require an active Better Auth session:
 | Method | Route                            | Description                             |
 | ------ | -------------------------------- | --------------------------------------- |
 | `POST` | `/api/question`                  | Generate or return a cached AP question |
-| `GET`  | `/api/question/[id]`             | Fetch a stored question by ID           |
 | `POST` | `/api/question/cache/generate`   | Prime the question cache                |
-| `GET`  | `/api/question/cache/stats`      | Cache status                            |
 | `GET`  | `/api/question/generation-stats` | Public read-only generation counters    |
 
 ### Other
 
-| Method | Route                                                | Description                                                      |
-| ------ | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `GET`  | `/api/blog`, `/api/blog/[slug]`                      | Published blog data                                              |
-| `POST` | `/api/tutor/chat`, `/api/tutor/greeting`             | AI tutor assistant                                               |
-| `POST` | `/api/bug-report`                                    | Submit bug reports as GitHub Issues (rate-limited per IP)        |
-| `POST` | `/api/s3/presign-upload`, `/api/s3/presign-download` | S3 signed URLs                                                   |
-| `POST` | `/api/admin/questions/batch-analyze`                 | Admin-only S3 batch analysis (`X-Questions-Admin-Secret` header) |
-| `GET`  | `/health`                                            | Health check                                                     |
+| Method | Route                                    | Description                                               |
+| ------ | ---------------------------------------- | --------------------------------------------------------- |
+| `POST` | `/api/tutor/chat`, `/api/tutor/greeting` | AI tutor assistant                                        |
+| `POST` | `/api/bug-report`                        | Submit bug reports as GitHub Issues (rate-limited per IP) |
+| `GET`  | `/health`                                | Health check                                              |
 
 Optional Vercel Analytics are enabled only after a user opts in inside the app.
 
@@ -195,4 +188,3 @@ If you fork the code to build something of your own, give it a completely differ
 - Question generation and grading are API-driven; the UI is fully SvelteKit.
 - The landing page routes authenticated users into `/app`.
 - The blog and summer study guide are meant to bridge reading content with active practice.
-- Auth migration from the pre–Better Auth system is documented in the changelog and supported by the `pnpm auth:*` scripts.

@@ -46,7 +46,7 @@ export const QuestionGenUnitDetail: Model<IQuestionGenUnitDetail> =
 
 /**
  * Global rollup by unit label (same string may appear in multiple courses —
- * counts are summed, matching legacy batch-analyze `byUnit` reports).
+ * counts are summed across courses when the same unit label appears in multiple classes).
  */
 export interface IQuestionGenUnitGlobal extends Document {
 	unit: string;

@@ -3,7 +3,6 @@ import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
 
 export interface IUserProfile extends Document {
 	userId: string;
-	legacyUserId?: string | null;
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	bookmarkedQuestions: string[];
@@ -41,7 +40,6 @@ const questionAttemptSchema = new Schema<IQuestionAttempt>(
 const userProfileSchema = new Schema<IUserProfile>(
 	{
 		userId: { type: String, required: true, unique: true, index: true },
-		legacyUserId: { type: String, default: null, index: true },
 		progress: { type: [progressSchema], default: [] },
 		questionHistory: { type: [questionAttemptSchema], default: [] },
 		bookmarkedQuestions: { type: [String], default: [] }

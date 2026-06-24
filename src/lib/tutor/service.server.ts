@@ -1,4 +1,4 @@
-import { runChatCompletion, runStreamingChat, TUTOR_MODEL } from './ai';
+import { runChatCompletion, runStreamingChat, TUTOR_MODEL } from '$lib/ai/service.server';
 
 export interface TutorMessage {
 	role: 'user' | 'assistant' | 'system';

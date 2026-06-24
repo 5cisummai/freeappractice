@@ -21,7 +21,6 @@
 				{
 					title: 'Infrastructure',
 					items: [
-						'Migration scripts and runbooks for moving existing users to Better Auth',
 						'Docker Compose config for local MongoDB during auth development',
 						'Updated environment variables and README for Better Auth setup'
 					]

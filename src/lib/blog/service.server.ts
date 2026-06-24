@@ -1,16 +1,3 @@
-import { BlogPost, type IBlogPost } from '$lib/blog/model.server';
-import { connectDb } from '$lib/server/db';
-
-export interface BlogPostData {
-	title: string;
-	slug: string;
-	excerpt: string;
-	content: string;
-	coverImage?: string;
-	tags?: string[];
-	published?: boolean;
-}
-
 export type BlogEntry = {
 	_id: string;
 	title: string;
@@ -22,7 +9,7 @@ export type BlogEntry = {
 	author?: string;
 	publishedAt?: Date;
 	createdAt: Date;
-	source: 'db' | 'file';
+	source: 'file';
 };
 
 type ParsedMarkdownPost = {
@@ -173,34 +160,9 @@ async function listMarkdownPosts(): Promise<BlogEntry[]> {
 	return validPosts;
 }
 
-function mapDbPostToEntry(post: IBlogPost): BlogEntry {
-	return {
-		_id: String(post._id),
-		title: post.title,
-		slug: post.slug,
-		excerpt: post.excerpt,
-		content: post.content,
-		coverImage: post.coverImage,
-		tags: post.tags,
-		...(post.author ? { author: post.author } : {}),
-		publishedAt: post.publishedAt,
-		createdAt: post.createdAt,
-		source: 'db'
-	};
-}
-
 export async function listPublishedBlogEntries(): Promise<BlogEntry[]> {
-	const [dbPosts, markdownPosts] = await Promise.all([listPosts(true), listMarkdownPosts()]);
-	const merged = [...dbPosts.map(mapDbPostToEntry), ...markdownPosts];
-
-	const bySlug = new Map<string, BlogEntry>();
-	for (const post of merged) {
-		if (!bySlug.has(post.slug) || post.source === 'db') {
-			bySlug.set(post.slug, post);
-		}
-	}
-
-	return Array.from(bySlug.values()).sort((a, b) => {
+	const posts = await listMarkdownPosts();
+	return posts.sort((a, b) => {
 		const aTime = (a.publishedAt ?? a.createdAt).getTime();
 		const bTime = (b.publishedAt ?? b.createdAt).getTime();
 		return bTime - aTime;
@@ -211,52 +173,6 @@ export async function getPublishedBlogEntryBySlug(slug: string): Promise<BlogEnt
 	const normalizedSlug = normalizeSlug(slug);
 	if (!normalizedSlug) return null;
 
-	const dbPost = await getPostBySlug(normalizedSlug, true);
-	if (dbPost) return mapDbPostToEntry(dbPost);
-
 	const markdownPosts = await listMarkdownPosts();
 	return markdownPosts.find((post) => post.slug === normalizedSlug) ?? null;
-}
-
-async function listPosts(publishedOnly = true): Promise<IBlogPost[]> {
-	await connectDb();
-	const filter = publishedOnly ? { published: true } : {};
-	return BlogPost.find(filter).sort({ publishedAt: -1, createdAt: -1 }).lean<IBlogPost[]>();
-}
-
-export async function getPostBySlug(slug: string, publishedOnly = true): Promise<IBlogPost | null> {
-	await connectDb();
-	const filter: Record<string, unknown> = { slug };
-	if (publishedOnly) filter.published = true;
-	return BlogPost.findOne(filter).lean<IBlogPost>();
-}
-
-export async function createPost(data: BlogPostData): Promise<IBlogPost> {
-	await connectDb();
-	const post = new BlogPost({
-		...data,
-		publishedAt: data.published ? new Date() : undefined
-	});
-	return post.save();
-}
-
-export async function updatePost(
-	slug: string,
-	data: Partial<BlogPostData>
-): Promise<IBlogPost | null> {
-	await connectDb();
-	const update: Partial<IBlogPost> & { publishedAt?: Date } = { ...data } as Partial<IBlogPost>;
-	if (data.published) {
-		const existing = await BlogPost.findOne({ slug }).select('publishedAt').lean<IBlogPost>();
-		if (!existing?.publishedAt) {
-			update.publishedAt = new Date();
-		}
-	}
-	return BlogPost.findOneAndUpdate({ slug }, update, { returnDocument: 'after' }).lean<IBlogPost>();
-}
-
-export async function deletePost(slug: string): Promise<boolean> {
-	await connectDb();
-	const result = await BlogPost.deleteOne({ slug });
-	return result.deletedCount > 0;
 }

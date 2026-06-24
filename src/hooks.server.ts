@@ -43,8 +43,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
-const CORS_HEADERS = 'Content-Type, Authorization, X-Questions-Admin-Secret';
-const MAINTENANCE_MODE = env.MAINTENANCE_MODE === 'true';
+const CORS_HEADERS = 'Content-Type, Authorization';
 const ALLOWED_ORIGINS = getAllowedOrigins();
 
 function applyCorsHeaders(response: Response, origin: string | null): Response {
@@ -114,30 +113,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 					'Access-Control-Max-Age': '86400'
 				}
 			}),
-			origin
-		);
-	}
-
-	if (
-		MAINTENANCE_MODE &&
-		event.url.pathname !== '/health' &&
-		!event.url.pathname.startsWith('/_app/') &&
-		!event.url.pathname.startsWith('/favicon')
-	) {
-		const isApi = event.url.pathname.startsWith('/api/');
-		return applyCorsHeaders(
-			new Response(
-				isApi
-					? JSON.stringify({ error: 'Maintenance mode' })
-					: 'Maintenance mode. Please try again shortly.',
-				{
-					status: 503,
-					headers: {
-						'Content-Type': isApi ? 'application/json' : 'text/plain; charset=utf-8',
-						'Retry-After': '3600'
-					}
-				}
-			),
 			origin
 		);
 	}
