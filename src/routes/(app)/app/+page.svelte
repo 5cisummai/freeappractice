@@ -23,7 +23,7 @@
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
 
-	const nextBestUnit = $derived(() => {
+	const nextBestUnit = $derived.by(() => {
 		if (!progressData.length) return null;
 		return (
 			[...progressData]
@@ -32,13 +32,19 @@
 		);
 	});
 
-	const recommendedPracticeHref = $derived(() => {
-		const recommendation = nextBestUnit();
+	const recommendedPracticeHref = $derived.by(() => {
+		const recommendation = nextBestUnit;
 		if (!recommendation) return resolve('/app/practice');
 		const basePath = resolve('/app/practice');
 		const classParam = `apClass=${encodeURIComponent(recommendation.apClass)}`;
 		const unitParam = recommendation.unit ? `&unit=${encodeURIComponent(recommendation.unit)}` : '';
 		return `${basePath}?${classParam}${unitParam}`;
+	});
+
+	const firstName = $derived.by(() => {
+		const name = data.user.name?.trim();
+		if (!name) return 'Student';
+		return name.split(' ')[0] || 'Student';
 	});
 </script>
 
@@ -47,22 +53,22 @@
 </svelte:head>
 
 <PageShell
-	title={`Welcome back, ${data.user.name.split(' ')[0] ?? 'Student'}`}
+	title={`Welcome back, ${firstName}`}
 	description="Here's an overview of your study progress."
 >
 	<Card.Root class="{appCard} border-primary/30 bg-primary/3 p-5">
 		<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 			<div class="space-y-1.5">
 				<p class="text-sm font-medium text-primary">Your Next Best Unit</p>
-				{#if nextBestUnit()}
+				{#if nextBestUnit}
 					<p class="text-base font-semibold">
-						{nextBestUnit()?.apClass}
-						{#if nextBestUnit()?.unit}
-							- {nextBestUnit()?.unit}
+						{nextBestUnit.apClass}
+						{#if nextBestUnit.unit}
+							- {nextBestUnit.unit}
 						{/if}
 					</p>
 					<p class="text-sm text-muted-foreground">
-						Mastery {nextBestUnit()?.mastery}% across {nextBestUnit()?.totalAttempts} attempts.
+						Mastery {nextBestUnit.mastery}% across {nextBestUnit.totalAttempts} attempts.
 					</p>
 				{:else}
 					<p class="text-base font-semibold">Start your first focused practice session</p>
@@ -71,7 +77,7 @@
 					</p>
 				{/if}
 			</div>
-			<Button href={recommendedPracticeHref()} class={appPrimaryButton}>
+			<Button href={recommendedPracticeHref} class={appPrimaryButton}>
 				Start Recommended Practice
 			</Button>
 		</div>
@@ -95,7 +101,9 @@
 					<BookOpenIcon class="h-4 w-4" />
 				</div>
 				<div>
-					<p class="text-2xl font-semibold tracking-tight">{statsData?.overview.totalQuestions ?? 0}</p>
+					<p class="text-2xl font-semibold tracking-tight">
+						{statsData?.overview.totalQuestions ?? 0}
+					</p>
 					<p class="text-xs text-muted-foreground">Questions</p>
 				</div>
 			</div>
@@ -121,7 +129,9 @@
 					<FlameIcon class="h-4 w-4" />
 				</div>
 				<div>
-					<p class="text-2xl font-semibold tracking-tight">{statsData?.overview.currentStreak ?? 0}</p>
+					<p class="text-2xl font-semibold tracking-tight">
+						{statsData?.overview.currentStreak ?? 0}
+					</p>
 					<p class="text-xs text-muted-foreground">Day Streak</p>
 				</div>
 			</div>

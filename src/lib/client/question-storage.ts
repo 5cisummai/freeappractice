@@ -1,5 +1,5 @@
 import { CUSTOM_UNIT_VALUE, hashTopicKey, isCustomUnit } from '$lib/constants/custom-unit';
-import type { AnswerResult, GeneratedQuestion } from '$lib/types/question';
+import type { AnswerResult, GeneratedQuestion, QuestionOption } from '$lib/types/question';
 
 export interface McqPersistedState {
 	currentQuestion: GeneratedQuestion;
@@ -11,6 +11,36 @@ export interface McqPersistedState {
 	statusMessage: string;
 	startedAtMs: number;
 	questionCount: number;
+}
+
+function isQuestionOption(value: unknown): value is QuestionOption {
+	if (!value || typeof value !== 'object') return false;
+	const option = value as QuestionOption;
+	return typeof option.id === 'string' && typeof option.text === 'string';
+}
+
+function isGeneratedQuestion(value: unknown): value is GeneratedQuestion {
+	if (!value || typeof value !== 'object') return false;
+	const question = value as GeneratedQuestion;
+	if (typeof question.prompt !== 'string' || !Array.isArray(question.options)) {
+		return false;
+	}
+	if (!question.options.every(isQuestionOption)) return false;
+	if (question.correctAnswer !== undefined && typeof question.correctAnswer !== 'string') {
+		return false;
+	}
+	return true;
+}
+
+function isAnswerResult(value: unknown): value is AnswerResult {
+	if (!value || typeof value !== 'object') return false;
+	const result = value as AnswerResult;
+	return (
+		typeof result.selectedAnswer === 'string' &&
+		typeof result.correctAnswer === 'string' &&
+		typeof result.isCorrect === 'boolean' &&
+		typeof result.timeTakenMs === 'number'
+	);
 }
 
 export function getPracticeStorageKey(
@@ -66,14 +96,24 @@ export function loadMcqPracticeState(key: string): {
 	restoreFailed?: boolean;
 } {
 	const { data, restoreFailed } = readPracticeStorageJson(key);
-	if (!data?.currentQuestion) return { state: null, restoreFailed };
+	if (!data?.currentQuestion || !isGeneratedQuestion(data.currentQuestion)) {
+		return { state: null, restoreFailed };
+	}
+
+	const answerResult =
+		data.answerResult === null || data.answerResult === undefined
+			? null
+			: isAnswerResult(data.answerResult)
+				? data.answerResult
+				: null;
+
 	return {
 		state: {
-			currentQuestion: data.currentQuestion as GeneratedQuestion,
+			currentQuestion: data.currentQuestion,
 			hasCheckedAnswer: Boolean(data.hasCheckedAnswer),
-			checkedSelection: (data.checkedSelection as string | null) ?? null,
-			answerResult: (data.answerResult as AnswerResult | null) ?? null,
-			selectedOption: (data.selectedOption as string | null) ?? null,
+			checkedSelection: typeof data.checkedSelection === 'string' ? data.checkedSelection : null,
+			answerResult,
+			selectedOption: typeof data.selectedOption === 'string' ? data.selectedOption : null,
 			showExplanation: Boolean(data.showExplanation),
 			statusMessage: typeof data.statusMessage === 'string' ? data.statusMessage : '',
 			startedAtMs: typeof data.startedAtMs === 'number' ? data.startedAtMs : Date.now(),

@@ -22,8 +22,7 @@ export function createHistoryColumns(
 			header: ({ table }) =>
 				renderComponent(HistoryDataTableCheckbox, {
 					checked: table.getIsAllPageRowsSelected(),
-					indeterminate:
-						table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected(),
+					indeterminate: table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected(),
 					onCheckedChange: (value) => table.toggleAllPageRowsSelected(!!value),
 					'aria-label': 'Select all'
 				}),
@@ -45,18 +44,15 @@ export function createHistoryColumns(
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const subjectSnippet = createRawSnippet<[{ subject: string; unit: string }]>(
-					(getData) => {
-						const { subject, unit } = getData();
-						const unitHtml = unit
-							? `<span class="text-muted-foreground"> · ${escapeHtml(unit)}</span>`
-							: '';
-						return {
-							render: () =>
-								`<div class="font-medium">${escapeHtml(subject)}${unitHtml}</div>`
-						};
-					}
-				);
+				const subjectSnippet = createRawSnippet<[{ subject: string; unit: string }]>((getData) => {
+					const { subject, unit } = getData();
+					const unitHtml = unit
+						? `<span class="text-muted-foreground"> · ${escapeHtml(unit)}</span>`
+						: '';
+					return {
+						render: () => `<div class="font-medium">${escapeHtml(subject)}${unitHtml}</div>`
+					};
+				});
 				return renderSnippet(subjectSnippet, {
 					subject: row.original.attempt.apClass,
 					unit: row.original.attempt.unit ?? ''
@@ -88,22 +84,19 @@ export function createHistoryColumns(
 			accessorFn: (row) => new Date(row.attempt.attemptedAt).getTime(),
 			header: ({ column }) =>
 				renderComponent(HistoryDataTableSortButton, {
-					label: 'Date',
+					label: 'Date · Time taken',
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const dateSnippet = createRawSnippet<[{ date: string; time: string | null }]>(
-					(getData) => {
-						const { date, time } = getData();
-						const timeHtml = time
-							? `<span class="text-muted-foreground"> · ${time}</span>`
-							: '';
-						return {
-							render: () =>
-								`<div class="text-sm whitespace-nowrap">${date}${timeHtml}</div>`
-						};
-					}
-				);
+				const dateSnippet = createRawSnippet<[{ date: string; time: string | null }]>((getData) => {
+					const { date, time } = getData();
+					const timeHtml = time
+						? `<span class="text-muted-foreground"> · ${escapeHtml(time)}</span>`
+						: '';
+					return {
+						render: () => `<div class="text-sm whitespace-nowrap">${date}${timeHtml}</div>`
+					};
+				});
 				return renderSnippet(dateSnippet, {
 					date: formatAttemptDate(row.original.attempt.attemptedAt),
 					time: formatTimeTaken(row.original.attempt.timeTakenMs)
@@ -118,7 +111,7 @@ export function createHistoryColumns(
 				const answerSnippet = createRawSnippet<[{ answer: string }]>((getData) => {
 					const { answer } = getData();
 					return {
-						render: () => `<div class="font-medium tabular-nums">${answer}</div>`
+						render: () => `<div class="font-medium tabular-nums">${escapeHtml(answer)}</div>`
 					};
 				});
 				return renderSnippet(answerSnippet, {

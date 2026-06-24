@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { apiFetch } from '$lib/client/api.js';
+	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import type { HistoryResponse } from '$lib/types/history.js';
 	import HistoryDataTable from '$lib/components/history/history-data-table.svelte';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
@@ -14,45 +14,52 @@
 	let pageIndex = $state(0);
 	let loading = $state(true);
 	let errorMessage = $state('');
+	let loadSequence = 0;
 
-	async function loadHistory() {
+	async function loadHistory(requestedPageIndex = pageIndex) {
+		const sequence = ++loadSequence;
 		loading = true;
 		errorMessage = '';
 		try {
-			const query = [`page=${pageIndex + 1}`, `limit=${PAGE_SIZE}`].join('&');
+			const query = [`page=${requestedPageIndex + 1}`, `limit=${PAGE_SIZE}`].join('&');
 			const response = await apiFetch(`/api/me/history?${query}`);
+			const payload = await readJsonOrNull<HistoryResponse & { error?: string }>(response);
 			if (!response.ok) {
-				const payload = await response.json().catch(() => ({}));
 				throw new Error(
-					typeof payload.error === 'string' ? payload.error : 'Failed to load history.'
+					typeof payload?.error === 'string' ? payload.error : 'Failed to load history.'
 				);
 			}
-			const data = (await response.json()) as HistoryResponse;
+			if (sequence !== loadSequence) return;
+
+			const data = payload as HistoryResponse;
 			items = data.items ?? [];
 			total = data.total ?? 0;
 
 			const maxPageIndex = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
-			if (pageIndex > maxPageIndex) {
+			if (requestedPageIndex > maxPageIndex) {
 				pageIndex = maxPageIndex;
-				await loadHistory();
+				await loadHistory(maxPageIndex);
 				return;
 			}
+			pageIndex = requestedPageIndex;
 		} catch (err) {
+			if (sequence !== loadSequence) return;
 			errorMessage = err instanceof Error ? err.message : 'Failed to load history.';
 			items = [];
 			total = 0;
 		} finally {
-			loading = false;
+			if (sequence === loadSequence) {
+				loading = false;
+			}
 		}
 	}
 
 	function handlePageChange(nextPageIndex: number) {
-		pageIndex = nextPageIndex;
-		void loadHistory();
+		void loadHistory(nextPageIndex);
 	}
 
 	onMount(() => {
-		void loadHistory();
+		void loadHistory(0);
 	});
 </script>
 

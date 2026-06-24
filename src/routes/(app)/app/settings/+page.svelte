@@ -10,7 +10,6 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import { onMount } from 'svelte';
 
 	import SunIcon from '@lucide/svelte/icons/sun';
@@ -21,6 +20,7 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import PageShell from '$lib/components/page-shell.svelte';
 	import { appCard, appInsetPanel, appPrimaryButton } from '$lib/app-ui.js';
+	import { appVersion } from '$lib/app-version.js';
 
 	let { data } = $props();
 
@@ -35,7 +35,6 @@
 		confirmPassword: ''
 	});
 	let deletePassword = $state('');
-	const appVersion = '1.4.1';
 
 	onMount(() => {
 		accountForm = { name: data.user.name, email: data.user.email };
@@ -44,6 +43,10 @@
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();
 		settingsController.updateAccount(data.user, accountForm);
+	}
+
+	function resetAccountForm() {
+		accountForm = { name: data.user.name, email: data.user.email };
 	}
 
 	function handleChangePassword(e: SubmitEvent) {
@@ -68,8 +71,6 @@
 	<title>Settings – Free AP Practice</title>
 </svelte:head>
 
-<Toaster />
-
 <PageShell title="Settings" description="Manage your account and app preferences.">
 	<Tabs.Root bind:value={activeTab} class="mx-auto w-full max-w-2xl space-y-6">
 		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
@@ -91,7 +92,8 @@
 		<Tabs.Content value="appearance">
 			<Card.Root class={appCard}>
 				<Card.Header>
-					<Card.Title class="font-display text-lg font-medium tracking-tight">Appearance</Card.Title>
+					<Card.Title class="font-display text-lg font-medium tracking-tight">Appearance</Card.Title
+					>
 					<Card.Description>Choose your preferred theme and font size.</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-6">
@@ -178,10 +180,10 @@
 						Current setting:
 						<strong class="text-foreground">
 							{privacy.analyticsConsent === 'granted'
-								? ' enabled'
+								? 'enabled'
 								: privacy.analyticsConsent === 'denied'
-									? ' disabled'
-									: ' not chosen'}
+									? 'disabled'
+									: 'not chosen'}
 						</strong>
 					</div>
 				</Card.Content>
@@ -207,10 +209,21 @@
 							<Input id="email" type="email" bind:value={accountForm.email} />
 						</div>
 						<div class="flex gap-4 pt-4">
-							<Button type="submit" class={appPrimaryButton} disabled={settingsController.accountPending}>
+							<Button
+								type="submit"
+								class={appPrimaryButton}
+								disabled={settingsController.accountPending}
+							>
 								{settingsController.accountPending ? 'Saving...' : 'Save Changes'}
 							</Button>
-							<Button variant="outline" type="button" class={appPrimaryButton}>Reset</Button>
+							<Button
+								variant="outline"
+								type="button"
+								class={appPrimaryButton}
+								onclick={resetAccountForm}
+							>
+								Reset
+							</Button>
 						</div>
 					</form>
 

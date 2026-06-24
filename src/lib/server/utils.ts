@@ -57,20 +57,22 @@ export async function findUserProfileOrFail(
 export function calcStreak(history: Array<{ attemptedAt: Date }>): number {
 	if (!history.length) return 0;
 
-	const sortedDates = [...new Set(history.map((q) => new Date(q.attemptedAt).toDateString()))].sort(
-		(a, b) => new Date(b).getTime() - new Date(a).getTime()
+	const toUtcDayKey = (date: Date) => date.toISOString().slice(0, 10);
+
+	const sortedDates = [...new Set(history.map((q) => toUtcDayKey(new Date(q.attemptedAt))))].sort(
+		(a, b) => b.localeCompare(a)
 	);
 
-	const today = new Date().toDateString();
-	const yesterday = new Date(Date.now() - 86400000).toDateString();
+	const today = toUtcDayKey(new Date());
+	const yesterday = toUtcDayKey(new Date(Date.now() - 86_400_000));
 
 	if (!sortedDates.includes(today) && !sortedDates.includes(yesterday)) return 0;
 
 	let streak = 1;
 	for (let i = 1; i < sortedDates.length; i++) {
-		const dayDiff = Math.floor(
-			(new Date(sortedDates[i - 1]).getTime() - new Date(sortedDates[i]).getTime()) / 86400000
-		);
+		const previous = new Date(`${sortedDates[i - 1]}T00:00:00.000Z`);
+		const current = new Date(`${sortedDates[i]}T00:00:00.000Z`);
+		const dayDiff = Math.round((previous.getTime() - current.getTime()) / 86_400_000);
 		if (dayDiff === 1) streak++;
 		else break;
 	}

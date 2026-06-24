@@ -36,8 +36,16 @@ class SettingsController {
 		const saved = localStorage.getItem('fap_settings');
 		if (saved) {
 			try {
-				const data = JSON.parse(saved);
-				this.settings = { ...this.settings, ...data };
+				const data = JSON.parse(saved) as Partial<SettingsData>;
+				const theme =
+					data.theme === 'light' || data.theme === 'dark' || data.theme === 'system'
+						? data.theme
+						: this.settings.theme;
+				const fontSize =
+					typeof data.fontSize === 'number' && data.fontSize >= 12 && data.fontSize <= 24
+						? data.fontSize
+						: this.settings.fontSize;
+				this.settings = { theme, fontSize };
 			} catch {
 				localStorage.removeItem('fap_settings');
 			}

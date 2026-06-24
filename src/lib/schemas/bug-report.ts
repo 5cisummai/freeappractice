@@ -16,7 +16,26 @@ export const bugReportSchema = z.object({
 	expected: optionalTrimmedString(2000),
 	severity: z.enum(BUG_REPORT_SEVERITIES).default('medium'),
 	email: optionalTrimmedString(254).pipe(z.string().email('Enter a valid email.').optional()),
-	metadata: z.record(z.string(), z.unknown()).optional()
+	metadata: z
+		.record(z.string().trim().min(1).max(80), z.unknown())
+		.optional()
+		.superRefine((metadata, ctx) => {
+			if (!metadata) return;
+			const keys = Object.keys(metadata);
+			if (keys.length > 20) {
+				ctx.addIssue({
+					code: 'custom',
+					message: 'metadata may include at most 20 keys'
+				});
+			}
+			const serialized = JSON.stringify(metadata);
+			if (serialized.length > 8_000) {
+				ctx.addIssue({
+					code: 'custom',
+					message: 'metadata payload is too large'
+				});
+			}
+		})
 });
 
 export type BugReportPayload = z.infer<typeof bugReportSchema>;

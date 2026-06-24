@@ -2,6 +2,7 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
+	import { Toaster } from '$lib/components/ui/sonner/index.js';
 
 	let { data, children } = $props();
 </script>
@@ -11,6 +12,8 @@
 	<meta name="googlebot" content="noindex, nofollow" />
 	<link rel="canonical" href="https://freeappractice.org/app" />
 </svelte:head>
+
+<Toaster />
 
 <Sidebar.Provider>
 	<AppSidebar user={data.user} />

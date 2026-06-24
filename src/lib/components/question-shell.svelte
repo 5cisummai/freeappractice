@@ -50,7 +50,7 @@
 </div>
 
 <div class="mx-auto min-h-40 max-w-6xl">
-	{#key `${selectedClass}:${selectedUnit}:${customTopic}:${requestVersion}`}
+	{#key `${selectedClass}:${selectedUnit}:${requestVersion}`}
 		<QuestionCard {selectedClass} {selectedUnit} {customTopic} {requestVersion} {...cardProps} />
 	{/key}
 </div>

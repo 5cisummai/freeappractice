@@ -98,13 +98,6 @@
 			"logo": "https://freeappractice.org/icon.png",
 			"image": "https://freeappractice.org/icon.png",
 			"applicationCategory": "EducationalApplication",
-			"aggregateRating": {
-				"@type": "AggregateRating",
-				"ratingValue": "4.8",
-				"ratingCount": "1250",
-				"bestRating": "5",
-				"worstRating": "1"
-			},
 			"offers": {
 				"@type": "Offer",
 				"price": "0",
@@ -309,7 +302,7 @@
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-4">
 					<h1
-						class="{twAnimateIn} delay-150 font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl"
+						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
 						Master your AP classes with instant practice questions.
 					</h1>
@@ -324,15 +317,15 @@
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
-							class="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both delay-500 duration-500 ease-out rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>Student Developed</span
 						>
 						<span
-							class="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both delay-600 duration-500 ease-out rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>20+ AP Subjects</span
 						>
 						<span
-							class="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both delay-700 duration-500 ease-out rounded-full border border-border/70 bg-muted/40 px-4 py-1.5"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>100% Free</span
 						>
 					</div>
@@ -440,8 +433,8 @@
 						<Accordion.Content>
 							<p>
 								Question may take longer to load as you may be generating a question for the
-								specific unit and topic for the first time. This then helps helps everyone by adding
-								new questions to the cache, which then provides sub second load times the next time.
+								specific unit and topic for the first time. This then helps everyone by adding new
+								questions to the cache, which then provides sub second load times the next time.
 								This is only expected to be a problem for newer users in the first few weeks, and
 								will be resolved as more questions are generated and added to the cache.
 							</p>

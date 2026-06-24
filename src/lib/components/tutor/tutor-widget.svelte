@@ -7,7 +7,7 @@
 	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/rich-text.svelte';
-	import { getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';
@@ -158,7 +158,7 @@
 		if (hasGreeted || !question) return;
 		hasGreeted = true;
 		try {
-			const res = await fetch('/api/tutor/greeting', {
+			const res = await apiFetch('/api/tutor/greeting', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ question })
@@ -203,7 +203,7 @@
 		isStreaming = true;
 
 		try {
-			const res = await fetch('/api/tutor/chat', {
+			const res = await apiFetch('/api/tutor/chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				signal: controller.signal,
@@ -238,7 +238,12 @@
 					if (!line.startsWith('data: ')) continue;
 					const data = line.slice(6).trim();
 					if (data === '[DONE]') continue;
-					const parsed = JSON.parse(data) as { content?: string; error?: string };
+					let parsed: { content?: string; error?: string };
+					try {
+						parsed = JSON.parse(data) as { content?: string; error?: string };
+					} catch {
+						continue;
+					}
 					if (parsed.error) {
 						throw new Error(parsed.error);
 					}

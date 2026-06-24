@@ -3,8 +3,6 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 
-	const communityPortrait = '';
-
 	const socialLinks = [
 		{
 			label: 'Instagram',
@@ -85,14 +83,12 @@
 						</div>
 					</div>
 
-					<div class="overflow-hidden rounded-[1.75rem] bg-muted">
-						<img
-							src={communityPortrait}
-							alt="Still Finding a good one to use"
-							class="aspect-4/5 w-full object-cover"
-							loading="lazy"
-							decoding="async"
-						/>
+					<div
+						class="flex aspect-4/5 w-full items-center justify-center rounded-[1.75rem] bg-muted"
+						role="img"
+						aria-label="Free AP Practice community"
+					>
+						<GraduationCapIcon class="size-20 text-muted-foreground/60" strokeWidth={1.5} />
 					</div>
 				</div>
 

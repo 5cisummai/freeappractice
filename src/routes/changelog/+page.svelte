@@ -35,7 +35,7 @@
 				{
 					title: 'New Features',
 					items: [
-						'Question history page with pagination and subject filter for signed-in users',
+						'Question history in the Progress tab with pagination for signed-in users',
 						'Summer study guide at /summer with a 4-week Unit 1 preview plan',
 						'Homepage aspiring-students section and refreshed messaging around course planning',
 						'AP Lunch😂 — a joke subject with cafeteria-themed practice questions',
@@ -551,7 +551,7 @@
 			<PublicPageHero
 				title="Changelog"
 				description="Release notes and updates for Free AP Practice."
-				meta="Last Updated: March 31, 2026"
+				meta="Last Updated: June 19, 2026"
 			/>
 
 			<div class="space-y-12 pt-8">

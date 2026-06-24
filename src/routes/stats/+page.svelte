@@ -19,15 +19,22 @@
 
 	let generationStats = $state<GenerationStats | null>(null);
 	let loading = $state(true);
+	let errorMessage = $state('');
 
 	onMount(async () => {
+		errorMessage = '';
 		try {
 			const res = await fetch('/api/question/generation-stats');
-			if (res.ok) {
-				const data = await res.json();
-				generationStats = data.stats ?? null;
+			if (!res.ok) {
+				const payload = await res.json().catch(() => ({}));
+				throw new Error(
+					typeof payload.error === 'string' ? payload.error : 'Failed to load generation stats.'
+				);
 			}
+			const data = await res.json();
+			generationStats = data.stats ?? null;
 		} catch (e) {
+			errorMessage = e instanceof Error ? e.message : 'Failed to load generation stats.';
 			console.error('Failed to load stats', e);
 		} finally {
 			loading = false;
@@ -132,6 +139,12 @@
 						</div>
 					</Card.Root>
 				</section>
+			{:else if errorMessage}
+				<p
+					class="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+				>
+					{errorMessage}
+				</p>
 			{:else}
 				<!-- Overview Cards -->
 				<section>

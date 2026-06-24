@@ -16,10 +16,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import {
-		FlexRender,
-		createSvelteTable
-	} from '$lib/components/ui/data-table/index.js';
+	import { FlexRender, createSvelteTable } from '$lib/components/ui/data-table/index.js';
 
 	type HistoryDataTableProps = {
 		data: HistoryItem[];
@@ -58,8 +55,7 @@
 		get pageCount() {
 			return pageCount;
 		},
-		getRowId: (row, index) =>
-			`${row.attempt.questionId}-${row.attempt.attemptedAt}-${index}`,
+		getRowId: (row, index) => `${row.attempt.questionId}-${row.attempt.attemptedAt}-${index}`,
 		state: {
 			get pagination() {
 				return { pageIndex, pageSize };
@@ -91,16 +87,13 @@
 			sorting = typeof updater === 'function' ? updater(sorting) : updater;
 		},
 		onColumnFiltersChange: (updater) => {
-			columnFilters =
-				typeof updater === 'function' ? updater(columnFilters) : updater;
+			columnFilters = typeof updater === 'function' ? updater(columnFilters) : updater;
 		},
 		onColumnVisibilityChange: (updater) => {
-			columnVisibility =
-				typeof updater === 'function' ? updater(columnVisibility) : updater;
+			columnVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
 		},
 		onRowSelectionChange: (updater) => {
-			rowSelection =
-				typeof updater === 'function' ? updater(rowSelection) : updater;
+			rowSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
 		}
 	});
 </script>
@@ -108,14 +101,15 @@
 <div class="space-y-4">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 		<Input
-			placeholder="Filter questions..."
+			placeholder="Filter current page..."
+			aria-label="Filter questions on the current page"
 			value={(table.getColumn('question')?.getFilterValue() as string) ?? ''}
-			oninput={(e) =>
-				table.getColumn('question')?.setFilterValue(e.currentTarget.value)}
-			onchange={(e) =>
-				table.getColumn('question')?.setFilterValue(e.currentTarget.value)}
+			oninput={(e) => table.getColumn('question')?.setFilterValue(e.currentTarget.value)}
 			class="max-w-sm"
 		/>
+		<p class="text-xs text-muted-foreground sm:ms-auto">
+			Search and sort apply to this page only. Use pagination to browse all attempts.
+		</p>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
@@ -126,14 +120,10 @@
 				{/snippet}
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content align="end">
-				{#each table
-					.getAllColumns()
-					.filter((col) => col.getCanHide()) as column (column.id)}
+				{#each table.getAllColumns().filter((col) => col.getCanHide()) as column (column.id)}
 					<DropdownMenu.CheckboxItem
 						class="capitalize"
-						bind:checked={
-							() => column.getIsVisible(), (v) => column.toggleVisibility(!!v)
-						}
+						bind:checked={() => column.getIsVisible(), (v) => column.toggleVisibility(!!v)}
 					>
 						{column.id}
 					</DropdownMenu.CheckboxItem>
@@ -176,10 +166,7 @@
 									}
 								}}
 							>
-								<FlexRender
-									content={cell.column.columnDef.cell}
-									context={cell.getContext()}
-								/>
+								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 							</Table.Cell>
 						{/each}
 					</Table.Row>
@@ -195,10 +182,12 @@
 	</div>
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-		<p class="text-muted-foreground text-sm">
+		<p class="text-sm text-muted-foreground">
 			{table.getFilteredSelectedRowModel().rows.length} of
-			{table.getFilteredRowModel().rows.length} row(s) selected on this page · {total} total
-			attempt{total === 1 ? '' : 's'}
+			{table.getFilteredRowModel().rows.length} row(s) selected on this page · {total} total attempt{total ===
+			1
+				? ''
+				: 's'}
 		</p>
 		<div class="flex items-center gap-2">
 			<p class="text-sm text-muted-foreground">

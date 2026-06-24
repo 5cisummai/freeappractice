@@ -17,7 +17,16 @@ const SEVERITY_LABEL: Record<string, string> = {
 };
 
 function escapeMarkdown(text: string): string {
-	return text.replace(/`/g, '\\`').replace(/\[/g, '\\[').replace(/</g, '&lt;');
+	return text
+		.replace(/`/g, '\\`')
+		.replace(/\[/g, '\\[')
+		.replace(/</g, '&lt;')
+		.replace(/\r?\n/g, ' ')
+		.trim();
+}
+
+function sanitizeIssueTitle(title: string): string {
+	return title.replace(/[\r\n]+/g, ' ').trim();
 }
 
 function buildIssueBody(parsed: BugReportPayload): string {
@@ -39,7 +48,7 @@ function buildIssueBody(parsed: BugReportPayload): string {
 
 	if (parsed.metadata && Object.keys(parsed.metadata).length > 0) {
 		const meta = Object.entries(parsed.metadata)
-			.map(([k, v]) => `- **${k}**: ${escapeMarkdown(JSON.stringify(v))}`)
+			.map(([k, v]) => `- **${escapeMarkdown(k)}**: ${escapeMarkdown(JSON.stringify(v))}`)
 			.join('\n');
 		lines.push(`## Context\n${meta}`);
 	}
@@ -106,7 +115,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		const parsed = result.data;
 
 		const issuePayload = {
-			title: `[Bug] ${escapeMarkdown(parsed.title)}`,
+			title: `[Bug] ${escapeMarkdown(sanitizeIssueTitle(parsed.title))}`,
 			body: buildIssueBody(parsed),
 			labels: ['bug', SEVERITY_LABEL[parsed.severity]]
 		};

@@ -12,7 +12,7 @@
 			description: 'Browse all current study guides, updates, and strategy posts.'
 		},
 		{
-			href: resolve('/blog/science_of_studying'),
+			href: resolve('/blog/science-of-studying'),
 			label: 'Science of Studying',
 			description: 'Research-backed strategies for spacing, retrieval, and retention.'
 		}
@@ -69,7 +69,8 @@
 							<p class="font-medium">{resource.label}</p>
 							<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
 							<div class="mt-3">
-								<Button variant="outline" href={resource.href} class={appPrimaryButton}>Open</Button>
+								<Button variant="outline" href={resource.href} class={appPrimaryButton}>Open</Button
+								>
 							</div>
 						</div>
 					{/each}

@@ -15,12 +15,7 @@
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import {
-		appCard,
-		appEmptyState,
-		appPrimaryButton,
-		appSectionTitle
-	} from '$lib/app-ui.js';
+	import { appCard, appEmptyState, appPrimaryButton, appSectionTitle } from '$lib/app-ui.js';
 
 	type ProgressView = 'mastery' | 'history';
 
@@ -42,7 +37,9 @@
 		return Object.entries(map)
 			.map(([apClass, units]) => ({
 				apClass,
-				units: [...units].sort((a, b) => a.mastery - b.mastery || b.totalAttempts - a.totalAttempts),
+				units: [...units].sort(
+					(a, b) => a.mastery - b.mastery || b.totalAttempts - a.totalAttempts
+				),
 				avgMastery: Math.round(
 					units.reduce((sum, unit) => sum + unit.mastery, 0) / Math.max(units.length, 1)
 				),
@@ -51,9 +48,7 @@
 			.sort((a, b) => a.apClass.localeCompare(b.apClass));
 	});
 
-	const hasActivity = $derived(
-		(statsData?.overview.totalQuestions ?? 0) > 0 || grouped.length > 0
-	);
+	const hasActivity = $derived((statsData?.overview.totalQuestions ?? 0) > 0 || grouped.length > 0);
 
 	function masteryBarClass(mastery: number): string {
 		if (mastery >= 75) return 'bg-emerald-500';
@@ -77,13 +72,18 @@
 		}
 	}
 
-	$effect(() => {
-		const param = page.url.searchParams.get('view');
-		activeView = param === 'history' ? 'history' : 'mastery';
-	});
+	function handleViewChange(view: string | undefined) {
+		if (view !== 'mastery' && view !== 'history') return;
+		activeView = view;
+		syncViewToUrl(view);
+	}
 
 	$effect(() => {
-		syncViewToUrl(activeView);
+		const param = page.url.searchParams.get('view');
+		const nextView: ProgressView = param === 'history' ? 'history' : 'mastery';
+		if (activeView !== nextView) {
+			activeView = nextView;
+		}
 	});
 </script>
 
@@ -150,7 +150,7 @@
 		</Card.Root>
 	</div>
 
-	<Tabs.Root bind:value={activeView} class="space-y-6">
+	<Tabs.Root bind:value={activeView} onValueChange={handleViewChange} class="space-y-6">
 		<Tabs.List class="grid w-full max-w-md grid-cols-2">
 			<Tabs.Trigger value="mastery" class="flex items-center gap-2">
 				<BarChart3Icon class="size-4" />
@@ -167,7 +167,9 @@
 				<div class={appEmptyState}>
 					<p>No progress yet. Go practice some questions!</p>
 					<div class="mt-4">
-						<Button href={resolve('/app/practice')} class={appPrimaryButton}>Start practicing</Button>
+						<Button href={resolve('/app/practice')} class={appPrimaryButton}
+							>Start practicing</Button
+						>
 					</div>
 				</div>
 			{:else}
@@ -185,7 +187,9 @@
 										<div class="flex w-36 items-center gap-3">
 											<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
 												<div
-													class="h-full rounded-full transition-all {masteryBarClass(subject.accuracy)}"
+													class="h-full rounded-full transition-all {masteryBarClass(
+														subject.accuracy
+													)}"
 													style="width: {subject.accuracy}%"
 												></div>
 											</div>
@@ -204,7 +208,9 @@
 					<section class="space-y-4">
 						<div class="flex flex-wrap items-end justify-between gap-3">
 							<h2 class={appSectionTitle}>Mastery by unit</h2>
-							<p class="text-sm text-muted-foreground">Sorted by lowest mastery first within each subject</p>
+							<p class="text-sm text-muted-foreground">
+								Sorted by lowest mastery first within each subject
+							</p>
 						</div>
 
 						<div class="grid gap-4 lg:grid-cols-2">
@@ -228,7 +234,9 @@
 										</div>
 										<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
 											<div
-												class="h-full rounded-full transition-all {masteryBarClass(subject.avgMastery)}"
+												class="h-full rounded-full transition-all {masteryBarClass(
+													subject.avgMastery
+												)}"
 												style="width: {subject.avgMastery}%"
 											></div>
 										</div>
@@ -249,7 +257,9 @@
 												</div>
 												<div class="h-2 overflow-hidden rounded-full bg-muted">
 													<div
-														class="h-full rounded-full transition-all {masteryBarClass(unit.mastery)}"
+														class="h-full rounded-full transition-all {masteryBarClass(
+															unit.mastery
+														)}"
 														style="width: {unit.mastery}%"
 													></div>
 												</div>

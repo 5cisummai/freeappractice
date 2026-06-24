@@ -89,6 +89,7 @@
 	let showExplanation = $state(false);
 	let startedAtMs = $state(Date.now());
 	let isLoading = $state(false);
+	let storageReady = $state(!browser);
 	let questionCount = $state(0);
 	let statusMessage = $state('');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
@@ -139,7 +140,9 @@
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
 
-	const showEmptyState = $derived(!isLoading && requestVersion === 0);
+	const showEmptyState = $derived(
+		storageReady && !isLoading && requestVersion === 0 && !currentQuestion
+	);
 
 	function customTopicCacheKey(): string {
 		return `${selectedClass}::${hashTopicKey(customTopic.trim())}`;
@@ -441,6 +444,7 @@
 		referenceSheetOpen = false;
 		statusMessage = 'Choose the best answer and then check your response.';
 		loadFromStorage();
+		storageReady = true;
 
 		const onResize = () => {
 			isMobileViewport = window.innerWidth < 768;
@@ -454,7 +458,10 @@
 		onResize();
 
 		if (requestVersion > 0) {
+			isLoading = true;
 			void loadQuestion();
+		} else if (currentQuestion) {
+			isLoading = false;
 		}
 
 		return () => {
@@ -464,7 +471,7 @@
 	});
 </script>
 
-{#if isLoading}
+{#if !storageReady || isLoading}
 	<QuestionCardSkeleton
 		isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)}
 		class={className}
@@ -684,7 +691,7 @@
 				<Button
 					variant="outline"
 					onclick={handleNextQuestion}
-					disabled={isLoading || (!hasCheckedAnswer && !selectedOption)}
+					disabled={isLoading || !hasCheckedAnswer}
 				>
 					{nextLabel}
 				</Button>

@@ -320,11 +320,16 @@ OUTPUT:
 	);
 
 	const persistUnitLabel = isCustom ? `Custom: ${ct}` : unit;
-	let questionId: string | undefined;
+	let questionId: string;
 	try {
 		questionId = await persistGeneratedMcqQuestion(parsed, className, persistUnitLabel);
-	} catch {
-		/* non-critical */
+	} catch (err) {
+		logger.error('Failed to persist generated question to S3', {
+			className,
+			unit: persistUnitLabel,
+			error: err
+		});
+		throw new Error('Failed to persist generated question');
 	}
 	return { answer: parsed, provider: 'openai', model, questionId };
 }
