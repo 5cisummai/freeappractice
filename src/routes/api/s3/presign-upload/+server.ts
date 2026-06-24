@@ -1,5 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { getPresignedUploadUrl } from '$lib/server/services/s3';
+import {
+	getPresignedUploadUrl,
+	S3ConfigError,
+	S3KeyValidationError
+} from '$lib/server/services/s3';
 import { withAuthedHandler } from '$lib/server/route-helpers';
 
 export const POST = withAuthedHandler(
@@ -9,8 +13,15 @@ export const POST = withAuthedHandler(
 			return json({ error: 'key and contentType are required' }, { status: 400 });
 		}
 
-		const result = await getPresignedUploadUrl({ key, contentType });
-		return json(result);
+		try {
+			const result = await getPresignedUploadUrl({ key, contentType });
+			return json(result);
+		} catch (err) {
+			if (err instanceof S3KeyValidationError || err instanceof S3ConfigError) {
+				return json({ error: err.message }, { status: 400 });
+			}
+			throw err;
+		}
 	},
 	{ logLabel: 'Presign upload error', errorMessage: 'Failed to generate upload URL' }
 );

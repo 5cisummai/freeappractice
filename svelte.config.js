@@ -42,7 +42,7 @@ const config = {
 					'self',
 					'data:',
 					'blob:',
-					'https://freeappractice.org',
+					'https://public.assets.freeappractice.org',
 					'https://*.googleapis.com',
 					'https://*.gstatic.com'
 				],

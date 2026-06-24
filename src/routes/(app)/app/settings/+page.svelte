@@ -10,7 +10,6 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import { onMount } from 'svelte';
 
 	import SunIcon from '@lucide/svelte/icons/sun';
@@ -18,24 +17,19 @@
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
 	import UserIcon from '@lucide/svelte/icons/user';
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
-	import AccessibilityIcon from '@lucide/svelte/icons/accessibility';
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import PageShell from '$lib/components/page-shell.svelte';
+	import { appCard, appInsetPanel, appPrimaryButton } from '$lib/app-ui.js';
+	import { appVersion } from '$lib/app-version.js';
 
 	let { data } = $props();
 
-	type SettingsTab = 'appearance' | 'accessibility' | 'privacy' | 'account' | 'about';
+	type SettingsTab = 'appearance' | 'privacy' | 'account' | 'about';
 
 	let activeTab = $state<SettingsTab>('appearance');
 	let deleteAccountOpen = $state(false);
 	let accountForm = $state({ name: '', email: '' });
-	let passwordForm = $state({
-		currentPassword: '',
-		newPassword: '',
-		confirmPassword: ''
-	});
 	let deletePassword = $state('');
-	const appVersion = '1.4.1';
 
 	onMount(() => {
 		accountForm = { name: data.user.name, email: data.user.email };
@@ -46,13 +40,8 @@
 		settingsController.updateAccount(data.user, accountForm);
 	}
 
-	function handleChangePassword(e: SubmitEvent) {
-		e.preventDefault();
-		settingsController.changePassword(passwordForm).then((ok) => {
-			if (ok) {
-				passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
-			}
-		});
+	function resetAccountForm() {
+		accountForm = { name: data.user.name, email: data.user.email };
 	}
 
 	async function handleDeleteAccount() {
@@ -68,18 +57,12 @@
 	<title>Settings – Free AP Practice</title>
 </svelte:head>
 
-<Toaster />
-
 <PageShell title="Settings" description="Manage your account and app preferences.">
 	<Tabs.Root bind:value={activeTab} class="mx-auto w-full max-w-2xl space-y-6">
-		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-5">
+		<Tabs.List class="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
 			<Tabs.Trigger value="appearance" class="flex items-center gap-2">
 				<PaintbrushIcon class="h-4 w-4" />
 				Appearance
-			</Tabs.Trigger>
-			<Tabs.Trigger value="accessibility" class="flex items-center gap-2">
-				<AccessibilityIcon class="h-4 w-4" />
-				Accessibility
 			</Tabs.Trigger>
 			<Tabs.Trigger value="privacy" class="flex items-center gap-2">Privacy</Tabs.Trigger>
 			<Tabs.Trigger value="account" class="flex items-center gap-2">
@@ -93,9 +76,10 @@
 		</Tabs.List>
 
 		<Tabs.Content value="appearance">
-			<Card.Root>
+			<Card.Root class={appCard}>
 				<Card.Header>
-					<Card.Title>Appearance</Card.Title>
+					<Card.Title class="font-display text-lg font-medium tracking-tight">Appearance</Card.Title
+					>
 					<Card.Description>Choose your preferred theme and font size.</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-6">
@@ -153,46 +137,10 @@
 			</Card.Root>
 		</Tabs.Content>
 
-		<Tabs.Content value="accessibility">
-			<Card.Root>
-				<Card.Header>
-					<Card.Title>Accessibility</Card.Title>
-					<Card.Description>Enable features that make the app easier to use.</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-6">
-					<div class="flex items-center justify-between">
-						<div class="space-y-0.5">
-							<Label for="high-contrast-toggle">High Contrast</Label>
-							<p class="text-sm text-muted-foreground">Increases visibility of elements.</p>
-						</div>
-						<Switch
-							id="high-contrast-toggle"
-							name="high-contrast"
-							checked={settingsController.settings.highContrast}
-							onCheckedChange={() => settingsController.toggleAccessibility('highContrast')}
-						/>
-					</div>
-
-					<div class="flex items-center justify-between border-t border-border pt-4">
-						<div class="space-y-0.5">
-							<Label for="reduce-motion-toggle">Reduce Motion</Label>
-							<p class="text-sm text-muted-foreground">Disables UI animations.</p>
-						</div>
-						<Switch
-							id="reduce-motion-toggle"
-							name="reduce-motion"
-							checked={settingsController.settings.reduceMotion}
-							onCheckedChange={() => settingsController.toggleAccessibility('reduceMotion')}
-						/>
-					</div>
-				</Card.Content>
-			</Card.Root>
-		</Tabs.Content>
-
 		<Tabs.Content value="privacy">
-			<Card.Root>
+			<Card.Root class={appCard}>
 				<Card.Header>
-					<Card.Title>Privacy</Card.Title>
+					<Card.Title class="font-display text-lg font-medium tracking-tight">Privacy</Card.Title>
 					<Card.Description>
 						Choose whether optional analytics may be used to improve the site.
 					</Card.Description>
@@ -214,16 +162,14 @@
 						/>
 					</div>
 
-					<div
-						class="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground"
-					>
+					<div class="{appInsetPanel} text-sm text-muted-foreground">
 						Current setting:
 						<strong class="text-foreground">
 							{privacy.analyticsConsent === 'granted'
-								? ' enabled'
+								? 'enabled'
 								: privacy.analyticsConsent === 'denied'
-									? ' disabled'
-									: ' not chosen'}
+									? 'disabled'
+									: 'not chosen'}
 						</strong>
 					</div>
 				</Card.Content>
@@ -231,9 +177,11 @@
 		</Tabs.Content>
 
 		<Tabs.Content value="account">
-			<Card.Root>
+			<Card.Root class={appCard}>
 				<Card.Header>
-					<Card.Title>Account Settings</Card.Title>
+					<Card.Title class="font-display text-lg font-medium tracking-tight">
+						Account Settings
+					</Card.Title>
 					<Card.Description>Update your profile information.</Card.Description>
 				</Card.Header>
 				<Card.Content>
@@ -247,50 +195,22 @@
 							<Input id="email" type="email" bind:value={accountForm.email} />
 						</div>
 						<div class="flex gap-4 pt-4">
-							<Button type="submit" disabled={settingsController.accountPending}>
+							<Button
+								type="submit"
+								class={appPrimaryButton}
+								disabled={settingsController.accountPending}
+							>
 								{settingsController.accountPending ? 'Saving...' : 'Save Changes'}
 							</Button>
-							<Button variant="outline" type="button">Reset</Button>
+							<Button
+								variant="outline"
+								type="button"
+								class={appPrimaryButton}
+								onclick={resetAccountForm}
+							>
+								Reset
+							</Button>
 						</div>
-					</form>
-
-					<form onsubmit={handleChangePassword} class="mt-8 space-y-4 border-t border-border pt-6">
-						<div class="space-y-1">
-							<p class="font-medium">Change password</p>
-							<p class="text-sm text-muted-foreground">
-								Update your password. Other sessions will be signed out.
-							</p>
-						</div>
-						<div class="space-y-2">
-							<Label for="current-password">Current password</Label>
-							<Input
-								id="current-password"
-								type="password"
-								autocomplete="current-password"
-								bind:value={passwordForm.currentPassword}
-							/>
-						</div>
-						<div class="space-y-2">
-							<Label for="new-password">New password</Label>
-							<Input
-								id="new-password"
-								type="password"
-								autocomplete="new-password"
-								bind:value={passwordForm.newPassword}
-							/>
-						</div>
-						<div class="space-y-2">
-							<Label for="confirm-new-password">Confirm new password</Label>
-							<Input
-								id="confirm-new-password"
-								type="password"
-								autocomplete="new-password"
-								bind:value={passwordForm.confirmPassword}
-							/>
-						</div>
-						<Button type="submit" variant="outline" disabled={settingsController.passwordPending}>
-							{settingsController.passwordPending ? 'Updating...' : 'Update password'}
-						</Button>
 					</form>
 				</Card.Content>
 				<Card.Footer class="flex flex-col items-start gap-4 border-t border-border pt-6">
@@ -306,22 +226,22 @@
 		</Tabs.Content>
 
 		<Tabs.Content value="about">
-			<Card.Root>
+			<Card.Root class={appCard}>
 				<Card.Header>
-					<Card.Title>About</Card.Title>
+					<Card.Title class="font-display text-lg font-medium tracking-tight">About</Card.Title>
 					<Card.Description>Version details and policy links for Free AP Practice.</Card.Description
 					>
 				</Card.Header>
 				<Card.Content class="space-y-6">
 					<div class="grid gap-4 sm:grid-cols-2">
-						<div class="rounded-lg border border-border bg-muted/30 p-4">
+						<div class={appInsetPanel}>
 							<p class="text-xs tracking-wide text-muted-foreground uppercase">App version</p>
 							<p class="mt-1 text-lg font-semibold">{appVersion}</p>
 							<p class="mt-1 text-sm text-muted-foreground">
 								Current release installed in this workspace.
 							</p>
 						</div>
-						<div class="rounded-lg border border-border bg-muted/30 p-4">
+						<div class={appInsetPanel}>
 							<p class="text-xs tracking-wide text-muted-foreground uppercase">Build</p>
 							<p class="mt-1 text-lg font-semibold">SvelteKit</p>
 							<p class="mt-1 text-sm text-muted-foreground">
@@ -333,9 +253,15 @@
 					<div class="space-y-3 border-t border-border pt-4">
 						<p class="text-sm font-medium text-foreground">Policies</p>
 						<div class="flex flex-wrap gap-3">
-							<Button variant="outline" href={resolve('/privacy')}>Privacy Policy</Button>
-							<Button variant="outline" href={resolve('/terms')}>Terms of Service</Button>
-							<Button variant="ghost" href={resolve('/changelog')}>Changelog</Button>
+							<Button variant="outline" href={resolve('/privacy')} class={appPrimaryButton}>
+								Privacy Policy
+							</Button>
+							<Button variant="outline" href={resolve('/terms')} class={appPrimaryButton}>
+								Terms of Service
+							</Button>
+							<Button variant="ghost" href={resolve('/changelog')} class={appPrimaryButton}>
+								Changelog
+							</Button>
 						</div>
 					</div>
 				</Card.Content>

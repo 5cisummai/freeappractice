@@ -3,6 +3,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/page-shell.svelte';
+	import { appCard, appInsetPanel, appPrimaryButton } from '$lib/app-ui.js';
 
 	const blogResources = [
 		{
@@ -11,14 +12,9 @@
 			description: 'Browse all current study guides, updates, and strategy posts.'
 		},
 		{
-			href: resolve('/blog/science_of_studying'),
+			href: resolve('/blog/science-of-studying'),
 			label: 'Science of Studying',
 			description: 'Research-backed strategies for spacing, retrieval, and retention.'
-		},
-		{
-			href: resolve('/blog/simple_frq_guide'),
-			label: 'FRQ Guide',
-			description: 'A practical framework for improving free-response scores.'
 		}
 	];
 
@@ -59,21 +55,22 @@
 	description="Curated study guides from our blog and external links worth keeping in your AP toolkit."
 >
 	<div class="grid gap-6 lg:grid-cols-2">
-		<Card.Root class="h-full">
+		<Card.Root class="{appCard} h-full">
 			<Card.Header>
-				<Card.Title>Blog</Card.Title>
-				<Card.Description
-					>Read the latest in-house study guides and AP strategy posts.</Card.Description
-				>
+				<Card.Title class="font-display text-lg font-medium tracking-tight">Blog</Card.Title>
+				<Card.Description>
+					Read the latest in-house study guides and AP strategy posts.
+				</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4">
 				<div class="space-y-3">
 					{#each blogResources as resource (resource.href)}
-						<div class="rounded-lg border border-border bg-muted/20 p-4">
+						<div class={appInsetPanel}>
 							<p class="font-medium">{resource.label}</p>
 							<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
 							<div class="mt-3">
-								<Button variant="outline" href={resource.href}>Open</Button>
+								<Button variant="outline" href={resource.href} class={appPrimaryButton}>Open</Button
+								>
 							</div>
 						</div>
 					{/each}
@@ -81,14 +78,16 @@
 			</Card.Content>
 		</Card.Root>
 
-		<Card.Root class="h-full">
+		<Card.Root class="{appCard} h-full">
 			<Card.Header>
-				<Card.Title>External resources</Card.Title>
+				<Card.Title class="font-display text-lg font-medium tracking-tight">
+					External resources
+				</Card.Title>
 				<Card.Description>Official references and supplemental study tools.</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-3">
 				{#each externalResources as resource (resource.href)}
-					<div class="rounded-lg border border-border bg-muted/20 p-4">
+					<div class={appInsetPanel}>
 						<p class="font-medium">{resource.label}</p>
 						<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
 						<div class="mt-3">
@@ -97,6 +96,7 @@
 								href={resource.href}
 								target="_blank"
 								rel="noopener noreferrer"
+								class={appPrimaryButton}
 							>
 								Visit site
 							</Button>

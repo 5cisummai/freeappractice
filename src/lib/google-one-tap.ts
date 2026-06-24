@@ -19,7 +19,7 @@ const ONE_TAP_ROUTE_PATTERNS = [
 	/^\/signup$/
 ] as const;
 
-export function isGoogleOneTapRoute(pathname: string): boolean {
+function isGoogleOneTapRoute(pathname: string): boolean {
 	return ONE_TAP_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname));
 }
 
@@ -133,15 +133,6 @@ function runFedcmPrompt(context: OneTapContext, pathname: string): Promise<void>
 		timeout = setTimeout(finish, PROMPT_SETTLE_TIMEOUT_MS);
 		window.google?.accounts.id.prompt();
 	});
-}
-
-export function finishGoogleOneTapAttempt(pathname: string): void {
-	if (activePromptPath === pathname) {
-		if (activeCredentialHandler) {
-			activeCredentialHandler = null;
-		}
-		activePromptPath = null;
-	}
 }
 
 export function cancelGoogleOneTap(): void {

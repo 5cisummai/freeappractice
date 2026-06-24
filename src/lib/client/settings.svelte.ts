@@ -7,8 +7,6 @@ import { authCallbackUrl } from '$lib/auth-callback-url.js';
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
 	fontSize: number;
-	highContrast: boolean;
-	reduceMotion: boolean;
 };
 
 type AccountUser = {
@@ -19,12 +17,9 @@ type AccountUser = {
 class SettingsController {
 	settings = $state<SettingsData>({
 		theme: 'system',
-		fontSize: 16,
-		highContrast: false,
-		reduceMotion: false
+		fontSize: 16
 	});
 	accountPending = $state(false);
-	passwordPending = $state(false);
 	deletePending = $state(false);
 
 	constructor() {
@@ -32,7 +27,7 @@ class SettingsController {
 
 		this.load();
 		setMode(this.settings.theme);
-		this.applyAccessibility();
+		this.applyFontSize();
 	}
 
 	private load() {
@@ -40,8 +35,16 @@ class SettingsController {
 		const saved = localStorage.getItem('fap_settings');
 		if (saved) {
 			try {
-				const data = JSON.parse(saved);
-				this.settings = { ...this.settings, ...data };
+				const data = JSON.parse(saved) as Partial<SettingsData>;
+				const theme =
+					data.theme === 'light' || data.theme === 'dark' || data.theme === 'system'
+						? data.theme
+						: this.settings.theme;
+				const fontSize =
+					typeof data.fontSize === 'number' && data.fontSize >= 12 && data.fontSize <= 24
+						? data.fontSize
+						: this.settings.fontSize;
+				this.settings = { theme, fontSize };
 			} catch {
 				localStorage.removeItem('fap_settings');
 			}
@@ -55,7 +58,7 @@ class SettingsController {
 		} catch {
 			// Keep the current in-memory settings even if persistence fails.
 		}
-		this.applyAccessibility();
+		this.applyFontSize();
 	}
 
 	setTheme(theme: 'light' | 'dark' | 'system') {
@@ -69,18 +72,9 @@ class SettingsController {
 		this.save();
 	}
 
-	toggleAccessibility(key: keyof Pick<SettingsData, 'highContrast' | 'reduceMotion'>) {
-		this.settings[key] = !this.settings[key];
-		this.save();
-	}
-
-	private applyAccessibility() {
+	private applyFontSize() {
 		if (typeof document === 'undefined') return;
-		const root = document.documentElement;
-
-		root.style.fontSize = `${this.settings.fontSize}px`;
-		document.body.classList.toggle('high-contrast', this.settings.highContrast);
-		document.body.classList.toggle('reduce-motion', this.settings.reduceMotion);
+		document.documentElement.style.fontSize = `${this.settings.fontSize}px`;
 	}
 
 	async updateAccount(user: AccountUser, data: { name: string; email: string }) {
@@ -123,40 +117,6 @@ class SettingsController {
 			return false;
 		} finally {
 			this.accountPending = false;
-		}
-	}
-
-	async changePassword(data: {
-		currentPassword: string;
-		newPassword: string;
-		confirmPassword: string;
-	}): Promise<boolean> {
-		if (this.passwordPending) return false;
-		this.passwordPending = true;
-		try {
-			if (data.newPassword !== data.confirmPassword) {
-				toast.error('New passwords do not match');
-				return false;
-			}
-			if (data.newPassword.length < 8) {
-				toast.error('Password must be at least 8 characters');
-				return false;
-			}
-
-			const { error } = await authClient.changePassword({
-				currentPassword: data.currentPassword,
-				newPassword: data.newPassword,
-				revokeOtherSessions: true
-			});
-			if (error) throw new Error(error.message ?? 'Failed to change password');
-
-			toast.success('Password updated successfully');
-			return true;
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : 'Failed to change password');
-			return false;
-		} finally {
-			this.passwordPending = false;
 		}
 	}
 

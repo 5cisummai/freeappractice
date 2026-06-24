@@ -12,7 +12,6 @@ export async function ensureUserProfile(userId: string): Promise<IUserProfile> {
 			userId,
 			progress: [],
 			questionHistory: [],
-			frqHistory: [],
 			bookmarkedQuestions: []
 		});
 	} catch (err) {

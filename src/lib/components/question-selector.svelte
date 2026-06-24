@@ -4,7 +4,9 @@
 	import BugIcon from '@lucide/svelte/icons/bug';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+	import ClipboardCopyIcon from '@lucide/svelte/icons/clipboard-copy';
+	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -25,13 +27,10 @@
 		selectedUnit?: string;
 		/** When the user picks "Custom" unit, they describe the topic here (sent to the API, not cached). */
 		customTopic?: string;
-		questionType?: 'mcq' | 'frq';
-		hideQuestionTypeTabs?: boolean;
 		isLoading?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
-		onTypeChange?: (type: 'mcq' | 'frq') => void;
 	};
 
 	const rawCourses = (apClassesData.courses ?? []) as Course[];
@@ -45,13 +44,10 @@
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
 		customTopic = $bindable(''),
-		questionType = $bindable<'mcq' | 'frq'>('mcq'),
-		hideQuestionTypeTabs = false,
 		isLoading = false,
 		generateLabel = 'Generate Question',
 		onGenerate,
-		onSelectionChange,
-		onTypeChange
+		onSelectionChange
 	}: QuestionSelectorProps = $props();
 
 	const isCustomUnitSelected = $derived(selectedUnit === CUSTOM_UNIT_VALUE);
@@ -66,6 +62,7 @@
 	let classTriggerRef = $state<HTMLButtonElement>(null!);
 	let unitTriggerRef = $state<HTMLButtonElement>(null!);
 	let bugReportOpen = $state(false);
+	let optionsOpen = $state(false);
 
 	function notifySelectionChange(): void {
 		onSelectionChange?.(selectedClass, selectedUnit);
@@ -87,44 +84,38 @@
 		tick().then(() => unitTriggerRef?.focus());
 		notifySelectionChange();
 	}
+
+	function openBugReport(): void {
+		optionsOpen = false;
+		bugReportOpen = true;
+	}
+
+	function clearSelection(): void {
+		selectedClass = '';
+		selectedUnit = '';
+		customTopic = '';
+		optionsOpen = false;
+		notifySelectionChange();
+	}
+
+	async function copySelection(): Promise<void> {
+		if (!selectedClass) return;
+
+		const parts = [selectedClass];
+		if (isCustomUnitSelected && customTopic.trim()) {
+			parts.push(customTopic.trim());
+		} else if (selectedUnit) {
+			parts.push(selectedUnit);
+		} else {
+			parts.push('All Units');
+		}
+
+		await navigator.clipboard.writeText(parts.join(' · '));
+		optionsOpen = false;
+	}
 </script>
 
 <div class="space-y-4">
-	{#if !hideQuestionTypeTabs}
-		<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
-			<button
-				type="button"
-				onclick={() => {
-					questionType = 'mcq';
-					onTypeChange?.('mcq');
-				}}
-				class={cn(
-					'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-					questionType === 'mcq'
-						? 'bg-background text-foreground shadow-sm'
-						: 'text-muted-foreground hover:text-foreground'
-				)}
-			>
-				Multiple Choice
-			</button>
-			<button
-				type="button"
-				onclick={() => {
-					questionType = 'frq';
-					onTypeChange?.('frq');
-				}}
-				class={cn(
-					'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
-					questionType === 'frq'
-						? 'bg-background text-foreground shadow-sm'
-						: 'text-muted-foreground hover:text-foreground'
-				)}
-			>
-				<TriangleAlert class="ml-1 inline-block size-4 text-yellow-500" /> (Alpha) Free Response
-			</button>
-		</div>
-	{/if}
-
 	<div class="flex flex-wrap items-end gap-4">
 		<div class="flex min-w-48 flex-1 flex-col gap-2">
 			<Label id="question-selector-class-label">AP Class</Label>
@@ -252,15 +243,55 @@
 		>
 			{isLoading ? 'Generating...' : generateLabel}
 		</Button>
-		<Button
-			type="button"
-			variant="ghost"
-			onclick={() => (bugReportOpen = true)}
-			class="h-10 shrink-0 px-3 text-sm text-muted-foreground hover:text-foreground"
-		>
-			<BugIcon class="mr-1.5 size-4" />
-			Report bug
-		</Button>
+		<Popover.Root bind:open={optionsOpen}>
+			<Popover.Trigger>
+				{#snippet child({ props })}
+					<Button
+						{...props}
+						type="button"
+						variant="ghost"
+						size="icon"
+						class="size-10 shrink-0 text-muted-foreground hover:text-foreground"
+					>
+						<span class="sr-only">More options</span>
+						<EllipsisIcon class="size-4" />
+					</Button>
+				{/snippet}
+			</Popover.Trigger>
+			<Popover.Content align="end" class="w-48 gap-0 p-1">
+				<div class="flex flex-col gap-0.5">
+					<Button
+						type="button"
+						variant="ghost"
+						class="h-9 w-full justify-start gap-2 px-2 font-normal"
+						onclick={openBugReport}
+					>
+						<BugIcon class="size-4" />
+						Report bug
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						class="h-9 w-full justify-start gap-2 px-2 font-normal"
+						onclick={copySelection}
+						disabled={!selectedClass}
+					>
+						<ClipboardCopyIcon class="size-4" />
+						Copy selection
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						class="h-9 w-full justify-start gap-2 px-2 font-normal"
+						onclick={clearSelection}
+						disabled={!selectedClass && !selectedUnit}
+					>
+						<RotateCcwIcon class="size-4" />
+						Clear selection
+					</Button>
+				</div>
+			</Popover.Content>
+		</Popover.Root>
 	</div>
 
 	{#if selectedClass && isCustomUnitSelected}

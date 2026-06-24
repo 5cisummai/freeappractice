@@ -32,7 +32,7 @@ async function releaseCacheMissLock(key: string): Promise<void> {
 	await CacheMissLock.deleteOne({ key }).catch(() => {});
 }
 
-export type CacheMissRole = 'leader' | 'follower';
+type CacheMissRole = 'leader' | 'follower';
 
 export type CacheMissClusterMeta = {
 	role: CacheMissRole;
@@ -133,14 +133,23 @@ export async function runCacheMissClusterFlow<T>(options: {
 		}
 	}
 
+	const finalClaim = await tryClaim();
+	if (finalClaim !== null) {
+		const cache_miss_follower_wait_ms = Date.now() - t0;
+		logger.info(`[${logScope}] cache_miss_follower_claimed_after_timeout`, {
+			clusterLockKey,
+			cache_miss_follower_wait_ms
+		});
+		return {
+			result: finalClaim,
+			meta: { role: 'follower', cache_miss_follower_wait_ms }
+		};
+	}
+
 	const cache_miss_follower_wait_ms = Date.now() - t0;
-	const result = await leaderRun();
-	logger.info(`[${logScope}] cache_miss_follower_fallback_live`, {
+	logger.error(`[${logScope}] cache_miss_lock_unavailable`, {
 		clusterLockKey,
 		cache_miss_follower_wait_ms
 	});
-	return {
-		result,
-		meta: { role: 'follower', cache_miss_follower_wait_ms }
-	};
+	throw new Error('Question generation is busy. Please retry in a moment.');
 }

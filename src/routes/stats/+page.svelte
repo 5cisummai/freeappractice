@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 
 	interface GenerationStats {
 		byApClass: Record<string, number>;
@@ -21,15 +19,22 @@
 
 	let generationStats = $state<GenerationStats | null>(null);
 	let loading = $state(true);
+	let errorMessage = $state('');
 
 	onMount(async () => {
+		errorMessage = '';
 		try {
 			const res = await fetch('/api/question/generation-stats');
-			if (res.ok) {
-				const data = await res.json();
-				generationStats = data.stats ?? null;
+			if (!res.ok) {
+				const payload = await res.json().catch(() => ({}));
+				throw new Error(
+					typeof payload.error === 'string' ? payload.error : 'Failed to load generation stats.'
+				);
 			}
+			const data = await res.json();
+			generationStats = data.stats ?? null;
 		} catch (e) {
+			errorMessage = e instanceof Error ? e.message : 'Failed to load generation stats.';
 			console.error('Failed to load stats', e);
 		} finally {
 			loading = false;
@@ -71,10 +76,7 @@
 
 	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-6xl space-y-10 px-5 sm:px-8">
-			<Button variant="ghost" href={resolve('/')}>
-				<ArrowLeftIcon class="size-4" />
-				Back to Home
-			</Button>
+			<BackToHome />
 
 			<PublicPageHero
 				title="Question Generation Stats"
@@ -137,6 +139,12 @@
 						</div>
 					</Card.Root>
 				</section>
+			{:else if errorMessage}
+				<p
+					class="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+				>
+					{errorMessage}
+				</p>
 			{:else}
 				<!-- Overview Cards -->
 				<section>

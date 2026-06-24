@@ -19,6 +19,7 @@ export type BlogEntry = {
 	content: string;
 	coverImage?: string;
 	tags: string[];
+	author?: string;
 	publishedAt?: Date;
 	createdAt: Date;
 	source: 'db' | 'file';
@@ -29,6 +30,7 @@ type ParsedMarkdownPost = {
 	excerpt?: string;
 	coverImage?: string;
 	tags?: string[];
+	author?: string;
 	published?: boolean;
 	publishedAt?: Date;
 	content: string;
@@ -121,6 +123,7 @@ function parseMarkdownPost(raw: string): ParsedMarkdownPost {
 		excerpt: frontmatter.excerpt,
 		coverImage: frontmatter.coverimage ?? frontmatter.cover_image,
 		tags: parseTags(frontmatter.tags),
+		author: frontmatter.author,
 		published: parseBoolean(frontmatter.published),
 		publishedAt: parseDate(
 			frontmatter.publisheddate ?? frontmatter.published_at ?? frontmatter.date
@@ -155,6 +158,7 @@ async function listMarkdownPosts(): Promise<BlogEntry[]> {
 			content: parsed.content,
 			...(parsed.coverImage ? { coverImage: parsed.coverImage } : {}),
 			tags: parsed.tags ?? [],
+			...(parsed.author ? { author: parsed.author } : {}),
 			publishedAt,
 			createdAt,
 			source: 'file' as const
@@ -178,6 +182,7 @@ function mapDbPostToEntry(post: IBlogPost): BlogEntry {
 		content: post.content,
 		coverImage: post.coverImage,
 		tags: post.tags,
+		...(post.author ? { author: post.author } : {}),
 		publishedAt: post.publishedAt,
 		createdAt: post.createdAt,
 		source: 'db'

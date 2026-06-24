@@ -2,9 +2,7 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
-	import { resolve } from '$app/paths';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 
 	const changelog = [
 		{
@@ -37,7 +35,7 @@
 				{
 					title: 'New Features',
 					items: [
-						'Question history page with pagination and subject filter for signed-in users',
+						'Question history in the Progress tab with pagination for signed-in users',
 						'Summer study guide at /summer with a 4-week Unit 1 preview plan',
 						'Homepage aspiring-students section and refreshed messaging around course planning',
 						'AP Lunch😂 — a joke subject with cafeteria-themed practice questions',
@@ -76,7 +74,7 @@
 			sections: [
 				{
 					title: 'Fixes',
-					items: ['Bug fixes and edge-case handling across practice, FRQs, and account flows']
+					items: ['Bug fixes and edge-case handling across practice and account flows']
 				},
 				{
 					title: 'AI',
@@ -147,7 +145,7 @@
 					title: 'Improvements',
 					items: [
 						'Optimized code for better performance and reuse across components',
-						'Refined FRQ handling with slight quality improvements'
+						'Refined practice handling with slight quality improvements'
 					]
 				}
 			]
@@ -199,7 +197,7 @@
 					title: 'New Features',
 					items: [
 						'Added a new dashboard for loggin in users including a home, practice, progress and settings page',
-						'Added alpha support for FRQs for logged in users, does not affect progress statistics yet'
+						'Added practice improvements for logged in users'
 					]
 				},
 				{
@@ -274,7 +272,7 @@
 					title: 'Changes',
 					items: [
 						'Project is now Open-Source, repo at github.com/5cisummai/freeappractice',
-							'Added optional analytics preference controls'
+						'Added optional analytics preference controls'
 					]
 				},
 				{
@@ -548,15 +546,12 @@
 
 	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<Button variant="ghost" href={resolve('/')}>
-				<ArrowLeftIcon class="size-4" />
-				Back to Home
-			</Button>
+			<BackToHome />
 
 			<PublicPageHero
 				title="Changelog"
 				description="Release notes and updates for Free AP Practice."
-				meta="Last Updated: March 31, 2026"
+				meta="Last Updated: June 19, 2026"
 			/>
 
 			<div class="space-y-12 pt-8">

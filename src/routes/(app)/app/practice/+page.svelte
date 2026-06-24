@@ -2,11 +2,8 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import QuestionCard, {
-		type AnswerResult,
-		type FRQAnswerResult
-	} from '$lib/components/question-card.svelte';
-	import QuestionSelector from '$lib/components/question-selector.svelte';
+	import QuestionShell from '$lib/components/question-shell.svelte';
+	import type { AnswerResult } from '$lib/components/question-card.svelte';
 	import { toast } from 'svelte-sonner';
 	import { unitForProgress } from '$lib/constants/custom-unit';
 	import PageShell from '$lib/components/page-shell.svelte';
@@ -14,7 +11,6 @@
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
 	let customTopic = $state('');
-	let questionType = $state<'mcq' | 'frq'>('mcq');
 	let requestVersion = $state(0);
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
@@ -27,19 +23,6 @@
 		selectedUnit = presetUnit;
 		requestVersion = 1;
 	});
-
-	function handleSelectionChange() {
-		requestVersion = 0;
-	}
-
-	function handleTypeChange(type: 'mcq' | 'frq') {
-		questionType = type;
-		requestVersion = 0;
-	}
-
-	function handleGenerate() {
-		requestVersion += 1;
-	}
 
 	async function syncAttempt(
 		path: string,
@@ -78,22 +61,6 @@
 			'Could not save this attempt to your progress history.'
 		);
 	}
-
-	async function handleFRQAnswered(result: FRQAnswerResult) {
-		await syncAttempt(
-			'/api/me/record-frq-attempt',
-			{
-				questionId: result.questionId,
-				apClass: selectedClass,
-				unit: unitForProgress(selectedUnit, customTopic),
-				aiScore: result.aiScore,
-				pointsEarned: result.pointsEarned,
-				totalPoints: result.totalPoints,
-				timeTakenMs: result.timeTakenMs
-			},
-			'Could not save this FRQ result to your progress history.'
-		);
-	}
 </script>
 
 <svelte:head>
@@ -101,26 +68,13 @@
 </svelte:head>
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">
-	<div class="mx-auto max-w-250 space-y-6">
-		<QuestionSelector
+	<div class="mx-auto max-w-250">
+		<QuestionShell
 			bind:selectedClass
 			bind:selectedUnit
 			bind:customTopic
-			bind:questionType
-			onSelectionChange={handleSelectionChange}
-			onTypeChange={handleTypeChange}
-			onGenerate={handleGenerate}
+			bind:requestVersion
+			onAnswered={handleAnswered}
 		/>
-		{#key `${questionType}:${selectedClass}:${selectedUnit}:${customTopic}:${requestVersion}`}
-			<QuestionCard
-				mode={questionType}
-				{selectedClass}
-				{selectedUnit}
-				{customTopic}
-				{requestVersion}
-				onAnswered={handleAnswered}
-				onFRQAnswered={handleFRQAnswered}
-			/>
-		{/key}
 	</div>
 </PageShell>

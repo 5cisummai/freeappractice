@@ -81,10 +81,10 @@ test.describe('public app smoke checks', () => {
 
 		await expect(page).toHaveTitle('Changelog – Free AP Practice');
 		await expect(page.getByRole('heading', { name: 'Changelog' })).toBeVisible();
-		await expect(page.getByText('v1.2.2')).toBeVisible();
+		await expect(page.getByText('1.2.2')).toBeVisible();
 	});
 
-	test('history page redirects unauthenticated users to login', async ({ page }) => {
+	test('history route redirects unauthenticated users to login', async ({ page }) => {
 		await page.goto('/app/history');
 
 		await expect(page).toHaveURL(/\/login$/);

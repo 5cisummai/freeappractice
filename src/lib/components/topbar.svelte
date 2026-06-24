@@ -49,7 +49,7 @@
 				<Button href={resolve('/blog')} variant="ghost">Blog</Button>
 				<Button href={resolve('/stats')} variant="ghost">Stats</Button>
 				<Button href={resolve('/login')} variant="ghost">Sign In</Button>
-				<Button href={resolve('/signup')} variant="default" class="rounded-full "
+				<Button href={resolve('/signup')} variant="default" class="rounded-full px-4"
 					>Sign Up Free</Button
 				>
 				<Button onclick={toggleMode} variant="ghost" size="icon" class="relative">

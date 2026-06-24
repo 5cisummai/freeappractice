@@ -94,7 +94,7 @@ function joinKeywords(keywords: string[], max = 4): string {
 
 function pickStudyTip(unitNumber: number, className: string): string {
 	const tips = [
-		`After each practice question, write one sentence explaining why the correct answer works. That habit transfers directly to ${className} free response reasoning.`,
+		`After each practice question, write one sentence explaining why the correct answer works. That habit transfers directly to ${className} exam reasoning.`,
 		`Mix MCQ practice with sketching diagrams or timelines from memory. ${className} rewards recall under time pressure, not just recognition.`,
 		`When you miss a question, tag it by skill (vocabulary, calculation, inference). Patterns in your misses show where to reread your notes.`,
 		`Try explaining this unit's core idea to someone else in under 60 seconds. If the explanation drifts, you found a gap worth fixing before test day.`,
@@ -154,7 +154,7 @@ function generateClassPage(course: Course, meta: CourseMeta | undefined): Practi
 		.join(', ');
 
 	const paragraphs = [
-		`${course.name} builds skills you will use on both multiple-choice and free-response sections of the AP exam. This page lets you generate unlimited practice questions for any unit in the course, with instant explanations and no account required.`,
+		`${course.name} builds skills you will use on both multiple-choice and written-response sections of the AP exam. This page lets you generate unlimited practice questions for any unit in the course, with instant explanations and no account required.`,
 		`The course spans ${units.length} units, starting with ${unitListSample}${units.length > 3 ? ', and more' : ''}. Working unit by unit mirrors how most teachers pace the year and helps you spot weak areas early.`,
 		meta?.important_notes
 			? `Exam tip: ${meta.important_notes.split('.')[0]}.`
@@ -443,7 +443,10 @@ const TOPIC_PAGES: Array<{
 	}
 ];
 
-function generateTopicPage(def: (typeof TOPIC_PAGES)[number], meta: CourseMeta | undefined): PracticePage {
+function generateTopicPage(
+	def: (typeof TOPIC_PAGES)[number],
+	meta: CourseMeta | undefined
+): PracticePage {
 	const classSlug = classToSlug(def.className);
 	const slug = `${classSlug}/${def.slugSuffix}`;
 	const collegeBoardUrl = extractCollegeBoardUrl(meta?.sources);

@@ -7,6 +7,7 @@ export interface IBlogPost extends Document {
 	content: string; // raw markdown
 	coverImage?: string;
 	tags: string[];
+	author?: string;
 	published: boolean;
 	publishedAt?: Date;
 	createdAt: Date;
@@ -21,6 +22,7 @@ const blogPostSchema = new Schema<IBlogPost>(
 		content: { type: String, required: true },
 		coverImage: { type: String },
 		tags: { type: [String], default: [] },
+		author: { type: String, trim: true },
 		published: { type: Boolean, default: false },
 		publishedAt: { type: Date }
 	},

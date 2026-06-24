@@ -1,6 +1,5 @@
 <script lang="ts">
-	import QuestionCard from '$lib/components/question-card.svelte';
-	import QuestionSelector from '$lib/components/question-selector.svelte';
+	import QuestionShell from '$lib/components/question-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
@@ -25,19 +24,6 @@
 
 	const crumbs = $derived(buildPracticeBreadcrumbs(page));
 	const initial = getInitialSelection(page);
-
-	let selectedClass = $state(initial.selectedClass);
-	let selectedUnit = $state(initial.selectedUnit);
-	let customTopic = $state(initial.customTopic);
-	let generateVersion = $state(0);
-
-	function handleSelectionChange(): void {
-		generateVersion = 0;
-	}
-
-	function handleGenerate(): void {
-		generateVersion += 1;
-	}
 
 	function linkHref(href: string): string {
 		return href;
@@ -74,30 +60,11 @@
 			</section>
 
 			<section>
-				<div class="mx-auto max-w-5xl">
-					<QuestionSelector
-						bind:selectedClass
-						bind:selectedUnit
-						bind:customTopic
-						hideQuestionTypeTabs={true}
-						isLoading={false}
-						onSelectionChange={handleSelectionChange}
-						onGenerate={handleGenerate}
-					/>
-				</div>
-			</section>
-
-			<section>
-				<div class="mx-auto min-h-40 max-w-6xl">
-					{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
-						<QuestionCard
-							{selectedClass}
-							{selectedUnit}
-							{customTopic}
-							requestVersion={generateVersion}
-						/>
-					{/key}
-				</div>
+				<QuestionShell
+					selectedClass={initial.selectedClass}
+					selectedUnit={initial.selectedUnit}
+					customTopic={initial.customTopic}
+				/>
 			</section>
 
 			<section class="mx-auto max-w-3xl">

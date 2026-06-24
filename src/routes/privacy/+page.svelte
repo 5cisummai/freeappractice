@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+	import BackToHome from '$lib/components/back-to-home.svelte';
 </script>
 
 <svelte:head>
@@ -32,10 +30,7 @@
 
 	<main id="main-content" class="flex-1 py-12">
 		<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-			<Button variant="ghost" href={resolve('/')}>
-				<ArrowLeftIcon class="size-4" />
-				Back to Home
-			</Button>
+			<BackToHome />
 
 			<PublicPageHero
 				title="Privacy Policy"
@@ -59,8 +54,7 @@
 					<ul class="list-disc space-y-1 pl-6">
 						<li><strong>Account data:</strong> name, email address, and password hash</li>
 						<li>
-							<strong>Practice data:</strong> answers submitted, question attempts, FRQ responses, progress,
-							and bookmarks
+							<strong>Practice data:</strong> answers submitted, question attempts, progress, and bookmarks
 						</li>
 						<li><strong>Bug reports and account requests:</strong> text and metadata you submit</li>
 						<li>
@@ -68,9 +62,8 @@
 							requests
 						</li>
 						<li>
-							<strong>User-provided responses:</strong> AI tutor prompts and FRQ responses may be sent
-							to OpenAI for processing so the Service can generate responses. Please do not submit sensitive
-							personal information.
+							<strong>User-provided responses:</strong> AI tutor prompts may be sent to OpenAI for processing
+							so the Service can generate responses. Please do not submit sensitive personal information.
 						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
@@ -83,9 +76,11 @@
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
 					<ul class="list-disc space-y-1 pl-6">
-						<li>Authentication token and basic user profile data</li>
-						<li>Theme and accessibility preferences</li>
-						<li>Draft or in-progress state needed to keep the app responsive between refreshes</li>
+						<li>Theme preferences and optional analytics choice</li>
+						<li>
+							Draft or in-progress practice state needed to keep the app responsive between
+							refreshes
+						</li>
 					</ul>
 				</section>
 
@@ -109,8 +104,8 @@
 					<p>
 						We store account and progress data in MongoDB, and generated question content may also
 						be stored in MongoDB and AWS S3 depending on the feature being used. Passwords are
-						stored as hashes, not plain text. We use bearer tokens for authentication, and those
-						tokens expire after a limited period. No method of transmission or storage is completely
+						stored as hashes, not plain text. We use secure HTTP-only session cookies for
+						authentication through Better Auth. No method of transmission or storage is completely
 						secure, so we cannot guarantee absolute security.
 					</p>
 				</section>
@@ -118,11 +113,10 @@
 				<section>
 					<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
 					<p>
-						We use local browser storage to keep you signed in and to save theme and accessibility
-						preferences. We also use local storage to remember your optional analytics choice. In
-						addition, we use a first-party cookie to remember sidebar state. We do not use
-						third-party advertising cookies. If you use a shared device, you should sign out when
-						finished.
+						We use HTTP-only session cookies to keep you signed in, along with local browser storage
+						for theme preferences, optional analytics choice, and in-progress practice state. We
+						also use a first-party cookie to remember sidebar state. We do not use third-party
+						advertising cookies. If you use a shared device, you should sign out when finished.
 					</p>
 				</section>
 

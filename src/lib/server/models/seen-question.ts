@@ -11,7 +11,7 @@ export interface ISeenQuestion extends Document {
 	contentHash: string;
 	apClass: string;
 	unit: string;
-	questionType: 'mcq' | 'frq';
+	questionType: 'mcq';
 	seenAt: Date;
 }
 
@@ -20,7 +20,7 @@ const seenQuestionSchema = new Schema<ISeenQuestion>({
 	contentHash: { type: String, required: true },
 	apClass: { type: String, required: true },
 	unit: { type: String, required: true },
-	questionType: { type: String, enum: ['mcq', 'frq'], required: true },
+	questionType: { type: String, enum: ['mcq'], required: true },
 	seenAt: { type: Date, default: () => new Date() }
 });
 

@@ -1,9 +1,13 @@
 <script lang="ts">
+	import { twAnimateInView } from '$lib/tw-animate';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 </script>
 
-<section class="mx-auto w-full max-w-xl text-center" aria-labelledby="bottom-cta-heading">
+<section
+	class="mx-auto w-full max-w-xl text-center {twAnimateInView}"
+	aria-labelledby="bottom-cta-heading"
+>
 	<h2 id="bottom-cta-heading" class="font-display text-2xl font-medium tracking-tight sm:text-3xl">
 		Ready to practice?
 	</h2>

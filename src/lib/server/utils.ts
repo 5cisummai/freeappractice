@@ -4,9 +4,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import crypto from 'crypto';
 import { json } from '@sveltejs/kit';
-import { connectDb } from '$lib/server/db';
 import { SeenQuestion } from '$lib/server/models/seen-question';
 import { UserProfile } from '$lib/server/models/user-profile';
 import type { IUserProfile } from '$lib/server/models/user-profile';
@@ -53,41 +51,28 @@ export async function findUserProfileOrFail(
 	return profile;
 }
 
-// ── Email token generation ─────────────────────────────────
-
-/** Generate a random hex token (default 32 bytes = 64 hex chars). */
-export function generateRandomToken(length = 32): string {
-	return crypto.randomBytes(length).toString('hex');
-}
-
-/** Generate a verification/reset token and its 24-hour expiration date. */
-export function generateEmailToken(): { emailToken: string; emailTokenExpires: Date } {
-	return {
-		emailToken: generateRandomToken(),
-		emailTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
-	};
-}
-
 // ── Streak calculation ─────────────────────────────────────
 
 /** Calculate current daily streak from a list of attempts with `attemptedAt` dates. */
 export function calcStreak(history: Array<{ attemptedAt: Date }>): number {
 	if (!history.length) return 0;
 
-	const sortedDates = [...new Set(history.map((q) => new Date(q.attemptedAt).toDateString()))].sort(
-		(a, b) => new Date(b).getTime() - new Date(a).getTime()
+	const toUtcDayKey = (date: Date) => date.toISOString().slice(0, 10);
+
+	const sortedDates = [...new Set(history.map((q) => toUtcDayKey(new Date(q.attemptedAt))))].sort(
+		(a, b) => b.localeCompare(a)
 	);
 
-	const today = new Date().toDateString();
-	const yesterday = new Date(Date.now() - 86400000).toDateString();
+	const today = toUtcDayKey(new Date());
+	const yesterday = toUtcDayKey(new Date(Date.now() - 86_400_000));
 
 	if (!sortedDates.includes(today) && !sortedDates.includes(yesterday)) return 0;
 
 	let streak = 1;
 	for (let i = 1; i < sortedDates.length; i++) {
-		const dayDiff = Math.floor(
-			(new Date(sortedDates[i - 1]).getTime() - new Date(sortedDates[i]).getTime()) / 86400000
-		);
+		const previous = new Date(`${sortedDates[i - 1]}T00:00:00.000Z`);
+		const current = new Date(`${sortedDates[i]}T00:00:00.000Z`);
+		const dayDiff = Math.round((previous.getTime() - current.getTime()) / 86_400_000);
 		if (dayDiff === 1) streak++;
 		else break;
 	}
@@ -103,8 +88,6 @@ interface ProgressEntry {
 	mastery: number;
 	totalAttempts: number;
 	correctAttempts: number;
-	frqTotalAttempts: number;
-	frqTotalScore: number;
 	lastAttemptAt?: Date;
 }
 
@@ -125,9 +108,7 @@ export function findOrCreateProgressEntry(
 			completed: false,
 			mastery: 0,
 			totalAttempts: 0,
-			correctAttempts: 0,
-			frqTotalAttempts: 0,
-			frqTotalScore: 0
+			correctAttempts: 0
 		});
 		entry = progress[progress.length - 1];
 	}
@@ -147,7 +128,7 @@ export async function recordSeenQuestion(
 	contentHash: string,
 	apClass: string,
 	unit: string,
-	questionType: 'mcq' | 'frq'
+	questionType: 'mcq'
 ): Promise<void> {
 	try {
 		await SeenQuestion.updateOne(
@@ -170,7 +151,3 @@ export async function recordSeenQuestion(
 		// Non-critical — don't let history tracking affect the main request
 	}
 }
-
-// ── Password validation ────────────────────────────────────
-
-export const MIN_PASSWORD_LENGTH = 8;

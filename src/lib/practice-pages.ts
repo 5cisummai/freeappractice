@@ -1,9 +1,9 @@
 import apClassesData from '$lib/data/ap-classes.json';
 import practicePagesData from '$lib/data/practice-pages.json';
 
-export type PracticePageLinkKind = 'college-board' | 'subject-tool' | 'blog' | 'external';
+type PracticePageLinkKind = 'college-board' | 'subject-tool' | 'blog' | 'external';
 
-export type PracticePageLink = {
+type PracticePageLink = {
 	label: string;
 	href: string;
 	kind: PracticePageLinkKind;
@@ -36,35 +36,7 @@ type Course = {
 
 const courses = (apClassesData.courses ?? []) as Course[];
 
-/** "AP Biology" → "ap-biology" */
-export function classToSlug(name: string): string {
-	return name
-		.toLowerCase()
-		.normalize('NFKD')
-		.replace(/[^\w\s-]/g, '')
-		.trim()
-		.replace(/[\s_]+/g, '-')
-		.replace(/-+/g, '-');
-}
-
-/** "Unit 1: Chemistry of Life" or "Big Idea 1: ..." → "unit-1" */
-export function unitToSlug(unitName: string): string {
-	const match = unitName.match(/(?:Unit|Big Idea)\s+(\d+)/i);
-	if (!match) {
-		throw new Error(`Cannot derive unit slug from "${unitName}"`);
-	}
-	return `unit-${match[1]}`;
-}
-
-export function extractUnitNumber(unitName: string): number {
-	const match = unitName.match(/(?:Unit|Big Idea)\s+(\d+)/i);
-	if (!match) {
-		throw new Error(`Cannot extract unit number from "${unitName}"`);
-	}
-	return Number.parseInt(match[1]!, 10);
-}
-
-export function getUnitsForClass(className: string): string[] {
+function getUnitsForClass(className: string): string[] {
 	const course = courses.find((c) => c.name === className);
 	if (!course) return [];
 	return [...course.semester1, ...course.semester2];
@@ -120,10 +92,6 @@ export function getPageBySlug(slugParam: string): PracticePage | null {
 
 export function getAllPageSlugs(): string[] {
 	return pages.map((page) => page.slug);
-}
-
-export function getPracticePageCount(): number {
-	return pages.length;
 }
 
 export function getClassPracticePages(): PracticePage[] {

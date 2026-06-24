@@ -1,12 +1,11 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { IFRQAttempt, IProgress, IQuestionAttempt } from '$lib/server/models/user-records';
+import type { IProgress, IQuestionAttempt } from '$lib/server/models/user-records';
 
 export interface IUserProfile extends Document {
 	userId: string;
 	legacyUserId?: string | null;
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
-	frqHistory: IFRQAttempt[];
 	bookmarkedQuestions: string[];
 	createdAt: Date;
 	updatedAt: Date;
@@ -21,9 +20,7 @@ const progressSchema = new Schema<IProgress>(
 		totalAttempts: { type: Number, default: 0 },
 		correctAttempts: { type: Number, default: 0 },
 		lastAttemptAt: { type: Date },
-		lastReviewedAt: { type: Date },
-		frqTotalAttempts: { type: Number, default: 0 },
-		frqTotalScore: { type: Number, default: 0 }
+		lastReviewedAt: { type: Date }
 	},
 	{ _id: false }
 );
@@ -41,27 +38,12 @@ const questionAttemptSchema = new Schema<IQuestionAttempt>(
 	{ _id: false }
 );
 
-const frqAttemptSchema = new Schema<IFRQAttempt>(
-	{
-		questionId: { type: String, required: true, index: true },
-		apClass: { type: String, required: true, trim: true },
-		unit: { type: String, required: true, trim: true },
-		aiScore: { type: Number, min: 0, max: 100, required: true },
-		pointsEarned: { type: Number, min: 0, required: true },
-		totalPoints: { type: Number, min: 1, required: true },
-		timeTakenMs: { type: Number, min: 0 },
-		attemptedAt: { type: Date, default: Date.now }
-	},
-	{ _id: false }
-);
-
 const userProfileSchema = new Schema<IUserProfile>(
 	{
 		userId: { type: String, required: true, unique: true, index: true },
 		legacyUserId: { type: String, default: null, index: true },
 		progress: { type: [progressSchema], default: [] },
 		questionHistory: { type: [questionAttemptSchema], default: [] },
-		frqHistory: { type: [frqAttemptSchema], default: [] },
 		bookmarkedQuestions: { type: [String], default: [] }
 	},
 	{ timestamps: true }
@@ -69,7 +51,6 @@ const userProfileSchema = new Schema<IUserProfile>(
 
 userProfileSchema.index({ 'progress.apClass': 1, 'progress.unit': 1 });
 userProfileSchema.index({ 'questionHistory.attemptedAt': -1 });
-userProfileSchema.index({ 'frqHistory.attemptedAt': -1 });
 
 export const UserProfile: Model<IUserProfile> =
 	(mongoose.models.UserProfile as Model<IUserProfile>) ??

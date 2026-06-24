@@ -1,36 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import QuestionCard from '$lib/components/question-card.svelte';
-	import QuestionSelector from '$lib/components/question-selector.svelte';
+	import QuestionShell from '$lib/components/question-shell.svelte';
+	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/aspiring-students-section.svelte';
 	import BottomCtaSection from '$lib/components/bottom-cta-section.svelte';
 	import FeaturesSection from '$lib/components/features-section.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 
-	let selectedClass = $state('');
-	let selectedUnit = $state('');
-	let customTopic = $state('');
-	let generateVersion = $state(0);
 	let dotGridOffset = $state(0);
 
 	function updateDotGridParallax(): void {
 		if (typeof window === 'undefined') return;
-		const reduceMotion =
-			document.body.classList.contains('reduce-motion') ||
-			window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		dotGridOffset = reduceMotion ? 0 : window.scrollY * -0.35;
-	}
-
-	function handleSelectionChange(): void {
-		generateVersion = 0;
-	}
-
-	function handleGenerate(): void {
-		generateVersion += 1;
 	}
 
 	onMount(() => {
@@ -113,13 +98,6 @@
 			"logo": "https://freeappractice.org/icon.png",
 			"image": "https://freeappractice.org/icon.png",
 			"applicationCategory": "EducationalApplication",
-			"aggregateRating": {
-				"@type": "AggregateRating",
-				"ratingValue": "4.8",
-				"ratingCount": "1250",
-				"bestRating": "5",
-				"worstRating": "1"
-			},
 			"offers": {
 				"@type": "Offer",
 				"price": "0",
@@ -323,76 +301,54 @@
 		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-4">
-					<div
-						class="flex animate-in flex-wrap justify-center gap-2 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-3"
-					>
-						<Badge variant="ghost" class="p-2">New: AP Lunch Joke Subject 😂</Badge>
-					</div>
 					<h1
-						class="animate-in font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-4xl lg:text-5xl"
+						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
-						Plan your AP year. Get ahead this summer.
+						Master your AP classes with instant practice questions.
 					</h1>
+					<!--
 					<p
 						class="text-md mx-auto max-w-2xl animate-in leading-8 text-balance text-muted-foreground delay-300 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-lg"
 					>
-						Start your AP journey with free practice questions and instant feedback.
+						Get ahead this summer with free, high-quality practice questions and interactive
+						explanations.
 					</p>
+					-->
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>Student Developed</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>20+ AP Subjects</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
 							>100% Free</span
 						>
 					</div>
 				</div>
 			</section>
 
-			<section>
-				<div class="mx-auto max-w-5xl">
-					<QuestionSelector
-						bind:selectedClass
-						bind:selectedUnit
-						bind:customTopic
-						hideQuestionTypeTabs={true}
-						isLoading={false}
-						onSelectionChange={handleSelectionChange}
-						onGenerate={handleGenerate}
-					/>
-				</div>
-			</section>
-
-			<section>
-				<div class="mx-auto min-h-40 max-w-6xl">
-					{#key `${selectedClass}:${selectedUnit}:${customTopic}:${generateVersion}`}
-						<QuestionCard
-							{selectedClass}
-							{selectedUnit}
-							{customTopic}
-							requestVersion={generateVersion}
-						/>
-					{/key}
-				</div>
+			<section class={twAnimateInViewZoom}>
+				<QuestionShell />
 			</section>
 
 			<FeaturesSection />
 
 			<AspiringStudentsSection />
 
-			<section class="mx-auto w-full max-w-3xl space-y-4">
+			<section class="mx-auto w-full max-w-3xl space-y-4 {twAnimateInView}">
 				<div class="space-y-1">
 					<h2 class="text-2xl font-semibold tracking-tight">FAQ</h2>
 				</div>
 
-				<Accordion.Root type="single" class="rounded-xl border border-border/70 bg-card px-4">
+				<Accordion.Root
+					type="single"
+					class="rounded-xl border border-border/70 bg-card px-4 transition-shadow duration-300 hover:shadow-sm"
+				>
 					<Accordion.Item value="what-is-this-website">
 						<Accordion.Trigger level={3}>What is this website?</Accordion.Trigger>
 						<Accordion.Content>
@@ -477,8 +433,8 @@
 						<Accordion.Content>
 							<p>
 								Question may take longer to load as you may be generating a question for the
-								specific unit and topic for the first time. This then helps helps everyone by adding
-								new questions to the cache, which then provides sub second load times the next time.
+								specific unit and topic for the first time. This then helps everyone by adding new
+								questions to the cache, which then provides sub second load times the next time.
 								This is only expected to be a problem for newer users in the first few weeks, and
 								will be resolved as more questions are generated and added to the cache.
 							</p>
@@ -499,7 +455,7 @@
 		left: 0;
 		background-image: radial-gradient(
 			circle,
-			color-mix(in oklch, var(--foreground) 10%, transparent) 1px,
+			color-mix(in oklch, var(--foreground) 15%, transparent) 1px,
 			transparent 1px
 		);
 		background-size: 2rem 2rem;
@@ -509,7 +465,7 @@
 	:global(.dark) .landing-dot-grid {
 		background-image: radial-gradient(
 			circle,
-			color-mix(in oklch, var(--foreground) 2%, transparent) 1px,
+			color-mix(in oklch, var(--foreground) 5%, transparent) 1px,
 			transparent 1px
 		);
 	}

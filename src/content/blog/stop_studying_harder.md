@@ -4,6 +4,7 @@ excerpt: A direct, AP-specific study plan built around retrieval, spacing, and e
 summary: Replace vague AP prep habits with a concrete schedule and evidence-based routines that improve long-term retention.
 published: true
 date: 2026-03-31
+coverImage: https://public.assets.freeappractice.org/sayan-majhi-pkTEvaaBS-U-unsplash.jpg
 ---
 
 _A practical, opinionated guide to organizing your AP prep - without the generic advice that doesn't actually work._
@@ -28,7 +29,7 @@ Key things to identify:
 
 - **What percentage of the exam comes from each unit?** A unit worth 5% of the exam should get roughly 5% of your prep time. Many students spend disproportionate time on early units because they feel more comfortable there.
 - **What are the "big ideas" and "enduring understandings" for this course?** These are the conceptual throughlines the exam tests again and again in different forms. Know these cold.
-- **What specific skills does the free response test?** AP Biology FRQs test experimental design. AP Lang FRQs test rhetorical analysis. AP Calc FRQs test process and justification. These are skills you build through specific practice, not through generic studying.
+- **What specific skills does the written response test?** AP Biology written-response questions test experimental design. AP Lang written-response questions test rhetorical analysis. AP Calc written-response questions test process and justification. These are skills you build through specific practice, not through generic studying.
 
 ---
 
@@ -42,7 +43,7 @@ Most students avoid this because it's uncomfortable and because they fear a bad 
 
 - Which units are genuinely weak vs. which ones just felt weak
 - Whether your issue is content knowledge, time management, or question-reading strategy
-- What FRQ elements you're consistently missing points on
+- What written-response elements you're consistently missing points on
 - Where you're making careless errors vs. where you have real knowledge gaps
 
 These are completely different problems. A student who keeps getting questions about the AP Psychology "biological approach" wrong because they're confusing the neurotransmitters needs to review the content. A student who keeps getting those questions wrong because they're reading them too fast and missing a key qualifier needs to fix their test-taking process.
@@ -55,15 +56,15 @@ Your study plan should be built around the diagnostic, not around the table of c
 
 Here's the approach: start at exam day and work backwards, rather than starting at "Week 1" and hoping to reach "ready" by May.
 
-**Exam day (day zero):** You want to be able to walk in having completed at least two full timed practice exams, having written and self-scored FRQs for every major question type, and having reviewed every topic flagged by your diagnostic.
+**Exam day (day zero):** You want to be able to walk in having completed at least two full timed practice exams, having written and self-scored written-response questions for every major question type, and having reviewed every topic flagged by your diagnostic.
 
-**Three weeks before exam day:** You should be in "full retrieval mode" - nothing but practice problems, FRQs, and review of your wrong answers. No new content learning. If you're still covering new material three weeks before the exam, your earlier timeline was miscalibrated.
+**Three weeks before exam day:** You should be in "full retrieval mode" - nothing but practice problems, written-response questions, and review of your wrong answers. No new content learning. If you're still covering new material three weeks before the exam, your earlier timeline was miscalibrated.
 
 **Four to eight weeks before exam day:** This is the core study period. One unit of content review per week (or per two weeks, depending on how many units your subject has), combined with daily retrieval practice across all prior units.
 
 **Eight to twelve weeks before exam day:** Diagnostic phase. Take your initial practice exam, analyze the results, and build your prioritized topic list.
 
-Now work backwards from that structure to fill in specific weeks with specific topics. When you're done, you should have a calendar that tells you exactly what you're doing each week - not vague intentions like "review Cell Division" but specific deliverables like "write two FRQ practice responses on cell division, self-score with rubric, do 20 practice MCQs on Unit 2."
+Now work backwards from that structure to fill in specific weeks with specific topics. When you're done, you should have a calendar that tells you exactly what you're doing each week - not vague intentions like "review Cell Division" but specific deliverables like "write two written-response practice responses on cell division, self-score with rubric, do 20 practice MCQs on Unit 2."
 
 ---
 
@@ -75,7 +76,7 @@ Here's a structured one-hour block that research on productive learning supports
 
 **Minutes 0–5: Retrieval warm-up.** Before opening any notes, spend five minutes trying to write down everything you remember about the topic you studied last session. This cold retrieval activates the right cognitive mode and tells you immediately what you've retained.
 
-**Minutes 5–35: New content or FRQ practice.** Either cover new material actively (taking notes in your own words, not copying) or work on practice questions/FRQs. Not both in the same block.
+**Minutes 5–35: New content or written-response practice.** Either cover new material actively (taking notes in your own words, not copying) or work on practice questions/written-response questions. Not both in the same block.
 
 **Minutes 35–50: Retrieval consolidation.** Close your notes and try to write a summary of the key ideas from what you just covered. This is different from re-reading - it forces your brain to reconstruct.
 
@@ -89,9 +90,9 @@ That's a productive study hour. Rinse and repeat, with breaks between blocks.
 
 Two resources that dramatically improve AP scores and are almost entirely ignored:
 
-**1. AP teacher office hours.** Your AP teacher has almost certainly read the scoring guidelines for your subject, attended AP training, and probably graded real exams. They know what the College Board is looking for in a way that no prep book can fully replicate. Bring your practice FRQs to office hours and ask your teacher to score them. Ask specifically: "What's the difference between what I wrote and a top-scoring response?" This conversation is worth hours of solo studying.
+**1. AP teacher office hours.** Your AP teacher has almost certainly read the scoring guidelines for your subject, attended AP training, and probably graded real exams. They know what the College Board is looking for in a way that no prep book can fully replicate. Bring your practice written-response questions to office hours and ask your teacher to score them. Ask specifically: "What's the difference between what I wrote and a top-scoring response?" This conversation is worth hours of solo studying.
 
-**2. College Board scoring guidelines and sample responses.** Every year, the College Board releases sample student responses for AP FRQs, scored at every point level, with commentary explaining why each response earned the score it did. These annotated samples are gold. Reading a 6-point DBQ response side by side with a 3-point response on the same prompt - and studying the commentary - teaches you more about what earns points than any test prep guide.
+**2. College Board scoring guidelines and sample responses.** Every year, the College Board releases sample student responses for AP written-response questions, scored at every point level, with commentary explaining why each response earned the score it did. These annotated samples are gold. Reading a 6-point DBQ response side by side with a 3-point response on the same prompt - and studying the commentary - teaches you more about what earns points than any test prep guide.
 
 Both of these resources are completely free. The only cost is the willingness to seek feedback.
 
@@ -115,7 +116,7 @@ The week before your AP exam is not for discovering new content. It's for consol
 
 **Days 7–4 before exam:** Review your Anki cards (only cards already in your deck - no new ones). Do practice MCQs from mixed units. Read through your error log from the semester and note any recurring gaps.
 
-**Days 3–2 before exam:** Write one complete FRQ under timed conditions. Score it. Skim (don't reread) your notes on the two or three topics you feel least confident about.
+**Days 3–2 before exam:** Write one complete written-response under timed conditions. Score it. Skim (don't reread) your notes on the two or three topics you feel least confident about.
 
 **Day 1 before exam:** Do a light review of your most important flashcards - 20 minutes maximum. Review the structure of the exam (how many sections, time limits, question types). Sleep at a reasonable hour. Seriously.
 
@@ -127,7 +128,7 @@ The week before your AP exam is not for discovering new content. It's for consol
 
 AP exams feel high-stakes, which creates a particular kind of brain fog that kills performance on questions students technically know the answer to. Here are two practical techniques for managing this:
 
-**The "minimum viable answer" mindset for FRQs.** When you sit down to write a free response and feel overwhelmed, tell yourself: "My only job right now is to write a thesis." Not a whole essay. Not every piece of evidence. Just the thesis. Once it's on paper, you have something to build from, and the paralysis breaks.
+**The "minimum viable answer" mindset for written-response questions.** When you sit down to write a written response and feel overwhelmed, tell yourself: "My only job right now is to write a thesis." Not a whole essay. Not every piece of evidence. Just the thesis. Once it's on paper, you have something to build from, and the paralysis breaks.
 
 **The triage approach for MCQ.** On any AP multiple choice section, there will be questions you know immediately, questions you can get to with some thought, and questions that will eat your time without a guaranteed payoff. Move through the section quickly on the first pass, answering the ones you know and circling the rest. Come back to the difficult ones after. Time management on AP MCQ is a real skill, and students who get paralyzed by one question often run out of time on questions they would have answered correctly.
 

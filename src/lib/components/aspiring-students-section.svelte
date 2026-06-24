@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { twAnimateInView } from '$lib/tw-animate';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -170,7 +171,10 @@
 	});
 </script>
 
-<section class="mx-auto w-full max-w-6xl space-y-8" aria-labelledby="aspiring-students-heading">
+<section
+	class="mx-auto w-full max-w-6xl space-y-8 {twAnimateInView}"
+	aria-labelledby="aspiring-students-heading"
+>
 	<div class="relative">
 		<div class="space-y-2 px-0 text-center sm:px-14">
 			<h2

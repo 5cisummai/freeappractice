@@ -2,6 +2,7 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
+	import { Toaster } from '$lib/components/ui/sonner/index.js';
 
 	let { data, children } = $props();
 </script>
@@ -12,13 +13,17 @@
 	<link rel="canonical" href="https://freeappractice.org/app" />
 </svelte:head>
 
+<Toaster />
+
 <Sidebar.Provider>
 	<AppSidebar user={data.user} />
-	<Sidebar.Inset>
-		<header class="flex h-14 shrink-0 items-center gap-2 px-4">
+	<Sidebar.Inset class="flex min-h-svh flex-col bg-background text-foreground">
+		<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 			<SidebarTrigger class="-ml-1" />
 		</header>
 
-		{@render children()}
+		<main id="main-content" class="flex-1">
+			{@render children()}
+		</main>
 	</Sidebar.Inset>
 </Sidebar.Provider>

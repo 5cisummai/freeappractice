@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { z } from 'zod';
 import { GITHUB_BUG_REPORT_TOKEN } from '$env/static/private';
+import { bugReportSchema, type BugReportPayload } from '$lib/schemas/bug-report';
 import { logger } from '$lib/server/logger';
 
 const GITHUB_OWNER = '5cisummai';
@@ -10,16 +10,6 @@ const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_RE
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const recentReportByIp = new Map<string, number>();
 
-const reportSchema = z.object({
-	title: z.string().min(5).max(200),
-	description: z.string().min(10).max(5000),
-	steps: z.string().max(5000).optional(),
-	expected: z.string().max(2000).optional(),
-	severity: z.enum(['low', 'medium', 'high']).default('low'),
-	email: z.string().email().max(254).optional(),
-	metadata: z.record(z.string(), z.unknown()).optional()
-});
-
 const SEVERITY_LABEL: Record<string, string> = {
 	low: 'severity: low',
 	medium: 'severity: medium',
@@ -27,10 +17,20 @@ const SEVERITY_LABEL: Record<string, string> = {
 };
 
 function escapeMarkdown(text: string): string {
-	return text.replace(/`/g, '\\`').replace(/\[/g, '\\[').replace(/</g, '&lt;');
+	return text
+		.replace(/\\/g, '\\\\')
+		.replace(/`/g, '\\`')
+		.replace(/\[/g, '\\[')
+		.replace(/</g, '&lt;')
+		.replace(/\r?\n/g, ' ')
+		.trim();
 }
 
-function buildIssueBody(parsed: z.infer<typeof reportSchema>): string {
+function sanitizeIssueTitle(title: string): string {
+	return title.replace(/[\r\n]+/g, ' ').trim();
+}
+
+function buildIssueBody(parsed: BugReportPayload): string {
 	const lines: string[] = [];
 
 	lines.push(`## Description\n${escapeMarkdown(parsed.description)}`);
@@ -49,7 +49,7 @@ function buildIssueBody(parsed: z.infer<typeof reportSchema>): string {
 
 	if (parsed.metadata && Object.keys(parsed.metadata).length > 0) {
 		const meta = Object.entries(parsed.metadata)
-			.map(([k, v]) => `- **${k}**: ${escapeMarkdown(JSON.stringify(v))}`)
+			.map(([k, v]) => `- **${escapeMarkdown(k)}**: ${escapeMarkdown(JSON.stringify(v))}`)
 			.join('\n');
 		lines.push(`## Context\n${meta}`);
 	}
@@ -109,14 +109,14 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			return json({ error: 'Invalid request body' }, { status: 400 });
 		}
 
-		const result = reportSchema.safeParse(body);
+		const result = bugReportSchema.safeParse(body);
 		if (!result.success) {
 			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
 		}
 		const parsed = result.data;
 
 		const issuePayload = {
-			title: `[Bug] ${escapeMarkdown(parsed.title)}`,
+			title: `[Bug] ${escapeMarkdown(sanitizeIssueTitle(parsed.title))}`,
 			body: buildIssueBody(parsed),
 			labels: ['bug', SEVERITY_LABEL[parsed.severity]]
 		};

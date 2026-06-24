@@ -99,7 +99,6 @@ async function main() {
 			legacyUserId,
 			progress: legacyUser.progress ?? [],
 			questionHistory: legacyUser.questionHistory ?? [],
-			frqHistory: legacyUser.frqHistory ?? [],
 			bookmarkedQuestions: legacyUser.bookmarkedQuestions ?? []
 		};
 

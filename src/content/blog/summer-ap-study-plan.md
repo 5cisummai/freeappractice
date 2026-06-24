@@ -4,6 +4,7 @@ excerpt: How to preview your AP classes over the summer with about 15–30 minut
 summary: A practical summer schedule for students planning or starting AP classes, with pacing that builds habits without cramming.
 published: true
 date: 2026-06-01
+coverImage: https://public.assets.freeappractice.org/brice-cooper-Qc7BB9E0lMc-unsplash.jpg
 ---
 
 _Summer is the best time to get ahead on AP. It's also the easiest time to overdo it. Here's a plan that actually sticks._

@@ -69,9 +69,6 @@ async function main() {
 		if ((profile.questionHistory?.length ?? 0) !== (sourceUser.questionHistory?.length ?? 0)) {
 			problems.push(`Question history length mismatch for ${userId}`);
 		}
-		if ((profile.frqHistory?.length ?? 0) !== (sourceUser.frqHistory?.length ?? 0)) {
-			problems.push(`FRQ history length mismatch for ${userId}`);
-		}
 		if (
 			(profile.bookmarkedQuestions?.length ?? 0) !== (sourceUser.bookmarkedQuestions?.length ?? 0)
 		) {

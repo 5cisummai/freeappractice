@@ -10,12 +10,10 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
-	import FrqQuestionView from '$lib/components/frq-question-view.svelte';
 	import McqAnswerChoices from '$lib/components/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/question-card-skeleton.svelte';
 	import RichText from '$lib/components/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
@@ -24,20 +22,9 @@
 		resolveEffectiveUnit,
 		type QuestionApiResponse
 	} from '$lib/client/question-payload.js';
-	import {
-		getPracticeStorageKey,
-		loadFrqPracticeState,
-		loadMcqPracticeState,
-		RESTORE_FAILED_WARNING,
-		saveFrqPracticeState,
-		saveMcqPracticeState
-	} from '$lib/client/question-storage.js';
 	import type {
 		AnswerResult,
 		BugReportContext,
-		FRQGrade,
-		FRQPart,
-		FRQQuestion,
 		GeneratedQuestion,
 		QuestionCardProps
 	} from '$lib/types/question';
@@ -49,7 +36,7 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import { hashTopicKey, isCustomUnit, unitForProgress } from '$lib/constants/custom-unit';
+	import { hashTopicKey, isCustomUnit } from '$lib/constants/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -64,7 +51,6 @@
 
 	let {
 		class: className,
-		mode = 'mcq',
 		questionNumber = '',
 		selectedClass = '',
 		selectedUnit = '',
@@ -85,8 +71,7 @@
 		onSkip,
 		onNotLearned,
 		onReportBug,
-		onAnswered,
-		onFRQAnswered
+		onAnswered
 	}: QuestionCardProps = $props();
 
 	let promptElement: HTMLDivElement | null = null;
@@ -98,48 +83,23 @@
 	let showExplanation = $state(false);
 	let startedAtMs = $state(Date.now());
 	let isLoading = $state(false);
+	let mounted = $state(!browser);
 	let questionCount = $state(0);
 	let statusMessage = $state('');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
-	let persistenceWarning = $state('');
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
 
-	// FRQ state
-	let frqQuestion = $state<FRQQuestion | null>(null);
-	let frqResponses = $state<Record<string, string>>({});
-	let frqGrade = $state<FRQGrade | null>(null);
-	let isGrading = $state(false);
-	let hasSubmitted = $state(false);
-
 	/** One-slot client prefetch for custom-topic flows only (next question while you work on the current one). */
 	let prefetchedCustomMcq = $state<{ key: string; question: GeneratedQuestion } | null>(null);
-	let prefetchedCustomFrq = $state<{ key: string; question: FRQQuestion } | null>(null);
 	let prefetchMcqInFlightKey = $state<string | null>(null);
-	let prefetchFrqInFlightKey = $state<string | null>(null);
 
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
 		referenceSheet: { title: string; sections: { heading: string; content: string }[] } | null;
-	};
-	type ApiErrorPayload = {
-		error?: string;
-		message?: string;
-	};
-	type FRQQuestionApiResponse = ApiErrorPayload & {
-		question?: {
-			prompt: string;
-			context?: string | null;
-			parts: FRQPart[];
-			totalPoints: number;
-		};
-		questionId?: string;
-	};
-	type FRQGradeApiResponse = ApiErrorPayload & {
-		grade?: FRQGrade;
 	};
 	const toolConfig = $derived(
 		(subjectToolsData as Record<string, SubjectToolEntry>)[selectedClass] ??
@@ -173,12 +133,9 @@
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
 
-	const allPartsAnswered = $derived.by(() => {
-		if (!frqQuestion) return false;
-		return frqQuestion.parts.every((p) => (frqResponses[p.label] ?? '').trim().length > 0);
-	});
-
-	const showEmptyState = $derived(!isLoading && requestVersion === 0);
+	const showEmptyState = $derived(
+		mounted && !isLoading && requestVersion === 0 && !currentQuestion
+	);
 
 	function customTopicCacheKey(): string {
 		return `${selectedClass}::${hashTopicKey(customTopic.trim())}`;
@@ -188,18 +145,16 @@
 		if (!browser) return;
 		if (!isCustomUnit(selectedUnit) || !customTopic.trim()) {
 			prefetchedCustomMcq = null;
-			prefetchedCustomFrq = null;
 			return;
 		}
 		const k = customTopicCacheKey();
 		if (prefetchedCustomMcq && prefetchedCustomMcq.key !== k) prefetchedCustomMcq = null;
-		if (prefetchedCustomFrq && prefetchedCustomFrq.key !== k) prefetchedCustomFrq = null;
 	});
 
 	async function requestQuestion(
 		className: string,
 		unit: string,
-		topicOverride?: string
+		topicOverride: string | undefined = undefined
 	): Promise<QuestionApiResponse> {
 		const body: Record<string, string> = { className, unit };
 		const t = topicOverride?.trim();
@@ -220,7 +175,7 @@
 	}
 
 	function prefetchNextCustomMcq(): void {
-		if (!browser || mode !== 'mcq') return;
+		if (!browser) return;
 		if (!isCustomUnit(selectedUnit)) return;
 		const topicTrim = customTopic.trim();
 		if (!topicTrim || !selectedClass) return;
@@ -238,46 +193,6 @@
 				// Prefetch is best-effort only.
 			} finally {
 				if (prefetchMcqInFlightKey === key) prefetchMcqInFlightKey = null;
-			}
-		})();
-	}
-
-	function prefetchNextCustomFrq(): void {
-		if (!browser || mode !== 'frq') return;
-		if (!isCustomUnit(selectedUnit)) return;
-		const topicTrim = customTopic.trim();
-		if (!topicTrim || !selectedClass) return;
-		const key = customTopicCacheKey();
-		if (prefetchedCustomFrq?.key === key) return;
-		if (prefetchFrqInFlightKey === key) return;
-		prefetchFrqInFlightKey = key;
-		void (async () => {
-			try {
-				const body: Record<string, string> = {
-					className: selectedClass,
-					unit: '',
-					customTopic: topicTrim
-				};
-				const response = await apiFetch('/api/question/frq', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(body)
-				});
-				const data = await readJsonOrNull<FRQQuestionApiResponse>(response);
-				if (!response.ok || !data?.question) return;
-				const fq: FRQQuestion = {
-					questionId: data.questionId,
-					prompt: data.question.prompt,
-					context: data.question.context ?? null,
-					parts: data.question.parts,
-					totalPoints: data.question.totalPoints
-				};
-				if (customTopicCacheKey() !== key || !isCustomUnit(selectedUnit)) return;
-				prefetchedCustomFrq = { key, question: fq };
-			} catch {
-				// Prefetch is best-effort only.
-			} finally {
-				if (prefetchFrqInFlightKey === key) prefetchFrqInFlightKey = null;
 			}
 		})();
 	}
@@ -318,6 +233,21 @@
 		};
 	}
 
+	function portalToBody(node: HTMLElement) {
+		if (!browser) return;
+
+		const originalOverflow = document.body.style.overflow;
+		document.body.appendChild(node);
+		document.body.style.overflow = 'hidden';
+
+		return {
+			destroy() {
+				document.body.style.overflow = originalOverflow;
+				node.remove();
+			}
+		};
+	}
+
 	function resetInteractionState(clearSelection = true): void {
 		hasCheckedAnswer = false;
 		checkedSelection = null;
@@ -340,7 +270,9 @@
 		};
 	}
 
-	async function loadQuestion(reason?: 'skip' | 'not-learned' | 'next'): Promise<void> {
+	async function loadQuestion(
+		reason: 'skip' | 'not-learned' | 'next' | undefined = undefined
+	): Promise<void> {
 		if (isLoading) return;
 		if (!selectedClass) {
 			statusMessage = 'Please choose a class before requesting a question.';
@@ -369,7 +301,6 @@
 			currentQuestion = cached;
 			questionCount += 1;
 			resetInteractionState(true);
-			saveToStorage();
 			prefetchNextCustomMcq();
 			return;
 		}
@@ -394,7 +325,6 @@
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
-			saveToStorage();
 			if (custom && topicTrim) prefetchNextCustomMcq();
 		} catch (error) {
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
@@ -417,7 +347,6 @@
 		hasCheckedAnswer = true;
 		checkedSelection = result.selectedAnswer;
 		answerResult = result;
-		saveToStorage();
 
 		onAnswered?.(result);
 
@@ -456,241 +385,14 @@
 		bugReportOpen = true;
 	}
 
-	// --- FRQ functions ---
-
-	function resetFRQState(): void {
-		frqQuestion = null;
-		frqGrade = null;
-		frqResponses = {};
-		hasSubmitted = false;
-		isGrading = false;
-		startedAtMs = Date.now();
-	}
-
-	async function loadFRQQuestion(): Promise<void> {
-		if (isLoading) return;
-		if (!selectedClass) {
-			statusMessage = 'Please choose a class before requesting a question.';
-			return;
-		}
-
-		const custom = isCustomUnit(selectedUnit);
-		const topicTrim = customTopic.trim();
-		if (custom && !topicTrim) {
-			statusMessage = 'Enter a topic for your custom question.';
-			return;
-		}
-
-		if (
-			custom &&
-			topicTrim &&
-			prefetchedCustomFrq &&
-			prefetchedCustomFrq.key === customTopicCacheKey()
-		) {
-			const q = prefetchedCustomFrq.question;
-			prefetchedCustomFrq = null;
-			resetFRQState();
-			frqQuestion = q;
-			frqResponses = Object.fromEntries(q.parts.map((p) => [p.label, '']));
-			questionCount += 1;
-			statusMessage = 'Write your response for each part, then submit.';
-			saveToStorage();
-			prefetchNextCustomFrq();
-			return;
-		}
-
-		isLoading = true;
-		statusMessage = 'Loading question...';
-		resetFRQState();
-
-		try {
-			const body: Record<string, string> = {
-				className: selectedClass,
-				unit: custom ? '' : selectedUnit
-			};
-			if (custom) body.customTopic = topicTrim;
-
-			const response = await apiFetch('/api/question/frq', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
-			});
-			const data = await readJsonOrNull<FRQQuestionApiResponse>(response);
-
-			if (!response.ok) {
-				throw new Error(getResponseMessage(data, 'Failed to load question'));
-			}
-
-			if (!data?.question) {
-				throw new Error('Question service returned an invalid response.');
-			}
-
-			frqQuestion = {
-				questionId: data.questionId,
-				prompt: data.question.prompt,
-				context: data.question.context ?? null,
-				parts: data.question.parts,
-				totalPoints: data.question.totalPoints
-			};
-			frqResponses = Object.fromEntries(data.question.parts.map((p) => [p.label, '']));
-			questionCount += 1;
-			statusMessage = 'Write your response for each part, then submit.';
-			saveToStorage();
-			if (custom && topicTrim) prefetchNextCustomFrq();
-		} catch (error) {
-			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	async function handleFRQSubmit(): Promise<void> {
-		if (!frqQuestion || !allPartsAnswered || isGrading) return;
-
-		isGrading = true;
-		statusMessage = 'Grading your response...';
-
-		try {
-			const response = await apiFetch('/api/question/frq/grade', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					className: selectedClass,
-					unit: unitForProgress(selectedUnit, customTopic),
-					parts: frqQuestion.parts,
-					responses: frqResponses
-				})
-			});
-			const data = await readJsonOrNull<FRQGradeApiResponse>(response);
-
-			if (!response.ok) {
-				throw new Error(getResponseMessage(data, 'Failed to grade response'));
-			}
-
-			if (!data?.grade) {
-				throw new Error('Grading service returned an invalid response.');
-			}
-
-			frqGrade = data.grade;
-			hasSubmitted = true;
-			statusMessage = `Score: ${frqGrade.totalScore}/100`;
-			saveToStorage();
-
-			const earnedPoints = frqGrade.parts.reduce((sum, p) => sum + p.pointsEarned, 0);
-			const timeTakenMs = Date.now() - startedAtMs;
-
-			onFRQAnswered?.({
-				questionId: frqQuestion.questionId,
-				questionNumber: effectiveQuestionNumber,
-				aiScore: frqGrade.totalScore,
-				pointsEarned: earnedPoints,
-				totalPoints: frqQuestion.totalPoints,
-				timeTakenMs
-			});
-		} catch (error) {
-			statusMessage = error instanceof Error ? error.message : 'Could not grade response.';
-		} finally {
-			isGrading = false;
-		}
-	}
-
-	async function handleFRQNext(): Promise<void> {
-		await loadFRQQuestion();
-	}
-
-	function saveToStorage(): void {
-		const key = getPracticeStorageKey(mode, selectedClass, selectedUnit, customTopic);
-		if (mode === 'mcq') {
-			const result = saveMcqPracticeState(
-				key,
-				currentQuestion
-					? {
-							currentQuestion,
-							hasCheckedAnswer,
-							checkedSelection,
-							answerResult,
-							selectedOption,
-							showExplanation,
-							statusMessage,
-							startedAtMs,
-							questionCount
-						}
-					: null
-			);
-			persistenceWarning = result.ok ? '' : result.warning;
-		} else {
-			const result = saveFrqPracticeState(
-				key,
-				frqQuestion
-					? {
-							frqQuestion,
-							frqResponses,
-							frqGrade,
-							hasSubmitted,
-							statusMessage,
-							startedAtMs,
-							questionCount
-						}
-					: null
-			);
-			persistenceWarning = result.ok ? '' : result.warning;
-		}
-	}
-
-	function loadFromStorage(): void {
-		const key = getPracticeStorageKey(mode, selectedClass, selectedUnit, customTopic);
-		if (mode === 'mcq') {
-			const { state: stored, restoreFailed } = loadMcqPracticeState(key);
-			if (restoreFailed) {
-				persistenceWarning = RESTORE_FAILED_WARNING;
-				return;
-			}
-			if (!stored) return;
-			currentQuestion = stored.currentQuestion;
-			hasCheckedAnswer = stored.hasCheckedAnswer;
-			checkedSelection = stored.checkedSelection;
-			answerResult = stored.answerResult;
-			selectedOption = stored.selectedOption;
-			showExplanation = stored.showExplanation;
-			statusMessage = stored.statusMessage || statusMessage;
-			startedAtMs = stored.startedAtMs;
-			questionCount = stored.questionCount;
-			persistenceWarning = '';
-		} else {
-			const { state: stored, restoreFailed } = loadFrqPracticeState(key);
-			if (restoreFailed) {
-				persistenceWarning = RESTORE_FAILED_WARNING;
-				return;
-			}
-			if (!stored) return;
-			frqQuestion = stored.frqQuestion;
-			frqResponses = stored.frqResponses;
-			frqGrade = stored.frqGrade;
-			hasSubmitted = stored.hasSubmitted;
-			statusMessage = stored.statusMessage || statusMessage;
-			startedAtMs = stored.startedAtMs;
-			questionCount = stored.questionCount;
-			persistenceWarning = '';
-		}
-	}
-
-	function handleFrqResponseChange(label: string, value: string): void {
-		frqResponses[label] = value;
-		saveToStorage();
-	}
-
 	onMount(() => {
 		currentQuestion = null;
 		questionCount = 0;
 		resetInteractionState(true);
-		resetFRQState();
 		calculatorOpen = false;
 		referenceSheetOpen = false;
-		statusMessage =
-			mode === 'frq'
-				? 'Write your response for each part, then submit.'
-				: 'Choose the best answer and then check your response.';
-		loadFromStorage();
+		statusMessage = 'Choose the best answer and then check your response.';
+		mounted = true;
 
 		const onResize = () => {
 			isMobileViewport = window.innerWidth < 768;
@@ -704,11 +406,10 @@
 		onResize();
 
 		if (requestVersion > 0) {
-			if (mode === 'frq') {
-				void loadFRQQuestion();
-			} else {
-				void loadQuestion();
-			}
+			isLoading = true;
+			void loadQuestion();
+		} else if (currentQuestion) {
+			isLoading = false;
 		}
 
 		return () => {
@@ -718,36 +419,11 @@
 	});
 </script>
 
-{#if isLoading}
-	{#if mode === 'frq'}
-		<Card.Root class={cn('overflow-hidden border-border/70 shadow-sm', className)}>
-			<Card.Header class="gap-3">
-				<Skeleton class="h-6 w-48" />
-				<Skeleton class="h-4 w-32" />
-			</Card.Header>
-			<Card.Content class="space-y-6">
-				<div class="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4">
-					<Skeleton class="h-4 w-full" />
-					<Skeleton class="h-4 w-[92%]" />
-					<Skeleton class="h-4 w-[85%]" />
-				</div>
-				{#each [0, 1, 2] as i (i)}
-					<div class="space-y-2">
-						<Skeleton class="h-4 w-24" />
-						<Skeleton class="h-28 w-full rounded-md" />
-					</div>
-				{/each}
-			</Card.Content>
-			<Card.Footer class="border-t border-border/70 bg-muted/20 px-6 py-4">
-				<Skeleton class="h-9 w-32" />
-			</Card.Footer>
-		</Card.Root>
-	{:else}
-		<QuestionCardSkeleton
-			isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)}
-			class={className}
-		/>
-	{/if}
+{#if !mounted || isLoading}
+	<QuestionCardSkeleton
+		isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)}
+		class={className}
+	/>
 {:else if showEmptyState}
 	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
 		<Card.Content
@@ -766,18 +442,7 @@
 		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
 			<div class="flex items-start justify-between">
 				<div>
-					{#if mode === 'frq'}
-						<h2 class="mt-0.5 text-xl font-semibold">
-							Free Response Question {effectiveQuestionNumber}
-						</h2>
-						{#if frqQuestion}
-							<p class="mt-1 text-xs text-muted-foreground">
-								{frqQuestion.totalPoints} point{frqQuestion.totalPoints !== 1 ? 's' : ''} total
-							</p>
-						{/if}
-					{:else}
-						<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
-					{/if}
+					<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
 				</div>
 				<Button
 					variant="ghost"
@@ -794,17 +459,7 @@
 				</Button>
 			</div>
 
-			{#if mode === 'frq' && frqQuestion}
-				<FrqQuestionView
-					question={frqQuestion}
-					responses={frqResponses}
-					{hasSubmitted}
-					grade={frqGrade}
-					{isMobileViewport}
-					{expanded}
-					onResponseChange={handleFrqResponseChange}
-				/>
-			{:else if currentQuestion?.hasStimulus && !isMobileViewport}
+			{#if currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
 						'overflow-hidden rounded-lg border border-border/70',
@@ -905,7 +560,7 @@
 				/>
 			{/if}
 
-			{#if mode === 'mcq' && showUtilityActions && !hasCheckedAnswer}
+			{#if showUtilityActions && !hasCheckedAnswer}
 				<div class="flex flex-wrap gap-2">
 					<Button variant="ghost" size="sm" onclick={handleSkipQuestion} disabled={isLoading}
 						>{skipLabel}</Button
@@ -920,183 +575,104 @@
 			{/if}
 		</Card.Content>
 
-		{#if mode === 'frq'}
-			<Card.Footer
-				class="flex flex-col gap-3 border-t border-border/70 bg-muted/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
-			>
-				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-					<div class="min-w-0 space-y-1">
-						<p class="text-sm text-muted-foreground">{statusMessage}</p>
-						{#if persistenceWarning}
-							<p class="text-xs text-amber-600 dark:text-amber-400">{persistenceWarning}</p>
+		<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+				<div class="min-w-0 space-y-1">
+					<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
+				</div>
+				{#if hasCalculator || hasReferenceSheet}
+					<div class="flex gap-0.5">
+						{#if hasCalculator}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<Button
+											{...props}
+											variant="ghost"
+											size="icon"
+											class="h-7 w-7 text-muted-foreground hover:text-foreground"
+											onclick={withTooltipTriggerClick(props, () => {
+												calculatorOpen = !calculatorOpen;
+											})}
+											aria-label="Open Calculator"
+										>
+											<CalculatorIcon class="h-3.5 w-3.5" />
+										</Button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content side="top" sideOffset={6}>Open Calculator</Tooltip.Content>
+							</Tooltip.Root>
+						{/if}
+						{#if hasReferenceSheet}
+							<Tooltip.Root>
+								<Tooltip.Trigger>
+									{#snippet child({ props })}
+										<Button
+											{...props}
+											variant="ghost"
+											size="icon"
+											class="h-7 w-7 text-muted-foreground hover:text-foreground"
+											onclick={withTooltipTriggerClick(props, () => {
+												referenceSheetOpen = !referenceSheetOpen;
+											})}
+											aria-label="Reference Sheet"
+										>
+											<BookOpenIcon class="h-3.5 w-3.5" />
+										</Button>
+									{/snippet}
+								</Tooltip.Trigger>
+								<Tooltip.Content side="top" sideOffset={6}>Reference Sheet</Tooltip.Content>
+							</Tooltip.Root>
 						{/if}
 					</div>
-					{#if hasCalculator || hasReferenceSheet}
-						<div class="flex gap-0.5">
-							{#if hasCalculator}
-								<Tooltip.Root>
-									<Tooltip.Trigger>
-										{#snippet child({ props })}
-											<Button
-												{...props}
-												variant="ghost"
-												size="icon"
-												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={withTooltipTriggerClick(props, () => {
-													calculatorOpen = !calculatorOpen;
-												})}
-												aria-label="Open Calculator"
-											>
-												<CalculatorIcon class="h-3.5 w-3.5" />
-											</Button>
-										{/snippet}
-									</Tooltip.Trigger>
-									<Tooltip.Content side="top" sideOffset={6}>Open Calculator</Tooltip.Content>
-								</Tooltip.Root>
-							{/if}
-							{#if hasReferenceSheet}
-								<Tooltip.Root>
-									<Tooltip.Trigger>
-										{#snippet child({ props })}
-											<Button
-												{...props}
-												variant="ghost"
-												size="icon"
-												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={withTooltipTriggerClick(props, () => {
-													referenceSheetOpen = !referenceSheetOpen;
-												})}
-												aria-label="Reference Sheet"
-											>
-												<BookOpenIcon class="h-3.5 w-3.5" />
-											</Button>
-										{/snippet}
-									</Tooltip.Trigger>
-									<Tooltip.Content side="top" sideOffset={6}>Reference Sheet</Tooltip.Content>
-								</Tooltip.Root>
-							{/if}
-						</div>
-					{/if}
-				</div>
-				<div class="flex shrink-0 gap-2">
-					{#if hasSubmitted}
-						<Button onclick={handleFRQNext} class="h-9 px-4 text-sm" disabled={isLoading}
-							>Next Question</Button
-						>
-					{:else}
-						<Button
-							onclick={handleFRQSubmit}
-							disabled={!allPartsAnswered || isGrading}
-							class="h-9 px-4 text-sm"
-						>
-							{isGrading ? 'Grading...' : 'Submit Response'}
-						</Button>
-					{/if}
-				</div>
-			</Card.Footer>
-		{:else}
-			<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-					<div class="min-w-0 space-y-1">
-						<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
-						{#if persistenceWarning}
-							<p class="text-xs text-amber-600 dark:text-amber-400">{persistenceWarning}</p>
-						{/if}
-					</div>
-					{#if hasCalculator || hasReferenceSheet}
-						<div class="flex gap-0.5">
-							{#if hasCalculator}
-								<Tooltip.Root>
-									<Tooltip.Trigger>
-										{#snippet child({ props })}
-											<Button
-												{...props}
-												variant="ghost"
-												size="icon"
-												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={withTooltipTriggerClick(props, () => {
-													calculatorOpen = !calculatorOpen;
-												})}
-												aria-label="Open Calculator"
-											>
-												<CalculatorIcon class="h-3.5 w-3.5" />
-											</Button>
-										{/snippet}
-									</Tooltip.Trigger>
-									<Tooltip.Content side="top" sideOffset={6}>Open Calculator</Tooltip.Content>
-								</Tooltip.Root>
-							{/if}
-							{#if hasReferenceSheet}
-								<Tooltip.Root>
-									<Tooltip.Trigger>
-										{#snippet child({ props })}
-											<Button
-												{...props}
-												variant="ghost"
-												size="icon"
-												class="h-7 w-7 text-muted-foreground hover:text-foreground"
-												onclick={withTooltipTriggerClick(props, () => {
-													referenceSheetOpen = !referenceSheetOpen;
-												})}
-												aria-label="Reference Sheet"
-											>
-												<BookOpenIcon class="h-3.5 w-3.5" />
-											</Button>
-										{/snippet}
-									</Tooltip.Trigger>
-									<Tooltip.Content side="top" sideOffset={6}>Reference Sheet</Tooltip.Content>
-								</Tooltip.Root>
-							{/if}
-						</div>
-					{/if}
-				</div>
-				<div class="flex gap-2">
-					{#if hasCheckedAnswer && currentQuestion?.explanation}
-						<Button variant="outline" onclick={() => (showExplanation = true)}>
-							{showExplanationLabel}
-						</Button>
-					{/if}
-					<Button
-						variant="outline"
-						onclick={handleNextQuestion}
-						disabled={isLoading || (!hasCheckedAnswer && !selectedOption)}
-					>
-						{nextLabel}
+				{/if}
+			</div>
+			<div class="flex gap-2">
+				{#if hasCheckedAnswer && currentQuestion?.explanation}
+					<Button variant="outline" onclick={() => (showExplanation = true)}>
+						{showExplanationLabel}
 					</Button>
-					{#if !hasCheckedAnswer}
-						<Button disabled={!selectedOption} onclick={handleCheckAnswer}>{checkLabel}</Button>
-					{/if}
-				</div>
-			</Card.Footer>
-
-			{#if showExplanation && currentQuestion?.explanation}
-				<div
-					class="absolute inset-0 z-20 flex items-center justify-center bg-background/65 p-4 backdrop-blur-[1px]"
+				{/if}
+				<Button
+					variant="outline"
+					onclick={handleNextQuestion}
+					disabled={isLoading || !hasCheckedAnswer}
 				>
-					<div
-						class="max-h-[85%] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl"
-					>
-						<h3 class="text-lg font-semibold">
-							{checkedSelection === currentQuestion?.correctAnswer
-								? 'Correct!'
-								: 'Review Explanation'}
-						</h3>
-						{#if currentQuestion?.correctAnswer}
-							<p class="mt-2 text-sm text-muted-foreground">
-								Correct answer:
-								<span class="font-semibold text-foreground">{currentQuestion?.correctAnswer}</span>
-							</p>
-						{/if}
-						<RichText
-							text={currentQuestion?.explanation ?? ''}
-							class="mt-4 text-sm leading-6 text-foreground/90"
-						/>
-						<div class="mt-5 flex justify-end">
-							<Button variant="outline" onclick={() => (showExplanation = false)}>Close</Button>
-						</div>
+					{nextLabel}
+				</Button>
+				{#if !hasCheckedAnswer}
+					<Button disabled={!selectedOption} onclick={handleCheckAnswer}>{checkLabel}</Button>
+				{/if}
+			</div>
+		</Card.Footer>
+
+		{#if showExplanation && currentQuestion?.explanation}
+			<div
+				class="absolute inset-0 z-20 flex items-center justify-center bg-background/65 p-4 backdrop-blur-[1px]"
+			>
+				<div
+					class="max-h-[85%] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl"
+				>
+					<h3 class="text-lg font-semibold">
+						{checkedSelection === currentQuestion?.correctAnswer
+							? 'Correct!'
+							: 'Review Explanation'}
+					</h3>
+					{#if currentQuestion?.correctAnswer}
+						<p class="mt-2 text-sm text-muted-foreground">
+							Correct answer:
+							<span class="font-semibold text-foreground">{currentQuestion?.correctAnswer}</span>
+						</p>
+					{/if}
+					<RichText
+						text={currentQuestion?.explanation ?? ''}
+						class="mt-4 text-sm leading-6 text-foreground/90"
+					/>
+					<div class="mt-5 flex justify-end">
+						<Button variant="outline" onclick={() => (showExplanation = false)}>Close</Button>
 					</div>
 				</div>
-			{/if}
+			</div>
 		{/if}
 	{/snippet}
 
@@ -1114,6 +690,7 @@
 	<!-- Fullscreen overlay - scales in/out smoothly -->
 	{#if isExpanded}
 		<div
+			use:portalToBody
 			class="fixed inset-0 z-50 flex flex-col"
 			transition:scale={{ duration: 240, start: 0.97, opacity: 0, easing: quintOut }}
 		>
@@ -1125,7 +702,7 @@
 		</div>
 	{/if}
 
-	{#if mode === 'mcq' && currentQuestion && !isExpanded}
+	{#if currentQuestion}
 		{#key currentQuestion.questionId ?? currentQuestion.prompt}
 			<TutorWidget
 				question={currentQuestion.prompt}

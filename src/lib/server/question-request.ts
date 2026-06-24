@@ -1,8 +1,15 @@
 import { json } from '@sveltejs/kit';
+import apClassesData from '$lib/data/ap-classes.json';
 
 const MAX_CUSTOM_TOPIC_LEN = 500;
+const MAX_CLASS_NAME_LEN = 120;
+const MAX_UNIT_LEN = 200;
 
-export interface ValidatedQuestionRequest {
+const ALLOWED_CLASS_NAMES = new Set(
+	((apClassesData as { courses?: Array<{ name: string }> }).courses ?? []).map((c) => c.name)
+);
+
+interface ValidatedQuestionRequest {
 	className: string;
 	unit: string;
 	customTopic: string;
@@ -24,12 +31,40 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 			)
 		};
 	}
+
+	const trimmedClassName = className.trim();
+	if (trimmedClassName.length > MAX_CLASS_NAME_LEN) {
+		return {
+			ok: false,
+			response: json(
+				{ error: `className must be at most ${MAX_CLASS_NAME_LEN} characters` },
+				{ status: 400 }
+			)
+		};
+	}
+
+	if (!ALLOWED_CLASS_NAMES.has(trimmedClassName)) {
+		return {
+			ok: false,
+			response: json({ error: 'className must be a supported AP course' }, { status: 400 })
+		};
+	}
+
 	if (unit !== undefined && typeof unit !== 'string') {
 		return {
 			ok: false,
 			response: json({ error: 'unit must be a string if provided' }, { status: 400 })
 		};
 	}
+
+	const trimmedUnit = typeof unit === 'string' ? unit.trim() : '';
+	if (trimmedUnit.length > MAX_UNIT_LEN) {
+		return {
+			ok: false,
+			response: json({ error: `unit must be at most ${MAX_UNIT_LEN} characters` }, { status: 400 })
+		};
+	}
+
 	if (customTopic !== undefined && typeof customTopic !== 'string') {
 		return {
 			ok: false,
@@ -51,8 +86,8 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	return {
 		ok: true,
 		value: {
-			className: className.trim(),
-			unit: typeof unit === 'string' ? unit : '',
+			className: trimmedClassName,
+			unit: trimmedUnit,
 			customTopic: topicTrim
 		}
 	};
