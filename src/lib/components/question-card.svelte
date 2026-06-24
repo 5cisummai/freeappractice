@@ -406,7 +406,6 @@
 		onResize();
 
 		if (requestVersion > 0) {
-			isLoading = true;
 			void loadQuestion();
 		} else if (currentQuestion) {
 			isLoading = false;
