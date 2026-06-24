@@ -5,7 +5,7 @@
 	import * as Field from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { goto } from '$app/navigation';
-	import { authClient } from '$lib/auth-client.js';
+	import { authClient } from '$lib/auth/client.js';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getGenerationStatsForApi } from '$lib/server/services/question-gen-stats';
+import { getGenerationStatsForApi } from '$lib/questions/gen-stats.server';
 import { logger } from '$lib/server/logger';
 
 /** Public read-only stats for MCQs generated and stored (Mongo-backed, updated on each new generation). */

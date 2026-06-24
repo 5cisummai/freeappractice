@@ -160,7 +160,9 @@
 						/>
 					</div>
 
-					<div class="rounded-xl border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+					<div
+						class="rounded-xl border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground"
+					>
 						Current setting:
 						<strong class="text-foreground">
 							{privacy.analyticsConsent === 'granted'

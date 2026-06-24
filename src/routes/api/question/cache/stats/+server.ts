@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getCacheStats } from '$lib/server/services/question-cache';
+import { getCacheStats } from '$lib/questions/cache.server';
 import { logger } from '$lib/server/logger';
 
 export const GET: RequestHandler = async () => {

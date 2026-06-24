@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
-import type { HistoryItem } from '$lib/types/history.js';
+import type { HistoryItem } from '$lib/users/types.js';
 import {
 	escapeHtml,
 	formatAttemptDate,

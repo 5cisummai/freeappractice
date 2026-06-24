@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '$lib/server/services/blog';
+import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '$lib/blog/service.server';
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';

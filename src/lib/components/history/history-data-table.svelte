@@ -9,7 +9,7 @@
 		getFilteredRowModel,
 		getSortedRowModel
 	} from '@tanstack/table-core';
-	import type { HistoryItem } from '$lib/types/history.js';
+	import type { HistoryItem } from '$lib/users/types.js';
 	import { createHistoryColumns } from './history-columns.js';
 	import HistoryDetailSheet from './history-detail-sheet.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';

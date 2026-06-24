@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { getQuestionsFromS3 } from '$lib/server/services/question-storage';
-import { withAuthedHandler } from '$lib/server/route-helpers';
-import { findUserProfileOrFail } from '$lib/server/utils';
+import { getQuestionsFromS3 } from '$lib/questions/storage.server';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { findUserProfileOrFail } from '$lib/users/profile.server';
 
 export const GET = withAuthedHandler(
 	async (_event, userId) => {

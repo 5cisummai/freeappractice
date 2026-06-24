@@ -5,7 +5,7 @@
 	import BackToHome from '$lib/components/back-to-home.svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
-	import { getClassPracticePages } from '$lib/practice-pages.js';
+	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
 
 	const subjects = getClassPracticePages();
 </script>

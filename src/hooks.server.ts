@@ -1,8 +1,8 @@
 import type { Handle } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { auth } from '$lib/auth';
+import { auth } from '$lib/auth/server';
 import { logger } from '$lib/server/logger';
-import { getAllowedOrigins } from '$lib/server/trusted-origins';
+import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 
 // ── In-memory rate limiter ──────────────────────────────────
 // TODO: For multi-instance (Vercel/Cloudflare) production deploys,

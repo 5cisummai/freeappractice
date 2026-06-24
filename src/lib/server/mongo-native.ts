@@ -1,3 +1,7 @@
+/**
+ * Native MongoDB driver connection for Better Auth (mongodb adapter).
+ * App data uses Mongoose via `$lib/server/db.ts`.
+ */
 import { MongoClient, type Db } from 'mongodb';
 import { DATABASE_URI } from '$env/static/private';
 

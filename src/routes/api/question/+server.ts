@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { generateLiveCustomTopicMcq, getQuestion } from '$lib/server/services/question-cache';
-import { validateQuestionRequest } from '$lib/server/question-request';
+import { generateLiveCustomTopicMcq, getQuestion } from '$lib/questions/cache.server';
+import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
 

@@ -3,8 +3,8 @@ import {
 	getPresignedUploadUrl,
 	S3ConfigError,
 	S3KeyValidationError
-} from '$lib/server/services/s3';
-import { withAuthedHandler } from '$lib/server/route-helpers';
+} from '$lib/questions/s3.server';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 
 export const POST = withAuthedHandler(
 	async (event) => {

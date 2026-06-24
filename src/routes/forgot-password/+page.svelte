@@ -5,8 +5,8 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth-client.js';
-	import { authCallbackUrl } from '$lib/auth-callback-url.js';
+	import { authClient } from '$lib/auth/client.js';
+	import { authCallbackUrl } from '$lib/auth/urls.js';
 
 	let email = $state('');
 	let loading = $state(false);

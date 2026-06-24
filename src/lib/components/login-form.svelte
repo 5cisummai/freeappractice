@@ -13,8 +13,8 @@
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
-	import { authClient } from '$lib/auth-client.js';
-	import { authCallbackUrl } from '$lib/auth-callback-url.js';
+	import { authClient } from '$lib/auth/client.js';
+	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/google-logo.svelte';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();

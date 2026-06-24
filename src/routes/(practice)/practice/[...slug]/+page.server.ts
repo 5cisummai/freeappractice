@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getAllPageSlugs, getPageBySlug } from '$lib/practice-pages.js';
+import { getAllPageSlugs, getPageBySlug } from '$lib/catalog/practice-pages.js';
 import type { PageServerLoad } from './$types';
 
 export function entries() {

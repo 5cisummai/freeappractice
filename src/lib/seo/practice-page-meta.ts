@@ -1,5 +1,5 @@
-import type { PracticePage } from '$lib/practice-pages.js';
-import { PRODUCTION_SITE_URL } from '$lib/site-url';
+import type { PracticePage } from '$lib/catalog/practice-pages.js';
+import { PRODUCTION_SITE_URL } from '$lib/auth/urls';
 
 const BASE_URL = PRODUCTION_SITE_URL;
 

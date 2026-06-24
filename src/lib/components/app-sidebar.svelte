@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth-client.js';
+	import { authClient } from '$lib/auth/client.js';
 	import { toggleMode } from 'mode-watcher';
 	import logo from '$lib/assets/logo.png';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';

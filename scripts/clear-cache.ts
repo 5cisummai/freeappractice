@@ -20,7 +20,7 @@ if (!DATABASE_URI) {
 
 const isDryRun = process.argv.includes('--dry-run');
 
-// ── Minimal inline schema (mirrors src/lib/server/models/question.ts) ─
+// ── Minimal inline schema (mirrors src/lib/questions/cache-model.server.ts) ─
 const questionSchema = new mongoose.Schema(
 	{
 		apClass: String,

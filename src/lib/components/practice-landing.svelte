@@ -3,8 +3,8 @@
 	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-	import { CUSTOM_UNIT_VALUE } from '$lib/constants/custom-unit';
-	import type { PracticePage } from '$lib/practice-pages.js';
+	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
+	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 
 	function getInitialSelection(page: PracticePage) {

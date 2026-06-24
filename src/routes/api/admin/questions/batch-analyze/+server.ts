@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { verifyQuestionsAdminSecret } from '$lib/server/admin-question-batch';
-import { runBatchQuestionAnalysis } from '$lib/server/services/question-batch-analysis';
+import { verifyQuestionsAdminSecret } from '$lib/server/admin-auth';
+import { runBatchQuestionAnalysis } from '$lib/questions/batch-analysis.server';
 import { env } from '$env/dynamic/private';
 import { logger } from '$lib/server/logger';
 

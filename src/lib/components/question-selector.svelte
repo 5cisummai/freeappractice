@@ -1,5 +1,5 @@
 <script lang="ts">
-	import apClassesData from '$lib/data/ap-classes.json';
+	import { getCourses } from '$lib/catalog/ap-classes';
 	import { tick } from 'svelte';
 	import BugIcon from '@lucide/svelte/icons/bug';
 	import CheckIcon from '@lucide/svelte/icons/check';
@@ -13,14 +13,8 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils.js';
-	import { CUSTOM_UNIT_VALUE } from '$lib/constants/custom-unit';
+	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
 	import { Input } from '$lib/components/ui/input/index.js';
-
-	type Course = {
-		name: string;
-		semester1: string[];
-		semester2: string[];
-	};
 
 	type QuestionSelectorProps = {
 		selectedClass?: string;
@@ -33,12 +27,7 @@
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
 	};
 
-	const rawCourses = (apClassesData.courses ?? []) as Course[];
-	const courses = $derived.by(() => {
-		const lunch = rawCourses.filter((c) => c.name.toLowerCase().includes('ap lunch'));
-		const rest = rawCourses.filter((c) => !c.name.toLowerCase().includes('ap lunch'));
-		return [...rest, ...lunch];
-	});
+	const courses = $derived(getCourses());
 
 	let {
 		selectedClass = $bindable(''),

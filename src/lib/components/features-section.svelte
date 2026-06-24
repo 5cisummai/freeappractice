@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { twAnimateInView, twAnimateInViewSubtle } from '$lib/tw-animate';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import apClassesData from '$lib/data/ap-classes.json';
+	import { getCourses } from '$lib/catalog/ap-classes';
 	import RocketIcon from '@lucide/svelte/icons/rocket';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
@@ -28,7 +28,7 @@
 		'AP Spanish Language': 'Spanish'
 	};
 
-	const subjectNames = apClassesData.courses
+	const subjectNames = getCourses()
 		.filter((course) => !course.name.includes('Lunch'))
 		.map((course) => shortSubjectNames[course.name] ?? course.name.replace(/^AP /, ''));
 

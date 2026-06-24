@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
-import { getQuestionFromS3 } from '$lib/server/services/question-storage';
-import { withAuthedHandler } from '$lib/server/route-helpers';
+import { getQuestionFromS3 } from '$lib/questions/storage.server';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 
 export const GET = withAuthedHandler(
 	async (event) => {

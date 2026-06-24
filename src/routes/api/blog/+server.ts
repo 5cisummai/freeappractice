@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { z } from 'zod';
-import { listPublishedBlogEntries, createPost } from '$lib/server/services/blog';
-import { requireBlogAdminKey } from '$lib/server/blog-admin-auth';
+import { listPublishedBlogEntries, createPost } from '$lib/blog/service.server';
+import { requireBlogAdminKey } from '$lib/server/admin-auth';
 import { logger } from '$lib/server/logger';
 
 const createSchema = z.object({

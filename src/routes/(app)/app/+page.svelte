@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
+	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
@@ -49,7 +49,9 @@
 	title={`Welcome back, ${firstName}`}
 	description="Here's an overview of your study progress."
 >
-	<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 border-primary/30 bg-primary/3 p-5">
+	<Card.Root
+		class="rounded-2xl border border-border/60 border-primary/30 bg-primary/3 p-5 shadow-sm ring-0"
+	>
 		<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 			<div class="space-y-1.5">
 				<p class="text-sm font-medium text-primary">Your Next Best Unit</p>
@@ -88,7 +90,7 @@
 	{/if}
 
 	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<BookOpenIcon class="h-4 w-4" />
@@ -101,7 +103,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -114,7 +116,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -129,7 +131,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400"

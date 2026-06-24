@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
+	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -95,7 +95,7 @@
 	description="Track mastery by subject and review every question you've answered."
 >
 	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<BookOpenIcon class="size-4" />
@@ -106,7 +106,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -119,7 +119,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -132,7 +132,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0 p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400"
@@ -218,7 +218,9 @@
 
 						<div class="grid gap-4 lg:grid-cols-2">
 							{#each grouped as subject (subject.apClass)}
-								<Card.Root class="flex flex-col rounded-2xl border border-border/60 shadow-sm ring-0">
+								<Card.Root
+									class="flex flex-col rounded-2xl border border-border/60 shadow-sm ring-0"
+								>
 									<Card.Header class="border-b border-border/60 pb-4">
 										<div class="flex items-start justify-between gap-3">
 											<div class="min-w-0">

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { getMcqHistoryPage, hydrateMcqHistoryItems } from '$lib/server/services/history';
-import { withAuthedHandler } from '$lib/server/route-helpers';
-import { findUserProfileOrFail } from '$lib/server/utils';
+import { getMcqHistoryPage, hydrateMcqHistoryItems } from '$lib/users/history.server';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { findUserProfileOrFail } from '$lib/users/profile.server';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {

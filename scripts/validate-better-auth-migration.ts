@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { MongoClient, ObjectId } from 'mongodb';
-import { LegacyUser } from '../src/lib/server/models/user-legacy';
-import { UserProfile } from '../src/lib/server/models/user-profile';
+import { LegacyUser } from './models/user-legacy';
+import { UserProfile } from '../src/lib/users/model.server';
 
 const uri = process.env.DATABASE_URI;
 if (!uri) throw new Error('DATABASE_URI is required');

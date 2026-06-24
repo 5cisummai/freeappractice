@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { HistoryItem } from '$lib/types/history.js';
+	import type { HistoryItem } from '$lib/users/types.js';
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 	import RichText from '$lib/components/rich-text.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';

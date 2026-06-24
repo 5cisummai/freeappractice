@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
-	import type { HistoryResponse } from '$lib/types/history.js';
+	import type { HistoryResponse } from '$lib/users/types.js';
 	import HistoryDataTable from '$lib/components/history/history-data-table.svelte';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 
