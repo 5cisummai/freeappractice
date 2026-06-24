@@ -1,5 +1,6 @@
 import type { IQuestionAttempt } from '$lib/users/records.server';
-import { getQuestionsFromS3, type StoredQuestion } from '$lib/questions/storage.server';
+import { getQuestionsByIds } from '$lib/questions/lookup.server';
+import type { StoredQuestion } from '$lib/questions/storage.server';
 
 export type McqHistoryItem = {
 	attempt: IQuestionAttempt;
@@ -43,7 +44,7 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 	const uniqueIds = [...new Set(items.map((item) => item.attempt.questionId))];
 	if (uniqueIds.length === 0) return items;
 
-	const questions = await getQuestionsFromS3(uniqueIds);
+	const questions = await getQuestionsByIds(uniqueIds);
 	const byId = new Map(questions.map((q) => [q.id, q]));
 
 	return items.map((item) => ({

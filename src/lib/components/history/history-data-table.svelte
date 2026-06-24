@@ -15,7 +15,6 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
 	import { FlexRender, createSvelteTable } from '$lib/components/ui/data-table/index.js';
 
 	type HistoryDataTableProps = {
@@ -100,15 +99,8 @@
 
 <div class="space-y-4">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-		<Input
-			placeholder="Filter current page..."
-			aria-label="Filter questions on the current page"
-			value={(table.getColumn('question')?.getFilterValue() as string) ?? ''}
-			oninput={(e) => table.getColumn('question')?.setFilterValue(e.currentTarget.value)}
-			class="max-w-sm"
-		/>
-		<p class="text-xs text-muted-foreground sm:ms-auto">
-			Search and sort apply to this page only. Use pagination to browse all attempts.
+		<p class="text-xs text-muted-foreground">
+			Sort applies to this page only. Use pagination to browse all attempts.
 		</p>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>

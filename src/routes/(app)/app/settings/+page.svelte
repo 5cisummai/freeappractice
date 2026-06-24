@@ -5,7 +5,6 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Slider } from '$lib/components/ui/slider/index.js';
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
@@ -78,7 +77,7 @@
 				<Card.Header>
 					<Card.Title class="font-display text-lg font-medium tracking-tight">Appearance</Card.Title
 					>
-					<Card.Description>Choose your preferred theme and font size.</Card.Description>
+					<Card.Description>Choose your preferred theme.</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-6">
 					<div class="space-y-4">
@@ -109,27 +108,6 @@
 								<span>System</span>
 							</Button>
 						</div>
-					</div>
-
-					<div class="space-y-4 border-t border-border pt-4">
-						<div class="flex items-center justify-between">
-							<Label for="font-size-slider">
-								Font Size ({settingsController.settings.fontSize}px)
-							</Label>
-							<Button variant="ghost" size="sm" onclick={() => settingsController.setFontSize(16)}
-								>Reset</Button
-							>
-						</div>
-						<Slider
-							id="font-size-slider"
-							type="single"
-							value={settingsController.settings.fontSize}
-							min={12}
-							max={24}
-							step={1}
-							onValueChange={(value: number) => settingsController.setFontSize(value)}
-						/>
-						<p class="text-sm text-muted-foreground">Adjust text size for better readability.</p>
 					</div>
 				</Card.Content>
 			</Card.Root>

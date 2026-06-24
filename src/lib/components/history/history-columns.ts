@@ -1,13 +1,7 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
 import type { HistoryItem } from '$lib/users/types.js';
-import {
-	escapeHtml,
-	formatAttemptDate,
-	formatTimeTaken,
-	plainQuestionText,
-	questionPreview
-} from '$lib/history-display.js';
+import { escapeHtml, formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
 import HistoryDataTableCheckbox from './history-data-table-checkbox.svelte';
 import HistoryDataTableSortButton from './history-data-table-sort-button.svelte';
@@ -60,24 +54,6 @@ export function createHistoryColumns(
 			},
 			sortingFn: (rowA, rowB) =>
 				rowA.original.attempt.apClass.localeCompare(rowB.original.attempt.apClass)
-		},
-		{
-			id: 'question',
-			accessorFn: (row) => plainQuestionText(row.question?.question ?? ''),
-			header: 'Question',
-			cell: ({ row }) => {
-				const questionSnippet = createRawSnippet<[{ preview: string }]>((getData) => {
-					const { preview } = getData();
-					return {
-						render: () =>
-							`<div class="max-w-md truncate text-sm text-muted-foreground">${escapeHtml(preview)}</div>`
-					};
-				});
-				return renderSnippet(questionSnippet, {
-					preview: questionPreview(row.original)
-				});
-			},
-			filterFn: 'includesString'
 		},
 		{
 			id: 'attemptedAt',
