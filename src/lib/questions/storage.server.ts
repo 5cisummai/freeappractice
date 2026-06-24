@@ -11,6 +11,8 @@ export interface QuestionData {
 	explanation: string;
 	apClass?: string;
 	unit?: string;
+	contentHash?: string;
+	topicsCovered?: string;
 	[key: string]: unknown;
 }
 

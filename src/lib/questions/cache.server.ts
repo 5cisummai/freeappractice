@@ -1,8 +1,18 @@
 import { Question, type IQuestion } from '$lib/questions/cache-model.server';
 import { connectDb } from '$lib/server/db';
-import { generateAPQuestion, type GenerateResult } from '$lib/questions/generation.server';
+import { selectModelForClass } from '$lib/ai/service.server';
+import {
+	generateAPQuestion,
+	generateAPQuestionBody,
+	persistMcqQuestionToS3,
+	persistOrResolveMcqQuestion,
+	type GenerateResult
+} from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
 import { createQuestionPool } from '$lib/questions/pool.server';
+import { buildSlimPoolDoc } from '$lib/questions/pool-doc.server';
+import { loadQuestionBodyFromPoolDoc } from '$lib/questions/pool-resolve.server';
+import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 
 const RECENT_TOPICS_WINDOW = 20;
@@ -11,50 +21,55 @@ function getPoolSize(): number {
 	return Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
 }
 
-async function getRecentTopics(className: string, unit: string): Promise<string[]> {
-	const docs = await Question.find(
-		{ apClass: className, unit, topicsCovered: { $exists: true, $ne: '' } },
-		{ topicsCovered: 1 },
-		{ sort: { createdAt: -1 }, limit: RECENT_TOPICS_WINDOW }
-	).lean();
-	return docs.map((d) => d.topicsCovered as string).filter(Boolean);
+async function insertSlimPoolDoc(
+	className: string,
+	cacheUnit: string,
+	s3QuestionId: string,
+	answer: GenerateResult['answer']
+): Promise<void> {
+	const contentHash = computeContentHash(answer.question);
+	const topicsCovered = answer.topicsCovered ?? '';
+
+	await recordRecentTopic({
+		apClass: className,
+		unit: cacheUnit,
+		topicsCovered,
+		s3QuestionId
+	});
+
+	await Question.create(
+		buildSlimPoolDoc({
+			s3QuestionId,
+			apClass: className,
+			unit: cacheUnit,
+			contentHash,
+			topicsCovered
+		})
+	);
 }
 
 async function generateAndInsert(className: string, unit: string): Promise<string | null> {
 	try {
-		const recentTopics = await getRecentTopics(className, normalizeUnit(unit));
-		const result = await generateAPQuestion({ className, unit, recentTopics });
-		const { answer } = result;
+		const cacheUnit = normalizeUnit(unit);
+		const recentTopics = await getRecentTopics(className, cacheUnit, RECENT_TOPICS_WINDOW);
+		const answer = await generateAPQuestionBody({ className, unit, recentTopics });
 		const contentHash = computeContentHash(answer.question);
 
 		const exists = await Question.exists({ contentHash });
 		if (exists) {
 			logger.info('[cache] skipping duplicate question (hash collision)', {
 				className,
-				unit,
+				unit: cacheUnit,
 				contentHash
 			});
 			return null;
 		}
 
-		const doc = await Question.create({
-			apClass: className,
-			unit: normalizeUnit(unit),
-			question: answer.question,
-			optionA: answer.optionA,
-			optionB: answer.optionB,
-			optionC: answer.optionC,
-			optionD: answer.optionD,
-			correctAnswer: answer.correctAnswer,
-			explanation: answer.explanation,
-			contentHash,
-			topicsCovered: answer.topicsCovered ?? '',
-			lastServedAt: null,
-			status: 'available',
-			serveCount: 0,
-			lockedUntil: null
+		const s3QuestionId = await persistMcqQuestionToS3(answer, className, cacheUnit, {
+			contentHash
 		});
-		return doc._id.toString();
+		await insertSlimPoolDoc(className, cacheUnit, s3QuestionId, answer);
+		return s3QuestionId;
 	} catch (err: unknown) {
 		if (isDuplicateKeyError(err)) {
 			logger.info('[cache] duplicate key on insert, skipping', { className, unit });
@@ -70,29 +85,15 @@ async function persistMcqToPool(
 	cacheUnit: string,
 	result: GenerateResult
 ): Promise<void> {
-	const { answer } = result;
+	const { answer, questionId } = result;
+	if (!questionId) return;
+
 	const contentHash = computeContentHash(answer.question);
 	const exists = await Question.exists({ contentHash });
 	if (exists) return;
 
 	try {
-		await Question.create({
-			apClass: className,
-			unit: cacheUnit,
-			question: answer.question,
-			optionA: answer.optionA,
-			optionB: answer.optionB,
-			optionC: answer.optionC,
-			optionD: answer.optionD,
-			correctAnswer: answer.correctAnswer,
-			explanation: answer.explanation,
-			contentHash,
-			topicsCovered: answer.topicsCovered ?? '',
-			lastServedAt: null,
-			status: 'available',
-			serveCount: 0,
-			lockedUntil: null
-		});
+		await insertSlimPoolDoc(className, cacheUnit, questionId, answer);
 	} catch (err: unknown) {
 		if (isDuplicateKeyError(err)) return;
 		throw err;
@@ -114,33 +115,27 @@ const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 			{ status: { $exists: false } },
 			{ $set: { status: 'available', serveCount: 0, lockedUntil: null } }
 		).then(() => undefined),
-	getRecentTopics,
+	getRecentTopics: (className, unit) => getRecentTopics(className, unit, RECENT_TOPICS_WINDOW),
 	generateAndInsert,
-	serveClaimed: (doc, className, cacheUnit, _userId, replenish) => {
+	serveClaimed: async (doc, className, cacheUnit, _userId, replenish) => {
 		replenish(className, cacheUnit);
+		const { questionId, answer } = await loadQuestionBodyFromPoolDoc(doc);
 		return {
 			answer: {
-				question: doc.question,
-				optionA: doc.optionA,
-				optionB: doc.optionB,
-				optionC: doc.optionC,
-				optionD: doc.optionD,
-				correctAnswer: doc.correctAnswer,
-				explanation: doc.explanation,
-				topicsCovered: doc.topicsCovered ?? ''
+				...answer,
+				topicsCovered: answer.topicsCovered ?? doc.topicsCovered ?? ''
 			},
 			provider: 'cache',
 			model: 'cached',
 			cached: true,
-			questionId: doc._id.toString()
+			questionId
 		};
 	},
 	generateLive: async (className, unit, recentTopics) => {
 		const result = await generateAPQuestion({ className, unit, recentTopics });
 		return { ...result, cached: false };
 	},
-	persistLiveToPool: (className, cacheUnit, result) =>
-		persistMcqToPool(className, cacheUnit, result),
+	persistLiveToPool: (className, cacheUnit, result) => persistMcqToPool(className, cacheUnit, result),
 	getContentHashFromResult: (result) => computeContentHash(result.answer.question)
 });
 
@@ -170,42 +165,57 @@ export async function generateAndStoreQuestion(
 
 	await connectDb();
 
-	const recentTopics = await getRecentTopics(className, normalizeUnit(unit)).catch(() => []);
-	const result = await generateAPQuestion({
+	const cacheUnit = normalizeUnit(unit);
+	const recentTopics = await getRecentTopics(className.trim(), cacheUnit, RECENT_TOPICS_WINDOW).catch(
+		() => []
+	);
+	const answer = await generateAPQuestionBody({
 		className: className.trim(),
 		unit: unit ?? '',
 		recentTopics
 	});
-	const { answer } = result;
-	const contentHash = computeContentHash(answer.question);
 
-	try {
-		await Question.create({
-			apClass: className.trim(),
-			unit: normalizeUnit(unit),
-			question: answer.question,
-			optionA: answer.optionA,
-			optionB: answer.optionB,
-			optionC: answer.optionC,
-			optionD: answer.optionD,
-			correctAnswer: answer.correctAnswer,
-			explanation: answer.explanation,
-			contentHash,
-			topicsCovered: answer.topicsCovered ?? '',
-			lastServedAt: null,
-			status: 'available',
-			serveCount: 0,
-			lockedUntil: null
+	const resolved = await persistOrResolveMcqQuestion({
+		answer,
+		className: className.trim(),
+		unit: cacheUnit,
+		findExistingS3Id: async (contentHash) => {
+			const existing = await Question.findOne({ contentHash }, { s3QuestionId: 1 }).lean();
+			return existing?.s3QuestionId ?? null;
+		}
+	});
+
+	if (resolved.duplicate) {
+		logger.info('[cache] generateAndStoreQuestion: duplicate hash, using existing S3 body', {
+			className,
+			questionId: resolved.questionId
 		});
-	} catch (err: unknown) {
-		if (isDuplicateKeyError(err)) {
-			logger.info('[cache] generateAndStoreQuestion: duplicate hash, not re-storing', {
-				className
-			});
-		} else {
-			throw err;
+	}
+
+	if (!resolved.duplicate) {
+		try {
+			await insertSlimPoolDoc(
+				className.trim(),
+				cacheUnit,
+				resolved.questionId,
+				resolved.answer
+			);
+		} catch (err: unknown) {
+			if (isDuplicateKeyError(err)) {
+				logger.info('[cache] generateAndStoreQuestion: duplicate key on pool insert', {
+					className
+				});
+			} else {
+				throw err;
+			}
 		}
 	}
 
-	return { ...result, cached: false };
+	return {
+		answer: resolved.answer,
+		provider: 'openai',
+		model: selectModelForClass(className.trim()),
+		questionId: resolved.questionId,
+		cached: false
+	};
 }

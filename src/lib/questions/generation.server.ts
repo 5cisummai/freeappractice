@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { saveQuestionToS3 } from '$lib/questions/storage.server';
+import { getQuestionFromS3, saveQuestionToS3 } from '$lib/questions/storage.server';
 import { recordMcqGenerated } from '$lib/questions/gen-stats.server';
+import { computeContentHash } from '$lib/questions/util.server';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import { logger } from '$lib/server/logger';
 import {
@@ -159,6 +160,8 @@ const APQuestion = z.object({
 
 type APQuestionData = z.infer<typeof APQuestion>;
 
+export type { APQuestionData };
+
 export interface GenerateResult {
 	answer: APQuestionData;
 	provider: string;
@@ -169,13 +172,70 @@ export interface GenerateResult {
 
 // ── Persistence ────────────────────────────────────────────────
 
-async function persistGeneratedMcqQuestion(
+export type PersistOrResolveResult = {
+	questionId: string;
+	answer: APQuestionData;
+	contentHash: string;
+	duplicate: boolean;
+};
+
+function storedQuestionToAnswer(
+	stored: Awaited<ReturnType<typeof getQuestionFromS3>>,
+	fallbackTopics?: string
+): APQuestionData {
+	return {
+		question: stored.question,
+		optionA: stored.optionA,
+		optionB: stored.optionB,
+		optionC: stored.optionC,
+		optionD: stored.optionD,
+		correctAnswer: stored.correctAnswer,
+		explanation: stored.explanation,
+		topicsCovered:
+			typeof stored.topicsCovered === 'string' ? stored.topicsCovered : (fallbackTopics ?? '')
+	};
+}
+
+/** Persist a new MCQ to S3, or resolve an existing S3 object when contentHash matches. */
+export async function persistOrResolveMcqQuestion(opts: {
+	answer: APQuestionData;
+	className: string;
+	unit: string | undefined;
+	contentHash?: string;
+	findExistingS3Id?: (contentHash: string) => Promise<string | null | undefined>;
+}): Promise<PersistOrResolveResult> {
+	const { answer, className, unit, findExistingS3Id } = opts;
+	const contentHash = opts.contentHash ?? computeContentHash(answer.question);
+
+	if (findExistingS3Id) {
+		const existingId = await findExistingS3Id(contentHash);
+		if (existingId) {
+			const stored = await getQuestionFromS3(existingId);
+			return {
+				questionId: existingId,
+				answer: storedQuestionToAnswer(stored, answer.topicsCovered),
+				contentHash,
+				duplicate: true
+			};
+		}
+	}
+
+	const questionId = await persistMcqQuestionToS3(answer, className, unit, { contentHash });
+	return { questionId, answer, contentHash, duplicate: false };
+}
+
+export async function persistMcqQuestionToS3(
 	parsed: APQuestionData,
 	className: string,
-	unit: string | undefined
+	unit: string | undefined,
+	opts?: { contentHash?: string }
 ): Promise<string> {
 	const unitLabel = unit ?? 'General';
-	const questionData = Object.assign({}, parsed, { apClass: className, unit: unitLabel });
+	const questionData = Object.assign({}, parsed, {
+		apClass: className,
+		unit: unitLabel,
+		...(opts?.contentHash ? { contentHash: opts.contentHash } : {})
+	});
 	const id = await saveQuestionToS3(questionData);
 	try {
 		await recordMcqGenerated({
@@ -199,12 +259,12 @@ function isAPLunch(className: string): boolean {
 
 // ── MCQ generation ─────────────────────────────────────────────
 
-export async function generateAPQuestion(opts: {
+export async function generateAPQuestionBody(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
 	customTopic?: string;
-}): Promise<GenerateResult> {
+}): Promise<APQuestionData> {
 	const { className, unit, recentTopics, customTopic } = opts;
 	if (!className) throw new Error('className is required');
 
@@ -324,10 +384,24 @@ OUTPUT:
 		{ className, unit, customTopic: isCustom ? ct : undefined }
 	);
 
-	const persistUnitLabel = isCustom ? `Custom: ${ct}` : unit;
+	return parsed;
+}
+
+export async function generateAPQuestion(opts: {
+	className: string;
+	unit?: string;
+	recentTopics?: string[];
+	customTopic?: string;
+}): Promise<GenerateResult> {
+	const { className, unit, customTopic } = opts;
+	const parsed = await generateAPQuestionBody({ className, unit, recentTopics: opts.recentTopics, customTopic });
+
+	const persistUnitLabel = customTopic?.trim()
+		? `Custom: ${customTopic.trim()}`
+		: unit;
 	let questionId: string;
 	try {
-		questionId = await persistGeneratedMcqQuestion(parsed, className, persistUnitLabel);
+		questionId = await persistMcqQuestionToS3(parsed, className, persistUnitLabel);
 	} catch (err) {
 		logger.error('Failed to persist generated question to S3', {
 			className,
@@ -336,5 +410,5 @@ OUTPUT:
 		});
 		throw new Error('Failed to persist generated question');
 	}
-	return { answer: parsed, provider: 'openai', model, questionId };
+	return { answer: parsed, provider: 'openai', model: selectModelForClass(className), questionId };
 }

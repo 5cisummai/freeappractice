@@ -8,6 +8,7 @@ const LOCK_WINDOW_MS = 10_000;
 
 export interface PoolDocument {
 	_id: { toString(): string };
+	s3QuestionId?: string;
 	contentHash?: string;
 	serveCount?: number;
 	maxServeCount?: number;
@@ -22,6 +23,7 @@ interface PoolModel<TDoc extends PoolDocument> {
 		options: { sort: Record<string, 1 | -1> }
 	): Promise<TDoc | null>;
 	updateOne(filter: Record<string, unknown>, update: Record<string, unknown>): Promise<unknown>;
+	deleteOne(filter: Record<string, unknown>): Promise<unknown>;
 }
 
 export interface QuestionPoolConfig<
@@ -44,7 +46,7 @@ export interface QuestionPoolConfig<
 		cacheUnit: string,
 		userId: string | null | undefined,
 		replenish: (className: string, unit: string) => void
-	) => TCached;
+	) => Promise<TCached>;
 	generateLive: (className: string, unit: string, recentTopics?: string[]) => Promise<TCached>;
 	persistLiveToPool: (className: string, cacheUnit: string, result: TCached) => Promise<void>;
 	getContentHashFromResult: (result: TCached) => string;
@@ -109,16 +111,37 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		return doc;
 	}
 
-	function releaseDoc(docId: string, currentServeCount: number, maxServeCount: number): void {
+	function releaseDoc(doc: TDoc, currentServeCount: number, maxServeCount: number): void {
+		const docId = doc._id.toString();
 		const nextServeCount = currentServeCount + 1;
-		const nextStatus: 'available' | 'retired' =
-			nextServeCount >= maxServeCount ? 'retired' : 'available';
+		if (nextServeCount >= maxServeCount) {
+			// Slim docs: body is in S3 — safe to drop from the pool.
+			// Legacy docs: retire so Mongo-id history/bookmark lookups keep working.
+			if (doc.s3QuestionId) {
+				config.model.deleteOne({ _id: docId }).catch(() => {});
+			} else {
+				config.model
+					.updateOne(
+						{ _id: docId },
+						{
+							$set: {
+								serveCount: nextServeCount,
+								lastServedAt: new Date(),
+								lockedUntil: null,
+								status: 'retired'
+							}
+						}
+					)
+					.catch(() => {});
+			}
+			return;
+		}
 		config.model
 			.updateOne(
 				{ _id: docId },
 				{
 					$inc: { serveCount: 1 },
-					$set: { lastServedAt: new Date(), lockedUntil: null, status: nextStatus }
+					$set: { lastServedAt: new Date(), lockedUntil: null, status: 'available' }
 				}
 			)
 			.catch(() => {});
@@ -177,13 +200,13 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		})();
 	}
 
-	function serveClaimedDoc(
+	async function serveClaimedDoc(
 		doc: TDoc,
 		className: string,
 		cacheUnit: string,
 		userId: string | null | undefined
-	): TCached {
-		releaseDoc(doc._id.toString(), doc.serveCount ?? 0, doc.maxServeCount ?? 50);
+	): Promise<TCached> {
+		releaseDoc(doc, doc.serveCount ?? 0, doc.maxServeCount ?? 50);
 
 		if (userId && doc.contentHash) {
 			recordSeenQuestion(userId, doc.contentHash, className, cacheUnit, config.questionType).catch(
