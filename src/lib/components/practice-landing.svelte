@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
 	import PracticeHubNav from '$lib/components/practice-hub-nav.svelte';
@@ -8,36 +9,43 @@
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 
-	function getInitialSelection(page: PracticePage) {
+	function getInitialSelection(practicePage: PracticePage, customTopicEnabled: boolean) {
 		return {
-			selectedClass: page.className,
+			selectedClass: practicePage.className,
 			selectedUnit:
-				page.type === 'unit' && page.unitName
-					? page.unitName
-					: page.type === 'topic'
+				practicePage.type === 'unit' && practicePage.unitName
+					? practicePage.unitName
+					: practicePage.type === 'topic' && customTopicEnabled
 						? CUSTOM_UNIT_VALUE
 						: '',
-			customTopic: page.type === 'topic' ? (page.customTopic ?? '') : ''
+			customTopic:
+				practicePage.type === 'topic' && customTopicEnabled
+					? (practicePage.customTopic ?? '')
+					: ''
 		};
 	}
 
-	let { page }: { page: PracticePage } = $props();
+	let { page: practicePage }: { page: PracticePage } = $props();
 
-	const crumbs = $derived(buildPracticeBreadcrumbs(page));
-	const initial = $derived(getInitialSelection(page));
+	const allowCustomTopic = $derived(Boolean(page.data.customTopicEnabled));
+	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
+	const initial = $derived(getInitialSelection(practicePage, allowCustomTopic));
 
 	function linkHref(href: string): string {
 		return href;
 	}
 
-	function linkRel(kind: PracticePage['links'][number]['kind']): string | undefined {
+	function linkRel(kind: (typeof practicePage.links)[number]['kind']): string | undefined {
 		if (kind === 'external' || kind === 'college-board') {
 			return 'noopener noreferrer';
 		}
 		return undefined;
 	}
 
-	function linkTarget(href: string, kind: PracticePage['links'][number]['kind']): string | undefined {
+	function linkTarget(
+		href: string,
+		kind: (typeof practicePage.links)[number]['kind']
+	): string | undefined {
 		if (kind === 'internal' || kind === 'practice' || !href.startsWith('http')) {
 			return undefined;
 		}
@@ -57,11 +65,11 @@
 					<h1
 						class="font-display text-3xl leading-[1.15] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl"
 					>
-						{page.seo.h1}
+						{practicePage.seo.h1}
 					</h1>
-					{#if page.seo.subtitle}
+					{#if practicePage.seo.subtitle}
 						<p class="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-							{page.seo.subtitle}
+							{practicePage.seo.subtitle}
 						</p>
 					{/if}
 				</div>
@@ -76,21 +84,21 @@
 			</section>
 
 			<section class="mx-auto max-w-3xl">
-				<PracticeHubNav {page} />
+				<PracticeHubNav page={practicePage} />
 
 				<article class="prose prose-neutral dark:prose-invert mt-10 max-w-none space-y-4">
-					{#each page.article.paragraphs as paragraph, index (index)}
+					{#each practicePage.article.paragraphs as paragraph, index (index)}
 						<p class="text-base leading-7 text-muted-foreground">{paragraph}</p>
 					{/each}
 				</article>
 
-				{#if page.links.length > 0}
+				{#if practicePage.links.length > 0}
 					<div class="mt-8 border-t border-border/70 pt-6">
 						<h2 class="mb-3 text-sm font-semibold tracking-wide text-foreground uppercase">
 							Helpful resources
 						</h2>
 						<ul class="space-y-2">
-							{#each page.links as link (link.href)}
+							{#each practicePage.links as link (link.href)}
 								<li>
 									<a
 										href={linkHref(link.href)}

@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { getQuestionFromS3, saveQuestionToS3 } from '$lib/questions/storage.server';
+import { saveQuestionToS3 } from '$lib/questions/storage.server';
 import { recordMcqGenerated } from '$lib/questions/gen-stats.server';
-import { computeContentHash } from '$lib/questions/util.server';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import { logger } from '$lib/server/logger';
 import {
@@ -171,58 +170,6 @@ export interface GenerateResult {
 }
 
 // ── Persistence ────────────────────────────────────────────────
-
-export type PersistOrResolveResult = {
-	questionId: string;
-	answer: APQuestionData;
-	contentHash: string;
-	duplicate: boolean;
-};
-
-function storedQuestionToAnswer(
-	stored: Awaited<ReturnType<typeof getQuestionFromS3>>,
-	fallbackTopics?: string
-): APQuestionData {
-	return {
-		question: stored.question,
-		optionA: stored.optionA,
-		optionB: stored.optionB,
-		optionC: stored.optionC,
-		optionD: stored.optionD,
-		correctAnswer: stored.correctAnswer,
-		explanation: stored.explanation,
-		topicsCovered:
-			typeof stored.topicsCovered === 'string' ? stored.topicsCovered : (fallbackTopics ?? '')
-	};
-}
-
-/** Persist a new MCQ to S3, or resolve an existing S3 object when contentHash matches. */
-export async function persistOrResolveMcqQuestion(opts: {
-	answer: APQuestionData;
-	className: string;
-	unit: string | undefined;
-	contentHash?: string;
-	findExistingS3Id?: (contentHash: string) => Promise<string | null | undefined>;
-}): Promise<PersistOrResolveResult> {
-	const { answer, className, unit, findExistingS3Id } = opts;
-	const contentHash = opts.contentHash ?? computeContentHash(answer.question);
-
-	if (findExistingS3Id) {
-		const existingId = await findExistingS3Id(contentHash);
-		if (existingId) {
-			const stored = await getQuestionFromS3(existingId);
-			return {
-				questionId: existingId,
-				answer: storedQuestionToAnswer(stored, answer.topicsCovered),
-				contentHash,
-				duplicate: true
-			};
-		}
-	}
-
-	const questionId = await persistMcqQuestionToS3(answer, className, unit, { contentHash });
-	return { questionId, answer, contentHash, duplicate: false };
-}
 
 export async function persistMcqQuestionToS3(
 	parsed: APQuestionData,

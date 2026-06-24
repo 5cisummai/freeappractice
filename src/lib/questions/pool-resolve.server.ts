@@ -1,4 +1,4 @@
-import { hasS3BackedBody, hasLegacyInlineBody, type IQuestion } from '$lib/questions/cache-model.server';
+import { hasHotPoolBody, hasPersistedS3Id, hasS3OnlyBody, type IQuestion } from '$lib/questions/cache-model.server';
 import { getQuestionFromS3, type StoredQuestion } from '$lib/questions/storage.server';
 
 export type McqAnswerBody = {
@@ -12,10 +12,11 @@ export type McqAnswerBody = {
 	topicsCovered?: string;
 };
 
-function legacyBodyFromDoc(doc: IQuestion): McqAnswerBody | null {
-	if (!hasLegacyInlineBody(doc)) return null;
-	if (!doc.optionA || !doc.optionB || !doc.optionC || !doc.optionD) return null;
-	if (!doc.correctAnswer || !doc.explanation) return null;
+/** Read full MCQ body directly from a hot-cache pool doc (no S3 round trip). */
+export function hotPoolBodyFromDoc(doc: IQuestion): McqAnswerBody {
+	if (!hasHotPoolBody(doc)) {
+		throw new Error(`Pool doc ${doc._id.toString()} has no inline hot-cache body`);
+	}
 	return {
 		question: doc.question,
 		optionA: doc.optionA,
@@ -41,24 +42,30 @@ function storedToAnswer(stored: StoredQuestion): McqAnswerBody {
 	};
 }
 
-/** Load full MCQ body for a pool doc — S3 first, legacy inline fields as fallback. */
+/**
+ * Load MCQ body for history lookup — inline hot cache first, S3 pointer fallback for
+ * pre-migration slim pool docs only.
+ */
 export async function loadQuestionBodyFromPoolDoc(
 	doc: IQuestion
 ): Promise<{ questionId: string; answer: McqAnswerBody }> {
-	if (hasS3BackedBody(doc)) {
+	if (hasHotPoolBody(doc) && hasPersistedS3Id(doc)) {
+		return { questionId: doc.s3QuestionId, answer: hotPoolBodyFromDoc(doc) };
+	}
+
+	if (hasHotPoolBody(doc)) {
+		return { questionId: doc._id.toString(), answer: hotPoolBodyFromDoc(doc) };
+	}
+
+	if (hasS3OnlyBody(doc)) {
 		const stored = await getQuestionFromS3(doc.s3QuestionId);
 		return { questionId: doc.s3QuestionId, answer: storedToAnswer(stored) };
 	}
 
-	const legacy = legacyBodyFromDoc(doc);
-	if (legacy) {
-		return { questionId: doc._id.toString(), answer: legacy };
-	}
-
-	throw new Error(`Pool doc ${doc._id.toString()} has no s3QuestionId or legacy body`);
+	throw new Error(`Pool doc ${doc._id.toString()} has no inline body or s3QuestionId`);
 }
 
-/** Resolve a stored question shape from a pool doc (for history migration lookups). */
+/** Resolve a stored question shape from a pool doc (for legacy history lookups). */
 export async function resolveStoredQuestionFromPoolDoc(
 	doc: IQuestion
 ): Promise<StoredQuestion | null> {

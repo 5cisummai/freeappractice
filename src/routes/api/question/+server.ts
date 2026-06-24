@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { customTopicEnabled } from '$lib/flags';
 import { generateLiveCustomTopicMcq, getQuestion } from '$lib/questions/cache.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { dev } from '$app/environment';
@@ -17,6 +18,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		if (!validated.ok) return validated.response;
 
 		const { className, unit, customTopic } = validated.value;
+
+		if (customTopic && !(await customTopicEnabled())) {
+			return json({ error: 'Custom topics are not available' }, { status: 403 });
+		}
 
 		const result = customTopic
 			? await generateLiveCustomTopicMcq(className, customTopic)

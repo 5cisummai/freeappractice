@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { getCourses } from '$lib/catalog/ap-classes';
 	import { tick } from 'svelte';
 	import BugIcon from '@lucide/svelte/icons/bug';
@@ -39,7 +40,17 @@
 		onSelectionChange
 	}: QuestionSelectorProps = $props();
 
-	const isCustomUnitSelected = $derived(selectedUnit === CUSTOM_UNIT_VALUE);
+	const allowCustomTopic = $derived(Boolean(page.data.customTopicEnabled));
+	const isCustomUnitSelected = $derived(
+		allowCustomTopic && selectedUnit === CUSTOM_UNIT_VALUE
+	);
+
+	$effect(() => {
+		if (!allowCustomTopic && selectedUnit === CUSTOM_UNIT_VALUE) {
+			selectedUnit = '';
+			customTopic = '';
+		}
+	});
 
 	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
 	const unitOptions = $derived(
@@ -212,12 +223,17 @@
 										{unit}
 									</Command.Item>
 								{/each}
-								<Command.Item value="custom-topic" onSelect={() => selectUnit(CUSTOM_UNIT_VALUE)}>
-									<CheckIcon
-										class={cn('mr-2 size-4 shrink-0', !isCustomUnitSelected && 'text-transparent')}
-									/>
-									Custom topic…
-								</Command.Item>
+								{#if allowCustomTopic}
+									<Command.Item value="custom-topic" onSelect={() => selectUnit(CUSTOM_UNIT_VALUE)}>
+										<CheckIcon
+											class={cn(
+												'mr-2 size-4 shrink-0',
+												!isCustomUnitSelected && 'text-transparent'
+											)}
+										/>
+										Custom topic…
+									</Command.Item>
+								{/if}
 							</Command.Group>
 						</Command.List>
 					</Command.Root>
@@ -283,7 +299,7 @@
 		</Popover.Root>
 	</div>
 
-	{#if selectedClass && isCustomUnitSelected}
+	{#if allowCustomTopic && selectedClass && isCustomUnitSelected}
 		<div class="space-y-2">
 			<Label for="custom-topic-input">Topic or subtopic</Label>
 			<Input

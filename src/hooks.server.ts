@@ -1,6 +1,10 @@
 import type { Handle } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
+import { FLAGS_SECRET } from '$env/static/private';
+import { createHandle } from 'flags/sveltekit';
 import { env } from '$env/dynamic/private';
 import { auth } from '$lib/auth/server';
+import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 
@@ -88,7 +92,7 @@ function postProcessResponse(
 	return applyCorsHeaders(response, origin);
 }
 
-export const handle: Handle = async ({ event, resolve }) => {
+const appHandle: Handle = async ({ event, resolve }) => {
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
 
@@ -169,3 +173,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	return response;
 };
+
+export const handle = sequence(createHandle({ secret: FLAGS_SECRET, flags }), appHandle);

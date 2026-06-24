@@ -155,20 +155,19 @@ flowchart TD
     Validate -->|standard unit| Pool["getQuestion → question pool"]
 
     Pool --> Claim{"MongoDB pool<br/>claim available question?"}
-    Claim -->|hit| LoadS3["Load full MCQ body from S3<br/>via pool doc s3QuestionId"]
+    Claim -->|hit| LoadInline["Read full MCQ body from Mongo<br/>inline hot-cache fields"]
     Claim -->|miss| MissFlow["cache-miss cluster flow<br/>distributed lock + wait/retry"]
-    MissFlow --> GenInsert["generateAndInsert"]
+    MissFlow --> GenPool["generateQuestionForPool"]
 
-    GenInsert --> UnitCtx["Lookup unit context<br/>unit-descriptionsrevised.json"]
+    Replenish["Background replenish pool<br/>target CACHE_POOL_SIZE"] --> GenPool
+    GenPool --> UnitCtx["Lookup unit context<br/>unit-descriptionsrevised.json"]
     UnitCtx --> Recent["getRecentTopics<br/>avoid duplicate topics"]
     Recent --> AI["AI structured completion<br/>ADVANCED_MODEL or BASIC_MODEL"]
-    AI --> Hash["contentHash dedup check"]
-    Hash --> S3Write["persistMcqQuestionToS3"]
-    S3Write --> SlimDoc["Insert slim pool doc in MongoDB<br/>status · serveCount · topics"]
-    SlimDoc --> Replenish["Background replenish pool<br/>target CACHE_POOL_SIZE"]
+    AI --> S3Write["persistMcqQuestionToS3<br/>single durable write"]
+    S3Write --> HotDoc["Insert full MCQ + s3QuestionId<br/>in Mongo hot pool"]
 
-    LoadS3 --> Seen{"Signed-in user?"}
-    Replenish --> Seen
+    LoadInline --> Seen{"Signed-in user?"}
+    HotDoc --> Seen
     Live --> Seen
     Seen -->|yes| SeenDB["recordSeenQuestion<br/>skip repeats for user"]
     Seen -->|no| Return
@@ -277,20 +276,21 @@ erDiagram
         string apClass
         string unit
         string contentHash
+        string question
         string status
         int serveCount
     }
 
     SEEN_QUESTIONS {
         string userId
-        string questionId
+        string contentHash
     }
 
     GEN_STATS {
         counters for public /stats
     }
 
-    QUESTION_POOL }o--|| S3_OBJECT : "full MCQ JSON"
+    QUESTION_POOL }o--|| S3_OBJECT : "s3QuestionId from generation"
     USER_PROFILE }o--o{ S3_OBJECT : "history references questionId"
 ```
 
@@ -302,7 +302,7 @@ erDiagram
 |--------|------|
 | **Public site** | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only |
 | **`/app`** | Core product: generate questions, track progress, history, bookmarks, settings |
-| **Question cache** | MongoDB holds lightweight pool metadata; S3 holds full question bodies; AI fills the pool on miss |
+| **Question cache** | One generation path writes S3 once, then stores full MCQ bodies plus `s3QuestionId` in the Mongo hot pool; cache serves read Mongo only |
 | **Better Auth** | Sessions, OAuth, email verification; creates a `UserProfile` on signup |
 | **AI layer** | One OpenAI-compatible provider (cloud or LM Studio) for generation, grading context, and tutor chat |
 | **Vercel** | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights |

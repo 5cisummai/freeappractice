@@ -1,6 +1,6 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 
-/** Shared pool metadata for slim (S3-backed) and legacy (inline) docs. */
+/** Shared pool metadata. */
 interface IPoolDocMetadata {
 	apClass: string;
 	unit: string;
@@ -14,14 +14,10 @@ interface IPoolDocMetadata {
 	updatedAt: Date;
 }
 
-/** Post-migration shape — canonical body lives in S3. */
-export type SlimQuestionDoc = IPoolDocMetadata & {
+/** Ephemeral hot-cache pool entry — full MCQ body inline plus durable S3 id. */
+export type HotPoolDoc = IPoolDocMetadata & {
 	s3QuestionId: string;
 	contentHash: string;
-};
-
-/** Pre-migration shape — body may still be inline in Mongo. */
-export type LegacyQuestionDoc = IPoolDocMetadata & {
 	question: string;
 	optionA: string;
 	optionB: string;
@@ -29,12 +25,17 @@ export type LegacyQuestionDoc = IPoolDocMetadata & {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
-	contentHash?: string;
+};
+
+/** @deprecated Pre-migration slim pool entry — body in S3 via s3QuestionId. */
+export type SlimPoolDoc = IPoolDocMetadata & {
+	s3QuestionId: string;
+	contentHash: string;
 };
 
 /**
- * Cache pool document. During migration, docs may be slim (S3-backed) or legacy (inline body).
- * Use `hasS3BackedBody()` / `hasLegacyInlineBody()` to narrow.
+ * MongoDB hot question cache. Full MCQ inline for fast serves, with S3 written
+ * once by the shared generation path before a doc enters the pool.
  */
 export interface IQuestion extends Document, IPoolDocMetadata {
 	s3QuestionId?: string;
@@ -48,23 +49,48 @@ export interface IQuestion extends Document, IPoolDocMetadata {
 	explanation?: string;
 }
 
-export function hasS3BackedBody(doc: Pick<IQuestion, 's3QuestionId'>): doc is IQuestion & SlimQuestionDoc {
+export function hasHotPoolBody(
+	doc: Pick<
+		IQuestion,
+		'question' | 'optionA' | 'optionB' | 'optionC' | 'optionD' | 'correctAnswer' | 'explanation'
+	>
+): doc is IQuestion & HotPoolDoc {
+	return Boolean(
+		doc.question &&
+			doc.optionA &&
+			doc.optionB &&
+			doc.optionC &&
+			doc.optionD &&
+			doc.correctAnswer &&
+			doc.explanation
+	);
+}
+
+export function hasPersistedS3Id(
+	doc: Pick<IQuestion, 's3QuestionId'>
+): doc is IQuestion & { s3QuestionId: string } {
 	return typeof doc.s3QuestionId === 'string' && doc.s3QuestionId.length > 0;
 }
 
-export function hasLegacyInlineBody(
-	doc: Pick<IQuestion, 's3QuestionId' | 'question'>
-): doc is IQuestion & LegacyQuestionDoc {
-	return !hasS3BackedBody(doc) && typeof doc.question === 'string' && doc.question.length > 0;
+/** @deprecated Slim pool docs without inline body — body fetched from S3 only. */
+export function hasS3OnlyBody(doc: IQuestion): doc is IQuestion & SlimPoolDoc {
+	return hasPersistedS3Id(doc) && !hasHotPoolBody(doc);
 }
 
 const questionSchema = new Schema<IQuestion>(
 	{
 		apClass: { type: String, required: true },
 		unit: { type: String, required: true, default: 'all-units' },
-		s3QuestionId: { type: String, index: true },
 		contentHash: { type: String },
 		topicsCovered: { type: String },
+		question: { type: String },
+		optionA: { type: String },
+		optionB: { type: String },
+		optionC: { type: String },
+		optionD: { type: String },
+		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'] },
+		explanation: { type: String },
+		s3QuestionId: { type: String, index: true },
 		lastServedAt: { type: Date, default: null },
 		status: {
 			type: String,
@@ -74,14 +100,7 @@ const questionSchema = new Schema<IQuestion>(
 		},
 		serveCount: { type: Number, default: 0 },
 		maxServeCount: { type: Number, default: 50 },
-		lockedUntil: { type: Date, default: null },
-		question: { type: String },
-		optionA: { type: String },
-		optionB: { type: String },
-		optionC: { type: String },
-		optionD: { type: String },
-		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'] },
-		explanation: { type: String }
+		lockedUntil: { type: Date, default: null }
 	},
 	{ timestamps: true }
 );

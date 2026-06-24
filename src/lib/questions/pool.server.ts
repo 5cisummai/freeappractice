@@ -2,9 +2,33 @@ import { SeenQuestion } from '$lib/questions/seen.server';
 import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { runCacheMissClusterFlow } from '$lib/questions/cache-miss.server';
-import { recordSeenQuestion } from '$lib/questions/util.server';
+import { CacheMissLock } from '$lib/questions/cache-lock.server';
+import { isDuplicateKeyError, recordSeenQuestion } from '$lib/questions/util.server';
 
 const LOCK_WINDOW_MS = 10_000;
+
+function getReplenishLockTtlMs(): number {
+	return Math.max(10_000, parseInt(process.env.CACHE_REPLENISH_LOCK_TTL_MS ?? '', 10) || 120_000);
+}
+
+async function tryAcquireReplenishLock(key: string): Promise<boolean> {
+	await connectDb();
+	try {
+		await CacheMissLock.create({
+			key,
+			expiresAt: new Date(Date.now() + getReplenishLockTtlMs())
+		});
+		return true;
+	} catch (err) {
+		if (isDuplicateKeyError(err)) return false;
+		throw err;
+	}
+}
+
+async function releaseReplenishLock(key: string): Promise<void> {
+	await connectDb();
+	await CacheMissLock.deleteOne({ key }).catch(() => {});
+}
 
 export interface PoolDocument {
 	_id: { toString(): string };
@@ -48,7 +72,6 @@ export interface QuestionPoolConfig<
 		replenish: (className: string, unit: string) => void
 	) => Promise<TCached>;
 	generateLive: (className: string, unit: string, recentTopics?: string[]) => Promise<TCached>;
-	persistLiveToPool: (className: string, cacheUnit: string, result: TCached) => Promise<void>;
 	getContentHashFromResult: (result: TCached) => string;
 }
 
@@ -115,25 +138,8 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		const docId = doc._id.toString();
 		const nextServeCount = currentServeCount + 1;
 		if (nextServeCount >= maxServeCount) {
-			// Slim docs: body is in S3 — safe to drop from the pool.
-			// Legacy docs: retire so Mongo-id history/bookmark lookups keep working.
-			if (doc.s3QuestionId) {
-				config.model.deleteOne({ _id: docId }).catch(() => {});
-			} else {
-				config.model
-					.updateOne(
-						{ _id: docId },
-						{
-							$set: {
-								serveCount: nextServeCount,
-								lastServedAt: new Date(),
-								lockedUntil: null,
-								status: 'retired'
-							}
-						}
-					)
-					.catch(() => {});
-			}
+			// Hot cache is ephemeral — drop the pool doc once fully served.
+			config.model.deleteOne({ _id: docId }).catch(() => {});
 			return;
 		}
 		config.model
@@ -150,12 +156,16 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 	function replenishPool(className: string, unit: string): void {
 		const cacheUnit = config.normalizeUnit(unit);
 		const key = `${className}::${cacheUnit}`;
+		const lockKey = `replenish::${config.questionType}::${key}`;
 		if (replenishing.has(key)) return;
 		replenishing.add(key);
 
 		(async () => {
+			let hasLock = false;
 			try {
 				await connectDb();
+				hasLock = await tryAcquireReplenishLock(lockKey);
+				if (!hasLock) return;
 				const poolSize = config.getPoolSize();
 
 				await config.model.updateMany(
@@ -169,14 +179,14 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 				);
 
 				for (let i = 0; i < poolSize; i++) {
-					const available = await config.model.countDocuments({
+					const active = await config.model.countDocuments({
 						apClass: className,
 						unit: cacheUnit,
-						status: 'available'
+						status: { $in: ['available', 'serving'] }
 					});
-					if (available >= poolSize) break;
+					if (active >= poolSize) break;
 
-					logger.info(`[${config.logScope}] replenishing - available: ${available}/${poolSize}`, {
+					logger.info(`[${config.logScope}] replenishing - active: ${active}/${poolSize}`, {
 						className,
 						unit: cacheUnit
 					});
@@ -195,6 +205,9 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 			} catch (err) {
 				logger.error(`[${config.logScope}] replenishPool error`, { className, unit, error: err });
 			} finally {
+				if (hasLock) {
+					await releaseReplenishLock(lockKey);
+				}
 				replenishing.delete(key);
 			}
 		})();
@@ -268,7 +281,6 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 					leaderRun: async () => {
 						const recentTopics = await config.getRecentTopics(className, cacheUnit).catch(() => []);
 						const gen = await config.generateLive(className, unit ?? '', recentTopics);
-						await config.persistLiveToPool(className, cacheUnit, gen);
 						if (userId) {
 							const hash = config.getContentHashFromResult(gen);
 							recordSeenQuestion(userId, hash, className, cacheUnit, config.questionType).catch(
