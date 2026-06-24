@@ -71,6 +71,8 @@ flowchart TB
     PubUI -.->|"signed-in user redirected"| AppUI
 ```
 
+
+
 ---
 
 ## 2. Request lifecycle (every HTTP request)
@@ -94,6 +96,8 @@ sequenceDiagram
     H->>H: security headers, CORS, no-cache on /api
     H-->>B: Response
 ```
+
+
 
 ---
 
@@ -143,6 +147,8 @@ flowchart LR
     P5 --> PR
 ```
 
+
+
 ---
 
 ## 4. Question generation pipeline (core feature)
@@ -154,7 +160,7 @@ flowchart TD
     Validate -->|custom topic| Live["generateLiveCustomTopicMcq<br/>always live AI — no cache pool"]
     Validate -->|standard unit| Pool["getQuestion → question pool"]
 
-    Pool --> Claim{"MongoDB pool<br/>claim available question?"}
+    Pool --> Claim{"MongoDB pool<br/>claim next available doc<br/>(same logic for all users)"}
     Claim -->|hit| LoadInline["Read full MCQ body from Mongo<br/>inline hot-cache fields"]
     Claim -->|miss| MissFlow["cache-miss cluster flow<br/>distributed lock + wait/retry"]
     MissFlow --> GenPool["generateQuestionForPool"]
@@ -166,18 +172,24 @@ flowchart TD
     AI --> S3Write["persistMcqQuestionToS3<br/>single durable write"]
     S3Write --> HotDoc["Insert full MCQ + s3QuestionId<br/>in Mongo hot pool"]
 
-    LoadInline --> Seen{"Signed-in user?"}
-    HotDoc --> Seen
-    Live --> Seen
-    Seen -->|yes| SeenDB["recordSeenQuestion<br/>skip repeats for user"]
-    Seen -->|no| Return
-    SeenDB --> Return(["JSON: answer, questionId,<br/>provider, model, cached"])
+    LoadInline --> Return(["JSON: answer, questionId,<br/>provider, model, cached"])
+    HotDoc --> Return
+    Live --> Return
 
     Return --> UI["QuestionCard renders MCQ<br/>LaTeX · KaTeX · Desmos optional"]
     UI --> Attempt["User answers"]
     Attempt --> Record["POST /api/me/record-attempt"]
     Record --> Profile["UserProfile in MongoDB<br/>questionHistory + progress + mastery"]
 ```
+
+
+
+**Pool behavior notes**
+
+- Signed-in and anonymous users share the same claim path: oldest available doc for `(apClass, unit)` by `lastServedAt`, with no per-user repeat filtering.
+- `contentHash` (SHA-256 of normalized question text) deduplicates entries **inside the hot pool** only — it prevents the same MCQ body from being inserted twice while replenishing.
+- Pool docs are ephemeral: after `maxServeCount` serves (default 50), the Mongo doc is deleted. S3 remains the durable copy for history and bookmarks.
+- Background replenish targets `CACHE_POOL_SIZE` per class/unit bucket. Ops scripts: `pnpm cache:clear`, `pnpm cache:warm`.
 
 ---
 
@@ -211,6 +223,8 @@ flowchart TD
     Profile --> UserData["progress[] · questionHistory[]<br/>bookmarkedQuestions[]"]
 ```
 
+
+
 ---
 
 ## 6. Practice session (signed-in user journey)
@@ -228,8 +242,8 @@ sequenceDiagram
     U->>App: Pick AP class + unit (or custom topic)
     App->>QS: requestVersion++
     QS->>API: POST /api/question
-    API->>DB: pool claim or generate
-    API->>AI: generate if cache miss / custom
+    API->>DB: claim from hot pool (auth does not change selection)
+    API->>AI: generate on cache miss or custom topic
     AI-->>API: structured MCQ
     API->>DB: S3 + pool doc
     API-->>QS: question payload
@@ -254,6 +268,8 @@ sequenceDiagram
     end
 ```
 
+
+
 ---
 
 ## 7. Data model (MongoDB)
@@ -272,18 +288,25 @@ erDiagram
     }
 
     QUESTION_POOL {
-        string s3QuestionId
+        string s3QuestionId UK
         string apClass
         string unit
-        string contentHash
+        string contentHash UK
         string question
         string status
         int serveCount
+        int maxServeCount
     }
 
-    SEEN_QUESTIONS {
-        string userId
-        string contentHash
+    CACHE_MISS_LOCK {
+        string key UK
+        date expiresAt
+    }
+
+    QUESTION_RECENT_TOPICS {
+        string apClass
+        string unit
+        string topicsCovered
     }
 
     GEN_STATS {
@@ -294,15 +317,19 @@ erDiagram
     USER_PROFILE }o--o{ S3_OBJECT : "history references questionId"
 ```
 
+
+
 ---
 
 ## How the pieces fit together
 
-| Layer | Role |
-|--------|------|
-| **Public site** | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only |
-| **`/app`** | Core product: generate questions, track progress, history, bookmarks, settings |
-| **Question cache** | One generation path writes S3 once, then stores full MCQ bodies plus `s3QuestionId` in the Mongo hot pool; cache serves read Mongo only |
-| **Better Auth** | Sessions, OAuth, email verification; creates a `UserProfile` on signup |
-| **AI layer** | One OpenAI-compatible provider (cloud or LM Studio) for generation, grading context, and tutor chat |
-| **Vercel** | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights |
+
+| Layer              | Role                                                                                                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Public site**    | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                                                                                                                              |
+| `**/app`**         | Core product: generate questions, track progress, history, bookmarks, settings                                                                                                                                                                                      |
+| **Question cache** | One generation path writes S3 once, then stores full MCQ bodies plus `s3QuestionId` in the Mongo hot pool; serves read Mongo only. Pool-level `contentHash` dedup; no per-user seen tracking. `CacheMissLock` coordinates cache misses across serverless instances. |
+| **Better Auth**    | Sessions, OAuth, email verification; creates a `UserProfile` on signup                                                                                                                                                                                              |
+| **AI layer**       | One OpenAI-compatible provider (cloud or LM Studio) for generation, grading context, and tutor chat                                                                                                                                                                 |
+| **Vercel**         | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights                                                                                                                                                                                   |
+

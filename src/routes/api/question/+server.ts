@@ -11,7 +11,7 @@ export const config = {
 	maxDuration: 60
 };
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
 		const validated = validateQuestionRequest(body);
@@ -25,7 +25,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const result = customTopic
 			? await generateLiveCustomTopicMcq(className, customTopic)
-			: await getQuestion(className, unit, locals.userId ?? null);
+			: await getQuestion(className, unit);
 
 		const answerStr =
 			typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer;

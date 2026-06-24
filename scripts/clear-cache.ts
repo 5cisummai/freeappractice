@@ -6,7 +6,6 @@
  *
  *   pnpm cache:clear
  *   pnpm cache:clear --dry-run
- *   pnpm cache:clear --include-seen
  */
 
 import 'dotenv/config';
@@ -19,7 +18,6 @@ if (!DATABASE_URI) {
 }
 
 const isDryRun = process.argv.includes('--dry-run');
-const includeSeen = process.argv.includes('--include-seen');
 
 const questionSchema = new mongoose.Schema(
 	{
@@ -54,30 +52,11 @@ async function main() {
 
 	if (isDryRun) {
 		console.log('Dry-run mode — nothing deleted.');
-		if (includeSeen) {
-			const seenSchema = new mongoose.Schema({ userId: String });
-			const SeenQuestion =
-				(mongoose.models['SeenQuestion'] as mongoose.Model<mongoose.Document>) ??
-				mongoose.model('SeenQuestion', seenSchema);
-			const seenCount = await SeenQuestion.countDocuments({});
-			console.log(`Would also delete ${seenCount} SeenQuestion record(s).`);
-		}
 		return;
 	}
 
 	const result = await Question.deleteMany({});
 	console.log(`✓ Deleted ${result.deletedCount} question(s) from the Mongo cache pool.`);
-
-	if (includeSeen) {
-		const seenSchema = new mongoose.Schema({ userId: String });
-		const SeenQuestion =
-			(mongoose.models['SeenQuestion'] as mongoose.Model<mongoose.Document>) ??
-			mongoose.model('SeenQuestion', seenSchema);
-		const seenResult = await SeenQuestion.deleteMany({});
-		console.log(`✓ Deleted ${seenResult.deletedCount} SeenQuestion record(s).`);
-	} else {
-		console.log('SeenQuestion records kept (pass --include-seen to clear them).');
-	}
 }
 
 main()

@@ -22,7 +22,6 @@ export type SiteNavGroup = {
 /** Primary links shown in the desktop and mobile topbar. */
 export const topbarNavItems: SiteNavItem[] = [
 	{ href: '/subjects', label: 'Subjects' },
-	{ href: '/summer', label: 'Summer' },
 	{ href: '/blog', label: 'Blog' },
 	{ href: '/about', label: 'About' },
 	{ href: '/stats', label: 'Stats' }

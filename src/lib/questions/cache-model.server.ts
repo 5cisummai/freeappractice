@@ -27,70 +27,26 @@ export type HotPoolDoc = IPoolDocMetadata & {
 	explanation: string;
 };
 
-/** @deprecated Pre-migration slim pool entry — body in S3 via s3QuestionId. */
-export type SlimPoolDoc = IPoolDocMetadata & {
-	s3QuestionId: string;
-	contentHash: string;
-};
-
 /**
  * MongoDB hot question cache. Full MCQ inline for fast serves, with S3 written
  * once by the shared generation path before a doc enters the pool.
  */
-export interface IQuestion extends Document, IPoolDocMetadata {
-	s3QuestionId?: string;
-	contentHash?: string;
-	question?: string;
-	optionA?: string;
-	optionB?: string;
-	optionC?: string;
-	optionD?: string;
-	correctAnswer?: 'A' | 'B' | 'C' | 'D';
-	explanation?: string;
-}
-
-export function hasHotPoolBody(
-	doc: Pick<
-		IQuestion,
-		'question' | 'optionA' | 'optionB' | 'optionC' | 'optionD' | 'correctAnswer' | 'explanation'
-	>
-): doc is IQuestion & HotPoolDoc {
-	return Boolean(
-		doc.question &&
-			doc.optionA &&
-			doc.optionB &&
-			doc.optionC &&
-			doc.optionD &&
-			doc.correctAnswer &&
-			doc.explanation
-	);
-}
-
-export function hasPersistedS3Id(
-	doc: Pick<IQuestion, 's3QuestionId'>
-): doc is IQuestion & { s3QuestionId: string } {
-	return typeof doc.s3QuestionId === 'string' && doc.s3QuestionId.length > 0;
-}
-
-/** @deprecated Slim pool docs without inline body — body fetched from S3 only. */
-export function hasS3OnlyBody(doc: IQuestion): doc is IQuestion & SlimPoolDoc {
-	return hasPersistedS3Id(doc) && !hasHotPoolBody(doc);
-}
+export interface IQuestion extends Document, HotPoolDoc {}
 
 const questionSchema = new Schema<IQuestion>(
 	{
 		apClass: { type: String, required: true },
 		unit: { type: String, required: true, default: 'all-units' },
-		contentHash: { type: String },
+		contentHash: { type: String, required: true },
 		topicsCovered: { type: String },
-		question: { type: String },
-		optionA: { type: String },
-		optionB: { type: String },
-		optionC: { type: String },
-		optionD: { type: String },
-		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'] },
-		explanation: { type: String },
-		s3QuestionId: { type: String, index: true },
+		question: { type: String, required: true },
+		optionA: { type: String, required: true },
+		optionB: { type: String, required: true },
+		optionC: { type: String, required: true },
+		optionD: { type: String, required: true },
+		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
+		explanation: { type: String, required: true },
+		s3QuestionId: { type: String, required: true, index: true },
 		lastServedAt: { type: Date, default: null },
 		status: {
 			type: String,

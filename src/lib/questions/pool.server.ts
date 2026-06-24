@@ -1,9 +1,8 @@
-import { SeenQuestion } from '$lib/questions/seen.server';
 import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { runCacheMissClusterFlow } from '$lib/questions/cache-miss.server';
 import { CacheMissLock } from '$lib/questions/cache-lock.server';
-import { isDuplicateKeyError, recordSeenQuestion } from '$lib/questions/util.server';
+import { isDuplicateKeyError } from '$lib/questions/util.server';
 
 const LOCK_WINDOW_MS = 10_000;
 
@@ -32,8 +31,6 @@ async function releaseReplenishLock(key: string): Promise<void> {
 
 export interface PoolDocument {
 	_id: { toString(): string };
-	s3QuestionId?: string;
-	contentHash?: string;
 	serveCount?: number;
 	maxServeCount?: number;
 }
@@ -50,40 +47,27 @@ interface PoolModel<TDoc extends PoolDocument> {
 	deleteOne(filter: Record<string, unknown>): Promise<unknown>;
 }
 
-export interface QuestionPoolConfig<
-	TDoc extends PoolDocument,
-	TCached extends { cached: boolean }
-> {
-	questionType: 'mcq';
+export interface McqPoolConfig<TDoc extends PoolDocument, TCached extends { cached: boolean }> {
 	logScope: string;
-	defaultUnit: string;
 	getPoolSize: () => number;
-	recentTopicsWindow: number;
 	normalizeUnit: (unit?: string | null) => string;
 	model: PoolModel<TDoc>;
-	runStartupMigration: () => Promise<void>;
 	getRecentTopics: (className: string, unit: string) => Promise<string[]>;
 	generateAndInsert: (className: string, unit: string) => Promise<string | null>;
 	serveClaimed: (
 		doc: TDoc,
 		className: string,
 		cacheUnit: string,
-		userId: string | null | undefined,
 		replenish: (className: string, unit: string) => void
 	) => Promise<TCached>;
 	generateLive: (className: string, unit: string, recentTopics?: string[]) => Promise<TCached>;
-	getContentHashFromResult: (result: TCached) => string;
 }
 
-export function createQuestionPool<TDoc extends PoolDocument, TCached extends { cached: boolean }>(
-	config: QuestionPoolConfig<TDoc, TCached>
+export function createMcqPool<TDoc extends PoolDocument, TCached extends { cached: boolean }>(
+	config: McqPoolConfig<TDoc, TCached>
 ) {
 	const replenishing = new Set<string>();
 	const inFlightMiss = new Map<string, Promise<TCached>>();
-
-	connectDb()
-		.then(() => config.runStartupMigration())
-		.catch(() => {});
 
 	async function claimDoc(filter: Record<string, unknown>): Promise<TDoc | null> {
 		const lockedUntil = new Date(Date.now() + LOCK_WINDOW_MS);
@@ -94,44 +78,9 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		);
 	}
 
-	async function claimForUser(
-		className: string,
-		cacheUnit: string,
-		userId: string | null | undefined
-	): Promise<TDoc | null> {
+	async function claimFromPool(className: string, cacheUnit: string): Promise<TDoc | null> {
 		await connectDb();
-
-		const baseFilter: Record<string, unknown> = { apClass: className, unit: cacheUnit };
-
-		if (userId) {
-			const seenHashes = await SeenQuestion.find(
-				{
-					userId,
-					apClass: className,
-					unit: cacheUnit,
-					questionType: config.questionType
-				},
-				{ contentHash: 1 }
-			)
-				.lean()
-				.then((docs) => docs.map((d) => d.contentHash));
-
-			if (seenHashes.length > 0) {
-				baseFilter['contentHash'] = { $nin: seenHashes };
-			}
-		}
-
-		let doc = await claimDoc(baseFilter);
-
-		if (!doc && userId) {
-			logger.info(
-				`[${config.logScope}] all pooled questions already seen by user, falling back to any`,
-				{ className, unit: cacheUnit, userId }
-			);
-			doc = await claimDoc({ apClass: className, unit: cacheUnit });
-		}
-
-		return doc;
+		return claimDoc({ apClass: className, unit: cacheUnit });
 	}
 
 	function releaseDoc(doc: TDoc, currentServeCount: number, maxServeCount: number): void {
@@ -156,7 +105,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 	function replenishPool(className: string, unit: string): void {
 		const cacheUnit = config.normalizeUnit(unit);
 		const key = `${className}::${cacheUnit}`;
-		const lockKey = `replenish::${config.questionType}::${key}`;
+		const lockKey = `replenish::mcq::${key}`;
 		if (replenishing.has(key)) return;
 		replenishing.add(key);
 
@@ -216,30 +165,18 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 	async function serveClaimedDoc(
 		doc: TDoc,
 		className: string,
-		cacheUnit: string,
-		userId: string | null | undefined
+		cacheUnit: string
 	): Promise<TCached> {
 		releaseDoc(doc, doc.serveCount ?? 0, doc.maxServeCount ?? 50);
-
-		if (userId && doc.contentHash) {
-			recordSeenQuestion(userId, doc.contentHash, className, cacheUnit, config.questionType).catch(
-				() => {}
-			);
-		}
-
-		return config.serveClaimed(doc, className, cacheUnit, userId, replenishPool);
+		return config.serveClaimed(doc, className, cacheUnit, replenishPool);
 	}
 
-	async function getQuestion(
-		className: string,
-		unit?: string,
-		userId?: string | null
-	): Promise<TCached> {
+	async function getQuestion(className: string, unit?: string): Promise<TCached> {
 		const cacheUnit = config.normalizeUnit(unit);
 
 		let doc: TDoc | null;
 		try {
-			doc = await claimForUser(className, cacheUnit, userId);
+			doc = await claimFromPool(className, cacheUnit);
 		} catch (err) {
 			logger.warn(`[${config.logScope}] DB read failed, falling back to live generation`, {
 				className,
@@ -250,10 +187,10 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		}
 
 		if (doc) {
-			return serveClaimedDoc(doc, className, cacheUnit, userId);
+			return serveClaimedDoc(doc, className, cacheUnit);
 		}
 
-		const missKey = `miss::${config.questionType}::${className}::${cacheUnit}`;
+		const missKey = `miss::mcq::${className}::${cacheUnit}`;
 
 		if (inFlightMiss.has(missKey)) {
 			logger.info(`[${config.logScope}] coalescing duplicate cache miss`, {
@@ -274,19 +211,13 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 				const { result, meta } = await runCacheMissClusterFlow<TCached>({
 					clusterLockKey: missKey,
 					tryClaim: async () => {
-						const claimed = await claimForUser(className, cacheUnit, userId);
+						const claimed = await claimFromPool(className, cacheUnit);
 						if (!claimed) return null;
-						return serveClaimedDoc(claimed, className, cacheUnit, userId);
+						return serveClaimedDoc(claimed, className, cacheUnit);
 					},
 					leaderRun: async () => {
 						const recentTopics = await config.getRecentTopics(className, cacheUnit).catch(() => []);
 						const gen = await config.generateLive(className, unit ?? '', recentTopics);
-						if (userId) {
-							const hash = config.getContentHashFromResult(gen);
-							recordSeenQuestion(userId, hash, className, cacheUnit, config.questionType).catch(
-								() => {}
-							);
-						}
 						return { ...gen, cached: false };
 					},
 					logScope: config.logScope
@@ -317,7 +248,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 	}
 
 	return {
-		claimForUser,
+		claimFromPool,
 		replenishPool,
 		releaseDoc,
 		getQuestion

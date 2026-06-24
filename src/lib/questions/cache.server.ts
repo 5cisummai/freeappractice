@@ -1,4 +1,4 @@
-import { Question, hasPersistedS3Id, type IQuestion } from '$lib/questions/cache-model.server';
+import { Question, type IQuestion } from '$lib/questions/cache-model.server';
 import { connectDb } from '$lib/server/db';
 import {
 	generateAPQuestion,
@@ -6,7 +6,7 @@ import {
 	type GenerateResult
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
-import { createQuestionPool } from '$lib/questions/pool.server';
+import { createMcqPool } from '$lib/questions/pool.server';
 import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
 import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
@@ -99,31 +99,16 @@ async function generateAndInsert(className: string, unit: string): Promise<strin
 	}
 }
 
-function poolDocQuestionId(doc: IQuestion): string {
-	if (!hasPersistedS3Id(doc)) {
-		throw new Error(`Hot pool doc ${doc._id.toString()} is missing s3QuestionId`);
-	}
-	return doc.s3QuestionId;
-}
-
 export type CachedResult = GenerateResult & { cached: boolean };
 
-const mcqPool = createQuestionPool<IQuestion, CachedResult>({
-	questionType: 'mcq',
+const mcqPool = createMcqPool<IQuestion, CachedResult>({
 	logScope: 'cache',
-	defaultUnit: '',
 	getPoolSize,
-	recentTopicsWindow: RECENT_TOPICS_WINDOW,
 	normalizeUnit: (unit) => normalizeUnit(unit),
 	model: Question,
-	runStartupMigration: () =>
-		Question.updateMany(
-			{ status: { $exists: false } },
-			{ $set: { status: 'available', serveCount: 0, lockedUntil: null } }
-		).then(() => undefined),
 	getRecentTopics: (className, unit) => getRecentTopics(className, unit, RECENT_TOPICS_WINDOW),
 	generateAndInsert,
-	serveClaimed: async (doc, className, cacheUnit, _userId, replenish) => {
+	serveClaimed: async (doc, className, cacheUnit, replenish) => {
 		replenish(className, cacheUnit);
 
 		const answer = hotPoolBodyFromDoc(doc);
@@ -134,14 +119,13 @@ const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 			provider: 'cache',
 			model: 'cached',
 			cached: true,
-			questionId: poolDocQuestionId(doc)
+			questionId: doc.s3QuestionId
 		};
 	},
 	generateLive: async (className, unit, recentTopics) => {
 		const result = await generateQuestionForPool(className, unit, recentTopics ?? []);
 		return { ...result, cached: false };
-	},
-	getContentHashFromResult: (result) => computeContentHash(result.answer.question)
+	}
 });
 
 export async function generateLiveCustomTopicMcq(
@@ -172,9 +156,11 @@ export async function generateAndStoreQuestion(
 	await connectDb();
 
 	const cacheUnit = normalizeUnit(unit);
-	const recentTopics = await getRecentTopics(className.trim(), cacheUnit, RECENT_TOPICS_WINDOW).catch(
-		() => []
-	);
+	const recentTopics = await getRecentTopics(
+		className.trim(),
+		cacheUnit,
+		RECENT_TOPICS_WINDOW
+	).catch(() => []);
 	const result = await generateQuestionForPool(className.trim(), unit ?? '', recentTopics);
 	return { ...result, cached: false };
 }
