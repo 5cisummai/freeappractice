@@ -15,6 +15,9 @@
 </script>
 
 <header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
+	<!--<div id="top-banner" class=" bg-primary py-2 text-center text-sm text-primary-foreground">
+		We are sorry for any account issues. We are working to fix them as soon as possible.
+	</div>-->
 	<div
 		class="relative mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
 	>

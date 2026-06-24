@@ -27,3 +27,5 @@ vite.config.ts.timestamp-*
 .fallow
 
 emergency_migration_backup.gz
+
+backups/
