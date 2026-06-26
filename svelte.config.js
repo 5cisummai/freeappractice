@@ -32,7 +32,6 @@ const config = {
 					'https://va.vercel-scripts.com',
 					'unsafe-inline',
 					'https://t.freeappractice.org',
-					'https://us.i.posthog.com',
 					'blob:'
 				],
 				// Svelte transitions and some third-party widgets inject inline styles.
@@ -57,6 +56,7 @@ const config = {
 					'https://cloudflareinsights.com',
 					'https://static.cloudflareinsights.com',
 					'https://va.vercel-scripts.com',
+					'https://t.freeappractice.org',
 					'https://us.posthog.com'
 				],
 				'frame-src': ['self', 'https://accounts.google.com'],
