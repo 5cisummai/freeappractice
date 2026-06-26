@@ -4,8 +4,14 @@ import { hasAnalyticsConsent } from '$lib/client/analytics-consent';
 
 let initialized = false;
 
+function isProduction() {
+	return import.meta.env.PROD;
+}
+
 export function initPostHogAnalytics() {
-	if (initialized || typeof window === 'undefined' || !hasAnalyticsConsent()) return;
+	if (!isProduction() || initialized || typeof window === 'undefined' || !hasAnalyticsConsent()) {
+		return;
+	}
 
 	posthog.init(PUBLIC_POSTHOG_PROJECT_TOKEN, {
 		api_host: 'https://t.freeappractice.org',
