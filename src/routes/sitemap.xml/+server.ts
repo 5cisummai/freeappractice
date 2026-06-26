@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
-import { listPublishedBlogEntries } from '$lib/server/services/blog';
-import { getAllPageSlugs, getPageBySlug, getSitemapPriority } from '$lib/practice-pages.js';
-import { getSiteUrl } from '$lib/site-url';
+import { listPublishedBlogEntries } from '$lib/blog/service.server';
+import { getAllPageSlugs, getPageBySlug, getSitemapPriority } from '$lib/catalog/practice-pages.js';
+import { getSiteUrl } from '$lib/auth/urls';
 
 export const prerender = true;
 
@@ -13,16 +13,14 @@ type SitemapEntry = {
 
 const entries: SitemapEntry[] = [
 	{ path: '/', changefreq: 'daily', priority: '1.0' },
+	{ path: '/subjects', changefreq: 'weekly', priority: '0.9' },
 	{ path: '/blog', changefreq: 'weekly', priority: '0.8' },
 	{ path: '/summer', changefreq: 'weekly', priority: '0.9' },
+	{ path: '/stats', changefreq: 'weekly', priority: '0.7' },
 	{ path: '/about', changefreq: 'weekly', priority: '0.8' },
 	{ path: '/changelog', changefreq: 'weekly', priority: '0.7' },
 	{ path: '/login', changefreq: 'monthly', priority: '0.5' },
 	{ path: '/signup', changefreq: 'monthly', priority: '0.5' },
-	{ path: '/forgot-password', changefreq: 'monthly', priority: '0.3' },
-	{ path: '/reset-password', changefreq: 'monthly', priority: '0.3' },
-	{ path: '/verify-email', changefreq: 'monthly', priority: '0.3' },
-	{ path: '/email-sent', changefreq: 'monthly', priority: '0.3' },
 	{ path: '/privacy', changefreq: 'monthly', priority: '0.4' },
 	{ path: '/terms', changefreq: 'monthly', priority: '0.4' }
 ];

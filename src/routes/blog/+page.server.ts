@@ -1,4 +1,4 @@
-import { listPublishedBlogEntries } from '$lib/server/services/blog';
+import { listPublishedBlogEntries } from '$lib/blog/service.server';
 import { getBlogAuthor } from '$lib/blog-display';
 import type { PageServerLoad } from './$types';
 

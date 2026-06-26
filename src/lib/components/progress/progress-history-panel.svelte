@@ -2,10 +2,9 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
-	import type { HistoryResponse } from '$lib/types/history.js';
+	import type { HistoryResponse } from '$lib/users/types.js';
 	import HistoryDataTable from '$lib/components/history/history-data-table.svelte';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
-	import { appEmptyState } from '$lib/app-ui.js';
 
 	const PAGE_SIZE = 20;
 
@@ -70,7 +69,9 @@
 {:else if errorMessage}
 	<p class="text-sm text-destructive">{errorMessage}</p>
 {:else if items.length === 0}
-	<div class={appEmptyState}>
+	<div
+		class="rounded-2xl border border-dashed border-border/70 p-12 text-center text-muted-foreground"
+	>
 		<p>No practice history yet.</p>
 		<p class="mt-2 text-sm">Answer questions while signed in to build your history.</p>
 		<a

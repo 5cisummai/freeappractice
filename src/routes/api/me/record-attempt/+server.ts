@@ -1,6 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/server/route-helpers';
-import { findOrCreateProgressEntry, findUserProfileOrFail, normalizeUnit } from '$lib/server/utils';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { findUserProfileOrFail } from '$lib/users/profile.server';
+import { findOrCreateProgressEntry } from '$lib/users/progress.server';
+import { normalizeUnit } from '$lib/questions/util.server';
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {

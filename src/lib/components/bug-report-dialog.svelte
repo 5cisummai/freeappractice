@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import type { BugReportContext } from '$lib/types/question.js';
+	import type { BugReportContext } from '$lib/questions/types.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { NativeSelect } from '$lib/components/ui/native-select/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
-	import { unitForProgress } from '$lib/constants/custom-unit';
+	import { unitForProgress } from '$lib/catalog/custom-unit';
 	import {
 		bugReportSchema,
 		type BugReportPayload,

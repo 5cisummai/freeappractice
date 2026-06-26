@@ -1,8 +1,12 @@
 import type { Handle } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
+import { FLAGS_SECRET } from '$env/static/private';
+import { createHandle } from 'flags/sveltekit';
 import { env } from '$env/dynamic/private';
-import { auth } from '$lib/auth';
+import { auth } from '$lib/auth/server';
+import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
-import { getAllowedOrigins } from '$lib/server/trusted-origins';
+import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 
 // ── In-memory rate limiter ──────────────────────────────────
 // TODO: For multi-instance (Vercel/Cloudflare) production deploys,
@@ -43,8 +47,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 const CORS_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
-const CORS_HEADERS = 'Content-Type, Authorization, X-Questions-Admin-Secret';
-const MAINTENANCE_MODE = env.MAINTENANCE_MODE === 'true';
+const CORS_HEADERS = 'Content-Type, Authorization';
 const ALLOWED_ORIGINS = getAllowedOrigins();
 
 function applyCorsHeaders(response: Response, origin: string | null): Response {
@@ -89,7 +92,7 @@ function postProcessResponse(
 	return applyCorsHeaders(response, origin);
 }
 
-export const handle: Handle = async ({ event, resolve }) => {
+const appHandle: Handle = async ({ event, resolve }) => {
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
 
@@ -114,30 +117,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 					'Access-Control-Max-Age': '86400'
 				}
 			}),
-			origin
-		);
-	}
-
-	if (
-		MAINTENANCE_MODE &&
-		event.url.pathname !== '/health' &&
-		!event.url.pathname.startsWith('/_app/') &&
-		!event.url.pathname.startsWith('/favicon')
-	) {
-		const isApi = event.url.pathname.startsWith('/api/');
-		return applyCorsHeaders(
-			new Response(
-				isApi
-					? JSON.stringify({ error: 'Maintenance mode' })
-					: 'Maintenance mode. Please try again shortly.',
-				{
-					status: 503,
-					headers: {
-						'Content-Type': isApi ? 'application/json' : 'text/plain; charset=utf-8',
-						'Retry-After': '3600'
-					}
-				}
-			),
 			origin
 		);
 	}
@@ -194,3 +173,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	return response;
 };
+
+export const handle = sequence(createHandle({ secret: FLAGS_SECRET, flags }), appHandle);

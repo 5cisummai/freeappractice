@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import type { ProgressEntry, StatsData } from '$lib/types/user-stats.js';
+	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -15,7 +15,6 @@
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import { appCard, appEmptyState, appPrimaryButton, appSectionTitle } from '$lib/app-ui.js';
 
 	type ProgressView = 'mastery' | 'history';
 
@@ -96,7 +95,7 @@
 	description="Track mastery by subject and review every question you've answered."
 >
 	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<BookOpenIcon class="size-4" />
@@ -107,7 +106,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -120,7 +119,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400"
@@ -133,7 +132,7 @@
 				</div>
 			</div>
 		</Card.Root>
-		<Card.Root class="{appCard} p-4">
+		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400"
@@ -164,19 +163,21 @@
 
 		<Tabs.Content value="mastery" class="space-y-6">
 			{#if !hasActivity}
-				<div class={appEmptyState}>
+				<div
+					class="rounded-2xl border border-dashed border-border/70 p-12 text-center text-muted-foreground"
+				>
 					<p>No progress yet. Go practice some questions!</p>
 					<div class="mt-4">
-						<Button href={resolve('/app/practice')} class={appPrimaryButton}
-							>Start practicing</Button
-						>
+						<Button href={resolve('/app/practice')} class="rounded-full">Start practicing</Button>
 					</div>
 				</div>
 			{:else}
 				{#if statsData.subjectBreakdown.length > 0}
 					<section class="space-y-4">
-						<h2 class={appSectionTitle}>Subject accuracy</h2>
-						<Card.Root class={appCard}>
+						<h2 class="font-display text-xl font-medium tracking-tight sm:text-2xl">
+							Subject accuracy
+						</h2>
+						<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
 							<div class="divide-y divide-border/70">
 								{#each statsData.subjectBreakdown as subject (subject.subject)}
 									<div class="flex items-center gap-4 px-5 py-4">
@@ -207,7 +208,9 @@
 				{#if grouped.length > 0}
 					<section class="space-y-4">
 						<div class="flex flex-wrap items-end justify-between gap-3">
-							<h2 class={appSectionTitle}>Mastery by unit</h2>
+							<h2 class="font-display text-xl font-medium tracking-tight sm:text-2xl">
+								Mastery by unit
+							</h2>
 							<p class="text-sm text-muted-foreground">
 								Sorted by lowest mastery first within each subject
 							</p>
@@ -215,7 +218,9 @@
 
 						<div class="grid gap-4 lg:grid-cols-2">
 							{#each grouped as subject (subject.apClass)}
-								<Card.Root class="{appCard} flex flex-col">
+								<Card.Root
+									class="flex flex-col rounded-2xl border border-border/60 shadow-sm ring-0"
+								>
 									<Card.Header class="border-b border-border/60 pb-4">
 										<div class="flex items-start justify-between gap-3">
 											<div class="min-w-0">

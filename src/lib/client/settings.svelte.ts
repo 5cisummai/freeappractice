@@ -1,12 +1,11 @@
 import { setMode } from 'mode-watcher';
 import { invalidateAll } from '$app/navigation';
 import { toast } from 'svelte-sonner';
-import { authClient } from '$lib/auth-client.js';
-import { authCallbackUrl } from '$lib/auth-callback-url.js';
+import { authClient } from '$lib/auth/client.js';
+import { authCallbackUrl } from '$lib/auth/urls.js';
 
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
-	fontSize: number;
 };
 
 type AccountUser = {
@@ -16,8 +15,7 @@ type AccountUser = {
 
 class SettingsController {
 	settings = $state<SettingsData>({
-		theme: 'system',
-		fontSize: 16
+		theme: 'system'
 	});
 	accountPending = $state(false);
 	deletePending = $state(false);
@@ -27,7 +25,7 @@ class SettingsController {
 
 		this.load();
 		setMode(this.settings.theme);
-		this.applyFontSize();
+		document.documentElement.style.fontSize = '';
 	}
 
 	private load() {
@@ -40,11 +38,7 @@ class SettingsController {
 					data.theme === 'light' || data.theme === 'dark' || data.theme === 'system'
 						? data.theme
 						: this.settings.theme;
-				const fontSize =
-					typeof data.fontSize === 'number' && data.fontSize >= 12 && data.fontSize <= 24
-						? data.fontSize
-						: this.settings.fontSize;
-				this.settings = { theme, fontSize };
+				this.settings = { theme };
 			} catch {
 				localStorage.removeItem('fap_settings');
 			}
@@ -58,23 +52,12 @@ class SettingsController {
 		} catch {
 			// Keep the current in-memory settings even if persistence fails.
 		}
-		this.applyFontSize();
 	}
 
 	setTheme(theme: 'light' | 'dark' | 'system') {
 		this.settings.theme = theme;
 		setMode(theme);
 		this.save();
-	}
-
-	setFontSize(size: number) {
-		this.settings.fontSize = size;
-		this.save();
-	}
-
-	private applyFontSize() {
-		if (typeof document === 'undefined') return;
-		document.documentElement.style.fontSize = `${this.settings.fontSize}px`;
 	}
 
 	async updateAccount(user: AccountUser, data: { name: string; email: string }) {

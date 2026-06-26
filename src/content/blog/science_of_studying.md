@@ -95,7 +95,7 @@ Here's a rough template for students 10–12 weeks out from AP exams:
 
 - Cover content by unit, but begin your Anki deck or retrieval practice immediately after each unit - don't wait until "review mode"
 - Do at least one set of written-response questions per week, graded against official rubrics
-- Use resources like [freeappractice.org](https://freeappractice.org) for unlimited AI-generated practice questions that adapt to the units you're studying
+- Use resources like [Free AP Practice](/) for unlimited AI-generated practice questions that adapt to the units you're studying
 
 **Weeks 7–9 (Active Retrieval Phase)**
 

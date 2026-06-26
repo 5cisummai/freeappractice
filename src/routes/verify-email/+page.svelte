@@ -5,8 +5,8 @@
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
-	import { authClient } from '$lib/auth-client.js';
-	import { authCallbackUrl } from '$lib/auth-callback-url.js';
+	import { authClient } from '$lib/auth/client.js';
+	import { authCallbackUrl } from '$lib/auth/urls.js';
 
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');

@@ -1,17 +1,16 @@
 /**
  * scripts/clear-cache.ts
  *
- * Drops every pre-generated question from the cache pool.
+ * Drops every pre-generated question from the Mongo cache pool.
+ * S3 objects are untouched — history and bookmarks keep working.
  *
  *   pnpm cache:clear
- *
- * Add --dry-run to print the count without deleting.
+ *   pnpm cache:clear --dry-run
  */
 
 import 'dotenv/config';
 import mongoose from 'mongoose';
 
-// ── Bootstrap ───────────────────────────────────────────────
 const DATABASE_URI = process.env.DATABASE_URI;
 if (!DATABASE_URI) {
 	console.error('Error: DATABASE_URI is not set in your environment / .env file.');
@@ -20,23 +19,13 @@ if (!DATABASE_URI) {
 
 const isDryRun = process.argv.includes('--dry-run');
 
-// ── Minimal inline schema (mirrors src/lib/server/models/question.ts) ─
 const questionSchema = new mongoose.Schema(
 	{
 		apClass: String,
 		unit: String,
-		question: String,
-		optionA: String,
-		optionB: String,
-		optionC: String,
-		optionD: String,
-		correctAnswer: String,
-		explanation: String,
-		lastServedAt: Date,
+		s3QuestionId: String,
 		status: String,
-		serveCount: Number,
-		maxServeCount: Number,
-		lockedUntil: Date
+		serveCount: Number
 	},
 	{ timestamps: true }
 );
@@ -45,7 +34,6 @@ const Question =
 	(mongoose.models['Question'] as mongoose.Model<mongoose.Document>) ??
 	mongoose.model('Question', questionSchema);
 
-// ── Main ───────────────────────────────────────────────────
 async function main() {
 	console.log(`Connecting to MongoDB…`);
 	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
@@ -60,21 +48,15 @@ async function main() {
 	console.log(
 		`Cache contains ${total} question(s): ${available} available, ${serving} serving, ${retired} retired.`
 	);
+	console.log('S3 question objects are not modified by this script.');
 
 	if (isDryRun) {
 		console.log('Dry-run mode — nothing deleted.');
-	} else {
-		const result = await Question.deleteMany({});
-		console.log(`✓ Deleted ${result.deletedCount} question(s) from the cache.`);
-
-		// Also clear SeenQuestion history
-		const seenSchema = new mongoose.Schema({ userId: String });
-		const SeenQuestion =
-			(mongoose.models['SeenQuestion'] as mongoose.Model<mongoose.Document>) ??
-			mongoose.model('SeenQuestion', seenSchema);
-		const seenResult = await SeenQuestion.deleteMany({});
-		console.log(`✓ Deleted ${seenResult.deletedCount} history records from SeenQuestion.`);
+		return;
 	}
+
+	const result = await Question.deleteMany({});
+	console.log(`✓ Deleted ${result.deletedCount} question(s) from the Mongo cache pool.`);
 }
 
 main()

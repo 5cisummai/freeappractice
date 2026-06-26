@@ -100,7 +100,7 @@ Both of these resources are completely free. The only cost is the willingness to
 
 ## A Word on Practice Platforms and How to Use Them
 
-There are now strong free platforms for AP practice questions. [freeappractice.org](https://freeappractice.org) generates unlimited AI-powered AP multiple choice questions across all major subjects with instant explanations. This is useful for building fluency - but with one important caveat.
+There are now strong free platforms for AP practice questions. [Free AP Practice](/) generates unlimited AI-powered AP multiple choice questions across all major subjects with instant explanations. This is useful for building fluency - but with one important caveat.
 
 Practice questions are only as valuable as the attention you bring to the explanation. The goal of a practice session isn't to get a high score - it's to understand why every answer is right or wrong, including the ones you got right by guessing or process-of-elimination. A student who does 10 practice questions and reads every explanation carefully will outperform a student who does 50 practice questions and just checks the score.
 

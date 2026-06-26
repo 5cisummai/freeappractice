@@ -1,7 +1,7 @@
 <script lang="ts">
 	import QuestionCard from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
-	import type { QuestionCardProps } from '$lib/types/question';
+	import type { QuestionCardProps } from '$lib/questions/types';
 
 	type QuestionShellProps = {
 		selectedClass?: string;

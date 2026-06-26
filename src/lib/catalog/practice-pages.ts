@@ -1,0 +1,214 @@
+import practicePagesData from '$lib/data/practice-pages.json';
+import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
+
+type PracticePageLinkKind =
+	| 'college-board'
+	| 'subject-tool'
+	| 'blog'
+	| 'external'
+	| 'internal'
+	| 'practice';
+
+type PracticePageLink = {
+	label: string;
+	href: string;
+	kind: PracticePageLinkKind;
+};
+
+export type PracticePage = {
+	slug: string;
+	type: 'class' | 'unit' | 'topic';
+	className: string;
+	unitName?: string;
+	customTopic?: string;
+	parentUnitSlug?: string;
+	seo: {
+		title: string;
+		description: string;
+		keywords?: string;
+		h1: string;
+		subtitle?: string;
+	};
+	article: {
+		paragraphs: string[];
+	};
+	links: PracticePageLink[];
+};
+
+/** Topic slug -> parent unit slug for breadcrumb and related-unit links. */
+const TOPIC_PARENT_UNIT_SLUG: Record<string, string> = {
+	'ap-biology/photosynthesis': 'ap-biology/unit-3',
+	'ap-biology/natural-selection': 'ap-biology/unit-7',
+	'ap-calculus-ab/limits': 'ap-calculus-ab/unit-1',
+	'ap-calculus-ab/derivatives': 'ap-calculus-ab/unit-2',
+	'ap-chemistry/stoichiometry': 'ap-chemistry/unit-4',
+	'ap-english-language/rhetorical-analysis': 'ap-english-language/unit-1',
+	'ap-psychology/memory': 'ap-psychology/unit-2',
+	'ap-us-history/constitution': 'ap-us-history/unit-3',
+	'ap-us-history/civil-war': 'ap-us-history/unit-5',
+	'ap-world-history/silk-road': 'ap-world-history/unit-2'
+};
+
+function validatePages(pages: PracticePage[]): void {
+	const slugSet = new Set<string>();
+	const courses = getCourses();
+
+	for (const page of pages) {
+		if (slugSet.has(page.slug)) {
+			throw new Error(`Duplicate practice page slug: ${page.slug}`);
+		}
+		slugSet.add(page.slug);
+
+		const course = courses.find((c) => c.name === page.className);
+		if (!course) {
+			throw new Error(`Unknown className "${page.className}" for slug ${page.slug}`);
+		}
+
+		if (page.type === 'unit') {
+			if (!page.unitName) {
+				throw new Error(`Unit page ${page.slug} missing unitName`);
+			}
+			const units = getUnitsForClass(page.className);
+			if (!units.includes(page.unitName)) {
+				throw new Error(
+					`Unit "${page.unitName}" not found in ${page.className} (slug: ${page.slug})`
+				);
+			}
+		}
+
+		if (page.type === 'topic') {
+			if (!page.customTopic?.trim()) {
+				throw new Error(`Topic page ${page.slug} missing customTopic`);
+			}
+		}
+
+		if (page.type === 'class' && page.unitName) {
+			throw new Error(`Class page ${page.slug} should not have unitName`);
+		}
+	}
+}
+
+const pages = (practicePagesData.pages ?? []) as PracticePage[];
+validatePages(pages);
+
+const pageBySlug = new Map(pages.map((page) => [page.slug, page]));
+
+const pagesByClass = new Map<string, PracticePage[]>();
+const unitsByClass = new Map<string, PracticePage[]>();
+const topicsByClass = new Map<string, PracticePage[]>();
+
+function extractUnitOrder(slug: string): number {
+	const match = slug.match(/\/unit-(\d+)$/);
+	return match ? Number.parseInt(match[1]!, 10) : 0;
+}
+
+for (const page of pages) {
+	const list = pagesByClass.get(page.className) ?? [];
+	list.push(page);
+	pagesByClass.set(page.className, list);
+
+	if (page.type === 'unit') {
+		const units = unitsByClass.get(page.className) ?? [];
+		units.push(page);
+		unitsByClass.set(page.className, units);
+	}
+
+	if (page.type === 'topic') {
+		const topics = topicsByClass.get(page.className) ?? [];
+		topics.push(page);
+		topicsByClass.set(page.className, topics);
+	}
+}
+
+for (const [, units] of unitsByClass) {
+	units.sort((a, b) => extractUnitOrder(a.slug) - extractUnitOrder(b.slug));
+}
+
+for (const [, topics] of topicsByClass) {
+	topics.sort((a, b) => (a.customTopic ?? '').localeCompare(b.customTopic ?? ''));
+}
+
+export function getClassSlugForPage(page: PracticePage): string {
+	return page.slug.split('/')[0]!;
+}
+
+export function getPracticePageHref(page: PracticePage): string {
+	return `/practice/${page.slug}`;
+}
+
+export function getPagesByClass(className: string): PracticePage[] {
+	return pagesByClass.get(className) ?? [];
+}
+
+export function getUnitPagesForClass(className: string): PracticePage[] {
+	return unitsByClass.get(className) ?? [];
+}
+
+export function getTopicPagesForClass(className: string): PracticePage[] {
+	return topicsByClass.get(className) ?? [];
+}
+
+export function getClassPracticePageFor(page: PracticePage): PracticePage | null {
+	const classSlug = getClassSlugForPage(page);
+	return pageBySlug.get(classSlug) ?? null;
+}
+
+export function getParentUnitPageForTopic(page: PracticePage): PracticePage | null {
+	if (page.type !== 'topic') return null;
+	const parentSlug = page.parentUnitSlug ?? TOPIC_PARENT_UNIT_SLUG[page.slug];
+	if (!parentSlug) return null;
+	return pageBySlug.get(parentSlug) ?? null;
+}
+
+export function getAdjacentUnitPages(
+	page: PracticePage
+): { prev?: PracticePage; next?: PracticePage } {
+	if (page.type !== 'unit') return {};
+	const units = getUnitPagesForClass(page.className);
+	const index = units.findIndex((unit) => unit.slug === page.slug);
+	if (index < 0) return {};
+	return {
+		prev: index > 0 ? units[index - 1] : undefined,
+		next: index < units.length - 1 ? units[index + 1] : undefined
+	};
+}
+
+export function formatUnitLabel(page: PracticePage): string {
+	if (page.type === 'unit' && page.unitName) {
+		return page.unitName.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '');
+	}
+	if (page.type === 'topic' && page.customTopic) {
+		return page.customTopic;
+	}
+	return page.seo.h1;
+}
+
+export function getClassPracticePageByClassName(className: string): PracticePage | null {
+	return pages.find((page) => page.type === 'class' && page.className === className) ?? null;
+}
+
+export function getClassPracticeHref(className: string): string | null {
+	const page = getClassPracticePageByClassName(className);
+	return page ? getPracticePageHref(page) : null;
+}
+
+export function getPageBySlug(slugParam: string): PracticePage | null {
+	const normalized = slugParam.replace(/^\/+|\/+$/g, '');
+	return pageBySlug.get(normalized) ?? null;
+}
+
+export function getAllPageSlugs(): string[] {
+	return pages.map((page) => page.slug);
+}
+
+export function getClassPracticePages(): PracticePage[] {
+	return pages
+		.filter((page) => page.type === 'class')
+		.sort((a, b) => a.className.localeCompare(b.className));
+}
+
+export function getSitemapPriority(page: PracticePage): string {
+	if (page.type === 'class') return '0.8';
+	if (page.type === 'topic') return '0.75';
+	return '0.7';
+}

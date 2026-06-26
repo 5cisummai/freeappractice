@@ -3,7 +3,6 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/page-shell.svelte';
-	import { appCard, appInsetPanel, appPrimaryButton } from '$lib/app-ui.js';
 
 	const blogResources = [
 		{
@@ -55,7 +54,7 @@
 	description="Curated study guides from our blog and external links worth keeping in your AP toolkit."
 >
 	<div class="grid gap-6 lg:grid-cols-2">
-		<Card.Root class="{appCard} h-full">
+		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
 			<Card.Header>
 				<Card.Title class="font-display text-lg font-medium tracking-tight">Blog</Card.Title>
 				<Card.Description>
@@ -65,12 +64,11 @@
 			<Card.Content class="space-y-4">
 				<div class="space-y-3">
 					{#each blogResources as resource (resource.href)}
-						<div class={appInsetPanel}>
+						<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
 							<p class="font-medium">{resource.label}</p>
 							<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
 							<div class="mt-3">
-								<Button variant="outline" href={resource.href} class={appPrimaryButton}>Open</Button
-								>
+								<Button variant="outline" href={resource.href} class="rounded-full">Open</Button>
 							</div>
 						</div>
 					{/each}
@@ -78,7 +76,7 @@
 			</Card.Content>
 		</Card.Root>
 
-		<Card.Root class="{appCard} h-full">
+		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
 			<Card.Header>
 				<Card.Title class="font-display text-lg font-medium tracking-tight">
 					External resources
@@ -87,7 +85,7 @@
 			</Card.Header>
 			<Card.Content class="space-y-3">
 				{#each externalResources as resource (resource.href)}
-					<div class={appInsetPanel}>
+					<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
 						<p class="font-medium">{resource.label}</p>
 						<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
 						<div class="mt-3">
@@ -96,7 +94,7 @@
 								href={resource.href}
 								target="_blank"
 								rel="noopener noreferrer"
-								class={appPrimaryButton}
+								class="rounded-full"
 							>
 								Visit site
 							</Button>

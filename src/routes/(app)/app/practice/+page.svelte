@@ -5,7 +5,7 @@
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import type { AnswerResult } from '$lib/components/question-card.svelte';
 	import { toast } from 'svelte-sonner';
-	import { unitForProgress } from '$lib/constants/custom-unit';
+	import { unitForProgress } from '$lib/catalog/custom-unit';
 	import PageShell from '$lib/components/page-shell.svelte';
 
 	let selectedClass = $state('');

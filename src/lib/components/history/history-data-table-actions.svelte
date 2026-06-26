@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { HistoryItem } from '$lib/types/history.js';
+	import type { HistoryItem } from '$lib/users/types.js';
 	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import { Button } from '$lib/components/ui/button/index.js';

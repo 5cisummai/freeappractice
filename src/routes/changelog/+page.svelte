@@ -3,6 +3,7 @@
 	import Topbar from '$lib/components/topbar.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import BackToHome from '$lib/components/back-to-home.svelte';
+	import { resolve } from '$app/paths';
 
 	const changelog = [
 		{
@@ -21,7 +22,6 @@
 				{
 					title: 'Infrastructure',
 					items: [
-						'Migration scripts and runbooks for moving existing users to Better Auth',
 						'Docker Compose config for local MongoDB during auth development',
 						'Updated environment variables and README for Better Auth setup'
 					]
@@ -583,6 +583,29 @@
 					</article>
 				{/each}
 			</div>
+
+			<section class="mt-16 rounded-2xl border border-border bg-muted/30 px-6 py-8">
+				<h2 class="text-xl font-semibold tracking-tight">Explore the site</h2>
+				<p class="mt-2 text-sm text-muted-foreground">
+					Jump to the pages mentioned throughout these release notes.
+				</p>
+				<ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+					<li>
+						<a href={resolve('/subjects')} class="underline-offset-2 hover:underline">Subjects</a>
+					</li>
+					<li>
+						<a href={resolve('/summer')} class="underline-offset-2 hover:underline"
+							>Summer guide</a
+						>
+					</li>
+					<li>
+						<a href={resolve('/stats')} class="underline-offset-2 hover:underline">Stats</a>
+					</li>
+					<li>
+						<a href={resolve('/blog')} class="underline-offset-2 hover:underline">Blog</a>
+					</li>
+				</ul>
+			</section>
 		</div>
 	</main>
 

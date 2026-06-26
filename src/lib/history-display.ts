@@ -1,4 +1,4 @@
-import type { HistoryItem } from '$lib/types/history.js';
+import type { HistoryItem } from '$lib/users/types.js';
 
 export function escapeHtml(value: string): string {
 	return value

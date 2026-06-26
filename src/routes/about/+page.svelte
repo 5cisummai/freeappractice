@@ -2,6 +2,8 @@
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
+	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button/index.js';
 
 	const socialLinks = [
 		{
@@ -159,6 +161,18 @@
 				>
 					Ajay Saravanan
 				</p>
+			</div>
+		</section>
+
+		<section class="mt-16 rounded-2xl border border-border bg-muted/30 px-6 py-8">
+			<h2 class="text-xl font-semibold tracking-tight">Start exploring</h2>
+			<p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+				Browse every AP subject, read study guides, or preview Unit 1 over the summer.
+			</p>
+			<div class="mt-5 flex flex-wrap gap-3">
+				<Button href={resolve('/subjects')} variant="default">Browse subjects</Button>
+				<Button href={resolve('/blog')} variant="outline">Read the blog</Button>
+				<Button href={resolve('/summer')} variant="outline">Summer study guide</Button>
 			</div>
 		</section>
 	</main>

@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	export type * from '$lib/types/question.js';
+	export type * from '$lib/questions/types.js';
 </script>
 
 <script lang="ts">
@@ -21,13 +21,13 @@
 		parseQuestionPayloadFromResponse,
 		resolveEffectiveUnit,
 		type QuestionApiResponse
-	} from '$lib/client/question-payload.js';
+	} from '$lib/questions/payload.js';
 	import type {
 		AnswerResult,
 		BugReportContext,
 		GeneratedQuestion,
 		QuestionCardProps
-	} from '$lib/types/question';
+	} from '$lib/questions/types';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
@@ -36,7 +36,7 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import { hashTopicKey, isCustomUnit } from '$lib/constants/custom-unit';
+	import { hashTopicKey, isCustomUnit } from '$lib/catalog/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(

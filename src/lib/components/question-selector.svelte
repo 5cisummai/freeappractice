@@ -1,5 +1,6 @@
 <script lang="ts">
-	import apClassesData from '$lib/data/ap-classes.json';
+	import { page } from '$app/state';
+	import { getCourses } from '$lib/catalog/ap-classes';
 	import { tick } from 'svelte';
 	import BugIcon from '@lucide/svelte/icons/bug';
 	import CheckIcon from '@lucide/svelte/icons/check';
@@ -13,14 +14,8 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils.js';
-	import { CUSTOM_UNIT_VALUE } from '$lib/constants/custom-unit';
+	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
 	import { Input } from '$lib/components/ui/input/index.js';
-
-	type Course = {
-		name: string;
-		semester1: string[];
-		semester2: string[];
-	};
 
 	type QuestionSelectorProps = {
 		selectedClass?: string;
@@ -33,12 +28,7 @@
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
 	};
 
-	const rawCourses = (apClassesData.courses ?? []) as Course[];
-	const courses = $derived.by(() => {
-		const lunch = rawCourses.filter((c) => c.name.toLowerCase().includes('ap lunch'));
-		const rest = rawCourses.filter((c) => !c.name.toLowerCase().includes('ap lunch'));
-		return [...rest, ...lunch];
-	});
+	const courses = $derived(getCourses());
 
 	let {
 		selectedClass = $bindable(''),
@@ -50,7 +40,17 @@
 		onSelectionChange
 	}: QuestionSelectorProps = $props();
 
-	const isCustomUnitSelected = $derived(selectedUnit === CUSTOM_UNIT_VALUE);
+	const allowCustomTopic = $derived(Boolean(page.data.customTopicEnabled));
+	const isCustomUnitSelected = $derived(
+		allowCustomTopic && selectedUnit === CUSTOM_UNIT_VALUE
+	);
+
+	$effect(() => {
+		if (!allowCustomTopic && selectedUnit === CUSTOM_UNIT_VALUE) {
+			selectedUnit = '';
+			customTopic = '';
+		}
+	});
 
 	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
 	const unitOptions = $derived(
@@ -223,12 +223,17 @@
 										{unit}
 									</Command.Item>
 								{/each}
-								<Command.Item value="custom-topic" onSelect={() => selectUnit(CUSTOM_UNIT_VALUE)}>
-									<CheckIcon
-										class={cn('mr-2 size-4 shrink-0', !isCustomUnitSelected && 'text-transparent')}
-									/>
-									Custom topic…
-								</Command.Item>
+								{#if allowCustomTopic}
+									<Command.Item value="custom-topic" onSelect={() => selectUnit(CUSTOM_UNIT_VALUE)}>
+										<CheckIcon
+											class={cn(
+												'mr-2 size-4 shrink-0',
+												!isCustomUnitSelected && 'text-transparent'
+											)}
+										/>
+										Custom topic…
+									</Command.Item>
+								{/if}
 							</Command.Group>
 						</Command.List>
 					</Command.Root>
@@ -294,7 +299,7 @@
 		</Popover.Root>
 	</div>
 
-	{#if selectedClass && isCustomUnitSelected}
+	{#if allowCustomTopic && selectedClass && isCustomUnitSelected}
 		<div class="space-y-2">
 			<Label for="custom-topic-input">Topic or subtopic</Label>
 			<Input

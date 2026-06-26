@@ -2,6 +2,7 @@
 	import Topbar from '$lib/components/topbar.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
+	import BlogRelatedLinks from '$lib/components/blog-related-links.svelte';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -76,7 +77,9 @@
 					{@html data.htmlContent}
 				</div>
 
-				<div class="mt-12 border-t border-border/70 pt-8">
+				<BlogRelatedLinks relatedPosts={data.relatedPosts} productCta={data.productCta} />
+
+				<div class="mt-8 border-t border-border/70 pt-8">
 					<a
 						href={resolve('/blog')}
 						class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"

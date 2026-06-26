@@ -1,5 +1,10 @@
-import type { PracticePage } from '$lib/practice-pages.js';
-import { PRODUCTION_SITE_URL } from '$lib/site-url';
+import type { PracticePage } from '$lib/catalog/practice-pages.js';
+import { PRODUCTION_SITE_URL } from '$lib/auth/urls';
+import {
+	formatUnitLabel,
+	getParentUnitPageForTopic,
+	getPracticePageHref
+} from '$lib/catalog/practice-pages.js';
 
 const BASE_URL = PRODUCTION_SITE_URL;
 
@@ -57,7 +62,10 @@ export function buildPracticePageJsonLd(page: PracticePage): Record<string, unkn
 export function buildPracticeBreadcrumbs(
 	page: PracticePage
 ): Array<{ label: string; href?: string }> {
-	const crumbs: Array<{ label: string; href?: string }> = [{ label: 'Home', href: '/' }];
+	const crumbs: Array<{ label: string; href?: string }> = [
+		{ label: 'Home', href: '/' },
+		{ label: 'Subjects', href: '/subjects' }
+	];
 
 	const classSlug = page.slug.split('/')[0]!;
 	crumbs.push({
@@ -67,11 +75,38 @@ export function buildPracticeBreadcrumbs(
 
 	if (page.type === 'unit' && page.unitName) {
 		crumbs.push({
-			label: page.unitName.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '')
+			label: formatUnitLabel(page)
 		});
-	} else if (page.type === 'topic' && page.customTopic) {
-		crumbs.push({ label: page.customTopic });
+	} else if (page.type === 'topic') {
+		const parentUnit = getParentUnitPageForTopic(page);
+		if (parentUnit) {
+			crumbs.push({
+				label: formatUnitLabel(parentUnit),
+				href: getPracticePageHref(parentUnit)
+			});
+		}
+		if (page.customTopic) {
+			crumbs.push({ label: page.customTopic });
+		}
 	}
 
 	return crumbs;
+}
+
+export function buildPracticeBreadcrumbJsonLd(
+	page: PracticePage
+): Record<string, unknown> {
+	const crumbs = buildPracticeBreadcrumbs(page);
+	const meta = buildPracticePageMeta(page);
+
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'BreadcrumbList',
+		itemListElement: crumbs.map((crumb, index) => ({
+			'@type': 'ListItem',
+			position: index + 1,
+			name: crumb.label,
+			...(crumb.href ? { item: `${BASE_URL}${crumb.href}` } : { item: meta.url })
+		}))
+	};
 }

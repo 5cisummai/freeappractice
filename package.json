@@ -1,7 +1,7 @@
 {
 	"name": "freeappractice-svelte",
 	"private": true,
-	"version": "1.4.1",
+	"version": "1.4.3",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -16,14 +16,8 @@
 		"cache:clear": "tsx scripts/clear-cache.ts",
 		"cache:warm": "tsx scripts/warm-cache-simple.ts",
 		"scaffold:practice-pages": "tsx scripts/scaffold-practice-pages.ts",
-		"auth:indexes": "tsx scripts/create-better-auth-indexes.ts",
-		"auth:restore-local": "bash scripts/restore-local-backup.sh",
-		"auth:migrate:dry": "tsx scripts/migrate-to-better-auth.ts",
-		"auth:migrate": "tsx scripts/migrate-to-better-auth.ts --commit",
-		"auth:repair-ids": "tsx scripts/repair-auth-user-ids.ts --commit",
-		"auth:repair-ids:dry": "tsx scripts/repair-auth-user-ids.ts",
-		"auth:validate": "tsx scripts/validate-better-auth-migration.ts",
-		"auth:verify": "tsx scripts/validate-better-auth-migration.ts"
+		"audit:internal-links": "tsx scripts/audit-internal-links.ts",
+		"auth:indexes": "tsx scripts/create-better-auth-indexes.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "latest",
@@ -38,6 +32,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.1",
 		"@types/node": "^24.13.2",
+		"@vercel/toolbar": "^0.2.6",
 		"bits-ui": "^2.18.1",
 		"clsx": "^2.1.1",
 		"eslint": "^10.5.0",
@@ -63,7 +58,6 @@
 	"dependencies": {
 		"@ai-sdk/openai": "^3.0.74",
 		"@aws-sdk/client-s3": "^3.1075.0",
-		"@aws-sdk/s3-request-presigner": "^3.1075.0",
 		"@tanstack/table-core": "^8.21.3",
 		"@vercel/analytics": "2.0.1",
 		"@vercel/functions": "^3.7.3",
@@ -73,6 +67,7 @@
 		"better-auth": "^1.6.20",
 		"dompurify": "^3.4.11",
 		"dotenv": "^17.4.2",
+		"flags": "^4.2.0",
 		"highlight.js": "^11.11.1",
 		"katex": "^0.16.47",
 		"marked": "^17.0.6",

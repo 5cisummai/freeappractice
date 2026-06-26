@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/server/route-helpers';
-import { buildProgressData } from '$lib/server/dashboard-data';
-import { findUserProfileOrFail } from '$lib/server/utils';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { buildProgressData } from '$lib/users/progress.server';
+import { findUserProfileOrFail } from '$lib/users/profile.server';
 
 export const GET = withAuthedHandler(
 	async (_event, userId) => {

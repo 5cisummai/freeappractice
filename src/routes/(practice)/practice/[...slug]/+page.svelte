@@ -1,12 +1,13 @@
 <script lang="ts">
 	import PracticeLanding from '$lib/components/practice-landing.svelte';
-	import { buildPracticePageJsonLd, buildPracticePageMeta } from '$lib/seo/practice-page-meta.js';
+	import { buildPracticePageJsonLd, buildPracticeBreadcrumbJsonLd, buildPracticePageMeta } from '$lib/seo/practice-page-meta.js';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const meta = $derived(buildPracticePageMeta(data.page));
 	const jsonLd = $derived(buildPracticePageJsonLd(data.page));
+	const breadcrumbJsonLd = $derived(buildPracticeBreadcrumbJsonLd(data.page));
 </script>
 
 <svelte:head>
@@ -40,6 +41,7 @@
 	<meta name="twitter:site" content="@freeappractice" />
 
 	{@html `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`}
+	{@html `<script type="application/ld+json">${JSON.stringify(breadcrumbJsonLd)}</script>`}
 </svelte:head>
 
 <PracticeLanding page={data.page} />

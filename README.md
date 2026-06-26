@@ -6,12 +6,14 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ## What's included
 
-- Public marketing pages: landing, about, subjects, summer study guide, blog, privacy, terms, and changelog.
+- Public marketing pages: landing, about, subjects, summer study guide, blog, stats, privacy, terms, and changelog.
 - Authenticated app at `/app` for dashboard, practice, progress, question history, resources, and settings.
-- Per-subject practice routes under `/practice/[...slug]`.
+- SEO practice landing pages under `/practice/[...slug]` (class, unit, and topic pages with internal linking).
 - AI-generated MCQs with optional custom topics, an in-app tutor, bookmarks, and attempt history.
+- Public generation stats at `/stats` (backed by `/api/question/generation-stats`).
 - Better Auth for email/password and Google sign-in (including Google One Tap when configured).
-- SvelteKit API routes for questions, user data, tutoring, blog content, S3 storage helpers, and bug reports.
+- SvelteKit API routes for questions, signed-in user data, tutoring, and bug reports.
+- Markdown blog posts in `src/content/blog/`; private question batches stored in S3 for bookmarks and history.
 
 ## Tech stack
 
@@ -20,7 +22,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - Tailwind CSS
 - MongoDB + Mongoose
 - [Better Auth](https://www.better-auth.com/) for sessions, email flows, and OAuth
-- [Vercel AI SDK](https://sdk.vercel.ai/) + OpenAI for question generation and tutor responses
+- [Vercel AI SDK](https://sdk.vercel.ai/) with an OpenAI-compatible API for question generation and tutor responses (OpenAI or [LM Studio](https://lmstudio.ai/) locally)
 - Resend for transactional email
 - AWS S3 for private question storage
 - Vercel for deployment (`@sveltejs/adapter-vercel`)
@@ -47,7 +49,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    cp .env.example .env
    ```
 
-3. (Optional) Start a local MongoDB instance:
+3. (Optional) Start a local MongoDB instance with `compose.yaml`:
 
    ```sh
    docker compose up -d
@@ -81,8 +83,8 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 | `pnpm lint` / `pnpm format`                   | ESLint and Prettier                                 |
 | `pnpm cache:clear` / `pnpm cache:warm`        | Manage the question cache                           |
 | `pnpm auth:indexes`                           | Create Better Auth MongoDB indexes                  |
-| `pnpm auth:migrate:dry` / `pnpm auth:migrate` | Dry-run or run legacy-user migration to Better Auth |
-| `pnpm auth:validate`                          | Validate a completed auth migration                 |
+| `pnpm scaffold:practice-pages`              | Regenerate `practice-pages.json` from AP catalog    |
+| `pnpm audit:internal-links`                 | Audit internal links across public and practice pages |
 
 ## Environment variables
 
@@ -93,8 +95,16 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 | `DATABASE_URI`       | MongoDB connection string                                                      |
 | `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
 | `BETTER_AUTH_URL`    | App base URL for auth callbacks (e.g. `http://localhost:5173`)                 |
-| `OPEN_AI_KEY`        | OpenAI API key                                                                 |
+| `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
 | `OPENAI_BASE_URL`    | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`)       |
+
+Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
+
+| Variable          | Purpose                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| `ADVANCED_MODEL`  | Model for STEM and other advanced subjects                     |
+| `BASIC_MODEL`     | Model for humanities and lighter subjects                      |
+| `TUTOR_MODEL`     | Model for the in-app tutor chat                                |
 
 Commonly needed for full functionality:
 
@@ -104,11 +114,29 @@ Commonly needed for full functionality:
 | `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client             |
 | `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                      |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches   |
+| `AWS_SESSION_TOKEN`                                                              | Optional temporary/assumed-role credentials |
 | `PUBLIC_BASE_URL`                                                              | Canonical site URL                       |
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports |
 | `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                 |
 
-Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, rate-limit vars, `MAINTENANCE_MODE`, and `QUESTIONS_S3_ADMIN_SECRET` for the admin batch-analyze endpoint. See `.env.example` for defaults and comments.
+Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, and rate-limit vars. See `.env.example` for defaults and comments.
+
+### Local AI with LM Studio
+
+To run question generation and tutoring against a local model instead of OpenAI:
+
+1. Start LM Studio and load a model with the local server enabled (default `http://localhost:1234/v1`).
+2. Set in `.env`:
+
+   ```env
+   OPENAI_BASE_URL=http://localhost:1234/v1
+   OPEN_AI_KEY=lm-studio
+   ADVANCED_MODEL=your-loaded-model-id
+   BASIC_MODEL=your-loaded-model-id
+   TUTOR_MODEL=your-loaded-model-id
+   ```
+
+   Use the model identifier shown in LM Studio for the `*_MODEL` values.
 
 ## API overview
 
@@ -116,7 +144,7 @@ Routes live under `src/routes/api` as SvelteKit server endpoints.
 
 ### Authentication (Better Auth)
 
-All auth flows are handled by Better Auth at `/api/auth/*` (sign-up, sign-in, sign-out, email verification, password reset, Google OAuth, session management, account deletion, and email change). Use the Better Auth client in `src/lib/auth-client.ts` from the browser; do not call legacy `/api/auth/register` or `/api/auth/login` endpoints — those were removed in v1.4.1.
+All auth flows are handled by Better Auth at `/api/auth/*` (sign-up, sign-in, sign-out, email verification, password reset, Google OAuth, session management, account deletion, and email change). Use the Better Auth client in `src/lib/auth/client.ts` from the browser; do not call legacy `/api/auth/register` or `/api/auth/login` endpoints — those were removed in v1.4.1.
 
 ### Signed-in user data (`/api/me/*`)
 
@@ -136,23 +164,18 @@ These routes require an active Better Auth session:
 | Method | Route                            | Description                             |
 | ------ | -------------------------------- | --------------------------------------- |
 | `POST` | `/api/question`                  | Generate or return a cached AP question |
-| `GET`  | `/api/question/[id]`             | Fetch a stored question by ID           |
 | `POST` | `/api/question/cache/generate`   | Prime the question cache                |
-| `GET`  | `/api/question/cache/stats`      | Cache status                            |
 | `GET`  | `/api/question/generation-stats` | Public read-only generation counters    |
 
 ### Other
 
-| Method | Route                                                | Description                                                      |
-| ------ | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `GET`  | `/api/blog`, `/api/blog/[slug]`                      | Published blog data                                              |
-| `POST` | `/api/tutor/chat`, `/api/tutor/greeting`             | AI tutor assistant                                               |
-| `POST` | `/api/bug-report`                                    | Submit bug reports as GitHub Issues (rate-limited per IP)        |
-| `POST` | `/api/s3/presign-upload`, `/api/s3/presign-download` | S3 signed URLs                                                   |
-| `POST` | `/api/admin/questions/batch-analyze`                 | Admin-only S3 batch analysis (`X-Questions-Admin-Secret` header) |
-| `GET`  | `/health`                                            | Health check                                                     |
+| Method | Route                                    | Description                                               |
+| ------ | ---------------------------------------- | --------------------------------------------------------- |
+| `POST` | `/api/tutor/chat`, `/api/tutor/greeting` | AI tutor assistant                                        |
+| `POST` | `/api/bug-report`                        | Submit bug reports as GitHub Issues (rate-limited per IP) |
+| `GET`  | `/health`                                | Health check                                              |
 
-Optional Vercel Analytics are enabled only after a user opts in inside the app.
+Optional Vercel Analytics and Speed Insights load only after a user opts in inside the app.
 
 ## Bug reports
 
@@ -195,4 +218,4 @@ If you fork the code to build something of your own, give it a completely differ
 - Question generation and grading are API-driven; the UI is fully SvelteKit.
 - The landing page routes authenticated users into `/app`.
 - The blog and summer study guide are meant to bridge reading content with active practice.
-- Auth migration from the pre–Better Auth system is documented in the changelog and supported by the `pnpm auth:*` scripts.
+- Practice landing pages and the stats page are public; signed-in features live under `/app`.

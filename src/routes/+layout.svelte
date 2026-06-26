@@ -8,12 +8,14 @@
 	import GoogleOneTapPrompt from '$lib/components/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
+	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		privacy.init();
+		if (import.meta.env.DEV) mountVercelToolbar();
 	});
 </script>
 
