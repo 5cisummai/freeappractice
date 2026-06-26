@@ -7,6 +7,76 @@
 
 	const changelog = [
 		{
+			version: '1.4.3',
+			date: 'June 24, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Practice landing pages for every AP class, unit, and topic at /practice — easier to find and share study pages',
+						'Practice hub navigation to browse units, featured topics, and jump to related pages',
+						'Public generation stats on /stats showing how many questions have been created across subjects'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Breadcrumbs and clearer navigation on practice pages',
+						'Related links on blog posts to surface more study resources',
+						'Updated footer with contact links and more consistent site navigation',
+						'Simplified settings by removing the font size control',
+						'Cleaner question history table in the Progress tab'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: ['Practice page and question card bug fixes']
+				}
+			]
+		},
+		{
+			version: '1.4.2',
+			date: 'June 23, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Google One Tap sign-in for faster account access',
+						'Redesigned question history in Progress — sortable table, detail view, and pagination',
+						'Refreshed practice subject pages with a cleaner layout',
+						'Blog posts now show cover images',
+						'Homepage aspiring-students section with auto-scrolling highlights',
+						'Consistent hero headers across public pages (about, changelog, stats, and more)'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Updated about page',
+						'Refined app sidebar layout',
+						'Homepage features section refresh',
+						'App-wide toast notifications for action feedback',
+						'Progress and history page polish'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'Fixed AI tutor display in fullscreen question mode',
+						'Fixed broken Resources link in the app',
+						'Settings reset and question flow reliability fixes'
+					]
+				},
+				{
+					title: 'Changes',
+					items: [
+						'Practice focused on multiple-choice questions (written-response/FRQ mode removed)',
+						'Simplified settings by removing unused options'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.1',
 			date: 'June 19, 2026',
 			sections: [
@@ -551,7 +621,7 @@
 			<PublicPageHero
 				title="Changelog"
 				description="Release notes and updates for Free AP Practice."
-				meta="Last Updated: June 19, 2026"
+				meta="Last Updated: June 25, 2026"
 			/>
 
 			<div class="space-y-12 pt-8">
