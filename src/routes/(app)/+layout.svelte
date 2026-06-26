@@ -23,15 +23,15 @@
 
 <Toaster />
 
-<Sidebar.Provider>
+<Sidebar.Provider class="bg-sidebar">
 	<AppSidebar isAdmin={data.isAdmin} />
 	<Sidebar.Inset>
 		<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 			<SidebarTrigger />
 		</header>
 
-		<main id="main-content" class="flex-1">
+		<div class="flex-1">
 			{@render children()}
-		</main>
+		</div>
 	</Sidebar.Inset>
 </Sidebar.Provider>
