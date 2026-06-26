@@ -1,13 +1,27 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import PracticeLanding from '$lib/components/practice-landing.svelte';
-	import { buildPracticePageJsonLd, buildPracticeBreadcrumbJsonLd, buildPracticePageMeta } from '$lib/seo/practice-page-meta.js';
+	import {
+		buildPracticePageJsonLd,
+		buildPracticeBreadcrumbJsonLd,
+		buildPracticePageMeta
+	} from '$lib/seo/practice-page-meta.js';
 	import type { PageData } from './$types';
+	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
 	let { data }: { data: PageData } = $props();
 
 	const meta = $derived(buildPracticePageMeta(data.page));
 	const jsonLd = $derived(buildPracticePageJsonLd(data.page));
 	const breadcrumbJsonLd = $derived(buildPracticeBreadcrumbJsonLd(data.page));
+
+	onMount(() => {
+		capturePostHogEvent('practice_page_viewed', {
+			ap_class: data.page.className,
+			page_type: data.page.type,
+			unit: 'unitName' in data.page ? data.page.unitName : undefined
+		});
+	});
 </script>
 
 <svelte:head>

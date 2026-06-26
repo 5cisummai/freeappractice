@@ -36,7 +36,7 @@
 			<PublicPageHero
 				title="Privacy Policy"
 				description="How we collect, use, and protect your information when you use Free AP Practice."
-				meta="Last Updated: May 28, 2026"
+				meta="Last Updated: June 25, 2026"
 			/>
 
 			<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -73,6 +73,11 @@
 						<li>Browser and device information sent through standard HTTP headers</li>
 						<li>
 							Usage information such as page visits, feature interactions, and authentication state
+						</li>
+						<li>
+							<strong>When optional analytics are enabled:</strong> product analytics events, performance
+							signals, client-side error reports, and session replay data collected through PostHog and
+							Vercel Analytics
 						</li>
 					</ul>
 					<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
@@ -116,7 +121,12 @@
 					<p>
 						We use HTTP-only session cookies to keep you signed in, along with local browser storage
 						for theme preferences, optional analytics choice, and in-progress practice state. We
-						also use a first-party cookie to remember sidebar state. We do not use third-party
+						also use a first-party cookie to remember sidebar state.
+					</p>
+					<p class="mt-2">
+						If you accept optional analytics, PostHog may set first-party cookies and use local
+						storage to remember your device, session, and analytics preferences. Vercel Analytics and
+						Speed Insights may also load only after you opt in. We do not use third-party
 						advertising cookies. If you use a shared device, you should sign out when finished.
 					</p>
 				</section>
@@ -124,10 +134,26 @@
 				<section>
 					<h2 class="text-xl font-semibold">6. Optional Analytics</h2>
 					<p>
-						Optional analytics may be provided by Vercel Analytics and Vercel Speed Insights. If you
-						choose to enable them, we may collect page views and performance-related signals to
-						understand how the Service is used and to improve reliability. You can change this
-						preference in Settings at any time.
+						Optional analytics are off by default. A consent banner asks before any analytics tools
+						load. If you choose to enable them, we may use:
+					</p>
+					<ul class="mt-2 list-disc space-y-1 pl-6">
+						<li>
+							<strong>PostHog:</strong> product analytics, feature usage events, client-side error
+							tracking, and session replay to understand how the Service is used and to improve
+							reliability
+						</li>
+						<li>
+							<strong>Vercel Analytics and Speed Insights:</strong> page views and performance-related
+							signals
+						</li>
+					</ul>
+					<p class="mt-2">
+						When analytics are disabled, PostHog and Vercel analytics scripts do not load and we do
+						not send optional analytics events from your browser. Some server-side API activity is
+						still logged for security and operations, but optional product-analytics events tied to
+						your account are not sent unless you have opted in. You can change this preference in
+						Settings at any time.
 					</p>
 				</section>
 
@@ -153,7 +179,14 @@
 							bug report form
 						</li>
 						<li><strong>Resend:</strong> delivery of verification and reset emails</li>
-						<li><strong>Vercel:</strong> website hosting and deployment infrastructure</li>
+						<li>
+							<strong>PostHog:</strong> optional product analytics, error tracking, and session replay
+							when you opt in
+						</li>
+						<li>
+							<strong>Vercel:</strong> website hosting, deployment infrastructure, and optional
+							analytics when you opt in
+						</li>
 					</ul>
 					<p class="mt-2">
 						Each third party has its own terms and privacy practices. We do not sell your personal

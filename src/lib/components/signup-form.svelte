@@ -10,6 +10,7 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/google-logo.svelte';
+	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -46,6 +47,8 @@
 				errorMessage = error.message ?? 'Registration failed';
 				return;
 			}
+			identifyPostHogUser(email, { name });
+			capturePostHogEvent('user_signed_up', { method: 'email' });
 			goto(`${resolve('/email-sent')}?email=${encodeURIComponent(email)}`);
 		} catch {
 			errorMessage = 'Network error. Please try again.';

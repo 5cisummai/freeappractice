@@ -3,6 +3,7 @@ import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { findOrCreateProgressEntry } from '$lib/users/progress.server';
 import { normalizeUnit } from '$lib/questions/util.server';
+import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {
@@ -39,6 +40,20 @@ export const POST = withAuthedHandler(
 		progressEntry.lastAttemptAt = new Date();
 
 		await user.save();
+
+		capturePostHogServerEvent(event.request, {
+			distinctId: userId,
+			event: 'question_attempt_recorded',
+			properties: {
+				question_id: questionId,
+				ap_class: apClass,
+				unit: normalizedUnit,
+				was_correct: wasCorrect,
+				time_taken_ms: timeTakenMs ?? 0,
+				mastery: progressEntry.mastery,
+				total_attempts: progressEntry.totalAttempts
+			}
+		});
 
 		return json({
 			message: 'Attempt recorded successfully',

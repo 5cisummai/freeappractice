@@ -16,6 +16,7 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/google-logo.svelte';
+	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -44,6 +45,8 @@
 						: (error.message ?? 'Login failed');
 				return;
 			}
+			identifyPostHogUser(email);
+			capturePostHogEvent('user_logged_in', { method: 'email' });
 			goto(resolve('/app'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';

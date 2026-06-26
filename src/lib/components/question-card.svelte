@@ -17,6 +17,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import {
 		parseQuestionPayloadFromResponse,
 		resolveEffectiveUnit,
@@ -350,6 +351,14 @@
 
 		onAnswered?.(result);
 
+		capturePostHogEvent('question_answered', {
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			question_id: result.questionId,
+			is_correct: result.isCorrect,
+			time_taken_ms: result.timeTakenMs
+		});
+
 		if (autoShowExplanation && currentQuestion?.explanation) {
 			showExplanation = true;
 		}
@@ -361,11 +370,21 @@
 
 	async function handleSkipQuestion(): Promise<void> {
 		onSkip?.();
+		capturePostHogEvent('question_skipped', {
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			question_id: currentQuestion?.questionId
+		});
 		await loadQuestion('skip');
 	}
 
 	async function handleNotLearnedQuestion(): Promise<void> {
 		onNotLearned?.();
+		capturePostHogEvent('question_marked_not_learned', {
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			question_id: currentQuestion?.questionId
+		});
 		await loadQuestion('not-learned');
 	}
 

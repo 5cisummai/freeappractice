@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { chat } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
+import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -20,6 +21,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (!question || !message) {
 			return json({ error: 'Question and message are required' }, { status: 400 });
 		}
+
+		capturePostHogServerEvent(request, {
+			distinctId: 'anonymous',
+			event: 'tutor_chat_started',
+			properties: {
+				ap_class: apClass ?? '',
+				unit: unit ?? '',
+				has_prior_conversation: Array.isArray(conversationHistory) && conversationHistory.length > 0
+			}
+		});
 
 		const stream = new ReadableStream({
 			async start(controller) {

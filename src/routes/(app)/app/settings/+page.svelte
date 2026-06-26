@@ -126,7 +126,8 @@
 						<div class="space-y-0.5">
 							<Label for="analytics-toggle">Optional analytics</Label>
 							<p class="text-sm text-muted-foreground">
-								Used to understand traffic and performance on this personal project.
+								When enabled, PostHog and Vercel Analytics may collect page views, feature usage,
+								performance signals, and session replay to help improve this personal project.
 							</p>
 						</div>
 						<Switch

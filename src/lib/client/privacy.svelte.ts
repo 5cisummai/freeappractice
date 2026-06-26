@@ -1,9 +1,17 @@
 import { injectAnalytics } from '@vercel/analytics/sveltekit';
 import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
-
-const ANALYTICS_CONSENT_KEY = 'fap_analytics_consent';
-
-type AnalyticsConsent = 'granted' | 'denied' | null;
+import type { AnalyticsConsent } from '$lib/analytics-consent';
+import {
+	clearAnalyticsConsentStorage,
+	persistAnalyticsConsent,
+	readAnalyticsConsent,
+	syncAnalyticsConsentCookie
+} from '$lib/client/analytics-consent';
+import {
+	capturePostHogEvent,
+	initPostHogAnalytics,
+	teardownPostHogAnalytics
+} from '$lib/client/posthog-analytics';
 
 function createPrivacyState() {
 	let analyticsConsent = $state<AnalyticsConsent>(null);
@@ -25,13 +33,16 @@ function createPrivacyState() {
 	function init() {
 		if (initialized || typeof window === 'undefined') return;
 
-		const saved = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+		syncAnalyticsConsentCookie();
+
+		const saved = readAnalyticsConsent();
 		if (saved === 'granted' || saved === 'denied') {
 			analyticsConsent = saved;
 		}
 
 		initialized = true;
 		if (analyticsConsent === 'granted') {
+			initPostHogAnalytics();
 			loadAnalytics();
 		}
 	}
@@ -39,16 +50,18 @@ function createPrivacyState() {
 	function setAnalyticsConsent(consent: Exclude<AnalyticsConsent, null>) {
 		analyticsConsent = consent;
 		initialized = true;
-
-		if (typeof window !== 'undefined') {
-			localStorage.setItem(ANALYTICS_CONSENT_KEY, consent);
-		}
+		persistAnalyticsConsent(consent);
 
 		if (consent === 'granted') {
+			initPostHogAnalytics();
 			loadAnalytics();
+			capturePostHogEvent('analytics_consent_changed', { consent: 'granted' });
+			return;
 		}
 
-		if (consent === 'denied' && analyticsLoaded && typeof window !== 'undefined') {
+		teardownPostHogAnalytics();
+
+		if (analyticsLoaded && typeof window !== 'undefined') {
 			window.location.reload();
 		}
 	}
@@ -56,10 +69,8 @@ function createPrivacyState() {
 	function clearAnalyticsConsent() {
 		analyticsConsent = null;
 		initialized = true;
-
-		if (typeof window !== 'undefined') {
-			localStorage.removeItem(ANALYTICS_CONSENT_KEY);
-		}
+		teardownPostHogAnalytics();
+		clearAnalyticsConsentStorage();
 	}
 
 	return {

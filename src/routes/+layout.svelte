@@ -7,6 +7,7 @@
 	import SkipToMain from '$lib/components/skip-to-main.svelte';
 	import GoogleOneTapPrompt from '$lib/components/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
+	import { resolve } from '$app/paths';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
@@ -36,8 +37,10 @@
 				<div class="space-y-1">
 					<p class="font-semibold text-foreground">Optional analytics</p>
 					<p class="text-sm leading-6 text-muted-foreground">
-						This personal project uses optional analytics to understand traffic and performance.
-						Nothing loads until you choose. You can change this later in Settings.
+						This personal project may use optional analytics (PostHog and Vercel) to understand
+						traffic, performance, and product usage. Nothing loads until you choose. You can change
+						this later in Settings. See our
+						<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 					</p>
 				</div>
 				<div class="flex flex-wrap gap-2 sm:shrink-0">

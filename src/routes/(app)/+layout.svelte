@@ -1,10 +1,18 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
+	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { data, children } = $props();
+
+	onMount(() => {
+		if (data.user) {
+			identifyPostHogUser(data.user.email, { name: data.user.name });
+		}
+	});
 </script>
 
 <svelte:head>
