@@ -15,6 +15,9 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
+		paths: {
+			relative: false
+		},
 		csp: {
 			// 'auto' uses hashes for prerendered pages and nonces for SSR pages.
 			// This lets SvelteKit allow its own inline runtime scripts without keeping
@@ -51,7 +54,8 @@ const config = {
 					'https://accounts.google.com',
 					'https://cloudflareinsights.com',
 					'https://static.cloudflareinsights.com',
-					'https://va.vercel-scripts.com'
+					'https://va.vercel-scripts.com',
+					'https://us.posthog.com'
 				],
 				'frame-src': ['self', 'https://accounts.google.com'],
 				'worker-src': ['self', 'blob:'],

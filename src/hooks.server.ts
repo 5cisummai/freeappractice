@@ -1,4 +1,4 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { FLAGS_SECRET } from '$env/static/private';
 import { createHandle } from 'flags/sveltekit';
@@ -7,6 +7,7 @@ import { auth } from '$lib/auth/server';
 import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
+import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 // ── In-memory rate limiter ──────────────────────────────────
 // TODO: For multi-instance (Vercel/Cloudflare) production deploys,
@@ -92,6 +93,43 @@ function postProcessResponse(
 	return applyCorsHeaders(response, origin);
 }
 
+const posthogProxyHandle: Handle = async ({ event, resolve }) => {
+	const { pathname } = event.url;
+
+	if (pathname.startsWith('/ingest')) {
+		const useAssetHost =
+			pathname.startsWith('/ingest/static/') || pathname.startsWith('/ingest/array/');
+		const hostname = useAssetHost ? 'us-assets.i.posthog.com' : 'us.i.posthog.com';
+
+		const url = new URL(event.request.url);
+		url.protocol = 'https:';
+		url.hostname = hostname;
+		url.port = '443';
+		url.pathname = pathname.replace(/^\/ingest/, '');
+
+		const headers = new Headers(event.request.headers);
+		headers.set('host', hostname);
+		headers.set('accept-encoding', '');
+
+		const clientIp = event.request.headers.get('x-forwarded-for') || event.getClientAddress();
+		if (clientIp) {
+			headers.set('x-forwarded-for', clientIp);
+		}
+
+		const response = await fetch(url.toString(), {
+			method: event.request.method,
+			headers,
+			body: event.request.body,
+			// @ts-expect-error - duplex is required for streaming request bodies
+			duplex: 'half'
+		});
+
+		return response;
+	}
+
+	return resolve(event);
+};
+
 const appHandle: Handle = async ({ event, resolve }) => {
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
@@ -174,4 +212,25 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle = sequence(createHandle({ secret: FLAGS_SECRET, flags }), appHandle);
+export const handle = sequence(
+	createHandle({ secret: FLAGS_SECRET, flags }),
+	posthogProxyHandle,
+	appHandle
+);
+
+export const handleError: HandleServerError = async ({ error, event, status, message }) => {
+	capturePostHogServerEvent(event.request, {
+		distinctId: 'server',
+		event: 'server_error',
+		properties: {
+			error: error instanceof Error ? error.message : String(error),
+			status,
+			message
+		}
+	});
+
+	return {
+		message,
+		status
+	};
+};

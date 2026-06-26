@@ -36,7 +36,7 @@
 			<PublicPageHero
 				title="Terms of Service"
 				description="The rules and guidelines for using Free AP Practice."
-				meta="Last Updated: May 28, 2026"
+				meta="Last Updated: June 25, 2026"
 			/>
 
 			<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -105,7 +105,8 @@
 					<p>
 						The Service depends on third-party providers, including OpenAI for question generation,
 						Google for sign-in, MongoDB for database storage, AWS S3 for file storage, Resend for
-						transactional emails, Vercel for hosting and deployment, and GitHub for bug-report
+						transactional emails, PostHog for optional product analytics when you opt in, Vercel for
+						hosting, deployment, and optional analytics when you opt in, and GitHub for bug-report
 						handling. Those providers may process data according to their own terms and privacy
 						policies.
 					</p>

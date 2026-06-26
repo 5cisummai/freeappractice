@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
+import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {
@@ -20,9 +21,19 @@ export const POST = withAuthedHandler(
 
 		await user.save();
 
+		const bookmarked = index === -1;
+		capturePostHogServerEvent(event.request, {
+			distinctId: userId,
+			event: 'question_bookmark_toggled',
+			properties: {
+				question_id: questionId,
+				bookmarked
+			}
+		});
+
 		return json({
-			message: index > -1 ? 'Bookmark removed' : 'Bookmark added',
-			bookmarked: index === -1
+			message: bookmarked ? 'Bookmark added' : 'Bookmark removed',
+			bookmarked
 		});
 	},
 	{ logLabel: 'Bookmark error', errorMessage: 'Failed to bookmark question' }
