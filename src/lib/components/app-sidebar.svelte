@@ -11,19 +11,23 @@
 	import CompassIcon from '@lucide/svelte/icons/compass';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
+	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
 
-	let { user }: { user: { name: string; email: string } } = $props();
+	let { isAdmin }: { isAdmin: boolean } = $props();
 
-	const navItems = [
+	const baseNavItems = [
 		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
 		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
 		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
 		{ href: '/app/resources', label: 'Resources', icon: CompassIcon },
 		{ href: '/app/settings', label: 'Settings', icon: SettingsIcon }
 	] as const;
+
+	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
+	const navItems = $derived(isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems);
 
 	function isActive(href: (typeof navItems)[number]['href']): boolean {
 		return page.url.pathname === resolve(href);
@@ -48,7 +52,7 @@
 	}
 </script>
 
-<Sidebar.Root collapsible="icon">
+<Sidebar.Root collapsible="offcanvas" variant="inset">
 	<Sidebar.Header class="h-14 justify-center">
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>
