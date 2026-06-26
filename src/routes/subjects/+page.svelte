@@ -45,35 +45,8 @@
 			class="mt-6"
 			align="start"
 			title="AP Subjects"
-			description="Every supported AP course in one place—open a subject hub, pick a unit, and start practicing in two clicks."
+			description="Every supported AP course in one place: open a subject hub, pick a unit, and start practicing in two clicks."
 		/>
-
-		<section class="mt-8 space-y-4 text-base leading-7 text-muted-foreground">
-			<p>
-				Free AP Practice covers more than twenty College Board courses, from AP Biology and AP US
-				History to AP Calculus, AP Physics, economics, languages, and computer science. Each subject
-				page is a hub: you will see the full unit list your teacher likely follows, plus quick access
-				to generate unlimited multiple-choice questions with instant explanations.
-			</p>
-			<p>
-				You do not need an account to start. Pick the class you are taking—or one you are considering
-				for next year—open its practice page, choose a unit, and hit Generate. Wrong answers are as
-				useful as right ones when you read the feedback immediately; that is how the site is built to
-				work.
-			</p>
-			<p>
-				If you are planning a schedule, browsing subjects here is faster than guessing what is
-				supported. Every link below goes to a dedicated hub with exam-aligned context, study tips,
-				and helpful resources where we have them. Start with the course on your desk today, or
-				preview Unit 1 for a class you might take in the fall.
-			</p>
-			<p>
-				Looking for something specific? Use your browser search on this page, or open a subject and
-				use the unit navigation there. New courses and units get added as the College Board updates
-				syllabi and as students ask for coverage—this list is the canonical map of what you can
-				practice today.
-			</p>
-		</section>
 
 		<section class="mt-10">
 			<ul class="grid gap-3 sm:grid-cols-2">
@@ -91,6 +64,33 @@
 					</li>
 				{/each}
 			</ul>
+		</section>
+
+		<section class="mt-8 space-y-4 text-base leading-7 text-muted-foreground">
+			<p>
+				Free AP Practice covers more than twenty College Board courses, from AP Biology and AP US
+				History to AP Calculus, AP Physics, economics, languages, and computer science. Each subject
+				page is a hub: you will see the full unit list your teacher likely follows, plus quick
+				access to generate unlimited multiple-choice questions with instant explanations.
+			</p>
+			<p>
+				You do not need an account to start. Pick the class you are taking (or one you are
+				considering for next year), open its practice page, choose a unit, and hit Generate. Wrong
+				answers are as useful as right ones when you read the feedback immediately; that is how the
+				site is built to work.
+			</p>
+			<p>
+				If you are planning a schedule, browsing subjects here is faster than guessing what is
+				supported. Every link below goes to a dedicated hub with exam-aligned context, study tips,
+				and helpful resources where we have them. Start with the course on your desk today, or
+				preview Unit 1 for a class you might take in the fall.
+			</p>
+			<p>
+				Looking for something specific? Use your browser search on this page, or open a subject and
+				use the unit navigation there. New courses and units get added as the College Board updates
+				syllabi and as students ask for coverage; this list is the canonical map of what you can
+				practice today.
+			</p>
 		</section>
 	</main>
 
