@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+	S3Client,
+	PutObjectCommand,
+	GetObjectCommand,
+	ListObjectsV2Command
+} from '@aws-sdk/client-s3';
 import { env as privateEnv } from '$env/dynamic/private';
 import type { Readable } from 'stream';
 
@@ -99,4 +104,33 @@ export async function getObjectStream(opts: { key: string; bucket?: string }): P
 		throw new Error(`Object not found: ${key}`);
 	}
 	return resp.Body as Readable;
+}
+
+const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
+
+/** List every canonical question id from S3 object keys under `questions/`. */
+export async function listQuestionIds(opts?: { bucket?: string }): Promise<string[]> {
+	const bucket = resolveBucket(opts?.bucket);
+	const ids: string[] = [];
+	let continuationToken: string | undefined;
+
+	do {
+		const resp = await s3.send(
+			new ListObjectsV2Command({
+				Bucket: bucket,
+				Prefix: 'questions/',
+				ContinuationToken: continuationToken
+			})
+		);
+
+		for (const obj of resp.Contents ?? []) {
+			if (!obj.Key) continue;
+			const match = obj.Key.match(QUESTION_KEY_RE);
+			if (match) ids.push(match[1]);
+		}
+
+		continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
+	} while (continuationToken);
+
+	return ids;
 }

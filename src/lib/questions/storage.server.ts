@@ -1,4 +1,5 @@
 import * as s3 from '$lib/questions/s3.server';
+import { registerQuestionIdSafe } from '$lib/questions/question-id-registry.server';
 import { randomUUID } from 'crypto';
 
 export interface QuestionData {
@@ -32,6 +33,7 @@ export async function saveQuestionToS3(questionData: QuestionData): Promise<stri
 	};
 
 	await s3.putObject({ key, body: JSON.stringify(payload), contentType: 'application/json' });
+	await registerQuestionIdSafe(questionId);
 	return questionId;
 }
 
