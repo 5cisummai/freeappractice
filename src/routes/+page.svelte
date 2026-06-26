@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
+	import { authClient } from '$lib/auth/client.js';
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
@@ -19,6 +21,12 @@
 	}
 
 	onMount(() => {
+		void authClient.getSession().then(({ data }) => {
+			if (data?.session) {
+				void goto(resolve('/app'));
+			}
+		});
+
 		updateDotGridParallax();
 		window.addEventListener('scroll', updateDotGridParallax, { passive: true });
 
