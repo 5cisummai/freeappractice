@@ -106,7 +106,7 @@
 						The Service depends on third-party providers, including OpenAI for question generation,
 						Google for sign-in, MongoDB for database storage, AWS S3 for file storage, Resend for
 						transactional emails, PostHog for optional product analytics when you opt in, Vercel for
-						hosting, deployment, and optional analytics when you opt in, and GitHub for bug-report
+						hosting, deployment, and cookieless analytics, and GitHub for bug-report
 						handling. Those providers may process data according to their own terms and privacy
 						policies.
 					</p>

@@ -1,11 +1,10 @@
 import { initPostHogAnalytics, capturePostHogException } from '$lib/client/posthog-analytics';
-import { hasAnalyticsConsent } from '$lib/client/analytics-consent';
+import { initVercelAnalytics } from '$lib/client/vercel-analytics';
 import type { HandleClientError } from '@sveltejs/kit';
 
 export async function init() {
-	if (hasAnalyticsConsent()) {
-		initPostHogAnalytics();
-	}
+	initPostHogAnalytics();
+	initVercelAnalytics();
 }
 
 export const handleError: HandleClientError = async ({ error, status, message }) => {

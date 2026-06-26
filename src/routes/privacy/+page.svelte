@@ -124,36 +124,38 @@
 						also use a first-party cookie to remember sidebar state.
 					</p>
 					<p class="mt-2">
-						If you accept optional analytics, PostHog may set first-party cookies and use local
-						storage to remember your device, session, and analytics preferences. Vercel Analytics and
-						Speed Insights may also load only after you opt in. We do not use third-party
-						advertising cookies. If you use a shared device, you should sign out when finished.
+						If you accept optional PostHog analytics, PostHog may set first-party cookies and use
+						local storage to remember your device, session, and analytics preferences. Vercel
+						Analytics and Speed Insights always run in a cookieless mode for aggregate page views and
+						performance signals. We do not use third-party advertising cookies. If you use a shared
+						device, you should sign out when finished.
 					</p>
 				</section>
 
 				<section>
 					<h2 class="text-xl font-semibold">6. Optional Analytics</h2>
 					<p>
-						Optional analytics are off by default. A consent banner asks before any analytics tools
-						load. If you choose to enable them, we may use:
+						PostHog product analytics are off by default. A consent banner asks before detailed
+						PostHog tracking begins. We also use:
 					</p>
 					<ul class="mt-2 list-disc space-y-1 pl-6">
 						<li>
-							<strong>PostHog:</strong> product analytics, feature usage events, client-side error
-							tracking, and session replay to understand how the Service is used and to improve
-							reliability
+							<strong>Vercel Analytics and Speed Insights:</strong> always-on, cookieless page views
+							and performance-related signals
 						</li>
 						<li>
-							<strong>Vercel Analytics and Speed Insights:</strong> page views and performance-related
-							signals
+							<strong>PostHog (opt-in):</strong> product analytics, feature usage events, client-side
+							error tracking, and session replay to understand how the Service is used and to improve
+							reliability
 						</li>
 					</ul>
 					<p class="mt-2">
-						When analytics are disabled, PostHog and Vercel analytics scripts do not load and we do
-						not send optional analytics events from your browser. Some server-side API activity is
-						still logged for security and operations, but optional product-analytics events tied to
-						your account are not sent unless you have opted in. You can change this preference in
-						Settings at any time.
+						If you reject PostHog, it may still load in a cookieless mode that counts aggregate
+						visits using a privacy-preserving server-side hash. It does not set PostHog cookies,
+						store identifiers in your browser, or send detailed product events. Some server-side API
+						activity is still logged for security and operations, but optional product-analytics
+						events tied to your account are not sent unless you have opted in. You can change this
+						preference in Settings at any time.
 					</p>
 				</section>
 
@@ -184,8 +186,8 @@
 							when you opt in
 						</li>
 						<li>
-							<strong>Vercel:</strong> website hosting, deployment infrastructure, and optional
-							analytics when you opt in
+							<strong>Vercel:</strong> website hosting, deployment infrastructure, and cookieless
+							analytics
 						</li>
 					</ul>
 					<p class="mt-2">

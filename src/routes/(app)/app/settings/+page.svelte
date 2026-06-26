@@ -118,16 +118,17 @@
 				<Card.Header>
 					<Card.Title class="font-display text-lg font-medium tracking-tight">Privacy</Card.Title>
 					<Card.Description>
-						Choose whether optional analytics may be used to improve the site.
+						Choose whether PostHog product analytics may be used to improve the site.
 					</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-6">
 					<div class="flex items-center justify-between gap-4">
 						<div class="space-y-0.5">
-							<Label for="analytics-toggle">Optional analytics</Label>
+							<Label for="analytics-toggle">PostHog product analytics</Label>
 							<p class="text-sm text-muted-foreground">
-								When enabled, PostHog and Vercel Analytics may collect page views, feature usage,
-								performance signals, and session replay to help improve this personal project.
+								When enabled, PostHog may collect feature usage, client-side errors, and session
+								replay to help improve this personal project. Vercel Analytics always runs in a
+								cookieless mode for aggregate traffic and performance.
 							</p>
 						</div>
 						<Switch

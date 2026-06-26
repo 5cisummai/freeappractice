@@ -1,6 +1,10 @@
 import posthog from 'posthog-js';
 import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$env/static/public';
-import { hasAnalyticsConsent } from '$lib/client/analytics-consent';
+import {
+	hasAnalyticsConsent,
+	readAnalyticsConsent
+} from '$lib/client/analytics-consent';
+import type { AnalyticsConsent } from '$lib/analytics-consent';
 
 let initialized = false;
 
@@ -9,27 +13,46 @@ function isProduction() {
 }
 
 export function initPostHogAnalytics() {
-	if (!isProduction() || initialized || typeof window === 'undefined' || !hasAnalyticsConsent()) {
+	if (!isProduction() || initialized || typeof window === 'undefined') {
 		return;
 	}
 
 	posthog.init(PUBLIC_POSTHOG_PROJECT_TOKEN, {
 		api_host: 'https://t.freeappractice.org',
 		ui_host: 'https://us.posthog.com',
-		defaults: '2026-01-30',
+		defaults: '2026-05-30',
 		capture_exceptions: true,
-		opt_out_capturing_by_default: false
+		cookieless_mode: 'on_reject',
+		capture_pageview: false
 	});
-	posthog.opt_in_capturing();
 	initialized = true;
+	syncPostHogConsentFromStorage();
 }
 
-export function teardownPostHogAnalytics() {
+export function syncPostHogConsentFromStorage() {
 	if (!initialized || typeof window === 'undefined') return;
 
-	posthog.opt_out_capturing();
+	applyPostHogConsent(readAnalyticsConsent());
+}
+
+export function applyPostHogConsent(consent: AnalyticsConsent) {
+	if (!initialized || typeof window === 'undefined') return;
+
+	if (consent === 'granted') {
+		posthog.opt_in_capturing({ captureEventName: false });
+		posthog.capture('$pageview');
+		return;
+	}
+
+	if (consent === 'denied') {
+		posthog.opt_out_capturing();
+	}
+}
+
+export function resetPostHogConsent() {
+	if (!initialized || typeof window === 'undefined') return;
+
 	posthog.reset(true);
-	initialized = false;
 }
 
 export function capturePostHogEvent(event: string, properties?: Record<string, unknown>) {

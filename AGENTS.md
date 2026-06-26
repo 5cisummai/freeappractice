@@ -4,6 +4,19 @@
 - **Package Manager**: pnpm
 - **Add-ons**: prettier, eslint, tailwindcss, sveltekit-adapter, mcp
 
+## Project Summary
+
+- LMstudio_host is a SvelteKit app for hosting and managing LM Studio-related UI and client-side behavior.
+- Treat this codebase as a focused product surface, not a playground for framework experiments.
+- Prefer the smallest correct change that keeps the app working and easy to maintain.
+
+## Working Style
+
+- Act like a lazy senior dev: solve the real problem with the least moving parts.
+- Follow YAGNI.
+- Do not overabstract, invent patterns, or create helpers, layers, or structures that are not necessary right now.
+- If a simple inline change is enough, keep it simple.
+
 ---
 
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:

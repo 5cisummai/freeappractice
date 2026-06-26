@@ -35,11 +35,11 @@
 		>
 			<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 				<div class="space-y-1">
-					<p class="font-semibold text-foreground">Optional analytics</p>
+					<p class="font-semibold text-foreground">Optional product analytics</p>
 					<p class="text-sm leading-6 text-muted-foreground">
-						This personal project may use optional analytics (PostHog and Vercel) to understand
-						traffic, performance, and product usage. Nothing loads until you choose. You can change
-						this later in Settings. See our
+						This personal project uses cookieless Vercel Analytics for traffic and performance. You
+						can also opt in to PostHog for detailed product usage, error tracking, and session
+						replay. You can change this later in Settings. See our
 						<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 					</p>
 				</div>
