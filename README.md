@@ -81,7 +81,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 | --------------------------------------------- | --------------------------------------------------- |
 | `pnpm check`                                  | Type-check with `svelte-check`                      |
 | `pnpm lint` / `pnpm format`                   | ESLint and Prettier                                 |
-| `pnpm cache:clear` / `pnpm cache:warm`        | Manage the question cache                           |
+| `pnpm cache:clear`                            | Clear the question cache pool                       |
 | `pnpm auth:indexes`                           | Create Better Auth MongoDB indexes                  |
 | `pnpm scaffold:practice-pages`              | Regenerate `practice-pages.json` from AP catalog    |
 | `pnpm audit:internal-links`                 | Audit internal links across public and practice pages |
@@ -164,7 +164,6 @@ These routes require an active Better Auth session:
 | Method | Route                            | Description                             |
 | ------ | -------------------------------- | --------------------------------------- |
 | `POST` | `/api/question`                  | Generate or return a cached AP question |
-| `POST` | `/api/question/cache/generate`   | Prime the question cache                |
 | `GET`  | `/api/question/generation-stats` | Public read-only generation counters    |
 
 ### Other

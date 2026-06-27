@@ -143,24 +143,3 @@ export async function generateLiveCustomTopicMcq(
 }
 
 export const getQuestion = mcqPool.getQuestion;
-
-/** Warm the hot pool through the same AI -> S3 -> Mongo path used by cache misses. */
-export async function generateAndStoreQuestion(
-	className: string,
-	unit?: string
-): Promise<CachedResult> {
-	if (typeof className !== 'string' || !className.trim()) {
-		throw new Error('Invalid className: must be a non-empty string');
-	}
-
-	await connectDb();
-
-	const cacheUnit = normalizeUnit(unit);
-	const recentTopics = await getRecentTopics(
-		className.trim(),
-		cacheUnit,
-		RECENT_TOPICS_WINDOW
-	).catch(() => []);
-	const result = await generateQuestionForPool(className.trim(), unit ?? '', recentTopics);
-	return { ...result, cached: false };
-}
