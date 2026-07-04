@@ -37,7 +37,7 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import { hashTopicKey, isCustomUnit } from '$lib/catalog/custom-unit';
+	import { hashTopicKey, isCustomUnit, unitForProgress } from '$lib/catalog/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -88,6 +88,8 @@
 	let questionCount = $state(0);
 	let statusMessage = $state('');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
+	/** Top-level questionId from the last API response; backup when parsing omits it. */
+	let currentQuestionApiId = $state('');
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
@@ -259,10 +261,16 @@
 	}
 
 	function buildAnswerResult(selectedAnswer: string): AnswerResult | null {
-		if (!currentQuestion?.correctAnswer) return null;
+		const apClass = selectedClass.trim();
+		if (!currentQuestion?.correctAnswer || !apClass) return null;
+
+		const questionId =
+			currentQuestion.questionId?.trim() || currentQuestionApiId.trim() || undefined;
 
 		return {
-			questionId: currentQuestion.questionId,
+			questionId,
+			apClass,
+			unit: unitForProgress(selectedUnit, customTopic),
 			questionNumber: effectiveQuestionNumber,
 			selectedAnswer,
 			correctAnswer: currentQuestion.correctAnswer,
@@ -300,6 +308,7 @@
 			else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
 			else statusMessage = 'Choose the best answer and then check your response.';
 			currentQuestion = cached;
+			currentQuestionApiId = cached.questionId?.trim() ?? '';
 			questionCount += 1;
 			resetInteractionState(true);
 			prefetchNextCustomMcq();
@@ -321,8 +330,11 @@
 			);
 
 			const normalized = parseQuestionPayloadFromResponse(response);
+			const apiQuestionId =
+				typeof response.questionId === 'string' ? response.questionId.trim() : '';
 
 			currentQuestion = normalized;
+			currentQuestionApiId = apiQuestionId || normalized.questionId?.trim() || '';
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
