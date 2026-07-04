@@ -30,8 +30,8 @@
 			<SidebarTrigger />
 		</header>
 
-		<div class="flex-1">
+		<main id="main-content" class="flex-1">
 			{@render children()}
-		</div>
+		</main>
 	</Sidebar.Inset>
 </Sidebar.Provider>

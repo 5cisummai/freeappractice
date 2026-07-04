@@ -15,7 +15,8 @@ export const load: PageServerLoad = async ({ locals, request, url }) => {
 	}
 
 	const search = url.searchParams.get('search')?.trim() ?? '';
-	const page = Math.max(Number(url.searchParams.get('page') ?? '1') || 1, 1);
+	const rawPage = Number.parseInt(url.searchParams.get('page') ?? '1', 10);
+	const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
 
 	return getAdminDashboardData({
 		headers: request.headers,

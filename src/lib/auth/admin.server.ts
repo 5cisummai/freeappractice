@@ -14,8 +14,5 @@ export function getAdminUserIds(): string[] {
 
 export function isAdminUser(user: AdminUser | null | undefined): boolean {
 	if (!user) return false;
-	if (getAdminUserIds().includes(user.id)) return true;
-
-	const roles = Array.isArray(user.role) ? user.role : (user.role ?? '').split(',');
-	return roles.map((role) => role.trim()).includes('admin');
+	return getAdminUserIds().includes(user.id);
 }

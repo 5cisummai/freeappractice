@@ -128,6 +128,7 @@ flowchart LR
         HI["/app/history"]
         RS["/app/resources"]
         ST["/app/settings"]
+        AD["/app/admin"]
     end
 
     subgraph API["API"]

@@ -4,6 +4,15 @@ import { renderSnippet, renderComponent } from '$lib/components/ui/data-table/in
 import AdminDataTableSortButton from '$lib/components/admin/admin-data-table-sort-button.svelte';
 import type { AdminUserRow } from '$lib/admin/types.js';
 
+function escapeHtml(str: string): string {
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
 function formatDate(value: Date | string | null | undefined): string {
 	if (!value) return '-';
 	const date = new Date(value);
@@ -11,7 +20,8 @@ function formatDate(value: Date | string | null | undefined): string {
 	return new Intl.DateTimeFormat('en-US', {
 		month: 'short',
 		day: 'numeric',
-		year: 'numeric'
+		year: 'numeric',
+		timeZone: 'UTC'
 	}).format(date);
 }
 
@@ -35,7 +45,7 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					const { name, email } = getData();
 					return {
 						render: () =>
-							`<div class="min-w-0"><div class="font-medium">${name}</div><div class="truncate text-xs text-muted-foreground sm:hidden">${email}</div></div>`
+							`<div class="min-w-0"><div class="font-medium">${escapeHtml(name)}</div><div class="truncate text-xs text-muted-foreground sm:hidden">${escapeHtml(email)}</div></div>`
 					};
 				});
 
@@ -68,7 +78,7 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					const { role } = getData();
 					return {
 						render: () =>
-							`<span class="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">${role}</span>`
+							`<span class="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground">${escapeHtml(role)}</span>`
 					};
 				});
 				return renderSnippet(roleSnippet, { role: formatRole(row.original.role) });
@@ -135,7 +145,7 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					const { id } = getData();
 					return {
 						render: () =>
-							`<code class="block max-w-[16rem] truncate text-xs text-muted-foreground">${id}</code>`
+							`<code class="block max-w-[16rem] truncate text-xs text-muted-foreground">${escapeHtml(id)}</code>`
 					};
 				});
 				return renderSnippet(idSnippet, { id: row.original.id });

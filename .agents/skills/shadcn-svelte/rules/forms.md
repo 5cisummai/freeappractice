@@ -5,7 +5,7 @@
 - Forms use Field.FieldGroup + Field.Field
 - InputGroup requires InputGroup.Input/InputGroup.Textarea
 - Buttons inside inputs use InputGroup.Root + InputGroup.Addon
-- Option sets (2–7 choices) use ToggleGroup.Root + ToggleGroup.Item
+- Option sets (2–5 choices) use ToggleGroup.Root + ToggleGroup.Item
 - Field.FieldSet + Field.FieldLegend for grouping related fields
 - Field validation and disabled states
 
@@ -122,7 +122,7 @@ Never place a `Button` directly inside or adjacent to an `Input` with custom pos
 
 ---
 
-## Option sets (2–7 choices) use ToggleGroup.Root + ToggleGroup.Item
+## Option sets (2–5 choices) use ToggleGroup.Root + ToggleGroup.Item
 
 Don't manually loop `Button` components with active state.
 

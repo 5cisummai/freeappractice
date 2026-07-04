@@ -128,6 +128,9 @@ export async function getAdminDashboardData(opts: {
 		userProfilesResult,
 		cacheBucketsResult,
 		cacheLocksResult,
+		activeLockCountResult,
+		activeMissLockCountResult,
+		activeReplenishLockCountResult,
 		recentTopicsResult,
 		generationStatsResult
 	] = await Promise.allSettled([
@@ -173,6 +176,9 @@ export async function getAdminDashboardData(opts: {
 			.limit(12)
 			.lean()
 			.exec(),
+		CacheMissLock.countDocuments({ expiresAt: { $gt: now } }).exec(),
+		CacheMissLock.countDocuments({ expiresAt: { $gt: now }, key: /^miss::/ }).exec(),
+		CacheMissLock.countDocuments({ expiresAt: { $gt: now }, key: /^replenish::/ }).exec(),
 		QuestionRecentTopic.find({})
 			.sort({ createdAt: -1 })
 			.limit(10)
@@ -249,8 +255,16 @@ export async function getAdminDashboardData(opts: {
 			? cacheLocksResult.value.map((lock) => parseLock(lock.key, lock.expiresAt))
 			: [];
 
-	const activeMissLocks = cacheLocks.filter((lock) => lock.type === 'miss').length;
-	const activeReplenishLocks = cacheLocks.filter((lock) => lock.type === 'replenish').length;
+	const activeLockCount =
+		activeLockCountResult.status === 'fulfilled' ? activeLockCountResult.value : cacheLocks.length;
+	const activeMissLocks =
+		activeMissLockCountResult.status === 'fulfilled'
+			? activeMissLockCountResult.value
+			: cacheLocks.filter((lock) => lock.type === 'miss').length;
+	const activeReplenishLocks =
+		activeReplenishLockCountResult.status === 'fulfilled'
+			? activeReplenishLockCountResult.value
+			: cacheLocks.filter((lock) => lock.type === 'replenish').length;
 
 	const cacheOverview: CacheOverview = {
 		targetPoolSize,
@@ -264,7 +278,7 @@ export async function getAdminDashboardData(opts: {
 		healthyBuckets: cacheBuckets.filter((bucket) => bucket.health === 'healthy').length,
 		underTargetBuckets: cacheBuckets.filter((bucket) => bucket.available < targetPoolSize).length,
 		emptyBuckets: cacheBuckets.filter((bucket) => bucket.available === 0).length,
-		activeLocks: cacheLocks.length,
+		activeLocks: activeLockCount,
 		activeMissLocks,
 		activeReplenishLocks,
 		availableRatio: 0
