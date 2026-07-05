@@ -11,6 +11,8 @@ type QuestionPanel = {
 
 export type AnswerResult = {
 	questionId?: string;
+	apClass: string;
+	unit: string;
 	questionNumber: string;
 	selectedAnswer: string;
 	correctAnswer: string;

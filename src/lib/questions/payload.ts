@@ -80,6 +80,17 @@ function normalizeOptions(value: unknown): QuestionOption[] {
 		.filter((entry): entry is QuestionOption => Boolean(entry));
 }
 
+function resolveQuestionId(payload: unknown, questionIdFromApi?: string): string | undefined {
+	const fromApi =
+		typeof questionIdFromApi === 'string' && questionIdFromApi.trim()
+			? questionIdFromApi.trim()
+			: undefined;
+	if (!payload || typeof payload !== 'object') return fromApi;
+
+	const inner = String((payload as Record<string, unknown>).questionId ?? '').trim();
+	return inner || fromApi;
+}
+
 function normalizeQuestionPayload(
 	payload: unknown,
 	questionIdFromApi?: string
@@ -98,7 +109,7 @@ function normalizeQuestionPayload(
 	const hasStimulus = stimulus.length > 0;
 
 	return {
-		questionId: String(obj.questionId ?? questionIdFromApi ?? '').trim() || undefined,
+		questionId: resolveQuestionId(obj, questionIdFromApi),
 		prompt,
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),

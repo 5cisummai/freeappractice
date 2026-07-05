@@ -128,11 +128,12 @@ flowchart LR
         HI["/app/history"]
         RS["/app/resources"]
         ST["/app/settings"]
+        AD["/app/admin"]
     end
 
     subgraph API["API"]
         AUTH["/api/auth/*<br/>Better Auth"]
-        Q["/api/question<br/>/cache/generate<br/>/generation-stats"]
+        Q["/api/question<br/>/generation-stats"]
         ME["/api/me/*<br/>stats · progress · history<br/>record-attempt · bookmarks"]
         T["/api/tutor/chat · greeting"]
         BR["/api/bug-report"]
@@ -189,7 +190,7 @@ flowchart TD
 - Signed-in and anonymous users share the same claim path: oldest available doc for `(apClass, unit)` by `lastServedAt`, with no per-user repeat filtering.
 - `contentHash` (SHA-256 of normalized question text) deduplicates entries **inside the hot pool** only — it prevents the same MCQ body from being inserted twice while replenishing.
 - Pool docs are ephemeral: after `maxServeCount` serves (default 50), the Mongo doc is deleted. S3 remains the durable copy for history and bookmarks.
-- Background replenish targets `CACHE_POOL_SIZE` per class/unit bucket. Ops scripts: `pnpm cache:clear`, `pnpm cache:warm`.
+- Background replenish targets `CACHE_POOL_SIZE` per class/unit bucket. Ops script: `pnpm cache:clear`.
 
 ---
 

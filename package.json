@@ -14,7 +14,6 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"cache:clear": "tsx scripts/clear-cache.ts",
-		"cache:warm": "tsx scripts/warm-cache-simple.ts",
 		"sync:question-ids": "tsx scripts/sync-question-ids-from-s3.ts",
 		"scaffold:practice-pages": "tsx scripts/scaffold-practice-pages.ts",
 		"audit:internal-links": "tsx scripts/audit-internal-links.ts",

@@ -48,12 +48,18 @@
 	}
 
 	function handleAnswered(result: AnswerResult) {
+		const apClass = result.apClass.trim() || selectedClass.trim();
+		const questionId = result.questionId?.trim();
+		const unit = result.unit.trim() || unitForProgress(selectedUnit, customTopic);
+
+		if (!apClass || !questionId) return;
+
 		void syncAttempt(
 			'/api/me/record-attempt',
 			{
-				questionId: result.questionId,
-				apClass: selectedClass,
-				unit: unitForProgress(selectedUnit, customTopic),
+				questionId,
+				apClass,
+				unit,
 				selectedAnswer: result.selectedAnswer,
 				wasCorrect: result.isCorrect,
 				timeTakenMs: result.timeTakenMs

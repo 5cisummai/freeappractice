@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth/minimal';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { oneTap } from 'better-auth/plugins';
+import { admin } from 'better-auth/plugins/admin';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { waitUntil } from '@vercel/functions';
 import { building } from '$app/environment';
@@ -17,6 +18,7 @@ import { connectDb } from '$lib/server/db';
 import { UserProfile } from '$lib/users/model.server';
 import { ensureUserProfile } from '$lib/users/profile.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
+import { getAdminUserIds } from '$lib/auth/admin.server';
 
 const db = await getMongoDb();
 const client = await getMongoClient();
@@ -132,6 +134,9 @@ export const auth = betterAuth({
 	},
 	plugins: [
 		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
+		admin({
+			adminUserIds: getAdminUserIds()
+		}),
 		sveltekitCookies(getRequestEvent)
 	]
 });
