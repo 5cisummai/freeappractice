@@ -12,10 +12,13 @@
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
 
+	import { registerWebMcpTools } from '$lib/client/webmcp.js';
+
 	let { children } = $props();
 
 	onMount(() => {
 		privacy.init();
+		registerWebMcpTools();
 		if (import.meta.env.DEV) mountVercelToolbar();
 	});
 </script>
