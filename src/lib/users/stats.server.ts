@@ -1,47 +1,62 @@
+import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import type { IUserProfile } from '$lib/users/model.server';
 import type { StatsData } from '$lib/users/types';
 
-/** Calculate current daily streak from a list of attempts with `attemptedAt` dates. */
-export function calcStreak(history: Array<{ attemptedAt: Date }>): number {
+function toLocalDayKey(date: Date, timeZone = 'UTC'): string {
+	return new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(date);
+}
+
+function shiftDayKey(dayKey: string, deltaDays: number): string {
+	const date = new Date(`${dayKey}T12:00:00.000Z`);
+	date.setUTCDate(date.getUTCDate() + deltaDays);
+	return date.toISOString().slice(0, 10);
+}
+
+/** Current daily streak using the user's local calendar days when a timezone is provided. */
+export function calcStreak(
+	history: Array<{ attemptedAt: Date }>,
+	timeZone?: string
+): number {
 	if (!history.length) return 0;
 
-	const toUtcDayKey = (date: Date) => date.toISOString().slice(0, 10);
+	const zone = timeZone || 'UTC';
+	const sortedDates = [
+		...new Set(history.map((q) => toLocalDayKey(new Date(q.attemptedAt), zone)))
+	].sort((a, b) => b.localeCompare(a));
 
-	const sortedDates = [...new Set(history.map((q) => toUtcDayKey(new Date(q.attemptedAt))))].sort(
-		(a, b) => b.localeCompare(a)
-	);
-
-	const today = toUtcDayKey(new Date());
-	const yesterday = toUtcDayKey(new Date(Date.now() - 86_400_000));
+	const today = toLocalDayKey(new Date(), zone);
+	const yesterday = shiftDayKey(today, -1);
 
 	if (!sortedDates.includes(today) && !sortedDates.includes(yesterday)) return 0;
 
 	let streak = 1;
 	for (let i = 1; i < sortedDates.length; i++) {
-		const previous = new Date(`${sortedDates[i - 1]}T00:00:00.000Z`);
-		const current = new Date(`${sortedDates[i]}T00:00:00.000Z`);
-		const dayDiff = Math.round((previous.getTime() - current.getTime()) / 86_400_000);
-		if (dayDiff === 1) streak++;
+		if (shiftDayKey(sortedDates[i - 1], -1) === sortedDates[i]) streak++;
 		else break;
 	}
 	return streak;
 }
 
-export function buildStatsData(user: IUserProfile): StatsData {
+export function buildStatsData(user: IUserProfile, timeZone?: string): StatsData {
 	const history = user.questionHistory ?? [];
 	const totalQuestions = history.length;
 	const correctAnswers = history.filter((q) => q.wasCorrect).length;
 	const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-	const totalTimeMs = history.reduce((sum, q) => sum + (q.timeTakenMs ?? 0), 0);
+	const totalTimeMs = history.reduce((sum, q) => sum + sanitizeAttemptTimeMs(q.timeTakenMs), 0);
 	const totalTimeHours = Math.round((totalTimeMs / 1000 / 60 / 60) * 10) / 10;
-	const currentStreak = calcStreak(history);
+	const currentStreak = calcStreak(history, timeZone);
 
 	const subjectStats: Record<string, { total: number; correct: number; totalTime: number }> = {};
 	history.forEach((q) => {
 		if (!subjectStats[q.apClass]) subjectStats[q.apClass] = { total: 0, correct: 0, totalTime: 0 };
 		subjectStats[q.apClass].total++;
 		if (q.wasCorrect) subjectStats[q.apClass].correct++;
-		subjectStats[q.apClass].totalTime += q.timeTakenMs ?? 0;
+		subjectStats[q.apClass].totalTime += sanitizeAttemptTimeMs(q.timeTakenMs);
 	});
 	const subjectBreakdown = Object.entries(subjectStats)
 		.map(([subject, s]) => ({

@@ -8,7 +8,6 @@
 		selectedUnit?: string;
 		customTopic?: string;
 		requestVersion?: number;
-		isLoading?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -19,7 +18,6 @@
 		selectedUnit = $bindable(''),
 		customTopic = $bindable(''),
 		requestVersion = $bindable(0),
-		isLoading = false,
 		generateLabel,
 		onGenerate,
 		onSelectionChange,
@@ -42,7 +40,6 @@
 		bind:selectedClass
 		bind:selectedUnit
 		bind:customTopic
-		{isLoading}
 		{generateLabel}
 		onSelectionChange={handleSelectionChange}
 		onGenerate={handleGenerate}

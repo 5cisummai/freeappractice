@@ -6,8 +6,7 @@
 		type SortingState,
 		type VisibilityState,
 		getCoreRowModel,
-		getFilteredRowModel,
-		getSortedRowModel
+		getFilteredRowModel
 	} from '@tanstack/table-core';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import { createHistoryColumns } from './history-columns.js';
@@ -22,12 +21,21 @@
 		total: number;
 		pageIndex: number;
 		pageSize: number;
+		sorting: SortingState;
 		onPageChange: (pageIndex: number) => void;
+		onSortingChange: (sorting: SortingState) => void;
 	};
 
-	let { data, total, pageIndex, pageSize, onPageChange }: HistoryDataTableProps = $props();
+	let {
+		data,
+		total,
+		pageIndex,
+		pageSize,
+		sorting,
+		onPageChange,
+		onSortingChange
+	}: HistoryDataTableProps = $props();
 
-	let sorting = $state<SortingState>([{ id: 'attemptedAt', desc: true }]);
 	let columnFilters = $state<ColumnFiltersState>([]);
 	let columnVisibility = $state<VisibilityState>({});
 	let rowSelection = $state<RowSelectionState>({});
@@ -51,6 +59,7 @@
 			return columns;
 		},
 		manualPagination: true,
+		manualSorting: true,
 		get pageCount() {
 			return pageCount;
 		},
@@ -73,7 +82,6 @@
 			}
 		},
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
 		onPaginationChange: (updater) => {
 			const current = { pageIndex, pageSize };
@@ -83,7 +91,8 @@
 			}
 		},
 		onSortingChange: (updater) => {
-			sorting = typeof updater === 'function' ? updater(sorting) : updater;
+			const next = typeof updater === 'function' ? updater(sorting) : updater;
+			onSortingChange(next);
 		},
 		onColumnFiltersChange: (updater) => {
 			columnFilters = typeof updater === 'function' ? updater(columnFilters) : updater;
@@ -100,7 +109,7 @@
 <div class="space-y-4">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 		<p class="text-xs text-muted-foreground">
-			Sort applies to this page only. Use pagination to browse all attempts.
+			Sorting applies across all attempts, not just this page.
 		</p>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>

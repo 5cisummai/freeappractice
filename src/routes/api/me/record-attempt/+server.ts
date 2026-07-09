@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { findOrCreateProgressEntry } from '$lib/users/progress.server';
 import { normalizeUnit } from '$lib/questions/util.server';
@@ -15,10 +16,8 @@ export const POST = withAuthedHandler(
 		const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
 		const normalizedAnswer =
 			typeof selectedAnswer === 'string' ? selectedAnswer.trim().toUpperCase() : '';
-		const elapsedTimeMs =
-			typeof timeTakenMs === 'number' && Number.isFinite(timeTakenMs) && timeTakenMs >= 0
-				? timeTakenMs
-				: 0;
+		// Correctness is derived server-side from S3; only clamp client-reported duration.
+		const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
 		if (!normalizedQuestionId || !answerChoices.has(normalizedAnswer)) {
 			return json(

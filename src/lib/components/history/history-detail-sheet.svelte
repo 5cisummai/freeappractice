@@ -33,9 +33,12 @@
 </script>
 
 <Sheet.Root bind:open>
-	<Sheet.Content side="right" class="w-full overflow-y-auto sm:max-w-lg">
+	<Sheet.Content
+		side="right"
+		class="w-full gap-0 overflow-y-auto p-0 sm:max-w-2xl data-[side=right]:sm:max-w-2xl"
+	>
 		{#if item}
-			<Sheet.Header class="space-y-3 text-left">
+			<Sheet.Header class="space-y-3 border-b border-border/60 p-6 pr-14 text-left">
 				<div class="flex flex-wrap items-center gap-2">
 					<Sheet.Title class="text-base">{item.attempt.apClass}</Sheet.Title>
 					{#if item.attempt.unit}
@@ -54,7 +57,7 @@
 				</Sheet.Description>
 			</Sheet.Header>
 
-			<div class="mt-6 space-y-6">
+			<div class="space-y-6 p-6">
 				{#if !item.question}
 					<p class="text-sm text-muted-foreground">
 						This question is no longer available in storage. Your attempt was still recorded.

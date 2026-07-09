@@ -7,15 +7,35 @@
 	import SkipToMain from '$lib/components/skip-to-main.svelte';
 	import GoogleOneTapPrompt from '$lib/components/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
+	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
+	import {
+		parseTimezone,
+		TIMEZONE_COOKIE_MAX_AGE,
+		TIMEZONE_COOKIE_NAME
+	} from '$lib/users/timezone';
 
 	let { children } = $props();
 
 	onMount(() => {
 		privacy.init();
+
+		const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		const existing = parseTimezone(
+			document.cookie
+				.split('; ')
+				.find((part) => part.startsWith(`${TIMEZONE_COOKIE_NAME}=`))
+				?.slice(TIMEZONE_COOKIE_NAME.length + 1)
+		);
+		if (timeZone && existing !== timeZone) {
+			const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+			document.cookie = `${TIMEZONE_COOKIE_NAME}=${encodeURIComponent(timeZone)}; path=/; max-age=${TIMEZONE_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
+			void invalidateAll();
+		}
+
 		if (import.meta.env.DEV) mountVercelToolbar();
 	});
 </script>
