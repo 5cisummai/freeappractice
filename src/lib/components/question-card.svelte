@@ -37,7 +37,7 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import { hashTopicKey, isCustomUnit, unitForProgress } from '$lib/catalog/custom-unit';
+	import { hashTopicKey, isCustomUnit } from '$lib/catalog/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -261,16 +261,13 @@
 	}
 
 	function buildAnswerResult(selectedAnswer: string): AnswerResult | null {
-		const apClass = selectedClass.trim();
-		if (!currentQuestion?.correctAnswer || !apClass) return null;
+		if (!currentQuestion?.correctAnswer) return null;
 
 		const questionId =
 			currentQuestion.questionId?.trim() || currentQuestionApiId.trim() || undefined;
 
 		return {
 			questionId,
-			apClass,
-			unit: unitForProgress(selectedUnit, customTopic),
 			questionNumber: effectiveQuestionNumber,
 			selectedAnswer,
 			correctAnswer: currentQuestion.correctAnswer,
