@@ -5,11 +5,6 @@ interface IPoolDocMetadata {
 	apClass: string;
 	unit: string;
 	topicsCovered?: string;
-	lastServedAt: Date | null;
-	status: 'available' | 'serving' | 'retired' | 'generating';
-	serveCount: number;
-	maxServeCount: number;
-	lockedUntil: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -46,22 +41,12 @@ const questionSchema = new Schema<IQuestion>(
 		optionD: { type: String, required: true },
 		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
 		explanation: { type: String, required: true },
-		s3QuestionId: { type: String, required: true, index: true },
-		lastServedAt: { type: Date, default: null },
-		status: {
-			type: String,
-			enum: ['available', 'serving', 'retired', 'generating'],
-			default: 'available',
-			required: true
-		},
-		serveCount: { type: Number, default: 0 },
-		maxServeCount: { type: Number, default: 50 },
-		lockedUntil: { type: Date, default: null }
+		s3QuestionId: { type: String, required: true, index: true }
 	},
 	{ timestamps: true }
 );
 
-questionSchema.index({ apClass: 1, unit: 1, status: 1, lastServedAt: 1 });
+questionSchema.index({ apClass: 1, unit: 1, createdAt: 1 });
 questionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
 questionSchema.index({ s3QuestionId: 1 }, { unique: true, sparse: true });
 

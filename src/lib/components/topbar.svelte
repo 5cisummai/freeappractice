@@ -1,12 +1,10 @@
 <script lang="ts">
-	import MoonIcon from '@lucide/svelte/icons/moon';
-	import SunIcon from '@lucide/svelte/icons/sun';
 	import MenuIcon from '@lucide/svelte/icons/menu';
 	import XIcon from '@lucide/svelte/icons/x';
-	import { toggleMode } from 'mode-watcher';
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import { topbarAuthItems, topbarNavItems } from '$lib/site-nav.js';
 
 	let mobileOpen = $state(false);
@@ -58,15 +56,7 @@
 						{item.label}
 					</Button>
 				{/each}
-				<Button onclick={toggleMode} variant="ghost" size="icon" class="relative">
-					<SunIcon
-						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all! dark:scale-0 dark:-rotate-90"
-					/>
-					<MoonIcon
-						class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all! dark:scale-100 dark:rotate-0"
-					/>
-					<span class="sr-only">Toggle theme</span>
-				</Button>
+				<ThemeToggle />
 			</nav>
 		</div>
 
@@ -83,18 +73,6 @@
 						{item.label}
 					</a>
 				{/each}
-				<a
-					href={resolve('/privacy')}
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
-				>
-					Privacy
-				</a>
-				<a
-					href={resolve('/terms')}
-					class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
-				>
-					Terms
-				</a>
 				{#each topbarAuthItems as item (item.href)}
 					<a
 						href={resolve(item.href)}
@@ -103,9 +81,9 @@
 						{item.label}
 					</a>
 				{/each}
-				<Button onclick={toggleMode} variant="ghost" size="icon" class="mt-2 w-full">
-					<p>Toggle Theme</p>
-				</Button>
+				<div class="mt-2">
+					<ThemeToggle variant="full" />
+				</div>
 			</nav>
 		{/if}
 	</div>

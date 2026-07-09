@@ -17,7 +17,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const validated = validateQuestionRequest(body);
 		if (!validated.ok) return validated.response;
 
-		const { className, unit, customTopic } = validated.value;
+		const { className, unit, customTopic, excludeQuestionIds } = validated.value;
 
 		if (customTopic && !(await customTopicEnabled())) {
 			return json({ error: 'Custom topics are not available' }, { status: 403 });
@@ -25,7 +25,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const result = customTopic
 			? await generateLiveCustomTopicMcq(className, customTopic)
-			: await getQuestion(className, unit);
+			: await getQuestion(className, unit, { excludeQuestionIds });
 
 		const answerStr =
 			typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer;

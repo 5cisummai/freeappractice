@@ -23,11 +23,6 @@ export function buildHotPoolDoc(opts: {
 	| 'optionD'
 	| 'correctAnswer'
 	| 'explanation'
-	| 'lastServedAt'
-	| 'status'
-	| 'serveCount'
-	| 'maxServeCount'
-	| 'lockedUntil'
 > {
 	const { answer } = opts;
 	return {
@@ -42,11 +37,6 @@ export function buildHotPoolDoc(opts: {
 		optionC: answer.optionC,
 		optionD: answer.optionD,
 		correctAnswer: answer.correctAnswer,
-		explanation: answer.explanation,
-		lastServedAt: null,
-		status: 'available',
-		serveCount: 0,
-		maxServeCount: 50,
-		lockedUntil: null
+		explanation: answer.explanation
 	};
 }

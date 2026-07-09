@@ -33,7 +33,10 @@
 	<title>Admin - Free AP Practice</title>
 </svelte:head>
 
-<PageShell title="Admin" description="User management, question cache health, and generation visibility.">
+<PageShell
+	title="Admin"
+	description="User management, question cache health, and generation visibility."
+>
 	<div class="space-y-6">
 		<div class="flex flex-wrap gap-2 border-b border-border/70 pb-3">
 			{#each tabItems as item (item.value)}
@@ -61,7 +64,9 @@
 				</Card.Root>
 				<Card.Root class="rounded-2xl border border-border/60 p-5 shadow-sm">
 					<p class="text-sm text-muted-foreground">Cached questions</p>
-					<p class="mt-2 text-3xl font-semibold tracking-tight">{data.cacheOverview.totalQuestions}</p>
+					<p class="mt-2 text-3xl font-semibold tracking-tight">
+						{data.cacheOverview.totalQuestions}
+					</p>
 				</Card.Root>
 				<Card.Root class="rounded-2xl border border-border/60 p-5 shadow-sm">
 					<p class="text-sm text-muted-foreground">Buckets below target</p>
@@ -81,28 +86,30 @@
 				<Card.Root class="rounded-2xl border border-border/60 shadow-sm">
 					<Card.Header class="border-b border-border/70">
 						<Card.Title>Needs attention</Card.Title>
-						<Card.Description>Fast read on where the system is thin or actively working.</Card.Description>
+						<Card.Description
+							>Fast read on where the system is thin or actively working.</Card.Description
+						>
 					</Card.Header>
 					<Card.Content class="space-y-3 p-6">
 						<div class="rounded-xl border border-border/60 p-4">
 							<p class="text-sm font-medium">Cache pressure</p>
 							<p class="mt-1 text-sm text-muted-foreground">
-								{data.cacheOverview.emptyBuckets} empty bucket(s), {data.cacheOverview.underTargetBuckets}
+								{data.cacheOverview.emptyBuckets} empty bucket(s), {data.cacheOverview
+									.underTargetBuckets}
 								below the target pool size of {data.cacheOverview.targetPoolSize}.
 							</p>
 						</div>
 						<div class="rounded-xl border border-border/60 p-4">
 							<p class="text-sm font-medium">Worker activity</p>
 							<p class="mt-1 text-sm text-muted-foreground">
-								{data.cacheOverview.activeMissLocks} active miss lock(s) and
-								{data.cacheOverview.activeReplenishLocks} replenish lock(s).
+								{data.cacheOverview.activeMissLocks} active miss lock(s) across serverless instances.
 							</p>
 						</div>
 						<div class="rounded-xl border border-border/60 p-4">
-							<p class="text-sm font-medium">Immediate serveability</p>
+							<p class="text-sm font-medium">Reusable inventory</p>
 							<p class="mt-1 text-sm text-muted-foreground">
-								{data.cacheOverview.available} of {data.cacheOverview.totalQuestions} cached questions are
-								available right now ({data.cacheOverview.availableRatio}%).
+								{data.cacheOverview.totalQuestions} cached question(s) can be shared across sessions,
+								filtered only by each browser's seen list.
 							</p>
 						</div>
 					</Card.Content>
@@ -128,7 +135,6 @@
 					</Card.Content>
 				</Card.Root>
 			</div>
-
 		{:else if data.activeTab === 'users'}
 			<AdminUsersDataTable
 				data={data.users}
@@ -197,7 +203,10 @@
 										<Table.Cell class="text-right">{row.share}%</Table.Cell>
 										<Table.Cell>
 											<div class="h-2 overflow-hidden rounded-full bg-muted">
-												<div class="h-full rounded-full bg-primary" style={`width:${row.share}%`}></div>
+												<div
+													class="h-full rounded-full bg-primary"
+													style={`width:${row.share}%`}
+												></div>
 											</div>
 										</Table.Cell>
 									</Table.Row>
