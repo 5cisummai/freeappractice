@@ -42,9 +42,9 @@
 
 .dark {
 	/* Inset shell: lifted charcoal content on a near-black sidebar rail */
-	--background: oklch(0.165 0.006 285.885);
+	--background: oklch(0.147 0.006 285.885);
 	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.165 0.006 285.885);
+	--card: oklch(0.147 0.006 285.885);
 	--card-foreground: oklch(0.985 0 0);
 	--popover: oklch(0.19 0.006 285.885);
 	--popover-foreground: oklch(0.985 0 0);
