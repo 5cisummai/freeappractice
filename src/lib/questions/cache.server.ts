@@ -1,22 +1,19 @@
 import { Question, type IQuestion } from '$lib/questions/cache-model.server';
-import { connectDb } from '$lib/server/db';
 import {
 	generateAPQuestion,
 	type APQuestionData,
 	type GenerateResult
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
-import { createMcqPool } from '$lib/questions/pool.server';
+import { createMcqPool, type GetQuestionOptions } from '$lib/questions/pool.server';
 import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
 import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 
-const RECENT_TOPICS_WINDOW = 20;
+export type { GetQuestionOptions };
 
-function getPoolSize(): number {
-	return Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
-}
+const RECENT_TOPICS_WINDOW = 20;
 
 async function insertHotPoolDoc(
 	className: string,
@@ -46,7 +43,7 @@ async function insertHotPoolDoc(
 	);
 }
 
-/** AI -> S3 -> Mongo hot pool. Used by background refill, cache miss, and manual warm. */
+/** AI -> S3 -> Mongo hot pool. Used by standard cache misses. */
 async function generateQuestionForPool(
 	className: string,
 	unit: string,
@@ -87,30 +84,14 @@ async function generateQuestionForPool(
 	return result;
 }
 
-async function generateAndInsert(className: string, unit: string): Promise<string | null> {
-	try {
-		const cacheUnit = normalizeUnit(unit);
-		const recentTopics = await getRecentTopics(className, cacheUnit, RECENT_TOPICS_WINDOW);
-		const result = await generateQuestionForPool(className, unit, recentTopics);
-		return result.questionId ?? null;
-	} catch (err: unknown) {
-		logger.error('[cache] generateAndInsert failed', { className, unit, error: err });
-		return null;
-	}
-}
-
 export type CachedResult = GenerateResult & { cached: boolean };
 
 const mcqPool = createMcqPool<IQuestion, CachedResult>({
 	logScope: 'cache',
-	getPoolSize,
 	normalizeUnit: (unit) => normalizeUnit(unit),
 	model: Question,
 	getRecentTopics: (className, unit) => getRecentTopics(className, unit, RECENT_TOPICS_WINDOW),
-	generateAndInsert,
-	serveClaimed: async (doc, className, cacheUnit, replenish) => {
-		replenish(className, cacheUnit);
-
+	serveCached: async (doc) => {
 		const answer = hotPoolBodyFromDoc(doc);
 		const topicsCovered = answer.topicsCovered ?? doc.topicsCovered ?? '';
 

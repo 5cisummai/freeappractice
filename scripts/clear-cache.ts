@@ -23,9 +23,7 @@ const questionSchema = new mongoose.Schema(
 	{
 		apClass: String,
 		unit: String,
-		s3QuestionId: String,
-		status: String,
-		serveCount: Number
+		s3QuestionId: String
 	},
 	{ timestamps: true }
 );
@@ -39,15 +37,8 @@ async function main() {
 	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
 	console.log('Connected.');
 
-	const [total, available, serving, retired] = await Promise.all([
-		Question.countDocuments({}),
-		Question.countDocuments({ status: 'available' }),
-		Question.countDocuments({ status: 'serving' }),
-		Question.countDocuments({ status: 'retired' })
-	]);
-	console.log(
-		`Cache contains ${total} question(s): ${available} available, ${serving} serving, ${retired} retired.`
-	);
+	const total = await Question.countDocuments({});
+	console.log(`Cache contains ${total} reusable question(s).`);
 	console.log('S3 question objects are not modified by this script.');
 
 	if (isDryRun) {

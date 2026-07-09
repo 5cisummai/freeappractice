@@ -5,22 +5,43 @@
 	import type { HistoryResponse } from '$lib/users/types.js';
 	import HistoryDataTable from '$lib/components/history/history-data-table.svelte';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import type { SortingState } from '@tanstack/table-core';
 
 	const PAGE_SIZE = 20;
+	const DEFAULT_SORTING: SortingState = [{ id: 'attemptedAt', desc: true }];
 
 	let items = $state<HistoryResponse['items']>([]);
 	let total = $state(0);
 	let pageIndex = $state(0);
+	let sorting = $state<SortingState>(DEFAULT_SORTING);
 	let loading = $state(true);
 	let errorMessage = $state('');
 	let loadSequence = 0;
 
-	async function loadHistory(requestedPageIndex = pageIndex) {
+	function sortParams(sortState: SortingState): { sortBy: string; sortDir: 'asc' | 'desc' } {
+		const primary = sortState[0];
+		if (!primary) return { sortBy: 'attemptedAt', sortDir: 'desc' };
+		return {
+			sortBy: primary.id,
+			sortDir: primary.desc ? 'desc' : 'asc'
+		};
+	}
+
+	async function loadHistory(
+		requestedPageIndex = pageIndex,
+		requestedSorting = sorting
+	) {
 		const sequence = ++loadSequence;
 		loading = true;
 		errorMessage = '';
 		try {
-			const query = [`page=${requestedPageIndex + 1}`, `limit=${PAGE_SIZE}`].join('&');
+			const { sortBy, sortDir } = sortParams(requestedSorting);
+			const query = [
+				`page=${requestedPageIndex + 1}`,
+				`limit=${PAGE_SIZE}`,
+				`sortBy=${encodeURIComponent(sortBy)}`,
+				`sortDir=${sortDir}`
+			].join('&');
 			const response = await apiFetch(`/api/me/history?${query}`);
 			const payload = await readJsonOrNull<HistoryResponse & { error?: string }>(response);
 			if (!response.ok) {
@@ -33,11 +54,12 @@
 			const data = payload as HistoryResponse;
 			items = data.items ?? [];
 			total = data.total ?? 0;
+			sorting = requestedSorting;
 
 			const maxPageIndex = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
 			if (requestedPageIndex > maxPageIndex) {
 				pageIndex = maxPageIndex;
-				await loadHistory(maxPageIndex);
+				await loadHistory(maxPageIndex, requestedSorting);
 				return;
 			}
 			pageIndex = requestedPageIndex;
@@ -54,11 +76,15 @@
 	}
 
 	function handlePageChange(nextPageIndex: number) {
-		void loadHistory(nextPageIndex);
+		void loadHistory(nextPageIndex, sorting);
+	}
+
+	function handleSortingChange(nextSorting: SortingState) {
+		void loadHistory(0, nextSorting.length ? nextSorting : DEFAULT_SORTING);
 	}
 
 	onMount(() => {
-		void loadHistory(0);
+		void loadHistory(0, sorting);
 	});
 </script>
 
@@ -87,6 +113,8 @@
 		{total}
 		{pageIndex}
 		pageSize={PAGE_SIZE}
+		{sorting}
 		onPageChange={handlePageChange}
+		onSortingChange={handleSortingChange}
 	/>
 {/if}

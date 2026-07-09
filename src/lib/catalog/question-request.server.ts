@@ -4,6 +4,8 @@ import { getAllowedClassNames } from '$lib/catalog/ap-classes';
 const MAX_CUSTOM_TOPIC_LEN = 500;
 const MAX_CLASS_NAME_LEN = 120;
 const MAX_UNIT_LEN = 200;
+const MAX_EXCLUDED_QUESTION_IDS = 100;
+const MAX_QUESTION_ID_LEN = 120;
 
 const ALLOWED_CLASS_NAMES = getAllowedClassNames();
 
@@ -11,6 +13,7 @@ interface ValidatedQuestionRequest {
 	className: string;
 	unit: string;
 	customTopic: string;
+	excludeQuestionIds: string[];
 }
 
 export type QuestionRequestResult =
@@ -18,7 +21,10 @@ export type QuestionRequestResult =
 	| { ok: false; response: Response };
 
 export function validateQuestionRequest(body: unknown): QuestionRequestResult {
-	const { className, unit, customTopic } = (body ?? {}) as Record<string, unknown>;
+	const { className, unit, customTopic, excludeQuestionIds } = (body ?? {}) as Record<
+		string,
+		unknown
+	>;
 
 	if (typeof className !== 'string' || !className.trim()) {
 		return {
@@ -81,12 +87,43 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		};
 	}
 
+	if (excludeQuestionIds !== undefined && !Array.isArray(excludeQuestionIds)) {
+		return {
+			ok: false,
+			response: json({ error: 'excludeQuestionIds must be an array if provided' }, { status: 400 })
+		};
+	}
+
+	const excludedIds: string[] = [];
+	for (const id of excludeQuestionIds ?? []) {
+		if (typeof id !== 'string') {
+			return {
+				ok: false,
+				response: json({ error: 'excludeQuestionIds must contain only strings' }, { status: 400 })
+			};
+		}
+		const trimmed = id.trim();
+		if (!trimmed) continue;
+		if (trimmed.length > MAX_QUESTION_ID_LEN) {
+			return {
+				ok: false,
+				response: json(
+					{ error: `question IDs must be at most ${MAX_QUESTION_ID_LEN} characters` },
+					{ status: 400 }
+				)
+			};
+		}
+		if (!excludedIds.includes(trimmed)) excludedIds.push(trimmed);
+		if (excludedIds.length >= MAX_EXCLUDED_QUESTION_IDS) break;
+	}
+
 	return {
 		ok: true,
 		value: {
 			className: trimmedClassName,
 			unit: trimmedUnit,
-			customTopic: topicTrim
+			customTopic: topicTrim,
+			excludeQuestionIds: excludedIds
 		}
 	};
 }

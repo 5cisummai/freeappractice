@@ -22,7 +22,6 @@
 		selectedUnit?: string;
 		/** When the user picks "Custom" unit, they describe the topic here (sent to the API, not cached). */
 		customTopic?: string;
-		isLoading?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -34,7 +33,6 @@
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
 		customTopic = $bindable(''),
-		isLoading = false,
 		generateLabel = 'Generate Question',
 		onGenerate,
 		onSelectionChange
@@ -243,10 +241,10 @@
 
 		<Button
 			onclick={onGenerate}
-			disabled={isLoading || !selectedClass || (isCustomUnitSelected && !customTopic.trim())}
+			disabled={!selectedClass || (isCustomUnitSelected && !customTopic.trim())}
 			class="h-10 shrink-0 px-4 text-sm"
 		>
-			{isLoading ? 'Generating...' : generateLabel}
+			{generateLabel}
 		</Button>
 		<Popover.Root bind:open={optionsOpen}>
 			<Popover.Trigger>

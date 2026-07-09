@@ -1,32 +1,52 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { findOrCreateProgressEntry } from '$lib/users/progress.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { getQuestionFromS3 } from '$lib/questions/storage.server';
+
+const answerChoices = new Set(['A', 'B', 'C', 'D']);
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {
 		const body = await event.request.json();
-		const { apClass, unit, questionId, selectedAnswer, wasCorrect, timeTakenMs } = body;
-		const normalizedUnit = normalizeUnit(unit, 'all-units');
+		const { questionId, selectedAnswer, timeTakenMs } = body;
+		const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
+		const normalizedAnswer =
+			typeof selectedAnswer === 'string' ? selectedAnswer.trim().toUpperCase() : '';
+		// Correctness is derived server-side from S3; only clamp client-reported duration.
+		const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
-		if (!apClass || !questionId || !selectedAnswer || typeof wasCorrect !== 'boolean') {
+		if (!normalizedQuestionId || !answerChoices.has(normalizedAnswer)) {
 			return json(
-				{ error: 'Missing required fields: apClass, questionId, selectedAnswer, wasCorrect' },
+				{ error: 'Missing required fields: questionId and selectedAnswer' },
 				{ status: 400 }
 			);
 		}
 
+		const question = await getQuestionFromS3(normalizedQuestionId).catch(() => null);
+		if (!question) {
+			return json({ error: 'Question metadata was not found' }, { status: 404 });
+		}
+
+		const apClass = typeof question.apClass === 'string' ? question.apClass.trim() : '';
+		const normalizedUnit = normalizeUnit(question.unit);
+		if (!apClass || !normalizedUnit) {
+			return json({ error: 'Question metadata is missing class or unit' }, { status: 422 });
+		}
+
+		const wasCorrect = normalizedAnswer === question.correctAnswer;
 		const user = await findUserProfileOrFail(userId);
 
 		user.questionHistory.push({
-			questionId,
+			questionId: normalizedQuestionId,
 			apClass,
 			unit: normalizedUnit,
-			selectedAnswer,
+			selectedAnswer: normalizedAnswer as 'A' | 'B' | 'C' | 'D',
 			wasCorrect,
-			timeTakenMs: timeTakenMs ?? 0,
+			timeTakenMs: elapsedTimeMs,
 			attemptedAt: new Date()
 		});
 
@@ -45,11 +65,11 @@ export const POST = withAuthedHandler(
 			distinctId: userId,
 			event: 'question_attempt_recorded',
 			properties: {
-				question_id: questionId,
+				question_id: normalizedQuestionId,
 				ap_class: apClass,
 				unit: normalizedUnit,
 				was_correct: wasCorrect,
-				time_taken_ms: timeTakenMs ?? 0,
+				time_taken_ms: elapsedTimeMs,
 				mastery: progressEntry.mastery,
 				total_attempts: progressEntry.totalAttempts
 			}
@@ -57,7 +77,7 @@ export const POST = withAuthedHandler(
 
 		return json({
 			message: 'Attempt recorded successfully',
-			questionId,
+			questionId: normalizedQuestionId,
 			mastery: progressEntry.mastery,
 			totalAttempts: progressEntry.totalAttempts
 		});

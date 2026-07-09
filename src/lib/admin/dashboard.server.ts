@@ -56,21 +56,12 @@ function parseLock(key: string, expiresAt: Date | string): CacheLockSnapshot {
 		};
 	}
 
-	if (parts[0] === 'replenish' && parts[1] === 'mcq') {
-		return {
-			key,
-			type: 'replenish',
-			apClass: parts[2] ?? 'Unknown',
-			unit: parts[3] ?? 'Unknown',
-			expiresAt
-		};
-	}
-
+	// Stale keys (e.g. legacy replenish::*) show as other — replenish workers are gone.
 	return {
 		key,
 		type: 'other',
-		apClass: 'Unknown',
-		unit: 'Unknown',
+		apClass: parts[0] === 'replenish' ? (parts[2] ?? 'Unknown') : 'Unknown',
+		unit: parts[0] === 'replenish' ? (parts[3] ?? 'Unknown') : 'Unknown',
 		expiresAt
 	};
 }
@@ -121,7 +112,6 @@ export async function getAdminDashboardData(opts: {
 	const activeTab = normalizeAdminTab(opts.tab);
 	const offset = (opts.page - 1) * opts.limit;
 	const now = new Date();
-	const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
 	const [
 		usersResult,
@@ -130,7 +120,6 @@ export async function getAdminDashboardData(opts: {
 		cacheLocksResult,
 		activeLockCountResult,
 		activeMissLockCountResult,
-		activeReplenishLockCountResult,
 		recentTopicsResult,
 		generationStatsResult
 	] = await Promise.allSettled([
@@ -156,15 +145,6 @@ export async function getAdminDashboardData(opts: {
 				$group: {
 					_id: { apClass: '$apClass', unit: '$unit' },
 					total: { $sum: 1 },
-					available: { $sum: { $cond: [{ $eq: ['$status', 'available'] }, 1, 0] } },
-					serving: { $sum: { $cond: [{ $eq: ['$status', 'serving'] }, 1, 0] } },
-					generating: { $sum: { $cond: [{ $eq: ['$status', 'generating'] }, 1, 0] } },
-					retired: { $sum: { $cond: [{ $eq: ['$status', 'retired'] }, 1, 0] } },
-					servedLast24h: {
-						$sum: { $cond: [{ $gte: ['$lastServedAt', last24Hours] }, 1, 0] }
-					},
-					avgServeCount: { $avg: '$serveCount' },
-					maxServeCount: { $max: '$maxServeCount' },
 					oldestCreatedAt: { $min: '$createdAt' },
 					newestCreatedAt: { $max: '$createdAt' }
 				}
@@ -178,60 +158,37 @@ export async function getAdminDashboardData(opts: {
 			.exec(),
 		CacheMissLock.countDocuments({ expiresAt: { $gt: now } }).exec(),
 		CacheMissLock.countDocuments({ expiresAt: { $gt: now }, key: /^miss::/ }).exec(),
-		CacheMissLock.countDocuments({ expiresAt: { $gt: now }, key: /^replenish::/ }).exec(),
-		QuestionRecentTopic.find({})
-			.sort({ createdAt: -1 })
-			.limit(10)
-			.lean()
-			.exec(),
+		QuestionRecentTopic.find({}).sort({ createdAt: -1 }).limit(10).lean().exec(),
 		getGenerationStatsForApi()
 	]);
 
 	const usersPayload = usersResult.status === 'fulfilled' ? usersResult.value : null;
-	const userError =
-		usersResult.status === 'rejected' ? 'Unable to load users right now.' : null;
+	const userError = usersResult.status === 'rejected' ? 'Unable to load users right now.' : null;
 	const users = (usersPayload?.users ?? []) as AdminUserRow[];
 	const totalUsers = usersPayload?.total ?? 0;
-	const totalUserProfiles = userProfilesResult.status === 'fulfilled' ? userProfilesResult.value : 0;
+	const totalUserProfiles =
+		userProfilesResult.status === 'fulfilled' ? userProfilesResult.value : 0;
 
 	const cacheBucketsRaw =
 		cacheBucketsResult.status === 'fulfilled'
 			? (cacheBucketsResult.value as Array<{
 					_id: { apClass: string; unit: string };
 					total: number;
-					available: number;
-					serving: number;
-					generating: number;
-					retired: number;
-					servedLast24h: number;
-					avgServeCount: number;
-					maxServeCount: number;
 					oldestCreatedAt?: Date;
 					newestCreatedAt?: Date;
-			  }>)
+				}>)
 			: [];
 
 	const cacheBuckets: CacheBucketSummary[] = cacheBucketsRaw
 		.map((bucket) => {
 			const fillRatio = Math.min(100, Math.round((bucket.total / targetPoolSize) * 100));
 			const health: CacheBucketSummary['health'] =
-				bucket.available === 0
-					? 'empty'
-					: bucket.available < targetPoolSize
-						? 'low'
-						: 'healthy';
+				bucket.total === 0 ? 'empty' : bucket.total < targetPoolSize ? 'low' : 'healthy';
 
 			return {
 				apClass: bucket._id.apClass,
 				unit: bucket._id.unit,
 				total: bucket.total,
-				available: bucket.available,
-				serving: bucket.serving,
-				generating: bucket.generating,
-				retired: bucket.retired,
-				servedLast24h: bucket.servedLast24h,
-				avgServeCount: Math.round((bucket.avgServeCount ?? 0) * 10) / 10,
-				maxServeCount: bucket.maxServeCount ?? 0,
 				oldestCreatedAt: bucket.oldestCreatedAt,
 				newestCreatedAt: bucket.newestCreatedAt,
 				fillRatio,
@@ -261,32 +218,17 @@ export async function getAdminDashboardData(opts: {
 		activeMissLockCountResult.status === 'fulfilled'
 			? activeMissLockCountResult.value
 			: cacheLocks.filter((lock) => lock.type === 'miss').length;
-	const activeReplenishLocks =
-		activeReplenishLockCountResult.status === 'fulfilled'
-			? activeReplenishLockCountResult.value
-			: cacheLocks.filter((lock) => lock.type === 'replenish').length;
 
 	const cacheOverview: CacheOverview = {
 		targetPoolSize,
 		totalQuestions: cacheBuckets.reduce((sum, bucket) => sum + bucket.total, 0),
 		totalBuckets: cacheBuckets.length,
-		available: cacheBuckets.reduce((sum, bucket) => sum + bucket.available, 0),
-		serving: cacheBuckets.reduce((sum, bucket) => sum + bucket.serving, 0),
-		generating: cacheBuckets.reduce((sum, bucket) => sum + bucket.generating, 0),
-		retired: cacheBuckets.reduce((sum, bucket) => sum + bucket.retired, 0),
-		servedLast24h: cacheBuckets.reduce((sum, bucket) => sum + bucket.servedLast24h, 0),
 		healthyBuckets: cacheBuckets.filter((bucket) => bucket.health === 'healthy').length,
-		underTargetBuckets: cacheBuckets.filter((bucket) => bucket.available < targetPoolSize).length,
-		emptyBuckets: cacheBuckets.filter((bucket) => bucket.available === 0).length,
+		underTargetBuckets: cacheBuckets.filter((bucket) => bucket.total < targetPoolSize).length,
+		emptyBuckets: cacheBuckets.filter((bucket) => bucket.total === 0).length,
 		activeLocks: activeLockCount,
-		activeMissLocks,
-		activeReplenishLocks,
-		availableRatio: 0
+		activeMissLocks
 	};
-
-	cacheOverview.availableRatio = cacheOverview.totalQuestions
-		? Math.round((cacheOverview.available / cacheOverview.totalQuestions) * 100)
-		: 0;
 
 	const recentTopics: RecentTopicSnapshot[] =
 		recentTopicsResult.status === 'fulfilled'

@@ -14,31 +14,17 @@ export interface CacheOverview {
 	targetPoolSize: number;
 	totalQuestions: number;
 	totalBuckets: number;
-	available: number;
-	serving: number;
-	generating: number;
-	retired: number;
-	servedLast24h: number;
 	healthyBuckets: number;
 	underTargetBuckets: number;
 	emptyBuckets: number;
 	activeLocks: number;
 	activeMissLocks: number;
-	activeReplenishLocks: number;
-	availableRatio: number;
 }
 
 export interface CacheBucketSummary {
 	apClass: string;
 	unit: string;
 	total: number;
-	available: number;
-	serving: number;
-	generating: number;
-	retired: number;
-	servedLast24h: number;
-	avgServeCount: number;
-	maxServeCount: number;
 	oldestCreatedAt?: Date | string | null;
 	newestCreatedAt?: Date | string | null;
 	fillRatio: number;
@@ -47,7 +33,7 @@ export interface CacheBucketSummary {
 
 export interface CacheLockSnapshot {
 	key: string;
-	type: 'miss' | 'replenish' | 'other';
+	type: 'miss' | 'other';
 	apClass: string;
 	unit: string;
 	expiresAt: Date | string;

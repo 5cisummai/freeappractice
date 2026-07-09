@@ -37,7 +37,7 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import { hashTopicKey, isCustomUnit, unitForProgress } from '$lib/catalog/custom-unit';
+	import { hashTopicKey, isCustomUnit } from '$lib/catalog/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -88,8 +88,7 @@
 	let questionCount = $state(0);
 	let statusMessage = $state('');
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
-	/** Top-level questionId from the last API response; backup when parsing omits it. */
-	let currentQuestionApiId = $state('');
+	let seenQuestionIds = $state<string[]>([]);
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
@@ -157,11 +156,13 @@
 	async function requestQuestion(
 		className: string,
 		unit: string,
-		topicOverride: string | undefined = undefined
+		topicOverride: string | undefined = undefined,
+		excludeQuestionIds: string[] = []
 	): Promise<QuestionApiResponse> {
-		const body: Record<string, string> = { className, unit };
+		const body: Record<string, string | string[]> = { className, unit };
 		const t = topicOverride?.trim();
 		if (t) body.customTopic = t;
+		else if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
 
 		const response = await apiFetch('/api/question', {
 			method: 'POST',
@@ -175,6 +176,12 @@
 		}
 
 		return payload;
+	}
+
+	function rememberSeenQuestion(question: GeneratedQuestion): void {
+		const questionId = question.questionId?.trim() ?? '';
+		if (!questionId || seenQuestionIds.includes(questionId)) return;
+		seenQuestionIds = [...seenQuestionIds, questionId];
 	}
 
 	function prefetchNextCustomMcq(): void {
@@ -261,16 +268,10 @@
 	}
 
 	function buildAnswerResult(selectedAnswer: string): AnswerResult | null {
-		const apClass = selectedClass.trim();
-		if (!currentQuestion?.correctAnswer || !apClass) return null;
-
-		const questionId =
-			currentQuestion.questionId?.trim() || currentQuestionApiId.trim() || undefined;
+		if (!currentQuestion?.correctAnswer) return null;
 
 		return {
-			questionId,
-			apClass,
-			unit: unitForProgress(selectedUnit, customTopic),
+			questionId: currentQuestion.questionId?.trim() || undefined,
 			questionNumber: effectiveQuestionNumber,
 			selectedAnswer,
 			correctAnswer: currentQuestion.correctAnswer,
@@ -308,7 +309,6 @@
 			else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
 			else statusMessage = 'Choose the best answer and then check your response.';
 			currentQuestion = cached;
-			currentQuestionApiId = cached.questionId?.trim() ?? '';
 			questionCount += 1;
 			resetInteractionState(true);
 			prefetchNextCustomMcq();
@@ -326,15 +326,14 @@
 			const response = await requestQuestion(
 				selectedClass,
 				effectiveUnit,
-				custom ? topicTrim : undefined
+				custom ? topicTrim : undefined,
+				custom ? [] : [...seenQuestionIds]
 			);
 
 			const normalized = parseQuestionPayloadFromResponse(response);
-			const apiQuestionId =
-				typeof response.questionId === 'string' ? response.questionId.trim() : '';
 
 			currentQuestion = normalized;
-			currentQuestionApiId = apiQuestionId || normalized.questionId?.trim() || '';
+			if (!custom) rememberSeenQuestion(normalized);
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
