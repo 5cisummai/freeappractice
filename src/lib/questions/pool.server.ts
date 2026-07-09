@@ -4,8 +4,6 @@ import { runCacheMissClusterFlow } from '$lib/questions/cache-miss.server';
 import { CacheMissLock } from '$lib/questions/cache-lock.server';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 
-const LOCK_WINDOW_MS = 10_000;
-
 function getReplenishLockTtlMs(): number {
 	return Math.max(10_000, parseInt(process.env.CACHE_REPLENISH_LOCK_TTL_MS ?? '', 10) || 120_000);
 }
@@ -70,10 +68,15 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 	const inFlightMiss = new Map<string, Promise<TCached>>();
 
 	async function claimDoc(filter: Record<string, unknown>): Promise<TDoc | null> {
-		const lockedUntil = new Date(Date.now() + LOCK_WINDOW_MS);
 		return config.model.findOneAndUpdate(
-			{ ...filter, status: 'available' },
-			{ $set: { status: 'serving', lockedUntil } },
+			{
+				...filter,
+				status: 'available',
+				$expr: {
+					$lt: [{ $ifNull: ['$serveCount', 0] }, { $ifNull: ['$maxServeCount', 50] }]
+				}
+			},
+			{ $inc: { serveCount: 1 }, $set: { lastServedAt: new Date() } },
 			{ sort: { lastServedAt: 1, createdAt: 1 } }
 		);
 	}
@@ -83,23 +86,13 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 		return claimDoc({ apClass: className, unit: cacheUnit });
 	}
 
-	function releaseDoc(doc: TDoc, currentServeCount: number, maxServeCount: number): void {
+	function deleteIfFullyServed(doc: TDoc, currentServeCount: number, maxServeCount: number): void {
 		const docId = doc._id.toString();
 		const nextServeCount = currentServeCount + 1;
 		if (nextServeCount >= maxServeCount) {
 			// Hot cache is ephemeral — drop the pool doc once fully served.
 			config.model.deleteOne({ _id: docId }).catch(() => {});
-			return;
 		}
-		config.model
-			.updateOne(
-				{ _id: docId },
-				{
-					$inc: { serveCount: 1 },
-					$set: { lastServedAt: new Date(), lockedUntil: null, status: 'available' }
-				}
-			)
-			.catch(() => {});
 	}
 
 	function replenishPool(className: string, unit: string): void {
@@ -167,7 +160,7 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 		className: string,
 		cacheUnit: string
 	): Promise<TCached> {
-		releaseDoc(doc, doc.serveCount ?? 0, doc.maxServeCount ?? 50);
+		deleteIfFullyServed(doc, doc.serveCount ?? 0, doc.maxServeCount ?? 50);
 		return config.serveClaimed(doc, className, cacheUnit, replenishPool);
 	}
 
@@ -250,7 +243,7 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 	return {
 		claimFromPool,
 		replenishPool,
-		releaseDoc,
+		deleteIfFullyServed,
 		getQuestion
 	};
 }
