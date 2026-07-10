@@ -1,10 +1,6 @@
 import type { PracticePage } from '$lib/catalog/practice-pages.js';
 import { PRODUCTION_SITE_URL } from '$lib/auth/urls';
-import {
-	formatUnitLabel,
-	getParentUnitPageForTopic,
-	getPracticePageHref
-} from '$lib/catalog/practice-pages.js';
+import { formatUnitLabel } from '$lib/catalog/practice-pages.js';
 
 const BASE_URL = PRODUCTION_SITE_URL;
 
@@ -35,7 +31,7 @@ export function buildPracticePageJsonLd(page: PracticePage): Record<string, unkn
 			? page.seo.h1
 			: page.type === 'unit' && page.unitName
 				? `${page.className}: ${page.unitName.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '')}`
-				: `${page.className}: ${page.customTopic ?? page.seo.h1}`;
+				: page.seo.h1;
 
 	return {
 		'@context': 'https://schema.org',
@@ -77,17 +73,6 @@ export function buildPracticeBreadcrumbs(
 		crumbs.push({
 			label: formatUnitLabel(page)
 		});
-	} else if (page.type === 'topic') {
-		const parentUnit = getParentUnitPageForTopic(page);
-		if (parentUnit) {
-			crumbs.push({
-				label: formatUnitLabel(parentUnit),
-				href: getPracticePageHref(parentUnit)
-			});
-		}
-		if (page.customTopic) {
-			crumbs.push({ label: page.customTopic });
-		}
 	}
 
 	return crumbs;

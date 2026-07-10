@@ -9,7 +9,6 @@
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
-	let customTopic = $state('');
 	let requestVersion = $state(0);
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
@@ -72,7 +71,6 @@
 		<QuestionShell
 			bind:selectedClass
 			bind:selectedUnit
-			bind:customTopic
 			bind:requestVersion
 			onAnswered={handleAnswered}
 		/>

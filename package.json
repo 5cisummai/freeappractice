@@ -67,7 +67,6 @@
 		"better-auth": "^1.6.20",
 		"dompurify": "^3.4.11",
 		"dotenv": "^17.4.2",
-		"flags": "^4.2.0",
 		"highlight.js": "^11.11.1",
 		"katex": "^0.16.47",
 		"marked": "^17.0.6",

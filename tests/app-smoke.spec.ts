@@ -40,6 +40,28 @@ test.describe('public app smoke checks', () => {
 		expect(robots).toContain('Disallow: /app');
 	});
 
+	test('question API rejects deprecated custom-topic requests', async ({ request }) => {
+		const response = await request.post('/api/question', {
+			data: {
+				className: 'AP Biology',
+				unit: '',
+				customTopic: 'Natural Selection'
+			}
+		});
+
+		expect(response.status()).toBe(410);
+		await expect(response.json()).resolves.toMatchObject({
+			error: expect.stringContaining('deprecated')
+		});
+	});
+
+	test('legacy topic practice URLs redirect to their unit pages', async ({ page }) => {
+		await page.goto('/practice/ap-biology/natural-selection');
+
+		await expect(page).toHaveURL(/\/practice\/ap-biology\/unit-7$/);
+		await expect(page.getByRole('heading', { name: /Unit 7/i })).toBeVisible();
+	});
+
 	test('health endpoint returns ok', async ({ request }) => {
 		const response = await request.get('/health');
 		expect(response.ok()).toBeTruthy();

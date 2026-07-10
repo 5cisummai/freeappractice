@@ -8,8 +8,8 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 - Public marketing pages: landing, about, subjects, summer study guide, blog, stats, privacy, terms, and changelog.
 - Authenticated app at `/app` for dashboard, practice, progress, question history, resources, and settings.
-- SEO practice landing pages under `/practice/[...slug]` (class, unit, and topic pages with internal linking).
-- AI-generated MCQs with optional custom topics, an in-app tutor, bookmarks, and attempt history.
+- SEO practice landing pages under `/practice/[...slug]` (class and unit pages with internal linking).
+- AI-generated MCQs with an in-app tutor, bookmarks, and attempt history.
 - Public generation stats at `/stats` (backed by `/api/question/generation-stats`).
 - Better Auth for email/password and Google sign-in (including Google One Tap when configured).
 - SvelteKit API routes for questions, signed-in user data, tutoring, and bug reports.

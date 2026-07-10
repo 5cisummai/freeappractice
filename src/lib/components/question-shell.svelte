@@ -6,17 +6,15 @@
 	type QuestionShellProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
-		customTopic?: string;
 		requestVersion?: number;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
-	} & Omit<QuestionCardProps, 'selectedClass' | 'selectedUnit' | 'customTopic' | 'requestVersion'>;
+	} & Omit<QuestionCardProps, 'selectedClass' | 'selectedUnit' | 'requestVersion'>;
 
 	let {
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
-		customTopic = $bindable(''),
 		requestVersion = $bindable(0),
 		generateLabel,
 		onGenerate,
@@ -39,7 +37,6 @@
 	<QuestionSelector
 		bind:selectedClass
 		bind:selectedUnit
-		bind:customTopic
 		{generateLabel}
 		onSelectionChange={handleSelectionChange}
 		onGenerate={handleGenerate}
@@ -48,6 +45,6 @@
 
 <div class="mx-auto min-h-40 max-w-6xl">
 	{#key `${selectedClass}:${selectedUnit}:${requestVersion}`}
-		<QuestionCard {selectedClass} {selectedUnit} {customTopic} {requestVersion} {...cardProps} />
+		<QuestionCard {selectedClass} {selectedUnit} {requestVersion} {...cardProps} />
 	{/key}
 </div>

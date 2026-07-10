@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getAllowedClassNames } from '$lib/catalog/ap-classes';
 
-const MAX_CUSTOM_TOPIC_LEN = 500;
 const MAX_CLASS_NAME_LEN = 120;
 const MAX_UNIT_LEN = 200;
 const MAX_EXCLUDED_QUESTION_IDS = 100;
@@ -12,7 +11,6 @@ const ALLOWED_CLASS_NAMES = getAllowedClassNames();
 interface ValidatedQuestionRequest {
 	className: string;
 	unit: string;
-	customTopic: string;
 	excludeQuestionIds: string[];
 }
 
@@ -69,22 +67,25 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		};
 	}
 
-	if (customTopic !== undefined && typeof customTopic !== 'string') {
-		return {
-			ok: false,
-			response: json({ error: 'customTopic must be a string if provided' }, { status: 400 })
-		};
-	}
-
-	const topicTrim = typeof customTopic === 'string' ? customTopic.trim() : '';
-	if (topicTrim.length > MAX_CUSTOM_TOPIC_LEN) {
-		return {
-			ok: false,
-			response: json(
-				{ error: `customTopic must be at most ${MAX_CUSTOM_TOPIC_LEN} characters` },
-				{ status: 400 }
-			)
-		};
+	if (customTopic !== undefined && customTopic !== null) {
+		if (typeof customTopic !== 'string') {
+			return {
+				ok: false,
+				response: json({ error: 'customTopic must be a string if provided' }, { status: 400 })
+			};
+		}
+		if (customTopic.trim()) {
+			return {
+				ok: false,
+				response: json(
+					{
+						error:
+							'customTopic is deprecated; use a class unit instead. Live custom-topic generation has been removed.'
+					},
+					{ status: 410 }
+				)
+			};
+		}
 	}
 
 	if (excludeQuestionIds !== undefined && !Array.isArray(excludeQuestionIds)) {
@@ -122,7 +123,6 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		value: {
 			className: trimmedClassName,
 			unit: trimmedUnit,
-			customTopic: topicTrim,
 			excludeQuestionIds: excludedIds
 		}
 	};

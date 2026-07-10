@@ -1,35 +1,24 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
 	import PracticeHubNav from '$lib/components/practice-hub-nav.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 
-	function getInitialSelection(practicePage: PracticePage, customTopicEnabled: boolean) {
+	function getInitialSelection(practicePage: PracticePage) {
 		return {
 			selectedClass: practicePage.className,
 			selectedUnit:
-				practicePage.type === 'unit' && practicePage.unitName
-					? practicePage.unitName
-					: practicePage.type === 'topic' && customTopicEnabled
-						? CUSTOM_UNIT_VALUE
-						: '',
-			customTopic:
-				practicePage.type === 'topic' && customTopicEnabled
-					? (practicePage.customTopic ?? '')
-					: ''
+				practicePage.type === 'unit' && practicePage.unitName ? practicePage.unitName : ''
 		};
 	}
 
 	let { page: practicePage }: { page: PracticePage } = $props();
 
-	const allowCustomTopic = $derived(Boolean(page.data.customTopicEnabled));
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
-	const initial = $derived(getInitialSelection(practicePage, allowCustomTopic));
+	const initial = $derived(getInitialSelection(practicePage));
 
 	function linkHref(href: string): string {
 		return href;
@@ -79,7 +68,6 @@
 				<QuestionShell
 					selectedClass={initial.selectedClass}
 					selectedUnit={initial.selectedUnit}
-					customTopic={initial.customTopic}
 				/>
 			</section>
 

@@ -37,7 +37,6 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-	import { hashTopicKey, isCustomUnit } from '$lib/catalog/custom-unit';
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -55,7 +54,6 @@
 		questionNumber = '',
 		selectedClass = '',
 		selectedUnit = '',
-		customTopic = '',
 		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
@@ -95,10 +93,6 @@
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
 
-	/** One-slot client prefetch for custom-topic flows only (next question while you work on the current one). */
-	let prefetchedCustomMcq = $state<{ key: string; question: GeneratedQuestion } | null>(null);
-	let prefetchMcqInFlightKey = $state<string | null>(null);
-
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
 		referenceSheet: { title: string; sections: { heading: string; content: string }[] } | null;
@@ -111,9 +105,7 @@
 	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
-	const tutorUnitLabel = $derived(
-		isCustomUnit(selectedUnit) ? customTopic.trim() || 'Custom topic' : selectedUnit
-	);
+	const tutorUnitLabel = $derived(selectedUnit);
 	const effectiveTwoColumn = $derived(
 		!isMobileViewport &&
 			(currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
@@ -139,30 +131,13 @@
 		mounted && !isLoading && requestVersion === 0 && !currentQuestion
 	);
 
-	function customTopicCacheKey(): string {
-		return `${selectedClass}::${hashTopicKey(customTopic.trim())}`;
-	}
-
-	$effect(() => {
-		if (!browser) return;
-		if (!isCustomUnit(selectedUnit) || !customTopic.trim()) {
-			prefetchedCustomMcq = null;
-			return;
-		}
-		const k = customTopicCacheKey();
-		if (prefetchedCustomMcq && prefetchedCustomMcq.key !== k) prefetchedCustomMcq = null;
-	});
-
 	async function requestQuestion(
 		className: string,
 		unit: string,
-		topicOverride: string | undefined = undefined,
 		excludeQuestionIds: string[] = []
 	): Promise<QuestionApiResponse> {
 		const body: Record<string, string | string[]> = { className, unit };
-		const t = topicOverride?.trim();
-		if (t) body.customTopic = t;
-		else if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
+		if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
 
 		const response = await apiFetch('/api/question', {
 			method: 'POST',
@@ -182,29 +157,6 @@
 		const questionId = question.questionId?.trim() ?? '';
 		if (!questionId || seenQuestionIds.includes(questionId)) return;
 		seenQuestionIds = [...seenQuestionIds, questionId];
-	}
-
-	function prefetchNextCustomMcq(): void {
-		if (!browser) return;
-		if (!isCustomUnit(selectedUnit)) return;
-		const topicTrim = customTopic.trim();
-		if (!topicTrim || !selectedClass) return;
-		const key = customTopicCacheKey();
-		if (prefetchedCustomMcq?.key === key) return;
-		if (prefetchMcqInFlightKey === key) return;
-		prefetchMcqInFlightKey = key;
-		void (async () => {
-			try {
-				const response = await requestQuestion(selectedClass, '', topicTrim);
-				const normalized = parseQuestionPayloadFromResponse(response);
-				if (customTopicCacheKey() !== key || !isCustomUnit(selectedUnit)) return;
-				prefetchedCustomMcq = { key, question: normalized };
-			} catch {
-				// Prefetch is best-effort only.
-			} finally {
-				if (prefetchMcqInFlightKey === key) prefetchMcqInFlightKey = null;
-			}
-		})();
 	}
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
@@ -289,32 +241,6 @@
 			return;
 		}
 
-		const custom = isCustomUnit(selectedUnit);
-		const topicTrim = customTopic.trim();
-		if (custom && !topicTrim) {
-			statusMessage = 'Enter a topic for your custom question.';
-			return;
-		}
-
-		// Instant path: one client-cached question for the same custom class+topic.
-		if (
-			custom &&
-			topicTrim &&
-			prefetchedCustomMcq &&
-			prefetchedCustomMcq.key === customTopicCacheKey()
-		) {
-			const cached = prefetchedCustomMcq.question;
-			prefetchedCustomMcq = null;
-			if (reason === 'skip') statusMessage = 'Skipped current question.';
-			else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
-			else statusMessage = 'Choose the best answer and then check your response.';
-			currentQuestion = cached;
-			questionCount += 1;
-			resetInteractionState(true);
-			prefetchNextCustomMcq();
-			return;
-		}
-
 		isLoading = true;
 
 		if (reason === 'skip') statusMessage = 'Skipped current question.';
@@ -322,22 +248,16 @@
 		else statusMessage = 'Loading question...';
 
 		try {
-			const effectiveUnit = custom ? '' : resolveEffectiveUnit(selectedClass, selectedUnit);
-			const response = await requestQuestion(
-				selectedClass,
-				effectiveUnit,
-				custom ? topicTrim : undefined,
-				custom ? [] : [...seenQuestionIds]
-			);
+			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit);
+			const response = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
 
 			const normalized = parseQuestionPayloadFromResponse(response);
 
 			currentQuestion = normalized;
-			if (!custom) rememberSeenQuestion(normalized);
+			rememberSeenQuestion(normalized);
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
-			if (custom && topicTrim) prefetchNextCustomMcq();
 		} catch (error) {
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
 		} finally {
@@ -405,7 +325,6 @@
 			questionNumber: effectiveQuestionNumber,
 			selectedClass,
 			selectedUnit,
-			customTopic,
 			prompt: currentQuestion?.prompt,
 			correctAnswer: currentQuestion?.correctAnswer,
 			hasStimulus: Boolean(currentQuestion?.hasStimulus)
@@ -758,6 +677,5 @@
 		context={bugReportContext}
 		{selectedClass}
 		{selectedUnit}
-		{customTopic}
 	/>
 {/if}

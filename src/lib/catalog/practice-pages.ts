@@ -17,11 +17,9 @@ type PracticePageLink = {
 
 export type PracticePage = {
 	slug: string;
-	type: 'class' | 'unit' | 'topic';
+	type: 'class' | 'unit';
 	className: string;
 	unitName?: string;
-	customTopic?: string;
-	parentUnitSlug?: string;
 	seo: {
 		title: string;
 		description: string;
@@ -35,8 +33,11 @@ export type PracticePage = {
 	links: PracticePageLink[];
 };
 
-/** Topic slug -> parent unit slug for breadcrumb and related-unit links. */
-const TOPIC_PARENT_UNIT_SLUG: Record<string, string> = {
+/**
+ * Legacy focused-topic SEO URLs → parent unit pages.
+ * Kept so old indexable routes redirect instead of 404.
+ */
+export const TOPIC_PRACTICE_REDIRECTS: Record<string, string> = {
 	'ap-biology/photosynthesis': 'ap-biology/unit-3',
 	'ap-biology/natural-selection': 'ap-biology/unit-7',
 	'ap-calculus-ab/limits': 'ap-calculus-ab/unit-1',
@@ -76,12 +77,6 @@ function validatePages(pages: PracticePage[]): void {
 			}
 		}
 
-		if (page.type === 'topic') {
-			if (!page.customTopic?.trim()) {
-				throw new Error(`Topic page ${page.slug} missing customTopic`);
-			}
-		}
-
 		if (page.type === 'class' && page.unitName) {
 			throw new Error(`Class page ${page.slug} should not have unitName`);
 		}
@@ -95,7 +90,6 @@ const pageBySlug = new Map(pages.map((page) => [page.slug, page]));
 
 const pagesByClass = new Map<string, PracticePage[]>();
 const unitsByClass = new Map<string, PracticePage[]>();
-const topicsByClass = new Map<string, PracticePage[]>();
 
 function extractUnitOrder(slug: string): number {
 	const match = slug.match(/\/unit-(\d+)$/);
@@ -112,20 +106,10 @@ for (const page of pages) {
 		units.push(page);
 		unitsByClass.set(page.className, units);
 	}
-
-	if (page.type === 'topic') {
-		const topics = topicsByClass.get(page.className) ?? [];
-		topics.push(page);
-		topicsByClass.set(page.className, topics);
-	}
 }
 
 for (const [, units] of unitsByClass) {
 	units.sort((a, b) => extractUnitOrder(a.slug) - extractUnitOrder(b.slug));
-}
-
-for (const [, topics] of topicsByClass) {
-	topics.sort((a, b) => (a.customTopic ?? '').localeCompare(b.customTopic ?? ''));
 }
 
 export function getClassSlugForPage(page: PracticePage): string {
@@ -144,20 +128,9 @@ export function getUnitPagesForClass(className: string): PracticePage[] {
 	return unitsByClass.get(className) ?? [];
 }
 
-export function getTopicPagesForClass(className: string): PracticePage[] {
-	return topicsByClass.get(className) ?? [];
-}
-
 export function getClassPracticePageFor(page: PracticePage): PracticePage | null {
 	const classSlug = getClassSlugForPage(page);
 	return pageBySlug.get(classSlug) ?? null;
-}
-
-export function getParentUnitPageForTopic(page: PracticePage): PracticePage | null {
-	if (page.type !== 'topic') return null;
-	const parentSlug = page.parentUnitSlug ?? TOPIC_PARENT_UNIT_SLUG[page.slug];
-	if (!parentSlug) return null;
-	return pageBySlug.get(parentSlug) ?? null;
 }
 
 export function getAdjacentUnitPages(
@@ -177,9 +150,6 @@ export function formatUnitLabel(page: PracticePage): string {
 	if (page.type === 'unit' && page.unitName) {
 		return page.unitName.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '');
 	}
-	if (page.type === 'topic' && page.customTopic) {
-		return page.customTopic;
-	}
 	return page.seo.h1;
 }
 
@@ -197,6 +167,15 @@ export function getPageBySlug(slugParam: string): PracticePage | null {
 	return pageBySlug.get(normalized) ?? null;
 }
 
+export function getTopicPracticeRedirect(slugParam: string): string | null {
+	const normalized = slugParam.replace(/^\/+|\/+$/g, '');
+	return TOPIC_PRACTICE_REDIRECTS[normalized] ?? null;
+}
+
+export function getTopicRedirectSlugs(): string[] {
+	return Object.keys(TOPIC_PRACTICE_REDIRECTS);
+}
+
 export function getAllPageSlugs(): string[] {
 	return pages.map((page) => page.slug);
 }
@@ -209,6 +188,5 @@ export function getClassPracticePages(): PracticePage[] {
 
 export function getSitemapPriority(page: PracticePage): string {
 	if (page.type === 'class') return '0.8';
-	if (page.type === 'topic') return '0.75';
 	return '0.7';
 }

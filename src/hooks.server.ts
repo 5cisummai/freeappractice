@@ -1,9 +1,6 @@
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { FLAGS_SECRET } from '$env/static/private';
-import { createHandle } from 'flags/sveltekit';
 import { auth } from '$lib/auth/server';
-import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
@@ -158,11 +155,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle = sequence(
-	createHandle({ secret: FLAGS_SECRET, flags }),
-	posthogProxyHandle,
-	appHandle
-);
+export const handle = sequence(posthogProxyHandle, appHandle);
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {
 	capturePostHogServerEvent(event.request, {

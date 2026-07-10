@@ -109,18 +109,4 @@ const mcqPool = createMcqPool<IQuestion, CachedResult>({
 	}
 });
 
-export async function generateLiveCustomTopicMcq(
-	className: string,
-	customTopic: string
-): Promise<CachedResult> {
-	const trimmed = customTopic.trim();
-	if (!trimmed) throw new Error('customTopic is required');
-	const result = await generateAPQuestion({
-		className,
-		unit: '',
-		customTopic: trimmed
-	});
-	return { ...result, cached: false };
-}
-
 export const getQuestion = mcqPool.getQuestion;

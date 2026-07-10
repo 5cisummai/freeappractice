@@ -150,10 +150,9 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Start(["POST /api/question"]) --> Validate["validateQuestionRequest<br/>AP class · unit · optional custom topic"]
-    Validate -->|invalid| Err400["400 response"]
-    Validate -->|custom topic| Live["generateLiveCustomTopicMcq<br/>always live AI — no cache pool"]
-    Validate -->|standard unit| Pool["getQuestion → question pool"]
+    Start(["POST /api/question"]) --> Validate["validateQuestionRequest<br/>AP class · unit"]
+    Validate -->|invalid| Err400["400 / 410 response"]
+    Validate -->|ok| Pool["getQuestion → question pool"]
 
     Pool --> Select{"MongoDB pool<br/>select reusable doc<br/>excluding this session's seen IDs"}
     Select -->|hit| LoadInline["Read full MCQ body from Mongo<br/>inline hot-cache fields"]
@@ -168,7 +167,6 @@ flowchart TD
 
     LoadInline --> Return(["JSON: answer, questionId,<br/>provider, model, cached"])
     HotDoc --> Return
-    Live --> Return
 
     Return --> UI["QuestionCard renders MCQ<br/>LaTeX · KaTeX · Desmos optional"]
     UI --> Attempt["User answers"]
@@ -230,11 +228,11 @@ sequenceDiagram
     participant DB as MongoDB + S3
     participant Tutor as Tutor panel
 
-    U->>App: Pick AP class + unit (or custom topic)
+    U->>App: Pick AP class + unit
     App->>QS: requestVersion++
     QS->>API: POST /api/question
     API->>DB: claim from hot pool (auth does not change selection)
-    API->>AI: generate on cache miss or custom topic
+    API->>AI: generate on cache miss
     AI-->>API: structured MCQ
     API->>DB: S3 + pool doc
     API-->>QS: question payload
