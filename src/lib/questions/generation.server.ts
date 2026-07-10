@@ -161,12 +161,18 @@ type APQuestionData = z.infer<typeof APQuestion>;
 
 export type { APQuestionData };
 
+export interface GenerateTiming {
+	generationMs: number;
+	persistenceMs: number;
+}
+
 export interface GenerateResult {
 	answer: APQuestionData;
 	provider: string;
 	model: string;
 	questionId?: string;
 	cached?: boolean;
+	timing?: GenerateTiming;
 }
 
 // ── Persistence ────────────────────────────────────────────────
@@ -316,13 +322,16 @@ export async function generateAPQuestion(opts: {
 	recentTopics?: string[];
 }): Promise<GenerateResult> {
 	const { className, unit } = opts;
+	const generationStarted = Date.now();
 	const parsed = await generateAPQuestionBody({
 		className,
 		unit,
 		recentTopics: opts.recentTopics
 	});
+	const generationMs = Date.now() - generationStarted;
 
 	let questionId: string;
+	const persistenceStarted = Date.now();
 	try {
 		questionId = await persistMcqQuestionToS3(parsed, className, unit);
 	} catch (err) {
@@ -331,7 +340,16 @@ export async function generateAPQuestion(opts: {
 			unit,
 			error: err
 		});
-		throw new Error('Failed to persist generated question');
+		throw new Error('Failed to persist generated question', { cause: err });
 	}
-	return { answer: parsed, provider: 'openai', model: selectModelForClass(className), questionId };
+	return {
+		answer: parsed,
+		provider: 'openai',
+		model: selectModelForClass(className),
+		questionId,
+		timing: {
+			generationMs,
+			persistenceMs: Date.now() - persistenceStarted
+		}
+	};
 }

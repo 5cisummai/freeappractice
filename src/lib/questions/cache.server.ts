@@ -67,6 +67,7 @@ async function generateQuestionForPool(
 		return result;
 	}
 
+	const poolInsertStarted = Date.now();
 	try {
 		await insertHotPoolDoc(className, cacheUnit, answer, questionId);
 	} catch (err: unknown) {
@@ -81,7 +82,14 @@ async function generateQuestionForPool(
 		throw err;
 	}
 
-	return result;
+	return {
+		...result,
+		timing: {
+			generationMs: result.timing?.generationMs ?? 0,
+			persistenceMs:
+				(result.timing?.persistenceMs ?? 0) + (Date.now() - poolInsertStarted)
+		}
+	};
 }
 
 export type CachedResult = GenerateResult & { cached: boolean };
@@ -106,7 +114,8 @@ const mcqPool = createMcqPool<IQuestion, CachedResult>({
 	generateLive: async (className, unit, recentTopics) => {
 		const result = await generateQuestionForPool(className, unit, recentTopics ?? []);
 		return { ...result, cached: false };
-	}
+	},
+	getLiveTiming: (result) => result.timing
 });
 
 export const getQuestion = mcqPool.getQuestion;
