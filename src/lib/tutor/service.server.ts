@@ -30,6 +30,7 @@ export async function* chat(opts: {
 	answerChoices: { A: string; B: string; C: string; D: string } | null;
 	conversationHistory: TutorMessage[];
 	userMessage: string;
+	signal?: AbortSignal;
 }): AsyncGenerator<string> {
 	const {
 		question,
@@ -39,7 +40,8 @@ export async function* chat(opts: {
 		unit,
 		answerChoices,
 		conversationHistory,
-		userMessage
+		userMessage,
+		signal
 	} = opts;
 
 	const choicesText = answerChoices
@@ -75,7 +77,8 @@ Important: do NOT at any point give the answer to the question. Instead, guide t
 				...conversationHistory,
 				{ role: 'user', content: userMessage }
 			],
-			maxOutputTokens: 500
+			maxOutputTokens: 500,
+			abortSignal: signal
 		},
 		{ historyLength: conversationHistory.length }
 	);
