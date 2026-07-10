@@ -118,8 +118,9 @@ Commonly needed for full functionality:
 | `PUBLIC_BASE_URL`                                                              | Canonical site URL                       |
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports |
 | `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                 |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`                          | Shared AI API rate limiting (`/api/question`, `/api/tutor/*`); required — missing config fails closed with 503 (no in-memory fallback) |
 
-Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, and rate-limit vars. See `.env.example` for defaults and comments.
+Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, `API_RATE_LIMIT_WINDOW_MS`, `API_RATE_LIMIT_MAX`. See `.env.example` for defaults and comments.
 
 ### Local AI with LM Studio
 

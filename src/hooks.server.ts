@@ -2,42 +2,13 @@ import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { FLAGS_SECRET } from '$env/static/private';
 import { createHandle } from 'flags/sveltekit';
-import { env } from '$env/dynamic/private';
 import { auth } from '$lib/auth/server';
 import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
-
-// ── In-memory rate limiter ──────────────────────────────────
-// TODO: For multi-instance (Vercel/Cloudflare) production deploys,
-// replace with a Redis-backed solution like @upstash/ratelimit.
-const WINDOW_MS = parseInt(env.API_RATE_LIMIT_WINDOW_MS ?? '900000', 10); // 15 min
-const MAX_REQUESTS = parseInt(env.API_RATE_LIMIT_MAX ?? '500', 10);
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-	const now = Date.now();
-	const entry = rateLimitMap.get(ip);
-
-	if (!entry || now > entry.resetAt) {
-		rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-		return true;
-	}
-	if (entry.count >= MAX_REQUESTS) return false;
-	entry.count++;
-	return true;
-}
-
-// Clean up stale entries periodically to prevent memory leaks
-setInterval(() => {
-	const now = Date.now();
-	for (const [key, val] of rateLimitMap) {
-		if (now > val.resetAt) rateLimitMap.delete(key);
-	}
-}, WINDOW_MS);
+import { enforceConfiguredAiRateLimit } from '$lib/server/api-rate-limit.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -108,7 +79,7 @@ const posthogProxyHandle: Handle = async ({ event, resolve }) => {
 		url.port = '443';
 		url.pathname = pathname.replace(/^\/ingest/, '');
 
-		const clientIp = event.request.headers.get('x-forwarded-for') || event.getClientAddress();
+		const clientIp = event.getClientAddress();
 		const response = await fetch(
 			url.toString(),
 			createPostHogProxyRequestInit(event.request, clientIp)
@@ -149,26 +120,6 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	if (event.url.pathname.startsWith('/api/') && !event.url.pathname.startsWith('/api/auth/')) {
-		const ip =
-			event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
-			event.request.headers.get('x-real-ip') ??
-			'unknown';
-
-		if (!checkRateLimit(ip)) {
-			return applyCorsHeaders(
-				new Response(JSON.stringify({ error: 'Too many requests' }), {
-					status: 429,
-					headers: {
-						'Content-Type': 'application/json',
-						'Retry-After': String(Math.ceil(WINDOW_MS / 1000))
-					}
-				}),
-				origin
-			);
-		}
-	}
-
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
@@ -181,6 +132,11 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	} catch (err) {
 		logger.error('Session lookup failed', { error: err, path: event.url.pathname });
+	}
+
+	const rateLimitResponse = await enforceConfiguredAiRateLimit(event);
+	if (rateLimitResponse) {
+		return postProcessResponse(rateLimitResponse, event, origin);
 	}
 
 	const requestStart = Date.now();
