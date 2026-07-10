@@ -8,6 +8,7 @@ import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
 
 // ── In-memory rate limiter ──────────────────────────────────
 // TODO: For multi-instance (Vercel/Cloudflare) production deploys,
@@ -107,22 +108,11 @@ const posthogProxyHandle: Handle = async ({ event, resolve }) => {
 		url.port = '443';
 		url.pathname = pathname.replace(/^\/ingest/, '');
 
-		const headers = new Headers(event.request.headers);
-		headers.set('host', hostname);
-		headers.set('accept-encoding', '');
-
 		const clientIp = event.request.headers.get('x-forwarded-for') || event.getClientAddress();
-		if (clientIp) {
-			headers.set('x-forwarded-for', clientIp);
-		}
-
-		const response = await fetch(url.toString(), {
-			method: event.request.method,
-			headers,
-			body: event.request.body,
-			// @ts-expect-error - duplex is required for streaming request bodies
-			duplex: 'half'
-		});
+		const response = await fetch(
+			url.toString(),
+			createPostHogProxyRequestInit(event.request, clientIp)
+		);
 
 		return response;
 	}
