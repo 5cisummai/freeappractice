@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import QuestionCard from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import type { QuestionCardProps } from '$lib/questions/types';
@@ -28,6 +29,7 @@
 	}
 
 	function handleGenerate(): void {
+		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
 		requestVersion += 1;
 		onGenerate?.();
 	}

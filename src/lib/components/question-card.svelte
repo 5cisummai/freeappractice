@@ -17,6 +17,15 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import {
+		captureFirstAnswerSubmitted,
+		captureQuestionRendered,
+		captureQuestionRequestFailed,
+		captureQuestionRequestSucceeded,
+		QuestionRequestError,
+		questionSourceFromCachedFlag,
+		type QuestionSource
+	} from '$lib/client/activation-analytics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import {
 		parseQuestionPayloadFromResponse,
@@ -37,6 +46,12 @@
 	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
+
+	type QuestionFetchResult = {
+		question: GeneratedQuestion;
+		source: QuestionSource;
+		latencyMs: number;
+	};
 
 	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
 	function withTooltipTriggerClick(
@@ -135,22 +150,38 @@
 		className: string,
 		unit: string,
 		excludeQuestionIds: string[] = []
-	): Promise<QuestionApiResponse> {
+	): Promise<QuestionFetchResult> {
+		const startedAt = Date.now();
 		const body: Record<string, string | string[]> = { className, unit };
 		if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
 
-		const response = await apiFetch('/api/question', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
+		try {
+			const response = await apiFetch('/api/question', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
 
-		const payload = await readJsonOrNull<QuestionApiResponse>(response);
-		if (!response.ok || !payload) {
-			throw new Error(getResponseMessage(payload, 'Failed to load question.'));
+			const payload = await readJsonOrNull<QuestionApiResponse>(response);
+			if (!response.ok || !payload) {
+				throw new QuestionRequestError(
+					getResponseMessage(payload, 'Failed to load question.'),
+					response.ok ? null : response.status
+				);
+			}
+
+			return {
+				question: parseQuestionPayloadFromResponse(payload),
+				source: questionSourceFromCachedFlag(payload.cached),
+				latencyMs: Date.now() - startedAt
+			};
+		} catch (error) {
+			if (error instanceof QuestionRequestError) throw error;
+			throw new QuestionRequestError(
+				error instanceof Error ? error.message : 'Could not load question.',
+				null
+			);
 		}
-
-		return payload;
 	}
 
 	function rememberSeenQuestion(question: GeneratedQuestion): void {
@@ -247,18 +278,32 @@
 		else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
 		else statusMessage = 'Loading question...';
 
+		const loadStartedAt = Date.now();
 		try {
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit);
-			const response = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			const result = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			const analytics = {
+				apClass: selectedClass,
+				unit: selectedUnit,
+				source: result.source,
+				latencyMs: result.latencyMs
+			};
+			captureQuestionRequestSucceeded(analytics);
+			captureQuestionRendered(analytics);
 
-			const normalized = parseQuestionPayloadFromResponse(response);
-
-			currentQuestion = normalized;
-			rememberSeenQuestion(normalized);
+			currentQuestion = result.question;
+			rememberSeenQuestion(result.question);
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
 		} catch (error) {
+			captureQuestionRequestFailed({
+				apClass: selectedClass,
+				unit: selectedUnit,
+				failureKind: error instanceof QuestionRequestError ? error.failureKind : 'network',
+				status: error instanceof QuestionRequestError ? error.status : null,
+				latencyMs: Date.now() - loadStartedAt
+			});
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
 		} finally {
 			isLoading = false;
@@ -288,6 +333,12 @@
 			question_id: result.questionId,
 			is_correct: result.isCorrect,
 			time_taken_ms: result.timeTakenMs
+		});
+		captureFirstAnswerSubmitted({
+			apClass: selectedClass,
+			unit: selectedUnit,
+			isCorrect: result.isCorrect,
+			timeTakenMs: result.timeTakenMs
 		});
 
 		if (autoShowExplanation && currentQuestion?.explanation) {

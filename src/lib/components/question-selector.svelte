@@ -13,6 +13,7 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils.js';
+	import { capturePracticeSelectorUsed } from '$lib/client/activation-analytics';
 
 	type QuestionSelectorProps = {
 		selectedClass?: string;
@@ -46,6 +47,7 @@
 
 	function notifySelectionChange(): void {
 		onSelectionChange?.(selectedClass, selectedUnit);
+		if (selectedClass) capturePracticeSelectorUsed(selectedClass, selectedUnit);
 	}
 
 	function selectClass(name: string): void {

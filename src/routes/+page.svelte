@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { authClient } from '$lib/auth/client.js';
+	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
@@ -13,6 +14,7 @@
 	import Topbar from '$lib/components/topbar.svelte';
 
 	onMount(() => {
+		captureLandingPageViewed();
 		void authClient.getSession().then(({ data }) => {
 			if (data?.session) {
 				void goto(resolve('/app'));

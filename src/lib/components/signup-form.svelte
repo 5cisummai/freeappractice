@@ -10,6 +10,10 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/google-logo.svelte';
+	import {
+		captureSignupCompleted,
+		captureSignupStarted
+	} from '$lib/client/activation-analytics';
 	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
@@ -36,8 +40,9 @@
 		}
 
 		loading = true;
+		captureSignupStarted('email');
 		try {
-			const { error } = await authClient.signUp.email({
+			const { data, error } = await authClient.signUp.email({
 				name,
 				email,
 				password,
@@ -47,8 +52,12 @@
 				errorMessage = error.message ?? 'Registration failed';
 				return;
 			}
-			identifyPostHogUser(email, { name });
+			const userId = data?.user?.id;
+			if (userId) {
+				identifyPostHogUser(userId, { name });
+			}
 			capturePostHogEvent('user_signed_up', { method: 'email' });
+			captureSignupCompleted('email');
 			goto(`${resolve('/email-sent')}?email=${encodeURIComponent(email)}`);
 		} catch {
 			errorMessage = 'Network error. Please try again.';
@@ -61,12 +70,13 @@
 		if (googleLoading) return;
 		errorMessage = '';
 		googleLoading = true;
+		captureSignupStarted('google');
 		try {
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
 				callbackURL: authCallbackUrl('/app'),
 				errorCallbackURL: authCallbackUrl('/signup'),
-				newUserCallbackURL: authCallbackUrl('/app')
+				newUserCallbackURL: authCallbackUrl('/app?signup=google')
 			});
 			if (error) errorMessage = error.message ?? 'Google sign-in failed';
 		} finally {

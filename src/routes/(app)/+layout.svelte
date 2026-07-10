@@ -1,16 +1,29 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { replaceState } from '$app/navigation';
+	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
+	import {
+		captureAuthenticatedStudentReturnedIfNeeded,
+		captureSignupCompleted
+	} from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { data, children } = $props();
 
 	onMount(() => {
 		if (data.user) {
-			identifyPostHogUser(data.user.email, { name: data.user.name });
+			identifyPostHogUser(data.user.id, { name: data.user.name });
+			if (page.url.searchParams.get('signup') === 'google') {
+				captureSignupCompleted('google');
+				const url = new URL(page.url);
+				url.searchParams.delete('signup');
+				replaceState(url, page.state);
+			}
+			captureAuthenticatedStudentReturnedIfNeeded();
 		}
 	});
 </script>
