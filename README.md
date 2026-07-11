@@ -77,14 +77,11 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command                        | Purpose                                               |
-| ------------------------------ | ----------------------------------------------------- |
-| `pnpm check`                   | Type-check with `svelte-check`                        |
-| `pnpm lint` / `pnpm format`    | ESLint and Prettier                                   |
-| `pnpm cache:clear`             | Clear the question cache pool                         |
-| `pnpm auth:indexes`            | Create Better Auth MongoDB indexes                    |
-| `pnpm scaffold:practice-pages` | Regenerate `practice-pages.json` from AP catalog      |
-| `pnpm audit:internal-links`    | Audit internal links across public and practice pages |
+| Command                     | Purpose                        |
+| --------------------------- | ------------------------------ |
+| `bun check`                 | Type-check with `svelte-check` |
+| `bun test:unit`             | Run Vitest unit tests          |
+| `bun lint` / `bun format`   | ESLint and Prettier            |
 
 ## Environment variables
 
