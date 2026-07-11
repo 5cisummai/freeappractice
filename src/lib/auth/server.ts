@@ -17,6 +17,7 @@ import {
 import { connectDb } from '$lib/server/db';
 import { UserProfile } from '$lib/users/model.server';
 import { ensureUserProfile } from '$lib/users/profile.server';
+import { Referral } from '$lib/referrals/model.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
 import { getAdminUserIds } from '$lib/auth/admin.server';
 
@@ -64,7 +65,12 @@ export const auth = betterAuth({
 			enabled: true,
 			afterDelete: async (user) => {
 				await connectDb();
-				await UserProfile.deleteOne({ userId: user.id });
+				await Promise.all([
+					UserProfile.deleteOne({ userId: user.id }),
+					Referral.deleteMany({
+						$or: [{ referrerUserId: user.id }, { referredUserId: user.id }]
+					})
+				]);
 			}
 		}
 	},

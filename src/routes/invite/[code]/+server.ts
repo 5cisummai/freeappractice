@@ -1,10 +1,17 @@
 import { redirect, type RequestHandler } from '@sveltejs/kit';
-import { findReferrerByCode, rememberReferralCode } from '$lib/referrals/referrals.server';
+import {
+	captureInviteLanded,
+	findReferrerByCode,
+	rememberReferralCode
+} from '$lib/referrals/referrals.server';
 
 export const GET: RequestHandler = async ({ cookies, params }) => {
 	const code = params.code?.trim() ?? '';
 	const referrerUserId = await findReferrerByCode(code);
-	if (referrerUserId) rememberReferralCode(cookies, code);
+	const codeValid = Boolean(referrerUserId);
 
-	redirect(302, '/practice');
+	if (referrerUserId) rememberReferralCode(cookies, code);
+	captureInviteLanded(codeValid);
+
+	redirect(302, codeValid ? '/subjects?invited=1' : '/subjects');
 };

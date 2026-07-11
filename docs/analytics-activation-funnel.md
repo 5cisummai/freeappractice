@@ -60,3 +60,14 @@ Other consent-gated keys:
 ## Related events (outside this funnel)
 
 Existing PostHog events such as `question_answered`, `user_signed_up`, and `$pageview` remain separate. Activation helpers delegate to `capturePostHogEvent` in `src/lib/client/posthog-analytics.ts`. Types and pure helpers live in `activation-funnel-metrics.ts` — import those directly, not via the capture module.
+
+## Referral funnel (growth)
+
+| Event                 | When                                              | Properties / notes                                      |
+| --------------------- | ------------------------------------------------- | ------------------------------------------------------- |
+| `invite_landed`       | `/invite/{code}` hit                              | Anonymous metric: `code_valid`                          |
+| `referral_claimed`    | Cookie attributed to a new account                | Consent-gated; `activated_on_claim`                     |
+| `referral_activated`  | First recorded attempt (or claim backfill)        | Consent-gated; `source` (`first_attempt` \| `claim_backfill`) |
+| `referral_share`      | User copies or native-shares their invite link    | Consent-gated; `method` (`copy` \| `native_share`)      |
+
+Invite links land on `/subjects?invited=1` (not bare `/practice`, which has no index route). Claim runs on every authenticated `(app)` layout load so practice-before-dashboard still attributes.

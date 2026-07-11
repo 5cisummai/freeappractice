@@ -61,7 +61,7 @@ export const POST = withAuthedHandler(
 		progressEntry.lastAttemptAt = new Date();
 
 		await user.save();
-		await activateReferralForUser(userId);
+		await activateReferralForUser(userId, event.request);
 
 		capturePostHogServerEvent(event.request, {
 			distinctId: userId,
