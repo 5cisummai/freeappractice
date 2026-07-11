@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth/client.js';
-	import { toggleMode } from 'mode-watcher';
 	import logo from '$lib/assets/logo.png';
+	import NavUser from '$lib/components/nav-user.svelte';
+	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
@@ -12,11 +12,14 @@
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
-	import LogOutIcon from '@lucide/svelte/icons/log-out';
-	import MoonIcon from '@lucide/svelte/icons/moon';
-	import SunIcon from '@lucide/svelte/icons/sun';
 
-	let { isAdmin }: { isAdmin: boolean } = $props();
+	let {
+		isAdmin,
+		user
+	}: {
+		isAdmin: boolean;
+		user: { name: string; email: string; image?: string | null };
+	} = $props();
 
 	const baseNavItems = [
 		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
@@ -31,24 +34,6 @@
 
 	function isActive(href: (typeof navItems)[number]['href']): boolean {
 		return page.url.pathname === resolve(href);
-	}
-
-	let signOutPending = $state(false);
-
-	async function handleSignOut() {
-		if (signOutPending) return;
-		signOutPending = true;
-		try {
-			await authClient.signOut({
-				fetchOptions: {
-					onSuccess: () => {
-						window.location.href = resolve('/');
-					}
-				}
-			});
-		} finally {
-			signOutPending = false;
-		}
 	}
 </script>
 
@@ -97,29 +82,10 @@
 	<Sidebar.Footer class="border-t border-sidebar-border">
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>
-				<Sidebar.MenuButton tooltipContent="Toggle theme" onclick={toggleMode}>
-					<span class="relative size-4">
-						<SunIcon
-							class="absolute inset-0 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90"
-						/>
-						<MoonIcon
-							class="absolute inset-0 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0"
-						/>
-					</span>
-					<span>Toggle theme</span>
-				</Sidebar.MenuButton>
-			</Sidebar.MenuItem>
-			<Sidebar.MenuItem>
-				<Sidebar.MenuButton
-					tooltipContent="Sign out"
-					onclick={handleSignOut}
-					class="hover:bg-destructive/10 hover:text-destructive"
-				>
-					<LogOutIcon />
-					<span>Sign out</span>
-				</Sidebar.MenuButton>
+				<ThemeToggle variant="sidebar" />
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
+		<NavUser {user} />
 	</Sidebar.Footer>
 
 	<Sidebar.Rail />

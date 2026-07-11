@@ -5,7 +5,6 @@
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import type { AnswerResult } from '$lib/components/question-card.svelte';
 	import { toast } from 'svelte-sonner';
-	import { unitForProgress } from '$lib/catalog/custom-unit';
 	import PageShell from '$lib/components/page-shell.svelte';
 
 	let selectedClass = $state('');
@@ -48,20 +47,15 @@
 	}
 
 	function handleAnswered(result: AnswerResult) {
-		const apClass = result.apClass.trim() || selectedClass.trim();
 		const questionId = result.questionId?.trim();
-		const unit = result.unit.trim() || unitForProgress(selectedUnit, customTopic);
 
-		if (!apClass || !questionId) return;
+		if (!questionId) return;
 
 		void syncAttempt(
 			'/api/me/record-attempt',
 			{
 				questionId,
-				apClass,
-				unit,
 				selectedAnswer: result.selectedAnswer,
-				wasCorrect: result.isCorrect,
 				timeTakenMs: result.timeTakenMs
 			},
 			'Could not save this attempt to your progress history.'

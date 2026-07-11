@@ -12,27 +12,12 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
 
-	let dotGridOffset = $state(0);
-
-	function updateDotGridParallax(): void {
-		if (typeof window === 'undefined') return;
-		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		dotGridOffset = reduceMotion ? 0 : window.scrollY * -0.35;
-	}
-
 	onMount(() => {
 		void authClient.getSession().then(({ data }) => {
 			if (data?.session) {
 				void goto(resolve('/app'));
 			}
 		});
-
-		updateDotGridParallax();
-		window.addEventListener('scroll', updateDotGridParallax, { passive: true });
-
-		return () => {
-			window.removeEventListener('scroll', updateDotGridParallax);
-		};
 	});
 </script>
 
@@ -294,13 +279,6 @@
 </svelte:head>
 
 <div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-	<div
-		class="landing-dot-grid pointer-events-none fixed -z-10 w-full"
-		style:top="-15vh"
-		style:height="130vh"
-		style:transform={`translate3d(0, ${dotGridOffset}px, 0)`}
-		aria-hidden="true"
-	></div>
 	<Topbar />
 
 	<main id="main-content" class="flex-1">
@@ -457,30 +435,3 @@
 
 	<SiteFooter />
 </div>
-
-<style>
-	.landing-dot-grid {
-		left: 0;
-		background-image: radial-gradient(
-			circle,
-			color-mix(in oklch, var(--foreground) 15%, transparent) 1px,
-			transparent 1px
-		);
-		background-size: 2rem 2rem;
-		will-change: transform;
-	}
-
-	:global(.dark) .landing-dot-grid {
-		background-image: radial-gradient(
-			circle,
-			color-mix(in oklch, var(--foreground) 5%, transparent) 1px,
-			transparent 1px
-		);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.landing-dot-grid {
-			will-change: auto;
-		}
-	}
-</style>

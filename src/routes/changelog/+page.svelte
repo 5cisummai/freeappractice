@@ -7,6 +7,39 @@
 
 	const changelog = [
 		{
+			version: '1.4.4',
+			date: 'July 9, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Question pool now excludes previously seen question IDs so practice sessions feel fresher',
+						'Refreshed sidebar user menu with avatar, settings shortcut, and sign-out',
+						'Dedicated theme toggle in the app shell (light, dark, and system)'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Streamlined question pool and cache handling for faster, more reliable delivery',
+						'Simplified admin cache dashboard aligned with the updated pool structure',
+						'History in Progress sorts consistently across paginated results',
+						'Daily streaks now count by your local calendar day',
+						'Cleaner landing page with simplified background styling',
+						'Dark mode color refinements and sidebar layout polish'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'More reliable attempt recording with validated question IDs and answer data',
+						'Capped attempt timing to prevent outlier values from skewing stats',
+						'History detail drawer spacing and layout fixes'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.3',
 			date: 'June 24, 2026',
 			sections: [
@@ -621,7 +654,7 @@
 			<PublicPageHero
 				title="Changelog"
 				description="Release notes and updates for Free AP Practice."
-				meta="Last Updated: June 25, 2026"
+				meta="Last Updated: July 9, 2026"
 			/>
 
 			<div class="space-y-12 pt-8">

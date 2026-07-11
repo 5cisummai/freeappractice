@@ -1,3 +1,4 @@
+import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import type { HistoryItem } from '$lib/users/types.js';
 
 export function escapeHtml(value: string): string {
@@ -19,8 +20,9 @@ export function formatAttemptDate(attemptedAt: string): string {
 }
 
 export function formatTimeTaken(ms?: number): string | null {
-	if (!ms || ms <= 0) return null;
-	const seconds = Math.round(ms / 1000);
+	const sanitized = sanitizeAttemptTimeMs(ms);
+	if (sanitized <= 0) return null;
+	const seconds = Math.round(sanitized / 1000);
 	if (seconds < 60) return `${seconds}s`;
 	const minutes = Math.floor(seconds / 60);
 	const rem = seconds % 60;

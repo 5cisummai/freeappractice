@@ -16,33 +16,6 @@
 
 	let { overview, buckets, locks, recentTopics }: Props = $props();
 
-	const statusSegments = $derived([
-		{
-			label: 'Available',
-			value: overview.available,
-			width: overview.totalQuestions ? (overview.available / overview.totalQuestions) * 100 : 0,
-			barClass: 'bg-emerald-500'
-		},
-		{
-			label: 'Serving',
-			value: overview.serving,
-			width: overview.totalQuestions ? (overview.serving / overview.totalQuestions) * 100 : 0,
-			barClass: 'bg-sky-500'
-		},
-		{
-			label: 'Generating',
-			value: overview.generating,
-			width: overview.totalQuestions ? (overview.generating / overview.totalQuestions) * 100 : 0,
-			barClass: 'bg-amber-500'
-		},
-		{
-			label: 'Retired',
-			value: overview.retired,
-			width: overview.totalQuestions ? (overview.retired / overview.totalQuestions) * 100 : 0,
-			barClass: 'bg-zinc-400'
-		}
-	]);
-
 	function healthClasses(health: CacheBucketSummary['health']): string {
 		if (health === 'healthy')
 			return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
@@ -52,8 +25,6 @@
 	}
 
 	function lockClasses(type: CacheLockSnapshot['type']): string {
-		if (type === 'replenish')
-			return 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300';
 		if (type === 'miss')
 			return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
 		return 'border-border bg-muted text-muted-foreground';
@@ -73,17 +44,10 @@
 </script>
 
 <div class="space-y-6">
-	<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+	<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
 		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
 			<p class="text-sm text-muted-foreground">Cached questions</p>
 			<p class="mt-2 text-3xl font-semibold tracking-tight">{overview.totalQuestions}</p>
-		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
-			<p class="text-sm text-muted-foreground">Available now</p>
-			<p class="mt-2 text-3xl font-semibold tracking-tight">{overview.available}</p>
-			<p class="mt-1 text-xs text-muted-foreground">
-				{overview.availableRatio}% immediately serveable
-			</p>
 		</Card.Root>
 		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
 			<p class="text-sm text-muted-foreground">Tracked buckets</p>
@@ -99,42 +63,23 @@
 			<p class="mt-2 text-3xl font-semibold tracking-tight">{overview.emptyBuckets}</p>
 		</Card.Root>
 		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
-			<p class="text-sm text-muted-foreground">Active locks</p>
-			<p class="mt-2 text-3xl font-semibold tracking-tight">{overview.activeLocks}</p>
-			<p class="mt-1 text-xs text-muted-foreground">
-				{overview.activeMissLocks} miss · {overview.activeReplenishLocks} replenish
-			</p>
+			<p class="text-sm text-muted-foreground">Active miss locks</p>
+			<p class="mt-2 text-3xl font-semibold tracking-tight">{overview.activeMissLocks}</p>
+			<p class="mt-1 text-xs text-muted-foreground">{overview.activeLocks} total lock(s)</p>
 		</Card.Root>
 	</div>
 
 	<div class="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
 		<Card.Root class="rounded-2xl border border-border/60 shadow-sm">
 			<Card.Header class="border-b border-border/70">
-				<Card.Title>Cache status mix</Card.Title>
-				<Card.Description>Question inventory by live pool state.</Card.Description>
+				<Card.Title>Reusable cache pool</Card.Title>
+				<Card.Description>Cached question inventory available for shared serving.</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4 p-6">
-				<div class="h-3 overflow-hidden rounded-full bg-muted">
-					<div class="flex h-full w-full">
-						{#each statusSegments as segment (segment.label)}
-							<div class={segment.barClass} style={`width:${segment.width}%`}></div>
-						{/each}
-					</div>
-				</div>
-				<div class="grid gap-3 sm:grid-cols-2">
-					{#each statusSegments as segment (segment.label)}
-						<div class="rounded-xl border border-border/60 px-4 py-3">
-							<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">
-								{segment.label}
-							</p>
-							<p class="mt-2 text-2xl font-semibold tracking-tight">{segment.value}</p>
-						</div>
-					{/each}
-				</div>
 				<div class="grid gap-3 sm:grid-cols-3">
 					<div class="rounded-xl border border-border/60 px-4 py-3">
-						<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Served 24h</p>
-						<p class="mt-2 text-2xl font-semibold tracking-tight">{overview.servedLast24h}</p>
+						<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Reusable</p>
+						<p class="mt-2 text-2xl font-semibold tracking-tight">{overview.totalQuestions}</p>
 					</div>
 					<div class="rounded-xl border border-border/60 px-4 py-3">
 						<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Healthy buckets</p>
@@ -151,7 +96,7 @@
 		<Card.Root class="rounded-2xl border border-border/60 shadow-sm">
 			<Card.Header class="border-b border-border/70">
 				<Card.Title>Active locks</Card.Title>
-				<Card.Description>Current miss coalescing and replenish workers.</Card.Description>
+				<Card.Description>Current cache-miss leaders across serverless instances.</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-3 p-6">
 				{#if locks.length === 0}
@@ -213,11 +158,10 @@
 									style={`width:${bucket.fillRatio}%`}
 								></div>
 							</div>
-							<div class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-4">
-								<span>{bucket.available} available</span>
-								<span>{bucket.serving} serving</span>
+							<div class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+								<span>{bucket.total} reusable</span>
 								<span>{bucket.total}/{overview.targetPoolSize} pooled</span>
-								<span>{bucket.servedLast24h} served 24h</span>
+								<span>Newest {formatRelativeDate(bucket.newestCreatedAt ?? '')}</span>
 							</div>
 						</div>
 					</div>
