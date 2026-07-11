@@ -4,29 +4,29 @@ Server-side timing and reliability metrics for `POST /api/question`. Used to wat
 
 ## Event
 
-| Field | Value |
-| --- | --- |
-| Event name | `question_request` |
-| Distinct ID | `server` (anonymous; never a user id) |
-| Consent | Not required — operational metric with no PII |
+| Field       | Value                                         |
+| ----------- | --------------------------------------------- |
+| Event name  | `question_request`                            |
+| Distinct ID | `server` (anonymous; never a user id)         |
+| Consent     | Not required — operational metric with no PII |
 
 ## Properties (allowlisted)
 
-| Property | Type | Notes |
-| --- | --- | --- |
-| `segment` | string | `cache_hit` \| `cache_miss_leader` \| `cache_miss_follower` \| `error` |
-| `ap_class` | string | AP course name (catalog value) |
-| `unit` | string | Normalized unit label |
-| `validation_ms` | number | Request JSON + validation |
-| `cache_lookup_ms` | number | Hot-pool Mongo lookup |
-| `lock_wait_ms` | number | Cache-miss lock / follower wait (0 on hit) |
-| `generation_ms` | number | Model structured completion (0 on hit / follower claim) |
-| `persistence_ms` | number | S3 + hot-pool insert (0 on hit / follower claim) |
-| `total_ms` | number | End-to-end handler latency |
-| `http_status` | number | Response status |
-| `ok` | boolean | `true` on 200 |
-| `cached` | boolean | Whether the served MCQ came from the hot pool |
-| `error_type` | string? | `validation` \| `forbidden` \| `generation` \| `busy` \| `unknown` |
+| Property          | Type    | Notes                                                                  |
+| ----------------- | ------- | ---------------------------------------------------------------------- |
+| `segment`         | string  | `cache_hit` \| `cache_miss_leader` \| `cache_miss_follower` \| `error` |
+| `ap_class`        | string  | AP course name (catalog value)                                         |
+| `unit`            | string  | Normalized unit label                                                  |
+| `validation_ms`   | number  | Request JSON + validation                                              |
+| `cache_lookup_ms` | number  | Hot-pool Mongo lookup                                                  |
+| `lock_wait_ms`    | number  | Cache-miss lock / follower wait (0 on hit)                             |
+| `generation_ms`   | number  | Model structured completion (0 on hit / follower claim)                |
+| `persistence_ms`  | number  | S3 + hot-pool insert (0 on hit / follower claim)                       |
+| `total_ms`        | number  | End-to-end handler latency                                             |
+| `http_status`     | number  | Response status                                                        |
+| `ok`              | boolean | `true` on 200                                                          |
+| `cached`          | boolean | Whether the served MCQ came from the hot pool                          |
+| `error_type`      | string? | `validation` \| `forbidden` \| `generation` \| `busy` \| `unknown`     |
 
 **Never recorded:** question bodies, answers, explanations, `customTopic` text, user IDs, emails, session IDs, or `excludeQuestionIds`.
 
@@ -120,12 +120,12 @@ ORDER BY error_rate DESC, total DESC
 
 Create PostHog insights alerts (or external monitors on the HogQL above) for **sustained** regressions — e.g. breach for **2 consecutive 15-minute windows** with ≥20 events in the window:
 
-| Signal | Threshold | Why |
-| --- | --- | --- |
-| Cache-hit p95 `total_ms` | **> 800 ms** | Warm-pool serve should stay snappy |
+| Signal                           | Threshold       | Why                                        |
+| -------------------------------- | --------------- | ------------------------------------------ |
+| Cache-hit p95 `total_ms`         | **> 800 ms**    | Warm-pool serve should stay snappy         |
 | Cache-miss leader p95 `total_ms` | **> 45_000 ms** | Approaching serverless `maxDuration` (60s) |
-| Follower p95 `lock_wait_ms` | **> 20_000 ms** | Cluster lock / claim path degrading |
-| Error rate (`ok = false`) | **> 5%** | Reliability regression |
-| `error_type = busy` rate | **> 2%** | Lock contention / capacity |
+| Follower p95 `lock_wait_ms`      | **> 20_000 ms** | Cluster lock / claim path degrading        |
+| Error rate (`ok = false`)        | **> 5%**        | Reliability regression                     |
+| `error_type = busy` rate         | **> 2%**        | Lock contention / capacity                 |
 
 Tune after a week of baseline data; keep alerts on **rates and percentiles**, not single outliers.

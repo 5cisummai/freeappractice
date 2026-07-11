@@ -2,7 +2,7 @@
 
 > Free AP practice for high school students: plan which APs to take, preview Unit 1 over the summer, and generate unlimited practice questions with instant feedback. No signup required.
 
-Use this site to choose AP classes wisely, build a summer study habit (about 15–30 minutes a day), and prepare for AP exams. Select an AP subject, choose a unit or custom topic, and generate practice questions with explanations.
+Use this site to choose AP classes wisely, build a summer study habit (about 15–30 minutes a day), and prepare for AP exams. Select an AP subject and unit, then generate practice questions with explanations.
 
 ## Features
 
@@ -10,7 +10,7 @@ Use this site to choose AP classes wisely, build a summer study habit (about 15�
 - AP course planning and summer study guides
 - Instant feedback with detailed explanations
 - Progress tracking and streak counting
-- Custom topic and unit selection
+- AP subject and unit selection
 - Privacy-first: progress is saved locally for anonymous use and can be stored to your account when signed in
 - 100% free, no ads or subscriptions
 

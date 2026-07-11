@@ -1,3 +1,5 @@
+import type { QuestionPathMetrics } from '$lib/questions/pool.server';
+
 /** Outcome segments for POST /api/question reliability dashboards. */
 export type QuestionRequestSegment =
 	| 'cache_hit'
@@ -76,9 +78,3 @@ export function createQuestionPathMetrics(): QuestionPathMetrics {
 		persistenceMs: 0
 	};
 }
-
-export function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
-	captureAnonymousServerMetric(QUESTION_REQUEST_EVENT, sanitizeQuestionRequestMetricProps(props));
-}
-import type { QuestionPathMetrics } from '$lib/questions/pool.server';
-import { captureAnonymousServerMetric } from '$lib/server/posthog';

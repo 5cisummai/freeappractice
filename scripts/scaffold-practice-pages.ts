@@ -233,14 +233,13 @@ function generateLunchUnitParagraphs(label: string, unitNumber: number): string[
 			`Use this page to drill resource allocation strategies that would make your econ teacher proud and your friends less annoyed.`
 		]
 	};
-	const base =
-		byUnit[unitNumber] ?? [
-			`${label} is a cornerstone unit in AP Lunch, where rigorous analysis meets the cafeteria clock.`,
-			`Practice applying lunch-period logic to unfamiliar scenarios—because the exam writers respect creativity and a well-defended tray.`,
-			`Generate questions here and read every explanation; tomorrow's line might be longer.`,
-			`Treat each MCQ like a debate with your future self about whether you would make the same choice hungry.`,
-			`When in doubt, pick the answer that respects time, fairness, and the laws of physics for a full tray.`
-		];
+	const base = byUnit[unitNumber] ?? [
+		`${label} is a cornerstone unit in AP Lunch, where rigorous analysis meets the cafeteria clock.`,
+		`Practice applying lunch-period logic to unfamiliar scenarios—because the exam writers respect creativity and a well-defended tray.`,
+		`Generate questions here and read every explanation; tomorrow's line might be longer.`,
+		`Treat each MCQ like a debate with your future self about whether you would make the same choice hungry.`,
+		`When in doubt, pick the answer that respects time, fairness, and the laws of physics for a full tray.`
+	];
 	return [
 		...base,
 		`Lunch-period time limits make every decision visible: you either eat, socialize, or sprint to club—AP Lunch MCQs train you to commit after brief analysis instead of overthinking.`,
@@ -295,11 +294,7 @@ function buildClassLinks(className: string, collegeBoardUrl: string | null): Pra
 	return links.slice(0, 3);
 }
 
-function buildUnitLinks(
-	className: string,
-	collegeBoardUrl: string | null,
-	unitNumber: number
-): PracticePageLink[] {
+function buildUnitLinks(className: string, collegeBoardUrl: string | null): PracticePageLink[] {
 	const links = buildClassLinks(className, collegeBoardUrl);
 	const classSlug = classToSlug(className);
 	links.unshift({
@@ -321,7 +316,7 @@ function generateClassPage(course: Course, meta: CourseMeta | undefined): Practi
 	const unitLabels = units.map((u) => stripUnitPrefix(u));
 	const firstUnits = unitLabels.slice(0, 2).join(' and ');
 	const laterUnits =
-		unitLabels.length > 3 ? unitLabels.slice(-2).join(' and ') : unitLabels.at(-1) ?? '';
+		unitLabels.length > 3 ? unitLabels.slice(-2).join(' and ') : (unitLabels.at(-1) ?? '');
 
 	const paragraphs = isLunchCourse(course.name)
 		? [
@@ -446,7 +441,7 @@ function generateUnitPage(
 			subtitle: weight ? `~${weight} of multiple-choice exam weight` : undefined
 		},
 		article: { paragraphs },
-		links: buildUnitLinks(course.name, collegeBoardUrl, unitNumber)
+		links: buildUnitLinks(course.name, collegeBoardUrl)
 	};
 }
 

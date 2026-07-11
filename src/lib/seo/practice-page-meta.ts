@@ -78,9 +78,7 @@ export function buildPracticeBreadcrumbs(
 	return crumbs;
 }
 
-export function buildPracticeBreadcrumbJsonLd(
-	page: PracticePage
-): Record<string, unknown> {
+export function buildPracticeBreadcrumbJsonLd(page: PracticePage): Record<string, unknown> {
 	const crumbs = buildPracticeBreadcrumbs(page);
 	const meta = buildPracticePageMeta(page);
 

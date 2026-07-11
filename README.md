@@ -77,14 +77,14 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command                                       | Purpose                                             |
-| --------------------------------------------- | --------------------------------------------------- |
-| `pnpm check`                                  | Type-check with `svelte-check`                      |
-| `pnpm lint` / `pnpm format`                   | ESLint and Prettier                                 |
-| `pnpm cache:clear`                            | Clear the question cache pool                       |
-| `pnpm auth:indexes`                           | Create Better Auth MongoDB indexes                  |
-| `pnpm scaffold:practice-pages`              | Regenerate `practice-pages.json` from AP catalog    |
-| `pnpm audit:internal-links`                 | Audit internal links across public and practice pages |
+| Command                        | Purpose                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| `pnpm check`                   | Type-check with `svelte-check`                        |
+| `pnpm lint` / `pnpm format`    | ESLint and Prettier                                   |
+| `pnpm cache:clear`             | Clear the question cache pool                         |
+| `pnpm auth:indexes`            | Create Better Auth MongoDB indexes                    |
+| `pnpm scaffold:practice-pages` | Regenerate `practice-pages.json` from AP catalog      |
+| `pnpm audit:internal-links`    | Audit internal links across public and practice pages |
 
 ## Environment variables
 
@@ -100,24 +100,24 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
 
-| Variable          | Purpose                                                        |
-| ----------------- | -------------------------------------------------------------- |
-| `ADVANCED_MODEL`  | Model for STEM and other advanced subjects                     |
-| `BASIC_MODEL`     | Model for humanities and lighter subjects                      |
-| `TUTOR_MODEL`     | Model for the in-app tutor chat                                |
+| Variable         | Purpose                                    |
+| ---------------- | ------------------------------------------ |
+| `ADVANCED_MODEL` | Model for STEM and other advanced subjects |
+| `BASIC_MODEL`    | Model for humanities and lighter subjects  |
+| `TUTOR_MODEL`    | Model for the in-app tutor chat            |
 
 Commonly needed for full functionality:
 
-| Variable                                                                       | Purpose                                  |
-| ------------------------------------------------------------------------------ | ---------------------------------------- |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                             |
-| `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client             |
-| `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                      |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches   |
-| `AWS_SESSION_TOKEN`                                                              | Optional temporary/assumed-role credentials |
-| `PUBLIC_BASE_URL`                                                              | Canonical site URL                       |
-| `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports |
-| `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                 |
+| Variable                                                                       | Purpose                                                                                                                                |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                                                                                                                           |
+| `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client                                                                                                           |
+| `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                                                                                                                    |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches                                                                                                 |
+| `AWS_SESSION_TOKEN`                                                            | Optional temporary/assumed-role credentials                                                                                            |
+| `PUBLIC_BASE_URL`                                                              | Canonical site URL                                                                                                                     |
+| `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                                                               |
+| `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                                                                                                               |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`                          | Shared AI API rate limiting (`/api/question`, `/api/tutor/*`); required — missing config fails closed with 503 (no in-memory fallback) |
 
 Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, `API_RATE_LIMIT_WINDOW_MS`, `API_RATE_LIMIT_MAX`. See `.env.example` for defaults and comments.

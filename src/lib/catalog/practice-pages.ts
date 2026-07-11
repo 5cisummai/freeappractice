@@ -133,9 +133,10 @@ export function getClassPracticePageFor(page: PracticePage): PracticePage | null
 	return pageBySlug.get(classSlug) ?? null;
 }
 
-export function getAdjacentUnitPages(
-	page: PracticePage
-): { prev?: PracticePage; next?: PracticePage } {
+export function getAdjacentUnitPages(page: PracticePage): {
+	prev?: PracticePage;
+	next?: PracticePage;
+} {
 	if (page.type !== 'unit') return {};
 	const units = getUnitPagesForClass(page.className);
 	const index = units.findIndex((unit) => unit.slug === page.slug);

@@ -5,10 +5,12 @@ import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
+import { captureAnonymousServerMetric } from '$lib/server/posthog';
 import {
-	captureQuestionRequestMetric,
+	QUESTION_REQUEST_EVENT,
 	classifyQuestionRequestError,
 	createQuestionPathMetrics,
+	sanitizeQuestionRequestMetricProps,
 	type QuestionRequestErrorType,
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
@@ -31,21 +33,24 @@ export const POST: RequestHandler = async ({ request }) => {
 		cached: boolean,
 		errorType?: QuestionRequestErrorType
 	): void {
-		captureQuestionRequestMetric({
-			segment,
-			ap_class: apClass,
-			unit,
-			validation_ms: validationMs,
-			cache_lookup_ms: path.cacheLookupMs,
-			lock_wait_ms: path.lockWaitMs,
-			generation_ms: path.generationMs,
-			persistence_ms: path.persistenceMs,
-			total_ms: Date.now() - startedAt,
-			http_status: status,
-			ok: status < 400,
-			cached,
-			...(errorType ? { error_type: errorType } : {})
-		});
+		captureAnonymousServerMetric(
+			QUESTION_REQUEST_EVENT,
+			sanitizeQuestionRequestMetricProps({
+				segment,
+				ap_class: apClass,
+				unit,
+				validation_ms: validationMs,
+				cache_lookup_ms: path.cacheLookupMs,
+				lock_wait_ms: path.lockWaitMs,
+				generation_ms: path.generationMs,
+				persistence_ms: path.persistenceMs,
+				total_ms: Date.now() - startedAt,
+				http_status: status,
+				ok: status < 400,
+				cached,
+				...(errorType ? { error_type: errorType } : {})
+			})
+		);
 	}
 
 	try {

@@ -3,11 +3,8 @@ import type { RequestHandler } from './$types';
 import { chat } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import {
-	MAX_TUTOR_CHAT_REQUEST_BYTES,
-	TUTOR_CHAT_STREAM_TIMEOUT_MS,
-	tutorChatRequestSchema
-} from '$lib/tutor/chat-request';
+import { createTutorChatStream } from '$lib/tutor/chat-stream.server';
+import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '$lib/tutor/chat-request';
 
 class RequestTooLargeError extends Error {}
 
@@ -67,16 +64,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				{ status: 400 }
 			);
 		}
-		const {
-			question,
-			answer,
-			explanation,
-			apClass,
-			unit,
-			answerChoices,
-			conversationHistory,
-			message
-		} = result.data;
+		const { apClass, unit, conversationHistory } = result.data;
 
 		capturePostHogServerEvent(request, {
 			distinctId: 'anonymous',
@@ -88,71 +76,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		});
 
-		const providerController = new AbortController();
-		let cancelled = false;
-		const abortProvider = () => {
-			if (!providerController.signal.aborted) providerController.abort();
-		};
-		request.signal.addEventListener('abort', abortProvider, { once: true });
-		const timeoutId = setTimeout(abortProvider, TUTOR_CHAT_STREAM_TIMEOUT_MS);
-		const cleanup = () => {
-			clearTimeout(timeoutId);
-			request.signal.removeEventListener('abort', abortProvider);
-		};
-
-		const stream = new ReadableStream({
-			async start(controller) {
-				const encoder = new TextEncoder();
-				const enqueue = (payload: unknown) => {
-					controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
-				};
-
-				try {
-					const generator = chat({
-						question,
-						correctAnswer: answer,
-						explanation: explanation,
-						apClass: apClass,
-						unit: unit,
-						answerChoices,
-						conversationHistory,
-						userMessage: message,
-						signal: providerController.signal
-					});
-					for await (const chunk of generator) {
-						if (cancelled) return;
-						enqueue({ content: chunk });
-					}
-
-					if (!cancelled) controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-				} catch (err) {
-					if (cancelled) return;
-
-					try {
-						const aborted = providerController.signal.aborted;
-						if (aborted) {
-							const timedOut = !request.signal.aborted;
-							enqueue({
-								error: timedOut ? 'Tutor chat timed out' : 'Stream cancelled'
-							});
-						} else {
-							logger.error('Tutor stream error', { error: err });
-							enqueue({ error: 'Stream error occurred' });
-						}
-					} catch {
-						// Client already disconnected.
-					}
-				} finally {
-					cleanup();
-					if (!cancelled) controller.close();
-				}
-			},
-			cancel() {
-				cancelled = true;
-				abortProvider();
-				cleanup();
-			}
-		});
+		const stream = createTutorChatStream(result.data, request.signal, { chatImpl: chat });
 
 		return new Response(stream, {
 			headers: {

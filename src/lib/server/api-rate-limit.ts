@@ -1,5 +1,6 @@
 const DEFAULT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_REQUESTS = 500;
+const REDIS_REQUEST_TIMEOUT_MS = 3_000;
 const RATE_LIMIT_PREFIX = 'freeappractice:ai-rate-limit:v1';
 
 const ATOMIC_INCREMENT_SCRIPT = `
@@ -98,6 +99,7 @@ export async function enforceAiRateLimit(
 		const fetchImpl = options.fetchImpl ?? fetch;
 		const response = await fetchImpl(config.redisUrl, {
 			method: 'POST',
+			signal: AbortSignal.timeout(REDIS_REQUEST_TIMEOUT_MS),
 			headers: {
 				Authorization: `Bearer ${config.redisToken}`,
 				'Content-Type': 'application/json'

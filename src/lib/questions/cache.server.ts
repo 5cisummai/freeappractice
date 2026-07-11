@@ -86,8 +86,7 @@ async function generateQuestionForPool(
 		...result,
 		timing: {
 			generationMs: result.timing?.generationMs ?? 0,
-			persistenceMs:
-				(result.timing?.persistenceMs ?? 0) + (Date.now() - poolInsertStarted)
+			persistenceMs: (result.timing?.persistenceMs ?? 0) + (Date.now() - poolInsertStarted)
 		}
 	};
 }

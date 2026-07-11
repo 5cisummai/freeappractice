@@ -20,10 +20,6 @@
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
 	const initial = $derived(getInitialSelection(practicePage));
 
-	function linkHref(href: string): string {
-		return href;
-	}
-
 	function linkRel(kind: (typeof practicePage.links)[number]['kind']): string | undefined {
 		if (kind === 'external' || kind === 'college-board') {
 			return 'noopener noreferrer';
@@ -65,10 +61,7 @@
 			</section>
 
 			<section>
-				<QuestionShell
-					selectedClass={initial.selectedClass}
-					selectedUnit={initial.selectedUnit}
-				/>
+				<QuestionShell selectedClass={initial.selectedClass} selectedUnit={initial.selectedUnit} />
 			</section>
 
 			<section class="mx-auto max-w-3xl">
@@ -88,14 +81,17 @@
 						<ul class="space-y-2">
 							{#each practicePage.links as link (link.href)}
 								<li>
+									<!-- Catalog links are validated internal paths or explicit external URLs. -->
+									<!-- eslint-disable svelte/no-navigation-without-resolve -->
 									<a
-										href={linkHref(link.href)}
+										href={link.href}
 										class="text-sm text-primary underline-offset-4 hover:underline"
 										target={linkTarget(link.href, link.kind)}
 										rel={linkRel(link.kind)}
 									>
 										{link.label}
 									</a>
+									<!-- eslint-enable svelte/no-navigation-without-resolve -->
 								</li>
 							{/each}
 						</ul>

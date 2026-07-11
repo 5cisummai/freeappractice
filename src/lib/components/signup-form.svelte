@@ -10,10 +10,7 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/google-logo.svelte';
-	import {
-		captureSignupCompleted,
-		captureSignupStarted
-	} from '$lib/client/activation-analytics';
+	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
@@ -58,7 +55,10 @@
 			}
 			capturePostHogEvent('user_signed_up', { method: 'email' });
 			captureSignupCompleted('email');
-			goto(`${resolve('/email-sent')}?email=${encodeURIComponent(email)}`);
+			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;
+			// The base path is resolved above; only the encoded query string is appended.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto(emailSentHref);
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -76,7 +76,7 @@
 				provider: 'google',
 				callbackURL: authCallbackUrl('/app'),
 				errorCallbackURL: authCallbackUrl('/signup'),
-				newUserCallbackURL: authCallbackUrl('/app?signup=google')
+				newUserCallbackURL: `${authCallbackUrl('/app')}?signup=google`
 			});
 			if (error) errorMessage = error.message ?? 'Google sign-in failed';
 		} finally {

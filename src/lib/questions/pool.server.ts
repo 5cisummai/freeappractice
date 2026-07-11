@@ -167,8 +167,7 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 					cache_miss_follower_wait_ms: meta.cache_miss_follower_wait_ms
 				});
 				if (metrics) {
-					metrics.segment =
-						meta.role === 'leader' ? 'cache_miss_leader' : 'cache_miss_follower';
+					metrics.segment = meta.role === 'leader' ? 'cache_miss_leader' : 'cache_miss_follower';
 					metrics.lockWaitMs = meta.cache_miss_follower_wait_ms;
 					if (meta.role === 'leader') Object.assign(metrics, config.getLiveTiming?.(result));
 				}

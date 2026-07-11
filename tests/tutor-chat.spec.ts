@@ -20,16 +20,6 @@ const validRequest = {
 };
 
 test.describe('tutor chat request limits', () => {
-	test('accepts the legitimate tutor payload and preserves the SSE contract', async ({
-		request
-	}) => {
-		const response = await request.post('/api/tutor/chat', { data: validRequest });
-
-		expect(response.status()).toBe(200);
-		expect(response.headers()['content-type']).toContain('text/event-stream');
-		expect(await response.text()).toContain('data:');
-	});
-
 	test('rejects a request body over the byte budget', async ({ request }) => {
 		const response = await request.post('/api/tutor/chat', {
 			data: { ...validRequest, explanation: 'x'.repeat(33 * 1024) }

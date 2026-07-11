@@ -19,10 +19,12 @@ function event(pathname: string, userId?: string) {
 
 test('allows a legitimate request and atomically keys authenticated users', async () => {
 	let command: unknown;
+	let signal: AbortSignal | null | undefined;
 	const response = await enforceAiRateLimit(event('/api/question', 'user-123'), {
 		privateEnv,
 		fetchImpl: async (_input, init) => {
 			command = JSON.parse(String(init?.body));
+			signal = init?.signal;
 			return Response.json({ result: [1, 60000] });
 		}
 	});
@@ -33,6 +35,7 @@ test('allows a legitimate request and atomically keys authenticated users', asyn
 	assert.equal(command[2], '1');
 	assert.equal(command[3], 'freeappractice:ai-rate-limit:v1:user:user-123');
 	assert.equal(command[4], '60000');
+	assert.ok(signal instanceof AbortSignal);
 });
 
 test('rejects a shared counter over quota with the remaining window', async () => {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { replaceState } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
@@ -21,7 +22,10 @@
 				captureSignupCompleted('google');
 				const url = new URL(page.url);
 				url.searchParams.delete('signup');
-				replaceState(url, page.state);
+				const appHref = `${resolve('/app')}${url.search}`;
+				// The base path is resolved above; this only removes the one-time query marker.
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				replaceState(appHref, page.state);
 			}
 			captureAuthenticatedStudentReturnedIfNeeded();
 		}

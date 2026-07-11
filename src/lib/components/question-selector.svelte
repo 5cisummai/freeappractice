@@ -201,11 +201,7 @@
 			</Popover.Root>
 		</div>
 
-		<Button
-			onclick={onGenerate}
-			disabled={!selectedClass}
-			class="h-10 shrink-0 px-4 text-sm"
-		>
+		<Button onclick={onGenerate} disabled={!selectedClass} class="h-10 shrink-0 px-4 text-sm">
 			{generateLabel}
 		</Button>
 		<Popover.Root bind:open={optionsOpen}>

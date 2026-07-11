@@ -197,10 +197,7 @@
 			sections: [
 				{
 					title: 'New Features',
-					items: [
-						'Custom topics: Enter your own desired topic(s) for questions',
-						'Added AP Spanish support'
-					]
+					items: ['Added AP Spanish support']
 				},
 				{
 					title: 'Fixes',
@@ -697,9 +694,7 @@
 						<a href={resolve('/subjects')} class="underline-offset-2 hover:underline">Subjects</a>
 					</li>
 					<li>
-						<a href={resolve('/summer')} class="underline-offset-2 hover:underline"
-							>Summer guide</a
-						>
+						<a href={resolve('/summer')} class="underline-offset-2 hover:underline">Summer guide</a>
 					</li>
 					<li>
 						<a href={resolve('/stats')} class="underline-offset-2 hover:underline">Stats</a>
