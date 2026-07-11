@@ -5,6 +5,13 @@ import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
+import { buildHomepageLinkHeader } from '$lib/server/agent-discovery/link-headers';
+import {
+	acceptsMarkdown,
+	getHomepageMarkdown,
+	htmlToBasicMarkdown,
+	markdownResponse
+} from '$lib/server/agent-discovery/markdown';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -42,6 +49,10 @@ function postProcessResponse(
 		response.headers.set(key, value);
 	}
 
+	if (event.url.pathname === '/' || event.url.pathname === '') {
+		response.headers.set('Link', buildHomepageLinkHeader());
+	}
+
 	if (event.url.pathname.startsWith('/desmos-sandbox')) {
 		const csp = response.headers.get('Content-Security-Policy');
 		if (csp) {
@@ -59,6 +70,23 @@ function postProcessResponse(
 	}
 
 	return applyCorsHeaders(response, origin);
+}
+
+async function maybeServeMarkdown(
+	response: Response,
+	event: Parameters<Handle>[0]['event']
+): Promise<Response> {
+	if (event.request.method !== 'GET') return response;
+	if (!acceptsMarkdown(event.request)) return response;
+
+	const contentType = response.headers.get('content-type') ?? '';
+	if (!contentType.includes('text/html')) return response;
+
+	const { pathname } = event.url;
+
+	const html = await response.text();
+	const fallbackTitle = pathname.split('/').filter(Boolean).at(-1) ?? 'Free AP Practice';
+	return markdownResponse(htmlToBasicMarkdown(html, fallbackTitle));
 }
 
 const posthogProxyHandle: Handle = async ({ event, resolve }) => {
@@ -90,6 +118,18 @@ const posthogProxyHandle: Handle = async ({ event, resolve }) => {
 const appHandle: Handle = async ({ event, resolve }) => {
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
+
+	if (
+		event.request.method === 'GET' &&
+		acceptsMarkdown(event.request) &&
+		(event.url.pathname === '/' || event.url.pathname === '')
+	) {
+		return postProcessResponse(
+			markdownResponse(await getHomepageMarkdown()),
+			event,
+			origin
+		);
+	}
 
 	if (event.url.pathname === '/favicon.ico') {
 		return new Response(null, {
@@ -132,7 +172,12 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 	const requestStart = Date.now();
 
-	const response = postProcessResponse(await resolve(event), event, origin);
+	const resolved = await resolve(event);
+	const response = postProcessResponse(
+		await maybeServeMarkdown(resolved, event),
+		event,
+		origin
+	);
 
 	const requestTimeMs = Date.now() - requestStart;
 	logger.info('http request', {

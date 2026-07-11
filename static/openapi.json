@@ -1,0 +1,146 @@
+{
+	"openapi": "3.1.0",
+	"info": {
+		"title": "Free AP Practice API",
+		"version": "1.4.3",
+		"description": "Public and authenticated APIs for AP practice question generation, progress tracking, and the AI tutor.",
+		"contact": {
+			"name": "Free AP Practice Support",
+			"email": "support@freeappractice.org",
+			"url": "https://freeappractice.org/about"
+		}
+	},
+	"servers": [
+		{
+			"url": "https://freeappractice.org"
+		}
+	],
+	"tags": [
+		{ "name": "health", "description": "Service health" },
+		{ "name": "questions", "description": "Question generation" },
+		{ "name": "user", "description": "Authenticated user data" },
+		{ "name": "tutor", "description": "AI tutor chat" },
+		{ "name": "auth", "description": "Better Auth session endpoints" }
+	],
+	"paths": {
+		"/health": {
+			"get": {
+				"tags": ["health"],
+				"summary": "Health check",
+				"responses": {
+					"200": {
+						"description": "Service is healthy",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"status": { "type": "string", "example": "ok" },
+										"timestamp": { "type": "string", "format": "date-time" }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/question": {
+			"post": {
+				"tags": ["questions"],
+				"summary": "Generate a practice question",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["className"],
+								"properties": {
+									"className": { "type": "string", "example": "AP Biology" },
+									"unit": { "type": "string", "example": "Unit 1: Chemistry of Life" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Generated question metadata" },
+					"400": { "description": "Invalid request" },
+					"410": { "description": "Deprecated customTopic request" },
+					"500": { "description": "Generation failed" }
+				}
+			}
+		},
+		"/api/me/stats": {
+			"get": {
+				"tags": ["user"],
+				"summary": "Get user practice statistics",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "User stats" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/me/progress": {
+			"get": {
+				"tags": ["user"],
+				"summary": "Get user progress",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Progress data" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/tutor/chat": {
+			"post": {
+				"tags": ["tutor"],
+				"summary": "Chat with the AI tutor",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Tutor response stream or JSON" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/auth/sign-up/email": {
+			"post": {
+				"tags": ["auth"],
+				"summary": "Register with email and password",
+				"responses": {
+					"200": { "description": "Registration initiated" }
+				}
+			}
+		},
+		"/api/auth/sign-in/email": {
+			"post": {
+				"tags": ["auth"],
+				"summary": "Sign in with email and password",
+				"responses": {
+					"200": { "description": "Session created" }
+				}
+			}
+		},
+		"/api/auth/get-session": {
+			"get": {
+				"tags": ["auth"],
+				"summary": "Get current session",
+				"responses": {
+					"200": { "description": "Session payload or null" }
+				}
+			}
+		}
+	},
+	"components": {
+		"securitySchemes": {
+			"sessionCookie": {
+				"type": "apiKey",
+				"in": "cookie",
+				"name": "better-auth.session_token",
+				"description": "Better Auth session cookie issued after sign-in"
+			}
+		}
+	}
+}
