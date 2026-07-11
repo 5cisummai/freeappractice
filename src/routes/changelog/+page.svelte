@@ -7,6 +7,26 @@
 
 	const changelog = [
 		{
+			version: '1.4.5',
+			date: 'July 11, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Practice is clearer: pick an AP class and unit, then generate — no extra topic setup',
+						'AI tutor chats are more reliable, with safer limits so long or stuck replies don’t hang forever',
+						'Old topic practice links (like photosynthesis or limits) now open the matching unit page instead of a dead end'
+					]
+				},
+				{
+					title: 'Changes',
+					items: [
+						'Custom-topic question generation has been removed so every question stays tied to a real AP unit'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.4',
 			date: 'July 9, 2026',
 			sections: [
