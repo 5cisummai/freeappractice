@@ -1,7 +1,6 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
-import { createTutorChatStream, type TutorChatFunction } from './chat-stream.server.ts';
-import type { TutorChatRequest } from './chat-request.ts';
+import { expect, test } from 'vitest';
+import { createTutorChatStream, type TutorChatFunction } from '$lib/tutor/chat-stream.server';
+import type { TutorChatRequest } from '$lib/tutor/chat-request';
 
 const payload: TutorChatRequest = {
 	question: 'What process produces ATP?',
@@ -21,8 +20,8 @@ test('streams legitimate tutor output with the existing SSE contract', async () 
 	const stream = createTutorChatStream(payload, new AbortController().signal, { chatImpl });
 	const text = await new Response(stream).text();
 
-	assert.match(text, /data: {"content":"Start with the mitochondria\."}/);
-	assert.match(text, /data: \[DONE\]/);
+	expect(text).toMatch(/data: {"content":"Start with the mitochondria\."}/);
+	expect(text).toMatch(/data: \[DONE\]/);
 });
 
 test('aborts provider work and reports a timeout', async () => {
@@ -44,23 +43,24 @@ test('aborts provider work and reports a timeout', async () => {
 	});
 	const text = await new Response(stream).text();
 
-	assert.equal(providerSignal?.aborted, true);
-	assert.match(text, /Tutor chat timed out/);
+	expect(providerSignal?.aborted).toBe(true);
+	expect(text).toMatch(/Tutor chat timed out/);
 });
 
 test('cancelling the response aborts provider work', async () => {
 	let providerSignal: AbortSignal | undefined;
-	const aborted = new Promise<void>((resolve) => {
-		const chatImpl: TutorChatFunction = async function* (options) {
-			yield* [];
-			providerSignal = options.signal;
-			options.signal?.addEventListener('abort', () => resolve(), { once: true });
-			await new Promise(() => undefined);
-		};
-		const stream = createTutorChatStream(payload, new AbortController().signal, { chatImpl });
-		void stream.cancel();
-	});
+	const chatImpl: TutorChatFunction = async function* (options) {
+		providerSignal = options.signal;
+		await new Promise(() => undefined);
+	};
+	const stream = createTutorChatStream(payload, new AbortController().signal, { chatImpl });
+	const reader = stream.getReader();
+	void reader.read();
 
-	await aborted;
-	assert.equal(providerSignal?.aborted, true);
+	while (!providerSignal) {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	}
+
+	await reader.cancel();
+	expect(providerSignal?.aborted).toBe(true);
 });

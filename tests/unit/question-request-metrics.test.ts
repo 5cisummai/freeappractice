@@ -1,15 +1,14 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 import {
 	QUESTION_REQUEST_EVENT,
 	classifyQuestionRequestError,
 	sanitizeQuestionRequestMetricProps,
 	type QuestionRequestMetricProps
-} from './question-request-metrics.ts';
+} from '$lib/server/question-request-metrics';
 
 describe('question-request-metrics', () => {
 	it('exports the stable event name', () => {
-		assert.equal(QUESTION_REQUEST_EVENT, 'question_request');
+		expect(QUESTION_REQUEST_EVENT).toBe('question_request');
 	});
 
 	it('allowlists only safe metric properties', () => {
@@ -34,7 +33,7 @@ describe('question-request-metrics', () => {
 
 		const sanitized = sanitizeQuestionRequestMetricProps(props as QuestionRequestMetricProps);
 
-		assert.deepEqual(sanitized, {
+		expect(sanitized).toEqual({
 			segment: 'cache_hit',
 			ap_class: 'AP Biology',
 			unit: 'Unit 1',
@@ -48,20 +47,18 @@ describe('question-request-metrics', () => {
 			ok: true,
 			cached: true
 		});
-		assert.equal('question_body' in sanitized, false);
-		assert.equal('user_id' in sanitized, false);
-		assert.equal('customTopic' in sanitized, false);
+		expect('question_body' in sanitized).toBe(false);
+		expect('user_id' in sanitized).toBe(false);
+		expect('customTopic' in sanitized).toBe(false);
 	});
 
 	it('classifies busy vs generation errors without leaking messages', () => {
-		assert.equal(
-			classifyQuestionRequestError(new Error('Question generation is busy. Please retry.')),
-			'busy'
-		);
-		assert.equal(
-			classifyQuestionRequestError(new Error('Failed to persist generated question')),
-			'generation'
-		);
-		assert.equal(classifyQuestionRequestError(new Error('boom')), 'unknown');
+		expect(
+			classifyQuestionRequestError(new Error('Question generation is busy. Please retry.'))
+		).toBe('busy');
+		expect(
+			classifyQuestionRequestError(new Error('Failed to persist generated question'))
+		).toBe('generation');
+		expect(classifyQuestionRequestError(new Error('boom'))).toBe('unknown');
 	});
 });

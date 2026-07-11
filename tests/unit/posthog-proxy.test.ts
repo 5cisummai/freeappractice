@@ -1,6 +1,5 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
-import { createPostHogProxyRequestInit } from './posthog-proxy';
+import { expect, test } from 'vitest';
+import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
 
 test('PostHog proxy drops credentials and hop-by-hop headers', () => {
 	const request = new Request('https://freeappractice.com/ingest/e/', {
@@ -25,18 +24,18 @@ test('PostHog proxy drops credentials and hop-by-hop headers', () => {
 	const init = createPostHogProxyRequestInit(request, '198.51.100.7');
 	const headers = new Headers(init.headers);
 
-	assert.equal(headers.get('authorization'), null);
-	assert.equal(headers.get('connection'), null);
-	assert.equal(headers.get('cookie'), null);
-	assert.equal(headers.get('forwarded'), null);
-	assert.equal(headers.get('proxy-authorization'), null);
-	assert.equal(headers.get('referer'), null);
-	assert.equal(headers.get('transfer-encoding'), null);
-	assert.equal(headers.get('upgrade'), null);
-	assert.equal(headers.get('content-type'), 'application/json');
-	assert.equal(headers.get('user-agent'), 'posthog-js/1.0');
-	assert.equal(headers.get('x-forwarded-for'), '198.51.100.7');
-	assert.equal(headers.get('x-real-ip'), null);
+	expect(headers.get('authorization')).toBeNull();
+	expect(headers.get('connection')).toBeNull();
+	expect(headers.get('cookie')).toBeNull();
+	expect(headers.get('forwarded')).toBeNull();
+	expect(headers.get('proxy-authorization')).toBeNull();
+	expect(headers.get('referer')).toBeNull();
+	expect(headers.get('transfer-encoding')).toBeNull();
+	expect(headers.get('upgrade')).toBeNull();
+	expect(headers.get('content-type')).toBe('application/json');
+	expect(headers.get('user-agent')).toBe('posthog-js/1.0');
+	expect(headers.get('x-forwarded-for')).toBe('198.51.100.7');
+	expect(headers.get('x-real-ip')).toBeNull();
 });
 
 test('PostHog proxy preserves the request method and streaming body', async () => {
@@ -47,8 +46,8 @@ test('PostHog proxy preserves the request method and streaming body', async () =
 
 	const init = createPostHogProxyRequestInit(request, null);
 
-	assert.equal(init.method, 'POST');
-	assert.equal(await new Response(init.body).text(), 'analytics payload');
+	expect(init.method).toBe('POST');
+	expect(await new Response(init.body).text()).toBe('analytics payload');
 });
 
 test('PostHog proxy preserves safe asset request headers', () => {
@@ -63,9 +62,9 @@ test('PostHog proxy preserves safe asset request headers', () => {
 	const init = createPostHogProxyRequestInit(request, null);
 	const headers = new Headers(init.headers);
 
-	assert.equal(init.method, 'GET');
-	assert.equal(init.body, null);
-	assert.equal(headers.get('accept'), '*/*');
-	assert.equal(headers.get('if-none-match'), '"asset-version"');
-	assert.equal(headers.get('range'), 'bytes=0-99');
+	expect(init.method).toBe('GET');
+	expect(init.body).toBeNull();
+	expect(headers.get('accept')).toBe('*/*');
+	expect(headers.get('if-none-match')).toBe('"asset-version"');
+	expect(headers.get('range')).toBe('bytes=0-99');
 });

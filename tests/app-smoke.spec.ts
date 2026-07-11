@@ -17,8 +17,10 @@ test.describe('public app smoke checks', () => {
 	test('homepage renders the main marketing surface', async ({ page }) => {
 		await page.goto('/');
 
-		await expect(page).toHaveTitle('Free AP Practice Questions 2026 - AI-Powered AP Exam Prep');
-		await expect(page.getByRole('heading', { name: 'Ace your AP Exams' })).toBeVisible();
+		await expect(page).toHaveTitle('Free AP Practice – The Fastest Way to Practice AP Online');
+		await expect(
+			page.getByRole('heading', { name: 'Master your AP classes with instant practice questions.' })
+		).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Generate Question' })).toBeVisible();
 		await expect(page.getByText('20+ AP Subjects')).toBeVisible();
 	});
