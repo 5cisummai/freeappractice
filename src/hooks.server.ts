@@ -5,7 +5,6 @@ import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
-import { enforceConfiguredAiRateLimit } from '$lib/server/api-rate-limit.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -129,11 +128,6 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	} catch (err) {
 		logger.error('Session lookup failed', { error: err, path: event.url.pathname });
-	}
-
-	const rateLimitResponse = await enforceConfiguredAiRateLimit(event);
-	if (rateLimitResponse) {
-		return postProcessResponse(rateLimitResponse, event, origin);
 	}
 
 	const requestStart = Date.now();
