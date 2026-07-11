@@ -25,7 +25,7 @@ describe('classifyQuestionFailure', () => {
 		expect(classifyQuestionFailure(400)).toBe('validation');
 		expect(classifyQuestionFailure(403)).toBe('validation');
 		expect(classifyQuestionFailure(422)).toBe('validation');
-		expect(classifyQuestionFailure(429)).toBe('rate_limit');
+		expect(classifyQuestionFailure(429)).toBe('validation');
 		expect(classifyQuestionFailure(500)).toBe('generation');
 		expect(classifyQuestionFailure(502)).toBe('generation');
 	});

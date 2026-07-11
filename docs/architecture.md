@@ -19,7 +19,7 @@ flowchart TB
 
     subgraph Vercel["SvelteKit on Vercel"]
         direction TB
-        Hooks["hooks.server.ts<br/>session · rate limit · CORS · security headers · logging"]
+        Hooks["hooks.server.ts<br/>session · PostHog proxy · CORS · security headers · logging"]
         Pages["SSR / CSR routes<br/>+layout.server.ts guards /app"]
         API["API routes /api/*"]
     end
@@ -84,7 +84,7 @@ sequenceDiagram
     participant DB as MongoDB
 
     B->>H: HTTP request
-    H->>H: OPTIONS / favicon / rate-limit /api/*
+    H->>H: OPTIONS / favicon / PostHog proxy /api/*
     H->>BA: getSession(headers)
     BA->>DB: authSessions lookup
     BA-->>H: session + user (or null)
@@ -180,7 +180,9 @@ flowchart TD
 - The browser sends current-session `excludeQuestionIds` for standard questions so one session does not see the same question ID twice.
 - Multiple users can receive the same cached question at the same time; cached docs are not claimed, locked, or deleted after a serve count.
 - `contentHash` (SHA-256 of normalized question text) deduplicates entries **inside the hot pool** only — it prevents the same MCQ body from being inserted twice during generation.
-- On a standard-unit miss, `CacheMissLock` coordinates one live generation across Vercel serverless instances. Ops script: `pnpm cache:clear`.
+- On a standard-unit miss, `CacheMissLock` coordinates one live generation across Vercel serverless instances. Ops script: `bun scripts/clear-cache.ts`.
+
+There is **no** application-level AI rate limiter on `/api/question` or `/api/tutor/chat` after the process-local / Upstash experiments were removed. Cost and abuse controls, if needed again, should be added deliberately (edge/WAF or a shared store), not as process-local maps.
 
 ---
 

@@ -28,7 +28,6 @@ Other consent-gated keys:
 | `generate_clicked`               | Generate button click                                                                              | `ap_class`, `unit`, `journey_key`                                                                              |
 | `question_request_succeeded`     | Question API returns a payload                                                                     | `ap_class`, `unit`, `source` (`cached` \| `generated`), `latency_ms`, `latency_bucket`, `journey_key`          |
 | `question_request_failed`        | Question API or network error                                                                      | `ap_class`, `unit`, `failure_kind`, optional `status`, optional `latency_ms` / `latency_bucket`, `journey_key` |
-| `question_rendered`              | Question shown to the user (paired with success)                                                   | Same as `question_request_succeeded`                                                                           |
 | `first_answer_submitted`         | First “Check answer” in this browser                                                               | `ap_class`, `unit`, `is_correct`, `time_taken_ms`, `time_taken_bucket`, `journey_key`                          |
 | `signup_started`                 | Signup page view or submit/OAuth start                                                             | `method` (`page` \| `email` \| `google`), `journey_key`                                                        |
 | `signup_completed`               | Email signup succeeds or Better Auth redirects a newly created Google user to `/app?signup=google` | `method` (`email` \| `google`), `journey_key`                                                                  |
@@ -38,8 +37,7 @@ Other consent-gated keys:
 
 | Value        | Meaning                                       |
 | ------------ | --------------------------------------------- |
-| `validation` | HTTP 400, 403, 422, or other 4xx (except 429) |
-| `rate_limit` | HTTP 429                                      |
+| `validation` | HTTP 4xx                                      |
 | `generation` | HTTP 5xx (server/generation failure)          |
 | `network`    | No response status, fetch error, or status 0  |
 
@@ -54,11 +52,11 @@ Other consent-gated keys:
 | `src/routes/+page.svelte`                     | `landing_page_viewed`                                               |
 | `src/lib/components/question-selector.svelte` | `practice_selector_used`                                            |
 | `src/lib/components/question-shell.svelte`    | `generate_clicked`                                                  |
-| `src/lib/components/question-card.svelte`     | `question_request_*`, `question_rendered`, `first_answer_submitted` |
+| `src/lib/components/question-card.svelte`     | `question_request_*`, `first_answer_submitted`                      |
 | `src/routes/signup/+page.svelte`              | `signup_started` (`page`)                                           |
 | `src/lib/components/signup-form.svelte`       | `signup_started`, `signup_completed`                                |
 | `src/routes/(app)/+layout.svelte`             | `signup_completed` (OAuth), `authenticated_student_returned`        |
 
 ## Related events (outside this funnel)
 
-Existing PostHog events such as `question_answered`, `user_signed_up`, and `$pageview` remain separate. Activation helpers delegate to `capturePostHogEvent` in `src/lib/client/posthog-analytics.ts`.
+Existing PostHog events such as `question_answered`, `user_signed_up`, and `$pageview` remain separate. Activation helpers delegate to `capturePostHogEvent` in `src/lib/client/posthog-analytics.ts`. Types and pure helpers live in `activation-funnel-metrics.ts` — import those directly, not via the capture module.

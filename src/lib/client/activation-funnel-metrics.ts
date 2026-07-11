@@ -1,4 +1,4 @@
-export type QuestionFailureKind = 'validation' | 'rate_limit' | 'generation' | 'network';
+export type QuestionFailureKind = 'validation' | 'generation' | 'network';
 
 export type LatencyBucket = '0-500ms' | '500-1000ms' | '1-2s' | '2-5s' | '5s+';
 
@@ -15,8 +15,6 @@ export function latencyBucket(ms: number): LatencyBucket {
 
 export function classifyQuestionFailure(status: number | null | undefined): QuestionFailureKind {
 	if (status == null || status === 0) return 'network';
-	if (status === 400 || status === 403 || status === 422) return 'validation';
-	if (status === 429) return 'rate_limit';
 	if (status >= 500) return 'generation';
 	if (status >= 400) return 'validation';
 	return 'network';

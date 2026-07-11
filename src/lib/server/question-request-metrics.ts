@@ -1,4 +1,9 @@
 import type { QuestionPathMetrics } from '$lib/questions/pool.server';
+import {
+	QuestionBusyError,
+	QuestionGenerationError
+} from '$lib/questions/question-errors.server';
+import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
 /** Outcome segments for POST /api/question reliability dashboards. */
 export type QuestionRequestSegment =
@@ -7,12 +12,7 @@ export type QuestionRequestSegment =
 	| 'cache_miss_follower'
 	| 'error';
 
-export type QuestionRequestErrorType =
-	| 'validation'
-	| 'forbidden'
-	| 'generation'
-	| 'busy'
-	| 'unknown';
+export type QuestionRequestErrorType = 'validation' | 'generation' | 'busy' | 'unknown';
 
 export const QUESTION_REQUEST_EVENT = 'question_request';
 
@@ -64,10 +64,16 @@ export function sanitizeQuestionRequestMetricProps(
 }
 
 export function classifyQuestionRequestError(err: unknown): QuestionRequestErrorType {
-	const message = err instanceof Error ? err.message : String(err);
-	if (/busy|lock_unavailable|retry/i.test(message)) return 'busy';
-	if (/persist|generat|openai|model|S3/i.test(message)) return 'generation';
+	if (err instanceof QuestionBusyError) return 'busy';
+	if (err instanceof QuestionGenerationError) return 'generation';
 	return 'unknown';
+}
+
+export function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
+	captureAnonymousServerMetric(
+		QUESTION_REQUEST_EVENT,
+		sanitizeQuestionRequestMetricProps(props)
+	);
 }
 
 export function createQuestionPathMetrics(): QuestionPathMetrics {

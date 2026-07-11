@@ -26,7 +26,7 @@ Server-side timing and reliability metrics for `POST /api/question`. Used to wat
 | `http_status`     | number  | Response status                                                        |
 | `ok`              | boolean | `true` on 200                                                          |
 | `cached`          | boolean | Whether the served MCQ came from the hot pool                          |
-| `error_type`      | string? | `validation` \| `forbidden` \| `generation` \| `busy` \| `unknown`     |
+| `error_type`      | string? | `validation` \| `generation` \| `busy` \| `unknown`                    |
 
 **Never recorded:** question bodies, answers, explanations, `customTopic` text, user IDs, emails, session IDs, or `excludeQuestionIds`.
 
@@ -37,7 +37,7 @@ Server-side timing and reliability metrics for `POST /api/question`. Used to wat
 3. `src/lib/questions/generation.server.ts` — `generation_ms` / S3 `persistence_ms`
 4. `src/lib/questions/cache.server.ts` — hot-pool insert folded into `persistence_ms`
 
-Capture helper: `captureQuestionRequestMetric` in `src/lib/server/question-request-metrics.ts` (via `captureAnonymousServerMetric` in `src/lib/server/posthog.ts`).
+Capture helper: `captureQuestionRequestMetric` in `src/lib/server/question-request-metrics.ts` (wraps `captureAnonymousServerMetric` in `src/lib/server/posthog.ts`). Server `error_type` is classified from typed throws (`QuestionBusyError`, `QuestionGenerationError`) in `src/lib/questions/question-errors.server.ts` — not from message regex.
 
 ## PostHog: p50 / p95 total time by AP class and unit
 

@@ -9,6 +9,7 @@ import {
 	ADVANCED_MODEL,
 	LATEX_RULE
 } from '$lib/ai/service.server';
+import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 /**
  * Question generation and grading domain logic.
@@ -340,7 +341,7 @@ export async function generateAPQuestion(opts: {
 			unit,
 			error: err
 		});
-		throw new Error('Failed to persist generated question', { cause: err });
+		throw new QuestionGenerationError('Failed to persist generated question', { cause: err });
 	}
 	return {
 		answer: parsed,

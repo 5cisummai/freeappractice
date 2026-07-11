@@ -10,6 +10,7 @@ import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
 import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
+import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 export type { GetQuestionOptions };
 
@@ -53,7 +54,7 @@ async function generateQuestionForPool(
 	const result = await generateAPQuestion({ className, unit, recentTopics });
 	const { answer, questionId } = result;
 	if (!questionId) {
-		throw new Error('Generated question was not persisted to S3');
+		throw new QuestionGenerationError('Generated question was not persisted to S3');
 	}
 
 	const contentHash = computeContentHash(answer.question);

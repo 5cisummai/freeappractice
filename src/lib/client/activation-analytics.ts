@@ -8,18 +8,6 @@ import {
 } from '$lib/client/activation-funnel-metrics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
-export {
-	classifyQuestionFailure,
-	daysBetweenCalendarDays,
-	latencyBucket,
-	localCalendarDay,
-	QuestionRequestError,
-	questionSourceFromCachedFlag,
-	type LatencyBucket,
-	type QuestionFailureKind,
-	type QuestionSource
-} from '$lib/client/activation-funnel-metrics';
-
 /** localStorage key for the anonymous activation journey (consent-gated). */
 export const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
 const FIRST_ANSWER_FLAG_KEY = 'ph_activation_first_answer_sent';
@@ -32,7 +20,6 @@ export const ACTIVATION_EVENTS = {
 	generateClicked: 'generate_clicked',
 	questionRequestSucceeded: 'question_request_succeeded',
 	questionRequestFailed: 'question_request_failed',
-	questionRendered: 'question_rendered',
 	firstAnswerSubmitted: 'first_answer_submitted',
 	signupStarted: 'signup_started',
 	signupCompleted: 'signup_completed',
@@ -126,21 +113,6 @@ export function captureQuestionRequestFailed(opts: {
 		...(opts.latencyMs != null
 			? { latency_ms: opts.latencyMs, latency_bucket: latencyBucket(opts.latencyMs) }
 			: {})
-	});
-}
-
-export function captureQuestionRendered(opts: {
-	apClass: string;
-	unit: string;
-	source: QuestionSource;
-	latencyMs: number;
-}): void {
-	captureActivation(ACTIVATION_EVENTS.questionRendered, {
-		ap_class: opts.apClass,
-		unit: opts.unit,
-		source: opts.source,
-		latency_ms: opts.latencyMs,
-		latency_bucket: latencyBucket(opts.latencyMs)
 	});
 }
 

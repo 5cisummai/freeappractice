@@ -19,13 +19,14 @@
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import {
 		captureFirstAnswerSubmitted,
-		captureQuestionRendered,
 		captureQuestionRequestFailed,
-		captureQuestionRequestSucceeded,
+		captureQuestionRequestSucceeded
+	} from '$lib/client/activation-analytics';
+	import {
 		QuestionRequestError,
 		questionSourceFromCachedFlag,
 		type QuestionSource
-	} from '$lib/client/activation-analytics';
+	} from '$lib/client/activation-funnel-metrics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import {
 		parseQuestionPayloadFromResponse,
@@ -289,7 +290,6 @@
 				latencyMs: result.latencyMs
 			};
 			captureQuestionRequestSucceeded(analytics);
-			captureQuestionRendered(analytics);
 
 			currentQuestion = result.question;
 			rememberSeenQuestion(result.question);
