@@ -27,7 +27,7 @@ export function buildMcpServerCard(requestUrl?: URL) {
 			{
 				name: 'generate_question',
 				description:
-					'Generate an AP practice multiple-choice question for a subject and unit or custom topic.'
+					'Generate an AP practice multiple-choice question for a subject and unit.'
 			},
 			{
 				name: 'list_subjects',

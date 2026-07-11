@@ -216,7 +216,7 @@
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
 							<p class="text-xs tracking-wide text-muted-foreground uppercase">App version</p>
-							<p class="mt-1 text-lg font-semibold">1.4.4</p>
+							<p class="mt-1 text-lg font-semibold">1.4.5</p>
 							<p class="mt-1 text-sm text-muted-foreground">
 								Current release installed in this workspace.
 							</p>

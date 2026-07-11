@@ -23,7 +23,6 @@ export type BugReportContext = {
 	questionNumber: string;
 	selectedClass?: string;
 	selectedUnit?: string;
-	customTopic?: string;
 	prompt?: string;
 	correctAnswer?: string;
 	hasStimulus: boolean;
@@ -45,8 +44,6 @@ export type QuestionCardProps = {
 	questionNumber?: string;
 	selectedClass?: string;
 	selectedUnit?: string;
-	/** Required when selectedUnit is the custom-topic sentinel. */
-	customTopic?: string;
 	requestVersion?: number;
 	selectedOption?: string | null;
 	autoDetectLongQuestion?: boolean;

@@ -2,6 +2,7 @@ import { connectDb } from '$lib/server/db';
 import { CacheMissLock } from '$lib/questions/cache-lock.server';
 import { logger } from '$lib/server/logger';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
+import { QuestionBusyError } from '$lib/questions/question-errors.server';
 
 /** How long the lock document lives if the leader never releases (crash / timeout). */
 function getCacheMissLockTtlMs(): number {
@@ -151,5 +152,5 @@ export async function runCacheMissClusterFlow<T>(options: {
 		clusterLockKey,
 		cache_miss_follower_wait_ms
 	});
-	throw new Error('Question generation is busy. Please retry in a moment.');
+	throw new QuestionBusyError();
 }

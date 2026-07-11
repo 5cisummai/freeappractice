@@ -1,13 +1,10 @@
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { FLAGS_SECRET } from '$env/static/private';
-import { createHandle } from 'flags/sveltekit';
-import { env } from '$env/dynamic/private';
 import { auth } from '$lib/auth/server';
-import * as flags from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
 import { buildHomepageLinkHeader } from '$lib/server/agent-discovery/link-headers';
 import {
 	acceptsMarkdown,
@@ -15,35 +12,6 @@ import {
 	htmlToBasicMarkdown,
 	markdownResponse
 } from '$lib/server/agent-discovery/markdown';
-
-// ── In-memory rate limiter ──────────────────────────────────
-// TODO: For multi-instance (Vercel/Cloudflare) production deploys,
-// replace with a Redis-backed solution like @upstash/ratelimit.
-const WINDOW_MS = parseInt(env.API_RATE_LIMIT_WINDOW_MS ?? '900000', 10); // 15 min
-const MAX_REQUESTS = parseInt(env.API_RATE_LIMIT_MAX ?? '500', 10);
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-	const now = Date.now();
-	const entry = rateLimitMap.get(ip);
-
-	if (!entry || now > entry.resetAt) {
-		rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-		return true;
-	}
-	if (entry.count >= MAX_REQUESTS) return false;
-	entry.count++;
-	return true;
-}
-
-// Clean up stale entries periodically to prevent memory leaks
-setInterval(() => {
-	const now = Date.now();
-	for (const [key, val] of rateLimitMap) {
-		if (now > val.resetAt) rateLimitMap.delete(key);
-	}
-}, WINDOW_MS);
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -135,22 +103,11 @@ const posthogProxyHandle: Handle = async ({ event, resolve }) => {
 		url.port = '443';
 		url.pathname = pathname.replace(/^\/ingest/, '');
 
-		const headers = new Headers(event.request.headers);
-		headers.set('host', hostname);
-		headers.set('accept-encoding', '');
-
-		const clientIp = event.request.headers.get('x-forwarded-for') || event.getClientAddress();
-		if (clientIp) {
-			headers.set('x-forwarded-for', clientIp);
-		}
-
-		const response = await fetch(url.toString(), {
-			method: event.request.method,
-			headers,
-			body: event.request.body,
-			// @ts-expect-error - duplex is required for streaming request bodies
-			duplex: 'half'
-		});
+		const clientIp = event.getClientAddress();
+		const response = await fetch(
+			url.toString(),
+			createPostHogProxyRequestInit(event.request, clientIp)
+		);
 
 		return response;
 	}
@@ -199,26 +156,6 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		);
 	}
 
-	if (event.url.pathname.startsWith('/api/') && !event.url.pathname.startsWith('/api/auth/')) {
-		const ip =
-			event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
-			event.request.headers.get('x-real-ip') ??
-			'unknown';
-
-		if (!checkRateLimit(ip)) {
-			return applyCorsHeaders(
-				new Response(JSON.stringify({ error: 'Too many requests' }), {
-					status: 429,
-					headers: {
-						'Content-Type': 'application/json',
-						'Retry-After': String(Math.ceil(WINDOW_MS / 1000))
-					}
-				}),
-				origin
-			);
-		}
-	}
-
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
@@ -257,11 +194,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle = sequence(
-	createHandle({ secret: FLAGS_SECRET, flags }),
-	posthogProxyHandle,
-	appHandle
-);
+export const handle = sequence(posthogProxyHandle, appHandle);
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {
 	capturePostHogServerEvent(event.request, {

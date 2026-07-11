@@ -78,7 +78,7 @@ That's it. Consistency beats intensity.
 
 ## How Free AP Practice Fits In
 
-Use the generator for **active practice** after you've seen Unit 1 once. Select your AP class, choose Unit 1 (or a custom topic from your summer reading), and generate questions until explanations make sense without rereading the prompt three times.
+Use the generator for **active practice** after you've seen Unit 1 once. Select your AP class, choose Unit 1, and generate questions until explanations make sense without rereading the prompt three times.
 
 When school starts, keep the same 20-minute rhythm. Just swap "preview" for whatever unit your teacher is on.
 

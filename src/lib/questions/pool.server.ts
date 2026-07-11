@@ -22,10 +22,22 @@ export interface McqPoolConfig<TDoc extends PoolDocument, TCached extends { cach
 	getRecentTopics: (className: string, unit: string) => Promise<string[]>;
 	serveCached: (doc: TDoc, className: string, cacheUnit: string) => Promise<TCached>;
 	generateLive: (className: string, unit: string, recentTopics?: string[]) => Promise<TCached>;
+	getLiveTiming?: (result: TCached) => { generationMs: number; persistenceMs: number } | undefined;
 }
+
+export type QuestionPathSegment = 'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower';
+
+export type QuestionPathMetrics = {
+	segment?: QuestionPathSegment;
+	cacheLookupMs: number;
+	lockWaitMs: number;
+	generationMs: number;
+	persistenceMs: number;
+};
 
 export interface GetQuestionOptions {
 	excludeQuestionIds?: string[];
+	metrics?: QuestionPathMetrics;
 }
 
 function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
@@ -71,20 +83,36 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 	): Promise<TCached> {
 		const cacheUnit = config.normalizeUnit(unit);
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
+		const metrics = options.metrics;
 
+		const lookupStarted = Date.now();
 		let doc: TDoc | null;
 		try {
 			doc = await selectFromPool(className, cacheUnit, excludeQuestionIds);
 		} catch (err) {
+			if (metrics) metrics.cacheLookupMs = Date.now() - lookupStarted;
 			logger.warn(`[${config.logScope}] DB read failed, falling back to live generation`, {
 				className,
 				unit: cacheUnit,
 				error: err
 			});
-			return config.generateLive(className, unit ?? '');
+			const generationStarted = Date.now();
+			try {
+				const result = await config.generateLive(className, unit ?? '');
+				if (metrics) {
+					metrics.segment = 'cache_miss_leader';
+					Object.assign(metrics, config.getLiveTiming?.(result));
+				}
+				return result;
+			} catch (error) {
+				if (metrics) metrics.generationMs = Date.now() - generationStarted;
+				throw error;
+			}
 		}
+		if (metrics) metrics.cacheLookupMs = Date.now() - lookupStarted;
 
 		if (doc) {
+			if (metrics) metrics.segment = 'cache_hit';
 			return serveCachedDoc(doc, className, cacheUnit);
 		}
 
@@ -97,7 +125,13 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 				className,
 				unit: cacheUnit
 			});
-			return inFlightMiss.get(missKey)!;
+			const waitStarted = Date.now();
+			const result = await inFlightMiss.get(missKey)!;
+			if (metrics) {
+				metrics.segment = 'cache_miss_follower';
+				metrics.lockWaitMs = Date.now() - waitStarted;
+			}
+			return result;
 		}
 
 		logger.info(
@@ -109,6 +143,7 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 		);
 
 		const livePromise: Promise<TCached> = (async (): Promise<TCached> => {
+			const generationStarted = Date.now();
 			try {
 				const { result, meta } = await runCacheMissClusterFlow<TCached>({
 					clusterLockKey: missKey,
@@ -131,9 +166,15 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 					cache_miss_role: meta.role,
 					cache_miss_follower_wait_ms: meta.cache_miss_follower_wait_ms
 				});
+				if (metrics) {
+					metrics.segment = meta.role === 'leader' ? 'cache_miss_leader' : 'cache_miss_follower';
+					metrics.lockWaitMs = meta.cache_miss_follower_wait_ms;
+					if (meta.role === 'leader') Object.assign(metrics, config.getLiveTiming?.(result));
+				}
 
 				return result;
 			} catch (err) {
+				if (metrics) metrics.generationMs = Date.now() - generationStarted;
 				logger.error(`[${config.logScope}] live generation also failed`, {
 					className,
 					unit: cacheUnit,

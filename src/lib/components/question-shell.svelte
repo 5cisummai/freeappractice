@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import QuestionCard from '$lib/components/question-card.svelte';
 	import QuestionSelector from '$lib/components/question-selector.svelte';
 	import type { QuestionCardProps } from '$lib/questions/types';
@@ -6,17 +7,15 @@
 	type QuestionShellProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
-		customTopic?: string;
 		requestVersion?: number;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
-	} & Omit<QuestionCardProps, 'selectedClass' | 'selectedUnit' | 'customTopic' | 'requestVersion'>;
+	} & Omit<QuestionCardProps, 'selectedClass' | 'selectedUnit' | 'requestVersion'>;
 
 	let {
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
-		customTopic = $bindable(''),
 		requestVersion = $bindable(0),
 		generateLabel,
 		onGenerate,
@@ -30,6 +29,7 @@
 	}
 
 	function handleGenerate(): void {
+		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
 		requestVersion += 1;
 		onGenerate?.();
 	}
@@ -39,7 +39,6 @@
 	<QuestionSelector
 		bind:selectedClass
 		bind:selectedUnit
-		bind:customTopic
 		{generateLabel}
 		onSelectionChange={handleSelectionChange}
 		onGenerate={handleGenerate}
@@ -48,6 +47,6 @@
 
 <div class="mx-auto min-h-40 max-w-6xl">
 	{#key `${selectedClass}:${selectedUnit}:${requestVersion}`}
-		<QuestionCard {selectedClass} {selectedUnit} {customTopic} {requestVersion} {...cardProps} />
+		<QuestionCard {selectedClass} {selectedUnit} {requestVersion} {...cardProps} />
 	{/key}
 </div>

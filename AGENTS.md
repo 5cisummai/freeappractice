@@ -17,6 +17,16 @@
 - Do not overabstract, invent patterns, or create helpers, layers, or structures that are not necessary right now.
 - If a simple inline change is enough, keep it simple.
 
+## Subagent Tools
+
+IF you are **CURSOR** : use cursor grok high 4.5 for harder tasks and composer 2.5 for lighter tasks.
+
+IF you are **CODEX** : use 5.6 terra for harder tasks and 5.6 luna for lighter tasks.
+
+## Linear Rules
+
+When starting working on an issue set status to in progress. After you complete an issue set status to in review.
+
 ---
 
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:

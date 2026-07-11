@@ -1,39 +1,24 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import QuestionShell from '$lib/components/question-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
 	import PracticeHubNav from '$lib/components/practice-hub-nav.svelte';
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import Topbar from '$lib/components/topbar.svelte';
-	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 
-	function getInitialSelection(practicePage: PracticePage, customTopicEnabled: boolean) {
+	function getInitialSelection(practicePage: PracticePage) {
 		return {
 			selectedClass: practicePage.className,
 			selectedUnit:
-				practicePage.type === 'unit' && practicePage.unitName
-					? practicePage.unitName
-					: practicePage.type === 'topic' && customTopicEnabled
-						? CUSTOM_UNIT_VALUE
-						: '',
-			customTopic:
-				practicePage.type === 'topic' && customTopicEnabled
-					? (practicePage.customTopic ?? '')
-					: ''
+				practicePage.type === 'unit' && practicePage.unitName ? practicePage.unitName : ''
 		};
 	}
 
 	let { page: practicePage }: { page: PracticePage } = $props();
 
-	const allowCustomTopic = $derived(Boolean(page.data.customTopicEnabled));
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
-	const initial = $derived(getInitialSelection(practicePage, allowCustomTopic));
-
-	function linkHref(href: string): string {
-		return href;
-	}
+	const initial = $derived(getInitialSelection(practicePage));
 
 	function linkRel(kind: (typeof practicePage.links)[number]['kind']): string | undefined {
 		if (kind === 'external' || kind === 'college-board') {
@@ -76,11 +61,7 @@
 			</section>
 
 			<section>
-				<QuestionShell
-					selectedClass={initial.selectedClass}
-					selectedUnit={initial.selectedUnit}
-					customTopic={initial.customTopic}
-				/>
+				<QuestionShell selectedClass={initial.selectedClass} selectedUnit={initial.selectedUnit} />
 			</section>
 
 			<section class="mx-auto max-w-3xl">
@@ -100,14 +81,17 @@
 						<ul class="space-y-2">
 							{#each practicePage.links as link (link.href)}
 								<li>
+									<!-- Catalog links are validated internal paths or explicit external URLs. -->
+									<!-- eslint-disable svelte/no-navigation-without-resolve -->
 									<a
-										href={linkHref(link.href)}
+										href={link.href}
 										class="text-sm text-primary underline-offset-4 hover:underline"
 										target={linkTarget(link.href, link.kind)}
 										rel={linkRel(link.kind)}
 									>
 										{link.label}
 									</a>
+									<!-- eslint-enable svelte/no-navigation-without-resolve -->
 								</li>
 							{/each}
 						</ul>

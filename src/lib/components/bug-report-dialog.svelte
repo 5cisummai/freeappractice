@@ -7,7 +7,6 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { NativeSelect } from '$lib/components/ui/native-select/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
-	import { unitForProgress } from '$lib/catalog/custom-unit';
 	import {
 		bugReportSchema,
 		type BugReportPayload,
@@ -28,7 +27,6 @@
 		context?: BugReportContext | null;
 		selectedClass?: string;
 		selectedUnit?: string;
-		customTopic?: string;
 	};
 
 	type BugReportField = Exclude<keyof BugReportPayload, 'metadata'>;
@@ -46,8 +44,7 @@
 		open = $bindable(false),
 		context = null,
 		selectedClass = '',
-		selectedUnit = '',
-		customTopic = ''
+		selectedUnit = ''
 	}: Props = $props();
 
 	let submitting = $state(false);
@@ -61,10 +58,7 @@
 
 	function formFromContext(ctx: BugReportContext): BugReportForm {
 		const classLabel = ctx.selectedClass || selectedClass || 'practice';
-		const unitLabel = unitForProgress(
-			ctx.selectedUnit ?? selectedUnit ?? '',
-			ctx.customTopic ?? customTopic
-		);
+		const unitLabel = (ctx.selectedUnit ?? selectedUnit ?? '').trim() || 'all-units';
 		const questionLabel = ctx.questionNumber
 			? `Question ${ctx.questionNumber}`
 			: 'the current question';

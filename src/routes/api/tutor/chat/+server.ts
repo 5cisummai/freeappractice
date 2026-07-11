@@ -3,65 +3,80 @@ import type { RequestHandler } from './$types';
 import { chat } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { createTutorChatStream } from '$lib/tutor/chat-stream.server';
+import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '$lib/tutor/chat-request';
+
+class RequestTooLargeError extends Error {}
+
+async function readRequestBody(request: Request): Promise<unknown> {
+	const declaredLength = Number(request.headers.get('content-length'));
+	if (Number.isFinite(declaredLength) && declaredLength > MAX_TUTOR_CHAT_REQUEST_BYTES) {
+		throw new RequestTooLargeError();
+	}
+
+	if (!request.body) return null;
+
+	const reader = request.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let receivedBytes = 0;
+
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+
+		receivedBytes += value.byteLength;
+		if (receivedBytes > MAX_TUTOR_CHAT_REQUEST_BYTES) {
+			await reader.cancel();
+			throw new RequestTooLargeError();
+		}
+		chunks.push(value);
+	}
+
+	const bytes = new Uint8Array(receivedBytes);
+	let offset = 0;
+	for (const chunk of chunks) {
+		bytes.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+
+	return JSON.parse(new TextDecoder().decode(bytes));
+}
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const body = await request.json();
-		const {
-			question,
-			answer,
-			explanation,
-			apClass,
-			unit,
-			answerChoices,
-			conversationHistory,
-			message
-		} = body;
-
-		if (!question || !message) {
-			return json({ error: 'Question and message are required' }, { status: 400 });
+		let body: unknown;
+		try {
+			body = await readRequestBody(request);
+		} catch (error) {
+			if (error instanceof RequestTooLargeError) {
+				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
+			}
+			return json({ error: 'Tutor chat request must be valid JSON' }, { status: 400 });
 		}
+
+		const result = tutorChatRequestSchema.safeParse(body);
+		if (!result.success) {
+			return json(
+				{
+					error: 'Invalid tutor chat request',
+					details: result.error.issues.map((issue) => issue.message)
+				},
+				{ status: 400 }
+			);
+		}
+		const { apClass, unit, conversationHistory } = result.data;
 
 		capturePostHogServerEvent(request, {
 			distinctId: 'anonymous',
 			event: 'tutor_chat_started',
 			properties: {
-				ap_class: apClass ?? '',
-				unit: unit ?? '',
-				has_prior_conversation: Array.isArray(conversationHistory) && conversationHistory.length > 0
+				ap_class: apClass,
+				unit: unit,
+				has_prior_conversation: conversationHistory.length > 0
 			}
 		});
 
-		const stream = new ReadableStream({
-			async start(controller) {
-				const encoder = new TextEncoder();
-
-				try {
-					const generator = chat({
-						question,
-						correctAnswer: answer ?? '',
-						explanation: explanation ?? '',
-						apClass: apClass ?? '',
-						unit: unit ?? '',
-						answerChoices: answerChoices ?? null,
-						conversationHistory: conversationHistory ?? [],
-						userMessage: message
-					});
-					for await (const chunk of generator) {
-						controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
-					}
-
-					controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-				} catch (err) {
-					logger.error('Tutor stream error', { error: err });
-					controller.enqueue(
-						encoder.encode(`data: ${JSON.stringify({ error: 'Stream error occurred' })}\n\n`)
-					);
-				} finally {
-					controller.close();
-				}
-			}
-		});
+		const stream = createTutorChatStream(result.data, request.signal, { chatImpl: chat });
 
 		return new Response(stream, {
 			headers: {

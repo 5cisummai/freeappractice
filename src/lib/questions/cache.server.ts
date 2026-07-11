@@ -10,6 +10,7 @@ import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
 import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
+import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 export type { GetQuestionOptions };
 
@@ -53,7 +54,7 @@ async function generateQuestionForPool(
 	const result = await generateAPQuestion({ className, unit, recentTopics });
 	const { answer, questionId } = result;
 	if (!questionId) {
-		throw new Error('Generated question was not persisted to S3');
+		throw new QuestionGenerationError('Generated question was not persisted to S3');
 	}
 
 	const contentHash = computeContentHash(answer.question);
@@ -67,6 +68,7 @@ async function generateQuestionForPool(
 		return result;
 	}
 
+	const poolInsertStarted = Date.now();
 	try {
 		await insertHotPoolDoc(className, cacheUnit, answer, questionId);
 	} catch (err: unknown) {
@@ -81,7 +83,13 @@ async function generateQuestionForPool(
 		throw err;
 	}
 
-	return result;
+	return {
+		...result,
+		timing: {
+			generationMs: result.timing?.generationMs ?? 0,
+			persistenceMs: (result.timing?.persistenceMs ?? 0) + (Date.now() - poolInsertStarted)
+		}
+	};
 }
 
 export type CachedResult = GenerateResult & { cached: boolean };
@@ -106,21 +114,8 @@ const mcqPool = createMcqPool<IQuestion, CachedResult>({
 	generateLive: async (className, unit, recentTopics) => {
 		const result = await generateQuestionForPool(className, unit, recentTopics ?? []);
 		return { ...result, cached: false };
-	}
+	},
+	getLiveTiming: (result) => result.timing
 });
-
-export async function generateLiveCustomTopicMcq(
-	className: string,
-	customTopic: string
-): Promise<CachedResult> {
-	const trimmed = customTopic.trim();
-	if (!trimmed) throw new Error('customTopic is required');
-	const result = await generateAPQuestion({
-		className,
-		unit: '',
-		customTopic: trimmed
-	});
-	return { ...result, cached: false };
-}
 
 export const getQuestion = mcqPool.getQuestion;

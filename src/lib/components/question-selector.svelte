@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { getCourses } from '$lib/catalog/ap-classes';
 	import { tick } from 'svelte';
 	import BugIcon from '@lucide/svelte/icons/bug';
@@ -14,14 +13,11 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils.js';
-	import { CUSTOM_UNIT_VALUE } from '$lib/catalog/custom-unit';
-	import { Input } from '$lib/components/ui/input/index.js';
+	import { capturePracticeSelectorUsed } from '$lib/client/activation-analytics';
 
 	type QuestionSelectorProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
-		/** When the user picks "Custom" unit, they describe the topic here (sent to the API, not cached). */
-		customTopic?: string;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -32,23 +28,10 @@
 	let {
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
-		customTopic = $bindable(''),
 		generateLabel = 'Generate Question',
 		onGenerate,
 		onSelectionChange
 	}: QuestionSelectorProps = $props();
-
-	const allowCustomTopic = $derived(Boolean(page.data.customTopicEnabled));
-	const isCustomUnitSelected = $derived(
-		allowCustomTopic && selectedUnit === CUSTOM_UNIT_VALUE
-	);
-
-	$effect(() => {
-		if (!allowCustomTopic && selectedUnit === CUSTOM_UNIT_VALUE) {
-			selectedUnit = '';
-			customTopic = '';
-		}
-	});
 
 	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
 	const unitOptions = $derived(
@@ -64,12 +47,12 @@
 
 	function notifySelectionChange(): void {
 		onSelectionChange?.(selectedClass, selectedUnit);
+		if (selectedClass) capturePracticeSelectorUsed(selectedClass, selectedUnit);
 	}
 
 	function selectClass(name: string): void {
 		selectedClass = name;
 		selectedUnit = '';
-		customTopic = '';
 		classOpen = false;
 		tick().then(() => classTriggerRef?.focus());
 		notifySelectionChange();
@@ -77,7 +60,6 @@
 
 	function selectUnit(unit: string): void {
 		selectedUnit = unit;
-		if (unit !== CUSTOM_UNIT_VALUE) customTopic = '';
 		unitOpen = false;
 		tick().then(() => unitTriggerRef?.focus());
 		notifySelectionChange();
@@ -91,7 +73,6 @@
 	function clearSelection(): void {
 		selectedClass = '';
 		selectedUnit = '';
-		customTopic = '';
 		optionsOpen = false;
 		notifySelectionChange();
 	}
@@ -100,9 +81,7 @@
 		if (!selectedClass) return;
 
 		const parts = [selectedClass];
-		if (isCustomUnitSelected && customTopic.trim()) {
-			parts.push(customTopic.trim());
-		} else if (selectedUnit) {
+		if (selectedUnit) {
 			parts.push(selectedUnit);
 		} else {
 			parts.push('All Units');
@@ -180,12 +159,6 @@
 									Select a course first
 								{:else if !selectedUnit}
 									All Units
-								{:else if isCustomUnitSelected}
-									{customTopic.trim()
-										? customTopic.trim().length > 48
-											? `${customTopic.trim().slice(0, 48)}…`
-											: customTopic.trim()
-										: 'Custom topic'}
 								{:else}
 									{selectedUnit}
 								{/if}
@@ -221,17 +194,6 @@
 										{unit}
 									</Command.Item>
 								{/each}
-								{#if allowCustomTopic}
-									<Command.Item value="custom-topic" onSelect={() => selectUnit(CUSTOM_UNIT_VALUE)}>
-										<CheckIcon
-											class={cn(
-												'mr-2 size-4 shrink-0',
-												!isCustomUnitSelected && 'text-transparent'
-											)}
-										/>
-										Custom topic…
-									</Command.Item>
-								{/if}
 							</Command.Group>
 						</Command.List>
 					</Command.Root>
@@ -239,11 +201,7 @@
 			</Popover.Root>
 		</div>
 
-		<Button
-			onclick={onGenerate}
-			disabled={!selectedClass || (isCustomUnitSelected && !customTopic.trim())}
-			class="h-10 shrink-0 px-4 text-sm"
-		>
+		<Button onclick={onGenerate} disabled={!selectedClass} class="h-10 shrink-0 px-4 text-sm">
 			{generateLabel}
 		</Button>
 		<Popover.Root bind:open={optionsOpen}>
@@ -296,20 +254,6 @@
 			</Popover.Content>
 		</Popover.Root>
 	</div>
-
-	{#if allowCustomTopic && selectedClass && isCustomUnitSelected}
-		<div class="space-y-2">
-			<Label for="custom-topic-input">Topic or subtopic</Label>
-			<Input
-				id="custom-topic-input"
-				placeholder="e.g. Cross-sectional volumes"
-				bind:value={customTopic}
-				class="max-w-xl"
-				autocomplete="off"
-			/>
-			<p class="text-xs text-muted-foreground">Generated on demand for this topic.</p>
-		</div>
-	{/if}
 </div>
 
-<BugReportDialog bind:open={bugReportOpen} {selectedClass} {selectedUnit} {customTopic} />
+<BugReportDialog bind:open={bugReportOpen} {selectedClass} {selectedUnit} />

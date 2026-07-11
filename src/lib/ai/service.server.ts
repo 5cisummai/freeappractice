@@ -79,6 +79,7 @@ export type ChatCompletionParams = {
 	model: string;
 	messages: ChatMessage[];
 	maxOutputTokens?: number;
+	abortSignal?: AbortSignal;
 };
 
 export type StructuredCompletionParams<T> = {
@@ -173,7 +174,8 @@ export async function* runStreamingChat(
 			model: model(params.model),
 			...(system != null && { system }),
 			messages,
-			maxOutputTokens: params.maxOutputTokens
+			maxOutputTokens: params.maxOutputTokens,
+			abortSignal: params.abortSignal
 		});
 
 		let chunks = 0;
@@ -183,7 +185,11 @@ export async function* runStreamingChat(
 		}
 		doneAiCall({ chunks });
 	} catch (err) {
-		logger.error(`[ai] ${callName} failed`, { ...logContext, model: params.model, error: err });
+		const aborted =
+			params.abortSignal?.aborted || (err instanceof Error && err.name === 'AbortError');
+		if (!aborted) {
+			logger.error(`[ai] ${callName} failed`, { ...logContext, model: params.model, error: err });
+		}
 		throw err;
 	}
 }

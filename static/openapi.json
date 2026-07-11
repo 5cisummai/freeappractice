@@ -58,8 +58,7 @@
 								"required": ["className"],
 								"properties": {
 									"className": { "type": "string", "example": "AP Biology" },
-									"unit": { "type": "string", "example": "Unit 1: Chemistry of Life" },
-									"customTopic": { "type": "string" }
+									"unit": { "type": "string", "example": "Unit 1: Chemistry of Life" }
 								}
 							}
 						}
@@ -68,7 +67,7 @@
 				"responses": {
 					"200": { "description": "Generated question metadata" },
 					"400": { "description": "Invalid request" },
-					"403": { "description": "Feature disabled" },
+					"410": { "description": "Deprecated customTopic request" },
 					"500": { "description": "Generation failed" }
 				}
 			}

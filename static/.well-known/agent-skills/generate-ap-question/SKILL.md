@@ -18,15 +18,6 @@ Use the Free AP Practice question API to generate multiple-choice questions for 
 }
 ```
 
-Optional custom topic:
-
-```json
-{
-  "className": "AP Biology",
-  "customTopic": "Cell membrane transport"
-}
-```
-
 ## Response
 
 Returns `answer`, `provider`, `model`, `cached`, and `questionId`. The full question payload is delivered separately in the app UI flow.

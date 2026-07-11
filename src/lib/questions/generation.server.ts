@@ -9,6 +9,7 @@ import {
 	ADVANCED_MODEL,
 	LATEX_RULE
 } from '$lib/ai/service.server';
+import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 /**
  * Question generation and grading domain logic.
@@ -161,12 +162,18 @@ type APQuestionData = z.infer<typeof APQuestion>;
 
 export type { APQuestionData };
 
+export interface GenerateTiming {
+	generationMs: number;
+	persistenceMs: number;
+}
+
 export interface GenerateResult {
 	answer: APQuestionData;
 	provider: string;
 	model: string;
 	questionId?: string;
 	cached?: boolean;
+	timing?: GenerateTiming;
 }
 
 // ── Persistence ────────────────────────────────────────────────
@@ -210,36 +217,20 @@ export async function generateAPQuestionBody(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
-	customTopic?: string;
 }): Promise<APQuestionData> {
-	const { className, unit, recentTopics, customTopic } = opts;
+	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
-	const ct = customTopic?.trim() ?? '';
-	const isCustom = ct.length > 0;
-
-	let unitContext: string;
-	let keywordsContext = '';
-	let courseNotesContext = '';
-	let diversitySection = '';
-
-	if (isCustom) {
-		unitContext = `
-USER-SPECIFIED TOPIC (PRIMARY — THE ENTIRE QUESTION MUST CENTER ON THIS):
-${ct}
-`;
-	} else {
-		const sections = buildUnitSections(className, unit, 'question');
-		unitContext = sections.unitContext;
-		keywordsContext = sections.keywordsContext;
-		courseNotesContext = sections.courseNotesContext;
-		diversitySection = buildDiversitySection(recentTopics, {
-			label: 'TOPICS',
-			avoidLabel: 'subtopic, concept, or scenario',
-			pickLabel:
-				'Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.'
-		});
-	}
+	const sections = buildUnitSections(className, unit, 'question');
+	const unitContext = sections.unitContext;
+	const keywordsContext = sections.keywordsContext;
+	const courseNotesContext = sections.courseNotesContext;
+	const diversitySection = buildDiversitySection(recentTopics, {
+		label: 'TOPICS',
+		avoidLabel: 'subtopic, concept, or scenario',
+		pickLabel:
+			'Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.'
+	});
 
 	const isBiology = className.toLowerCase().includes('biology');
 	const difficultyGuidance = isBiology
@@ -252,11 +243,7 @@ ${ct}
 		? `TOPIC SCOPE:
 - Keep the humor centered on high school lunch culture: cafeteria lines, mystery meat, snack trades, saving tables, vending machines, brown-bag shame, lunch ladies, milk cartons, and related chaos.
 - The joke should land even if the student has never taken a real AP exam.`
-		: isCustom
-			? `TOPIC SCOPE:
-- The question MUST assess understanding directly related to the user-specified topic above within ${className}.
-- Stay aligned with College Board standards for that course; do not drift into unrelated subjects.`
-			: `CRITICAL UNIT SCOPE REQUIREMENT:
+		: `CRITICAL UNIT SCOPE REQUIREMENT:
 - Your question MUST stay strictly within the unit's specified keywords and topics listed above
 - DO NOT incorporate concepts from other units, even if they seem related`;
 
@@ -309,12 +296,8 @@ OUTPUT:
 
 	const model = selectModelForClass(className);
 	const userMessage = lunchMode
-		? isCustom
-			? `Create a hilarious AP Lunch multiple-choice question about: ${ct}\n\nReturn ONLY the JSON object, no other text.`
-			: `Create a hilarious AP Lunch multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
-		: isCustom
-			? `Create an AP-level practice multiple-choice question for ${className} focused on this topic: ${ct}\n\nReturn ONLY the JSON object, no other text.`
-			: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+		? `Create a hilarious AP Lunch multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
+		: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
 	const { parsed } = await runStructuredCompletion<APQuestionData>(
 		'generateAPQuestion',
@@ -328,7 +311,7 @@ OUTPUT:
 			schemaName: 'ap_question',
 			reasoningEffort: model === ADVANCED_MODEL ? 'medium' : undefined
 		},
-		{ className, unit, customTopic: isCustom ? ct : undefined }
+		{ className, unit }
 	);
 
 	return parsed;
@@ -338,24 +321,36 @@ export async function generateAPQuestion(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
-	customTopic?: string;
 }): Promise<GenerateResult> {
-	const { className, unit, customTopic } = opts;
-	const parsed = await generateAPQuestionBody({ className, unit, recentTopics: opts.recentTopics, customTopic });
+	const { className, unit } = opts;
+	const generationStarted = Date.now();
+	const parsed = await generateAPQuestionBody({
+		className,
+		unit,
+		recentTopics: opts.recentTopics
+	});
+	const generationMs = Date.now() - generationStarted;
 
-	const persistUnitLabel = customTopic?.trim()
-		? `Custom: ${customTopic.trim()}`
-		: unit;
 	let questionId: string;
+	const persistenceStarted = Date.now();
 	try {
-		questionId = await persistMcqQuestionToS3(parsed, className, persistUnitLabel);
+		questionId = await persistMcqQuestionToS3(parsed, className, unit);
 	} catch (err) {
 		logger.error('Failed to persist generated question to S3', {
 			className,
-			unit: persistUnitLabel,
+			unit,
 			error: err
 		});
-		throw new Error('Failed to persist generated question');
+		throw new QuestionGenerationError('Failed to persist generated question', { cause: err });
 	}
-	return { answer: parsed, provider: 'openai', model: selectModelForClass(className), questionId };
+	return {
+		answer: parsed,
+		provider: 'openai',
+		model: selectModelForClass(className),
+		questionId,
+		timing: {
+			generationMs,
+			persistenceMs: Date.now() - persistenceStarted
+		}
+	};
 }

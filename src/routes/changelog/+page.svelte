@@ -7,6 +7,26 @@
 
 	const changelog = [
 		{
+			version: '1.4.5',
+			date: 'July 11, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Practice is clearer: pick an AP class and unit, then generate — no extra topic setup',
+						'AI tutor chats are more reliable, with safer limits so long or stuck replies don’t hang forever',
+						'Old topic practice links (like photosynthesis or limits) now open the matching unit page instead of a dead end'
+					]
+				},
+				{
+					title: 'Changes',
+					items: [
+						'Custom-topic question generation has been removed so every question stays tied to a real AP unit'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.4',
 			date: 'July 9, 2026',
 			sections: [
@@ -197,10 +217,7 @@
 			sections: [
 				{
 					title: 'New Features',
-					items: [
-						'Custom topics: Enter your own desired topic(s) for questions',
-						'Added AP Spanish support'
-					]
+					items: ['Added AP Spanish support']
 				},
 				{
 					title: 'Fixes',
@@ -697,9 +714,7 @@
 						<a href={resolve('/subjects')} class="underline-offset-2 hover:underline">Subjects</a>
 					</li>
 					<li>
-						<a href={resolve('/summer')} class="underline-offset-2 hover:underline"
-							>Summer guide</a
-						>
+						<a href={resolve('/summer')} class="underline-offset-2 hover:underline">Summer guide</a>
 					</li>
 					<li>
 						<a href={resolve('/stats')} class="underline-offset-2 hover:underline">Stats</a>

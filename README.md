@@ -8,8 +8,8 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 - Public marketing pages: landing, about, subjects, summer study guide, blog, stats, privacy, terms, and changelog.
 - Authenticated app at `/app` for dashboard, practice, progress, question history, resources, and settings.
-- SEO practice landing pages under `/practice/[...slug]` (class, unit, and topic pages with internal linking).
-- AI-generated MCQs with optional custom topics, an in-app tutor, bookmarks, and attempt history.
+- SEO practice landing pages under `/practice/[...slug]` (class and unit pages with internal linking).
+- AI-generated MCQs with an in-app tutor, bookmarks, and attempt history.
 - Public generation stats at `/stats` (backed by `/api/question/generation-stats`).
 - Better Auth for email/password and Google sign-in (including Google One Tap when configured).
 - SvelteKit API routes for questions, signed-in user data, tutoring, and bug reports.
@@ -77,14 +77,11 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command                                       | Purpose                                             |
-| --------------------------------------------- | --------------------------------------------------- |
-| `pnpm check`                                  | Type-check with `svelte-check`                      |
-| `pnpm lint` / `pnpm format`                   | ESLint and Prettier                                 |
-| `pnpm cache:clear`                            | Clear the question cache pool                       |
-| `pnpm auth:indexes`                           | Create Better Auth MongoDB indexes                  |
-| `pnpm scaffold:practice-pages`              | Regenerate `practice-pages.json` from AP catalog    |
-| `pnpm audit:internal-links`                 | Audit internal links across public and practice pages |
+| Command                     | Purpose                        |
+| --------------------------- | ------------------------------ |
+| `bun check`                 | Type-check with `svelte-check` |
+| `bun test:unit`             | Run Vitest unit tests          |
+| `bun lint` / `bun format`   | ESLint and Prettier            |
 
 ## Environment variables
 
@@ -100,26 +97,25 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
 
-| Variable          | Purpose                                                        |
-| ----------------- | -------------------------------------------------------------- |
-| `ADVANCED_MODEL`  | Model for STEM and other advanced subjects                     |
-| `BASIC_MODEL`     | Model for humanities and lighter subjects                      |
-| `TUTOR_MODEL`     | Model for the in-app tutor chat                                |
+| Variable         | Purpose                                    |
+| ---------------- | ------------------------------------------ |
+| `ADVANCED_MODEL` | Model for STEM and other advanced subjects |
+| `BASIC_MODEL`    | Model for humanities and lighter subjects  |
+| `TUTOR_MODEL`    | Model for the in-app tutor chat            |
 
 Commonly needed for full functionality:
 
-| Variable                                                                       | Purpose                                  |
-| ------------------------------------------------------------------------------ | ---------------------------------------- |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                             |
-| `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client             |
-| `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                      |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches   |
-| `AWS_SESSION_TOKEN`                                                              | Optional temporary/assumed-role credentials |
-| `PUBLIC_BASE_URL`                                                              | Canonical site URL                       |
-| `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports |
-| `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                 |
-
-Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`, and rate-limit vars. See `.env.example` for defaults and comments.
+| Variable                                                                       | Purpose                                                                                                                                |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                                                                                                                           |
+| `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client                                                                                                           |
+| `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                                                                                                                    |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches                                                                                                 |
+| `AWS_SESSION_TOKEN`                                                            | Optional temporary/assumed-role credentials                                                                                            |
+| `PUBLIC_BASE_URL`                                                              | Canonical site URL                                                                                                                     |
+| `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                                                               |
+| `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                                                                                                               |
+Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`. See `.env.example` for defaults and comments.
 
 ### Local AI with LM Studio
 
