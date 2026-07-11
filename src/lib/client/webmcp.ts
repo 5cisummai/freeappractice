@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { getCourses } from '$lib/catalog/ap-classes';
 
 type ModelContextTool = {
 	name: string;
@@ -18,18 +19,7 @@ declare global {
 	}
 }
 
-const AP_SUBJECTS = [
-	'AP Biology',
-	'AP Chemistry',
-	'AP Physics 1',
-	'AP Calculus AB',
-	'AP Calculus BC',
-	'AP Statistics',
-	'AP US History',
-	'AP World History',
-	'AP Psychology',
-	'AP Computer Science A'
-];
+const AP_SUBJECTS = getCourses().map((course) => course.name);
 
 export function registerWebMcpTools(): void {
 	if (typeof document === 'undefined' || !document.modelContext?.registerTool) {

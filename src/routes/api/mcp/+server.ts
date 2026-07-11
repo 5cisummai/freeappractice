@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import pkg from '../../../../package.json' with { type: 'json' };
+import { mcpServerInfo } from '$lib/server/agent-discovery/mcp';
 
 export const prerender = false;
 
@@ -9,10 +9,7 @@ export const GET: RequestHandler = () => {
 	return json(
 		{
 			protocolVersion: '2024-11-05',
-			serverInfo: {
-				name: 'Free AP Practice',
-				version: pkg.version
-			},
+			serverInfo: mcpServerInfo(),
 			capabilities: {
 				tools: {}
 			}

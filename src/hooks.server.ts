@@ -116,10 +116,6 @@ async function maybeServeMarkdown(
 
 	const { pathname } = event.url;
 
-	if (pathname === '/' || pathname === '') {
-		return markdownResponse(await getHomepageMarkdown());
-	}
-
 	const html = await response.text();
 	const fallbackTitle = pathname.split('/').filter(Boolean).at(-1) ?? 'Free AP Practice';
 	return markdownResponse(htmlToBasicMarkdown(html, fallbackTitle));
