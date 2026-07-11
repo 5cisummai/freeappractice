@@ -10,11 +10,13 @@
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import PageShell from '$lib/components/page-shell.svelte';
+	import ReferralCard from '$lib/components/referral-card.svelte';
 
 	let { data } = $props();
 
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
+	const referral = $derived(data.referral as { shareUrl: string; studentsHelped: number });
 
 	const nextBestUnit = $derived.by(() => {
 		if (!progressData.length) return null;
@@ -147,6 +149,8 @@
 			</div>
 		</Card.Root>
 	</div>
+
+	<ReferralCard shareUrl={referral.shareUrl} studentsHelped={referral.studentsHelped} />
 
 	<div>
 		<h2 class="mb-4 font-display text-xl font-medium tracking-tight sm:text-2xl">Quick Actions</h2>

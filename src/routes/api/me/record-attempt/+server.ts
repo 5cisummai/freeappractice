@@ -6,6 +6,7 @@ import { findOrCreateProgressEntry } from '$lib/users/progress.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { getQuestionFromS3 } from '$lib/questions/storage.server';
+import { activateReferralForUser } from '$lib/referrals/referrals.server';
 
 const answerChoices = new Set(['A', 'B', 'C', 'D']);
 
@@ -60,6 +61,7 @@ export const POST = withAuthedHandler(
 		progressEntry.lastAttemptAt = new Date();
 
 		await user.save();
+		await activateReferralForUser(userId);
 
 		capturePostHogServerEvent(event.request, {
 			distinctId: userId,
