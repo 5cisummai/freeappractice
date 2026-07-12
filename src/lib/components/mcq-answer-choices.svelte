@@ -10,7 +10,8 @@
 		checkedSelection = null,
 		correctAnswer,
 		onSelect,
-		compact = false
+		compact = false,
+		realistic = false
 	}: {
 		options: QuestionOption[];
 		selectedOption?: string | null;
@@ -19,6 +20,7 @@
 		correctAnswer?: string;
 		onSelect: (optionId: string) => void;
 		compact?: boolean;
+		realistic?: boolean;
 	} = $props();
 
 	function optionButtonClasses(optionId: string): string {
@@ -52,7 +54,7 @@
 	}
 </script>
 
-<div class="space-y-2" role="radiogroup" aria-label="Answer choices">
+<div class={cn('space-y-2', realistic && 'font-exam')} role="radiogroup" aria-label="Answer choices">
 	{#each options as option (option.id)}
 		<button
 			type="button"
@@ -77,7 +79,11 @@
 				>
 					{option.label}
 				</span>
-				<RichText text={option.text} inline class="text-sm leading-6" />
+				<RichText
+					text={option.text}
+					inline
+					class={cn('leading-6', realistic ? 'text-[15px] text-foreground/85' : 'text-sm')}
+				/>
 			</div>
 		</button>
 	{/each}

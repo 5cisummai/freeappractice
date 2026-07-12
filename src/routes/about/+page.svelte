@@ -4,6 +4,7 @@
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import Signature from '$lib/components/spell/signature/signature.svelte';
 
 	const socialLinks = [
 		{
@@ -154,25 +155,9 @@
 						That focus is how I want to earn students' trust.
 					</p>
 				</div>
-
-				<p
-					class="self-end font-display text-3xl font-medium tracking-tight text-foreground italic sm:text-4xl"
-					aria-label="Signature: Ajay Saravanan"
-				>
-					Ajay Saravanan
-				</p>
-			</div>
-		</section>
-
-		<section class="mt-16 rounded-2xl border border-border bg-muted/30 px-6 py-8">
-			<h2 class="text-xl font-semibold tracking-tight">Start exploring</h2>
-			<p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-				Browse every AP subject, read study guides, or preview Unit 1 over the summer.
-			</p>
-			<div class="mt-5 flex flex-wrap gap-3">
-				<Button href={resolve('/subjects')} variant="default">Browse subjects</Button>
-				<Button href={resolve('/blog')} variant="outline">Read the blog</Button>
-				<Button href={resolve('/summer')} variant="outline">Summer study guide</Button>
+				<div class="flex justify-end">
+					<Signature text="Ajay Saravanan" />
+				</div>
 			</div>
 		</section>
 	</main>

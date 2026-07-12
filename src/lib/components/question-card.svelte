@@ -28,6 +28,7 @@
 		type QuestionSource
 	} from '$lib/client/activation-funnel-metrics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import {
 		parseQuestionPayloadFromResponse,
 		resolveEffectiveUnit,
@@ -119,6 +120,7 @@
 	);
 	const hasCalculator = $derived(toolConfig.calculator !== 'none');
 	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
+	const realistic = $derived(realisticMode.enabled);
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
 	const tutorUnitLabel = $derived(selectedUnit);
@@ -133,6 +135,9 @@
 		for (const opt of currentQuestion.options) map[opt.id] = opt.text;
 		return map.A && map.B ? (map as { A: string; B: string; C: string; D: string }) : null;
 	});
+	const realisticContextLabel = $derived(
+		selectedClass ? `${selectedClass} · ${selectedUnit.trim() || 'All Units'}` : ''
+	);
 	const feedbackMessage = $derived.by(() => {
 		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
 			return statusMessage;
@@ -438,11 +443,31 @@
 	</Card.Root>
 {:else}
 	{#snippet cardInner(expanded: boolean)}
+		{#snippet realisticQuestionNumber()}
+			<div class="mb-3">
+				<span
+					class="inline-flex size-8 items-center justify-center bg-foreground font-exam text-base font-semibold text-background"
+					aria-hidden="true"
+				>
+					{effectiveQuestionNumber}
+				</span>
+				<span class="sr-only">Question {effectiveQuestionNumber}</span>
+			</div>
+		{/snippet}
+
 		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
-			<div class="flex items-start justify-between">
-				<div>
-					<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
-				</div>
+			<div class="flex items-start justify-between gap-4">
+				{#if realistic}
+					<div class="min-w-0">
+						<p class="mt-0.5 truncate text-base font-medium text-foreground">
+							{realisticContextLabel}
+						</p>
+					</div>
+				{:else}
+					<div>
+						<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
+					</div>
+				{/if}
 				<Button
 					variant="ghost"
 					size="icon"
@@ -461,17 +486,29 @@
 			{#if currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
-						'overflow-hidden rounded-lg border border-border/70',
+						'overflow-hidden',
+						realistic
+							? 'rounded-none border border-border realistic-surface'
+							: 'rounded-lg border border-border/70',
 						expanded ? 'min-h-0 flex-1' : 'h-88'
 					)}
 				>
 					<Resizable.PaneGroup direction="horizontal" class="h-full">
 						<Resizable.Pane defaultSize={54} minSize={30} class="min-w-0">
 							<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
-								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									{currentQuestion.leftPanel?.title ?? 'Stimulus'}
-								</p>
-								<div class="space-y-4 text-sm leading-6 text-foreground/90">
+								{#if !realistic}
+									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+										{currentQuestion.leftPanel?.title ?? 'Stimulus'}
+									</p>
+								{/if}
+								<div
+									class={cn(
+										'space-y-4 leading-6',
+										realistic
+											? 'font-exam text-[15px] text-foreground'
+											: 'text-sm text-foreground/90'
+									)}
+								>
 									{#each currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
@@ -484,10 +521,19 @@
 								use:observePromptLayout={currentQuestion?.prompt ?? ''}
 								class="h-full space-y-3 overflow-y-auto p-4 sm:p-5"
 							>
-								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									{currentQuestion.rightPanel?.title ?? 'Prompt'}
-								</p>
-								<div class="space-y-4 text-sm leading-6 text-foreground/90">
+								{#if !realistic}
+									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+										{currentQuestion.rightPanel?.title ?? 'Prompt'}
+									</p>
+								{/if}
+								<div
+									class={cn(
+										'space-y-4 leading-7',
+										realistic
+											? 'font-exam text-[15px] text-foreground/85'
+											: 'text-sm text-foreground/90'
+									)}
+								>
 									{#each currentQuestion.rightPanel?.content ?? [currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
@@ -496,6 +542,9 @@
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
 				</div>
+				{#if realistic}
+					{@render realisticQuestionNumber()}
+				{/if}
 				<McqAnswerChoices
 					options={currentQuestion.options}
 					{selectedOption}
@@ -503,11 +552,15 @@
 					{checkedSelection}
 					correctAnswer={currentQuestion.correctAnswer}
 					onSelect={handleOptionSelect}
+					{realistic}
 				/>
 			{:else if expandedTwoColumn}
 				<div
 					class={cn(
-						'overflow-hidden rounded-lg border border-border/70',
+						'overflow-hidden',
+						realistic
+							? 'rounded-none border border-border realistic-surface'
+							: 'rounded-lg border border-border/70',
 						expanded ? 'min-h-0 flex-1' : 'h-100'
 					)}
 				>
@@ -517,18 +570,28 @@
 								use:observePromptLayout={currentQuestion?.prompt ?? ''}
 								class="h-full overflow-y-auto p-4 sm:p-5"
 							>
-								<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									Question
-								</p>
+								{#if !realistic}
+									<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+										Question
+									</p>
+								{/if}
 								<RichText
 									text={currentQuestion?.prompt ?? ''}
-									class="text-sm leading-6 text-foreground/90"
+									class={cn(
+										'leading-7',
+										realistic
+											? 'font-exam text-[15px] text-foreground/85'
+											: 'text-sm text-foreground/90'
+									)}
 								/>
 							</div>
 						</Resizable.Pane>
 						<Resizable.Handle withHandle />
 						<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
 							<div class="h-full overflow-y-auto p-4 sm:p-5">
+								{#if realistic}
+									{@render realisticQuestionNumber()}
+								{/if}
 								<McqAnswerChoices
 									options={currentQuestion?.options ?? []}
 									{selectedOption}
@@ -537,6 +600,7 @@
 									correctAnswer={currentQuestion?.correctAnswer}
 									onSelect={handleOptionSelect}
 									compact
+									{realistic}
 								/>
 							</div>
 						</Resizable.Pane>
@@ -546,9 +610,16 @@
 				<div use:observePromptLayout={currentQuestion?.prompt ?? ''}>
 					<RichText
 						text={currentQuestion?.prompt ?? ''}
-						class="text-base leading-7 text-foreground/90"
+						class={cn(
+							realistic
+								? 'font-exam text-[15px] leading-8 text-foreground/85'
+								: 'text-base leading-7 text-foreground/90'
+						)}
 					/>
 				</div>
+				{#if realistic}
+					{@render realisticQuestionNumber()}
+				{/if}
 				<McqAnswerChoices
 					options={currentQuestion?.options ?? []}
 					{selectedOption}
@@ -556,6 +627,7 @@
 					{checkedSelection}
 					correctAnswer={currentQuestion?.correctAnswer}
 					onSelect={handleOptionSelect}
+					{realistic}
 				/>
 			{/if}
 
@@ -678,7 +750,9 @@
 	<!-- Normal card (kept in the DOM to preserve layout space; hidden while expanded) -->
 	<Card.Root
 		class={cn(
-			'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
+			realistic
+				? 'relative overflow-hidden border-border/70 realistic-surface shadow-none'
+				: 'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
 			isExpanded ? 'pointer-events-none invisible' : className
 		)}
 		aria-hidden={isExpanded}
@@ -694,7 +768,12 @@
 			transition:scale={{ duration: 240, start: 0.97, opacity: 0, easing: quintOut }}
 		>
 			<Card.Root
-				class="relative flex h-full flex-col overflow-hidden rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm"
+				class={cn(
+					'relative flex h-full flex-col overflow-hidden',
+					realistic
+						? 'rounded-none border-0 realistic-surface shadow-none'
+						: 'rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm'
+				)}
 			>
 				{@render cardInner(true)}
 			</Card.Root>

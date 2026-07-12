@@ -216,7 +216,7 @@
 
 	<div
 		bind:this={carouselEl}
-		class="flex snap-x snap-mandatory scrollbar-none gap-4 overflow-x-auto scroll-smooth pb-1 [-ms-overflow-style:none] mask-[linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] [&::-webkit-scrollbar]:hidden"
+		class="flex snap-x snap-mandatory scrollbar-none gap-4 overflow-x-auto scroll-smooth mask-[linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
 		aria-label="Student testimonials carousel"
 	>
 		{#each stories as story (story.name)}
