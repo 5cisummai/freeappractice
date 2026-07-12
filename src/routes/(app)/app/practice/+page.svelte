@@ -6,6 +6,7 @@
 	import type { AnswerResult } from '$lib/components/question-card.svelte';
 	import { toast } from 'svelte-sonner';
 	import PageShell from '$lib/components/page-shell.svelte';
+	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
@@ -39,6 +40,9 @@
 				throw new Error(getResponseMessage(payload, fallbackMessage));
 			}
 		} catch (error) {
+			capturePostHogEvent('practice_progress_save_failed', {
+				endpoint: 'record_attempt'
+			});
 			toast.error(error instanceof Error ? error.message : fallbackMessage, {
 				id: 'practice-sync-error'
 			});

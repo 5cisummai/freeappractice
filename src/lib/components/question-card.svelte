@@ -109,6 +109,7 @@
 	let isMobileViewport = $state(false);
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
+	let questionFeedbackReason = $state<string | null>(null);
 
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
@@ -252,6 +253,7 @@
 		checkedSelection = null;
 		answerResult = null;
 		showExplanation = false;
+		questionFeedbackReason = null;
 		startedAtMs = Date.now();
 		if (clearSelection) selectedOption = null;
 	}
@@ -296,7 +298,7 @@
 			};
 			captureQuestionRequestSucceeded(analytics);
 
-			currentQuestion = result.question;
+			currentQuestion = { ...result.question, source: result.source };
 			rememberSeenQuestion(result.question);
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
@@ -336,6 +338,8 @@
 			ap_class: selectedClass,
 			unit: selectedUnit,
 			question_id: result.questionId,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source,
 			is_correct: result.isCorrect,
 			time_taken_ms: result.timeTakenMs
 		});
@@ -360,7 +364,9 @@
 		capturePostHogEvent('question_skipped', {
 			ap_class: selectedClass,
 			unit: selectedUnit,
-			question_id: currentQuestion?.questionId
+			question_id: currentQuestion?.questionId,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source
 		});
 		await loadQuestion('skip');
 	}
@@ -370,7 +376,9 @@
 		capturePostHogEvent('question_marked_not_learned', {
 			ap_class: selectedClass,
 			unit: selectedUnit,
-			question_id: currentQuestion?.questionId
+			question_id: currentQuestion?.questionId,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source
 		});
 		await loadQuestion('not-learned');
 	}
@@ -388,6 +396,23 @@
 		onReportBug?.(ctx);
 		bugReportContext = ctx;
 		bugReportOpen = true;
+	}
+
+	function submitQuestionFeedback(
+		reason: 'answer_incorrect' | 'question_unclear' | 'explanation_unclear'
+	): void {
+		if (!currentQuestion || questionFeedbackReason) return;
+
+		questionFeedbackReason = reason;
+		capturePostHogEvent('question_feedback_submitted', {
+			reason,
+			question_id: currentQuestion.questionId,
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			topic: currentQuestion.topic,
+			source: currentQuestion.source,
+			is_correct: answerResult?.isCorrect
+		});
 	}
 
 	onMount(() => {
@@ -571,7 +596,9 @@
 								class="h-full overflow-y-auto p-4 sm:p-5"
 							>
 								{#if !realistic}
-									<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+									<p
+										class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+									>
 										Question
 									</p>
 								{/if}
@@ -700,7 +727,20 @@
 			</div>
 			<div class="flex gap-2">
 				{#if hasCheckedAnswer && currentQuestion?.explanation}
-					<Button variant="outline" onclick={() => (showExplanation = true)}>
+					<Button
+						variant="outline"
+						onclick={() => {
+							showExplanation = true;
+							capturePostHogEvent('explanation_viewed', {
+								question_id: currentQuestion?.questionId,
+								ap_class: selectedClass,
+								unit: selectedUnit,
+								topic: currentQuestion?.topic,
+								source: currentQuestion?.source,
+								is_correct: answerResult?.isCorrect
+							});
+						}}
+					>
 						{showExplanationLabel}
 					</Button>
 				{/if}
@@ -739,6 +779,34 @@
 						text={currentQuestion?.explanation ?? ''}
 						class="mt-4 text-sm leading-6 text-foreground/90"
 					/>
+					<div class="mt-5 border-t pt-4">
+						<p class="text-sm text-muted-foreground">Something wrong with this question?</p>
+						{#if questionFeedbackReason}
+							<p class="mt-2 text-sm text-muted-foreground">
+								Thanks — this helps improve future questions.
+							</p>
+						{:else}
+							<div class="mt-2 flex flex-wrap gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
+								>
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => submitQuestionFeedback('question_unclear')}
+									>Question is unclear</Button
+								>
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => submitQuestionFeedback('explanation_unclear')}
+									>Explanation is unclear</Button
+								>
+							</div>
+						{/if}
+					</div>
 					<div class="mt-5 flex justify-end">
 						<Button variant="outline" onclick={() => (showExplanation = false)}>Close</Button>
 					</div>
@@ -791,6 +859,8 @@
 				apClass={selectedClass}
 				unit={tutorUnitLabel}
 				answerChoices={tutorAnswerChoices}
+				questionId={currentQuestion.questionId}
+				topic={currentQuestion.topic}
 			/>
 		{/key}
 	{/if}
