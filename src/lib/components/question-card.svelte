@@ -5,7 +5,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { scale } from 'svelte/transition';
+	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -748,17 +748,19 @@
 	{/snippet}
 
 	<!-- Normal card (kept in the DOM to preserve layout space; hidden while expanded) -->
-	<Card.Root
-		class={cn(
-			realistic
-				? 'relative overflow-hidden border-border/70 realistic-surface shadow-none'
-				: 'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
-			isExpanded ? 'pointer-events-none invisible' : className
-		)}
-		aria-hidden={isExpanded}
-	>
-		{@render cardInner(false)}
-	</Card.Root>
+	<div in:fade={{ duration: 280, easing: quintOut }}>
+		<Card.Root
+			class={cn(
+				realistic
+					? 'relative overflow-hidden border-border/70 realistic-surface shadow-none'
+					: 'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
+				isExpanded ? 'pointer-events-none invisible' : className
+			)}
+			aria-hidden={isExpanded}
+		>
+			{@render cardInner(false)}
+		</Card.Root>
+	</div>
 
 	<!-- Fullscreen overlay - scales in/out smoothly -->
 	{#if isExpanded}

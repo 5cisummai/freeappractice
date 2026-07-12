@@ -41,7 +41,7 @@ const questionSchema = new Schema<IQuestion>(
 		optionD: { type: String, required: true },
 		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
 		explanation: { type: String, required: true },
-		s3QuestionId: { type: String, required: true, index: true }
+		s3QuestionId: { type: String, required: true }
 	},
 	{ timestamps: true }
 );
