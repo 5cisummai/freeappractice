@@ -10,6 +10,7 @@
 	import AdminUsersDataTable from '$lib/components/admin/admin-users-data-table.svelte';
 	import AdminCacheDashboard from '$lib/components/admin/admin-cache-dashboard.svelte';
 	import type { AdminTab } from '$lib/admin/types.js';
+	import { resolve } from '$app/paths';
 
 	let { data } = $props();
 
@@ -25,7 +26,7 @@
 		if (tab === 'users' && data.search) params.push(`search=${encodeURIComponent(data.search)}`);
 		const currentPage = Math.floor(data.offset / data.limit) + 1;
 		if (tab === 'users' && currentPage > 1) params.push(`page=${currentPage}`);
-		return `/app/admin?${params.join('&')}`;
+		return `${resolve('/app/admin')}?${params.join('&')}`;
 	}
 </script>
 

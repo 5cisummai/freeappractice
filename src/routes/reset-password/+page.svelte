@@ -66,7 +66,7 @@
 
 <main
 	id="main-content"
-	class="bg flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10"
+	class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
 >
 	<div class="flex w-full max-w-sm flex-col gap-6">
 		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
@@ -95,11 +95,23 @@
 							{/if}
 							<Field.Field>
 								<Field.Label for="password">New Password</Field.Label>
-								<Input id="password" type="password" required bind:value={password} />
+								<Input
+									id="password"
+									type="password"
+									required
+									bind:value={password}
+									autocomplete="new-password"
+								/>
 							</Field.Field>
 							<Field.Field>
 								<Field.Label for="confirm">Confirm Password</Field.Label>
-								<Input id="confirm" type="password" required bind:value={confirmPassword} />
+								<Input
+									id="confirm"
+									type="password"
+									required
+									bind:value={confirmPassword}
+									autocomplete="new-password"
+								/>
 								<Field.Description>Must be at least 8 characters.</Field.Description>
 							</Field.Field>
 							<Field.Field>
