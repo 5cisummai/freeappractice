@@ -1,6 +1,6 @@
 /**
  * Audits internal linking coverage for public routes and practice pages.
- * Run: pnpm audit:internal-links
+ * Run: bun run audit:internal-links
  */
 import fs from 'node:fs';
 import path from 'node:path';

@@ -174,7 +174,7 @@
 						'Refactored authenticated API routes with shared auth and error-handling helpers',
 						'Updated privacy and terms pages',
 						'Typography refresh across marketing pages',
-						'Switched package manager from pnpm to Bun',
+						'Switched package manager to Bun',
 						'GitHub Actions workflow for Afterlane deploy verification'
 					]
 				},

@@ -32,10 +32,10 @@ npm install --save posthog-js
 yarn add posthog-js
 ```
 
-### pnpm
+### Bun
 
 ```bash
-pnpm add posthog-js
+bun add posthog-js
 ```
 
 ### Bun
@@ -114,10 +114,10 @@ npm install posthog-node --save
 yarn add posthog-node
 ```
 
-### pnpm
+### Bun
 
 ```bash
-pnpm add posthog-node
+bun add posthog-node
 ```
 
 ### Bun

@@ -2,7 +2,7 @@
 
 Configuration is read from `components.json`. See [components.json](https://shadcn-svelte.com/docs/components-json) on the docs site for the full schema.
 
-> **IMPORTANT:** Always run commands using the project's package runner: `npx shadcn-svelte@latest`, `pnpm dlx shadcn-svelte@latest`, or `bunx --bun shadcn-svelte@latest`. Check `packageManager` from the project (or lockfile) to choose the right one. Examples below use `npx shadcn-svelte@latest` but substitute the correct runner for the project.
+> **IMPORTANT:** Always run commands using the project's package runner: `npx shadcn-svelte@latest` or `bunx --bun shadcn-svelte@latest`. Check the lockfile to choose the right one. Examples below use `npx shadcn-svelte@latest` but substitute the correct runner for the project.
 
 > **IMPORTANT:** Only use the flags documented below. Do not invent or guess flags — if a flag isn't listed here, it doesn't exist. The CLI auto-detects the package manager; there is no `--package-manager` flag.
 

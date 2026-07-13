@@ -1,6 +1,6 @@
 /**
  * Generates src/lib/data/practice-pages.json from ap-classes.json and unit metadata.
- * Run: pnpm scaffold:practice-pages
+ * Run: bun run scaffold:practice-pages
  */
 
 import { writeFileSync } from 'node:fs';

@@ -1,7 +1,7 @@
 ## Project Configuration
 
 - **Language**: TypeScript
-- **Package Manager**: pnpm
+- **Package Manager**: Bun
 - **Add-ons**: prettier, eslint, tailwindcss, sveltekit-adapter, mcp
 
 ## Project Summary
