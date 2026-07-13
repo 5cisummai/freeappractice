@@ -25,24 +25,51 @@
 
 	const resolvedVariant = $derived(compact ? 'compact' : variant);
 
-	let copied = $state(false);
+	type CopyStatus = 'idle' | 'copied' | 'error';
 
-	async function copyLink(): Promise<void> {
-		await navigator.clipboard.writeText(shareUrl);
-		copied = true;
-		capturePostHogEvent('referral_share', { method: 'copy' });
-		window.setTimeout(() => (copied = false), 2000);
+	let copyStatus = $state<CopyStatus>('idle');
+	const copyLabel = $derived(
+		copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Copy failed' : 'Copy'
+	);
+	const copyMessage = $derived(
+		copyStatus === 'error' ? 'Could not copy the invite link. Please try again.' : ''
+	);
+
+	function wasShareDismissed(error: unknown): boolean {
+		return error instanceof DOMException && error.name === 'AbortError';
+	}
+
+	async function copyLink(): Promise<boolean> {
+		copyStatus = 'idle';
+
+		if (!navigator.clipboard?.writeText) {
+			copyStatus = 'error';
+			return false;
+		}
+
+		try {
+			await navigator.clipboard.writeText(shareUrl);
+			copyStatus = 'copied';
+			capturePostHogEvent('referral_share', { method: 'copy' });
+			return true;
+		} catch {
+			copyStatus = 'error';
+			return false;
+		}
 	}
 
 	async function share(): Promise<void> {
 		const text = 'Free AP practice questions with instant feedback and no paywall.';
+		copyStatus = 'idle';
+
 		if (navigator.share) {
 			try {
 				await navigator.share({ title: 'Free AP Practice', text, url: shareUrl });
 				capturePostHogEvent('referral_share', { method: 'native_share' });
 				return;
-			} catch {
-				// A dismissed share sheet should not surface an error.
+			} catch (error) {
+				// Dismissing the native sheet is an intentional no-op, not a request to copy a link.
+				if (wasShareDismissed(error)) return;
 			}
 		}
 
@@ -76,21 +103,22 @@
 		<div class="mt-3 flex gap-2">
 			<Button onclick={copyLink} size="sm" class="h-8 flex-1" variant="ghost">
 				<CopyIcon class="size-3.5" />
-				{copied ? 'Copied' : 'Copy'}
+				{copyLabel}
 			</Button>
 			<Button onclick={share} size="sm" class="h-8 flex-1">
 				<Share2Icon class="size-3.5" />
 				Share
 			</Button>
 		</div>
+		{#if copyMessage}
+			<p class="mt-2 text-xs text-sidebar-foreground/65" aria-live="polite">{copyMessage}</p>
+		{/if}
 	</div>
 {:else}
 	<Card.Root
-		class={
-			resolvedVariant === 'compact'
-				? 'rounded-2xl border border-primary/20 bg-primary/3 p-4 shadow-sm ring-0'
-				: 'rounded-2xl border border-primary/20 bg-primary/3 p-5 shadow-sm ring-0'
-		}
+		class={resolvedVariant === 'compact'
+			? 'rounded-2xl border border-primary/20 bg-primary/3 p-4 shadow-sm ring-0'
+			: 'rounded-2xl border border-primary/20 bg-primary/3 p-5 shadow-sm ring-0'}
 	>
 		<div class="flex flex-col gap-3">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -118,8 +146,8 @@
 						{:else if pendingInvites > 0}
 							<p class="text-sm text-muted-foreground">
 								{pendingInvites}
-								{pendingInvites === 1 ? 'classmate signed up' : 'classmates signed up'} — they’ll
-								count once they answer a question.
+								{pendingInvites === 1 ? 'classmate signed up' : 'classmates signed up'} — they’ll count
+								once they answer a question.
 							</p>
 						{:else}
 							<p class="text-sm text-muted-foreground">
@@ -131,13 +159,16 @@
 				<div class="flex shrink-0 gap-2">
 					<Button onclick={copyLink} variant="outline" class="rounded-full">
 						<CopyIcon />
-						{copied ? 'Copied' : 'Copy'}
+						{copyLabel}
 					</Button>
 					<Button onclick={share} class="rounded-full">
 						<Share2Icon /> Share
 					</Button>
 				</div>
 			</div>
+			{#if copyMessage}
+				<p class="text-sm text-destructive" aria-live="polite">{copyMessage}</p>
+			{/if}
 		</div>
 	</Card.Root>
 {/if}

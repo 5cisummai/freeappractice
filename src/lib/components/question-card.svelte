@@ -71,6 +71,7 @@
 		questionNumber = '',
 		selectedClass = '',
 		selectedUnit = '',
+		unitRange,
 		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
@@ -288,7 +289,7 @@
 
 		const loadStartedAt = Date.now();
 		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit);
+			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
 			const result = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
 			const analytics = {
 				apClass: selectedClass,

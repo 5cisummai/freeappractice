@@ -46,6 +46,7 @@ export type QuestionCardProps = {
 	questionNumber?: string;
 	selectedClass?: string;
 	selectedUnit?: string;
+	unitRange?: readonly number[];
 	requestVersion?: number;
 	selectedOption?: string | null;
 	autoDetectLongQuestion?: boolean;

@@ -17,6 +17,11 @@
 - Do not overabstract, invent patterns, or create helpers, layers, or structures that are not necessary right now.
 - If a simple inline change is enough, keep it simple.
 
+## Browser Testing
+
+- Do not install, add, or configure Playwright or other browser-automation tooling for testing.
+- Use Codex's native browser tools for browser verification instead.
+
 ## Subagent Tools
 
 IF you are **CURSOR** : use cursor grok high 4.5 for harder tasks and composer 2.5 for lighter tasks.
@@ -25,7 +30,7 @@ IF you are **CODEX** : use 5.6 terra for harder tasks and 5.6 luna for lighter t
 
 ## Linear Rules
 
-When starting working on an issue set status to in progress. After you complete an issue set status to in review.
+For any work associated with a Linear issue, change the issue status to **In Progress** before beginning implementation. After the work is complete and verified, change the status to **In Review**.
 
 ---
 
