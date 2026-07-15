@@ -20,13 +20,13 @@
 ## Browser Testing
 
 - Do not install, add, or configure Playwright or other browser-automation tooling for testing.
-- Use Codex's native browser tools for browser verification instead.
+- Use Codex's or Cursor's native browser tools for browser verification instead.
 
 ## Subagent Tools
 
 IF you are **CURSOR** : use cursor grok high 4.5 for harder tasks and composer 2.5 for lighter tasks.
 
-IF you are **CODEX** : use 5.6 terra for harder tasks and 5.6 luna for lighter tasks.
+IF you are **CODEX** : use 5.6 luna with xhigh effort for harder tasks and high effort for easier tasks.
 
 ## Linear Rules
 

@@ -46,6 +46,7 @@
 	let viewportHeight = $state(0);
 	let activeStreamController: AbortController | null = null;
 	let activeStreamId = 0;
+	let triggerEl: HTMLButtonElement | null = $state(null);
 
 	// Drag state for the floating button
 	let btnX = $state(0);
@@ -190,8 +191,48 @@
 	}
 
 	function handleClose() {
+		const wasOpen = isOpen;
 		isOpen = false;
 		invalidateActiveStream();
+		if (wasOpen) {
+			requestAnimationFrame(() => triggerEl?.focus());
+		}
+	}
+
+	function trapPanelFocus(node: HTMLElement) {
+		const getFocusable = () =>
+			Array.from(
+				node.querySelectorAll<HTMLElement>(
+					'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+				)
+			).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== 'Tab') return;
+			const focusable = getFocusable();
+			if (focusable.length === 0) {
+				event.preventDefault();
+				node.focus();
+				return;
+			}
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+			const active = document.activeElement as HTMLElement | null;
+			if (event.shiftKey && (active === first || active === node)) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && active === last) {
+				event.preventDefault();
+				first.focus();
+			}
+		};
+
+		node.addEventListener('keydown', onKeyDown);
+		return {
+			destroy() {
+				node.removeEventListener('keydown', onKeyDown);
+			}
+		};
 	}
 
 	async function sendMessage() {
@@ -303,6 +344,11 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			handleClose();
+			return;
+		}
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
 			sendMessage();
@@ -360,11 +406,26 @@
 	});
 </script>
 
+<svelte:window
+	onkeydown={(event) => {
+		if (isOpen && event.key === 'Escape') {
+			event.preventDefault();
+			handleClose();
+		}
+	}}
+/>
+
 <div use:portalToBody>
 	<!-- Chat panel: clamped to viewport, opens above or below the button -->
 	{#if isOpen}
 		<div
-			class="fixed z-[60] flex flex-col rounded-2xl border border-border bg-card shadow-2xl"
+			id="ai-tutor-panel"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="ai-tutor-title"
+			tabindex="-1"
+			use:trapPanelFocus
+			class="fixed z-[60] flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
 			style="
 					left: {panelLeft}px;
 					top: {panelTop}px;
@@ -380,7 +441,7 @@
 			>
 				<div class="flex items-center gap-2">
 					<SparklesIcon class="h-4 w-4 text-primary-foreground" />
-					<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
+					<span id="ai-tutor-title" class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
 				</div>
 				<button
 					onclick={handleClose}
@@ -455,6 +516,12 @@
 
 	<!-- Floating toggle button -->
 	<button
+		bind:this={triggerEl}
+		id="ai-tutor-trigger"
+		type="button"
+		aria-expanded={isOpen}
+		aria-controls="ai-tutor-panel"
+		aria-haspopup="dialog"
 		onpointerdown={onBtnPointerDown}
 		onpointermove={onBtnPointerMove}
 		onpointerup={onBtnPointerUp}

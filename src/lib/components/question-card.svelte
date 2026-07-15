@@ -9,6 +9,7 @@
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
 	import McqAnswerChoices from '$lib/components/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/question-card-skeleton.svelte';
@@ -757,63 +758,6 @@
 				{/if}
 			</div>
 		</Card.Footer>
-
-		{#if showExplanation && currentQuestion?.explanation}
-			<div
-				class="absolute inset-0 z-20 flex items-center justify-center bg-background/65 p-4 backdrop-blur-[1px]"
-			>
-				<div
-					class="max-h-[85%] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl"
-				>
-					<h3 class="text-lg font-semibold">
-						{checkedSelection === currentQuestion?.correctAnswer
-							? 'Correct!'
-							: 'Review Explanation'}
-					</h3>
-					{#if currentQuestion?.correctAnswer}
-						<p class="mt-2 text-sm text-muted-foreground">
-							Correct answer:
-							<span class="font-semibold text-foreground">{currentQuestion?.correctAnswer}</span>
-						</p>
-					{/if}
-					<RichText
-						text={currentQuestion?.explanation ?? ''}
-						class="mt-4 text-sm leading-6 text-foreground/90"
-					/>
-					<div class="mt-5 border-t pt-4">
-						<p class="text-sm text-muted-foreground">Something wrong with this question?</p>
-						{#if questionFeedbackReason}
-							<p class="mt-2 text-sm text-muted-foreground">
-								Thanks — this helps improve future questions.
-							</p>
-						{:else}
-							<div class="mt-2 flex flex-wrap gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onclick={() => submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
-								>
-								<Button
-									variant="outline"
-									size="sm"
-									onclick={() => submitQuestionFeedback('question_unclear')}
-									>Question is unclear</Button
-								>
-								<Button
-									variant="outline"
-									size="sm"
-									onclick={() => submitQuestionFeedback('explanation_unclear')}
-									>Explanation is unclear</Button
-								>
-							</div>
-						{/if}
-					</div>
-					<div class="mt-5 flex justify-end">
-						<Button variant="outline" onclick={() => (showExplanation = false)}>Close</Button>
-					</div>
-				</div>
-			</div>
-		{/if}
 	{/snippet}
 
 	<!-- Normal card (kept in the DOM to preserve layout space; hidden while expanded) -->
@@ -881,4 +825,68 @@
 		{selectedClass}
 		{selectedUnit}
 	/>
+
+	{#if currentQuestion?.explanation}
+		<Dialog.Root bind:open={showExplanation}>
+			<Dialog.Content
+				class="max-h-[min(85vh,40rem)] w-full max-w-2xl gap-0 overflow-y-auto sm:max-w-2xl"
+				showCloseButton={true}
+			>
+				<Dialog.Header class="gap-2 text-left">
+					<Dialog.Title>
+						{checkedSelection === currentQuestion.correctAnswer ? 'Correct!' : 'Review Explanation'}
+					</Dialog.Title>
+					<Dialog.Description class={currentQuestion.correctAnswer ? undefined : 'sr-only'}>
+						{#if currentQuestion.correctAnswer}
+							Correct answer:
+							<span class="font-semibold text-foreground">{currentQuestion.correctAnswer}</span>
+						{:else}
+							Detailed explanation for this question.
+						{/if}
+					</Dialog.Description>
+				</Dialog.Header>
+				<RichText
+					text={currentQuestion.explanation}
+					class="mt-2 text-sm leading-6 text-foreground/90"
+				/>
+				<Dialog.Footer class="mt-6 sm:justify-end">
+					<Dialog.Close>
+						{#snippet child({ props })}
+							<Button variant="outline" {...props}>Close</Button>
+						{/snippet}
+					</Dialog.Close>
+				</Dialog.Footer>
+				<div class="mt-8 border-t border-border/50 pt-3">
+					{#if questionFeedbackReason}
+						<p class="mt-1.5 text-xs text-muted-foreground/70">
+							Thanks, this helps improve future questions.
+						</p>
+					{:else}
+						<div class="mt-1 flex flex-wrap gap-0.5">
+							<Button
+								variant="ghost"
+								size="xs"
+								class="text-muted-foreground"
+								onclick={() => submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
+							>
+							<Button
+								variant="ghost"
+								size="xs"
+								class="text-muted-foreground"
+								onclick={() => submitQuestionFeedback('question_unclear')}
+								>Question is unclear</Button
+							>
+							<Button
+								variant="ghost"
+								size="xs"
+								class="text-muted-foreground"
+								onclick={() => submitQuestionFeedback('explanation_unclear')}
+								>Explanation is unclear</Button
+							>
+						</div>
+					{/if}
+				</div>
+			</Dialog.Content>
+		</Dialog.Root>
+	{/if}
 {/if}
