@@ -425,7 +425,7 @@
 			aria-labelledby="ai-tutor-title"
 			tabindex="-1"
 			use:trapPanelFocus
-			class="fixed z-[60] flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
+			class="fixed z-60 flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
 			style="
 					left: {panelLeft}px;
 					top: {panelTop}px;
@@ -441,7 +441,9 @@
 			>
 				<div class="flex items-center gap-2">
 					<SparklesIcon class="h-4 w-4 text-primary-foreground" />
-					<span id="ai-tutor-title" class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
+					<span id="ai-tutor-title" class="text-sm font-semibold text-primary-foreground"
+						>AI Tutor</span
+					>
 				</div>
 				<button
 					onclick={handleClose}
@@ -536,7 +538,7 @@
 				handleOpen();
 			}
 		}}
-		class="fixed z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
+		class="fixed z-60 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
 		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
 		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
 	>

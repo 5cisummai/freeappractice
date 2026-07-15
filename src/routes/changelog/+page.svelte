@@ -707,7 +707,7 @@
 						<div
 							class="flex flex-col space-y-1 sm:flex-row sm:items-baseline sm:justify-between sm:space-y-0"
 						>
-							<h2 class="text-2xl font-bold text-primary">{entry.version}</h2>
+							<h2 class="text-2xl font-bold">{entry.version}</h2>
 							<time class="text-sm text-muted-foreground">{entry.date}</time>
 						</div>
 
