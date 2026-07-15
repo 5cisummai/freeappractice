@@ -2,6 +2,7 @@
 	"name": "freeappractice-svelte",
 	"private": true,
 	"version": "1.4.5",
+	"packageManager": "bun@1.3.14",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",

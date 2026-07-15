@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import XIcon from '@lucide/svelte/icons/x';
 
 	let dismissed = $state(false);
 
-	const invited = $derived(page.url.searchParams.get('invited') === '1');
+	const invited = $derived(browser && page.url.searchParams.get('invited') === '1');
 	const showBanner = $derived(invited && !dismissed);
 </script>
 

@@ -189,6 +189,11 @@
 		fetchGreeting();
 	}
 
+	function handleClose() {
+		isOpen = false;
+		invalidateActiveStream();
+	}
+
 	async function sendMessage() {
 		const text = inputText.trim();
 		if (!text || isStreaming) return;
@@ -378,7 +383,7 @@
 					<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
 				</div>
 				<button
-					onclick={() => (isOpen = false)}
+					onclick={handleClose}
 					class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
 					aria-label="Close AI Tutor"
 				>
@@ -459,7 +464,7 @@
 				return;
 			}
 			if (isOpen) {
-				isOpen = false;
+				handleClose();
 			} else {
 				handleOpen();
 			}

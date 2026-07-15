@@ -4,6 +4,7 @@
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		item,
@@ -12,6 +13,20 @@
 		item: HistoryItem;
 		onView: (item: HistoryItem) => void;
 	} = $props();
+
+	async function copyQuestionId(): Promise<void> {
+		if (!navigator.clipboard?.writeText) {
+			toast.error('Could not copy the question ID. Please try again.');
+			return;
+		}
+
+		try {
+			await navigator.clipboard.writeText(item.attempt.questionId);
+			toast.success('Question ID copied.');
+		} catch {
+			toast.error('Could not copy the question ID. Please try again.');
+		}
+	}
 </script>
 
 <DropdownMenu.Root>
@@ -30,9 +45,7 @@
 				<EyeIcon class="size-4" />
 				View question
 			</DropdownMenu.Item>
-			<DropdownMenu.Item onclick={() => navigator.clipboard.writeText(item.attempt.questionId)}>
-				Copy question ID
-			</DropdownMenu.Item>
+			<DropdownMenu.Item onclick={copyQuestionId}>Copy question ID</DropdownMenu.Item>
 		</DropdownMenu.Group>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
