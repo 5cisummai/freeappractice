@@ -202,10 +202,22 @@
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		const textLength = currentQuestion?.prompt.length ?? 0;
 		const hasCodeBlock = /```|\n\s{2,}|<code/i.test(currentQuestion?.prompt ?? '');
-		const questionHeight = node?.scrollHeight ?? 0;
 		const threshold = Math.min(window.innerHeight * 0.7, 600);
+
+		// Dual-column / fullscreen panes use h-full + overflow, so scrollHeight matches
+		// the pane (often the viewport) even for short prompts. Only treat those as
+		// tall when content actually overflows; otherwise use natural content height.
+		let tallByLayout = false;
+		if (node) {
+			const overflowY = getComputedStyle(node).overflowY;
+			const isScrollContainer = overflowY === 'auto' || overflowY === 'scroll';
+			tallByLayout = isScrollContainer
+				? node.scrollHeight > node.clientHeight + 1
+				: node.scrollHeight > threshold;
+		}
+
 		isLongQuestion =
-			textLength > longQuestionThresholdChars || hasCodeBlock || questionHeight > threshold;
+			textLength > longQuestionThresholdChars || hasCodeBlock || tallByLayout;
 	}
 
 	function observePromptLayout(node: HTMLDivElement, promptText: string) {
