@@ -2,17 +2,19 @@ import { Resend } from 'resend';
 import { RESEND_API_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { getSiteUrl } from '$lib/auth/urls';
+import { assertResendSent } from '$lib/auth/resend-result';
 
 const resend = new Resend(RESEND_API_KEY);
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
 async function sendEmail(payload: { to: string; subject: string; html: string }): Promise<void> {
-	await resend.emails.send({
+	const result = await resend.emails.send({
 		from: FROM,
 		to: payload.to,
 		subject: payload.subject,
 		html: payload.html
 	});
+	assertResendSent(result);
 }
 
 /** Send verification email using Better Auth's full verification URL when provided. */

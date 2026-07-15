@@ -28,14 +28,6 @@ const authSecret =
 	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
 const authBaseUrl = env.BETTER_AUTH_URL;
 
-function runAuthBackgroundTask(promise: Promise<unknown>): void {
-	try {
-		waitUntil(promise);
-	} catch {
-		void promise.catch((err) => console.error('Background auth task failed:', err));
-	}
-}
-
 export const auth = betterAuth({
 	appName: 'Free AP Practice',
 	...(authSecret ? { secret: authSecret } : {}),
@@ -100,10 +92,10 @@ export const auth = betterAuth({
 			verify: async ({ password, hash }) => bcrypt.compare(password, hash)
 		},
 		sendResetPassword: async ({ user, url }) => {
-			runAuthBackgroundTask(sendResetEmail(user.email, url));
+			await sendResetEmail(user.email, url);
 		},
 		onExistingUserSignUp: async ({ user }) => {
-			runAuthBackgroundTask(sendExistingUserSignupEmail(user.email));
+			await sendExistingUserSignupEmail(user.email);
 		}
 	},
 	emailVerification: {
@@ -112,7 +104,7 @@ export const auth = betterAuth({
 		autoSignInAfterVerification: true,
 		expiresIn: 60 * 60 * 24,
 		sendVerificationEmail: async ({ user, url }) => {
-			runAuthBackgroundTask(sendConfirmationEmail(user.email, url));
+			await sendConfirmationEmail(user.email, url);
 		}
 	},
 	socialProviders:
@@ -128,14 +120,9 @@ export const auth = betterAuth({
 		ipAddress: {
 			ipAddressHeaders: ['x-forwarded-for', 'x-real-ip']
 		},
+		// Native Better Auth serverless pattern: defer email work, keep the isolate alive until it finishes.
 		backgroundTasks: {
-			handler: (promise) => {
-				try {
-					waitUntil(promise);
-				} catch {
-					void promise.catch((err) => console.error('Background auth task failed:', err));
-				}
-			}
+			handler: waitUntil
 		}
 	},
 	plugins: [

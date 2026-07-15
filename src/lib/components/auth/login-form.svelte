@@ -14,6 +14,7 @@
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
 	import { authClient } from '$lib/auth/client.js';
+	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
@@ -25,12 +26,17 @@
 	let email = $state('');
 	let password = $state('');
 	let errorMessage = $state('');
+	let infoMessage = $state('');
+	let needsVerification = $state(false);
 	let loading = $state(false);
 	let googleLoading = $state(false);
+	let resending = $state(false);
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		errorMessage = '';
+		infoMessage = '';
+		needsVerification = false;
 		loading = true;
 		try {
 			const { error } = await authClient.signIn.email({
@@ -39,10 +45,13 @@
 				callbackURL: authCallbackUrl('/app')
 			});
 			if (error) {
-				errorMessage =
-					error.status === 403
-						? 'Please verify your email before signing in. Check your inbox for a verification link.'
-						: (error.message ?? 'Login failed');
+				if (error.status === 403) {
+					needsVerification = true;
+					errorMessage =
+						'Please verify your email before signing in. Check your inbox for a verification link.';
+				} else {
+					errorMessage = error.message ?? 'Login failed';
+				}
 				return;
 			}
 			identifyPostHogUser(email);
@@ -52,6 +61,23 @@
 			errorMessage = 'Network error. Please try again.';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function handleResendVerification() {
+		if (!email || resending) return;
+		errorMessage = '';
+		infoMessage = '';
+		resending = true;
+		try {
+			const sendError = await requestVerificationEmail(email);
+			if (sendError) {
+				errorMessage = sendError;
+				return;
+			}
+			infoMessage = 'Verification email sent. Check your inbox.';
+		} finally {
+			resending = false;
 		}
 	}
 
@@ -96,7 +122,22 @@
 						Or continue with
 					</FieldSeparator>
 					{#if errorMessage}
-						<p class="text-center text-sm text-destructive">{errorMessage}</p>
+						<p class="text-center text-sm text-destructive" role="alert">{errorMessage}</p>
+					{/if}
+					{#if infoMessage}
+						<p class="text-center text-sm text-muted-foreground" role="status">{infoMessage}</p>
+					{/if}
+					{#if needsVerification}
+						<Field>
+							<Button
+								type="button"
+								variant="outline"
+								onclick={handleResendVerification}
+								disabled={resending || !email}
+							>
+								{resending ? 'Sending...' : 'Resend verification email'}
+							</Button>
+						</Field>
 					{/if}
 					<Field>
 						<FieldLabel for="email-{id}">Email</FieldLabel>

@@ -55,6 +55,7 @@
 			}
 			capturePostHogEvent('user_signed_up', { method: 'email' });
 			captureSignupCompleted('email');
+			// Verification email is sent by Better Auth (sendOnSignUp + backgroundTasks.waitUntil).
 			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;
 			// The base path is resolved above; only the encoded query string is appended.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
