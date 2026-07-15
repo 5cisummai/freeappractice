@@ -45,7 +45,7 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					const { name, email } = getData();
 					return {
 						render: () =>
-							`<div class="min-w-0"><div class="font-medium">${escapeHtml(name)}</div><div class="truncate text-xs text-muted-foreground sm:hidden">${escapeHtml(email)}</div></div>`
+							`<div class="ph-mask-pii min-w-0"><div class="font-medium">${escapeHtml(name)}</div><div class="truncate text-xs text-muted-foreground sm:hidden">${escapeHtml(email)}</div></div>`
 					};
 				});
 
@@ -63,7 +63,15 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					label: 'Email',
 					onclick: column.getToggleSortingHandler()
 				}),
-			cell: ({ row }) => row.original.email || '-'
+			cell: ({ row }) => {
+				const emailSnippet = createRawSnippet<[{ email: string }]>((getData) => {
+					const { email } = getData();
+					return {
+						render: () => `<span class="ph-mask-pii">${escapeHtml(email)}</span>`
+					};
+				});
+				return renderSnippet(emailSnippet, { email: row.original.email || '-' });
+			}
 		},
 		{
 			accessorKey: 'role',
@@ -145,7 +153,7 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					const { id } = getData();
 					return {
 						render: () =>
-							`<code class="block max-w-[16rem] truncate text-xs text-muted-foreground">${escapeHtml(id)}</code>`
+							`<code class="ph-mask-pii block max-w-[16rem] truncate text-xs text-muted-foreground">${escapeHtml(id)}</code>`
 					};
 				});
 				return renderSnippet(idSnippet, { id: row.original.id });

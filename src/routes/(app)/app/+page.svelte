@@ -48,6 +48,7 @@
 <PageShell
 	title={`Welcome back, ${firstName}`}
 	description="Here's an overview of your study progress."
+	maskTitle
 >
 	<Card.Root
 		class="rounded-2xl border border-border/60 border-primary/30 bg-primary/3 p-5 shadow-sm ring-0"

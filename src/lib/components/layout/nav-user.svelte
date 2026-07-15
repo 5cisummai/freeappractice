@@ -55,13 +55,13 @@
 						class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						{...props}
 					>
-						<Avatar.Root class="size-8 rounded-lg">
+						<Avatar.Root class="ph-no-capture size-8 rounded-lg">
 							{#if user.image}
 								<Avatar.Image src={user.image} alt={user.name} />
 							{/if}
-							<Avatar.Fallback class="rounded-lg">{initials}</Avatar.Fallback>
+							<Avatar.Fallback class="ph-mask-pii rounded-lg">{initials}</Avatar.Fallback>
 						</Avatar.Root>
-						<div class="grid flex-1 text-start text-sm leading-tight">
+						<div class="ph-mask-pii grid flex-1 text-start text-sm leading-tight">
 							<span class="truncate font-medium">{user.name}</span>
 							<span class="truncate text-xs">{user.email}</span>
 						</div>
@@ -78,13 +78,13 @@
 				<DropdownMenu.Group>
 					<DropdownMenu.Label class="p-0 font-normal">
 						<div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-							<Avatar.Root class="size-8 rounded-lg">
+							<Avatar.Root class="ph-no-capture size-8 rounded-lg">
 								{#if user.image}
 									<Avatar.Image src={user.image} alt={user.name} />
 								{/if}
-								<Avatar.Fallback class="rounded-lg">{initials}</Avatar.Fallback>
+								<Avatar.Fallback class="ph-mask-pii rounded-lg">{initials}</Avatar.Fallback>
 							</Avatar.Root>
-							<div class="grid flex-1 text-start text-sm leading-tight">
+							<div class="ph-mask-pii grid flex-1 text-start text-sm leading-tight">
 								<span class="truncate font-medium">{user.name}</span>
 								<span class="truncate text-xs">{user.email}</span>
 							</div>

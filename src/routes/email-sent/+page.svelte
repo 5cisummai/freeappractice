@@ -54,7 +54,7 @@
 			<p class="text-sm text-muted-foreground">
 				We sent a verification link to
 				{#if email}
-					<strong>{email}</strong>.
+					<strong class="ph-mask-pii">{email}</strong>.
 				{:else}
 					your email address.
 				{/if}

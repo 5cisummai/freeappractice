@@ -4,10 +4,13 @@
 	let {
 		title,
 		description,
+		maskTitle = false,
 		children
 	}: {
 		title: string;
 		description: string;
+		/** When true, the title is hashed in PostHog session recordings. */
+		maskTitle?: boolean;
 		children: Snippet;
 	} = $props();
 </script>
@@ -16,6 +19,7 @@
 	<header class="space-y-2">
 		<h1
 			class="font-display text-3xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl"
+			class:ph-mask-pii={maskTitle}
 		>
 			{title}
 		</h1>
