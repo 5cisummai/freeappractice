@@ -3,6 +3,7 @@
 	import SiteFooter from '$lib/components/site-footer.svelte';
 	import PublicPageHero from '$lib/components/public-page-hero.svelte';
 	import BackToHome from '$lib/components/back-to-home.svelte';
+	import InviteBanner from '$lib/components/invite-banner.svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
@@ -40,6 +41,8 @@
 
 	<main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
 		<BackToHome />
+
+		<InviteBanner />
 
 		<PublicPageHero
 			class="mt-6"

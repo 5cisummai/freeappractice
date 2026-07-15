@@ -26,9 +26,21 @@ export function getAllowedClassNames(): Set<string> {
 }
 
 /** When "All Units" is selected (unit === ''), pick a random real unit for the class. */
-export function resolveEffectiveUnit(cls: string, unit: string): string {
+export function resolveEffectiveUnit(
+	cls: string,
+	unit: string,
+	unitRange?: readonly number[]
+): string {
 	if (unit.trim()) return unit.trim();
 	const allUnits = getUnitsForClass(cls);
 	if (!allUnits.length) return '';
-	return allUnits[Math.floor(Math.random() * allUnits.length)];
+
+	const maxIndex = allUnits.length - 1;
+	const start = Math.min(Math.max(Math.trunc(unitRange?.[0] ?? 0), 0), maxIndex);
+	const end = Math.min(Math.max(Math.trunc(unitRange?.[1] ?? maxIndex), 0), maxIndex);
+	const firstIndex = Math.min(start, end);
+	const lastIndex = Math.max(start, end);
+	const index = firstIndex + Math.floor(Math.random() * (lastIndex - firstIndex + 1));
+
+	return allUnits[index]!;
 }

@@ -1,6 +1,6 @@
 /**
  * Generates src/lib/data/practice-pages.json from ap-classes.json and unit metadata.
- * Run: pnpm scaffold:practice-pages
+ * Run: bun run scaffold:practice-pages
  */
 
 import { writeFileSync } from 'node:fs';
@@ -171,6 +171,10 @@ function isLunchCourse(className: string): boolean {
 	return className.includes('Lunch');
 }
 
+function isPhysicalEducationCourse(className: string): boolean {
+	return className === 'AP PE😂';
+}
+
 function generateLunchUnitParagraphs(label: string, unitNumber: number): string[] {
 	const byUnit: Record<number, string[]> = {
 		1: [
@@ -244,6 +248,43 @@ function generateLunchUnitParagraphs(label: string, unitNumber: number): string[
 		...base,
 		`Lunch-period time limits make every decision visible: you either eat, socialize, or sprint to club—AP Lunch MCQs train you to commit after brief analysis instead of overthinking.`,
 		`Hit Generate above for a fresh scenario. Wrong answers are useful here; the explanations are short enough to read before your friends sit down with their trays.`
+	];
+}
+
+function generatePEUnitParagraphs(label: string, unitNumber: number): string[] {
+	const jokes = [
+		`The Art of Standing Near the Equipment studies the advanced skill of looking prepared while remaining safely outside the cone radius.`,
+		`Cardio Without Making It a Whole Thing measures heart rate, perceived exertion, and the exact moment a water break becomes a constitutional right.`,
+		`Anatomy of a Student Avoiding the Ball maps the musculoskeletal system during a highly technical evasive maneuver.`,
+		`Hydration, Snacks, and the Locker-Room Economy examines energy balance and who has the last granola bar.`,
+		`Training Plans for People Who Start Monday applies progressive overload to a schedule that currently contains several Mondays.`,
+		`Motor Skills, Confidence, and Strategic Celebration covers feedback, motivation, and the appropriate celebration length for completing a two-person pass.`,
+		`Biomechanics of Not Getting Picked Last applies force, torque, and center of mass to the oldest selection system in school athletics.`,
+		`Fitness Testing and Lifelong Activity (Until Further Notice) interprets assessment data and the longitudinal claim “I used to be fast.”`
+	];
+	const joke =
+		jokes[unitNumber - 1] ??
+		`${label} applies serious terminology to a situation involving cones and a whistle.`;
+	return [
+		joke,
+		`Students still learn the real ${label.toLowerCase()} concepts, but every scenario has the academic urgency of a teacher saying, “Pick teams.”`,
+		`Strong answers distinguish evidence-based fitness guidance from whatever a classmate heard in a thirty-second video.`,
+		`Watch for distractors that confuse genuine preparation with theatrical stretching performed only when attendance is being taken.`,
+		`There is no official AP PE exam—just unlimited practice, instant explanations, and the possibility that someone will make you run one more lap.`,
+		`Generate a fresh AP PE question above. The course is fictional; the awkward group activity is probably real.`
+	];
+}
+
+function generatePEClassParagraphs(units: string[]): string[] {
+	const firstUnit = stripUnitPrefix(units[0] ?? 'Unit 1');
+	const lastUnit = stripUnitPrefix(units.at(-1) ?? 'the final unit');
+	return [
+		`AP PE is the internet's most serious fake course about fitness, teamwork, and surviving an activity you were told would be “quick.”`,
+		`Across ${units.length} units, students study cardio, movement, wellness, training plans, sport psychology, and the delicate diplomacy of choosing teams.`,
+		`The syllabus moves from ${firstUnit} to ${lastUnit}, with learning objectives written in such formal language that nobody notices one of them is “look busy near a cone.”`,
+		`Questions use real practice logic with ridiculous situations: read the scenario, identify the principle, and ignore the classmate doing a full warm-up for dodgeball.`,
+		`There is no official AP PE exam, but there is unlimited practice, instant explanations, and no signup required. Please stretch responsibly.`,
+		`Pick a unit below, hit Generate, and discover whether your answer reflects biomechanics, sports psychology, or a deep commitment to not being goalie.`
 	];
 }
 
@@ -328,18 +369,20 @@ function generateClassPage(course: Course, meta: CourseMeta | undefined): Practi
 				`When you are ready for scored AP prep, jump back to any core subject from the subjects list. Lunch will still be here when you need it.`,
 				`Share a ridiculous question with a friend if it helps you reset before diving back into calculus or history. Low-stakes practice still trains the habit of reading carefully before you click.`
 			]
-		: [
-				`${course.name} builds skills you will use on both multiple-choice and written-response sections of the AP exam. This page lets you generate unlimited practice questions for any unit in the course, with instant explanations and no account required.`,
-				overview.endsWith('.')
-					? `The College Board organizes the course around ${units.length} commonly taught units. ${overview}`
-					: `The College Board organizes the course around ${units.length} commonly taught units: ${overview}.`,
-				`You will move from ${firstUnits}${laterUnits && laterUnits !== firstUnits ? ` toward ${laterUnits}` : ''}. Practicing in that same order helps you reinforce what your class just covered—or preview what is coming if you are studying ahead over the summer.`,
-				meta?.important_notes
-					? `Before test day, keep this framing in mind: ${meta.important_notes}`
-					: `Before test day, aim for accuracy first and speed second. Short daily sets beat marathon cram sessions, especially when you review misses the same day while the reasoning is still fresh.`,
-				pickClassExamFocus(course.name),
-				`Use this hub when you want a fast starting point: pick a unit below, click Generate, and read the explanation even when you are correct. You can switch units anytime without leaving the page.`
-			];
+		: isPhysicalEducationCourse(course.name)
+			? generatePEClassParagraphs(units)
+			: [
+					`${course.name} builds skills you will use on both multiple-choice and written-response sections of the AP exam. This page lets you generate unlimited practice questions for any unit in the course, with instant explanations and no account required.`,
+					overview.endsWith('.')
+						? `The College Board organizes the course around ${units.length} commonly taught units. ${overview}`
+						: `The College Board organizes the course around ${units.length} commonly taught units: ${overview}.`,
+					`You will move from ${firstUnits}${laterUnits && laterUnits !== firstUnits ? ` toward ${laterUnits}` : ''}. Practicing in that same order helps you reinforce what your class just covered—or preview what is coming if you are studying ahead over the summer.`,
+					meta?.important_notes
+						? `Before test day, keep this framing in mind: ${meta.important_notes}`
+						: `Before test day, aim for accuracy first and speed second. Short daily sets beat marathon cram sessions, especially when you review misses the same day while the reasoning is still fresh.`,
+					pickClassExamFocus(course.name),
+					`Use this hub when you want a fast starting point: pick a unit below, click Generate, and read the explanation even when you are correct. You can switch units anytime without leaving the page.`
+				];
 
 	const keywords = [
 		`${course.name} practice`,
@@ -409,16 +452,18 @@ function generateUnitPage(
 
 	const paragraphs = isLunchCourse(course.name)
 		? generateLunchUnitParagraphs(label, unitNumber)
-		: [
-				opener,
-				`${description} On the ${course.name} exam, items from ${label} often ask you to ${pickUnitExamVerb(course.name)} rather than recall isolated terms.`,
-				topicSentence,
-				weightParagraph,
-				pickUnitTrapWarning(label, topics, unitNumber),
-				pickStudyTip(unitNumber, course.name),
-				pickUnitPracticeRoutine(label, course.name, unitNumber),
-				`Use the generator above for fresh MCQs tied to ${label}. Answer, read the explanation, and log one sentence about why the correct choice works—that habit compounds faster than grinding endless worksheets.`
-			].filter((paragraph) => paragraph.trim().length > 0);
+		: isPhysicalEducationCourse(course.name)
+			? generatePEUnitParagraphs(label, unitNumber)
+			: [
+					opener,
+					`${description} On the ${course.name} exam, items from ${label} often ask you to ${pickUnitExamVerb(course.name)} rather than recall isolated terms.`,
+					topicSentence,
+					weightParagraph,
+					pickUnitTrapWarning(label, topics, unitNumber),
+					pickStudyTip(unitNumber, course.name),
+					pickUnitPracticeRoutine(label, course.name, unitNumber),
+					`Use the generator above for fresh MCQs tied to ${label}. Answer, read the explanation, and log one sentence about why the correct choice works—that habit compounds faster than grinding endless worksheets.`
+				].filter((paragraph) => paragraph.trim().length > 0);
 
 	const seoKeywords = [
 		`${course.name} ${label}`,

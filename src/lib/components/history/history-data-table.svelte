@@ -51,6 +51,14 @@
 		detailOpen = true;
 	}
 
+	function handleRowKeydown(event: KeyboardEvent, item: HistoryItem) {
+		if (event.target !== event.currentTarget) return;
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+
+		event.preventDefault();
+		viewDetails(item);
+	}
+
 	const table = createSvelteTable({
 		get data() {
 			return data;
@@ -156,7 +164,10 @@
 					<Table.Row
 						data-state={row.getIsSelected() && 'selected'}
 						class="cursor-pointer"
+						tabindex={0}
+						aria-label="View question details"
 						onclick={() => viewDetails(row.original)}
+						onkeydown={(event) => handleRowKeydown(event, row.original)}
 					>
 						{#each row.getVisibleCells() as cell (cell.id)}
 							<Table.Cell

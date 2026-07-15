@@ -211,6 +211,10 @@ function isAPLunch(className: string): boolean {
 	return (className ?? '').toLowerCase().includes('ap lunch');
 }
 
+function isAPPE(className: string): boolean {
+	return (className ?? '').toLowerCase() === 'ap pe😂';
+}
+
 // ── MCQ generation ─────────────────────────────────────────────
 
 export async function generateAPQuestionBody(opts: {
@@ -238,12 +242,18 @@ export async function generateAPQuestionBody(opts: {
 		: '';
 
 	const lunchMode = isAPLunch(className);
+	const peMode = isAPPE(className);
 
 	const scopeBlock = lunchMode
 		? `TOPIC SCOPE:
 - Keep the humor centered on high school lunch culture: cafeteria lines, mystery meat, snack trades, saving tables, vending machines, brown-bag shame, lunch ladies, milk cartons, and related chaos.
 - The joke should land even if the student has never taken a real AP exam.`
-		: `CRITICAL UNIT SCOPE REQUIREMENT:
+		: peMode
+			? `TOPIC SCOPE:
+- Keep the humor centered on high school physical education: warm-ups, cones, dodgeball, team selection, water breaks, locker-room snacks, awkward celebrations, and trying not to be goalie.
+- Use the selected unit's real fitness or movement concepts as the academic explanation for the ridiculous situation.
+- The joke should land even if the student has never taken a real AP exam.`
+			: `CRITICAL UNIT SCOPE REQUIREMENT:
 - Your question MUST stay strictly within the unit's specified keywords and topics listed above
 - DO NOT incorporate concepts from other units, even if they seem related`;
 
@@ -268,7 +278,29 @@ EXPLANATION:
 
 OUTPUT:
 - Return ONLY the JSON object matching the schema; no text before or after the JSON`
-		: `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
+		: peMode
+			? `You are the world's foremost scholar of AP PE — a totally real Advanced Placement course about physical education, teamwork, and surviving the mile. Write hilarious multiple-choice questions that sound like over-serious AP prompts but are actually about school PE.${unitContext}${diversitySection}
+
+${scopeBlock}
+
+QUESTION QUALITY:
+- Be genuinely funny; use a dry academic tone for ordinary PE chaos
+- Keep the physical education concepts accurate enough to support the joke
+- Make all four options plausible in the situation, with one answer that is funniest and most defensible
+- Reference the selected unit when one is provided
+- Keep it school-appropriate and avoid cruelty or mean-spirited jokes about real students
+- Options should be roughly equal in length
+
+FORMATTING:
+- ${LATEX_RULE} (only if a formula genuinely improves the joke)
+
+EXPLANATION:
+- Stay in character as an AP PE grader explaining the "correct" answer with deadpan seriousness
+- Use a newline before each option letter (A, B, C, D) when discussing them
+
+OUTPUT:
+- Return ONLY the JSON object matching the schema; no text before or after the JSON`
+			: `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
 
 ${scopeBlock}
 
@@ -297,7 +329,9 @@ OUTPUT:
 	const model = selectModelForClass(className);
 	const userMessage = lunchMode
 		? `Create a hilarious AP Lunch multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
-		: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+		: peMode
+			? `Create a hilarious AP PE multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
+			: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
 	const { parsed } = await runStructuredCompletion<APQuestionData>(
 		'generateAPQuestion',

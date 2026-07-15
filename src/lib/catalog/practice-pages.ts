@@ -163,6 +163,15 @@ export function getClassPracticeHref(className: string): string | null {
 	return page ? getPracticePageHref(page) : null;
 }
 
+/** Returns the canonical public practice page for the current selector state. */
+export function getFocusedPracticeHref(className: string, unitName?: string): string | null {
+	const unitPage = unitName
+		? getUnitPagesForClass(className).find((page) => page.unitName === unitName)
+		: undefined;
+
+	return unitPage ? getPracticePageHref(unitPage) : getClassPracticeHref(className);
+}
+
 export function getPageBySlug(slugParam: string): PracticePage | null {
 	const normalized = slugParam.replace(/^\/+|\/+$/g, '');
 	return pageBySlug.get(normalized) ?? null;

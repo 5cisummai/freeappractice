@@ -2,14 +2,14 @@
 name: shadcn-svelte
 description: Manages shadcn-svelte components and projects — adding, updating, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn-svelte, the CLI, design-system presets, or any project with a components.json file. Also triggers for "shadcn-svelte init", "add component", or registry URLs.
 user-invocable: false
-allowed-tools: Bash(npx shadcn-svelte@latest *), Bash(pnpm dlx shadcn-svelte@latest *), Bash(bunx --bun shadcn-svelte@latest *)
+allowed-tools: Bash(npx shadcn-svelte@latest *), Bash(bunx --bun shadcn-svelte@latest *)
 ---
 
 # shadcn-svelte
 
 A framework for building UI, components, and design systems for Svelte. Components are added as source to the user's project via the CLI.
 
-> **IMPORTANT:** Run all CLI commands using the project's package runner: `npx shadcn-svelte@latest`, `pnpm dlx shadcn-svelte@latest`, or `bunx --bun shadcn-svelte@latest` — based on the project's package manager. Examples below use `npx shadcn-svelte@latest` but substitute the correct runner for the project.
+> **IMPORTANT:** Run all CLI commands using the project's package runner: `npx shadcn-svelte@latest` or `bunx --bun shadcn-svelte@latest` — based on the project's package manager. Examples below use `npx shadcn-svelte@latest` but substitute the correct runner for the project.
 
 ## Current Project Context
 

@@ -30,6 +30,8 @@ export type BugReportContext = {
 
 export type GeneratedQuestion = {
 	questionId?: string;
+	topic?: string;
+	source?: 'cached' | 'generated';
 	prompt: string;
 	options: QuestionOption[];
 	correctAnswer?: string;
@@ -44,6 +46,7 @@ export type QuestionCardProps = {
 	questionNumber?: string;
 	selectedClass?: string;
 	selectedUnit?: string;
+	unitRange?: readonly number[];
 	requestVersion?: number;
 	selectedOption?: string | null;
 	autoDetectLongQuestion?: boolean;

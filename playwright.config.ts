@@ -16,7 +16,7 @@ export default defineConfig({
 		trace: 'on-first-retry'
 	},
 	webServer: {
-		command: `pnpm build && pnpm preview --host 127.0.0.1 --port ${port} --strictPort`,
+		command: `bun run build && bun run preview --host 127.0.0.1 --port ${port} --strictPort`,
 		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120000

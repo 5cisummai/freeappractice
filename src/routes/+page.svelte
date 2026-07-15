@@ -307,14 +307,6 @@
 					>
 						Master your AP classes with instant practice questions.
 					</h1>
-					<!--
-					<p
-						class="text-md mx-auto max-w-2xl animate-in leading-8 text-balance text-muted-foreground delay-300 duration-700 fade-in-0 fill-mode-both slide-in-from-bottom-4 sm:text-lg"
-					>
-						Get ahead this summer with free, high-quality practice questions and interactive
-						explanations.
-					</p>
-					-->
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span

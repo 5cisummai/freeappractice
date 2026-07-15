@@ -33,13 +33,30 @@ Other consent-gated keys:
 | `signup_completed`               | Email signup succeeds or Better Auth redirects a newly created Google user to `/app?signup=google` | `method` (`email` \| `google`), `journey_key`                                                                  |
 | `authenticated_student_returned` | Authenticated app visit on a later local calendar day                                              | `days_since_previous_visit`, `journey_key`                                                                     |
 
+## Practice quality and support events
+
+All of these events are consent-gated and never include question text, answer text, tutor messages, or free-form feedback.
+
+| Event                           | When                                            | Properties                                                                          |
+| ------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `question_answered`             | Student checks an answer                        | `ap_class`, `unit`, `question_id`, `topic`, `source`, `is_correct`, `time_taken_ms` |
+| `question_skipped`              | Student skips before answering                  | `ap_class`, `unit`, `question_id`, `topic`, `source`                                |
+| `question_marked_not_learned`   | Student marks a question as not yet learned     | `ap_class`, `unit`, `question_id`, `topic`, `source`                                |
+| `explanation_viewed`            | Student opens an explanation after answering    | `ap_class`, `unit`, `question_id`, `topic`, `source`, `is_correct`                  |
+| `question_feedback_submitted`   | Student flags an answer, prompt, or explanation | `reason`, `ap_class`, `unit`, `question_id`, `topic`, `source`, `is_correct`        |
+| `tutor_response_completed`      | A tutor stream completes                        | `ap_class`, `unit`, `question_id`, `topic`, `response_time_ms`, `conversation_turn` |
+| `tutor_response_failed`         | A tutor stream fails or times out               | `ap_class`, `unit`, `question_id`, `topic`, `failure_kind`, `response_time_ms`      |
+| `practice_progress_save_failed` | Authenticated progress persistence fails        | `endpoint`                                                                          |
+
+`topic` is the generated question's stored concept label (`topicsCovered`). It is useful for exploratory analysis, but it is free text; use AP class and unit for dependable grouped reporting until a controlled topic taxonomy exists.
+
 ## Failure kinds (`failure_kind`)
 
-| Value        | Meaning                                       |
-| ------------ | --------------------------------------------- |
-| `validation` | HTTP 4xx                                      |
-| `generation` | HTTP 5xx (server/generation failure)          |
-| `network`    | No response status, fetch error, or status 0  |
+| Value        | Meaning                                      |
+| ------------ | -------------------------------------------- |
+| `validation` | HTTP 4xx                                     |
+| `generation` | HTTP 5xx (server/generation failure)         |
+| `network`    | No response status, fetch error, or status 0 |
 
 ## Latency buckets (`latency_bucket`, `time_taken_bucket`)
 
@@ -47,16 +64,27 @@ Other consent-gated keys:
 
 ## Instrumentation map
 
-| File                                          | Events                                                              |
-| --------------------------------------------- | ------------------------------------------------------------------- |
-| `src/routes/+page.svelte`                     | `landing_page_viewed`                                               |
-| `src/lib/components/question-selector.svelte` | `practice_selector_used`                                            |
-| `src/lib/components/question-shell.svelte`    | `generate_clicked`                                                  |
-| `src/lib/components/question-card.svelte`     | `question_request_*`, `first_answer_submitted`                      |
-| `src/routes/signup/+page.svelte`              | `signup_started` (`page`)                                           |
-| `src/lib/components/signup-form.svelte`       | `signup_started`, `signup_completed`                                |
-| `src/routes/(app)/+layout.svelte`             | `signup_completed` (OAuth), `authenticated_student_returned`        |
+| File                                          | Events                                                       |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| `src/routes/+page.svelte`                     | `landing_page_viewed`                                        |
+| `src/lib/components/question-selector.svelte` | `practice_selector_used`                                     |
+| `src/lib/components/question-shell.svelte`    | `generate_clicked`                                           |
+| `src/lib/components/question-card.svelte`     | `question_request_*`, `first_answer_submitted`               |
+| `src/routes/signup/+page.svelte`              | `signup_started` (`page`)                                    |
+| `src/lib/components/signup-form.svelte`       | `signup_started`, `signup_completed`                         |
+| `src/routes/(app)/+layout.svelte`             | `signup_completed` (OAuth), `authenticated_student_returned` |
 
 ## Related events (outside this funnel)
 
 Existing PostHog events such as `question_answered`, `user_signed_up`, and `$pageview` remain separate. Activation helpers delegate to `capturePostHogEvent` in `src/lib/client/posthog-analytics.ts`. Types and pure helpers live in `activation-funnel-metrics.ts` — import those directly, not via the capture module.
+
+## Referral funnel (growth)
+
+| Event                | When                                           | Properties / notes                                            |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------------------- |
+| `invite_landed`      | `/invite/{code}` hit                           | Anonymous metric: `code_valid`                                |
+| `referral_claimed`   | Cookie attributed to a new account             | Consent-gated; `activated_on_claim`                           |
+| `referral_activated` | First recorded attempt (or claim backfill)     | Consent-gated; `source` (`first_attempt` \| `claim_backfill`) |
+| `referral_share`     | User copies or native-shares their invite link | Consent-gated; `method` (`copy` \| `native_share`)            |
+
+Invite links land on `/subjects?invited=1` (not bare `/practice`, which has no index route). Claim runs on every authenticated `(app)` layout load so practice-before-dashboard still attributes.

@@ -1,8 +1,14 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
+import { randomBytes } from 'node:crypto';
 import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
+
+export function createReferralCode(): string {
+	return randomBytes(9).toString('base64url');
+}
 
 export interface IUserProfile extends Document {
 	userId: string;
+	referralCode?: string;
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	bookmarkedQuestions: string[];
@@ -40,6 +46,13 @@ const questionAttemptSchema = new Schema<IQuestionAttempt>(
 const userProfileSchema = new Schema<IUserProfile>(
 	{
 		userId: { type: String, required: true, unique: true, index: true },
+		referralCode: {
+			type: String,
+			required: true,
+			unique: true,
+			sparse: true,
+			default: createReferralCode
+		},
 		progress: { type: [progressSchema], default: [] },
 		questionHistory: { type: [questionAttemptSchema], default: [] },
 		bookmarkedQuestions: { type: [String], default: [] }

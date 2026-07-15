@@ -113,7 +113,14 @@
 					{/if}
 					<Field.Field>
 						<Field.Label for="name">Full Name</Field.Label>
-						<Input id="name" type="text" placeholder="John Doe" required bind:value={name} />
+						<Input
+							id="name"
+							type="text"
+							placeholder="John Doe"
+							required
+							bind:value={name}
+							autocomplete="name"
+						/>
 					</Field.Field>
 					<Field.Field>
 						<Field.Label for="email">Email</Field.Label>
@@ -123,13 +130,20 @@
 							placeholder="m@example.com"
 							required
 							bind:value={email}
+							autocomplete="email"
 						/>
 					</Field.Field>
 					<Field.Field>
 						<div class="grid grid-cols-2 gap-4">
 							<Field.Field>
 								<Field.Label for="password">Password</Field.Label>
-								<Input id="password" type="password" required bind:value={password} />
+								<Input
+									id="password"
+									type="password"
+									required
+									bind:value={password}
+									autocomplete="new-password"
+								/>
 							</Field.Field>
 							<Field.Field>
 								<Field.Label for="confirm-password">Confirm Password</Field.Label>
@@ -138,6 +152,7 @@
 									type="password"
 									required
 									bind:value={confirmPassword}
+									autocomplete="new-password"
 								/>
 							</Field.Field>
 						</div>

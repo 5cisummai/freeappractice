@@ -7,6 +7,7 @@
 	type QuestionShellProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
+		unitRange?: number[];
 		requestVersion?: number;
 		generateLabel?: string;
 		onGenerate?: () => void;
@@ -16,6 +17,7 @@
 	let {
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
+		unitRange = $bindable<number[] | undefined>(undefined),
 		requestVersion = $bindable(0),
 		generateLabel,
 		onGenerate,
@@ -39,6 +41,7 @@
 	<QuestionSelector
 		bind:selectedClass
 		bind:selectedUnit
+		bind:unitRange
 		{generateLabel}
 		onSelectionChange={handleSelectionChange}
 		onGenerate={handleGenerate}
@@ -47,6 +50,6 @@
 
 <div class="mx-auto min-h-40 max-w-6xl">
 	{#key `${selectedClass}:${selectedUnit}:${requestVersion}`}
-		<QuestionCard {selectedClass} {selectedUnit} {requestVersion} {...cardProps} />
+		<QuestionCard {selectedClass} {selectedUnit} {unitRange} {requestVersion} {...cardProps} />
 	{/key}
 </div>

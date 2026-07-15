@@ -5,7 +5,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { scale } from 'svelte/transition';
+	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -28,6 +28,7 @@
 		type QuestionSource
 	} from '$lib/client/activation-funnel-metrics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import {
 		parseQuestionPayloadFromResponse,
 		resolveEffectiveUnit,
@@ -70,6 +71,7 @@
 		questionNumber = '',
 		selectedClass = '',
 		selectedUnit = '',
+		unitRange,
 		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
@@ -108,6 +110,7 @@
 	let isMobileViewport = $state(false);
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
+	let questionFeedbackReason = $state<string | null>(null);
 
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
@@ -119,6 +122,7 @@
 	);
 	const hasCalculator = $derived(toolConfig.calculator !== 'none');
 	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
+	const realistic = $derived(realisticMode.enabled);
 
 	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
 	const tutorUnitLabel = $derived(selectedUnit);
@@ -133,6 +137,9 @@
 		for (const opt of currentQuestion.options) map[opt.id] = opt.text;
 		return map.A && map.B ? (map as { A: string; B: string; C: string; D: string }) : null;
 	});
+	const realisticContextLabel = $derived(
+		selectedClass ? `${selectedClass} · ${selectedUnit.trim() || 'All Units'}` : ''
+	);
 	const feedbackMessage = $derived.by(() => {
 		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
 			return statusMessage;
@@ -247,6 +254,7 @@
 		checkedSelection = null;
 		answerResult = null;
 		showExplanation = false;
+		questionFeedbackReason = null;
 		startedAtMs = Date.now();
 		if (clearSelection) selectedOption = null;
 	}
@@ -281,7 +289,7 @@
 
 		const loadStartedAt = Date.now();
 		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit);
+			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
 			const result = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
 			const analytics = {
 				apClass: selectedClass,
@@ -291,7 +299,7 @@
 			};
 			captureQuestionRequestSucceeded(analytics);
 
-			currentQuestion = result.question;
+			currentQuestion = { ...result.question, source: result.source };
 			rememberSeenQuestion(result.question);
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
@@ -331,6 +339,8 @@
 			ap_class: selectedClass,
 			unit: selectedUnit,
 			question_id: result.questionId,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source,
 			is_correct: result.isCorrect,
 			time_taken_ms: result.timeTakenMs
 		});
@@ -355,7 +365,9 @@
 		capturePostHogEvent('question_skipped', {
 			ap_class: selectedClass,
 			unit: selectedUnit,
-			question_id: currentQuestion?.questionId
+			question_id: currentQuestion?.questionId,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source
 		});
 		await loadQuestion('skip');
 	}
@@ -365,7 +377,9 @@
 		capturePostHogEvent('question_marked_not_learned', {
 			ap_class: selectedClass,
 			unit: selectedUnit,
-			question_id: currentQuestion?.questionId
+			question_id: currentQuestion?.questionId,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source
 		});
 		await loadQuestion('not-learned');
 	}
@@ -383,6 +397,23 @@
 		onReportBug?.(ctx);
 		bugReportContext = ctx;
 		bugReportOpen = true;
+	}
+
+	function submitQuestionFeedback(
+		reason: 'answer_incorrect' | 'question_unclear' | 'explanation_unclear'
+	): void {
+		if (!currentQuestion || questionFeedbackReason) return;
+
+		questionFeedbackReason = reason;
+		capturePostHogEvent('question_feedback_submitted', {
+			reason,
+			question_id: currentQuestion.questionId,
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			topic: currentQuestion.topic,
+			source: currentQuestion.source,
+			is_correct: answerResult?.isCorrect
+		});
 	}
 
 	onMount(() => {
@@ -438,11 +469,31 @@
 	</Card.Root>
 {:else}
 	{#snippet cardInner(expanded: boolean)}
+		{#snippet realisticQuestionNumber()}
+			<div class="mb-3">
+				<span
+					class="inline-flex size-8 items-center justify-center bg-foreground font-exam text-base font-semibold text-background"
+					aria-hidden="true"
+				>
+					{effectiveQuestionNumber}
+				</span>
+				<span class="sr-only">Question {effectiveQuestionNumber}</span>
+			</div>
+		{/snippet}
+
 		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
-			<div class="flex items-start justify-between">
-				<div>
-					<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
-				</div>
+			<div class="flex items-start justify-between gap-4">
+				{#if realistic}
+					<div class="min-w-0">
+						<p class="mt-0.5 truncate text-base font-medium text-foreground">
+							{realisticContextLabel}
+						</p>
+					</div>
+				{:else}
+					<div>
+						<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
+					</div>
+				{/if}
 				<Button
 					variant="ghost"
 					size="icon"
@@ -461,17 +512,29 @@
 			{#if currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
-						'overflow-hidden rounded-lg border border-border/70',
+						'overflow-hidden',
+						realistic
+							? 'rounded-none border border-border realistic-surface'
+							: 'rounded-lg border border-border/70',
 						expanded ? 'min-h-0 flex-1' : 'h-88'
 					)}
 				>
 					<Resizable.PaneGroup direction="horizontal" class="h-full">
 						<Resizable.Pane defaultSize={54} minSize={30} class="min-w-0">
 							<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
-								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									{currentQuestion.leftPanel?.title ?? 'Stimulus'}
-								</p>
-								<div class="space-y-4 text-sm leading-6 text-foreground/90">
+								{#if !realistic}
+									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+										{currentQuestion.leftPanel?.title ?? 'Stimulus'}
+									</p>
+								{/if}
+								<div
+									class={cn(
+										'space-y-4 leading-6',
+										realistic
+											? 'font-exam text-[15px] text-foreground'
+											: 'text-sm text-foreground/90'
+									)}
+								>
 									{#each currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
@@ -484,10 +547,19 @@
 								use:observePromptLayout={currentQuestion?.prompt ?? ''}
 								class="h-full space-y-3 overflow-y-auto p-4 sm:p-5"
 							>
-								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									{currentQuestion.rightPanel?.title ?? 'Prompt'}
-								</p>
-								<div class="space-y-4 text-sm leading-6 text-foreground/90">
+								{#if !realistic}
+									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+										{currentQuestion.rightPanel?.title ?? 'Prompt'}
+									</p>
+								{/if}
+								<div
+									class={cn(
+										'space-y-4 leading-7',
+										realistic
+											? 'font-exam text-[15px] text-foreground/85'
+											: 'text-sm text-foreground/90'
+									)}
+								>
 									{#each currentQuestion.rightPanel?.content ?? [currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
@@ -496,6 +568,9 @@
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
 				</div>
+				{#if realistic}
+					{@render realisticQuestionNumber()}
+				{/if}
 				<McqAnswerChoices
 					options={currentQuestion.options}
 					{selectedOption}
@@ -503,11 +578,15 @@
 					{checkedSelection}
 					correctAnswer={currentQuestion.correctAnswer}
 					onSelect={handleOptionSelect}
+					{realistic}
 				/>
 			{:else if expandedTwoColumn}
 				<div
 					class={cn(
-						'overflow-hidden rounded-lg border border-border/70',
+						'overflow-hidden',
+						realistic
+							? 'rounded-none border border-border realistic-surface'
+							: 'rounded-lg border border-border/70',
 						expanded ? 'min-h-0 flex-1' : 'h-100'
 					)}
 				>
@@ -517,18 +596,30 @@
 								use:observePromptLayout={currentQuestion?.prompt ?? ''}
 								class="h-full overflow-y-auto p-4 sm:p-5"
 							>
-								<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-									Question
-								</p>
+								{#if !realistic}
+									<p
+										class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+									>
+										Question
+									</p>
+								{/if}
 								<RichText
 									text={currentQuestion?.prompt ?? ''}
-									class="text-sm leading-6 text-foreground/90"
+									class={cn(
+										'leading-7',
+										realistic
+											? 'font-exam text-[15px] text-foreground/85'
+											: 'text-sm text-foreground/90'
+									)}
 								/>
 							</div>
 						</Resizable.Pane>
 						<Resizable.Handle withHandle />
 						<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
 							<div class="h-full overflow-y-auto p-4 sm:p-5">
+								{#if realistic}
+									{@render realisticQuestionNumber()}
+								{/if}
 								<McqAnswerChoices
 									options={currentQuestion?.options ?? []}
 									{selectedOption}
@@ -537,6 +628,7 @@
 									correctAnswer={currentQuestion?.correctAnswer}
 									onSelect={handleOptionSelect}
 									compact
+									{realistic}
 								/>
 							</div>
 						</Resizable.Pane>
@@ -546,9 +638,16 @@
 				<div use:observePromptLayout={currentQuestion?.prompt ?? ''}>
 					<RichText
 						text={currentQuestion?.prompt ?? ''}
-						class="text-base leading-7 text-foreground/90"
+						class={cn(
+							realistic
+								? 'font-exam text-[15px] leading-8 text-foreground/85'
+								: 'text-base leading-7 text-foreground/90'
+						)}
 					/>
 				</div>
+				{#if realistic}
+					{@render realisticQuestionNumber()}
+				{/if}
 				<McqAnswerChoices
 					options={currentQuestion?.options ?? []}
 					{selectedOption}
@@ -556,6 +655,7 @@
 					{checkedSelection}
 					correctAnswer={currentQuestion?.correctAnswer}
 					onSelect={handleOptionSelect}
+					{realistic}
 				/>
 			{/if}
 
@@ -628,7 +728,20 @@
 			</div>
 			<div class="flex gap-2">
 				{#if hasCheckedAnswer && currentQuestion?.explanation}
-					<Button variant="outline" onclick={() => (showExplanation = true)}>
+					<Button
+						variant="outline"
+						onclick={() => {
+							showExplanation = true;
+							capturePostHogEvent('explanation_viewed', {
+								question_id: currentQuestion?.questionId,
+								ap_class: selectedClass,
+								unit: selectedUnit,
+								topic: currentQuestion?.topic,
+								source: currentQuestion?.source,
+								is_correct: answerResult?.isCorrect
+							});
+						}}
+					>
 						{showExplanationLabel}
 					</Button>
 				{/if}
@@ -667,6 +780,34 @@
 						text={currentQuestion?.explanation ?? ''}
 						class="mt-4 text-sm leading-6 text-foreground/90"
 					/>
+					<div class="mt-5 border-t pt-4">
+						<p class="text-sm text-muted-foreground">Something wrong with this question?</p>
+						{#if questionFeedbackReason}
+							<p class="mt-2 text-sm text-muted-foreground">
+								Thanks — this helps improve future questions.
+							</p>
+						{:else}
+							<div class="mt-2 flex flex-wrap gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
+								>
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => submitQuestionFeedback('question_unclear')}
+									>Question is unclear</Button
+								>
+								<Button
+									variant="outline"
+									size="sm"
+									onclick={() => submitQuestionFeedback('explanation_unclear')}
+									>Explanation is unclear</Button
+								>
+							</div>
+						{/if}
+					</div>
 					<div class="mt-5 flex justify-end">
 						<Button variant="outline" onclick={() => (showExplanation = false)}>Close</Button>
 					</div>
@@ -676,15 +817,19 @@
 	{/snippet}
 
 	<!-- Normal card (kept in the DOM to preserve layout space; hidden while expanded) -->
-	<Card.Root
-		class={cn(
-			'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
-			isExpanded ? 'pointer-events-none invisible' : className
-		)}
-		aria-hidden={isExpanded}
-	>
-		{@render cardInner(false)}
-	</Card.Root>
+	<div in:fade={{ duration: 280, easing: quintOut }}>
+		<Card.Root
+			class={cn(
+				realistic
+					? 'relative overflow-hidden border-border/70 realistic-surface shadow-none'
+					: 'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
+				isExpanded ? 'pointer-events-none invisible' : className
+			)}
+			aria-hidden={isExpanded}
+		>
+			{@render cardInner(false)}
+		</Card.Root>
+	</div>
 
 	<!-- Fullscreen overlay - scales in/out smoothly -->
 	{#if isExpanded}
@@ -694,7 +839,12 @@
 			transition:scale={{ duration: 240, start: 0.97, opacity: 0, easing: quintOut }}
 		>
 			<Card.Root
-				class="relative flex h-full flex-col overflow-hidden rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm"
+				class={cn(
+					'relative flex h-full flex-col overflow-hidden',
+					realistic
+						? 'rounded-none border-0 realistic-surface shadow-none'
+						: 'rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm'
+				)}
 			>
 				{@render cardInner(true)}
 			</Card.Root>
@@ -710,6 +860,8 @@
 				apClass={selectedClass}
 				unit={tutorUnitLabel}
 				answerChoices={tutorAnswerChoices}
+				questionId={currentQuestion.questionId}
+				topic={currentQuestion.topic}
 			/>
 		{/key}
 	{/if}

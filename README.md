@@ -32,7 +32,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 ### Prerequisites
 
 - Node.js 20+
-- [pnpm](https://pnpm.io/)
+- [Bun](https://bun.sh/)
 - MongoDB (Atlas or local via Docker Compose)
 
 ### Setup
@@ -40,7 +40,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 1. Install dependencies:
 
    ```sh
-   pnpm install
+   bun install
    ```
 
 2. Copy the example env file and fill in your values:
@@ -60,19 +60,19 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 4. Start the dev server:
 
    ```sh
-   pnpm dev
+   bun dev
    ```
 
 5. Build for production:
 
    ```sh
-   pnpm build
+   bun run build
    ```
 
 6. Run the Playwright smoke suite (builds the app and tests public pages, sitemap, robots, and `/health`):
 
    ```sh
-   pnpm test
+   bun test
    ```
 
 ### Useful scripts
@@ -186,7 +186,7 @@ Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
 2. Set production environment variables (at minimum `DATABASE_URI`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
-3. Vercel runs `pnpm build` via the default SvelteKit integration.
+3. Vercel runs `bun run build` via the default SvelteKit integration.
 
 `BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.
 

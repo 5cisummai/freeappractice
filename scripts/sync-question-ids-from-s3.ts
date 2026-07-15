@@ -3,8 +3,8 @@
  *
  * Backfill the MongoDB `question_ids` registry from every object under `questions/` in S3.
  *
- *   pnpm sync:question-ids
- *   pnpm sync:question-ids --dry-run
+ *   bun run sync:question-ids
+ *   bun run sync:question-ids --dry-run
  */
 
 import 'dotenv/config';

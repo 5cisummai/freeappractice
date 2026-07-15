@@ -8,6 +8,7 @@
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/rich-text.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';
@@ -21,6 +22,8 @@
 		apClass?: string;
 		unit?: string;
 		answerChoices?: { A: string; B: string; C: string; D: string } | null;
+		questionId?: string;
+		topic?: string;
 	};
 
 	let {
@@ -29,7 +32,9 @@
 		explanation = '',
 		apClass = '',
 		unit = '',
-		answerChoices = null
+		answerChoices = null,
+		questionId = '',
+		topic = ''
 	}: TutorWidgetProps = $props();
 
 	let isOpen = $state(false);
@@ -184,6 +189,11 @@
 		fetchGreeting();
 	}
 
+	function handleClose() {
+		isOpen = false;
+		invalidateActiveStream();
+	}
+
 	async function sendMessage() {
 		const text = inputText.trim();
 		if (!text || isStreaming) return;
@@ -199,6 +209,7 @@
 		const controller = new AbortController();
 		activeStreamController = controller;
 		const timeoutId = window.setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
+		const startedAt = Date.now();
 
 		isStreaming = true;
 
@@ -252,8 +263,29 @@
 					}
 				}
 			}
+
+			capturePostHogEvent('tutor_response_completed', {
+				question_id: questionId || undefined,
+				ap_class: apClass,
+				unit,
+				topic: topic || undefined,
+				response_time_ms: Date.now() - startedAt,
+				conversation_turn:
+					conversationHistory.filter((message) => message.role === 'user').length + 1
+			});
 		} catch (error) {
 			if (streamId !== activeStreamId) return;
+
+			const failureKind =
+				error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'request_failed';
+			capturePostHogEvent('tutor_response_failed', {
+				question_id: questionId || undefined,
+				ap_class: apClass,
+				unit,
+				topic: topic || undefined,
+				failure_kind: failureKind,
+				response_time_ms: Date.now() - startedAt
+			});
 
 			messages[assistantIdx].content =
 				error instanceof DOMException && error.name === 'AbortError'
@@ -351,7 +383,7 @@
 					<span class="text-sm font-semibold text-primary-foreground">AI Tutor</span>
 				</div>
 				<button
-					onclick={() => (isOpen = false)}
+					onclick={handleClose}
 					class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
 					aria-label="Close AI Tutor"
 				>
@@ -432,7 +464,7 @@
 				return;
 			}
 			if (isOpen) {
-				isOpen = false;
+				handleClose();
 			} else {
 				handleOpen();
 			}

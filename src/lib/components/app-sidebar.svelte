@@ -12,13 +12,16 @@
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import ReferralCard from '$lib/components/referral-card.svelte';
 
 	let {
 		isAdmin,
-		user
+		user,
+		referral
 	}: {
 		isAdmin: boolean;
 		user: { name: string; email: string; image?: string | null };
+		referral: { shareUrl: string; studentsHelped: number; pendingInvites: number };
 	} = $props();
 
 	const baseNavItems = [
@@ -76,6 +79,14 @@
 					{/each}
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
+		</Sidebar.Group>
+
+		<Sidebar.Group class="px-2">
+			<ReferralCard
+				shareUrl={referral.shareUrl}
+				studentsHelped={referral.studentsHelped}
+				pendingInvites={referral.pendingInvites}
+			/>
 		</Sidebar.Group>
 	</Sidebar.Content>
 

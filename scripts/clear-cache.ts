@@ -4,8 +4,8 @@
  * Drops every pre-generated question from the Mongo cache pool.
  * S3 objects are untouched — history and bookmarks keep working.
  *
- *   pnpm cache:clear
- *   pnpm cache:clear --dry-run
+ *   bun run cache:clear
+ *   bun run cache:clear --dry-run
  */
 
 import 'dotenv/config';
