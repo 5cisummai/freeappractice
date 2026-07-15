@@ -2,9 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { authClient } from '$lib/auth/client.js';
 	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
 	import QuestionShell from '$lib/components/question-shell.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/aspiring-students-section.svelte';
@@ -289,6 +291,17 @@
 		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-4">
+					<Badge
+						href="https://discord.gg/TtTwmCAGK"
+						variant="outline"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="rounded-full border-primary/30 px-3 py-1 text-sm font-normal text-primary"
+					>
+						Join the new discord
+						<ArrowRightIcon aria-hidden="true" />
+					</Badge>
+
 					<h1
 						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
