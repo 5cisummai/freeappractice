@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import Topbar from '$lib/components/topbar.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
 	import { Signature } from '$lib/components/spell/signature';
 	import { TextAnimate } from '$lib/components/magic/text-animate';
 	import { BlurFade } from '$lib/components/magic/blur-fade';

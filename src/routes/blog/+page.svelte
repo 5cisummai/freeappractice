@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Topbar from '$lib/components/topbar.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import BlogPostCard from '$lib/components/blog-post-card.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import BlogPostCard from '$lib/components/blog/blog-post-card.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

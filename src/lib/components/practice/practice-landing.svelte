@@ -1,9 +1,9 @@
 <script lang="ts">
-	import QuestionShell from '$lib/components/question-shell.svelte';
-	import PracticeBreadcrumbs from '$lib/components/practice-breadcrumbs.svelte';
-	import PracticeHubNav from '$lib/components/practice-hub-nav.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import Topbar from '$lib/components/topbar.svelte';
+	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import PracticeBreadcrumbs from '$lib/components/practice/practice-breadcrumbs.svelte';
+	import PracticeHubNav from '$lib/components/practice/practice-hub-nav.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 

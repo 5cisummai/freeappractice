@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import logo from '$lib/assets/logo.png';
-	import SignupForm from '$lib/components/signup-form.svelte';
+	import SignupForm from '$lib/components/auth/signup-form.svelte';
 	import { resolve } from '$app/paths';
 	import { captureSignupStarted } from '$lib/client/activation-analytics';
 

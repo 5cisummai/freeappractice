@@ -17,7 +17,7 @@
 	import UserIcon from '@lucide/svelte/icons/user';
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
 	import InfoIcon from '@lucide/svelte/icons/info';
-	import PageShell from '$lib/components/page-shell.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
 
 	let { data } = $props();
 

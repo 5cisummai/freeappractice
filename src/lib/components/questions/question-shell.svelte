@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
-	import QuestionCard from '$lib/components/question-card.svelte';
-	import QuestionSelector from '$lib/components/question-selector.svelte';
+	import QuestionCard from '$lib/components/questions/question-card.svelte';
+	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
 	import type { QuestionCardProps } from '$lib/questions/types';
 
 	type QuestionShellProps = {

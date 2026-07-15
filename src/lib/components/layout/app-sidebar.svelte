@@ -2,8 +2,8 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
-	import NavUser from '$lib/components/nav-user.svelte';
-	import ThemeToggle from '$lib/components/theme-toggle.svelte';
+	import NavUser from '$lib/components/layout/nav-user.svelte';
+	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
@@ -12,7 +12,7 @@
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
-	import ReferralCard from '$lib/components/referral-card.svelte';
+	import ReferralCard from '$lib/components/layout/referral-card.svelte';
 
 	let {
 		isAdmin,

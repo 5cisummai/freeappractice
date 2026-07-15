@@ -1,7 +1,3 @@
-<script lang="ts" module>
-	export type * from '$lib/questions/types.js';
-</script>
-
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
@@ -10,9 +6,9 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
-	import McqAnswerChoices from '$lib/components/mcq-answer-choices.svelte';
-	import QuestionCardSkeleton from '$lib/components/question-card-skeleton.svelte';
+	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
+	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
+	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
 	import RichText from '$lib/components/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
@@ -45,9 +41,9 @@
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import TutorWidget from '$lib/components/tutor/tutor-widget.svelte';
-	import DesmosCalculator from '$lib/components/desmos-calculator.svelte';
-	import ReferenceSheet from '$lib/components/reference-sheet.svelte';
+	import TutorWidget from '$lib/components/tutor-widget.svelte';
+	import DesmosCalculator from '$lib/components/questions/desmos-calculator.svelte';
+	import ReferenceSheet from '$lib/components/questions/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
 
 	type QuestionFetchResult = {
@@ -216,8 +212,7 @@
 				: node.scrollHeight > threshold;
 		}
 
-		isLongQuestion =
-			textLength > longQuestionThresholdChars || hasCodeBlock || tallByLayout;
+		isLongQuestion = textLength > longQuestionThresholdChars || hasCodeBlock || tallByLayout;
 	}
 
 	function observePromptLayout(node: HTMLDivElement, promptText: string) {

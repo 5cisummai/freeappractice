@@ -15,7 +15,7 @@
 	import { goto } from '$app/navigation';
 	import { authClient } from '$lib/auth/client.js';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
-	import GoogleLogo from '$lib/components/google-logo.svelte';
+	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();

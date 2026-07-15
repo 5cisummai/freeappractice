@@ -4,8 +4,8 @@
 	/* hljs light theme (default); dark overrides are in layout.css under .dark */
 	import 'highlight.js/styles/github.min.css';
 	import logo from '$lib/assets/logo.png';
-	import SkipToMain from '$lib/components/skip-to-main.svelte';
-	import GoogleOneTapPrompt from '$lib/components/google-one-tap-prompt.svelte';
+	import SkipToMain from '$lib/components/layout/skip-to-main.svelte';
+	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';

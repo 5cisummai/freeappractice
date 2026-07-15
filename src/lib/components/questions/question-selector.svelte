@@ -10,7 +10,7 @@
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import Share2Icon from '@lucide/svelte/icons/share-2';
 	import SlidersHorizontalIcon from '@lucide/svelte/icons/sliders-horizontal';
-	import BugReportDialog from '$lib/components/bug-report-dialog.svelte';
+	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';

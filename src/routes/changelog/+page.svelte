@@ -1,8 +1,8 @@
 <script lang="ts">
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import Topbar from '$lib/components/topbar.svelte';
-	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import BackToHome from '$lib/components/back-to-home.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
 	const changelog = [

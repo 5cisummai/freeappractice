@@ -3,7 +3,7 @@
 	import { replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';

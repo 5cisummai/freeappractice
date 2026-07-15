@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import ThemeToggle from '$lib/components/theme-toggle.svelte';
+	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import { topbarAuthItems, topbarNavItems } from '$lib/site-nav.js';
 
 	let mobileOpen = $state(false);

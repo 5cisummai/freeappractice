@@ -2,10 +2,10 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import QuestionShell from '$lib/components/question-shell.svelte';
-	import type { AnswerResult } from '$lib/components/question-card.svelte';
+	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import type { AnswerResult } from '$lib/questions/types';
 	import { toast } from 'svelte-sonner';
-	import PageShell from '$lib/components/page-shell.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
 	let selectedClass = $state('');

@@ -9,7 +9,7 @@
 	import TargetIcon from '@lucide/svelte/icons/target';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import ClockIcon from '@lucide/svelte/icons/clock';
-	import PageShell from '$lib/components/page-shell.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
 
 	let { data } = $props();
 
