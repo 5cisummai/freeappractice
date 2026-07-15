@@ -7,6 +7,33 @@
 
 	const changelog = [
 		{
+			version: '1.4.6',
+			date: 'July 14, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Realistic mode gives practice questions a cleaner, exam-style presentation and remembers your preference',
+						'Choose a custom range of units for mixed-unit practice instead of practicing one unit or every unit',
+						'Share your current class or unit practice page, or invite a classmate from the app sidebar',
+						'Flag a wrong answer, unclear question, or unclear explanation directly after reviewing a question'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Bug reports now stay open with a clear confirmation after they are submitted',
+						'Sign-up and password forms work better with browser autofill and password managers',
+						'Practice history rows can be opened with the keyboard, and copying a question ID now shows success or failure feedback'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: ['Closing the AI tutor now stops its active reply instead of leaving it running']
+				}
+			]
+		},
+		{
 			version: '1.4.5',
 			date: 'July 11, 2026',
 			sections: [

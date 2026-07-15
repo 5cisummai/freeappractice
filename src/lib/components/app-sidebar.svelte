@@ -83,7 +83,6 @@
 
 		<Sidebar.Group class="px-2">
 			<ReferralCard
-				variant="sidebar"
 				shareUrl={referral.shareUrl}
 				studentsHelped={referral.studentsHelped}
 				pendingInvites={referral.pendingInvites}

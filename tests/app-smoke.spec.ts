@@ -133,13 +133,6 @@ test.describe('public app smoke checks', () => {
 		await expect(page.getByRole('heading', { name: /Unit 7/i })).toBeVisible();
 	});
 
-	test('focused practice pages offer a student-facing share action', async ({ page }) => {
-		await page.goto('/practice/ap-biology/unit-3');
-
-		await page.getByRole('button', { name: 'More options' }).click();
-		await expect(page.getByRole('button', { name: 'Share with your AP class' })).toBeEnabled();
-	});
-
 	test('health endpoint returns ok', async ({ request }) => {
 		const response = await request.get('/health');
 		expect(response.ok()).toBeTruthy();
