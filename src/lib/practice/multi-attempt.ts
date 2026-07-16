@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 export const MULTI_ATTEMPT_EXPERIMENT_KEY = 'multi_attempt_hints';
 export const MULTI_ATTEMPT_EXPERIMENT_VERSION = 1;
 export const MAX_MULTI_ATTEMPT_SUBMISSIONS = 3;
@@ -17,16 +15,6 @@ export type PracticeExperimentAssignment = {
 };
 
 const ANSWER_CHOICES = new Set(['A', 'B', 'C', 'D']);
-
-/** Stable 50/50 assignment from user id + experiment identity (not client-chosen). */
-export function assignPracticeVariant(
-	userId: string,
-	key = MULTI_ATTEMPT_EXPERIMENT_KEY,
-	version = MULTI_ATTEMPT_EXPERIMENT_VERSION
-): PracticeVariant {
-	const digest = createHash('sha256').update(`${key}:v${version}:${userId}`).digest();
-	return digest[0]! % 2 === 0 ? 'control' : 'multi_attempt_hints';
-}
 
 export function hasValidHints(question: {
 	hint1?: string | null;

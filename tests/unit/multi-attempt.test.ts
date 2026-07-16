@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { assignPracticeVariant } from '$lib/practice/assign-practice-variant.server';
 import {
-	assignPracticeVariant,
 	buildAttemptFieldsFromMultiAttempt,
 	hasValidHints,
 	isMultiAttemptRequestBody,

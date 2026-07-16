@@ -1,9 +1,9 @@
 import type { PracticeExperimentAssignment, PracticeVariant } from '$lib/practice/multi-attempt';
 import {
 	MULTI_ATTEMPT_EXPERIMENT_KEY,
-	MULTI_ATTEMPT_EXPERIMENT_VERSION,
-	assignPracticeVariant
+	MULTI_ATTEMPT_EXPERIMENT_VERSION
 } from '$lib/practice/multi-attempt';
+import { assignPracticeVariant } from '$lib/practice/assign-practice-variant.server';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { isMultiAttemptExperimentEnabled } from '$lib/flags';
 
@@ -27,9 +27,7 @@ export async function getOrAssignMultiAttemptVariant(
 		};
 	}
 
-	const variant: PracticeVariant = enabled
-		? assignPracticeVariant(userId)
-		: 'control';
+	const variant: PracticeVariant = enabled ? assignPracticeVariant(userId) : 'control';
 	const assignment: PracticeExperimentAssignment = {
 		key: MULTI_ATTEMPT_EXPERIMENT_KEY,
 		version: MULTI_ATTEMPT_EXPERIMENT_VERSION,
