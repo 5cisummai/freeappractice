@@ -24,8 +24,8 @@
 			errorMessage = 'Passwords do not match';
 			return;
 		}
-		if (password.length < 8) {
-			errorMessage = 'Password must be at least 8 characters';
+		if (password.length < 12) {
+			errorMessage = 'Password must be at least 12 characters';
 			return;
 		}
 
@@ -112,7 +112,7 @@
 									bind:value={confirmPassword}
 									autocomplete="new-password"
 								/>
-								<Field.Description>Must be at least 8 characters.</Field.Description>
+								<Field.Description>Must be at least 12 characters.</Field.Description>
 							</Field.Field>
 							<Field.Field>
 								<Button type="submit" disabled={loading}>

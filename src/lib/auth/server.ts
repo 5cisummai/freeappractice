@@ -3,13 +3,16 @@ import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { oneTap } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
+import { waitUntil } from '@vercel/functions';
 import { building } from '$app/environment';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/private';
 import bcrypt from 'bcryptjs';
 import { getMongoClient, getMongoDb } from '$lib/server/mongo-native';
 import {
+	sendChangeEmailConfirmationEmail,
 	sendConfirmationEmail,
+	sendDeleteAccountEmail,
 	sendExistingUserSignupEmail,
 	sendResetEmail
 } from '$lib/auth/email.server';
@@ -36,7 +39,13 @@ export const auth = betterAuth({
 	experimental: { joins: true },
 	rateLimit: {
 		enabled: true,
-		storage: 'database'
+		storage: 'database',
+		customRules: {
+			'/sign-in/email': { window: 60, max: 5 },
+			'/sign-up/email': { window: 60, max: 3 },
+			'/request-password-reset': { window: 60, max: 3 },
+			'/send-verification-email': { window: 60, max: 3 }
+		}
 	},
 	databaseHooks: {
 		user: {
@@ -50,10 +59,16 @@ export const auth = betterAuth({
 	user: {
 		modelName: 'authUsers',
 		changeEmail: {
-			enabled: true
+			enabled: true,
+			sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+				await sendChangeEmailConfirmationEmail(user.email, newEmail, url);
+			}
 		},
 		deleteUser: {
 			enabled: true,
+			sendDeleteAccountVerification: async ({ user, url }) => {
+				await sendDeleteAccountEmail(user.email, url);
+			},
 			afterDelete: async (user) => {
 				await connectDb();
 				await Promise.all([
@@ -67,10 +82,16 @@ export const auth = betterAuth({
 	},
 	account: {
 		modelName: 'authAccounts',
-		encryptOAuthTokens: true
+		encryptOAuthTokens: true,
+		accountLinking: {
+			enabled: true,
+			trustedProviders: ['google'],
+			requireLocalEmailVerified: true
+		}
 	},
 	session: {
 		modelName: 'authSessions',
+		freshAge: 60 * 60,
 		cookieCache: {
 			enabled: true,
 			maxAge: 300,
@@ -83,7 +104,8 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: true,
-		minPasswordLength: 8,
+		minPasswordLength: 12,
+		maxPasswordLength: 72,
 		resetPasswordTokenExpiresIn: 15 * 60,
 		revokeSessionsOnPasswordReset: true,
 		password: {
@@ -101,7 +123,7 @@ export const auth = betterAuth({
 		sendOnSignUp: true,
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
-		expiresIn: 60 * 60 * 24,
+		expiresIn: 15 * 60,
 		sendVerificationEmail: async ({ user, url }) => {
 			await sendConfirmationEmail(user.email, url);
 		}
@@ -117,7 +139,13 @@ export const auth = betterAuth({
 			: undefined,
 	advanced: {
 		ipAddress: {
-			ipAddressHeaders: ['x-forwarded-for', 'x-real-ip']
+			// Prefer Vercel's single-value client IP; multi-hop XFF is untrusted without CIDRs.
+			ipAddressHeaders: ['x-real-ip', 'x-forwarded-for']
+		},
+		backgroundTasks: {
+			handler: (promise) => {
+				waitUntil(promise);
+			}
 		}
 	},
 	plugins: [

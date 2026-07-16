@@ -2,7 +2,7 @@ import { setMode } from 'mode-watcher';
 import { invalidateAll } from '$app/navigation';
 import { toast } from 'svelte-sonner';
 import { authClient } from '$lib/auth/client.js';
-import { authCallbackUrl } from '$lib/auth/urls.js';
+import { authCallbackUrl, getSiteUrl } from '$lib/auth/urls.js';
 
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
@@ -87,8 +87,7 @@ class SettingsController {
 					callbackURL: authCallbackUrl('/app/settings')
 				});
 				if (error) throw new Error(error.message ?? 'Failed to update email');
-				toast.success('Verification email sent to your new address.');
-				window.location.href = `/email-sent?email=${encodeURIComponent(email)}`;
+				toast.success('Check your current inbox to approve the email change.');
 				return true;
 			}
 
@@ -103,16 +102,24 @@ class SettingsController {
 		}
 	}
 
-	async deleteAccount(password?: string): Promise<boolean> {
+	async deleteAccount(password?: string): Promise<'deleted' | 'pending' | false> {
 		if (this.deletePending) return false;
 		this.deletePending = true;
 		try {
-			const { error } = await authClient.deleteUser(password ? { password } : undefined);
+			const { data, error } = await authClient.deleteUser({
+				...(password ? { password } : {}),
+				callbackURL: `${getSiteUrl()}/`
+			});
 			if (error) throw new Error(error.message ?? 'Failed to delete account');
+
+			if (data?.message === 'Verification email sent') {
+				toast.success('Check your email to confirm account deletion.');
+				return 'pending';
+			}
 
 			toast.success('Account deleted successfully');
 			window.location.href = '/';
-			return true;
+			return 'deleted';
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Failed to delete account');
 			return false;

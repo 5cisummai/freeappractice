@@ -79,7 +79,7 @@
 					{:else}
 						your email address.
 					{/if}
-					It expires in 24 hours. Check spam if you don't see it.
+					It expires in 15 minutes. Check spam if you don't see it.
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">

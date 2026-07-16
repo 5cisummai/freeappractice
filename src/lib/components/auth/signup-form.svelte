@@ -31,8 +31,8 @@
 			errorMessage = 'Passwords do not match';
 			return;
 		}
-		if (password.length < 8) {
-			errorMessage = 'Password must be at least 8 characters';
+		if (password.length < 12) {
+			errorMessage = 'Password must be at least 12 characters';
 			return;
 		}
 
@@ -55,7 +55,7 @@
 			}
 			capturePostHogEvent('user_signed_up', { method: 'email' });
 			captureSignupCompleted('email');
-			// Verification email is sent by Better Auth (sendOnSignUp + backgroundTasks.waitUntil).
+			// Verification email is sent by Better Auth (sendOnSignUp + Vercel waitUntil).
 			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;
 			// The base path is resolved above; only the encoded query string is appended.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
@@ -157,7 +157,7 @@
 								/>
 							</Field.Field>
 						</div>
-						<Field.Description>Must be at least 8 characters long.</Field.Description>
+						<Field.Description>Must be at least 12 characters long.</Field.Description>
 					</Field.Field>
 					<Field.Field>
 						<Button type="submit" disabled={loading}>

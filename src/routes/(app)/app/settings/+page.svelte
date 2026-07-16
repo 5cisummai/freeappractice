@@ -42,8 +42,8 @@
 	}
 
 	async function handleDeleteAccount() {
-		const deleted = await settingsController.deleteAccount(deletePassword || undefined);
-		if (deleted) {
+		const result = await settingsController.deleteAccount(deletePassword || undefined);
+		if (result) {
 			deleteAccountOpen = false;
 			deletePassword = '';
 		}
@@ -255,17 +255,17 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete your account?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This will permanently delete your account and all associated data. This action cannot be
-				undone.
+				We'll email you a confirmation link to permanently delete your account and data. This
+				cannot be undone.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<div class="px-6 pb-2">
-			<Label for="delete-password">Confirm your password</Label>
+			<Label for="delete-password">Password (email/password accounts)</Label>
 			<Input
 				id="delete-password"
 				type="password"
 				autocomplete="current-password"
-				placeholder="Enter your password to confirm"
+				placeholder="Optional if you signed in with Google"
 				bind:value={deletePassword}
 				class="mt-2"
 			/>
@@ -277,7 +277,7 @@
 				onclick={handleDeleteAccount}
 				disabled={settingsController.deletePending}
 			>
-				{settingsController.deletePending ? 'Deleting...' : 'Delete Account'}
+				{settingsController.deletePending ? 'Sending...' : 'Send deletion email'}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
