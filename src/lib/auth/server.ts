@@ -3,7 +3,6 @@ import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { oneTap } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
-import { waitUntil } from '@vercel/functions';
 import { building } from '$app/environment';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/private';
@@ -119,10 +118,6 @@ export const auth = betterAuth({
 	advanced: {
 		ipAddress: {
 			ipAddressHeaders: ['x-forwarded-for', 'x-real-ip']
-		},
-		// Native Better Auth serverless pattern: defer email work, keep the isolate alive until it finishes.
-		backgroundTasks: {
-			handler: waitUntil
 		}
 	},
 	plugins: [
