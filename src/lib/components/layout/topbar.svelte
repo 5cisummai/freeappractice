@@ -21,10 +21,10 @@
 		<div class="topbar-logo">
 			<a
 				href={resolve('/')}
-				class="logo-link flex items-center gap-3 text-base font-semibold tracking-tight"
+				class="logo-link flex items-center gap-0 text-base font-semibold tracking-tight lg:gap-3"
 			>
 				<img src={logo} alt="Free AP Practice logo" class="size-7 rounded-sm" />
-				<span>Free AP Practice</span>
+				<span class="hidden lg:inline">Free AP Practice</span>
 			</a>
 		</div>
 
