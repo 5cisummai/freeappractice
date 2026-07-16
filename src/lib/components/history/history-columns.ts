@@ -91,7 +91,7 @@ export function createHistoryColumns(
 					};
 				});
 				return renderSnippet(answerSnippet, {
-					answer: row.original.attempt.selectedAnswer
+					answer: row.original.attempt.selectedAnswer ?? '—'
 				});
 			},
 			enableSorting: false
@@ -105,12 +105,15 @@ export function createHistoryColumns(
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const resultSnippet = createRawSnippet<[{ correct: boolean }]>((getData) => {
+				const resultSnippet = createRawSnippet<[{ correct: boolean | undefined }]>((getData) => {
 					const { correct } = getData();
-					const label = correct ? 'Correct' : 'Incorrect';
-					const classes = correct
-						? 'bg-secondary text-secondary-foreground'
-						: 'bg-destructive/10 text-destructive';
+					const label = correct === undefined ? 'Revealed' : correct ? 'Correct' : 'Incorrect';
+					const classes =
+						correct === undefined
+							? 'bg-muted text-muted-foreground'
+							: correct
+								? 'bg-secondary text-secondary-foreground'
+								: 'bg-destructive/10 text-destructive';
 					return {
 						render: () =>
 							`<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes}">${label}</span>`
@@ -120,8 +123,10 @@ export function createHistoryColumns(
 					correct: row.original.attempt.wasCorrect
 				});
 			},
-			sortingFn: (rowA, rowB) =>
-				Number(rowB.original.attempt.wasCorrect) - Number(rowA.original.attempt.wasCorrect)
+			sortingFn: (rowA, rowB) => {
+				const rank = (value: boolean | undefined) => (value === undefined ? -1 : value ? 1 : 0);
+				return rank(rowB.original.attempt.wasCorrect) - rank(rowA.original.attempt.wasCorrect);
+			}
 		},
 		{
 			id: 'actions',

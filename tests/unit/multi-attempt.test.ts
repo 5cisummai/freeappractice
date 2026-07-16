@@ -105,6 +105,26 @@ describe('validateMultiAttemptPayload + first-vs-final semantics', () => {
 			error: 'hintsShown does not match the submitted answers'
 		});
 	});
+
+	it('allows revealing before any answer without inventing first-answer correctness', () => {
+		const validated = validateMultiAttemptPayload(
+			{
+				answers: [],
+				terminalOutcome: 'revealed',
+				hintsShown: 0,
+				displayedVariant: 'multi_attempt_hints'
+			},
+			'C'
+		);
+		expect(validated.ok).toBe(true);
+		if (!validated.ok) return;
+		expect(buildAttemptFieldsFromMultiAttempt(validated.data, 'C')).toMatchObject({
+			selectedAnswer: undefined,
+			wasCorrect: undefined,
+			answerCount: 0,
+			terminalOutcome: 'revealed'
+		});
+	});
 });
 
 describe('isMultiAttemptRequestBody backwards compatibility', () => {

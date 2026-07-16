@@ -72,10 +72,18 @@ export function validateMultiAttemptPayload(
 	correctAnswer: 'A' | 'B' | 'C' | 'D'
 ): { ok: true; data: MultiAttemptPayload } | { ok: false; error: string } {
 	const answersRaw = body.answers;
+	const terminalOutcome = body.terminalOutcome;
+	if (
+		terminalOutcome !== 'correct' &&
+		terminalOutcome !== 'revealed' &&
+		terminalOutcome !== 'max_attempts'
+	) {
+		return { ok: false, error: 'Invalid terminalOutcome' };
+	}
 	if (
 		!Array.isArray(answersRaw) ||
-		answersRaw.length < 1 ||
-		answersRaw.length > MAX_MULTI_ATTEMPT_SUBMISSIONS
+		answersRaw.length > MAX_MULTI_ATTEMPT_SUBMISSIONS ||
+		(answersRaw.length < 1 && terminalOutcome !== 'revealed')
 	) {
 		return { ok: false, error: 'answers must contain 1 to 3 letters' };
 	}
@@ -90,15 +98,6 @@ export function validateMultiAttemptPayload(
 		}
 		answers.push(letter);
 		if (letter !== correctAnswer) seenWrong.add(letter);
-	}
-
-	const terminalOutcome = body.terminalOutcome;
-	if (
-		terminalOutcome !== 'correct' &&
-		terminalOutcome !== 'revealed' &&
-		terminalOutcome !== 'max_attempts'
-	) {
-		return { ok: false, error: 'Invalid terminalOutcome' };
 	}
 
 	const last = answers[answers.length - 1]!;
@@ -157,11 +156,11 @@ export function buildAttemptFieldsFromMultiAttempt(
 	payload: MultiAttemptPayload,
 	correctAnswer: 'A' | 'B' | 'C' | 'D'
 ) {
-	const firstAnswer = payload.answers[0]!;
-	const finalAnswer = payload.answers[payload.answers.length - 1]!;
+	const firstAnswer = payload.answers[0];
+	const finalAnswer = payload.answers[payload.answers.length - 1];
 	return {
 		selectedAnswer: firstAnswer,
-		wasCorrect: firstAnswer === correctAnswer,
+		wasCorrect: firstAnswer ? firstAnswer === correctAnswer : undefined,
 		finalAnswer,
 		answerCount: payload.answers.length,
 		hintsShown: payload.hintsShown,

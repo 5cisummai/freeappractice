@@ -174,9 +174,10 @@
 		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
 			return statusMessage;
 		}
-		if (answerResult.isCorrect) {
+		if (answerResult.isCorrect === true) {
 			return 'Correct! Nice work.';
 		}
+		if (answerResult.isCorrect === undefined) return 'Answer revealed.';
 		if (
 			answerResult.displayedVariant === 'multi_attempt_hints' &&
 			answerResult.finalAnswer === answerResult.correctAnswer &&
@@ -331,7 +332,10 @@
 		}
 	}
 
-	function applyQuestionExperimentExposure(question: GeneratedQuestion, source: QuestionSource): void {
+	function applyQuestionExperimentExposure(
+		question: GeneratedQuestion,
+		source: QuestionSource
+	): void {
 		const resolved = resolveDisplayedVariant({
 			assigned: assignedVariant,
 			experimentEnabled,
@@ -418,7 +422,9 @@
 		selectedOption = optionId;
 	}
 
-	function captureFirstAnswerAnalytics(result: AnswerResult): void {
+	function captureFirstAnswerAnalytics(
+		result: AnswerResult & { selectedAnswer: string; isCorrect: boolean }
+	): void {
 		capturePostHogEvent('question_answered', {
 			ap_class: selectedClass,
 			unit: selectedUnit,
@@ -436,18 +442,39 @@
 		});
 	}
 
+	function captureQuestionCompletedAnalytics(
+		result: AnswerResult,
+		terminalOutcome: 'correct' | 'incorrect' | 'revealed' | 'max_attempts',
+		resolvedCorrect: boolean,
+		answerCount: number,
+		hintsShown: number
+	): void {
+		capturePostHogEvent('practice_question_completed', {
+			displayed_variant: result.displayedVariant ?? 'control',
+			terminal_outcome: terminalOutcome,
+			first_answer_correct: result.isCorrect,
+			resolved_correct: resolvedCorrect,
+			answer_count: answerCount,
+			hints_shown: hintsShown,
+			elapsed_ms: result.timeTakenMs,
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			topic: currentQuestion?.topic,
+			source: currentQuestion?.source
+		});
+	}
+
 	function finalizeTreatmentAttempt(): void {
 		if (!currentQuestion?.correctAnswer || multiAttemptState.phase !== 'terminal') return;
 
 		const firstAnswer = multiAttemptState.answers[0];
-		if (!firstAnswer) return;
 
 		const result: AnswerResult = {
 			questionId: currentQuestion.questionId?.trim() || undefined,
 			questionNumber: effectiveQuestionNumber,
 			selectedAnswer: firstAnswer,
 			correctAnswer: currentQuestion.correctAnswer,
-			isCorrect: multiAttemptState.firstAnswerCorrect ?? false,
+			isCorrect: multiAttemptState.firstAnswerCorrect ?? undefined,
 			timeTakenMs: Date.now() - startedAtMs,
 			finalAnswer: multiAttemptState.answers[multiAttemptState.answers.length - 1],
 			answerCount: multiAttemptState.answers.length,
@@ -460,23 +487,17 @@
 		};
 
 		hasCheckedAnswer = true;
-		checkedSelection = firstAnswer;
+		checkedSelection = firstAnswer ?? null;
 		answerResult = result;
 		onAnswered?.(result);
 
-		capturePostHogEvent('practice_question_completed', {
-			displayed_variant: 'multi_attempt_hints',
-			terminal_outcome: multiAttemptState.terminalOutcome,
-			first_answer_correct: result.isCorrect,
-			resolved_correct: multiAttemptState.resolvedCorrect,
-			answer_count: multiAttemptState.answers.length,
-			hints_shown: multiAttemptState.hintsShown,
-			elapsed_ms: result.timeTakenMs,
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			topic: currentQuestion.topic,
-			source: currentQuestion.source
-		});
+		captureQuestionCompletedAnalytics(
+			result,
+			multiAttemptState.terminalOutcome ?? 'revealed',
+			multiAttemptState.resolvedCorrect ?? false,
+			multiAttemptState.answers.length,
+			multiAttemptState.hintsShown
+		);
 
 		if (autoShowExplanation && currentQuestion.explanation) {
 			showExplanation = true;
@@ -495,13 +516,24 @@
 
 		if (!isTreatmentActive) {
 			const result = buildAnswerResult(selectedOption);
-			if (!result) return;
+			if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
+			const completeResult = result as AnswerResult & {
+				selectedAnswer: string;
+				isCorrect: boolean;
+			};
 
 			hasCheckedAnswer = true;
-			checkedSelection = result.selectedAnswer;
-			answerResult = result;
-			onAnswered?.(result);
-			captureFirstAnswerAnalytics(result);
+			checkedSelection = completeResult.selectedAnswer;
+			answerResult = completeResult;
+			onAnswered?.(completeResult);
+			captureFirstAnswerAnalytics(completeResult);
+			captureQuestionCompletedAnalytics(
+				completeResult,
+				completeResult.isCorrect ? 'correct' : 'incorrect',
+				completeResult.isCorrect,
+				1,
+				0
+			);
 
 			if (autoShowExplanation && currentQuestion?.explanation) {
 				showExplanation = true;
@@ -524,7 +556,11 @@
 
 		if (isFirstSubmit) {
 			const firstResult = buildAnswerResult(answer);
-			if (firstResult) captureFirstAnswerAnalytics(firstResult);
+			if (firstResult?.selectedAnswer !== undefined && firstResult.isCorrect !== undefined) {
+				captureFirstAnswerAnalytics(
+					firstResult as AnswerResult & { selectedAnswer: string; isCorrect: boolean }
+				);
+			}
 		}
 
 		if (multiAttemptState.hintsShown > prevHintsShown) {
@@ -949,7 +985,7 @@
 					{nextLabel}
 				</Button>
 				{#if !hasCheckedAnswer}
-					{#if isTreatmentActive && multiAttemptState.phase === 'hinted'}
+					{#if isTreatmentActive && multiAttemptState.phase !== 'terminal'}
 						<Button variant="outline" onclick={handleRevealAnswer}>Show answer</Button>
 					{/if}
 					<Button disabled={!selectedOption} onclick={handleCheckAnswer}>{checkLabel}</Button>

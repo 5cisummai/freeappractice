@@ -12,11 +12,11 @@ type QuestionPanel = {
 export type AnswerResult = {
 	questionId?: string;
 	questionNumber: string;
-	/** First-answer letter (always set; same meaning as before). */
-	selectedAnswer: string;
+	/** First-answer letter; omitted when the student reveals before answering. */
+	selectedAnswer?: string;
 	correctAnswer: string;
-	/** First-answer correctness (always set; same meaning as before). */
-	isCorrect: boolean;
+	/** First-answer correctness; omitted when the student reveals before answering. */
+	isCorrect?: boolean;
 	timeTakenMs: number;
 	/** Present only for multi-attempt treatment completions. */
 	finalAnswer?: string;

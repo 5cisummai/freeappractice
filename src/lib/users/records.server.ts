@@ -23,9 +23,9 @@ export interface IQuestionAttempt {
 	apClass: string;
 	unit: string;
 	/** First-answer letter (stats/mastery source of truth). */
-	selectedAnswer: 'A' | 'B' | 'C' | 'D';
+	selectedAnswer?: 'A' | 'B' | 'C' | 'D';
 	/** First-answer correctness (stats/mastery source of truth). */
-	wasCorrect: boolean;
+	wasCorrect?: boolean;
 	timeTakenMs?: number;
 	attemptedAt: Date;
 	/** Treatment resolution fields (optional; control attempts omit these). */

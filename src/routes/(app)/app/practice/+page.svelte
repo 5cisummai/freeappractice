@@ -54,12 +54,12 @@
 
 		if (!questionId) return;
 
-		if (result.displayedVariant === 'multi_attempt_hints' && result.answers?.length) {
+		if (result.displayedVariant === 'multi_attempt_hints') {
 			void syncAttempt(
 				'/api/me/record-attempt',
 				{
 					questionId,
-					answers: result.answers,
+					answers: result.answers ?? [],
 					terminalOutcome: result.terminalOutcome,
 					hintsShown: result.hintsShown,
 					displayedVariant: result.displayedVariant,

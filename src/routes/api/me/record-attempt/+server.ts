@@ -144,11 +144,13 @@ export const POST = withAuthedHandler(
 
 		const progressEntry = findOrCreateProgressEntry(user.progress, apClass, normalizedUnit);
 
-		progressEntry.totalAttempts++;
-		if (attempt.wasCorrect) progressEntry.correctAttempts++;
-		progressEntry.mastery = Math.round(
-			(progressEntry.correctAttempts / progressEntry.totalAttempts) * 100
-		);
+		if (attempt.wasCorrect !== undefined) {
+			progressEntry.totalAttempts++;
+			if (attempt.wasCorrect) progressEntry.correctAttempts++;
+			progressEntry.mastery = Math.round(
+				(progressEntry.correctAttempts / progressEntry.totalAttempts) * 100
+			);
+		}
 		progressEntry.lastAttemptAt = new Date();
 
 		await user.save();

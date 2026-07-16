@@ -26,9 +26,7 @@ describe('calcStreak', () => {
 		expect(calcStreak([])).toBe(0);
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-07-15T18:00:00.000Z'));
-		expect(calcStreak([attempt({ attemptedAt: new Date('2026-07-10T12:00:00.000Z') })])).toBe(
-			0
-		);
+		expect(calcStreak([attempt({ attemptedAt: new Date('2026-07-10T12:00:00.000Z') })])).toBe(0);
 	});
 
 	it('counts consecutive local calendar days including yesterday', () => {
@@ -94,5 +92,27 @@ describe('buildStatsData', () => {
 		expect(stats.recentPerformance.questionsLast7Days).toBe(2);
 		expect(stats.subjectBreakdown[0]?.subject).toBe('AP Biology');
 		expect(stats.subjectBreakdown).toHaveLength(2);
+	});
+
+	it('excludes reveal-before-answer records from accuracy and mastery stats', () => {
+		const user = {
+			createdAt: new Date('2026-01-01T00:00:00.000Z'),
+			questionHistory: [
+				attempt({ wasCorrect: true, attemptedAt: new Date('2026-07-15T10:00:00.000Z') }),
+				attempt({
+					questionId: 'revealed',
+					selectedAnswer: undefined,
+					wasCorrect: undefined,
+					terminalOutcome: 'revealed',
+					attemptedAt: new Date('2026-07-15T11:00:00.000Z')
+				})
+			]
+		} as IUserProfile;
+
+		const stats = buildStatsData(user, 'UTC');
+		expect(stats.overview.totalQuestions).toBe(1);
+		expect(stats.overview.correctAnswers).toBe(1);
+		expect(stats.overview.accuracy).toBe(100);
+		expect(stats.subjectBreakdown).toHaveLength(1);
 	});
 });

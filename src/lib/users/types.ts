@@ -33,8 +33,8 @@ type QuestionAttempt = {
 	questionId: string;
 	apClass: string;
 	unit: string;
-	selectedAnswer: 'A' | 'B' | 'C' | 'D';
-	wasCorrect: boolean;
+	selectedAnswer?: 'A' | 'B' | 'C' | 'D';
+	wasCorrect?: boolean;
 	timeTakenMs?: number;
 	attemptedAt: string;
 	finalAnswer?: 'A' | 'B' | 'C' | 'D';
