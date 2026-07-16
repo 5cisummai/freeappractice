@@ -6,15 +6,10 @@ import { logger } from '$lib/server/logger';
 import { unverifiedUserCutoff } from '$lib/auth/cron-auth';
 
 type AuthUserDoc = {
-	_id: { toString(): string } | string;
-	email?: string;
+	_id: string;
 	emailVerified?: boolean;
 	createdAt?: Date;
 };
-
-function toUserId(id: AuthUserDoc['_id']): string {
-	return typeof id === 'string' ? id : id.toString();
-}
 
 /**
  * Deletes Better Auth users whose email is still unverified and who are older
@@ -28,14 +23,14 @@ export async function cleanupUnverifiedUsers(now = new Date()): Promise<{
 	const db = await getMongoDb();
 	await connectDb();
 
-	const staleUsers = (await db
-		.collection('authUsers')
+	const authUsers = db.collection<AuthUserDoc>('authUsers');
+	const staleUsers = await authUsers
 		.find({
 			emailVerified: { $ne: true },
 			createdAt: { $lt: cutoff }
 		})
-		.project({ _id: 1, email: 1 })
-		.toArray()) as AuthUserDoc[];
+		.project({ _id: 1 })
+		.toArray();
 
 	if (staleUsers.length === 0) {
 		logger.info('cron cleanup-unverified-users: nothing to delete', {
@@ -44,35 +39,44 @@ export async function cleanupUnverifiedUsers(now = new Date()): Promise<{
 		return { deletedUsers: 0, cutoff: cutoff.toISOString() };
 	}
 
-	const userIds = staleUsers.map((user) => toUserId(user._id));
-	const emails = staleUsers
-		.map((user) => user.email?.trim())
-		.filter((email): email is string => Boolean(email));
+	const deletedUsers = (
+		await Promise.all(
+			staleUsers.map((user) =>
+				authUsers.findOneAndDelete({
+					_id: user._id,
+					emailVerified: { $ne: true },
+					createdAt: { $lt: cutoff }
+				})
+			)
+		)
+	).filter((user): user is AuthUserDoc => user !== null);
+
+	if (deletedUsers.length === 0) {
+		logger.info('cron cleanup-unverified-users: no eligible users remained', {
+			cutoff: cutoff.toISOString()
+		});
+		return { deletedUsers: 0, cutoff: cutoff.toISOString() };
+	}
+
+	const userIds = deletedUsers.map((user) => user._id);
 
 	await Promise.all([
 		db.collection('authSessions').deleteMany({ userId: { $in: userIds } }),
 		db.collection('authAccounts').deleteMany({ userId: { $in: userIds } }),
-		emails.length > 0
-			? db.collection('authVerifications').deleteMany({ identifier: { $in: emails } })
-			: Promise.resolve(),
+		db.collection('authVerifications').deleteMany({ value: { $in: userIds } }),
 		UserProfile.deleteMany({ userId: { $in: userIds } }),
 		Referral.deleteMany({
 			$or: [{ referrerUserId: { $in: userIds } }, { referredUserId: { $in: userIds } }]
 		})
 	]);
 
-	const deleteResult = await db.collection('authUsers').deleteMany({
-		_id: { $in: staleUsers.map((user) => user._id) },
-		emailVerified: { $ne: true }
-	});
-
 	logger.info('cron cleanup-unverified-users: deleted unverified users', {
-		deletedUsers: deleteResult.deletedCount,
+		deletedUsers: deletedUsers.length,
 		cutoff: cutoff.toISOString()
 	});
 
 	return {
-		deletedUsers: deleteResult.deletedCount,
+		deletedUsers: deletedUsers.length,
 		cutoff: cutoff.toISOString()
 	};
 }

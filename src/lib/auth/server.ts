@@ -22,6 +22,11 @@ import { ensureUserProfile } from '$lib/users/profile.server';
 import { Referral } from '$lib/referrals/model.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
 import { getAdminUserIds } from '$lib/auth/admin.server';
+import {
+	isPasswordWithinLimit,
+	MAX_PASSWORD_LENGTH,
+	MIN_PASSWORD_LENGTH
+} from '$lib/auth/password-policy';
 
 const db = await getMongoDb();
 const client = await getMongoClient();
@@ -104,12 +109,17 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: true,
-		minPasswordLength: 12,
-		maxPasswordLength: 72,
+		minPasswordLength: MIN_PASSWORD_LENGTH,
+		maxPasswordLength: MAX_PASSWORD_LENGTH,
 		resetPasswordTokenExpiresIn: 15 * 60,
 		revokeSessionsOnPasswordReset: true,
 		password: {
-			hash: async (password) => bcrypt.hash(password, 12),
+			hash: async (password) => {
+				if (!isPasswordWithinLimit(password)) {
+					throw new Error('Password must be 72 UTF-8 bytes or fewer');
+				}
+				return bcrypt.hash(password, 12);
+			},
 			verify: async ({ password, hash }) => bcrypt.compare(password, hash)
 		},
 		sendResetPassword: async ({ user, url }) => {

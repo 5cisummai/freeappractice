@@ -4,6 +4,7 @@ import {
 	unverifiedUserCutoff,
 	UNVERIFIED_USER_MAX_AGE_MS
 } from '$lib/auth/cron-auth';
+import { isPasswordWithinLimit, passwordByteLength } from '$lib/auth/password-policy';
 
 describe('isAuthorizedCronRequest', () => {
 	it('rejects when CRON_SECRET is missing', () => {
@@ -35,5 +36,16 @@ describe('unverifiedUserCutoff', () => {
 		expect(unverifiedUserCutoff(now).toISOString()).toBe(
 			new Date(now.getTime() - UNVERIFIED_USER_MAX_AGE_MS).toISOString()
 		);
+	});
+});
+
+describe('password policy', () => {
+	it('enforces the 72-byte bcrypt limit for multibyte passwords', () => {
+		const withinLimit = '😀'.repeat(18);
+		const overLimit = '😀'.repeat(19);
+
+		expect(passwordByteLength(withinLimit)).toBe(72);
+		expect(isPasswordWithinLimit(withinLimit)).toBe(true);
+		expect(isPasswordWithinLimit(overLimit)).toBe(false);
 	});
 });

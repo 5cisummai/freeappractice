@@ -12,6 +12,11 @@
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import {
+		isPasswordWithinLimit,
+		MAX_PASSWORD_BYTES,
+		MIN_PASSWORD_LENGTH
+	} from '$lib/auth/password-policy.js';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -31,8 +36,12 @@
 			errorMessage = 'Passwords do not match';
 			return;
 		}
-		if (password.length < 12) {
-			errorMessage = 'Password must be at least 12 characters';
+		if (password.length < MIN_PASSWORD_LENGTH) {
+			errorMessage = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+			return;
+		}
+		if (!isPasswordWithinLimit(password)) {
+			errorMessage = `Password must be no more than ${MAX_PASSWORD_BYTES} UTF-8 bytes`;
 			return;
 		}
 
@@ -157,7 +166,10 @@
 								/>
 							</Field.Field>
 						</div>
-						<Field.Description>Must be at least 12 characters long.</Field.Description>
+						<Field.Description>
+							Must be at least {MIN_PASSWORD_LENGTH} characters and no more than {MAX_PASSWORD_BYTES}
+							UTF-8 bytes.
+						</Field.Description>
 					</Field.Field>
 					<Field.Field>
 						<Button type="submit" disabled={loading}>

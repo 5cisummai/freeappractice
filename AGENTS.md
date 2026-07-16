@@ -34,7 +34,7 @@ For any work associated with a Linear issue, change the issue status to **In Pro
 
 ## Deployment
 
-This pro
+This project will be deployed in an serverless environment (vercel) so consider that.
 
 ---
 
