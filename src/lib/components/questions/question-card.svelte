@@ -366,7 +366,10 @@
 			selectedAnswer,
 			correctAnswer: currentQuestion.correctAnswer,
 			isCorrect: selectedAnswer === currentQuestion.correctAnswer,
-			timeTakenMs: Date.now() - startedAtMs
+			timeTakenMs: Date.now() - startedAtMs,
+			displayedVariant,
+			experimentKey: MULTI_ATTEMPT_EXPERIMENT_KEY,
+			experimentVersion: MULTI_ATTEMPT_EXPERIMENT_VERSION
 		};
 	}
 

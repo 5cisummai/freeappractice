@@ -78,7 +78,10 @@
 			{
 				questionId,
 				selectedAnswer: result.selectedAnswer,
-				timeTakenMs: result.timeTakenMs
+				timeTakenMs: result.timeTakenMs,
+				displayedVariant: result.displayedVariant,
+				experimentKey: result.experimentKey,
+				experimentVersion: result.experimentVersion
 			},
 			'Could not save this attempt to your progress history.'
 		);

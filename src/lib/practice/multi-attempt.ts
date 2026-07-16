@@ -67,10 +67,12 @@ export type MultiAttemptPayload = {
 	experimentVersion: number;
 };
 
+type ValidatedMultiAttemptInput = Omit<MultiAttemptPayload, 'experimentKey' | 'experimentVersion'>;
+
 export function validateMultiAttemptPayload(
 	body: Record<string, unknown>,
 	correctAnswer: 'A' | 'B' | 'C' | 'D'
-): { ok: true; data: MultiAttemptPayload } | { ok: false; error: string } {
+): { ok: true; data: ValidatedMultiAttemptInput } | { ok: false; error: string } {
 	const answersRaw = body.answers;
 	const terminalOutcome = body.terminalOutcome;
 	if (
@@ -129,24 +131,13 @@ export function validateMultiAttemptPayload(
 		return { ok: false, error: 'Invalid displayedVariant' };
 	}
 
-	const experimentKey =
-		typeof body.experimentKey === 'string' && body.experimentKey.trim()
-			? body.experimentKey.trim()
-			: MULTI_ATTEMPT_EXPERIMENT_KEY;
-	const experimentVersion =
-		typeof body.experimentVersion === 'number' && Number.isInteger(body.experimentVersion)
-			? body.experimentVersion
-			: MULTI_ATTEMPT_EXPERIMENT_VERSION;
-
 	return {
 		ok: true,
 		data: {
 			answers,
 			terminalOutcome,
 			hintsShown,
-			displayedVariant,
-			experimentKey,
-			experimentVersion
+			displayedVariant
 		}
 	};
 }
