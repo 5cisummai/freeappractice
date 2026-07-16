@@ -32,6 +32,10 @@ IF you are **CODEX** : use 5.6 luna with xhigh effort for harder tasks and high 
 
 For any work associated with a Linear issue, change the issue status to **In Progress** before beginning implementation. After the work is complete and verified, change the status to **In Review**.
 
+## Deployment
+
+This pro
+
 ---
 
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
@@ -8,12 +9,37 @@
 
 	const email = $derived(page.url.searchParams.get('email'));
 
+	const RESEND_COOLDOWN_SECONDS = 30;
+
 	let errorMessage = $state('');
 	let successMessage = $state('');
 	let resending = $state(false);
+	let cooldownRemaining = $state(0);
+	let cooldownInterval: ReturnType<typeof setInterval> | undefined;
+
+	function clearCooldown() {
+		if (cooldownInterval) {
+			clearInterval(cooldownInterval);
+			cooldownInterval = undefined;
+		}
+		cooldownRemaining = 0;
+	}
+
+	function startCooldown() {
+		clearCooldown();
+		cooldownRemaining = RESEND_COOLDOWN_SECONDS;
+		cooldownInterval = setInterval(() => {
+			cooldownRemaining -= 1;
+			if (cooldownRemaining <= 0) {
+				clearCooldown();
+			}
+		}, 1000);
+	}
+
+	onDestroy(clearCooldown);
 
 	async function handleResend() {
-		if (!email || resending) return;
+		if (!email || resending || cooldownRemaining > 0) return;
 		errorMessage = '';
 		successMessage = '';
 		resending = true;
@@ -25,6 +51,7 @@
 				return;
 			}
 			successMessage = 'Verification email sent. Check your inbox.';
+			startCooldown();
 		} finally {
 			resending = false;
 		}
@@ -90,8 +117,19 @@
 					<p class="text-center text-sm text-muted-foreground" role="status">{successMessage}</p>
 				{/if}
 				{#if email}
-					<Button type="button" variant="outline" onclick={handleResend} disabled={resending}>
-						{resending ? 'Sending...' : errorMessage ? 'Try sending again' : "Didn't get it? Resend"}
+					<Button
+						type="button"
+						variant="outline"
+						onclick={handleResend}
+						disabled={resending || cooldownRemaining > 0}
+					>
+						{resending
+							? 'Sending...'
+							: cooldownRemaining > 0
+								? `Resend in ${cooldownRemaining}s`
+								: errorMessage
+									? 'Try sending again'
+									: "Didn't get it? Resend"}
 					</Button>
 				{/if}
 				<div class="text-center">

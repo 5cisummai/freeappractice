@@ -3,7 +3,9 @@
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import Share2Icon from '@lucide/svelte/icons/share-2';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import { referralCardDismiss } from '$lib/client/referral-card-dismiss.svelte.js';
 
 	let {
 		shareUrl,
@@ -81,25 +83,36 @@
 	});
 </script>
 
-<div class="rounded-xl border border-sidebar-border bg-sidebar-accent/30 p-3.5">
-	<p class="flex items-start gap-2 text-sm leading-snug text-sidebar-foreground/90">
-		<UsersIcon class="mt-0.5 size-4 shrink-0 opacity-70" aria-hidden="true" />
-		<span>Share Free AP Practice with a classmate</span>
-	</p>
-	{#if statusLine}
-		<p class="mt-1.5 pl-6 text-xs text-sidebar-foreground/65">{statusLine}</p>
-	{/if}
-	<div class="mt-3 flex gap-2">
-		<Button onclick={copyLink} size="sm" class="h-8 flex-1" variant="ghost">
-			<CopyIcon class="size-3.5" />
-			{copyLabel}
+{#if !referralCardDismiss.dismissed}
+	<div class="relative rounded-xl border border-sidebar-border bg-sidebar-accent/30 p-3.5">
+		<Button
+			variant="ghost"
+			size="icon"
+			class="absolute top-1 right-1 size-7 text-sidebar-foreground/50 hover:text-sidebar-foreground"
+			aria-label="Dismiss referral card"
+			onclick={() => referralCardDismiss.dismiss()}
+		>
+			<XIcon class="size-3.5" />
 		</Button>
-		<Button onclick={share} size="sm" class="h-8 flex-1">
-			<Share2Icon class="size-3.5" />
-			Share
-		</Button>
+		<p class="flex items-start gap-2 pr-6 text-sm leading-snug text-sidebar-foreground/90">
+			<UsersIcon class="mt-0.5 size-4 shrink-0 opacity-70" aria-hidden="true" />
+			<span>Share Free AP Practice with a classmate</span>
+		</p>
+		{#if statusLine}
+			<p class="mt-1.5 pl-6 text-xs text-sidebar-foreground/65">{statusLine}</p>
+		{/if}
+		<div class="mt-3 flex gap-2">
+			<Button onclick={copyLink} size="sm" class="h-8 flex-1" variant="ghost">
+				<CopyIcon class="size-3.5" />
+				{copyLabel}
+			</Button>
+			<Button onclick={share} size="sm" class="h-8 flex-1">
+				<Share2Icon class="size-3.5" />
+				Share
+			</Button>
+		</div>
+		{#if copyMessage}
+			<p class="mt-2 text-xs text-sidebar-foreground/65" aria-live="polite">{copyMessage}</p>
+		{/if}
 	</div>
-	{#if copyMessage}
-		<p class="mt-2 text-xs text-sidebar-foreground/65" aria-live="polite">{copyMessage}</p>
-	{/if}
-</div>
+{/if}
