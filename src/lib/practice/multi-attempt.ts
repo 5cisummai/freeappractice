@@ -67,7 +67,10 @@ export type MultiAttemptPayload = {
 	experimentVersion: number;
 };
 
-type ValidatedMultiAttemptInput = Omit<MultiAttemptPayload, 'experimentKey' | 'experimentVersion'>;
+export type ValidatedMultiAttemptInput = Omit<
+	MultiAttemptPayload,
+	'experimentKey' | 'experimentVersion'
+>;
 
 export function validateMultiAttemptPayload(
 	body: Record<string, unknown>,
@@ -144,11 +147,13 @@ export function validateMultiAttemptPayload(
 
 /** First-answer semantics for stats/mastery; treatment fields describe later resolution. */
 export function buildAttemptFieldsFromMultiAttempt(
-	payload: MultiAttemptPayload,
+	payload: MultiAttemptPayload | ValidatedMultiAttemptInput,
 	correctAnswer: 'A' | 'B' | 'C' | 'D'
 ) {
 	const firstAnswer = payload.answers[0];
 	const finalAnswer = payload.answers[payload.answers.length - 1];
+	const experimentKey = 'experimentKey' in payload ? payload.experimentKey : undefined;
+	const experimentVersion = 'experimentVersion' in payload ? payload.experimentVersion : undefined;
 	return {
 		selectedAnswer: firstAnswer,
 		wasCorrect: firstAnswer ? firstAnswer === correctAnswer : undefined,
@@ -156,8 +161,8 @@ export function buildAttemptFieldsFromMultiAttempt(
 		answerCount: payload.answers.length,
 		hintsShown: payload.hintsShown,
 		terminalOutcome: payload.terminalOutcome,
-		experimentKey: payload.experimentKey,
-		experimentVersion: payload.experimentVersion,
+		experimentKey,
+		experimentVersion,
 		displayedVariant: payload.displayedVariant
 	};
 }
