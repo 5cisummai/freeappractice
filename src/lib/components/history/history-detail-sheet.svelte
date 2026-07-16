@@ -54,6 +54,9 @@
 						· {timeLabel}
 					{/if}
 					· You chose {item.attempt.selectedAnswer}
+					{#if item.attempt.finalAnswer && item.attempt.finalAnswer !== item.attempt.selectedAnswer}
+						· Later resolved to {item.attempt.finalAnswer} after hints
+					{/if}
 				</Sheet.Description>
 			</Sheet.Header>
 

@@ -37,6 +37,13 @@ type QuestionAttempt = {
 	wasCorrect: boolean;
 	timeTakenMs?: number;
 	attemptedAt: string;
+	finalAnswer?: 'A' | 'B' | 'C' | 'D';
+	answerCount?: number;
+	hintsShown?: number;
+	terminalOutcome?: 'correct' | 'revealed' | 'max_attempts';
+	experimentKey?: string;
+	experimentVersion?: number;
+	displayedVariant?: 'control' | 'multi_attempt_hints';
 };
 
 type StoredMcqQuestion = {

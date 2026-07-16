@@ -115,6 +115,8 @@ function normalizeQuestionPayload(
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),
 		explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
+		hint1: String(obj.hint1 ?? '').trim() || undefined,
+		hint2: String(obj.hint2 ?? '').trim() || undefined,
 		leftPanel: hasStimulus ? { title: 'Stimulus', content: parseParagraphs(stimulus) } : undefined,
 		rightPanel: hasStimulus ? { title: 'Prompt', content: parseParagraphs(prompt) } : undefined,
 		hasStimulus

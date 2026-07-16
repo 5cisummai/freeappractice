@@ -1,6 +1,10 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 import { randomBytes } from 'node:crypto';
-import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
+import type {
+	IPracticeExperimentAssignment,
+	IProgress,
+	IQuestionAttempt
+} from '$lib/users/records.server';
 
 export function createReferralCode(): string {
 	return randomBytes(9).toString('base64url');
@@ -12,6 +16,7 @@ export interface IUserProfile extends Document {
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	bookmarkedQuestions: string[];
+	practiceExperiments?: IPracticeExperimentAssignment[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -38,7 +43,23 @@ const questionAttemptSchema = new Schema<IQuestionAttempt>(
 		selectedAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
 		wasCorrect: { type: Boolean, required: true },
 		timeTakenMs: { type: Number, min: 0 },
-		attemptedAt: { type: Date, default: Date.now }
+		attemptedAt: { type: Date, default: Date.now },
+		finalAnswer: { type: String, enum: ['A', 'B', 'C', 'D'] },
+		answerCount: { type: Number, min: 1, max: 3 },
+		hintsShown: { type: Number, min: 0, max: 2 },
+		terminalOutcome: { type: String, enum: ['correct', 'revealed', 'max_attempts'] },
+		experimentKey: { type: String },
+		experimentVersion: { type: Number },
+		displayedVariant: { type: String, enum: ['control', 'multi_attempt_hints'] }
+	},
+	{ _id: false }
+);
+
+const practiceExperimentSchema = new Schema<IPracticeExperimentAssignment>(
+	{
+		key: { type: String, required: true },
+		version: { type: Number, required: true },
+		variant: { type: String, enum: ['control', 'multi_attempt_hints'], required: true }
 	},
 	{ _id: false }
 );
@@ -55,7 +76,8 @@ const userProfileSchema = new Schema<IUserProfile>(
 		},
 		progress: { type: [progressSchema], default: [] },
 		questionHistory: { type: [questionAttemptSchema], default: [] },
-		bookmarkedQuestions: { type: [String], default: [] }
+		bookmarkedQuestions: { type: [String], default: [] },
+		practiceExperiments: { type: [practiceExperimentSchema], default: [] }
 	},
 	{ timestamps: true }
 );

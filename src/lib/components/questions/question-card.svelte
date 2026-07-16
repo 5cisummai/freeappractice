@@ -31,6 +31,19 @@
 		resolveEffectiveUnit,
 		type QuestionApiResponse
 	} from '$lib/questions/payload.js';
+	import {
+		hasValidHints,
+		MULTI_ATTEMPT_EXPERIMENT_KEY,
+		MULTI_ATTEMPT_EXPERIMENT_VERSION,
+		normalizeAnswerLetter,
+		resolveDisplayedVariant,
+		type PracticeVariant
+	} from '$lib/practice/multi-attempt';
+	import {
+		createMultiAttemptState,
+		reduceMultiAttempt,
+		type MultiAttemptMachineState
+	} from '$lib/practice/multi-attempt-machine';
 	import type {
 		AnswerResult,
 		BugReportContext,
@@ -108,6 +121,17 @@
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
 	let questionFeedbackReason = $state<string | null>(null);
+	let assignedVariant = $state<PracticeVariant>('control');
+	let experimentEnabled = $state(false);
+	let displayedVariant = $state<PracticeVariant>('control');
+	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
+
+	type PracticeExperimentResponse = {
+		assignedVariant: PracticeVariant;
+		experimentEnabled: boolean;
+		experimentKey: string;
+		experimentVersion: number;
+	};
 
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
@@ -137,12 +161,28 @@
 	const realisticContextLabel = $derived(
 		selectedClass ? `${selectedClass} · ${selectedUnit.trim() || 'All Units'}` : ''
 	);
+	const isTreatmentActive = $derived(displayedVariant === 'multi_attempt_hints');
+	const lockedChoices = $derived(isTreatmentActive ? multiAttemptState.lockedChoices : []);
+	const activeHintText = $derived.by(() => {
+		if (!isTreatmentActive || multiAttemptState.phase !== 'hinted') return null;
+		if (multiAttemptState.hintsShown === 1) return currentQuestion?.hint1?.trim() ?? null;
+		if (multiAttemptState.hintsShown === 2) return currentQuestion?.hint2?.trim() ?? null;
+		return null;
+	});
 	const feedbackMessage = $derived.by(() => {
+		if (activeHintText) return activeHintText;
 		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
 			return statusMessage;
 		}
 		if (answerResult.isCorrect) {
 			return 'Correct! Nice work.';
+		}
+		if (
+			answerResult.displayedVariant === 'multi_attempt_hints' &&
+			answerResult.finalAnswer === answerResult.correctAnswer &&
+			!answerResult.isCorrect
+		) {
+			return 'Solved after hints.';
 		}
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
@@ -263,8 +303,54 @@
 		answerResult = null;
 		showExplanation = false;
 		questionFeedbackReason = null;
+		multiAttemptState = createMultiAttemptState();
 		startedAtMs = Date.now();
 		if (clearSelection) selectedOption = null;
+	}
+
+	async function fetchPracticeExperiment(): Promise<void> {
+		try {
+			const response = await apiFetch('/api/me/practice-experiment');
+			if (response.status === 401 || !response.ok) {
+				assignedVariant = 'control';
+				experimentEnabled = false;
+				return;
+			}
+			const payload = await readJsonOrNull<PracticeExperimentResponse>(response);
+			if (!payload) {
+				assignedVariant = 'control';
+				experimentEnabled = false;
+				return;
+			}
+			assignedVariant =
+				payload.assignedVariant === 'multi_attempt_hints' ? 'multi_attempt_hints' : 'control';
+			experimentEnabled = Boolean(payload.experimentEnabled);
+		} catch {
+			assignedVariant = 'control';
+			experimentEnabled = false;
+		}
+	}
+
+	function applyQuestionExperimentExposure(question: GeneratedQuestion, source: QuestionSource): void {
+		const resolved = resolveDisplayedVariant({
+			assigned: assignedVariant,
+			experimentEnabled,
+			questionHasHints: hasValidHints(question)
+		});
+		displayedVariant = resolved.displayed;
+		multiAttemptState = createMultiAttemptState();
+
+		capturePostHogEvent('practice_experiment_exposed', {
+			assigned_variant: assignedVariant,
+			displayed_variant: resolved.displayed,
+			experiment_key: MULTI_ATTEMPT_EXPERIMENT_KEY,
+			experiment_version: MULTI_ATTEMPT_EXPERIMENT_VERSION,
+			question_source: source,
+			fallback_reason: resolved.fallbackReason,
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			topic: question.topic
+		});
 	}
 
 	function buildAnswerResult(selectedAnswer: string): AnswerResult | null {
@@ -312,6 +398,7 @@
 			questionCount += 1;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
+			applyQuestionExperimentExposure(result.question, result.source);
 		} catch (error) {
 			captureQuestionRequestFailed({
 				apClass: selectedClass,
@@ -331,18 +418,7 @@
 		selectedOption = optionId;
 	}
 
-	function handleCheckAnswer(): void {
-		if (!selectedOption) return;
-		onCheckAnswer?.(selectedOption);
-		const result = buildAnswerResult(selectedOption);
-		if (!result) return;
-
-		hasCheckedAnswer = true;
-		checkedSelection = result.selectedAnswer;
-		answerResult = result;
-
-		onAnswered?.(result);
-
+	function captureFirstAnswerAnalytics(result: AnswerResult): void {
 		capturePostHogEvent('question_answered', {
 			ap_class: selectedClass,
 			unit: selectedUnit,
@@ -358,9 +434,115 @@
 			isCorrect: result.isCorrect,
 			timeTakenMs: result.timeTakenMs
 		});
+	}
 
-		if (autoShowExplanation && currentQuestion?.explanation) {
+	function finalizeTreatmentAttempt(): void {
+		if (!currentQuestion?.correctAnswer || multiAttemptState.phase !== 'terminal') return;
+
+		const firstAnswer = multiAttemptState.answers[0];
+		if (!firstAnswer) return;
+
+		const result: AnswerResult = {
+			questionId: currentQuestion.questionId?.trim() || undefined,
+			questionNumber: effectiveQuestionNumber,
+			selectedAnswer: firstAnswer,
+			correctAnswer: currentQuestion.correctAnswer,
+			isCorrect: multiAttemptState.firstAnswerCorrect ?? false,
+			timeTakenMs: Date.now() - startedAtMs,
+			finalAnswer: multiAttemptState.answers[multiAttemptState.answers.length - 1],
+			answerCount: multiAttemptState.answers.length,
+			hintsShown: multiAttemptState.hintsShown,
+			terminalOutcome: multiAttemptState.terminalOutcome ?? undefined,
+			displayedVariant: 'multi_attempt_hints',
+			experimentKey: MULTI_ATTEMPT_EXPERIMENT_KEY,
+			experimentVersion: MULTI_ATTEMPT_EXPERIMENT_VERSION,
+			answers: [...multiAttemptState.answers]
+		};
+
+		hasCheckedAnswer = true;
+		checkedSelection = firstAnswer;
+		answerResult = result;
+		onAnswered?.(result);
+
+		capturePostHogEvent('practice_question_completed', {
+			displayed_variant: 'multi_attempt_hints',
+			terminal_outcome: multiAttemptState.terminalOutcome,
+			first_answer_correct: result.isCorrect,
+			resolved_correct: multiAttemptState.resolvedCorrect,
+			answer_count: multiAttemptState.answers.length,
+			hints_shown: multiAttemptState.hintsShown,
+			elapsed_ms: result.timeTakenMs,
+			ap_class: selectedClass,
+			unit: selectedUnit,
+			topic: currentQuestion.topic,
+			source: currentQuestion.source
+		});
+
+		if (autoShowExplanation && currentQuestion.explanation) {
 			showExplanation = true;
+		}
+	}
+
+	function handleRevealAnswer(): void {
+		if (!isTreatmentActive || hasCheckedAnswer) return;
+		multiAttemptState = reduceMultiAttempt(multiAttemptState, { type: 'reveal' });
+		finalizeTreatmentAttempt();
+	}
+
+	function handleCheckAnswer(): void {
+		if (!selectedOption) return;
+		onCheckAnswer?.(selectedOption);
+
+		if (!isTreatmentActive) {
+			const result = buildAnswerResult(selectedOption);
+			if (!result) return;
+
+			hasCheckedAnswer = true;
+			checkedSelection = result.selectedAnswer;
+			answerResult = result;
+			onAnswered?.(result);
+			captureFirstAnswerAnalytics(result);
+
+			if (autoShowExplanation && currentQuestion?.explanation) {
+				showExplanation = true;
+			}
+			return;
+		}
+
+		const answer = normalizeAnswerLetter(selectedOption);
+		const correctAnswer = normalizeAnswerLetter(currentQuestion?.correctAnswer);
+		if (!answer || !correctAnswer) return;
+
+		const isFirstSubmit = multiAttemptState.answers.length === 0;
+		const prevHintsShown = multiAttemptState.hintsShown;
+
+		multiAttemptState = reduceMultiAttempt(multiAttemptState, {
+			type: 'submit',
+			answer,
+			correctAnswer
+		});
+
+		if (isFirstSubmit) {
+			const firstResult = buildAnswerResult(answer);
+			if (firstResult) captureFirstAnswerAnalytics(firstResult);
+		}
+
+		if (multiAttemptState.hintsShown > prevHintsShown) {
+			capturePostHogEvent('practice_hint_shown', {
+				displayed_variant: 'multi_attempt_hints',
+				hint_number: multiAttemptState.hintsShown,
+				first_answer_correct: multiAttemptState.firstAnswerCorrect,
+				ap_class: selectedClass,
+				unit: selectedUnit,
+				topic: currentQuestion?.topic,
+				source: currentQuestion?.source
+			});
+		}
+
+		if (multiAttemptState.phase === 'terminal') {
+			finalizeTreatmentAttempt();
+		} else {
+			selectedOption = null;
 		}
 	}
 
@@ -444,11 +626,14 @@
 		window.addEventListener('keydown', onKeydown);
 		onResize();
 
-		if (requestVersion > 0) {
-			void loadQuestion();
-		} else if (currentQuestion) {
-			isLoading = false;
-		}
+		void (async () => {
+			await fetchPracticeExperiment();
+			if (requestVersion > 0) {
+				await loadQuestion();
+			} else if (currentQuestion) {
+				isLoading = false;
+			}
+		})();
 
 		return () => {
 			window.removeEventListener('resize', onResize);
@@ -587,6 +772,7 @@
 					correctAnswer={currentQuestion.correctAnswer}
 					onSelect={handleOptionSelect}
 					{realistic}
+					{lockedChoices}
 				/>
 			{:else if expandedTwoColumn}
 				<div
@@ -637,6 +823,7 @@
 									onSelect={handleOptionSelect}
 									compact
 									{realistic}
+									{lockedChoices}
 								/>
 							</div>
 						</Resizable.Pane>
@@ -664,6 +851,7 @@
 					correctAnswer={currentQuestion?.correctAnswer}
 					onSelect={handleOptionSelect}
 					{realistic}
+					{lockedChoices}
 				/>
 			{/if}
 
@@ -761,6 +949,9 @@
 					{nextLabel}
 				</Button>
 				{#if !hasCheckedAnswer}
+					{#if isTreatmentActive && multiAttemptState.phase === 'hinted'}
+						<Button variant="outline" onclick={handleRevealAnswer}>Show answer</Button>
+					{/if}
 					<Button disabled={!selectedOption} onclick={handleCheckAnswer}>{checkLabel}</Button>
 				{/if}
 			</div>

@@ -12,6 +12,9 @@ import {
 	htmlToBasicMarkdown,
 	markdownResponse
 } from '$lib/server/agent-discovery/markdown';
+import { env } from '$env/dynamic/private';
+import { createHandle } from 'flags/sveltekit';
+import { multiAttemptExperimentEnabled } from '$lib/flags';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -194,7 +197,18 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle = sequence(posthogProxyHandle, appHandle);
+export const handle = sequence(
+	...(env.FLAGS_SECRET
+		? [
+				createHandle({
+					secret: env.FLAGS_SECRET,
+					flags: { multiAttemptExperimentEnabled }
+				}) as Handle
+			]
+		: []),
+	posthogProxyHandle,
+	appHandle
+);
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {
 	capturePostHogServerEvent(event.request, {

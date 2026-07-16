@@ -54,6 +54,25 @@
 
 		if (!questionId) return;
 
+		if (result.displayedVariant === 'multi_attempt_hints' && result.answers?.length) {
+			void syncAttempt(
+				'/api/me/record-attempt',
+				{
+					questionId,
+					answers: result.answers,
+					terminalOutcome: result.terminalOutcome,
+					hintsShown: result.hintsShown,
+					displayedVariant: result.displayedVariant,
+					experimentKey: result.experimentKey,
+					experimentVersion: result.experimentVersion,
+					timeTakenMs: result.timeTakenMs,
+					selectedAnswer: result.selectedAnswer
+				},
+				'Could not save this attempt to your progress history.'
+			);
+			return;
+		}
+
 		void syncAttempt(
 			'/api/me/record-attempt',
 			{
