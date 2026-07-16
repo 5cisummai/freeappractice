@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HistoryItem } from '$lib/users/types.js';
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
-	import RichText from '$lib/components/rich-text.svelte';
+	import RichText from '$lib/components/content/rich-text.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import { cn } from '$lib/utils.js';
@@ -44,8 +44,18 @@
 					{#if item.attempt.unit}
 						<span class="text-sm text-muted-foreground">· {item.attempt.unit}</span>
 					{/if}
-					<Badge variant={item.attempt.wasCorrect ? 'secondary' : 'destructive'}>
-						{item.attempt.wasCorrect ? 'Correct' : 'Incorrect'}
+					<Badge
+						variant={item.attempt.wasCorrect === undefined
+							? 'outline'
+							: item.attempt.wasCorrect
+								? 'secondary'
+								: 'destructive'}
+					>
+						{item.attempt.wasCorrect === undefined
+							? 'Revealed'
+							: item.attempt.wasCorrect
+								? 'Correct'
+								: 'Incorrect'}
 					</Badge>
 				</div>
 				<Sheet.Description>
@@ -53,7 +63,14 @@
 					{#if timeLabel}
 						· {timeLabel}
 					{/if}
-					· You chose {item.attempt.selectedAnswer}
+					{#if item.attempt.selectedAnswer}
+						· You chose {item.attempt.selectedAnswer}
+					{:else}
+						· No answer submitted
+					{/if}
+					{#if item.attempt.finalAnswer && item.attempt.finalAnswer !== item.attempt.selectedAnswer}
+						· Later resolved to {item.attempt.finalAnswer} after hints
+					{/if}
 				</Sheet.Description>
 			</Sheet.Header>
 

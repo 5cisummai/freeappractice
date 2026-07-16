@@ -5,15 +5,15 @@
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { authClient } from '$lib/auth/client.js';
 	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
-	import QuestionShell from '$lib/components/question-shell.svelte';
+	import QuestionShell from '$lib/components/questions/question-shell.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import AspiringStudentsSection from '$lib/components/aspiring-students-section.svelte';
-	import BottomCtaSection from '$lib/components/bottom-cta-section.svelte';
-	import FeaturesSection from '$lib/components/features-section.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import Topbar from '$lib/components/topbar.svelte';
+	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
+	import BottomCtaSection from '$lib/components/marketing/bottom-cta-section.svelte';
+	import FeaturesSection from '$lib/components/marketing/features-section.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
 
 	onMount(() => {
 		captureLandingPageViewed();

@@ -2,10 +2,10 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import QuestionShell from '$lib/components/question-shell.svelte';
-	import type { AnswerResult } from '$lib/components/question-card.svelte';
+	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import type { AnswerResult } from '$lib/questions/types';
 	import { toast } from 'svelte-sonner';
-	import PageShell from '$lib/components/page-shell.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
 	let selectedClass = $state('');
@@ -54,12 +54,34 @@
 
 		if (!questionId) return;
 
+		if (result.displayedVariant === 'multi_attempt_hints') {
+			void syncAttempt(
+				'/api/me/record-attempt',
+				{
+					questionId,
+					answers: result.answers ?? [],
+					terminalOutcome: result.terminalOutcome,
+					hintsShown: result.hintsShown,
+					displayedVariant: result.displayedVariant,
+					experimentKey: result.experimentKey,
+					experimentVersion: result.experimentVersion,
+					timeTakenMs: result.timeTakenMs,
+					selectedAnswer: result.selectedAnswer
+				},
+				'Could not save this attempt to your progress history.'
+			);
+			return;
+		}
+
 		void syncAttempt(
 			'/api/me/record-attempt',
 			{
 				questionId,
 				selectedAnswer: result.selectedAnswer,
-				timeTakenMs: result.timeTakenMs
+				timeTakenMs: result.timeTakenMs,
+				displayedVariant: result.displayedVariant,
+				experimentKey: result.experimentKey,
+				experimentVersion: result.experimentVersion
 			},
 			'Could not save this attempt to your progress history.'
 		);

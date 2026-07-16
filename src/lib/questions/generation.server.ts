@@ -151,6 +151,18 @@ const APQuestion = z.object({
 	explanation: z
 		.string()
 		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
+	hint1: z
+		.string()
+		.optional()
+		.describe(
+			'Brief progressive hint after a first incorrect answer; do not reveal the correct letter'
+		),
+	hint2: z
+		.string()
+		.optional()
+		.describe(
+			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
+		),
 	topicsCovered: z
 		.string()
 		.describe(

@@ -20,6 +20,8 @@ export type HotPoolDoc = IPoolDocMetadata & {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
+	hint1?: string;
+	hint2?: string;
 };
 
 /**
@@ -41,6 +43,8 @@ const questionSchema = new Schema<IQuestion>(
 		optionD: { type: String, required: true },
 		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
 		explanation: { type: String, required: true },
+		hint1: { type: String },
+		hint2: { type: String },
 		s3QuestionId: { type: String, required: true }
 	},
 	{ timestamps: true }

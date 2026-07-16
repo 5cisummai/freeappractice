@@ -2,8 +2,33 @@
 	import { page } from '$app/state';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
 
 	const email = $derived(page.url.searchParams.get('email'));
+
+	let errorMessage = $state('');
+	let successMessage = $state('');
+	let resending = $state(false);
+
+	async function handleResend() {
+		if (!email || resending) return;
+		errorMessage = '';
+		successMessage = '';
+		resending = true;
+		try {
+			// Native Better Auth client API: awaits the send and surfaces provider failures.
+			const sendError = await requestVerificationEmail(email);
+			if (sendError) {
+				errorMessage = sendError;
+				return;
+			}
+			successMessage = 'Verification email sent. Check your inbox.';
+		} finally {
+			resending = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -36,37 +61,49 @@
 
 <main
 	id="main-content"
-	class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10"
+	class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
 >
 	<div class="flex w-full max-w-sm flex-col gap-6">
 		<a href={resolve('/')} class="flex items-center gap-2 self-center font-medium">
-			<img src={logo} alt="Free AP Practice" class="size-8 rounded-sm" />
+			<img src={logo} alt="Free AP Practice" class="size-6 rounded-sm" />
 			Free AP Practice
 		</a>
 
-		<div class="flex flex-col gap-4 rounded-xl border bg-background p-6 text-center shadow-sm">
-			<div
-				class="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-100 text-2xl text-blue-600"
-			>
-				✉
-			</div>
-			<h1 class="text-xl font-semibold">Check your email</h1>
-			<p class="text-sm text-muted-foreground">
-				We sent a verification link to
-				{#if email}
-					<strong>{email}</strong>.
-				{:else}
-					your email address.
+		<Card.Root>
+			<Card.Header class="text-center">
+				<Card.Title class="text-xl">Check your email</Card.Title>
+				<Card.Description>
+					We sent a verification link to
+					{#if email}
+						<span class="ph-mask-pii font-medium text-foreground">{email}</span>.
+					{:else}
+						your email address.
+					{/if}
+					It expires in 15 minutes. Check spam if you don't see it.
+				</Card.Description>
+			</Card.Header>
+			<Card.Content class="flex flex-col gap-4">
+				{#if errorMessage}
+					<p class="text-center text-sm text-destructive" role="alert">{errorMessage}</p>
 				{/if}
-				Click the link to activate your account.
-			</p>
-			<p class="text-xs text-muted-foreground">
-				The link expires in 24 hours. Check your spam folder if you don't see it.
-			</p>
-		</div>
-
-		<div class="flex flex-col gap-2 text-sm">
-			<a href={resolve('/login')} class="underline underline-offset-4">Back to sign in</a>
-		</div>
+				{#if successMessage}
+					<p class="text-center text-sm text-muted-foreground" role="status">{successMessage}</p>
+				{/if}
+				{#if email}
+					<Button type="button" variant="outline" onclick={handleResend} disabled={resending}>
+						{resending
+							? 'Sending...'
+							: errorMessage
+								? 'Try sending again'
+								: "Didn't get it? Resend"}
+					</Button>
+				{/if}
+				<div class="text-center">
+					<a href={resolve('/login')} class="text-sm underline underline-offset-4"
+						>Back to sign in</a
+					>
+				</div>
+			</Card.Content>
+		</Card.Root>
 	</div>
 </main>

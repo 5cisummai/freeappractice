@@ -23,6 +23,8 @@ export function buildHotPoolDoc(opts: {
 	| 'optionD'
 	| 'correctAnswer'
 	| 'explanation'
+	| 'hint1'
+	| 'hint2'
 > {
 	const { answer } = opts;
 	return {
@@ -37,6 +39,8 @@ export function buildHotPoolDoc(opts: {
 		optionC: answer.optionC,
 		optionD: answer.optionD,
 		correctAnswer: answer.correctAnswer,
-		explanation: answer.explanation
+		explanation: answer.explanation,
+		hint1: answer.hint1,
+		hint2: answer.hint2
 	};
 }

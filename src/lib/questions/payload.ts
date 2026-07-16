@@ -43,8 +43,10 @@ function parseParagraphs(value: unknown): string[] {
 
 function extractCorrectLetter(value: unknown): string | undefined {
 	if (typeof value !== 'string') return undefined;
-	const match = value.toUpperCase().match(/[A-D]/);
-	return match?.[0];
+	const upper = value.toUpperCase();
+	// Prefer a standalone A–D token so phrases like "answer is C" do not match the A in "ANSWER".
+	const standalone = upper.match(/\b([A-D])\b/);
+	return standalone?.[1];
 }
 
 function normalizeOptions(value: unknown): QuestionOption[] {
@@ -115,6 +117,8 @@ function normalizeQuestionPayload(
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),
 		explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
+		hint1: String(obj.hint1 ?? '').trim() || undefined,
+		hint2: String(obj.hint2 ?? '').trim() || undefined,
 		leftPanel: hasStimulus ? { title: 'Stimulus', content: parseParagraphs(stimulus) } : undefined,
 		rightPanel: hasStimulus ? { title: 'Prompt', content: parseParagraphs(prompt) } : undefined,
 		hasStimulus

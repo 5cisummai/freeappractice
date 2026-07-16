@@ -8,6 +8,11 @@
 	import { authClient } from '$lib/auth/client.js';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
+	import {
+		isPasswordWithinLimit,
+		MAX_PASSWORD_BYTES,
+		MIN_PASSWORD_LENGTH
+	} from '$lib/auth/password-policy.js';
 
 	const token = $derived(page.url.searchParams.get('token') ?? '');
 
@@ -24,8 +29,12 @@
 			errorMessage = 'Passwords do not match';
 			return;
 		}
-		if (password.length < 8) {
-			errorMessage = 'Password must be at least 8 characters';
+		if (password.length < MIN_PASSWORD_LENGTH) {
+			errorMessage = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+			return;
+		}
+		if (!isPasswordWithinLimit(password)) {
+			errorMessage = `Password must be no more than ${MAX_PASSWORD_BYTES} UTF-8 bytes`;
 			return;
 		}
 
@@ -112,7 +121,10 @@
 									bind:value={confirmPassword}
 									autocomplete="new-password"
 								/>
-								<Field.Description>Must be at least 8 characters.</Field.Description>
+								<Field.Description>
+									Must be at least {MIN_PASSWORD_LENGTH} characters and no more than {MAX_PASSWORD_BYTES}
+									UTF-8 bytes.
+								</Field.Description>
 							</Field.Field>
 							<Field.Field>
 								<Button type="submit" disabled={loading}>

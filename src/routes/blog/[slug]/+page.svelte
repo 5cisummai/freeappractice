@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Topbar from '$lib/components/topbar.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import BlogRelatedLinks from '$lib/components/blog-related-links.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
+	import BlogRelatedLinks from '$lib/components/blog/blog-related-links.svelte';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';

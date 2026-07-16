@@ -18,10 +18,7 @@ function shiftDayKey(dayKey: string, deltaDays: number): string {
 }
 
 /** Current daily streak using the user's local calendar days when a timezone is provided. */
-export function calcStreak(
-	history: Array<{ attemptedAt: Date }>,
-	timeZone?: string
-): number {
+export function calcStreak(history: Array<{ attemptedAt: Date }>, timeZone?: string): number {
 	if (!history.length) return 0;
 
 	const zone = timeZone || 'UTC';
@@ -44,15 +41,16 @@ export function calcStreak(
 
 export function buildStatsData(user: IUserProfile, timeZone?: string): StatsData {
 	const history = user.questionHistory ?? [];
-	const totalQuestions = history.length;
-	const correctAnswers = history.filter((q) => q.wasCorrect).length;
+	const answeredHistory = history.filter((q) => q.wasCorrect !== undefined);
+	const totalQuestions = answeredHistory.length;
+	const correctAnswers = answeredHistory.filter((q) => q.wasCorrect).length;
 	const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 	const totalTimeMs = history.reduce((sum, q) => sum + sanitizeAttemptTimeMs(q.timeTakenMs), 0);
 	const totalTimeHours = Math.round((totalTimeMs / 1000 / 60 / 60) * 10) / 10;
 	const currentStreak = calcStreak(history, timeZone);
 
 	const subjectStats: Record<string, { total: number; correct: number; totalTime: number }> = {};
-	history.forEach((q) => {
+	answeredHistory.forEach((q) => {
 		if (!subjectStats[q.apClass]) subjectStats[q.apClass] = { total: 0, correct: 0, totalTime: 0 };
 		subjectStats[q.apClass].total++;
 		if (q.wasCorrect) subjectStats[q.apClass].correct++;
@@ -69,7 +67,7 @@ export function buildStatsData(user: IUserProfile, timeZone?: string): StatsData
 		.sort((a, b) => b.total - a.total);
 
 	const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-	const recentHistory = history.filter((q) => new Date(q.attemptedAt) >= sevenDaysAgo);
+	const recentHistory = answeredHistory.filter((q) => new Date(q.attemptedAt) >= sevenDaysAgo);
 	const recentCorrect = recentHistory.filter((q) => q.wasCorrect).length;
 	const recentAccuracy =
 		recentHistory.length > 0 ? Math.round((recentCorrect / recentHistory.length) * 100) : 0;

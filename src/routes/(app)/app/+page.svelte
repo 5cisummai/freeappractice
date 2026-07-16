@@ -9,7 +9,7 @@
 	import TargetIcon from '@lucide/svelte/icons/target';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import ClockIcon from '@lucide/svelte/icons/clock';
-	import PageShell from '$lib/components/page-shell.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
 
 	let { data } = $props();
 
@@ -48,6 +48,7 @@
 <PageShell
 	title={`Welcome back, ${firstName}`}
 	description="Here's an overview of your study progress."
+	maskTitle
 >
 	<Card.Root
 		class="rounded-2xl border border-border/60 border-primary/30 bg-primary/3 p-5 shadow-sm ring-0"

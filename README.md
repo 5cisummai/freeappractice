@@ -114,6 +114,7 @@ Commonly needed for full functionality:
 | `AWS_SESSION_TOKEN`                                                            | Optional temporary/assumed-role credentials                                                                                            |
 | `PUBLIC_BASE_URL`                                                              | Canonical site URL                                                                                                                     |
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                                                               |
+| `CRON_SECRET`                                                                  | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs                                      |
 | `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                                                                                                               |
 Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`. See `.env.example` for defaults and comments.
 

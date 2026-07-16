@@ -247,15 +247,15 @@ Reuse these components on marketing pages:
 
 | Component                 | Path                                               | When to use                              |
 | ------------------------- | -------------------------------------------------- | ---------------------------------------- |
-| `Topbar`                  | `$lib/components/topbar.svelte`                    | All public pages                         |
-| `SiteFooter`              | `$lib/components/site-footer.svelte`               | All public pages                         |
-| `PublicPageHero`          | `$lib/components/public-page-hero.svelte`          | Utility pages (privacy, stats, subjects) |
-| `BackToHome`              | `$lib/components/back-to-home.svelte`              | Secondary pages with back navigation     |
-| `FeaturesSection`         | `$lib/components/features-section.svelte`          | Landing only                             |
-| `AspiringStudentsSection` | `$lib/components/aspiring-students-section.svelte` | Landing only                             |
-| `BottomCtaSection`        | `$lib/components/bottom-cta-section.svelte`        | Landing / long-form pages                |
-| `QuestionShell`           | `$lib/components/question-shell.svelte`            | Landing + practice pages                 |
-| `BlogPostCard`            | `$lib/components/blog-post-card.svelte`            | Blog index                               |
+| `Topbar`                  | `$lib/components/layout/topbar.svelte`                    | All public pages                         |
+| `SiteFooter`              | `$lib/components/layout/site-footer.svelte`               | All public pages                         |
+| `PublicPageHero`          | `$lib/components/marketing/public-page-hero.svelte`          | Utility pages (privacy, stats, subjects) |
+| `BackToHome`              | `$lib/components/layout/back-to-home.svelte`              | Secondary pages with back navigation     |
+| `FeaturesSection`         | `$lib/components/marketing/features-section.svelte`          | Landing only                             |
+| `AspiringStudentsSection` | `$lib/components/marketing/aspiring-students-section.svelte` | Landing only                             |
+| `BottomCtaSection`        | `$lib/components/marketing/bottom-cta-section.svelte`        | Landing / long-form pages                |
+| `QuestionShell`           | `$lib/components/questions/question-shell.svelte`            | Landing + practice pages                 |
+| `BlogPostCard`            | `$lib/components/blog/blog-post-card.svelte`            | Blog index                               |
 
 ### FAQ block
 

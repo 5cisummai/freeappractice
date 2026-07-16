@@ -23,7 +23,21 @@ export function initPostHogAnalytics() {
 		defaults: '2026-05-30',
 		capture_exceptions: true,
 		cookieless_mode: 'on_reject',
-		capture_pageview: false
+		capture_pageview: false,
+		session_recording: {
+			maskAllInputs: true,
+			// Elements marked with .ph-mask-pii (names, emails, etc.) are hashed in replays.
+			maskTextSelector: '.ph-mask-pii',
+			maskCapturedNetworkRequestFn: (request) => {
+				if (request.name) {
+					request.name = request.name.replace(
+						/([?&](email|token|auth)=)[^&]+/gi,
+						'$1[REDACTED]'
+					);
+				}
+				return request;
+			}
+		}
 	});
 	initialized = true;
 	syncPostHogConsentFromStorage();

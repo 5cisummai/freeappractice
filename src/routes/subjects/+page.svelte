@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Topbar from '$lib/components/topbar.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import BackToHome from '$lib/components/back-to-home.svelte';
-	import InviteBanner from '$lib/components/invite-banner.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '$lib/components/layout/back-to-home.svelte';
+	import InviteBanner from '$lib/components/marketing/invite-banner.svelte';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';

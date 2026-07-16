@@ -1,11 +1,40 @@
 <script lang="ts">
-	import SiteFooter from '$lib/components/site-footer.svelte';
-	import Topbar from '$lib/components/topbar.svelte';
-	import PublicPageHero from '$lib/components/public-page-hero.svelte';
-	import BackToHome from '$lib/components/back-to-home.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
 	const changelog = [
+		{
+			version: '1.4.7',
+			date: 'July 16, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Some practice sessions now support multiple answer attempts with progressive hints before a question is finalized',
+						'Practice history records multi-attempt outcomes, including the final resolved answer and hints shown'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Redesigned Settings page brings practice, appearance, privacy, account, and release details into one easier-to-scan view',
+						'Email verification, email changes, password resets, and account deletion now provide clearer confirmation and recovery flows',
+						'Password limits and authentication request limits are now applied consistently for safer, more reliable account access',
+						'Practice and navigation layouts work more smoothly across screen sizes, including fullscreen question mode'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'Email delivery failures now surface clear feedback so verification and recovery attempts do not fail silently',
+						'AI tutor replies stop cleanly when the tutor is closed or Escape is pressed'
+					]
+				}
+			]
+		},
 		{
 			version: '1.4.6',
 			date: 'July 14, 2026',
@@ -707,7 +736,7 @@
 						<div
 							class="flex flex-col space-y-1 sm:flex-row sm:items-baseline sm:justify-between sm:space-y-0"
 						>
-							<h2 class="text-2xl font-bold text-primary">{entry.version}</h2>
+							<h2 class="text-2xl font-bold">{entry.version}</h2>
 							<time class="text-sm text-muted-foreground">{entry.date}</time>
 						</div>
 

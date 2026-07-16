@@ -6,8 +6,8 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import PageShell from '$lib/components/page-shell.svelte';
-	import ProgressHistoryPanel from '$lib/components/progress/progress-history-panel.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
+	import ProgressHistoryPanel from '$lib/components/progress-history-panel.svelte';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import FlameIcon from '@lucide/svelte/icons/flame';

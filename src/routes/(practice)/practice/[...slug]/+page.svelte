@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import PracticeLanding from '$lib/components/practice-landing.svelte';
+	import PracticeLanding from '$lib/components/practice/practice-landing.svelte';
 	import {
 		buildPracticePageJsonLd,
 		buildPracticeBreadcrumbJsonLd,

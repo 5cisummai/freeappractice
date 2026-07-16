@@ -1,5 +1,5 @@
 <script lang="ts">
-	import LoginForm from '$lib/components/login-form.svelte';
+	import LoginForm from '$lib/components/auth/login-form.svelte';
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 </script>

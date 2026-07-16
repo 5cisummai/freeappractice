@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Topbar from '$lib/components/topbar.svelte';
-	import SiteFooter from '$lib/components/site-footer.svelte';
+	import Topbar from '$lib/components/layout/topbar.svelte';
+	import SiteFooter from '$lib/components/layout/site-footer.svelte';
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';

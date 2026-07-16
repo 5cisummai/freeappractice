@@ -1,7 +1,7 @@
 {
-  "plugins": {
-    "linear": {
-      "enabled": true
-    }
-  }
+	"plugins": {
+		"linear": {
+			"enabled": true
+		}
+	}
 }

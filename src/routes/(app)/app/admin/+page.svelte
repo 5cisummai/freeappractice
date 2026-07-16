@@ -3,7 +3,7 @@
 	import DatabaseZapIcon from '@lucide/svelte/icons/database-zap';
 	import ChartColumnBigIcon from '@lucide/svelte/icons/chart-column-big';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
-	import PageShell from '$lib/components/page-shell.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';

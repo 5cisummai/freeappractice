@@ -6,6 +6,7 @@
 	import logo from '$lib/assets/logo.png';
 	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth/client.js';
+	import { EMAIL_SEND_FAILED_MESSAGE } from '$lib/auth/resend-result';
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 
 	let email = $state('');
@@ -18,11 +19,15 @@
 		errorMessage = '';
 		loading = true;
 		try {
-			await authClient.requestPasswordReset({
+			const { error } = await authClient.requestPasswordReset({
 				email,
 				redirectTo: authCallbackUrl('/reset-password')
 			});
-			// Always show success to prevent email enumeration
+			if (error) {
+				errorMessage = error.message ?? EMAIL_SEND_FAILED_MESSAGE;
+				return;
+			}
+			// Always show success to prevent email enumeration (including when user does not exist)
 			success = true;
 		} catch {
 			errorMessage = 'Network error. Please try again.';
@@ -87,7 +92,7 @@
 					<form onsubmit={handleSubmit}>
 						<Field.Group>
 							{#if errorMessage}
-								<p class="text-center text-sm text-destructive">{errorMessage}</p>
+								<p class="text-center text-sm text-destructive" role="alert">{errorMessage}</p>
 							{/if}
 							<Field.Field>
 								<Field.Label for="email">Email</Field.Label>
