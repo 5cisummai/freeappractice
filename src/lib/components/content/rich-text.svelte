@@ -209,7 +209,7 @@
 {/if}
 
 <style lang="postcss">
-	@reference "../../routes/layout.css";
+	@reference "../../../routes/layout.css";
 
 	.rich-text :global(p) {
 		@apply mb-2;

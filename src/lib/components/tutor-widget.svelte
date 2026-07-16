@@ -6,7 +6,7 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import RichText from '$lib/components/rich-text.svelte';
+	import RichText from '$lib/components/content/rich-text.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 

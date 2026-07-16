@@ -11,13 +11,13 @@ Feature-specific UI lives in named subfolders. Shared primitives and animation l
 | `history/` | Question attempt history tables and detail sheet | `history-data-table.svelte`, `history-detail-sheet.svelte`, `history-columns.ts` |
 | `admin/` | Admin dashboard tables and cache UI | `admin-users-data-table.svelte`, `admin-cache-dashboard.svelte` |
 
-## Shared root components
+## Shared components
 
-Single-file components live at the top level (no wrapper folder):
+Shared components live in feature-specific folders:
 
 | File | Purpose |
 | --- | --- |
-| `rich-text.svelte` | Markdown, math, and code rendering — used by questions, history, and tutor |
+| `content/rich-text.svelte` | Markdown, math, and code rendering — used by questions, history, and tutor |
 | `tutor-widget.svelte` | In-question AI tutor panel |
 | `progress-history-panel.svelte` | Progress dashboard history panel |
 
@@ -50,7 +50,7 @@ Single-file components live at the top level (no wrapper folder):
 - **A page section on the marketing site** → `marketing/` or `blog/`
 - **Navigation, footer, or app chrome** → `layout/`
 - **Login / signup** → `auth/`
-- **Reusable rich content rendering** → `rich-text.svelte` (root)
+- **Reusable rich content rendering** → `content/rich-text.svelte`
 - **Standalone feature widget with no siblings yet** → root of `components/`
 - **Generic button, dialog, table, etc.** → `ui/` (via shadcn-svelte CLI)
 - **Decorative animation only** → `magic/`, `spell/`, or `fancy/`

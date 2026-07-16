@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import RichText from '$lib/components/rich-text.svelte';
+	import RichText from '$lib/components/content/rich-text.svelte';
 
 	type ReferenceSheetData = {
 		title: string;

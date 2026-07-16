@@ -9,7 +9,7 @@
 	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
-	import RichText from '$lib/components/rich-text.svelte';
+	import RichText from '$lib/components/content/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
