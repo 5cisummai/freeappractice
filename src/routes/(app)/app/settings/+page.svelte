@@ -11,7 +11,6 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
-	import { referralCardDismiss } from '$lib/client/referral-card-dismiss.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { userPrefersMode } from 'mode-watcher';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
@@ -174,24 +173,6 @@
 						onCheckedChange={(checked: boolean) => realisticMode.setEnabled(checked)}
 					/>
 				</div>
-				{#if referralCardDismiss.dismissed}
-					<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-						<div class="min-w-0 space-y-0.5">
-							<p class="text-sm font-medium text-foreground">Referral card</p>
-							<p class="text-sm text-muted-foreground">
-								Show the classmate invite card in the sidebar again.
-							</p>
-						</div>
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onclick={() => referralCardDismiss.restore()}
-						>
-							Restore
-						</Button>
-					</div>
-				{/if}
 			</div>
 		</section>
 
@@ -206,7 +187,12 @@
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger>
 							{#snippet child({ props })}
-								<Button {...props} variant="outline" size="sm" class="min-w-28 justify-between gap-2">
+								<Button
+									{...props}
+									variant="outline"
+									size="sm"
+									class="min-w-28 justify-between gap-2"
+								>
 									<span class="flex items-center gap-2">
 										{#if theme === 'dark'}
 											<MoonIcon class="size-3.5" />
@@ -274,12 +260,7 @@
 					</div>
 					<div class="space-y-2">
 						<Label for="email">Email</Label>
-						<Input
-							id="email"
-							type="email"
-							class="ph-mask-pii"
-							bind:value={accountForm.email}
-						/>
+						<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
 					</div>
 					<div class="flex flex-wrap gap-2 pt-1">
 						<Button type="submit" size="sm" disabled={settingsController.accountPending}>
@@ -339,18 +320,14 @@
 						<p class="text-sm font-medium text-foreground">Privacy Policy</p>
 						<p class="text-sm text-muted-foreground">How we handle your data.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/privacy')}>
-						View
-					</Button>
+					<Button type="button" variant="outline" size="sm" href={resolve('/privacy')}>View</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Terms of Service</p>
 						<p class="text-sm text-muted-foreground">The rules for using this site.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/terms')}>
-						View
-					</Button>
+					<Button type="button" variant="outline" size="sm" href={resolve('/terms')}>View</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
@@ -371,8 +348,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete your account?</AlertDialog.Title>
 			<AlertDialog.Description>
-				We'll email you a confirmation link to permanently delete your account and data. This
-				cannot be undone.
+				We'll email you a confirmation link to permanently delete your account and data. This cannot
+				be undone.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<div class="px-6 pb-2">
