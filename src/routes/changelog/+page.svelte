@@ -7,6 +7,35 @@
 
 	const changelog = [
 		{
+			version: '1.4.7',
+			date: 'July 16, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Some practice sessions now support multiple answer attempts with progressive hints before a question is finalized',
+						'Practice history records multi-attempt outcomes, including the final resolved answer and hints shown'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Redesigned Settings page brings practice, appearance, privacy, account, and release details into one easier-to-scan view',
+						'Email verification, email changes, password resets, and account deletion now provide clearer confirmation and recovery flows',
+						'Password limits and authentication request limits are now applied consistently for safer, more reliable account access',
+						'Practice and navigation layouts work more smoothly across screen sizes, including fullscreen question mode'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'Email delivery failures now surface clear feedback so verification and recovery attempts do not fail silently',
+						'AI tutor replies stop cleanly when the tutor is closed or Escape is pressed'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.6',
 			date: 'July 14, 2026',
 			sections: [

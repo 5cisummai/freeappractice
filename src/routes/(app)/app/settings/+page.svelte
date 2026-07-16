@@ -313,7 +313,7 @@
 						<p class="text-sm font-medium text-foreground">App version</p>
 						<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
 					</div>
-					<p class="text-sm font-medium text-foreground tabular-nums">1.4.5</p>
+					<p class="text-sm font-medium text-foreground tabular-nums">1.4.7</p>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
