@@ -16,16 +16,23 @@ export type PracticeExperimentAssignment = {
 
 const ANSWER_CHOICES = new Set(['A', 'B', 'C', 'D']);
 
-export function hasValidHints(question: {
-	hint1?: string | null;
-	hint2?: string | null;
-}): boolean {
+export function hasValidHints(question: { hint1?: string | null; hint2?: string | null }): boolean {
 	return Boolean(question.hint1?.trim() && question.hint2?.trim());
 }
 
 /** Classic clients omit answers/displayedVariant; keep them on the legacy record-attempt path. */
 export function isMultiAttemptRequestBody(body: Record<string, unknown>): boolean {
 	return Array.isArray(body.answers) || body.displayedVariant === 'multi_attempt_hints';
+}
+
+/** True when a client is participating in the server-owned experiment contract. */
+export function hasPracticeExperimentMetadata(body: Record<string, unknown>): boolean {
+	return (
+		Array.isArray(body.answers) ||
+		body.displayedVariant !== undefined ||
+		body.experimentKey !== undefined ||
+		body.experimentVersion !== undefined
+	);
 }
 
 export function resolveDisplayedVariant(input: {
@@ -65,7 +72,11 @@ export function validateMultiAttemptPayload(
 	correctAnswer: 'A' | 'B' | 'C' | 'D'
 ): { ok: true; data: MultiAttemptPayload } | { ok: false; error: string } {
 	const answersRaw = body.answers;
-	if (!Array.isArray(answersRaw) || answersRaw.length < 1 || answersRaw.length > MAX_MULTI_ATTEMPT_SUBMISSIONS) {
+	if (
+		!Array.isArray(answersRaw) ||
+		answersRaw.length < 1 ||
+		answersRaw.length > MAX_MULTI_ATTEMPT_SUBMISSIONS
+	) {
 		return { ok: false, error: 'answers must contain 1 to 3 letters' };
 	}
 
@@ -102,11 +113,16 @@ export function validateMultiAttemptPayload(
 	}
 
 	const hintsShown =
-		typeof body.hintsShown === 'number' && Number.isInteger(body.hintsShown)
-			? body.hintsShown
-			: -1;
+		typeof body.hintsShown === 'number' && Number.isInteger(body.hintsShown) ? body.hintsShown : -1;
 	if (hintsShown < 0 || hintsShown > 2) {
 		return { ok: false, error: 'hintsShown must be 0, 1, or 2' };
+	}
+	const expectedHintsShown = Math.min(
+		2,
+		answers.filter((answer) => answer !== correctAnswer).length
+	);
+	if (hintsShown !== expectedHintsShown) {
+		return { ok: false, error: 'hintsShown does not match the submitted answers' };
 	}
 
 	const displayedVariant = body.displayedVariant;

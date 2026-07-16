@@ -2,10 +2,14 @@ import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import {
 	buildAttemptFieldsFromMultiAttempt,
+	hasPracticeExperimentMetadata,
+	hasValidHints,
 	isMultiAttemptRequestBody,
 	normalizeAnswerLetter,
+	resolveDisplayedVariant,
 	validateMultiAttemptPayload
 } from '$lib/practice/multi-attempt';
+import { getOrAssignMultiAttemptVariant } from '$lib/practice/assign-variant.server';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { findOrCreateProgressEntry } from '$lib/users/progress.server';
@@ -14,8 +18,6 @@ import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { getQuestionFromS3 } from '$lib/questions/storage.server';
 import { activateReferralForUser } from '$lib/referrals/referrals.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
-
-const answerChoices = new Set(['A', 'B', 'C', 'D']);
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {
@@ -26,7 +28,10 @@ export const POST = withAuthedHandler(
 		const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
 		if (!normalizedQuestionId) {
-			return json({ error: 'Missing required fields: questionId and selectedAnswer' }, { status: 400 });
+			return json(
+				{ error: 'Missing required fields: questionId and selectedAnswer' },
+				{ status: 400 }
+			);
 		}
 
 		const question = await getQuestionFromS3(normalizedQuestionId).catch(() => null);
@@ -41,6 +46,40 @@ export const POST = withAuthedHandler(
 		}
 
 		const user = await findUserProfileOrFail(userId);
+		const experimentRequest = hasPracticeExperimentMetadata(body);
+		const experimentContext = experimentRequest
+			? await getOrAssignMultiAttemptVariant(userId)
+			: null;
+		const displayedExperiment = experimentContext
+			? resolveDisplayedVariant({
+					assigned: experimentContext.assigned,
+					experimentEnabled: experimentContext.enabled,
+					questionHasHints: hasValidHints({
+						hint1: typeof question.hint1 === 'string' ? question.hint1 : null,
+						hint2: typeof question.hint2 === 'string' ? question.hint2 : null
+					})
+				})
+			: null;
+		const clientVariant = body.displayedVariant;
+		if (
+			experimentContext &&
+			clientVariant !== undefined &&
+			clientVariant !== displayedExperiment?.displayed
+		) {
+			return json(
+				{ error: 'Displayed experiment variant does not match the server assignment' },
+				{ status: 400 }
+			);
+		}
+		if (
+			experimentContext &&
+			isMultiAttemptRequestBody(body) !== (displayedExperiment?.displayed === 'multi_attempt_hints')
+		) {
+			return json(
+				{ error: 'Inconsistent experiment payload for the displayed variant' },
+				{ status: 400 }
+			);
+		}
 		let attempt: IQuestionAttempt;
 
 		if (isMultiAttemptRequestBody(body)) {
@@ -48,7 +87,15 @@ export const POST = withAuthedHandler(
 			if (!validated.ok) {
 				return json({ error: validated.error }, { status: 400 });
 			}
-			const fields = buildAttemptFieldsFromMultiAttempt(validated.data, question.correctAnswer);
+			const fields = buildAttemptFieldsFromMultiAttempt(
+				{
+					...validated.data,
+					displayedVariant: displayedExperiment!.displayed,
+					experimentKey: experimentContext!.assignment.key,
+					experimentVersion: experimentContext!.assignment.version
+				},
+				question.correctAnswer
+			);
 			attempt = {
 				questionId: normalizedQuestionId,
 				apClass,
@@ -67,15 +114,7 @@ export const POST = withAuthedHandler(
 			};
 		} else {
 			// Classic control path — identical contract to pre-multi-attempt clients.
-			const normalizedAnswer =
-				typeof selectedAnswer === 'string' ? selectedAnswer.trim().toUpperCase() : '';
-			if (!answerChoices.has(normalizedAnswer)) {
-				return json(
-					{ error: 'Missing required fields: questionId and selectedAnswer' },
-					{ status: 400 }
-				);
-			}
-			const letter = normalizeAnswerLetter(normalizedAnswer);
+			const letter = normalizeAnswerLetter(selectedAnswer);
 			if (!letter) {
 				return json(
 					{ error: 'Missing required fields: questionId and selectedAnswer' },
@@ -90,7 +129,14 @@ export const POST = withAuthedHandler(
 				selectedAnswer: letter,
 				wasCorrect,
 				timeTakenMs: elapsedTimeMs,
-				attemptedAt: new Date()
+				attemptedAt: new Date(),
+				...(experimentContext
+					? {
+							experimentKey: experimentContext.assignment.key,
+							experimentVersion: experimentContext.assignment.version,
+							displayedVariant: displayedExperiment!.displayed
+						}
+					: {})
 			};
 		}
 

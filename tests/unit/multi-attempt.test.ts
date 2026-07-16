@@ -3,6 +3,7 @@ import { assignPracticeVariant } from '$lib/practice/assign-practice-variant.ser
 import {
 	buildAttemptFieldsFromMultiAttempt,
 	hasValidHints,
+	hasPracticeExperimentMetadata,
 	isMultiAttemptRequestBody,
 	resolveDisplayedVariant,
 	validateMultiAttemptPayload
@@ -88,9 +89,36 @@ describe('validateMultiAttemptPayload + first-vs-final semantics', () => {
 		);
 		expect(validated.ok).toBe(false);
 	});
+
+	it('rejects client-provided hint counts that do not match the answers', () => {
+		const validated = validateMultiAttemptPayload(
+			{
+				answers: ['A', 'C'],
+				terminalOutcome: 'correct',
+				hintsShown: 0,
+				displayedVariant: 'multi_attempt_hints'
+			},
+			'C'
+		);
+		expect(validated).toEqual({
+			ok: false,
+			error: 'hintsShown does not match the submitted answers'
+		});
+	});
 });
 
 describe('isMultiAttemptRequestBody backwards compatibility', () => {
+	it('recognizes experiment metadata without changing the classic payload shape', () => {
+		expect(
+			hasPracticeExperimentMetadata({
+				selectedAnswer: 'A',
+				displayedVariant: 'control',
+				experimentKey: 'multi_attempt_hints',
+				experimentVersion: 1
+			})
+		).toBe(true);
+	});
+
 	it('treats classic selectedAnswer-only payloads as control', () => {
 		expect(
 			isMultiAttemptRequestBody({
