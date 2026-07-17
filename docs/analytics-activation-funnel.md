@@ -1,6 +1,6 @@
 # Activation funnel analytics (DEV-36)
 
-Consent-respecting PostHog events for the anonymous landing → first answer → signup journey. Implemented in `src/lib/client/activation-analytics.ts` (event capture) and `src/lib/client/activation-funnel-metrics.ts` (pure latency/failure helpers). Wired from landing, question, signup, and app layout surfaces.
+Consent-respecting PostHog events for the anonymous landing → first answer → signup journey. Implemented in `src/lib/client/activation-analytics.ts` (event capture + latency/failure helpers) with shared failure kinds in `src/lib/question-failure.ts`. Wired from landing, question, signup, and app layout surfaces.
 
 ## Privacy
 
@@ -76,7 +76,7 @@ All of these events are consent-gated and never include question text, answer te
 
 ## Related events (outside this funnel)
 
-Existing PostHog events such as `question_answered`, `user_signed_up`, and `$pageview` remain separate. Activation helpers delegate to `capturePostHogEvent` in `src/lib/client/posthog-analytics.ts`. Types and pure helpers live in `activation-funnel-metrics.ts` — import those directly, not via the capture module.
+Existing PostHog events such as `question_answered`, `user_signed_up`, and `$pageview` remain separate. Activation helpers (including latency/failure helpers) live in `src/lib/client/activation-analytics.ts` and delegate to `capturePostHogEvent` in `src/lib/client/posthog-analytics.ts`. Shared failure kinds: `src/lib/question-failure.ts`.
 
 ## Referral funnel (growth)
 

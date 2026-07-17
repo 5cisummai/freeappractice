@@ -8,6 +8,10 @@ export function mcpServerInfo() {
 	} as const;
 }
 
+/**
+ * MCP server-card for discovery. Tools listed here must match what /api/mcp
+ * actually serves — today that endpoint is not implemented (POST → 501).
+ */
 export function buildMcpServerCard(requestUrl?: URL) {
 	return {
 		$schema: 'https://modelcontextprotocol.io/schemas/server-card/v1',
@@ -23,16 +27,8 @@ export function buildMcpServerCard(requestUrl?: URL) {
 			resources: {},
 			prompts: {}
 		},
-		tools: [
-			{
-				name: 'generate_question',
-				description:
-					'Generate an AP practice multiple-choice question for a subject and unit.'
-			},
-			{
-				name: 'list_subjects',
-				description: 'List supported AP subjects available for practice.'
-			}
-		]
+		tools: [] as { name: string; description: string }[],
+		status: 'unimplemented' as const,
+		documentation: absoluteUrl('/llms.txt', requestUrl)
 	};
 }

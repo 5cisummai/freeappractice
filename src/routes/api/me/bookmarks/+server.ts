@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getQuestionsByIds } from '$lib/questions/lookup.server';
+import { getQuestionsByIds } from '$lib/questions/storage.server';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
 

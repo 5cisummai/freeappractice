@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import { RESEND_API_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
-import { getSiteUrl } from '$lib/auth/urls';
+import { getSiteUrl } from '$lib/site-url';
 import { assertResendSent } from '$lib/auth/resend-result';
 
 const resend = new Resend(RESEND_API_KEY);

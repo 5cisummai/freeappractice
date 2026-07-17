@@ -3,6 +3,7 @@ import {
 	QuestionBusyError,
 	QuestionGenerationError
 } from '$lib/questions/question-errors.server';
+import type { QuestionFailureKind } from '$lib/question-failure';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
 /** Outcome segments for POST /api/question reliability dashboards. */
@@ -12,7 +13,8 @@ export type QuestionRequestSegment =
 	| 'cache_miss_follower'
 	| 'error';
 
-export type QuestionRequestErrorType = 'validation' | 'generation' | 'busy' | 'unknown';
+/** Server-side subset of QuestionFailureKind (no client-only `network`). */
+export type QuestionRequestErrorType = Exclude<QuestionFailureKind, 'network'>;
 
 export const QUESTION_REQUEST_EVENT = 'question_request';
 

@@ -1,5 +1,5 @@
 import type { IQuestionAttempt } from '$lib/users/records.server';
-import { getQuestionsLookupMap } from '$lib/questions/lookup.server';
+import { getQuestionsLookupMap } from '$lib/questions/storage.server';
 import type { StoredQuestion } from '$lib/questions/storage.server';
 import { FrqAttempt } from '$lib/frq/model.server';
 import { connectDb } from '$lib/server/db';

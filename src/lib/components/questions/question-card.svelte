@@ -13,24 +13,23 @@
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import {
 		captureFirstAnswerSubmitted,
 		captureQuestionRequestFailed,
-		captureQuestionRequestSucceeded
-	} from '$lib/client/activation-analytics';
-	import {
+		captureQuestionRequestSucceeded,
 		QuestionRequestError,
-		questionSourceFromCachedFlag,
 		type QuestionSource
-	} from '$lib/client/activation-funnel-metrics';
+	} from '$lib/client/activation-analytics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
+	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
+	import { requestMcqQuestion } from '$lib/questions/request-mcq.client';
 	import {
-		parseQuestionPayloadFromResponse,
-		resolveEffectiveUnit,
-		type QuestionApiResponse
-	} from '$lib/questions/payload.js';
+		measureLongQuestion,
+		portalToBody,
+		withTooltipTriggerClick
+	} from '$lib/components/questions/question-card-dom';
 	import {
 		hasValidHints,
 		MULTI_ATTEMPT_EXPERIMENT_KEY,
@@ -58,23 +57,6 @@
 	import DesmosCalculator from '$lib/components/questions/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/questions/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-
-	type QuestionFetchResult = {
-		question: GeneratedQuestion;
-		source: QuestionSource;
-		latencyMs: number;
-	};
-
-	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
-	function withTooltipTriggerClick(
-		triggerProps: { onclick?: (e: MouseEvent) => void },
-		action: () => void
-	) {
-		return (e: MouseEvent) => {
-			triggerProps.onclick?.(e);
-			action();
-		};
-	}
 
 	let {
 		class: className,
@@ -192,44 +174,6 @@
 		mounted && !isLoading && requestVersion === 0 && !currentQuestion
 	);
 
-	async function requestQuestion(
-		className: string,
-		unit: string,
-		excludeQuestionIds: string[] = []
-	): Promise<QuestionFetchResult> {
-		const startedAt = Date.now();
-		const body: Record<string, string | string[]> = { className, unit };
-		if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
-
-		try {
-			const response = await apiFetch('/api/question', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
-			});
-
-			const payload = await readJsonOrNull<QuestionApiResponse>(response);
-			if (!response.ok || !payload) {
-				throw new QuestionRequestError(
-					getResponseMessage(payload, 'Failed to load question.'),
-					response.ok ? null : response.status
-				);
-			}
-
-			return {
-				question: parseQuestionPayloadFromResponse(payload),
-				source: questionSourceFromCachedFlag(payload.cached),
-				latencyMs: Date.now() - startedAt
-			};
-		} catch (error) {
-			if (error instanceof QuestionRequestError) throw error;
-			throw new QuestionRequestError(
-				error instanceof Error ? error.message : 'Could not load question.',
-				null
-			);
-		}
-	}
-
 	function rememberSeenQuestion(question: GeneratedQuestion): void {
 		const questionId = question.questionId?.trim() ?? '';
 		if (!questionId || seenQuestionIds.includes(questionId)) return;
@@ -237,23 +181,11 @@
 	}
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
-		const textLength = currentQuestion?.prompt.length ?? 0;
-		const hasCodeBlock = /```|\n\s{2,}|<code/i.test(currentQuestion?.prompt ?? '');
-		const threshold = Math.min(window.innerHeight * 0.7, 600);
-
-		// Dual-column / fullscreen panes use h-full + overflow, so scrollHeight matches
-		// the pane (often the viewport) even for short prompts. Only treat those as
-		// tall when content actually overflows; otherwise use natural content height.
-		let tallByLayout = false;
-		if (node) {
-			const overflowY = getComputedStyle(node).overflowY;
-			const isScrollContainer = overflowY === 'auto' || overflowY === 'scroll';
-			tallByLayout = isScrollContainer
-				? node.scrollHeight > node.clientHeight + 1
-				: node.scrollHeight > threshold;
-		}
-
-		isLongQuestion = textLength > longQuestionThresholdChars || hasCodeBlock || tallByLayout;
+		isLongQuestion = measureLongQuestion({
+			prompt: currentQuestion?.prompt ?? '',
+			node,
+			longQuestionThresholdChars
+		});
 	}
 
 	function observePromptLayout(node: HTMLDivElement, promptText: string) {
@@ -279,21 +211,6 @@
 				if (promptElement === node) {
 					promptElement = null;
 				}
-			}
-		};
-	}
-
-	function portalToBody(node: HTMLElement) {
-		if (!browser) return;
-
-		const originalOverflow = document.body.style.overflow;
-		document.body.appendChild(node);
-		document.body.style.overflow = 'hidden';
-
-		return {
-			destroy() {
-				document.body.style.overflow = originalOverflow;
-				node.remove();
 			}
 		};
 	}
@@ -391,7 +308,7 @@
 		const loadStartedAt = Date.now();
 		try {
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const result = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			const result = await requestMcqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
 			const analytics = {
 				apClass: selectedClass,
 				unit: selectedUnit,

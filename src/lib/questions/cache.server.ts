@@ -6,8 +6,6 @@ import {
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
 import { createQuestionPool, type GetQuestionOptions } from '$lib/questions/pool.server';
-import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
-import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
@@ -15,6 +13,79 @@ import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 export type { GetQuestionOptions };
 
 const RECENT_TOPICS_WINDOW = 20;
+
+type McqAnswerBody = {
+	question: string;
+	optionA: string;
+	optionB: string;
+	optionC: string;
+	optionD: string;
+	correctAnswer: 'A' | 'B' | 'C' | 'D';
+	explanation: string;
+	topicsCovered?: string;
+	hint1: string;
+	hint2: string;
+};
+
+/** Build an ephemeral hot-cache pool document with the full MCQ body inline. */
+function buildHotPoolDoc(opts: {
+	s3QuestionId: string;
+	apClass: string;
+	unit: string;
+	contentHash: string;
+	topicsCovered: string;
+	answer: APQuestionData;
+}): Pick<
+	IQuestion,
+	| 's3QuestionId'
+	| 'apClass'
+	| 'unit'
+	| 'contentHash'
+	| 'topicsCovered'
+	| 'question'
+	| 'optionA'
+	| 'optionB'
+	| 'optionC'
+	| 'optionD'
+	| 'correctAnswer'
+	| 'explanation'
+	| 'hint1'
+	| 'hint2'
+> {
+	const { answer } = opts;
+	return {
+		s3QuestionId: opts.s3QuestionId,
+		apClass: opts.apClass,
+		unit: opts.unit,
+		contentHash: opts.contentHash,
+		topicsCovered: opts.topicsCovered,
+		question: answer.question,
+		optionA: answer.optionA,
+		optionB: answer.optionB,
+		optionC: answer.optionC,
+		optionD: answer.optionD,
+		correctAnswer: answer.correctAnswer,
+		explanation: answer.explanation,
+		hint1: answer.hint1,
+		hint2: answer.hint2
+	};
+}
+
+/** Read full MCQ body directly from a hot-cache pool doc (no S3 round trip). */
+function hotPoolBodyFromDoc(doc: IQuestion): McqAnswerBody {
+	return {
+		question: doc.question,
+		optionA: doc.optionA,
+		optionB: doc.optionB,
+		optionC: doc.optionC,
+		optionD: doc.optionD,
+		correctAnswer: doc.correctAnswer,
+		explanation: doc.explanation,
+		topicsCovered: doc.topicsCovered ?? '',
+		hint1: doc.hint1 ?? '',
+		hint2: doc.hint2 ?? ''
+	};
+}
 
 async function insertHotPoolDoc(
 	className: string,

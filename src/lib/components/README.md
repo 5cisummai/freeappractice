@@ -6,8 +6,8 @@ Feature-specific UI lives in named subfolders. Shared primitives and animation l
 
 | Folder | Purpose | Key files |
 | --- | --- | --- |
-| `questions/` | Question practice UI — card, selection, tools | `question-card.svelte`, `question-shell.svelte`, `question-selector.svelte`, `mcq-answer-choices.svelte`, `bug-report-dialog.svelte`, `desmos-calculator.svelte`, `reference-sheet.svelte` |
-| `practice/` | Public practice landing pages | `practice-landing.svelte`, `practice-breadcrumbs.svelte`, `practice-hub-nav.svelte` |
+| `questions/` | Question practice UI — card, selection, tools | `question-card.svelte`, `question-shell.svelte` (MCQ-only wrapper), `question-selector.svelte`, `mcq-answer-choices.svelte`, `bug-report-dialog.svelte`, `desmos-calculator.svelte`, `reference-sheet.svelte` |
+| `practice/` | Practice chrome + public landing pages | `practice-shell.svelte` (MCQ/FRQ orchestrator), `practice-landing.svelte`, `practice-breadcrumbs.svelte`, `practice-hub-nav.svelte` |
 | `history/` | Question attempt history tables and detail sheet | `history-data-table.svelte`, `history-detail-sheet.svelte`, `history-columns.ts` |
 | `admin/` | Admin dashboard tables and cache UI | `admin-users-data-table.svelte`, `admin-cache-dashboard.svelte` |
 

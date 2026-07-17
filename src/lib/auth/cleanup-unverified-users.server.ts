@@ -1,7 +1,6 @@
 import { getMongoDb } from '$lib/server/mongo-native';
 import { connectDb } from '$lib/server/db';
-import { UserProfile } from '$lib/users/model.server';
-import { Referral } from '$lib/referrals/model.server';
+import { deleteAppDataForUsers } from '$lib/users/delete-app-data.server';
 import { logger } from '$lib/server/logger';
 import { unverifiedUserCutoff } from '$lib/auth/cron-auth';
 
@@ -64,10 +63,7 @@ export async function cleanupUnverifiedUsers(now = new Date()): Promise<{
 		db.collection('authSessions').deleteMany({ userId: { $in: userIds } }),
 		db.collection('authAccounts').deleteMany({ userId: { $in: userIds } }),
 		db.collection('authVerifications').deleteMany({ value: { $in: userIds } }),
-		UserProfile.deleteMany({ userId: { $in: userIds } }),
-		Referral.deleteMany({
-			$or: [{ referrerUserId: { $in: userIds } }, { referredUserId: { $in: userIds } }]
-		})
+		deleteAppDataForUsers(userIds)
 	]);
 
 	logger.info('cron cleanup-unverified-users: deleted unverified users', {

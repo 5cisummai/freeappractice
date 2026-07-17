@@ -22,7 +22,8 @@ vi.mock('$app/paths', () => ({
 	resolve: (path: string) => path
 }));
 
-import { PRODUCTION_SITE_URL, authCallbackUrl, getSiteUrl } from '$lib/auth/urls';
+import { authCallbackUrl } from '$lib/auth/urls';
+import { PRODUCTION_SITE_URL, getSiteUrl } from '$lib/site-url';
 
 describe('getSiteUrl', () => {
 	beforeEach(() => {

@@ -232,11 +232,6 @@ export async function getFrqProgressForUser(userId: string): Promise<FrqProgress
 	}));
 }
 
-export async function deleteFrqAttemptsForUser(userId: string): Promise<void> {
-	await connectDb();
-	await FrqAttempt.deleteMany({ userId });
-}
-
 export type FrqActivity = {
 	attemptedAt: Date;
 	timeTakenMs: number;

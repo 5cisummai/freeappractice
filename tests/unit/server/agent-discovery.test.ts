@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/auth/urls', () => ({
+vi.mock('$lib/site-url', () => ({
 	getSiteUrl: (origin?: string) => origin ?? 'https://freeappractice.org'
 }));
 
@@ -30,11 +30,12 @@ describe('agent discovery site helpers', () => {
 });
 
 describe('oauth metadata builders', () => {
-	it('builds authorization server metadata', () => {
+	it('builds authorization server metadata for Better Auth (not full OAuth2)', () => {
 		const meta = buildOAuthAuthorizationServerMetadata(requestUrl);
 		expect(meta.issuer).toBe('https://agents.example/');
-		expect(meta.authorization_endpoint).toContain('/api/auth/sign-in/social/google');
-		expect(meta.code_challenge_methods_supported).toEqual(['S256']);
+		expect(meta.authorization_endpoint).toContain('/login');
+		expect(meta.grant_types_supported).toEqual([]);
+		expect(meta.service_documentation).toContain('/auth.md');
 	});
 
 	it('builds protected resource metadata', () => {
@@ -45,14 +46,12 @@ describe('oauth metadata builders', () => {
 });
 
 describe('mcp and api catalog', () => {
-	it('exposes server info and MCP card tools', () => {
+	it('exposes server info and an honest empty MCP tool list', () => {
 		expect(mcpServerInfo().name).toBe('Free AP Practice');
 		const card = buildMcpServerCard(requestUrl);
 		expect(card.transport.endpoint).toBe('https://agents.example/api/mcp');
-		expect(card.tools.map((tool) => tool.name)).toEqual([
-			'generate_question',
-			'list_subjects'
-		]);
+		expect(card.tools).toEqual([]);
+		expect(card.status).toBe('unimplemented');
 	});
 
 	it('builds the API catalog linkset', () => {

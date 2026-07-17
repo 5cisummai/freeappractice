@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { claimReferralFromCookie, getReferralSummary } from '$lib/referrals/referrals.server';
-import { getSiteUrl } from '$lib/auth/urls';
+import { getSiteUrl } from '$lib/site-url';
 
 export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) => {
 	if (!locals.session) {

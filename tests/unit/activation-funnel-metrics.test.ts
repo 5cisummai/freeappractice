@@ -5,7 +5,7 @@ import {
 	latencyBucket,
 	localCalendarDay,
 	questionSourceFromCachedFlag
-} from '$lib/client/activation-funnel-metrics';
+} from '$lib/client/activation-analytics';
 
 describe('latencyBucket', () => {
 	it('maps durations to coarse buckets', () => {
@@ -26,6 +26,7 @@ describe('classifyQuestionFailure', () => {
 		expect(classifyQuestionFailure(403)).toBe('validation');
 		expect(classifyQuestionFailure(422)).toBe('validation');
 		expect(classifyQuestionFailure(429)).toBe('validation');
+		expect(classifyQuestionFailure(503)).toBe('busy');
 		expect(classifyQuestionFailure(500)).toBe('generation');
 		expect(classifyQuestionFailure(502)).toBe('generation');
 	});

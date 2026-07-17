@@ -1,4 +1,4 @@
-import { getSiteUrl } from '$lib/auth/urls';
+import { getSiteUrl } from '$lib/site-url';
 
 /** Canonical origin for agent discovery documents (no trailing slash). */
 export function getAgentDiscoveryOrigin(requestUrl?: URL): string {

@@ -2,21 +2,24 @@
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
 	import FrqCard from '$lib/components/questions/frq-card.svelte';
-	import type { AnswerResult } from '$lib/questions/types.js';
-	import type { FrqAttemptView } from '$lib/frq/types.js';
-	import { captureGenerateClicked } from '$lib/client/activation-analytics.js';
+	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
+	import type { FrqAttemptView } from '$lib/frq/types';
+	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 
-	type Props = {
+	type PracticeShellProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
 		unitRange?: number[];
 		requestVersion?: number;
 		allowFrq?: boolean;
 		mode?: 'mcq' | 'frq';
+		generateLabel?: string;
+		onGenerate?: () => void;
+		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
 		onModeChange?: (mode: 'mcq' | 'frq') => void;
 		onAnswered?: (result: AnswerResult) => void;
 		onFrqGraded?: (attempt: FrqAttemptView) => void;
-	};
+	} & Omit<QuestionCardProps, 'selectedClass' | 'selectedUnit' | 'requestVersion' | 'onAnswered'>;
 
 	let {
 		selectedClass = $bindable(''),
@@ -25,10 +28,14 @@
 		requestVersion = $bindable(0),
 		allowFrq = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
+		generateLabel,
+		onGenerate,
+		onSelectionChange,
 		onModeChange,
 		onAnswered,
-		onFrqGraded
-	}: Props = $props();
+		onFrqGraded,
+		...cardProps
+	}: PracticeShellProps = $props();
 
 	function changeMode(nextMode: 'mcq' | 'frq'): void {
 		mode = nextMode;
@@ -36,9 +43,15 @@
 		onModeChange?.(nextMode);
 	}
 
-	function generate(): void {
+	function handleSelectionChange(className: string, unit: string): void {
+		requestVersion = 0;
+		onSelectionChange?.(className, unit);
+	}
+
+	function handleGenerate(): void {
 		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
 		requestVersion += 1;
+		onGenerate?.();
 	}
 </script>
 
@@ -65,8 +78,9 @@
 		bind:selectedClass
 		bind:selectedUnit
 		bind:unitRange
-		onSelectionChange={() => (requestVersion = 0)}
-		onGenerate={generate}
+		{generateLabel}
+		onSelectionChange={handleSelectionChange}
+		onGenerate={handleGenerate}
 	/>
 </div>
 
@@ -75,7 +89,14 @@
 		{#if mode === 'frq' && allowFrq}
 			<FrqCard {selectedClass} {selectedUnit} {unitRange} {requestVersion} onGraded={onFrqGraded} />
 		{:else}
-			<QuestionCard {selectedClass} {selectedUnit} {unitRange} {requestVersion} {onAnswered} />
+			<QuestionCard
+				{selectedClass}
+				{selectedUnit}
+				{unitRange}
+				{requestVersion}
+				{onAnswered}
+				{...cardProps}
+			/>
 		{/if}
 	{/key}
 </div>
