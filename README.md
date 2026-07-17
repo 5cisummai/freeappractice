@@ -154,7 +154,7 @@ These routes require an active Better Auth session:
 | `GET`  | `/api/me/history`        | Paginated MCQ attempt history. Query params: `page` (default 1), `limit` (default 50, max 200), optional `apClass` |
 | `POST` | `/api/me/record-attempt` | Record an answer attempt                                                                                           |
 | `GET`  | `/api/me/bookmarks`      | List bookmarked questions                                                                                          |
-| `POST` | `/api/me/bookmark`       | Add or remove a bookmark                                                                                           |
+| `POST` | `/api/me/bookmarks`      | Add or remove a bookmark                                                                                           |
 
 ### Questions
 

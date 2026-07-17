@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isFrqPracticeEnabled } from '$lib/flags';
+import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqFromS3 } from '$lib/frq/storage.server';
@@ -12,9 +12,8 @@ import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isFrqPracticeEnabled())) {
-			return json({ error: 'Written-response practice is unavailable' }, { status: 404 });
-		}
+		const gated = await requireFrqPracticeEnabled();
+		if (gated) return gated;
 
 		let body: unknown;
 		try {

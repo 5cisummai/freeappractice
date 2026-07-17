@@ -2,13 +2,12 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
-import { isFrqPracticeEnabled } from '$lib/flags';
+import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isFrqPracticeEnabled())) {
-			return json({ error: 'Written-response practice is unavailable' }, { status: 404 });
-		}
+		const gated = await requireFrqPracticeEnabled();
+		if (gated) return gated;
 		const attemptId = event.params.id;
 		if (!attemptId) return json({ error: 'Written-response attempt not found' }, { status: 404 });
 		const attempt = await getFrqAttemptForUser(userId, attemptId);

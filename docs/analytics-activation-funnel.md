@@ -72,7 +72,7 @@ All of these events are consent-gated and never include question text, answer te
 | `src/lib/components/questions/question-card.svelte`     | `question_request_*`, `first_answer_submitted`               |
 | `src/routes/signup/+page.svelte`              | `signup_started` (`page`)                                    |
 | `src/lib/components/auth/signup-form.svelte`  | `signup_started`, `signup_completed`                         |
-| `src/routes/(app)/+layout.svelte`             | `signup_completed` (OAuth), `authenticated_student_returned` |
+| `src/routes/app/+layout.svelte`               | `signup_completed` (OAuth), `authenticated_student_returned` |
 
 ## Related events (outside this funnel)
 

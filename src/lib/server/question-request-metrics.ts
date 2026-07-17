@@ -91,3 +91,33 @@ export function createQuestionPathMetrics(
 		persistenceMs: 0
 	};
 }
+
+/** Build + capture a metric from path timings and common request fields. */
+export function capturePathQuestionRequestMetric(opts: {
+	path: QuestionPathMetrics;
+	startedAt: number;
+	validationMs: number;
+	apClass: string;
+	unit: string;
+	httpStatus: number;
+	segment: QuestionRequestSegment;
+	cached: boolean;
+	errorType?: QuestionRequestErrorType;
+}): void {
+	captureQuestionRequestMetric({
+		question_type: opts.path.questionType,
+		segment: opts.segment,
+		ap_class: opts.apClass,
+		unit: opts.unit,
+		validation_ms: opts.validationMs,
+		cache_lookup_ms: opts.path.cacheLookupMs,
+		lock_wait_ms: opts.path.lockWaitMs,
+		generation_ms: opts.path.generationMs,
+		persistence_ms: opts.path.persistenceMs,
+		total_ms: Date.now() - opts.startedAt,
+		http_status: opts.httpStatus,
+		ok: opts.httpStatus < 400,
+		cached: opts.cached,
+		...(opts.errorType ? { error_type: opts.errorType } : {})
+	});
+}

@@ -8,7 +8,7 @@ import { logger } from '$lib/server/logger';
 import {
 	classifyQuestionRequestError,
 	createQuestionPathMetrics,
-	captureQuestionRequestMetric,
+	capturePathQuestionRequestMetric,
 	type QuestionRequestErrorType,
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
@@ -31,21 +31,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		cached: boolean,
 		errorType?: QuestionRequestErrorType
 	): void {
-		captureQuestionRequestMetric({
-			question_type: path.questionType,
-			segment,
-			ap_class: apClass,
+		capturePathQuestionRequestMetric({
+			path,
+			startedAt,
+			validationMs,
+			apClass,
 			unit,
-			validation_ms: validationMs,
-			cache_lookup_ms: path.cacheLookupMs,
-			lock_wait_ms: path.lockWaitMs,
-			generation_ms: path.generationMs,
-			persistence_ms: path.persistenceMs,
-			total_ms: Date.now() - startedAt,
-			http_status: status,
-			ok: status < 400,
+			httpStatus: status,
+			segment,
 			cached,
-			...(errorType ? { error_type: errorType } : {})
+			errorType
 		});
 	}
 

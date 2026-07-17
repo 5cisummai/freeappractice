@@ -2,12 +2,12 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
+import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqQuestion } from '$lib/frq/service.server';
-import { isFrqPracticeEnabled } from '$lib/flags';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import {
-	captureQuestionRequestMetric,
+	capturePathQuestionRequestMetric,
 	createQuestionPathMetrics
 } from '$lib/server/question-request-metrics';
 
@@ -20,29 +20,23 @@ export const POST: RequestHandler = withAuthedHandler(
 		let apClass = '';
 		let unit = '';
 		let validationMs = 0;
-		if (!(await isFrqPracticeEnabled())) {
-			return json({ error: 'Written-response practice is not enabled' }, { status: 404 });
-		}
+		const gated = await requireFrqPracticeEnabled();
+		if (gated) return gated;
 		try {
 			const validationStarted = Date.now();
 			const validated = validateQuestionRequest(await event.request.json());
 			validationMs = Date.now() - validationStarted;
 			if (!validated.ok) {
-				captureQuestionRequestMetric({
-					question_type: path.questionType,
-					segment: 'error',
-					ap_class: apClass,
+				capturePathQuestionRequestMetric({
+					path,
+					startedAt,
+					validationMs,
+					apClass,
 					unit,
-					validation_ms: validationMs,
-					cache_lookup_ms: 0,
-					lock_wait_ms: 0,
-					generation_ms: 0,
-					persistence_ms: 0,
-					total_ms: Date.now() - startedAt,
-					http_status: validated.response.status,
-					ok: false,
+					httpStatus: validated.response.status,
+					segment: 'error',
 					cached: false,
-					error_type: 'validation'
+					errorType: 'validation'
 				});
 				return validated.response;
 			}
@@ -57,19 +51,14 @@ export const POST: RequestHandler = withAuthedHandler(
 				excludeQuestionIds: validated.value.excludeQuestionIds,
 				metrics: path
 			});
-			captureQuestionRequestMetric({
-				question_type: path.questionType,
-				segment: path.segment ?? 'error',
-				ap_class: apClass,
+			capturePathQuestionRequestMetric({
+				path,
+				startedAt,
+				validationMs,
+				apClass,
 				unit,
-				validation_ms: validationMs,
-				cache_lookup_ms: path.cacheLookupMs,
-				lock_wait_ms: path.lockWaitMs,
-				generation_ms: path.generationMs,
-				persistence_ms: path.persistenceMs,
-				total_ms: Date.now() - startedAt,
-				http_status: 200,
-				ok: true,
+				httpStatus: 200,
+				segment: path.segment ?? 'error',
 				cached: result.cached
 			});
 			capturePostHogServerEvent(event.request, {
@@ -96,21 +85,16 @@ export const POST: RequestHandler = withAuthedHandler(
 				cached: result.cached
 			});
 		} catch (error) {
-			captureQuestionRequestMetric({
-				question_type: path.questionType,
-				segment: 'error',
-				ap_class: apClass,
+			capturePathQuestionRequestMetric({
+				path,
+				startedAt,
+				validationMs,
+				apClass,
 				unit,
-				validation_ms: validationMs,
-				cache_lookup_ms: path.cacheLookupMs,
-				lock_wait_ms: path.lockWaitMs,
-				generation_ms: path.generationMs,
-				persistence_ms: path.persistenceMs,
-				total_ms: Date.now() - startedAt,
-				http_status: 500,
-				ok: false,
+				httpStatus: 500,
+				segment: 'error',
 				cached: false,
-				error_type: 'unknown'
+				errorType: 'unknown'
 			});
 			capturePostHogServerEvent(event.request, {
 				distinctId: userId,

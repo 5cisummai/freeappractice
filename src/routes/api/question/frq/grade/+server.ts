@@ -2,8 +2,8 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { FrqAttemptInProgressError, gradeFrqAttempt } from '$lib/frq/attempts.server';
+import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 import { FrqGradeRequestSchema } from '$lib/frq/types';
-import { isFrqPracticeEnabled } from '$lib/flags';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 export const config = { maxDuration: 60 };
@@ -11,9 +11,8 @@ export const config = { maxDuration: 60 };
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const startedAt = Date.now();
-		if (!(await isFrqPracticeEnabled())) {
-			return json({ error: 'Written-response practice is not enabled' }, { status: 404 });
-		}
+		const gated = await requireFrqPracticeEnabled();
+		if (gated) return gated;
 		const parsed = FrqGradeRequestSchema.safeParse(await event.request.json());
 		if (!parsed.success) {
 			return json(

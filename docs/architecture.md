@@ -254,7 +254,7 @@ sequenceDiagram
     end
 
     opt Bookmark
-        U->>API: POST /api/me/bookmark
+        U->>API: POST /api/me/bookmarks
         API->>DB: bookmarkedQuestions[]
     end
 ```
