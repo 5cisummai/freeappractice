@@ -7,7 +7,7 @@
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
-	import TutorWidget from '$lib/components/tutor-widget.svelte';
+	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 
 	type Props = {
 		selectedClass?: string;

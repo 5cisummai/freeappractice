@@ -1,6 +1,6 @@
 <script lang="ts">
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
-	import Signature from '$lib/components/spell/signature/signature.svelte';
+	import Signature from '$lib/components/marketing/signature.svelte';
 
 	const socialLinks = [
 		{

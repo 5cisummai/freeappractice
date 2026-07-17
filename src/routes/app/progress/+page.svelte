@@ -7,7 +7,7 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import ProgressHistoryPanel from '$lib/components/progress-history-panel.svelte';
+	import ProgressHistoryPanel from '$lib/components/history/progress-history-panel.svelte';
 	import StatsOverviewCards from '$lib/components/stats-overview-cards.svelte';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import HistoryIcon from '@lucide/svelte/icons/history';
