@@ -71,7 +71,8 @@
 		get pageCount() {
 			return pageCount;
 		},
-		getRowId: (row, index) => `${row.attempt.questionId}-${row.attempt.attemptedAt}-${index}`,
+		getRowId: (row, index) =>
+			`${row.kind}-${row.attempt.questionId}-${row.attempt.attemptedAt}-${index}`,
 		state: {
 			get pagination() {
 				return { pageIndex, pageSize };
@@ -225,4 +226,6 @@
 	</div>
 </div>
 
-<HistoryDetailSheet item={selectedItem} bind:open={detailOpen} />
+{#key selectedItem ? selectedItem.kind + ':' + selectedItem.attempt.questionId + ':' + selectedItem.attempt.attemptedAt : 'empty'}
+	<HistoryDetailSheet item={selectedItem} bind:open={detailOpen} />
+{/key}

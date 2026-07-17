@@ -5,6 +5,11 @@ export interface ProgressEntry {
 	correctAttempts?: number;
 	mastery: number;
 	lastAttemptAt?: string;
+	frqAttempts?: number;
+	frqPointsEarned?: number;
+	frqPointsAvailable?: number;
+	frqAveragePercentage?: number;
+	frqLastAttemptAt?: string;
 }
 
 export interface StatsData {
@@ -14,11 +19,14 @@ export interface StatsData {
 		accuracy: number;
 		currentStreak: number;
 		totalTimeHours: number;
+		frqSubmissions: number;
+		frqAveragePercentage: number;
 		memberSince: string;
 	};
 	recentPerformance: {
 		questionsLast7Days: number;
 		accuracyLast7Days: number;
+		frqSubmissionsLast7Days: number;
 	};
 	subjectBreakdown: Array<{
 		subject: string;
@@ -26,10 +34,12 @@ export interface StatsData {
 		correct: number;
 		accuracy: number;
 		avgTimeSeconds: number;
+		frqAttempts: number;
+		frqAveragePercentage: number;
 	}>;
 }
 
-type QuestionAttempt = {
+export type QuestionAttempt = {
 	questionId: string;
 	apClass: string;
 	unit: string;
@@ -46,7 +56,7 @@ type QuestionAttempt = {
 	displayedVariant?: 'control' | 'multi_attempt_hints';
 };
 
-type StoredMcqQuestion = {
+export type StoredMcqQuestion = {
 	id: string;
 	question: string;
 	optionA: string;
@@ -60,10 +70,29 @@ type StoredMcqQuestion = {
 	createdAt: string;
 };
 
-export type HistoryItem = {
+export type McqHistoryItem = {
+	kind: 'mcq';
 	attempt: QuestionAttempt;
 	question: StoredMcqQuestion | null;
 };
+
+export type FrqHistoryItem = {
+	kind: 'frq';
+	attempt: {
+		id: string;
+		questionId: string;
+		apClass: string;
+		unit: string;
+		pointsEarned: number;
+		pointsAvailable: number;
+		percentage: number;
+		timeTakenMs: number;
+		attemptedAt: string;
+	};
+	question: null;
+};
+
+export type HistoryItem = McqHistoryItem | FrqHistoryItem;
 
 export type HistoryResponse = {
 	items: HistoryItem[];

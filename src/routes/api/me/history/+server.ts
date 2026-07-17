@@ -2,10 +2,13 @@ import { json } from '@sveltejs/kit';
 import {
 	getMcqHistoryPage,
 	hydrateMcqHistoryItems,
+	getPracticeHistoryPage,
+	hydratePracticeHistoryItems,
 	parseHistorySort
 } from '$lib/users/history.server';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
+import { isFrqPracticeEnabled } from '$lib/flags';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
@@ -18,6 +21,18 @@ export const GET = withAuthedHandler(
 		);
 
 		const user = await findUserProfileOrFail(userId, 'questionHistory');
+
+		const frqEnabled = await isFrqPracticeEnabled();
+		if (frqEnabled) {
+			const pageResult = await getPracticeHistoryPage(user, userId, { page, limit, apClass, sort });
+			const items = await hydratePracticeHistoryItems(pageResult.items);
+			return json({
+				items,
+				total: pageResult.total,
+				page: pageResult.page,
+				limit: pageResult.limit
+			});
+		}
 
 		const pageResult = getMcqHistoryPage(user, { page, limit, apClass, sort });
 		const items = await hydrateMcqHistoryItems(pageResult.items);

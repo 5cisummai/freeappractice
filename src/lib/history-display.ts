@@ -40,6 +40,9 @@ export function plainQuestionText(raw: string): string {
 }
 
 export function questionPreview(item: HistoryItem, maxLength = 120): string {
+	if (item.kind === 'frq') {
+		return `Written-response: ${item.attempt.percentage}% (${item.attempt.pointsEarned}/${item.attempt.pointsAvailable})`;
+	}
 	const raw = item.question?.question ?? '';
 	if (!raw) return 'Question unavailable';
 	const plain = plainQuestionText(raw);

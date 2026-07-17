@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
@@ -22,6 +22,7 @@
 
 	const progressData = $derived(data.progress as ProgressEntry[]);
 	const statsData = $derived(data.stats as StatsData);
+	const frqEnabled = $derived(Boolean(data.frqEnabled));
 
 	let activeView = $state<ProgressView>(
 		page.url.searchParams.get('view') === 'history' ? 'history' : 'mastery'
@@ -37,17 +38,26 @@
 			.map(([apClass, units]) => ({
 				apClass,
 				units: [...units].sort(
-					(a, b) => a.mastery - b.mastery || b.totalAttempts - a.totalAttempts
+					(a, b) =>
+						(a.totalAttempts ? a.mastery : 101) - (b.totalAttempts ? b.mastery : 101) ||
+						b.totalAttempts - a.totalAttempts
 				),
-				avgMastery: Math.round(
-					units.reduce((sum, unit) => sum + unit.mastery, 0) / Math.max(units.length, 1)
-				),
+				avgMastery: (() => {
+					const mcqUnits = units.filter((unit) => unit.totalAttempts > 0);
+					return mcqUnits.length
+						? Math.round(mcqUnits.reduce((sum, unit) => sum + unit.mastery, 0) / mcqUnits.length)
+						: null;
+				})(),
 				totalAttempts: units.reduce((sum, unit) => sum + unit.totalAttempts, 0)
 			}))
 			.sort((a, b) => a.apClass.localeCompare(b.apClass));
 	});
 
-	const hasActivity = $derived((statsData?.overview.totalQuestions ?? 0) > 0 || grouped.length > 0);
+	const hasActivity = $derived(
+		(statsData?.overview.totalQuestions ?? 0) > 0 ||
+			(statsData?.overview.frqSubmissions ?? 0) > 0 ||
+			grouped.length > 0
+	);
 
 	function masteryBarClass(mastery: number): string {
 		if (mastery >= 75) return 'bg-emerald-500';
@@ -57,9 +67,9 @@
 
 	function practiceHref(apClass: string, unit: string | undefined = undefined): string {
 		const base = resolve('/app/practice');
-		const params = new URLSearchParams({ apClass });
-		if (unit) params.set('unit', unit);
-		return `${base}?${params.toString()}`;
+		const classParam = `apClass=${encodeURIComponent(apClass)}`;
+		const unitParam = unit ? `&unit=${encodeURIComponent(unit)}` : '';
+		return `${base}?${classParam}${unitParam}`;
 	}
 
 	function syncViewToUrl(view: ProgressView) {
@@ -67,7 +77,11 @@
 		const next = view === 'history' ? `${path}?view=history` : path;
 		const current = page.url.pathname + page.url.search;
 		if (current !== next) {
-			goto(next, { replaceState: true, keepFocus: true, noScroll: true });
+			goto(resolve(view === 'history' ? '/app/progress?view=history' : '/app/progress'), {
+				replaceState: true,
+				keepFocus: true,
+				noScroll: true
+			});
 		}
 	}
 
@@ -77,7 +91,7 @@
 		syncViewToUrl(view);
 	}
 
-	$effect(() => {
+	afterNavigate(() => {
 		const param = page.url.searchParams.get('view');
 		const nextView: ProgressView = param === 'history' ? 'history' : 'mastery';
 		if (activeView !== nextView) {
@@ -105,7 +119,22 @@
 					<p class="text-xs text-muted-foreground">Questions</p>
 				</div>
 			</div>
-		</Card.Root>
+			</Card.Root>
+			{#if frqEnabled}
+			<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
+			<div class="flex items-center gap-3">
+				<div
+					class="flex size-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400"
+				>
+					<BookOpenIcon class="size-4" />
+				</div>
+				<div>
+					<p class="text-2xl font-semibold tracking-tight">{statsData.overview.frqSubmissions}</p>
+					<p class="text-xs text-muted-foreground">FRQ submissions</p>
+				</div>
+			</div>
+			</Card.Root>
+			{/if}
 		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
@@ -184,20 +213,29 @@
 										<div class="min-w-0 flex-1">
 											<p class="truncate text-sm font-medium">{subject.subject}</p>
 											<p class="text-xs text-muted-foreground">{subject.total} questions</p>
+											{#if subject.frqAttempts > 0}
+												<p class="text-xs text-muted-foreground">
+													{subject.frqAttempts} FRQ · {subject.frqAveragePercentage}% average
+												</p>
+											{/if}
 										</div>
-										<div class="flex w-36 items-center gap-3">
-											<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-												<div
-													class="h-full rounded-full transition-all {masteryBarClass(
-														subject.accuracy
-													)}"
-													style="width: {subject.accuracy}%"
-												></div>
-											</div>
-											<span class="w-10 text-right text-sm font-medium tabular-nums">
-												{subject.accuracy}%
-											</span>
-										</div>
+						{#if subject.total > 0}
+							<div class="flex w-36 items-center gap-3">
+								<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+									<div
+										class="h-full rounded-full transition-all {masteryBarClass(
+											subject.accuracy
+										)}"
+										style="width: {subject.accuracy}%"
+									></div>
+								</div>
+								<span class="w-10 text-right text-sm font-medium tabular-nums">
+									{subject.accuracy}%
+								</span>
+							</div>
+						{:else}
+							<span class="text-sm text-muted-foreground">No MCQ attempts</span>
+						{/if}
 									</div>
 								{/each}
 							</div>
@@ -227,9 +265,13 @@
 												<Card.Title class="truncate text-base font-semibold tracking-tight">
 													{subject.apClass}
 												</Card.Title>
-												<Card.Description>
-													{subject.totalAttempts} attempts · {subject.avgMastery}% avg mastery
-												</Card.Description>
+									<Card.Description>
+										{#if subject.avgMastery !== null}
+											{subject.totalAttempts} attempts · {subject.avgMastery}% avg MCQ mastery
+										{:else}
+											FRQ performance is tracked separately
+										{/if}
+									</Card.Description>
 											</div>
 											<span
 												class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
@@ -237,6 +279,7 @@
 												{subject.units.length} unit{subject.units.length === 1 ? '' : 's'}
 											</span>
 										</div>
+									{#if subject.avgMastery !== null}
 										<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
 											<div
 												class="h-full rounded-full transition-all {masteryBarClass(
@@ -245,6 +288,7 @@
 												style="width: {subject.avgMastery}%"
 											></div>
 										</div>
+									{/if}
 									</Card.Header>
 									<Card.Content class="space-y-4 pt-4">
 										{#each subject.units as unit (`${subject.apClass}:${unit.unit || 'all-units'}`)}
@@ -254,20 +298,33 @@
 														<p class="truncate text-sm font-medium">
 															{unit.unit || 'All units'}
 														</p>
-														<p class="text-xs text-muted-foreground">
-															{unit.totalAttempts} attempt{unit.totalAttempts === 1 ? '' : 's'}
-														</p>
+																{#if unit.totalAttempts > 0}
+																	<p class="text-xs text-muted-foreground">
+																		{unit.totalAttempts} attempt{unit.totalAttempts === 1 ? '' : 's'}
+																	</p>
+																{:else}
+																	<p class="text-xs text-muted-foreground">No MCQ attempts</p>
+																{/if}
+														{#if unit.frqAttempts}
+															<p class="text-xs text-muted-foreground">
+																{unit.frqAttempts} FRQ · {unit.frqAveragePercentage}% average
+															</p>
+														{/if}
 													</div>
-													<span class="text-sm font-semibold tabular-nums">{unit.mastery}%</span>
-												</div>
-												<div class="h-2 overflow-hidden rounded-full bg-muted">
-													<div
-														class="h-full rounded-full transition-all {masteryBarClass(
-															unit.mastery
-														)}"
-														style="width: {unit.mastery}%"
-													></div>
-												</div>
+											{#if unit.totalAttempts > 0}
+												<span class="text-sm font-semibold tabular-nums">{unit.mastery}%</span>
+											{/if}
+									</div>
+									{#if unit.totalAttempts > 0}
+										<div class="h-2 overflow-hidden rounded-full bg-muted">
+											<div
+												class="h-full rounded-full transition-all {masteryBarClass(
+													unit.mastery
+												)}"
+												style="width: {unit.mastery}%"
+											></div>
+										</div>
+									{/if}
 												<Button
 													variant="ghost"
 													size="sm"

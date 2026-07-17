@@ -15,7 +15,11 @@ interface PoolModel<TDoc extends PoolDocument> {
 	): Promise<TDoc | null>;
 }
 
-export interface McqPoolConfig<TDoc extends PoolDocument, TCached extends { cached: boolean }> {
+export interface QuestionPoolConfig<
+	TDoc extends PoolDocument,
+	TCached extends { cached: boolean }
+> {
+	questionType: 'mcq' | 'frq';
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
 	model: PoolModel<TDoc>;
@@ -28,6 +32,7 @@ export interface McqPoolConfig<TDoc extends PoolDocument, TCached extends { cach
 export type QuestionPathSegment = 'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower';
 
 export type QuestionPathMetrics = {
+	questionType: 'mcq' | 'frq';
 	segment?: QuestionPathSegment;
 	cacheLookupMs: number;
 	lockWaitMs: number;
@@ -45,8 +50,8 @@ function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
 	return [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
 }
 
-export function createMcqPool<TDoc extends PoolDocument, TCached extends { cached: boolean }>(
-	config: McqPoolConfig<TDoc, TCached>
+export function createQuestionPool<TDoc extends PoolDocument, TCached extends { cached: boolean }>(
+	config: QuestionPoolConfig<TDoc, TCached>
 ) {
 	const inFlightMiss = new Map<string, Promise<TCached>>();
 
@@ -116,7 +121,7 @@ export function createMcqPool<TDoc extends PoolDocument, TCached extends { cache
 			return serveCachedDoc(doc, className, cacheUnit);
 		}
 
-		const missKey = `miss::mcq::${className}::${cacheUnit}`;
+		const missKey = `miss::${config.questionType}::${className}::${cacheUnit}`;
 
 		// Only coalesce unrestricted misses. Session-specific exclusions must not
 		// reuse another request's in-flight result (it may be in their exclude list).

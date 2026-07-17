@@ -80,9 +80,10 @@ export function createHistoryColumns(
 			}
 		},
 		{
-			accessorKey: 'attempt.selectedAnswer',
 			id: 'answer',
-			header: 'Your answer',
+			accessorFn: (row) =>
+				row.kind === 'mcq' ? (row.attempt.selectedAnswer ?? '') : row.attempt.percentage,
+			header: 'Answer / score',
 			cell: ({ row }) => {
 				const answerSnippet = createRawSnippet<[{ answer: string }]>((getData) => {
 					const { answer } = getData();
@@ -91,41 +92,68 @@ export function createHistoryColumns(
 					};
 				});
 				return renderSnippet(answerSnippet, {
-					answer: row.original.attempt.selectedAnswer ?? '—'
+					answer:
+						row.original.kind === 'mcq'
+							? (row.original.attempt.selectedAnswer ?? '—')
+							: `${row.original.attempt.pointsEarned}/${row.original.attempt.pointsAvailable} (${row.original.attempt.percentage}%)`
 				});
 			},
 			enableSorting: false
 		},
 		{
-			accessorKey: 'attempt.wasCorrect',
 			id: 'result',
+			accessorFn: (row) =>
+				row.kind === 'mcq' ? (row.attempt.wasCorrect ? 1 : 0) : row.attempt.percentage,
 			header: ({ column }) =>
 				renderComponent(HistoryDataTableSortButton, {
 					label: 'Result',
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const resultSnippet = createRawSnippet<[{ correct: boolean | undefined }]>((getData) => {
-					const { correct } = getData();
-					const label = correct === undefined ? 'Revealed' : correct ? 'Correct' : 'Incorrect';
-					const classes =
-						correct === undefined
-							? 'bg-muted text-muted-foreground'
-							: correct
-								? 'bg-secondary text-secondary-foreground'
-								: 'bg-destructive/10 text-destructive';
+				const resultSnippet = createRawSnippet<[{ label: string; classes: string }]>((getData) => {
+					const { label, classes } = getData();
 					return {
 						render: () =>
 							`<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes}">${label}</span>`
 					};
 				});
+				const result =
+					row.original.kind === 'frq'
+						? {
+								label: `${row.original.attempt.percentage}%`,
+								classes:
+									row.original.attempt.percentage >= 70
+										? 'bg-secondary text-secondary-foreground'
+										: 'bg-muted text-muted-foreground'
+							}
+						: {
+								label:
+									row.original.attempt.wasCorrect === undefined
+										? 'Revealed'
+										: row.original.attempt.wasCorrect
+											? 'Correct'
+											: 'Incorrect',
+								classes:
+									row.original.attempt.wasCorrect === undefined
+										? 'bg-muted text-muted-foreground'
+										: row.original.attempt.wasCorrect
+											? 'bg-secondary text-secondary-foreground'
+											: 'bg-destructive/10 text-destructive'
+							};
 				return renderSnippet(resultSnippet, {
-					correct: row.original.attempt.wasCorrect
+					...result
 				});
 			},
 			sortingFn: (rowA, rowB) => {
-				const rank = (value: boolean | undefined) => (value === undefined ? -1 : value ? 1 : 0);
-				return rank(rowB.original.attempt.wasCorrect) - rank(rowA.original.attempt.wasCorrect);
+				const score = (item: HistoryItem) =>
+					item.kind === 'frq'
+						? item.attempt.percentage
+						: item.attempt.wasCorrect === undefined
+							? -1
+							: item.attempt.wasCorrect
+								? 100
+								: 0;
+				return score(rowB.original) - score(rowA.original);
 			}
 		},
 		{

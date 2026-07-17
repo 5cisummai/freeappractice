@@ -2,17 +2,22 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import PracticeShell from '$lib/components/practice/practice-shell.svelte';
 	import type { AnswerResult } from '$lib/questions/types';
 	import { toast } from 'svelte-sonner';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
+	let { data } = $props();
+
 	let selectedClass = $state('');
 	let selectedUnit = $state('');
+	let unitRange = $state<number[] | undefined>(undefined);
 	let requestVersion = $state(0);
+	let mode = $state<'mcq' | 'frq'>('mcq');
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
+	const presetMode = $derived(page.url.searchParams.get('mode') ?? '');
 
 	type ApiErrorPayload = { error?: string };
 
@@ -20,6 +25,7 @@
 		if (!presetClass) return;
 		selectedClass = presetClass;
 		selectedUnit = presetUnit;
+		if (data.frqEnabled && presetMode === 'frq') mode = 'frq';
 		requestVersion = 1;
 	});
 
@@ -86,6 +92,13 @@
 			'Could not save this attempt to your progress history.'
 		);
 	}
+
+	function handleFrqGraded(): void {
+		capturePostHogEvent('frq_progress_saved', {
+			ap_class: selectedClass,
+			unit: selectedUnit
+		});
+	}
 </script>
 
 <svelte:head>
@@ -94,11 +107,15 @@
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">
 	<div class="mx-auto max-w-250">
-		<QuestionShell
+		<PracticeShell
 			bind:selectedClass
 			bind:selectedUnit
+			bind:unitRange
 			bind:requestVersion
+			bind:mode
+			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
 			onAnswered={handleAnswered}
+			onFrqGraded={handleFrqGraded}
 		/>
 	</div>
 </PageShell>

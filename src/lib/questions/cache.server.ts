@@ -5,7 +5,7 @@ import {
 	type GenerateResult
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
-import { createMcqPool, type GetQuestionOptions } from '$lib/questions/pool.server';
+import { createQuestionPool, type GetQuestionOptions } from '$lib/questions/pool.server';
 import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
 import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
@@ -94,7 +94,8 @@ async function generateQuestionForPool(
 
 export type CachedResult = GenerateResult & { cached: boolean };
 
-const mcqPool = createMcqPool<IQuestion, CachedResult>({
+const mcqPool = createQuestionPool<IQuestion, CachedResult>({
+	questionType: 'mcq',
 	logScope: 'cache',
 	normalizeUnit: (unit) => normalizeUnit(unit),
 	model: Question,

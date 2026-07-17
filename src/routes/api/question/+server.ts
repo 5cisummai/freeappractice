@@ -32,6 +32,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		errorType?: QuestionRequestErrorType
 	): void {
 		captureQuestionRequestMetric({
+			question_type: path.questionType,
 			segment,
 			ap_class: apClass,
 			unit,

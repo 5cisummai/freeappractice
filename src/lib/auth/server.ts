@@ -20,6 +20,7 @@ import { connectDb } from '$lib/server/db';
 import { UserProfile } from '$lib/users/model.server';
 import { ensureUserProfile } from '$lib/users/profile.server';
 import { Referral } from '$lib/referrals/model.server';
+import { FrqAttempt } from '$lib/frq/model.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
 import { getAdminUserIds } from '$lib/auth/admin.server';
 import {
@@ -78,6 +79,7 @@ export const auth = betterAuth({
 				await connectDb();
 				await Promise.all([
 					UserProfile.deleteOne({ userId: user.id }),
+					FrqAttempt.deleteMany({ userId: user.id }),
 					Referral.deleteMany({
 						$or: [{ referrerUserId: user.id }, { referredUserId: user.id }]
 					})

@@ -17,6 +17,7 @@ export type QuestionRequestErrorType = 'validation' | 'generation' | 'busy' | 'u
 export const QUESTION_REQUEST_EVENT = 'question_request';
 
 export type QuestionRequestMetricProps = {
+	question_type: 'mcq' | 'frq';
 	segment: QuestionRequestSegment;
 	ap_class: string;
 	unit: string;
@@ -33,6 +34,7 @@ export type QuestionRequestMetricProps = {
 };
 
 const ALLOWED_PROP_KEYS = new Set<keyof QuestionRequestMetricProps>([
+	'question_type',
 	'segment',
 	'ap_class',
 	'unit',
@@ -76,8 +78,11 @@ export function captureQuestionRequestMetric(props: QuestionRequestMetricProps):
 	);
 }
 
-export function createQuestionPathMetrics(): QuestionPathMetrics {
+export function createQuestionPathMetrics(
+	questionType: QuestionPathMetrics['questionType'] = 'mcq'
+): QuestionPathMetrics {
 	return {
+		questionType,
 		cacheLookupMs: 0,
 		lockWaitMs: 0,
 		generationMs: 0,

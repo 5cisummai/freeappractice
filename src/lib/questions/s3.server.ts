@@ -7,7 +7,7 @@ import {
 import { env as privateEnv } from '$env/dynamic/private';
 import type { Readable } from 'stream';
 
-const ALLOWED_KEY_PREFIXES = ['questions/'] as const;
+const ALLOWED_KEY_PREFIXES = ['questions/', 'frqs/'] as const;
 
 export class S3ConfigError extends Error {
 	constructor(message: string) {

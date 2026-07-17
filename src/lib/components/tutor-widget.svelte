@@ -23,6 +23,8 @@
 		unit?: string;
 		answerChoices?: { A: string; B: string; C: string; D: string } | null;
 		questionId?: string;
+		frqQuestionId?: string;
+		frqAttemptId?: string;
 		topic?: string;
 	};
 
@@ -34,6 +36,8 @@
 		unit = '',
 		answerChoices = null,
 		questionId = '',
+		frqQuestionId = '',
+		frqAttemptId = '',
 		topic = ''
 	}: TutorWidgetProps = $props();
 
@@ -255,17 +259,25 @@
 		isStreaming = true;
 
 		try {
-			const res = await apiFetch('/api/tutor/chat', {
+			const isFrq = Boolean(frqQuestionId);
+			const res = await apiFetch(isFrq ? '/api/tutor/frq' : '/api/tutor/chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				signal: controller.signal,
 				body: JSON.stringify({
-					question,
-					answer,
-					explanation,
-					apClass,
-					unit,
-					answerChoices,
+					...(isFrq
+						? {
+								questionId: frqQuestionId,
+								...(frqAttemptId ? { attemptId: frqAttemptId } : {})
+							}
+						: {
+								question,
+								answer,
+								explanation,
+								apClass,
+								unit,
+								answerChoices
+							}),
 					conversationHistory,
 					message: text
 				})

@@ -15,15 +15,34 @@
 
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
+	const frqEnabled = $derived(Boolean(data.frqEnabled));
 
 	const nextBestUnit = $derived.by(() => {
 		if (!progressData.length) return null;
-		return (
-			[...progressData]
-				.filter((entry) => !!entry.apClass)
-				.sort((a, b) => a.mastery - b.mastery || a.totalAttempts - b.totalAttempts)[0] ?? null
-		);
+		const entries = progressData.filter((entry) => !!entry.apClass);
+		const lowFrq = frqEnabled
+			? entries
+					.filter((entry) => (entry.frqAttempts ?? 0) > 0 && (entry.frqAveragePercentage ?? 0) < 70)
+					.sort((a, b) => (a.frqAveragePercentage ?? 0) - (b.frqAveragePercentage ?? 0))[0]
+			: undefined;
+		const lowMcq = entries
+			.filter((entry) => entry.totalAttempts > 0)
+			.sort((a, b) => a.mastery - b.mastery || a.totalAttempts - b.totalAttempts)[0];
+		const frqOnly = frqEnabled
+			? entries.filter((entry) => (entry.frqAttempts ?? 0) > 0).sort(
+					(a, b) => (a.frqAveragePercentage ?? 0) - (b.frqAveragePercentage ?? 0)
+				)[0]
+			: undefined;
+		return lowFrq ?? lowMcq ?? frqOnly ?? null;
 	});
+	const frqRecommendation = $derived(
+		Boolean(
+			frqEnabled &&
+			nextBestUnit &&
+			(nextBestUnit.frqAveragePercentage ?? 100) < 70 &&
+			(nextBestUnit.frqAttempts ?? 0) > 0
+		)
+	);
 
 	const recommendedPracticeHref = $derived.by(() => {
 		const recommendation = nextBestUnit;
@@ -31,7 +50,8 @@
 		const basePath = resolve('/app/practice');
 		const classParam = `apClass=${encodeURIComponent(recommendation.apClass)}`;
 		const unitParam = recommendation.unit ? `&unit=${encodeURIComponent(recommendation.unit)}` : '';
-		return `${basePath}?${classParam}${unitParam}`;
+		const modeParam = frqRecommendation ? '&mode=frq' : '';
+		return `${basePath}?${classParam}${unitParam}${modeParam}`;
 	});
 
 	const firstName = $derived.by(() => {
@@ -64,7 +84,15 @@
 						{/if}
 					</p>
 					<p class="text-sm text-muted-foreground">
-						Mastery {nextBestUnit.mastery}% across {nextBestUnit.totalAttempts} attempts.
+						{#if frqRecommendation}
+							FRQ average {nextBestUnit.frqAveragePercentage ?? 0}% across
+							{nextBestUnit.frqAttempts ?? 0} submissions.
+						{:else if nextBestUnit.totalAttempts > 0}
+							MCQ mastery {nextBestUnit.mastery}% across {nextBestUnit.totalAttempts} attempts.
+						{:else}
+							FRQ average {nextBestUnit.frqAveragePercentage ?? 0}% across
+							{nextBestUnit.frqAttempts ?? 0} submissions.
+						{/if}
 					</p>
 				{:else}
 					<p class="text-base font-semibold">Start your first focused practice session</p>
@@ -79,7 +107,7 @@
 		</div>
 	</Card.Root>
 
-	{#if (statsData?.overview.totalQuestions ?? 0) > 0}
+	{#if (statsData?.overview.totalQuestions ?? 0) > 0 || (frqEnabled && (statsData?.overview.frqSubmissions ?? 0) > 0)}
 		<p class="text-sm text-muted-foreground">
 			<a
 				href="{resolve('/app/progress')}?view=history"
@@ -91,7 +119,7 @@
 	{/if}
 
 	<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
+			<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<BookOpenIcon class="h-4 w-4" />
@@ -103,8 +131,25 @@
 					<p class="text-xs text-muted-foreground">Questions</p>
 				</div>
 			</div>
-		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
+			</Card.Root>
+			{#if frqEnabled}
+			<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
+			<div class="flex items-center gap-3">
+				<div
+					class="flex size-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400"
+				>
+					<BookOpenIcon class="h-4 w-4" />
+				</div>
+				<div>
+					<p class="text-2xl font-semibold tracking-tight">
+						{statsData?.overview.frqSubmissions ?? 0}
+					</p>
+					<p class="text-xs text-muted-foreground">FRQ submissions</p>
+				</div>
+				</div>
+			</Card.Root>
+			{/if}
+			<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
 			<div class="flex items-center gap-3">
 				<div
 					class="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -222,7 +267,7 @@
 		</div>
 	{/if}
 
-	{#if !statsData || statsData.overview.totalQuestions === 0}
+	{#if !statsData || (statsData.overview.totalQuestions === 0 && statsData.overview.frqSubmissions === 0)}
 		<Card.Root
 			class="rounded-2xl border border-dashed border-border/70 p-10 text-center text-muted-foreground shadow-sm ring-0"
 		>
