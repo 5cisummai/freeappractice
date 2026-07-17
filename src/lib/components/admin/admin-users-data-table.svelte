@@ -143,7 +143,11 @@
 				</Table.Header>
 				<Table.Body>
 					{#each table.getRowModel().rows as row (row.id)}
-						<Table.Row>
+						<Table.Row
+							class={!row.original.emailVerified
+								? 'bg-muted/20 text-muted-foreground opacity-60 hover:bg-muted/30'
+								: undefined}
+						>
 							{#each row.getVisibleCells() as cell (cell.id)}
 								<Table.Cell>
 									<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
