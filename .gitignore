@@ -25,6 +25,7 @@ vite.config.ts.timestamp-*
 /.vscode
 /test-results
 .fallow
+.question-quality-eval*.json
 
 backups/
 .env.local

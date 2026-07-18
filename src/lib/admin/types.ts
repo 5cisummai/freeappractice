@@ -1,4 +1,4 @@
-export type AdminTab = 'overview' | 'users' | 'cache' | 'generation';
+export type AdminTab = 'overview' | 'users' | 'cache' | 'generation' | 'quality';
 
 export interface AdminUserRow {
 	id: string;

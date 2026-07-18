@@ -2,6 +2,7 @@
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import DatabaseZapIcon from '@lucide/svelte/icons/database-zap';
 	import ChartColumnBigIcon from '@lucide/svelte/icons/chart-column-big';
+	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -9,6 +10,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import AdminUsersDataTable from '$lib/components/admin/admin-users-data-table.svelte';
 	import AdminCacheDashboard from '$lib/components/admin/admin-cache-dashboard.svelte';
+	import AdminQualityDashboard from '$lib/components/admin/admin-quality-dashboard.svelte';
 	import type { AdminTab } from '$lib/admin/types.js';
 	import { resolve } from '$app/paths';
 
@@ -18,7 +20,8 @@
 		{ value: 'overview', label: 'Overview', icon: LayoutDashboardIcon },
 		{ value: 'users', label: 'Users', icon: UsersIcon },
 		{ value: 'cache', label: 'Cache', icon: DatabaseZapIcon },
-		{ value: 'generation', label: 'Generation', icon: ChartColumnBigIcon }
+		{ value: 'generation', label: 'Generation', icon: ChartColumnBigIcon },
+		{ value: 'quality', label: 'Quality', icon: BadgeCheckIcon }
 	];
 
 	function tabHref(tab: AdminTab): string {
@@ -152,6 +155,8 @@
 				locks={data.cacheLocks}
 				recentTopics={data.recentTopics}
 			/>
+		{:else if data.activeTab === 'quality'}
+			<AdminQualityDashboard snapshot={data.quality} />
 		{:else if data.activeTab === 'generation'}
 			<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 				<Card.Root class="rounded-2xl border border-border/60 p-5 shadow-sm">

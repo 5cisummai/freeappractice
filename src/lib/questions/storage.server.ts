@@ -1,5 +1,6 @@
+import { createHash, randomUUID } from 'crypto';
 import * as s3 from '$lib/questions/s3.server';
-import { randomUUID } from 'crypto';
+import { registerQuestionIdSafe } from '$lib/questions/question-id-registry.server';
 
 export interface QuestionData {
 	question: string;
@@ -32,7 +33,16 @@ export async function saveQuestionToS3(questionData: QuestionData): Promise<stri
 		createdAt: new Date().toISOString()
 	};
 
-	await s3.putObject({ key, body: JSON.stringify(payload), contentType: 'application/json' });
+	const body = JSON.stringify(payload);
+	await s3.putObject({ key, body, contentType: 'application/json' });
+	await registerQuestionIdSafe(questionId, {
+		apClass: questionData.apClass,
+		unit: questionData.unit,
+		questionCreatedAt: new Date(payload.createdAt),
+		contentHash: createHash('sha256').update(body).digest('hex'),
+		contentLength: body.length,
+		metadataSyncedAt: new Date()
+	});
 	return questionId;
 }
 

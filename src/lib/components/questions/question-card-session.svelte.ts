@@ -426,7 +426,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	function submitQuestionFeedback(
 		reason: 'answer_incorrect' | 'question_unclear' | 'explanation_unclear'
 	): void {
-		if (!currentQuestion || questionFeedbackReason) return;
+		if (!currentQuestion?.questionId || questionFeedbackReason) return;
 
 		questionFeedbackReason = reason;
 		capturePostHogEvent('question_feedback_submitted', {
@@ -437,6 +437,18 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 			topic: currentQuestion.topic,
 			source: currentQuestion.source,
 			is_correct: answerResult?.isCorrect
+		});
+		void apiFetch('/api/question/feedback', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				questionId: currentQuestion.questionId,
+				type: reason,
+				apClass: opts.getSelectedClass(),
+				unit: opts.getSelectedUnit()
+			})
+		}).catch(() => {
+			// Analytics still captures the interaction; durable feedback requires a signed-in session.
 		});
 	}
 

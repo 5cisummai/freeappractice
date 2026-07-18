@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+	S3Client,
+	PutObjectCommand,
+	GetObjectCommand,
+	ListObjectsV2Command
+} from '@aws-sdk/client-s3';
 import { env as privateEnv } from '$env/dynamic/private';
 
 const ALLOWED_KEY_PREFIXES = ['questions/', 'frqs/'] as const;
@@ -103,4 +108,54 @@ export async function getObjectJson<T = unknown>(opts: {
 	}
 	const raw = await resp.Body.transformToString('utf-8');
 	return JSON.parse(raw) as T;
+}
+
+const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
+
+export interface QuestionObjectSummary {
+	questionId: string;
+	etag?: string;
+	lastModified?: Date;
+	size?: number;
+}
+
+/** List every canonical question id from S3 object keys under `questions/`. */
+export async function listQuestionIds(opts?: { bucket?: string }): Promise<string[]> {
+	return (await listQuestionObjects(opts)).map((object) => object.questionId);
+}
+
+/** List canonical questions with the inexpensive metadata returned by S3 listing. */
+export async function listQuestionObjects(opts?: {
+	bucket?: string;
+}): Promise<QuestionObjectSummary[]> {
+	const bucket = resolveBucket(opts?.bucket);
+	const objects: QuestionObjectSummary[] = [];
+	let continuationToken: string | undefined;
+
+	do {
+		const resp = await s3.send(
+			new ListObjectsV2Command({
+				Bucket: bucket,
+				Prefix: 'questions/',
+				ContinuationToken: continuationToken
+			})
+		);
+
+		for (const obj of resp.Contents ?? []) {
+			if (!obj.Key) continue;
+			const match = obj.Key.match(QUESTION_KEY_RE);
+			if (match) {
+				objects.push({
+					questionId: match[1],
+					etag: obj.ETag?.replaceAll('"', ''),
+					lastModified: obj.LastModified,
+					size: obj.Size
+				});
+			}
+		}
+
+		continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
+	} while (continuationToken);
+
+	return objects;
 }
