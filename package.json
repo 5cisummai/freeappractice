@@ -13,6 +13,7 @@
 		"quality": "bun scripts/question-quality.ts",
 		"quality:eval": "bun scripts/evaluate-question-quality-agent.ts",
 		"sync:question-ids": "bun scripts/sync-question-ids-from-s3.ts",
+		"auth:cleanup-unverified": "bun scripts/cleanup-unverified-users.ts",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"lint": "prettier --check . && eslint .",
