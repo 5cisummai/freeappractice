@@ -3,8 +3,7 @@ import { flag } from 'flags/sveltekit';
 /**
  * Kill-switch / rollout gate for the multi-attempt experiment.
  * Sticky cohort assignment still lives on the user profile (Linear DEV-61).
- * Default decide() is true so the experiment runs without a Flags project;
- * override via Flags Explorer when FLAGS_SECRET + toolbar are configured.
+ * Temporarily disabled while the practice auth flow is stabilized.
  */
 export const multiAttemptExperimentEnabled = flag<boolean>({
 	key: 'multi-attempt-experiment',
@@ -14,14 +13,10 @@ export const multiAttemptExperimentEnabled = flag<boolean>({
 		{ value: false, label: 'Off' }
 	],
 	decide() {
-		return true;
+		return false;
 	}
 });
 
 export async function isMultiAttemptExperimentEnabled(): Promise<boolean> {
-	try {
-		return Boolean(await multiAttemptExperimentEnabled());
-	} catch {
-		return true;
-	}
+	return false;
 }
