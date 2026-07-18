@@ -229,14 +229,12 @@ flowchart TD
         Check -->|yes| AppPages["/app/* pages"]
     end
 
-    subgraph Delete["Account / cron cleanup"]
+    subgraph Delete["Account cleanup"]
         Del["deleteAppDataForUsers<br/>UserProfile · FrqAttempt · Referral"]
-        Cron["cleanup-unverified-users<br/>auth rows + deleteAppDataForUsers"]
     end
 
     Profile --> UserData["progress[] · questionHistory[]<br/>bookmarkedQuestions[] · practiceExperiments[]"]
     BA --> Del
-    Cron --> Del
 ```
 
 Canonical site origin for emails, sitemaps, and discovery lives in `$lib/site-url.ts`. Auth callbacks use `$lib/auth/urls.ts` (`authCallbackUrl`). Authenticated API routes use `withAuthedHandler` in `$lib/auth/route-helpers.server.ts`.
@@ -368,7 +366,7 @@ erDiagram
 | **Public site** | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only |
 | **/app** | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings |
 | **Question cache** | Shared pool for MCQ and FRQ: one generation writes S3 once, then stores body + `s3QuestionId` in Mongo; `CacheMissLock` coordinates misses across serverless instances |
-| **Better Auth** | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on delete / unverified-user cron |
+| **Better Auth** | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete |
 | **AI layer** | One OpenAI-compatible provider for generation, FRQ grading, and tutor chat |
 | **Referrals** | Invite cookie → claim → activate on first meaningful attempt |
 | **Vercel** | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights |

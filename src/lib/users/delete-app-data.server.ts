@@ -5,7 +5,7 @@ import { FrqAttempt } from '$lib/frq/model.server';
 
 /**
  * Deletes app-owned rows for one or more users (profile, FRQ attempts, referrals).
- * Auth collections (sessions/accounts/verifications) are cleaned separately by cron.
+ * Auth collections (sessions/accounts/verifications) are cleaned by Better Auth on account delete.
  */
 export async function deleteAppDataForUsers(userIds: string | string[]): Promise<void> {
 	const ids = Array.isArray(userIds) ? userIds : [userIds];

@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	isAuthorizedCronRequest,
-	unverifiedUserCutoff,
-	UNVERIFIED_USER_MAX_AGE_MS
-} from '$lib/auth/cron-auth';
+import { isAuthorizedCronRequest } from '$lib/auth/cron-auth';
 import { isPasswordWithinLimit } from '$lib/auth/password-policy';
 
 describe('isAuthorizedCronRequest', () => {
@@ -27,15 +23,6 @@ describe('isAuthorizedCronRequest', () => {
 			headers: { authorization: `Bearer ${secret}` }
 		});
 		expect(isAuthorizedCronRequest(request, secret)).toBe(true);
-	});
-});
-
-describe('unverifiedUserCutoff', () => {
-	it('is three days before now', () => {
-		const now = new Date('2026-07-16T00:00:00.000Z');
-		expect(unverifiedUserCutoff(now).toISOString()).toBe(
-			new Date(now.getTime() - UNVERIFIED_USER_MAX_AGE_MS).toISOString()
-		);
 	});
 });
 
