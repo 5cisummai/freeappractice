@@ -1,13 +1,4 @@
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
-import type { HistoryItem } from '$lib/users/types.js';
-
-export function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;');
-}
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
 	dateStyle: 'medium',
@@ -27,25 +18,4 @@ export function formatTimeTaken(ms?: number): string | null {
 	const minutes = Math.floor(seconds / 60);
 	const rem = seconds % 60;
 	return rem > 0 ? `${minutes}m ${rem}s` : `${minutes}m`;
-}
-
-export function plainQuestionText(raw: string): string {
-	return raw
-		.replace(/\$\$[\s\S]*?\$\$/g, ' ')
-		.replace(/\\\[([\s\S]*?)\\\]/g, ' ')
-		.replace(/\$[^$]+\$/g, ' ')
-		.replace(/[#*_`>[\]()]/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim();
-}
-
-export function questionPreview(item: HistoryItem, maxLength = 120): string {
-	if (item.kind === 'frq') {
-		return `Written-response: ${item.attempt.percentage}% (${item.attempt.pointsEarned}/${item.attempt.pointsAvailable})`;
-	}
-	const raw = item.question?.question ?? '';
-	if (!raw) return 'Question unavailable';
-	const plain = plainQuestionText(raw);
-	if (plain.length <= maxLength) return plain;
-	return `${plain.slice(0, maxLength)}…`;
 }

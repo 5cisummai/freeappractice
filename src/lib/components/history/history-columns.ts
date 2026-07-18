@@ -1,7 +1,8 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
 import type { HistoryItem } from '$lib/users/types.js';
-import { escapeHtml, formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
+import { escapeHtml } from '$lib/escape-html.js';
+import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
 import HistoryDataTableCheckbox from './history-data-table-checkbox.svelte';
 import HistoryDataTableSortButton from './history-data-table-sort-button.svelte';

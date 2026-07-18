@@ -3,6 +3,6 @@ import type { RequestHandler } from './$types';
 
 export const prerender = false;
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = () => {
 	return json({ status: 'ok', timestamp: new Date().toISOString() });
 };

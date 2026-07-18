@@ -46,8 +46,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	try {
 		const validationStarted = Date.now();
-		const body = await request.json();
-		const validated = validateQuestionRequest(body);
+		const validated = validateQuestionRequest(await request.json());
 		validationMs = Date.now() - validationStarted;
 		if (!validated.ok) {
 			recordMetric(validated.response.status, 'error', false, 'validation');
@@ -63,11 +62,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 		recordMetric(200, path.segment ?? 'error', result.cached ?? false);
 
-		const answerStr =
-			typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer;
-
 		return json({
-			answer: answerStr,
+			answer:
+				typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer,
 			provider: result.provider,
 			model: result.model,
 			cached: result.cached ?? false,

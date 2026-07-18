@@ -9,7 +9,7 @@ export const GET: RequestHandler = () => {
 	return json(
 		{
 			protocolVersion: '2024-11-05',
-			serverInfo: mcpServerInfo(),
+			serverInfo: mcpServerInfo,
 			capabilities: {
 				tools: {}
 			}
@@ -22,7 +22,7 @@ export const GET: RequestHandler = () => {
 	);
 };
 
-export const POST: RequestHandler = async () => {
+export const POST: RequestHandler = () => {
 	return json(
 		{
 			jsonrpc: '2.0',

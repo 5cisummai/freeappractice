@@ -17,13 +17,12 @@ import {
 	htmlToBasicMarkdown,
 	markdownResponse
 } from '$lib/server/agent-discovery/markdown';
-import { absoluteUrl, getAgentDiscoveryOrigin } from '$lib/server/agent-discovery/site';
+import { absoluteUrl } from '$lib/server/agent-discovery/site';
 
 const requestUrl = new URL('https://agents.example/path');
 
 describe('agent discovery site helpers', () => {
-	it('resolves origin and absolute URLs', () => {
-		expect(getAgentDiscoveryOrigin(requestUrl)).toBe('https://agents.example');
+	it('resolves absolute URLs from the request origin', () => {
 		expect(absoluteUrl('/api', requestUrl)).toBe('https://agents.example/api');
 		expect(absoluteUrl('health', requestUrl)).toBe('https://agents.example/health');
 	});
@@ -47,7 +46,7 @@ describe('oauth metadata builders', () => {
 
 describe('mcp and api catalog', () => {
 	it('exposes server info and an honest empty MCP tool list', () => {
-		expect(mcpServerInfo().name).toBe('Free AP Practice');
+		expect(mcpServerInfo.name).toBe('Free AP Practice');
 		const card = buildMcpServerCard(requestUrl);
 		expect(card.transport.endpoint).toBe('https://agents.example/api/mcp');
 		expect(card.tools).toEqual([]);

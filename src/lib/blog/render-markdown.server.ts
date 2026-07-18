@@ -1,15 +1,7 @@
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
-
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
+import { escapeHtml } from '$lib/escape-html';
 
 function isSafeUrl(url: string): boolean {
 	const normalized = url.trim().toLowerCase();

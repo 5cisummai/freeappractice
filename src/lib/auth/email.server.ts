@@ -3,18 +3,10 @@ import { RESEND_API_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
 import { getSiteUrl } from '$lib/site-url';
 import { assertResendSent } from '$lib/auth/resend-result';
+import { escapeHtml } from '$lib/escape-html';
 
 const resend = new Resend(RESEND_API_KEY);
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
-
-function escapeHtml(value: string): string {
-	return value
-		.replaceAll('&', '&amp;')
-		.replaceAll('<', '&lt;')
-		.replaceAll('>', '&gt;')
-		.replaceAll('"', '&quot;')
-		.replaceAll("'", '&#39;');
-}
 
 async function sendEmail(payload: { to: string; subject: string; html: string }): Promise<void> {
 	const result = await resend.emails.send({

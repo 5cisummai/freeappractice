@@ -1,12 +1,7 @@
 import { getSiteUrl } from '$lib/site-url';
 
-/** Canonical origin for agent discovery documents (no trailing slash). */
-export function getAgentDiscoveryOrigin(requestUrl?: URL): string {
-	return getSiteUrl(requestUrl?.origin);
-}
-
 export function absoluteUrl(path: string, requestUrl?: URL): string {
-	const origin = getAgentDiscoveryOrigin(requestUrl);
+	const origin = getSiteUrl(requestUrl?.origin);
 	const normalized = path.startsWith('/') ? path : `/${path}`;
 	return `${origin}${normalized}`;
 }

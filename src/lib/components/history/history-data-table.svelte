@@ -1,12 +1,10 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import {
-		type ColumnFiltersState,
 		type RowSelectionState,
 		type SortingState,
 		type VisibilityState,
-		getCoreRowModel,
-		getFilteredRowModel
+		getCoreRowModel
 	} from '@tanstack/table-core';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import { createHistoryColumns } from './history-columns.js';
@@ -36,7 +34,6 @@
 		onSortingChange
 	}: HistoryDataTableProps = $props();
 
-	let columnFilters = $state<ColumnFiltersState>([]);
 	let columnVisibility = $state<VisibilityState>({});
 	let rowSelection = $state<RowSelectionState>({});
 	let detailOpen = $state(false);
@@ -85,13 +82,9 @@
 			},
 			get rowSelection() {
 				return rowSelection;
-			},
-			get columnFilters() {
-				return columnFilters;
 			}
 		},
 		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
 		onPaginationChange: (updater) => {
 			const current = { pageIndex, pageSize };
 			const next = typeof updater === 'function' ? updater(current) : updater;
@@ -102,9 +95,6 @@
 		onSortingChange: (updater) => {
 			const next = typeof updater === 'function' ? updater(sorting) : updater;
 			onSortingChange(next);
-		},
-		onColumnFiltersChange: (updater) => {
-			columnFilters = typeof updater === 'function' ? updater(columnFilters) : updater;
 		},
 		onColumnVisibilityChange: (updater) => {
 			columnVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
@@ -196,8 +186,8 @@
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<p class="text-sm text-muted-foreground">
-			{table.getFilteredSelectedRowModel().rows.length} of
-			{table.getFilteredRowModel().rows.length} row(s) selected on this page · {total} total attempt{total ===
+			{table.getSelectedRowModel().rows.length} of
+			{table.getRowModel().rows.length} row(s) selected on this page · {total} total attempt{total ===
 			1
 				? ''
 				: 's'}
