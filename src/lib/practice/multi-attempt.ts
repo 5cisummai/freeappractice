@@ -6,7 +6,7 @@ export type PracticeVariant = 'control' | 'multi_attempt_hints';
 
 export type TerminalOutcome = 'correct' | 'revealed' | 'max_attempts';
 
-export type FallbackReason = 'none' | 'missing_hints' | 'experiment_disabled';
+type FallbackReason = 'none' | 'missing_hints' | 'experiment_disabled';
 
 export type PracticeExperimentAssignment = {
 	key: string;
@@ -58,7 +58,7 @@ export function normalizeAnswerLetter(value: unknown): 'A' | 'B' | 'C' | 'D' | n
 	return ANSWER_CHOICES.has(letter) ? (letter as 'A' | 'B' | 'C' | 'D') : null;
 }
 
-export type MultiAttemptPayload = {
+type MultiAttemptPayload = {
 	answers: Array<'A' | 'B' | 'C' | 'D'>;
 	terminalOutcome: TerminalOutcome;
 	hintsShown: number;
@@ -67,7 +67,7 @@ export type MultiAttemptPayload = {
 	experimentVersion: number;
 };
 
-export type ValidatedMultiAttemptInput = Omit<
+type ValidatedMultiAttemptInput = Omit<
 	MultiAttemptPayload,
 	'experimentKey' | 'experimentVersion'
 >;

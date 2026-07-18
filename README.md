@@ -97,11 +97,10 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
 
-| Variable         | Purpose                                    |
-| ---------------- | ------------------------------------------ |
-| `ADVANCED_MODEL` | Model for STEM and other advanced subjects |
-| `BASIC_MODEL`    | Model for humanities and lighter subjects  |
-| `TUTOR_MODEL`    | Model for the in-app tutor chat            |
+| Variable            | Purpose                         |
+| ------------------- | ------------------------------- |
+| `GENERATION_MODEL`  | Model for question generation   |
+| `TUTOR_MODEL`       | Model for the in-app tutor chat |
 
 Commonly needed for full functionality:
 
@@ -128,8 +127,7 @@ To run question generation and tutoring against a local model instead of OpenAI:
    ```env
    OPENAI_BASE_URL=http://localhost:1234/v1
    OPEN_AI_KEY=lm-studio
-   ADVANCED_MODEL=your-loaded-model-id
-   BASIC_MODEL=your-loaded-model-id
+   GENERATION_MODEL=your-loaded-model-id
    TUTOR_MODEL=your-loaded-model-id
    ```
 

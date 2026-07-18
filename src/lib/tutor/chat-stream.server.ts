@@ -7,7 +7,7 @@ import {
 } from '$lib/tutor/chat-request';
 
 export type TutorChatFunction = typeof chat;
-export type FrqTutorChatFunction = typeof chatFrq;
+type FrqTutorChatFunction = typeof chatFrq;
 
 function createChatStream(
 	requestSignal: AbortSignal,

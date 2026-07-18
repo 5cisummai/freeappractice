@@ -1,12 +1,10 @@
 export type FrqCourseProfile = {
-	apClass: string;
 	formatId: string;
 	supportedFormats: readonly string[];
 	generationConstraints: {
 		minSections: number;
 		maxSections: number;
 		maxMaterials: number;
-		originalOnly: true;
 	};
 	scoringMechanics: 'criterion-level-rubric';
 	allowedResponseTypes: readonly ['text'];
@@ -18,10 +16,9 @@ export type FrqCourseProfile = {
 
 const PROFILES: Record<string, FrqCourseProfile> = {
 	'AP Biology': {
-		apClass: 'AP Biology',
 		formatId: 'scientific-analysis',
 		supportedFormats: ['materials', 'multi-section', 'text'],
-		generationConstraints: { minSections: 1, maxSections: 12, maxMaterials: 12, originalOnly: true },
+		generationConstraints: { minSections: 1, maxSections: 12, maxMaterials: 12 },
 		scoringMechanics: 'criterion-level-rubric',
 		allowedResponseTypes: ['text'],
 		profileVersion: 'biology-v1',
@@ -32,10 +29,9 @@ const PROFILES: Record<string, FrqCourseProfile> = {
 			'Award points only for biologically correct claims connected to evidence or mechanisms. Definitions alone do not earn application or reasoning points.'
 	},
 	'AP Calculus AB': {
-		apClass: 'AP Calculus AB',
 		formatId: 'calculus-worked-response',
 		supportedFormats: ['materials', 'multi-section', 'text'],
-		generationConstraints: { minSections: 1, maxSections: 12, maxMaterials: 12, originalOnly: true },
+		generationConstraints: { minSections: 1, maxSections: 12, maxMaterials: 12 },
 		scoringMechanics: 'criterion-level-rubric',
 		allowedResponseTypes: ['text'],
 		profileVersion: 'calculus-ab-v1',
@@ -46,10 +42,9 @@ const PROFILES: Record<string, FrqCourseProfile> = {
 			'Award method and setup credit independently from arithmetic accuracy when the rubric allows it. Require mathematical justification when a conclusion depends on a theorem or sign analysis.'
 	},
 	'AP English Language': {
-		apClass: 'AP English Language',
 		formatId: 'argument-analysis',
 		supportedFormats: ['materials', 'multi-section', 'text'],
-		generationConstraints: { minSections: 1, maxSections: 12, maxMaterials: 12, originalOnly: true },
+		generationConstraints: { minSections: 1, maxSections: 12, maxMaterials: 12 },
 		scoringMechanics: 'criterion-level-rubric',
 		allowedResponseTypes: ['text'],
 		profileVersion: 'english-language-v1',

@@ -1,4 +1,5 @@
 import type { IQuestionAttempt } from '$lib/users/records.server';
+import type { FrqHistoryItem } from '$lib/users/types';
 import { getQuestionsLookupMap } from '$lib/questions/storage.server';
 import type { StoredQuestion } from '$lib/questions/storage.server';
 import { FrqAttempt } from '$lib/frq/model.server';
@@ -8,22 +9,6 @@ export type McqHistoryItem = {
 	kind: 'mcq';
 	attempt: IQuestionAttempt;
 	question: StoredQuestion | null;
-};
-
-export type FrqHistoryItem = {
-	kind: 'frq';
-	attempt: {
-		id: string;
-		questionId: string;
-		apClass: string;
-		unit: string;
-		pointsEarned: number;
-		pointsAvailable: number;
-		percentage: number;
-		timeTakenMs: number;
-		attemptedAt: string;
-	};
-	question: null;
 };
 
 export type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem;

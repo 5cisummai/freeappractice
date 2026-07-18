@@ -25,10 +25,6 @@ function escapeMarkdown(text: string): string {
 		.trim();
 }
 
-function sanitizeIssueTitle(title: string): string {
-	return title.replace(/[\r\n]+/g, ' ').trim();
-}
-
 function buildIssueBody(parsed: BugReportPayload): string {
 	const lines: string[] = [];
 
@@ -58,15 +54,6 @@ function buildIssueBody(parsed: BugReportPayload): string {
 	return lines.join('\n\n');
 }
 
-function getRetryAfterMs(ip: string, now: number): number {
-	const lastSubmittedAt = recentReportByIp.get(ip);
-	if (!lastSubmittedAt) {
-		return 0;
-	}
-
-	return Math.max(0, RATE_LIMIT_WINDOW_MS - (now - lastSubmittedAt));
-}
-
 function pruneExpiredRateLimits(now: number) {
 	for (const [ip, lastSubmittedAt] of recentReportByIp.entries()) {
 		if (now - lastSubmittedAt >= RATE_LIMIT_WINDOW_MS) {
@@ -80,7 +67,10 @@ export async function submitBugReport(request: Request, clientIp: string): Promi
 		const now = Date.now();
 		pruneExpiredRateLimits(now);
 
-		const retryAfterMs = getRetryAfterMs(clientIp, now);
+		const lastSubmittedAt = recentReportByIp.get(clientIp);
+		const retryAfterMs = lastSubmittedAt
+			? Math.max(0, RATE_LIMIT_WINDOW_MS - (now - lastSubmittedAt))
+			: 0;
 		if (retryAfterMs > 0) {
 			const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
 			return json(
@@ -114,7 +104,7 @@ export async function submitBugReport(request: Request, clientIp: string): Promi
 		const parsed = result.data;
 
 		const issuePayload = {
-			title: `[Bug] ${escapeMarkdown(sanitizeIssueTitle(parsed.title))}`,
+			title: `[Bug] ${escapeMarkdown(parsed.title.replace(/[\r\n]+/g, ' ').trim())}`,
 			body: buildIssueBody(parsed),
 			labels: ['bug', SEVERITY_LABEL[parsed.severity]]
 		};

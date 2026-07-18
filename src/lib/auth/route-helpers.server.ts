@@ -8,7 +8,7 @@ type AuthedHandler = (event: RequestEvent, userId: string) => Promise<Response>;
  * Full auth guard for use in +server.ts handlers.
  * Uses Better Auth session cookies; falls back to locals when already populated by hooks.
  */
-export async function requireAuth(event: RequestEvent): Promise<string> {
+async function requireAuth(event: RequestEvent): Promise<string> {
 	if (event.locals.userId) {
 		return event.locals.userId;
 	}

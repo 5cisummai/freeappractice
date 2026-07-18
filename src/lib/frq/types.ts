@@ -29,7 +29,7 @@ export const FrqSectionSchema = z
 	})
 	.strict();
 
-export const FrqRubricLevelSchema = z
+const FrqRubricLevelSchema = z
 	.object({
 		points: z.number().int().min(0).max(12),
 		description: z.string().trim().min(1).max(4_000)
@@ -210,8 +210,6 @@ export type FrqProgressSummary = {
 };
 
 export function toPublicFrqQuestion(questionId: string, question: FrqQuestion): PublicFrqQuestion {
-	const publicQuestion = Object.fromEntries(
-		Object.entries(question).filter(([key]) => key !== 'rubric')
-	) as Omit<FrqQuestion, 'rubric'>;
+	const { rubric: _rubric, ...publicQuestion } = question;
 	return { ...publicQuestion, questionId };
 }

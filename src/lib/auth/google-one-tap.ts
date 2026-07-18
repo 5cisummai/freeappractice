@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { goto, invalidateAll } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { authClient, googleClientId, googleOneTapEnabled } from '$lib/auth/client.js';
+import { authClient, googleClientId } from '$lib/auth/client.js';
 
 type OneTapContext = 'signin' | 'signup' | 'use';
 
@@ -144,7 +144,7 @@ export function cancelGoogleOneTap(): void {
 }
 
 export async function maybePromptGoogleOneTap(pathname: string): Promise<void> {
-	if (!browser || !googleOneTapEnabled) return;
+	if (!browser || !googleClientId) return;
 	if (!isGoogleOneTapRoute(pathname)) return;
 	if (promptedPaths.has(pathname) || promptInFlight) return;
 	if (activePromptPath === pathname) return;

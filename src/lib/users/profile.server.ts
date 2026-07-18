@@ -33,16 +33,7 @@ export async function findUserProfileOrFail(
 	let profile = await query;
 	if (profile) return profile;
 
-	try {
-		await UserProfile.create({
-			userId,
-			progress: [],
-			questionHistory: [],
-			bookmarkedQuestions: []
-		});
-	} catch {
-		// Concurrent create won the race — fall through to re-fetch.
-	}
+	await ensureUserProfile(userId);
 
 	query = UserProfile.findOne({ userId });
 	if (select) query = query.select(select);

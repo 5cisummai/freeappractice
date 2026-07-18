@@ -5,27 +5,12 @@ import {
 	type GenerateResult
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
-import { createQuestionPool, type GetQuestionOptions } from '$lib/questions/pool.server';
+import { createQuestionPool } from '$lib/questions/pool.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
-export type { GetQuestionOptions };
-
-const RECENT_TOPICS_WINDOW = 20;
-
-type McqAnswerBody = {
-	question: string;
-	optionA: string;
-	optionB: string;
-	optionC: string;
-	optionD: string;
-	correctAnswer: 'A' | 'B' | 'C' | 'D';
-	explanation: string;
-	topicsCovered?: string;
-	hint1: string;
-	hint2: string;
-};
+type CachedResult = GenerateResult & { cached: boolean };
 
 /** Build an ephemeral hot-cache pool document with the full MCQ body inline. */
 function buildHotPoolDoc(opts: {
@@ -33,7 +18,6 @@ function buildHotPoolDoc(opts: {
 	apClass: string;
 	unit: string;
 	contentHash: string;
-	topicsCovered: string;
 	answer: APQuestionData;
 }): Pick<
 	IQuestion,
@@ -58,7 +42,7 @@ function buildHotPoolDoc(opts: {
 		apClass: opts.apClass,
 		unit: opts.unit,
 		contentHash: opts.contentHash,
-		topicsCovered: opts.topicsCovered,
+		topicsCovered: answer.topicsCovered ?? '',
 		question: answer.question,
 		optionA: answer.optionA,
 		optionB: answer.optionB,
@@ -72,7 +56,7 @@ function buildHotPoolDoc(opts: {
 }
 
 /** Read full MCQ body directly from a hot-cache pool doc (no S3 round trip). */
-function hotPoolBodyFromDoc(doc: IQuestion): McqAnswerBody {
+function hotPoolBodyFromDoc(doc: IQuestion): APQuestionData {
 	return {
 		question: doc.question,
 		optionA: doc.optionA,
@@ -93,13 +77,10 @@ async function insertHotPoolDoc(
 	answer: APQuestionData,
 	s3QuestionId: string
 ): Promise<IQuestion> {
-	const contentHash = computeContentHash(answer.question);
-	const topicsCovered = answer.topicsCovered ?? '';
-
 	await recordRecentTopic({
 		apClass: className,
 		unit: cacheUnit,
-		topicsCovered,
+		topicsCovered: answer.topicsCovered ?? '',
 		s3QuestionId
 	});
 
@@ -107,8 +88,7 @@ async function insertHotPoolDoc(
 		buildHotPoolDoc({
 			apClass: className,
 			unit: cacheUnit,
-			contentHash,
-			topicsCovered,
+			contentHash: computeContentHash(answer.question),
 			answer,
 			s3QuestionId
 		})
@@ -129,16 +109,6 @@ async function generateQuestionForPool(
 	}
 
 	const contentHash = computeContentHash(answer.question);
-	const exists = await Question.exists({ contentHash });
-	if (exists) {
-		logger.info('[cache] generated duplicate question already in pool', {
-			className,
-			unit: cacheUnit,
-			contentHash
-		});
-		return result;
-	}
-
 	const poolInsertStarted = Date.now();
 	try {
 		await insertHotPoolDoc(className, cacheUnit, answer, questionId);
@@ -163,26 +133,19 @@ async function generateQuestionForPool(
 	};
 }
 
-export type CachedResult = GenerateResult & { cached: boolean };
-
 const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 	questionType: 'mcq',
 	logScope: 'cache',
-	normalizeUnit: (unit) => normalizeUnit(unit),
+	normalizeUnit,
 	model: Question,
-	getRecentTopics: (className, unit) => getRecentTopics(className, unit, RECENT_TOPICS_WINDOW),
-	serveCached: async (doc) => {
-		const answer = hotPoolBodyFromDoc(doc);
-		const topicsCovered = answer.topicsCovered ?? doc.topicsCovered ?? '';
-
-		return {
-			answer: { ...answer, topicsCovered },
-			provider: 'cache',
-			model: 'cached',
-			cached: true,
-			questionId: doc.s3QuestionId
-		};
-	},
+	getRecentTopics,
+	serveCached: async (doc) => ({
+		answer: hotPoolBodyFromDoc(doc),
+		provider: 'cache',
+		model: 'cached',
+		cached: true,
+		questionId: doc.s3QuestionId
+	}),
 	generateLive: async (className, unit, recentTopics) => {
 		const result = await generateQuestionForPool(className, unit, recentTopics ?? []);
 		return { ...result, cached: false };

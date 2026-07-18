@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-	classifyQuestionFailure,
 	daysBetweenCalendarDays,
 	latencyBucket,
 	localCalendarDay,
 	questionSourceFromCachedFlag
 } from '$lib/client/activation-analytics';
+import { classifyQuestionFailureFromStatus } from '$lib/question-failure';
 
 describe('latencyBucket', () => {
 	it('maps durations to coarse buckets', () => {
@@ -18,17 +18,17 @@ describe('latencyBucket', () => {
 	});
 });
 
-describe('classifyQuestionFailure', () => {
+describe('classifyQuestionFailureFromStatus', () => {
 	it('maps HTTP statuses to failure kinds', () => {
-		expect(classifyQuestionFailure(null)).toBe('network');
-		expect(classifyQuestionFailure(0)).toBe('network');
-		expect(classifyQuestionFailure(400)).toBe('validation');
-		expect(classifyQuestionFailure(403)).toBe('validation');
-		expect(classifyQuestionFailure(422)).toBe('validation');
-		expect(classifyQuestionFailure(429)).toBe('validation');
-		expect(classifyQuestionFailure(503)).toBe('busy');
-		expect(classifyQuestionFailure(500)).toBe('generation');
-		expect(classifyQuestionFailure(502)).toBe('generation');
+		expect(classifyQuestionFailureFromStatus(null)).toBe('network');
+		expect(classifyQuestionFailureFromStatus(0)).toBe('network');
+		expect(classifyQuestionFailureFromStatus(400)).toBe('validation');
+		expect(classifyQuestionFailureFromStatus(403)).toBe('validation');
+		expect(classifyQuestionFailureFromStatus(422)).toBe('validation');
+		expect(classifyQuestionFailureFromStatus(429)).toBe('validation');
+		expect(classifyQuestionFailureFromStatus(503)).toBe('busy');
+		expect(classifyQuestionFailureFromStatus(500)).toBe('generation');
+		expect(classifyQuestionFailureFromStatus(502)).toBe('generation');
 	});
 });
 

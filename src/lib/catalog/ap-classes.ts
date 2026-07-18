@@ -1,6 +1,6 @@
 import apClassesData from '$lib/data/ap-classes.json';
 
-export type ApCourse = {
+type ApCourse = {
 	name: string;
 	semester1: string[];
 	semester2: string[];

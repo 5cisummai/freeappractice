@@ -5,10 +5,7 @@ import {
 	type QuestionFailureKind
 } from '$lib/question-failure';
 
-export type { QuestionFailureKind };
-export { classifyQuestionFailureFromStatus as classifyQuestionFailure };
-
-export type LatencyBucket = '0-500ms' | '500-1000ms' | '1-2s' | '2-5s' | '5s+';
+type LatencyBucket = '0-500ms' | '500-1000ms' | '1-2s' | '2-5s' | '5s+';
 export type QuestionSource = 'cached' | 'generated';
 
 export function latencyBucket(ms: number): LatencyBucket {
@@ -50,13 +47,11 @@ export function daysBetweenCalendarDays(earlier: string, later: string): number 
 	return Math.round((b - a) / 86_400_000);
 }
 
-/** localStorage key for the anonymous activation journey (consent-gated). */
-export const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
+const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
 const FIRST_ANSWER_FLAG_KEY = 'ph_activation_first_answer_sent';
 const LAST_AUTH_VISIT_DAY_KEY = 'ph_last_auth_visit_day';
 
-/** Activation funnel event names (see docs/analytics-activation-funnel.md). */
-export const ACTIVATION_EVENTS = {
+const ACTIVATION_EVENTS = {
 	landingPageViewed: 'landing_page_viewed',
 	practiceSelectorUsed: 'practice_selector_used',
 	generateClicked: 'generate_clicked',
@@ -72,8 +67,7 @@ function canUseStorage(): boolean {
 	return typeof window !== 'undefined' && hasAnalyticsConsent();
 }
 
-/** Non-identifying journey key shared across funnel events when consent is granted. */
-export function getOrCreateJourneyKey(): string | undefined {
+function getOrCreateJourneyKey(): string | undefined {
 	if (!canUseStorage()) return undefined;
 
 	try {

@@ -4,8 +4,6 @@ import { adminClient } from 'better-auth/client/plugins';
 
 export const googleClientId = PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
 
-export const googleOneTapEnabled = Boolean(googleClientId);
-
 export const authClient = createAuthClient({
 	plugins: [adminClient()]
 });

@@ -1,6 +1,5 @@
-import type { PracticePage } from '$lib/catalog/practice-pages.js';
+import { formatUnitLabel, type PracticePage } from '$lib/catalog/practice-pages.js';
 import { PRODUCTION_SITE_URL } from '$lib/site-url';
-import { formatUnitLabel } from '$lib/catalog/practice-pages.js';
 
 const BASE_URL = PRODUCTION_SITE_URL;
 
@@ -27,11 +26,9 @@ export function buildPracticePageMeta(page: PracticePage) {
 export function buildPracticePageJsonLd(page: PracticePage): Record<string, unknown> {
 	const meta = buildPracticePageMeta(page);
 	const resourceName =
-		page.type === 'class'
-			? page.seo.h1
-			: page.type === 'unit' && page.unitName
-				? `${page.className}: ${page.unitName.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '')}`
-				: page.seo.h1;
+		page.type === 'unit' && page.unitName
+			? `${page.className}: ${formatUnitLabel(page)}`
+			: formatUnitLabel(page);
 
 	return {
 		'@context': 'https://schema.org',

@@ -17,7 +17,7 @@ import type {
 	RecentTopicSnapshot
 } from '$lib/admin/types.js';
 
-export interface AdminDashboardData {
+interface AdminDashboardData {
 	activeTab: AdminTab;
 	users: AdminUserRow[];
 	totalUsers: number;

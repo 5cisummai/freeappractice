@@ -14,7 +14,7 @@ type ServerCaptureEvent = {
 /** Anonymous ops metrics — never include user IDs or request bodies. */
 const ANONYMOUS_SERVER_DISTINCT_ID = 'server';
 
-export function getPostHogClient() {
+function getPostHogClient() {
 	if (!posthogClient) {
 		posthogClient = new PostHog(PUBLIC_POSTHOG_PROJECT_TOKEN, {
 			host: PUBLIC_POSTHOG_HOST,
@@ -50,11 +50,5 @@ export function captureAnonymousServerMetric(event: string, properties?: Record<
 		waitUntil(client.flush());
 	} catch {
 		void client.flush().catch(() => undefined);
-	}
-}
-
-export async function shutdownPostHog() {
-	if (posthogClient) {
-		await posthogClient.shutdown();
 	}
 }

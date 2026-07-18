@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { env } from '$env/dynamic/private';
-import { ADVANCED_MODEL, runStructuredCompletion } from '$lib/ai/service.server';
+import { GENERATION_MODEL, structuredObject } from '$lib/ai/service.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { FrqQuestionModel, FrqRecentTopic, type IFrqQuestion } from '$lib/frq/model.server';
 import { saveFrqToS3 } from '$lib/frq/storage.server';
@@ -97,23 +97,16 @@ ${recent}
 
 Return one coherent question and its private scoring rubric. Materials and prompts may use Markdown and $...$ or $$...$$ LaTeX. Every section needs one or more rubric criteria. Criterion levels must use unique integer points, include zero, and reach maxPoints. Section point totals and the overall total must exactly match the rubric. Reference answers are private grading facts, not student-facing copy.`;
 
-	const { parsed } = await runStructuredCompletion(
-		'generateFrqQuestion',
-		{
-			model: ADVANCED_MODEL,
-			messages: [
-				{ role: 'system', content: systemPrompt },
-				{
-					role: 'user',
-					content: `Create an original ${apClass} written-response task for ${unit}.`
-				}
-			],
-			schema: GeneratedFrqSchema,
-			schemaName: 'frq_question',
-			reasoningEffort: 'high'
-		},
-		{ apClass, unit, profileVersion: profile.profileVersion }
-	);
+	const { parsed } = await structuredObject({
+		callName: 'generateFrqQuestion',
+		model: GENERATION_MODEL,
+		system: systemPrompt,
+		user: `Create an original ${apClass} written-response task for ${unit}.`,
+		schema: GeneratedFrqSchema,
+		schemaName: 'frq_question',
+		reasoningEffort: 'high',
+		logContext: { apClass, unit, profileVersion: profile.profileVersion }
+	});
 
 	const question = FrqQuestionSchema.parse({
 		...parsed,
@@ -174,8 +167,8 @@ async function generateAndPersist(
 	return {
 		question,
 		publicQuestion: toPublicFrqQuestion(questionId, question),
-		provider: 'openai',
-		model: ADVANCED_MODEL,
+		provider: 'ai',
+		model: GENERATION_MODEL,
 		questionId,
 		cached: false,
 		timing: { generationMs, persistenceMs: Date.now() - persistenceStarted }
@@ -185,7 +178,7 @@ async function generateAndPersist(
 const frqPool = createQuestionPool<IFrqQuestion, FrqServiceResult>({
 	questionType: 'frq',
 	logScope: 'frq-cache',
-	normalizeUnit: (unit) => normalizeUnit(unit),
+	normalizeUnit,
 	model: FrqQuestionModel,
 	getRecentTopics,
 	serveCached: async (doc) => {
@@ -221,5 +214,5 @@ export async function getFrqQuestion(
 }
 
 export function getFrqGradingModel(): string {
-	return env.FRQ_GRADING_MODEL?.trim() || ADVANCED_MODEL;
+	return env.FRQ_GRADING_MODEL?.trim() || GENERATION_MODEL;
 }

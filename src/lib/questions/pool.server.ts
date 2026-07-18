@@ -2,7 +2,7 @@ import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { runCacheMissClusterFlow } from '$lib/questions/cache-miss.server';
 
-export interface PoolDocument {
+interface PoolDocument {
 	_id: { toString(): string };
 	s3QuestionId?: string;
 }
@@ -15,10 +15,7 @@ interface PoolModel<TDoc extends PoolDocument> {
 	): Promise<TDoc | null>;
 }
 
-export interface QuestionPoolConfig<
-	TDoc extends PoolDocument,
-	TCached extends { cached: boolean }
-> {
+interface QuestionPoolConfig<TDoc extends PoolDocument, TCached extends { cached: boolean }> {
 	questionType: 'mcq' | 'frq';
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
@@ -29,11 +26,9 @@ export interface QuestionPoolConfig<
 	getLiveTiming?: (result: TCached) => { generationMs: number; persistenceMs: number } | undefined;
 }
 
-export type QuestionPathSegment = 'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower';
-
 export type QuestionPathMetrics = {
 	questionType: 'mcq' | 'frq';
-	segment?: QuestionPathSegment;
+	segment?: 'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower';
 	cacheLookupMs: number;
 	lockWaitMs: number;
 	generationMs: number;
@@ -77,10 +72,6 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 		return findCachedDoc({ apClass: className, unit: cacheUnit }, excludeQuestionIds);
 	}
 
-	async function serveCachedDoc(doc: TDoc, className: string, cacheUnit: string): Promise<TCached> {
-		return config.serveCached(doc, className, cacheUnit);
-	}
-
 	async function getQuestion(
 		className: string,
 		unit?: string,
@@ -103,7 +94,8 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 			});
 			const generationStarted = Date.now();
 			try {
-				const result = await config.generateLive(className, unit ?? '');
+				const recentTopics = await config.getRecentTopics(className, cacheUnit).catch(() => []);
+				const result = await config.generateLive(className, unit ?? '', recentTopics);
 				if (metrics) {
 					metrics.segment = 'cache_miss_leader';
 					Object.assign(metrics, config.getLiveTiming?.(result));
@@ -118,7 +110,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 
 		if (doc) {
 			if (metrics) metrics.segment = 'cache_hit';
-			return serveCachedDoc(doc, className, cacheUnit);
+			return config.serveCached(doc, className, cacheUnit);
 		}
 
 		const missKey = `miss::${config.questionType}::${className}::${cacheUnit}`;
@@ -155,7 +147,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached extends { 
 					tryClaim: async () => {
 						const selected = await selectFromPool(className, cacheUnit, excludeQuestionIds);
 						if (!selected) return null;
-						return serveCachedDoc(selected, className, cacheUnit);
+						return config.serveCached(selected, className, cacheUnit);
 					},
 					leaderRun: async () => {
 						const recentTopics = await config.getRecentTopics(className, cacheUnit).catch(() => []);

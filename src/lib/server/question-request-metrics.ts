@@ -73,7 +73,7 @@ export function classifyQuestionRequestError(err: unknown): QuestionRequestError
 	return 'unknown';
 }
 
-export function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
+function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
 	captureAnonymousServerMetric(
 		QUESTION_REQUEST_EVENT,
 		sanitizeQuestionRequestMetricProps(props)

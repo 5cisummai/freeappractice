@@ -1,8 +1,6 @@
 import { resolve } from '$app/paths';
 import { getSiteUrl } from '$lib/site-url';
 
-export { getSiteUrl, PRODUCTION_SITE_URL } from '$lib/site-url';
-
 type AuthCallbackPath =
 	| '/app'
 	| '/app/settings'

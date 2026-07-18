@@ -1,4 +1,4 @@
-export type BlogEntry = {
+type BlogEntry = {
 	_id: string;
 	title: string;
 	slug: string;
@@ -9,7 +9,6 @@ export type BlogEntry = {
 	author?: string;
 	publishedAt?: Date;
 	createdAt: Date;
-	source: 'file';
 };
 
 type ParsedMarkdownPost = {
@@ -119,25 +118,24 @@ function parseMarkdownPost(raw: string): ParsedMarkdownPost {
 	};
 }
 
-async function listMarkdownPosts(): Promise<BlogEntry[]> {
-	const posts = Object.entries(markdownFiles).map(([filePath, raw]) => {
+function listMarkdownPosts(): BlogEntry[] {
+	const posts: BlogEntry[] = [];
+	for (const [filePath, raw] of Object.entries(markdownFiles)) {
 		const fileName = filePath.split('/').pop() ?? '';
 		const parsed = parseMarkdownPost(raw);
 
 		const slugFromFile = normalizeSlug(fileName);
 		const published = parsed.published ?? true;
-		if (!published || !slugFromFile) return null;
+		if (!published || !slugFromFile) continue;
 
 		const title =
 			parsed.title?.trim() ||
 			extractTitleFromMarkdown(parsed.content) ||
 			humanizeSlug(slugFromFile);
 		const excerpt = parsed.excerpt?.trim() || summarizeMarkdown(parsed.content);
+		const publishedAt = parsed.publishedAt ?? new Date();
 
-		const createdAt = parsed.publishedAt ?? new Date();
-		const publishedAt = parsed.publishedAt ?? createdAt;
-
-		return {
+		posts.push({
 			_id: `file:${slugFromFile}`,
 			title,
 			slug: slugFromFile,
@@ -147,32 +145,23 @@ async function listMarkdownPosts(): Promise<BlogEntry[]> {
 			tags: parsed.tags ?? [],
 			...(parsed.author ? { author: parsed.author } : {}),
 			publishedAt,
-			createdAt,
-			source: 'file' as const
-		};
-	});
-
-	const validPosts: BlogEntry[] = [];
-	for (const post of posts) {
-		if (post) validPosts.push(post);
+			createdAt: publishedAt
+		});
 	}
-
-	return validPosts;
+	return posts;
 }
 
-export async function listPublishedBlogEntries(): Promise<BlogEntry[]> {
-	const posts = await listMarkdownPosts();
-	return posts.sort((a, b) => {
+export function listPublishedBlogEntries(): BlogEntry[] {
+	return listMarkdownPosts().sort((a, b) => {
 		const aTime = (a.publishedAt ?? a.createdAt).getTime();
 		const bTime = (b.publishedAt ?? b.createdAt).getTime();
 		return bTime - aTime;
 	});
 }
 
-export async function getPublishedBlogEntryBySlug(slug: string): Promise<BlogEntry | null> {
+export function getPublishedBlogEntryBySlug(slug: string): BlogEntry | null {
 	const normalizedSlug = normalizeSlug(slug);
 	if (!normalizedSlug) return null;
 
-	const markdownPosts = await listMarkdownPosts();
-	return markdownPosts.find((post) => post.slug === normalizedSlug) ?? null;
+	return listMarkdownPosts().find((post) => post.slug === normalizedSlug) ?? null;
 }

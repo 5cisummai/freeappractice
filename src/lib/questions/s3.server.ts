@@ -1,15 +1,9 @@
-import {
-	S3Client,
-	PutObjectCommand,
-	GetObjectCommand,
-	ListObjectsV2Command
-} from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { env as privateEnv } from '$env/dynamic/private';
-import type { Readable } from 'stream';
 
 const ALLOWED_KEY_PREFIXES = ['questions/', 'frqs/'] as const;
 
-export class S3ConfigError extends Error {
+class S3ConfigError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = 'S3ConfigError';
@@ -50,8 +44,7 @@ function createS3Client(): S3Client {
 	const endpoint = privateEnv.AWS_S3_ENDPOINT;
 	const forcePathStyle = privateEnv.AWS_S3_FORCE_PATH_STYLE === 'true';
 
-	// Use keys from SvelteKit private env so dev/prod reliably see `.env` (SDK default chain
-	// only reads `process.env`, which is not always populated the same way under Vite).
+	// Use keys from SvelteKit private env so dev/prod reliably see `.env` (Vite/serverless).
 	const accessKeyId = privateEnv.AWS_ACCESS_KEY_ID?.trim();
 	const secretAccessKey = privateEnv.AWS_SECRET_ACCESS_KEY?.trim();
 	const sessionToken = privateEnv.AWS_SESSION_TOKEN?.trim();
@@ -96,41 +89,18 @@ export async function putObject(opts: {
 	await s3.send(cmd);
 }
 
-export async function getObjectStream(opts: { key: string; bucket?: string }): Promise<Readable> {
+/** Fetch an object and parse it as JSON. */
+export async function getObjectJson<T = unknown>(opts: {
+	key: string;
+	bucket?: string;
+}): Promise<T> {
 	const key = validateS3ObjectKey(opts.key);
-	const cmd = new GetObjectCommand({ Bucket: resolveBucket(opts.bucket), Key: key });
-	const resp = await s3.send(cmd);
+	const resp = await s3.send(
+		new GetObjectCommand({ Bucket: resolveBucket(opts.bucket), Key: key })
+	);
 	if (!resp.Body) {
 		throw new Error(`Object not found: ${key}`);
 	}
-	return resp.Body as Readable;
-}
-
-const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
-
-/** List every canonical question id from S3 object keys under `questions/`. */
-export async function listQuestionIds(opts?: { bucket?: string }): Promise<string[]> {
-	const bucket = resolveBucket(opts?.bucket);
-	const ids: string[] = [];
-	let continuationToken: string | undefined;
-
-	do {
-		const resp = await s3.send(
-			new ListObjectsV2Command({
-				Bucket: bucket,
-				Prefix: 'questions/',
-				ContinuationToken: continuationToken
-			})
-		);
-
-		for (const obj of resp.Contents ?? []) {
-			if (!obj.Key) continue;
-			const match = obj.Key.match(QUESTION_KEY_RE);
-			if (match) ids.push(match[1]);
-		}
-
-		continuationToken = resp.IsTruncated ? resp.NextContinuationToken : undefined;
-	} while (continuationToken);
-
-	return ids;
+	const raw = await resp.Body.transformToString('utf-8');
+	return JSON.parse(raw) as T;
 }

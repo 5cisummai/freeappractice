@@ -1,5 +1,4 @@
 import * as s3 from '$lib/questions/s3.server';
-import { registerQuestionIdSafe } from '$lib/questions/question-id-registry.server';
 import { randomUUID } from 'crypto';
 
 export interface QuestionData {
@@ -10,11 +9,12 @@ export interface QuestionData {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
+	hint1?: string;
+	hint2?: string;
 	apClass?: string;
 	unit?: string;
 	contentHash?: string;
 	topicsCovered?: string;
-	[key: string]: unknown;
 }
 
 export interface StoredQuestion extends QuestionData {
@@ -33,19 +33,11 @@ export async function saveQuestionToS3(questionData: QuestionData): Promise<stri
 	};
 
 	await s3.putObject({ key, body: JSON.stringify(payload), contentType: 'application/json' });
-	await registerQuestionIdSafe(questionId);
 	return questionId;
 }
 
 export async function getQuestionFromS3(questionId: string): Promise<StoredQuestion> {
-	const key = `questions/${questionId}.json`;
-	const stream = await s3.getObjectStream({ key });
-
-	const chunks: Buffer[] = [];
-	for await (const chunk of stream) {
-		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-	}
-	return JSON.parse(Buffer.concat(chunks).toString('utf-8')) as StoredQuestion;
+	return s3.getObjectJson<StoredQuestion>({ key: `questions/${questionId}.json` });
 }
 
 export async function getQuestionsFromS3(questionIds: string[]): Promise<StoredQuestion[]> {
