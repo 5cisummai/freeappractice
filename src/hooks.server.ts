@@ -14,7 +14,7 @@ import {
 } from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
 import { createHandle } from 'flags/sveltekit';
-import { multiAttemptExperimentEnabled } from '$lib/flags';
+import { frqPracticeEnabled, multiAttemptExperimentEnabled } from '$lib/flags';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -202,7 +202,7 @@ export const handle = sequence(
 		? [
 				createHandle({
 					secret: env.FLAGS_SECRET,
-					flags: { multiAttemptExperimentEnabled }
+					flags: { multiAttemptExperimentEnabled, frqPracticeEnabled }
 				}) as Handle
 			]
 		: []),

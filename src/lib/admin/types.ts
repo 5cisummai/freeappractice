@@ -1,9 +1,10 @@
-export type AdminTab = 'overview' | 'users' | 'cache' | 'generation';
+export type AdminTab = 'overview' | 'users' | 'cache' | 'generation' | 'quality';
 
 export interface AdminUserRow {
 	id: string;
 	name?: string | null;
 	email?: string | null;
+	emailVerified?: boolean;
 	role?: string | string[] | null;
 	banned?: boolean | null;
 	createdAt?: Date | string | null;

@@ -46,12 +46,12 @@ function collectOriginsFromEnv(): Set<string> {
 	return origins;
 }
 
-/** Build Better Auth trustedOrigins from env (localhost only in dev). */
-export function getTrustedOrigins(): string[] {
-	return [...collectOriginsFromEnv()];
-}
-
 /** Allowed browser origins for CORS on API routes. */
 export function getAllowedOrigins(): Set<string> {
 	return collectOriginsFromEnv();
+}
+
+/** Build Better Auth trustedOrigins from env (localhost only in dev). */
+export function getTrustedOrigins(): string[] {
+	return [...getAllowedOrigins()];
 }

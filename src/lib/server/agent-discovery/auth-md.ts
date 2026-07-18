@@ -46,16 +46,15 @@ Email/password registration with verification link sent to the user.
 - Assertion type: \`verified_email\`
 - Claim URL: ${absoluteUrl('/verify-email', requestUrl)}
 
-## OAuth discovery
+## Auth discovery
 
-- Authorization server metadata: \`${oauthAs}\`
+- Auth skill document: \`${oauthAs}\` (Better Auth session cookies — not a full OAuth2 authorization server)
 - Google social sign-in: \`${absoluteUrl('/api/auth/sign-in/social/google', requestUrl)}\`
 
 ## Scopes
 
 - \`profile\` — user profile fields
 - \`email\` — verified email address
-- \`offline_access\` — persistent session
 
 ## Contact
 

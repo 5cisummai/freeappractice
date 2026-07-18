@@ -4,6 +4,10 @@
 		{
 			"path": "/api/cron/cleanup-unverified-users",
 			"schedule": "0 0 * * *"
+		},
+		{
+			"path": "/api/cron/question-quality",
+			"schedule": "17 4 * * *"
 		}
 	]
 }

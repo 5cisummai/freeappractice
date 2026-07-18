@@ -3,6 +3,7 @@ import {
 	QuestionBusyError,
 	QuestionGenerationError
 } from '$lib/questions/question-errors.server';
+import type { QuestionFailureKind } from '$lib/question-failure';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
 /** Outcome segments for POST /api/question reliability dashboards. */
@@ -12,11 +13,13 @@ export type QuestionRequestSegment =
 	| 'cache_miss_follower'
 	| 'error';
 
-export type QuestionRequestErrorType = 'validation' | 'generation' | 'busy' | 'unknown';
+/** Server-side subset of QuestionFailureKind (no client-only `network`). */
+export type QuestionRequestErrorType = Exclude<QuestionFailureKind, 'network'>;
 
 export const QUESTION_REQUEST_EVENT = 'question_request';
 
 export type QuestionRequestMetricProps = {
+	question_type: 'mcq' | 'frq';
 	segment: QuestionRequestSegment;
 	ap_class: string;
 	unit: string;
@@ -33,6 +36,7 @@ export type QuestionRequestMetricProps = {
 };
 
 const ALLOWED_PROP_KEYS = new Set<keyof QuestionRequestMetricProps>([
+	'question_type',
 	'segment',
 	'ap_class',
 	'unit',
@@ -69,18 +73,51 @@ export function classifyQuestionRequestError(err: unknown): QuestionRequestError
 	return 'unknown';
 }
 
-export function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
+function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
 	captureAnonymousServerMetric(
 		QUESTION_REQUEST_EVENT,
 		sanitizeQuestionRequestMetricProps(props)
 	);
 }
 
-export function createQuestionPathMetrics(): QuestionPathMetrics {
+export function createQuestionPathMetrics(
+	questionType: QuestionPathMetrics['questionType'] = 'mcq'
+): QuestionPathMetrics {
 	return {
+		questionType,
 		cacheLookupMs: 0,
 		lockWaitMs: 0,
 		generationMs: 0,
 		persistenceMs: 0
 	};
+}
+
+/** Build + capture a metric from path timings and common request fields. */
+export function capturePathQuestionRequestMetric(opts: {
+	path: QuestionPathMetrics;
+	startedAt: number;
+	validationMs: number;
+	apClass: string;
+	unit: string;
+	httpStatus: number;
+	segment: QuestionRequestSegment;
+	cached: boolean;
+	errorType?: QuestionRequestErrorType;
+}): void {
+	captureQuestionRequestMetric({
+		question_type: opts.path.questionType,
+		segment: opts.segment,
+		ap_class: opts.apClass,
+		unit: opts.unit,
+		validation_ms: opts.validationMs,
+		cache_lookup_ms: opts.path.cacheLookupMs,
+		lock_wait_ms: opts.path.lockWaitMs,
+		generation_ms: opts.path.generationMs,
+		persistence_ms: opts.path.persistenceMs,
+		total_ms: Date.now() - opts.startedAt,
+		http_status: opts.httpStatus,
+		ok: opts.httpStatus < 400,
+		cached: opts.cached,
+		...(opts.errorType ? { error_type: opts.errorType } : {})
+	});
 }

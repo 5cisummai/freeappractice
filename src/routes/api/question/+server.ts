@@ -8,7 +8,7 @@ import { logger } from '$lib/server/logger';
 import {
 	classifyQuestionRequestError,
 	createQuestionPathMetrics,
-	captureQuestionRequestMetric,
+	capturePathQuestionRequestMetric,
 	type QuestionRequestErrorType,
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
@@ -31,27 +31,22 @@ export const POST: RequestHandler = async ({ request }) => {
 		cached: boolean,
 		errorType?: QuestionRequestErrorType
 	): void {
-		captureQuestionRequestMetric({
-			segment,
-			ap_class: apClass,
+		capturePathQuestionRequestMetric({
+			path,
+			startedAt,
+			validationMs,
+			apClass,
 			unit,
-			validation_ms: validationMs,
-			cache_lookup_ms: path.cacheLookupMs,
-			lock_wait_ms: path.lockWaitMs,
-			generation_ms: path.generationMs,
-			persistence_ms: path.persistenceMs,
-			total_ms: Date.now() - startedAt,
-			http_status: status,
-			ok: status < 400,
+			httpStatus: status,
+			segment,
 			cached,
-			...(errorType ? { error_type: errorType } : {})
+			errorType
 		});
 	}
 
 	try {
 		const validationStarted = Date.now();
-		const body = await request.json();
-		const validated = validateQuestionRequest(body);
+		const validated = validateQuestionRequest(await request.json());
 		validationMs = Date.now() - validationStarted;
 		if (!validated.ok) {
 			recordMetric(validated.response.status, 'error', false, 'validation');
@@ -67,11 +62,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 		recordMetric(200, path.segment ?? 'error', result.cached ?? false);
 
-		const answerStr =
-			typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer;
-
 		return json({
-			answer: answerStr,
+			answer:
+				typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer,
 			provider: result.provider,
 			model: result.model,
 			cached: result.cached ?? false,

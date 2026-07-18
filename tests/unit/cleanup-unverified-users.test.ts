@@ -4,7 +4,7 @@ import {
 	unverifiedUserCutoff,
 	UNVERIFIED_USER_MAX_AGE_MS
 } from '$lib/auth/cron-auth';
-import { isPasswordWithinLimit, passwordByteLength } from '$lib/auth/password-policy';
+import { isPasswordWithinLimit } from '$lib/auth/password-policy';
 
 describe('isAuthorizedCronRequest', () => {
 	it('rejects when CRON_SECRET is missing', () => {
@@ -44,7 +44,6 @@ describe('password policy', () => {
 		const withinLimit = '😀'.repeat(18);
 		const overLimit = '😀'.repeat(19);
 
-		expect(passwordByteLength(withinLimit)).toBe(72);
 		expect(isPasswordWithinLimit(withinLimit)).toBe(true);
 		expect(isPasswordWithinLimit(overLimit)).toBe(false);
 	});

@@ -25,6 +25,12 @@
       "skillPath": "better-auth/emailAndPassword/SKILL.md",
       "computedHash": "747d7f73bd9e2ec5317b8ef88dc70f97df716d00e3d02de4051feebaa48b062d"
     },
+    "fallow": {
+      "source": "fallow-rs/fallow-skills",
+      "sourceType": "github",
+      "skillPath": "fallow/skills/fallow/SKILL.md",
+      "computedHash": "c2cd356f8c0d33f2001be4817b0b78d016017a0918346490642169381a26d546"
+    },
     "organization-best-practices": {
       "source": "better-auth/skills",
       "sourceType": "github",

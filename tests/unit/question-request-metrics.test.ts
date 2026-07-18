@@ -17,6 +17,7 @@ describe('question-request-metrics', () => {
 
 	it('allowlists only safe metric properties', () => {
 		const props = {
+			question_type: 'mcq',
 			segment: 'cache_hit',
 			ap_class: 'AP Biology',
 			unit: 'Unit 1',
@@ -38,6 +39,7 @@ describe('question-request-metrics', () => {
 		const sanitized = sanitizeQuestionRequestMetricProps(props as QuestionRequestMetricProps);
 
 		expect(sanitized).toEqual({
+			question_type: 'mcq',
 			segment: 'cache_hit',
 			ap_class: 'AP Biology',
 			unit: 'Unit 1',

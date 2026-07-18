@@ -3,19 +3,12 @@ import { saveQuestionToS3 } from '$lib/questions/storage.server';
 import { recordMcqGenerated } from '$lib/questions/gen-stats.server';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import { logger } from '$lib/server/logger';
-import {
-	runStructuredCompletion,
-	selectModelForClass,
-	ADVANCED_MODEL,
-	LATEX_RULE
-} from '$lib/ai/service.server';
+import { GENERATION_MODEL, structuredObject } from '$lib/ai/service.server';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
+import { normalizeUnit } from '$lib/questions/util.server';
 
 /**
- * Question generation and grading domain logic.
- *
- * Uses the AI abstraction layer (`./ai`) for all provider calls.
- * Owns Zod schemas, prompt engineering, data lookups, and persistence.
+ * MCQ generation: prompts, structured AI calls, and S3 persistence.
  */
 
 // ── Data-lookup types ──────────────────────────────────────────
@@ -184,25 +177,22 @@ export interface GenerateResult {
 	provider: string;
 	model: string;
 	questionId?: string;
-	cached?: boolean;
 	timing?: GenerateTiming;
 }
 
 // ── Persistence ────────────────────────────────────────────────
 
-export async function persistMcqQuestionToS3(
+async function persistMcqQuestionToS3(
 	parsed: APQuestionData,
 	className: string,
-	unit: string | undefined,
-	opts?: { contentHash?: string }
+	unit: string | undefined
 ): Promise<string> {
-	const unitLabel = unit ?? 'General';
-	const questionData = Object.assign({}, parsed, {
+	const unitLabel = normalizeUnit(unit, 'General');
+	const id = await saveQuestionToS3({
+		...parsed,
 		apClass: className,
-		unit: unitLabel,
-		...(opts?.contentHash ? { contentHash: opts.contentHash } : {})
+		unit: unitLabel
 	});
-	const id = await saveQuestionToS3(questionData);
 	try {
 		await recordMcqGenerated({
 			apClass: className,
@@ -229,18 +219,19 @@ function isAPPE(className: string): boolean {
 
 // ── MCQ generation ─────────────────────────────────────────────
 
-export async function generateAPQuestionBody(opts: {
+async function generateAPQuestionBody(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
-}): Promise<APQuestionData> {
+}): Promise<{ parsed: APQuestionData; model: string }> {
 	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
-	const sections = buildUnitSections(className, unit, 'question');
-	const unitContext = sections.unitContext;
-	const keywordsContext = sections.keywordsContext;
-	const courseNotesContext = sections.courseNotesContext;
+	const { unitContext, keywordsContext, courseNotesContext } = buildUnitSections(
+		className,
+		unit,
+		'question'
+	);
 	const diversitySection = buildDiversitySection(recentTopics, {
 		label: 'TOPICS',
 		avoidLabel: 'subtopic, concept, or scenario',
@@ -282,7 +273,7 @@ QUESTION QUALITY:
 - Options should be roughly equal in length
 
 FORMATTING:
-- ${LATEX_RULE} (only if a fake formula genuinely improves the joke)
+- For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render. (only if a fake formula genuinely improves the joke)
 
 EXPLANATION:
 - Stay in character as an AP Lunch grader explaining the "correct" answer with deadpan seriousness
@@ -304,7 +295,7 @@ QUESTION QUALITY:
 - Options should be roughly equal in length
 
 FORMATTING:
-- ${LATEX_RULE} (only if a formula genuinely improves the joke)
+- For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render. (only if a formula genuinely improves the joke)
 
 EXPLANATION:
 - Stay in character as an AP PE grader explaining the "correct" answer with deadpan seriousness
@@ -326,7 +317,7 @@ QUESTION QUALITY:
 - Vary the cognitive level: alternate between recall, application, analysis, and evaluation questions
 
 FORMATTING:
-- ${LATEX_RULE}
+- For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.
 - For code blocks use the triple backtick syntax (\`\`\`) to enclose code.
 
 EXPLANATION:
@@ -338,29 +329,22 @@ EXPLANATION:
 OUTPUT:
 - Return ONLY the JSON object matching the schema; no text before or after the JSON`;
 
-	const model = selectModelForClass(className);
 	const userMessage = lunchMode
 		? `Create a hilarious AP Lunch multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
 		: peMode
 			? `Create a hilarious AP PE multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
 			: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
-	const { parsed } = await runStructuredCompletion<APQuestionData>(
-		'generateAPQuestion',
-		{
-			model,
-			messages: [
-				{ role: 'system', content: systemPrompt },
-				{ role: 'user', content: userMessage }
-			],
-			schema: APQuestion,
-			schemaName: 'ap_question',
-			reasoningEffort: model === ADVANCED_MODEL ? 'medium' : undefined
-		},
-		{ className, unit }
-	);
-
-	return parsed;
+	return structuredObject({
+		callName: 'generateAPQuestion',
+		model: GENERATION_MODEL,
+		system: systemPrompt,
+		user: userMessage,
+		schema: APQuestion,
+		schemaName: 'ap_question',
+		reasoningEffort: 'medium',
+		logContext: { className, unit }
+	});
 }
 
 export async function generateAPQuestion(opts: {
@@ -370,7 +354,7 @@ export async function generateAPQuestion(opts: {
 }): Promise<GenerateResult> {
 	const { className, unit } = opts;
 	const generationStarted = Date.now();
-	const parsed = await generateAPQuestionBody({
+	const { parsed, model } = await generateAPQuestionBody({
 		className,
 		unit,
 		recentTopics: opts.recentTopics
@@ -391,8 +375,8 @@ export async function generateAPQuestion(opts: {
 	}
 	return {
 		answer: parsed,
-		provider: 'openai',
-		model: selectModelForClass(className),
+		provider: 'ai',
+		model,
 		questionId,
 		timing: {
 			generationMs,

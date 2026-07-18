@@ -2,7 +2,8 @@ import { setMode } from 'mode-watcher';
 import { invalidateAll } from '$app/navigation';
 import { toast } from 'svelte-sonner';
 import { authClient } from '$lib/auth/client.js';
-import { authCallbackUrl, getSiteUrl } from '$lib/auth/urls.js';
+import { authCallbackUrl } from '$lib/auth/urls.js';
+import { getSiteUrl } from '$lib/site-url.js';
 
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';

@@ -10,7 +10,7 @@ interface IPoolDocMetadata {
 }
 
 /** Ephemeral hot-cache pool entry — full MCQ body inline plus durable S3 id. */
-export type HotPoolDoc = IPoolDocMetadata & {
+type HotPoolDoc = IPoolDocMetadata & {
 	s3QuestionId: string;
 	contentHash: string;
 	question: string;

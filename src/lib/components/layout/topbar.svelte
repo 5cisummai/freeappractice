@@ -8,10 +8,6 @@
 	import { topbarAuthItems, topbarNavItems } from '$lib/site-nav.js';
 
 	let mobileOpen = $state(false);
-
-	const toggleMobileMenu = () => {
-		mobileOpen = !mobileOpen;
-	};
 </script>
 
 <header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
@@ -30,7 +26,7 @@
 
 		<div class="flex items-center gap-3">
 			<Button
-				onclick={toggleMobileMenu}
+				onclick={() => (mobileOpen = !mobileOpen)}
 				variant="ghost"
 				size="icon"
 				class="block sm:hidden"

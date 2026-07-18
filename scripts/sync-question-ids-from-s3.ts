@@ -5,15 +5,18 @@
  *
  *   bun run sync:question-ids
  *   bun run sync:question-ids --dry-run
+ *   bun run sync:question-ids --hydrate  # required before class/unit-filtered backfill
  */
 
 import 'dotenv/config';
-import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
+import { createHash } from 'node:crypto';
 import mongoose from 'mongoose';
 
 const DATABASE_URI = process.env.DATABASE_URI;
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
 const isDryRun = process.argv.includes('--dry-run');
+const hydrateMetadata = process.argv.includes('--hydrate');
 const BATCH_SIZE = 1000;
 const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
 
@@ -28,7 +31,15 @@ if (!AWS_S3_BUCKET?.trim()) {
 }
 
 const questionIdSchema = new mongoose.Schema(
-	{ questionId: { type: String, required: true, unique: true, index: true } },
+	{
+		questionId: { type: String, required: true, unique: true, index: true },
+		apClass: { type: String, index: true },
+		unit: { type: String, index: true },
+		questionCreatedAt: { type: Date, index: true },
+		contentHash: String,
+		contentLength: Number,
+		metadataSyncedAt: Date
+	},
 	{ timestamps: true }
 );
 
@@ -126,6 +137,53 @@ async function main() {
 
 	const finalCount = await QuestionId.countDocuments({});
 	console.log(`✓ Upserted ${inserted} new id(s). Registry now has ${finalCount} document(s).`);
+
+	if (hydrateMetadata) {
+		console.log('Hydrating AP class, unit, source date, and content hash from S3…');
+		let hydrated = 0;
+		for (let i = 0; i < s3Ids.length; i += 10) {
+			const rows = await Promise.all(
+				s3Ids.slice(i, i + 10).map(async (questionId) => {
+					try {
+						const response = await s3.send(
+							new GetObjectCommand({ Bucket: bucket, Key: `questions/${questionId}.json` })
+						);
+						if (!response.Body) return null;
+						const body = await response.Body.transformToString();
+						const question = JSON.parse(body) as {
+							apClass?: string;
+							unit?: string;
+							createdAt?: string;
+						};
+						return {
+							questionId,
+							apClass: question.apClass,
+							unit: question.unit,
+							questionCreatedAt: question.createdAt ? new Date(question.createdAt) : undefined,
+							contentHash: createHash('sha256').update(body).digest('hex'),
+							contentLength: body.length,
+							metadataSyncedAt: new Date()
+						};
+					} catch (error) {
+						console.warn(`Could not hydrate ${questionId}:`, error);
+						return null;
+					}
+				})
+			);
+			const valid = rows.filter((row): row is NonNullable<typeof row> => row !== null);
+			if (valid.length) {
+				await QuestionId.bulkWrite(
+					valid.map((row) => ({
+						updateOne: { filter: { questionId: row.questionId }, update: { $set: row } }
+					})),
+					{ ordered: false }
+				);
+				hydrated += valid.length;
+			}
+			console.log(`Hydrated ${Math.min(i + 10, s3Ids.length)}/${s3Ids.length}`);
+		}
+		console.log(`✓ Hydrated ${hydrated} question registry record(s).`);
+	}
 }
 
 main()

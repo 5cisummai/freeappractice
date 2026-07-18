@@ -8,12 +8,8 @@ import type { AnalyticsConsent } from '$lib/analytics-consent';
 
 let initialized = false;
 
-function isProduction() {
-	return import.meta.env.PROD;
-}
-
 export function initPostHogAnalytics() {
-	if (!isProduction() || initialized || typeof window === 'undefined') {
+	if (!import.meta.env.PROD || initialized || typeof window === 'undefined') {
 		return;
 	}
 
@@ -43,7 +39,7 @@ export function initPostHogAnalytics() {
 	syncPostHogConsentFromStorage();
 }
 
-export function syncPostHogConsentFromStorage() {
+function syncPostHogConsentFromStorage() {
 	if (!initialized || typeof window === 'undefined') return;
 
 	applyPostHogConsent(readAnalyticsConsent());

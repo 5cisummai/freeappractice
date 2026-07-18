@@ -35,7 +35,7 @@ async function releaseCacheMissLock(key: string): Promise<void> {
 
 type CacheMissRole = 'leader' | 'follower';
 
-export type CacheMissClusterMeta = {
+type CacheMissClusterMeta = {
 	role: CacheMissRole;
 	/** Wall time spent in follower path (0 for immediate leader). */
 	cache_miss_follower_wait_ms: number;

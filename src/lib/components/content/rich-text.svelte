@@ -2,7 +2,7 @@
 	import katex from 'katex';
 	import { Marked, type Token } from 'marked';
 	import hljs from 'highlight.js';
-	import DOMPurify from 'dompurify';
+	import DOMPurify from 'isomorphic-dompurify';
 
 	let {
 		text = '',

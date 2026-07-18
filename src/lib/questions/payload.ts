@@ -1,7 +1,4 @@
-import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 import type { GeneratedQuestion, QuestionOption } from '$lib/questions/types';
-
-export { resolveEffectiveUnit };
 
 export type QuestionApiResponse = Record<string, unknown> & {
 	error?: string;

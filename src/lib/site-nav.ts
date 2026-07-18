@@ -1,4 +1,4 @@
-export type SiteNavItem = {
+type SiteNavItem = {
 	href:
 		| '/'
 		| '/subjects'
@@ -14,7 +14,7 @@ export type SiteNavItem = {
 	label: string;
 };
 
-export type SiteNavGroup = {
+type SiteNavGroup = {
 	label: string;
 	items: SiteNavItem[];
 };
@@ -62,19 +62,4 @@ export const footerNavGroups: SiteNavGroup[] = [
 			{ href: '/terms', label: 'Terms' }
 		]
 	}
-];
-
-/** Static public routes that should appear in sitemap and internal-link audits. */
-export const corePublicRoutes: SiteNavItem['href'][] = [
-	'/',
-	'/subjects',
-	'/blog',
-	'/summer',
-	'/stats',
-	'/about',
-	'/changelog',
-	'/privacy',
-	'/terms',
-	'/login',
-	'/signup'
 ];

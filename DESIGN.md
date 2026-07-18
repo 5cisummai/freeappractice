@@ -308,7 +308,7 @@ Cards: `translateY(-3px)` + soft shadow on hover (see `.feature-card` in `featur
 
 ## App vs. marketing
 
-The authenticated app (`src/routes/(app)/`) uses a **sidebar layout** and `PageShell` — intentionally denser and utilitarian. When refreshing app pages, adopt marketing **tokens and typography** (`font-display` for page titles, softened borders) but keep the sidebar shell.
+The authenticated app (`src/routes/app/`) uses a **sidebar layout** and `PageShell` — intentionally denser and utilitarian. When refreshing app pages, adopt marketing **tokens and typography** (`font-display` for page titles, softened borders) but keep the sidebar shell.
 
 `PageShell` today uses `text-2xl font-semibold` — migrating to `font-display` would align it with this system.
 

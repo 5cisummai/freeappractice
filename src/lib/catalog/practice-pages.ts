@@ -37,7 +37,7 @@ export type PracticePage = {
  * Legacy focused-topic SEO URLs → parent unit pages.
  * Kept so old indexable routes redirect instead of 404.
  */
-export const TOPIC_PRACTICE_REDIRECTS: Record<string, string> = {
+const TOPIC_PRACTICE_REDIRECTS: Record<string, string> = {
 	'ap-biology/photosynthesis': 'ap-biology/unit-3',
 	'ap-biology/natural-selection': 'ap-biology/unit-7',
 	'ap-calculus-ab/limits': 'ap-calculus-ab/unit-1',
@@ -88,7 +88,6 @@ validatePages(pages);
 
 const pageBySlug = new Map(pages.map((page) => [page.slug, page]));
 
-const pagesByClass = new Map<string, PracticePage[]>();
 const unitsByClass = new Map<string, PracticePage[]>();
 
 function extractUnitOrder(slug: string): number {
@@ -97,10 +96,6 @@ function extractUnitOrder(slug: string): number {
 }
 
 for (const page of pages) {
-	const list = pagesByClass.get(page.className) ?? [];
-	list.push(page);
-	pagesByClass.set(page.className, list);
-
 	if (page.type === 'unit') {
 		const units = unitsByClass.get(page.className) ?? [];
 		units.push(page);
@@ -112,16 +107,12 @@ for (const [, units] of unitsByClass) {
 	units.sort((a, b) => extractUnitOrder(a.slug) - extractUnitOrder(b.slug));
 }
 
-export function getClassSlugForPage(page: PracticePage): string {
+function getClassSlugForPage(page: PracticePage): string {
 	return page.slug.split('/')[0]!;
 }
 
-export function getPracticePageHref(page: PracticePage): string {
+function getPracticePageHref(page: PracticePage): string {
 	return `/practice/${page.slug}`;
-}
-
-export function getPagesByClass(className: string): PracticePage[] {
-	return pagesByClass.get(className) ?? [];
 }
 
 export function getUnitPagesForClass(className: string): PracticePage[] {
@@ -158,7 +149,7 @@ export function getClassPracticePageByClassName(className: string): PracticePage
 	return pages.find((page) => page.type === 'class' && page.className === className) ?? null;
 }
 
-export function getClassPracticeHref(className: string): string | null {
+function getClassPracticeHref(className: string): string | null {
 	const page = getClassPracticePageByClassName(className);
 	return page ? getPracticePageHref(page) : null;
 }

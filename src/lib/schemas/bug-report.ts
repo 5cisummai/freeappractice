@@ -7,7 +7,7 @@ const optionalTrimmedString = (max: number) =>
 		return trimmed.length > 0 ? trimmed : undefined;
 	}, z.string().max(max).optional());
 
-export const BUG_REPORT_SEVERITIES = ['low', 'medium', 'high'] as const;
+const BUG_REPORT_SEVERITIES = ['low', 'medium', 'high'] as const;
 
 export const bugReportSchema = z.object({
 	title: z.string().trim().min(5, 'Use at least 5 characters.').max(120),

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildProgressData, findOrCreateProgressEntry } from '$lib/users/progress.server';
+import {
+	buildProgressData,
+	findOrCreateProgressEntry,
+	mergeFrqProgress
+} from '$lib/users/progress.server';
 import type { IProgress } from '$lib/users/records.server';
 import type { IUserProfile } from '$lib/users/model.server';
 
@@ -63,5 +67,33 @@ describe('buildProgressData', () => {
 				lastAttemptAt: lastAttemptAt.toISOString()
 			}
 		]);
+	});
+});
+
+describe('mergeFrqProgress', () => {
+	it('keeps MCQ mastery independent from FRQ percentages', () => {
+		const merged = mergeFrqProgress(
+			[
+				{
+					apClass: 'AP Biology',
+					unit: 'Unit 4',
+					totalAttempts: 2,
+					correctAttempts: 1,
+					mastery: 50
+				}
+			],
+			[
+				{
+					apClass: 'AP Biology',
+					unit: 'Unit 4',
+					attempts: 1,
+					pointsEarned: 9,
+					pointsAvailable: 10,
+					averagePercentage: 90
+				}
+			]
+		);
+
+		expect(merged[0]).toMatchObject({ mastery: 50, frqAveragePercentage: 90 });
 	});
 });

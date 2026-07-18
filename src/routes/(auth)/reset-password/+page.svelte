@@ -1,0 +1,115 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Field from '$lib/components/ui/field/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { goto } from '$app/navigation';
+	import { authClient } from '$lib/auth/client.js';
+	import { resolve } from '$app/paths';
+	import {
+		isPasswordWithinLimit,
+		MAX_PASSWORD_BYTES,
+		MIN_PASSWORD_LENGTH
+	} from '$lib/auth/password-policy.js';
+	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
+
+	const token = $derived(page.url.searchParams.get('token') ?? '');
+
+	let password = $state('');
+	let confirmPassword = $state('');
+	let loading = $state(false);
+	let errorMessage = $state('');
+
+	async function handleSubmit(e: SubmitEvent) {
+		e.preventDefault();
+		errorMessage = '';
+
+		if (password !== confirmPassword) {
+			errorMessage = 'Passwords do not match';
+			return;
+		}
+		if (password.length < MIN_PASSWORD_LENGTH) {
+			errorMessage = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+			return;
+		}
+		if (!isPasswordWithinLimit(password)) {
+			errorMessage = `Password must be no more than ${MAX_PASSWORD_BYTES} UTF-8 bytes`;
+			return;
+		}
+
+		loading = true;
+		try {
+			const { error } = await authClient.resetPassword({ token, newPassword: password });
+			if (error) {
+				errorMessage = error.message ?? 'Reset failed';
+				return;
+			}
+			goto(resolve('/login'));
+		} catch {
+			errorMessage = 'Network error. Please try again.';
+		} finally {
+			loading = false;
+		}
+	}
+</script>
+
+<AuthSeoHead
+	title="Reset Password – Free AP Practice"
+	description="Reset your Free AP Practice account password."
+	path="/reset-password"
+/>
+
+<Card.Root>
+	<Card.Header class="text-center">
+		<Card.Title class="text-xl">Set new password</Card.Title>
+		<Card.Description>Choose a strong password for your account</Card.Description>
+	</Card.Header>
+	<Card.Content>
+		{#if !token}
+			<div class="space-y-4 text-center">
+				<p class="text-sm text-destructive">Invalid or missing reset token.</p>
+				<a href={resolve('/forgot-password')} class="text-sm underline underline-offset-4"
+					>Request a new link</a
+				>
+			</div>
+		{:else}
+			<form onsubmit={handleSubmit}>
+				<Field.Group>
+					{#if errorMessage}
+						<p class="text-center text-sm text-destructive">{errorMessage}</p>
+					{/if}
+					<Field.Field>
+						<Field.Label for="password">New Password</Field.Label>
+						<Input
+							id="password"
+							type="password"
+							required
+							bind:value={password}
+							autocomplete="new-password"
+						/>
+					</Field.Field>
+					<Field.Field>
+						<Field.Label for="confirm">Confirm Password</Field.Label>
+						<Input
+							id="confirm"
+							type="password"
+							required
+							bind:value={confirmPassword}
+							autocomplete="new-password"
+						/>
+						<Field.Description>
+							Must be at least {MIN_PASSWORD_LENGTH} characters and no more than {MAX_PASSWORD_BYTES}
+							UTF-8 bytes.
+						</Field.Description>
+					</Field.Field>
+					<Field.Field>
+						<Button type="submit" disabled={loading}>
+							{loading ? 'Saving...' : 'Set new password'}
+						</Button>
+					</Field.Field>
+				</Field.Group>
+			</form>
+		{/if}
+	</Card.Content>
+</Card.Root>

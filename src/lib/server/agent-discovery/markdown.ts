@@ -4,14 +4,10 @@ import { building } from '$app/environment';
 
 const LLMS_TXT_PATH = join(process.cwd(), 'static', 'llms.txt');
 
-function estimateMarkdownTokens(markdown: string): string {
-	return String(Math.ceil(markdown.length / 4));
-}
-
 export function markdownResponse(markdown: string, init?: ResponseInit): Response {
 	const headers = new Headers(init?.headers);
 	headers.set('Content-Type', 'text/markdown; charset=utf-8');
-	headers.set('x-markdown-tokens', estimateMarkdownTokens(markdown));
+	headers.set('x-markdown-tokens', String(Math.ceil(markdown.length / 4)));
 	headers.set('Vary', appendVary(headers.get('Vary'), 'Accept'));
 
 	return new Response(markdown, {

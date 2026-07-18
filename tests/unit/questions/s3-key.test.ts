@@ -9,6 +9,12 @@ describe('validateS3ObjectKey', () => {
 		expect(validateS3ObjectKey('  questions/foo.json  ')).toBe('questions/foo.json');
 	});
 
+	it('accepts canonical FRQ keys under the frqs/ prefix', () => {
+		expect(validateS3ObjectKey('frqs/3c0f9bb7-f208-4a1c-985f-bf312d0d4301.json')).toBe(
+			'frqs/3c0f9bb7-f208-4a1c-985f-bf312d0d4301.json'
+		);
+	});
+
 	it.each([
 		['', 'key is required'],
 		['   ', 'key is required'],

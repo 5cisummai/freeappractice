@@ -13,68 +13,23 @@
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import {
-		captureFirstAnswerSubmitted,
-		captureQuestionRequestFailed,
-		captureQuestionRequestSucceeded
-	} from '$lib/client/activation-analytics';
-	import {
-		QuestionRequestError,
-		questionSourceFromCachedFlag,
-		type QuestionSource
-	} from '$lib/client/activation-funnel-metrics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import {
-		parseQuestionPayloadFromResponse,
-		resolveEffectiveUnit,
-		type QuestionApiResponse
-	} from '$lib/questions/payload.js';
-	import {
-		hasValidHints,
-		MULTI_ATTEMPT_EXPERIMENT_KEY,
-		MULTI_ATTEMPT_EXPERIMENT_VERSION,
-		normalizeAnswerLetter,
-		resolveDisplayedVariant,
-		type PracticeVariant
-	} from '$lib/practice/multi-attempt';
-	import {
-		createMultiAttemptState,
-		reduceMultiAttempt,
-		type MultiAttemptMachineState
-	} from '$lib/practice/multi-attempt-machine';
-	import type {
-		AnswerResult,
-		BugReportContext,
-		GeneratedQuestion,
-		QuestionCardProps
-	} from '$lib/questions/types';
+		measureLongQuestion,
+		portalToBody,
+		withTooltipTriggerClick
+	} from '$lib/components/questions/question-card-dom';
+	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
+	import type { BugReportContext, QuestionCardProps } from '$lib/questions/types';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import TutorWidget from '$lib/components/tutor-widget.svelte';
+	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import DesmosCalculator from '$lib/components/questions/desmos-calculator.svelte';
 	import ReferenceSheet from '$lib/components/questions/reference-sheet.svelte';
 	import subjectToolsData from '$lib/data/subject-tools.json';
-
-	type QuestionFetchResult = {
-		question: GeneratedQuestion;
-		source: QuestionSource;
-		latencyMs: number;
-	};
-
-	/** Merge Tooltip.Trigger onclick with a custom handler (spread props override bare onclick). */
-	function withTooltipTriggerClick(
-		triggerProps: { onclick?: (e: MouseEvent) => void },
-		action: () => void
-	) {
-		return (e: MouseEvent) => {
-			triggerProps.onclick?.(e);
-			action();
-		};
-	}
 
 	let {
 		class: className,
@@ -103,35 +58,31 @@
 
 	let promptElement: HTMLDivElement | null = null;
 	let isLongQuestion = $state(false);
-	let hasCheckedAnswer = $state(false);
 	let isExpanded = $state(false);
-	let checkedSelection = $state<string | null>(null);
-	let answerResult = $state<AnswerResult | null>(null);
-	let showExplanation = $state(false);
-	let startedAtMs = $state(Date.now());
-	let isLoading = $state(false);
 	let mounted = $state(!browser);
-	let questionCount = $state(0);
-	let statusMessage = $state('');
-	let currentQuestion = $state<GeneratedQuestion | null>(null);
-	let seenQuestionIds = $state<string[]>([]);
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
 	let calculatorOpen = $state(false);
 	let referenceSheetOpen = $state(false);
-	let questionFeedbackReason = $state<string | null>(null);
-	let assignedVariant = $state<PracticeVariant>('control');
-	let experimentEnabled = $state(false);
-	let displayedVariant = $state<PracticeVariant>('control');
-	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
 
-	type PracticeExperimentResponse = {
-		assignedVariant: PracticeVariant;
-		experimentEnabled: boolean;
-		experimentKey: string;
-		experimentVersion: number;
-	};
+	const session = createQuestionCardSession({
+		getSelectedClass: () => selectedClass,
+		getSelectedUnit: () => selectedUnit,
+		getUnitRange: () => unitRange,
+		getRequestVersion: () => requestVersion,
+		getQuestionNumber: () => questionNumber,
+		getAutoShowExplanation: () => autoShowExplanation,
+		getSelectedOption: () => selectedOption,
+		getMounted: () => mounted,
+		setSelectedOption: (value) => {
+			selectedOption = value;
+		},
+		onCheckAnswer: (value) => onCheckAnswer?.(value),
+		onSkip: () => onSkip?.(),
+		onNotLearned: () => onNotLearned?.(),
+		onAnswered: (result) => onAnswered?.(result)
+	});
 
 	type SubjectToolEntry = {
 		calculator: 'none' | 'scientific' | 'graphing';
@@ -145,115 +96,28 @@
 	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
 	const realistic = $derived(realisticMode.enabled);
 
-	const effectiveQuestionNumber = $derived(questionNumber || `${questionCount}`);
 	const tutorUnitLabel = $derived(selectedUnit);
 	const effectiveTwoColumn = $derived(
 		!isMobileViewport &&
-			(currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
+			(session.currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
 	);
 	const expandedTwoColumn = $derived(!isMobileViewport && (isExpanded || effectiveTwoColumn));
 	const tutorAnswerChoices = $derived.by(() => {
-		if (!currentQuestion?.options) return null;
+		if (!session.currentQuestion?.options) return null;
 		const map: Record<string, string> = {};
-		for (const opt of currentQuestion.options) map[opt.id] = opt.text;
+		for (const opt of session.currentQuestion.options) map[opt.id] = opt.text;
 		return map.A && map.B ? (map as { A: string; B: string; C: string; D: string }) : null;
 	});
 	const realisticContextLabel = $derived(
 		selectedClass ? `${selectedClass} · ${selectedUnit.trim() || 'All Units'}` : ''
 	);
-	const isTreatmentActive = $derived(displayedVariant === 'multi_attempt_hints');
-	const lockedChoices = $derived(isTreatmentActive ? multiAttemptState.lockedChoices : []);
-	const activeHintText = $derived.by(() => {
-		if (!isTreatmentActive || multiAttemptState.phase !== 'hinted') return null;
-		if (multiAttemptState.hintsShown === 1) return currentQuestion?.hint1?.trim() ?? null;
-		if (multiAttemptState.hintsShown === 2) return currentQuestion?.hint2?.trim() ?? null;
-		return null;
-	});
-	const feedbackMessage = $derived.by(() => {
-		if (activeHintText) return activeHintText;
-		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
-			return statusMessage;
-		}
-		if (answerResult.isCorrect === true) {
-			return 'Correct! Nice work.';
-		}
-		if (answerResult.isCorrect === undefined) return 'Answer revealed.';
-		if (
-			answerResult.displayedVariant === 'multi_attempt_hints' &&
-			answerResult.finalAnswer === answerResult.correctAnswer &&
-			!answerResult.isCorrect
-		) {
-			return 'Solved after hints.';
-		}
-		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
-	});
-
-	const showEmptyState = $derived(
-		mounted && !isLoading && requestVersion === 0 && !currentQuestion
-	);
-
-	async function requestQuestion(
-		className: string,
-		unit: string,
-		excludeQuestionIds: string[] = []
-	): Promise<QuestionFetchResult> {
-		const startedAt = Date.now();
-		const body: Record<string, string | string[]> = { className, unit };
-		if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
-
-		try {
-			const response = await apiFetch('/api/question', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
-			});
-
-			const payload = await readJsonOrNull<QuestionApiResponse>(response);
-			if (!response.ok || !payload) {
-				throw new QuestionRequestError(
-					getResponseMessage(payload, 'Failed to load question.'),
-					response.ok ? null : response.status
-				);
-			}
-
-			return {
-				question: parseQuestionPayloadFromResponse(payload),
-				source: questionSourceFromCachedFlag(payload.cached),
-				latencyMs: Date.now() - startedAt
-			};
-		} catch (error) {
-			if (error instanceof QuestionRequestError) throw error;
-			throw new QuestionRequestError(
-				error instanceof Error ? error.message : 'Could not load question.',
-				null
-			);
-		}
-	}
-
-	function rememberSeenQuestion(question: GeneratedQuestion): void {
-		const questionId = question.questionId?.trim() ?? '';
-		if (!questionId || seenQuestionIds.includes(questionId)) return;
-		seenQuestionIds = [...seenQuestionIds, questionId];
-	}
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
-		const textLength = currentQuestion?.prompt.length ?? 0;
-		const hasCodeBlock = /```|\n\s{2,}|<code/i.test(currentQuestion?.prompt ?? '');
-		const threshold = Math.min(window.innerHeight * 0.7, 600);
-
-		// Dual-column / fullscreen panes use h-full + overflow, so scrollHeight matches
-		// the pane (often the viewport) even for short prompts. Only treat those as
-		// tall when content actually overflows; otherwise use natural content height.
-		let tallByLayout = false;
-		if (node) {
-			const overflowY = getComputedStyle(node).overflowY;
-			const isScrollContainer = overflowY === 'auto' || overflowY === 'scroll';
-			tallByLayout = isScrollContainer
-				? node.scrollHeight > node.clientHeight + 1
-				: node.scrollHeight > threshold;
-		}
-
-		isLongQuestion = textLength > longQuestionThresholdChars || hasCodeBlock || tallByLayout;
+		isLongQuestion = measureLongQuestion({
+			prompt: session.currentQuestion?.prompt ?? '',
+			node,
+			longQuestionThresholdChars
+		});
 	}
 
 	function observePromptLayout(node: HTMLDivElement, promptText: string) {
@@ -283,375 +147,24 @@
 		};
 	}
 
-	function portalToBody(node: HTMLElement) {
-		if (!browser) return;
-
-		const originalOverflow = document.body.style.overflow;
-		document.body.appendChild(node);
-		document.body.style.overflow = 'hidden';
-
-		return {
-			destroy() {
-				document.body.style.overflow = originalOverflow;
-				node.remove();
-			}
-		};
-	}
-
-	function resetInteractionState(clearSelection = true): void {
-		hasCheckedAnswer = false;
-		checkedSelection = null;
-		answerResult = null;
-		showExplanation = false;
-		questionFeedbackReason = null;
-		multiAttemptState = createMultiAttemptState();
-		startedAtMs = Date.now();
-		if (clearSelection) selectedOption = null;
-	}
-
-	async function fetchPracticeExperiment(): Promise<void> {
-		try {
-			const response = await apiFetch('/api/me/practice-experiment');
-			if (response.status === 401 || !response.ok) {
-				assignedVariant = 'control';
-				experimentEnabled = false;
-				return;
-			}
-			const payload = await readJsonOrNull<PracticeExperimentResponse>(response);
-			if (!payload) {
-				assignedVariant = 'control';
-				experimentEnabled = false;
-				return;
-			}
-			assignedVariant =
-				payload.assignedVariant === 'multi_attempt_hints' ? 'multi_attempt_hints' : 'control';
-			experimentEnabled = Boolean(payload.experimentEnabled);
-		} catch {
-			assignedVariant = 'control';
-			experimentEnabled = false;
-		}
-	}
-
-	function applyQuestionExperimentExposure(
-		question: GeneratedQuestion,
-		source: QuestionSource
-	): void {
-		const resolved = resolveDisplayedVariant({
-			assigned: assignedVariant,
-			experimentEnabled,
-			questionHasHints: hasValidHints(question)
-		});
-		displayedVariant = resolved.displayed;
-		multiAttemptState = createMultiAttemptState();
-
-		capturePostHogEvent('practice_experiment_exposed', {
-			assigned_variant: assignedVariant,
-			displayed_variant: resolved.displayed,
-			experiment_key: MULTI_ATTEMPT_EXPERIMENT_KEY,
-			experiment_version: MULTI_ATTEMPT_EXPERIMENT_VERSION,
-			question_source: source,
-			fallback_reason: resolved.fallbackReason,
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			topic: question.topic
-		});
-	}
-
-	function buildAnswerResult(selectedAnswer: string): AnswerResult | null {
-		if (!currentQuestion?.correctAnswer) return null;
-
-		return {
-			questionId: currentQuestion.questionId?.trim() || undefined,
-			questionNumber: effectiveQuestionNumber,
-			selectedAnswer,
-			correctAnswer: currentQuestion.correctAnswer,
-			isCorrect: selectedAnswer === currentQuestion.correctAnswer,
-			timeTakenMs: Date.now() - startedAtMs,
-			displayedVariant,
-			experimentKey: MULTI_ATTEMPT_EXPERIMENT_KEY,
-			experimentVersion: MULTI_ATTEMPT_EXPERIMENT_VERSION
-		};
-	}
-
-	async function loadQuestion(
-		reason: 'skip' | 'not-learned' | 'next' | undefined = undefined
-	): Promise<void> {
-		if (isLoading) return;
-		if (!selectedClass) {
-			statusMessage = 'Please choose a class before requesting a question.';
-			return;
-		}
-
-		isLoading = true;
-
-		if (reason === 'skip') statusMessage = 'Skipped current question.';
-		else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
-		else statusMessage = 'Loading question...';
-
-		const loadStartedAt = Date.now();
-		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const result = await requestQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
-			const analytics = {
-				apClass: selectedClass,
-				unit: selectedUnit,
-				source: result.source,
-				latencyMs: result.latencyMs
-			};
-			captureQuestionRequestSucceeded(analytics);
-
-			currentQuestion = { ...result.question, source: result.source };
-			rememberSeenQuestion(result.question);
-			questionCount += 1;
-			statusMessage = 'Choose the best answer and then check your response.';
-			resetInteractionState(true);
-			applyQuestionExperimentExposure(result.question, result.source);
-		} catch (error) {
-			captureQuestionRequestFailed({
-				apClass: selectedClass,
-				unit: selectedUnit,
-				failureKind: error instanceof QuestionRequestError ? error.failureKind : 'network',
-				status: error instanceof QuestionRequestError ? error.status : null,
-				latencyMs: Date.now() - loadStartedAt
-			});
-			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	function handleOptionSelect(optionId: string): void {
-		if (hasCheckedAnswer) return;
-		selectedOption = optionId;
-	}
-
-	function captureFirstAnswerAnalytics(
-		result: AnswerResult & { selectedAnswer: string; isCorrect: boolean }
-	): void {
-		capturePostHogEvent('question_answered', {
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			question_id: result.questionId,
-			topic: currentQuestion?.topic,
-			source: currentQuestion?.source,
-			is_correct: result.isCorrect,
-			time_taken_ms: result.timeTakenMs
-		});
-		captureFirstAnswerSubmitted({
-			apClass: selectedClass,
-			unit: selectedUnit,
-			isCorrect: result.isCorrect,
-			timeTakenMs: result.timeTakenMs
-		});
-	}
-
-	function captureQuestionCompletedAnalytics(
-		result: AnswerResult,
-		terminalOutcome: 'correct' | 'incorrect' | 'revealed' | 'max_attempts',
-		resolvedCorrect: boolean,
-		answerCount: number,
-		hintsShown: number
-	): void {
-		capturePostHogEvent('practice_question_completed', {
-			displayed_variant: result.displayedVariant ?? 'control',
-			terminal_outcome: terminalOutcome,
-			first_answer_correct: result.isCorrect,
-			resolved_correct: resolvedCorrect,
-			answer_count: answerCount,
-			hints_shown: hintsShown,
-			elapsed_ms: result.timeTakenMs,
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			topic: currentQuestion?.topic,
-			source: currentQuestion?.source
-		});
-	}
-
-	function finalizeTreatmentAttempt(): void {
-		if (!currentQuestion?.correctAnswer || multiAttemptState.phase !== 'terminal') return;
-
-		const firstAnswer = multiAttemptState.answers[0];
-
-		const result: AnswerResult = {
-			questionId: currentQuestion.questionId?.trim() || undefined,
-			questionNumber: effectiveQuestionNumber,
-			selectedAnswer: firstAnswer,
-			correctAnswer: currentQuestion.correctAnswer,
-			isCorrect: multiAttemptState.firstAnswerCorrect ?? undefined,
-			timeTakenMs: Date.now() - startedAtMs,
-			finalAnswer: multiAttemptState.answers[multiAttemptState.answers.length - 1],
-			answerCount: multiAttemptState.answers.length,
-			hintsShown: multiAttemptState.hintsShown,
-			terminalOutcome: multiAttemptState.terminalOutcome ?? undefined,
-			displayedVariant: 'multi_attempt_hints',
-			experimentKey: MULTI_ATTEMPT_EXPERIMENT_KEY,
-			experimentVersion: MULTI_ATTEMPT_EXPERIMENT_VERSION,
-			answers: [...multiAttemptState.answers]
-		};
-
-		hasCheckedAnswer = true;
-		checkedSelection = firstAnswer ?? null;
-		answerResult = result;
-		onAnswered?.(result);
-
-		captureQuestionCompletedAnalytics(
-			result,
-			multiAttemptState.terminalOutcome ?? 'revealed',
-			multiAttemptState.resolvedCorrect ?? false,
-			multiAttemptState.answers.length,
-			multiAttemptState.hintsShown
-		);
-
-		if (autoShowExplanation && currentQuestion.explanation) {
-			showExplanation = true;
-		}
-	}
-
-	function handleRevealAnswer(): void {
-		if (!isTreatmentActive || hasCheckedAnswer) return;
-		multiAttemptState = reduceMultiAttempt(multiAttemptState, { type: 'reveal' });
-		finalizeTreatmentAttempt();
-	}
-
-	function handleCheckAnswer(): void {
-		if (!selectedOption) return;
-		onCheckAnswer?.(selectedOption);
-
-		if (!isTreatmentActive) {
-			const result = buildAnswerResult(selectedOption);
-			if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
-			const completeResult = result as AnswerResult & {
-				selectedAnswer: string;
-				isCorrect: boolean;
-			};
-
-			hasCheckedAnswer = true;
-			checkedSelection = completeResult.selectedAnswer;
-			answerResult = completeResult;
-			onAnswered?.(completeResult);
-			captureFirstAnswerAnalytics(completeResult);
-			captureQuestionCompletedAnalytics(
-				completeResult,
-				completeResult.isCorrect ? 'correct' : 'incorrect',
-				completeResult.isCorrect,
-				1,
-				0
-			);
-
-			if (autoShowExplanation && currentQuestion?.explanation) {
-				showExplanation = true;
-			}
-			return;
-		}
-
-		const answer = normalizeAnswerLetter(selectedOption);
-		const correctAnswer = normalizeAnswerLetter(currentQuestion?.correctAnswer);
-		if (!answer || !correctAnswer) return;
-
-		const isFirstSubmit = multiAttemptState.answers.length === 0;
-		const prevHintsShown = multiAttemptState.hintsShown;
-
-		multiAttemptState = reduceMultiAttempt(multiAttemptState, {
-			type: 'submit',
-			answer,
-			correctAnswer
-		});
-
-		if (isFirstSubmit) {
-			const firstResult = buildAnswerResult(answer);
-			if (firstResult?.selectedAnswer !== undefined && firstResult.isCorrect !== undefined) {
-				captureFirstAnswerAnalytics(
-					firstResult as AnswerResult & { selectedAnswer: string; isCorrect: boolean }
-				);
-			}
-		}
-
-		if (multiAttemptState.hintsShown > prevHintsShown) {
-			capturePostHogEvent('practice_hint_shown', {
-				displayed_variant: 'multi_attempt_hints',
-				hint_number: multiAttemptState.hintsShown,
-				first_answer_correct: multiAttemptState.firstAnswerCorrect,
-				ap_class: selectedClass,
-				unit: selectedUnit,
-				topic: currentQuestion?.topic,
-				source: currentQuestion?.source
-			});
-		}
-
-		if (multiAttemptState.phase === 'terminal') {
-			finalizeTreatmentAttempt();
-		} else {
-			selectedOption = null;
-		}
-	}
-
-	async function handleNextQuestion(): Promise<void> {
-		await loadQuestion('next');
-	}
-
-	async function handleSkipQuestion(): Promise<void> {
-		onSkip?.();
-		capturePostHogEvent('question_skipped', {
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			question_id: currentQuestion?.questionId,
-			topic: currentQuestion?.topic,
-			source: currentQuestion?.source
-		});
-		await loadQuestion('skip');
-	}
-
-	async function handleNotLearnedQuestion(): Promise<void> {
-		onNotLearned?.();
-		capturePostHogEvent('question_marked_not_learned', {
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			question_id: currentQuestion?.questionId,
-			topic: currentQuestion?.topic,
-			source: currentQuestion?.source
-		});
-		await loadQuestion('not-learned');
-	}
-
 	function handleReportBugAction(): void {
 		const ctx: BugReportContext = {
-			questionId: currentQuestion?.questionId,
-			questionNumber: effectiveQuestionNumber,
+			questionId: session.currentQuestion?.questionId,
+			questionNumber: session.effectiveQuestionNumber,
 			selectedClass,
 			selectedUnit,
-			prompt: currentQuestion?.prompt,
-			correctAnswer: currentQuestion?.correctAnswer,
-			hasStimulus: Boolean(currentQuestion?.hasStimulus)
+			prompt: session.currentQuestion?.prompt,
+			correctAnswer: session.currentQuestion?.correctAnswer,
+			hasStimulus: Boolean(session.currentQuestion?.hasStimulus)
 		};
 		onReportBug?.(ctx);
 		bugReportContext = ctx;
 		bugReportOpen = true;
 	}
 
-	function submitQuestionFeedback(
-		reason: 'answer_incorrect' | 'question_unclear' | 'explanation_unclear'
-	): void {
-		if (!currentQuestion || questionFeedbackReason) return;
-
-		questionFeedbackReason = reason;
-		capturePostHogEvent('question_feedback_submitted', {
-			reason,
-			question_id: currentQuestion.questionId,
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			topic: currentQuestion.topic,
-			source: currentQuestion.source,
-			is_correct: answerResult?.isCorrect
-		});
-	}
-
 	onMount(() => {
-		currentQuestion = null;
-		questionCount = 0;
-		resetInteractionState(true);
 		calculatorOpen = false;
 		referenceSheetOpen = false;
-		statusMessage = 'Choose the best answer and then check your response.';
 		mounted = true;
 
 		const onResize = () => {
@@ -665,14 +178,7 @@
 		window.addEventListener('keydown', onKeydown);
 		onResize();
 
-		void (async () => {
-			await fetchPracticeExperiment();
-			if (requestVersion > 0) {
-				await loadQuestion();
-			} else if (currentQuestion) {
-				isLoading = false;
-			}
-		})();
+		void session.init();
 
 		return () => {
 			window.removeEventListener('resize', onResize);
@@ -681,12 +187,12 @@
 	});
 </script>
 
-{#if !mounted || isLoading}
+{#if !mounted || session.isLoading}
 	<QuestionCardSkeleton
-		isTwoColumn={Boolean(currentQuestion?.hasStimulus && !isMobileViewport)}
+		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
 		class={className}
 	/>
-{:else if showEmptyState}
+{:else if session.showEmptyState}
 	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
 		<Card.Content
 			class="relative flex min-h-40 flex-col items-center justify-center gap-2 px-6 pb-12 text-center"
@@ -707,9 +213,9 @@
 					class="inline-flex size-8 items-center justify-center bg-foreground font-exam text-base font-semibold text-background"
 					aria-hidden="true"
 				>
-					{effectiveQuestionNumber}
+					{session.effectiveQuestionNumber}
 				</span>
-				<span class="sr-only">Question {effectiveQuestionNumber}</span>
+				<span class="sr-only">Question {session.effectiveQuestionNumber}</span>
 			</div>
 		{/snippet}
 
@@ -723,7 +229,7 @@
 					</div>
 				{:else}
 					<div>
-						<h2 class="mt-0.5 text-xl font-semibold">Question {effectiveQuestionNumber}</h2>
+						<h2 class="mt-0.5 text-xl font-semibold">Question {session.effectiveQuestionNumber}</h2>
 					</div>
 				{/if}
 				<Button
@@ -741,7 +247,7 @@
 				</Button>
 			</div>
 
-			{#if currentQuestion?.hasStimulus && !isMobileViewport}
+			{#if session.currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
 						'overflow-hidden',
@@ -756,7 +262,7 @@
 							<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
 								{#if !realistic}
 									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-										{currentQuestion.leftPanel?.title ?? 'Stimulus'}
+										{session.currentQuestion.leftPanel?.title ?? 'Stimulus'}
 									</p>
 								{/if}
 								<div
@@ -767,7 +273,7 @@
 											: 'text-sm text-foreground/90'
 									)}
 								>
-									{#each currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
+									{#each session.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
 								</div>
@@ -776,12 +282,12 @@
 						<Resizable.Handle withHandle />
 						<Resizable.Pane defaultSize={46} minSize={30} class="min-w-0">
 							<div
-								use:observePromptLayout={currentQuestion?.prompt ?? ''}
+								use:observePromptLayout={session.currentQuestion?.prompt ?? ''}
 								class="h-full space-y-3 overflow-y-auto p-4 sm:p-5"
 							>
 								{#if !realistic}
 									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-										{currentQuestion.rightPanel?.title ?? 'Prompt'}
+										{session.currentQuestion.rightPanel?.title ?? 'Prompt'}
 									</p>
 								{/if}
 								<div
@@ -792,7 +298,7 @@
 											: 'text-sm text-foreground/90'
 									)}
 								>
-									{#each currentQuestion.rightPanel?.content ?? [currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
+									{#each session.currentQuestion.rightPanel?.content ?? [session.currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
 								</div>
@@ -804,14 +310,14 @@
 					{@render realisticQuestionNumber()}
 				{/if}
 				<McqAnswerChoices
-					options={currentQuestion.options}
+					options={session.currentQuestion.options}
 					{selectedOption}
-					{hasCheckedAnswer}
-					{checkedSelection}
-					correctAnswer={currentQuestion.correctAnswer}
-					onSelect={handleOptionSelect}
+					hasCheckedAnswer={session.hasCheckedAnswer}
+					checkedSelection={session.checkedSelection}
+					correctAnswer={session.currentQuestion.correctAnswer}
+					onSelect={session.handleOptionSelect}
 					{realistic}
-					{lockedChoices}
+					lockedChoices={session.lockedChoices}
 				/>
 			{:else if expandedTwoColumn}
 				<div
@@ -826,7 +332,7 @@
 					<Resizable.PaneGroup direction="horizontal" class="h-full">
 						<Resizable.Pane defaultSize={56} minSize={35} class="min-w-0">
 							<div
-								use:observePromptLayout={currentQuestion?.prompt ?? ''}
+								use:observePromptLayout={session.currentQuestion?.prompt ?? ''}
 								class="h-full overflow-y-auto p-4 sm:p-5"
 							>
 								{#if !realistic}
@@ -837,7 +343,7 @@
 									</p>
 								{/if}
 								<RichText
-									text={currentQuestion?.prompt ?? ''}
+									text={session.currentQuestion?.prompt ?? ''}
 									class={cn(
 										'leading-7',
 										realistic
@@ -854,24 +360,24 @@
 									{@render realisticQuestionNumber()}
 								{/if}
 								<McqAnswerChoices
-									options={currentQuestion?.options ?? []}
+									options={session.currentQuestion?.options ?? []}
 									{selectedOption}
-									{hasCheckedAnswer}
-									{checkedSelection}
-									correctAnswer={currentQuestion?.correctAnswer}
-									onSelect={handleOptionSelect}
+									hasCheckedAnswer={session.hasCheckedAnswer}
+									checkedSelection={session.checkedSelection}
+									correctAnswer={session.currentQuestion?.correctAnswer}
+									onSelect={session.handleOptionSelect}
 									compact
 									{realistic}
-									{lockedChoices}
+									lockedChoices={session.lockedChoices}
 								/>
 							</div>
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
 				</div>
 			{:else}
-				<div use:observePromptLayout={currentQuestion?.prompt ?? ''}>
+				<div use:observePromptLayout={session.currentQuestion?.prompt ?? ''}>
 					<RichText
-						text={currentQuestion?.prompt ?? ''}
+						text={session.currentQuestion?.prompt ?? ''}
 						class={cn(
 							realistic
 								? 'font-exam text-[15px] leading-8 text-foreground/85'
@@ -883,23 +389,31 @@
 					{@render realisticQuestionNumber()}
 				{/if}
 				<McqAnswerChoices
-					options={currentQuestion?.options ?? []}
+					options={session.currentQuestion?.options ?? []}
 					{selectedOption}
-					{hasCheckedAnswer}
-					{checkedSelection}
-					correctAnswer={currentQuestion?.correctAnswer}
-					onSelect={handleOptionSelect}
+					hasCheckedAnswer={session.hasCheckedAnswer}
+					checkedSelection={session.checkedSelection}
+					correctAnswer={session.currentQuestion?.correctAnswer}
+					onSelect={session.handleOptionSelect}
 					{realistic}
-					{lockedChoices}
+					lockedChoices={session.lockedChoices}
 				/>
 			{/if}
 
-			{#if showUtilityActions && !hasCheckedAnswer}
+			{#if showUtilityActions && !session.hasCheckedAnswer}
 				<div class="flex flex-wrap gap-2">
-					<Button variant="ghost" size="sm" onclick={handleSkipQuestion} disabled={isLoading}
-						>{skipLabel}</Button
+					<Button
+						variant="ghost"
+						size="sm"
+						onclick={session.handleSkipQuestion}
+						disabled={session.isLoading}>{skipLabel}</Button
 					>
-					<Button variant="ghost" size="sm" onclick={handleNotLearnedQuestion} disabled={isLoading}>
+					<Button
+						variant="ghost"
+						size="sm"
+						onclick={session.handleNotLearnedQuestion}
+						disabled={session.isLoading}
+					>
 						{notLearnedLabel}
 					</Button>
 					<Button variant="ghost" size="sm" onclick={handleReportBugAction}>
@@ -912,7 +426,7 @@
 		<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 				<div class="min-w-0 space-y-1">
-					<p class="text-sm text-muted-foreground">{feedbackMessage}</p>
+					<p class="text-sm text-muted-foreground">{session.feedbackMessage}</p>
 				</div>
 				{#if hasCalculator || hasReferenceSheet}
 					<div class="flex gap-0.5">
@@ -962,18 +476,18 @@
 				{/if}
 			</div>
 			<div class="flex gap-2">
-				{#if hasCheckedAnswer && currentQuestion?.explanation}
+				{#if session.hasCheckedAnswer && session.currentQuestion?.explanation}
 					<Button
 						variant="outline"
 						onclick={() => {
-							showExplanation = true;
+							session.showExplanation = true;
 							capturePostHogEvent('explanation_viewed', {
-								question_id: currentQuestion?.questionId,
+								question_id: session.currentQuestion?.questionId,
 								ap_class: selectedClass,
 								unit: selectedUnit,
-								topic: currentQuestion?.topic,
-								source: currentQuestion?.source,
-								is_correct: answerResult?.isCorrect
+								topic: session.currentQuestion?.topic,
+								source: session.currentQuestion?.source,
+								is_correct: session.answerResult?.isCorrect
 							});
 						}}
 					>
@@ -982,16 +496,18 @@
 				{/if}
 				<Button
 					variant="outline"
-					onclick={handleNextQuestion}
-					disabled={isLoading || !hasCheckedAnswer}
+					onclick={session.handleNextQuestion}
+					disabled={session.isLoading || !session.hasCheckedAnswer}
 				>
 					{nextLabel}
 				</Button>
-				{#if !hasCheckedAnswer}
-					{#if isTreatmentActive && multiAttemptState.phase !== 'terminal'}
-						<Button variant="outline" onclick={handleRevealAnswer}>Show answer</Button>
+				{#if !session.hasCheckedAnswer}
+					{#if session.isTreatmentActive && session.multiAttemptState.phase !== 'terminal'}
+						<Button variant="outline" onclick={session.handleRevealAnswer}>Show answer</Button>
 					{/if}
-					<Button disabled={!selectedOption} onclick={handleCheckAnswer}>{checkLabel}</Button>
+					<Button disabled={!selectedOption} onclick={session.handleCheckAnswer}
+						>{checkLabel}</Button
+					>
 				{/if}
 			</div>
 		</Card.Footer>
@@ -1032,17 +548,17 @@
 		</div>
 	{/if}
 
-	{#if currentQuestion}
-		{#key currentQuestion.questionId ?? currentQuestion.prompt}
+	{#if session.currentQuestion}
+		{#key session.currentQuestion.questionId ?? session.currentQuestion.prompt}
 			<TutorWidget
-				question={currentQuestion.prompt}
-				answer={currentQuestion.correctAnswer ?? ''}
-				explanation={currentQuestion.explanation ?? ''}
+				question={session.currentQuestion.prompt}
+				answer={session.currentQuestion.correctAnswer ?? ''}
+				explanation={session.currentQuestion.explanation ?? ''}
 				apClass={selectedClass}
 				unit={tutorUnitLabel}
 				answerChoices={tutorAnswerChoices}
-				questionId={currentQuestion.questionId}
-				topic={currentQuestion.topic}
+				questionId={session.currentQuestion.questionId}
+				topic={session.currentQuestion.topic}
 			/>
 		{/key}
 	{/if}
@@ -1063,27 +579,33 @@
 		{selectedUnit}
 	/>
 
-	{#if currentQuestion?.explanation}
-		<Dialog.Root bind:open={showExplanation}>
+	{#if session.currentQuestion?.explanation}
+		<Dialog.Root bind:open={session.showExplanation}>
 			<Dialog.Content
 				class="max-h-[min(85vh,40rem)] w-full max-w-2xl gap-0 overflow-y-auto sm:max-w-2xl"
 				showCloseButton={true}
 			>
 				<Dialog.Header class="gap-2 text-left">
 					<Dialog.Title>
-						{checkedSelection === currentQuestion.correctAnswer ? 'Correct!' : 'Review Explanation'}
+						{session.checkedSelection === session.currentQuestion.correctAnswer
+							? 'Correct!'
+							: 'Review Explanation'}
 					</Dialog.Title>
-					<Dialog.Description class={currentQuestion.correctAnswer ? undefined : 'sr-only'}>
-						{#if currentQuestion.correctAnswer}
+					<Dialog.Description
+						class={session.currentQuestion.correctAnswer ? undefined : 'sr-only'}
+					>
+						{#if session.currentQuestion.correctAnswer}
 							Correct answer:
-							<span class="font-semibold text-foreground">{currentQuestion.correctAnswer}</span>
+							<span class="font-semibold text-foreground"
+								>{session.currentQuestion.correctAnswer}</span
+							>
 						{:else}
 							Detailed explanation for this question.
 						{/if}
 					</Dialog.Description>
 				</Dialog.Header>
 				<RichText
-					text={currentQuestion.explanation}
+					text={session.currentQuestion.explanation}
 					class="mt-2 text-sm leading-6 text-foreground/90"
 				/>
 				<Dialog.Footer class="mt-6 sm:justify-end">
@@ -1094,7 +616,7 @@
 					</Dialog.Close>
 				</Dialog.Footer>
 				<div class="mt-8 border-t border-border/50 pt-3">
-					{#if questionFeedbackReason}
+					{#if session.questionFeedbackReason}
 						<p class="mt-1.5 text-xs text-muted-foreground/70">
 							Thanks, this helps improve future questions.
 						</p>
@@ -1104,20 +626,21 @@
 								variant="ghost"
 								size="xs"
 								class="text-muted-foreground"
-								onclick={() => submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
+								onclick={() => session.submitQuestionFeedback('answer_incorrect')}
+								>Answer is wrong</Button
 							>
 							<Button
 								variant="ghost"
 								size="xs"
 								class="text-muted-foreground"
-								onclick={() => submitQuestionFeedback('question_unclear')}
+								onclick={() => session.submitQuestionFeedback('question_unclear')}
 								>Question is unclear</Button
 							>
 							<Button
 								variant="ghost"
 								size="xs"
 								class="text-muted-foreground"
-								onclick={() => submitQuestionFeedback('explanation_unclear')}
+								onclick={() => session.submitQuestionFeedback('explanation_unclear')}
 								>Explanation is unclear</Button
 							>
 						</div>

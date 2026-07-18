@@ -6,10 +6,6 @@ import {
 } from '$lib/questions/gen-stats-model.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 
-function normalizeUnitLabel(unit?: string | null): string {
-	return normalizeUnit(unit, '(none)');
-}
-
 /**
  * Call after a new MCQ is written to S3. Updates class totals, per-class unit rows,
  * and global unit rollup (same labels across courses are summed in global).
@@ -20,7 +16,7 @@ export async function recordMcqGenerated(opts: {
 	questionText: string;
 }): Promise<void> {
 	await connectDb();
-	const unit = normalizeUnitLabel(opts.unit);
+	const unit = normalizeUnit(opts.unit, '(none)');
 	const len = opts.questionText.length;
 
 	await Promise.all([
