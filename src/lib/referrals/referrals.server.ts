@@ -16,7 +16,7 @@ import { captureAnonymousServerMetric, capturePostHogServerEvent } from '$lib/se
 const REFERRAL_COOKIE = 'freeap_referral';
 const REFERRAL_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
-export const REFERRAL_EVENTS = {
+const REFERRAL_EVENTS = {
 	inviteLanded: 'invite_landed',
 	referralClaimed: 'referral_claimed',
 	referralActivated: 'referral_activated'

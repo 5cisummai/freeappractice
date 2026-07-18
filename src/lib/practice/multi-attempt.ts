@@ -1,6 +1,6 @@
 export const MULTI_ATTEMPT_EXPERIMENT_KEY = 'multi_attempt_hints';
 export const MULTI_ATTEMPT_EXPERIMENT_VERSION = 1;
-export const MAX_MULTI_ATTEMPT_SUBMISSIONS = 3;
+const MAX_MULTI_ATTEMPT_SUBMISSIONS = 3;
 
 export type PracticeVariant = 'control' | 'multi_attempt_hints';
 

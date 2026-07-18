@@ -79,7 +79,6 @@
 		"posthog-js": "^1.393.5",
 		"posthog-node": "^5.38.5",
 		"resend": "^6.14.0",
-		"runed": "^0.37.1",
 		"zod": "^4.4.3"
 	},
 	"overrides": {

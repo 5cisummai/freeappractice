@@ -5,29 +5,29 @@ import type { StoredQuestion } from '$lib/questions/storage.server';
 import { FrqAttempt } from '$lib/frq/model.server';
 import { connectDb } from '$lib/server/db';
 
-export type McqHistoryItem = {
+type McqHistoryItem = {
 	kind: 'mcq';
 	attempt: IQuestionAttempt;
 	question: StoredQuestion | null;
 };
 
-export type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem;
+type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem;
 
-export type McqHistoryPageResult = {
+type McqHistoryPageResult = {
 	items: McqHistoryItem[];
 	total: number;
 	page: number;
 	limit: number;
 };
 
-export type PracticeHistoryPageResult = {
+type PracticeHistoryPageResult = {
 	items: PracticeHistoryItem[];
 	total: number;
 	page: number;
 	limit: number;
 };
 
-export type HistorySort = {
+type HistorySort = {
 	field: 'attemptedAt' | 'subject' | 'result';
 	direction: 'asc' | 'desc';
 };

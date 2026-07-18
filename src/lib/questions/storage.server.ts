@@ -40,7 +40,7 @@ export async function getQuestionFromS3(questionId: string): Promise<StoredQuest
 	return s3.getObjectJson<StoredQuestion>({ key: `questions/${questionId}.json` });
 }
 
-export async function getQuestionsFromS3(questionIds: string[]): Promise<StoredQuestion[]> {
+async function getQuestionsFromS3(questionIds: string[]): Promise<StoredQuestion[]> {
 	const results = await Promise.all(
 		questionIds.map((id) => getQuestionFromS3(id).catch(() => null))
 	);

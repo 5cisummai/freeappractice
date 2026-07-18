@@ -1,3 +1,5 @@
+import type { PracticeVariant, TerminalOutcome } from '$lib/practice/multi-attempt';
+
 export interface IProgress {
 	apClass: string;
 	unit: string;
@@ -8,9 +10,6 @@ export interface IProgress {
 	lastAttemptAt?: Date;
 	lastReviewedAt?: Date;
 }
-
-export type PracticeVariant = 'control' | 'multi_attempt_hints';
-export type TerminalOutcome = 'correct' | 'revealed' | 'max_attempts';
 
 export interface IPracticeExperimentAssignment {
 	key: string;

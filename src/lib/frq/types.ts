@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const FRQ_SCHEMA_VERSION = 1 as const;
-export const MAX_FRQ_SECTION_RESPONSE_CHARS = 12_000;
-export const MAX_FRQ_TOTAL_RESPONSE_CHARS = 40_000;
+const MAX_FRQ_SECTION_RESPONSE_CHARS = 12_000;
+const MAX_FRQ_TOTAL_RESPONSE_CHARS = 40_000;
 
 const stableId = z
 	.string()

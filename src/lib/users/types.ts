@@ -1,3 +1,5 @@
+import type { PracticeVariant, TerminalOutcome } from '$lib/practice/multi-attempt';
+
 export interface ProgressEntry {
 	apClass: string;
 	unit: string;
@@ -50,10 +52,10 @@ export type QuestionAttempt = {
 	finalAnswer?: 'A' | 'B' | 'C' | 'D';
 	answerCount?: number;
 	hintsShown?: number;
-	terminalOutcome?: 'correct' | 'revealed' | 'max_attempts';
+	terminalOutcome?: TerminalOutcome;
 	experimentKey?: string;
 	experimentVersion?: number;
-	displayedVariant?: 'control' | 'multi_attempt_hints';
+	displayedVariant?: PracticeVariant;
 };
 
 export type StoredMcqQuestion = {
