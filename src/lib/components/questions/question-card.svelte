@@ -205,6 +205,22 @@
 			</p>
 		</Card.Content>
 	</Card.Root>
+{:else if session.showErrorState}
+	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
+		<Card.Content
+			class="relative flex min-h-40 flex-col items-center justify-center gap-3 px-6 pb-12 text-center"
+		>
+			<p class="text-lg font-medium text-muted-foreground sm:text-xl">
+				We couldn’t load this question
+			</p>
+			<p class="max-w-sm text-sm text-muted-foreground/80">
+				Sorry about that — we’ve noted this so we can get it fixed. Please try again in a moment.
+			</p>
+			<Button onclick={() => void session.loadQuestion()} disabled={session.isLoading}
+				>Try again</Button
+			>
+		</Card.Content>
+	</Card.Root>
 {:else}
 	{#snippet cardInner(expanded: boolean)}
 		{#snippet realisticQuestionNumber()}

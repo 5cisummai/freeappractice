@@ -4,6 +4,7 @@ import { recordMcqGenerated } from '$lib/questions/gen-stats.server';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import { logger } from '$lib/server/logger';
 import { GENERATION_MODEL, structuredObject } from '$lib/ai/service.server';
+import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 
@@ -144,15 +145,15 @@ const APQuestion = z.object({
 	explanation: z
 		.string()
 		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
+	// Must be required (not .optional): OpenAI structured outputs require every
+	// property key to appear in JSON Schema `required`.
 	hint1: z
 		.string()
-		.optional()
 		.describe(
 			'Brief progressive hint after a first incorrect answer; do not reveal the correct letter'
 		),
 	hint2: z
 		.string()
-		.optional()
 		.describe(
 			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
 		),
@@ -163,7 +164,12 @@ const APQuestion = z.object({
 		)
 });
 
+assertOpenAiCompatibleObjectSchema(APQuestion, { schemaName: 'ap_question' });
+
 type APQuestionData = z.infer<typeof APQuestion>;
+
+/** Exported for OpenAI schema compatibility tests. */
+export const apQuestionSchema = APQuestion;
 
 export type { APQuestionData };
 

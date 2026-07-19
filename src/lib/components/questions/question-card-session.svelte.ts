@@ -56,6 +56,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let isLoading = $state(false);
 	let questionCount = $state(0);
 	let statusMessage = $state('');
+	let questionLoadFailed = $state(false);
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
 	let assignedVariant = $state<PracticeVariant>('control');
@@ -92,8 +93,13 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
 	const showEmptyState = $derived(
-		opts.getMounted() && !isLoading && opts.getRequestVersion() === 0 && !currentQuestion
+		opts.getMounted() &&
+			!isLoading &&
+			!questionLoadFailed &&
+			opts.getRequestVersion() === 0 &&
+			!currentQuestion
 	);
+	const showErrorState = $derived(opts.getMounted() && !isLoading && questionLoadFailed);
 
 	function rememberSeenQuestion(question: GeneratedQuestion): void {
 		const questionId = question.questionId?.trim() ?? '';
@@ -190,6 +196,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		}
 
 		isLoading = true;
+		questionLoadFailed = false;
 
 		if (reason === 'skip') statusMessage = 'Skipped current question.';
 		else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
@@ -221,6 +228,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 				status: error instanceof QuestionRequestError ? error.status : null,
 				latencyMs: Date.now() - loadStartedAt
 			});
+			questionLoadFailed = true;
+			currentQuestion = null;
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
 		} finally {
 			isLoading = false;
@@ -532,6 +541,9 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		},
 		get showEmptyState() {
 			return showEmptyState;
+		},
+		get showErrorState() {
+			return showErrorState;
 		},
 		rememberSeenQuestion,
 		resetInteractionState,
