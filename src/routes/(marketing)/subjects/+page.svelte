@@ -34,7 +34,6 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-
 <main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
 	<BackToHome />
 
@@ -69,20 +68,20 @@
 		<p>
 			Free AP Practice covers more than twenty College Board courses, from AP Biology and AP US
 			History to AP Calculus, AP Physics, economics, languages, and computer science. Each subject
-			page is a hub: you will see the full unit list your teacher likely follows, plus quick
-			access to generate unlimited multiple-choice questions with instant explanations.
+			page is a hub: you will see the full unit list your teacher likely follows, plus quick access
+			to generate unlimited multiple-choice questions with instant explanations.
 		</p>
 		<p>
-			You do not need an account to start. Pick the class you are taking (or one you are
-			considering for next year), open its practice page, choose a unit, and hit Generate. Wrong
-			answers are as useful as right ones when you read the feedback immediately; that is how the
-			site is built to work.
+			You do not need an account to start. Pick the class you are taking (or one you are considering
+			for next year), open its practice page, choose a unit, and hit Generate. Wrong answers are as
+			useful as right ones when you read the feedback immediately; that is how the site is built to
+			work.
 		</p>
 		<p>
 			If you are planning a schedule, browsing subjects here is faster than guessing what is
-			supported. Every link below goes to a dedicated hub with exam-aligned context, study tips,
-			and helpful resources where we have them. Start with the course on your desk today, or
-			preview Unit 1 for a class you might take in the fall.
+			supported. Every link below goes to a dedicated hub with exam-aligned context, study tips, and
+			helpful resources where we have them. Start with the course on your desk today, or preview
+			Unit 1 for a class you might take in the fall.
 		</p>
 		<p>
 			Looking for something specific? Use your browser search on this page, or open a subject and
@@ -92,4 +91,3 @@
 		</p>
 	</section>
 </main>
-

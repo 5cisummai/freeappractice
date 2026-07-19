@@ -13,25 +13,25 @@ This app already has **half** of the Flags stack: `flags` + SvelteKit `createHan
 
 ## What you already have
 
-| Piece | Status | Where |
-|-------|--------|--------|
-| `flags` package | ✅ `^4.2.0` | `package.json` |
-| Flag declarations | ✅ two flags | `src/lib/flags.ts` |
-| Discovery + overrides hook | ✅ gated on `FLAGS_SECRET` | `src/hooks.server.ts` |
-| Vercel Toolbar (local) | ✅ | `vite.config.ts`, `+layout.svelte` |
-| `@flags-sdk/vercel` / `vercelAdapter` | ❌ missing | — |
-| Dashboard-managed values | ❌ | Local `decide()` / hardcoded `false` / env |
+| Piece                                 | Status                     | Where                                      |
+| ------------------------------------- | -------------------------- | ------------------------------------------ |
+| `flags` package                       | ✅ `^4.2.0`                | `package.json`                             |
+| Flag declarations                     | ✅ two flags               | `src/lib/flags.ts`                         |
+| Discovery + overrides hook            | ✅ gated on `FLAGS_SECRET` | `src/hooks.server.ts`                      |
+| Vercel Toolbar (local)                | ✅                         | `vite.config.ts`, `+layout.svelte`         |
+| `@flags-sdk/vercel` / `vercelAdapter` | ❌ missing                 | —                                          |
+| Dashboard-managed values              | ❌                         | Local `decide()` / hardcoded `false` / env |
 
 ### Declared flags today
 
-1. **`multi-attempt-experiment`** (`multiAttemptExperimentEnabled`)  
-   - Kill-switch for sticky multi-attempt experiment ([DEV-60](https://linear.app/freeappractice/issue/DEV-60)).  
-   - Currently hard-off: `decide() → false`, `isMultiAttemptExperimentEnabled() → false`.  
+1. **`multi-attempt-experiment`** (`multiAttemptExperimentEnabled`)
+   - Kill-switch for sticky multi-attempt experiment ([DEV-60](https://linear.app/freeappractice/issue/DEV-60)).
+   - Currently hard-off: `decide() → false`, `isMultiAttemptExperimentEnabled() → false`.
    - API `GET /api/me/practice-experiment` also hard-returns `experimentEnabled: false` (bypasses the flag).
 
-2. **`frq-practice`** (`frqPracticeEnabled`)  
-   - Pilot gate for authenticated FRQ practice ([DEV-82](https://linear.app/freeappractice/issue/DEV-82)).  
-   - `decide()` reads `FRQ_PRACTICE_ENABLED === 'true'`.  
+2. **`frq-practice`** (`frqPracticeEnabled`)
+   - Pilot gate for authenticated FRQ practice ([DEV-82](https://linear.app/freeappractice/issue/DEV-82)).
+   - `decide()` reads `FRQ_PRACTICE_ENABLED === 'true'`.
    - Used by practice page load, FRQ gate, dashboard, history API.
 
 ### Explorer wiring
@@ -44,15 +44,15 @@ When `FLAGS_SECRET` is set, `createHandle` exposes `/.well-known/vercel/flags` a
 
 Two layers (easy to confuse):
 
-1. **Flags Explorer / discovery** (already mostly done)  
-   - Code declares flags → discovery endpoint → Toolbar can list & override.  
+1. **Flags Explorer / discovery** (already mostly done)
+   - Code declares flags → discovery endpoint → Toolbar can list & override.
    - Needs `FLAGS_SECRET` + Toolbar.
 
-2. **Vercel Flags as provider** (the gap)  
-   - Dashboard owns on/off, targeting, rollouts, per-env values.  
-   - Needs `@flags-sdk/vercel`, `adapter: vercelAdapter()`, and project auth via OIDC (`vercel env pull` locally; automatic on Vercel) or an SDK key in `FLAGS`.  
+2. **Vercel Flags as provider** (the gap)
+   - Dashboard owns on/off, targeting, rollouts, per-env values.
+   - Needs `@flags-sdk/vercel`, `adapter: vercelAdapter()`, and project auth via OIDC (`vercel env pull` locally; automatic on Vercel) or an SDK key in `FLAGS`.
    - Code-defined flags appear as **drafts** after deploy; promote in Dashboard to manage them.  
-   Sources: [Vercel Flags](https://vercel.com/docs/flags/vercel-flags), [Flags SDK adapter](https://vercel.com/docs/flags/vercel-flags/sdks/flags-sdk), [SDKs](https://vercel.com/docs/flags/vercel-flags/sdks).
+     Sources: [Vercel Flags](https://vercel.com/docs/flags/vercel-flags), [Flags SDK adapter](https://vercel.com/docs/flags/vercel-flags/sdks/flags-sdk), [SDKs](https://vercel.com/docs/flags/vercel-flags/sdks).
 
 ### Target shape for each flag
 
@@ -61,15 +61,15 @@ import { flag } from 'flags/sveltekit';
 import { vercelAdapter } from '@flags-sdk/vercel';
 
 export const frqPracticeEnabled = flag<boolean>({
-  key: 'frq-practice',
-  description: 'Enable authenticated written-response practice for pilot courses',
-  adapter: vercelAdapter(),
-  // optional until draft is promoted:
-  // defaultValue: false,
-  options: [
-    { value: true, label: 'On' },
-    { value: false, label: 'Off' }
-  ]
+	key: 'frq-practice',
+	description: 'Enable authenticated written-response practice for pilot courses',
+	adapter: vercelAdapter(),
+	// optional until draft is promoted:
+	// defaultValue: false,
+	options: [
+		{ value: true, label: 'On' },
+		{ value: false, label: 'Off' }
+	]
 });
 ```
 
@@ -81,28 +81,28 @@ For user/team targeting (e.g. beta testers, course pilots), add an `identify` fu
 
 ### Should be Vercel Flags (product behavior / rollout)
 
-| Candidate | Why |
-|-----------|-----|
-| `frq-practice` | Pilot kill-switch; toggle without redeploy; per-env (dev on / prod off). |
-| `multi-attempt-experiment` | Experiment master kill-switch; keep sticky assignment in Mongo, but gate enrollment from Dashboard. |
-| Future: focused session loop ([DEV-41](https://linear.app/freeappractice/issue/DEV-41)) | New UX — ship behind a flag. |
-| Future: new course FRQ profiles beyond pilot | Gradual course rollout / segment by course or user. |
-| Future: landing / growth UI experiments | A/B via Dashboard splits + Web Analytics. |
+| Candidate                                                                               | Why                                                                                                 |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `frq-practice`                                                                          | Pilot kill-switch; toggle without redeploy; per-env (dev on / prod off).                            |
+| `multi-attempt-experiment`                                                              | Experiment master kill-switch; keep sticky assignment in Mongo, but gate enrollment from Dashboard. |
+| Future: focused session loop ([DEV-41](https://linear.app/freeappractice/issue/DEV-41)) | New UX — ship behind a flag.                                                                        |
+| Future: new course FRQ profiles beyond pilot                                            | Gradual course rollout / segment by course or user.                                                 |
+| Future: landing / growth UI experiments                                                 | A/B via Dashboard splits + Web Analytics.                                                           |
 
 ### Keep as env / config (not Flags)
 
-| Item | Why |
-|------|-----|
-| Model names (`GENERATION_MODEL`, `FRQ_GRADING_MODEL`, …) | Ops config, not user-facing rollout. |
-| Secrets (`CRON_SECRET`, tokens, API keys) | Never flags. |
-| Cache TTLs / pool sizes | Tuning knobs. |
-| `QUESTION_QUALITY_*` calibration gates | Internal batch pipeline, not runtime UX. |
-| Sticky experiment **assignment** | Already correctly on the user profile; flag only enables the experiment. |
+| Item                                                     | Why                                                                      |
+| -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Model names (`GENERATION_MODEL`, `FRQ_GRADING_MODEL`, …) | Ops config, not user-facing rollout.                                     |
+| Secrets (`CRON_SECRET`, tokens, API keys)                | Never flags.                                                             |
+| Cache TTLs / pool sizes                                  | Tuning knobs.                                                            |
+| `QUESTION_QUALITY_*` calibration gates                   | Internal batch pipeline, not runtime UX.                                 |
+| Sticky experiment **assignment**                         | Already correctly on the user profile; flag only enables the experiment. |
 
 ### Cleanup when connecting Dashboard
 
-- Route `GET /api/me/practice-experiment` should call `isMultiAttemptExperimentEnabled()` / assignment helpers instead of hardcoding `false`.  
-- Restore `isMultiAttemptExperimentEnabled()` to evaluate the flag (not always `false`).  
+- Route `GET /api/me/practice-experiment` should call `isMultiAttemptExperimentEnabled()` / assignment helpers instead of hardcoding `false`.
+- Restore `isMultiAttemptExperimentEnabled()` to evaluate the flag (not always `false`).
 - After Dashboard owns values, drop `FRQ_PRACTICE_ENABLED` env fallback (or keep only as emergency `defaultValue` / offline fallback).
 
 ---

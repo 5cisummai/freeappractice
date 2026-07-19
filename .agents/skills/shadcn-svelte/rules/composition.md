@@ -26,12 +26,12 @@ Never render items directly inside the content container.
 
 ```svelte
 <script lang="ts">
-  import * as Select from "$lib/components/ui/select";
+	import * as Select from '$lib/components/ui/select';
 </script>
 
 <Select.Content>
-  <Select.Item value="apple">Apple</Select.Item>
-  <Select.Item value="banana">Banana</Select.Item>
+	<Select.Item value="apple">Apple</Select.Item>
+	<Select.Item value="banana">Banana</Select.Item>
 </Select.Content>
 ```
 
@@ -39,14 +39,14 @@ Never render items directly inside the content container.
 
 ```svelte
 <script lang="ts">
-  import * as Select from "$lib/components/ui/select";
+	import * as Select from '$lib/components/ui/select';
 </script>
 
 <Select.Content>
-  <Select.Group>
-    <Select.Item value="apple">Apple</Select.Item>
-    <Select.Item value="banana">Banana</Select.Item>
-  </Select.Group>
+	<Select.Group>
+		<Select.Item value="apple">Apple</Select.Item>
+		<Select.Item value="banana">Banana</Select.Item>
+	</Select.Group>
 </Select.Content>
 ```
 
@@ -66,12 +66,12 @@ This applies to all group-based components:
 
 ```svelte
 <script lang="ts">
-  import * as Alert from "$lib/components/ui/alert";
+	import * as Alert from '$lib/components/ui/alert';
 </script>
 
 <Alert.Root>
-  <Alert.Title>Warning</Alert.Title>
-  <Alert.Description>Something needs attention.</Alert.Description>
+	<Alert.Title>Warning</Alert.Title>
+	<Alert.Description>Something needs attention.</Alert.Description>
 </Alert.Root>
 ```
 
@@ -81,22 +81,20 @@ This applies to all group-based components:
 
 ```svelte
 <script lang="ts">
-  import * as Empty from "$lib/components/ui/empty";
-  import { Button } from "$lib/components/ui/button";
-  import FolderIcon from "@lucide/svelte/icons/folder";
+	import * as Empty from '$lib/components/ui/empty';
+	import { Button } from '$lib/components/ui/button';
+	import FolderIcon from '@lucide/svelte/icons/folder';
 </script>
 
 <Empty.Root>
-  <Empty.Header>
-    <Empty.Media variant="icon"><FolderIcon /></Empty.Media>
-    <Empty.Title>No projects yet</Empty.Title>
-    <Empty.Description
-      >Get started by creating a new project.</Empty.Description
-    >
-  </Empty.Header>
-  <Empty.Content>
-    <Button>Create Project</Button>
-  </Empty.Content>
+	<Empty.Header>
+		<Empty.Media variant="icon"><FolderIcon /></Empty.Media>
+		<Empty.Title>No projects yet</Empty.Title>
+		<Empty.Description>Get started by creating a new project.</Empty.Description>
+	</Empty.Header>
+	<Empty.Content>
+		<Button>Create Project</Button>
+	</Empty.Content>
 </Empty.Root>
 ```
 
@@ -106,15 +104,15 @@ This applies to all group-based components:
 
 ```svelte
 <script lang="ts">
-  import { toast } from "svelte-sonner";
+	import { toast } from 'svelte-sonner';
 </script>
 ```
 
 ```ts
-toast.success("Changes saved.");
-toast.error("Something went wrong.");
-toast("File deleted.", {
-  action: { label: "Undo", onClick: () => undoDelete() },
+toast.success('Changes saved.');
+toast.error('Something went wrong.');
+toast('File deleted.', {
+	action: { label: 'Undo', onClick: () => undoDelete() }
 });
 ```
 
@@ -141,15 +139,15 @@ Mount the `Toaster` from your UI folder once in the app layout (see [Sonner](htt
 
 ```svelte
 <script lang="ts">
-  import * as Dialog from "$lib/components/ui/dialog";
+	import * as Dialog from '$lib/components/ui/dialog';
 </script>
 
 <Dialog.Content>
-  <Dialog.Header>
-    <Dialog.Title>Edit Profile</Dialog.Title>
-    <Dialog.Description>Update your profile.</Dialog.Description>
-  </Dialog.Header>
-  ...
+	<Dialog.Header>
+		<Dialog.Title>Edit Profile</Dialog.Title>
+		<Dialog.Description>Update your profile.</Dialog.Description>
+	</Dialog.Header>
+	...
 </Dialog.Content>
 ```
 
@@ -161,19 +159,19 @@ Use full composition — don't dump everything into `Card.Content`:
 
 ```svelte
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card";
-  import { Button } from "$lib/components/ui/button";
+	import * as Card from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
 </script>
 
 <Card.Root>
-  <Card.Header>
-    <Card.Title>Team Members</Card.Title>
-    <Card.Description>Manage your team.</Card.Description>
-  </Card.Header>
-  <Card.Content>...</Card.Content>
-  <Card.Footer>
-    <Button>Invite</Button>
-  </Card.Footer>
+	<Card.Header>
+		<Card.Title>Team Members</Card.Title>
+		<Card.Description>Manage your team.</Card.Description>
+	</Card.Header>
+	<Card.Content>...</Card.Content>
+	<Card.Footer>
+		<Button>Invite</Button>
+	</Card.Footer>
 </Card.Root>
 ```
 
@@ -185,13 +183,13 @@ Compose with `Spinner` inside `Button` + `disabled`:
 
 ```svelte
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
-  import { Spinner } from "$lib/components/ui/spinner";
+	import { Button } from '$lib/components/ui/button';
+	import { Spinner } from '$lib/components/ui/spinner';
 </script>
 
 <Button disabled>
-  <Spinner data-icon="inline-start" />
-  Saving...
+	<Spinner data-icon="inline-start" />
+	Saving...
 </Button>
 ```
 
@@ -203,16 +201,16 @@ Never render `Tabs.Trigger` directly inside `Tabs.Root` — always wrap in `Tabs
 
 ```svelte
 <script lang="ts">
-  import * as Tabs from "$lib/components/ui/tabs";
-  let tab = $state("account");
+	import * as Tabs from '$lib/components/ui/tabs';
+	let tab = $state('account');
 </script>
 
 <Tabs.Root bind:value={tab}>
-  <Tabs.List>
-    <Tabs.Trigger value="account">Account</Tabs.Trigger>
-    <Tabs.Trigger value="password">Password</Tabs.Trigger>
-  </Tabs.List>
-  <Tabs.Content value="account">...</Tabs.Content>
+	<Tabs.List>
+		<Tabs.Trigger value="account">Account</Tabs.Trigger>
+		<Tabs.Trigger value="password">Password</Tabs.Trigger>
+	</Tabs.List>
+	<Tabs.Content value="account">...</Tabs.Content>
 </Tabs.Root>
 ```
 
@@ -224,12 +222,12 @@ Always include `Avatar.Fallback` for when the image fails to load:
 
 ```svelte
 <script lang="ts">
-  import * as Avatar from "$lib/components/ui/avatar";
+	import * as Avatar from '$lib/components/ui/avatar';
 </script>
 
 <Avatar.Root>
-  <Avatar.Image src="/avatar.png" alt="User" />
-  <Avatar.Fallback>JD</Avatar.Fallback>
+	<Avatar.Image src="/avatar.png" alt="User" />
+	<Avatar.Fallback>JD</Avatar.Fallback>
 </Avatar.Root>
 ```
 

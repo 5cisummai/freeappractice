@@ -53,8 +53,8 @@ Class-based toggle via `.dark` on the root element. In SvelteKit, use [mode-watc
 
 ```svelte
 <script lang="ts">
-  import { ModeWatcher } from "mode-watcher";
-  let { children } = $props();
+	import { ModeWatcher } from 'mode-watcher';
+	let { children } = $props();
 </script>
 
 <ModeWatcher />
@@ -84,20 +84,20 @@ Add variables to the global CSS file path in `components.json` (`tailwind.css`).
 ```css
 /* 1. Define in the global CSS file. */
 :root {
-  --warning: oklch(0.84 0.16 84);
-  --warning-foreground: oklch(0.28 0.07 46);
+	--warning: oklch(0.84 0.16 84);
+	--warning-foreground: oklch(0.28 0.07 46);
 }
 .dark {
-  --warning: oklch(0.41 0.11 46);
-  --warning-foreground: oklch(0.99 0.02 95);
+	--warning: oklch(0.41 0.11 46);
+	--warning-foreground: oklch(0.99 0.02 95);
 }
 ```
 
 ```css
 /* 2a. Register with Tailwind v4 (@theme inline). */
 @theme inline {
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
 }
 ```
 
@@ -106,21 +106,19 @@ On Tailwind v3, register in `tailwind.config.js` (see the [Tailwind v3 docs](htt
 ```js
 // 2b. Register with Tailwind v3 (tailwind.config.js).
 module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        warning: "oklch(var(--warning) / <alpha-value>)",
-        "warning-foreground":
-          "oklch(var(--warning-foreground) / <alpha-value>)",
-      },
-    },
-  },
+	theme: {
+		extend: {
+			colors: {
+				warning: 'oklch(var(--warning) / <alpha-value>)',
+				'warning-foreground': 'oklch(var(--warning-foreground) / <alpha-value>)'
+			}
+		}
+	}
 };
 ```
 
 ```svelte
-<!-- 3. Use in components. -->
-<div class="bg-warning text-warning-foreground">Warning</div>
+<!-- 3. Use in components. --><div class="bg-warning text-warning-foreground">Warning</div>
 ```
 
 ---
@@ -141,7 +139,7 @@ Prefer these approaches in order:
 
 ```svelte
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
+	import { Button } from '$lib/components/ui/button';
 </script>
 
 <Button variant="outline" size="sm">Click</Button>
@@ -151,11 +149,11 @@ Prefer these approaches in order:
 
 ```svelte
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card";
+	import * as Card from '$lib/components/ui/card';
 </script>
 
 <Card.Root class="mx-auto max-w-md">
-  <Card.Content>...</Card.Content>
+	<Card.Content>...</Card.Content>
 </Card.Root>
 ```
 
@@ -174,30 +172,30 @@ Compose shadcn-svelte primitives into higher-level `.svelte` files:
 
 ```svelte
 <script lang="ts">
-  import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  let { title, description, onConfirm, children } = $props();
-  let open = $state(false);
+	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	let { title, description, onConfirm, children } = $props();
+	let open = $state(false);
 </script>
 
 <AlertDialog.Root bind:open>
-  <AlertDialog.Trigger>
-    {@render children?.()}
-  </AlertDialog.Trigger>
-  <AlertDialog.Content>
-    <AlertDialog.Header>
-      <AlertDialog.Title>{title}</AlertDialog.Title>
-      <AlertDialog.Description>{description}</AlertDialog.Description>
-    </AlertDialog.Header>
-    <AlertDialog.Footer>
-      <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-      <AlertDialog.Action
-        onclick={() => {
-          onConfirm?.();
-          open = false;
-        }}>Confirm</AlertDialog.Action
-      >
-    </AlertDialog.Footer>
-  </AlertDialog.Content>
+	<AlertDialog.Trigger>
+		{@render children?.()}
+	</AlertDialog.Trigger>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>{title}</AlertDialog.Title>
+			<AlertDialog.Description>{description}</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				onclick={() => {
+					onConfirm?.();
+					open = false;
+				}}>Confirm</AlertDialog.Action
+			>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
 </AlertDialog.Root>
 ```
 

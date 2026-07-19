@@ -735,7 +735,6 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
 		<BackToHome />
@@ -798,4 +797,3 @@
 		</section>
 	</div>
 </main>
-

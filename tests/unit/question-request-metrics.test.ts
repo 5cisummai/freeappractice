@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	QuestionBusyError,
-	QuestionGenerationError
-} from '$lib/questions/question-errors.server';
+import { QuestionBusyError, QuestionGenerationError } from '$lib/questions/question-errors.server';
 import {
 	QUESTION_REQUEST_EVENT,
 	classifyQuestionRequestError,
@@ -61,7 +58,9 @@ describe('question-request-metrics', () => {
 	it('classifies typed errors without reading messages', () => {
 		expect(classifyQuestionRequestError(new QuestionBusyError())).toBe('busy');
 		expect(
-			classifyQuestionRequestError(new QuestionGenerationError('Failed to persist generated question'))
+			classifyQuestionRequestError(
+				new QuestionGenerationError('Failed to persist generated question')
+			)
 		).toBe('generation');
 		expect(classifyQuestionRequestError(new Error('boom'))).toBe('unknown');
 	});

@@ -23,9 +23,9 @@ Each component lives in its own folder with an `index.ts` barrel. Match the [ins
 - **Single-component barrels** (only one meaningful component in the folder): **named imports** — `import { Button } from "$lib/components/ui/button"` and `<Button>`, not `import * as Button` + `Button.Root`. Same pattern for `{ Input }`, `{ Badge }`, `{ Spinner }`, `{ Checkbox }`, `{ Separator }`, `{ Skeleton }`, etc.
 
 ```ts
-import * as Dialog from "$lib/components/ui/dialog";
-import { Button } from "$lib/components/ui/button";
-import { Separator } from "$lib/components/ui/separator";
+import * as Dialog from '$lib/components/ui/dialog';
+import { Button } from '$lib/components/ui/button';
+import { Separator } from '$lib/components/ui/separator';
 ```
 
 Use the real aliases from `components.json` (often `$lib/components/ui/...`), not hardcoded paths.
@@ -96,33 +96,33 @@ These are the most common patterns that differentiate correct shadcn-svelte code
 
 ```svelte
 <script lang="ts">
-  import * as Field from "$lib/components/ui/field";
-  import { Input } from "$lib/components/ui/input";
-  import { Button } from "$lib/components/ui/button";
-  import SearchIcon from "@lucide/svelte/icons/search";
-  import { Badge } from "$lib/components/ui/badge";
-  import * as Avatar from "$lib/components/ui/avatar";
+	import * as Field from '$lib/components/ui/field';
+	import { Input } from '$lib/components/ui/input';
+	import { Button } from '$lib/components/ui/button';
+	import SearchIcon from '@lucide/svelte/icons/search';
+	import { Badge } from '$lib/components/ui/badge';
+	import * as Avatar from '$lib/components/ui/avatar';
 </script>
 
 <!-- Form layout: Field.FieldGroup + Field.Field, not div + Label. -->
 <Field.FieldGroup>
-  <Field.Field>
-    <Field.FieldLabel for="email">Email</Field.FieldLabel>
-    <Input id="email" />
-  </Field.Field>
+	<Field.Field>
+		<Field.FieldLabel for="email">Email</Field.FieldLabel>
+		<Input id="email" />
+	</Field.Field>
 </Field.FieldGroup>
 
 <!-- Validation: data-invalid on Field, aria-invalid on the control. -->
 <Field.Field data-invalid>
-  <Field.FieldLabel for="email">Email</Field.FieldLabel>
-  <Input id="email" aria-invalid />
-  <Field.FieldDescription>Invalid email.</Field.FieldDescription>
+	<Field.FieldLabel for="email">Email</Field.FieldLabel>
+	<Input id="email" aria-invalid />
+	<Field.FieldDescription>Invalid email.</Field.FieldDescription>
 </Field.Field>
 
 <!-- Icons in buttons: data-icon, no sizing classes. -->
 <Button>
-  <SearchIcon data-icon="inline-start" />
-  Search
+	<SearchIcon data-icon="inline-start" />
+	Search
 </Button>
 
 <!-- Spacing: gap-*, not space-y-*. -->
@@ -130,8 +130,8 @@ These are the most common patterns that differentiate correct shadcn-svelte code
 
 <!-- Equal dimensions: size-*, not w-* h-*. -->
 <Avatar.Root class="size-10">
-  <Avatar.Image src="/u.png" alt="User" />
-  <Avatar.Fallback>U</Avatar.Fallback>
+	<Avatar.Image src="/u.png" alt="User" />
+	<Avatar.Fallback>U</Avatar.Fallback>
 </Avatar.Root>
 
 <!-- Status colors: Badge variants or semantic tokens, not raw colors. -->

@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	computeContentHash,
-	isDuplicateKeyError,
-	normalizeUnit
-} from '$lib/questions/util.server';
+import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 
 describe('normalizeUnit', () => {
 	it('trims units and falls back when empty', () => {

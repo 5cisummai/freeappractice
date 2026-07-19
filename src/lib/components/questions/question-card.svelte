@@ -593,9 +593,7 @@
 							? 'Correct!'
 							: 'Review Explanation'}
 					</Dialog.Title>
-					<Dialog.Description
-						class={session.currentQuestion.correctAnswer ? undefined : 'sr-only'}
-					>
+					<Dialog.Description class={session.currentQuestion.correctAnswer ? undefined : 'sr-only'}>
 						{#if session.currentQuestion.correctAnswer}
 							Correct answer:
 							<span class="font-semibold text-foreground"

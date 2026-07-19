@@ -67,10 +67,7 @@ type MultiAttemptPayload = {
 	experimentVersion: number;
 };
 
-type ValidatedMultiAttemptInput = Omit<
-	MultiAttemptPayload,
-	'experimentKey' | 'experimentVersion'
->;
+type ValidatedMultiAttemptInput = Omit<MultiAttemptPayload, 'experimentKey' | 'experimentVersion'>;
 
 export function validateMultiAttemptPayload(
 	body: Record<string, unknown>,

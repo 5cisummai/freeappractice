@@ -70,7 +70,11 @@
 	}
 </script>
 
-<div class={cn('space-y-2', realistic && 'font-exam')} role="radiogroup" aria-label="Answer choices">
+<div
+	class={cn('space-y-2', realistic && 'font-exam')}
+	role="radiogroup"
+	aria-label="Answer choices"
+>
 	{#each options as option (option.id)}
 		<button
 			type="button"

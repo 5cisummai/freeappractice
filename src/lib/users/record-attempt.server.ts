@@ -18,7 +18,10 @@ import { activateReferralForUser } from '$lib/referrals/referrals.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
 export type RecordAttemptResult =
-	| { status: 200; body: { message: string; questionId: string; mastery: number; totalAttempts: number } }
+	| {
+			status: 200;
+			body: { message: string; questionId: string; mastery: number; totalAttempts: number };
+	  }
 	| { status: number; body: { error: string } };
 
 export async function recordQuestionAttempt(
@@ -32,7 +35,10 @@ export async function recordQuestionAttempt(
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
 	if (!normalizedQuestionId) {
-		return { status: 400, body: { error: 'Missing required fields: questionId and selectedAnswer' } };
+		return {
+			status: 400,
+			body: { error: 'Missing required fields: questionId and selectedAnswer' }
+		};
 	}
 
 	const question = await getQuestionFromS3(normalizedQuestionId).catch(() => null);
@@ -48,9 +54,7 @@ export async function recordQuestionAttempt(
 
 	const user = await findUserProfileOrFail(userId);
 	const experimentRequest = hasPracticeExperimentMetadata(body);
-	const experimentContext = experimentRequest
-		? await getOrAssignMultiAttemptVariant(userId)
-		: null;
+	const experimentContext = experimentRequest ? await getOrAssignMultiAttemptVariant(userId) : null;
 	const displayedExperiment = experimentContext
 		? resolveDisplayedVariant({
 				assigned: experimentContext.assigned,
@@ -67,13 +71,19 @@ export async function recordQuestionAttempt(
 		clientVariant !== undefined &&
 		clientVariant !== displayedExperiment?.displayed
 	) {
-		return { status: 400, body: { error: 'Displayed experiment variant does not match the server assignment' } };
+		return {
+			status: 400,
+			body: { error: 'Displayed experiment variant does not match the server assignment' }
+		};
 	}
 	if (
 		experimentContext &&
 		isMultiAttemptRequestBody(body) !== (displayedExperiment?.displayed === 'multi_attempt_hints')
 	) {
-		return { status: 400, body: { error: 'Inconsistent experiment payload for the displayed variant' } };
+		return {
+			status: 400,
+			body: { error: 'Inconsistent experiment payload for the displayed variant' }
+		};
 	}
 	let attempt: IQuestionAttempt;
 
@@ -111,7 +121,10 @@ export async function recordQuestionAttempt(
 		// Classic control path — identical contract to pre-multi-attempt clients.
 		const letter = normalizeAnswerLetter(selectedAnswer);
 		if (!letter) {
-			return { status: 400, body: { error: 'Missing required fields: questionId and selectedAnswer' } };
+			return {
+				status: 400,
+				body: { error: 'Missing required fields: questionId and selectedAnswer' }
+			};
 		}
 		const wasCorrect = letter === question.correctAnswer;
 		attempt = {
@@ -181,4 +194,3 @@ export async function recordQuestionAttempt(
 		}
 	};
 }
-

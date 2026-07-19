@@ -71,7 +71,6 @@
 	<title>Stats – Free AP Practice</title>
 </svelte:head>
 
-
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-6xl space-y-10 px-5 sm:px-8">
 		<BackToHome />
@@ -241,4 +240,3 @@
 		{/if}
 	</div>
 </main>
-

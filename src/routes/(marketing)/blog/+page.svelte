@@ -32,7 +32,6 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-
 <main id="main-content" class="flex-1">
 	<div class="mx-auto w-full max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
 		<header class="max-w-2xl space-y-4">
@@ -53,9 +52,7 @@
 				<p class="text-muted-foreground">No posts yet — check back soon!</p>
 			</div>
 		{:else}
-			<ul
-				class="mt-12 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-2 lg:grid-cols-3 lg:gap-8"
-			>
+			<ul class="mt-12 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
 				{#each data.posts as post (post._id)}
 					<li class="min-h-0">
 						<BlogPostCard
@@ -73,4 +70,3 @@
 		{/if}
 	</div>
 </main>
-

@@ -44,7 +44,6 @@
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">
-
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:py-16">
 			<article class="w-full min-w-0">
@@ -100,7 +99,6 @@
 			</article>
 		</div>
 	</main>
-
 </div>
 
 <style>

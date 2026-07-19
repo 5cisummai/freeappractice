@@ -104,7 +104,11 @@
 				</DropdownMenu.Group>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Group>
-					<DropdownMenu.Item variant="destructive" onclick={handleSignOut} disabled={signOutPending}>
+					<DropdownMenu.Item
+						variant="destructive"
+						onclick={handleSignOut}
+						disabled={signOutPending}
+					>
 						<LogOutIcon />
 						Sign out
 					</DropdownMenu.Item>

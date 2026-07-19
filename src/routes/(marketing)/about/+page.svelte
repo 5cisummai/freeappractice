@@ -48,7 +48,6 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-
 <main id="main-content" class="mx-auto w-full max-w-6xl flex-1 px-5 py-14 sm:px-8 sm:py-20">
 	<header class="space-y-8">
 		<div
@@ -128,16 +127,16 @@
 						>AP prep shouldn't cost hundreds of dollars.</strong
 					>
 					I started this as a personal project when I saw classmates not getting adequate support due
-					to other learning platforms being paid and realized the real barrier wasn't motivation, it
-					was access.
+					to other learning platforms being paid and realized the real barrier wasn't motivation, it was
+					access.
 				</p>
 
 				<p>
 					My approach is about removing <strong class="font-semibold text-foreground">
 						every unnecessary step.
 					</strong>
-					Pick a subject, generate a question, get instant feedback. No signup wall, no paywall, no
-					friction between you and practice.
+					Pick a subject, generate a question, get instant feedback. No signup wall, no paywall, no friction
+					between you and practice.
 				</p>
 
 				<p>
@@ -155,4 +154,3 @@
 		</div>
 	</section>
 </main>
-

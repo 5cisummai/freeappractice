@@ -1,9 +1,6 @@
 import posthog from 'posthog-js';
 import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$env/static/public';
-import {
-	hasAnalyticsConsent,
-	readAnalyticsConsent
-} from '$lib/client/analytics-consent';
+import { hasAnalyticsConsent, readAnalyticsConsent } from '$lib/client/analytics-consent';
 import type { AnalyticsConsent } from '$lib/analytics-consent';
 
 let initialized = false;
@@ -26,10 +23,7 @@ export function initPostHogAnalytics() {
 			maskTextSelector: '.ph-mask-pii',
 			maskCapturedNetworkRequestFn: (request) => {
 				if (request.name) {
-					request.name = request.name.replace(
-						/([?&](email|token|auth)=)[^&]+/gi,
-						'$1[REDACTED]'
-					);
+					request.name = request.name.replace(/([?&](email|token|auth)=)[^&]+/gi, '$1[REDACTED]');
 				}
 				return request;
 			}

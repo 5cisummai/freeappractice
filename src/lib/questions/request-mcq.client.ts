@@ -4,10 +4,7 @@ import {
 	questionSourceFromCachedFlag,
 	type QuestionSource
 } from '$lib/client/activation-analytics';
-import {
-	parseQuestionPayloadFromResponse,
-	type QuestionApiResponse
-} from '$lib/questions/payload';
+import { parseQuestionPayloadFromResponse, type QuestionApiResponse } from '$lib/questions/payload';
 import type { GeneratedQuestion } from '$lib/questions/types';
 
 export type QuestionFetchResult = {

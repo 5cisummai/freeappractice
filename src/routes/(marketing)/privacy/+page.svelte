@@ -24,7 +24,6 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
 		<BackToHome />
@@ -80,8 +79,7 @@
 				<ul class="list-disc space-y-1 pl-6">
 					<li>Theme preferences and optional analytics choice</li>
 					<li>
-						Draft or in-progress practice state needed to keep the app responsive between
-						refreshes
+						Draft or in-progress practice state needed to keep the app responsive between refreshes
 					</li>
 				</ul>
 			</section>
@@ -95,8 +93,8 @@
 					<li>To send transactional emails such as verification and password reset emails</li>
 					<li>To respond to bug reports, account requests, and support inquiries</li>
 					<li>
-						To analyze usage trends and improve reliability, quality, and performance when
-						optional analytics are enabled
+						To analyze usage trends and improve reliability, quality, and performance when optional
+						analytics are enabled
 					</li>
 				</ul>
 			</section>
@@ -104,11 +102,11 @@
 			<section>
 				<h2 class="text-xl font-semibold">4. Data Storage and Security</h2>
 				<p>
-					We store account and progress data in MongoDB, and generated question content may also
-					be stored in MongoDB and AWS S3 depending on the feature being used. Passwords are
-					stored as hashes, not plain text. We use secure HTTP-only session cookies for
-					authentication through Better Auth. No method of transmission or storage is completely
-					secure, so we cannot guarantee absolute security.
+					We store account and progress data in MongoDB, and generated question content may also be
+					stored in MongoDB and AWS S3 depending on the feature being used. Passwords are stored as
+					hashes, not plain text. We use secure HTTP-only session cookies for authentication through
+					Better Auth. No method of transmission or storage is completely secure, so we cannot
+					guarantee absolute security.
 				</p>
 			</section>
 
@@ -116,8 +114,8 @@
 				<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
 				<p>
 					We use HTTP-only session cookies to keep you signed in, along with local browser storage
-					for theme preferences, optional analytics choice, and in-progress practice state. We
-					also use a first-party cookie to remember sidebar state.
+					for theme preferences, optional analytics choice, and in-progress practice state. We also
+					use a first-party cookie to remember sidebar state.
 				</p>
 				<p class="mt-2">
 					If you accept optional PostHog analytics, PostHog may set first-party cookies and use
@@ -136,19 +134,18 @@
 				</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
 					<li>
-						<strong>Vercel Analytics and Speed Insights:</strong> always-on, cookieless page views
-						and performance-related signals
+						<strong>Vercel Analytics and Speed Insights:</strong> always-on, cookieless page views and
+						performance-related signals
 					</li>
 					<li>
-						<strong>PostHog (opt-in):</strong> product analytics, feature usage events, client-side
-						error tracking, and session replay to understand how the Service is used and to improve
-						reliability
+						<strong>PostHog (opt-in):</strong> product analytics, feature usage events, client-side error
+						tracking, and session replay to understand how the Service is used and to improve reliability
 					</li>
 				</ul>
 				<p class="mt-2">
-					If you reject PostHog, it may still load in a cookieless mode that counts aggregate
-					visits using a privacy-preserving server-side hash. It does not set PostHog cookies,
-					store identifiers in your browser, or send detailed product events. Some server-side API
+					If you reject PostHog, it may still load in a cookieless mode that counts aggregate visits
+					using a privacy-preserving server-side hash. It does not set PostHog cookies, store
+					identifiers in your browser, or send detailed product events. Some server-side API
 					activity is still logged for security and operations, but optional product-analytics
 					events tied to your account are not sent unless you have opted in. You can change this
 					preference in Settings at any time.
@@ -166,8 +163,7 @@
 						<strong>Google:</strong> sign-in flows may use Google Identity Services and Google ID tokens
 					</li>
 					<li>
-						<strong>MongoDB:</strong> database storage for user accounts, progress data, and cached
-						questions
+						<strong>MongoDB:</strong> database storage for user accounts, progress data, and cached questions
 					</li>
 					<li>
 						<strong>AWS S3:</strong> file storage for generated question content and related assets
@@ -178,12 +174,11 @@
 					</li>
 					<li><strong>Resend:</strong> delivery of verification and reset emails</li>
 					<li>
-						<strong>PostHog:</strong> optional product analytics, error tracking, and session replay
-						when you opt in
+						<strong>PostHog:</strong> optional product analytics, error tracking, and session replay when
+						you opt in
 					</li>
 					<li>
-						<strong>Vercel:</strong> website hosting, deployment infrastructure, and cookieless
-						analytics
+						<strong>Vercel:</strong> website hosting, deployment infrastructure, and cookieless analytics
 					</li>
 				</ul>
 				<p class="mt-2">
@@ -195,11 +190,11 @@
 			<section>
 				<h2 class="text-xl font-semibold">8. Your Rights</h2>
 				<p>
-					Depending on your location, you may have rights to access, correct, export, or delete
-					your personal data. You can delete your account through the Service or contact us for
-					help. We will delete your account record from our primary database, and some information
-					may remain in backups, logs, or third-party systems for a limited period, subject to
-					legal or operational retention requirements.
+					Depending on your location, you may have rights to access, correct, export, or delete your
+					personal data. You can delete your account through the Service or contact us for help. We
+					will delete your account record from our primary database, and some information may remain
+					in backups, logs, or third-party systems for a limited period, subject to legal or
+					operational retention requirements.
 				</p>
 			</section>
 
@@ -207,8 +202,8 @@
 				<h2 class="text-xl font-semibold">9. Children's Privacy</h2>
 				<p>
 					The Service is intended for students, but it is not directed to children under 13. We do
-					not knowingly collect personal information from children under 13. If you believe a
-					child has provided us personal information, contact us and we will address the request
+					not knowingly collect personal information from children under 13. If you believe a child
+					has provided us personal information, contact us and we will address the request
 					appropriately.
 				</p>
 			</section>
@@ -216,8 +211,8 @@
 			<section>
 				<h2 class="text-xl font-semibold">10. International Transfers</h2>
 				<p>
-					Your information may be processed in the United States or other countries where we or
-					our service providers operate. Where required, we take steps intended to protect the
+					Your information may be processed in the United States or other countries where we or our
+					service providers operate. Where required, we take steps intended to protect the
 					information in accordance with applicable law.
 				</p>
 			</section>
@@ -226,8 +221,8 @@
 				<h2 class="text-xl font-semibold">11. Changes to This Privacy Policy</h2>
 				<p>
 					We may update this Privacy Policy from time to time. Changes will be posted on this page
-					with a revised "Last Updated" date. Continued use of the Service after changes take
-					effect means you accept the updated policy.
+					with a revised "Last Updated" date. Continued use of the Service after changes take effect
+					means you accept the updated policy.
 				</p>
 			</section>
 
@@ -250,4 +245,3 @@
 		</div>
 	</div>
 </main>
-

@@ -122,7 +122,9 @@ Return one coherent question and its private scoring rubric. Materials and promp
 		question.sections.length < constraints.minSections ||
 		question.sections.length > constraints.maxSections ||
 		question.materials.length > constraints.maxMaterials ||
-		question.sections.some((section) => !profile.allowedResponseTypes.includes(section.responseKind))
+		question.sections.some(
+			(section) => !profile.allowedResponseTypes.includes(section.responseKind)
+		)
 	) {
 		throw new Error('Generated FRQ does not satisfy the course profile constraints');
 	}

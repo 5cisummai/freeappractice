@@ -127,11 +127,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		acceptsMarkdown(event.request) &&
 		(event.url.pathname === '/' || event.url.pathname === '')
 	) {
-		return postProcessResponse(
-			markdownResponse(await getHomepageMarkdown()),
-			event,
-			origin
-		);
+		return postProcessResponse(markdownResponse(await getHomepageMarkdown()), event, origin);
 	}
 
 	if (event.url.pathname === '/favicon.ico') {
@@ -176,11 +172,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	const requestStart = Date.now();
 
 	const resolved = await resolve(event);
-	const response = postProcessResponse(
-		await maybeServeMarkdown(resolved, event),
-		event,
-		origin
-	);
+	const response = postProcessResponse(await maybeServeMarkdown(resolved, event), event, origin);
 
 	const requestTimeMs = Date.now() - requestStart;
 	logger.info('http request', {

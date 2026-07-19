@@ -2,12 +2,7 @@ import practicePagesData from '$lib/data/practice-pages.json';
 import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
 
 type PracticePageLinkKind =
-	| 'college-board'
-	| 'subject-tool'
-	| 'blog'
-	| 'external'
-	| 'internal'
-	| 'practice';
+	'college-board' | 'subject-tool' | 'blog' | 'external' | 'internal' | 'practice';
 
 type PracticePageLink = {
 	label: string;

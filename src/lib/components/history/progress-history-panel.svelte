@@ -27,10 +27,7 @@
 		};
 	}
 
-	async function loadHistory(
-		requestedPageIndex = pageIndex,
-		requestedSorting = sorting
-	) {
+	async function loadHistory(requestedPageIndex = pageIndex, requestedSorting = sorting) {
 		const sequence = ++loadSequence;
 		loading = true;
 		errorMessage = '';
