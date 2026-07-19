@@ -9,13 +9,8 @@ import 'dotenv/config';
 import { readFile, writeFile } from 'node:fs/promises';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import mongoose from 'mongoose';
-import {
-	assessmentJsonSchema,
-	buildQuestionQualityPrompt,
-	buildQuestionQualityWebSearchTool,
-	extractResponseOutputText,
-	requiresWebSearchForQuestion
-} from '../src/lib/question-quality/rubric.server';
+import { buildBatchLine } from '../src/lib/question-quality/batch-line';
+import { extractResponseOutputText } from '../src/lib/question-quality/rubric.server';
 
 type GoldItem = { questionId: string; verdict: 'good' | 'bad'; apClass: string };
 type Candidate = {
@@ -141,40 +136,6 @@ async function createBatch(inputFileId: string, candidate: Candidate): Promise<s
 	return ((await response.json()) as { id: string }).id;
 }
 
-function batchLine(questionId: string, question: Record<string, unknown>, candidate: Candidate) {
-	const prompt = buildQuestionQualityPrompt(question);
-	const webSearchEnabled = requiresWebSearchForQuestion(question);
-	return JSON.stringify({
-		custom_id: questionId,
-		method: 'POST',
-		url: '/v1/responses',
-		body: {
-			model: candidate.model,
-			reasoning: { effort: candidate.effort },
-			...(webSearchEnabled
-				? {
-						tools: [buildQuestionQualityWebSearchTool('high')],
-						tool_choice: 'required',
-						include: ['web_search_call.action.sources']
-					}
-				: {}),
-			input: [
-				{ role: 'developer', content: prompt.developer },
-				{ role: 'user', content: prompt.user }
-			],
-			text: {
-				format: {
-					type: 'json_schema',
-					name: 'question_quality_assessment',
-					strict: true,
-					schema: assessmentJsonSchema
-				}
-			},
-			max_output_tokens: 800
-		}
-	});
-}
-
 function stratified(items: GoldItem[], maximum: number): GoldItem[] {
 	const groups = new Map<string, GoldItem[]>();
 	for (const item of items) groups.set(item.apClass, [...(groups.get(item.apClass) ?? []), item]);
@@ -230,7 +191,16 @@ async function submit() {
 	const runs: EvalRun[] = [];
 	for (const candidate of candidates) {
 		const contents = gold
-			.map((item) => batchLine(item.questionId, questions.get(item.questionId)!, candidate))
+			.map((item) =>
+				buildBatchLine({
+					questionId: item.questionId,
+					question: questions.get(item.questionId)!,
+					model: candidate.model,
+					reasoningEffort: candidate.effort,
+					maxOutputTokens: 800,
+					webSearchContextSize: 'high'
+				})
+			)
 			.join('\n');
 		const inputFileId = await upload(
 			contents,

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { submitQuestionFeedback } from '$lib/question-quality/service.server';
+import { submitQuestionFeedback } from '$lib/question-quality/dashboard.server';
 import type { FeedbackType } from '$lib/question-quality/types';
 
 const VALID_TYPES = new Set<FeedbackType>([

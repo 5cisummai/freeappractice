@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireQuestionQualityAdmin } from '$lib/question-quality/admin-auth.server';
+import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
 import {
 	createReviewJob,
-	getQualityDashboardSnapshot,
 	previewReviewJob,
 	reconcileQuestionInventory,
 	recordHumanDecision,

@@ -5,7 +5,7 @@ import { Question } from '$lib/questions/cache-model.server';
 import { CacheMissLock } from '$lib/questions/cache-lock.server';
 import { QuestionRecentTopic } from '$lib/questions/recent-topic-model.server';
 import { getGenerationStatsForApi } from '$lib/questions/gen-stats.server';
-import { getQualityDashboardSnapshot } from '$lib/question-quality/service.server';
+import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
 import type {
 	AdminTab,

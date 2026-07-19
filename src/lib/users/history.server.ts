@@ -196,8 +196,6 @@ export async function hydratePracticeHistoryItems(
 ): Promise<PracticeHistoryItem[]> {
 	const mcqItems = items.filter((item): item is McqHistoryItem => item.kind === 'mcq');
 	const hydratedMcq = await hydrateMcqHistoryItems(mcqItems);
-	const byQuestionId = new Map(hydratedMcq.map((item) => [item.attempt.questionId, item]));
-	return items.map((item) =>
-		item.kind === 'mcq' ? byQuestionId.get(item.attempt.questionId)! : item
-	);
+	let i = 0;
+	return items.map((item) => (item.kind === 'mcq' ? hydratedMcq[i++]! : item));
 }

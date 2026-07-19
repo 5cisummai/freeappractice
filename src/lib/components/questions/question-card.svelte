@@ -219,6 +219,20 @@
 			</div>
 		{/snippet}
 
+		{#snippet mcqChoices(compact = false)}
+			<McqAnswerChoices
+				options={session.currentQuestion?.options ?? []}
+				{selectedOption}
+				hasCheckedAnswer={session.hasCheckedAnswer}
+				checkedSelection={session.checkedSelection}
+				correctAnswer={session.currentQuestion?.correctAnswer}
+				onSelect={session.handleOptionSelect}
+				{compact}
+				{realistic}
+				lockedChoices={session.lockedChoices}
+			/>
+		{/snippet}
+
 		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
 			<div class="flex items-start justify-between gap-4">
 				{#if realistic}
@@ -309,16 +323,7 @@
 				{#if realistic}
 					{@render realisticQuestionNumber()}
 				{/if}
-				<McqAnswerChoices
-					options={session.currentQuestion.options}
-					{selectedOption}
-					hasCheckedAnswer={session.hasCheckedAnswer}
-					checkedSelection={session.checkedSelection}
-					correctAnswer={session.currentQuestion.correctAnswer}
-					onSelect={session.handleOptionSelect}
-					{realistic}
-					lockedChoices={session.lockedChoices}
-				/>
+				{@render mcqChoices()}
 			{:else if expandedTwoColumn}
 				<div
 					class={cn(
@@ -359,17 +364,7 @@
 								{#if realistic}
 									{@render realisticQuestionNumber()}
 								{/if}
-								<McqAnswerChoices
-									options={session.currentQuestion?.options ?? []}
-									{selectedOption}
-									hasCheckedAnswer={session.hasCheckedAnswer}
-									checkedSelection={session.checkedSelection}
-									correctAnswer={session.currentQuestion?.correctAnswer}
-									onSelect={session.handleOptionSelect}
-									compact
-									{realistic}
-									lockedChoices={session.lockedChoices}
-								/>
+								{@render mcqChoices(true)}
 							</div>
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
@@ -388,16 +383,7 @@
 				{#if realistic}
 					{@render realisticQuestionNumber()}
 				{/if}
-				<McqAnswerChoices
-					options={session.currentQuestion?.options ?? []}
-					{selectedOption}
-					hasCheckedAnswer={session.hasCheckedAnswer}
-					checkedSelection={session.checkedSelection}
-					correctAnswer={session.currentQuestion?.correctAnswer}
-					onSelect={session.handleOptionSelect}
-					{realistic}
-					lockedChoices={session.lockedChoices}
-				/>
+				{@render mcqChoices()}
 			{/if}
 
 			{#if showUtilityActions && !session.hasCheckedAnswer}

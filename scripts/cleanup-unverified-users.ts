@@ -10,6 +10,8 @@
  */
 import 'dotenv/config';
 import { MongoClient, ObjectId, type Db } from 'mongodb';
+import mongoose from 'mongoose';
+import { deleteAppDataDocuments } from '../src/lib/users/delete-app-data-documents.server.ts';
 import {
 	assertSafeEmail,
 	assertSafeUserId,
@@ -127,14 +129,9 @@ async function deleteOneUnverifiedUser(db: Db, candidate: CleanupCandidate, cuto
 		db.collection('authAccounts').deleteMany({ userId: deletedId }),
 		db.collection('authVerifications').deleteMany({
 			$or: [{ identifier: deletedEmail }, { identifier: deletedEmail.toLowerCase() }]
-		}),
-		// App collections (mongoose defaults) — scoped to this userId only
-		db.collection('userprofiles').deleteMany({ userId: deletedId }),
-		db.collection('frqattempts').deleteMany({ userId: deletedId }),
-		db.collection('referrals').deleteMany({
-			$or: [{ referrerUserId: deletedId }, { referredUserId: deletedId }]
 		})
 	]);
+	await deleteAppDataDocuments([deletedId]);
 
 	return true;
 }
@@ -181,6 +178,7 @@ async function main() {
 			return;
 		}
 
+		await mongoose.connect(DATABASE_URI);
 		console.log('\nDeleting…');
 		let deletedCount = 0;
 		for (const candidate of candidates) {
@@ -200,6 +198,9 @@ async function main() {
 		console.log(`\n✓ Deleted ${deletedCount} of ${candidates.length} candidate(s).`);
 		console.log(`Verified users unchanged: ${verifiedAfter}`);
 	} finally {
+		if (mongoose.connection.readyState !== 0) {
+			await mongoose.disconnect();
+		}
 		await client.close();
 	}
 }

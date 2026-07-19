@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import {
 	buildAttemptFieldsFromMultiAttempt,
 	hasPracticeExperimentMetadata,
@@ -18,32 +17,33 @@ import { getQuestionFromS3 } from '$lib/questions/storage.server';
 import { activateReferralForUser } from '$lib/referrals/referrals.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
+export type RecordAttemptResult =
+	| { status: 200; body: { message: string; questionId: string; mastery: number; totalAttempts: number } }
+	| { status: number; body: { error: string } };
+
 export async function recordQuestionAttempt(
 	userId: string,
 	body: Record<string, unknown>,
 	request: Request
-): Promise<Response> {
+): Promise<RecordAttemptResult> {
 	const { questionId, selectedAnswer, timeTakenMs } = body;
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
 	// Correctness is derived server-side from S3; only clamp client-reported duration.
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
 	if (!normalizedQuestionId) {
-		return json(
-			{ error: 'Missing required fields: questionId and selectedAnswer' },
-			{ status: 400 }
-		);
+		return { status: 400, body: { error: 'Missing required fields: questionId and selectedAnswer' } };
 	}
 
 	const question = await getQuestionFromS3(normalizedQuestionId).catch(() => null);
 	if (!question) {
-		return json({ error: 'Question metadata was not found' }, { status: 404 });
+		return { status: 404, body: { error: 'Question metadata was not found' } };
 	}
 
 	const apClass = typeof question.apClass === 'string' ? question.apClass.trim() : '';
 	const normalizedUnit = normalizeUnit(question.unit);
 	if (!apClass || !normalizedUnit) {
-		return json({ error: 'Question metadata is missing class or unit' }, { status: 422 });
+		return { status: 422, body: { error: 'Question metadata is missing class or unit' } };
 	}
 
 	const user = await findUserProfileOrFail(userId);
@@ -67,26 +67,20 @@ export async function recordQuestionAttempt(
 		clientVariant !== undefined &&
 		clientVariant !== displayedExperiment?.displayed
 	) {
-		return json(
-			{ error: 'Displayed experiment variant does not match the server assignment' },
-			{ status: 400 }
-		);
+		return { status: 400, body: { error: 'Displayed experiment variant does not match the server assignment' } };
 	}
 	if (
 		experimentContext &&
 		isMultiAttemptRequestBody(body) !== (displayedExperiment?.displayed === 'multi_attempt_hints')
 	) {
-		return json(
-			{ error: 'Inconsistent experiment payload for the displayed variant' },
-			{ status: 400 }
-		);
+		return { status: 400, body: { error: 'Inconsistent experiment payload for the displayed variant' } };
 	}
 	let attempt: IQuestionAttempt;
 
 	if (isMultiAttemptRequestBody(body)) {
 		const validated = validateMultiAttemptPayload(body, question.correctAnswer);
 		if (!validated.ok) {
-			return json({ error: validated.error }, { status: 400 });
+			return { status: 400, body: { error: validated.error } };
 		}
 		const fields = buildAttemptFieldsFromMultiAttempt(
 			{
@@ -117,10 +111,7 @@ export async function recordQuestionAttempt(
 		// Classic control path — identical contract to pre-multi-attempt clients.
 		const letter = normalizeAnswerLetter(selectedAnswer);
 		if (!letter) {
-			return json(
-				{ error: 'Missing required fields: questionId and selectedAnswer' },
-				{ status: 400 }
-			);
+			return { status: 400, body: { error: 'Missing required fields: questionId and selectedAnswer' } };
 		}
 		const wasCorrect = letter === question.correctAnswer;
 		attempt = {
@@ -180,10 +171,14 @@ export async function recordQuestionAttempt(
 	});
 
 	// Response shape stays backwards compatible; extras are additive only.
-	return json({
-		message: 'Attempt recorded successfully',
-		questionId: normalizedQuestionId,
-		mastery: progressEntry.mastery,
-		totalAttempts: progressEntry.totalAttempts
-	});
+	return {
+		status: 200,
+		body: {
+			message: 'Attempt recorded successfully',
+			questionId: normalizedQuestionId,
+			mastery: progressEntry.mastery,
+			totalAttempts: progressEntry.totalAttempts
+		}
+	};
 }
+

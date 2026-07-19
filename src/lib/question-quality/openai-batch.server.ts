@@ -1,10 +1,5 @@
 import { env } from '$env/dynamic/private';
-import {
-	assessmentJsonSchema,
-	buildQuestionQualityPrompt,
-	buildQuestionQualityWebSearchTool,
-	requiresWebSearchForQuestion
-} from './rubric.server.js';
+import { buildBatchLine as buildBatchLinePure } from './batch-line.js';
 
 function getApiKey(): string {
 	const key = env.OPEN_AI_KEY?.trim();
@@ -52,36 +47,10 @@ export function buildBatchLine(opts: {
 	model: string;
 	reasoningEffort: string;
 }): string {
-	const prompt = buildQuestionQualityPrompt(opts.question);
-	const webSearchEnabled = requiresWebSearchForQuestion(opts.question);
-	return JSON.stringify({
-		custom_id: opts.questionId,
-		method: 'POST',
-		url: '/v1/responses',
-		body: {
-			model: opts.model,
-			reasoning: { effort: opts.reasoningEffort },
-			...(webSearchEnabled
-				? {
-						tools: [buildQuestionQualityWebSearchTool(webSearchContextSize())],
-						tool_choice: 'required',
-						include: ['web_search_call.action.sources']
-					}
-				: {}),
-			input: [
-				{ role: 'developer', content: prompt.developer },
-				{ role: 'user', content: prompt.user }
-			],
-			text: {
-				format: {
-					type: 'json_schema',
-					name: 'question_quality_assessment',
-					strict: true,
-					schema: assessmentJsonSchema
-				}
-			},
-			max_output_tokens: Number.parseInt(env.QUESTION_QUALITY_MAX_OUTPUT_TOKENS || '800', 10)
-		}
+	return buildBatchLinePure({
+		...opts,
+		maxOutputTokens: Number.parseInt(env.QUESTION_QUALITY_MAX_OUTPUT_TOKENS || '800', 10),
+		webSearchContextSize: webSearchContextSize()
 	});
 }
 

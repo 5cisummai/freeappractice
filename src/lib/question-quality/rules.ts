@@ -56,6 +56,18 @@ export function shouldRequireHumanReview(opts: {
 	return { required: false, reason: 'confident_ai' };
 }
 
+export function estimateCostUsd(
+	inputTokens: number,
+	outputTokens: number,
+	inputUsdPerMillion: number,
+	outputUsdPerMillion: number
+): number {
+	return (
+		(inputTokens / 1_000_000) * inputUsdPerMillion +
+		(outputTokens / 1_000_000) * outputUsdPerMillion
+	);
+}
+
 export function estimateBatchCost(opts: {
 	count: number;
 	inputTokensPerQuestion?: number;
@@ -67,9 +79,14 @@ export function estimateBatchCost(opts: {
 		opts.count * (opts.inputTokensPerQuestion ?? DEFAULT_INPUT_TOKENS_PER_QUESTION);
 	const estimatedOutputTokens =
 		opts.count * (opts.outputTokensPerQuestion ?? DEFAULT_OUTPUT_TOKENS_PER_QUESTION);
-	const estimatedMaximumCostUsd =
-		(estimatedInputTokens / 1_000_000) * opts.inputUsdPerMillion +
-		(estimatedOutputTokens / 1_000_000) * opts.outputUsdPerMillion;
-
-	return { estimatedInputTokens, estimatedOutputTokens, estimatedMaximumCostUsd };
+	return {
+		estimatedInputTokens,
+		estimatedOutputTokens,
+		estimatedMaximumCostUsd: estimateCostUsd(
+			estimatedInputTokens,
+			estimatedOutputTokens,
+			opts.inputUsdPerMillion,
+			opts.outputUsdPerMillion
+		)
+	};
 }
