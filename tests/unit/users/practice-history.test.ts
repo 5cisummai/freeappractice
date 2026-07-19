@@ -94,9 +94,15 @@ describe('hydratePracticeHistoryItems', () => {
 		]);
 
 		expect(hydrated).toHaveLength(2);
-		expect(hydrated[0]?.attempt.wasCorrect).toBe(true);
-		expect(hydrated[1]?.attempt.wasCorrect).toBe(false);
-		expect(hydrated[0]?.question?.id).toBe('shared-question');
-		expect(hydrated[1]?.question?.id).toBe('shared-question');
+		expect(hydrated[0]).toMatchObject({
+			kind: 'mcq',
+			attempt: { wasCorrect: true, questionId: 'shared-question' },
+			question: { id: 'shared-question' }
+		});
+		expect(hydrated[1]).toMatchObject({
+			kind: 'mcq',
+			attempt: { wasCorrect: false, questionId: 'shared-question' },
+			question: { id: 'shared-question' }
+		});
 	});
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	estimateBatchCost,
+	estimateCostUsd,
 	feedbackSummaryFromCounts,
 	isCalibrationSample,
 	shouldRequireHumanReview
@@ -113,5 +114,10 @@ describe('question quality rules', () => {
 			estimatedOutputTokens: 50_000,
 			estimatedMaximumCostUsd: 0.4
 		});
+	});
+
+	it('shares the same USD formula for raw token totals', () => {
+		expect(estimateCostUsd(200_000, 50_000, 1, 4)).toBe(0.4);
+		expect(estimateCostUsd(0, 0, 1, 4)).toBe(0);
 	});
 });
