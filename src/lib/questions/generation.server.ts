@@ -9,6 +9,7 @@ import {
 	ADVANCED_MODEL,
 	LATEX_RULE
 } from '$lib/ai/service.server';
+import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 /**
@@ -137,7 +138,8 @@ function buildDiversitySection(
 
 // ── Zod schemas ────────────────────────────────────────────────
 
-const APQuestion = z.object({
+/** Exported for OpenAI structured-output required-field regression tests. */
+export const apQuestionSchema = z.object({
 	question: z
 		.string()
 		.describe(
@@ -151,15 +153,15 @@ const APQuestion = z.object({
 	explanation: z
 		.string()
 		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
+	// Must be required (not .optional): OpenAI structured outputs require every
+	// property key to appear in JSON Schema `required`.
 	hint1: z
 		.string()
-		.optional()
 		.describe(
 			'Brief progressive hint after a first incorrect answer; do not reveal the correct letter'
 		),
 	hint2: z
 		.string()
-		.optional()
 		.describe(
 			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
 		),
@@ -170,7 +172,9 @@ const APQuestion = z.object({
 		)
 });
 
-type APQuestionData = z.infer<typeof APQuestion>;
+assertOpenAiCompatibleObjectSchema(apQuestionSchema, { schemaName: 'ap_question' });
+
+type APQuestionData = z.infer<typeof apQuestionSchema>;
 
 export type { APQuestionData };
 
@@ -353,7 +357,7 @@ OUTPUT:
 				{ role: 'system', content: systemPrompt },
 				{ role: 'user', content: userMessage }
 			],
-			schema: APQuestion,
+			schema: apQuestionSchema,
 			schemaName: 'ap_question',
 			reasoningEffort: model === ADVANCED_MODEL ? 'medium' : undefined
 		},

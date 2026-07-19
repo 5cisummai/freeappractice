@@ -113,6 +113,7 @@
 	let mounted = $state(!browser);
 	let questionCount = $state(0);
 	let statusMessage = $state('');
+	let questionLoadFailed = $state(false);
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
 	let bugReportOpen = $state(false);
@@ -191,6 +192,7 @@
 	const showEmptyState = $derived(
 		mounted && !isLoading && requestVersion === 0 && !currentQuestion
 	);
+	const showErrorState = $derived(mounted && !isLoading && questionLoadFailed);
 
 	async function requestQuestion(
 		className: string,
@@ -383,6 +385,7 @@
 		}
 
 		isLoading = true;
+		questionLoadFailed = false;
 
 		if (reason === 'skip') statusMessage = 'Skipped current question.';
 		else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
@@ -414,6 +417,8 @@
 				status: error instanceof QuestionRequestError ? error.status : null,
 				latencyMs: Date.now() - loadStartedAt
 			});
+			questionLoadFailed = true;
+			currentQuestion = null;
 			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
 		} finally {
 			isLoading = false;
@@ -697,6 +702,20 @@
 			<p class="max-w-sm text-sm text-muted-foreground/80">
 				Select a class and unit above, then generate a question to start practicing.
 			</p>
+		</Card.Content>
+	</Card.Root>
+{:else if showErrorState}
+	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
+		<Card.Content
+			class="relative flex min-h-40 flex-col items-center justify-center gap-3 px-6 pb-12 text-center"
+		>
+			<p class="text-lg font-medium text-muted-foreground sm:text-xl">
+				We couldn’t load this question
+			</p>
+			<p class="max-w-sm text-sm text-muted-foreground/80">
+				Sorry about that — we’ve noted this so we can get it fixed. Please try again in a moment.
+			</p>
+			<Button onclick={() => void loadQuestion()} disabled={isLoading}>Try again</Button>
 		</Card.Content>
 	</Card.Root>
 {:else}

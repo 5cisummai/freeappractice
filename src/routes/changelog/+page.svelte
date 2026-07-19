@@ -7,6 +7,26 @@
 
 	const changelog = [
 		{
+			version: '1.4.8',
+			date: 'July 18, 2026',
+			sections: [
+				{
+					title: 'Fixes',
+					items: [
+						'Fixed live question generation failing with a 500 when the OpenAI structured-output schema treated progressive hints as optional',
+						'Question card now shows a clear retryable error state instead of a blank panel when generation fails'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Structured AI schemas for question generation are checked at module load so incompatible optional fields fail fast in tests and startup',
+						'Added unit and mocked pipeline coverage for MCQ generation schema compatibility and persistence'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.7',
 			date: 'July 16, 2026',
 			sections: [
