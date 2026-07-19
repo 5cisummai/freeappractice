@@ -13,7 +13,8 @@
 				{
 					title: 'Fixes',
 					items: [
-						'Fixed live question generation failing with a 500 when the OpenAI structured-output schema treated progressive hints as optional'
+						'Fixed live question generation failing with a 500 when the OpenAI structured-output schema treated progressive hints as optional',
+						'Question card now shows a clear retryable error state instead of a blank panel when generation fails'
 					]
 				},
 				{
