@@ -47,8 +47,7 @@ function validateResponseKeys(sectionIds: string[], responses: Record<string, st
 }
 
 type ClaimResult =
-	| { status: 'claimed'; attempt: IFrqAttempt }
-	| { status: 'graded'; view: FrqAttemptView };
+	{ status: 'claimed'; attempt: IFrqAttempt } | { status: 'graded'; view: FrqAttemptView };
 
 async function claimSubmission(
 	userId: string,

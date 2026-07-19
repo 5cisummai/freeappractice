@@ -63,8 +63,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		recordMetric(200, path.segment ?? 'error', result.cached ?? false);
 
 		return json({
-			answer:
-				typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer,
+			answer: typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer,
 			provider: result.provider,
 			model: result.model,
 			cached: result.cached ?? false,

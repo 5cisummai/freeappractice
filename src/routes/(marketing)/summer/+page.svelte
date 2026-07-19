@@ -81,7 +81,6 @@
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">
-
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 lg:py-16">
 			<div class="flex items-start justify-center gap-10">
@@ -207,7 +206,6 @@
 			</div>
 		</div>
 	</main>
-
 </div>
 
 <style>

@@ -1,17 +1,11 @@
 import type { QuestionPathMetrics } from '$lib/questions/pool.server';
-import {
-	QuestionBusyError,
-	QuestionGenerationError
-} from '$lib/questions/question-errors.server';
+import { QuestionBusyError, QuestionGenerationError } from '$lib/questions/question-errors.server';
 import type { QuestionFailureKind } from '$lib/question-failure';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
 /** Outcome segments for POST /api/question reliability dashboards. */
 export type QuestionRequestSegment =
-	| 'cache_hit'
-	| 'cache_miss_leader'
-	| 'cache_miss_follower'
-	| 'error';
+	'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower' | 'error';
 
 /** Server-side subset of QuestionFailureKind (no client-only `network`). */
 export type QuestionRequestErrorType = Exclude<QuestionFailureKind, 'network'>;
@@ -74,10 +68,7 @@ export function classifyQuestionRequestError(err: unknown): QuestionRequestError
 }
 
 function captureQuestionRequestMetric(props: QuestionRequestMetricProps): void {
-	captureAnonymousServerMetric(
-		QUESTION_REQUEST_EVENT,
-		sanitizeQuestionRequestMetricProps(props)
-	);
+	captureAnonymousServerMetric(QUESTION_REQUEST_EVENT, sanitizeQuestionRequestMetricProps(props));
 }
 
 export function createQuestionPathMetrics(

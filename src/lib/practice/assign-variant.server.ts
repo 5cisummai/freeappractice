@@ -18,9 +18,11 @@ export function assignPracticeVariant(
 }
 
 /** Get or create sticky assignment for the multi-attempt experiment. */
-export async function getOrAssignMultiAttemptVariant(
-	userId: string
-): Promise<{ assigned: PracticeVariant; assignment: PracticeExperimentAssignment; enabled: boolean }> {
+export async function getOrAssignMultiAttemptVariant(userId: string): Promise<{
+	assigned: PracticeVariant;
+	assignment: PracticeExperimentAssignment;
+	enabled: boolean;
+}> {
 	const enabled = await isMultiAttemptExperimentEnabled();
 	const user = await findUserProfileOrFail(userId);
 	const existing = user.practiceExperiments?.find(

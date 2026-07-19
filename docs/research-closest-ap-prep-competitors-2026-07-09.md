@@ -6,14 +6,14 @@ _Research date: 2026-07-09. This excludes the large incumbent publishers and Col
 
 The meaningful competitive set is not one company: it is six focused products that can each own one part of the AP student journey. The biggest near-term risk is **a better first-session outcome**—a realistic timed exam, a trusted question bank, or rubric feedback—not a giant company’s brand.
 
-| Priority | Competitor | What it can win | Public traction evidence |
-| --- | --- | --- | --- |
-| 1 | [AcornPrep](https://www.acornprep.com/) | Sign-up-gated all-in-one practice with a paid full-access tier, plus a strong expert-written quality claim | Explicitly says it is brand new and does not have thousands of students. |
-| 2 | [AP Scholr](https://apscholr.com/) | Sign-up-gated all-AP suite: notes, practice, full exams, tutor, and writing feedback, with ads | No public user or school count found. |
-| 3 | [EazyAP](https://www.eazyap.com/) | Full-length timed simulations and a large SEO surface | No public user or school count found. |
-| 4 | [AGrader](https://agrader.ai/) | Rubric-based writing feedback, with the clearest public usage signal | Claims 10,000+ essays graded. |
-| 5 | [FRQ Review](https://www.frqreview.com/) | No-account, unlimited, photo-to-feedback FRQ grading | No public usage count found. |
-| 6 | [Calcify AI](https://calcifyai.app/) | A polished, mobile, single-subject depth play for AP Calculus AB | No public download/user count found. |
+| Priority | Competitor                               | What it can win                                                                                            | Public traction evidence                                                 |
+| -------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1        | [AcornPrep](https://www.acornprep.com/)  | Sign-up-gated all-in-one practice with a paid full-access tier, plus a strong expert-written quality claim | Explicitly says it is brand new and does not have thousands of students. |
+| 2        | [AP Scholr](https://apscholr.com/)       | Sign-up-gated all-AP suite: notes, practice, full exams, tutor, and writing feedback, with ads             | No public user or school count found.                                    |
+| 3        | [EazyAP](https://www.eazyap.com/)        | Full-length timed simulations and a large SEO surface                                                      | No public user or school count found.                                    |
+| 4        | [AGrader](https://agrader.ai/)           | Rubric-based writing feedback, with the clearest public usage signal                                       | Claims 10,000+ essays graded.                                            |
+| 5        | [FRQ Review](https://www.frqreview.com/) | No-account, unlimited, photo-to-feedback FRQ grading                                                       | No public usage count found.                                             |
+| 6        | [Calcify AI](https://calcifyai.app/)     | A polished, mobile, single-subject depth play for AP Calculus AB                                           | No public download/user count found.                                     |
 
 Free AP Practice's public baseline is 20+ subjects, unlimited no-signup AI MCQs, instant explanations, and an optional account for history and insights ([homepage](https://freeappractice.org/)). That means the defensible wedge is **the fastest reliable practice start across many APs**—not being the broadest study suite.
 

@@ -1,9 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 
-export function isAuthorizedCronRequest(
-	request: Request,
-	cronSecret: string | undefined
-): boolean {
+export function isAuthorizedCronRequest(request: Request, cronSecret: string | undefined): boolean {
 	if (!cronSecret) return false;
 	const header = request.headers.get('authorization');
 	if (!header?.startsWith('Bearer ')) return false;

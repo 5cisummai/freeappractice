@@ -77,11 +77,11 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command                     | Purpose                        |
-| --------------------------- | ------------------------------ |
-| `bun check`                 | Type-check with `svelte-check` |
-| `bun test:unit`             | Run Vitest unit tests          |
-| `bun lint` / `bun format`   | ESLint and Prettier            |
+| Command                   | Purpose                        |
+| ------------------------- | ------------------------------ |
+| `bun check`               | Type-check with `svelte-check` |
+| `bun test:unit`           | Run Vitest unit tests          |
+| `bun lint` / `bun format` | ESLint and Prettier            |
 
 ## Environment variables
 
@@ -97,25 +97,25 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
 
-| Variable            | Purpose                         |
-| ------------------- | ------------------------------- |
-| `GENERATION_MODEL`  | Model for question generation   |
-| `TUTOR_MODEL`       | Model for the in-app tutor chat |
+| Variable           | Purpose                         |
+| ------------------ | ------------------------------- |
+| `GENERATION_MODEL` | Model for question generation   |
+| `TUTOR_MODEL`      | Model for the in-app tutor chat |
 
 Commonly needed for full functionality:
 
-| Variable                                                                       | Purpose                                                                                                                                |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                                                                                                                           |
-| `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client                                                                                                           |
-| `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                                                                                                                    |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches                                                                                                 |
-| `AWS_SESSION_TOKEN`                                                            | Optional temporary/assumed-role credentials                                                                                            |
-| `PUBLIC_BASE_URL`                                                              | Canonical site URL                                                                                                                     |
-| `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                                                               |
-| `CRON_SECRET`                                                                  | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs                                      |
-| `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                                                                                                               |
-Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`. See `.env.example` for defaults and comments.
+| Variable                                                                                                    | Purpose                                                                                           |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                                                 | Google OAuth                                                                                      |
+| `PUBLIC_GOOGLE_CLIENT_ID`                                                                                   | Google One Tap on the client                                                                      |
+| `RESEND_API_KEY` / `RESEND_FROM`                                                                            | Transactional email                                                                               |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET`                              | Private S3 bucket for question batches                                                            |
+| `AWS_SESSION_TOKEN`                                                                                         | Optional temporary/assumed-role credentials                                                       |
+| `PUBLIC_BASE_URL`                                                                                           | Canonical site URL                                                                                |
+| `GITHUB_BUG_REPORT_TOKEN`                                                                                   | GitHub Issues API for in-app bug reports                                                          |
+| `CRON_SECRET`                                                                                               | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs |
+| `PUBLIC_DESMOS_API_KEY`                                                                                     | Desmos calculator embeds                                                                          |
+| Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`. See `.env.example` for defaults and comments. |
 
 ### Local AI with LM Studio
 

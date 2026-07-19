@@ -27,9 +27,9 @@
 			.filter((entry) => entry.totalAttempts > 0)
 			.sort((a, b) => a.mastery - b.mastery || a.totalAttempts - b.totalAttempts)[0];
 		const frqOnly = frqEnabled
-			? entries.filter((entry) => (entry.frqAttempts ?? 0) > 0).sort(
-					(a, b) => (a.frqAveragePercentage ?? 0) - (b.frqAveragePercentage ?? 0)
-				)[0]
+			? entries
+					.filter((entry) => (entry.frqAttempts ?? 0) > 0)
+					.sort((a, b) => (a.frqAveragePercentage ?? 0) - (b.frqAveragePercentage ?? 0))[0]
 			: undefined;
 		return lowFrq ?? lowMcq ?? frqOnly ?? null;
 	});

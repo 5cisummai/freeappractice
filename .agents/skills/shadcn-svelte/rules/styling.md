@@ -22,7 +22,7 @@ See [customization.md](../customization.md) for theming, CSS variables, and addi
 
 ```svelte
 <div class="bg-blue-500 text-white">
-  <p class="text-gray-600">Secondary text</p>
+	<p class="text-gray-600">Secondary text</p>
 </div>
 ```
 
@@ -30,7 +30,7 @@ See [customization.md](../customization.md) for theming, CSS variables, and addi
 
 ```svelte
 <div class="bg-primary text-primary-foreground">
-  <p class="text-muted-foreground">Secondary text</p>
+	<p class="text-muted-foreground">Secondary text</p>
 </div>
 ```
 
@@ -52,7 +52,7 @@ For positive, negative, or status indicators, use Badge variants, semantic token
 
 ```svelte
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge";
+	import { Badge } from '$lib/components/ui/badge';
 </script>
 
 <Badge variant="secondary">+20.1%</Badge>
@@ -70,19 +70,17 @@ If you need a success/positive color that doesn't exist as a semantic token, use
 
 ```svelte
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
+	import { Button } from '$lib/components/ui/button';
 </script>
 
-<Button class="border-input hover:bg-accent border bg-transparent"
-  >Click me</Button
->
+<Button class="border border-input bg-transparent hover:bg-accent">Click me</Button>
 ```
 
 **Correct:**
 
 ```svelte
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
+	import { Button } from '$lib/components/ui/button';
 </script>
 
 <Button variant="outline">Click me</Button>
@@ -98,11 +96,11 @@ Use `class` for layout (e.g. `max-w-md`, `mx-auto`, `mt-4`), **not** for overrid
 
 ```svelte
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card";
+	import * as Card from '$lib/components/ui/card';
 </script>
 
 <Card.Root class="bg-blue-100 font-bold text-blue-900">
-  <Card.Content>Dashboard</Card.Content>
+	<Card.Content>Dashboard</Card.Content>
 </Card.Root>
 ```
 
@@ -110,11 +108,11 @@ Use `class` for layout (e.g. `max-w-md`, `mx-auto`, `mt-4`), **not** for overrid
 
 ```svelte
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card";
+	import * as Card from '$lib/components/ui/card';
 </script>
 
 <Card.Root class="mx-auto max-w-md">
-  <Card.Content>Dashboard</Card.Content>
+	<Card.Content>Dashboard</Card.Content>
 </Card.Root>
 ```
 
@@ -132,14 +130,14 @@ Use `gap-*` instead. `space-y-4` → `flex flex-col gap-4`. `space-x-2` → `fle
 
 ```svelte
 <script lang="ts">
-  import { Input } from "$lib/components/ui/input";
-  import { Button } from "$lib/components/ui/button";
+	import { Input } from '$lib/components/ui/input';
+	import { Button } from '$lib/components/ui/button';
 </script>
 
 <div class="flex flex-col gap-4">
-  <Input />
-  <Input />
-  <Button>Submit</Button>
+	<Input />
+	<Input />
+	<Button>Submit</Button>
 </div>
 ```
 

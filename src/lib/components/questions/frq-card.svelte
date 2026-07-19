@@ -104,7 +104,8 @@
 		if (draftKey) sessionStorage.removeItem(draftKey);
 		if (draftScopeKey) {
 			const saved = sessionStorage.getItem(draftScopeKey);
-			if (!saved || saved.includes(question?.questionId ?? '')) sessionStorage.removeItem(draftScopeKey);
+			if (!saved || saved.includes(question?.questionId ?? ''))
+				sessionStorage.removeItem(draftScopeKey);
 		}
 	}
 

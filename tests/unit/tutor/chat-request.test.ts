@@ -39,19 +39,17 @@ describe('tutorChatRequestSchema', () => {
 	});
 
 	it('rejects unknown keys under strict mode', () => {
-		expect(() =>
-			tutorChatRequestSchema.parse({ ...validRequest, extra: true })
-		).toThrow();
+		expect(() => tutorChatRequestSchema.parse({ ...validRequest, extra: true })).toThrow();
 	});
 
 	it('rejects conversation history beyond the message cap', () => {
-		const conversationHistory = Array.from(
-			{ length: MAX_TUTOR_CHAT_HISTORY_MESSAGES + 1 },
-			() => ({ role: 'user' as const, content: 'hi' })
+		const conversationHistory = Array.from({ length: MAX_TUTOR_CHAT_HISTORY_MESSAGES + 1 }, () => ({
+			role: 'user' as const,
+			content: 'hi'
+		}));
+		expect(() => tutorChatRequestSchema.parse({ ...validRequest, conversationHistory })).toThrow(
+			/too long/i
 		);
-		expect(() =>
-			tutorChatRequestSchema.parse({ ...validRequest, conversationHistory })
-		).toThrow(/too long/i);
 	});
 
 	it('rejects payloads whose prompt characters exceed the limit', () => {

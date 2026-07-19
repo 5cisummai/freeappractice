@@ -4,7 +4,7 @@
 @import '@fontsource-variable/fraunces';
 @import '@fontsource/noto-serif/400.css';
 @import '@fontsource/noto-serif/600.css';
-@import "shadcn-svelte/tailwind.css";
+@import 'shadcn-svelte/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -158,10 +158,12 @@
 		0% {
 			transform: translateZ(0) rotate(0);
 		}
-		15%, 35% {
+		15%,
+		35% {
 			transform: translateZ(0) rotate(90deg);
 		}
-		65%, 85% {
+		65%,
+		85% {
 			transform: translateZ(0) rotate(270deg);
 		}
 		100% {

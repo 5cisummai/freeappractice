@@ -105,10 +105,14 @@
 					{/snippet}
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content align="end">
-					{#each table.getAllColumns().filter((column) => column.getCanHide()) as column (column.id)}
+					{#each table
+						.getAllColumns()
+						.filter((column) => column.getCanHide()) as column (column.id)}
 						<DropdownMenu.CheckboxItem
 							class="capitalize"
-							bind:checked={() => column.getIsVisible(), (value) => column.toggleVisibility(!!value)}
+							bind:checked={
+								() => column.getIsVisible(), (value) => column.toggleVisibility(!!value)
+							}
 						>
 							{column.id}
 						</DropdownMenu.CheckboxItem>
@@ -119,7 +123,9 @@
 	</div>
 
 	{#if errorMessage}
-		<p class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+		<p
+			class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+		>
 			{errorMessage}
 		</p>
 	{:else}
@@ -167,7 +173,8 @@
 
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<p class="text-sm text-muted-foreground">
-				Showing {(page - 1) * pageSize + (data.length ? 1 : 0)}-{(page - 1) * pageSize + data.length}
+				Showing {(page - 1) * pageSize + (data.length ? 1 : 0)}-{(page - 1) * pageSize +
+					data.length}
 				of {total.toLocaleString()} users
 			</p>
 			<div class="flex items-center gap-2">

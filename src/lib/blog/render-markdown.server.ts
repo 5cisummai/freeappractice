@@ -2,17 +2,7 @@ import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
 import { escapeHtml } from '$lib/escape-html';
-
-function isSafeUrl(url: string): boolean {
-	const normalized = url.trim().toLowerCase();
-	return (
-		normalized.startsWith('http://') ||
-		normalized.startsWith('https://') ||
-		normalized.startsWith('mailto:') ||
-		normalized.startsWith('/') ||
-		normalized.startsWith('#')
-	);
-}
+import { isSafeMarkdownUrl } from '$lib/content/render-rich-text';
 
 let configured = false;
 
@@ -27,7 +17,7 @@ function ensureMarkedConfigured(): void {
 				return '';
 			},
 			link({ href, title, text }) {
-				const safeHref = href && isSafeUrl(href) ? href : '#';
+				const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
 				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
 				const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
 				const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
@@ -35,7 +25,7 @@ function ensureMarkedConfigured(): void {
 				return `<a href="${escapeHtml(safeHref)}"${safeTitle}${relAttr}>${text}</a>`;
 			},
 			image({ href, title, text }) {
-				if (!href || !isSafeUrl(href)) return '';
+				if (!href || !isSafeMarkdownUrl(href)) return '';
 				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
 				return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text ?? '')}"${safeTitle} loading="lazy" decoding="async">`;
 			}

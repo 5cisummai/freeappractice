@@ -20,32 +20,22 @@ describe('bugReportSchema', () => {
 
 	it('rejects short titles and descriptions', () => {
 		expect(() => bugReportSchema.parse({ ...validReport, title: 'Hey' })).toThrow();
-		expect(() =>
-			bugReportSchema.parse({ ...validReport, description: 'Too short' })
-		).toThrow();
+		expect(() => bugReportSchema.parse({ ...validReport, description: 'Too short' })).toThrow();
 	});
 
 	it('rejects invalid emails and unknown severities', () => {
 		expect(() => bugReportSchema.parse({ ...validReport, email: 'nope' })).toThrow();
-		expect(() =>
-			bugReportSchema.parse({ ...validReport, severity: 'critical' })
-		).toThrow();
+		expect(() => bugReportSchema.parse({ ...validReport, severity: 'critical' })).toThrow();
 	});
 
 	it('rejects metadata with too many keys', () => {
-		const metadata = Object.fromEntries(
-			Array.from({ length: 21 }, (_, i) => [`k${i}`, i])
-		);
-		expect(() => bugReportSchema.parse({ ...validReport, metadata })).toThrow(
-			/at most 20 keys/
-		);
+		const metadata = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`k${i}`, i]));
+		expect(() => bugReportSchema.parse({ ...validReport, metadata })).toThrow(/at most 20 keys/);
 	});
 
 	it('rejects oversized metadata payloads', () => {
 		const metadata = { blob: 'x'.repeat(8_001) };
-		expect(() => bugReportSchema.parse({ ...validReport, metadata })).toThrow(
-			/too large/
-		);
+		expect(() => bugReportSchema.parse({ ...validReport, metadata })).toThrow(/too large/);
 	});
 
 	it('trims optional blank strings to undefined', () => {

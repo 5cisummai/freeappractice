@@ -15,8 +15,7 @@ interface ValidatedQuestionRequest {
 }
 
 type QuestionRequestResult =
-	| { ok: true; value: ValidatedQuestionRequest }
-	| { ok: false; response: Response };
+	{ ok: true; value: ValidatedQuestionRequest } | { ok: false; response: Response };
 
 export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	const { className, unit, customTopic, excludeQuestionIds } = (body ?? {}) as Record<

@@ -245,17 +245,17 @@ Hero uses `animate-in` from `tw-animate-css` with staggered delays instead of sc
 
 Reuse these components on marketing pages:
 
-| Component                 | Path                                               | When to use                              |
-| ------------------------- | -------------------------------------------------- | ---------------------------------------- |
-| `Topbar`                  | `$lib/components/layout/topbar.svelte`                    | All public pages                         |
-| `SiteFooter`              | `$lib/components/layout/site-footer.svelte`               | All public pages                         |
+| Component                 | Path                                                         | When to use                              |
+| ------------------------- | ------------------------------------------------------------ | ---------------------------------------- |
+| `Topbar`                  | `$lib/components/layout/topbar.svelte`                       | All public pages                         |
+| `SiteFooter`              | `$lib/components/layout/site-footer.svelte`                  | All public pages                         |
 | `PublicPageHero`          | `$lib/components/marketing/public-page-hero.svelte`          | Utility pages (privacy, stats, subjects) |
-| `BackToHome`              | `$lib/components/layout/back-to-home.svelte`              | Secondary pages with back navigation     |
+| `BackToHome`              | `$lib/components/layout/back-to-home.svelte`                 | Secondary pages with back navigation     |
 | `FeaturesSection`         | `$lib/components/marketing/features-section.svelte`          | Landing only                             |
 | `AspiringStudentsSection` | `$lib/components/marketing/aspiring-students-section.svelte` | Landing only                             |
 | `BottomCtaSection`        | `$lib/components/marketing/bottom-cta-section.svelte`        | Landing / long-form pages                |
 | `QuestionShell`           | `$lib/components/questions/question-shell.svelte`            | Landing + practice pages                 |
-| `BlogPostCard`            | `$lib/components/blog/blog-post-card.svelte`            | Blog index                               |
+| `BlogPostCard`            | `$lib/components/blog/blog-post-card.svelte`                 | Blog index                               |
 
 ### FAQ block
 

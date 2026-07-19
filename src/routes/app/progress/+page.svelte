@@ -148,23 +148,23 @@
 												</p>
 											{/if}
 										</div>
-						{#if subject.total > 0}
-							<div class="flex w-36 items-center gap-3">
-								<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-									<div
-										class="h-full rounded-full transition-all {masteryBarClass(
-											subject.accuracy
-										)}"
-										style="width: {subject.accuracy}%"
-									></div>
-								</div>
-								<span class="w-10 text-right text-sm font-medium tabular-nums">
-									{subject.accuracy}%
-								</span>
-							</div>
-						{:else}
-							<span class="text-sm text-muted-foreground">No MCQ attempts</span>
-						{/if}
+										{#if subject.total > 0}
+											<div class="flex w-36 items-center gap-3">
+												<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+													<div
+														class="h-full rounded-full transition-all {masteryBarClass(
+															subject.accuracy
+														)}"
+														style="width: {subject.accuracy}%"
+													></div>
+												</div>
+												<span class="w-10 text-right text-sm font-medium tabular-nums">
+													{subject.accuracy}%
+												</span>
+											</div>
+										{:else}
+											<span class="text-sm text-muted-foreground">No MCQ attempts</span>
+										{/if}
 									</div>
 								{/each}
 							</div>
@@ -194,13 +194,13 @@
 												<Card.Title class="truncate text-base font-semibold tracking-tight">
 													{subject.apClass}
 												</Card.Title>
-									<Card.Description>
-										{#if subject.avgMastery !== null}
-											{subject.totalAttempts} attempts · {subject.avgMastery}% avg MCQ mastery
-										{:else}
-											FRQ performance is tracked separately
-										{/if}
-									</Card.Description>
+												<Card.Description>
+													{#if subject.avgMastery !== null}
+														{subject.totalAttempts} attempts · {subject.avgMastery}% avg MCQ mastery
+													{:else}
+														FRQ performance is tracked separately
+													{/if}
+												</Card.Description>
 											</div>
 											<span
 												class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
@@ -208,16 +208,16 @@
 												{subject.units.length} unit{subject.units.length === 1 ? '' : 's'}
 											</span>
 										</div>
-									{#if subject.avgMastery !== null}
-										<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-											<div
-												class="h-full rounded-full transition-all {masteryBarClass(
-													subject.avgMastery
-												)}"
-												style="width: {subject.avgMastery}%"
-											></div>
-										</div>
-									{/if}
+										{#if subject.avgMastery !== null}
+											<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+												<div
+													class="h-full rounded-full transition-all {masteryBarClass(
+														subject.avgMastery
+													)}"
+													style="width: {subject.avgMastery}%"
+												></div>
+											</div>
+										{/if}
 									</Card.Header>
 									<Card.Content class="space-y-4 pt-4">
 										{#each subject.units as unit (`${subject.apClass}:${unit.unit || 'all-units'}`)}
@@ -227,33 +227,33 @@
 														<p class="truncate text-sm font-medium">
 															{unit.unit || 'All units'}
 														</p>
-																{#if unit.totalAttempts > 0}
-																	<p class="text-xs text-muted-foreground">
-																		{unit.totalAttempts} attempt{unit.totalAttempts === 1 ? '' : 's'}
-																	</p>
-																{:else}
-																	<p class="text-xs text-muted-foreground">No MCQ attempts</p>
-																{/if}
+														{#if unit.totalAttempts > 0}
+															<p class="text-xs text-muted-foreground">
+																{unit.totalAttempts} attempt{unit.totalAttempts === 1 ? '' : 's'}
+															</p>
+														{:else}
+															<p class="text-xs text-muted-foreground">No MCQ attempts</p>
+														{/if}
 														{#if unit.frqAttempts}
 															<p class="text-xs text-muted-foreground">
 																{unit.frqAttempts} FRQ · {unit.frqAveragePercentage}% average
 															</p>
 														{/if}
 													</div>
-											{#if unit.totalAttempts > 0}
-												<span class="text-sm font-semibold tabular-nums">{unit.mastery}%</span>
-											{/if}
-									</div>
-									{#if unit.totalAttempts > 0}
-										<div class="h-2 overflow-hidden rounded-full bg-muted">
-											<div
-												class="h-full rounded-full transition-all {masteryBarClass(
-													unit.mastery
-												)}"
-												style="width: {unit.mastery}%"
-											></div>
-										</div>
-									{/if}
+													{#if unit.totalAttempts > 0}
+														<span class="text-sm font-semibold tabular-nums">{unit.mastery}%</span>
+													{/if}
+												</div>
+												{#if unit.totalAttempts > 0}
+													<div class="h-2 overflow-hidden rounded-full bg-muted">
+														<div
+															class="h-full rounded-full transition-all {masteryBarClass(
+																unit.mastery
+															)}"
+															style="width: {unit.mastery}%"
+														></div>
+													</div>
+												{/if}
 												<Button
 													variant="ghost"
 													size="sm"

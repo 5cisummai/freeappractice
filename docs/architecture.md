@@ -361,12 +361,12 @@ erDiagram
 
 ## How the pieces fit together
 
-| Layer | Role |
-| --- | --- |
-| **Public site** | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only |
-| **/app** | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings |
+| Layer              | Role                                                                                                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Public site**    | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                                 |
+| **/app**           | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings                                                                                    |
 | **Question cache** | Shared pool for MCQ and FRQ: one generation writes S3 once, then stores body + `s3QuestionId` in Mongo; `CacheMissLock` coordinates misses across serverless instances |
-| **Better Auth** | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete |
-| **AI layer** | One OpenAI-compatible provider for generation, FRQ grading, and tutor chat |
-| **Referrals** | Invite cookie → claim → activate on first meaningful attempt |
-| **Vercel** | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights |
+| **Better Auth**    | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete                                        |
+| **AI layer**       | One OpenAI-compatible provider for generation, FRQ grading, and tutor chat                                                                                             |
+| **Referrals**      | Invite cookie → claim → activate on first meaningful attempt                                                                                                           |
+| **Vercel**         | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights                                                                                      |

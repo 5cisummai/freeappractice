@@ -24,7 +24,6 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
 
-
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
 		<BackToHome />
@@ -39,8 +38,8 @@
 			<section>
 				<h2 class="text-xl font-semibold">1. Agreement to Terms</h2>
 				<p>
-					By accessing or using Free AP Practice (the "Service", "we", "us", or "our"), you agree
-					to these Terms of Service and our Privacy Policy. Free AP Practice is a personal project
+					By accessing or using Free AP Practice (the "Service", "we", "us", or "our"), you agree to
+					these Terms of Service and our Privacy Policy. Free AP Practice is a personal project
 					maintained by Ajay Saravanan. If you do not agree, do not use the Service.
 				</p>
 			</section>
@@ -58,9 +57,9 @@
 			<section>
 				<h2 class="text-xl font-semibold">3. Use License</h2>
 				<p>
-					We grant you a limited, revocable, non-exclusive license to use the Service for
-					personal, non-commercial study purposes only. This license does not transfer ownership
-					of the Service or its content.
+					We grant you a limited, revocable, non-exclusive license to use the Service for personal,
+					non-commercial study purposes only. This license does not transfer ownership of the
+					Service or its content.
 				</p>
 			</section>
 
@@ -68,8 +67,8 @@
 				<h2 class="text-xl font-semibold">4. User Content and Rights</h2>
 				<p>
 					Content you submit, including profile information, answers, bookmarks, feedback, bug
-					reports, and account-related requests, remains yours. By submitting content, you grant
-					us a non-exclusive license to host, process, store, display, and analyze that content as
+					reports, and account-related requests, remains yours. By submitting content, you grant us
+					a non-exclusive license to host, process, store, display, and analyze that content as
 					reasonably necessary to operate, maintain, and improve the Service, subject to our
 					<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 				</p>
@@ -79,10 +78,10 @@
 				<h2 class="text-xl font-semibold">5. AI-Generated Content</h2>
 				<p>
 					The Service uses OpenAI to generate practice questions, explanations, and tutoring
-					content. AI-generated content can be incomplete, incorrect, or misleading. You should
-					use your own judgment and, when appropriate, verify answers against trusted sources. The
-					Service is provided for study support only and does not guarantee exam results or
-					academic outcomes.
+					content. AI-generated content can be incomplete, incorrect, or misleading. You should use
+					your own judgment and, when appropriate, verify answers against trusted sources. The
+					Service is provided for study support only and does not guarantee exam results or academic
+					outcomes.
 				</p>
 			</section>
 
@@ -102,17 +101,16 @@
 					The Service depends on third-party providers, including OpenAI for question generation,
 					Google for sign-in, MongoDB for database storage, AWS S3 for file storage, Resend for
 					transactional emails, PostHog for optional product analytics when you opt in, Vercel for
-					hosting, deployment, and cookieless analytics, and GitHub for bug-report
-					handling. Those providers may process data according to their own terms and privacy
-					policies.
+					hosting, deployment, and cookieless analytics, and GitHub for bug-report handling. Those
+					providers may process data according to their own terms and privacy policies.
 				</p>
 			</section>
 
 			<section>
 				<h2 class="text-xl font-semibold">8. Disclaimers and Limitations</h2>
 				<p>
-					The Service and all content are provided "as is" and "as available" without warranties
-					of any kind, express or implied. To the maximum extent permitted by law, we disclaim
+					The Service and all content are provided "as is" and "as available" without warranties of
+					any kind, express or implied. To the maximum extent permitted by law, we disclaim
 					liability for indirect, incidental, special, consequential, or punitive damages arising
 					from your use of the Service.
 				</p>
@@ -122,8 +120,8 @@
 				<h2 class="text-xl font-semibold">9. Termination</h2>
 				<p>
 					We may suspend or terminate access to the Service at any time for violations of these
-					Terms, security concerns, or operational reasons. You may delete your account through
-					the Service or by contacting us. Deletion removes the account record from our primary
+					Terms, security concerns, or operational reasons. You may delete your account through the
+					Service or by contacting us. Deletion removes the account record from our primary
 					database, although some information may remain in backups, logs, or third-party systems
 					for a limited time.
 				</p>
@@ -162,4 +160,3 @@
 		</div>
 	</div>
 </main>
-

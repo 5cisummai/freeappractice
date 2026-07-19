@@ -32,15 +32,12 @@ describe('validateQuestionRequest', () => {
 	});
 
 	it('rejects oversized className and unit', async () => {
+		expect((await errorBody(validateQuestionRequest({ className: 'A'.repeat(121) }))).status).toBe(
+			400
+		);
 		expect(
-			(await errorBody(validateQuestionRequest({ className: 'A'.repeat(121) }))).status
-		).toBe(400);
-		expect(
-			(
-				await errorBody(
-					validateQuestionRequest({ className: 'AP Biology', unit: 'u'.repeat(201) })
-				)
-			).status
+			(await errorBody(validateQuestionRequest({ className: 'AP Biology', unit: 'u'.repeat(201) })))
+				.status
 		).toBe(400);
 	});
 

@@ -41,9 +41,7 @@ describe('isEligibleUnverifiedUser', () => {
 	});
 
 	it('rejects users missing createdAt', () => {
-		expect(isEligibleUnverifiedUser({ emailVerified: false, createdAt: null }, cutoff)).toBe(
-			false
-		);
+		expect(isEligibleUnverifiedUser({ emailVerified: false, createdAt: null }, cutoff)).toBe(false);
 	});
 
 	it('accepts unverified users older than cutoff', () => {
