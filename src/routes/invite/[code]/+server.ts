@@ -13,5 +13,5 @@ export const GET: RequestHandler = async ({ cookies, params }) => {
 	if (referrerUserId) rememberReferralCode(cookies, code);
 	captureInviteLanded(codeValid);
 
-	redirect(302, codeValid ? '/subjects?invited=1' : '/subjects');
+	throw redirect(302, codeValid ? '/subjects?invited=1' : '/subjects');
 };

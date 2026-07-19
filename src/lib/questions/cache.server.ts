@@ -5,16 +5,71 @@ import {
 	type GenerateResult
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
-import { createMcqPool, type GetQuestionOptions } from '$lib/questions/pool.server';
-import { buildHotPoolDoc } from '$lib/questions/pool-doc.server';
-import { hotPoolBodyFromDoc } from '$lib/questions/pool-resolve.server';
+import { createQuestionPool } from '$lib/questions/pool.server';
 import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
-export type { GetQuestionOptions };
+type CachedResult = GenerateResult & { cached: boolean };
 
-const RECENT_TOPICS_WINDOW = 20;
+/** Build an ephemeral hot-cache pool document with the full MCQ body inline. */
+function buildHotPoolDoc(opts: {
+	s3QuestionId: string;
+	apClass: string;
+	unit: string;
+	contentHash: string;
+	answer: APQuestionData;
+}): Pick<
+	IQuestion,
+	| 's3QuestionId'
+	| 'apClass'
+	| 'unit'
+	| 'contentHash'
+	| 'topicsCovered'
+	| 'question'
+	| 'optionA'
+	| 'optionB'
+	| 'optionC'
+	| 'optionD'
+	| 'correctAnswer'
+	| 'explanation'
+	| 'hint1'
+	| 'hint2'
+> {
+	const { answer } = opts;
+	return {
+		s3QuestionId: opts.s3QuestionId,
+		apClass: opts.apClass,
+		unit: opts.unit,
+		contentHash: opts.contentHash,
+		topicsCovered: answer.topicsCovered ?? '',
+		question: answer.question,
+		optionA: answer.optionA,
+		optionB: answer.optionB,
+		optionC: answer.optionC,
+		optionD: answer.optionD,
+		correctAnswer: answer.correctAnswer,
+		explanation: answer.explanation,
+		hint1: answer.hint1,
+		hint2: answer.hint2
+	};
+}
+
+/** Read full MCQ body directly from a hot-cache pool doc (no S3 round trip). */
+function hotPoolBodyFromDoc(doc: IQuestion): APQuestionData {
+	return {
+		question: doc.question,
+		optionA: doc.optionA,
+		optionB: doc.optionB,
+		optionC: doc.optionC,
+		optionD: doc.optionD,
+		correctAnswer: doc.correctAnswer,
+		explanation: doc.explanation,
+		topicsCovered: doc.topicsCovered ?? '',
+		hint1: doc.hint1 ?? '',
+		hint2: doc.hint2 ?? ''
+	};
+}
 
 async function insertHotPoolDoc(
 	className: string,
@@ -22,13 +77,10 @@ async function insertHotPoolDoc(
 	answer: APQuestionData,
 	s3QuestionId: string
 ): Promise<IQuestion> {
-	const contentHash = computeContentHash(answer.question);
-	const topicsCovered = answer.topicsCovered ?? '';
-
 	await recordRecentTopic({
 		apClass: className,
 		unit: cacheUnit,
-		topicsCovered,
+		topicsCovered: answer.topicsCovered ?? '',
 		s3QuestionId
 	});
 
@@ -36,8 +88,7 @@ async function insertHotPoolDoc(
 		buildHotPoolDoc({
 			apClass: className,
 			unit: cacheUnit,
-			contentHash,
-			topicsCovered,
+			contentHash: computeContentHash(answer.question),
 			answer,
 			s3QuestionId
 		})
@@ -58,16 +109,6 @@ async function generateQuestionForPool(
 	}
 
 	const contentHash = computeContentHash(answer.question);
-	const exists = await Question.exists({ contentHash });
-	if (exists) {
-		logger.info('[cache] generated duplicate question already in pool', {
-			className,
-			unit: cacheUnit,
-			contentHash
-		});
-		return result;
-	}
-
 	const poolInsertStarted = Date.now();
 	try {
 		await insertHotPoolDoc(className, cacheUnit, answer, questionId);
@@ -92,25 +133,19 @@ async function generateQuestionForPool(
 	};
 }
 
-export type CachedResult = GenerateResult & { cached: boolean };
-
-const mcqPool = createMcqPool<IQuestion, CachedResult>({
+const mcqPool = createQuestionPool<IQuestion, CachedResult>({
+	questionType: 'mcq',
 	logScope: 'cache',
-	normalizeUnit: (unit) => normalizeUnit(unit),
+	normalizeUnit,
 	model: Question,
-	getRecentTopics: (className, unit) => getRecentTopics(className, unit, RECENT_TOPICS_WINDOW),
-	serveCached: async (doc) => {
-		const answer = hotPoolBodyFromDoc(doc);
-		const topicsCovered = answer.topicsCovered ?? doc.topicsCovered ?? '';
-
-		return {
-			answer: { ...answer, topicsCovered },
-			provider: 'cache',
-			model: 'cached',
-			cached: true,
-			questionId: doc.s3QuestionId
-		};
-	},
+	getRecentTopics,
+	serveCached: async (doc) => ({
+		answer: hotPoolBodyFromDoc(doc),
+		provider: 'cache',
+		model: 'cached',
+		cached: true,
+		questionId: doc.s3QuestionId
+	}),
 	generateLive: async (className, unit, recentTopics) => {
 		const result = await generateQuestionForPool(className, unit, recentTopics ?? []);
 		return { ...result, cached: false };

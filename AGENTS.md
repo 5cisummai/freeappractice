@@ -17,24 +17,28 @@
 - Do not overabstract, invent patterns, or create helpers, layers, or structures that are not necessary right now.
 - If a simple inline change is enough, keep it simple.
 
-## Browser Testing
+### Browser Testing
 
 - Do not install, add, or configure Playwright or other browser-automation tooling for testing.
 - Use Codex's or Cursor's native browser tools for browser verification instead.
 
-## Subagent Tools
+### Subagent Tools
 
 IF you are **CURSOR** : use cursor grok high 4.5 for harder tasks and composer 2.5 for lighter tasks.
 
 IF you are **CODEX** : use 5.6 luna with xhigh effort for harder tasks and high effort for easier tasks.
 
-## Linear Rules
+### Linear Rules
 
 For any work associated with a Linear issue, change the issue status to **In Progress** before beginning implementation. After the work is complete and verified, change the status to **In Review**.
 
-## Deployment
+### Deployment
 
-This project will be deployed in an serverless environment (vercel) so consider that.
+This project will be deployed in an serverless environment (Vercel) so consider that.
+
+### Specific cases:
+
+- When creating feature flags, use the existing vercel flags implementation rather then needing an env variable for the flags
 
 ---
 

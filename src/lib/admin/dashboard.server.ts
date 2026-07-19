@@ -5,6 +5,8 @@ import { Question } from '$lib/questions/cache-model.server';
 import { CacheMissLock } from '$lib/questions/cache-lock.server';
 import { QuestionRecentTopic } from '$lib/questions/recent-topic-model.server';
 import { getGenerationStatsForApi } from '$lib/questions/gen-stats.server';
+import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
+import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
 import type {
 	AdminTab,
 	AdminUserRow,
@@ -17,7 +19,7 @@ import type {
 	RecentTopicSnapshot
 } from '$lib/admin/types.js';
 
-export interface AdminDashboardData {
+interface AdminDashboardData {
 	activeTab: AdminTab;
 	users: AdminUserRow[];
 	totalUsers: number;
@@ -33,6 +35,7 @@ export interface AdminDashboardData {
 	generationOverview: GenerationOverview;
 	generationByClass: GenerationClassSummary[];
 	topGeneratedUnits: GenerationUnitSummary[];
+	quality: QualityDashboardSnapshot;
 }
 
 function getPoolTargetSize(): number {
@@ -40,7 +43,9 @@ function getPoolTargetSize(): number {
 }
 
 function normalizeAdminTab(value: string | null): AdminTab {
-	return value === 'users' || value === 'cache' || value === 'generation' ? value : 'overview';
+	return value === 'users' || value === 'cache' || value === 'generation' || value === 'quality'
+		? value
+		: 'overview';
 }
 
 function parseLock(key: string, expiresAt: Date | string): CacheLockSnapshot {
@@ -254,6 +259,17 @@ export async function getAdminDashboardData(opts: {
 					topUnits: []
 				};
 
+	const quality =
+		activeTab === 'quality'
+			? await getQualityDashboardSnapshot()
+			: {
+					counts: { unreviewed: 0, awaitingHuman: 0, good: 0, bad: 0, highPriority: 0 },
+					model: '',
+					calibrated: false,
+					jobs: [],
+					humanQueue: []
+				};
+
 	return {
 		activeTab,
 		users,
@@ -269,6 +285,7 @@ export async function getAdminDashboardData(opts: {
 		recentTopics,
 		generationOverview: generationPayload.overview,
 		generationByClass: generationPayload.byClass,
-		topGeneratedUnits: generationPayload.topUnits
+		topGeneratedUnits: generationPayload.topUnits,
+		quality
 	};
 }

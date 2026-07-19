@@ -98,13 +98,49 @@
 			"post": {
 				"tags": ["tutor"],
 				"summary": "Chat with the AI tutor",
-				"security": [{ "sessionCookie": [] }],
+				"description": "Public endpoint — no authentication required.",
 				"responses": {
 					"200": { "description": "Tutor response stream or JSON" },
+					"400": { "description": "Invalid request" },
+					"413": { "description": "Request body too large" },
+					"500": { "description": "Tutor chat failed" }
+				}
+			}
+		},
+		"/api/tutor/greeting": {
+			"post": {
+				"tags": ["tutor"],
+				"summary": "Get an AI tutor greeting for a question",
+				"description": "Public endpoint — no authentication required.",
+				"responses": {
+					"200": { "description": "Greeting message" },
+					"400": { "description": "Question is required" },
+					"500": { "description": "Greeting failed (may include fallback message)" }
+				}
+			}
+		},
+		"/api/me/bookmarks": {
+			"get": {
+				"tags": ["user"],
+				"summary": "List bookmarked questions",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Bookmarked questions" },
+					"401": { "description": "Not authenticated" }
+				}
+			},
+			"post": {
+				"tags": ["user"],
+				"summary": "Toggle a question bookmark",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Bookmark toggled" },
+					"400": { "description": "questionId is required" },
 					"401": { "description": "Not authenticated" }
 				}
 			}
 		},
+
 		"/api/auth/sign-up/email": {
 			"post": {
 				"tags": ["auth"],

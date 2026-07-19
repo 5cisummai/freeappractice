@@ -1,9 +1,4 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
-	"crons": [
-		{
-			"path": "/api/cron/cleanup-unverified-users",
-			"schedule": "0 0 * * *"
-		}
-	]
+	"crons": []
 }

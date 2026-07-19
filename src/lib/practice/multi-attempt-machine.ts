@@ -1,6 +1,6 @@
 import type { TerminalOutcome } from '$lib/practice/multi-attempt';
 
-export type MultiAttemptPhase = 'answering' | 'hinted' | 'terminal';
+type MultiAttemptPhase = 'answering' | 'hinted' | 'terminal';
 
 export type MultiAttemptMachineState = {
 	phase: MultiAttemptPhase;
@@ -24,7 +24,7 @@ export function createMultiAttemptState(): MultiAttemptMachineState {
 	};
 }
 
-export type MultiAttemptEvent =
+type MultiAttemptEvent =
 	| { type: 'submit'; answer: 'A' | 'B' | 'C' | 'D'; correctAnswer: 'A' | 'B' | 'C' | 'D' }
 	| { type: 'reveal' };
 
@@ -58,8 +58,7 @@ export function reduceMultiAttempt(
 			firstAnswerCorrect,
 			resolvedCorrect: true,
 			phase: 'terminal',
-			terminalOutcome: 'correct',
-			lockedChoices: state.lockedChoices
+			terminalOutcome: 'correct'
 		};
 	}
 

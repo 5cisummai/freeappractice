@@ -65,13 +65,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 		const { apClass, unit, conversationHistory } = result.data;
-
 		capturePostHogServerEvent(request, {
 			distinctId: 'anonymous',
 			event: 'tutor_chat_started',
 			properties: {
 				ap_class: apClass,
-				unit: unit,
+				unit,
 				has_prior_conversation: conversationHistory.length > 0
 			}
 		});

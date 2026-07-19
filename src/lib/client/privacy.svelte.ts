@@ -22,9 +22,7 @@ function createPrivacyState() {
 		syncAnalyticsConsentCookie();
 
 		const saved = readAnalyticsConsent();
-		if (saved === 'granted' || saved === 'denied') {
-			analyticsConsent = saved;
-		}
+		if (saved) analyticsConsent = saved;
 
 		initialized = true;
 		initPostHogAnalytics();

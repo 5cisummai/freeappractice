@@ -1,5 +1,4 @@
-/** Shape of Resend's emails.send() result (success or error). */
-export type ResendSendResult = {
+type ResendSendResult = {
 	data: { id: string } | null;
 	error: { message: string; statusCode: number | null; name: string } | null;
 };

@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { listPublishedBlogEntries } from '$lib/blog/service.server';
 import { getAllPageSlugs, getPageBySlug, getSitemapPriority } from '$lib/catalog/practice-pages.js';
-import { getSiteUrl } from '$lib/auth/urls';
+import { getSiteUrl } from '$lib/site-url';
 
 export const prerender = true;
 

@@ -16,10 +16,8 @@ import {
 	sendExistingUserSignupEmail,
 	sendResetEmail
 } from '$lib/auth/email.server';
-import { connectDb } from '$lib/server/db';
-import { UserProfile } from '$lib/users/model.server';
 import { ensureUserProfile } from '$lib/users/profile.server';
-import { Referral } from '$lib/referrals/model.server';
+import { deleteAppDataForUsers } from '$lib/users/delete-app-data.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
 import { getAdminUserIds } from '$lib/auth/admin.server';
 import {
@@ -75,13 +73,7 @@ export const auth = betterAuth({
 				await sendDeleteAccountEmail(user.email, url);
 			},
 			afterDelete: async (user) => {
-				await connectDb();
-				await Promise.all([
-					UserProfile.deleteOne({ userId: user.id }),
-					Referral.deleteMany({
-						$or: [{ referrerUserId: user.id }, { referredUserId: user.id }]
-					})
-				]);
+				await deleteAppDataForUsers(user.id);
 			}
 		}
 	},

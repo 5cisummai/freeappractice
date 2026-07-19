@@ -14,7 +14,7 @@ flowchart TB
         AuthUI["Auth pages<br/>/login, /signup, /verify-email,<br/>/forgot-password, /reset-password"]
         PracticeSEO["SEO practice landings<br/>/practice/[...slug]"]
         AppUI["Authenticated app /app/*<br/>dashboard · practice · progress<br/>history · resources · settings"]
-        Components["Shared UI<br/>QuestionShell · QuestionCard · Tutor<br/>Sidebar · Data tables"]
+        Components["Feature UI under $lib/components<br/>PracticeShell · QuestionCard · FrqCard<br/>Tutor · Sidebar · Data tables"]
     end
 
     subgraph Vercel["SvelteKit on Vercel"]
@@ -25,18 +25,22 @@ flowchart TB
     end
 
     subgraph Lib["Server libraries ($lib)"]
-        AuthLib["auth/server.ts — Better Auth"]
+        AuthLib["auth/* — Better Auth + API helpers"]
         QGen["questions/* — cache, pool, generation, S3"]
+        FrqLib["frq/* — FRQ generate, grade, attempts"]
+        PracticeExp["practice/* — multi-attempt experiment"]
         AI["ai/service.server.ts — Vercel AI SDK"]
-        TutorLib["tutor/service.server.ts"]
-        UsersLib["users/* — profile, stats, progress, history"]
+        TutorLib["tutor/*"]
+        UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
+        Referrals["referrals/*"]
         Catalog["catalog/* — AP classes, practice pages, validation"]
-        BlogLib["blog/service.server.ts — markdown posts"]
+        BlogLib["blog/* — markdown posts"]
+        SiteUrl["site-url.ts — canonical origin"]
     end
 
     subgraph Data["Persistence"]
         MongoDB[("MongoDB")]
-        S3[("AWS S3<br/>private question batches")]
+        S3[("AWS S3<br/>questions/ + frqs/")]
         StaticJSON["Static data<br/>unit-descriptionsrevised.json<br/>practice-pages.json"]
         BlogMD["Markdown<br/>src/content/blog/*.md"]
     end
@@ -57,14 +61,22 @@ flowchart TB
     AuthLib --> MongoDB
     AuthLib --> Resend
     AuthLib --> Google
+    AuthLib --> UsersLib
     UsersLib --> MongoDB
+    UsersLib --> FrqLib
+    UsersLib --> Referrals
     QGen --> MongoDB
     QGen --> S3
     QGen --> AI
+    FrqLib --> MongoDB
+    FrqLib --> S3
+    FrqLib --> AI
+    PracticeExp --> UsersLib
     AI --> OpenAI
     TutorLib --> AI
     Catalog --> StaticJSON
     BlogLib --> BlogMD
+    Referrals --> MongoDB
     API --> GitHub
 
     PracticeSEO -.->|"CTA → /app/practice?apClass&unit"| AppUI
@@ -119,7 +131,7 @@ flowchart LR
 
     subgraph App["/app — session required"]
         D["/app Dashboard"]
-        PR["/app/practice"]
+        PR["/app/practice<br/>MCQ + optional FRQ"]
         PG["/app/progress"]
         HI["/app/history"]
         RS["/app/resources"]
@@ -129,9 +141,9 @@ flowchart LR
 
     subgraph API["API"]
         AUTH["/api/auth/*<br/>Better Auth"]
-        Q["/api/question<br/>/generation-stats"]
-        ME["/api/me/*<br/>stats · progress · history<br/>record-attempt · bookmarks"]
-        T["/api/tutor/chat · greeting"]
+        Q["/api/question<br/>/api/question/frq · /frq/grade<br/>/generation-stats"]
+        ME["/api/me/*<br/>stats · progress · history<br/>record-attempt · bookmarks<br/>practice-experiment · frq-attempt"]
+        T["/api/tutor/chat · greeting · frq"]
         BR["/api/bug-report"]
     end
 
@@ -144,39 +156,43 @@ flowchart LR
     P5 --> PR
 ```
 
+Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShell`). Authenticated `/app/practice` uses `PracticeShell` with `allowFrq` when the FRQ flag is on.
+
 ---
 
 ## 4. Question generation pipeline (core feature)
 
+MCQ and FRQ share the same hot-pool / cache-miss machinery (`createQuestionPool` + cluster lock). Bodies live under S3 prefixes `questions/` and `frqs/`.
+
 ```mermaid
 flowchart TD
-    Start(["POST /api/question"]) --> Validate["validateQuestionRequest<br/>AP class · unit"]
+    Start(["POST /api/question or /api/question/frq"]) --> Validate["validateQuestionRequest<br/>AP class · unit"]
     Validate -->|invalid| Err400["400 / 410 response"]
-    Validate -->|ok| Pool["getQuestion → question pool"]
+    Validate -->|ok| Pool["getQuestion / getFrqQuestion → shared pool"]
 
     Pool --> Select{"MongoDB pool<br/>select reusable doc<br/>excluding this session's seen IDs"}
-    Select -->|hit| LoadInline["Read full MCQ body from Mongo<br/>inline hot-cache fields"]
+    Select -->|hit| LoadInline["Read body from Mongo<br/>inline hot-cache fields"]
     Select -->|miss| MissFlow["cache-miss cluster flow<br/>distributed lock + wait/retry"]
-    MissFlow --> GenPool["generateQuestionForPool"]
+    MissFlow --> GenPool["MCQ or FRQ live generation"]
 
     GenPool --> UnitCtx["Lookup unit context<br/>unit-descriptionsrevised.json"]
-    UnitCtx --> Recent["getRecentTopics<br/>avoid duplicate topics"]
-    Recent --> AI["AI structured completion<br/>ADVANCED_MODEL or BASIC_MODEL"]
-    AI --> S3Write["persistMcqQuestionToS3<br/>single durable write"]
-    S3Write --> HotDoc["Insert full MCQ + s3QuestionId<br/>in Mongo hot pool"]
+    UnitCtx --> Recent["Recent topics<br/>avoid duplicate topics"]
+    Recent --> AI["AI structured completion"]
+    AI --> S3Write["Persist to S3<br/>questions/ or frqs/"]
+    S3Write --> HotDoc["Insert body + s3QuestionId<br/>in Mongo hot pool"]
 
-    LoadInline --> Return(["JSON: answer, questionId,<br/>provider, model, cached"])
+    LoadInline --> Return(["JSON payload + questionId"])
     HotDoc --> Return
 
-    Return --> UI["QuestionCard renders MCQ<br/>LaTeX · KaTeX · Desmos optional"]
+    Return --> UI["QuestionCard or FrqCard"]
     UI --> Attempt["User answers"]
-    Attempt --> Record["POST /api/me/record-attempt"]
-    Record --> Profile["UserProfile in MongoDB<br/>questionHistory + progress + mastery"]
+    Attempt --> Record["MCQ: POST /api/me/record-attempt<br/>FRQ: POST /api/question/frq/grade"]
+    Record --> Profile["MCQ → UserProfile history/progress<br/>FRQ → FrqAttempt collection"]
 ```
 
 **Pool behavior notes**
 
-- Signed-in and anonymous users share the same reusable Mongo hot pool.
+- Signed-in and anonymous users share the same reusable Mongo hot pool (per question type).
 - The browser sends current-session `excludeQuestionIds` for standard questions so one session does not see the same question ID twice.
 - Multiple users can receive the same cached question at the same time; cached docs are not claimed, locked, or deleted after a serve count.
 - `contentHash` (SHA-256 of normalized question text) deduplicates entries **inside the hot pool** only — it prevents the same MCQ body from being inserted twice during generation.
@@ -213,8 +229,15 @@ flowchart TD
         Check -->|yes| AppPages["/app/* pages"]
     end
 
-    Profile --> UserData["progress[] · questionHistory[]<br/>bookmarkedQuestions[]"]
+    subgraph Delete["Account cleanup"]
+        Del["deleteAppDataForUsers<br/>UserProfile · FrqAttempt · Referral"]
+    end
+
+    Profile --> UserData["progress[] · questionHistory[]<br/>bookmarkedQuestions[] · practiceExperiments[]"]
+    BA --> Del
 ```
+
+Canonical site origin for emails, sitemaps, and discovery lives in `$lib/site-url.ts`. Auth callbacks use `$lib/auth/urls.ts` (`authCallbackUrl`). Authenticated API routes use `withAuthedHandler` in `$lib/auth/route-helpers.server.ts`.
 
 ---
 
@@ -224,40 +247,54 @@ flowchart TD
 sequenceDiagram
     participant U as Student
     participant App as /app/practice
-    participant QS as QuestionShell / QuestionCard
+    participant PS as PracticeShell
+    participant Card as QuestionCard / FrqCard
+    participant Sess as question-card-session
     participant API as API
     participant AI as OpenAI / LM Studio
     participant DB as MongoDB + S3
     participant Tutor as Tutor panel
 
-    U->>App: Pick AP class + unit
-    App->>QS: requestVersion++
-    QS->>API: POST /api/question
-    API->>DB: claim from hot pool (auth does not change selection)
-    API->>AI: generate on cache miss
-    AI-->>API: structured MCQ
-    API->>DB: S3 + pool doc
-    API-->>QS: question payload
-    QS-->>U: Render question + choices
-
-    opt After answer
-        U->>QS: Select A/B/C/D
-        QS->>API: POST /api/me/record-attempt
-        API->>DB: update UserProfile progress + history
+    U->>App: Pick AP class + unit · optional MCQ/FRQ mode
+    App->>PS: requestVersion++
+    alt MCQ
+        PS->>Card: QuestionCard
+        Card->>Sess: loadQuestion
+        Sess->>API: POST /api/question
+        API->>DB: hot pool hit or generate
+        API-->>Sess: question payload
+        Sess-->>U: Render question + choices
+        opt After answer
+            U->>Sess: Check answer / multi-attempt hints
+            Sess->>API: POST /api/me/record-attempt
+            API->>DB: UserProfile progress + history
+        end
+    else FRQ
+        PS->>Card: FrqCard
+        Card->>API: POST /api/question/frq
+        API->>DB: FRQ pool hit or generate
+        API-->>Card: FRQ payload
+        U->>API: POST /api/question/frq/grade
+        API->>AI: rubric grading
+        API->>DB: FrqAttempt
     end
 
     opt Tutor
         U->>Tutor: Ask for help
-        Tutor->>API: POST /api/tutor/greeting or /chat
+        Tutor->>API: POST /api/tutor/greeting, /chat, or /frq
         API->>AI: streaming tutor prompt (no answer leakage)
         AI-->>Tutor: streamed guidance
     end
 
     opt Bookmark
-        U->>API: POST /api/me/bookmark
+        U->>API: POST /api/me/bookmarks
         API->>DB: bookmarkedQuestions[]
     end
 ```
+
+`QuestionShell` is a thin public MCQ-only wrapper around `PracticeShell`. MCQ answer/load/experiment state lives in `createQuestionCardSession` (`question-card-session.svelte.ts`); markup stays in `question-card.svelte`.
+
+`$lib/practice/*` is the **multi-attempt A/B experiment**, not practice routing. Practice page catalog + SEO live in `$lib/catalog` and `$lib/components/practice`.
 
 ---
 
@@ -268,12 +305,28 @@ erDiagram
     AUTH_USERS ||--o{ AUTH_SESSIONS : has
     AUTH_USERS ||--o{ AUTH_ACCOUNTS : has
     AUTH_USERS ||--|| USER_PROFILE : "1:1 via userId"
+    AUTH_USERS ||--o{ FRQ_ATTEMPT : has
+    AUTH_USERS ||--o{ REFERRAL : "referrer or referred"
 
     USER_PROFILE {
         string userId PK
         array progress
         array questionHistory
         array bookmarkedQuestions
+        array practiceExperiments
+    }
+
+    FRQ_ATTEMPT {
+        string userId
+        string questionId
+        string status
+        object grade
+    }
+
+    REFERRAL {
+        string referrerUserId
+        string referredUserId
+        string code
     }
 
     QUESTION_POOL {
@@ -301,17 +354,19 @@ erDiagram
 
     QUESTION_POOL }o--|| S3_OBJECT : "s3QuestionId from generation"
     USER_PROFILE }o--o{ S3_OBJECT : "history references questionId"
+    FRQ_ATTEMPT }o--o{ S3_OBJECT : "FRQ questionId"
 ```
 
 ---
 
 ## How the pieces fit together
 
-| Layer              | Role                                                                                                                                                                                                                                                                                                                |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Public site**    | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                                                                                                                                                                              |
-| **/app**           | Core product: generate questions, track progress, history, bookmarks, settings                                                                                                                                                                                                                                      |
-| **Question cache** | One generation path writes S3 once, then stores full MCQ bodies plus `s3QuestionId` in the Mongo hot pool; cached serves read Mongo only. Pool-level `contentHash` dedup; browser session `excludeQuestionIds` prevents same-session repeats. `CacheMissLock` coordinates cache misses across serverless instances. |
-| **Better Auth**    | Sessions, OAuth, email verification; creates a `UserProfile` on signup                                                                                                                                                                                                                                              |
-| **AI layer**       | One OpenAI-compatible provider (cloud or LM Studio) for generation, grading context, and tutor chat                                                                                                                                                                                                                 |
-| **Vercel**         | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights                                                                                                                                                                                                                                   |
+| Layer | Role |
+| --- | --- |
+| **Public site** | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only |
+| **/app** | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings |
+| **Question cache** | Shared pool for MCQ and FRQ: one generation writes S3 once, then stores body + `s3QuestionId` in Mongo; `CacheMissLock` coordinates misses across serverless instances |
+| **Better Auth** | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete |
+| **AI layer** | One OpenAI-compatible provider for generation, FRQ grading, and tutor chat |
+| **Referrals** | Invite cookie → claim → activate on first meaningful attempt |
+| **Vercel** | Hosting, `waitUntil` for background auth tasks, optional Analytics/Speed Insights |

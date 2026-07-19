@@ -1,35 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { generateTextMock, saveQuestionToS3, recordMcqGenerated } = vi.hoisted(() => ({
+	generateTextMock: vi.fn(),
+	saveQuestionToS3: vi.fn(async () => 'persisted-question-id'),
+	recordMcqGenerated: vi.fn(async () => {})
+}));
+
 vi.mock('$env/static/private', () => ({
 	OPEN_AI_KEY: 'test-key'
 }));
 
 vi.mock('$env/dynamic/private', () => ({
 	env: {
-		ADVANCED_MODEL: 'test-advanced-model',
-		BASIC_MODEL: 'test-basic-model',
-		TUTOR_MODEL: 'test-tutor-model'
+		GENERATION_MODEL: 'test-generation-model',
+		TUTOR_MODEL: 'test-tutor-model',
+		OPENAI_BASE_URL: 'https://api.openai.com/v1'
 	}
 }));
-
-const generateTextMock = vi.fn();
 
 vi.mock('ai', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('ai')>();
 	return {
 		...actual,
-		generateText: (...args: unknown[]) => generateTextMock(...args)
+		generateText: generateTextMock
 	};
 });
 
-const saveQuestionToS3 = vi.fn(async () => 'persisted-question-id');
 vi.mock('$lib/questions/storage.server', () => ({
-	saveQuestionToS3: (...args: unknown[]) => saveQuestionToS3(...args)
+	saveQuestionToS3
 }));
 
-const recordMcqGenerated = vi.fn(async () => {});
 vi.mock('$lib/questions/gen-stats.server', () => ({
-	recordMcqGenerated: (...args: unknown[]) => recordMcqGenerated(...args)
+	recordMcqGenerated
 }));
 
 vi.mock('$lib/server/logger', () => ({
@@ -59,8 +61,10 @@ const validGeneratedQuestion = {
 describe('MCQ live generation pipeline', () => {
 	beforeEach(() => {
 		generateTextMock.mockReset();
-		saveQuestionToS3.mockClear();
-		recordMcqGenerated.mockClear();
+		saveQuestionToS3.mockReset();
+		saveQuestionToS3.mockResolvedValue('persisted-question-id');
+		recordMcqGenerated.mockReset();
+		recordMcqGenerated.mockResolvedValue(undefined);
 	});
 
 	it('runs generateAPQuestion end-to-end: schema-safe AI output → S3 persist → result', async () => {
@@ -88,8 +92,8 @@ describe('MCQ live generation pipeline', () => {
 		expect(result.questionId).toBe('persisted-question-id');
 		expect(result.answer.hint1).toBe(validGeneratedQuestion.hint1);
 		expect(result.answer.hint2).toBe(validGeneratedQuestion.hint2);
-		expect(result.provider).toBe('openai');
-		expect(result.model).toBe('test-basic-model'); // Human Geography → basic
+		expect(result.provider).toBe('ai');
+		expect(result.model).toBe('test-generation-model');
 		expect(result.timing?.generationMs).toBeGreaterThanOrEqual(0);
 		expect(result.timing?.persistenceMs).toBeGreaterThanOrEqual(0);
 	});

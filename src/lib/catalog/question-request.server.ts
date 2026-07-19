@@ -14,7 +14,7 @@ interface ValidatedQuestionRequest {
 	excludeQuestionIds: string[];
 }
 
-export type QuestionRequestResult =
+type QuestionRequestResult =
 	| { ok: true; value: ValidatedQuestionRequest }
 	| { ok: false; response: Response };
 

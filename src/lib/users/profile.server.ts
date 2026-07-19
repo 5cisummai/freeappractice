@@ -26,10 +26,18 @@ export async function findUserProfileOrFail(
 	userId: string,
 	select?: string
 ): Promise<IUserProfile> {
+	await connectDb();
+
+	let query = UserProfile.findOne({ userId });
+	if (select) query = query.select(select);
+	let profile = await query;
+	if (profile) return profile;
+
 	await ensureUserProfile(userId);
-	const query = UserProfile.findOne({ userId });
-	if (select) query.select(select);
-	const profile = await query;
+
+	query = UserProfile.findOne({ userId });
+	if (select) query = query.select(select);
+	profile = await query;
 	if (!profile) {
 		throw json({ error: 'User profile not found' }, { status: 404 });
 	}

@@ -3,15 +3,7 @@ import { createRawSnippet } from 'svelte';
 import { renderSnippet, renderComponent } from '$lib/components/ui/data-table/index.js';
 import AdminDataTableSortButton from '$lib/components/admin/admin-data-table-sort-button.svelte';
 import type { AdminUserRow } from '$lib/admin/types.js';
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#39;');
-}
+import { escapeHtml } from '$lib/escape-html.js';
 
 function formatDate(value: Date | string | null | undefined): string {
 	if (!value) return '-';
