@@ -36,7 +36,9 @@ describe('renderRichTextHtml', () => {
 		expect(js).toContain('href="#"');
 		expect(js).not.toContain('javascript:');
 
-		const data = renderRichTextHtml('[x](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)');
+		const data = renderRichTextHtml(
+			'[x](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)'
+		);
 		expect(data).toContain('href="#"');
 		expect(data).not.toContain('data:');
 	});
@@ -73,8 +75,6 @@ describe('renderRichTextHtml', () => {
 	});
 
 	it('normalizeFences inserts blank lines around fences', () => {
-		expect(normalizeFences('text\n```\ncode\n```\nmore')).toBe(
-			'text\n\n```\ncode\n```\n\nmore'
-		);
+		expect(normalizeFences('text\n```\ncode\n```\nmore')).toBe('text\n\n```\ncode\n```\n\nmore');
 	});
 });

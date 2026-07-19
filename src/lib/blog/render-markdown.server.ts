@@ -17,12 +17,12 @@ function ensureMarkedConfigured(): void {
 				return '';
 			},
 			link({ href, title, text }) {
-			const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
-			const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
-			const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
-			const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
-			const relAttr = rel ? ` rel="${rel}"` : '';
-			return `<a href="${escapeHtml(safeHref)}"${safeTitle}${relAttr}>${text}</a>`;
+				const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
+				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
+				const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
+				const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
+				const relAttr = rel ? ` rel="${rel}"` : '';
+				return `<a href="${escapeHtml(safeHref)}"${safeTitle}${relAttr}>${text}</a>`;
 			},
 			image({ href, title, text }) {
 				if (!href || !isSafeMarkdownUrl(href)) return '';
