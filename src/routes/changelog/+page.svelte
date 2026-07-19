@@ -20,7 +20,7 @@
 				{
 					title: 'Improvements',
 					items: [
-						'Structured AI schemas are validated before model calls so incompatible optional fields fail fast in development and tests',
+						'Structured AI schemas for question generation are checked at module load so incompatible optional fields fail fast in tests and startup',
 						'Added unit and mocked pipeline coverage for MCQ generation schema compatibility and persistence'
 					]
 				}

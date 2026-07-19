@@ -9,6 +9,7 @@ import {
 	ADVANCED_MODEL,
 	LATEX_RULE
 } from '$lib/ai/service.server';
+import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 /**
@@ -171,9 +172,9 @@ export const apQuestionSchema = z.object({
 		)
 });
 
-const APQuestion = apQuestionSchema;
+assertOpenAiCompatibleObjectSchema(apQuestionSchema, { schemaName: 'ap_question' });
 
-type APQuestionData = z.infer<typeof APQuestion>;
+type APQuestionData = z.infer<typeof apQuestionSchema>;
 
 export type { APQuestionData };
 
@@ -356,7 +357,7 @@ OUTPUT:
 				{ role: 'system', content: systemPrompt },
 				{ role: 'user', content: userMessage }
 			],
-			schema: APQuestion,
+			schema: apQuestionSchema,
 			schemaName: 'ap_question',
 			reasoningEffort: model === ADVANCED_MODEL ? 'medium' : undefined
 		},

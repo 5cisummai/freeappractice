@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
 
 vi.mock('$env/static/private', () => ({
 	OPEN_AI_KEY: 'test-key'
@@ -42,7 +41,6 @@ vi.mock('$lib/server/logger', () => ({
 	}
 }));
 
-import { runStructuredCompletion } from '$lib/ai/service.server';
 import { generateAPQuestion } from '$lib/questions/generation.server';
 
 const validGeneratedQuestion = {
@@ -63,28 +61,6 @@ describe('MCQ live generation pipeline', () => {
 		generateTextMock.mockReset();
 		saveQuestionToS3.mockClear();
 		recordMcqGenerated.mockClear();
-	});
-
-	it('rejects OpenAI-incompatible schemas before calling the model (prod hint1 failure)', async () => {
-		const badSchema = z.object({
-			question: z.string(),
-			hint1: z.string().optional()
-		});
-
-		await expect(
-			runStructuredCompletion(
-				'generateAPQuestion',
-				{
-					model: 'test-advanced-model',
-					messages: [{ role: 'user', content: 'x' }],
-					schema: badSchema,
-					schemaName: 'ap_question'
-				},
-				{ className: 'AP Human Geography' }
-			)
-		).rejects.toThrow(/hint1|required|optional/i);
-
-		expect(generateTextMock).not.toHaveBeenCalled();
 	});
 
 	it('runs generateAPQuestion end-to-end: schema-safe AI output → S3 persist → result', async () => {
