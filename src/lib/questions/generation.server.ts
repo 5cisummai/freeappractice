@@ -137,7 +137,8 @@ function buildDiversitySection(
 
 // ── Zod schemas ────────────────────────────────────────────────
 
-const APQuestion = z.object({
+/** Exported for OpenAI structured-output required-field regression tests. */
+export const apQuestionSchema = z.object({
 	question: z
 		.string()
 		.describe(
@@ -151,15 +152,15 @@ const APQuestion = z.object({
 	explanation: z
 		.string()
 		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
+	// Must be required (not .optional): OpenAI structured outputs require every
+	// property key to appear in JSON Schema `required`.
 	hint1: z
 		.string()
-		.optional()
 		.describe(
 			'Brief progressive hint after a first incorrect answer; do not reveal the correct letter'
 		),
 	hint2: z
 		.string()
-		.optional()
 		.describe(
 			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
 		),
@@ -169,6 +170,8 @@ const APQuestion = z.object({
 			'1-2 sentence description of the specific concept, subtopic, or scenario this question tests (used for diversity tracking — be precise and distinct)'
 		)
 });
+
+const APQuestion = apQuestionSchema;
 
 type APQuestionData = z.infer<typeof APQuestion>;
 

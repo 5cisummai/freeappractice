@@ -3,6 +3,7 @@ import { generateText, streamText, Output, NoObjectGeneratedError } from 'ai';
 import type { z } from 'zod';
 import { OPEN_AI_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
+import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
 import { logger } from '$lib/server/logger';
 
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
@@ -97,6 +98,7 @@ export async function runStructuredCompletion<T>(
 ): Promise<{ parsed: T; model: string }> {
 	const doneAiCall = logger.aiCall(callName, opts.model, logContext);
 	const { system, messages } = splitSystemMessages(opts.messages);
+	assertOpenAiCompatibleObjectSchema(opts.schema, { schemaName: opts.schemaName ?? callName });
 	try {
 		const result = await generateText({
 			model: model(opts.model),

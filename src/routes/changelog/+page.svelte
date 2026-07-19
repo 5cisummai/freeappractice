@@ -7,6 +7,25 @@
 
 	const changelog = [
 		{
+			version: '1.4.8',
+			date: 'July 18, 2026',
+			sections: [
+				{
+					title: 'Fixes',
+					items: [
+						'Fixed live question generation failing with a 500 when the OpenAI structured-output schema treated progressive hints as optional'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Structured AI schemas are validated before model calls so incompatible optional fields fail fast in development and tests',
+						'Added unit and mocked pipeline coverage for MCQ generation schema compatibility and persistence'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.7',
 			date: 'July 16, 2026',
 			sections: [
