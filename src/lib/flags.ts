@@ -2,9 +2,9 @@ import { flag } from 'flags/sveltekit';
 import { vercelAdapter } from '@flags-sdk/vercel';
 
 /**
- * Kill-switch / rollout gate for the multi-attempt experiment.
- * Sticky cohort assignment still lives on the user profile (Linear DEV-61).
- * Managed in the Vercel Flags dashboard after the draft is promoted.
+ * Sticky multi-attempt-with-hints practice experiment.
+ * Managed in the Vercel Flags dashboard (`multi-attempt-experiment`).
+ * Default off in all environments until you flip it there — no env var.
  */
 export const multiAttemptExperimentEnabled = flag<boolean>({
 	key: 'multi-attempt-experiment',
@@ -25,7 +25,11 @@ export async function isMultiAttemptExperimentEnabled(): Promise<boolean> {
 	}
 }
 
-/** Authenticated FRQ practice pilot gate — controlled via Vercel Flags. */
+/**
+ * Authenticated FRQ practice pilot.
+ * Managed in the Vercel Flags dashboard (`frq-practice`).
+ * Default off until you flip it there — no env var.
+ */
 export const frqPracticeEnabled = flag<boolean>({
 	key: 'frq-practice',
 	description: 'Enable authenticated written-response practice for pilot courses',

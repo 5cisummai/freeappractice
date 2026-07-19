@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
@@ -214,8 +213,12 @@
 		});
 	}
 
-	onMount(() => {
-		if (requestVersion > 0 && !restoreLatestDraft()) void loadQuestion();
+	let lastLoadedRequestVersion = 0;
+	$effect(() => {
+		const version = requestVersion;
+		if (version === 0 || version === lastLoadedRequestVersion) return;
+		lastLoadedRequestVersion = version;
+		if (!restoreLatestDraft()) void loadQuestion();
 	});
 </script>
 

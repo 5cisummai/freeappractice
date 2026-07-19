@@ -31,6 +31,24 @@ type PracticeExperimentResponse = {
 	experimentVersion: number;
 };
 
+/** One network fetch per tab — remounts must not re-hit the API. */
+let practiceExperimentCache: Promise<PracticeExperimentResponse | null> | null = null;
+
+function loadPracticeExperiment(): Promise<PracticeExperimentResponse | null> {
+	if (!practiceExperimentCache) {
+		practiceExperimentCache = (async () => {
+			try {
+				const response = await apiFetch('/api/me/practice-experiment');
+				if (response.status === 401 || !response.ok) return null;
+				return await readJsonOrNull<PracticeExperimentResponse>(response);
+			} catch {
+				return null;
+			}
+		})();
+	}
+	return practiceExperimentCache;
+}
+
 export type QuestionCardSessionOpts = {
 	getSelectedClass: () => string;
 	getSelectedUnit: () => string;
@@ -119,34 +137,21 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	}
 
 	async function fetchPracticeExperiment(): Promise<void> {
-		try {
-			const response = await apiFetch('/api/me/practice-experiment');
-			if (response.status === 401 || !response.ok) {
-				assignedVariant = 'control';
-				experimentEnabled = false;
-				return;
-			}
-			const payload = await readJsonOrNull<PracticeExperimentResponse>(response);
-			if (!payload) {
-				assignedVariant = 'control';
-				experimentEnabled = false;
-				return;
-			}
-			assignedVariant =
-				payload.assignedVariant === 'multi_attempt_hints' ? 'multi_attempt_hints' : 'control';
-			experimentEnabled = Boolean(payload.experimentEnabled);
-		} catch {
+		const payload = await loadPracticeExperiment();
+		if (!payload) {
 			assignedVariant = 'control';
 			experimentEnabled = false;
+			return;
 		}
+		assignedVariant =
+			payload.assignedVariant === 'multi_attempt_hints' ? 'multi_attempt_hints' : 'control';
+		experimentEnabled = Boolean(payload.experimentEnabled);
 	}
 
 	function applyQuestionExperimentExposure(
 		question: GeneratedQuestion,
 		source: QuestionSource
 	): void {
-		const selectedClass = opts.getSelectedClass();
-		const selectedUnit = opts.getSelectedUnit();
 		const resolved = resolveDisplayedVariant({
 			assigned: assignedVariant,
 			experimentEnabled,
@@ -155,6 +160,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		displayedVariant = resolved.displayed;
 		multiAttemptState = createMultiAttemptState();
 
+		if (!experimentEnabled) return;
+
 		capturePostHogEvent('practice_experiment_exposed', {
 			assigned_variant: assignedVariant,
 			displayed_variant: resolved.displayed,
@@ -162,8 +169,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 			experiment_version: MULTI_ATTEMPT_EXPERIMENT_VERSION,
 			question_source: source,
 			fallback_reason: resolved.fallbackReason,
-			ap_class: selectedClass,
-			unit: selectedUnit,
+			ap_class: opts.getSelectedClass(),
+			unit: opts.getSelectedUnit(),
 			topic: question.topic
 		});
 	}
@@ -466,13 +473,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		questionCount = 0;
 		resetInteractionState(true);
 		statusMessage = 'Choose the best answer and then check your response.';
-
 		await fetchPracticeExperiment();
-		if (opts.getRequestVersion() > 0) {
-			await loadQuestion();
-		} else if (currentQuestion) {
-			isLoading = false;
-		}
 	}
 
 	return {

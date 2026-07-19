@@ -185,6 +185,15 @@
 			window.removeEventListener('keydown', onKeydown);
 		};
 	});
+
+	// Generate increments requestVersion without remounting — load here instead of via {#key}.
+	let lastLoadedRequestVersion = 0;
+	$effect(() => {
+		const version = requestVersion;
+		if (!mounted || version === 0 || version === lastLoadedRequestVersion) return;
+		lastLoadedRequestVersion = version;
+		void session.loadQuestion();
+	});
 </script>
 
 {#if !mounted || session.isLoading}

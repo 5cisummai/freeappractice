@@ -85,7 +85,7 @@
 </div>
 
 <div class="mx-auto min-h-40 max-w-6xl">
-	{#key `${mode}:${selectedClass}:${selectedUnit}:${requestVersion}`}
+	{#key `${mode}:${selectedClass}:${selectedUnit}`}
 		{#if mode === 'frq' && allowFrq}
 			<FrqCard {selectedClass} {selectedUnit} {unitRange} {requestVersion} onGraded={onFrqGraded} />
 		{:else}
