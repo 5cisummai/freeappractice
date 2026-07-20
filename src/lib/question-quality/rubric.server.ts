@@ -33,24 +33,12 @@ function courseGuidance(apClass?: string): string {
 	if (normalized.includes('lunch')) {
 		return 'This is the intentional parody course AP Lunch. Judge internal logic, clarity, answerability, distractor quality, and consistency with the playful course premise rather than real College Board curriculum.';
 	}
-	if (
-		normalized.includes('physical education') ||
-		normalized === 'ap pe' ||
-		normalized.includes('ap p.e')
-	) {
-		return 'This is the intentional parody course AP Physical Education. Judge internal logic, clarity, answerability, distractor quality, and consistency with the playful course premise rather than real College Board curriculum.';
-	}
 	return `Judge alignment with the real ${apClass || 'AP'} course framework and the stated unit. Do not forgive factual errors merely because the question resembles an AP item.`;
 }
 
 export function requiresWebSearchForQuestion(question: Record<string, unknown>): boolean {
 	const apClass = typeof question.apClass === 'string' ? question.apClass.toLowerCase() : '';
-	return !(
-		apClass.includes('lunch') ||
-		apClass.includes('physical education') ||
-		apClass === 'ap pe' ||
-		apClass.includes('ap p.e')
-	);
+	return !apClass.includes('lunch');
 }
 
 export function hasOfficialApSource(sourceUrls: string[]): boolean {

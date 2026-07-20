@@ -201,28 +201,36 @@
 					"unit_title": "Contextual Applications of Differentiation",
 					"exam_weighting_mc": "6%–9%",
 					"description": "Applied derivative problems, optimization, and modeling in varied contexts.",
-					"topics_may_include": ["Related rates, optimization, modeling with derivatives"]
+					"topics_may_include": [
+						"Related rates, optimization, modeling with derivatives"
+					]
 				},
 				{
 					"unit_number": 5,
 					"unit_title": "Analytical Applications of Differentiation",
 					"exam_weighting_mc": "8%–11%",
 					"description": "Function analysis, curve sketching, and theorems about derivatives.",
-					"topics_may_include": ["Extrema, Mean Value Theorem, concavity and inflection points"]
+					"topics_may_include": [
+						"Extrema, Mean Value Theorem, concavity and inflection points"
+					]
 				},
 				{
 					"unit_number": 6,
 					"unit_title": "Integration and Accumulation of Change",
 					"exam_weighting_mc": "17%–20%",
 					"description": "Definite/indefinite integrals, Fundamental Theorem of Calculus, and integration techniques.",
-					"topics_may_include": ["Riemann sums, FTC, u-substitution, applications to accumulation"]
+					"topics_may_include": [
+						"Riemann sums, FTC, u-substitution, applications to accumulation"
+					]
 				},
 				{
 					"unit_number": 7,
 					"unit_title": "Differential Equations",
 					"exam_weighting_mc": "6%–9%",
 					"description": "Separable and other first-order differential equations and applications including logistic growth; slope fields.",
-					"topics_may_include": ["Separable ODEs, exponential/logistic growth, slope fields"]
+					"topics_may_include": [
+						"Separable ODEs, exponential/logistic growth, slope fields"
+					]
 				},
 				{
 					"unit_number": 8,
@@ -1531,7 +1539,14 @@
 						"Analyzing tone, word choice, and arrangement to influence audience",
 						"Comparing appeal strategies across genres and time periods"
 					],
-					"keywords": ["Ethos", "Pathos", "Logos", "Appeals", "Diction", "Tone"]
+					"keywords": [
+						"Ethos",
+						"Pathos",
+						"Logos",
+						"Appeals",
+						"Diction",
+						"Tone"
+					]
 				},
 				{
 					"unit_number": 3,
@@ -1578,7 +1593,14 @@
 						"Revising prose for precision, concision, and persuasive force",
 						"Using figurative and rhetorical devices strategically in argument"
 					],
-					"keywords": ["Style", "Syntax", "Diction", "Imagery", "Parallelism", "Sentence variety"]
+					"keywords": [
+						"Style",
+						"Syntax",
+						"Diction",
+						"Imagery",
+						"Parallelism",
+						"Sentence variety"
+					]
 				},
 				{
 					"unit_number": 6,
@@ -1690,7 +1712,14 @@
 						"Interpreting figurative language and sound devices in context",
 						"Comparing poetic forms and their rhetorical/literary effects"
 					],
-					"keywords": ["Imagery", "Figurative language", "Tone", "Poetic form", "Meter", "Syntax"]
+					"keywords": [
+						"Imagery",
+						"Figurative language",
+						"Tone",
+						"Poetic form",
+						"Meter",
+						"Syntax"
+					]
 				},
 				{
 					"unit_number": 3,
@@ -2310,7 +2339,14 @@
 						"Rise and operation of authoritarian states",
 						"Social and moral consequences of total war and genocide"
 					],
-					"keywords": ["World wars", "Fascism", "Communism", "Total war", "Resistance", "Holocaust"]
+					"keywords": [
+						"World wars",
+						"Fascism",
+						"Communism",
+						"Total war",
+						"Resistance",
+						"Holocaust"
+					]
 				},
 				{
 					"unit_number": 9,
@@ -3131,166 +3167,6 @@
 						"La salud",
 						"La pobreza",
 						"El bienestar social"
-					]
-				}
-			]
-		},
-		{
-			"course_code": "APPE",
-			"course_name": "AP PE😂",
-			"overview": "A totally real course covering fitness, exercise science, movement, wellness, and the delicate politics of choosing teams.",
-			"important_notes": "Keep questions grounded in physical education, but maintain a deadpan academic tone. Cover training principles, movement, health behaviors, injury prevention, and safe program design alongside the realities of dodgeball, locker-room snacks, and pretending not to be tired.",
-			"units": [
-				{
-					"unit_number": 1,
-					"unit_title": "The Art of Standing Near the Equipment",
-					"description": "The components of health-related fitness and the principles used to evaluate physical readiness.",
-					"topics_may_include": [
-						"Cardiorespiratory endurance, muscular strength, muscular endurance, flexibility, and body composition",
-						"Health-related versus skill-related fitness",
-						"Specificity, overload, progression, and reversibility",
-						"Fitness goals and baseline assessment"
-					],
-					"keywords": [
-						"Health-related fitness",
-						"Skill-related fitness",
-						"Specificity",
-						"Overload",
-						"Progression",
-						"Reversibility"
-					]
-				},
-				{
-					"unit_number": 2,
-					"unit_title": "Cardio Without Making It a Whole Thing",
-					"description": "How the body responds and adapts to physical activity across different intensities and durations.",
-					"topics_may_include": [
-						"Cardiovascular and respiratory responses to exercise",
-						"Energy systems and exercise intensity",
-						"Acute responses versus long-term adaptations",
-						"Recovery, fatigue, hydration, and thermoregulation"
-					],
-					"keywords": [
-						"Heart rate",
-						"VO2 max",
-						"Energy systems",
-						"Training adaptations",
-						"Fatigue",
-						"Thermoregulation"
-					]
-				},
-				{
-					"unit_number": 3,
-					"unit_title": "Anatomy of a Student Avoiding the Ball",
-					"description": "The major systems and movement patterns that allow the body to perform physical activity.",
-					"topics_may_include": [
-						"Skeletal, muscular, cardiovascular, and respiratory systems",
-						"Planes of movement and anatomical positions",
-						"Joint actions and major muscle groups",
-						"Agonists, antagonists, and synergistic muscle actions"
-					],
-					"keywords": [
-						"Musculoskeletal system",
-						"Planes of motion",
-						"Joint actions",
-						"Agonist",
-						"Antagonist",
-						"Synergist"
-					]
-				},
-				{
-					"unit_number": 4,
-					"unit_title": "Hydration, Snacks, and the Locker-Room Economy",
-					"description": "The relationships among nutrition, physical activity, mental health, and overall well-being.",
-					"topics_may_include": [
-						"Macronutrients, micronutrients, and energy balance",
-						"Sleep, stress management, and mental health",
-						"Health behaviors and chronic disease risk",
-						"Hydration and fueling before, during, and after activity"
-					],
-					"keywords": [
-						"Macronutrients",
-						"Micronutrients",
-						"Energy balance",
-						"Sleep",
-						"Stress management",
-						"Chronic disease"
-					]
-				},
-				{
-					"unit_number": 5,
-					"unit_title": "Training Plans for People Who Start Monday",
-					"description": "How to design safe, progressive training plans that match a person's goals, experience, and constraints.",
-					"topics_may_include": [
-						"FITT principle: frequency, intensity, time, and type",
-						"Training zones and workload management",
-						"Periodization and progression",
-						"Individualization, recovery, and realistic goal setting"
-					],
-					"keywords": [
-						"FITT principle",
-						"Training zones",
-						"Periodization",
-						"Workload",
-						"Individualization",
-						"Recovery"
-					]
-				},
-				{
-					"unit_number": 6,
-					"unit_title": "Motor Skills, Confidence, and Strategic Celebration",
-					"description": "How people learn, refine, and perform physical skills under practice and competition conditions.",
-					"topics_may_include": [
-						"Cognitive, associative, and autonomous stages of learning",
-						"Feedback, transfer, and practice variability",
-						"Motivation, confidence, arousal, and anxiety",
-						"Goal setting, attention, and team dynamics"
-					],
-					"keywords": [
-						"Motor learning",
-						"Feedback",
-						"Transfer",
-						"Motivation",
-						"Arousal",
-						"Goal setting"
-					]
-				},
-				{
-					"unit_number": 7,
-					"unit_title": "Biomechanics of Not Getting Picked Last",
-					"description": "How forces, leverage, technique, and environment affect movement efficiency and injury risk.",
-					"topics_may_include": [
-						"Force, torque, balance, and center of mass",
-						"Levers and mechanical advantage in human movement",
-						"Movement screening and technique analysis",
-						"Warm-up, protective equipment, and safe return to activity"
-					],
-					"keywords": [
-						"Biomechanics",
-						"Force",
-						"Torque",
-						"Center of mass",
-						"Levers",
-						"Injury prevention"
-					]
-				},
-				{
-					"unit_number": 8,
-					"unit_title": "Fitness Testing and Lifelong Activity (Until Further Notice)",
-					"description": "How to interpret fitness assessments and build sustainable physical activity habits across the lifespan.",
-					"topics_may_include": [
-						"Validity, reliability, and limitations of fitness tests",
-						"Interpreting data and tracking progress",
-						"Accessibility, inclusion, and adaptations",
-						"Barriers, behavior change, and lifelong activity planning"
-					],
-					"keywords": [
-						"Validity",
-						"Reliability",
-						"Fitness testing",
-						"Data interpretation",
-						"Inclusion",
-						"Behavior change"
 					]
 				}
 			]

@@ -181,6 +181,7 @@
 		void session.init();
 
 		return () => {
+			session.destroy();
 			window.removeEventListener('resize', onResize);
 			window.removeEventListener('keydown', onKeydown);
 		};
@@ -196,7 +197,35 @@
 	});
 </script>
 
-{#if !mounted || session.isLoading}
+{#if !mounted}
+	<QuestionCardSkeleton
+		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
+		class={className}
+	/>
+{:else if session.showWarmingState}
+	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
+		<Card.Content
+			class="relative flex min-h-40 flex-col items-center justify-center gap-3 px-6 pb-12 text-center"
+		>
+			<p class="text-lg font-medium text-muted-foreground sm:text-xl">
+				Practice is warming up
+			</p>
+			<p class="max-w-sm text-sm text-muted-foreground/80">
+				{session.statusMessage ||
+					'This course unit is still being prepared. Your class and unit selection are unchanged — retry in a moment.'}
+			</p>
+			<p class="text-xs text-muted-foreground/70">
+				Typical wait about {session.poolWarmingRetryAfterSeconds}s
+			</p>
+			<Button
+				onclick={() => void session.retryWarmingLoad()}
+				disabled={session.isLoading}
+			>
+				{session.isLoading ? 'Checking…' : 'Retry now'}
+			</Button>
+		</Card.Content>
+	</Card.Root>
+{:else if session.isLoading}
 	<QuestionCardSkeleton
 		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
 		class={className}

@@ -1,23 +1,43 @@
 import { auth } from '$lib/auth/server';
 import { connectDb } from '$lib/server/db';
+import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/questions/pool-constants';
 import { UserProfile } from '$lib/users/model.server';
 import { Question } from '$lib/questions/cache-model.server';
-import { CacheMissLock } from '$lib/questions/cache-lock.server';
 import { QuestionRecentTopic } from '$lib/questions/recent-topic-model.server';
-import { getGenerationStatsForApi } from '$lib/questions/gen-stats.server';
+import { FrqQuestionModel } from '$lib/frq/model.server';
+import {
+	listCatalogBuckets,
+	requestPoolRefill,
+	enqueueAllCatalogDeficits,
+	type PoolBucketKey
+} from '$lib/questions/pool-refill-queue.server';
+import {
+	PoolRefillState,
+	type PoolRefillQuestionType,
+	type PoolRefillStatus
+} from '$lib/questions/pool-refill-model.server';
+import {
+	getGenerationStatsForApi,
+	getMcqGenerationCountsByClass
+} from '$lib/questions/gen-stats.server';
 import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
 import type {
 	AdminTab,
 	AdminUserRow,
 	CacheBucketSummary,
-	CacheLockSnapshot,
 	CacheOverview,
 	GenerationClassSummary,
 	GenerationOverview,
 	GenerationUnitSummary,
+	PoolQuestionType,
+	PoolRefillStatusUi,
 	RecentTopicSnapshot
 } from '$lib/admin/types.js';
+
+/** Rough per-generation USD estimates for admin cost previews (not billing). */
+const EST_MCQ_GENERATION_USD = 0.015;
+const EST_FRQ_GENERATION_USD = 0.04;
 
 interface AdminDashboardData {
 	activeTab: AdminTab;
@@ -30,7 +50,6 @@ interface AdminDashboardData {
 	errorMessage: string | null;
 	cacheOverview: CacheOverview;
 	cacheBuckets: CacheBucketSummary[];
-	cacheLocks: CacheLockSnapshot[];
 	recentTopics: RecentTopicSnapshot[];
 	generationOverview: GenerationOverview;
 	generationByClass: GenerationClassSummary[];
@@ -38,9 +57,12 @@ interface AdminDashboardData {
 	quality: QualityDashboardSnapshot;
 }
 
-function getPoolTargetSize(): number {
-	return Math.max(1, parseInt(process.env.CACHE_POOL_SIZE ?? '', 10) || 5);
-}
+type BucketAggRow = {
+	_id: { apClass: string; unit: string };
+	total: number;
+	oldestCreatedAt?: Date;
+	newestCreatedAt?: Date;
+};
 
 function normalizeAdminTab(value: string | null): AdminTab {
 	return value === 'users' || value === 'cache' || value === 'generation' || value === 'quality'
@@ -48,27 +70,33 @@ function normalizeAdminTab(value: string | null): AdminTab {
 		: 'overview';
 }
 
-function parseLock(key: string, expiresAt: Date | string): CacheLockSnapshot {
-	const parts = key.split('::');
+function estimateGenerationCostUsd(questionType: PoolQuestionType, deficit: number): number {
+	const unitCost = questionType === 'mcq' ? EST_MCQ_GENERATION_USD : EST_FRQ_GENERATION_USD;
+	return Math.round(Math.max(0, deficit) * unitCost * 1000) / 1000;
+}
 
-	if (parts[0] === 'miss' && parts[1] === 'mcq') {
-		return {
-			key,
-			type: 'miss',
-			apClass: parts[2] ?? 'Unknown',
-			unit: parts[3] ?? 'Unknown',
-			expiresAt
-		};
+function toRefillStatusUi(status: PoolRefillStatus | undefined | null): PoolRefillStatusUi {
+	switch (status) {
+		case 'pending':
+		case 'running':
+		case 'idle':
+		case 'failed':
+		case 'budget_exhausted':
+			return status;
+		case undefined:
+		case null:
+			return 'unknown';
+		default: {
+			const _exhaustive: never = status;
+			return _exhaustive;
+		}
 	}
+}
 
-	// Stale keys (e.g. legacy replenish::*) show as other — replenish workers are gone.
-	return {
-		key,
-		type: 'other',
-		apClass: parts[0] === 'replenish' ? (parts[2] ?? 'Unknown') : 'Unknown',
-		unit: parts[0] === 'replenish' ? (parts[3] ?? 'Unknown') : 'Unknown',
-		expiresAt
-	};
+function healthForCount(activeCount: number, target: number): CacheBucketSummary['health'] {
+	if (activeCount <= 0) return 'empty';
+	if (activeCount < target) return 'low';
+	return 'healthy';
 }
 
 function summarizeGenerationData(stats: Awaited<ReturnType<typeof getGenerationStatsForApi>>): {
@@ -104,6 +132,218 @@ function summarizeGenerationData(stats: Awaited<ReturnType<typeof getGenerationS
 	};
 }
 
+async function aggregateActiveBuckets(
+	questionType: PoolRefillQuestionType
+): Promise<Map<string, BucketAggRow>> {
+	const model = questionType === 'mcq' ? Question : FrqQuestionModel;
+	const rows = (await model
+		.aggregate([
+			{ $match: { active: { $ne: false } } },
+			{
+				$group: {
+					_id: { apClass: '$apClass', unit: '$unit' },
+					total: { $sum: 1 },
+					oldestCreatedAt: { $min: '$createdAt' },
+					newestCreatedAt: { $max: '$createdAt' }
+				}
+			}
+		])
+		.exec()) as BucketAggRow[];
+
+	const map = new Map<string, BucketAggRow>();
+	for (const row of rows) {
+		map.set(`${row._id.apClass}::${row._id.unit}`, row);
+	}
+	return map;
+}
+
+function buildPoolBuckets(opts: {
+	questionType: PoolQuestionType;
+	targetFor: (bucket: PoolBucketKey) => number;
+	catalog: PoolBucketKey[];
+	activeByKey: Map<string, BucketAggRow>;
+	refillByKey: Map<
+		string,
+		{
+			status: PoolRefillStatus;
+			lastSuccessAt?: Date | null;
+			lastError?: string | null;
+			observedCount?: number;
+		}
+	>;
+}): CacheBucketSummary[] {
+	return opts.catalog.map((bucket) => {
+		const key = `${bucket.apClass}::${bucket.unit}`;
+		const active = opts.activeByKey.get(key);
+		const refill = opts.refillByKey.get(key);
+		const activeCount = active?.total ?? refill?.observedCount ?? 0;
+		const target = opts.targetFor(bucket);
+		const deficit = Math.max(0, target - activeCount);
+		const fillRatio = target ? Math.min(100, Math.round((activeCount / target) * 100)) : 100;
+
+		return {
+			questionType: opts.questionType,
+			apClass: bucket.apClass,
+			unit: bucket.unit,
+			total: activeCount,
+			activeCount,
+			target,
+			deficit,
+			oldestCreatedAt: active?.oldestCreatedAt ?? null,
+			newestCreatedAt: active?.newestCreatedAt ?? null,
+			fillRatio,
+			health: healthForCount(activeCount, target),
+			refillStatus: toRefillStatusUi(refill?.status),
+			lastSuccessAt: refill?.lastSuccessAt ?? null,
+			lastError: refill?.lastError ?? null,
+			estimatedRemainingCostUsd: estimateGenerationCostUsd(opts.questionType, deficit)
+		};
+	});
+}
+
+function summarizePoolOverview(buckets: CacheBucketSummary[], mcqTarget: number, frqTarget: number): CacheOverview {
+	const totalActive = buckets.reduce((sum, bucket) => sum + bucket.activeCount, 0);
+	const totalTarget = buckets.reduce((sum, bucket) => sum + bucket.target, 0);
+	const totalDeficit = buckets.reduce((sum, bucket) => sum + bucket.deficit, 0);
+	const filledTowardTarget = buckets.reduce(
+		(sum, bucket) => sum + Math.min(bucket.activeCount, bucket.target),
+		0
+	);
+	const readinessPercent = totalTarget
+		? Math.min(100, Math.round((filledTowardTarget / totalTarget) * 100))
+		: 100;
+
+	return {
+		mcqTarget,
+		frqTarget,
+		targetPoolSize: mcqTarget,
+		totalQuestions: totalActive,
+		totalTarget,
+		totalDeficit,
+		readinessPercent,
+		estimatedRemainingCostUsd:
+			Math.round(
+				buckets.reduce((sum, bucket) => sum + bucket.estimatedRemainingCostUsd, 0) * 1000
+			) / 1000,
+		totalBuckets: buckets.length,
+		healthyBuckets: buckets.filter((bucket) => bucket.health === 'healthy').length,
+		underTargetBuckets: buckets.filter((bucket) => bucket.deficit > 0).length,
+		emptyBuckets: buckets.filter((bucket) => bucket.health === 'empty').length,
+		pendingRefills: buckets.filter((bucket) => bucket.refillStatus === 'pending').length,
+		runningRefills: buckets.filter((bucket) => bucket.refillStatus === 'running').length,
+		failedRefills: buckets.filter(
+			(bucket) =>
+				bucket.refillStatus === 'failed' || bucket.refillStatus === 'budget_exhausted'
+		).length
+	};
+}
+
+export async function getPoolReadinessSnapshot(): Promise<{
+	overview: CacheOverview;
+	buckets: CacheBucketSummary[];
+}> {
+	await connectDb();
+	const env = QUESTION_POOL_CONFIG;
+	const generationCountsByClass = await getMcqGenerationCountsByClass();
+	const mcqTarget = env.mcqTarget;
+	const frqTarget = env.frqTarget;
+
+	const [mcqActive, frqActive, refillStates] = await Promise.all([
+		aggregateActiveBuckets('mcq'),
+		aggregateActiveBuckets('frq'),
+		PoolRefillState.find({}).lean().exec()
+	]);
+
+	const refillByType = {
+		mcq: new Map<
+			string,
+			{
+				status: PoolRefillStatus;
+				lastSuccessAt?: Date | null;
+				lastError?: string | null;
+				observedCount?: number;
+			}
+		>(),
+		frq: new Map<
+			string,
+			{
+				status: PoolRefillStatus;
+				lastSuccessAt?: Date | null;
+				lastError?: string | null;
+				observedCount?: number;
+			}
+		>()
+	};
+
+	for (const state of refillStates) {
+		const map = refillByType[state.questionType];
+		map.set(`${state.apClass}::${state.unit}`, {
+			status: state.status,
+			lastSuccessAt: state.lastSuccessAt ?? null,
+			lastError: state.lastError ?? null,
+			observedCount: state.observedCount
+		});
+	}
+
+	const buckets = [
+		...buildPoolBuckets({
+			questionType: 'mcq',
+			targetFor: (bucket) =>
+				poolTargetForBucket({
+					questionType: 'mcq',
+					apClass: bucket.apClass,
+					generationCountsByClass,
+					config: env
+				}),
+			catalog: listCatalogBuckets('mcq'),
+			activeByKey: mcqActive,
+			refillByKey: refillByType.mcq
+		}),
+		...buildPoolBuckets({
+			questionType: 'frq',
+			targetFor: (bucket) =>
+				poolTargetForBucket({
+					questionType: 'frq',
+					apClass: bucket.apClass,
+					config: env
+				}),
+			catalog: listCatalogBuckets('frq'),
+			activeByKey: frqActive,
+			refillByKey: refillByType.frq
+		})
+	].sort((a, b) => {
+		const healthRank: Record<CacheBucketSummary['health'], number> = {
+			empty: 0,
+			low: 1,
+			healthy: 2
+		};
+		if (healthRank[a.health] !== healthRank[b.health]) {
+			return healthRank[a.health] - healthRank[b.health];
+		}
+		if (b.deficit !== a.deficit) return b.deficit - a.deficit;
+		if (a.questionType !== b.questionType) return a.questionType.localeCompare(b.questionType);
+		if (a.apClass !== b.apClass) return a.apClass.localeCompare(b.apClass);
+		return a.unit.localeCompare(b.unit);
+	});
+
+	return {
+		overview: summarizePoolOverview(buckets, mcqTarget, frqTarget),
+		buckets
+	};
+}
+
+/** Enqueue one bucket for async refill. Never runs LLM generation. */
+export async function enqueuePoolBucketRefill(bucket: PoolBucketKey): Promise<{ enqueued: true }> {
+	await requestPoolRefill(bucket);
+	return { enqueued: true };
+}
+
+/** Enqueue every catalog deficit for async refill. Never runs LLM generation. */
+export async function enqueueAllPoolDeficits(): Promise<{ enqueued: number }> {
+	const enqueued = await enqueueAllCatalogDeficits();
+	return { enqueued };
+}
+
 export async function getAdminDashboardData(opts: {
 	headers: Headers;
 	search: string;
@@ -113,18 +353,13 @@ export async function getAdminDashboardData(opts: {
 }): Promise<AdminDashboardData> {
 	await connectDb();
 
-	const targetPoolSize = getPoolTargetSize();
 	const activeTab = normalizeAdminTab(opts.tab);
 	const offset = (opts.page - 1) * opts.limit;
-	const now = new Date();
 
 	const [
 		usersResult,
 		userProfilesResult,
-		cacheBucketsResult,
-		cacheLocksResult,
-		activeLockCountResult,
-		activeMissLockCountResult,
+		poolSnapshotResult,
 		recentTopicsResult,
 		generationStatsResult
 	] = await Promise.allSettled([
@@ -145,24 +380,7 @@ export async function getAdminDashboardData(opts: {
 			}
 		}),
 		UserProfile.countDocuments({}).exec(),
-		Question.aggregate([
-			{
-				$group: {
-					_id: { apClass: '$apClass', unit: '$unit' },
-					total: { $sum: 1 },
-					oldestCreatedAt: { $min: '$createdAt' },
-					newestCreatedAt: { $max: '$createdAt' }
-				}
-			},
-			{ $sort: { total: -1, '_id.apClass': 1, '_id.unit': 1 } }
-		]).exec(),
-		CacheMissLock.find({ expiresAt: { $gt: now } })
-			.sort({ expiresAt: 1 })
-			.limit(12)
-			.lean()
-			.exec(),
-		CacheMissLock.countDocuments({ expiresAt: { $gt: now } }).exec(),
-		CacheMissLock.countDocuments({ expiresAt: { $gt: now }, key: /^miss::/ }).exec(),
+		getPoolReadinessSnapshot(),
 		QuestionRecentTopic.find({}).sort({ createdAt: -1 }).limit(10).lean().exec(),
 		getGenerationStatsForApi()
 	]);
@@ -174,66 +392,13 @@ export async function getAdminDashboardData(opts: {
 	const totalUserProfiles =
 		userProfilesResult.status === 'fulfilled' ? userProfilesResult.value : 0;
 
-	const cacheBucketsRaw =
-		cacheBucketsResult.status === 'fulfilled'
-			? (cacheBucketsResult.value as Array<{
-					_id: { apClass: string; unit: string };
-					total: number;
-					oldestCreatedAt?: Date;
-					newestCreatedAt?: Date;
-				}>)
-			: [];
-
-	const cacheBuckets: CacheBucketSummary[] = cacheBucketsRaw
-		.map((bucket) => {
-			const fillRatio = Math.min(100, Math.round((bucket.total / targetPoolSize) * 100));
-			const health: CacheBucketSummary['health'] =
-				bucket.total === 0 ? 'empty' : bucket.total < targetPoolSize ? 'low' : 'healthy';
-
-			return {
-				apClass: bucket._id.apClass,
-				unit: bucket._id.unit,
-				total: bucket.total,
-				oldestCreatedAt: bucket.oldestCreatedAt,
-				newestCreatedAt: bucket.newestCreatedAt,
-				fillRatio,
-				health
-			};
-		})
-		.sort((a, b) => {
-			const healthRank: Record<CacheBucketSummary['health'], number> = {
-				empty: 0,
-				low: 1,
-				healthy: 2
-			};
-			if (healthRank[a.health] !== healthRank[b.health]) {
-				return healthRank[a.health] - healthRank[b.health];
-			}
-			return b.total - a.total;
-		});
-
-	const cacheLocks =
-		cacheLocksResult.status === 'fulfilled'
-			? cacheLocksResult.value.map((lock) => parseLock(lock.key, lock.expiresAt))
-			: [];
-
-	const activeLockCount =
-		activeLockCountResult.status === 'fulfilled' ? activeLockCountResult.value : cacheLocks.length;
-	const activeMissLocks =
-		activeMissLockCountResult.status === 'fulfilled'
-			? activeMissLockCountResult.value
-			: cacheLocks.filter((lock) => lock.type === 'miss').length;
-
-	const cacheOverview: CacheOverview = {
-		targetPoolSize,
-		totalQuestions: cacheBuckets.reduce((sum, bucket) => sum + bucket.total, 0),
-		totalBuckets: cacheBuckets.length,
-		healthyBuckets: cacheBuckets.filter((bucket) => bucket.health === 'healthy').length,
-		underTargetBuckets: cacheBuckets.filter((bucket) => bucket.total < targetPoolSize).length,
-		emptyBuckets: cacheBuckets.filter((bucket) => bucket.total === 0).length,
-		activeLocks: activeLockCount,
-		activeMissLocks
-	};
+	const poolSnapshot =
+		poolSnapshotResult.status === 'fulfilled'
+			? poolSnapshotResult.value
+			: {
+					overview: summarizePoolOverview([], QUESTION_POOL_CONFIG.mcqTarget, QUESTION_POOL_CONFIG.frqTarget),
+					buckets: [] as CacheBucketSummary[]
+				};
 
 	const recentTopics: RecentTopicSnapshot[] =
 		recentTopicsResult.status === 'fulfilled'
@@ -279,9 +444,8 @@ export async function getAdminDashboardData(opts: {
 		offset,
 		search: opts.search,
 		errorMessage: userError,
-		cacheOverview,
-		cacheBuckets,
-		cacheLocks,
+		cacheOverview: poolSnapshot.overview,
+		cacheBuckets: poolSnapshot.buckets,
 		recentTopics,
 		generationOverview: generationPayload.overview,
 		generationByClass: generationPayload.byClass,

@@ -171,6 +171,17 @@ type APQuestionData = z.infer<typeof APQuestion>;
 /** Exported for OpenAI schema compatibility tests. */
 export const apQuestionSchema = APQuestion;
 
+/** JSON Schema for OpenAI Batch `/v1/responses` structured output. */
+export function apQuestionJsonSchema(): Record<string, unknown> {
+	const schema = z.toJSONSchema(APQuestion) as Record<string, unknown>;
+	delete schema.$schema;
+	return {
+		...schema,
+		type: 'object',
+		additionalProperties: false
+	};
+}
+
 export type { APQuestionData };
 
 export interface GenerateTiming {
@@ -219,17 +230,14 @@ function isAPLunch(className: string): boolean {
 	return (className ?? '').toLowerCase().includes('ap lunch');
 }
 
-function isAPPE(className: string): boolean {
-	return (className ?? '').toLowerCase() === 'ap pe😂';
-}
-
 // ── MCQ generation ─────────────────────────────────────────────
 
-async function generateAPQuestionBody(opts: {
+/** Build system/user prompts for one MCQ (shared by sync + Batch API paths). */
+export function buildMcqGenerationPrompt(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
-}): Promise<{ parsed: APQuestionData; model: string }> {
+}): { system: string; user: string } {
 	const { className, unit, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
 
@@ -251,18 +259,12 @@ async function generateAPQuestionBody(opts: {
 		: '';
 
 	const lunchMode = isAPLunch(className);
-	const peMode = isAPPE(className);
 
 	const scopeBlock = lunchMode
 		? `TOPIC SCOPE:
 - Keep the humor centered on high school lunch culture: cafeteria lines, mystery meat, snack trades, saving tables, vending machines, brown-bag shame, lunch ladies, milk cartons, and related chaos.
 - The joke should land even if the student has never taken a real AP exam.`
-		: peMode
-			? `TOPIC SCOPE:
-- Keep the humor centered on high school physical education: warm-ups, cones, dodgeball, team selection, water breaks, locker-room snacks, awkward celebrations, and trying not to be goalie.
-- Use the selected unit's real fitness or movement concepts as the academic explanation for the ridiculous situation.
-- The joke should land even if the student has never taken a real AP exam.`
-			: `CRITICAL UNIT SCOPE REQUIREMENT:
+		: `CRITICAL UNIT SCOPE REQUIREMENT:
 - Your question MUST stay strictly within the unit's specified keywords and topics listed above
 - DO NOT incorporate concepts from other units, even if they seem related`;
 
@@ -287,29 +289,7 @@ EXPLANATION:
 
 OUTPUT:
 - Return ONLY the JSON object matching the schema; no text before or after the JSON`
-		: peMode
-			? `You are the world's foremost scholar of AP PE — a totally real Advanced Placement course about physical education, teamwork, and surviving the mile. Write hilarious multiple-choice questions that sound like over-serious AP prompts but are actually about school PE.${unitContext}${diversitySection}
-
-${scopeBlock}
-
-QUESTION QUALITY:
-- Be genuinely funny; use a dry academic tone for ordinary PE chaos
-- Keep the physical education concepts accurate enough to support the joke
-- Make all four options plausible in the situation, with one answer that is funniest and most defensible
-- Reference the selected unit when one is provided
-- Keep it school-appropriate and avoid cruelty or mean-spirited jokes about real students
-- Options should be roughly equal in length
-
-FORMATTING:
-- For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render. (only if a formula genuinely improves the joke)
-
-EXPLANATION:
-- Stay in character as an AP PE grader explaining the "correct" answer with deadpan seriousness
-- Use a newline before each option letter (A, B, C, D) when discussing them
-
-OUTPUT:
-- Return ONLY the JSON object matching the schema; no text before or after the JSON`
-			: `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
+		: `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
 
 ${scopeBlock}
 
@@ -337,20 +317,37 @@ OUTPUT:
 
 	const userMessage = lunchMode
 		? `Create a hilarious AP Lunch multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
-		: peMode
-			? `Create a hilarious AP PE multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
-			: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+		: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+
+	return { system: systemPrompt, user: userMessage };
+}
+
+async function generateAPQuestionBody(opts: {
+	className: string;
+	unit?: string;
+	recentTopics?: string[];
+}): Promise<{ parsed: APQuestionData; model: string }> {
+	const { system, user } = buildMcqGenerationPrompt(opts);
 
 	return structuredObject({
 		callName: 'generateAPQuestion',
 		model: GENERATION_MODEL,
-		system: systemPrompt,
-		user: userMessage,
+		system,
+		user,
 		schema: APQuestion,
 		schemaName: 'ap_question',
 		reasoningEffort: 'medium',
-		logContext: { className, unit }
+		logContext: { className: opts.className, unit: opts.unit }
 	});
+}
+
+/** Persist an already-parsed MCQ to S3 (canonical archive). */
+export async function persistParsedMcqToS3(
+	parsed: APQuestionData,
+	className: string,
+	unit: string | undefined
+): Promise<string> {
+	return persistMcqQuestionToS3(parsed, className, unit);
 }
 
 export async function generateAPQuestion(opts: {

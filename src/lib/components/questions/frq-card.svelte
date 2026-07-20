@@ -3,10 +3,16 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { QuestionRequestError } from '$lib/client/activation-analytics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
+	import { PoolWarmingError } from '$lib/questions/request-mcq.client';
+	import { requestFrqQuestion } from '$lib/questions/request-frq.client';
+
+	const MAX_SEEN_QUESTION_IDS = 100;
+	const MAX_POOL_WARMING_AUTO_RETRIES = 3;
 
 	type Props = {
 		selectedClass?: string;
@@ -30,11 +36,16 @@
 	let isLoading = $state(false);
 	let isGrading = $state(false);
 	let errorMessage = $state('');
+	let isPoolWarming = $state(false);
+	let poolWarmingRetryAfterSeconds = $state(15);
+	let poolWarmingAutoAttempts = $state(0);
 	let statusMessage = $state('Write your responses, then submit for rubric feedback.');
 	let startedAt = $state(0);
 	let attemptId = $state('');
 	let disagreementReported = $state(false);
 	let seenQuestionIds = $state<string[]>([]);
+	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
+	let loadGeneration = 0;
 
 	const draftKey = $derived(question?.questionId ? `frq-draft:${question.questionId}` : '');
 	const draftScopeKey = $derived(
@@ -44,15 +55,17 @@
 		Object.values(responses).some((response) => response.trim().length > 0)
 	);
 
-	type FrqQuestionResponse = {
-		question?: PublicFrqQuestion;
-		error?: string;
-	};
 	type GradeResponse = { attempt?: FrqAttemptView; error?: string };
+
+	function clearWarmingRetryTimer(): void {
+		if (!warmingRetryTimer) return;
+		clearTimeout(warmingRetryTimer);
+		warmingRetryTimer = null;
+	}
 
 	function rememberQuestion(questionId: string | undefined): void {
 		if (!questionId || seenQuestionIds.includes(questionId)) return;
-		seenQuestionIds = [...seenQuestionIds, questionId];
+		seenQuestionIds = [...seenQuestionIds, questionId].slice(-MAX_SEEN_QUESTION_IDS);
 	}
 
 	function restoreDraft(nextQuestion: PublicFrqQuestion): Record<string, string> {
@@ -114,47 +127,78 @@
 		saveDraft();
 	}
 
-	async function loadQuestion(): Promise<void> {
-		if (!selectedClass) return;
+	async function loadQuestion(options: { isAutoWarmingRetry?: boolean } = {}): Promise<void> {
+		if (!selectedClass || isLoading) return;
+		clearWarmingRetryTimer();
+		loadGeneration += 1;
 		isLoading = true;
 		isGrading = false;
 		grade = null;
 		attemptId = '';
 		disagreementReported = false;
 		errorMessage = '';
-		statusMessage = 'Loading a written-response task…';
+		if (!options.isAutoWarmingRetry) {
+			isPoolWarming = false;
+			poolWarmingAutoAttempts = 0;
+		}
+		statusMessage = options.isAutoWarmingRetry
+			? 'Checking whether written-response practice is ready…'
+			: 'Loading a written-response task…';
 		try {
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const response = await apiFetch('/api/question/frq', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					className: selectedClass,
-					unit: effectiveUnit,
-					excludeQuestionIds: seenQuestionIds
-				})
-			});
-			const payload = await readJsonOrNull<FrqQuestionResponse>(response);
-			if (!response.ok || !payload?.question) {
-				throw new Error(getResponseMessage(payload, 'Could not load written-response practice.'));
+			const result = await requestFrqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			if (result.exclusionsReset) {
+				seenQuestionIds = [];
 			}
-			question = payload.question;
-			responses = restoreDraft(payload.question);
+			question = result.question;
+			responses = restoreDraft(result.question);
 			startedAt = Date.now();
+			isPoolWarming = false;
+			poolWarmingAutoAttempts = 0;
 			statusMessage = 'Write your responses, then submit for rubric feedback.';
-			rememberQuestion(payload.question.questionId);
+			rememberQuestion(result.question.questionId);
 			capturePostHogEvent('frq_question_loaded', {
 				ap_class: selectedClass,
 				unit: selectedUnit,
-				question_id: payload.question.questionId
+				question_id: result.question.questionId
 			});
 		} catch (error) {
-			errorMessage =
-				error instanceof Error ? error.message : 'Could not load written-response practice.';
-			statusMessage = '';
+			if (error instanceof PoolWarmingError) {
+				question = null;
+				errorMessage = '';
+				isPoolWarming = true;
+				poolWarmingRetryAfterSeconds = error.retryAfterSeconds;
+				statusMessage =
+					error.message ||
+					'This course unit is still warming up. Practice will be ready shortly.';
+				if (poolWarmingAutoAttempts < MAX_POOL_WARMING_AUTO_RETRIES) {
+					poolWarmingAutoAttempts += 1;
+					const delaySeconds = Math.max(1, error.retryAfterSeconds);
+					const generation = loadGeneration;
+					warmingRetryTimer = setTimeout(() => {
+						warmingRetryTimer = null;
+						if (generation !== loadGeneration) return;
+						void loadQuestion({ isAutoWarmingRetry: true });
+					}, delaySeconds * 1000);
+				}
+			} else {
+				isPoolWarming = false;
+				errorMessage =
+					error instanceof QuestionRequestError
+						? error.message
+						: error instanceof Error
+							? error.message
+							: 'Could not load written-response practice.';
+				statusMessage = '';
+			}
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	async function retryWarmingLoad(): Promise<void> {
+		poolWarmingAutoAttempts = 0;
+		await loadQuestion();
 	}
 
 	async function submit(): Promise<void> {
@@ -220,9 +264,30 @@
 		lastLoadedRequestVersion = version;
 		if (!restoreLatestDraft()) void loadQuestion();
 	});
+
+	$effect(() => {
+		return () => {
+			loadGeneration += 1;
+			clearWarmingRetryTimer();
+		};
+	});
 </script>
 
-{#if isLoading}
+{#if isPoolWarming}
+	<div class="space-y-4 rounded-2xl border border-border/70 bg-muted/20 p-6 text-center">
+		<p class="text-sm font-medium">Written-response practice is warming up</p>
+		<p class="text-sm text-muted-foreground">
+			{statusMessage ||
+				'This course unit is still being prepared. Your class and unit selection are unchanged.'}
+		</p>
+		<p class="text-xs text-muted-foreground">
+			Typical wait about {poolWarmingRetryAfterSeconds}s
+		</p>
+		<Button onclick={() => void retryWarmingLoad()} disabled={isLoading}>
+			{isLoading ? 'Checking…' : 'Retry now'}
+		</Button>
+	</div>
+{:else if isLoading}
 	<div class="rounded-2xl border border-border/70 p-8 text-center text-sm text-muted-foreground">
 		Loading written-response practice…
 	</div>

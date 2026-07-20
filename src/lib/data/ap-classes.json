@@ -162,8 +162,14 @@
 		},
 		{
 			"name": "AP Computer Science A",
-			"semester1": ["Unit 1: Using Objects and Methods", "Unit 2: Selection and Iteration"],
-			"semester2": ["Unit 3: Class Creation", "Unit 4: Data Collections"]
+			"semester1": [
+				"Unit 1: Using Objects and Methods",
+				"Unit 2: Selection and Iteration"
+			],
+			"semester2": [
+				"Unit 3: Class Creation",
+				"Unit 4: Data Collections"
+			]
 		},
 		{
 			"name": "AP Computer Science Principles",
@@ -172,7 +178,10 @@
 				"Big Idea 2: Data",
 				"Big Idea 3: Algorithms and Programming"
 			],
-			"semester2": ["Big Idea 4: Computer Systems and Networks", "Big Idea 5: Impact of Computing"]
+			"semester2": [
+				"Big Idea 4: Computer Systems and Networks",
+				"Big Idea 5: Impact of Computing"
+			]
 		},
 		{
 			"name": "AP English Language",
@@ -262,7 +271,9 @@
 				"Unit 3: Civil Liberties and Civil Rights",
 				"Unit 4: American Political Ideologies and Beliefs"
 			],
-			"semester2": ["Unit 5: Political Participation"]
+			"semester2": [
+				"Unit 5: Political Participation"
+			]
 		},
 		{
 			"name": "AP Comparative Government",
@@ -272,7 +283,9 @@
 				"Unit 3: Political Culture and Participation",
 				"Unit 4: Party and Electoral Systems and Citizen Organizations"
 			],
-			"semester2": ["Unit 5: Political and Economic Changes and Development"]
+			"semester2": [
+				"Unit 5: Political and Economic Changes and Development"
+			]
 		},
 		{
 			"name": "AP Psychology",
@@ -282,7 +295,9 @@
 				"Unit 3: Development and Learning",
 				"Unit 4: Social Psychology and Personality"
 			],
-			"semester2": ["Unit 5: Mental and Physical Health"]
+			"semester2": [
+				"Unit 5: Mental and Physical Health"
+			]
 		},
 		{
 			"name": "AP Human Geography",
@@ -319,7 +334,10 @@
 				"Unit 3: Production, Cost, and the Perfect Competition Model",
 				"Unit 4: Imperfect Competition"
 			],
-			"semester2": ["Unit 5: Factor Markets", "Unit 6: Market Failure and the Role of Government"]
+			"semester2": [
+				"Unit 5: Factor Markets",
+				"Unit 6: Market Failure and the Role of Government"
+			]
 		},
 		{
 			"name": "AP Spanish Language",
@@ -332,21 +350,6 @@
 				"Unit 4: Science and Technology",
 				"Unit 5: Contemporary Life",
 				"Unit 6: Global Challenges"
-			]
-		},
-		{
-			"name": "AP PE😂",
-			"semester1": [
-				"Unit 1: The Art of Standing Near the Equipment",
-				"Unit 2: Cardio Without Making It a Whole Thing",
-				"Unit 3: Anatomy of a Student Avoiding the Ball",
-				"Unit 4: Hydration, Snacks, and the Locker-Room Economy"
-			],
-			"semester2": [
-				"Unit 5: Training Plans for People Who Start Monday",
-				"Unit 6: Motor Skills, Confidence, and Strategic Celebration",
-				"Unit 7: Biomechanics of Not Getting Picked Last",
-				"Unit 8: Fitness Testing and Lifelong Activity (Until Further Notice)"
 			]
 		},
 		{

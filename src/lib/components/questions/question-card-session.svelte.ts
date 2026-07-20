@@ -8,7 +8,7 @@ import {
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-import { requestMcqQuestion } from '$lib/questions/request-mcq.client';
+import { PoolWarmingError, requestMcqQuestion } from '$lib/questions/request-mcq.client';
 import {
 	hasValidHints,
 	MULTI_ATTEMPT_EXPERIMENT_KEY,
@@ -23,6 +23,9 @@ import {
 	type MultiAttemptMachineState
 } from '$lib/practice/multi-attempt-machine';
 import type { AnswerResult, GeneratedQuestion, QuestionCardProps } from '$lib/questions/types';
+
+const MAX_SEEN_QUESTION_IDS = 100;
+const MAX_POOL_WARMING_AUTO_RETRIES = 3;
 
 type PracticeExperimentResponse = {
 	assignedVariant: PracticeVariant;
@@ -75,6 +78,9 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let questionCount = $state(0);
 	let statusMessage = $state('');
 	let questionLoadFailed = $state(false);
+	let isPoolWarming = $state(false);
+	let poolWarmingRetryAfterSeconds = $state(15);
+	let poolWarmingAutoAttempts = $state(0);
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
 	let assignedVariant = $state<PracticeVariant>('control');
@@ -82,6 +88,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let displayedVariant = $state<PracticeVariant>('control');
 	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
 	let questionFeedbackReason = $state<string | null>(null);
+	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const effectiveQuestionNumber = $derived(opts.getQuestionNumber() || `${questionCount}`);
 	const isTreatmentActive = $derived(displayedVariant === 'multi_attempt_hints');
@@ -114,15 +121,25 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		opts.getMounted() &&
 			!isLoading &&
 			!questionLoadFailed &&
+			!isPoolWarming &&
 			opts.getRequestVersion() === 0 &&
 			!currentQuestion
 	);
-	const showErrorState = $derived(opts.getMounted() && !isLoading && questionLoadFailed);
+	const showWarmingState = $derived(opts.getMounted() && isPoolWarming);
+	const showErrorState = $derived(
+		opts.getMounted() && !isLoading && questionLoadFailed && !isPoolWarming
+	);
+
+	function clearWarmingRetryTimer(): void {
+		if (!warmingRetryTimer) return;
+		clearTimeout(warmingRetryTimer);
+		warmingRetryTimer = null;
+	}
 
 	function rememberSeenQuestion(question: GeneratedQuestion): void {
 		const questionId = question.questionId?.trim() ?? '';
 		if (!questionId || seenQuestionIds.includes(questionId)) return;
-		seenQuestionIds = [...seenQuestionIds, questionId];
+		seenQuestionIds = [...seenQuestionIds, questionId].slice(-MAX_SEEN_QUESTION_IDS);
 	}
 
 	function resetInteractionState(clearSelection = true): void {
@@ -192,7 +209,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	}
 
 	async function loadQuestion(
-		reason: 'skip' | 'not-learned' | 'next' | undefined = undefined
+		reason: 'skip' | 'not-learned' | 'next' | 'retry' | undefined = undefined,
+		options: { isAutoWarmingRetry?: boolean } = {}
 	): Promise<void> {
 		if (isLoading) return;
 		const selectedClass = opts.getSelectedClass();
@@ -202,11 +220,18 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 			return;
 		}
 
+		clearWarmingRetryTimer();
 		isLoading = true;
 		questionLoadFailed = false;
+		if (!options.isAutoWarmingRetry) {
+			isPoolWarming = false;
+			poolWarmingAutoAttempts = 0;
+		}
 
 		if (reason === 'skip') statusMessage = 'Skipped current question.';
 		else if (reason === 'not-learned') statusMessage = "Marked as: I haven't learned this yet.";
+		else if (reason === 'retry' || options.isAutoWarmingRetry)
+			statusMessage = 'Checking whether practice is ready…';
 		else statusMessage = 'Loading question...';
 
 		const loadStartedAt = Date.now();
@@ -221,9 +246,14 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 			};
 			captureQuestionRequestSucceeded(analytics);
 
+			if (result.exclusionsReset) {
+				seenQuestionIds = [];
+			}
 			currentQuestion = { ...result.question, source: result.source };
 			rememberSeenQuestion(result.question);
 			questionCount += 1;
+			isPoolWarming = false;
+			poolWarmingAutoAttempts = 0;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
 			applyQuestionExperimentExposure(result.question, result.source);
@@ -235,12 +265,39 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 				status: error instanceof QuestionRequestError ? error.status : null,
 				latencyMs: Date.now() - loadStartedAt
 			});
-			questionLoadFailed = true;
-			currentQuestion = null;
-			statusMessage = error instanceof Error ? error.message : 'Could not load question.';
+
+			if (error instanceof PoolWarmingError) {
+				currentQuestion = null;
+				questionLoadFailed = false;
+				isPoolWarming = true;
+				poolWarmingRetryAfterSeconds = error.retryAfterSeconds;
+				statusMessage =
+					error.message ||
+					'This course unit is still warming up. Practice will be ready shortly.';
+
+				if (poolWarmingAutoAttempts < MAX_POOL_WARMING_AUTO_RETRIES && opts.getMounted()) {
+					poolWarmingAutoAttempts += 1;
+					const delaySeconds = Math.max(1, error.retryAfterSeconds);
+					warmingRetryTimer = setTimeout(() => {
+						warmingRetryTimer = null;
+						if (!opts.getMounted()) return;
+						void loadQuestion('retry', { isAutoWarmingRetry: true });
+					}, delaySeconds * 1000);
+				}
+			} else {
+				isPoolWarming = false;
+				questionLoadFailed = true;
+				currentQuestion = null;
+				statusMessage = error instanceof Error ? error.message : 'Could not load question.';
+			}
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	async function retryWarmingLoad(): Promise<void> {
+		poolWarmingAutoAttempts = 0;
+		await loadQuestion('retry');
 	}
 
 	function handleOptionSelect(optionId: string): void {
@@ -469,11 +526,19 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	}
 
 	async function init(): Promise<void> {
+		clearWarmingRetryTimer();
 		currentQuestion = null;
 		questionCount = 0;
+		isPoolWarming = false;
+		poolWarmingAutoAttempts = 0;
+		questionLoadFailed = false;
 		resetInteractionState(true);
 		statusMessage = 'Choose the best answer and then check your response.';
 		await fetchPracticeExperiment();
+	}
+
+	function destroy(): void {
+		clearWarmingRetryTimer();
 	}
 
 	return {
@@ -543,8 +608,17 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		get showEmptyState() {
 			return showEmptyState;
 		},
+		get showWarmingState() {
+			return showWarmingState;
+		},
 		get showErrorState() {
 			return showErrorState;
+		},
+		get isPoolWarming() {
+			return isPoolWarming;
+		},
+		get poolWarmingRetryAfterSeconds() {
+			return poolWarmingRetryAfterSeconds;
 		},
 		rememberSeenQuestion,
 		resetInteractionState,
@@ -552,6 +626,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		applyQuestionExperimentExposure,
 		buildAnswerResult,
 		loadQuestion,
+		retryWarmingLoad,
 		handleOptionSelect,
 		captureFirstAnswerAnalytics,
 		captureQuestionCompletedAnalytics,
@@ -562,6 +637,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		handleSkipQuestion,
 		handleNotLearnedQuestion,
 		submitQuestionFeedback,
-		init
+		init,
+		destroy
 	};
 }

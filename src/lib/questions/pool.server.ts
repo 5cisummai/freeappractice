@@ -1,34 +1,44 @@
 import { connectDb } from '$lib/server/db';
+import { QUESTION_POOL_CONFIG } from '$lib/questions/pool-constants';
 import { logger } from '$lib/server/logger';
-import { runCacheMissClusterFlow } from '$lib/questions/cache-miss.server';
 
 interface PoolDocument {
 	_id: { toString(): string };
 	s3QuestionId?: string;
+	randomKey?: number;
+	active?: boolean;
 }
+
+type LeanFindChain<TDoc> = {
+	lean(): Promise<TDoc | null>;
+};
 
 interface PoolModel<TDoc extends PoolDocument> {
 	findOne(
 		filter: Record<string, unknown>,
-		projection: null,
-		options: { sort: Record<string, 1 | -1> }
-	): Promise<TDoc | null>;
+		projection?: Record<string, 0 | 1> | null,
+		options?: { sort?: Record<string, 1 | -1> }
+	): LeanFindChain<TDoc> | Promise<TDoc | null>;
+	countDocuments(filter: Record<string, unknown>): Promise<number>;
 }
 
-interface QuestionPoolConfig<TDoc extends PoolDocument, TCached extends { cached: boolean }> {
+interface QuestionPoolConfig<TDoc extends PoolDocument, TCached> {
 	questionType: 'mcq' | 'frq';
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
 	model: PoolModel<TDoc>;
-	getRecentTopics: (className: string, unit: string) => Promise<string[]>;
-	serveCached: (doc: TDoc, className: string, cacheUnit: string) => Promise<TCached>;
-	generateLive: (className: string, unit: string, recentTopics?: string[]) => Promise<TCached>;
-	getLiveTiming?: (result: TCached) => { generationMs: number; persistenceMs: number } | undefined;
+	projection: Record<string, 0 | 1>;
+	serveCached: (doc: TDoc, className: string, cacheUnit: string) => Promise<TCached> | TCached;
+	/** Request asynchronous population when the bucket is empty. */
+	requestRefill?: (className: string, unit: string) => Promise<void>;
 }
 
 export type QuestionPathMetrics = {
 	questionType: 'mcq' | 'frq';
-	segment?: 'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower';
+	segment?: 'pool_hit' | 'pool_warming' | 'pool_error';
+	dbConnectMs: number;
+	poolQueryMs: number;
+	/** @deprecated Prefer dbConnectMs + poolQueryMs; kept as sum for transitional clients. */
 	cacheLookupMs: number;
 	lockWaitMs: number;
 	generationMs: number;
@@ -40,158 +50,171 @@ export interface GetQuestionOptions {
 	metrics?: QuestionPathMetrics;
 }
 
+export type PoolSelectionResult<TCached> =
+	| { status: 'found'; result: TCached; exclusionsReset: boolean }
+	| { status: 'warming'; retryAfterSeconds: number }
+	| { status: 'failed'; error: unknown };
+
 function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
 	if (!ids?.length) return [];
 	return [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
 }
 
-export function createQuestionPool<TDoc extends PoolDocument, TCached extends { cached: boolean }>(
-	config: QuestionPoolConfig<TDoc, TCached>
-) {
-	const inFlightMiss = new Map<string, Promise<TCached>>();
+async function leanFindOne<TDoc extends PoolDocument>(
+	model: PoolModel<TDoc>,
+	filter: Record<string, unknown>,
+	projection: Record<string, 0 | 1>,
+	sort: Record<string, 1 | -1>
+): Promise<TDoc | null> {
+	const result = model.findOne(filter, projection, { sort });
+	if (result && typeof result === 'object' && 'lean' in result && typeof result.lean === 'function') {
+		return result.lean();
+	}
+	return result as Promise<TDoc | null>;
+}
 
-	async function findCachedDoc(
-		filter: Record<string, unknown>,
-		excludeQuestionIds: string[]
-	): Promise<TDoc | null> {
-		return config.model.findOne(
-			excludeQuestionIds.length
-				? { ...filter, s3QuestionId: { $nin: excludeQuestionIds } }
-				: filter,
-			null,
-			{ sort: { createdAt: 1 } }
-		);
+/**
+ * Indexed random selection around a pivot: first `randomKey >= pivot`, then wrap to `< pivot`.
+ * Pure helper exported for unit tests.
+ */
+export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
+	model: PoolModel<TDoc>;
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	projection: Record<string, 0 | 1>;
+	pivot?: number;
+}): Promise<TDoc | null> {
+	const pivot = opts.pivot ?? Math.random();
+	const base: Record<string, unknown> = {
+		apClass: opts.apClass,
+		unit: opts.unit,
+		active: { $ne: false }
+	};
+	if (opts.excludeQuestionIds.length) {
+		base.s3QuestionId = { $nin: opts.excludeQuestionIds };
 	}
 
-	async function selectFromPool(
-		className: string,
-		cacheUnit: string,
-		excludeQuestionIds: string[] = []
-	): Promise<TDoc | null> {
-		await connectDb();
-		return findCachedDoc({ apClass: className, unit: cacheUnit }, excludeQuestionIds);
+	const first = await leanFindOne<TDoc>(
+		opts.model,
+		{ ...base, randomKey: { $gte: pivot } },
+		opts.projection,
+		{ randomKey: 1 }
+	);
+	if (first) return first;
+
+	return leanFindOne<TDoc>(
+		opts.model,
+		{ ...base, randomKey: { $lt: pivot } },
+		opts.projection,
+		{ randomKey: 1 }
+	);
+}
+
+export function createQuestionPool<TDoc extends PoolDocument, TCached>(
+	config: QuestionPoolConfig<TDoc, TCached>
+) {
+	async function countActive(className: string, cacheUnit: string): Promise<number> {
+		return config.model.countDocuments({
+			apClass: className,
+			unit: cacheUnit,
+			active: { $ne: false }
+		});
 	}
 
 	async function getQuestion(
 		className: string,
 		unit?: string,
 		options: GetQuestionOptions = {}
-	): Promise<TCached> {
+	): Promise<PoolSelectionResult<TCached>> {
 		const cacheUnit = config.normalizeUnit(unit);
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
+		const pool = QUESTION_POOL_CONFIG;
 
-		const lookupStarted = Date.now();
-		let doc: TDoc | null;
+		const connectStarted = Date.now();
 		try {
-			doc = await selectFromPool(className, cacheUnit, excludeQuestionIds);
+			await connectDb();
 		} catch (err) {
-			if (metrics) metrics.cacheLookupMs = Date.now() - lookupStarted;
-			logger.warn(`[${config.logScope}] DB read failed, falling back to live generation`, {
+			if (metrics) {
+				metrics.dbConnectMs = Date.now() - connectStarted;
+				metrics.cacheLookupMs = metrics.dbConnectMs;
+				metrics.segment = 'pool_error';
+			}
+			logger.error(`[${config.logScope}] DB connect failed`, {
 				className,
 				unit: cacheUnit,
 				error: err
 			});
-			const generationStarted = Date.now();
-			try {
-				const recentTopics = await config.getRecentTopics(className, cacheUnit).catch(() => []);
-				const result = await config.generateLive(className, unit ?? '', recentTopics);
-				if (metrics) {
-					metrics.segment = 'cache_miss_leader';
-					Object.assign(metrics, config.getLiveTiming?.(result));
+			return { status: 'failed', error: err };
+		}
+		if (metrics) metrics.dbConnectMs = Date.now() - connectStarted;
+
+		const queryStarted = Date.now();
+		try {
+			let exclusionsReset = false;
+			let doc = await selectRandomActiveDoc({
+				model: config.model,
+				apClass: className,
+				unit: cacheUnit,
+				excludeQuestionIds,
+				projection: config.projection
+			});
+
+			if (!doc && excludeQuestionIds.length) {
+				const activeCount = await countActive(className, cacheUnit);
+				if (activeCount > 0) {
+					exclusionsReset = true;
+					doc = await selectRandomActiveDoc({
+						model: config.model,
+						apClass: className,
+						unit: cacheUnit,
+						excludeQuestionIds: [],
+						projection: config.projection
+					});
 				}
-				return result;
-			} catch (error) {
-				if (metrics) metrics.generationMs = Date.now() - generationStarted;
-				throw error;
 			}
-		}
-		if (metrics) metrics.cacheLookupMs = Date.now() - lookupStarted;
 
-		if (doc) {
-			if (metrics) metrics.segment = 'cache_hit';
-			return config.serveCached(doc, className, cacheUnit);
-		}
+			if (metrics) {
+				metrics.poolQueryMs = Date.now() - queryStarted;
+				metrics.cacheLookupMs = metrics.dbConnectMs + metrics.poolQueryMs;
+			}
 
-		const missKey = `miss::${config.questionType}::${className}::${cacheUnit}`;
+			if (doc) {
+				if (metrics) metrics.segment = 'pool_hit';
+				const result = await config.serveCached(doc, className, cacheUnit);
+				return { status: 'found', result, exclusionsReset };
+			}
 
-		// Only coalesce unrestricted misses. Session-specific exclusions must not
-		// reuse another request's in-flight result (it may be in their exclude list).
-		if (!excludeQuestionIds.length && inFlightMiss.has(missKey)) {
-			logger.info(`[${config.logScope}] coalescing duplicate cache miss`, {
+			if (metrics) metrics.segment = 'pool_warming';
+			logger.info(`[${config.logScope}] pool empty, returning POOL_WARMING`, {
 				className,
 				unit: cacheUnit
 			});
-			const waitStarted = Date.now();
-			const result = await inFlightMiss.get(missKey)!;
+			if (config.requestRefill) {
+				await config.requestRefill(className, cacheUnit).catch((error) => {
+					logger.warn(`[${config.logScope}] failed to enqueue refill`, {
+						className,
+						unit: cacheUnit,
+						error
+					});
+				});
+			}
+			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
+		} catch (err) {
 			if (metrics) {
-				metrics.segment = 'cache_miss_follower';
-				metrics.lockWaitMs = Date.now() - waitStarted;
+				metrics.poolQueryMs = Date.now() - queryStarted;
+				metrics.cacheLookupMs = metrics.dbConnectMs + metrics.poolQueryMs;
+				metrics.segment = 'pool_error';
 			}
-			return result;
-		}
-
-		logger.info(
-			`[${config.logScope}] no reusable cached question found, generating live question`,
-			{
+			logger.error(`[${config.logScope}] pool selection failed`, {
 				className,
-				unit: cacheUnit
-			}
-		);
-
-		const livePromise: Promise<TCached> = (async (): Promise<TCached> => {
-			const generationStarted = Date.now();
-			try {
-				const { result, meta } = await runCacheMissClusterFlow<TCached>({
-					clusterLockKey: missKey,
-					tryClaim: async () => {
-						const selected = await selectFromPool(className, cacheUnit, excludeQuestionIds);
-						if (!selected) return null;
-						return config.serveCached(selected, className, cacheUnit);
-					},
-					leaderRun: async () => {
-						const recentTopics = await config.getRecentTopics(className, cacheUnit).catch(() => []);
-						const gen = await config.generateLive(className, unit ?? '', recentTopics);
-						return { ...gen, cached: false };
-					},
-					logScope: config.logScope
-				});
-
-				logger.info(`[${config.logScope}] cache_miss_cluster_complete`, {
-					className,
-					unit: cacheUnit,
-					cache_miss_role: meta.role,
-					cache_miss_follower_wait_ms: meta.cache_miss_follower_wait_ms
-				});
-				if (metrics) {
-					metrics.segment = meta.role === 'leader' ? 'cache_miss_leader' : 'cache_miss_follower';
-					metrics.lockWaitMs = meta.cache_miss_follower_wait_ms;
-					if (meta.role === 'leader') Object.assign(metrics, config.getLiveTiming?.(result));
-				}
-
-				return result;
-			} catch (err) {
-				if (metrics) metrics.generationMs = Date.now() - generationStarted;
-				logger.error(`[${config.logScope}] live generation also failed`, {
-					className,
-					unit: cacheUnit,
-					error: err
-				});
-				throw err;
-			} finally {
-				if (!excludeQuestionIds.length) {
-					inFlightMiss.delete(missKey);
-				}
-			}
-		})();
-
-		if (!excludeQuestionIds.length) {
-			inFlightMiss.set(missKey, livePromise);
+				unit: cacheUnit,
+				error: err
+			});
+			return { status: 'failed', error: err };
 		}
-		return livePromise;
 	}
 
-	return {
-		getQuestion
-	};
+	return { getQuestion, selectRandomActiveDoc, countActive };
 }

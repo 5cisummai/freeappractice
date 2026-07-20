@@ -5,11 +5,15 @@ interface IPoolDocMetadata {
 	apClass: string;
 	unit: string;
 	topicsCovered?: string;
+	/** Stable random pivot for indexed selection; assigned once at insert/backfill. */
+	randomKey: number;
+	/** Soft-active flag — quality rejection / rotation without deleting S3 history. */
+	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
-/** Ephemeral hot-cache pool entry — full MCQ body inline plus durable S3 id. */
+/** Active serving-library entry — full MCQ body inline plus durable S3 id. */
 type HotPoolDoc = IPoolDocMetadata & {
 	s3QuestionId: string;
 	contentHash: string;
@@ -25,10 +29,15 @@ type HotPoolDoc = IPoolDocMetadata & {
 };
 
 /**
- * MongoDB hot question cache. Full MCQ inline for fast serves, with S3 written
- * once by the shared generation path before a doc enters the pool.
+ * MongoDB active question library. Full MCQ inline for fast serves, with S3 written
+ * once by the shared generation/backfill path before a doc enters the pool.
  */
 export interface IQuestion extends Document, HotPoolDoc {}
+
+/** Assign a one-time random pivot in [0, 1). */
+export function newPoolRandomKey(): number {
+	return Math.random();
+}
 
 const questionSchema = new Schema<IQuestion>(
 	{
@@ -45,12 +54,15 @@ const questionSchema = new Schema<IQuestion>(
 		explanation: { type: String, required: true },
 		hint1: { type: String },
 		hint2: { type: String },
-		s3QuestionId: { type: String, required: true }
+		s3QuestionId: { type: String, required: true },
+		randomKey: { type: Number, required: true, default: newPoolRandomKey },
+		active: { type: Boolean, required: true, default: true }
 	},
 	{ timestamps: true }
 );
 
 questionSchema.index({ apClass: 1, unit: 1, createdAt: 1 });
+questionSchema.index({ apClass: 1, unit: 1, active: 1, randomKey: 1 });
 questionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
 questionSchema.index({ s3QuestionId: 1 }, { unique: true, sparse: true });
 
