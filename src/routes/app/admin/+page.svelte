@@ -19,7 +19,7 @@
 	const tabItems: Array<{ value: AdminTab; label: string; icon: typeof LayoutDashboardIcon }> = [
 		{ value: 'overview', label: 'Overview', icon: LayoutDashboardIcon },
 		{ value: 'users', label: 'Users', icon: UsersIcon },
-		{ value: 'cache', label: 'Cache', icon: DatabaseZapIcon },
+		{ value: 'cache', label: 'Pool', icon: DatabaseZapIcon },
 		{ value: 'generation', label: 'Generation', icon: ChartColumnBigIcon },
 		{ value: 'quality', label: 'Quality', icon: BadgeCheckIcon }
 	];
@@ -39,7 +39,7 @@
 
 <PageShell
 	title="Admin"
-	description="User management, question cache health, and generation visibility."
+	description="User management, question pool readiness, and generation visibility."
 >
 	<div class="space-y-6">
 		<div class="flex flex-wrap gap-2 border-b border-border/70 pb-3">
@@ -67,9 +67,9 @@
 					<p class="mt-2 text-3xl font-semibold tracking-tight">{data.totalUserProfiles}</p>
 				</Card.Root>
 				<Card.Root class="rounded-2xl border border-border/60 p-5 shadow-sm">
-					<p class="text-sm text-muted-foreground">Cached questions</p>
+					<p class="text-sm text-muted-foreground">Pool readiness</p>
 					<p class="mt-2 text-3xl font-semibold tracking-tight">
-						{data.cacheOverview.totalQuestions}
+						{data.cacheOverview.readinessPercent}%
 					</p>
 				</Card.Root>
 				<Card.Root class="rounded-2xl border border-border/60 p-5 shadow-sm">
@@ -96,24 +96,28 @@
 					</Card.Header>
 					<Card.Content class="space-y-3 p-6">
 						<div class="rounded-xl border border-border/60 p-4">
-							<p class="text-sm font-medium">Cache pressure</p>
+							<p class="text-sm font-medium">Pool pressure</p>
 							<p class="mt-1 text-sm text-muted-foreground">
 								{data.cacheOverview.emptyBuckets} empty bucket(s), {data.cacheOverview
 									.underTargetBuckets}
-								below the target pool size of {data.cacheOverview.targetPoolSize}.
+								below target. Aggregate readiness {data.cacheOverview.readinessPercent}% (MCQ
+								{data.cacheOverview.mcqTarget} / FRQ {data.cacheOverview.frqTarget}).
 							</p>
 						</div>
 						<div class="rounded-xl border border-border/60 p-4">
-							<p class="text-sm font-medium">Worker activity</p>
+							<p class="text-sm font-medium">Refill queue</p>
 							<p class="mt-1 text-sm text-muted-foreground">
-								{data.cacheOverview.activeMissLocks} active miss lock(s) across serverless instances.
+								{data.cacheOverview.pendingRefills} pending, {data.cacheOverview.runningRefills}
+								running, {data.cacheOverview.failedRefills} failed/budget-exhausted. Est. remaining
+								generation cost ${data.cacheOverview.estimatedRemainingCostUsd.toFixed(2)}.
 							</p>
 						</div>
 						<div class="rounded-xl border border-border/60 p-4">
 							<p class="text-sm font-medium">Reusable inventory</p>
 							<p class="mt-1 text-sm text-muted-foreground">
-								{data.cacheOverview.totalQuestions} cached question(s) can be shared across sessions,
-								filtered only by each browser's seen list.
+								{data.cacheOverview.totalQuestions} active question(s) across
+								{data.cacheOverview.totalBuckets} catalog buckets; deficit
+								{data.cacheOverview.totalDeficit}.
 							</p>
 						</div>
 					</Card.Content>
@@ -152,7 +156,6 @@
 			<AdminCacheDashboard
 				overview={data.cacheOverview}
 				buckets={data.cacheBuckets}
-				locks={data.cacheLocks}
 				recentTopics={data.recentTopics}
 			/>
 		{:else if data.activeTab === 'quality'}

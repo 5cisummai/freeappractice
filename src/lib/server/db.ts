@@ -2,11 +2,21 @@ import mongoose from 'mongoose';
 import { DATABASE_URI } from '$env/static/private';
 import { logger } from '$lib/server/logger';
 
-// Cached connection for serverless environments (Vercel/Cloudflare edge)
-const cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null } = {
+type MongooseCache = {
+	conn: typeof mongoose | null;
+	promise: Promise<typeof mongoose> | null;
+};
+
+const globalForMongoose = globalThis as typeof globalThis & {
+	__lmstudioMongoose?: MongooseCache;
+};
+
+// Cached connection for serverless (survives warm isolates via globalThis).
+const cached: MongooseCache = globalForMongoose.__lmstudioMongoose ?? {
 	conn: null,
 	promise: null
 };
+globalForMongoose.__lmstudioMongoose = cached;
 
 export async function connectDb(): Promise<typeof mongoose> {
 	if (cached.conn) return cached.conn;
@@ -21,7 +31,6 @@ export async function connectDb(): Promise<typeof mongoose> {
 				heartbeatFrequencyMS: 10000
 			})
 			.then((m) => {
-				// Handle unexpected disconnects
 				mongoose.connection.on('error', (err) => {
 					logger.error('MongoDB connection error', { error: err });
 					cached.conn = null;

@@ -1,10 +1,32 @@
 import type { GeneratedQuestion, QuestionOption } from '$lib/questions/types';
 
+export const POOL_WARMING_CODE = 'POOL_WARMING' as const;
+
+export type PoolWarmingResponse = {
+	code: typeof POOL_WARMING_CODE;
+	error: string;
+	retryAfterSeconds: number;
+};
+
 export type QuestionApiResponse = Record<string, unknown> & {
 	error?: string;
+	code?: string;
+	retryAfterSeconds?: number;
 	questionId?: string;
 	answer?: unknown;
+	exclusionsReset?: boolean;
+	cached?: boolean;
 };
+
+export function isPoolWarmingResponse(payload: unknown): payload is PoolWarmingResponse {
+	if (!payload || typeof payload !== 'object') return false;
+	const obj = payload as Record<string, unknown>;
+	return (
+		obj.code === POOL_WARMING_CODE &&
+		typeof obj.retryAfterSeconds === 'number' &&
+		Number.isFinite(obj.retryAfterSeconds)
+	);
+}
 
 function parseParagraphs(value: unknown): string[] {
 	if (typeof value !== 'string') return [];

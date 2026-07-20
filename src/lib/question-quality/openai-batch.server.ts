@@ -66,6 +66,8 @@ export async function uploadBatchInput(contents: string, filename: string): Prom
 export async function createOpenAiBatch(opts: {
 	inputFileId: string;
 	idempotencyKey: string;
+	endpoint?: '/v1/responses' | '/v1/chat/completions';
+	metadata?: Record<string, string>;
 }): Promise<{ id: string; status: string }> {
 	const response = await openAiFetch('/batches', {
 		method: 'POST',
@@ -75,9 +77,9 @@ export async function createOpenAiBatch(opts: {
 		},
 		body: JSON.stringify({
 			input_file_id: opts.inputFileId,
-			endpoint: '/v1/responses',
+			endpoint: opts.endpoint ?? '/v1/responses',
 			completion_window: '24h',
-			metadata: { purpose: 'question-quality-review' }
+			metadata: opts.metadata ?? { purpose: 'question-quality-review' }
 		})
 	});
 	return response.json() as Promise<{ id: string; status: string }>;

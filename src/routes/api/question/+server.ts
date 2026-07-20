@@ -13,9 +13,9 @@ import {
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
 
-/** Vercel serverless max duration (seconds); raise on Pro if AI generation exceeds default. */
+/** Selection-only path — no synchronous LLM generation. */
 export const config = {
-	maxDuration: 60
+	maxDuration: 15
 };
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -56,27 +56,66 @@ export const POST: RequestHandler = async ({ request }) => {
 		const { className, unit: requestedUnit, excludeQuestionIds } = validated.value;
 		apClass = className;
 		unit = normalizeUnit(requestedUnit);
-		const result = await getQuestion(className, requestedUnit, {
+		const outcome = await getQuestion(className, requestedUnit, {
 			excludeQuestionIds,
 			metrics: path
 		});
-		recordMetric(200, path.segment ?? 'error', result.cached ?? false);
 
-		return json({
-			answer: typeof result.answer === 'object' ? JSON.stringify(result.answer) : result.answer,
-			provider: result.provider,
-			model: result.model,
-			cached: result.cached ?? false,
-			questionId: result.questionId
-		});
+		switch (outcome.status) {
+			case 'found':
+				recordMetric(200, path.segment ?? 'pool_hit', outcome.result.cached ?? true);
+				return json({
+					answer:
+						typeof outcome.result.answer === 'object'
+							? JSON.stringify(outcome.result.answer)
+							: outcome.result.answer,
+					provider: outcome.result.provider,
+					model: outcome.result.model,
+					cached: outcome.result.cached ?? true,
+					questionId: outcome.result.questionId,
+					exclusionsReset: outcome.exclusionsReset
+				});
+			case 'warming':
+				recordMetric(503, 'pool_warming', false, 'busy');
+				return json(
+					{
+						code: 'POOL_WARMING',
+						error: 'Question pool is warming up. Please retry shortly.',
+						retryAfterSeconds: outcome.retryAfterSeconds
+					},
+					{
+						status: 503,
+						headers: { 'Retry-After': String(outcome.retryAfterSeconds) }
+					}
+				);
+			case 'failed':
+				logger.error('Question pool selection failed', { error: outcome.error });
+				recordMetric(503, 'pool_error', false, classifyQuestionRequestError(outcome.error));
+				return json(
+					{
+						code: 'POOL_UNAVAILABLE',
+						error: 'Question pool temporarily unavailable',
+						details: dev
+							? outcome.error instanceof Error
+								? outcome.error.message
+								: String(outcome.error)
+							: undefined
+					},
+					{ status: 503 }
+				);
+			default: {
+				const _exhaustive: never = outcome;
+				return _exhaustive;
+			}
+		}
 	} catch (err) {
-		logger.error('Generate question error', { error: err });
+		logger.error('Question request error', { error: err });
 		recordMetric(500, 'error', false, classifyQuestionRequestError(err));
 		const details = dev
 			? err instanceof Error
 				? err.message
 				: String(err)
 			: 'Internal server error';
-		return json({ error: 'Failed to generate question', details }, { status: 500 });
+		return json({ error: 'Failed to load question', details }, { status: 500 });
 	}
 };

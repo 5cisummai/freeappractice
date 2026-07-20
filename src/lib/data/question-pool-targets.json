@@ -1,0 +1,8 @@
+{
+	"defaultMcqTarget": 20,
+	"minMcqTarget": 10,
+	"mcqTargetsByClass": {
+		"AP Biology": 35
+	},
+	"frqTarget": 8
+}

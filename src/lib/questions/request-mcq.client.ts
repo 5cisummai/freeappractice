@@ -4,13 +4,28 @@ import {
 	questionSourceFromCachedFlag,
 	type QuestionSource
 } from '$lib/client/activation-analytics';
-import { parseQuestionPayloadFromResponse, type QuestionApiResponse } from '$lib/questions/payload';
+import {
+	isPoolWarmingResponse,
+	parseQuestionPayloadFromResponse,
+	type QuestionApiResponse
+} from '$lib/questions/payload';
 import type { GeneratedQuestion } from '$lib/questions/types';
+
+export class PoolWarmingError extends QuestionRequestError {
+	readonly retryAfterSeconds: number;
+
+	constructor(message: string, retryAfterSeconds: number) {
+		super(message, 503);
+		this.name = 'PoolWarmingError';
+		this.retryAfterSeconds = retryAfterSeconds;
+	}
+}
 
 export type QuestionFetchResult = {
 	question: GeneratedQuestion;
 	source: QuestionSource;
 	latencyMs: number;
+	exclusionsReset: boolean;
 };
 
 /** Load one MCQ from POST /api/question with shared error/latency shaping. */
@@ -31,6 +46,12 @@ export async function requestMcqQuestion(
 		});
 
 		const payload = await readJsonOrNull<QuestionApiResponse>(response);
+		if (isPoolWarmingResponse(payload)) {
+			throw new PoolWarmingError(
+				payload.error || 'Question pool is warming up. Please retry shortly.',
+				Math.max(1, Math.floor(payload.retryAfterSeconds))
+			);
+		}
 		if (!response.ok || !payload) {
 			throw new QuestionRequestError(
 				getResponseMessage(payload, 'Failed to load question.'),
@@ -41,7 +62,8 @@ export async function requestMcqQuestion(
 		return {
 			question: parseQuestionPayloadFromResponse(payload),
 			source: questionSourceFromCachedFlag(payload.cached),
-			latencyMs: Date.now() - startedAt
+			latencyMs: Date.now() - startedAt,
+			exclusionsReset: payload.exclusionsReset === true
 		};
 	} catch (error) {
 		if (error instanceof QuestionRequestError) throw error;

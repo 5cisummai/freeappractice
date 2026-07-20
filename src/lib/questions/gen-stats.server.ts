@@ -87,3 +87,14 @@ export async function getGenerationStatsForApi(): Promise<GenerationStatsPayload
 		totals: { questions, totalQuestionChars }
 	};
 }
+
+/** Per-class MCQ generation counts used to demand-scale pool targets. */
+export async function getMcqGenerationCountsByClass(): Promise<Record<string, number>> {
+	await connectDb();
+	const classes = await QuestionGenClassTotal.find().lean().exec();
+	const byApClass: Record<string, number> = {};
+	for (const row of classes) {
+		byApClass[row.apClass] = row.count;
+	}
+	return byApClass;
+}

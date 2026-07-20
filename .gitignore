@@ -29,6 +29,8 @@ vite.config.ts.timestamp-*
 
 backups/
 .env.local
+/tmp/
+tmp/
 
 # Sentry Config File
 .env.sentry-build-plugin

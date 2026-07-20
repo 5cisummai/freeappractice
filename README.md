@@ -104,18 +104,19 @@ Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
 
 Commonly needed for full functionality:
 
-| Variable                                                                                                    | Purpose                                                                                           |
-| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                                                 | Google OAuth                                                                                      |
-| `PUBLIC_GOOGLE_CLIENT_ID`                                                                                   | Google One Tap on the client                                                                      |
-| `RESEND_API_KEY` / `RESEND_FROM`                                                                            | Transactional email                                                                               |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET`                              | Private S3 bucket for question batches                                                            |
-| `AWS_SESSION_TOKEN`                                                                                         | Optional temporary/assumed-role credentials                                                       |
-| `PUBLIC_BASE_URL`                                                                                           | Canonical site URL                                                                                |
-| `GITHUB_BUG_REPORT_TOKEN`                                                                                   | GitHub Issues API for in-app bug reports                                                          |
-| `CRON_SECRET`                                                                                               | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs |
-| `PUBLIC_DESMOS_API_KEY`                                                                                     | Desmos calculator embeds                                                                          |
-| Optional tuning: `CACHE_POOL_SIZE`, `CACHE_MISS_LOCK_TTL_MS`. See `.env.example` for defaults and comments. |
+| Variable                                                                                                                              | Purpose                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                                                                           | Google OAuth                                                                                      |
+| `PUBLIC_GOOGLE_CLIENT_ID`                                                                                                             | Google One Tap on the client                                                                      |
+| `RESEND_API_KEY` / `RESEND_FROM`                                                                                                      | Transactional email                                                                               |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET`                                                        | Private S3 bucket for question batches                                                            |
+| `AWS_SESSION_TOKEN`                                                                                                                   | Optional temporary/assumed-role credentials                                                       |
+| `PUBLIC_BASE_URL`                                                                                                                     | Canonical site URL                                                                                |
+| `GITHUB_BUG_REPORT_TOKEN`                                                                                                             | GitHub Issues API for in-app bug reports                                                          |
+| `CRON_SECRET`                                                                                                                         | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs |
+| `PUBLIC_DESMOS_API_KEY`                                                                                                               | Desmos calculator embeds                                                                          |
+
+Pool fill targets, leases, and daily LLM budget are coded in `src/lib/questions/pool-constants.ts` (not env). See `docs/question-pool-runbook.md`.
 
 ### Local AI with LM Studio
 

@@ -3,14 +3,32 @@ import { QuestionBusyError, QuestionGenerationError } from '$lib/questions/quest
 import type { QuestionFailureKind } from '$lib/question-failure';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
-/** Outcome segments for POST /api/question reliability dashboards. */
-export type QuestionRequestSegment =
-	'cache_hit' | 'cache_miss_leader' | 'cache_miss_follower' | 'error';
+/** Outcome segments for question request reliability dashboards. */
+export type QuestionRequestSegment = 'pool_hit' | 'pool_warming' | 'pool_error' | 'error';
 
 /** Server-side subset of QuestionFailureKind (no client-only `network`). */
 export type QuestionRequestErrorType = Exclude<QuestionFailureKind, 'network'>;
 
 export const QUESTION_REQUEST_EVENT = 'question_request';
+
+/** Cron / worker snapshot for pool readiness and refill health dashboards. */
+export const QUESTION_POOL_HEALTH_EVENT = 'question_pool_health';
+
+export type QuestionPoolHealthMetricProps = {
+	reconciled: number;
+	enqueued: number;
+	processed: number;
+	generated: number;
+	skipped_duplicates: number;
+	failed: number;
+	budget_remaining: number;
+	stopped_reason: string;
+	empty_observed_buckets: number;
+	failed_jobs: number;
+	budget_exhausted_jobs: number;
+	pending_jobs: number;
+	oldest_job_age_ms: number;
+};
 
 export type QuestionRequestMetricProps = {
 	question_type: 'mcq' | 'frq';
@@ -18,6 +36,9 @@ export type QuestionRequestMetricProps = {
 	ap_class: string;
 	unit: string;
 	validation_ms: number;
+	db_connect_ms: number;
+	pool_query_ms: number;
+	/** Transitional alias: db_connect_ms + pool_query_ms. */
 	cache_lookup_ms: number;
 	lock_wait_ms: number;
 	generation_ms: number;
@@ -35,6 +56,8 @@ const ALLOWED_PROP_KEYS = new Set<keyof QuestionRequestMetricProps>([
 	'ap_class',
 	'unit',
 	'validation_ms',
+	'db_connect_ms',
+	'pool_query_ms',
 	'cache_lookup_ms',
 	'lock_wait_ms',
 	'generation_ms',
@@ -76,6 +99,8 @@ export function createQuestionPathMetrics(
 ): QuestionPathMetrics {
 	return {
 		questionType,
+		dbConnectMs: 0,
+		poolQueryMs: 0,
 		cacheLookupMs: 0,
 		lockWaitMs: 0,
 		generationMs: 0,
@@ -101,7 +126,9 @@ export function capturePathQuestionRequestMetric(opts: {
 		ap_class: opts.apClass,
 		unit: opts.unit,
 		validation_ms: opts.validationMs,
-		cache_lookup_ms: opts.path.cacheLookupMs,
+		db_connect_ms: opts.path.dbConnectMs,
+		pool_query_ms: opts.path.poolQueryMs,
+		cache_lookup_ms: opts.path.cacheLookupMs || opts.path.dbConnectMs + opts.path.poolQueryMs,
 		lock_wait_ms: opts.path.lockWaitMs,
 		generation_ms: opts.path.generationMs,
 		persistence_ms: opts.path.persistenceMs,
@@ -111,4 +138,42 @@ export function capturePathQuestionRequestMetric(opts: {
 		cached: opts.cached,
 		...(opts.errorType ? { error_type: opts.errorType } : {})
 	});
+}
+
+const POOL_HEALTH_PROP_KEYS = new Set<keyof QuestionPoolHealthMetricProps>([
+	'reconciled',
+	'enqueued',
+	'processed',
+	'generated',
+	'skipped_duplicates',
+	'failed',
+	'budget_remaining',
+	'stopped_reason',
+	'empty_observed_buckets',
+	'failed_jobs',
+	'budget_exhausted_jobs',
+	'pending_jobs',
+	'oldest_job_age_ms'
+]);
+
+/** Strip anything outside the pool-health allowlist (no bucket names / error strings). */
+export function sanitizeQuestionPoolHealthMetricProps(
+	props: QuestionPoolHealthMetricProps
+): Record<string, string | number | boolean> {
+	const out: Record<string, string | number | boolean> = {};
+	for (const key of POOL_HEALTH_PROP_KEYS) {
+		const value = props[key];
+		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+			out[key] = value;
+		}
+	}
+	return out;
+}
+
+/** Capture anonymous refill/readiness snapshot after a cron or admin worker run. */
+export function captureQuestionPoolHealthMetric(props: QuestionPoolHealthMetricProps): void {
+	captureAnonymousServerMetric(
+		QUESTION_POOL_HEALTH_EVENT,
+		sanitizeQuestionPoolHealthMetricProps(props)
+	);
 }
