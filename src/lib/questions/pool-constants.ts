@@ -8,8 +8,6 @@ import poolTargets from '$lib/data/question-pool-targets.json';
 
 export const QUESTION_POOL_DEFAULT_MCQ_TARGET = poolTargets.defaultMcqTarget;
 export const QUESTION_POOL_MIN_MCQ_TARGET = poolTargets.minMcqTarget;
-/** @deprecated Prefer preferredMcqTarget(apClass) / resolveMcqTarget — kept as default ceiling. */
-export const QUESTION_POOL_MCQ_TARGET = QUESTION_POOL_DEFAULT_MCQ_TARGET;
 export const QUESTION_POOL_FRQ_TARGET = poolTargets.frqTarget;
 
 /** Refill enqueue threshold as a fraction of target (e.g. 0.9 → refill below 90%). */
@@ -76,11 +74,17 @@ export function resolveMcqTarget(
 	const min = QUESTION_POOL_MIN_MCQ_TARGET;
 	if (preferred <= min) return preferred;
 
-	const counts = Object.values(generationCountsByClass);
+	const counts = Object.values(generationCountsByClass).map((n) =>
+		typeof n === 'number' && Number.isFinite(n) ? Math.max(0, n) : 0
+	);
 	const maxCount = counts.length > 0 ? Math.max(0, ...counts) : 0;
 	if (maxCount <= 0) return preferred;
 
-	const classCount = Math.max(0, generationCountsByClass[apClass] ?? 0);
+	const rawClassCount = generationCountsByClass[apClass];
+	const classCount =
+		typeof rawClassCount === 'number' && Number.isFinite(rawClassCount)
+			? Math.max(0, rawClassCount)
+			: 0;
 	const ratio = Math.min(1, classCount / maxCount);
 	return Math.round(min + (preferred - min) * ratio);
 }
@@ -99,23 +103,6 @@ export function poolTargetForBucket(opts: {
 			return config.frqTarget;
 		default: {
 			const _exhaustive: never = opts.questionType;
-			return _exhaustive;
-		}
-	}
-}
-
-/** @deprecated Prefer poolTargetForBucket — FRQ only / default MCQ ceiling. */
-export function poolTargetForType(
-	questionType: 'mcq' | 'frq',
-	config: QuestionPoolConfig = QUESTION_POOL_CONFIG
-): number {
-	switch (questionType) {
-		case 'mcq':
-			return config.mcqTarget;
-		case 'frq':
-			return config.frqTarget;
-		default: {
-			const _exhaustive: never = questionType;
 			return _exhaustive;
 		}
 	}

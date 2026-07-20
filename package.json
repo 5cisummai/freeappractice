@@ -17,6 +17,7 @@
 		"pool:verify-indexes": "bun scripts/verify-question-pool-indexes.ts",
 		"pool:backfill-s3": "bun scripts/backfill-question-pool-from-s3.ts",
 		"pool:fill": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/fill-question-pool.ts",
+		"pool:reconcile": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/reconcile-question-pool.ts",
 		"pool:batch-submit": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/batch-submit-question-pool.ts",
 		"pool:batch-collect": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/batch-collect-question-pool.ts",
 		"pool:retire": "bun scripts/retire-question-pool.ts",

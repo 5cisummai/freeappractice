@@ -54,8 +54,6 @@ Emitted once per refill worker invocation (cron or admin enqueue processor).
 
 | Property                 | Type   | Notes                                                                          |
 | ------------------------ | ------ | ------------------------------------------------------------------------------ |
-| `reconciled`             | number | Buckets reconciled this run                                                    |
-| `enqueued`               | number | Deficit jobs upserted                                                          |
 | `processed`              | number | Leased jobs processed                                                          |
 | `generated`              | number | LLM generations completed                                                      |
 | `skipped_duplicates`     | number | Duplicate content/ID skips                                                     |
@@ -68,6 +66,7 @@ Emitted once per refill worker invocation (cron or admin enqueue processor).
 | `pending_jobs`           | number | Jobs in `pending` status                                                       |
 | `oldest_job_age_ms`      | number | Age of oldest non-idle refill job                                              |
 
+Full-catalog reconcile (`bun run pool:reconcile`) is a separate ops command and does not emit this event.
 ## Instrumentation points
 
 1. `src/routes/api/question/+server.ts` — validation, total latency, success/warming/error capture

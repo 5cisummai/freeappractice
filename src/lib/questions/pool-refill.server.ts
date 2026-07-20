@@ -7,10 +7,6 @@ import {
 } from '$lib/questions/pool-refill-model.server';
 import {
 	countActivePoolRows,
-	reconcilePoolRefillJobs,
-	requestPoolRefill,
-	enqueueAllCatalogDeficits,
-	listCatalogBuckets,
 	type PoolBucketKey
 } from '$lib/questions/pool-refill-queue.server';
 import { generateQuestionForPool } from '$lib/questions/pool-write.server';
@@ -20,11 +16,8 @@ import { logger } from '$lib/server/logger';
 import { captureQuestionPoolHealthMetric } from '$lib/server/question-request-metrics';
 
 export type { PoolBucketKey };
-export { requestPoolRefill, reconcilePoolRefillJobs, enqueueAllCatalogDeficits, listCatalogBuckets };
 
 export type RefillRunSummary = {
-	reconciled: number;
-	enqueued: number;
 	processed: number;
 	generated: number;
 	skippedDuplicates: number;
@@ -51,8 +44,6 @@ async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {
 	]);
 
 	captureQuestionPoolHealthMetric({
-		reconciled: summary.reconciled,
-		enqueued: summary.enqueued,
 		processed: summary.processed,
 		generated: summary.generated,
 		skipped_duplicates: summary.skippedDuplicates,
@@ -134,6 +125,49 @@ async function tryReserveDailyBudget(env: QuestionPoolConfig): Promise<boolean> 
 		{ new: true }
 	).exec();
 	return updated !== null;
+}
+
+/**
+ * Refund previously reserved slots (e.g. batch upload failed before OpenAI ran).
+ * Never decrements below 0. Returns how many slots were actually returned.
+ */
+export async function releaseDailyGenerationBudget(amount: number): Promise<number> {
+	if (amount <= 0) return 0;
+	const dayKey = utcDayKey();
+
+	const updated = await PoolGenerationBudget.findOneAndUpdate(
+		{ dayKey, generations: { $gte: amount } },
+		{ $inc: { generations: -amount } },
+		{ new: true }
+	).exec();
+	if (updated) return amount;
+
+	// Concurrent refunds or partial counter — drain whatever remains without going negative.
+	const doc = await PoolGenerationBudget.findOne({ dayKey }).lean();
+	const available = Math.max(0, doc?.generations ?? 0);
+	if (available <= 0) return 0;
+
+	const partial = await PoolGenerationBudget.findOneAndUpdate(
+		{ dayKey, generations: { $gte: available } },
+		{ $inc: { generations: -available } },
+		{ new: true }
+	).exec();
+	return partial ? available : 0;
+}
+
+/** Soft headroom so we don't reserve then get killed mid-LLM on Vercel cron. */
+function minRemainingMsForGeneration(questionType: 'mcq' | 'frq'): number {
+	switch (questionType) {
+		case 'frq':
+			// High-reasoning FRQ often exceeds 30s; skip rather than burn budget on kill.
+			return 35_000;
+		case 'mcq':
+			return 10_000;
+		default: {
+			const _exhaustive: never = questionType;
+			return _exhaustive;
+		}
+	}
 }
 
 async function renewRefillLease(
@@ -291,7 +325,8 @@ export async function processRefillJob(
 	let lease = doc;
 	try {
 		while (generated + skippedDuplicates < opts.maxGenerations) {
-			if (Date.now() >= opts.deadlineMs) break;
+			const remainingMs = opts.deadlineMs - Date.now();
+			if (remainingMs < minRemainingMsForGeneration(bucket.questionType)) break;
 
 			const observedCount = await countActivePoolRows(
 				bucket.questionType,
@@ -315,7 +350,12 @@ export async function processRefillJob(
 			}
 
 			// Keep the lease alive across multi-gen FRQ work (high reasoning latency).
-			lease = await renewRefillLease(lease, env.leaseTtlMs);
+			try {
+				lease = await renewRefillLease(lease, env.leaseTtlMs);
+			} catch (leaseError) {
+				await releaseDailyGenerationBudget(1);
+				throw leaseError;
+			}
 
 			const result = await generateOne(bucket);
 			if (result.skippedDuplicate) {
@@ -351,10 +391,8 @@ export async function runQuestionPoolRefillWorker(
 	const deadlineMs = startedAt + env.workerTimeBudgetMs;
 	const owner = opts?.owner ?? randomUUID();
 
-	// Claim/generate first. Full-catalog reconcile is N+1 and belongs to admin/ops,
-	// not every 5-minute cron tick (warming + admin enqueue keep the pending queue fed).
-	let reconciled = 0;
-	let enqueued = 0;
+	// Claim/generate first. Full-catalog reconcile (`bun run pool:reconcile`) is N+1 and
+	// belongs to ops — not every 5-minute cron tick.
 	let processed = 0;
 	let generated = 0;
 	let skippedDuplicates = 0;
@@ -364,8 +402,6 @@ export async function runQuestionPoolRefillWorker(
 	let budgetRemaining = await getDailyBudgetRemaining(env);
 	if (budgetRemaining <= 0) {
 		const summary: RefillRunSummary = {
-			reconciled,
-			enqueued,
 			processed,
 			generated,
 			skippedDuplicates,
@@ -438,8 +474,6 @@ export async function runQuestionPoolRefillWorker(
 	}
 
 	const summary: RefillRunSummary = {
-		reconciled,
-		enqueued,
 		processed,
 		generated,
 		skippedDuplicates,

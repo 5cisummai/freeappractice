@@ -8,8 +8,7 @@ const {
 	budgetFindOneAndUpdate,
 	countActivePoolRows,
 	generateQuestionForPool,
-	generateAndPersistFrq,
-	reconcilePoolRefillJobs
+	generateAndPersistFrq
 } = vi.hoisted(() => ({
 	findOneAndUpdate: vi.fn(),
 	updateOne: vi.fn(() => ({ exec: async () => ({}) })),
@@ -25,8 +24,7 @@ const {
 	budgetFindOneAndUpdate: vi.fn(),
 	countActivePoolRows: vi.fn(),
 	generateQuestionForPool: vi.fn(),
-	generateAndPersistFrq: vi.fn(),
-	reconcilePoolRefillJobs: vi.fn(async () => ({ reconciled: 0, enqueued: 0 }))
+	generateAndPersistFrq: vi.fn()
 }));
 
 vi.mock('$env/static/private', () => ({
@@ -67,7 +65,6 @@ vi.mock('$lib/questions/pool-refill-queue.server', async () => {
 	return {
 		...actual,
 		countActivePoolRows,
-		reconcilePoolRefillJobs,
 		requestPoolRefill: vi.fn(),
 		enqueueAllCatalogDeficits: vi.fn(),
 		listCatalogBuckets: vi.fn(() => [])
@@ -84,6 +81,7 @@ vi.mock('$lib/server/question-request-metrics', () => ({
 
 import {
 	processRefillJob,
+	releaseDailyGenerationBudget,
 	reserveDailyGenerationBudget,
 	runQuestionPoolRefillWorker,
 	tryAcquireRefillLease
@@ -162,7 +160,6 @@ describe('daily budget enforcement', () => {
 		budgetFindOneAndUpdate.mockReset();
 		countActivePoolRows.mockReset();
 		generateQuestionForPool.mockReset();
-		reconcilePoolRefillJobs.mockClear();
 	});
 
 	it('stops processRefillJob and marks budget_exhausted when daily budget is 0', async () => {
@@ -205,7 +202,6 @@ describe('daily budget enforcement', () => {
 		expect(summary.generated).toBe(0);
 		expect(summary.budgetRemaining).toBe(0);
 		expect(findOneAndUpdate).not.toHaveBeenCalled();
-		expect(reconcilePoolRefillJobs).not.toHaveBeenCalled();
 	});
 
 	it('consumes budget for each generation attempt including duplicates', async () => {
@@ -253,5 +249,52 @@ describe('daily budget enforcement', () => {
 			generations: { $lte: number };
 		};
 		expect(filter.generations.$lte).toBe(0); // budget 2 - toReserve 2
+	});
+
+	it('refunds reserved budget slots without going negative', async () => {
+		budgetFindOneAndUpdate.mockReturnValueOnce({
+			exec: async () => ({ generations: 10 })
+		});
+
+		const refunded = await releaseDailyGenerationBudget(5);
+		expect(refunded).toBe(5);
+		const filter = budgetFindOneAndUpdate.mock.calls[0]?.[0] as {
+			generations: { $gte: number };
+		};
+		expect(filter.generations.$gte).toBe(5);
+		const update = budgetFindOneAndUpdate.mock.calls[0]?.[1] as {
+			$inc: { generations: number };
+		};
+		expect(update.$inc.generations).toBe(-5);
+	});
+
+	it('partially refunds when fewer slots remain than requested', async () => {
+		budgetFindOneAndUpdate
+			.mockReturnValueOnce({ exec: async () => null })
+			.mockReturnValueOnce({ exec: async () => ({ generations: 0 }) });
+		budgetFindOne.mockReturnValue({
+			lean: async () => ({ dayKey: '2026-07-19', generations: 3 })
+		});
+
+		const refunded = await releaseDailyGenerationBudget(10);
+		expect(refunded).toBe(3);
+	});
+
+	it('does not reserve or generate FRQ when remaining time is below FRQ headroom', async () => {
+		countActivePoolRows.mockResolvedValue(0);
+
+		const result = await processRefillJob(leasedDoc({ questionType: 'frq', target: 8 }), env, {
+			maxGenerations: 5,
+			deadlineMs: Date.now() + 20_000
+		});
+
+		expect(result).toEqual({
+			generated: 0,
+			skippedDuplicates: 0,
+			failed: false,
+			budgetHit: false
+		});
+		expect(generateAndPersistFrq).not.toHaveBeenCalled();
+		expect(budgetFindOneAndUpdate).not.toHaveBeenCalled();
 	});
 });

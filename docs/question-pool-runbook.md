@@ -9,7 +9,7 @@ Related: [architecture.md](./architecture.md), [question-request-metrics.md](./q
 | Layer                                   | Behavior                                                                                                 |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `POST /api/question` / FRQ              | Indexed random Mongo select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM. |
-| Cron `GET/POST /api/cron/question-pool` | Claim due refill leases and generate within daily/run budgets (does **not** full-catalog reconcile every tick). |
+| Cron `GET /api/cron/question-pool` | Claim due refill leases and generate within daily/run budgets (does **not** full-catalog reconcile every tick). |
 | S3                                      | Canonical archive + question IDs. Never deleted by pool tools.                                           |
 | Mongo                                   | Active serving library (`active`, `randomKey`, inline bodies).                                           |
 
@@ -64,8 +64,11 @@ bun run pool:backfill-s3 --enqueue-deficits
 
 ```bash
 # Manual worker kick (Bearer CRON_SECRET), or wait for Vercel cron
-curl -X POST "$ORIGIN/api/cron/question-pool" \
+curl -X GET "$ORIGIN/api/cron/question-pool" \
   -H "Authorization: Bearer $CRON_SECRET"
+
+# Full-catalog target/count reconcile + deficit enqueue (ops only; not cron)
+bun run pool:reconcile
 ```
 
 Do **not** launch an unbounded sync fill. Prefer the **OpenAI Batch** path for bulk seeding (≈50% cheaper). Cron/sync refill remains for small warming top-ups. Caps are coded in `src/lib/questions/pool-constants.ts`:
@@ -91,7 +94,7 @@ bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
 bun run pool:batch-collect -- --batch batch_...
 ```
 
-Manifests land in `tmp/pool-batches/<batchId>.json` (gitignored). Batch submit **reserves** daily budget slots up front; collect does not re-charge budget.
+Manifests land in `tmp/pool-batches/<batchId>.json` (gitignored). Batch submit **reserves** daily budget slots up front; collect does not re-charge budget. If submit fails after reserve (partial concurrent reserve or upload/`create` error), slots are **refunded** so the UTC day is not permanently burned.
 
 Priority tip: enqueue high-traffic class/units first from the admin pool tab, then catalog-wide deficits. For large deficits, use `pool:batch-submit` instead of `pool:fill`.
 

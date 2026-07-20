@@ -216,7 +216,7 @@ flowchart TD
 - Multiple users can receive the same question at the same time; rows are not claimed or deleted on serve.
 - `contentHash` (SHA-256 of normalized question text) deduplicates inserts into the library; duplicate keys during refill are skipped and counted toward the run budget (S3 objects may remain as archive orphans).
 - Empty buckets return typed `POOL_WARMING` immediately and request asynchronous population — there is no synchronous generation fallback.
-- **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`reconcilePoolRefillJobs`) is an admin/ops tool — it is **not** run on every cron tick (that N+1 would starve generation inside the serverless time budget).
+- **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`bun run pool:reconcile` → `reconcilePoolRefillJobs`) is an ops tool — it is **not** run on every cron tick (that N+1 would starve generation inside the serverless time budget).
 - Ops: `bun run pool:backfill-s3`, `bun run pool:retire` (replaces the old clear-cache script), `bun run pool:verify-indexes`. See [question-pool-runbook.md](./question-pool-runbook.md).
 
 User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.

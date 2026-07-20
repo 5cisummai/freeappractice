@@ -6,7 +6,6 @@ import {
 	QUESTION_POOL_MIN_MCQ_TARGET,
 	isBelowLowWater,
 	poolTargetForBucket,
-	poolTargetForType,
 	preferredMcqTarget,
 	resolveMcqTarget,
 	type QuestionPoolConfig
@@ -28,7 +27,6 @@ describe('question pool constants', () => {
 			...QUESTION_POOL_CONFIG,
 			frqTarget: 4
 		};
-		expect(poolTargetForType('frq', config)).toBe(4);
 		expect(poolTargetForBucket({ questionType: 'frq', apClass: 'AP Biology', config })).toBe(4);
 	});
 
@@ -53,6 +51,15 @@ describe('question pool constants', () => {
 	it('uses preferred ceiling when generation stats are empty', () => {
 		expect(resolveMcqTarget('AP Biology', {})).toBe(35);
 		expect(resolveMcqTarget('AP Chemistry', {})).toBe(20);
+	});
+
+	it('ignores non-finite generation counts when scaling', () => {
+		expect(
+			resolveMcqTarget('AP Chemistry', {
+				'AP Biology': Number.NaN,
+				'AP Chemistry': 50
+			})
+		).toBe(20);
 	});
 
 	it('detects low-water deficits', () => {

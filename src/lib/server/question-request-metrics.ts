@@ -15,8 +15,6 @@ export const QUESTION_REQUEST_EVENT = 'question_request';
 export const QUESTION_POOL_HEALTH_EVENT = 'question_pool_health';
 
 export type QuestionPoolHealthMetricProps = {
-	reconciled: number;
-	enqueued: number;
 	processed: number;
 	generated: number;
 	skipped_duplicates: number;
@@ -141,8 +139,6 @@ export function capturePathQuestionRequestMetric(opts: {
 }
 
 const POOL_HEALTH_PROP_KEYS = new Set<keyof QuestionPoolHealthMetricProps>([
-	'reconciled',
-	'enqueued',
 	'processed',
 	'generated',
 	'skipped_duplicates',
