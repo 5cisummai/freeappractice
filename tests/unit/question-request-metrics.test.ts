@@ -64,8 +64,6 @@ describe('question-request-metrics', () => {
 
 	it('allowlists pool health snapshot properties', () => {
 		const sanitized = sanitizeQuestionPoolHealthMetricProps({
-			reconciled: 10,
-			enqueued: 2,
 			processed: 1,
 			generated: 3,
 			skipped_duplicates: 0,

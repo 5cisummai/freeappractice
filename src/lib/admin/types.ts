@@ -24,8 +24,6 @@ export interface AdminUserRow {
 export interface CacheOverview {
 	mcqTarget: number;
 	frqTarget: number;
-	/** @deprecated Prefer mcqTarget; kept for older UI bindings. */
-	targetPoolSize: number;
 	totalQuestions: number;
 	totalTarget: number;
 	totalDeficit: number;

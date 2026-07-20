@@ -216,7 +216,6 @@ function summarizePoolOverview(buckets: CacheBucketSummary[], mcqTarget: number,
 	return {
 		mcqTarget,
 		frqTarget,
-		targetPoolSize: mcqTarget,
 		totalQuestions: totalActive,
 		totalTarget,
 		totalDeficit,

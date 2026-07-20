@@ -39,8 +39,7 @@ vi.mock('$lib/questions/pool-refill-queue.server', async () => {
 	);
 	return {
 		...actual,
-		countActivePoolRows: vi.fn(async () => 0),
-		reconcilePoolRefillJobs: vi.fn(async () => ({ reconciled: 0, enqueued: 0 }))
+		countActivePoolRows: vi.fn(async () => 0)
 	};
 });
 

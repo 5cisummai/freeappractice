@@ -19,6 +19,7 @@ import {
 } from '../src/lib/questions/pool-refill-queue.server';
 import {
 	getDailyBudgetRemaining,
+	releaseDailyGenerationBudget,
 	reserveDailyGenerationBudget
 } from '../src/lib/questions/pool-refill.server';
 import { buildMcqPoolBatchJsonl, submitMcqPoolBatch } from '../src/lib/questions/pool-batch.server';
@@ -138,9 +139,16 @@ async function main() {
 
 	const reserved = await reserveDailyGenerationBudget(env, requests.length);
 	if (reserved < requests.length) {
-		console.error(
-			`Could only reserve ${reserved}/${requests.length} budget slots (concurrent fill?). Aborting without submit.`
-		);
+		if (reserved > 0) {
+			const refunded = await releaseDailyGenerationBudget(reserved);
+			console.error(
+				`Could only reserve ${reserved}/${requests.length} budget slots (concurrent fill?). Refunded ${refunded}. Aborting without submit.`
+			);
+		} else {
+			console.error(
+				`Could only reserve ${reserved}/${requests.length} budget slots (concurrent fill?). Aborting without submit.`
+			);
+		}
 		process.exit(1);
 	}
 
@@ -182,7 +190,11 @@ async function main() {
 			`Collect later with: bun run pool:batch-collect -- --batch ${submitted.batchId}`
 		);
 	} catch (error) {
-		console.error('Batch submit failed after budget reservation — slots are consumed:', error);
+		const refunded = await releaseDailyGenerationBudget(reserved);
+		console.error(
+			`Batch submit failed after budget reservation — refunded ${refunded}/${reserved} slots:`,
+			error
+		);
 		process.exit(1);
 	}
 
