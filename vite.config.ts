@@ -1,3 +1,4 @@
+import { sentrySvelteKit } from '@sentry/sveltekit';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
@@ -8,7 +9,15 @@ import { defineConfig } from 'vitest/config';
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit(), vercelToolbar()],
+	plugins: [
+		sentrySvelteKit({
+			org: 'free-ap-practice',
+			project: 'javascript-sveltekit'
+		}),
+		tailwindcss(),
+		sveltekit(),
+		vercelToolbar()
+	],
 	resolve: {
 		// shadcn-svelte only exports ./tailwind.css under the "style" condition,
 		alias: {

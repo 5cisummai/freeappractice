@@ -15,9 +15,11 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
+
 		paths: {
 			relative: false
 		},
+
 		csp: {
 			// 'auto' uses hashes for prerendered pages and nonces for SSR pages.
 			// This lets SvelteKit allow its own inline runtime scripts without keeping
@@ -66,6 +68,16 @@ const config = {
 				'object-src': ['none'],
 				'frame-ancestors': ['none'],
 				'upgrade-insecure-requests': true
+			}
+		},
+
+		experimental: {
+			tracing: {
+				server: true
+			},
+
+			instrumentation: {
+				server: true
 			}
 		}
 	}
