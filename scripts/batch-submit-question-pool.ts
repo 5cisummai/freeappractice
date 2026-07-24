@@ -1,7 +1,8 @@
 /**
  * scripts/batch-submit-question-pool.ts
  *
- * Build + submit an OpenAI Batch (~50% cheaper) for MCQ pool deficits.
+ * Build + submit an OpenAI Batch (~50% cheaper) for MCQ pool deficits vs
+ * `question-pool-targets.json` preferred ceilings (not demand-scaled).
  * Caps at remaining daily generation budget (default ~500/day).
  *
  *   bun run pool:batch-submit
@@ -25,11 +26,7 @@ import {
 import { buildMcqPoolBatchJsonl, submitMcqPoolBatch } from '../src/lib/questions/pool-batch.server';
 import { getRecentTopics } from '../src/lib/questions/recent-topic.server';
 import { connectDb } from '../src/lib/server/db';
-import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
-import {
-	QUESTION_POOL_CONFIG,
-	poolTargetForBucket
-} from '../src/lib/questions/pool-constants';
+import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
 
 function argValue(flag: string): string | undefined {
 	const eq = process.argv.find((a) => a.startsWith(`${flag}=`));
@@ -63,7 +60,6 @@ async function main() {
 
 	const env = QUESTION_POOL_CONFIG;
 	await connectDb();
-	const generationCountsByClass = await getMcqGenerationCountsByClass();
 
 	const budgetRemaining = await getDailyBudgetRemaining(env);
 	const maxRequests = dryRun ? limit : Math.min(limit, budgetRemaining);
@@ -75,36 +71,60 @@ async function main() {
 		maxRequests,
 		classFilter: classFilter ?? null,
 		unitFilter: unitFilter ?? null,
-		dryRun
+		dryRun,
+		targetSource: 'question-pool-targets.json preferred ceilings'
 	});
 
 	if (!dryRun && maxRequests <= 0) {
-		console.log('No daily budget remaining. Wait for next UTC day or raise QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET in pool-constants.ts.');
+		console.log(
+			'No daily budget remaining. Wait for next UTC day or raise QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET in pool-constants.ts.'
+		);
 		process.exit(0);
 	}
 
 	type Slot = { apClass: string; unit: string };
-	const slots: Slot[] = [];
+	type Deficit = Slot & { active: number; target: number; need: number };
 
+	const deficits: Deficit[] = [];
 	for (const bucket of listCatalogBuckets('mcq')) {
 		if (classFilter && bucket.apClass !== classFilter) continue;
 		if (unitFilter && bucket.unit !== unitFilter) continue;
 		const active = await countActivePoolRows('mcq', bucket.apClass, bucket.unit);
-		const target = poolTargetForBucket({
-			questionType: 'mcq',
-			apClass: bucket.apClass,
-			generationCountsByClass,
-			config: env
-		});
+		const target = preferredMcqTarget(bucket.apClass);
 		const need = Math.max(0, target - active);
-		for (let i = 0; i < need && slots.length < maxRequests; i += 1) {
-			slots.push({ apClass: bucket.apClass, unit: bucket.unit });
+		if (need > 0) {
+			deficits.push({
+				apClass: bucket.apClass,
+				unit: bucket.unit,
+				active,
+				target,
+				need
+			});
+		}
+	}
+
+	// Largest holes first so a capped run (e.g. 500) helps the neediest buckets.
+	deficits.sort((a, b) => b.need - a.need || a.apClass.localeCompare(b.apClass));
+
+	const totalNeed = deficits.reduce((sum, d) => sum + d.need, 0);
+	console.log('MCQ preferred-target deficits', {
+		bucketsUnderTarget: deficits.length,
+		totalNeed,
+		willSubmit: Math.min(totalNeed, maxRequests)
+	});
+
+	const slots: Slot[] = [];
+	for (const deficit of deficits) {
+		for (let i = 0; i < deficit.need && slots.length < maxRequests; i += 1) {
+			slots.push({ apClass: deficit.apClass, unit: deficit.unit });
 		}
 		if (slots.length >= maxRequests) break;
 	}
 
 	if (slots.length === 0) {
-		console.log('No MCQ deficits to fill for the given filters.');
+		console.log(
+			'No MCQ deficits vs question-pool-targets.json preferred ceilings for the given filters.'
+		);
 		process.exit(0);
 	}
 
@@ -186,9 +206,7 @@ async function main() {
 			requestCount: requests.length,
 			manifestPath
 		});
-		console.log(
-			`Collect later with: bun run pool:batch-collect -- --batch ${submitted.batchId}`
-		);
+		console.log(`Collect later with: bun run pool:batch-collect -- --batch ${submitted.batchId}`);
 	} catch (error) {
 		const refunded = await releaseDailyGenerationBudget(reserved);
 		console.error(
