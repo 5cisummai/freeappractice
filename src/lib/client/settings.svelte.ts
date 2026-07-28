@@ -4,6 +4,7 @@ import { toast } from 'svelte-sonner';
 import { authClient } from '$lib/auth/client.js';
 import { authCallbackUrl } from '$lib/auth/urls.js';
 import { getSiteUrl } from '$lib/site-url.js';
+import { resetPostHogUser } from '$lib/client/posthog-analytics';
 
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
@@ -119,6 +120,7 @@ class SettingsController {
 			}
 
 			toast.success('Account deleted successfully');
+			resetPostHogUser();
 			window.location.href = '/';
 			return 'deleted';
 		} catch (e) {

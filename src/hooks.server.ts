@@ -212,9 +212,9 @@ export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
 			distinctId: 'server',
 			event: 'server_error',
 			properties: {
-				error: error instanceof Error ? error.message : String(error),
+				error_type: error instanceof Error ? error.name : 'UnknownError',
 				status,
-				message
+				path: event.url.pathname
 			}
 		});
 

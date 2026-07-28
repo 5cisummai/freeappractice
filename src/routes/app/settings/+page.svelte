@@ -12,6 +12,7 @@
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
+	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { userPrefersMode } from 'mode-watcher';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
@@ -120,6 +121,7 @@
 			await authClient.signOut({
 				fetchOptions: {
 					onSuccess: () => {
+						resetPostHogUser();
 						window.location.href = resolve('/');
 					}
 				}

@@ -17,7 +17,7 @@
 
 	onMount(() => {
 		if (data.user) {
-			identifyPostHogUser(data.user.id, { name: data.user.name });
+			identifyPostHogUser(data.user.id);
 			if (page.url.searchParams.get('signup') === 'google') {
 				captureSignupCompleted('google');
 				const url = new URL(page.url);

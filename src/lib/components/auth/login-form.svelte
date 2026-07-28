@@ -39,7 +39,7 @@
 		needsVerification = false;
 		loading = true;
 		try {
-			const { error } = await authClient.signIn.email({
+			const { data, error } = await authClient.signIn.email({
 				email,
 				password,
 				callbackURL: authCallbackUrl('/app')
@@ -54,7 +54,9 @@
 				}
 				return;
 			}
-			identifyPostHogUser(email);
+			if (data?.user?.id) {
+				identifyPostHogUser(data.user.id);
+			}
 			capturePostHogEvent('user_logged_in', { method: 'email' });
 			goto(resolve('/app'));
 		} catch {

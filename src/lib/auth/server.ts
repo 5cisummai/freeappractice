@@ -25,6 +25,8 @@ import {
 	MAX_PASSWORD_LENGTH,
 	MIN_PASSWORD_LENGTH
 } from '$lib/auth/password-policy';
+import { classifyAccountCreationMethod } from '$lib/auth/analytics';
+import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
 const db = await getMongoDb();
 const client = await getMongoClient();
@@ -53,8 +55,13 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				after: async (user) => {
+				after: async (user, context) => {
 					await ensureUserProfile(user.id);
+					captureAnonymousServerMetric('account_created', {
+						method: classifyAccountCreationMethod(context?.path),
+						email_verified_at_creation: user.emailVerified,
+						source: 'better_auth'
+					});
 				}
 			}
 		}
@@ -128,6 +135,11 @@ export const auth = betterAuth({
 		expiresIn: 15 * 60,
 		sendVerificationEmail: async ({ user, url }) => {
 			await sendConfirmationEmail(user.email, url);
+		},
+		afterEmailVerification: async () => {
+			captureAnonymousServerMetric('account_email_verified', {
+				source: 'better_auth'
+			});
 		}
 	},
 	socialProviders:

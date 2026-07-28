@@ -1,4 +1,4 @@
-import { hasAnalyticsConsent } from '$lib/client/analytics-consent';
+import { hasAnalyticsConsent, readAnalyticsConsent } from '$lib/client/analytics-consent';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { classifyQuestionFailureFromStatus, type QuestionFailureKind } from '$lib/question-failure';
 
@@ -47,6 +47,7 @@ export function daysBetweenCalendarDays(earlier: string, later: string): number 
 const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
 const FIRST_ANSWER_FLAG_KEY = 'ph_activation_first_answer_sent';
 const LAST_AUTH_VISIT_DAY_KEY = 'ph_last_auth_visit_day';
+let firstAnswerCapturedThisSession = false;
 
 const ACTIVATION_EVENTS = {
 	landingPageViewed: 'landing_page_viewed',
@@ -79,11 +80,7 @@ function getOrCreateJourneyKey(): string | undefined {
 	}
 }
 
-function withJourney(
-	properties: Record<string, unknown> = {}
-): Record<string, unknown> | undefined {
-	if (!hasAnalyticsConsent()) return undefined;
-
+function withJourney(properties: Record<string, unknown> = {}): Record<string, unknown> {
 	const journeyKey = getOrCreateJourneyKey();
 	return {
 		...properties,
@@ -92,9 +89,7 @@ function withJourney(
 }
 
 function captureActivation(event: string, properties: Record<string, unknown> = {}): void {
-	const props = withJourney(properties);
-	if (!props) return;
-	capturePostHogEvent(event, props);
+	capturePostHogEvent(event, withJourney(properties));
 }
 
 export function captureLandingPageViewed(): void {
@@ -155,14 +150,17 @@ export function captureFirstAnswerSubmitted(opts: {
 	isCorrect: boolean;
 	timeTakenMs: number;
 }): void {
-	if (!canUseStorage()) return;
+	if (firstAnswerCapturedThisSession || readConsentIsDenied()) return;
 
-	try {
-		if (localStorage.getItem(FIRST_ANSWER_FLAG_KEY) === '1') return;
-		localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
-	} catch {
-		// Still attempt capture if storage is unavailable mid-session.
+	if (canUseStorage()) {
+		try {
+			if (localStorage.getItem(FIRST_ANSWER_FLAG_KEY) === '1') return;
+			localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
+		} catch {
+			// Still attempt capture if storage is unavailable mid-session.
+		}
 	}
+	firstAnswerCapturedThisSession = true;
 
 	captureActivation(ACTIVATION_EVENTS.firstAnswerSubmitted, {
 		ap_class: opts.apClass,
@@ -203,4 +201,8 @@ export function captureAuthenticatedStudentReturnedIfNeeded(): void {
 	} catch {
 		// ignore
 	}
+}
+
+function readConsentIsDenied(): boolean {
+	return readAnalyticsConsent() === 'denied';
 }

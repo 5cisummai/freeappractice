@@ -4,6 +4,13 @@ import { hasAnalyticsConsent, readAnalyticsConsent } from '$lib/client/analytics
 import type { AnalyticsConsent } from '$lib/analytics-consent';
 
 let initialized = false;
+const MAX_PENDING_OPERATIONS = 100;
+
+type PendingOperation =
+	| { kind: 'capture'; event: string; properties?: Record<string, unknown> }
+	| { kind: 'identify'; distinctId: string; properties?: Record<string, unknown> };
+
+let pendingOperations: PendingOperation[] = [];
 
 export function initPostHogAnalytics() {
 	if (!import.meta.env.PROD || initialized || typeof window === 'undefined') {
@@ -44,23 +51,37 @@ export function applyPostHogConsent(consent: AnalyticsConsent) {
 
 	if (consent === 'granted') {
 		posthog.opt_in_capturing({ captureEventName: false });
-		posthog.capture('$pageview');
+		for (const operation of pendingOperations) {
+			if (operation.kind === 'capture') {
+				posthog.capture(operation.event, operation.properties);
+			} else {
+				posthog.identify(operation.distinctId, operation.properties);
+			}
+		}
+		pendingOperations = [];
 		return;
 	}
 
 	if (consent === 'denied') {
+		pendingOperations = [];
 		posthog.opt_out_capturing();
 	}
 }
 
 export function resetPostHogConsent() {
+	pendingOperations = [];
 	if (!initialized || typeof window === 'undefined') return;
-
 	posthog.reset(true);
 }
 
 export function capturePostHogEvent(event: string, properties?: Record<string, unknown>) {
-	if (!hasAnalyticsConsent()) return;
+	const consent = readAnalyticsConsent();
+	if (consent === null) {
+		queuePendingOperation({ kind: 'capture', event, properties });
+		initPostHogAnalytics();
+		return;
+	}
+	if (consent === 'denied') return;
 
 	initPostHogAnalytics();
 	if (initialized) {
@@ -69,11 +90,34 @@ export function capturePostHogEvent(event: string, properties?: Record<string, u
 }
 
 export function identifyPostHogUser(distinctId: string, properties?: Record<string, unknown>) {
-	if (!hasAnalyticsConsent()) return;
+	const consent = readAnalyticsConsent();
+	if (consent === null) {
+		queuePendingOperation({ kind: 'identify', distinctId, properties });
+		initPostHogAnalytics();
+		return;
+	}
+	if (consent === 'denied') return;
 
 	initPostHogAnalytics();
 	if (initialized) {
 		posthog.identify(distinctId, properties);
+	}
+}
+
+export function capturePostHogPageview(url?: string) {
+	const consent = readAnalyticsConsent();
+	if (consent === null) return;
+
+	initPostHogAnalytics();
+	if (initialized) {
+		posthog.capture('$pageview', url ? { $current_url: url } : undefined);
+	}
+}
+
+export function resetPostHogUser() {
+	pendingOperations = [];
+	if (initialized && typeof window !== 'undefined') {
+		posthog.reset();
 	}
 }
 
@@ -84,4 +128,11 @@ export function capturePostHogException(error: unknown) {
 	if (initialized) {
 		posthog.captureException(error);
 	}
+}
+
+function queuePendingOperation(operation: PendingOperation) {
+	if (pendingOperations.length >= MAX_PENDING_OPERATIONS) {
+		pendingOperations.shift();
+	}
+	pendingOperations.push(operation);
 }

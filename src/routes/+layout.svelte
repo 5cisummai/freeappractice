@@ -7,7 +7,7 @@
 	import SkipToMain from '$lib/components/layout/skip-to-main.svelte';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { invalidateAll } from '$app/navigation';
+	import { afterNavigate, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
@@ -19,8 +19,13 @@
 	} from '$lib/users/timezone';
 
 	import { registerWebMcpTools } from '$lib/client/webmcp.js';
+	import { capturePostHogPageview } from '$lib/client/posthog-analytics';
 
 	let { children } = $props();
+
+	afterNavigate(({ to }) => {
+		capturePostHogPageview(to?.url.href);
+	});
 
 	onMount(() => {
 		privacy.init();
