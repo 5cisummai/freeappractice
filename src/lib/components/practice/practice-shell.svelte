@@ -5,6 +5,11 @@
 	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
+	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
+	import { Switch } from '$lib/components/ui/switch/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 
 	type PracticeShellProps = {
 		selectedClass?: string;
@@ -37,6 +42,8 @@
 		...cardProps
 	}: PracticeShellProps = $props();
 
+	const showEmptyChrome = $derived(requestVersion === 0);
+
 	function changeMode(nextMode: 'mcq' | 'frq'): void {
 		mode = nextMode;
 		requestVersion = 0;
@@ -55,7 +62,7 @@
 	}
 </script>
 
-<div class="mx-auto mb-8 max-w-5xl space-y-4">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 	{#if allowFrq}
 		<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
 			<button
@@ -73,7 +80,21 @@
 				Written response
 			</button>
 		</div>
+	{:else}
+		<div></div>
 	{/if}
+
+	<div class="flex items-center gap-3">
+		<Label for="exam-mode" class="text-sm font-medium text-muted-foreground">Exam mode</Label>
+		<Switch
+			id="exam-mode"
+			checked={realisticMode.enabled}
+			onCheckedChange={(checked: boolean) => realisticMode.setEnabled(checked)}
+		/>
+	</div>
+</div>
+
+<div class="mb-8 space-y-4">
 	<QuestionSelector
 		bind:selectedClass
 		bind:selectedUnit
@@ -84,19 +105,46 @@
 	/>
 </div>
 
-<div class="mx-auto min-h-40 max-w-6xl">
-	{#key `${mode}:${selectedClass}:${selectedUnit}`}
-		{#if mode === 'frq' && allowFrq}
-			<FrqCard {selectedClass} {selectedUnit} {unitRange} {requestVersion} onGraded={onFrqGraded} />
-		{:else}
-			<QuestionCard
-				{selectedClass}
-				{selectedUnit}
-				{unitRange}
-				{requestVersion}
-				{onAnswered}
-				{...cardProps}
-			/>
-		{/if}
-	{/key}
+{#if showEmptyChrome}
+	<Card.Root class="mb-8 overflow-hidden rounded-2xl border border-dashed border-border/70 bg-card shadow-none ring-0">
+		<Card.Content class="flex flex-col items-center justify-center gap-4 px-6 py-14 text-center">
+			<div
+				class="flex size-20 items-center justify-center rounded-full bg-primary/10 text-primary"
+				aria-hidden="true"
+			>
+				<BookOpenIcon class="size-9" />
+			</div>
+			<div class="space-y-1.5">
+				<p class="font-display text-xl font-medium tracking-tight">Ready to practice?</p>
+				<p class="max-w-md text-sm text-muted-foreground">
+					Select a class and unit, then generate a question to get started.
+				</p>
+			</div>
+		</Card.Content>
+	</Card.Root>
+{/if}
+
+<div class="min-h-40">
+	{#if requestVersion > 0}
+		{#key `${mode}:${selectedClass}:${selectedUnit}`}
+			{#if mode === 'frq' && allowFrq}
+				<FrqCard
+					{selectedClass}
+					{selectedUnit}
+					{unitRange}
+					{requestVersion}
+					onGraded={onFrqGraded}
+				/>
+			{:else}
+				<QuestionCard
+					{selectedClass}
+					{selectedUnit}
+					{unitRange}
+					{requestVersion}
+					{onAnswered}
+					{...cardProps}
+				/>
+			{/if}
+		{/key}
+	{/if}
 </div>

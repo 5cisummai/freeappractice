@@ -99,6 +99,18 @@ export function buildStatsData(
 		recentHistory.length > 0 ? Math.round((recentCorrect / recentHistory.length) * 100) : 0;
 	const recentFrq = frqActivity.filter((attempt) => attempt.attemptedAt >= sevenDaysAgo);
 
+	const zone = timeZone || 'UTC';
+	const todayKey = toLocalDayKey(new Date(), zone);
+	const dayKeys = Array.from({ length: 7 }, (_, i) => shiftDayKey(todayKey, i - 6));
+	const countsByDay = new Map<string, number>(dayKeys.map((key) => [key, 0]));
+	for (const item of [...history, ...frqActivity]) {
+		const key = toLocalDayKey(new Date(item.attemptedAt), zone);
+		if (!countsByDay.has(key)) continue;
+		countsByDay.set(key, (countsByDay.get(key) ?? 0) + 1);
+	}
+	const questionsPerDayLast7Days = dayKeys.map((key) => countsByDay.get(key) ?? 0);
+	const activityLast7Days = questionsPerDayLast7Days.map((count) => count > 0);
+
 	return {
 		overview: {
 			totalQuestions,
@@ -115,6 +127,8 @@ export function buildStatsData(
 			accuracyLast7Days: recentAccuracy,
 			frqSubmissionsLast7Days: recentFrq.length
 		},
+		activityLast7Days,
+		questionsPerDayLast7Days,
 		subjectBreakdown
 	};
 }

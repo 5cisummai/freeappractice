@@ -4,10 +4,14 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
-	import ClockIcon from '@lucide/svelte/icons/clock';
+	import FlameIcon from '@lucide/svelte/icons/flame';
+	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import StatsOverviewCards from '$lib/components/stats-overview-cards.svelte';
+	import RichStatsGrid from '$lib/components/app/rich-stats-grid.svelte';
+	import SectionHeader from '$lib/components/app/section-header.svelte';
+	import SubjectRow from '$lib/components/app/subject-row.svelte';
+	import { appSurfaceClass } from '$lib/components/app/surface.js';
 
 	let { data } = $props();
 
@@ -36,9 +40,9 @@
 	const frqRecommendation = $derived(
 		Boolean(
 			frqEnabled &&
-			nextBestUnit &&
-			(nextBestUnit.frqAveragePercentage ?? 100) < 70 &&
-			(nextBestUnit.frqAttempts ?? 0) > 0
+				nextBestUnit &&
+				(nextBestUnit.frqAveragePercentage ?? 100) < 70 &&
+				(nextBestUnit.frqAttempts ?? 0) > 0
 		)
 	);
 
@@ -57,132 +61,218 @@
 		if (!name) return 'Student';
 		return name.split(' ')[0] || 'Student';
 	});
+
+	const greeting = $derived.by(() => {
+		const hour = new Date().getHours();
+		if (hour < 12) return 'Good morning';
+		if (hour < 17) return 'Good afternoon';
+		return 'Good evening';
+	});
+
+	const heroMastery = $derived.by(() => {
+		if (!nextBestUnit) return 0;
+		if (frqRecommendation) return nextBestUnit.frqAveragePercentage ?? 0;
+		if (nextBestUnit.totalAttempts > 0) return nextBestUnit.mastery;
+		return nextBestUnit.frqAveragePercentage ?? 0;
+	});
+
+	const recentActivity = $derived.by(() => {
+		return [...progressData]
+			.filter((entry) => entry.lastAttemptAt || entry.frqLastAttemptAt)
+			.map((entry) => {
+				const lastAt = [entry.lastAttemptAt, entry.frqLastAttemptAt]
+					.filter(Boolean)
+					.sort((a, b) => String(b).localeCompare(String(a)))[0];
+				const score =
+					entry.totalAttempts > 0
+						? entry.mastery
+						: (entry.frqAveragePercentage ?? null);
+				return { ...entry, lastAt, score };
+			})
+			.sort((a, b) => String(b.lastAt).localeCompare(String(a.lastAt)))
+			.slice(0, 5);
+	});
+
+	const accuracyDelta = $derived.by(() => {
+		const overall = statsData?.overview.accuracy ?? 0;
+		const recent = statsData?.recentPerformance.accuracyLast7Days ?? 0;
+		if (!statsData?.recentPerformance.questionsLast7Days) return null;
+		return recent - overall;
+	});
+
+	function masteryBarClass(mastery: number): string {
+		if (mastery >= 75) return 'bg-emerald-500';
+		if (mastery >= 50) return 'bg-amber-500';
+		return 'bg-primary';
+	}
 </script>
 
 <svelte:head>
-	<title>Dashboard – Free AP Practice</title>
+	<title>Home – Free AP Practice</title>
 </svelte:head>
 
 <PageShell
-	title={`Welcome back, ${firstName}`}
-	description="Here's an overview of your study progress."
+	title={`${greeting}, ${firstName}`}
+	description="Let's keep your momentum going."
 	maskTitle
 >
+	{#snippet actions()}
+		{#if (statsData?.overview.currentStreak ?? 0) > 0}
+			<span
+				class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium shadow-sm"
+			>
+				<FlameIcon class="size-3.5 text-amber-500" />
+				{statsData.overview.currentStreak} day streak
+			</span>
+		{/if}
+		{#if accuracyDelta !== null}
+			<span
+				class="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium shadow-sm"
+			>
+				<TrendingUpIcon class="size-3.5 text-primary" />
+				{#if accuracyDelta > 0}+{/if}{accuracyDelta}% vs overall
+			</span>
+		{/if}
+	{/snippet}
+
+	<!-- Hero -->
 	<Card.Root
-		class="rounded-2xl border border-border/60 border-primary/30 bg-primary/3 p-5 shadow-sm ring-0"
+		class="relative overflow-hidden rounded-2xl border-0 bg-gradient-to-br from-primary via-primary to-primary/80 p-6 text-primary-foreground shadow-md ring-0 sm:p-8"
 	>
-		<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-			<div class="space-y-1.5">
-				<p class="text-sm font-medium text-primary">Your Next Best Unit</p>
+		<div
+			class="pointer-events-none absolute -right-8 -top-8 size-40 rounded-full bg-white/10 blur-2xl"
+			aria-hidden="true"
+		></div>
+		<div
+			class="pointer-events-none absolute -bottom-10 right-16 size-32 rounded-full bg-white/10 blur-xl"
+			aria-hidden="true"
+		></div>
+		<div class="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+			<div class="min-w-0 flex-1 space-y-3">
+				<p class="text-sm font-medium text-primary-foreground/80">Continue where you left off</p>
 				{#if nextBestUnit}
-					<p class="text-base font-semibold">
+					<h2 class="font-display text-2xl font-medium tracking-tight sm:text-3xl">
 						{nextBestUnit.apClass}
-						{#if nextBestUnit.unit}
-							- {nextBestUnit.unit}
-						{/if}
-					</p>
-					<p class="text-sm text-muted-foreground">
-						{#if frqRecommendation}
-							FRQ average {nextBestUnit.frqAveragePercentage ?? 0}% across
-							{nextBestUnit.frqAttempts ?? 0} submissions.
-						{:else if nextBestUnit.totalAttempts > 0}
-							MCQ mastery {nextBestUnit.mastery}% across {nextBestUnit.totalAttempts} attempts.
-						{:else}
-							FRQ average {nextBestUnit.frqAveragePercentage ?? 0}% across
-							{nextBestUnit.frqAttempts ?? 0} submissions.
-						{/if}
-					</p>
+					</h2>
+					{#if nextBestUnit.unit}
+						<p class="text-sm text-primary-foreground/85">{nextBestUnit.unit}</p>
+					{/if}
+					<div class="max-w-sm space-y-1.5 pt-1">
+						<div class="flex items-center justify-between text-xs text-primary-foreground/80">
+							<span>{heroMastery}% mastered</span>
+							<span>
+								{#if frqRecommendation}
+									FRQ · {nextBestUnit.frqAttempts ?? 0} submissions
+								{:else if nextBestUnit.totalAttempts > 0}
+									{nextBestUnit.totalAttempts} attempts
+								{:else}
+									FRQ · {nextBestUnit.frqAttempts ?? 0} submissions
+								{/if}
+							</span>
+						</div>
+						<div class="h-2 overflow-hidden rounded-full bg-white/20">
+							<div
+								class="h-full rounded-full bg-white transition-all"
+								style="width: {heroMastery}%"
+							></div>
+						</div>
+					</div>
 				{:else}
-					<p class="text-base font-semibold">Start your first focused practice session</p>
-					<p class="text-sm text-muted-foreground">
+					<h2 class="font-display text-2xl font-medium tracking-tight sm:text-3xl">
+						Start your first focused practice
+					</h2>
+					<p class="max-w-md text-sm text-primary-foreground/85">
 						We'll personalize this recommendation once you complete a few attempts.
 					</p>
 				{/if}
+				<div class="pt-2">
+					<Button
+						href={recommendedPracticeHref}
+						variant="secondary"
+						class="rounded-full bg-white text-primary hover:bg-white/90"
+					>
+						Continue practice
+						<ArrowRightIcon class="size-4" />
+					</Button>
+				</div>
 			</div>
-			<Button href={recommendedPracticeHref} class="rounded-full">
-				Start Recommended Practice
-			</Button>
+			<div
+				class="hidden shrink-0 items-center justify-center sm:flex"
+				aria-hidden="true"
+			>
+				<div
+					class="flex size-28 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20"
+				>
+					<BookOpenIcon class="size-12 text-white/90" />
+				</div>
+			</div>
 		</div>
 	</Card.Root>
 
 	{#if (statsData?.overview.totalQuestions ?? 0) > 0 || (frqEnabled && (statsData?.overview.frqSubmissions ?? 0) > 0)}
-		<p class="text-sm text-muted-foreground">
-			<a
-				href="{resolve('/app/progress')}?view=history"
-				class="underline underline-offset-4 hover:text-foreground"
-			>
-				View full question history →
-			</a>
-		</p>
+		<RichStatsGrid stats={statsData} {frqEnabled} />
 	{/if}
-
-	<StatsOverviewCards stats={statsData} {frqEnabled} />
-
-	<div>
-		<h2 class="mb-4 font-display text-xl font-medium tracking-tight sm:text-2xl">Quick Actions</h2>
-		<div class="grid gap-4 sm:grid-cols-2">
-			<a href={resolve('/app/practice')} class="block">
-				<Card.Root
-					class="flex items-center gap-4 rounded-2xl border border-border/60 p-5 shadow-sm ring-0 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/20 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
-				>
-					<div
-						class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
-					>
-						<BookOpenIcon class="h-5 w-5" />
-					</div>
-					<div>
-						<p class="font-medium">Start Practicing</p>
-						<p class="text-sm text-muted-foreground">Generate questions and test your knowledge</p>
-					</div>
-				</Card.Root>
-			</a>
-			<a href={resolve('/app/progress')} class="block">
-				<Card.Root
-					class="flex items-center gap-4 rounded-2xl border border-border/60 p-5 shadow-sm ring-0 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-muted/20 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"
-				>
-					<div
-						class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-					>
-						<BarChart3Icon class="h-5 w-5" />
-					</div>
-					<div>
-						<p class="font-medium">View Progress</p>
-						<p class="text-sm text-muted-foreground">Track mastery across AP subjects and units</p>
-					</div>
-				</Card.Root>
-			</a>
-		</div>
-	</div>
 
 	{#if statsData?.subjectBreakdown && statsData.subjectBreakdown.length > 0}
 		<div>
-			<h2 class="mb-4 font-display text-xl font-medium tracking-tight sm:text-2xl">
-				Subject Performance
-			</h2>
-			<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
+			<SectionHeader title="Your subjects">
+				{#snippet action()}
+					<a
+						href={resolve('/app/progress')}
+						class="text-sm text-primary underline-offset-4 hover:underline"
+					>
+						View progress
+					</a>
+				{/snippet}
+			</SectionHeader>
+			<Card.Root class={appSurfaceClass}>
 				<div class="divide-y divide-border/70">
 					{#each statsData.subjectBreakdown as subject (subject.subject)}
-						<div class="flex items-center gap-4 px-5 py-3.5">
-							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-medium">{subject.subject}</p>
-								<p class="text-xs text-muted-foreground">{subject.total} questions</p>
+						<SubjectRow
+							title={subject.subject}
+							meta={`${subject.total} questions${subject.avgTimeSeconds ? ` · ${Math.round(subject.avgTimeSeconds)}s avg` : ''}`}
+							value={subject.total > 0 ? `${subject.accuracy}%` : undefined}
+							barWidth={subject.accuracy}
+							barClass={masteryBarClass(subject.accuracy)}
+						/>
+					{/each}
+				</div>
+			</Card.Root>
+		</div>
+	{/if}
+
+	{#if recentActivity.length > 0}
+		<div>
+			<SectionHeader title="Recent activity">
+				{#snippet action()}
+					<a
+						href="{resolve('/app/progress')}?view=history"
+						class="text-sm text-primary underline-offset-4 hover:underline"
+					>
+						Full history
+					</a>
+				{/snippet}
+			</SectionHeader>
+			<Card.Root class={appSurfaceClass}>
+				<div class="divide-y divide-border/70">
+					{#each recentActivity as entry (`${entry.apClass}:${entry.unit}`)}
+						<div class="flex items-center justify-between gap-4 px-5 py-3.5">
+							<div class="min-w-0">
+								<p class="truncate text-sm font-medium">
+									{entry.apClass}{#if entry.unit}
+										· {entry.unit}{/if}
+								</p>
+								<p class="text-xs text-muted-foreground">
+									{entry.totalAttempts} MCQ{#if entry.frqAttempts}
+										· {entry.frqAttempts} FRQ{/if}
+								</p>
 							</div>
-							<div class="flex items-center gap-3 text-right">
-								<div class="w-24">
-									<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
-										<div
-											class="h-full rounded-full bg-primary transition-all"
-											style="width: {subject.accuracy}%"
-										></div>
-									</div>
-								</div>
-								<span class="w-12 text-sm font-medium tabular-nums">{subject.accuracy}%</span>
-							</div>
-							{#if subject.avgTimeSeconds}
-								<div class="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
-									<ClockIcon class="h-3 w-3" />
-									<span>{Math.round(subject.avgTimeSeconds)}s avg</span>
-								</div>
+							{#if entry.score !== null}
+								<span
+									class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-primary"
+								>
+									{entry.score}%
+								</span>
 							{/if}
 						</div>
 					{/each}
@@ -192,14 +282,12 @@
 	{/if}
 
 	{#if !statsData || (statsData.overview.totalQuestions === 0 && statsData.overview.frqSubmissions === 0)}
-		<Card.Root
-			class="rounded-2xl border border-dashed border-border/70 p-10 text-center text-muted-foreground shadow-sm ring-0"
-		>
+		<Card.Root class="{appSurfaceClass} border-dashed p-10 text-center text-muted-foreground">
 			<BookOpenIcon class="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
 			<p class="font-medium">No practice sessions yet</p>
 			<p class="mt-1 text-sm text-muted-foreground">Start practicing to see your stats here.</p>
 			<div class="mt-4">
-				<Button href={resolve('/app/practice')} class="rounded-full">Start Practicing</Button>
+				<Button href={resolve('/app/practice')} class="rounded-full">Start practicing</Button>
 			</div>
 		</Card.Root>
 	{/if}
