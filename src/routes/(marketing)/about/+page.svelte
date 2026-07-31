@@ -96,6 +96,7 @@
 
 				<nav class="flex items-center gap-3" aria-label="Social links">
 					{#each socialLinks as link (link.label)}
+						<!-- eslint-disable svelte/no-navigation-without-resolve -->
 						<a
 							href={link.href}
 							target="_blank"
@@ -113,6 +114,7 @@
 								<path d={link.path} />
 							</svg>
 						</a>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					{/each}
 				</nav>
 			</div>

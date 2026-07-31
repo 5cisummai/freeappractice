@@ -2,11 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { authClient } from '$lib/auth/client.js';
 	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
 	import QuestionShell from '$lib/components/questions/question-shell.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';

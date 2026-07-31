@@ -76,6 +76,7 @@
 		>
 			<nav class="flex flex-wrap items-center gap-4" aria-label="Contact links">
 				{#each contactLinks as link (link.label)}
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
 					<a
 						href={link.href}
 						target={link.external ? '_blank' : undefined}
@@ -98,6 +99,7 @@
 							</svg>
 						{/if}
 					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				{/each}
 			</nav>
 

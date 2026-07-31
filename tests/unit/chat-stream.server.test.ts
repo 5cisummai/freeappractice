@@ -50,6 +50,7 @@ test('aborts provider work and reports a timeout', async () => {
 test('cancelling the response aborts provider work', async () => {
 	let providerSignal: AbortSignal | undefined;
 	const chatImpl: TutorChatFunction = async function* (options) {
+		yield* [];
 		providerSignal = options.signal;
 		await new Promise(() => undefined);
 	};
