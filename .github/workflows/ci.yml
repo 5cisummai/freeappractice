@@ -36,6 +36,19 @@ jobs:
 
       - name: Typecheck
         run: bun run check
+        env:
+          # Placeholders so $env/static modules resolve for svelte-check (not real secrets).
+          BETTER_AUTH_SECRET: build-time-placeholder-secret-min-32-chars
+          BETTER_AUTH_URL: http://localhost:4173
+          PUBLIC_BASE_URL: http://localhost:4173
+          DATABASE_URI: mongodb://127.0.0.1:27017/ci
+          OPEN_AI_KEY: sk-ci-placeholder
+          PUBLIC_GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
+          PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci
+          PUBLIC_POSTHOG_HOST: https://us.i.posthog.com
+          PUBLIC_DESMOS_API_KEY: ci
+          RESEND_API_KEY: re_ci
+          GITHUB_BUG_REPORT_TOKEN: ghp_ci
 
       - name: Unit tests
         run: bun run test:unit
