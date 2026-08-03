@@ -30,10 +30,6 @@ export interface StatsData {
 		accuracyLast7Days: number;
 		frqSubmissionsLast7Days: number;
 	};
-	/** Oldest → newest: whether the user practiced on each of the last 7 local calendar days. */
-	activityLast7Days: boolean[];
-	/** Oldest → newest: MCQ + FRQ attempt counts per local day for the last 7 days. */
-	questionsPerDayLast7Days: number[];
 	subjectBreakdown: Array<{
 		subject: string;
 		total: number;

@@ -2,7 +2,6 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
-import { loadUserStreak } from '$lib/users/streak.server';
 
 export const load: LayoutServerLoad = async ({ cookies, locals, request }) => {
 	if (!locals.session) {
@@ -14,7 +13,6 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request }) => {
 
 	return {
 		user: locals.user!,
-		isAdmin: isAdminUser(locals.user),
-		currentStreak: await loadUserStreak(userId, cookies)
+		isAdmin: isAdminUser(locals.user)
 	};
 };

@@ -136,19 +136,19 @@
 	<title>Settings – Free AP Practice</title>
 </svelte:head>
 
-<PageShell title="Settings" description="Manage your account and preferences.">
+<PageShell title="Settings" description="Manage your account and app preferences.">
 	<div class="mx-auto w-full max-w-2xl space-y-8">
 		<nav
-			class="sticky top-14 z-10 -mx-1 flex gap-1 overflow-x-auto rounded-full border border-border/60 bg-card/95 px-1.5 py-1.5 shadow-sm backdrop-blur supports-backdrop-filter:bg-card/80"
+			class="sticky top-14 z-10 -mx-1 flex gap-1 overflow-x-auto bg-background/95 px-1 py-2 backdrop-blur supports-backdrop-filter:bg-background/80"
 			aria-label="Settings sections"
 		>
 			{#each SECTIONS as section (section.id)}
 				<button
 					type="button"
 					class={[
-						'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
+						'shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
 						activeSection === section.id
-							? 'bg-primary text-primary-foreground shadow-sm'
+							? 'bg-primary text-primary-foreground'
 							: 'text-muted-foreground hover:bg-muted hover:text-foreground'
 					]}
 					aria-current={activeSection === section.id ? 'true' : undefined}
@@ -161,10 +161,10 @@
 
 		<section id="practice" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Practice</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Exam mode</p>
+						<p class="text-sm font-medium text-foreground">Realistic exam mode</p>
 						<p class="text-sm text-muted-foreground">
 							Strip practice chrome so questions look closer to the real AP exam.
 						</p>
@@ -180,7 +180,7 @@
 
 		<section id="appearance" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Appearance</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Theme</p>
@@ -193,7 +193,7 @@
 									{...props}
 									variant="outline"
 									size="sm"
-									class="min-w-28 justify-between gap-2 rounded-full"
+									class="min-w-28 justify-between gap-2"
 								>
 									<span class="flex items-center gap-2">
 										{#if theme === 'dark'}
@@ -232,10 +232,10 @@
 
 		<section id="privacy" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Privacy</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Analytics</p>
+						<p class="text-sm font-medium text-foreground">Product analytics</p>
 						<p class="text-sm text-muted-foreground">
 							Allow PostHog to collect feature usage, errors, and session replay. Vercel Analytics
 							always runs cookieless for aggregate traffic.
@@ -254,7 +254,7 @@
 
 		<section id="account" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Account</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
 				<form onsubmit={handleUpdateAccount} class="space-y-4 px-4 py-4">
 					<div class="space-y-2">
 						<Label for="name">Name</Label>
@@ -265,10 +265,10 @@
 						<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
 					</div>
 					<div class="flex flex-wrap gap-2 pt-1">
-						<Button type="submit" size="sm" class="rounded-full" disabled={settingsController.accountPending}>
+						<Button type="submit" size="sm" disabled={settingsController.accountPending}>
 							{settingsController.accountPending ? 'Saving...' : 'Save changes'}
 						</Button>
-						<Button type="button" variant="outline" size="sm" class="rounded-full" onclick={resetAccountForm}>
+						<Button type="button" variant="outline" size="sm" onclick={resetAccountForm}>
 							Reset
 						</Button>
 					</div>
@@ -280,9 +280,8 @@
 					</div>
 					<Button
 						type="button"
-						variant="ghost"
+						variant="outline"
 						size="sm"
-						class="text-destructive hover:bg-destructive/10 hover:text-destructive"
 						onclick={handleSignOut}
 						disabled={signOutPending}
 					>
@@ -300,7 +299,6 @@
 						type="button"
 						variant="destructive"
 						size="sm"
-						class="rounded-full"
 						onclick={() => (deleteAccountOpen = true)}
 					>
 						Delete
@@ -311,7 +309,7 @@
 
 		<section id="about" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">About</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">App version</p>
@@ -324,21 +322,21 @@
 						<p class="text-sm font-medium text-foreground">Privacy Policy</p>
 						<p class="text-sm text-muted-foreground">How we handle your data.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" class="rounded-full" href={resolve('/privacy')}>View</Button>
+					<Button type="button" variant="outline" size="sm" href={resolve('/privacy')}>View</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Terms of Service</p>
 						<p class="text-sm text-muted-foreground">The rules for using this site.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" class="rounded-full" href={resolve('/terms')}>View</Button>
+					<Button type="button" variant="outline" size="sm" href={resolve('/terms')}>View</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Changelog</p>
 						<p class="text-sm text-muted-foreground">What changed in recent releases.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" class="rounded-full" href={resolve('/changelog')}>
+					<Button type="button" variant="outline" size="sm" href={resolve('/changelog')}>
 						View
 					</Button>
 				</div>

@@ -105,10 +105,7 @@
 	<title>Practice – Free AP Practice</title>
 </svelte:head>
 
-<PageShell
-	title="Practice"
-	description="Generate questions and deepen your understanding."
->
+<PageShell title="Practice" description="Select a course and unit, then generate a question.">
 	<div class="mx-auto max-w-250">
 		<PracticeShell
 			bind:selectedClass

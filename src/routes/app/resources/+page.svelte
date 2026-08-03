@@ -3,20 +3,15 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { appSurfaceClass } from '$lib/components/app/surface.js';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import LinkIcon from '@lucide/svelte/icons/link';
 
 	const blogResources = [
 		{
-			path: '/blog' as const,
+			href: resolve('/blog'),
 			label: 'Open the blog',
 			description: 'Browse all current study guides, updates, and strategy posts.'
 		},
 		{
-			path: '/blog/science-of-studying' as const,
+			href: resolve('/blog/science-of-studying'),
 			label: 'Science of Studying',
 			description: 'Research-backed strategies for spacing, retrieval, and retention.'
 		}
@@ -56,104 +51,57 @@
 
 <PageShell
 	title="Resources"
-	description="Study guides, strategies, and official links to keep in your AP toolkit."
+	description="Curated study guides from our blog and external links worth keeping in your AP toolkit."
 >
 	<div class="grid gap-6 lg:grid-cols-2">
-		<Card.Root class="h-full {appSurfaceClass}">
+		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
 			<Card.Header>
-				<div class="flex items-center gap-2">
-					<div
-						class="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
-					>
-						<BookOpenIcon class="size-4" />
-					</div>
-					<div>
-						<Card.Title class="font-display text-lg font-medium tracking-tight">
-							From our blog
-						</Card.Title>
-						<Card.Description>In-house study guides and AP strategy posts.</Card.Description>
-					</div>
-				</div>
+				<Card.Title class="font-display text-lg font-medium tracking-tight">Blog</Card.Title>
+				<Card.Description>
+					Read the latest in-house study guides and AP strategy posts.
+				</Card.Description>
 			</Card.Header>
-			<Card.Content class="space-y-1 pt-0">
-				{#each blogResources as resource (resource.path)}
-					<a
-						href={resolve(resource.path)}
-						class="group flex items-start justify-between gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/50"
-					>
-						<div class="min-w-0">
-							<p class="font-medium group-hover:text-primary">{resource.label}</p>
-							<p class="mt-0.5 text-sm text-muted-foreground">{resource.description}</p>
+			<Card.Content class="space-y-4">
+				<div class="space-y-3">
+					{#each blogResources as resource (resource.href)}
+						<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
+							<p class="font-medium">{resource.label}</p>
+							<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
+							<div class="mt-3">
+								<Button variant="outline" href={resource.href} class="rounded-full">Open</Button>
+							</div>
 						</div>
-						<span
-							class="mt-0.5 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary"
-						>
-							Read guide
-							<ArrowRightIcon class="size-3.5" />
-						</span>
-					</a>
-				{/each}
+					{/each}
+				</div>
 			</Card.Content>
 		</Card.Root>
 
-		<Card.Root class="h-full {appSurfaceClass}">
+		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
 			<Card.Header>
-				<div class="flex items-center gap-2">
-					<div
-						class="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
-					>
-						<LinkIcon class="size-4" />
-					</div>
-					<div>
-						<Card.Title class="font-display text-lg font-medium tracking-tight">
-							Helpful links
-						</Card.Title>
-						<Card.Description>Official references and supplemental study tools.</Card.Description>
-					</div>
-				</div>
+				<Card.Title class="font-display text-lg font-medium tracking-tight">
+					External resources
+				</Card.Title>
+				<Card.Description>Official references and supplemental study tools.</Card.Description>
 			</Card.Header>
-			<Card.Content class="space-y-1 pt-0">
+			<Card.Content class="space-y-3">
 				{#each externalResources as resource (resource.href)}
-					<div
-						class="group flex items-start justify-between gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/50"
-					>
-						<div class="min-w-0">
-							<p class="font-medium">{resource.label}</p>
-							<p class="mt-0.5 text-sm text-muted-foreground">{resource.description}</p>
+					<div class="rounded-xl border border-border/60 bg-muted/30 p-4">
+						<p class="font-medium">{resource.label}</p>
+						<p class="mt-1 text-sm text-muted-foreground">{resource.description}</p>
+						<div class="mt-3">
+							<Button
+								variant="outline"
+								href={resource.href}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="rounded-full"
+							>
+								Visit site
+							</Button>
 						</div>
-						<Button
-							variant="ghost"
-							size="sm"
-							href={resource.href}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="shrink-0 gap-1 text-primary hover:text-primary"
-						>
-							Visit
-							<ExternalLinkIcon class="size-3.5" />
-						</Button>
 					</div>
 				{/each}
 			</Card.Content>
 		</Card.Root>
 	</div>
-
-	<Card.Root class="{appSurfaceClass} border-primary/20 bg-primary/5">
-		<Card.Content
-			class="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center"
-		>
-			<div>
-				<p class="font-medium">Have a resource to share?</p>
-				<p class="mt-1 text-sm text-muted-foreground">
-					Suggest a guide or link that helped you prepare for an AP exam.
-				</p>
-			</div>
-			<Button
-				href="mailto:support@freeappractice.org?subject=Resource%20suggestion"
-				class="rounded-full"
-			>
-				Suggest resource
-			</Button>
-		</Card.Content>
-	</Card.Root>
 </PageShell>

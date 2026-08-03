@@ -90,11 +90,6 @@ describe('buildStatsData', () => {
 		expect(stats.overview.accuracy).toBe(67);
 		expect(stats.overview.currentStreak).toBe(2);
 		expect(stats.recentPerformance.questionsLast7Days).toBe(2);
-		expect(stats.activityLast7Days).toHaveLength(7);
-		expect(stats.questionsPerDayLast7Days).toHaveLength(7);
-		expect(stats.activityLast7Days[6]).toBe(true); // today
-		expect(stats.activityLast7Days[5]).toBe(true); // yesterday
-		expect(stats.questionsPerDayLast7Days[6]).toBe(1);
 		expect(stats.subjectBreakdown[0]?.subject).toBe('AP Biology');
 		expect(stats.subjectBreakdown).toHaveLength(2);
 	});
