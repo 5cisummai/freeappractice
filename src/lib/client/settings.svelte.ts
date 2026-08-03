@@ -5,6 +5,7 @@ import { authClient } from '$lib/auth/client.js';
 import { authCallbackUrl } from '$lib/auth/urls.js';
 import { getSiteUrl } from '$lib/site-url.js';
 import { resetPostHogUser } from '$lib/client/posthog-analytics';
+import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 
 type SettingsData = {
 	theme: 'light' | 'dark' | 'system';
@@ -21,6 +22,7 @@ class SettingsController {
 	});
 	accountPending = $state(false);
 	deletePending = $state(false);
+	clearPracticePending = $state(false);
 
 	constructor() {
 		if (typeof window === 'undefined') return;
@@ -101,6 +103,27 @@ class SettingsController {
 			return false;
 		} finally {
 			this.accountPending = false;
+		}
+	}
+
+	async clearPracticeData(): Promise<boolean> {
+		if (this.clearPracticePending) return false;
+		this.clearPracticePending = true;
+		try {
+			const response = await apiFetch('/api/me/practice-data', { method: 'DELETE' });
+			const payload = await readJsonOrNull<{ error?: string; message?: string }>(response);
+			if (!response.ok) {
+				throw new Error(getResponseMessage(payload, 'Failed to clear practice data'));
+			}
+
+			await invalidateAll();
+			toast.success('Practice data cleared');
+			return true;
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : 'Failed to clear practice data');
+			return false;
+		} finally {
+			this.clearPracticePending = false;
 		}
 	}
 

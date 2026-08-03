@@ -1,10 +1,8 @@
 <script lang="ts">
 	import type { StatsData } from '$lib/users/types.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import FlameIcon from '@lucide/svelte/icons/flame';
-	import TargetIcon from '@lucide/svelte/icons/target';
-	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import { performanceTextClass } from '$lib/components/app/performance.js';
+	import { cn } from '$lib/utils.js';
 
 	let {
 		stats,
@@ -16,72 +14,54 @@
 
 	const overview = $derived(stats?.overview);
 	const questionsLast7Days = $derived(stats?.recentPerformance?.questionsLast7Days ?? 0);
+	const accuracy = $derived(overview?.accuracy ?? 0);
+	const streak = $derived(overview?.currentStreak ?? 0);
+	const frqHint = $derived(
+		frqEnabled && (overview?.frqSubmissions ?? 0) > 0
+			? `${overview?.frqSubmissions ?? 0} FRQ all time`
+			: undefined
+	);
 </script>
 
-<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+<div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
 	<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
-		<div class="flex items-center gap-3">
-			<div class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-				<BookOpenIcon class="size-4" />
-			</div>
-			<div>
-				<p class="text-2xl font-semibold tracking-tight">{overview?.totalQuestions ?? 0}</p>
-				<p class="text-xs text-muted-foreground">Questions</p>
-			</div>
-		</div>
+		<p class="text-2xl font-semibold tracking-tight tabular-nums">
+			{overview?.totalQuestions ?? 0}
+		</p>
+		<p class="mt-0.5 text-xs text-muted-foreground">Questions</p>
+		{#if frqHint}
+			<p class="mt-0.5 text-xs text-muted-foreground/80">{frqHint}</p>
+		{/if}
 	</Card.Root>
-	{#if frqEnabled}
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
-			<div class="flex items-center gap-3">
-				<div
-					class="flex size-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400"
-				>
-					<BookOpenIcon class="size-4" />
-				</div>
-				<div>
-					<p class="text-2xl font-semibold tracking-tight">{overview?.frqSubmissions ?? 0}</p>
-					<p class="text-xs text-muted-foreground">FRQ submissions</p>
-				</div>
-			</div>
-		</Card.Root>
-	{/if}
+
 	<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
-		<div class="flex items-center gap-3">
-			<div
-				class="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-			>
-				<TargetIcon class="size-4" />
-			</div>
-			<div>
-				<p class="text-2xl font-semibold tracking-tight">{overview?.accuracy ?? 0}%</p>
-				<p class="text-xs text-muted-foreground">Accuracy</p>
-			</div>
-		</div>
+		<p class={cn('text-2xl font-semibold tracking-tight tabular-nums', performanceTextClass(accuracy))}>
+			{accuracy}%
+		</p>
+		<p class="mt-0.5 text-xs text-muted-foreground">Accuracy</p>
 	</Card.Root>
+
 	<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
-		<div class="flex items-center gap-3">
-			<div
-				class="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400"
-			>
-				<FlameIcon class="size-4" />
-			</div>
-			<div>
-				<p class="text-2xl font-semibold tracking-tight">{overview?.currentStreak ?? 0}</p>
-				<p class="text-xs text-muted-foreground">Day Streak</p>
-			</div>
-		</div>
+		<p
+			class={cn(
+				'text-2xl font-semibold tracking-tight tabular-nums',
+				streak > 0 && 'text-amber-600 dark:text-amber-400'
+			)}
+		>
+			{streak}
+		</p>
+		<p class="mt-0.5 text-xs text-muted-foreground">Day streak</p>
 	</Card.Root>
+
 	<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
-		<div class="flex items-center gap-3">
-			<div
-				class="flex size-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400"
-			>
-				<TrendingUpIcon class="size-4" />
-			</div>
-			<div>
-				<p class="text-2xl font-semibold tracking-tight">{questionsLast7Days}</p>
-				<p class="text-xs text-muted-foreground">Last 7 Days</p>
-			</div>
-		</div>
+		<p
+			class={cn(
+				'text-2xl font-semibold tracking-tight tabular-nums',
+				questionsLast7Days > 0 && 'text-primary'
+			)}
+		>
+			{questionsLast7Days}
+		</p>
+		<p class="mt-0.5 text-xs text-muted-foreground">Last 7 days</p>
 	</Card.Root>
 </div>

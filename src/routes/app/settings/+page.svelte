@@ -21,7 +21,7 @@
 
 	let { data } = $props();
 
-	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'about';
+	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'danger' | 'about';
 	type Theme = 'light' | 'dark' | 'system';
 
 	const SECTIONS: { id: SettingsSection; label: string }[] = [
@@ -29,6 +29,7 @@
 		{ id: 'appearance', label: 'Appearance' },
 		{ id: 'privacy', label: 'Privacy' },
 		{ id: 'account', label: 'Account' },
+		{ id: 'danger', label: 'Danger' },
 		{ id: 'about', label: 'About' }
 	];
 
@@ -41,6 +42,7 @@
 	let activeSection = $state<SettingsSection>('practice');
 	let scrollingToSection = $state(false);
 	let deleteAccountOpen = $state(false);
+	let clearPracticeOpen = $state(false);
 	let accountForm = $state({ name: '', email: '' });
 	let deletePassword = $state('');
 	let signOutPending = $state(false);
@@ -114,6 +116,13 @@
 		}
 	}
 
+	async function handleClearPracticeData() {
+		const result = await settingsController.clearPracticeData();
+		if (result) {
+			clearPracticeOpen = false;
+		}
+	}
+
 	async function handleSignOut() {
 		if (signOutPending) return;
 		signOutPending = true;
@@ -136,20 +145,24 @@
 	<title>Settings – Free AP Practice</title>
 </svelte:head>
 
-<PageShell title="Settings" description="Manage your account and app preferences.">
+<PageShell title="Settings" description="Manage your account and preferences.">
 	<div class="mx-auto w-full max-w-2xl space-y-8">
 		<nav
-			class="sticky top-14 z-10 -mx-1 flex gap-1 overflow-x-auto bg-background/95 px-1 py-2 backdrop-blur supports-backdrop-filter:bg-background/80"
+			class="sticky top-14 z-10 -mx-1 flex gap-1 overflow-x-auto border-b border-border/60 bg-background/95 px-1 py-2 backdrop-blur supports-backdrop-filter:bg-background/80"
 			aria-label="Settings sections"
 		>
 			{#each SECTIONS as section (section.id)}
 				<button
 					type="button"
 					class={[
-						'shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+						'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
 						activeSection === section.id
-							? 'bg-primary text-primary-foreground'
-							: 'text-muted-foreground hover:bg-muted hover:text-foreground'
+							? section.id === 'danger'
+								? 'bg-destructive/10 text-destructive'
+								: 'bg-primary/10 text-primary'
+							: section.id === 'danger'
+								? 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive'
+								: 'text-muted-foreground hover:bg-muted hover:text-foreground'
 					]}
 					aria-current={activeSection === section.id ? 'true' : undefined}
 					onclick={() => scrollToSection(section.id)}
@@ -161,10 +174,10 @@
 
 		<section id="practice" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Practice</h2>
-			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Realistic exam mode</p>
+						<p class="text-sm font-medium text-foreground">Exam mode</p>
 						<p class="text-sm text-muted-foreground">
 							Strip practice chrome so questions look closer to the real AP exam.
 						</p>
@@ -180,7 +193,7 @@
 
 		<section id="appearance" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Appearance</h2>
-			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Theme</p>
@@ -232,10 +245,10 @@
 
 		<section id="privacy" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Privacy</h2>
-			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Product analytics</p>
+						<p class="text-sm font-medium text-foreground">Analytics</p>
 						<p class="text-sm text-muted-foreground">
 							Allow PostHog to collect feature usage, errors, and session replay. Vercel Analytics
 							always runs cookieless for aggregate traffic.
@@ -254,7 +267,7 @@
 
 		<section id="account" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">Account</h2>
-			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 				<form onsubmit={handleUpdateAccount} class="space-y-4 px-4 py-4">
 					<div class="space-y-2">
 						<Label for="name">Name</Label>
@@ -288,6 +301,30 @@
 						{signOutPending ? 'Signing out...' : 'Sign out'}
 					</Button>
 				</div>
+			</div>
+		</section>
+
+		<section id="danger" class="scroll-mt-28 space-y-3">
+			<h2 class="text-sm font-medium text-destructive">Danger</h2>
+			<div class="overflow-hidden rounded-2xl border border-destructive/25 bg-card shadow-sm">
+				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+					<div class="min-w-0 space-y-0.5">
+						<p class="text-sm font-medium text-foreground">Clear practice data</p>
+						<p class="text-sm text-muted-foreground">
+							Delete question history, mastery progress, bookmarks, and FRQ submissions. Your
+							account stays signed in.
+						</p>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						class="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+						onclick={() => (clearPracticeOpen = true)}
+					>
+						Clear
+					</Button>
+				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-destructive">Delete account</p>
@@ -309,7 +346,7 @@
 
 		<section id="about" class="scroll-mt-28 space-y-3">
 			<h2 class="text-sm font-medium text-muted-foreground">About</h2>
-			<div class="overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">App version</p>
@@ -344,6 +381,28 @@
 		</section>
 	</div>
 </PageShell>
+
+<AlertDialog.Root bind:open={clearPracticeOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Clear practice data?</AlertDialog.Title>
+			<AlertDialog.Description>
+				This permanently deletes your question history, mastery progress, bookmarks, and FRQ
+				submissions. Your account will stay active. This cannot be undone.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+				onclick={handleClearPracticeData}
+				disabled={settingsController.clearPracticePending}
+			>
+				{settingsController.clearPracticePending ? 'Clearing...' : 'Clear practice data'}
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
 
 <AlertDialog.Root bind:open={deleteAccountOpen}>
 	<AlertDialog.Content>

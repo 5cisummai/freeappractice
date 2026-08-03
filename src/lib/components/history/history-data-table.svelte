@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import {
-		type RowSelectionState,
 		type SortingState,
 		type VisibilityState,
 		getCoreRowModel
@@ -35,7 +34,6 @@
 	}: HistoryDataTableProps = $props();
 
 	let columnVisibility = $state<VisibilityState>({});
-	let rowSelection = $state<RowSelectionState>({});
 	let detailOpen = $state(false);
 	let selectedItem = $state<HistoryItem | null>(null);
 
@@ -79,9 +77,6 @@
 			},
 			get columnVisibility() {
 				return columnVisibility;
-			},
-			get rowSelection() {
-				return rowSelection;
 			}
 		},
 		getCoreRowModel: getCoreRowModel(),
@@ -98,9 +93,6 @@
 		},
 		onColumnVisibilityChange: (updater) => {
 			columnVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
-		},
-		onRowSelectionChange: (updater) => {
-			rowSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
 		}
 	});
 </script>
@@ -138,7 +130,7 @@
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
 					<Table.Row>
 						{#each headerGroup.headers as header (header.id)}
-							<Table.Head class="[&:has([role=checkbox])]:ps-3">
+							<Table.Head class={header.column.id === 'subject' ? 'ps-4' : undefined}>
 								{#if !header.isPlaceholder}
 									<FlexRender
 										content={header.column.columnDef.header}
@@ -153,8 +145,7 @@
 			<Table.Body>
 				{#each table.getRowModel().rows as row (row.id)}
 					<Table.Row
-						data-state={row.getIsSelected() && 'selected'}
-						class="cursor-pointer"
+						class="cursor-pointer even:bg-muted/30"
 						tabindex={0}
 						aria-label="View question details"
 						onclick={() => viewDetails(row.original)}
@@ -162,9 +153,9 @@
 					>
 						{#each row.getVisibleCells() as cell (cell.id)}
 							<Table.Cell
-								class="[&:has([role=checkbox])]:ps-3"
+								class={cell.column.id === 'subject' ? 'ps-4' : undefined}
 								onclick={(e) => {
-									if (cell.column.id === 'select' || cell.column.id === 'actions') {
+									if (cell.column.id === 'actions') {
 										e.stopPropagation();
 									}
 								}}
@@ -186,11 +177,7 @@
 
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<p class="text-sm text-muted-foreground">
-			{table.getSelectedRowModel().rows.length} of
-			{table.getRowModel().rows.length} row(s) selected on this page · {total} total attempt{total ===
-			1
-				? ''
-				: 's'}
+			{total} total attempt{total === 1 ? '' : 's'}
 		</p>
 		<div class="flex items-center gap-2">
 			<p class="text-sm text-muted-foreground">
