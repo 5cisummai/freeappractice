@@ -1,4 +1,4 @@
-import { hasAnalyticsConsent, readAnalyticsConsent } from '$lib/client/analytics-consent';
+import { hasAnalyticsConsent } from '$lib/client/analytics-consent';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { classifyQuestionFailureFromStatus, type QuestionFailureKind } from '$lib/question-failure';
 
@@ -150,15 +150,13 @@ export function captureFirstAnswerSubmitted(opts: {
 	isCorrect: boolean;
 	timeTakenMs: number;
 }): void {
-	if (firstAnswerCapturedThisSession || readConsentIsDenied()) return;
+	if (firstAnswerCapturedThisSession || !hasAnalyticsConsent()) return;
 
-	if (canUseStorage()) {
-		try {
-			if (localStorage.getItem(FIRST_ANSWER_FLAG_KEY) === '1') return;
-			localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
-		} catch {
-			// Still attempt capture if storage is unavailable mid-session.
-		}
+	try {
+		if (localStorage.getItem(FIRST_ANSWER_FLAG_KEY) === '1') return;
+		localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
+	} catch {
+		// Still attempt capture if storage is unavailable mid-session.
 	}
 	firstAnswerCapturedThisSession = true;
 
@@ -201,8 +199,4 @@ export function captureAuthenticatedStudentReturnedIfNeeded(): void {
 	} catch {
 		// ignore
 	}
-}
-
-function readConsentIsDenied(): boolean {
-	return readAnalyticsConsent() === 'denied';
 }

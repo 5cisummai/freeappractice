@@ -58,7 +58,9 @@
 	<div class="grid gap-6 lg:grid-cols-2">
 		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
 			<Card.Header>
-				<Card.Title class="font-display text-lg font-medium tracking-tight">From our blog</Card.Title>
+				<Card.Title class="font-display text-lg font-medium tracking-tight"
+					>From our blog</Card.Title
+				>
 				<Card.Description>In-house study guides and AP strategy posts.</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-1 pt-0">

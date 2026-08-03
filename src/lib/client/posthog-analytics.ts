@@ -1,14 +1,19 @@
 import posthog from 'posthog-js';
 import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$env/static/public';
-import { hasAnalyticsConsent, readAnalyticsConsent } from '$lib/client/analytics-consent';
+import { readAnalyticsConsent } from '$lib/client/analytics-consent';
 import type { AnalyticsConsent } from '$lib/analytics-consent';
+import { getPostHogOperationDisposition } from '$lib/client/posthog-consent-policy';
 
 let initialized = false;
 const MAX_PENDING_OPERATIONS = 100;
 
-type PendingOperation =
+type PostHogOperation =
 	| { kind: 'capture'; event: string; properties?: Record<string, unknown> }
-	| { kind: 'identify'; distinctId: string; properties?: Record<string, unknown> };
+	| { kind: 'identify'; distinctId: string; properties?: Record<string, unknown> }
+	| { kind: 'pageview'; url?: string }
+	| { kind: 'exception'; error: unknown };
+
+type PendingOperation = Extract<PostHogOperation, { kind: 'capture' | 'identify' }>;
 
 let pendingOperations: PendingOperation[] = [];
 
@@ -52,11 +57,7 @@ export function applyPostHogConsent(consent: AnalyticsConsent) {
 	if (consent === 'granted') {
 		posthog.opt_in_capturing({ captureEventName: false });
 		for (const operation of pendingOperations) {
-			if (operation.kind === 'capture') {
-				posthog.capture(operation.event, operation.properties);
-			} else {
-				posthog.identify(operation.distinctId, operation.properties);
-			}
+			sendPostHogOperation(operation);
 		}
 		pendingOperations = [];
 		return;
@@ -68,66 +69,43 @@ export function applyPostHogConsent(consent: AnalyticsConsent) {
 	}
 }
 
-export function resetPostHogConsent() {
-	pendingOperations = [];
-	if (!initialized || typeof window === 'undefined') return;
-	posthog.reset(true);
-}
-
 export function capturePostHogEvent(event: string, properties?: Record<string, unknown>) {
-	const consent = readAnalyticsConsent();
-	if (consent === null) {
-		queuePendingOperation({ kind: 'capture', event, properties });
-		initPostHogAnalytics();
-		return;
-	}
-	if (consent === 'denied') return;
-
-	initPostHogAnalytics();
-	if (initialized) {
-		posthog.capture(event, properties);
-	}
+	dispatchPostHogOperation({ kind: 'capture', event, properties });
 }
 
 export function identifyPostHogUser(distinctId: string, properties?: Record<string, unknown>) {
-	const consent = readAnalyticsConsent();
-	if (consent === null) {
-		queuePendingOperation({ kind: 'identify', distinctId, properties });
-		initPostHogAnalytics();
-		return;
-	}
-	if (consent === 'denied') return;
-
-	initPostHogAnalytics();
-	if (initialized) {
-		posthog.identify(distinctId, properties);
-	}
+	dispatchPostHogOperation({ kind: 'identify', distinctId, properties });
 }
 
 export function capturePostHogPageview(url?: string) {
-	const consent = readAnalyticsConsent();
-	if (consent === null) return;
-
-	initPostHogAnalytics();
-	if (initialized) {
-		posthog.capture('$pageview', url ? { $current_url: url } : undefined);
-	}
+	dispatchPostHogOperation({ kind: 'pageview', url });
 }
 
-export function resetPostHogUser() {
+export function resetPostHogUser(options: { clearPersistence?: boolean } = {}) {
 	pendingOperations = [];
 	if (initialized && typeof window !== 'undefined') {
-		posthog.reset();
+		posthog.reset(options.clearPersistence ?? false);
 	}
 }
 
 export function capturePostHogException(error: unknown) {
-	if (!hasAnalyticsConsent()) return;
+	dispatchPostHogOperation({ kind: 'exception', error });
+}
+
+function dispatchPostHogOperation(operation: PostHogOperation): void {
+	const disposition = getPostHogOperationDisposition(readAnalyticsConsent(), operation.kind);
+	if (disposition === 'drop') return;
+
+	if (disposition === 'queue') {
+		if (operation.kind === 'capture' || operation.kind === 'identify') {
+			queuePendingOperation(operation);
+		}
+		initPostHogAnalytics();
+		return;
+	}
 
 	initPostHogAnalytics();
-	if (initialized) {
-		posthog.captureException(error);
-	}
+	if (initialized) sendPostHogOperation(operation);
 }
 
 function queuePendingOperation(operation: PendingOperation) {
@@ -135,4 +113,25 @@ function queuePendingOperation(operation: PendingOperation) {
 		pendingOperations.shift();
 	}
 	pendingOperations.push(operation);
+}
+
+function sendPostHogOperation(operation: PostHogOperation): void {
+	switch (operation.kind) {
+		case 'capture':
+			posthog.capture(operation.event, operation.properties);
+			return;
+		case 'identify':
+			posthog.identify(operation.distinctId, operation.properties);
+			return;
+		case 'pageview':
+			posthog.capture('$pageview', operation.url ? { $current_url: operation.url } : undefined);
+			return;
+		case 'exception':
+			posthog.captureException(operation.error);
+			return;
+		default: {
+			const exhaustiveOperation: never = operation;
+			return exhaustiveOperation;
+		}
+	}
 }

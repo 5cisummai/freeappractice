@@ -35,7 +35,12 @@
 	</Card.Root>
 
 	<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm ring-0">
-		<p class={cn('text-2xl font-semibold tracking-tight tabular-nums', performanceTextClass(accuracy))}>
+		<p
+			class={cn(
+				'text-2xl font-semibold tracking-tight tabular-nums',
+				performanceTextClass(accuracy)
+			)}
+		>
 			{accuracy}%
 		</p>
 		<p class="mt-0.5 text-xs text-muted-foreground">Accuracy</p>

@@ -192,18 +192,16 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(
 	Sentry.sentryHandle(),
-	sequence(
-		...(env.FLAGS_SECRET
-			? [
-					createHandle({
-						secret: env.FLAGS_SECRET,
-						flags: { multiAttemptExperimentEnabled, frqPracticeEnabled }
-					}) as Handle
-				]
-			: []),
-		posthogProxyHandle,
-		appHandle
-	)
+	...(env.FLAGS_SECRET
+		? [
+				createHandle({
+					secret: env.FLAGS_SECRET,
+					flags: { multiAttemptExperimentEnabled, frqPracticeEnabled }
+				}) as Handle
+			]
+		: []),
+	posthogProxyHandle,
+	appHandle
 );
 
 export const handleError: HandleServerError = Sentry.handleErrorWithSentry(

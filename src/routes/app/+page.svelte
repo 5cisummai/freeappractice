@@ -7,10 +7,7 @@
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import StatsOverviewCards from '$lib/components/stats-overview-cards.svelte';
-	import {
-		performanceBarClass,
-		performanceTextClass
-	} from '$lib/components/app/performance.js';
+	import { performanceBarClass, performanceTextClass } from '$lib/components/app/performance.js';
 	import { cn } from '$lib/utils.js';
 
 	let { data } = $props();
@@ -40,9 +37,9 @@
 	const frqRecommendation = $derived(
 		Boolean(
 			frqEnabled &&
-				nextBestUnit &&
-				(nextBestUnit.frqAveragePercentage ?? 100) < 70 &&
-				(nextBestUnit.frqAttempts ?? 0) > 0
+			nextBestUnit &&
+			(nextBestUnit.frqAveragePercentage ?? 100) < 70 &&
+			(nextBestUnit.frqAttempts ?? 0) > 0
 		)
 	);
 
@@ -94,9 +91,7 @@
 	maskTitle
 >
 	<!-- Primary focus: next practice action -->
-	<Card.Root
-		class="rounded-2xl border border-primary/35 bg-primary/5 p-5 shadow-sm ring-0 sm:p-6"
-	>
+	<Card.Root class="rounded-2xl border border-primary/35 bg-primary/5 p-5 shadow-sm ring-0 sm:p-6">
 		<div class="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
 			<div class="min-w-0 space-y-2">
 				<p class="text-sm font-medium text-primary">Next up</p>
@@ -240,7 +235,9 @@
 			class="rounded-2xl border border-dashed border-border/70 p-8 text-center shadow-sm ring-0 sm:p-10"
 		>
 			<p class="font-medium">No practice yet</p>
-			<p class="mt-1 text-sm text-muted-foreground">Answer a few questions to unlock your overview.</p>
+			<p class="mt-1 text-sm text-muted-foreground">
+				Answer a few questions to unlock your overview.
+			</p>
 			<div class="mt-4">
 				<Button href={resolve('/app/practice')}>Start practice</Button>
 			</div>

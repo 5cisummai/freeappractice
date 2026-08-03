@@ -10,7 +10,7 @@ import {
 	capturePostHogEvent,
 	capturePostHogPageview,
 	initPostHogAnalytics,
-	resetPostHogConsent
+	resetPostHogUser
 } from '$lib/client/posthog-analytics';
 
 function createPrivacyState() {
@@ -45,7 +45,7 @@ function createPrivacyState() {
 	function clearAnalyticsConsent() {
 		analyticsConsent = null;
 		initialized = true;
-		resetPostHogConsent();
+		resetPostHogUser({ clearPersistence: true });
 		clearAnalyticsConsentStorage();
 	}
 

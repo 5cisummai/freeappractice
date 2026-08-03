@@ -59,7 +59,8 @@ const config = {
 					'https://static.cloudflareinsights.com',
 					'https://va.vercel-scripts.com',
 					'https://t.freeappractice.org',
-					'https://us.posthog.com'
+					'https://us.posthog.com',
+					'https://o4511759649472512.ingest.us.sentry.io'
 				],
 				'frame-src': ['self', 'https://accounts.google.com'],
 				'worker-src': ['self', 'blob:'],

@@ -7,19 +7,25 @@ import { FrqAttempt } from '$lib/frq/model.server';
  * Removes MCQ history, mastery progress, bookmarks, and FRQ attempts.
  */
 export async function clearPracticeDataForUser(userId: string): Promise<void> {
-	await connectDb();
+	const db = await connectDb();
+	const session = await db.startSession();
 
-	await Promise.all([
-		UserProfile.updateOne(
-			{ userId },
-			{
-				$set: {
-					progress: [],
-					questionHistory: [],
-					bookmarkedQuestions: []
-				}
-			}
-		),
-		FrqAttempt.deleteMany({ userId })
-	]);
+	try {
+		await session.withTransaction(async () => {
+			await UserProfile.updateOne(
+				{ userId },
+				{
+					$set: {
+						progress: [],
+						questionHistory: [],
+						bookmarkedQuestions: []
+					}
+				},
+				{ session }
+			);
+			await FrqAttempt.deleteMany({ userId }, { session });
+		});
+	} finally {
+		await session.endSession();
+	}
 }

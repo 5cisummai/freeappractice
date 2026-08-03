@@ -22,16 +22,33 @@
 	let { data } = $props();
 
 	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'danger' | 'about';
+	type SettingsSectionTone = 'default' | 'danger';
+	type SettingsSectionConfig = {
+		id: SettingsSection;
+		label: string;
+		tone: SettingsSectionTone;
+	};
 	type Theme = 'light' | 'dark' | 'system';
 
-	const SECTIONS: { id: SettingsSection; label: string }[] = [
-		{ id: 'practice', label: 'Practice' },
-		{ id: 'appearance', label: 'Appearance' },
-		{ id: 'privacy', label: 'Privacy' },
-		{ id: 'account', label: 'Account' },
-		{ id: 'danger', label: 'Danger' },
-		{ id: 'about', label: 'About' }
+	const SECTIONS: SettingsSectionConfig[] = [
+		{ id: 'practice', label: 'Practice', tone: 'default' },
+		{ id: 'appearance', label: 'Appearance', tone: 'default' },
+		{ id: 'privacy', label: 'Privacy', tone: 'default' },
+		{ id: 'account', label: 'Account', tone: 'default' },
+		{ id: 'danger', label: 'Danger', tone: 'danger' },
+		{ id: 'about', label: 'About', tone: 'default' }
 	];
+
+	const SECTION_TONE_CLASSES: Record<SettingsSectionTone, { active: string; inactive: string }> = {
+		default: {
+			active: 'bg-primary/10 text-primary',
+			inactive: 'text-muted-foreground hover:bg-muted hover:text-foreground'
+		},
+		danger: {
+			active: 'bg-destructive/10 text-destructive',
+			inactive: 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive'
+		}
+	};
 
 	const THEME_LABELS: Record<Theme, string> = {
 		light: 'Light',
@@ -157,12 +174,8 @@
 					class={[
 						'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
 						activeSection === section.id
-							? section.id === 'danger'
-								? 'bg-destructive/10 text-destructive'
-								: 'bg-primary/10 text-primary'
-							: section.id === 'danger'
-								? 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'
+							? SECTION_TONE_CLASSES[section.tone].active
+							: SECTION_TONE_CLASSES[section.tone].inactive
 					]}
 					aria-current={activeSection === section.id ? 'true' : undefined}
 					onclick={() => scrollToSection(section.id)}

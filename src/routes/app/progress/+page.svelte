@@ -8,10 +8,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import ProgressHistoryPanel from '$lib/components/history/progress-history-panel.svelte';
-	import {
-		performanceBarClass,
-		performanceTextClass
-	} from '$lib/components/app/performance.js';
+	import { performanceBarClass, performanceTextClass } from '$lib/components/app/performance.js';
 	import { cn } from '$lib/utils.js';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import HistoryIcon from '@lucide/svelte/icons/history';
@@ -118,7 +115,9 @@
 			{#if !hasActivity}
 				<div class="rounded-2xl border border-dashed border-border/70 p-10 text-center">
 					<p class="font-medium">No progress yet</p>
-					<p class="mt-1 text-sm text-muted-foreground">Practice a few questions to build this view.</p>
+					<p class="mt-1 text-sm text-muted-foreground">
+						Practice a few questions to build this view.
+					</p>
 					<div class="mt-4">
 						<Button href={resolve('/app/practice')}>Start practice</Button>
 					</div>
@@ -202,7 +201,7 @@
 													{/if}
 												</Card.Description>
 											</div>
-											<span class="shrink-0 text-xs tabular-nums text-muted-foreground">
+											<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
 												{subject.units.length} unit{subject.units.length === 1 ? '' : 's'}
 											</span>
 										</div>

@@ -1,10 +1,6 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import {
-		type SortingState,
-		type VisibilityState,
-		getCoreRowModel
-	} from '@tanstack/table-core';
+	import { type SortingState, type VisibilityState, getCoreRowModel } from '@tanstack/table-core';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import { createHistoryColumns } from './history-columns.js';
 	import HistoryDetailSheet from './history-detail-sheet.svelte';
