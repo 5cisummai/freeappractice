@@ -88,7 +88,8 @@ function descriptionForSubject(name: string): string {
 	if (subject.includes('calculus')) return 'Limits, derivatives, and integrals.';
 	if (subject.includes('statistics')) return 'Data analysis, probability, and inference.';
 	if (subject.includes('precalculus')) return 'Functions, trigonometry, and modeling.';
-	if (subject.includes('computer science')) return 'Programming, algorithms, and computing concepts.';
+	if (subject.includes('computer science'))
+		return 'Programming, algorithms, and computing concepts.';
 	if (subject.includes('english')) return 'Reading, writing, and critical analysis.';
 	if (subject.includes('history')) return 'Historical thinking across eras and regions.';
 	if (subject.includes('government')) return 'Political systems, institutions, and policy.';
@@ -109,7 +110,11 @@ function iconClassForSubject(name: string): string {
 		return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400';
 	if (subject.includes('chemistry'))
 		return 'bg-violet-100 text-violet-600 dark:bg-violet-950/80 dark:text-violet-400';
-	if (subject.includes('calculus') || subject.includes('precalculus') || subject.includes('statistics'))
+	if (
+		subject.includes('calculus') ||
+		subject.includes('precalculus') ||
+		subject.includes('statistics')
+	)
 		return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/80 dark:text-indigo-400';
 	if (subject.includes('computer science'))
 		return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950/80 dark:text-cyan-400';

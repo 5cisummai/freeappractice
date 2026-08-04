@@ -79,9 +79,7 @@
 		</a>
 	{:else}
 		<a
-			href={resolve(
-				href as '/blog' | '/blog/science-of-studying' | '/blog/summer-ap-study-plan'
-			)}
+			href={resolve(href as '/blog' | '/blog/science-of-studying' | '/blog/summer-ap-study-plan')}
 			class="flex h-full flex-col"
 		>
 			{@render cardContent()}

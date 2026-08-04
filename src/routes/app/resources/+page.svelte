@@ -7,14 +7,14 @@
 			href: '/blog',
 			label: 'Open the blog',
 			description: 'Browse all current study guides, updates, and strategy posts.',
-			coverImage: 'https://public.assets.freeappractice.org/marissa-grootes-flRm0z3MEoA-unsplash.jpg'
+			coverImage:
+				'https://public.assets.freeappractice.org/marissa-grootes-flRm0z3MEoA-unsplash.jpg'
 		},
 		{
 			href: '/blog/science-of-studying',
 			label: 'Science of Studying',
 			description: 'Research-backed strategies for spacing, retrieval, and retention.',
-			coverImage:
-				'https://public.assets.freeappractice.org/zoshua-colah-klbApl9mxr0-unsplash.jpg'
+			coverImage: 'https://public.assets.freeappractice.org/zoshua-colah-klbApl9mxr0-unsplash.jpg'
 		},
 		{
 			href: '/blog/summer-ap-study-plan',
@@ -29,7 +29,8 @@
 		{
 			href: 'https://apstudents.collegeboard.org/',
 			label: 'AP Students',
-			description: 'Official College Board landing page for AP exam information and course details.',
+			description:
+				'Official College Board landing page for AP exam information and course details.',
 			coverImage:
 				'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&h=500&q=80'
 		},
