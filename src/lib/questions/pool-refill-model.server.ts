@@ -55,6 +55,33 @@ export const PoolRefillState: Model<IPoolRefillState> =
 	(mongoose.models.PoolRefillState as Model<IPoolRefillState>) ??
 	mongoose.model<IPoolRefillState>('PoolRefillState', poolRefillSchema);
 
+export interface IPoolBucketWriteLock extends Document {
+	questionType: PoolRefillQuestionType;
+	apClass: string;
+	unit: string;
+	leaseOwner?: string | null;
+	leaseExpiresAt?: Date | null;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+const poolBucketWriteLockSchema = new Schema<IPoolBucketWriteLock>(
+	{
+		questionType: { type: String, enum: ['mcq', 'frq'], required: true },
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		leaseOwner: { type: String, default: null },
+		leaseExpiresAt: { type: Date, default: null }
+	},
+	{ timestamps: true }
+);
+
+poolBucketWriteLockSchema.index({ questionType: 1, apClass: 1, unit: 1 }, { unique: true });
+
+export const PoolBucketWriteLock: Model<IPoolBucketWriteLock> =
+	(mongoose.models.PoolBucketWriteLock as Model<IPoolBucketWriteLock>) ??
+	mongoose.model<IPoolBucketWriteLock>('PoolBucketWriteLock', poolBucketWriteLockSchema);
+
 /** Daily LLM generation counter for hard budget enforcement. */
 export interface IPoolGenerationBudget extends Document {
 	dayKey: string;

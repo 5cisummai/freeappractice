@@ -58,6 +58,16 @@ vi.mock('$lib/frq/generation.server', () => ({
 	generateAndPersistFrq
 }));
 
+vi.mock('$lib/questions/pool-capacity.server', () => ({
+	writePoolBucketBelowTarget: vi.fn(
+		async (bucket: unknown, target: number, write: () => Promise<unknown>) => {
+			void bucket;
+			void target;
+			return { status: 'written', value: await write() };
+		}
+	)
+}));
+
 vi.mock('$lib/questions/pool-refill-queue.server', async () => {
 	const actual = await vi.importActual<typeof import('$lib/questions/pool-refill-queue.server')>(
 		'$lib/questions/pool-refill-queue.server'

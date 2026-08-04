@@ -20,7 +20,7 @@ import { apQuestionSchema } from '../src/lib/questions/generation.server';
 import { persistParsedQuestionToPool } from '../src/lib/questions/pool-write.server';
 import { parseGeneratedFrq, persistGeneratedFrqToPool } from '../src/lib/frq/generation.server';
 import { connectDb } from '../src/lib/server/db';
-import { countActivePoolRows } from '../src/lib/questions/pool-refill-queue.server';
+import { writePoolBucketBelowTarget } from '../src/lib/questions/pool-capacity.server';
 import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
 
 function argValue(flag: string): string | undefined {
@@ -135,21 +135,25 @@ async function main() {
 				continue;
 			}
 			const questionType = entry.questionType ?? 'mcq';
-			const active = await countActivePoolRows(questionType, entry.apClass, entry.unit);
 			const target =
 				questionType === 'mcq' ? preferredMcqTarget(entry.apClass) : QUESTION_POOL_CONFIG.frqTarget;
-			if (active >= target) {
+			const guarded = await writePoolBucketBelowTarget(
+				{ questionType, apClass: entry.apClass, unit: entry.unit },
+				target,
+				() =>
+					questionType === 'frq'
+						? persistGeneratedFrqToPool(entry.apClass, entry.unit, generated, manifest.model)
+						: persistParsedQuestionToPool(
+								entry.apClass,
+								entry.unit,
+								apQuestionSchema.parse(generated)
+							)
+			);
+			if (guarded.status === 'at_target') {
 				skippedAtTarget += 1;
 				continue;
 			}
-			const result =
-				questionType === 'frq'
-					? await persistGeneratedFrqToPool(entry.apClass, entry.unit, generated, manifest.model)
-					: await persistParsedQuestionToPool(
-							entry.apClass,
-							entry.unit,
-							apQuestionSchema.parse(generated)
-						);
+			const result = guarded.value;
 			if (result.skippedDuplicate) skippedDuplicate += 1;
 			else ok += 1;
 		} catch (error) {

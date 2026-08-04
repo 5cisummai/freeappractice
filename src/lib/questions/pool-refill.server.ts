@@ -6,6 +6,7 @@ import {
 	type IPoolRefillState
 } from '$lib/questions/pool-refill-model.server';
 import { countActivePoolRows, type PoolBucketKey } from '$lib/questions/pool-refill-queue.server';
+import { writePoolBucketBelowTarget } from '$lib/questions/pool-capacity.server';
 import { generateQuestionForPool } from '$lib/questions/pool-write.server';
 import { connectDb } from '$lib/server/db';
 import { QUESTION_POOL_CONFIG, type QuestionPoolConfig } from '$lib/questions/pool-constants';
@@ -289,21 +290,29 @@ async function releaseLeaseFailure(
 	).exec();
 }
 
-async function generateOne(bucket: PoolBucketKey): Promise<{ skippedDuplicate: boolean }> {
-	switch (bucket.questionType) {
-		case 'mcq': {
-			const result = await generateQuestionForPool(bucket.apClass, bucket.unit);
-			return { skippedDuplicate: Boolean(result.skippedDuplicate) };
+async function generateOne(
+	bucket: PoolBucketKey,
+	target: number
+): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean }> {
+	const guarded = await writePoolBucketBelowTarget(bucket, target, async () => {
+		switch (bucket.questionType) {
+			case 'mcq':
+				return generateQuestionForPool(bucket.apClass, bucket.unit);
+			case 'frq':
+				return generateAndPersistFrq(bucket.apClass, bucket.unit);
+			default: {
+				const _exhaustive: never = bucket.questionType;
+				return _exhaustive;
+			}
 		}
-		case 'frq': {
-			const result = await generateAndPersistFrq(bucket.apClass, bucket.unit);
-			return { skippedDuplicate: Boolean(result.skippedDuplicate) };
-		}
-		default: {
-			const _exhaustive: never = bucket.questionType;
-			return _exhaustive;
-		}
+	});
+	if (guarded.status === 'at_target') {
+		return { skippedDuplicate: false, skippedAtTarget: true };
 	}
+	return {
+		skippedDuplicate: Boolean(guarded.value.skippedDuplicate),
+		skippedAtTarget: false
+	};
 }
 
 export async function processRefillJob(
@@ -354,7 +363,17 @@ export async function processRefillJob(
 				throw leaseError;
 			}
 
-			const result = await generateOne(bucket);
+			const result = await generateOne(bucket, lease.target);
+			if (result.skippedAtTarget) {
+				await releaseDailyGenerationBudget(1);
+				const latestCount = await countActivePoolRows(
+					bucket.questionType,
+					bucket.apClass,
+					bucket.unit
+				);
+				await releaseLeaseSuccess(lease, latestCount, generated);
+				return { generated, skippedDuplicates, failed: false, budgetHit: false };
+			}
 			if (result.skippedDuplicate) {
 				skippedDuplicates += 1;
 			} else {
