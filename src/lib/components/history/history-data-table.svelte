@@ -125,7 +125,7 @@
 		<Popover.Root bind:open={filtersOpen}>
 			<Popover.Trigger>
 				{#snippet child({ props })}
-					<Button {...props} variant="outline" class="sm:ms-auto" aria-controls="history-filters">
+					<Button {...props} variant="ghost" class="sm:ms-auto" aria-controls="history-filters">
 						<FilterIcon class="size-4" aria-hidden="true" />
 						Filters
 					</Button>
@@ -139,7 +139,7 @@
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
-					<Button {...props} variant="outline">
+					<Button {...props} variant="ghost">
 						Columns
 						<ChevronDownIcon class="ms-2 size-4" />
 					</Button>
@@ -210,10 +210,7 @@
 		</Table.Root>
 	</div>
 
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-		<p class="text-sm text-muted-foreground">
-			{total} total attempt{total === 1 ? '' : 's'}
-		</p>
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
 		<div class="flex items-center gap-2">
 			<p class="text-sm text-muted-foreground">
 				Page {pageIndex + 1} of {pageCount}
