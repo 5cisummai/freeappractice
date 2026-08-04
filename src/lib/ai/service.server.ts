@@ -7,7 +7,7 @@ import { logger } from '$lib/server/logger';
 
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 export const GENERATION_MODEL = env.GENERATION_MODEL ?? 'gpt-5.6-luna';
-export const TUTOR_MODEL = env.TUTOR_MODEL ?? 'gpt-4.1-mini';
+export const TUTOR_MODEL = env.TUTOR_MODEL ?? 'gpt-5.4-mini';
 
 let provider: ReturnType<typeof createOpenAI> | null = null;
 
