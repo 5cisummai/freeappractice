@@ -13,13 +13,15 @@
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
+	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
+	import CheckIcon from '@lucide/svelte/icons/check';
 	import { userPrefersMode } from 'mode-watcher';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'advanced' | 'about';
 	type Theme = 'light' | 'dark' | 'system';
@@ -50,6 +52,11 @@
 	const themeLabel = $derived(
 		theme === 'light' || theme === 'dark' || theme === 'system' ? THEME_LABELS[theme] : 'System'
 	);
+	const selectedSubjects = $derived(new Set(data.selectedSubjects));
+
+	function subjectId(subject: string): string {
+		return `settings-subject-${subject.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+	}
 
 	function sectionFromHash(hash: string): SettingsSection {
 		if (hash === 'danger') return 'account';
@@ -149,6 +156,65 @@
 
 			<Tabs.Content value="practice" class="flex flex-col gap-3">
 				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<form method="POST" action="?/updateSubjects" class="space-y-4 px-4 py-4">
+						<div class="space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Classes</p>
+							<p class="text-sm text-muted-foreground">
+								Choose the AP classes you want to practice.
+							</p>
+						</div>
+						<div class="space-y-5">
+							{#each onboardingSubjectGroups as group (group.label)}
+								<section class="space-y-2" aria-labelledby={subjectId(group.label)}>
+									<h2 id={subjectId(group.label)} class="text-xs font-medium text-muted-foreground">
+										{group.label}
+									</h2>
+									<div class="grid gap-2 sm:grid-cols-2">
+										{#each group.subjects as subject (subject.name)}
+											{@const id = subjectId(subject.name)}
+											{@const SubjectIcon = subject.icon}
+											<div>
+												<input
+													{id}
+													type="checkbox"
+													name="subjects"
+													value={subject.name}
+													class="peer sr-only"
+													checked={selectedSubjects.has(subject.name)}
+												/>
+												<label
+													for={id}
+													class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.selection-check]:opacity-100 peer-checked:[&_.subject-icon]:bg-primary peer-checked:[&_.subject-icon]:text-primary-foreground"
+												>
+													<span
+														class="subject-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors"
+													>
+														<SubjectIcon class="size-4" />
+													</span>
+													<span class="min-w-0 flex-1 leading-tight font-medium"
+														>{subject.name}</span
+													>
+													<span
+														class="selection-check flex size-4 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
+														aria-hidden="true"
+													>
+														<CheckIcon class="size-3" />
+													</span>
+												</label>
+											</div>
+										{/each}
+									</div>
+								</section>
+							{/each}
+						</div>
+						{#if form?.subjectError}
+							<p class="text-sm text-destructive" role="alert">{form.subjectError}</p>
+						{/if}
+						<div class="flex justify-end">
+							<Button type="submit" size="sm">Save classes</Button>
+						</div>
+					</form>
+					<div class="border-t border-border/60"></div>
 					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 						<div class="flex min-w-0 flex-col gap-0.5">
 							<p class="text-sm font-medium text-foreground">Clear practice data</p>
@@ -159,9 +225,8 @@
 						</div>
 						<Button
 							type="button"
-							variant="outline"
+							variant="destructive"
 							size="sm"
-							class="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
 							onclick={() => (clearPracticeOpen = true)}
 						>
 							Clear
