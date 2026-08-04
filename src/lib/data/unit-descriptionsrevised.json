@@ -201,36 +201,28 @@
 					"unit_title": "Contextual Applications of Differentiation",
 					"exam_weighting_mc": "6%–9%",
 					"description": "Applied derivative problems, optimization, and modeling in varied contexts.",
-					"topics_may_include": [
-						"Related rates, optimization, modeling with derivatives"
-					]
+					"topics_may_include": ["Related rates, optimization, modeling with derivatives"]
 				},
 				{
 					"unit_number": 5,
 					"unit_title": "Analytical Applications of Differentiation",
 					"exam_weighting_mc": "8%–11%",
 					"description": "Function analysis, curve sketching, and theorems about derivatives.",
-					"topics_may_include": [
-						"Extrema, Mean Value Theorem, concavity and inflection points"
-					]
+					"topics_may_include": ["Extrema, Mean Value Theorem, concavity and inflection points"]
 				},
 				{
 					"unit_number": 6,
 					"unit_title": "Integration and Accumulation of Change",
 					"exam_weighting_mc": "17%–20%",
 					"description": "Definite/indefinite integrals, Fundamental Theorem of Calculus, and integration techniques.",
-					"topics_may_include": [
-						"Riemann sums, FTC, u-substitution, applications to accumulation"
-					]
+					"topics_may_include": ["Riemann sums, FTC, u-substitution, applications to accumulation"]
 				},
 				{
 					"unit_number": 7,
 					"unit_title": "Differential Equations",
 					"exam_weighting_mc": "6%–9%",
 					"description": "Separable and other first-order differential equations and applications including logistic growth; slope fields.",
-					"topics_may_include": [
-						"Separable ODEs, exponential/logistic growth, slope fields"
-					]
+					"topics_may_include": ["Separable ODEs, exponential/logistic growth, slope fields"]
 				},
 				{
 					"unit_number": 8,
@@ -1539,14 +1531,7 @@
 						"Analyzing tone, word choice, and arrangement to influence audience",
 						"Comparing appeal strategies across genres and time periods"
 					],
-					"keywords": [
-						"Ethos",
-						"Pathos",
-						"Logos",
-						"Appeals",
-						"Diction",
-						"Tone"
-					]
+					"keywords": ["Ethos", "Pathos", "Logos", "Appeals", "Diction", "Tone"]
 				},
 				{
 					"unit_number": 3,
@@ -1593,14 +1578,7 @@
 						"Revising prose for precision, concision, and persuasive force",
 						"Using figurative and rhetorical devices strategically in argument"
 					],
-					"keywords": [
-						"Style",
-						"Syntax",
-						"Diction",
-						"Imagery",
-						"Parallelism",
-						"Sentence variety"
-					]
+					"keywords": ["Style", "Syntax", "Diction", "Imagery", "Parallelism", "Sentence variety"]
 				},
 				{
 					"unit_number": 6,
@@ -1712,14 +1690,7 @@
 						"Interpreting figurative language and sound devices in context",
 						"Comparing poetic forms and their rhetorical/literary effects"
 					],
-					"keywords": [
-						"Imagery",
-						"Figurative language",
-						"Tone",
-						"Poetic form",
-						"Meter",
-						"Syntax"
-					]
+					"keywords": ["Imagery", "Figurative language", "Tone", "Poetic form", "Meter", "Syntax"]
 				},
 				{
 					"unit_number": 3,
@@ -2339,14 +2310,7 @@
 						"Rise and operation of authoritarian states",
 						"Social and moral consequences of total war and genocide"
 					],
-					"keywords": [
-						"World wars",
-						"Fascism",
-						"Communism",
-						"Total war",
-						"Resistance",
-						"Holocaust"
-					]
+					"keywords": ["World wars", "Fascism", "Communism", "Total war", "Resistance", "Holocaust"]
 				},
 				{
 					"unit_number": 9,

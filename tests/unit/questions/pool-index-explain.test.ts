@@ -34,7 +34,9 @@ describe('pool-index-explain', () => {
 	});
 
 	it('builds the production selection filter shape', () => {
-		expect(poolSelectionFilter({ apClass: 'AP Biology', unit: 'Chemistry of Life', pivot: 0.5 })).toEqual({
+		expect(
+			poolSelectionFilter({ apClass: 'AP Biology', unit: 'Chemistry of Life', pivot: 0.5 })
+		).toEqual({
 			apClass: 'AP Biology',
 			unit: 'Chemistry of Life',
 			active: { $ne: false },

@@ -20,15 +20,11 @@ import { PoolRefillState } from '../src/lib/questions/pool-refill-model.server';
 import { runQuestionPoolRefillWorker } from '../src/lib/questions/pool-refill.server';
 import { connectDb } from '../src/lib/server/db';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
-import {
-	QUESTION_POOL_CONFIG,
-	poolTargetForBucket
-} from '../src/lib/questions/pool-constants';
+import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '../src/lib/questions/pool-constants';
 
-const typeFilter = (process.argv.find((arg) => arg.startsWith('--type='))?.slice('--type='.length) ??
-	(process.argv.includes('--type')
-		? process.argv[process.argv.indexOf('--type') + 1]
-		: 'all')
+const typeFilter = (
+	process.argv.find((arg) => arg.startsWith('--type='))?.slice('--type='.length) ??
+	(process.argv.includes('--type') ? process.argv[process.argv.indexOf('--type') + 1] : 'all')
 ).toLowerCase();
 
 const maxRounds = Math.max(

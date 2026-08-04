@@ -54,9 +54,7 @@ export const QUESTION_POOL_CONFIG: QuestionPoolConfig = {
 
 /** Preferred (max) MCQ target for a class before demand scaling. */
 export function preferredMcqTarget(apClass: string): number {
-	const mapped = (
-		poolTargets.mcqTargetsByClass as Record<string, number | undefined>
-	)[apClass];
+	const mapped = (poolTargets.mcqTargetsByClass as Record<string, number | undefined>)[apClass];
 	return mapped ?? QUESTION_POOL_DEFAULT_MCQ_TARGET;
 }
 

@@ -201,7 +201,11 @@ function buildPoolBuckets(opts: {
 	});
 }
 
-function summarizePoolOverview(buckets: CacheBucketSummary[], mcqTarget: number, frqTarget: number): CacheOverview {
+function summarizePoolOverview(
+	buckets: CacheBucketSummary[],
+	mcqTarget: number,
+	frqTarget: number
+): CacheOverview {
 	const totalActive = buckets.reduce((sum, bucket) => sum + bucket.activeCount, 0);
 	const totalTarget = buckets.reduce((sum, bucket) => sum + bucket.target, 0);
 	const totalDeficit = buckets.reduce((sum, bucket) => sum + bucket.deficit, 0);
@@ -231,8 +235,7 @@ function summarizePoolOverview(buckets: CacheBucketSummary[], mcqTarget: number,
 		pendingRefills: buckets.filter((bucket) => bucket.refillStatus === 'pending').length,
 		runningRefills: buckets.filter((bucket) => bucket.refillStatus === 'running').length,
 		failedRefills: buckets.filter(
-			(bucket) =>
-				bucket.refillStatus === 'failed' || bucket.refillStatus === 'budget_exhausted'
+			(bucket) => bucket.refillStatus === 'failed' || bucket.refillStatus === 'budget_exhausted'
 		).length
 	};
 }
@@ -395,7 +398,11 @@ export async function getAdminDashboardData(opts: {
 		poolSnapshotResult.status === 'fulfilled'
 			? poolSnapshotResult.value
 			: {
-					overview: summarizePoolOverview([], QUESTION_POOL_CONFIG.mcqTarget, QUESTION_POOL_CONFIG.frqTarget),
+					overview: summarizePoolOverview(
+						[],
+						QUESTION_POOL_CONFIG.mcqTarget,
+						QUESTION_POOL_CONFIG.frqTarget
+					),
 					buckets: [] as CacheBucketSummary[]
 				};
 

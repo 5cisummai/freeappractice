@@ -108,8 +108,8 @@
 							<p class="text-sm font-medium">Refill queue</p>
 							<p class="mt-1 text-sm text-muted-foreground">
 								{data.cacheOverview.pendingRefills} pending, {data.cacheOverview.runningRefills}
-								running, {data.cacheOverview.failedRefills} failed/budget-exhausted. Est. remaining
-								generation cost ${data.cacheOverview.estimatedRemainingCostUsd.toFixed(2)}.
+								running, {data.cacheOverview.failedRefills} failed/budget-exhausted. Est. remaining generation
+								cost ${data.cacheOverview.estimatedRemainingCostUsd.toFixed(2)}.
 							</p>
 						</div>
 						<div class="rounded-xl border border-border/60 p-4">

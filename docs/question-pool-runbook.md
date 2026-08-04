@@ -6,12 +6,12 @@ Related: [architecture.md](./architecture.md), [question-request-metrics.md](./q
 
 ## Architecture reminder
 
-| Layer                                   | Behavior                                                                                                 |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `POST /api/question` / FRQ              | Indexed random Mongo select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM. |
+| Layer                              | Behavior                                                                                                        |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `POST /api/question` / FRQ         | Indexed random Mongo select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM.        |
 | Cron `GET /api/cron/question-pool` | Claim due refill leases and generate within daily/run budgets (does **not** full-catalog reconcile every tick). |
-| S3                                      | Canonical archive + question IDs. Never deleted by pool tools.                                           |
-| Mongo                                   | Active serving library (`active`, `randomKey`, inline bodies).                                           |
+| S3                                 | Canonical archive + question IDs. Never deleted by pool tools.                                                  |
+| Mongo                              | Active serving library (`active`, `randomKey`, inline bodies).                                                  |
 
 **Feature-flag note:** Selection-only serving is already the unconditional request path (legacy miss-lock / sync-generate code is removed). There is no dual-path flag to flip off generation on the request path. Use Vercel Flags only for unrelated product pilots (`frq-practice`, `multi-attempt-experiment`). Rollout canary = deploy → seed → watch metrics / admin readiness → expand traffic confidence, not a code flag.
 
@@ -97,7 +97,6 @@ bun run pool:batch-collect -- --batch batch_...
 Manifests land in `tmp/pool-batches/<batchId>.json` (gitignored). Batch submit **reserves** daily budget slots up front; collect does not re-charge budget. If submit fails after reserve (partial concurrent reserve or upload/`create` error), slots are **refunded** so the UTC day is not permanently burned.
 
 Priority tip: enqueue high-traffic class/units first from the admin pool tab, then catalog-wide deficits. For large deficits, use `pool:batch-submit` instead of `pool:fill`.
-
 
 ## 4. Empty buckets / POOL_WARMING
 

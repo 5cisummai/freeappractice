@@ -115,11 +115,9 @@ describe('requestPoolRefill', () => {
 
 	it('upserts counts without stomping status, then promotes pending lease-safely', async () => {
 		const env: QuestionPoolConfig = { ...QUESTION_POOL_CONFIG };
-		await requestPoolRefill(
-			{ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' },
-			env,
-			{ 'AP Biology': 100 }
-		);
+		await requestPoolRefill({ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' }, env, {
+			'AP Biology': 100
+		});
 
 		expect(findOneAndUpdate).toHaveBeenCalled();
 		const upsert = mockArgs(findOneAndUpdate.mock.calls[0])[1] as {

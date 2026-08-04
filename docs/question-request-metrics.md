@@ -67,6 +67,7 @@ Emitted once per refill worker invocation (cron or admin enqueue processor).
 | `oldest_job_age_ms`      | number | Age of oldest non-idle refill job                                              |
 
 Full-catalog reconcile (`bun run pool:reconcile`) is a separate ops command and does not emit this event.
+
 ## Instrumentation points
 
 1. `src/routes/api/question/+server.ts` — validation, total latency, success/warming/error capture

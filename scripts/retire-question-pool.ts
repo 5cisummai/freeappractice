@@ -26,13 +26,16 @@ const CONFIRM_TOKEN = 'RETIRE-POOL';
 const isDryRun = process.argv.includes('--dry-run');
 const confirmArg = process.argv.find((arg) => arg.startsWith('--confirm='));
 const confirmValue = confirmArg?.slice('--confirm='.length) ?? '';
-const typeFilter = (process.argv.find((arg) => arg.startsWith('--type='))?.slice('--type='.length) ??
+const typeFilter = (
+	process.argv.find((arg) => arg.startsWith('--type='))?.slice('--type='.length) ??
 	getFlagValue('--type') ??
 	'all'
 ).toLowerCase();
-const classFilter = process.argv.find((arg) => arg.startsWith('--class='))?.slice('--class='.length) ??
+const classFilter =
+	process.argv.find((arg) => arg.startsWith('--class='))?.slice('--class='.length) ??
 	getFlagValue('--class');
-const unitFilter = process.argv.find((arg) => arg.startsWith('--unit='))?.slice('--unit='.length) ??
+const unitFilter =
+	process.argv.find((arg) => arg.startsWith('--unit='))?.slice('--unit='.length) ??
 	getFlagValue('--unit');
 
 function getFlagValue(flag: string): string | undefined {
@@ -132,7 +135,9 @@ async function main() {
 	const includeMcq = typeFilter === 'all' || typeFilter === 'mcq';
 	const includeFrq = typeFilter === 'all' || typeFilter === 'frq';
 
-	const mcq = includeMcq ? await summarize(Question, filter) : { total: 0, buckets: [] as BucketRow[] };
+	const mcq = includeMcq
+		? await summarize(Question, filter)
+		: { total: 0, buckets: [] as BucketRow[] };
 	const frq = includeFrq
 		? await summarize(FrqQuestion, filter)
 		: { total: 0, buckets: [] as BucketRow[] };
@@ -175,7 +180,9 @@ async function main() {
 		retired += result.modifiedCount;
 		console.log(`✓ Retired ${result.modifiedCount} FRQ row(s).`);
 	}
-	console.log(`✓ Done. Retired ${retired} active pool row(s) across ${affectedBuckets.size} bucket(s).`);
+	console.log(
+		`✓ Done. Retired ${retired} active pool row(s) across ${affectedBuckets.size} bucket(s).`
+	);
 }
 
 main()

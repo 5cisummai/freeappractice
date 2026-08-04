@@ -67,7 +67,12 @@ async function leanFindOne<TDoc extends PoolDocument>(
 	sort: Record<string, 1 | -1>
 ): Promise<TDoc | null> {
 	const result = model.findOne(filter, projection, { sort });
-	if (result && typeof result === 'object' && 'lean' in result && typeof result.lean === 'function') {
+	if (
+		result &&
+		typeof result === 'object' &&
+		'lean' in result &&
+		typeof result.lean === 'function'
+	) {
 		return result.lean();
 	}
 	return result as Promise<TDoc | null>;
@@ -103,12 +108,9 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 	);
 	if (first) return first;
 
-	return leanFindOne<TDoc>(
-		opts.model,
-		{ ...base, randomKey: { $lt: pivot } },
-		opts.projection,
-		{ randomKey: 1 }
-	);
+	return leanFindOne<TDoc>(opts.model, { ...base, randomKey: { $lt: pivot } }, opts.projection, {
+		randomKey: 1
+	});
 }
 
 export function createQuestionPool<TDoc extends PoolDocument, TCached>(

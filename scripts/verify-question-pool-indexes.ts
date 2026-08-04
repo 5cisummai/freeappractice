@@ -45,7 +45,10 @@ function catalogExplainBucket(): ClassUnitCombo {
 	return first;
 }
 
-async function assertSelectionIndex(col: Collection<Document>, collectionName: string): Promise<void> {
+async function assertSelectionIndex(
+	col: Collection<Document>,
+	collectionName: string
+): Promise<void> {
 	const indexes = await col.indexes();
 	const found = indexes.find((idx) => idx.name === POOL_SELECTION_INDEX_NAME);
 	if (!found) {

@@ -31,7 +31,10 @@ const SELECTION_INDEX = {
 	name: 'apClass_1_unit_1_active_1_randomKey_1'
 } as const;
 
-async function backfillCollection(db: Db, collectionName: string): Promise<{
+async function backfillCollection(
+	db: Db,
+	collectionName: string
+): Promise<{
 	missingRandomKey: number;
 	missingActive: number;
 	updated: number;

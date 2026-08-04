@@ -335,8 +335,7 @@
 									></div>
 								</div>
 								<div class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
-									<span
-										>{bucket.activeCount}/{bucket.target} active (deficit {bucket.deficit})</span
+									<span>{bucket.activeCount}/{bucket.target} active (deficit {bucket.deficit})</span
 									>
 									<span>Est. remaining {formatUsd(bucket.estimatedRemainingCostUsd)}</span>
 									<span>Last success {formatRelativeDate(bucket.lastSuccessAt)}</span>
@@ -380,7 +379,9 @@
 						</div>
 						<div class="rounded-xl border border-border/60 px-4 py-3">
 							<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Healthy</p>
-							<p class="mt-2 text-2xl font-semibold tracking-tight">{liveOverview.healthyBuckets}</p>
+							<p class="mt-2 text-2xl font-semibold tracking-tight">
+								{liveOverview.healthyBuckets}
+							</p>
 						</div>
 						<div class="rounded-xl border border-border/60 px-4 py-3">
 							<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Tracked</p>

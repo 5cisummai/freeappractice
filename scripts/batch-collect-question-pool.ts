@@ -72,7 +72,9 @@ async function main() {
 
 	if (batch.error_file_id) {
 		const errors = await downloadOpenAiFile(batch.error_file_id);
-		console.warn(`Error file present (${batch.error_file_id}), first 2k chars:\n${errors.slice(0, 2000)}`);
+		console.warn(
+			`Error file present (${batch.error_file_id}), first 2k chars:\n${errors.slice(0, 2000)}`
+		);
 	}
 
 	const contents = await downloadOpenAiFile(batch.output_file_id);

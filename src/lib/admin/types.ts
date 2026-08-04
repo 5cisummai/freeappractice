@@ -3,12 +3,7 @@ export type AdminTab = 'overview' | 'users' | 'cache' | 'generation' | 'quality'
 export type PoolQuestionType = 'mcq' | 'frq';
 
 export type PoolRefillStatusUi =
-	| 'pending'
-	| 'running'
-	| 'idle'
-	| 'failed'
-	| 'budget_exhausted'
-	| 'unknown';
+	'pending' | 'running' | 'idle' | 'failed' | 'budget_exhausted' | 'unknown';
 
 export interface AdminUserRow {
 	id: string;

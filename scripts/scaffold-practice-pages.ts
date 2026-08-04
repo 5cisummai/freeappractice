@@ -329,17 +329,17 @@ function generateClassPage(course: Course, meta: CourseMeta | undefined): Practi
 				`Share a ridiculous question with a friend if it helps you reset before diving back into calculus or history. Low-stakes practice still trains the habit of reading carefully before you click.`
 			]
 		: [
-					`${course.name} builds skills you will use on both multiple-choice and written-response sections of the AP exam. This page lets you generate unlimited practice questions for any unit in the course, with instant explanations and no account required.`,
-					overview.endsWith('.')
-						? `The College Board organizes the course around ${units.length} commonly taught units. ${overview}`
-						: `The College Board organizes the course around ${units.length} commonly taught units: ${overview}.`,
-					`You will move from ${firstUnits}${laterUnits && laterUnits !== firstUnits ? ` toward ${laterUnits}` : ''}. Practicing in that same order helps you reinforce what your class just covered—or preview what is coming if you are studying ahead over the summer.`,
-					meta?.important_notes
-						? `Before test day, keep this framing in mind: ${meta.important_notes}`
-						: `Before test day, aim for accuracy first and speed second. Short daily sets beat marathon cram sessions, especially when you review misses the same day while the reasoning is still fresh.`,
-					pickClassExamFocus(course.name),
-					`Use this hub when you want a fast starting point: pick a unit below, click Generate, and read the explanation even when you are correct. You can switch units anytime without leaving the page.`
-				];
+				`${course.name} builds skills you will use on both multiple-choice and written-response sections of the AP exam. This page lets you generate unlimited practice questions for any unit in the course, with instant explanations and no account required.`,
+				overview.endsWith('.')
+					? `The College Board organizes the course around ${units.length} commonly taught units. ${overview}`
+					: `The College Board organizes the course around ${units.length} commonly taught units: ${overview}.`,
+				`You will move from ${firstUnits}${laterUnits && laterUnits !== firstUnits ? ` toward ${laterUnits}` : ''}. Practicing in that same order helps you reinforce what your class just covered—or preview what is coming if you are studying ahead over the summer.`,
+				meta?.important_notes
+					? `Before test day, keep this framing in mind: ${meta.important_notes}`
+					: `Before test day, aim for accuracy first and speed second. Short daily sets beat marathon cram sessions, especially when you review misses the same day while the reasoning is still fresh.`,
+				pickClassExamFocus(course.name),
+				`Use this hub when you want a fast starting point: pick a unit below, click Generate, and read the explanation even when you are correct. You can switch units anytime without leaving the page.`
+			];
 
 	const keywords = [
 		`${course.name} practice`,
@@ -410,15 +410,15 @@ function generateUnitPage(
 	const paragraphs = isLunchCourse(course.name)
 		? generateLunchUnitParagraphs(label, unitNumber)
 		: [
-					opener,
-					`${description} On the ${course.name} exam, items from ${label} often ask you to ${pickUnitExamVerb(course.name)} rather than recall isolated terms.`,
-					topicSentence,
-					weightParagraph,
-					pickUnitTrapWarning(label, topics, unitNumber),
-					pickStudyTip(unitNumber, course.name),
-					pickUnitPracticeRoutine(label, course.name, unitNumber),
-					`Use the generator above for fresh MCQs tied to ${label}. Answer, read the explanation, and log one sentence about why the correct choice works—that habit compounds faster than grinding endless worksheets.`
-				].filter((paragraph) => paragraph.trim().length > 0);
+				opener,
+				`${description} On the ${course.name} exam, items from ${label} often ask you to ${pickUnitExamVerb(course.name)} rather than recall isolated terms.`,
+				topicSentence,
+				weightParagraph,
+				pickUnitTrapWarning(label, topics, unitNumber),
+				pickStudyTip(unitNumber, course.name),
+				pickUnitPracticeRoutine(label, course.name, unitNumber),
+				`Use the generator above for fresh MCQs tied to ${label}. Answer, read the explanation, and log one sentence about why the correct choice works—that habit compounds faster than grinding endless worksheets.`
+			].filter((paragraph) => paragraph.trim().length > 0);
 
 	const seoKeywords = [
 		`${course.name} ${label}`,

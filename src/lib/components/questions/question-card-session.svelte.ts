@@ -272,8 +272,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 				isPoolWarming = true;
 				poolWarmingRetryAfterSeconds = error.retryAfterSeconds;
 				statusMessage =
-					error.message ||
-					'This course unit is still warming up. Practice will be ready shortly.';
+					error.message || 'This course unit is still warming up. Practice will be ready shortly.';
 
 				if (poolWarmingAutoAttempts < MAX_POOL_WARMING_AUTO_RETRIES && opts.getMounted()) {
 					poolWarmingAutoAttempts += 1;

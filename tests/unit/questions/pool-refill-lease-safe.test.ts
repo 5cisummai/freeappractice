@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { findOneAndUpdate, updateOne, countDocuments } = vi.hoisted(() => ({
-	findOneAndUpdate: vi.fn(() => ({ exec: async () => ({}) })),
-	updateOne: vi.fn(() => ({ exec: async () => ({}) })),
+	findOneAndUpdate: vi.fn((_filter: unknown, _update: unknown, _options?: unknown) => ({
+		exec: async () => ({})
+	})),
+	updateOne: vi.fn((_filter: unknown, _update: unknown) => ({ exec: async () => ({}) })),
 	countDocuments: vi.fn()
 }));
 
@@ -17,6 +19,10 @@ vi.mock('$lib/server/db', () => ({
 
 vi.mock('$lib/questions/cache-model.server', () => ({
 	Question: { countDocuments }
+}));
+
+vi.mock('$lib/questions/gen-stats.server', () => ({
+	getMcqGenerationCountsByClass: vi.fn(async () => ({}))
 }));
 
 vi.mock('$lib/frq/model.server', () => ({
@@ -64,17 +70,14 @@ describe('requestPoolRefill lease safety', () => {
 	it('never $sets status in the count-refresh upsert', async () => {
 		countDocuments.mockResolvedValue(0);
 
-		await requestPoolRefill(
-			{ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' },
-			env
-		);
+		await requestPoolRefill({ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' }, env);
 
 		const upsertUpdate = findOneAndUpdate.mock.calls[0]?.[1] as {
 			$set: Record<string, unknown>;
 			$setOnInsert: Record<string, unknown>;
 		};
 		expect(upsertUpdate.$set).toEqual({
-			target: 10,
+			target: 35,
 			observedCount: 0,
 			requestedAt: expect.any(Date)
 		});
@@ -85,10 +88,7 @@ describe('requestPoolRefill lease safety', () => {
 	it('promotes to pending only when lease is not live', async () => {
 		countDocuments.mockResolvedValue(2);
 
-		await requestPoolRefill(
-			{ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' },
-			env
-		);
+		await requestPoolRefill({ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' }, env);
 
 		expect(updateOne).toHaveBeenCalled();
 		const filter = updateOne.mock.calls[0]?.[0] as {

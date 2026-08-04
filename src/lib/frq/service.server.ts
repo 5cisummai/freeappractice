@@ -76,8 +76,7 @@ const frqPool = createQuestionPool<IFrqQuestion, FrqServiceResult>({
 			cached: true
 		};
 	},
-	requestRefill: (apClass, unit) =>
-		requestPoolRefill({ questionType: 'frq', apClass, unit })
+	requestRefill: (apClass, unit) => requestPoolRefill({ questionType: 'frq', apClass, unit })
 });
 
 /** Selection-only FRQ serve. Never invokes LLM or S3 generation. */
@@ -85,9 +84,7 @@ export async function getFrqQuestion(
 	apClass: string,
 	unit?: string,
 	options?: GetQuestionOptions
-): Promise<
-	PoolSelectionResult<Omit<FrqServiceResult, 'question'> & { question?: FrqQuestion }>
-> {
+): Promise<PoolSelectionResult<Omit<FrqServiceResult, 'question'> & { question?: FrqQuestion }>> {
 	const outcome = await frqPool.getQuestion(apClass, unit, options);
 	if (outcome.status !== 'found') return outcome;
 	return {

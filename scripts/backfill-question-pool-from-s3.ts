@@ -339,12 +339,10 @@ async function backfillFrq(
 		ids.map((questionId) =>
 			limit(async () => {
 				try {
-					const raw = await getJson<Record<string, unknown>>(
-						s3,
-						bucket,
-						`frqs/${questionId}.json`
-					);
-					const { id: _id, createdAt: _createdAt, ...canonical } = raw;
+					const raw = await getJson<Record<string, unknown>>(s3, bucket, `frqs/${questionId}.json`);
+					const canonical = { ...raw };
+					delete canonical.id;
+					delete canonical.createdAt;
 					const parsed = FrqQuestionSchema.safeParse(canonical);
 					if (!parsed.success) {
 						counters.invalid += 1;
@@ -509,11 +507,8 @@ async function main() {
 	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 
-	let mcq = emptyCounters();
-	let frq = emptyCounters();
-
 	if (typeFilter === 'all' || typeFilter === 'mcq') {
-		mcq = await backfillMcq(s3, bucket, allowed, limit);
+		const mcq = await backfillMcq(s3, bucket, allowed, limit);
 		printCounters('MCQ', mcq);
 		const deficit = estimateDeficit('mcq', mcq.byBucket, env, combos, generationCountsByClass);
 		console.log(
@@ -522,7 +517,7 @@ async function main() {
 	}
 
 	if (typeFilter === 'all' || typeFilter === 'frq') {
-		frq = await backfillFrq(s3, bucket, allowed, limit);
+		const frq = await backfillFrq(s3, bucket, allowed, limit);
 		printCounters('FRQ', frq);
 		const deficit = estimateDeficit('frq', frq.byBucket, env, frqCombos, generationCountsByClass);
 		console.log(
