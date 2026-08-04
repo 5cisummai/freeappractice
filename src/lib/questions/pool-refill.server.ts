@@ -412,7 +412,7 @@ export async function runQuestionPoolRefillWorker(
 	const owner = opts?.owner ?? randomUUID();
 
 	// Claim/generate first. Full-catalog reconcile (`bun run pool:reconcile`) is N+1 and
-	// belongs to ops — not every 5-minute cron tick.
+	// belongs to ops — not every scheduled cron run.
 	let processed = 0;
 	let generated = 0;
 	let skippedDuplicates = 0;

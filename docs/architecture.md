@@ -163,7 +163,7 @@ flowchart LR
     PR --> Q
     P4 --> Q
     P5 --> PR
-    CRON -.->|"Vercel cron */5"| CRON
+    CRON -.->|"Vercel cron daily"| CRON
 ```
 
 Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShell`). Authenticated `/app/practice` uses `PracticeShell` with `allowFrq` when the FRQ flag is on. Admin Pool tab enqueues refill jobs only — it never generates synchronously.
