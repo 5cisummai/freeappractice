@@ -7,6 +7,7 @@
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
+	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 
 	let {
 		user
@@ -35,6 +36,7 @@
 			await authClient.signOut({
 				fetchOptions: {
 					onSuccess: () => {
+						resetPostHogUser();
 						window.location.href = resolve('/');
 					}
 				}

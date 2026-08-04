@@ -2,11 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { authClient } from '$lib/auth/client.js';
 	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
 	import QuestionShell from '$lib/components/questions/question-shell.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
@@ -290,18 +288,7 @@
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 py-12 sm:px-8 lg:space-y-24 lg:px-10 lg:py-16"
 		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
-				<div class="mx-auto max-w-3xl space-y-4">
-					<Badge
-						href="https://discord.gg/TtTwmCAGK"
-						variant="outline"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="rounded-full border-primary/30 px-3 py-1 text-sm font-normal text-primary"
-					>
-						Join the new discord
-						<ArrowRightIcon aria-hidden="true" />
-					</Badge>
-
+				<div class="mx-auto max-w-3xl space-y-6">
 					<h1
 						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
@@ -311,15 +298,15 @@
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
 							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							>Student Developed</span
+							><span aria-hidden="true">📚</span> 20+ AP Subjects</span
 						>
 						<span
 							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							>20+ AP Subjects</span
+							><span aria-hidden="true">🎓</span> Student Developed</span
 						>
 						<span
 							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							>100% Free</span
+							><span aria-hidden="true">🎁</span> 100% Free</span
 						>
 					</div>
 				</div>

@@ -62,6 +62,7 @@
 		"@ai-sdk/openai": "^3.0.74",
 		"@aws-sdk/client-s3": "^3.1075.0",
 		"@flags-sdk/vercel": "^1.4.5",
+		"@sentry/sveltekit": "^10",
 		"@tanstack/table-core": "^8.21.3",
 		"@vercel/analytics": "2.0.1",
 		"@vercel/functions": "^3.7.3",

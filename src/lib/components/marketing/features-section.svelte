@@ -98,9 +98,6 @@
 			<Button href={resolve('/subjects')} variant="outline" size="lg" class="rounded-full px-6">
 				Browse Subjects
 			</Button>
-			<Button href={resolve('/about')} variant="outline" size="lg" class="rounded-full px-6">
-				Learn More
-			</Button>
 		</div>
 	</div>
 

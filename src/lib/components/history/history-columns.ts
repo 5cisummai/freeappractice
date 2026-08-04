@@ -4,7 +4,6 @@ import type { HistoryItem } from '$lib/users/types.js';
 import { escapeHtml } from '$lib/escape-html.js';
 import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
-import HistoryDataTableCheckbox from './history-data-table-checkbox.svelte';
 import HistoryDataTableSortButton from './history-data-table-sort-button.svelte';
 import HistoryDataTableActions from './history-data-table-actions.svelte';
 
@@ -12,24 +11,6 @@ export function createHistoryColumns(
 	onViewDetails: (item: HistoryItem) => void
 ): ColumnDef<HistoryItem>[] {
 	return [
-		{
-			id: 'select',
-			header: ({ table }) =>
-				renderComponent(HistoryDataTableCheckbox, {
-					checked: table.getIsAllPageRowsSelected(),
-					indeterminate: table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected(),
-					onCheckedChange: (value) => table.toggleAllPageRowsSelected(!!value),
-					'aria-label': 'Select all'
-				}),
-			cell: ({ row }) =>
-				renderComponent(HistoryDataTableCheckbox, {
-					checked: row.getIsSelected(),
-					onCheckedChange: (value) => row.toggleSelected(!!value),
-					'aria-label': 'Select row'
-				}),
-			enableSorting: false,
-			enableHiding: false
-		},
 		{
 			accessorKey: 'attempt.apClass',
 			id: 'subject',

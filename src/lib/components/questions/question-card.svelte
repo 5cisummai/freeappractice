@@ -204,14 +204,73 @@
 {:else if session.showEmptyState}
 	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
 		<Card.Content
-			class="relative flex min-h-40 flex-col items-center justify-center gap-2 px-6 pb-12 text-center"
+			class="relative flex min-h-52 flex-col items-center justify-center gap-5 px-6 pb-12 text-center"
 		>
-			<p class="text-lg font-medium text-muted-foreground sm:text-xl">
-				Your question will display here
-			</p>
-			<p class="max-w-sm text-sm text-muted-foreground/80">
-				Select a class and unit above, then generate a question to start practicing.
-			</p>
+			<svg
+				class="size-14 shrink-0 text-muted-foreground"
+				viewBox="0 0 48 48"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				aria-hidden="true"
+			>
+				<rect
+					x="12"
+					y="10"
+					width="24"
+					height="30"
+					rx="2"
+					class="stroke-muted-foreground"
+					stroke-width="1.5"
+				/>
+				<rect
+					x="12"
+					y="10"
+					width="24"
+					height="5"
+					rx="2"
+					class="fill-muted-foreground"
+					opacity="0.35"
+				/>
+				<line
+					x1="16"
+					y1="20"
+					x2="32"
+					y2="20"
+					class="stroke-muted-foreground"
+					stroke-width="1"
+					stroke-linecap="round"
+					opacity="0.7"
+				/>
+				<line
+					x1="16"
+					y1="25"
+					x2="30"
+					y2="25"
+					class="stroke-muted-foreground"
+					stroke-width="1"
+					stroke-linecap="round"
+					opacity="0.55"
+				/>
+				<line
+					x1="16"
+					y1="30"
+					x2="28"
+					y2="30"
+					class="stroke-muted-foreground"
+					stroke-width="1"
+					stroke-linecap="round"
+					opacity="0.4"
+				/>
+				<path d="M33 34 L36 37 L33 36 Z" class="fill-muted-foreground" opacity="0.55" />
+			</svg>
+			<div class="flex max-w-sm flex-col gap-2">
+				<p class="text-lg font-medium text-muted-foreground sm:text-xl">
+					Your practice space is ready
+				</p>
+				<p class="text-sm text-muted-foreground">
+					Choose a course and unit, then generate, and your question will show up here.
+				</p>
+			</div>
 		</Card.Content>
 	</Card.Root>
 {:else if session.showErrorState}

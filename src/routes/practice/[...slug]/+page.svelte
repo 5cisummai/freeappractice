@@ -11,9 +11,20 @@
 
 	let { data }: { data: PageData } = $props();
 
+	function buildJsonLdMarkup(value: unknown) {
+		return (
+			'<script type="application/ld+json">' +
+			JSON.stringify(value).replace(/</g, '\\u003c') +
+			'</' +
+			'script>'
+		);
+	}
+
 	const meta = $derived(buildPracticePageMeta(data.page));
 	const jsonLd = $derived(buildPracticePageJsonLd(data.page));
 	const breadcrumbJsonLd = $derived(buildPracticeBreadcrumbJsonLd(data.page));
+	const jsonLdMarkup = $derived(buildJsonLdMarkup(jsonLd));
+	const breadcrumbJsonLdMarkup = $derived(buildJsonLdMarkup(breadcrumbJsonLd));
 
 	onMount(() => {
 		capturePostHogEvent('practice_page_viewed', {
@@ -54,8 +65,10 @@
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 	<meta name="twitter:site" content="@freeappractice" />
 
-	{@html `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`}
-	{@html `<script type="application/ld+json">${JSON.stringify(breadcrumbJsonLd)}</script>`}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html jsonLdMarkup}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html breadcrumbJsonLdMarkup}
 </svelte:head>
 
 <PracticeLanding page={data.page} />

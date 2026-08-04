@@ -210,6 +210,7 @@ export type FrqProgressSummary = {
 };
 
 export function toPublicFrqQuestion(questionId: string, question: FrqQuestion): PublicFrqQuestion {
-	const { rubric: _rubric, ...publicQuestion } = question;
+	const { rubric, ...publicQuestion } = question;
+	void rubric;
 	return { ...publicQuestion, questionId };
 }

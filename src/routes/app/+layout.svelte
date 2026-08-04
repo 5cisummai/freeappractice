@@ -17,7 +17,7 @@
 
 	onMount(() => {
 		if (data.user) {
-			identifyPostHogUser(data.user.id, { name: data.user.name });
+			identifyPostHogUser(data.user.id);
 			if (page.url.searchParams.get('signup') === 'google') {
 				captureSignupCompleted('google');
 				const url = new URL(page.url);
@@ -41,7 +41,7 @@
 <Toaster />
 
 <Sidebar.Provider class="bg-sidebar">
-	<AppSidebar isAdmin={data.isAdmin} user={data.user} referral={data.referral} />
+	<AppSidebar isAdmin={data.isAdmin} user={data.user} />
 	<Sidebar.Inset>
 		<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 			<SidebarTrigger />

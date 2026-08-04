@@ -25,10 +25,19 @@ function getPostHogClient() {
 	return posthogClient;
 }
 
+function scheduleCapture(capture: Promise<void>) {
+	const safeCapture = capture.catch(() => undefined);
+	try {
+		waitUntil(safeCapture);
+	} catch {
+		void safeCapture;
+	}
+}
+
 export function capturePostHogServerEvent(request: Request, event: ServerCaptureEvent) {
 	if (!hasAnalyticsConsent(request)) return;
 
-	getPostHogClient().capture(event);
+	scheduleCapture(getPostHogClient().captureImmediate(event));
 }
 
 /**
@@ -37,18 +46,14 @@ export function capturePostHogServerEvent(request: Request, event: ServerCapture
  * question bodies, or user IDs.
  */
 export function captureAnonymousServerMetric(event: string, properties?: Record<string, unknown>) {
-	const client = getPostHogClient();
-	client.capture({
-		distinctId: ANONYMOUS_SERVER_DISTINCT_ID,
-		event,
-		properties: {
-			...properties,
-			$process_person_profile: false
-		}
-	});
-	try {
-		waitUntil(client.flush());
-	} catch {
-		void client.flush().catch(() => undefined);
-	}
+	scheduleCapture(
+		getPostHogClient().captureImmediate({
+			distinctId: ANONYMOUS_SERVER_DISTINCT_ID,
+			event,
+			properties: {
+				...properties,
+				$process_person_profile: false
+			}
+		})
+	);
 }

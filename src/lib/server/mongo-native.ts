@@ -6,7 +6,6 @@ import { MongoClient, type Db } from 'mongodb';
 import { DATABASE_URI } from '$env/static/private';
 
 declare global {
-	// eslint-disable-next-line no-var
 	var __fapMongoClientPromise: Promise<MongoClient> | undefined;
 }
 

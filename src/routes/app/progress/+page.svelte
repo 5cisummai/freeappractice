@@ -8,7 +8,8 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import ProgressHistoryPanel from '$lib/components/history/progress-history-panel.svelte';
-	import StatsOverviewCards from '$lib/components/stats-overview-cards.svelte';
+	import { performanceBarClass, performanceTextClass } from '$lib/components/app/performance.js';
+	import { cn } from '$lib/utils.js';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
@@ -19,7 +20,6 @@
 
 	const progressData = $derived(data.progress as ProgressEntry[]);
 	const statsData = $derived(data.stats as StatsData);
-	const frqEnabled = $derived(Boolean(data.frqEnabled));
 
 	let activeView = $state<ProgressView>(
 		page.url.searchParams.get('view') === 'history' ? 'history' : 'mastery'
@@ -55,12 +55,6 @@
 			(statsData?.overview.frqSubmissions ?? 0) > 0 ||
 			grouped.length > 0
 	);
-
-	function masteryBarClass(mastery: number): string {
-		if (mastery >= 75) return 'bg-emerald-500';
-		if (mastery >= 50) return 'bg-amber-500';
-		return 'bg-primary';
-	}
 
 	function practiceHref(apClass: string, unit: string | undefined = undefined): string {
 		const base = resolve('/app/practice');
@@ -105,8 +99,6 @@
 	title="Progress & History"
 	description="Track mastery by subject and review every question you've answered."
 >
-	<StatsOverviewCards stats={statsData} {frqEnabled} />
-
 	<Tabs.Root bind:value={activeView} onValueChange={handleViewChange} class="space-y-6">
 		<Tabs.List class="grid w-full max-w-md grid-cols-2">
 			<Tabs.Trigger value="mastery" class="flex items-center gap-2">
@@ -121,12 +113,13 @@
 
 		<Tabs.Content value="mastery" class="space-y-6">
 			{#if !hasActivity}
-				<div
-					class="rounded-2xl border border-dashed border-border/70 p-12 text-center text-muted-foreground"
-				>
-					<p>No progress yet. Go practice some questions!</p>
+				<div class="rounded-2xl border border-dashed border-border/70 p-10 text-center">
+					<p class="font-medium">No progress yet</p>
+					<p class="mt-1 text-sm text-muted-foreground">
+						Practice a few questions to build this view.
+					</p>
 					<div class="mt-4">
-						<Button href={resolve('/app/practice')} class="rounded-full">Start practicing</Button>
+						<Button href={resolve('/app/practice')}>Start practice</Button>
 					</div>
 				</div>
 			{:else}
@@ -152,13 +145,19 @@
 											<div class="flex w-36 items-center gap-3">
 												<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
 													<div
-														class="h-full rounded-full transition-all {masteryBarClass(
-															subject.accuracy
-														)}"
+														class={cn(
+															'h-full rounded-full transition-all',
+															performanceBarClass(subject.accuracy)
+														)}
 														style="width: {subject.accuracy}%"
 													></div>
 												</div>
-												<span class="w-10 text-right text-sm font-medium tabular-nums">
+												<span
+													class={cn(
+														'w-10 text-right text-sm font-semibold tabular-nums',
+														performanceTextClass(subject.accuracy)
+													)}
+												>
 													{subject.accuracy}%
 												</span>
 											</div>
@@ -202,18 +201,17 @@
 													{/if}
 												</Card.Description>
 											</div>
-											<span
-												class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
-											>
+											<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
 												{subject.units.length} unit{subject.units.length === 1 ? '' : 's'}
 											</span>
 										</div>
 										{#if subject.avgMastery !== null}
 											<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
 												<div
-													class="h-full rounded-full transition-all {masteryBarClass(
-														subject.avgMastery
-													)}"
+													class={cn(
+														'h-full rounded-full transition-all',
+														performanceBarClass(subject.avgMastery)
+													)}
 													style="width: {subject.avgMastery}%"
 												></div>
 											</div>
@@ -241,15 +239,21 @@
 														{/if}
 													</div>
 													{#if unit.totalAttempts > 0}
-														<span class="text-sm font-semibold tabular-nums">{unit.mastery}%</span>
+														<span
+															class={cn(
+																'text-sm font-semibold tabular-nums',
+																performanceTextClass(unit.mastery)
+															)}>{unit.mastery}%</span
+														>
 													{/if}
 												</div>
 												{#if unit.totalAttempts > 0}
 													<div class="h-2 overflow-hidden rounded-full bg-muted">
 														<div
-															class="h-full rounded-full transition-all {masteryBarClass(
-																unit.mastery
-															)}"
+															class={cn(
+																'h-full rounded-full transition-all',
+																performanceBarClass(unit.mastery)
+															)}
 															style="width: {unit.mastery}%"
 														></div>
 													</div>

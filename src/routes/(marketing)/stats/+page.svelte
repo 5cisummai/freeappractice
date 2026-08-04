@@ -109,7 +109,7 @@
 				<Card.Root>
 					<div class="space-y-3 p-4">
 						<!-- eslint-disable-next-line svelte/require-each-key -->
-						{#each Array(8) as _}
+						{#each Array.from({ length: 8 }, (_, i) => i) as index (index)}
 							<div class="flex items-center gap-4">
 								<Skeleton.Root class="h-4 w-32" />
 								<Skeleton.Root class="h-4 w-16" />
@@ -127,7 +127,7 @@
 				<Card.Root>
 					<div class="space-y-3 p-4">
 						<!-- eslint-disable-next-line svelte/require-each-key -->
-						{#each Array(10) as _}
+						{#each Array.from({ length: 10 }, (_, i) => i) as index (index)}
 							<div class="flex items-center gap-4">
 								<Skeleton.Root class="h-4 flex-1" />
 								<Skeleton.Root class="h-4 w-20" />

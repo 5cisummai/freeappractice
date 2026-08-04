@@ -11,7 +11,7 @@
 	import { authCallbackUrl } from '$lib/auth/urls.js';
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
-	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import {
 		isPasswordWithinLimit,
 		MAX_PASSWORD_BYTES,
@@ -60,9 +60,8 @@
 			}
 			const userId = data?.user?.id;
 			if (userId) {
-				identifyPostHogUser(userId, { name });
+				identifyPostHogUser(userId);
 			}
-			capturePostHogEvent('user_signed_up', { method: 'email' });
 			captureSignupCompleted('email');
 			// Verification email is sent by Better Auth (sendOnSignUp + Vercel waitUntil).
 			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;

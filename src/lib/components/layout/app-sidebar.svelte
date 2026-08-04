@@ -12,16 +12,13 @@
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
-	import ReferralCard from '$lib/components/layout/referral-card.svelte';
 
 	let {
 		isAdmin,
-		user,
-		referral
+		user
 	}: {
 		isAdmin: boolean;
 		user: { name: string; email: string; image?: string | null };
-		referral: { shareUrl: string; studentsHelped: number; pendingInvites: number };
 	} = $props();
 
 	const baseNavItems = [
@@ -36,7 +33,9 @@
 	const navItems = $derived(isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems);
 
 	function isActive(href: (typeof navItems)[number]['href']): boolean {
-		return page.url.pathname === resolve(href);
+		const resolved = resolve(href);
+		if (href === '/app') return page.url.pathname === resolved;
+		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');
 	}
 </script>
 
@@ -63,7 +62,11 @@
 				<Sidebar.Menu>
 					{#each navItems as item (item.href)}
 						<Sidebar.MenuItem>
-							<Sidebar.MenuButton isActive={isActive(item.href)} tooltipContent={item.label}>
+							<Sidebar.MenuButton
+								isActive={isActive(item.href)}
+								tooltipContent={item.label}
+								class="data-active:bg-primary/10 data-active:font-medium data-active:text-primary"
+							>
 								{#snippet child({ props })}
 									<a
 										href={resolve(item.href)}
@@ -79,14 +82,6 @@
 					{/each}
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
-		</Sidebar.Group>
-
-		<Sidebar.Group class="px-2">
-			<ReferralCard
-				shareUrl={referral.shareUrl}
-				studentsHelped={referral.studentsHelped}
-				pendingInvites={referral.pendingInvites}
-			/>
 		</Sidebar.Group>
 	</Sidebar.Content>
 

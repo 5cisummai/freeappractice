@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/sveltekit';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { auth } from '$lib/auth/server';
@@ -190,6 +191,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 };
 
 export const handle = sequence(
+	Sentry.sentryHandle(),
 	...(env.FLAGS_SECRET
 		? [
 				createHandle({
@@ -202,19 +204,21 @@ export const handle = sequence(
 	appHandle
 );
 
-export const handleError: HandleServerError = async ({ error, event, status, message }) => {
-	capturePostHogServerEvent(event.request, {
-		distinctId: 'server',
-		event: 'server_error',
-		properties: {
-			error: error instanceof Error ? error.message : String(error),
-			status,
-			message
-		}
-	});
+export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
+	async ({ error, event, status, message }) => {
+		capturePostHogServerEvent(event.request, {
+			distinctId: 'server',
+			event: 'server_error',
+			properties: {
+				error_type: error instanceof Error ? error.name : 'UnknownError',
+				status,
+				path: event.url.pathname
+			}
+		});
 
-	return {
-		message,
-		status
-	};
-};
+		return {
+			message,
+			status
+		};
+	}
+);
