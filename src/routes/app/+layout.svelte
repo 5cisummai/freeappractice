@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { replaceState } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
@@ -19,17 +19,18 @@
 	onMount(() => {
 		if (data.user) {
 			identifyPostHogUser(data.user.id);
-			if (page.url.searchParams.get('signup') === 'google') {
-				captureSignupCompleted('google');
-				const url = new URL(page.url);
-				url.searchParams.delete('signup');
-				const appHref = `${resolve('/app')}${url.search}`;
-				// The base path is resolved above; this only removes the one-time query marker.
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				replaceState(appHref, page.state);
-			}
 			captureAuthenticatedStudentReturnedIfNeeded();
 		}
+	});
+
+	afterNavigate(() => {
+		if (!data.user || page.url.searchParams.get('signup') !== 'google') return;
+
+		captureSignupCompleted('google');
+		const url = new URL(page.url);
+		url.searchParams.delete('signup');
+		const appHref = `${resolve('/app')}${url.search}`;
+		void goto(appHref, { replaceState: true, keepFocus: true, noScroll: true });
 	});
 </script>
 
