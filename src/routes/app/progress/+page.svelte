@@ -8,8 +8,10 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import ProgressHistoryPanel from '$lib/components/history/progress-history-panel.svelte';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import { performanceBarClass, performanceTextClass } from '$lib/components/app/performance.js';
 	import { cn } from '$lib/utils.js';
+	import targetImage from '$lib/assets/target.png';
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
@@ -113,15 +115,13 @@
 
 		<Tabs.Content value="mastery" class="space-y-6">
 			{#if !hasActivity}
-				<div class="rounded-2xl border border-dashed border-border/70 p-10 text-center">
-					<p class="font-medium">No progress yet</p>
-					<p class="mt-1 text-sm text-muted-foreground">
-						Practice a few questions to build this view.
-					</p>
-					<div class="mt-4">
-						<Button href={resolve('/app/practice')}>Start practice</Button>
-					</div>
-				</div>
+				<EmptyState
+					title="No progress yet"
+					description="Practice a few questions to build this view."
+					imageUrl={targetImage}
+				>
+					<Button href={resolve('/app/practice')}>Start practice</Button>
+				</EmptyState>
 			{:else}
 				{#if statsData.subjectBreakdown.length > 0}
 					<section class="space-y-4">

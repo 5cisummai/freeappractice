@@ -4,7 +4,10 @@
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import type { HistoryResponse } from '$lib/users/types.js';
 	import HistoryDataTable from '$lib/components/history/history-data-table.svelte';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import notebookImage from '$lib/assets/notebook.png';
 	import type { SortingState } from '@tanstack/table-core';
 
 	const PAGE_SIZE = 20;
@@ -92,18 +95,13 @@
 {:else if errorMessage}
 	<p class="text-sm text-destructive">{errorMessage}</p>
 {:else if items.length === 0}
-	<div
-		class="rounded-2xl border border-dashed border-border/70 p-12 text-center text-muted-foreground"
+	<EmptyState
+		title="No practice history yet"
+		description="Answer questions while signed in to build your history."
+		imageUrl={notebookImage}
 	>
-		<p>No practice history yet.</p>
-		<p class="mt-2 text-sm">Answer questions while signed in to build your history.</p>
-		<a
-			href={resolve('/app/practice')}
-			class="mt-4 inline-block text-sm underline underline-offset-4 hover:text-foreground"
-		>
-			Start practicing →
-		</a>
-	</div>
+		<Button href={resolve('/app/practice')}>Start practice</Button>
+	</EmptyState>
 {:else}
 	<HistoryDataTable
 		data={items}

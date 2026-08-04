@@ -26,7 +26,6 @@
 		selectedClass = presetClass;
 		selectedUnit = presetUnit;
 		if (data.frqEnabled && presetMode === 'frq') mode = 'frq';
-		requestVersion = 1;
 	});
 
 	async function syncAttempt(

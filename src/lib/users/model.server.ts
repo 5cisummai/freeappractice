@@ -13,6 +13,7 @@ export function createReferralCode(): string {
 export interface IUserProfile extends Document {
 	userId: string;
 	referralCode?: string;
+	subjects: string[];
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	bookmarkedQuestions: string[];
@@ -74,6 +75,7 @@ const userProfileSchema = new Schema<IUserProfile>(
 			sparse: true,
 			default: createReferralCode
 		},
+		subjects: { type: [String], default: [] },
 		progress: { type: [progressSchema], default: [] },
 		questionHistory: { type: [questionAttemptSchema], default: [] },
 		bookmarkedQuestions: { type: [String], default: [] },

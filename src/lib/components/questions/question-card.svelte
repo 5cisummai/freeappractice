@@ -9,6 +9,7 @@
 	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
@@ -22,6 +23,7 @@
 	} from '$lib/components/questions/question-card-dom';
 	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
 	import type { BugReportContext, QuestionCardProps } from '$lib/questions/types';
+	import lightbulbImage from '$lib/assets/lightbulb.png';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import CalculatorIcon from '@lucide/svelte/icons/calculator';
@@ -226,77 +228,11 @@
 		class={className}
 	/>
 {:else if session.showEmptyState}
-	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
-		<Card.Content
-			class="relative flex min-h-52 flex-col items-center justify-center gap-5 px-6 pb-12 text-center"
-		>
-			<svg
-				class="size-14 shrink-0 text-muted-foreground"
-				viewBox="0 0 48 48"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-				aria-hidden="true"
-			>
-				<rect
-					x="12"
-					y="10"
-					width="24"
-					height="30"
-					rx="2"
-					class="stroke-muted-foreground"
-					stroke-width="1.5"
-				/>
-				<rect
-					x="12"
-					y="10"
-					width="24"
-					height="5"
-					rx="2"
-					class="fill-muted-foreground"
-					opacity="0.35"
-				/>
-				<line
-					x1="16"
-					y1="20"
-					x2="32"
-					y2="20"
-					class="stroke-muted-foreground"
-					stroke-width="1"
-					stroke-linecap="round"
-					opacity="0.7"
-				/>
-				<line
-					x1="16"
-					y1="25"
-					x2="30"
-					y2="25"
-					class="stroke-muted-foreground"
-					stroke-width="1"
-					stroke-linecap="round"
-					opacity="0.55"
-				/>
-				<line
-					x1="16"
-					y1="30"
-					x2="28"
-					y2="30"
-					class="stroke-muted-foreground"
-					stroke-width="1"
-					stroke-linecap="round"
-					opacity="0.4"
-				/>
-				<path d="M33 34 L36 37 L33 36 Z" class="fill-muted-foreground" opacity="0.55" />
-			</svg>
-			<div class="flex max-w-sm flex-col gap-2">
-				<p class="text-lg font-medium text-muted-foreground sm:text-xl">
-					Your practice space is ready
-				</p>
-				<p class="text-sm text-muted-foreground">
-					Choose a course and unit, then generate, and your question will show up here.
-				</p>
-			</div>
-		</Card.Content>
-	</Card.Root>
+	<EmptyState
+		title="No question yet"
+		description="Select a course and unit, then generate a question."
+		imageUrl={lightbulbImage}
+	/>
 {:else if session.showErrorState}
 	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
 		<Card.Content

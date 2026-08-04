@@ -12,6 +12,7 @@
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import { markOnboardingPendingInBrowser } from '$lib/onboarding.js';
 	import {
 		isPasswordWithinLimit,
 		MAX_PASSWORD_BYTES,
@@ -62,6 +63,7 @@
 			if (userId) {
 				identifyPostHogUser(userId);
 			}
+			markOnboardingPendingInBrowser();
 			captureSignupCompleted('email');
 			// Verification email is sent by Better Auth (sendOnSignUp + Vercel waitUntil).
 			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;

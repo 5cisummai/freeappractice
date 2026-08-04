@@ -1,21 +1,27 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import ResourceImageCard from '$lib/components/blog/resource-image-card.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 
 	const blogResources = [
 		{
-			path: '/blog' as const,
+			href: '/blog',
 			label: 'Open the blog',
-			description: 'Browse all current study guides, updates, and strategy posts.'
+			description: 'Browse all current study guides, updates, and strategy posts.',
+			coverImage: 'https://public.assets.freeappractice.org/marissa-grootes-flRm0z3MEoA-unsplash.jpg'
 		},
 		{
-			path: '/blog/science-of-studying' as const,
+			href: '/blog/science-of-studying',
 			label: 'Science of Studying',
-			description: 'Research-backed strategies for spacing, retrieval, and retention.'
+			description: 'Research-backed strategies for spacing, retrieval, and retention.',
+			coverImage:
+				'https://public.assets.freeappractice.org/zoshua-colah-klbApl9mxr0-unsplash.jpg'
+		},
+		{
+			href: '/blog/summer-ap-study-plan',
+			label: 'Summer AP Study Plan',
+			description:
+				'How to preview AP classes over the summer with light daily work — without burning out.',
+			coverImage: 'https://public.assets.freeappractice.org/brice-cooper-Qc7BB9E0lMc-unsplash.jpg'
 		}
 	];
 
@@ -23,24 +29,36 @@
 		{
 			href: 'https://apstudents.collegeboard.org/',
 			label: 'AP Students',
-			description: 'Official College Board landing page for AP exam information and course details.'
+			description: 'Official College Board landing page for AP exam information and course details.',
+			coverImage:
+				'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&h=500&q=80'
 		},
 		{
 			href: 'https://apcentral.collegeboard.org/',
 			label: 'AP Central',
-			description: 'Official course materials, scoring guidelines, and exam resources.'
+			description: 'Official course materials, scoring guidelines, and exam resources.',
+			coverImage:
+				'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&h=500&q=80'
 		},
 		{
 			href: 'https://www.khanacademy.org/',
 			label: 'Khan Academy',
-			description: 'Free practice and review for a wide range of academic subjects.'
+			description: 'Free practice and review for a wide range of academic subjects.',
+			coverImage:
+				'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&h=500&q=80'
 		},
 		{
 			href: 'https://www.fiveable.me/',
 			label: 'Fiveable',
-			description: 'Community study guides, live review sessions, and AP support.'
+			description: 'Community study guides, live review sessions, and AP support.',
+			coverImage:
+				'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&h=500&q=80'
 		}
 	];
+
+	const scrollRowClass =
+		'no-scrollbar mt-4 flex list-none snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth p-0 pb-1';
+	const cardItemClass = 'w-[min(100%,18rem)] shrink-0 snap-start sm:w-72 lg:w-80';
 </script>
 
 <svelte:head>
@@ -55,65 +73,40 @@
 	title="Resources"
 	description="Study guides and official links worth keeping in your AP toolkit."
 >
-	<div class="grid gap-6 lg:grid-cols-2">
-		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
-			<Card.Header>
-				<Card.Title class="font-display text-lg font-medium tracking-tight"
-					>From our blog</Card.Title
-				>
-				<Card.Description>In-house study guides and AP strategy posts.</Card.Description>
-			</Card.Header>
-			<Card.Content class="space-y-1 pt-0">
-				{#each blogResources as resource (resource.path)}
-					<a
-						href={resolve(resource.path)}
-						class="group flex items-start justify-between gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/50"
-					>
-						<div class="min-w-0">
-							<p class="font-medium group-hover:text-primary">{resource.label}</p>
-							<p class="mt-0.5 text-sm text-muted-foreground">{resource.description}</p>
-						</div>
-						<span
-							class="mt-0.5 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary"
-						>
-							Read
-							<ArrowRightIcon class="size-3.5" />
-						</span>
-					</a>
-				{/each}
-			</Card.Content>
-		</Card.Root>
-
-		<Card.Root class="h-full rounded-2xl border border-border/60 shadow-sm ring-0">
-			<Card.Header>
-				<Card.Title class="font-display text-lg font-medium tracking-tight">
-					Helpful links
-				</Card.Title>
-				<Card.Description>Official references and supplemental study tools.</Card.Description>
-			</Card.Header>
-			<Card.Content class="space-y-1 pt-0">
-				{#each externalResources as resource (resource.href)}
-					<div
-						class="group flex items-start justify-between gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-muted/50"
-					>
-						<div class="min-w-0">
-							<p class="font-medium">{resource.label}</p>
-							<p class="mt-0.5 text-sm text-muted-foreground">{resource.description}</p>
-						</div>
-						<Button
-							variant="ghost"
-							size="sm"
+	<div class="space-y-12">
+		<section>
+			<h2 class="font-display text-2xl font-medium tracking-tight">Blogs</h2>
+			<ul class={scrollRowClass}>
+				{#each blogResources as resource (resource.href)}
+					<li class={cardItemClass}>
+						<ResourceImageCard
 							href={resource.href}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="mt-0.5 h-auto shrink-0 gap-1 px-0 text-xs font-medium text-primary hover:bg-transparent hover:text-primary"
-						>
-							Visit
-							<ExternalLinkIcon class="size-3.5" />
-						</Button>
-					</div>
+							title={resource.label}
+							description={resource.description}
+							coverImage={resource.coverImage}
+							badge="Blog"
+						/>
+					</li>
 				{/each}
-			</Card.Content>
-		</Card.Root>
+			</ul>
+		</section>
+
+		<section>
+			<h2 class="font-display text-2xl font-medium tracking-tight">More resources</h2>
+			<ul class={scrollRowClass}>
+				{#each externalResources as resource (resource.href)}
+					<li class={cardItemClass}>
+						<ResourceImageCard
+							href={resource.href}
+							title={resource.label}
+							description={resource.description}
+							coverImage={resource.coverImage}
+							external={true}
+							badge="External"
+						/>
+					</li>
+				{/each}
+			</ul>
+		</section>
 	</div>
 </PageShell>
