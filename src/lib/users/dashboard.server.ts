@@ -2,7 +2,11 @@ import type { Cookies } from '@sveltejs/kit';
 import { getFrqActivityForUser, getFrqProgressForUser } from '$lib/frq/attempts.server';
 import { isFrqPracticeEnabled } from '$lib/flags';
 import { findUserProfileOrFail } from '$lib/users/profile.server';
-import { buildProgressData, mergeFrqProgress } from '$lib/users/progress.server';
+import {
+	addTopicProgressData,
+	buildProgressData,
+	mergeFrqProgress
+} from '$lib/users/progress.server';
 import { buildStatsData } from '$lib/users/stats.server';
 import { timezoneFromCookies } from '$lib/users/timezone';
 import { ONBOARDING_COOKIE_NAME, readOnboardingState } from '$lib/onboarding.js';
@@ -25,7 +29,10 @@ export async function loadUserDashboardData(userId: string, cookies: Cookies) {
 
 	return {
 		stats: buildStatsData(user, timezoneFromCookies(cookies), frqActivity),
-		progress: mergeFrqProgress(buildProgressData(user), frqProgress),
+		progress: mergeFrqProgress(
+			await addTopicProgressData(buildProgressData(user), user),
+			frqProgress
+		),
 		frqEnabled,
 		selectedSubjects
 	};

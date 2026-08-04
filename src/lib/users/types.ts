@@ -12,6 +12,17 @@ export interface ProgressEntry {
 	frqPointsAvailable?: number;
 	frqAveragePercentage?: number;
 	frqLastAttemptAt?: string;
+	recentDelta?: number;
+	recentMistakes?: number;
+	topics?: MasteryTopic[];
+}
+
+export interface MasteryTopic {
+	name: string;
+	attempts: number;
+	correctAttempts: number;
+	mastery: number | null;
+	lastAttemptAt?: string;
 }
 
 export interface StatsData {
@@ -96,9 +107,18 @@ export type FrqHistoryItem = {
 
 export type HistoryItem = McqHistoryItem | FrqHistoryItem;
 
+export type HistorySummary = {
+	total: number;
+	answered: number;
+	correct: number;
+	accuracy: number | null;
+	avgTimeMs: number | null;
+};
+
 export type HistoryResponse = {
 	items: HistoryItem[];
 	total: number;
 	page: number;
 	limit: number;
+	summary: HistorySummary;
 };
