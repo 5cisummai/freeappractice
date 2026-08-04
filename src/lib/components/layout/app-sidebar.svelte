@@ -25,14 +25,13 @@
 		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
 		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
 		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
-		{ href: '/app/resources', label: 'Resources', icon: CompassIcon },
-		{ href: '/app/settings', label: 'Settings', icon: SettingsIcon }
+		{ href: '/app/resources', label: 'Resources', icon: CompassIcon }
 	] as const;
 
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
 	const navItems = $derived(isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems);
 
-	function isActive(href: (typeof navItems)[number]['href']): boolean {
+	function isActive(href: (typeof navItems)[number]['href'] | '/app/settings'): boolean {
 		const resolved = resolve(href);
 		if (href === '/app') return page.url.pathname === resolved;
 		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');
@@ -87,6 +86,24 @@
 
 	<Sidebar.Footer class="border-t border-sidebar-border">
 		<Sidebar.Menu>
+			<Sidebar.MenuItem>
+				<Sidebar.MenuButton
+					isActive={isActive('/app/settings')}
+					tooltipContent="Settings"
+					class="data-active:bg-primary/10 data-active:font-medium data-active:text-primary"
+				>
+					{#snippet child({ props })}
+						<a
+							href={resolve('/app/settings')}
+							aria-current={isActive('/app/settings') ? 'page' : undefined}
+							{...props}
+						>
+							<SettingsIcon />
+							<span>Settings</span>
+						</a>
+					{/snippet}
+				</Sidebar.MenuButton>
+			</Sidebar.MenuItem>
 			<Sidebar.MenuItem>
 				<ThemeToggle variant="sidebar" />
 			</Sidebar.MenuItem>

@@ -119,7 +119,7 @@ export function createHistoryColumns(
 									row.original.attempt.wasCorrect === undefined
 										? 'bg-muted text-muted-foreground'
 										: row.original.attempt.wasCorrect
-											? 'bg-secondary text-secondary-foreground'
+											? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
 											: 'bg-destructive/10 text-destructive'
 							};
 				return renderSnippet(resultSnippet, {

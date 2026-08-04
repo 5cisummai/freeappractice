@@ -7,48 +7,33 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Switch } from '$lib/components/ui/switch/index.js';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
+	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
+	import CheckIcon from '@lucide/svelte/icons/check';
 	import { userPrefersMode } from 'mode-watcher';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
-	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'danger' | 'about';
-	type SettingsSectionTone = 'default' | 'danger';
-	type SettingsSectionConfig = {
-		id: SettingsSection;
-		label: string;
-		tone: SettingsSectionTone;
-	};
+	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'advanced' | 'about';
 	type Theme = 'light' | 'dark' | 'system';
 
-	const SECTIONS: SettingsSectionConfig[] = [
-		{ id: 'practice', label: 'Practice', tone: 'default' },
-		{ id: 'appearance', label: 'Appearance', tone: 'default' },
-		{ id: 'privacy', label: 'Privacy', tone: 'default' },
-		{ id: 'account', label: 'Account', tone: 'default' },
-		{ id: 'danger', label: 'Danger', tone: 'danger' },
-		{ id: 'about', label: 'About', tone: 'default' }
+	const SECTIONS: { id: SettingsSection; label: string }[] = [
+		{ id: 'practice', label: 'Practice' },
+		{ id: 'appearance', label: 'Appearance' },
+		{ id: 'privacy', label: 'Privacy' },
+		{ id: 'account', label: 'Account' },
+		{ id: 'advanced', label: 'Advanced' },
+		{ id: 'about', label: 'About' }
 	];
-
-	const SECTION_TONE_CLASSES: Record<SettingsSectionTone, { active: string; inactive: string }> = {
-		default: {
-			active: 'bg-primary/10 text-primary',
-			inactive: 'text-muted-foreground hover:bg-muted hover:text-foreground'
-		},
-		danger: {
-			active: 'bg-destructive/10 text-destructive',
-			inactive: 'text-destructive/80 hover:bg-destructive/10 hover:text-destructive'
-		}
-	};
 
 	const THEME_LABELS: Record<Theme, string> = {
 		light: 'Light',
@@ -57,7 +42,6 @@
 	};
 
 	let activeSection = $state<SettingsSection>('practice');
-	let scrollingToSection = $state(false);
 	let deleteAccountOpen = $state(false);
 	let clearPracticeOpen = $state(false);
 	let accountForm = $state({ name: '', email: '' });
@@ -68,47 +52,37 @@
 	const themeLabel = $derived(
 		theme === 'light' || theme === 'dark' || theme === 'system' ? THEME_LABELS[theme] : 'System'
 	);
+	const selectedSubjects = $derived(new Set(data.selectedSubjects));
+
+	function subjectId(subject: string): string {
+		return `settings-subject-${subject.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+	}
+
+	function sectionFromHash(hash: string): SettingsSection {
+		if (hash === 'danger') return 'account';
+		if (SECTIONS.some((section) => section.id === hash)) {
+			return hash as SettingsSection;
+		}
+		return 'practice';
+	}
+
+	function syncHash(section: SettingsSection) {
+		history.replaceState(null, '', `#${section}`);
+	}
+
+	function handleSectionChange(value: string | undefined) {
+		if (!value || !SECTIONS.some((section) => section.id === value)) return;
+		activeSection = value as SettingsSection;
+		syncHash(activeSection);
+	}
 
 	onMount(() => {
 		accountForm = { name: data.user.name, email: data.user.email };
 
-		const hash = window.location.hash.slice(1) as SettingsSection;
-		if (SECTIONS.some((section) => section.id === hash)) {
-			activeSection = hash;
-			document.getElementById(hash)?.scrollIntoView({ behavior: 'auto', block: 'start' });
-		}
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (scrollingToSection) return;
-				const visible = entries
-					.filter((entry) => entry.isIntersecting)
-					.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-				const top = visible[0]?.target.id as SettingsSection | undefined;
-				if (top && SECTIONS.some((section) => section.id === top)) {
-					activeSection = top;
-				}
-			},
-			{ rootMargin: '-20% 0px -55% 0px', threshold: [0.1, 0.35, 0.6] }
-		);
-
-		for (const section of SECTIONS) {
-			const el = document.getElementById(section.id);
-			if (el) observer.observe(el);
-		}
-
-		return () => observer.disconnect();
+		const hash = window.location.hash.slice(1);
+		activeSection = sectionFromHash(hash);
+		syncHash(activeSection);
 	});
-
-	function scrollToSection(id: SettingsSection) {
-		activeSection = id;
-		scrollingToSection = true;
-		history.replaceState(null, '', `#${id}`);
-		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		window.setTimeout(() => {
-			scrollingToSection = false;
-		}, 700);
-	}
 
 	function onThemeChange(value: string) {
 		if (value === 'light' || value === 'dark' || value === 'system') {
@@ -163,235 +137,300 @@
 </svelte:head>
 
 <PageShell title="Settings" description="Manage your account and preferences.">
-	<div class="mx-auto w-full max-w-2xl space-y-8">
-		<nav
-			class="sticky top-14 z-10 -mx-1 flex gap-1 overflow-x-auto border-b border-border/60 bg-background/95 px-1 py-2 backdrop-blur supports-backdrop-filter:bg-background/80"
-			aria-label="Settings sections"
+	<div class="mx-auto w-full max-w-2xl">
+		<Tabs.Root
+			bind:value={activeSection}
+			onValueChange={handleSectionChange}
+			class="flex flex-col gap-6"
 		>
-			{#each SECTIONS as section (section.id)}
-				<button
-					type="button"
-					class={[
-						'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-						activeSection === section.id
-							? SECTION_TONE_CLASSES[section.tone].active
-							: SECTION_TONE_CLASSES[section.tone].inactive
-					]}
-					aria-current={activeSection === section.id ? 'true' : undefined}
-					onclick={() => scrollToSection(section.id)}
-				>
-					{section.label}
-				</button>
-			{/each}
-		</nav>
+			<Tabs.List
+				class="h-auto w-full justify-start gap-1 overflow-x-auto"
+				aria-label="Settings sections"
+			>
+				{#each SECTIONS as section (section.id)}
+					<Tabs.Trigger value={section.id} class="shrink-0">
+						{section.label}
+					</Tabs.Trigger>
+				{/each}
+			</Tabs.List>
 
-		<section id="practice" class="scroll-mt-28 space-y-3">
-			<h2 class="text-sm font-medium text-muted-foreground">Practice</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Exam mode</p>
-						<p class="text-sm text-muted-foreground">
-							Strip practice chrome so questions look closer to the real AP exam.
-						</p>
-					</div>
-					<Switch
-						id="realistic-mode"
-						checked={realisticMode.enabled}
-						onCheckedChange={(checked: boolean) => realisticMode.setEnabled(checked)}
-					/>
-				</div>
-			</div>
-		</section>
-
-		<section id="appearance" class="scroll-mt-28 space-y-3">
-			<h2 class="text-sm font-medium text-muted-foreground">Appearance</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Theme</p>
-						<p class="text-sm text-muted-foreground">Light, dark, or match your system setting.</p>
-					</div>
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger>
-							{#snippet child({ props })}
-								<Button
-									{...props}
-									variant="outline"
-									size="sm"
-									class="min-w-28 justify-between gap-2"
-								>
-									<span class="flex items-center gap-2">
-										{#if theme === 'dark'}
-											<MoonIcon class="size-3.5" />
-										{:else if theme === 'light'}
-											<SunIcon class="size-3.5" />
-										{:else}
-											<LaptopIcon class="size-3.5" />
-										{/if}
-										{themeLabel}
-									</span>
-									<ChevronsUpDownIcon class="size-3.5 opacity-60" />
-								</Button>
-							{/snippet}
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content align="end" class="min-w-36">
-							<DropdownMenu.RadioGroup value={theme} onValueChange={onThemeChange}>
-								<DropdownMenu.RadioItem value={'light' satisfies Theme}>
-									<SunIcon />
-									Light
-								</DropdownMenu.RadioItem>
-								<DropdownMenu.RadioItem value={'dark' satisfies Theme}>
-									<MoonIcon />
-									Dark
-								</DropdownMenu.RadioItem>
-								<DropdownMenu.RadioItem value={'system' satisfies Theme}>
-									<LaptopIcon />
-									System
-								</DropdownMenu.RadioItem>
-							</DropdownMenu.RadioGroup>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-				</div>
-			</div>
-		</section>
-
-		<section id="privacy" class="scroll-mt-28 space-y-3">
-			<h2 class="text-sm font-medium text-muted-foreground">Privacy</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Analytics</p>
-						<p class="text-sm text-muted-foreground">
-							Allow PostHog to collect feature usage, errors, and session replay. Vercel Analytics
-							always runs cookieless for aggregate traffic.
-						</p>
-					</div>
-					<Switch
-						id="analytics-toggle"
-						name="analytics"
-						checked={privacy.analyticsConsent === 'granted'}
-						onCheckedChange={(checked: boolean) =>
-							privacy.setAnalyticsConsent(checked ? 'granted' : 'denied')}
-					/>
-				</div>
-			</div>
-		</section>
-
-		<section id="account" class="scroll-mt-28 space-y-3">
-			<h2 class="text-sm font-medium text-muted-foreground">Account</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-				<form onsubmit={handleUpdateAccount} class="space-y-4 px-4 py-4">
-					<div class="space-y-2">
-						<Label for="name">Name</Label>
-						<Input id="name" class="ph-mask-pii" bind:value={accountForm.name} />
-					</div>
-					<div class="space-y-2">
-						<Label for="email">Email</Label>
-						<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
-					</div>
-					<div class="flex flex-wrap gap-2 pt-1">
-						<Button type="submit" size="sm" disabled={settingsController.accountPending}>
-							{settingsController.accountPending ? 'Saving...' : 'Save changes'}
+			<Tabs.Content value="practice" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<form method="POST" action="?/updateSubjects" class="space-y-4 px-4 py-4">
+						<div class="space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Classes</p>
+							<p class="text-sm text-muted-foreground">
+								Choose the AP classes you want to practice.
+							</p>
+						</div>
+						<div class="space-y-5">
+							{#each onboardingSubjectGroups as group (group.label)}
+								<section class="space-y-2" aria-labelledby={subjectId(group.label)}>
+									<h2 id={subjectId(group.label)} class="text-xs font-medium text-muted-foreground">
+										{group.label}
+									</h2>
+									<div class="grid gap-2 sm:grid-cols-2">
+										{#each group.subjects as subject (subject.name)}
+											{@const id = subjectId(subject.name)}
+											{@const SubjectIcon = subject.icon}
+											<div>
+												<input
+													{id}
+													type="checkbox"
+													name="subjects"
+													value={subject.name}
+													class="peer sr-only"
+													checked={selectedSubjects.has(subject.name)}
+												/>
+												<label
+													for={id}
+													class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.selection-check]:opacity-100 peer-checked:[&_.subject-icon]:bg-primary peer-checked:[&_.subject-icon]:text-primary-foreground"
+												>
+													<span
+														class="subject-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors"
+													>
+														<SubjectIcon class="size-4" />
+													</span>
+													<span class="min-w-0 flex-1 leading-tight font-medium"
+														>{subject.name}</span
+													>
+													<span
+														class="selection-check flex size-4 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
+														aria-hidden="true"
+													>
+														<CheckIcon class="size-3" />
+													</span>
+												</label>
+											</div>
+										{/each}
+									</div>
+								</section>
+							{/each}
+						</div>
+						{#if form?.subjectError}
+							<p class="text-sm text-destructive" role="alert">{form.subjectError}</p>
+						{/if}
+						<div class="flex justify-end">
+							<Button type="submit" size="sm">Save classes</Button>
+						</div>
+					</form>
+					<div class="border-t border-border/60"></div>
+					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Clear practice data</p>
+							<p class="text-sm text-muted-foreground">
+								Delete question history, mastery progress, bookmarks, and FRQ submissions. Your
+								account stays signed in.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="destructive"
+							size="sm"
+							onclick={() => (clearPracticeOpen = true)}
+						>
+							Clear
 						</Button>
-						<Button type="button" variant="outline" size="sm" onclick={resetAccountForm}>
+					</div>
+				</div>
+			</Tabs.Content>
+
+			<Tabs.Content value="appearance" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Theme</p>
+							<p class="text-sm text-muted-foreground">
+								Light, dark, or match your system setting.
+							</p>
+						</div>
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										variant="outline"
+										size="sm"
+										class="min-w-28 justify-between gap-2"
+									>
+										<span class="flex items-center gap-2">
+											{#if theme === 'dark'}
+												<MoonIcon class="size-3.5" />
+											{:else if theme === 'light'}
+												<SunIcon class="size-3.5" />
+											{:else}
+												<LaptopIcon class="size-3.5" />
+											{/if}
+											{themeLabel}
+										</span>
+										<ChevronsUpDownIcon class="size-3.5 opacity-60" />
+									</Button>
+								{/snippet}
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content align="end" class="min-w-36">
+								<DropdownMenu.RadioGroup value={theme} onValueChange={onThemeChange}>
+									<DropdownMenu.RadioItem value={'light' satisfies Theme}>
+										<SunIcon />
+										Light
+									</DropdownMenu.RadioItem>
+									<DropdownMenu.RadioItem value={'dark' satisfies Theme}>
+										<MoonIcon />
+										Dark
+									</DropdownMenu.RadioItem>
+									<DropdownMenu.RadioItem value={'system' satisfies Theme}>
+										<LaptopIcon />
+										System
+									</DropdownMenu.RadioItem>
+								</DropdownMenu.RadioGroup>
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					</div>
+				</div>
+			</Tabs.Content>
+
+			<Tabs.Content value="privacy" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Analytics</p>
+							<p class="text-sm text-muted-foreground">
+								Allow PostHog to collect feature usage, errors, and session replay. Vercel Analytics
+								always runs cookieless for aggregate traffic.
+							</p>
+						</div>
+						<Switch
+							id="analytics-toggle"
+							name="analytics"
+							checked={privacy.analyticsConsent === 'granted'}
+							onCheckedChange={(checked: boolean) =>
+								privacy.setAnalyticsConsent(checked ? 'granted' : 'denied')}
+						/>
+					</div>
+				</div>
+			</Tabs.Content>
+
+			<Tabs.Content value="advanced" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Reset onboarding</p>
+							<p class="text-sm text-muted-foreground">
+								Show the subject selection screen again so you can test the onboarding flow.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							href={resolve('/app/onboarding?reset=1')}
+						>
 							Reset
 						</Button>
 					</div>
-				</form>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Sign out</p>
-						<p class="text-sm text-muted-foreground">End your session on this device.</p>
-					</div>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onclick={handleSignOut}
-						disabled={signOutPending}
-					>
-						{signOutPending ? 'Signing out...' : 'Sign out'}
-					</Button>
 				</div>
-			</div>
-		</section>
+			</Tabs.Content>
 
-		<section id="danger" class="scroll-mt-28 space-y-3">
-			<h2 class="text-sm font-medium text-destructive">Danger</h2>
-			<div class="overflow-hidden rounded-2xl border border-destructive/25 bg-card shadow-sm">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Clear practice data</p>
-						<p class="text-sm text-muted-foreground">
-							Delete question history, mastery progress, bookmarks, and FRQ submissions. Your
-							account stays signed in.
-						</p>
-					</div>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						class="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-						onclick={() => (clearPracticeOpen = true)}
+			<Tabs.Content value="account" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<form onsubmit={handleUpdateAccount} class="flex flex-col gap-4 px-4 py-4">
+						<div class="flex flex-col gap-2">
+							<Label for="name">Name</Label>
+							<Input id="name" class="ph-mask-pii" bind:value={accountForm.name} />
+						</div>
+						<div class="flex flex-col gap-2">
+							<Label for="email">Email</Label>
+							<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
+						</div>
+						<div class="flex flex-wrap gap-2 pt-1">
+							<Button type="submit" size="sm" disabled={settingsController.accountPending}>
+								{settingsController.accountPending ? 'Saving...' : 'Save changes'}
+							</Button>
+							<Button type="button" variant="outline" size="sm" onclick={resetAccountForm}>
+								Reset
+							</Button>
+						</div>
+					</form>
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
 					>
-						Clear
-					</Button>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-destructive">Delete account</p>
-						<p class="text-sm text-muted-foreground">
-							Permanently delete your account and all associated data.
-						</p>
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Sign out</p>
+							<p class="text-sm text-muted-foreground">End your session on this device.</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onclick={handleSignOut}
+							disabled={signOutPending}
+						>
+							{signOutPending ? 'Signing out...' : 'Sign out'}
+						</Button>
 					</div>
-					<Button
-						type="button"
-						variant="destructive"
-						size="sm"
-						onclick={() => (deleteAccountOpen = true)}
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
 					>
-						Delete
-					</Button>
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-destructive">Delete account</p>
+							<p class="text-sm text-muted-foreground">
+								Permanently delete your account and all associated data.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="destructive"
+							size="sm"
+							onclick={() => (deleteAccountOpen = true)}
+						>
+							Delete
+						</Button>
+					</div>
 				</div>
-			</div>
-		</section>
+			</Tabs.Content>
 
-		<section id="about" class="scroll-mt-28 space-y-3">
-			<h2 class="text-sm font-medium text-muted-foreground">About</h2>
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">App version</p>
-						<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
+			<Tabs.Content value="about" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">App version</p>
+							<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
+						</div>
+						<p class="text-sm font-medium text-foreground tabular-nums">1.5.3</p>
 					</div>
-					<p class="text-sm font-medium text-foreground tabular-nums">1.4.8</p>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Privacy Policy</p>
-						<p class="text-sm text-muted-foreground">How we handle your data.</p>
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
+					>
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Privacy Policy</p>
+							<p class="text-sm text-muted-foreground">How we handle your data.</p>
+						</div>
+						<Button type="button" variant="outline" size="sm" href={resolve('/privacy')}
+							>View</Button
+						>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/privacy')}>View</Button>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Terms of Service</p>
-						<p class="text-sm text-muted-foreground">The rules for using this site.</p>
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
+					>
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Terms of Service</p>
+							<p class="text-sm text-muted-foreground">The rules for using this site.</p>
+						</div>
+						<Button type="button" variant="outline" size="sm" href={resolve('/terms')}>View</Button>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/terms')}>View</Button>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Changelog</p>
-						<p class="text-sm text-muted-foreground">What changed in recent releases.</p>
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
+					>
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Changelog</p>
+							<p class="text-sm text-muted-foreground">What changed in recent releases.</p>
+						</div>
+						<Button type="button" variant="outline" size="sm" href={resolve('/changelog')}>
+							View
+						</Button>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/changelog')}>
-						View
-					</Button>
 				</div>
-			</div>
-		</section>
+			</Tabs.Content>
+		</Tabs.Root>
 	</div>
 </PageShell>
 

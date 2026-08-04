@@ -2,66 +2,41 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
+	import type { StatsData } from '$lib/users/types.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import ProgressHistoryPanel from '$lib/components/history/progress-history-panel.svelte';
-	import { performanceBarClass, performanceTextClass } from '$lib/components/app/performance.js';
-	import { cn } from '$lib/utils.js';
-	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
-	import HistoryIcon from '@lucide/svelte/icons/history';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import MasteryPanel from '$lib/components/progress/mastery-panel.svelte';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import targetImage from '$lib/assets/target.png';
 
 	type ProgressView = 'mastery' | 'history';
 
 	let { data } = $props();
-
-	const progressData = $derived(data.progress as ProgressEntry[]);
-	const statsData = $derived(data.stats as StatsData);
-
 	let activeView = $state<ProgressView>(
 		page.url.searchParams.get('view') === 'history' ? 'history' : 'mastery'
 	);
-
-	const grouped = $derived.by(() => {
-		const map: Record<string, ProgressEntry[]> = {};
-		for (const entry of progressData) {
-			if (!map[entry.apClass]) map[entry.apClass] = [];
-			map[entry.apClass].push(entry);
-		}
-		return Object.entries(map)
-			.map(([apClass, units]) => ({
-				apClass,
-				units: [...units].sort(
-					(a, b) =>
-						(a.totalAttempts ? a.mastery : 101) - (b.totalAttempts ? b.mastery : 101) ||
-						b.totalAttempts - a.totalAttempts
-				),
-				avgMastery: (() => {
-					const mcqUnits = units.filter((unit) => unit.totalAttempts > 0);
-					return mcqUnits.length
-						? Math.round(mcqUnits.reduce((sum, unit) => sum + unit.mastery, 0) / mcqUnits.length)
-						: null;
-				})(),
-				totalAttempts: units.reduce((sum, unit) => sum + unit.totalAttempts, 0)
-			}))
-			.sort((a, b) => a.apClass.localeCompare(b.apClass));
-	});
+	const statsData = $derived(data.stats as StatsData);
 
 	const hasActivity = $derived(
-		(statsData?.overview.totalQuestions ?? 0) > 0 ||
-			(statsData?.overview.frqSubmissions ?? 0) > 0 ||
-			grouped.length > 0
+		(data.stats?.overview.totalQuestions ?? 0) > 0 ||
+			(data.stats?.overview.frqSubmissions ?? 0) > 0 ||
+			(data.progress?.length ?? 0) > 0
 	);
-
-	function practiceHref(apClass: string, unit: string | undefined = undefined): string {
-		const base = resolve('/app/practice');
-		const classParam = `apClass=${encodeURIComponent(apClass)}`;
-		const unitParam = unit ? `&unit=${encodeURIComponent(unit)}` : '';
-		return `${base}?${classParam}${unitParam}`;
-	}
+	const historySubjects = $derived(
+		[
+			...new Set([
+				...(data.selectedSubjects ?? []),
+				...(data.stats?.subjectBreakdown ?? []).map((subject) => subject.subject),
+				...(data.progress ?? []).map((entry) => entry.apClass)
+			])
+		].sort((a, b) => a.localeCompare(b))
+	);
+	const historyUnits = $derived(
+		(data.progress ?? []).map((entry) => ({ apClass: entry.apClass, unit: entry.unit }))
+	);
 
 	function syncViewToUrl(view: ProgressView) {
 		const path = resolve('/app/progress');
@@ -85,201 +60,81 @@
 	afterNavigate(() => {
 		const param = page.url.searchParams.get('view');
 		const nextView: ProgressView = param === 'history' ? 'history' : 'mastery';
-		if (activeView !== nextView) {
-			activeView = nextView;
-		}
+		if (activeView !== nextView) activeView = nextView;
 	});
+
+	function formatStudyTime(hours: number): string {
+		if (hours < 1) return `${Math.round(hours * 60)}m`;
+		return `${hours.toFixed(1)}h`;
+	}
 </script>
 
 <svelte:head>
 	<title>Progress – Free AP Practice</title>
 </svelte:head>
 
-<PageShell
-	title="Progress & History"
-	description="Track mastery by subject and review every question you've answered."
->
+<PageShell title="Progress" description="See where you're strong and what to practice next.">
+	<section class="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Progress summary">
+		<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+			<div class="p-4">
+				<p class="text-xs font-medium text-sky-700 dark:text-sky-300">Questions answered</p>
+				<p class="mt-1 text-2xl font-semibold text-sky-950 tabular-nums dark:text-sky-50">
+					{statsData.overview.totalQuestions}
+				</p>
+			</div>
+		</Card.Root>
+		<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+			<div class="p-4">
+				<p class="text-xs font-medium text-emerald-700 dark:text-emerald-300">Accuracy</p>
+				<p class="mt-1 text-2xl font-semibold text-emerald-950 tabular-nums dark:text-emerald-50">
+					{statsData.overview.accuracy}%
+				</p>
+			</div>
+		</Card.Root>
+		<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+			<div class="p-4">
+				<p class="text-xs font-medium text-amber-700 dark:text-amber-300">Current streak</p>
+				<p class="mt-1 text-2xl font-semibold text-amber-950 tabular-nums dark:text-amber-50">
+					{statsData.overview.currentStreak} day{statsData.overview.currentStreak === 1 ? '' : 's'}
+				</p>
+			</div>
+		</Card.Root>
+		<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+			<div class="p-4">
+				<p class="text-xs font-medium text-violet-700 dark:text-violet-300">Study time</p>
+				<p class="mt-1 text-2xl font-semibold text-violet-950 tabular-nums dark:text-violet-50">
+					{formatStudyTime(statsData.overview.totalTimeHours)}
+				</p>
+			</div>
+		</Card.Root>
+	</section>
+
 	<Tabs.Root bind:value={activeView} onValueChange={handleViewChange} class="space-y-6">
-		<Tabs.List class="grid w-full max-w-md grid-cols-2">
-			<Tabs.Trigger value="mastery" class="flex items-center gap-2">
-				<BarChart3Icon class="size-4" />
-				Mastery
-			</Tabs.Trigger>
-			<Tabs.Trigger value="history" class="flex items-center gap-2">
-				<HistoryIcon class="size-4" />
-				Question history
-			</Tabs.Trigger>
+		<Tabs.List aria-label="Progress views" class="h-auto w-full max-w-md justify-start gap-1">
+			<Tabs.Trigger value="mastery">Mastery</Tabs.Trigger>
+			<Tabs.Trigger value="history">History</Tabs.Trigger>
 		</Tabs.List>
 
-		<Tabs.Content value="mastery" class="space-y-6">
+		<Tabs.Content value="mastery" class="space-y-8">
 			{#if !hasActivity}
-				<div class="rounded-2xl border border-dashed border-border/70 p-10 text-center">
-					<p class="font-medium">No progress yet</p>
-					<p class="mt-1 text-sm text-muted-foreground">
-						Practice a few questions to build this view.
-					</p>
-					<div class="mt-4">
-						<Button href={resolve('/app/practice')}>Start practice</Button>
-					</div>
-				</div>
+				<EmptyState
+					title="No progress yet"
+					description="Practice a few questions to build this view."
+					imageUrl={targetImage}
+				>
+					<Button href={resolve('/app/practice')}>Start practice</Button>
+				</EmptyState>
 			{:else}
-				{#if statsData.subjectBreakdown.length > 0}
-					<section class="space-y-4">
-						<h2 class="font-display text-xl font-medium tracking-tight sm:text-2xl">
-							Subject accuracy
-						</h2>
-						<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
-							<div class="divide-y divide-border/70">
-								{#each statsData.subjectBreakdown as subject (subject.subject)}
-									<div class="flex items-center gap-4 px-5 py-4">
-										<div class="min-w-0 flex-1">
-											<p class="truncate text-sm font-medium">{subject.subject}</p>
-											<p class="text-xs text-muted-foreground">{subject.total} questions</p>
-											{#if subject.frqAttempts > 0}
-												<p class="text-xs text-muted-foreground">
-													{subject.frqAttempts} FRQ · {subject.frqAveragePercentage}% average
-												</p>
-											{/if}
-										</div>
-										{#if subject.total > 0}
-											<div class="flex w-36 items-center gap-3">
-												<div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-													<div
-														class={cn(
-															'h-full rounded-full transition-all',
-															performanceBarClass(subject.accuracy)
-														)}
-														style="width: {subject.accuracy}%"
-													></div>
-												</div>
-												<span
-													class={cn(
-														'w-10 text-right text-sm font-semibold tabular-nums',
-														performanceTextClass(subject.accuracy)
-													)}
-												>
-													{subject.accuracy}%
-												</span>
-											</div>
-										{:else}
-											<span class="text-sm text-muted-foreground">No MCQ attempts</span>
-										{/if}
-									</div>
-								{/each}
-							</div>
-						</Card.Root>
-					</section>
-				{/if}
-
-				{#if grouped.length > 0}
-					<section class="space-y-4">
-						<div class="flex flex-wrap items-end justify-between gap-3">
-							<h2 class="font-display text-xl font-medium tracking-tight sm:text-2xl">
-								Mastery by unit
-							</h2>
-							<p class="text-sm text-muted-foreground">
-								Sorted by lowest mastery first within each subject
-							</p>
-						</div>
-
-						<div class="grid gap-4 lg:grid-cols-2">
-							{#each grouped as subject (subject.apClass)}
-								<Card.Root
-									class="flex flex-col rounded-2xl border border-border/60 shadow-sm ring-0"
-								>
-									<Card.Header class="border-b border-border/60 pb-4">
-										<div class="flex items-start justify-between gap-3">
-											<div class="min-w-0">
-												<Card.Title class="truncate text-base font-semibold tracking-tight">
-													{subject.apClass}
-												</Card.Title>
-												<Card.Description>
-													{#if subject.avgMastery !== null}
-														{subject.totalAttempts} attempts · {subject.avgMastery}% avg MCQ mastery
-													{:else}
-														FRQ performance is tracked separately
-													{/if}
-												</Card.Description>
-											</div>
-											<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
-												{subject.units.length} unit{subject.units.length === 1 ? '' : 's'}
-											</span>
-										</div>
-										{#if subject.avgMastery !== null}
-											<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-												<div
-													class={cn(
-														'h-full rounded-full transition-all',
-														performanceBarClass(subject.avgMastery)
-													)}
-													style="width: {subject.avgMastery}%"
-												></div>
-											</div>
-										{/if}
-									</Card.Header>
-									<Card.Content class="space-y-4 pt-4">
-										{#each subject.units as unit (`${subject.apClass}:${unit.unit || 'all-units'}`)}
-											<div class="space-y-2">
-												<div class="flex items-center justify-between gap-3">
-													<div class="min-w-0">
-														<p class="truncate text-sm font-medium">
-															{unit.unit || 'All units'}
-														</p>
-														{#if unit.totalAttempts > 0}
-															<p class="text-xs text-muted-foreground">
-																{unit.totalAttempts} attempt{unit.totalAttempts === 1 ? '' : 's'}
-															</p>
-														{:else}
-															<p class="text-xs text-muted-foreground">No MCQ attempts</p>
-														{/if}
-														{#if unit.frqAttempts}
-															<p class="text-xs text-muted-foreground">
-																{unit.frqAttempts} FRQ · {unit.frqAveragePercentage}% average
-															</p>
-														{/if}
-													</div>
-													{#if unit.totalAttempts > 0}
-														<span
-															class={cn(
-																'text-sm font-semibold tabular-nums',
-																performanceTextClass(unit.mastery)
-															)}>{unit.mastery}%</span
-														>
-													{/if}
-												</div>
-												{#if unit.totalAttempts > 0}
-													<div class="h-2 overflow-hidden rounded-full bg-muted">
-														<div
-															class={cn(
-																'h-full rounded-full transition-all',
-																performanceBarClass(unit.mastery)
-															)}
-															style="width: {unit.mastery}%"
-														></div>
-													</div>
-												{/if}
-												<Button
-													variant="ghost"
-													size="sm"
-													href={practiceHref(subject.apClass, unit.unit || undefined)}
-													class="h-auto px-0 text-primary hover:bg-transparent"
-												>
-													Practice this unit
-													<ArrowRightIcon class="size-3.5" />
-												</Button>
-											</div>
-										{/each}
-									</Card.Content>
-								</Card.Root>
-							{/each}
-						</div>
-					</section>
-				{/if}
+				<MasteryPanel
+					progress={data.progress}
+					stats={data.stats}
+					selectedSubjects={data.selectedSubjects}
+				/>
 			{/if}
 		</Tabs.Content>
 
 		<Tabs.Content value="history" class="space-y-6">
-			<ProgressHistoryPanel />
+			<ProgressHistoryPanel subjects={historySubjects} units={historyUnits} />
 		</Tabs.Content>
 	</Tabs.Root>
 </PageShell>

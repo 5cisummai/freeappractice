@@ -1,5 +1,8 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import FilterIcon from '@lucide/svelte/icons/filter';
+	import SearchIcon from '@lucide/svelte/icons/search';
+	import type { Snippet } from 'svelte';
 	import { type SortingState, type VisibilityState, getCoreRowModel } from '@tanstack/table-core';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import { createHistoryColumns } from './history-columns.js';
@@ -7,6 +10,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { FlexRender, createSvelteTable } from '$lib/components/ui/data-table/index.js';
 
 	type HistoryDataTableProps = {
@@ -15,8 +19,12 @@
 		pageIndex: number;
 		pageSize: number;
 		sorting: SortingState;
+		search: string;
+		filtersOpen?: boolean;
+		filterContent: Snippet;
 		onPageChange: (pageIndex: number) => void;
 		onSortingChange: (sorting: SortingState) => void;
+		onSearchChange: (search: string) => void;
 	};
 
 	let {
@@ -25,8 +33,12 @@
 		pageIndex,
 		pageSize,
 		sorting,
+		search,
+		filtersOpen = $bindable(false),
+		filterContent,
 		onPageChange,
-		onSortingChange
+		onSortingChange,
+		onSearchChange
 	}: HistoryDataTableProps = $props();
 
 	let columnVisibility = $state<VisibilityState>({});
@@ -95,13 +107,39 @@
 
 <div class="space-y-4">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-		<p class="text-xs text-muted-foreground">
-			Sorting applies across all attempts, not just this page.
-		</p>
+		<label class="sr-only" for="history-search">Search history</label>
+		<div class="relative min-w-0 flex-1 sm:max-w-sm">
+			<SearchIcon
+				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+			/>
+			<input
+				id="history-search"
+				type="search"
+				value={search}
+				placeholder="Search by subject or unit"
+				oninput={(e) => onSearchChange(e.currentTarget.value)}
+				class="h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+			/>
+		</div>
+
+		<Popover.Root bind:open={filtersOpen}>
+			<Popover.Trigger>
+				{#snippet child({ props })}
+					<Button {...props} variant="ghost" class="sm:ms-auto" aria-controls="history-filters">
+						<FilterIcon class="size-4" aria-hidden="true" />
+						Filters
+					</Button>
+				{/snippet}
+			</Popover.Trigger>
+			<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))]">
+				{@render filterContent()}
+			</Popover.Content>
+		</Popover.Root>
+
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
-					<Button {...props} variant="outline" class="sm:ms-auto">
+					<Button {...props} variant="ghost">
 						Columns
 						<ChevronDownIcon class="ms-2 size-4" />
 					</Button>
@@ -122,6 +160,7 @@
 
 	<div class="rounded-md border">
 		<Table.Root>
+			<caption class="sr-only">Question history with review actions</caption>
 			<Table.Header>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
 					<Table.Row>
@@ -143,7 +182,7 @@
 					<Table.Row
 						class="cursor-pointer even:bg-muted/30"
 						tabindex={0}
-						aria-label="View question details"
+						aria-label={`View ${row.original.attempt.apClass} question details`}
 						onclick={() => viewDetails(row.original)}
 						onkeydown={(event) => handleRowKeydown(event, row.original)}
 					>
@@ -171,10 +210,7 @@
 		</Table.Root>
 	</div>
 
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-		<p class="text-sm text-muted-foreground">
-			{total} total attempt{total === 1 ? '' : 's'}
-		</p>
+	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
 		<div class="flex items-center gap-2">
 			<p class="text-sm text-muted-foreground">
 				Page {pageIndex + 1} of {pageCount}

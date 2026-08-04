@@ -14,13 +14,11 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
-	import { Switch } from '$lib/components/ui/switch/index.js';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { cn } from '$lib/utils.js';
 	import { capturePracticeSelectorUsed } from '$lib/client/activation-analytics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 
 	type QuestionSelectorProps = {
 		selectedClass?: string;
@@ -309,16 +307,6 @@
 			</Popover.Trigger>
 			<Popover.Content align="end" class="w-52 gap-0 p-1">
 				<div class="flex flex-col gap-0.5">
-					<div class="flex h-9 items-center justify-between gap-3 px-2">
-						<Label for="realistic-mode-toggle" class="text-sm font-normal">Realistic mode</Label>
-						<Switch
-							id="realistic-mode-toggle"
-							size="sm"
-							checked={realisticMode.enabled}
-							onCheckedChange={(checked) => realisticMode.setEnabled(checked)}
-						/>
-					</div>
-					<div class="my-0.5 h-px bg-border" aria-hidden="true"></div>
 					<Button
 						type="button"
 						variant="ghost"

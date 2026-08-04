@@ -443,18 +443,14 @@
 			transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
 		>
 			<!-- Header -->
-			<div
-				class="flex shrink-0 items-center justify-between border-b border-border bg-primary px-4 py-3"
-			>
+			<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
 				<div class="flex items-center gap-2">
-					<SparklesIcon class="h-4 w-4 text-primary-foreground" />
-					<span id="ai-tutor-title" class="text-sm font-semibold text-primary-foreground"
-						>AI Tutor</span
-					>
+					<SparklesIcon class="h-4 w-4" />
+					<span id="ai-tutor-title" class="text-sm font-semibold">AI Tutor</span>
 				</div>
 				<button
 					onclick={handleClose}
-					class="rounded-md p-0.5 text-primary-foreground/70 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
+					class="rounded-md p-0.5 transition-colors hover:bg-primary-foreground/10"
 					aria-label="Close AI Tutor"
 				>
 					<XIcon class="h-4 w-4" />
@@ -498,7 +494,9 @@
 
 			<!-- Input -->
 			<div class="shrink-0 p-3">
-				<div class="flex items-end gap-2 rounded-3xl border border-border bg-background px-3 py-2">
+				<div
+					class="flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2 shadow-sm"
+				>
 					<textarea
 						use:autofocusInput
 						bind:value={inputText}
@@ -507,7 +505,7 @@
 						rows={1}
 						placeholder="Ask a question…"
 						disabled={isStreaming}
-						class="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+						class="flex-1 resize-none bg-transparent px-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
 						style="max-height: 80px; overflow-y: auto;"
 					></textarea>
 					<button

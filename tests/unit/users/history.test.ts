@@ -88,4 +88,17 @@ describe('getMcqHistoryPage', () => {
 			'AP Chemistry'
 		]);
 	});
+
+	it('filters by search against subject and unit', () => {
+		const page = getMcqHistoryPage(
+			{ questionHistory: history },
+			{
+				page: 1,
+				limit: 10,
+				search: 'chem'
+			}
+		);
+		expect(page.total).toBe(1);
+		expect(page.items[0]?.attempt.apClass).toBe('AP Chemistry');
+	});
 });

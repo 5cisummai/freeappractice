@@ -11,7 +11,6 @@
 		correctAnswer,
 		onSelect,
 		compact = false,
-		realistic = false,
 		lockedChoices = []
 	}: {
 		options: QuestionOption[];
@@ -21,7 +20,6 @@
 		correctAnswer?: string;
 		onSelect: (optionId: string) => void;
 		compact?: boolean;
-		realistic?: boolean;
 		/** Multi-attempt: previously incorrect choices stay unavailable. Empty by default (control). */
 		lockedChoices?: string[];
 	} = $props();
@@ -70,11 +68,7 @@
 	}
 </script>
 
-<div
-	class={cn('space-y-2', realistic && 'font-exam')}
-	role="radiogroup"
-	aria-label="Answer choices"
->
+<div class="space-y-2" role="radiogroup" aria-label="Answer choices">
 	{#each options as option (option.id)}
 		<button
 			type="button"
@@ -99,11 +93,7 @@
 				>
 					{option.label}
 				</span>
-				<RichText
-					text={option.text}
-					inline
-					class={cn('leading-6', realistic ? 'text-[15px] text-foreground/85' : 'text-sm')}
-				/>
+				<RichText text={option.text} inline class="text-sm leading-6" />
 			</div>
 		</button>
 	{/each}

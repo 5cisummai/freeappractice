@@ -11,6 +11,7 @@ export async function ensureUserProfile(userId: string): Promise<IUserProfile> {
 	try {
 		return await UserProfile.create({
 			userId,
+			subjects: [],
 			progress: [],
 			questionHistory: [],
 			bookmarkedQuestions: []

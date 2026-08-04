@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import type { FrqAttemptView } from '$lib/frq/types.js';
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import { cn } from '$lib/utils.js';
 
@@ -58,6 +61,12 @@
 			{ id: 'D' as const, text: q.optionD }
 		];
 	});
+
+	function practiceHref(): string {
+		if (!item) return resolve('/app/practice');
+		const unitParam = item.attempt.unit ? `&unit=${encodeURIComponent(item.attempt.unit)}` : '';
+		return `${resolve('/app/practice')}?apClass=${encodeURIComponent(item.attempt.apClass)}${unitParam}`;
+	}
 </script>
 
 <Sheet.Root bind:open>
@@ -190,6 +199,15 @@
 							<RichText text={item.question.explanation} class="text-sm text-muted-foreground" />
 						</div>
 					{/if}
+				{/if}
+
+				{#if item}
+					<div class="border-t border-border/60 pt-5">
+						<Button href={practiceHref()} variant="outline">
+							Practice a similar question
+							<ArrowRightIcon class="size-4" aria-hidden="true" />
+						</Button>
+					</div>
 				{/if}
 			</div>
 		{/if}

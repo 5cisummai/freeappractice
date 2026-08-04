@@ -14,6 +14,7 @@
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { data, children } = $props();
+	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
 
 	onMount(() => {
 		if (data.user) {
@@ -41,15 +42,21 @@
 
 <Toaster />
 
-<Sidebar.Provider class="bg-sidebar">
-	<AppSidebar isAdmin={data.isAdmin} user={data.user} />
-	<Sidebar.Inset>
-		<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
-			<SidebarTrigger />
-		</header>
+{#if isOnboarding}
+	<main id="main-content" class="min-h-svh bg-background">
+		{@render children()}
+	</main>
+{:else}
+	<Sidebar.Provider class="bg-sidebar">
+		<AppSidebar isAdmin={data.isAdmin} user={data.user} />
+		<Sidebar.Inset>
+			<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
+				<SidebarTrigger />
+			</header>
 
-		<main id="main-content" class="flex-1">
-			{@render children()}
-		</main>
-	</Sidebar.Inset>
-</Sidebar.Provider>
+			<main id="main-content" class="flex-1">
+				{@render children()}
+			</main>
+		</Sidebar.Inset>
+	</Sidebar.Provider>
+{/if}

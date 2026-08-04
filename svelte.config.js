@@ -49,6 +49,7 @@ const config = {
 					'data:',
 					'blob:',
 					'https://public.assets.freeappractice.org',
+					'https://images.unsplash.com',
 					'https://*.googleapis.com',
 					'https://*.gstatic.com'
 				],

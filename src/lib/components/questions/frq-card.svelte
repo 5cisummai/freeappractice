@@ -8,8 +8,10 @@
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import { PoolWarmingError } from '$lib/questions/request-mcq.client';
 	import { requestFrqQuestion } from '$lib/questions/request-frq.client';
+	import lightbulbImage from '$lib/assets/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;
 	const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -296,11 +298,11 @@
 		<Button onclick={() => void loadQuestion()}>Try again</Button>
 	</div>
 {:else if !question}
-	<div
-		class="rounded-2xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground"
-	>
-		Select a course and unit, then choose Generate Question to begin.
-	</div>
+	<EmptyState
+		title="No prompt yet"
+		description="Select a course and unit, then generate a written-response task."
+		imageUrl={lightbulbImage}
+	/>
 {:else}
 	<div class="space-y-5">
 		<div class="flex flex-wrap items-start justify-between gap-3">
