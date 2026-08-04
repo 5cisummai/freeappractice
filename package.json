@@ -34,7 +34,6 @@
 		"@eslint/js": "latest",
 		"@fontsource-variable/fraunces": "^5.2.9",
 		"@fontsource-variable/geist": "^5.2.9",
-		"@fontsource/noto-serif": "^5.2.9",
 		"@internationalized/date": "^3.12.2",
 		"@lucide/svelte": "^1.21.0",
 		"@playwright/test": "^1.61.0",

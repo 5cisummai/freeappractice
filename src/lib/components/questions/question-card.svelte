@@ -15,7 +15,6 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import {
 		measureLongQuestion,
 		portalToBody,
@@ -96,7 +95,6 @@
 	);
 	const hasCalculator = $derived(toolConfig.calculator !== 'none');
 	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
-	const realistic = $derived(realisticMode.enabled);
 
 	const tutorUnitLabel = $derived(selectedUnit);
 	const effectiveTwoColumn = $derived(
@@ -110,9 +108,6 @@
 		for (const opt of session.currentQuestion.options) map[opt.id] = opt.text;
 		return map.A && map.B ? (map as { A: string; B: string; C: string; D: string }) : null;
 	});
-	const realisticContextLabel = $derived(
-		selectedClass ? `${selectedClass} · ${selectedUnit.trim() || 'All Units'}` : ''
-	);
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		isLongQuestion = measureLongQuestion({
@@ -251,18 +246,6 @@
 	</Card.Root>
 {:else}
 	{#snippet cardInner(expanded: boolean)}
-		{#snippet realisticQuestionNumber()}
-			<div class="mb-3">
-				<span
-					class="inline-flex size-8 items-center justify-center bg-foreground font-exam text-base font-semibold text-background"
-					aria-hidden="true"
-				>
-					{session.effectiveQuestionNumber}
-				</span>
-				<span class="sr-only">Question {session.effectiveQuestionNumber}</span>
-			</div>
-		{/snippet}
-
 		{#snippet mcqChoices(compact = false)}
 			<McqAnswerChoices
 				options={session.currentQuestion?.options ?? []}
@@ -272,24 +255,15 @@
 				correctAnswer={session.currentQuestion?.correctAnswer}
 				onSelect={session.handleOptionSelect}
 				{compact}
-				{realistic}
 				lockedChoices={session.lockedChoices}
 			/>
 		{/snippet}
 
 		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
 			<div class="flex items-start justify-between gap-4">
-				{#if realistic}
-					<div class="min-w-0">
-						<p class="mt-0.5 truncate text-base font-medium text-foreground">
-							{realisticContextLabel}
-						</p>
-					</div>
-				{:else}
-					<div>
-						<h2 class="mt-0.5 text-xl font-semibold">Question {session.effectiveQuestionNumber}</h2>
-					</div>
-				{/if}
+				<div>
+					<h2 class="mt-0.5 text-xl font-semibold">Question {session.effectiveQuestionNumber}</h2>
+				</div>
 				<Button
 					variant="ghost"
 					size="icon"
@@ -308,29 +282,17 @@
 			{#if session.currentQuestion?.hasStimulus && !isMobileViewport}
 				<div
 					class={cn(
-						'overflow-hidden',
-						realistic
-							? 'rounded-none border border-border realistic-surface'
-							: 'rounded-lg border border-border/70',
+						'overflow-hidden rounded-lg border border-border/70',
 						expanded ? 'min-h-0 flex-1' : 'h-88'
 					)}
 				>
 					<Resizable.PaneGroup direction="horizontal" class="h-full">
 						<Resizable.Pane defaultSize={54} minSize={30} class="min-w-0">
 							<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
-								{#if !realistic}
-									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-										{session.currentQuestion.leftPanel?.title ?? 'Stimulus'}
-									</p>
-								{/if}
-								<div
-									class={cn(
-										'space-y-4 leading-6',
-										realistic
-											? 'font-exam text-[15px] text-foreground'
-											: 'text-sm text-foreground/90'
-									)}
-								>
+								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+									{session.currentQuestion.leftPanel?.title ?? 'Stimulus'}
+								</p>
+								<div class="space-y-4 text-sm leading-6 text-foreground/90">
 									{#each session.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
@@ -343,19 +305,10 @@
 								use:observePromptLayout={session.currentQuestion?.prompt ?? ''}
 								class="h-full space-y-3 overflow-y-auto p-4 sm:p-5"
 							>
-								{#if !realistic}
-									<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-										{session.currentQuestion.rightPanel?.title ?? 'Prompt'}
-									</p>
-								{/if}
-								<div
-									class={cn(
-										'space-y-4 leading-7',
-										realistic
-											? 'font-exam text-[15px] text-foreground/85'
-											: 'text-sm text-foreground/90'
-									)}
-								>
+								<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+									{session.currentQuestion.rightPanel?.title ?? 'Prompt'}
+								</p>
+								<div class="space-y-4 text-sm leading-7 text-foreground/90">
 									{#each session.currentQuestion.rightPanel?.content ?? [session.currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
 										<RichText text={paragraph} />
 									{/each}
@@ -364,17 +317,11 @@
 						</Resizable.Pane>
 					</Resizable.PaneGroup>
 				</div>
-				{#if realistic}
-					{@render realisticQuestionNumber()}
-				{/if}
 				{@render mcqChoices()}
 			{:else if expandedTwoColumn}
 				<div
 					class={cn(
-						'overflow-hidden',
-						realistic
-							? 'rounded-none border border-border realistic-surface'
-							: 'rounded-lg border border-border/70',
+						'overflow-hidden rounded-lg border border-border/70',
 						expanded ? 'min-h-0 flex-1' : 'h-100'
 					)}
 				>
@@ -384,30 +331,18 @@
 								use:observePromptLayout={session.currentQuestion?.prompt ?? ''}
 								class="h-full overflow-y-auto p-4 sm:p-5"
 							>
-								{#if !realistic}
-									<p
-										class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-									>
-										Question
-									</p>
-								{/if}
+								<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+									Question
+								</p>
 								<RichText
 									text={session.currentQuestion?.prompt ?? ''}
-									class={cn(
-										'leading-7',
-										realistic
-											? 'font-exam text-[15px] text-foreground/85'
-											: 'text-sm text-foreground/90'
-									)}
+									class="text-sm leading-7 text-foreground/90"
 								/>
 							</div>
 						</Resizable.Pane>
 						<Resizable.Handle withHandle />
 						<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
 							<div class="h-full overflow-y-auto p-4 sm:p-5">
-								{#if realistic}
-									{@render realisticQuestionNumber()}
-								{/if}
 								{@render mcqChoices(true)}
 							</div>
 						</Resizable.Pane>
@@ -417,16 +352,9 @@
 				<div use:observePromptLayout={session.currentQuestion?.prompt ?? ''}>
 					<RichText
 						text={session.currentQuestion?.prompt ?? ''}
-						class={cn(
-							realistic
-								? 'font-exam text-[15px] leading-8 text-foreground/85'
-								: 'text-base leading-7 text-foreground/90'
-						)}
+						class="text-base leading-7 text-foreground/90"
 					/>
 				</div>
-				{#if realistic}
-					{@render realisticQuestionNumber()}
-				{/if}
 				{@render mcqChoices()}
 			{/if}
 
@@ -547,9 +475,7 @@
 	<div in:fade={{ duration: 280, easing: quintOut }}>
 		<Card.Root
 			class={cn(
-				realistic
-					? 'relative overflow-hidden border-border/70 realistic-surface shadow-none'
-					: 'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
+				'relative overflow-hidden border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
 				isExpanded ? 'pointer-events-none invisible' : className
 			)}
 			aria-hidden={isExpanded}
@@ -567,10 +493,7 @@
 		>
 			<Card.Root
 				class={cn(
-					'relative flex h-full flex-col overflow-hidden',
-					realistic
-						? 'rounded-none border-0 realistic-surface shadow-none'
-						: 'rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm'
+					'relative flex h-full flex-col overflow-hidden rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm'
 				)}
 			>
 				{@render cardInner(true)}

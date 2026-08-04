@@ -11,7 +11,6 @@
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { realisticMode } from '$lib/client/realistic-mode.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { userPrefersMode } from 'mode-watcher';
@@ -151,21 +150,6 @@
 			<Tabs.Content value="practice" class="flex flex-col gap-3">
 				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-						<div class="flex min-w-0 flex-col gap-0.5">
-							<p class="text-sm font-medium text-foreground">Exam mode</p>
-							<p class="text-sm text-muted-foreground">
-								Strip practice chrome so questions look closer to the real AP exam.
-							</p>
-						</div>
-						<Switch
-							id="realistic-mode"
-							checked={realisticMode.enabled}
-							onCheckedChange={(checked: boolean) => realisticMode.setEnabled(checked)}
-						/>
-					</div>
-					<div
-						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
-					>
 						<div class="flex min-w-0 flex-col gap-0.5">
 							<p class="text-sm font-medium text-foreground">Clear practice data</p>
 							<p class="text-sm text-muted-foreground">
