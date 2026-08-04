@@ -3,6 +3,7 @@
  * App data uses Mongoose via `$lib/server/db.ts`.
  */
 import { MongoClient, type Db } from 'mongodb';
+import { building } from '$app/environment';
 import { DATABASE_URI } from '$env/static/private';
 
 declare global {
@@ -21,7 +22,7 @@ function getDbName(uri: string): string {
 export function getMongoClient(): Promise<MongoClient> {
 	if (!globalThis.__fapMongoClientPromise) {
 		const client = new MongoClient(DATABASE_URI);
-		globalThis.__fapMongoClientPromise = client.connect();
+		globalThis.__fapMongoClientPromise = building ? Promise.resolve(client) : client.connect();
 	}
 	return globalThis.__fapMongoClientPromise;
 }

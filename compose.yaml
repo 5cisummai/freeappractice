@@ -9,7 +9,8 @@
 
 services:
   mongodb:
-    image: mongo:8
+    # Keep this pinned: the persistent development volume currently uses FCV 7.0.
+    image: mongo:7
     restart: unless-stopped
     ports:
       - '27017:27017'

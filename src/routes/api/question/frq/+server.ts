@@ -11,7 +11,7 @@ import {
 	createQuestionPathMetrics
 } from '$lib/server/question-request-metrics';
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 15 };
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
@@ -47,43 +47,95 @@ export const POST: RequestHandler = withAuthedHandler(
 					{ status: 400 }
 				);
 			}
-			const result = await getFrqQuestion(apClass, unit, {
+			const outcome = await getFrqQuestion(apClass, unit, {
 				excludeQuestionIds: validated.value.excludeQuestionIds,
 				metrics: path
 			});
-			capturePathQuestionRequestMetric({
-				path,
-				startedAt,
-				validationMs,
-				apClass,
-				unit,
-				httpStatus: 200,
-				segment: path.segment ?? 'error',
-				cached: result.cached
-			});
-			capturePostHogServerEvent(event.request, {
-				distinctId: userId,
-				event: 'frq_question_requested',
-				properties: {
-					request_source: 'authenticated_app',
-					question_type: path.questionType,
-					cache_outcome: result.cached ? 'hit' : 'miss',
-					provider: result.provider,
-					ap_class: apClass,
-					unit,
-					cache_lookup_ms: path.cacheLookupMs,
-					lock_wait_ms: path.lockWaitMs,
-					generation_ms: path.generationMs,
-					persistence_ms: path.persistenceMs
+
+			switch (outcome.status) {
+				case 'found': {
+					capturePathQuestionRequestMetric({
+						path,
+						startedAt,
+						validationMs,
+						apClass,
+						unit,
+						httpStatus: 200,
+						segment: path.segment ?? 'pool_hit',
+						cached: outcome.result.cached
+					});
+					capturePostHogServerEvent(event.request, {
+						distinctId: userId,
+						event: 'frq_question_requested',
+						properties: {
+							request_source: 'authenticated_app',
+							question_type: path.questionType,
+							cache_outcome: 'hit',
+							provider: outcome.result.provider,
+							ap_class: apClass,
+							unit,
+							db_connect_ms: path.dbConnectMs,
+							pool_query_ms: path.poolQueryMs
+						}
+					});
+					return json({
+						question: outcome.result.publicQuestion,
+						questionId: outcome.result.questionId,
+						provider: outcome.result.provider,
+						model: outcome.result.model,
+						cached: outcome.result.cached,
+						exclusionsReset: outcome.exclusionsReset
+					});
 				}
-			});
-			return json({
-				question: result.publicQuestion,
-				questionId: result.questionId,
-				provider: result.provider,
-				model: result.model,
-				cached: result.cached
-			});
+				case 'warming': {
+					capturePathQuestionRequestMetric({
+						path,
+						startedAt,
+						validationMs,
+						apClass,
+						unit,
+						httpStatus: 503,
+						segment: 'pool_warming',
+						cached: false,
+						errorType: 'busy'
+					});
+					return json(
+						{
+							code: 'POOL_WARMING',
+							error: 'Written-response pool is warming up. Please retry shortly.',
+							retryAfterSeconds: outcome.retryAfterSeconds
+						},
+						{
+							status: 503,
+							headers: { 'Retry-After': String(outcome.retryAfterSeconds) }
+						}
+					);
+				}
+				case 'failed': {
+					capturePathQuestionRequestMetric({
+						path,
+						startedAt,
+						validationMs,
+						apClass,
+						unit,
+						httpStatus: 503,
+						segment: 'pool_error',
+						cached: false,
+						errorType: 'unknown'
+					});
+					return json(
+						{
+							code: 'POOL_UNAVAILABLE',
+							error: 'Written-response pool temporarily unavailable'
+						},
+						{ status: 503 }
+					);
+				}
+				default: {
+					const _exhaustive: never = outcome;
+					return _exhaustive;
+				}
+			}
 		} catch (error) {
 			capturePathQuestionRequestMetric({
 				path,

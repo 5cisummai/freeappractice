@@ -13,7 +13,7 @@ export interface QuestionRegistryMetadata {
 }
 
 /** Record a canonical S3 question id and any known metadata (idempotent upsert). */
-export async function registerQuestionId(
+async function registerQuestionId(
 	questionId: string,
 	metadata: QuestionRegistryMetadata = {}
 ): Promise<void> {

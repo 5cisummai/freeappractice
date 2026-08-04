@@ -111,7 +111,6 @@ export async function getObjectJson<T = unknown>(opts: {
 }
 
 const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
-
 export interface QuestionObjectSummary {
 	questionId: string;
 	etag?: string;
@@ -119,15 +118,18 @@ export interface QuestionObjectSummary {
 	size?: number;
 }
 
-/** List every canonical question id from S3 object keys under `questions/`. */
-export async function listQuestionIds(opts?: { bucket?: string }): Promise<string[]> {
-	return (await listQuestionObjects(opts)).map((object) => object.questionId);
-}
-
 /** List canonical questions with the inexpensive metadata returned by S3 listing. */
 export async function listQuestionObjects(opts?: {
 	bucket?: string;
 }): Promise<QuestionObjectSummary[]> {
+	return listPrefixedObjects(opts, 'questions/', QUESTION_KEY_RE);
+}
+
+async function listPrefixedObjects(
+	opts: { bucket?: string } | undefined,
+	prefix: string,
+	keyRe: RegExp
+): Promise<QuestionObjectSummary[]> {
 	const bucket = resolveBucket(opts?.bucket);
 	const objects: QuestionObjectSummary[] = [];
 	let continuationToken: string | undefined;
@@ -136,14 +138,14 @@ export async function listQuestionObjects(opts?: {
 		const resp = await s3.send(
 			new ListObjectsV2Command({
 				Bucket: bucket,
-				Prefix: 'questions/',
+				Prefix: prefix,
 				ContinuationToken: continuationToken
 			})
 		);
 
 		for (const obj of resp.Contents ?? []) {
 			if (!obj.Key) continue;
-			const match = obj.Key.match(QUESTION_KEY_RE);
+			const match = obj.Key.match(keyRe);
 			if (match) {
 				objects.push({
 					questionId: match[1],

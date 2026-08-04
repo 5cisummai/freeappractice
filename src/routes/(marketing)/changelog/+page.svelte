@@ -5,6 +5,89 @@
 
 	const changelog = [
 		{
+			version: '1.5.3',
+			date: 'August 3, 2026',
+			sections: [
+				{
+					title: 'Question Pool',
+					items: [
+						'Expanded the durable question library across every supported AP class and unit, using the published per-course targets as the source of truth',
+						'Added bulk written-response generation and validation so FRQ pools can be filled as reliably as multiple-choice pools',
+						'Previously created local questions are now linked or archived before migration instead of being lost'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Question generation now defaults to GPT-5.6 Luna',
+						'Batch results recheck live targets before saving, preventing delayed jobs from overfilling a class and unit',
+						'Added a verified, reversible migration path to isolated production question collections while preserving the previous collections for rollback',
+						'Removed retired synchronous-cache code and metrics so live requests only select from the prepared pool while workers handle generation'
+					]
+				}
+			]
+		},
+		{
+			version: '1.5.2',
+			date: 'August 3, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Refreshed the signed-in dashboard, sidebar, and navigation for a clearer everyday study flow',
+						'Settings now includes a clear-practice-data action with safer confirmation and feedback',
+						'Analytics consent can be reviewed and reset more reliably'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Expanded Sentry error reporting while keeping development activity out of production monitoring',
+						'Improved analytics event handling and deployment type-check configuration'
+					]
+				}
+			]
+		},
+		{
+			version: '1.5.1',
+			date: 'July 19, 2026',
+			sections: [
+				{
+					title: 'Fixes',
+					items: [
+						'Fixed a homepage server error caused by a browser-oriented HTML sanitizing dependency being loaded on the server'
+					]
+				},
+				{
+					title: 'Engineering',
+					items: [
+						'Replaced the legacy deployment webhook check with continuous lint, type-check, unit-test, and production-build verification',
+						'Simplified practice experiment handling and improved release documentation checks'
+					]
+				}
+			]
+		},
+		{
+			version: '1.5.0',
+			date: 'July 18, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added authenticated written-response practice with course-specific formats, structured scoring rubrics, and saved attempts',
+						'Written-response availability can be rolled out safely through the existing feature-flag system'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Unified multiple-choice and written-response practice around shared layouts and simpler route loading',
+						'Improved account cleanup, data deletion behavior, architecture documentation, and question-quality review tooling'
+					]
+				}
+			]
+		},
+		{
 			version: '1.4.8',
 			date: 'July 18, 2026',
 			sections: [
@@ -742,7 +825,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: July 9, 2026"
+			meta="Last Updated: August 3, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

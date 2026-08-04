@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 import type { FrqGrade, FrqMaterial, FrqRubricCriterion, FrqSection } from '$lib/frq/types';
+import { FRQ_POOL_COLLECTION } from '$lib/questions/pool-collections.server';
 
 export interface IFrqQuestion extends Document {
 	apClass: string;
@@ -17,8 +18,17 @@ export interface IFrqQuestion extends Document {
 	topicsCovered: string;
 	contentHash: string;
 	s3QuestionId: string;
+	/** Stable random pivot for indexed selection; assigned once at insert/backfill. */
+	randomKey: number;
+	/** Soft-active flag — quality rejection / rotation without deleting S3 history. */
+	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
+}
+
+/** Assign a one-time random pivot in [0, 1). */
+export function newFrqPoolRandomKey(): number {
+	return Math.random();
 }
 
 export interface IFrqRecentTopic extends Document {
@@ -104,12 +114,15 @@ const frqQuestionSchema = new Schema<IFrqQuestion>(
 		totalPoints: { type: Number, required: true },
 		topicsCovered: { type: String, required: true },
 		contentHash: { type: String, required: true },
-		s3QuestionId: { type: String, required: true }
+		s3QuestionId: { type: String, required: true },
+		randomKey: { type: Number, required: true, default: newFrqPoolRandomKey },
+		active: { type: Boolean, required: true, default: true }
 	},
 	{ timestamps: true }
 );
 
 frqQuestionSchema.index({ apClass: 1, unit: 1, createdAt: 1 });
+frqQuestionSchema.index({ apClass: 1, unit: 1, active: 1, randomKey: 1 });
 frqQuestionSchema.index({ contentHash: 1 }, { unique: true });
 frqQuestionSchema.index({ s3QuestionId: 1 }, { unique: true });
 
@@ -175,7 +188,7 @@ frqAttemptSchema.index({ userId: 1, apClass: 1, unit: 1, createdAt: -1 });
 
 export const FrqQuestionModel: Model<IFrqQuestion> =
 	(mongoose.models.FrqQuestion as Model<IFrqQuestion>) ??
-	mongoose.model<IFrqQuestion>('FrqQuestion', frqQuestionSchema);
+	mongoose.model<IFrqQuestion>('FrqQuestion', frqQuestionSchema, FRQ_POOL_COLLECTION);
 
 export const FrqRecentTopic: Model<IFrqRecentTopic> =
 	(mongoose.models.FrqRecentTopic as Model<IFrqRecentTopic>) ??
