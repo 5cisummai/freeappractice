@@ -97,10 +97,10 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
 
-| Variable           | Purpose                         |
-| ------------------ | ------------------------------- |
-| `GENERATION_MODEL` | Model for question generation   |
-| `TUTOR_MODEL`      | Model for the in-app tutor chat |
+| Variable           | Purpose                                                    |
+| ------------------ | ---------------------------------------------------------- |
+| `GENERATION_MODEL` | Model for question generation (defaults to `gpt-5.6-luna`) |
+| `TUTOR_MODEL`      | Model for the in-app tutor chat                            |
 
 Commonly needed for full functionality:
 

@@ -18,7 +18,10 @@ import {
 } from '../src/lib/questions/pool-batch.server';
 import { apQuestionSchema } from '../src/lib/questions/generation.server';
 import { persistParsedQuestionToPool } from '../src/lib/questions/pool-write.server';
+import { parseGeneratedFrq, persistGeneratedFrqToPool } from '../src/lib/frq/generation.server';
 import { connectDb } from '../src/lib/server/db';
+import { countActivePoolRows } from '../src/lib/questions/pool-refill-queue.server';
+import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
 
 function argValue(flag: string): string | undefined {
 	const eq = process.argv.find((a) => a.startsWith(`${flag}=`));
@@ -87,6 +90,7 @@ async function main() {
 	let skippedDuplicate = 0;
 	let failed = 0;
 	let missingManifest = 0;
+	let skippedAtTarget = 0;
 
 	for (const line of lines) {
 		let parsed: {
@@ -120,12 +124,32 @@ async function main() {
 
 		try {
 			const text = extractPoolBatchOutputText(parsed.response.body);
-			const answer = apQuestionSchema.parse(JSON.parse(text));
+			const generated = JSON.parse(text) as unknown;
 			if (dryRun) {
+				if ((entry.questionType ?? 'mcq') === 'frq') {
+					parseGeneratedFrq(entry.apClass, entry.unit, generated);
+				} else {
+					apQuestionSchema.parse(generated);
+				}
 				ok += 1;
 				continue;
 			}
-			const result = await persistParsedQuestionToPool(entry.apClass, entry.unit, answer);
+			const questionType = entry.questionType ?? 'mcq';
+			const active = await countActivePoolRows(questionType, entry.apClass, entry.unit);
+			const target =
+				questionType === 'mcq' ? preferredMcqTarget(entry.apClass) : QUESTION_POOL_CONFIG.frqTarget;
+			if (active >= target) {
+				skippedAtTarget += 1;
+				continue;
+			}
+			const result =
+				questionType === 'frq'
+					? await persistGeneratedFrqToPool(entry.apClass, entry.unit, generated, manifest.model)
+					: await persistParsedQuestionToPool(
+							entry.apClass,
+							entry.unit,
+							apQuestionSchema.parse(generated)
+						);
 			if (result.skippedDuplicate) skippedDuplicate += 1;
 			else ok += 1;
 		} catch (error) {
@@ -137,6 +161,7 @@ async function main() {
 	console.log('Collect complete', {
 		ok,
 		skippedDuplicate,
+		skippedAtTarget,
 		failed,
 		missingManifest,
 		dryRun

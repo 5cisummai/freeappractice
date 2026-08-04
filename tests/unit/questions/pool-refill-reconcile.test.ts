@@ -100,6 +100,12 @@ describe('reconcilePoolRefillJobs target reconciliation', () => {
 			const filter = mockArgs(call)[0] as { questionType?: string };
 			return filter?.questionType === 'frq';
 		});
+		expect(mockArgs(idleCall)[0]).toMatchObject({
+			$or: expect.arrayContaining([
+				{ status: 'running', leaseExpiresAt: null },
+				{ status: 'running', leaseExpiresAt: { $lte: expect.any(Date) } }
+			])
+		});
 		expect(mockArgs(idleCall)[1]).toMatchObject({
 			$set: { status: 'idle' }
 		});

@@ -7,16 +7,18 @@ import {
 } from '$lib/question-quality/openai-batch.server';
 import { buildMcqPoolBatchLine } from '$lib/questions/pool-batch-line';
 import { GENERATION_MODEL } from '$lib/ai/service.server';
+import { buildFrqPoolBatchLine } from '$lib/frq/pool-batch-line';
 
 export { downloadOpenAiFile, retrieveOpenAiBatch };
 
 export type PoolBatchManifestEntry = {
 	apClass: string;
 	unit: string;
+	questionType?: 'mcq' | 'frq';
 };
 
 export type PoolBatchManifest = {
-	purpose: 'question-pool-mcq';
+	purpose: 'question-pool-mcq' | 'question-pool-frq';
 	model: string;
 	createdAt: string;
 	entries: Record<string, PoolBatchManifestEntry>;
@@ -51,7 +53,11 @@ export function buildMcqPoolBatchJsonl(opts: {
 				reasoningEffort: opts.reasoningEffort
 			})
 		);
-		entries[req.customId] = { apClass: req.apClass, unit: req.unit };
+		entries[req.customId] = {
+			apClass: req.apClass,
+			unit: req.unit,
+			questionType: 'mcq'
+		};
 	}
 
 	return {
@@ -65,10 +71,54 @@ export function buildMcqPoolBatchJsonl(opts: {
 	};
 }
 
+export function buildFrqPoolBatchJsonl(opts: {
+	requests: Array<{
+		customId: string;
+		apClass: string;
+		unit: string;
+		recentTopics?: string[];
+	}>;
+	model?: string;
+	reasoningEffort?: 'low' | 'medium' | 'high';
+}): { jsonl: string; manifest: PoolBatchManifest } {
+	const model = opts.model ?? getPoolBatchGenerationModel();
+	const lines: string[] = [];
+	const entries: Record<string, PoolBatchManifestEntry> = {};
+
+	for (const req of opts.requests) {
+		lines.push(
+			buildFrqPoolBatchLine({
+				customId: req.customId,
+				apClass: req.apClass,
+				unit: req.unit,
+				recentTopics: req.recentTopics,
+				model,
+				reasoningEffort: opts.reasoningEffort
+			})
+		);
+		entries[req.customId] = {
+			apClass: req.apClass,
+			unit: req.unit,
+			questionType: 'frq'
+		};
+	}
+
+	return {
+		jsonl: `${lines.join('\n')}\n`,
+		manifest: {
+			purpose: 'question-pool-frq',
+			model,
+			createdAt: new Date().toISOString(),
+			entries
+		}
+	};
+}
+
 export async function submitMcqPoolBatch(opts: {
 	jsonl: string;
 	idempotencyKey: string;
 	filename?: string;
+	purpose?: PoolBatchManifest['purpose'];
 }): Promise<{ batchId: string; status: string; inputFileId: string }> {
 	const inputFileId = await uploadBatchInput(
 		opts.jsonl,
@@ -77,7 +127,7 @@ export async function submitMcqPoolBatch(opts: {
 	const batch = await createOpenAiBatch({
 		inputFileId,
 		idempotencyKey: opts.idempotencyKey,
-		metadata: { purpose: 'question-pool-mcq' }
+		metadata: { purpose: opts.purpose ?? 'question-pool-mcq' }
 	});
 	return { batchId: batch.id, status: batch.status, inputFileId };
 }

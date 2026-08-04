@@ -146,8 +146,11 @@ export async function requestPoolRefill(
 	await PoolRefillState.updateOne(
 		{
 			...key,
-			status: { $in: ['pending', 'failed', 'budget_exhausted'] },
-			$or: [{ leaseExpiresAt: null }, { leaseExpiresAt: { $lte: now } }]
+			$or: [
+				{ status: { $in: ['pending', 'failed', 'budget_exhausted'] } },
+				{ status: 'running', leaseExpiresAt: null },
+				{ status: 'running', leaseExpiresAt: { $lte: now } }
+			]
 		},
 		{
 			$set: {
@@ -214,8 +217,11 @@ export async function reconcilePoolRefillJobs(
 						questionType,
 						apClass: bucket.apClass,
 						unit: bucket.unit,
-						status: { $in: ['pending', 'failed', 'budget_exhausted'] },
-						$or: [{ leaseExpiresAt: null }, { leaseExpiresAt: { $lte: now } }]
+						$or: [
+							{ status: { $in: ['pending', 'failed', 'budget_exhausted'] } },
+							{ status: 'running', leaseExpiresAt: null },
+							{ status: 'running', leaseExpiresAt: { $lte: now } }
+						]
 					},
 					{
 						$set: {

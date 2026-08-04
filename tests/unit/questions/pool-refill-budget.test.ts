@@ -204,6 +204,21 @@ describe('daily budget enforcement', () => {
 		expect(findOneAndUpdate).not.toHaveBeenCalled();
 	});
 
+	it('limits worker candidate claims to the requested question type', async () => {
+		budgetFindOne.mockReturnValue({
+			lean: async () => ({ dayKey: '2026-07-19', generations: 0 })
+		});
+
+		await runQuestionPoolRefillWorker(env, {
+			owner: 'worker-frq-only',
+			startedAt: Date.now(),
+			questionType: 'frq'
+		});
+
+		expect(refillFindOne).toHaveBeenCalledWith(expect.objectContaining({ questionType: 'frq' }));
+		expect(generateQuestionForPool).not.toHaveBeenCalled();
+	});
+
 	it('consumes budget for each generation attempt including duplicates', async () => {
 		countActivePoolRows.mockResolvedValueOnce(0).mockResolvedValueOnce(1).mockResolvedValueOnce(1);
 		budgetFindOneAndUpdate.mockReturnValue({

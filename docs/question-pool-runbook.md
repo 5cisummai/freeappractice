@@ -57,6 +57,16 @@ bun run pool:backfill-s3
 bun run pool:backfill-s3 --enqueue-deficits
 ```
 
+For a legacy local database, repair canonical links before migration. This command is dry-run by
+default. It archives local-only MCQs under deterministic S3 IDs and deactivates (but never deletes)
+legacy FRQs that lack the modern sections/rubric schema.
+
+```bash
+bun run pool:repair-local
+bun run pool:repair-local -- --apply --confirm=REPAIR-LOCAL-POOL
+bun run pool:repair-local # must report zero remaining work
+```
+
 ## 3. Initial seeding (two stages)
 
 1. **S3 → Mongo** via `pool:backfill-s3` (above).
@@ -87,6 +97,9 @@ bun run pool:batch-submit -- --dry-run --limit 50
 # Submit up to remaining daily budget (default min(500, remaining))
 bun run pool:batch-submit -- --limit 500
 
+# FRQ deficits use the same JSON target source and batch path
+bun run pool:batch-submit -- --type frq --limit 200
+
 # Narrow to one bucket
 bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
 
@@ -95,6 +108,15 @@ bun run pool:batch-collect -- --batch batch_...
 ```
 
 Manifests land in `tmp/pool-batches/<batchId>.json` (gitignored). Batch submit **reserves** daily budget slots up front; collect does not re-charge budget. If submit fails after reserve (partial concurrent reserve or upload/`create` error), slots are **refunded** so the UTC day is not permanently burned.
+
+Always run collect with `--dry-run` first. It validates every structured response without writing.
+The write pass rechecks each live bucket and skips results once its JSON preferred target is reached,
+so a delayed batch cannot overfill a bucket after another worker has completed it.
+
+```bash
+bun run pool:batch-collect -- --batch batch_... --dry-run
+bun run pool:batch-collect -- --batch batch_...
+```
 
 Priority tip: enqueue high-traffic class/units first from the admin pool tab, then catalog-wide deficits. For large deficits, use `pool:batch-submit` instead of `pool:fill`.
 
@@ -183,11 +205,46 @@ With `bun dev` (or a preview deploy):
 4. If FRQ flag is on, repeat hit/warming for FRQ.
 5. Confirm Network tab: `/api/question` never stays open for tens of seconds waiting on generation.
 
+## 12. Isolated v2 collection migration
+
+The v2 migration copies only active, modern-schema pool rows. It never deletes, renames, or mutates
+the source collections. Rehearse locally before supplying production credentials.
+
+```bash
+# Source audit only
+bun run pool:migrate-v2 -- --local-target
+
+# Prepare isolated local collections, then independently verify count + SHA-256 digest
+bun run pool:migrate-v2 -- --local-target --prepare --confirm=PREPARE-POOL-V2
+bun run pool:migrate-v2 -- --local-target --verify
+
+# Repeat against production with an explicit target URI
+TARGET_DATABASE_URI='mongodb+srv://…/database' bun run pool:migrate-v2
+TARGET_DATABASE_URI='mongodb+srv://…/database' \
+  bun run pool:migrate-v2 -- --prepare --confirm=PREPARE-POOL-V2
+TARGET_DATABASE_URI='mongodb+srv://…/database' bun run pool:migrate-v2 -- --verify
+```
+
+The migration blocks on missing/empty required fields, invalid field types, duplicate content hashes,
+duplicate S3 IDs, count mismatch, or digest mismatch. Only after verification, set the application to:
+
+```env
+QUESTION_POOL_MCQ_COLLECTION=questions_pool_v2
+QUESTION_POOL_FRQ_COLLECTION=frqquestions_pool_v2
+```
+
+Rollback is an environment-only collection switch to `questions` / `frqquestions`; the old
+collections remain intact.
+
 ## Useful package scripts
 
-| Script                        | Purpose                                                         |
-| ----------------------------- | --------------------------------------------------------------- |
-| `bun run pool:migrate-schema` | Indexes + `randomKey`/`active` backfill                         |
-| `bun run pool:verify-indexes` | Explain / index presence check                                  |
-| `bun run pool:backfill-s3`    | S3 → Mongo import (`--dry-run`, `--enqueue-deficits`)           |
-| `bun run pool:retire`         | Retire active Mongo rows (`--dry-run`, `--confirm=RETIRE-POOL`) |
+| Script                        | Purpose                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `bun run pool:migrate-schema` | Indexes + `randomKey`/`active` backfill                                      |
+| `bun run pool:migrate-v2`     | Dry-run/prepare/verify isolated v2 collections                               |
+| `bun run pool:verify-indexes` | Explain / index presence check                                               |
+| `bun run pool:backfill-s3`    | S3 → Mongo import (`--dry-run`, `--enqueue-deficits`)                        |
+| `bun run pool:repair-local`   | Archive/link local MCQs and deactivate invalid legacy FRQs (dry-run default) |
+| `bun run pool:batch-submit`   | Submit JSON-target deficits (`--type mcq\|frq`)                              |
+| `bun run pool:batch-collect`  | Validate/persist a completed batch                                           |
+| `bun run pool:retire`         | Retire active Mongo rows (`--dry-run`, `--confirm=RETIRE-POOL`)              |

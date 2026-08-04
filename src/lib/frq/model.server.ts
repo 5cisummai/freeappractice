@@ -1,5 +1,6 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
 import type { FrqGrade, FrqMaterial, FrqRubricCriterion, FrqSection } from '$lib/frq/types';
+import { FRQ_POOL_COLLECTION } from '$lib/questions/pool-collections.server';
 
 export interface IFrqQuestion extends Document {
 	apClass: string;
@@ -187,7 +188,7 @@ frqAttemptSchema.index({ userId: 1, apClass: 1, unit: 1, createdAt: -1 });
 
 export const FrqQuestionModel: Model<IFrqQuestion> =
 	(mongoose.models.FrqQuestion as Model<IFrqQuestion>) ??
-	mongoose.model<IFrqQuestion>('FrqQuestion', frqQuestionSchema);
+	mongoose.model<IFrqQuestion>('FrqQuestion', frqQuestionSchema, FRQ_POOL_COLLECTION);
 
 export const FrqRecentTopic: Model<IFrqRecentTopic> =
 	(mongoose.models.FrqRecentTopic as Model<IFrqRecentTopic>) ??

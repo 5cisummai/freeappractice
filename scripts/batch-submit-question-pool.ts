@@ -1,12 +1,13 @@
 /**
  * scripts/batch-submit-question-pool.ts
  *
- * Build + submit an OpenAI Batch (~50% cheaper) for MCQ pool deficits vs
- * `question-pool-targets.json` preferred ceilings (not demand-scaled).
+ * Build + submit an OpenAI Batch (~50% cheaper) for MCQ or FRQ pool deficits
+ * vs `question-pool-targets.json` preferred ceilings (not demand-scaled).
  * Caps at remaining daily generation budget (default ~500/day).
  *
  *   bun run pool:batch-submit
  *   bun run pool:batch-submit -- --limit 100 --dry-run
+ *   bun run pool:batch-submit -- --type frq --limit 200
  *   bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
  */
 
@@ -23,8 +24,13 @@ import {
 	releaseDailyGenerationBudget,
 	reserveDailyGenerationBudget
 } from '../src/lib/questions/pool-refill.server';
-import { buildMcqPoolBatchJsonl, submitMcqPoolBatch } from '../src/lib/questions/pool-batch.server';
+import {
+	buildFrqPoolBatchJsonl,
+	buildMcqPoolBatchJsonl,
+	submitMcqPoolBatch
+} from '../src/lib/questions/pool-batch.server';
 import { getRecentTopics } from '../src/lib/questions/recent-topic.server';
+import { getRecentFrqTopics } from '../src/lib/frq/generation.server';
 import { connectDb } from '../src/lib/server/db';
 import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
 
@@ -42,6 +48,7 @@ function argInt(flag: string, fallback: number): number {
 }
 
 const dryRun = process.argv.includes('--dry-run');
+const questionType = (argValue('--type') ?? 'mcq').toLowerCase();
 const classFilter = argValue('--class');
 const unitFilter = argValue('--unit');
 const limit = argInt('--limit', 500);
@@ -49,6 +56,10 @@ const limit = argInt('--limit', 500);
 const MANIFEST_DIR = path.resolve('tmp/pool-batches');
 
 async function main() {
+	if (questionType !== 'mcq' && questionType !== 'frq') {
+		console.error('--type must be mcq or frq');
+		process.exit(1);
+	}
 	if (!process.env.DATABASE_URI) {
 		console.error('DATABASE_URI is not set');
 		process.exit(1);
@@ -71,6 +82,7 @@ async function main() {
 		maxRequests,
 		classFilter: classFilter ?? null,
 		unitFilter: unitFilter ?? null,
+		questionType,
 		dryRun,
 		targetSource: 'question-pool-targets.json preferred ceilings'
 	});
@@ -86,11 +98,11 @@ async function main() {
 	type Deficit = Slot & { active: number; target: number; need: number };
 
 	const deficits: Deficit[] = [];
-	for (const bucket of listCatalogBuckets('mcq')) {
+	for (const bucket of listCatalogBuckets(questionType)) {
 		if (classFilter && bucket.apClass !== classFilter) continue;
 		if (unitFilter && bucket.unit !== unitFilter) continue;
-		const active = await countActivePoolRows('mcq', bucket.apClass, bucket.unit);
-		const target = preferredMcqTarget(bucket.apClass);
+		const active = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+		const target = questionType === 'mcq' ? preferredMcqTarget(bucket.apClass) : env.frqTarget;
 		const need = Math.max(0, target - active);
 		if (need > 0) {
 			deficits.push({
@@ -107,7 +119,7 @@ async function main() {
 	deficits.sort((a, b) => b.need - a.need || a.apClass.localeCompare(b.apClass));
 
 	const totalNeed = deficits.reduce((sum, d) => sum + d.need, 0);
-	console.log('MCQ preferred-target deficits', {
+	console.log(`${questionType.toUpperCase()} preferred-target deficits`, {
 		bucketsUnderTarget: deficits.length,
 		totalNeed,
 		willSubmit: Math.min(totalNeed, maxRequests)
@@ -123,7 +135,7 @@ async function main() {
 
 	if (slots.length === 0) {
 		console.log(
-			'No MCQ deficits vs question-pool-targets.json preferred ceilings for the given filters.'
+			`No ${questionType.toUpperCase()} deficits vs question-pool-targets.json preferred ceilings for the given filters.`
 		);
 		process.exit(0);
 	}
@@ -135,18 +147,24 @@ async function main() {
 		const cacheKey = `${slot.apClass}::${slot.unit}`;
 		let recentTopics = topicCache.get(cacheKey);
 		if (!recentTopics) {
-			recentTopics = await getRecentTopics(slot.apClass, slot.unit).catch(() => []);
+			recentTopics =
+				questionType === 'mcq'
+					? await getRecentTopics(slot.apClass, slot.unit).catch(() => [])
+					: await getRecentFrqTopics(slot.apClass, slot.unit).catch(() => []);
 			topicCache.set(cacheKey, recentTopics);
 		}
 		requests.push({
-			customId: `mcq-${String(i + 1).padStart(4, '0')}`,
+			customId: `${questionType}-${String(i + 1).padStart(4, '0')}`,
 			apClass: slot.apClass,
 			unit: slot.unit,
 			recentTopics
 		});
 	}
 
-	const { jsonl, manifest } = buildMcqPoolBatchJsonl({ requests });
+	const { jsonl, manifest } =
+		questionType === 'mcq'
+			? buildMcqPoolBatchJsonl({ requests })
+			: buildFrqPoolBatchJsonl({ requests });
 	console.log(`Built ${requests.length} batch requests (${jsonl.length} bytes JSONL)`);
 
 	if (dryRun) {
@@ -177,7 +195,8 @@ async function main() {
 		const submitted = await submitMcqPoolBatch({
 			jsonl,
 			idempotencyKey,
-			filename: `pool-mcq-${Date.now()}.jsonl`
+			filename: `pool-${questionType}-${Date.now()}.jsonl`,
+			purpose: manifest.purpose
 		});
 
 		await mkdir(MANIFEST_DIR, { recursive: true });

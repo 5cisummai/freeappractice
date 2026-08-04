@@ -1,7 +1,7 @@
 {
 	"name": "freeappractice-svelte",
 	"private": true,
-	"version": "1.5.0",
+	"version": "1.5.3",
 	"packageManager": "bun@1.3.14",
 	"type": "module",
 	"scripts": {
@@ -14,8 +14,10 @@
 		"quality:eval": "bun scripts/evaluate-question-quality-agent.ts",
 		"sync:question-ids": "bun scripts/sync-question-ids-from-s3.ts",
 		"pool:migrate-schema": "bun scripts/migrate-question-pool-schema.ts",
+		"pool:migrate-v2": "bun scripts/migrate-question-pools-v2.ts",
 		"pool:verify-indexes": "bun scripts/verify-question-pool-indexes.ts",
-		"pool:backfill-s3": "bun scripts/backfill-question-pool-from-s3.ts",
+		"pool:backfill-s3": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/backfill-question-pool-from-s3.ts",
+		"pool:repair-local": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/repair-local-question-pool.ts",
 		"pool:fill": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/fill-question-pool.ts",
 		"pool:reconcile": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/reconcile-question-pool.ts",
 		"pool:batch-submit": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/batch-submit-question-pool.ts",

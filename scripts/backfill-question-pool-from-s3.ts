@@ -203,6 +203,7 @@ type Counters = {
 	invalid: number;
 	duplicates: number;
 	imported: number;
+	linkedExisting: number;
 	skippedExisting: number;
 	byBucket: Map<BucketKey, number>;
 };
@@ -214,6 +215,7 @@ function emptyCounters(): Counters {
 		invalid: 0,
 		duplicates: 0,
 		imported: 0,
+		linkedExisting: 0,
 		skippedExisting: 0,
 		byBucket: new Map()
 	};
@@ -283,6 +285,31 @@ async function backfillMcq(
 						.lean();
 					if (existing) {
 						counters.skippedExisting += 1;
+						return;
+					}
+
+					const existingByContent = await Question.findOne({ contentHash })
+						.select({ _id: 1, s3QuestionId: 1 })
+						.lean();
+					if (existingByContent) {
+						if (!existingByContent.s3QuestionId) {
+							const result = await Question.updateOne(
+								{
+									_id: existingByContent._id,
+									$or: [
+										{ s3QuestionId: { $exists: false } },
+										{ s3QuestionId: null },
+										{ s3QuestionId: '' }
+									]
+								},
+								{ $set: { s3QuestionId: questionId } }
+							);
+							if (result.modifiedCount === 1) {
+								counters.linkedExisting += 1;
+								return;
+							}
+						}
+						counters.duplicates += 1;
 						return;
 					}
 
@@ -485,6 +512,7 @@ function printCounters(label: string, counters: Counters): void {
 	console.log(`  duplicates=${counters.duplicates}`);
 	if (!isDryRun) {
 		console.log(`  imported=${counters.imported}`);
+		console.log(`  linkedExisting=${counters.linkedExisting}`);
 		console.log(`  skippedExisting=${counters.skippedExisting}`);
 	}
 	console.log(`  bucketsWithValid=${counters.byBucket.size}`);

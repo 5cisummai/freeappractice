@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildMcqPoolBatchLine } from '$lib/questions/pool-batch-line';
 import { apQuestionJsonSchema } from '$lib/questions/generation.server';
+import { generatedFrqJsonSchema } from '$lib/frq/generation.server';
+import { buildFrqPoolBatchLine } from '$lib/frq/pool-batch-line';
 
 describe('buildMcqPoolBatchLine', () => {
 	it('emits OpenAI Batch /v1/responses JSONL with strict ap_question schema', () => {
@@ -46,5 +48,50 @@ describe('buildMcqPoolBatchLine', () => {
 		expect(schema.additionalProperties).toBe(false);
 		expect(schema.$schema).toBeUndefined();
 		expect(Array.isArray(schema.required)).toBe(true);
+	});
+
+	it('requires nullable optional FRQ material fields for strict OpenAI output', () => {
+		const schema = generatedFrqJsonSchema() as {
+			properties?: {
+				materials?: {
+					items?: { required?: string[]; properties?: { title?: { anyOf?: unknown[] } } };
+				};
+			};
+		};
+		const material = schema.properties?.materials?.items;
+
+		expect(material?.required).toContain('title');
+		expect(material?.properties?.title?.anyOf).toEqual(
+			expect.arrayContaining([expect.objectContaining({ type: 'null' })])
+		);
+	});
+
+	it('emits a strict Luna FRQ batch request with the course profile prompt', () => {
+		const parsed = JSON.parse(
+			buildFrqPoolBatchLine({
+				customId: 'frq-0001',
+				apClass: 'AP Biology',
+				unit: 'Unit 1: Chemistry of Life',
+				model: 'gpt-5.6-luna'
+			})
+		) as {
+			custom_id: string;
+			url: string;
+			body: {
+				model: string;
+				reasoning: { effort: string };
+				input: Array<{ role: string; content: string }>;
+				text: { format: { strict: boolean; name: string } };
+				max_output_tokens: number;
+			};
+		};
+
+		expect(parsed.custom_id).toBe('frq-0001');
+		expect(parsed.url).toBe('/v1/responses');
+		expect(parsed.body.model).toBe('gpt-5.6-luna');
+		expect(parsed.body.reasoning.effort).toBe('high');
+		expect(parsed.body.input[0]?.content).toContain('Course: AP Biology');
+		expect(parsed.body.text.format).toMatchObject({ name: 'frq_question', strict: true });
+		expect(parsed.body.max_output_tokens).toBe(16_000);
 	});
 });

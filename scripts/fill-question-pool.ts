@@ -118,7 +118,8 @@ async function main() {
 	for (let round = 1; round <= maxRounds; round += 1) {
 		const summary = await runQuestionPoolRefillWorker(env, {
 			owner: `fill-script-${round}`,
-			startedAt: Date.now()
+			startedAt: Date.now(),
+			...(typeFilter === 'mcq' || typeFilter === 'frq' ? { questionType: typeFilter } : {})
 		});
 		totalGenerated += summary.generated;
 		totalSkipped += summary.skippedDuplicates;

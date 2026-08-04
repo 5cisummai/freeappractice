@@ -89,7 +89,7 @@ export async function reserveDailyGenerationBudget(
 	const updated = await PoolGenerationBudget.findOneAndUpdate(
 		{ dayKey, generations: { $lte: env.dailyLlmGenerationBudget - toReserve } },
 		{ $inc: { generations: toReserve } },
-		{ new: true }
+		{ returnDocument: 'after' }
 	).exec();
 
 	if (updated) return toReserve;
@@ -119,7 +119,7 @@ async function tryReserveDailyBudget(env: QuestionPoolConfig): Promise<boolean> 
 	const updated = await PoolGenerationBudget.findOneAndUpdate(
 		{ dayKey, generations: { $lt: env.dailyLlmGenerationBudget } },
 		{ $inc: { generations: 1 } },
-		{ new: true }
+		{ returnDocument: 'after' }
 	).exec();
 	return updated !== null;
 }
@@ -135,7 +135,7 @@ export async function releaseDailyGenerationBudget(amount: number): Promise<numb
 	const updated = await PoolGenerationBudget.findOneAndUpdate(
 		{ dayKey, generations: { $gte: amount } },
 		{ $inc: { generations: -amount } },
-		{ new: true }
+		{ returnDocument: 'after' }
 	).exec();
 	if (updated) return amount;
 
@@ -147,7 +147,7 @@ export async function releaseDailyGenerationBudget(amount: number): Promise<numb
 	const partial = await PoolGenerationBudget.findOneAndUpdate(
 		{ dayKey, generations: { $gte: available } },
 		{ $inc: { generations: -available } },
-		{ new: true }
+		{ returnDocument: 'after' }
 	).exec();
 	return partial ? available : 0;
 }
@@ -175,7 +175,7 @@ async function renewRefillLease(
 	const updated = await PoolRefillState.findOneAndUpdate(
 		{ _id: doc._id, leaseOwner: doc.leaseOwner },
 		{ $set: { leaseExpiresAt } },
-		{ new: true }
+		{ returnDocument: 'after' }
 	).exec();
 	if (!updated) {
 		throw new Error('Lost refill lease while generating');
@@ -222,7 +222,7 @@ export async function tryAcquireRefillLease(
 			},
 			$inc: { attempts: 1 }
 		},
-		{ new: true }
+		{ returnDocument: 'after' }
 	).exec();
 }
 
@@ -381,7 +381,11 @@ export async function processRefillJob(
 
 export async function runQuestionPoolRefillWorker(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG,
-	opts?: { owner?: string; startedAt?: number }
+	opts?: {
+		owner?: string;
+		startedAt?: number;
+		questionType?: PoolBucketKey['questionType'];
+	}
 ): Promise<RefillRunSummary> {
 	await connectDb();
 	const startedAt = opts?.startedAt ?? Date.now();
@@ -414,6 +418,7 @@ export async function runQuestionPoolRefillWorker(
 
 	while (generationsLeft > 0 && Date.now() < deadlineMs) {
 		const candidate = await PoolRefillState.findOne({
+			...(opts?.questionType ? { questionType: opts.questionType } : {}),
 			status: { $in: ['pending', 'failed', 'budget_exhausted', 'running'] },
 			$and: [
 				{ $or: [{ nextAttemptAt: null }, { nextAttemptAt: { $lte: new Date() } }] },

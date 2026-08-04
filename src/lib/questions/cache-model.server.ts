@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
+import { MCQ_POOL_COLLECTION } from '$lib/questions/pool-collections.server';
 
 /** Shared pool metadata. */
 interface IPoolDocMetadata {
@@ -68,4 +69,4 @@ questionSchema.index({ s3QuestionId: 1 }, { unique: true, sparse: true });
 
 export const Question: Model<IQuestion> =
 	(mongoose.models.Question as Model<IQuestion>) ??
-	mongoose.model<IQuestion>('Question', questionSchema);
+	mongoose.model<IQuestion>('Question', questionSchema, MCQ_POOL_COLLECTION);

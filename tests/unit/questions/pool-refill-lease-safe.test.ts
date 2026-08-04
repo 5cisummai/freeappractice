@@ -1,10 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { findOneAndUpdate, updateOne, countDocuments } = vi.hoisted(() => ({
-	findOneAndUpdate: vi.fn((_filter: unknown, _update: unknown, _options?: unknown) => ({
-		exec: async () => ({})
-	})),
-	updateOne: vi.fn((_filter: unknown, _update: unknown) => ({ exec: async () => ({}) })),
+	findOneAndUpdate: vi.fn((filter: unknown, update: unknown, options?: unknown) => {
+		void filter;
+		void update;
+		void options;
+		return { exec: async () => ({}) };
+	}),
+	updateOne: vi.fn((filter: unknown, update: unknown) => {
+		void filter;
+		void update;
+		return { exec: async () => ({}) };
+	}),
 	countDocuments: vi.fn()
 }));
 
