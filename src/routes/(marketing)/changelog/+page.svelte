@@ -21,7 +21,8 @@
 					items: [
 						'Question generation now defaults to GPT-5.6 Luna',
 						'Batch results recheck live targets before saving, preventing delayed jobs from overfilling a class and unit',
-						'Added a verified, reversible migration path to isolated production question collections while preserving the previous collections for rollback'
+						'Added a verified, reversible migration path to isolated production question collections while preserving the previous collections for rollback',
+						'Removed retired synchronous-cache code and metrics so live requests only select from the prepared pool while workers handle generation'
 					]
 				}
 			]

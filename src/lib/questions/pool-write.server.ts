@@ -11,7 +11,7 @@ import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/que
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 /** Build an active-library pool document with the full MCQ body inline. */
-export function buildHotPoolDoc(opts: {
+function buildHotPoolDoc(opts: {
 	s3QuestionId: string;
 	apClass: string;
 	unit: string;
@@ -59,7 +59,7 @@ export function buildHotPoolDoc(opts: {
 	};
 }
 
-export async function insertHotPoolDoc(
+async function insertHotPoolDoc(
 	className: string,
 	cacheUnit: string,
 	answer: APQuestionData,

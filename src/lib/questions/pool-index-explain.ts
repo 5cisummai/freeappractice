@@ -39,13 +39,6 @@ export function planUsesIndexScan(node: ExplainPlanNode | null | undefined): boo
 
 export const POOL_SELECTION_INDEX_NAME = 'apClass_1_unit_1_active_1_randomKey_1';
 
-export const POOL_SELECTION_INDEX_KEY = {
-	apClass: 1,
-	unit: 1,
-	active: 1,
-	randomKey: 1
-} as const;
-
 /** Representative filter matching `selectRandomActiveDoc` (gte branch). */
 export function poolSelectionFilter(opts: {
 	apClass: string;

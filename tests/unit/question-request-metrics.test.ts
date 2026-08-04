@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { QuestionBusyError, QuestionGenerationError } from '$lib/questions/question-errors.server';
 import {
 	QUESTION_POOL_HEALTH_EVENT,
 	QUESTION_REQUEST_EVENT,
-	classifyQuestionRequestError,
 	sanitizeQuestionPoolHealthMetricProps,
 	sanitizeQuestionRequestMetricProps,
 	type QuestionRequestMetricProps
@@ -24,10 +22,6 @@ describe('question-request-metrics', () => {
 			validation_ms: 2,
 			db_connect_ms: 5,
 			pool_query_ms: 7,
-			cache_lookup_ms: 12,
-			lock_wait_ms: 0,
-			generation_ms: 0,
-			persistence_ms: 0,
 			total_ms: 40,
 			http_status: 200,
 			ok: true,
@@ -48,10 +42,6 @@ describe('question-request-metrics', () => {
 			validation_ms: 2,
 			db_connect_ms: 5,
 			pool_query_ms: 7,
-			cache_lookup_ms: 12,
-			lock_wait_ms: 0,
-			generation_ms: 0,
-			persistence_ms: 0,
 			total_ms: 40,
 			http_status: 200,
 			ok: true,
@@ -80,15 +70,5 @@ describe('question-request-metrics', () => {
 		expect(sanitized.stopped_reason).toBe('complete');
 		expect(sanitized.empty_observed_buckets).toBe(1);
 		expect(sanitized.oldest_job_age_ms).toBe(12_000);
-	});
-
-	it('classifies typed errors without reading messages', () => {
-		expect(classifyQuestionRequestError(new QuestionBusyError())).toBe('busy');
-		expect(
-			classifyQuestionRequestError(
-				new QuestionGenerationError('Failed to persist generated question')
-			)
-		).toBe('generation');
-		expect(classifyQuestionRequestError(new Error('boom'))).toBe('unknown');
 	});
 });

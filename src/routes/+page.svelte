@@ -412,11 +412,9 @@
 						>
 						<Accordion.Content>
 							<p>
-								Question may take longer to load as you may be generating a question for the
-								specific unit and topic for the first time. This then helps everyone by adding new
-								questions to the cache, which then provides sub second load times the next time.
-								This is only expected to be a problem for newer users in the first few weeks, and
-								will be resolved as more questions are generated and added to the cache.
+								Questions normally load directly from our prepared question pool. A unit can take
+								longer when its pool is still being filled; in that case, wait a moment and try
+								again while the background worker prepares more questions.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>

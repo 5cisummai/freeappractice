@@ -157,10 +157,10 @@ These routes require an active Better Auth session:
 
 ### Questions
 
-| Method | Route                            | Description                             |
-| ------ | -------------------------------- | --------------------------------------- |
-| `POST` | `/api/question`                  | Generate or return a cached AP question |
-| `GET`  | `/api/question/generation-stats` | Public read-only generation counters    |
+| Method | Route                            | Description                                |
+| ------ | -------------------------------- | ------------------------------------------ |
+| `POST` | `/api/question`                  | Select an active AP question from the pool |
+| `GET`  | `/api/question/generation-stats` | Public read-only generation counters       |
 
 ### Other
 

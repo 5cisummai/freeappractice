@@ -10,32 +10,28 @@ Server-side timing and reliability metrics for selection-only question serves (`
 | Distinct ID | `server` (anonymous; never a user id)         |
 | Consent     | Not required — operational metric with no PII |
 
-| Field       | Value                                           |
-| ----------- | ----------------------------------------------- |
-| Event name  | `question_pool_health`                          |
-| Distinct ID | `server`                                        |
-| Consent     | Not required — emitted after refill worker runs |
+| Field       | Value                                            |
+| ----------- | ------------------------------------------------ |
+| Event name  | `question_pool_health`                           |
+| Distinct ID | `server`                                         |
+| Consent     | Not required — emitted after cron processes work |
 
 ## Properties — `question_request` (allowlisted)
 
-| Property          | Type    | Notes                                                                                                                                                    |
-| ----------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `question_type`   | string  | `mcq` \| `frq`                                                                                                                                           |
-| `segment`         | string  | `pool_hit` \| `pool_warming` \| `pool_error` \| `error`                                                                                                  |
-| `ap_class`        | string  | AP course name (catalog value)                                                                                                                           |
-| `unit`            | string  | Normalized unit label                                                                                                                                    |
-| `validation_ms`   | number  | Request JSON + validation                                                                                                                                |
-| `db_connect_ms`   | number  | Mongoose `connectDb()` (≈0 on warm isolates with `globalThis` cache)                                                                                     |
-| `pool_query_ms`   | number  | Indexed random Mongo selection only                                                                                                                      |
-| `cache_lookup_ms` | number  | Transitional alias: `db_connect_ms + pool_query_ms`                                                                                                      |
-| `lock_wait_ms`    | number  | Legacy field; always `0` on the selection-only path                                                                                                      |
-| `generation_ms`   | number  | Legacy field; always `0` on the request path (generation is worker-only)                                                                                 |
-| `persistence_ms`  | number  | Legacy field; always `0` on the request path                                                                                                             |
-| `total_ms`        | number  | End-to-end handler latency                                                                                                                               |
-| `http_status`     | number  | Response status                                                                                                                                          |
-| `ok`              | boolean | `true` when `http_status < 400`                                                                                                                          |
-| `cached`          | boolean | Whether the served question came from the Mongo pool                                                                                                     |
-| `error_type`      | string? | `validation` \| `generation` \| `busy` \| `unknown` (legacy `generation` label may still appear for classified failures; request path does not generate) |
+| Property        | Type    | Notes                                                     |
+| --------------- | ------- | --------------------------------------------------------- |
+| `question_type` | string  | `mcq` \| `frq`                                            |
+| `segment`       | string  | `pool_hit` \| `pool_warming` \| `pool_error` \| `error`   |
+| `ap_class`      | string  | AP course name (catalog value)                            |
+| `unit`          | string  | Normalized unit label                                     |
+| `validation_ms` | number  | Request JSON + validation                                 |
+| `db_connect_ms` | number  | Mongoose `connectDb()` (≈0 on a warm serverless instance) |
+| `pool_query_ms` | number  | Indexed random Mongo selection only                       |
+| `total_ms`      | number  | End-to-end handler latency                                |
+| `http_status`   | number  | Response status                                           |
+| `ok`            | boolean | `true` when `http_status < 400`                           |
+| `cached`        | boolean | Whether the served question came from the Mongo pool      |
+| `error_type`    | string? | `validation` \| `busy` \| `unknown`                       |
 
 **Segments**
 
@@ -50,7 +46,7 @@ Server-side timing and reliability metrics for selection-only question serves (`
 
 ## Properties — `question_pool_health` (allowlisted)
 
-Emitted once per refill worker invocation (cron or admin enqueue processor).
+Emitted once per refill worker invocation. The deployed cron processes work; admin actions only enqueue it.
 
 | Property                 | Type   | Notes                                                                          |
 | ------------------------ | ------ | ------------------------------------------------------------------------------ |

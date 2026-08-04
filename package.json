@@ -90,7 +90,6 @@
 		"mongodb": "^7.3.0",
 		"mongoose": "^9.7.2",
 		"motion-sv": "^0.1.13",
-		"openai": "^6.48.0",
 		"opentype.js": "^2.0.0",
 		"posthog-js": "^1.393.5",
 		"posthog-node": "^5.38.5",

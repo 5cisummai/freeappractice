@@ -24,7 +24,7 @@ export type PoolBatchManifest = {
 	entries: Record<string, PoolBatchManifestEntry>;
 };
 
-export function getPoolBatchGenerationModel(): string {
+function getPoolBatchGenerationModel(): string {
 	return env.GENERATION_MODEL?.trim() || GENERATION_MODEL;
 }
 

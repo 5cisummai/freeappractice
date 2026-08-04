@@ -6,7 +6,6 @@ import { normalizeUnit } from '$lib/questions/util.server';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
 import {
-	classifyQuestionRequestError,
 	createQuestionPathMetrics,
 	capturePathQuestionRequestMetric,
 	type QuestionRequestErrorType,
@@ -90,7 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				);
 			case 'failed':
 				logger.error('Question pool selection failed', { error: outcome.error });
-				recordMetric(503, 'pool_error', false, classifyQuestionRequestError(outcome.error));
+				recordMetric(503, 'pool_error', false, 'unknown');
 				return json(
 					{
 						code: 'POOL_UNAVAILABLE',
@@ -110,7 +109,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	} catch (err) {
 		logger.error('Question request error', { error: err });
-		recordMetric(500, 'error', false, classifyQuestionRequestError(err));
+		recordMetric(500, 'error', false, 'unknown');
 		const details = dev
 			? err instanceof Error
 				? err.message

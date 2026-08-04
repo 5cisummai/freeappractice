@@ -38,11 +38,6 @@ export type QuestionPathMetrics = {
 	segment?: 'pool_hit' | 'pool_warming' | 'pool_error';
 	dbConnectMs: number;
 	poolQueryMs: number;
-	/** @deprecated Prefer dbConnectMs + poolQueryMs; kept as sum for transitional clients. */
-	cacheLookupMs: number;
-	lockWaitMs: number;
-	generationMs: number;
-	persistenceMs: number;
 };
 
 export interface GetQuestionOptions {
@@ -140,7 +135,6 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 		} catch (err) {
 			if (metrics) {
 				metrics.dbConnectMs = Date.now() - connectStarted;
-				metrics.cacheLookupMs = metrics.dbConnectMs;
 				metrics.segment = 'pool_error';
 			}
 			logger.error(`[${config.logScope}] DB connect failed`, {
@@ -179,7 +173,6 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 
 			if (metrics) {
 				metrics.poolQueryMs = Date.now() - queryStarted;
-				metrics.cacheLookupMs = metrics.dbConnectMs + metrics.poolQueryMs;
 			}
 
 			if (doc) {
@@ -206,7 +199,6 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 		} catch (err) {
 			if (metrics) {
 				metrics.poolQueryMs = Date.now() - queryStarted;
-				metrics.cacheLookupMs = metrics.dbConnectMs + metrics.poolQueryMs;
 				metrics.segment = 'pool_error';
 			}
 			logger.error(`[${config.logScope}] pool selection failed`, {

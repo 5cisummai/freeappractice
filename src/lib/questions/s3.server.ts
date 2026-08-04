@@ -111,8 +111,6 @@ export async function getObjectJson<T = unknown>(opts: {
 }
 
 const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
-const FRQ_KEY_RE = /^frqs\/([^/]+)\.json$/;
-
 export interface QuestionObjectSummary {
 	questionId: string;
 	etag?: string;
@@ -120,33 +118,11 @@ export interface QuestionObjectSummary {
 	size?: number;
 }
 
-export interface FrqObjectSummary {
-	questionId: string;
-	etag?: string;
-	lastModified?: Date;
-	size?: number;
-}
-
-/** List every canonical question id from S3 object keys under `questions/`. */
-export async function listQuestionIds(opts?: { bucket?: string }): Promise<string[]> {
-	return (await listQuestionObjects(opts)).map((object) => object.questionId);
-}
-
 /** List canonical questions with the inexpensive metadata returned by S3 listing. */
 export async function listQuestionObjects(opts?: {
 	bucket?: string;
 }): Promise<QuestionObjectSummary[]> {
 	return listPrefixedObjects(opts, 'questions/', QUESTION_KEY_RE);
-}
-
-/** List canonical FRQ ids from S3 object keys under `frqs/`. */
-export async function listFrqIds(opts?: { bucket?: string }): Promise<string[]> {
-	return (await listFrqObjects(opts)).map((object) => object.questionId);
-}
-
-/** List canonical FRQs with the inexpensive metadata returned by S3 listing. */
-export async function listFrqObjects(opts?: { bucket?: string }): Promise<FrqObjectSummary[]> {
-	return listPrefixedObjects(opts, 'frqs/', FRQ_KEY_RE);
 }
 
 async function listPrefixedObjects(

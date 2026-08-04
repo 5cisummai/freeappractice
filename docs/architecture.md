@@ -183,6 +183,8 @@ Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShe
 
 Targets default to demand-scaled MCQ floors (JSON in `src/lib/data/question-pool-targets.json`: Biology preferred **35**, default preferred **20**, min **10** from generation-stats share) and **8 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
 
+The serving and generation paths are deliberately separate. A question request performs validation, one database connection, and an indexed pool query. It does not acquire generation locks, call an LLM, or persist question content. Consequently, request telemetry records only validation, database-connect, pool-query, and total latency; generation and persistence timings belong to worker results and pool-health telemetry.
+
 ```mermaid
 flowchart TD
     Start(["POST /api/question or /api/question/frq"]) --> Validate["validateQuestionRequest<br/>AP class · unit"]
@@ -216,10 +218,13 @@ flowchart TD
 - Multiple users can receive the same question at the same time; rows are not claimed or deleted on serve.
 - `contentHash` (SHA-256 of normalized question text) deduplicates inserts into the library; duplicate keys during refill are skipped and counted toward the run budget (S3 objects may remain as archive orphans).
 - Empty buckets return typed `POOL_WARMING` immediately and request asynchronous population — there is no synchronous generation fallback.
+- The final count-and-write is serialized per bucket. Workers stop writing once the configured target is reached, while any older surplus rows remain active until an explicit retirement operation.
 - **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`bun run pool:reconcile` → `reconcilePoolRefillJobs`) is an ops tool — it is **not** run on every cron tick (that N+1 would starve generation inside the serverless time budget).
 - Ops: `bun run pool:backfill-s3`, `bun run pool:retire` (replaces the old clear-cache script), `bun run pool:verify-indexes`. See [question-pool-runbook.md](./question-pool-runbook.md).
 
 User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.
+
+This is simpler than the retired synchronous-cache design: the request interface has one responsibility (selection), the worker interface has one responsibility (population), and MongoDB is the single serving store. S3 remains the canonical archive rather than a second store queried during normal serves. The old cache-lock, cache-miss, synchronous-generation fallback, and clear-cache paths are intentionally absent.
 
 ---
 
