@@ -88,6 +88,14 @@ export function resetPostHogUser(options: { clearPersistence?: boolean } = {}) {
 	}
 }
 
+export function resetPostHogConsent() {
+	pendingOperations = [];
+	if (!initialized || typeof window === 'undefined') return;
+
+	posthog.opt_out_capturing();
+	posthog.reset(true);
+}
+
 export function capturePostHogException(error: unknown) {
 	dispatchPostHogOperation({ kind: 'exception', error });
 }

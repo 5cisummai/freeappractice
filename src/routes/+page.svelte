@@ -298,15 +298,15 @@
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
 							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							>📚 20+ AP Subjects</span
+							><span aria-hidden="true">📚</span> 20+ AP Subjects</span
 						>
 						<span
 							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							>🎓 Student Developed</span
+							><span aria-hidden="true">🎓</span> Student Developed</span
 						>
 						<span
 							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							>🎁 100% Free</span
+							><span aria-hidden="true">🎁</span> 100% Free</span
 						>
 					</div>
 				</div>

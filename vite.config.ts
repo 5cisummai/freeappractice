@@ -12,7 +12,8 @@ export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
 			org: 'free-ap-practice',
-			project: 'javascript-sveltekit'
+			project: 'javascript-sveltekit',
+			authToken: process.env.SENTRY_AUTH_TOKEN
 		}),
 		tailwindcss(),
 		sveltekit(),
