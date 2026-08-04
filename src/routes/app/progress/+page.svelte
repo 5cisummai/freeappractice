@@ -128,7 +128,7 @@
 						<h2 class="font-display text-xl font-medium tracking-tight sm:text-2xl">
 							Subject accuracy
 						</h2>
-						<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
+						<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
 							<div class="divide-y divide-border/70">
 								{#each statsData.subjectBreakdown as subject (subject.subject)}
 									<div class="flex items-center gap-4 px-5 py-4">
@@ -177,9 +177,6 @@
 							<h2 class="font-display text-xl font-medium tracking-tight sm:text-2xl">
 								Mastery by unit
 							</h2>
-							<p class="text-sm text-muted-foreground">
-								Sorted by lowest mastery first within each subject
-							</p>
 						</div>
 
 						<div class="grid gap-4 lg:grid-cols-2">

@@ -95,9 +95,6 @@
 
 <div class="space-y-4">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-		<p class="text-xs text-muted-foreground">
-			Sorting applies across all attempts, not just this page.
-		</p>
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
 				{#snippet child({ props })}
