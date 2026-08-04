@@ -259,7 +259,7 @@
 			/>
 		{/snippet}
 
-		<Card.Content class={cn('flex flex-col gap-6 pt-6', expanded && 'min-h-0 flex-1')}>
+		<Card.Content class={cn('flex flex-col gap-6 pt-4', expanded && 'min-h-0 flex-1')}>
 			<div class="flex items-start justify-between gap-4">
 				<div>
 					<h2 class="mt-0.5 text-xl font-semibold">Question {session.effectiveQuestionNumber}</h2>
@@ -357,35 +357,43 @@
 				</div>
 				{@render mcqChoices()}
 			{/if}
-
-			{#if showUtilityActions && !session.hasCheckedAnswer}
-				<div class="flex flex-wrap gap-2">
-					<Button
-						variant="ghost"
-						size="sm"
-						onclick={session.handleSkipQuestion}
-						disabled={session.isLoading}>{skipLabel}</Button
-					>
-					<Button
-						variant="ghost"
-						size="sm"
-						onclick={session.handleNotLearnedQuestion}
-						disabled={session.isLoading}
-					>
-						{notLearnedLabel}
-					</Button>
-					<Button variant="ghost" size="sm" onclick={handleReportBugAction}>
-						{reportBugLabel}
-					</Button>
-				</div>
-			{/if}
 		</Card.Content>
 
 		<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-				<div class="min-w-0 space-y-1">
-					<p class="text-sm text-muted-foreground">{session.feedbackMessage}</p>
-				</div>
+				{#if showUtilityActions && !session.hasCheckedAnswer}
+					<div class="flex flex-wrap gap-2">
+						<Button
+							variant="ghost"
+							size="sm"
+							class="text-muted-foreground hover:text-foreground"
+							onclick={session.handleSkipQuestion}
+							disabled={session.isLoading}>{skipLabel}</Button
+						>
+						<Button
+							variant="ghost"
+							size="sm"
+							class="text-muted-foreground hover:text-foreground"
+							onclick={session.handleNotLearnedQuestion}
+							disabled={session.isLoading}
+						>
+							{notLearnedLabel}
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							class="text-muted-foreground hover:text-foreground"
+							onclick={handleReportBugAction}
+						>
+							{reportBugLabel}
+						</Button>
+					</div>
+				{/if}
+				{#if session.hasCheckedAnswer || session.activeHintText}
+					<div class="min-w-0 space-y-1">
+						<p class="text-sm text-muted-foreground">{session.feedbackMessage}</p>
+					</div>
+				{/if}
 				{#if hasCalculator || hasReferenceSheet}
 					<div class="flex gap-0.5">
 						{#if hasCalculator}
