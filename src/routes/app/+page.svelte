@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import PartyPopperIcon from '@lucide/svelte/icons/party-popper';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
@@ -17,6 +18,10 @@
 	});
 
 	const statsData = $derived(data.stats as StatsData);
+	const hasActivity = $derived(
+		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
+	);
+
 	const subjectMeta = new Map(onboardingSubjects.map((subject) => [subject.name, subject]));
 	const subjectCards = $derived.by(() =>
 		(data.selectedSubjects as string[])
@@ -24,17 +29,8 @@
 				const subject = subjectMeta.get(name);
 				if (!subject) return null;
 
-				const stats = statsData.subjectBreakdown.find((entry) => entry.subject === name);
-				const questions = stats?.total ?? 0;
-				const frqAttempts = stats?.frqAttempts ?? 0;
-
 				return {
 					...subject,
-					questions,
-					accuracy: stats?.accuracy ?? 0,
-					frqAttempts,
-					hasActivity: questions > 0 || frqAttempts > 0,
-					frqAverage: stats?.frqAveragePercentage ?? 0,
 					href: `${resolve('/app/practice')}?apClass=${encodeURIComponent(name)}`
 				};
 			})
@@ -51,14 +47,47 @@
 		<h1
 			class="ph-mask-pii font-display text-3xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl"
 		>
-			Welcome back, {firstName}
+			{#if hasActivity}
+				Welcome back, {firstName}
+			{:else}
+				Welcome, {firstName}!
+			{/if}
 		</h1>
 		<p class="text-base leading-7 text-muted-foreground">
-			Pick up where you left off, or check how you're doing.
+			{#if hasActivity}
+				Pick up where you left off, or check how you're doing.
+			{:else}
+				You're all set. Your subjects are ready.
+			{/if}
 		</p>
 	</header>
 
 	{#if subjectCards.length > 0}
+		<section
+			class="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
+			aria-labelledby="get-started-heading"
+		>
+			<div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+				<div class="flex gap-4">
+					<div
+						class="flex size-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-background"
+					>
+						<PartyPopperIcon class="size-6 text-primary" aria-hidden="true" />
+					</div>
+					<div class="space-y-1">
+						<h2 id="get-started-heading" class="font-semibold tracking-tight">Let's get started</h2>
+						<p class="text-sm leading-6 text-muted-foreground">
+							Choose a subject and answer a few questions. No diagnostic or setup required.
+						</p>
+					</div>
+				</div>
+				<Button href={resolve('/app/practice')} class="shrink-0 self-center sm:self-auto">
+					Start practicing
+					<ArrowRightIcon class="size-4" aria-hidden="true" />
+				</Button>
+			</div>
+		</section>
+
 		<section class="space-y-4" aria-labelledby="your-subjects">
 			<div class="flex items-center justify-between gap-4">
 				<h2 id="your-subjects" class="text-lg font-semibold tracking-tight">Your subjects</h2>
@@ -70,60 +99,30 @@
 				</a>
 			</div>
 
-			<div class="grid gap-4 md:grid-cols-2">
+			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{#each subjectCards as subject (subject.name)}
 					{@const SubjectIcon = subject.icon}
 					<Card.Root class="rounded-2xl border border-border/60 shadow-sm ring-0">
-						<div class="flex flex-col gap-5 p-5">
-							<div class="flex items-center gap-3">
+						<div class="flex flex-col gap-4 p-5">
+							<div class="flex items-start gap-3">
 								<div
-									class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+									class="flex size-10 shrink-0 items-center justify-center rounded-lg {subject.iconClass}"
 								>
 									<SubjectIcon class="size-5" />
 								</div>
-								<h3 class="min-w-0 flex-1 truncate font-medium">{subject.name}</h3>
-								{#if !subject.hasActivity}
-									<span
-										class="inline-flex shrink-0 items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
-									>
-										Not started
-									</span>
-								{/if}
+								<div class="min-w-0 space-y-1">
+									<h3 class="font-semibold leading-snug">{subject.name}</h3>
+									<p class="text-sm leading-6 text-muted-foreground">{subject.description}</p>
+								</div>
 							</div>
 
-							{#if subject.hasActivity}
-								<div class="space-y-2">
-									<div class="flex items-center justify-between text-sm">
-										<span class="text-muted-foreground">Progress</span>
-										<span class="font-semibold tabular-nums">{subject.accuracy}%</span>
-									</div>
-									<div class="h-2 overflow-hidden rounded-full bg-muted">
-										<div
-											class="h-full rounded-full bg-primary transition-all"
-											style="width: {subject.accuracy}%"
-										></div>
-									</div>
-								</div>
-								<div class="grid grid-cols-2 gap-3 text-sm">
-									{#if subject.questions > 0}
-										<div class="rounded-lg bg-muted/50 px-3 py-2">
-											<p class="font-semibold tabular-nums">{subject.questions}</p>
-											<p class="text-xs text-muted-foreground">questions</p>
-										</div>
-									{/if}
-									{#if subject.frqAttempts > 0}
-										<div class="rounded-lg bg-muted/50 px-3 py-2">
-											<p class="font-semibold tabular-nums">{subject.frqAverage}%</p>
-											<p class="text-xs text-muted-foreground">FRQ average</p>
-										</div>
-									{/if}
-								</div>
-							{/if}
-
-							<Button href={subject.href} variant="outline" class="self-start">
-								Practice now
-								<ArrowRightIcon class="size-4" />
-							</Button>
+							<a
+								href={subject.href}
+								class="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+							>
+								Start practicing
+								<ArrowRightIcon class="size-4" aria-hidden="true" />
+							</a>
 						</div>
 					</Card.Root>
 				{/each}

@@ -299,8 +299,8 @@
 	</div>
 {:else if !question}
 	<EmptyState
-		title="No question yet"
-		description="Select a course and unit, then generate a question."
+		title="No prompt yet"
+		description="Select a course and unit, then generate a written-response task."
 		imageUrl={lightbulbImage}
 	/>
 {:else}
