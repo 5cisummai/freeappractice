@@ -5,7 +5,7 @@ import {
 	uploadBatchInput
 } from '$lib/question-quality/openai-batch.server';
 import { buildMcqPoolBatchLine } from '$lib/questions/pool-batch-line';
-import { AI_MODELS } from '$lib/ai/ai-models-config';
+import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { buildFrqPoolBatchLine } from '$lib/frq/pool-batch-line';
 
 export { downloadOpenAiFile, retrieveOpenAiBatch };
@@ -24,7 +24,7 @@ export type PoolBatchManifest = {
 };
 
 function getPoolBatchGenerationModel(): string {
-	return AI_MODELS.questionGeneration;
+	return MCQ_GENERATION_MODEL;
 }
 
 export function buildMcqPoolBatchJsonl(opts: {

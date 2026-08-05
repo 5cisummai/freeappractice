@@ -1,5 +1,5 @@
 import { generateText, streamText } from 'ai';
-import { AI_MODELS } from '$lib/ai/ai-models-config';
+import { TUTOR_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import { logger } from '$lib/server/logger';
 import type { FrqAttemptView, FrqQuestion } from '$lib/frq/types';
@@ -20,10 +20,10 @@ async function* streamTutorResponse(
 	logMeta?: Record<string, unknown>
 ): AsyncGenerator<string> {
 	const { system, conversationHistory, userMessage, signal } = opts;
-	const doneAiCall = logger.aiCall(operation, AI_MODELS.tutor, logMeta);
+	const doneAiCall = logger.aiCall(operation, TUTOR_MODEL, logMeta);
 	try {
 		const result = streamText({
-			model: openaiModel(AI_MODELS.tutor),
+			model: openaiModel(TUTOR_MODEL),
 			system,
 			messages: [...conversationHistory, { role: 'user', content: userMessage }],
 			maxOutputTokens: 500,
@@ -39,17 +39,17 @@ async function* streamTutorResponse(
 	} catch (err) {
 		const aborted = signal?.aborted || (err instanceof Error && err.name === 'AbortError');
 		if (!aborted) {
-			logger.error(`[ai] ${operation} failed`, { model: AI_MODELS.tutor, error: err });
+			logger.error(`[ai] ${operation} failed`, { model: TUTOR_MODEL, error: err });
 		}
 		throw err;
 	}
 }
 
 export async function getGreeting(question: string): Promise<string> {
-	const doneAiCall = logger.aiCall('getGreeting', AI_MODELS.tutor);
+	const doneAiCall = logger.aiCall('getGreeting', TUTOR_MODEL);
 	try {
 		const { text, usage } = await generateText({
-			model: openaiModel(AI_MODELS.tutor),
+			model: openaiModel(TUTOR_MODEL),
 			system:
 				'You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.',
 			messages: [{ role: 'user', content: `The current question is: ${question}` }],
@@ -58,7 +58,7 @@ export async function getGreeting(question: string): Promise<string> {
 		doneAiCall({ completionTokens: usage.outputTokens });
 		return text || "Hi! I'm here to help you understand this question.";
 	} catch (err) {
-		logger.error('[ai] getGreeting failed', { model: AI_MODELS.tutor, error: err });
+		logger.error('[ai] getGreeting failed', { model: TUTOR_MODEL, error: err });
 		throw err;
 	}
 }

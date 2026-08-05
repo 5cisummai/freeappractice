@@ -97,19 +97,8 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 | `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
 | `OPENAI_BASE_URL`    | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`)       |
 
-Optional model overrides (defaults and the use-case mapping are set in
-`src/lib/ai/ai-models-config.ts`):
-
-| Variable                              | Purpose                                                    |
-| ------------------------------------- | ---------------------------------------------------------- |
-| `GENERATION_MODEL`                    | MCQ and FRQ question generation                           |
-| `FRQ_GENERATION_MODEL`                | Optional FRQ-specific generation override                 |
-| `TUTOR_MODEL`                         | In-app tutor chat and greetings                            |
-| `FRQ_GRADING_MODEL`                   | Written-response grading                                  |
-| `COACH_MODEL`                         | Super Coach                                               |
-| `INSIGHTS_MODEL`                      | Super Insights narratives                                 |
-| `QUESTION_QUALITY_MODEL`              | Deferred question-quality review                           |
-| `QUESTION_QUALITY_CALIBRATED_MODEL`  | Optional calibrated quality-review model                   |
+Model choices for every AI use case are plain exported constants in
+`src/lib/ai/ai-models-config.ts`.
 
 Commonly needed for full functionality:
 
@@ -129,8 +118,8 @@ Commonly needed for full functionality:
 
 Super is disabled until Stripe credentials and both price IDs are present. Configure `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`, `MEM0_API_KEY`,
-`KV_REST_API_URL`, `KV_REST_API_TOKEN`, `REDIS_IDENTIFIER_SECRET`, `COACH_MODEL`, and `INSIGHTS_MODEL` in
-Vercel before enabling the Super Flags. `COACH_MODEL` and `INSIGHTS_MODEL` must be explicit in production.
+`KV_REST_API_URL`, `KV_REST_API_TOKEN`, and `REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super
+Flags.
 
 Create the Better Auth indexes before first production use:
 
@@ -165,11 +154,9 @@ To run question generation and tutoring against a local model instead of OpenAI:
    ```env
    OPENAI_BASE_URL=http://localhost:1234/v1
    OPEN_AI_KEY=lm-studio
-   GENERATION_MODEL=your-loaded-model-id
-   TUTOR_MODEL=your-loaded-model-id
    ```
 
-   Use the model identifier shown in LM Studio for the `*_MODEL` values.
+   Set the model identifier shown in LM Studio in `src/lib/ai/ai-models-config.ts`.
 
 ## API overview
 

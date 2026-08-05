@@ -7,8 +7,6 @@ import { logger } from '$lib/server/logger';
 
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 
-export { AI_MODELS } from '$lib/ai/ai-models-config';
-
 let provider: ReturnType<typeof createOpenAI> | null = null;
 
 /** OpenAI-compatible language model for the AI SDK. */

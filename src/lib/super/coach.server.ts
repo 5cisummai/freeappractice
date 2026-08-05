@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { ToolLoopAgent, type InferAgentUIMessage, stepCountIs, tool } from 'ai';
 import { z } from 'zod';
 import apClasses from '$lib/data/ap-classes.json';
-import { AI_MODELS, requireExplicitSuperModel } from '$lib/ai/ai-models-config';
+import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import {
 	claimIdempotencyKey,
@@ -68,7 +68,7 @@ async function writeAudit(
 	before: Record<string, unknown>,
 	after: Record<string, unknown>
 ): Promise<void> {
-	await CoachAudit.create({ userId, sessionId, toolName, before, after, modelId: AI_MODELS.coach });
+	await CoachAudit.create({ userId, sessionId, toolName, before, after, modelId: COACH_MODEL });
 }
 
 async function authorized(
@@ -100,12 +100,11 @@ function coachOperationId(sessionId: string, toolName: string, input: unknown): 
 }
 
 export function createCoachAgent(input: { userId: string; sessionId: string }) {
-	requireExplicitSuperModel('coach');
 	const { userId, sessionId } = input;
 
 	return new ToolLoopAgent({
 		id: 'super-coach',
-		model: openaiModel(AI_MODELS.coach),
+		model: openaiModel(COACH_MODEL),
 		maxOutputTokens: 700,
 		stopWhen: stepCountIs(8),
 		instructions: [

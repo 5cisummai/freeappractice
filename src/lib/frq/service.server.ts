@@ -1,4 +1,4 @@
-import { AI_MODELS } from '$lib/ai/ai-models-config';
+import { FRQ_GRADING_MODEL } from '$lib/ai/ai-models-config';
 import { FrqQuestionModel, type IFrqQuestion } from '$lib/frq/model.server';
 import {
 	FrqQuestionSchema,
@@ -100,5 +100,5 @@ export async function getFrqQuestion(
 }
 
 export function getFrqGradingModel(): string {
-	return AI_MODELS.frqGrading;
+	return FRQ_GRADING_MODEL;
 }

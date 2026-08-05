@@ -3,7 +3,7 @@ import { saveQuestionToS3 } from '$lib/questions/storage.server';
 import { recordMcqGenerated } from '$lib/questions/gen-stats.server';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import { logger } from '$lib/server/logger';
-import { AI_MODELS } from '$lib/ai/ai-models-config';
+import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { structuredObject } from '$lib/ai/service.server';
 import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
@@ -332,7 +332,7 @@ async function generateAPQuestionBody(opts: {
 
 	return structuredObject({
 		callName: 'generateAPQuestion',
-		model: AI_MODELS.questionGeneration,
+		model: MCQ_GENERATION_MODEL,
 		system,
 		user,
 		schema: APQuestion,
