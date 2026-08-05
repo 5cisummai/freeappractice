@@ -22,6 +22,7 @@ function privateEnvExports(): string {
 		'BETTER_AUTH_URL',
 		'FLAGS_SECRET',
 		'GENERATION_MODEL',
+		'FRQ_GENERATION_MODEL',
 		'TUTOR_MODEL',
 		'OPENAI_BASE_URL',
 		'OPENAI_URL'

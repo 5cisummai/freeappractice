@@ -1,4 +1,3 @@
-import { env } from '$env/dynamic/private';
 import {
 	createOpenAiBatch,
 	downloadOpenAiFile,
@@ -6,7 +5,7 @@ import {
 	uploadBatchInput
 } from '$lib/question-quality/openai-batch.server';
 import { buildMcqPoolBatchLine } from '$lib/questions/pool-batch-line';
-import { GENERATION_MODEL } from '$lib/ai/service.server';
+import { AI_MODELS } from '$lib/ai/ai-models-config';
 import { buildFrqPoolBatchLine } from '$lib/frq/pool-batch-line';
 
 export { downloadOpenAiFile, retrieveOpenAiBatch };
@@ -25,7 +24,7 @@ export type PoolBatchManifest = {
 };
 
 function getPoolBatchGenerationModel(): string {
-	return env.GENERATION_MODEL?.trim() || GENERATION_MODEL;
+	return AI_MODELS.questionGeneration;
 }
 
 export function buildMcqPoolBatchJsonl(opts: {

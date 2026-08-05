@@ -1,5 +1,6 @@
 import { generateText } from 'ai';
-import { INSIGHTS_MODEL, openaiModel, requireExplicitSuperModel } from '$lib/ai/service.server';
+import { AI_MODELS, requireExplicitSuperModel } from '$lib/ai/ai-models-config';
+import { openaiModel } from '$lib/ai/service.server';
 import { logger } from '$lib/server/logger';
 import { acquireInsightLock, RedisRequiredError, releaseLock } from '$lib/super/ai-controls.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
@@ -25,10 +26,10 @@ export function isWeeklyInsightRefreshDue(
 }
 
 export async function createInsightNarrative(report: InsightReportData): Promise<string | null> {
-	requireExplicitSuperModel('INSIGHTS_MODEL');
+	requireExplicitSuperModel('insights');
 	if (!report.eligibility.eligible) return null;
 	const { text } = await generateText({
-		model: openaiModel(INSIGHTS_MODEL),
+		model: openaiModel(AI_MODELS.insights),
 		system:
 			'Write a short, encouraging AP study insight from the supplied calculated aggregates. Do not predict an AP score, invent facts, mention hidden reasoning, or use more than 100 words.',
 		prompt: JSON.stringify({

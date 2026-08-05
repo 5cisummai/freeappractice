@@ -1,5 +1,4 @@
-import { env } from '$env/dynamic/private';
-import { GENERATION_MODEL } from '$lib/ai/service.server';
+import { AI_MODELS } from '$lib/ai/ai-models-config';
 import { FrqQuestionModel, type IFrqQuestion } from '$lib/frq/model.server';
 import {
 	FrqQuestionSchema,
@@ -101,5 +100,5 @@ export async function getFrqQuestion(
 }
 
 export function getFrqGradingModel(): string {
-	return env.FRQ_GRADING_MODEL?.trim() || GENERATION_MODEL;
+	return AI_MODELS.frqGrading;
 }

@@ -97,12 +97,19 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 | `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
 | `OPENAI_BASE_URL`    | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`)       |
 
-Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
+Optional model overrides (defaults and the use-case mapping are set in
+`src/lib/ai/ai-models-config.ts`):
 
-| Variable           | Purpose                                                    |
-| ------------------ | ---------------------------------------------------------- |
-| `GENERATION_MODEL` | Model for question generation (defaults to `gpt-5.6-luna`) |
-| `TUTOR_MODEL`      | Model for the in-app tutor chat                            |
+| Variable                              | Purpose                                                    |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `GENERATION_MODEL`                    | MCQ and FRQ question generation                           |
+| `FRQ_GENERATION_MODEL`                | Optional FRQ-specific generation override                 |
+| `TUTOR_MODEL`                         | In-app tutor chat and greetings                            |
+| `FRQ_GRADING_MODEL`                   | Written-response grading                                  |
+| `COACH_MODEL`                         | Super Coach                                               |
+| `INSIGHTS_MODEL`                      | Super Insights narratives                                 |
+| `QUESTION_QUALITY_MODEL`              | Deferred question-quality review                           |
+| `QUESTION_QUALITY_CALIBRATED_MODEL`  | Optional calibrated quality-review model                   |
 
 Commonly needed for full functionality:
 
