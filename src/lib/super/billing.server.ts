@@ -85,9 +85,12 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 				{ $set: { lockedAt: now } }
 			).exec()
 		]);
-	} else {
+	} else if (status === 'active') {
 		await Promise.all([
-			TutorProfile.updateOne({ userId: input.userId }, { $unset: { superEndedAt: 1 } }).exec(),
+			TutorProfile.updateOne(
+				{ userId: input.userId },
+				{ $unset: { superEndedAt: 1, memoryPurgedAt: 1 } }
+			).exec(),
 			InsightReport.updateMany(
 				{ userId: input.userId, lockedAt: { $exists: true } },
 				{ $unset: { lockedAt: 1 } }
@@ -104,18 +107,36 @@ export async function cancelStripeSubscriptionsForUser(userId: string): Promise<
 	const stripe = getStripeClient();
 	if (!stripe) return;
 	await connectDb();
-	const subscriptions = await SuperBillingAccess.find({
+	const customerRecords = await SuperBillingAccess.find({
 		userId,
-		stripeSubscriptionId: { $exists: true },
-		status: { $nin: ['canceled', 'incomplete', 'incomplete_expired'] }
+		stripeCustomerId: { $exists: true }
 	})
+		.select({ stripeCustomerId: 1 })
 		.lean()
 		.exec();
+	const customerIds = [
+		...new Set(
+			customerRecords
+				.map((record) => record.stripeCustomerId)
+				.filter((customerId): customerId is string => Boolean(customerId))
+		)
+	];
 
-	await Promise.all(
-		subscriptions.map(async (subscription) => {
-			if (!subscription.stripeSubscriptionId) return;
-			await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-		})
-	);
+	for (const customer of customerIds) {
+		let startingAfter: string | undefined;
+		do {
+			const page = await stripe.subscriptions.list({
+				customer,
+				status: 'all',
+				limit: 100,
+				...(startingAfter ? { starting_after: startingAfter } : {})
+			});
+			for (const subscription of page.data) {
+				if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired')
+					continue;
+				await stripe.subscriptions.cancel(subscription.id);
+			}
+			startingAfter = page.has_more ? page.data.at(-1)?.id : undefined;
+		} while (startingAfter);
+	}
 }

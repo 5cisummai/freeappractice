@@ -97,15 +97,17 @@ export async function limitGenericTutor(
 }
 
 /** Personalized tutor and Coach remain fail-closed when Redis is unavailable. */
-export async function limitSuperAi(
-	userId: string,
-	scope: 'tutor' | 'coach'
-): Promise<RateLimitDecision> {
-	return limit(SUPER_AI_LIMIT, scope, `user:${userId}`, false);
+/** One combined 60-request window covers personalized tutoring and Coach. */
+export async function limitSuperAi(userId: string): Promise<RateLimitDecision> {
+	return limit(SUPER_AI_LIMIT, 'super-ai', `user:${userId}`, false);
 }
 
 function currentUtcMonth(now = new Date()): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function previousUtcMonth(now = new Date()): string {
+	return currentUtcMonth(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)));
 }
 
 function secondsUntilUsageExpiry(now = new Date()): number {
@@ -344,12 +346,16 @@ export function acquireInsightLock(userId: string): Promise<LockHandle | null> {
 	return acquireLock(`${redisNamespace()}:lock:insights:${userId}`, INSIGHT_LOCK_TTL_SECONDS);
 }
 
+function idempotencyKey(userId: string, operationId: string): string {
+	return `${redisNamespace()}:idempotency:${userId}:${operationId}`;
+}
+
 export async function claimIdempotencyKey(userId: string, operationId: string): Promise<boolean> {
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();
 	try {
 		const result = await withRedisTimeout(
-			redis.set(`${redisNamespace()}:idempotency:${userId}:${operationId}`, '1', {
+			redis.set(idempotencyKey(userId, operationId), '1', {
 				nx: true,
 				ex: IDEMPOTENCY_TTL_SECONDS
 			}),
@@ -358,5 +364,41 @@ export async function claimIdempotencyKey(userId: string, operationId: string): 
 		return Boolean(result);
 	} catch {
 		throw new RedisRequiredError();
+	}
+}
+
+/** Release a reservation only when the mutation did not reach durable storage. */
+export async function releaseIdempotencyKey(userId: string, operationId: string): Promise<void> {
+	const redis = getRedisClient();
+	if (!redis) return;
+	try {
+		await withRedisTimeout(redis.del(idempotencyKey(userId, operationId)), 750);
+	} catch {
+		// The key's explicit TTL is the fallback if Redis cannot be reached.
+	}
+}
+
+/**
+ * Best-effort removal of the user-scoped Redis controls whose keys are known without scanning.
+ * Session authorization and idempotency keys remain disposable and expire on their own TTLs.
+ */
+export async function purgeKnownRedisControlsForUser(
+	userId: string,
+	now = new Date()
+): Promise<void> {
+	const redis = getRedisClient();
+	if (!redis) return;
+	const namespace = redisNamespace();
+	const keys = [
+		usageKey(userId, currentUtcMonth(now)),
+		usageKey(userId, previousUtcMonth(now)),
+		`${namespace}:lock:coach:${userId}`,
+		`${namespace}:lock:insights:${userId}`,
+		`${namespace}:rate:super-ai:user:${userId}`
+	];
+	try {
+		await withRedisTimeout(redis.del(...keys), 750);
+	} catch {
+		// Redis controls are intentionally non-durable; their explicit TTLs are the fallback cleanup.
 	}
 }

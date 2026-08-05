@@ -5,9 +5,20 @@ import {
 	isTutorMemoryConfigured,
 	resolveTutorMemoryId
 } from '$lib/mem0/service.server';
+import { isSuperMemoryEnabled } from '$lib/flags';
+import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 
 export const DELETE = withAuthedHandler(
 	async (event, userId) => {
+		if (!(await isSuperMemoryEnabled())) {
+			return json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
+		}
+		const access = await getSuperFeatureAccess(userId, 'memory');
+		if (!access.allowed)
+			return json(
+				{ error: superFeatureAccessMessage(access, 'Super tutor memory') },
+				{ status: 403 }
+			);
 		const memoryId = event.params.memoryId?.trim();
 		if (!memoryId || memoryId.length > 200) {
 			return json({ error: 'A valid memoryId is required' }, { status: 400 });

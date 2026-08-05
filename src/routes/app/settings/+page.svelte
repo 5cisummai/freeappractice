@@ -16,6 +16,7 @@
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import { userPrefersMode } from 'mode-watcher';
+	import { toast } from 'svelte-sonner';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
 	import MoonIcon from '@lucide/svelte/icons/moon';
@@ -55,6 +56,7 @@
 	let accountForm = $state({ name: '', email: '' });
 	let deletePassword = $state('');
 	let signOutPending = $state(false);
+	let billingBusy = $state(false);
 
 	const theme = $derived(userPrefersMode.current);
 	const themeLabel = $derived(
@@ -137,6 +139,35 @@
 			});
 		} finally {
 			signOutPending = false;
+		}
+	}
+
+	function formatDate(value: string | null | undefined): string {
+		if (!value) return 'Not available';
+		const date = new Date(value);
+		return Number.isFinite(date.getTime())
+			? new Intl.DateTimeFormat(undefined, {
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				}).format(date)
+			: 'Not available';
+	}
+
+	async function manageBilling() {
+		if (billingBusy) return;
+		billingBusy = true;
+		try {
+			const { data: portal, error } = await authClient.subscription.billingPortal({
+				returnUrl: `${window.location.origin}${resolve('/app/settings')}`,
+				disableRedirect: true
+			});
+			if (error || !portal?.url)
+				throw new Error(error?.message ?? 'Could not open billing management.');
+			window.location.assign(portal.url);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not open billing management.');
+			billingBusy = false;
 		}
 	}
 </script>
@@ -320,19 +351,101 @@
 
 			<Tabs.Content value="super" class="flex flex-col gap-3">
 				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-						<div class="flex min-w-0 flex-col gap-0.5">
-							<p class="text-sm font-medium text-foreground">Tutor memory and billing</p>
+					<div class="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
+						<div class="min-w-0 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">
+								{data.entitlements.plan === 'super' ? 'Super plan' : 'Free plan'}
+							</p>
 							<p class="text-sm text-muted-foreground">
-								Review or delete saved learning facts, pause memory, update tutor preferences, and
-								manage Super.
+								{#if data.entitlements.plan === 'super'}
+									{#if data.entitlements.accessReason === 'admin_grant'}
+										Super access granted by the team.
+									{:else if data.billing?.status === 'past_due'}
+										Payment is past due; Super access remains available during the grace period.
+									{:else}
+										Personalized tutoring, Coach, insights, and study plans are active.
+									{/if}
+								{:else}
+									Upgrade when you want personalized tutoring and study planning.
+								{/if}
+							</p>
+						</div>
+						{#if data.entitlements.plan === 'super' && data.billing?.hasCustomer}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onclick={manageBilling}
+								disabled={billingBusy}
+							>
+								{billingBusy ? 'Opening…' : 'Customer Portal'}
+							</Button>
+						{:else if data.entitlements.plan !== 'super'}
+							<Button type="button" variant="outline" size="sm" href={resolve('/pricing')}
+								>Upgrade</Button
+							>
+						{/if}
+					</div>
+
+					{#if data.entitlements.plan === 'super'}
+						<div class="space-y-3 border-t border-border/60 px-4 py-4">
+							<div class="grid gap-3 sm:grid-cols-2">
+								<div>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Status
+									</p>
+									<p class="mt-1 text-sm font-medium capitalize">
+										{data.billing?.status?.replaceAll('_', ' ') ?? 'Active'}
+									</p>
+								</div>
+								<div>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										{data.billing?.cancelAt || data.billing?.cancelAtPeriodEnd
+											? 'Cancels'
+											: 'Renews'}
+									</p>
+									<p class="mt-1 text-sm font-medium">
+										{formatDate(data.billing?.cancelAt ?? data.billing?.periodEnd)}
+									</p>
+								</div>
+							</div>
+							<div>
+								<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									Personalized AI usage
+								</p>
+								{#if data.usage.status === 'available'}
+									<p class="mt-1 text-sm">
+										{data.usage.remaining} of 600 messages remaining this month.
+									</p>
+									{#if data.usage.warning}
+										<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+											You have used {data.usage.warning}% of this month's personalized messages.
+										</p>
+									{/if}
+								{:else}
+									<p class="mt-1 text-sm text-muted-foreground">
+										Usage is unavailable right now. Try again later.
+									</p>
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<div
+						class="flex flex-wrap items-center justify-between gap-4 border-t border-border/60 px-4 py-4"
+					>
+						<div class="min-w-0 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Tutor memory</p>
+							<p class="text-sm text-muted-foreground">
+								Memory is {data.profile.memoryEnabled ? 'on' : 'paused'}. Review, delete, or update
+								your memory preferences.
 							</p>
 						</div>
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
-							href={`${resolve('/app/super/setup')}#tutor-memory`}>Manage</Button
+							href={`${resolve('/app/super/setup')}#tutor-memory`}>Manage memory</Button
 						>
 					</div>
 				</div>

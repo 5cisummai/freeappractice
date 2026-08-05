@@ -1,7 +1,7 @@
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 
-export type SuperFeature = 'coach' | 'aiInsights' | 'studyPlans';
+export type SuperFeature = 'coach' | 'aiInsights' | 'studyPlans' | 'memory';
 
 export type SuperFeatureAccess =
 	{ allowed: true } | { allowed: false; reason: 'subscription' | 'age' };
@@ -15,7 +15,8 @@ export async function getSuperFeatureAccess(
 		getEntitlements(userId),
 		getTutorProfileView(userId)
 	]);
-	if (!entitlements[feature]) return { allowed: false, reason: 'subscription' };
+	const entitled = feature === 'memory' ? entitlements.personalizedTutor : entitlements[feature];
+	if (!entitled) return { allowed: false, reason: 'subscription' };
 	if (!profile.ageConfirmedAt) return { allowed: false, reason: 'age' };
 	return { allowed: true };
 }

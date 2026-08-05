@@ -1,8 +1,14 @@
+import { createHash } from 'node:crypto';
 import { ToolLoopAgent, type InferAgentUIMessage, stepCountIs, tool } from 'ai';
 import { z } from 'zod';
 import apClasses from '$lib/data/ap-classes.json';
 import { COACH_MODEL, openaiModel, requireExplicitSuperModel } from '$lib/ai/service.server';
-import { hasCoachWriteAuthorization, type CoachWriteCategory } from '$lib/super/ai-controls.server';
+import {
+	claimIdempotencyKey,
+	hasCoachWriteAuthorization,
+	releaseIdempotencyKey,
+	type CoachWriteCategory
+} from '$lib/super/ai-controls.server';
 import { getSuperFeatureAccess } from '$lib/super/feature-access.server';
 import { getCurrentStoredInsightReport } from '$lib/super/insights.server';
 import { CoachAudit } from '$lib/super/models.server';
@@ -87,6 +93,11 @@ function hasSameValue(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function coachOperationId(sessionId: string, toolName: string, input: unknown): string {
+	const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('base64url');
+	return `coach:${sessionId}:${toolName}:${fingerprint}`;
+}
+
 export function createCoachAgent(input: { userId: string; sessionId: string }) {
 	requireExplicitSuperModel('COACH_MODEL');
 	const { userId, sessionId } = input;
@@ -169,10 +180,19 @@ export function createCoachAgent(input: { userId: string; sessionId: string }) {
 					if (!(await authorized(userId, sessionId, 'goals'))) {
 						return { updated: false, approvalRequired: true, category: 'goals', proposed: patch };
 					}
-					const before = await getTutorProfileView(userId);
-					const after = await updateTutorProfile(userId, patch);
-					await writeAudit(userId, sessionId, 'update_goals', before, after);
-					return { updated: true, profile: after };
+					const operationId = coachOperationId(sessionId, 'update_goals', patch);
+					if (!(await claimIdempotencyKey(userId, operationId))) {
+						return { updated: true, alreadyApplied: true };
+					}
+					try {
+						const before = await getTutorProfileView(userId);
+						const after = await updateTutorProfile(userId, patch);
+						await writeAudit(userId, sessionId, 'update_goals', before, after);
+						return { updated: true, profile: after };
+					} catch (error) {
+						await releaseIdempotencyKey(userId, operationId);
+						throw error;
+					}
 				}
 			}),
 			update_study_plan: tool({
@@ -192,29 +212,40 @@ export function createCoachAgent(input: { userId: string; sessionId: string }) {
 							proposed: { startsOn, behavior, tasks }
 						};
 					}
-					const existingPlan = await getCurrentStudyPlan(userId);
-					const before = existingPlan ?? {};
-					if (behavior === 'replace' && existingPlan) {
-						const proposedById = new Map(tasks.map((task) => [task.id, task]));
-						const modifiesCompletedTask = existingPlan.tasks.some((task) => {
-							if (task.status !== 'done') return false;
-							const proposed = proposedById.get(task.id);
-							return !proposed || JSON.stringify(proposed) !== JSON.stringify(task);
-						});
-						if (modifiesCompletedTask) {
-							return {
-								updated: false,
-								error: 'Completed study tasks cannot be changed or rescheduled by Coach.'
-							};
-						}
+					const operationInput = { startsOn, behavior, tasks };
+					const operationId = coachOperationId(sessionId, 'update_study_plan', operationInput);
+					if (!(await claimIdempotencyKey(userId, operationId))) {
+						return { updated: true, alreadyApplied: true };
 					}
-					const after = await saveStudyPlan(
-						userId,
-						{ startsOn, tasks: tasks as StudyTask[] },
-						{ behavior }
-					);
-					await writeAudit(userId, sessionId, 'update_study_plan', before, after);
-					return { updated: true, studyPlan: after };
+					try {
+						const existingPlan = await getCurrentStudyPlan(userId);
+						const before = existingPlan ?? {};
+						if (behavior === 'replace' && existingPlan) {
+							const proposedById = new Map(tasks.map((task) => [task.id, task]));
+							const modifiesCompletedTask = existingPlan.tasks.some((task) => {
+								if (task.status !== 'done') return false;
+								const proposed = proposedById.get(task.id);
+								return !proposed || JSON.stringify(proposed) !== JSON.stringify(task);
+							});
+							if (modifiesCompletedTask) {
+								await releaseIdempotencyKey(userId, operationId);
+								return {
+									updated: false,
+									error: 'Completed study tasks cannot be changed or rescheduled by Coach.'
+								};
+							}
+						}
+						const after = await saveStudyPlan(
+							userId,
+							{ startsOn, tasks: tasks as StudyTask[] },
+							{ behavior }
+						);
+						await writeAudit(userId, sessionId, 'update_study_plan', before, after);
+						return { updated: true, studyPlan: after };
+					} catch (error) {
+						await releaseIdempotencyKey(userId, operationId);
+						throw error;
+					}
 				}
 			})
 		}

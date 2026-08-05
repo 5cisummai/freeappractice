@@ -4,7 +4,7 @@ import { logger } from '$lib/server/logger';
 
 export function tutorRateLimitedResponse(retryAt: number | null): Response {
 	return json(
-		{ error: 'Too many tutor requests. Please try again shortly.' },
+		{ error: 'Too many tutor requests. Please try again shortly.', retryAt },
 		retryAt
 			? {
 					status: 429,

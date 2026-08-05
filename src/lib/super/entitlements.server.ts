@@ -57,17 +57,3 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 	}
 	return FREE_ENTITLEMENTS;
 }
-
-export async function requireEntitlement(
-	userId: string,
-	entitlement: Exclude<keyof Entitlements, 'plan' | 'accessReason'>
-): Promise<Entitlements> {
-	const access = await getEntitlements(userId);
-	if (!access[entitlement]) {
-		throw new Response(JSON.stringify({ error: 'Super subscription required' }), {
-			status: 403,
-			headers: { 'Content-Type': 'application/json' }
-		});
-	}
-	return access;
-}

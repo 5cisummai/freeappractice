@@ -25,6 +25,11 @@
 	const progressData = $derived(data.progress as ProgressEntry[]);
 	const superEntitlements = $derived(data.entitlements);
 	const superPlan = $derived(data.superPlan);
+	const superUsage = $derived(data.superUsage);
+	const superInsights = $derived(data.superInsights);
+	const openPlanTasks = $derived(
+		superPlan?.tasks.filter((task) => task.status !== 'done').slice(0, 3) ?? []
+	);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -108,6 +113,12 @@
 		if (diffDays === 1) return 'Yesterday';
 		if (diffDays < 30) return `${diffDays} days ago`;
 		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+	}
+
+	function formatPlanDate(value: string): string {
+		return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(
+			new Date(value)
+		);
 	}
 
 	function progressBarClass(iconClass: string): string {
@@ -201,7 +212,7 @@
 		</section>
 
 		{#if superEntitlements?.plan === 'super'}
-			<div class="grid gap-3 sm:grid-cols-2">
+			<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				<a
 					href={resolve('/app/coach')}
 					class="group flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 shadow-sm transition-colors hover:bg-primary/10"
@@ -214,19 +225,88 @@
 					</div>
 					<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 				</a>
+				<Card.Root class="border-border/60 bg-card shadow-sm ring-0">
+					<Card.Content class="p-5">
+						<div class="flex items-start justify-between gap-3">
+							<div>
+								<p class="font-medium">Active study plan</p>
+								<p class="text-sm text-muted-foreground">
+									{superPlan?.tasks.filter((task) => task.status !== 'done').length ?? 0} tasks
+									remaining
+								</p>
+							</div>
+							<a
+								href={resolve('/app/insights')}
+								class="text-sm text-primary underline-offset-4 hover:underline">View plan</a
+							>
+						</div>
+						{#if openPlanTasks.length}
+							<div class="mt-4 space-y-2 border-t border-border/60 pt-3">
+								{#each openPlanTasks as task (task.id)}
+									<a
+										href={resolve(
+											`/app/practice?apClass=${encodeURIComponent(task.apClass)}&unit=${encodeURIComponent(task.unit)}${task.mode === 'frq' ? '&mode=frq' : ''}`
+										)}
+										class="block rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/60"
+									>
+										<div class="flex items-center justify-between gap-2">
+											<span class="truncate font-medium">{task.apClass} · {task.unit}</span>
+											<span class="shrink-0 text-xs text-muted-foreground"
+												>{formatPlanDate(task.date)}</span
+											>
+										</div>
+										<p class="text-xs text-muted-foreground">
+											{task.mode === 'frq' ? 'FRQ' : task.mode === 'mcq' ? 'MCQ' : 'Review'} ·
+											{task.durationMinutes} min
+										</p>
+									</a>
+								{/each}
+							</div>
+						{:else}
+							<p class="mt-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
+								Your active plan is complete. Open Insights for the next one.
+							</p>
+						{/if}
+					</Card.Content>
+				</Card.Root>
 				<a
 					href={resolve('/app/insights')}
 					class="group flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm transition-colors hover:bg-muted/40"
 				>
 					<div>
-						<p class="font-medium">Weekly study plan</p>
+						<p class="font-medium">Weekly insights</p>
 						<p class="text-sm text-muted-foreground">
-							{superPlan?.tasks.filter((task) => task.status !== 'done').length ?? 0} tasks remaining
+							{#if superInsights.status === 'current'}
+								Your latest report is up to date.
+							{:else if superInsights.status === 'setup'}
+								Finish setup to unlock personalized insights.
+							{:else}
+								Your next report is ready to review.
+							{/if}
 						</p>
 					</div>
 					<ArrowRightIcon class="size-4 shrink-0 text-muted-foreground" />
 				</a>
 			</div>
+			{#if superUsage.status !== 'not_available'}
+				<div class="rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm">
+					<p class="font-medium">Personalized AI usage</p>
+					{#if superUsage.status === 'available'}
+						<p class="text-sm text-muted-foreground">
+							{superUsage.remaining} of 600 messages remaining this month.
+						</p>
+						{#if superUsage.warning}
+							<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+								You have used {superUsage.warning}% of this month's personalized messages.
+							</p>
+						{/if}
+					{:else}
+						<p class="text-sm text-muted-foreground">
+							Usage is unavailable right now. Your tutor and Coach access are unchanged.
+						</p>
+					{/if}
+				</div>
+			{/if}
 		{:else}
 			<a
 				href={resolve('/pricing')}

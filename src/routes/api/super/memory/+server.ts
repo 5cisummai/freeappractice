@@ -6,7 +6,19 @@ import {
 	isTutorMemoryConfigured,
 	listTutorMemories
 } from '$lib/mem0/service.server';
+import { isSuperMemoryEnabled } from '$lib/flags';
+import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/super/profile.server';
+
+async function requireMemoryAccess(userId: string): Promise<Response | null> {
+	if (!(await isSuperMemoryEnabled())) {
+		return json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
+	}
+	const access = await getSuperFeatureAccess(userId, 'memory');
+	return access.allowed
+		? null
+		: json({ error: superFeatureAccessMessage(access, 'Super tutor memory') }, { status: 403 });
+}
 
 async function publicMemory(
 	userId: string,
@@ -21,6 +33,8 @@ async function publicMemory(
 
 export const GET = withAuthedHandler(
 	async (_event, userId) => {
+		const denial = await requireMemoryAccess(userId);
+		if (denial) return denial;
 		const profile = await getTutorProfileView(userId);
 		const memories = await listTutorMemories(userId);
 		return json({
@@ -37,6 +51,8 @@ export const GET = withAuthedHandler(
 
 export const POST = withAuthedHandler(
 	async (_event, userId) => {
+		const denial = await requireMemoryAccess(userId);
+		if (denial) return denial;
 		await markMemoryDisclosureSeen(userId);
 		const profile = await getTutorProfileView(userId);
 		return json({
@@ -54,6 +70,8 @@ export const POST = withAuthedHandler(
 
 export const DELETE = withAuthedHandler(
 	async (_event, userId) => {
+		const denial = await requireMemoryAccess(userId);
+		if (denial) return denial;
 		if (!isTutorMemoryConfigured()) {
 			return json({ error: 'Tutor memory is not configured' }, { status: 503 });
 		}

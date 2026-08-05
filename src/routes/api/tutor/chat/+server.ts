@@ -113,7 +113,7 @@ export const POST: RequestHandler = async (event) => {
 				);
 			}
 			try {
-				const rate = await limitSuperAi(userId, 'tutor');
+				const rate = await limitSuperAi(userId);
 				if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
 				reservation = await reservePersonalizedTurn(userId);
 				if (!reservation) {

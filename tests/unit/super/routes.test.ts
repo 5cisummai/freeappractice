@@ -13,7 +13,15 @@ const mocks = vi.hoisted(() => ({
 	getTutorMemoryPublicId: vi.fn(),
 	resolveTutorMemoryId: vi.fn(),
 	deleteAllTutorMemories: vi.fn(),
-	deleteTutorMemory: vi.fn()
+	deleteTutorMemory: vi.fn(),
+	isSuperMemoryEnabled: vi.fn(),
+	getSuperFeatureAccess: vi.fn(),
+	insightsGet: vi.fn(),
+	insightsPost: vi.fn(),
+	studyPlanGet: vi.fn(),
+	studyPlanPost: vi.fn(),
+	coachApprovalPost: vi.fn(),
+	coachUndoPost: vi.fn()
 }));
 
 vi.mock('$lib/auth/route-helpers.server', () => ({
@@ -33,6 +41,27 @@ vi.mock('$lib/mem0/service.server', () => ({
 	deleteAllTutorMemories: mocks.deleteAllTutorMemories,
 	deleteTutorMemory: mocks.deleteTutorMemory
 }));
+vi.mock('$lib/flags', () => ({
+	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
+}));
+vi.mock('$lib/super/feature-access.server', () => ({
+	getSuperFeatureAccess: mocks.getSuperFeatureAccess,
+	superFeatureAccessMessage: vi.fn(() => 'Super subscription required')
+}));
+vi.mock('../../../src/routes/api/insights/+server', () => ({
+	GET: mocks.insightsGet,
+	POST: mocks.insightsPost
+}));
+vi.mock('../../../src/routes/api/study-plan/+server', () => ({
+	GET: mocks.studyPlanGet,
+	POST: mocks.studyPlanPost
+}));
+vi.mock('../../../src/routes/api/coach/approval/+server', () => ({
+	POST: mocks.coachApprovalPost
+}));
+vi.mock('../../../src/routes/api/coach/undo/+server', () => ({
+	POST: mocks.coachUndoPost
+}));
 
 import { POST as confirmAgePost } from '../../../src/routes/api/super/confirm-age/+server';
 import {
@@ -45,6 +74,25 @@ import {
 	GET as profileGet,
 	PATCH as profilePatch
 } from '../../../src/routes/api/super/profile/+server';
+import {
+	GET as meProfileGet,
+	PATCH as meProfilePatch
+} from '../../../src/routes/api/me/tutor-profile/+server';
+import {
+	GET as meMemoriesGet,
+	DELETE as meMemoriesDelete
+} from '../../../src/routes/api/me/tutor-memories/+server';
+import { DELETE as meMemoryIdDelete } from '../../../src/routes/api/me/tutor-memories/[memoryId]/+server';
+import {
+	GET as meInsightsGet,
+	POST as meInsightsPost
+} from '../../../src/routes/api/me/insights/+server';
+import {
+	GET as meStudyPlanGet,
+	PATCH as meStudyPlanPatch
+} from '../../../src/routes/api/me/study-plan/+server';
+import { POST as coachAuthorizePost } from '../../../src/routes/api/coach/session/authorize/+server';
+import { POST as coachActionUndoPost } from '../../../src/routes/api/coach/actions/[id]/undo/+server';
 
 const profile = {
 	ageConfirmedAt: null,
@@ -81,6 +129,37 @@ describe('Super API routes', () => {
 		]);
 		mocks.getTutorMemoryPublicId.mockResolvedValue('memory-token');
 		mocks.resolveTutorMemoryId.mockResolvedValue('mem0-secret-id');
+		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
+		mocks.getSuperFeatureAccess.mockResolvedValue({ allowed: true });
+		mocks.coachUndoPost.mockResolvedValue(new Response(null, { status: 204 }));
+	});
+
+	it('maps the named API contracts to their canonical handlers', () => {
+		expect(meProfileGet).toBe(profileGet);
+		expect(meProfilePatch).toBe(profilePatch);
+		expect(meMemoriesGet).toBe(memoryGet);
+		expect(meMemoriesDelete).toBe(memoryDelete);
+		expect(meMemoryIdDelete).toBe(memoryIdDelete);
+		expect(meInsightsGet).toBe(mocks.insightsGet);
+		expect(meInsightsPost).toBe(mocks.insightsPost);
+		expect(meStudyPlanGet).toBe(mocks.studyPlanGet);
+		expect(meStudyPlanPatch).toBe(mocks.studyPlanPost);
+		expect(coachAuthorizePost).toBe(mocks.coachApprovalPost);
+	});
+
+	it('takes Coach undo audit ID from the route parameter', async () => {
+		const response = await coachActionUndoPost(
+			event(
+				{ auditId: 'body-value-must-be-ignored' },
+				{ id: '0123456789abcdef01234567' }
+			) as Parameters<typeof coachActionUndoPost>[0]
+		);
+
+		expect(response.status).toBe(204);
+		const forwardedEvent = mocks.coachUndoPost.mock.calls[0][0] as { request: Request };
+		expect(await forwardedEvent.request.json()).toEqual({
+			auditId: '0123456789abcdef01234567'
+		});
 	});
 
 	it('returns profile and memory status', async () => {

@@ -1,5 +1,6 @@
 import { deleteAllTutorMemoriesById } from '$lib/mem0/service.server';
 import { logger } from '$lib/server/logger';
+import { purgeKnownRedisControlsForUser } from '$lib/super/ai-controls.server';
 import { cancelStripeSubscriptionsForUser } from '$lib/super/billing.server';
 import { SuperCleanupJob } from '$lib/super/models.server';
 import { getMem0UserId } from '$lib/super/profile.server';
@@ -26,6 +27,7 @@ export async function prepareAccountDeletion(userId: string): Promise<void> {
 }
 
 export async function processAccountDeletionCleanup(userId: string): Promise<void> {
+	await purgeKnownRedisControlsForUser(userId);
 	const job = await SuperCleanupJob.findOne({
 		userId,
 		kind: 'account_delete',
@@ -35,9 +37,7 @@ export async function processAccountDeletionCleanup(userId: string): Promise<voi
 
 	try {
 		await deleteAllTutorMemoriesById(job.mem0UserId);
-		job.completedAt = new Date();
-		job.lastError = undefined;
-		await job.save();
+		await job.deleteOne();
 	} catch (error) {
 		job.attempts += 1;
 		job.nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS);

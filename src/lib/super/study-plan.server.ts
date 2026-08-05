@@ -327,9 +327,3 @@ export async function rescheduleStudyTask(
 ): Promise<StudyPlanView | null> {
 	return updateTask(userId, taskId, { date: startOfUtcDay(date) });
 }
-
-/** Exposed for callers that need to decide whether a stored plan may be shown. */
-export async function isStudyPlanReadable(userId: string, now = new Date()): Promise<boolean> {
-	const entitlements = await getEntitlements(userId, now);
-	return hasStudyPlanAccess(entitlements);
-}

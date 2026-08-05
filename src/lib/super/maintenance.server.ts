@@ -3,11 +3,14 @@ import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import {
 	InsightReport,
+	SuperBillingAccess,
 	SuperCleanupJob,
 	SuperGrant,
 	TutorProfile,
 	type ISuperCleanupJob
 } from '$lib/super/models.server';
+import { getEntitlements } from '$lib/super/entitlements.server';
+import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
 
 const MEMORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const RETRY_DELAY_MS = 60 * 60 * 1000;
@@ -25,12 +28,6 @@ function memoryRetentionCutoff(now: Date): Date {
 	return new Date(now.getTime() - MEMORY_RETENTION_MS);
 }
 
-async function completeCleanupJob(job: ISuperCleanupJob): Promise<void> {
-	job.completedAt = new Date();
-	job.lastError = undefined;
-	await job.save();
-}
-
 async function retryCleanupJob(job: ISuperCleanupJob, error: unknown): Promise<void> {
 	job.attempts += 1;
 	job.nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS);
@@ -44,19 +41,44 @@ async function processCleanupJob(
 ): Promise<'completed' | 'retried'> {
 	try {
 		if (job.kind === 'downgrade_purge') {
-			const profile = await TutorProfile.findOne({ userId: job.userId })
-				.select({ superEndedAt: 1 })
+			const activeGrant = await SuperGrant.findOne({
+				userId: job.userId,
+				startsAt: { $lte: now },
+				expiresAt: { $gt: now },
+				revokedAt: { $exists: false }
+			})
+				.select({ _id: 1 })
 				.lean()
 				.exec();
-			if (!profile?.superEndedAt || profile.superEndedAt > memoryRetentionCutoff(now)) {
+			if (activeGrant) {
+				// A newly created grant can arrive after this job was queued. Removing this disposable
+				// job lets maintenance create a fresh one if the grant later expires without a restore.
+				await job.deleteOne();
+				return 'completed';
+			}
+			const profile = await TutorProfile.findOne({ userId: job.userId })
+				.select({ superEndedAt: 1, memoryPurgedAt: 1 })
+				.lean()
+				.exec();
+			if (
+				!profile?.superEndedAt ||
+				profile.superEndedAt > memoryRetentionCutoff(now) ||
+				profile.memoryPurgedAt
+			) {
 				// The student re-subscribed before the retention period elapsed.
-				await completeCleanupJob(job);
+				await job.deleteOne();
 				return 'completed';
 			}
 		}
 
 		await deleteAllTutorMemoriesById(job.mem0UserId);
-		await completeCleanupJob(job);
+		if (job.kind === 'downgrade_purge') {
+			await TutorProfile.updateOne(
+				{ userId: job.userId },
+				{ $set: { memoryPurgedAt: now } }
+			).exec();
+		}
+		await job.deleteOne();
 		return 'completed';
 	} catch (error) {
 		await retryCleanupJob(job, error);
@@ -79,8 +101,42 @@ export async function runSuperMaintenance(
 	batchSize = DEFAULT_BATCH_SIZE
 ): Promise<SuperMaintenanceSummary> {
 	await connectDb();
+	const pastDueGraceCutoff = new Date(now.getTime() - SUPER_PAST_DUE_GRACE_MS);
+	const expiredPastDueRecords = await SuperBillingAccess.find({
+		status: 'past_due',
+		pastDueSince: { $lte: pastDueGraceCutoff },
+		superEndedAt: { $exists: false }
+	})
+		.select({ userId: 1, pastDueSince: 1 })
+		.lean()
+		.exec();
+	const pastDueEndByUser = new Map<string, Date>();
+	for (const subscription of expiredPastDueRecords) {
+		if (!subscription.pastDueSince) continue;
+		const accessEndedAt = new Date(subscription.pastDueSince.getTime() + SUPER_PAST_DUE_GRACE_MS);
+		const existing = pastDueEndByUser.get(subscription.userId);
+		if (!existing || accessEndedAt > existing)
+			pastDueEndByUser.set(subscription.userId, accessEndedAt);
+	}
+	for (const [userId, accessEndedAt] of pastDueEndByUser) {
+		const access = await getEntitlements(userId, now);
+		if (access.plan === 'super') continue;
+		await Promise.all([
+			TutorProfile.updateOne(
+				{ userId, superEndedAt: { $exists: false } },
+				{ $set: { superEndedAt: accessEndedAt } }
+			).exec(),
+			InsightReport.updateMany(
+				{ userId, lockedAt: { $exists: false } },
+				{ $set: { lockedAt: accessEndedAt } }
+			).exec()
+		]);
+	}
 	const cutoff = memoryRetentionCutoff(now);
-	const expiredProfiles = await TutorProfile.find({ superEndedAt: { $lte: cutoff } })
+	const expiredProfiles = await TutorProfile.find({
+		superEndedAt: { $lte: cutoff },
+		memoryPurgedAt: { $exists: false }
+	})
 		.select({ userId: 1, mem0UserId: 1 })
 		.lean()
 		.exec();
@@ -103,7 +159,7 @@ export async function runSuperMaintenance(
 	await Promise.all(
 		profilesToPurge.map((profile) =>
 			SuperCleanupJob.findOneAndUpdate(
-				{ userId: profile.userId, kind: 'downgrade_purge', completedAt: { $exists: false } },
+				{ userId: profile.userId, kind: 'downgrade_purge' },
 				{
 					$setOnInsert: {
 						userId: profile.userId,

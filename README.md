@@ -136,6 +136,10 @@ the current period, and switching between the two Super prices at the next renew
 to Better Auth's `/api/auth/stripe/webhook` route. The app enables Stripe automatic tax and does not enable
 promotion codes.
 
+Configure Mem0 with a separate Platform project/API key for Development, Preview, and Production. Mem0
+3.x selects the Platform project from that key, so set `MEM0_ENVIRONMENT` to the matching deployment
+environment and `MEM0_PROJECT_ID` to that project identifier as a defense-in-depth app scope.
+
 Upstash is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
 single-flight locks, idempotency keys, and 30-minute Coach approvals. MongoDB, Stripe, S3, and Mem0 remain
 the durable stores; question-selection and grading logic do not use Redis. For local Redis testing, run an

@@ -103,7 +103,10 @@
 		try {
 			const response = await apiFetch('/api/coach/undo', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					'Idempotency-Key': crypto.randomUUID()
+				},
 				body: JSON.stringify({ auditId })
 			});
 			const result = await readJsonOrNull<{ error?: string }>(response);

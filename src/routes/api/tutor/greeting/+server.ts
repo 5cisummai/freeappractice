@@ -5,6 +5,7 @@ import { getQuestionFromS3 } from '$lib/questions/storage.server';
 import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
+import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { getGreeting } from '$lib/tutor/service.server';
 
 export const POST: RequestHandler = async (event) => {
@@ -16,9 +17,7 @@ export const POST: RequestHandler = async (event) => {
 			event.locals.userId ??
 			(await auth.api.getSession({ headers: event.request.headers }))?.user?.id;
 		const rate = await limitGenericTutor(event.request, userId);
-		if (!rate.allowed) {
-			return json({ error: 'Too many tutor requests. Please try again shortly.' }, { status: 429 });
-		}
+		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
 
 		const question = await getQuestionFromS3(parsed.data.questionId).catch(() => null);
 		if (!question) return json({ error: 'Question not found' }, { status: 404 });

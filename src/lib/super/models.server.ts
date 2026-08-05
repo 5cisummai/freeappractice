@@ -12,6 +12,7 @@ export interface ITutorProfile extends Document {
 	memoryEnabled: boolean;
 	memoryDisclosureSeenAt?: Date;
 	superEndedAt?: Date;
+	memoryPurgedAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -39,7 +40,8 @@ const tutorProfileSchema = new Schema<ITutorProfile>(
 		},
 		memoryEnabled: { type: Boolean, default: true },
 		memoryDisclosureSeenAt: { type: Date },
-		superEndedAt: { type: Date }
+		superEndedAt: { type: Date },
+		memoryPurgedAt: { type: Date }
 	},
 	{ timestamps: true }
 );
@@ -304,6 +306,8 @@ const superCleanupJobSchema = new Schema<ISuperCleanupJob>(
 	{ timestamps: true }
 );
 superCleanupJobSchema.index({ userId: 1, kind: 1, completedAt: 1 });
+// A completed job is only retained briefly for operational inspection. Pending jobs have no TTL.
+superCleanupJobSchema.index({ completedAt: 1 }, { expireAfterSeconds: 24 * 60 * 60 });
 
 export const SuperCleanupJob: Model<ISuperCleanupJob> =
 	(mongoose.models.SuperCleanupJob as Model<ISuperCleanupJob>) ??

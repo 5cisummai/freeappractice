@@ -6,7 +6,7 @@ import type { TutorProfileUpdate, TutorProfileView } from '$lib/super/types';
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;
 
-function toView(profile: ITutorProfile): TutorProfileView {
+function toTutorProfileView(profile: ITutorProfile): TutorProfileView {
 	return {
 		ageConfirmedAt: profile.ageConfirmedAt?.toISOString() ?? null,
 		selectedApClasses: [...profile.selectedApClasses],
@@ -38,7 +38,7 @@ export async function ensureTutorProfile(userId: string): Promise<ITutorProfile>
 }
 
 export async function getTutorProfileView(userId: string): Promise<TutorProfileView> {
-	return toView(await ensureTutorProfile(userId));
+	return toTutorProfileView(await ensureTutorProfile(userId));
 }
 
 export async function confirmAge(userId: string): Promise<TutorProfileView> {
@@ -47,7 +47,7 @@ export async function confirmAge(userId: string): Promise<TutorProfileView> {
 		profile.ageConfirmedAt = new Date();
 		await profile.save();
 	}
-	return toView(profile);
+	return toTutorProfileView(profile);
 }
 
 export async function markMemoryDisclosureSeen(userId: string): Promise<void> {
@@ -85,7 +85,7 @@ export async function updateTutorProfile(
 	if (patch.memoryEnabled !== undefined) profile.memoryEnabled = patch.memoryEnabled;
 
 	await profile.save();
-	return toView(profile);
+	return toTutorProfileView(profile);
 }
 
 export async function getMem0UserId(userId: string): Promise<string> {

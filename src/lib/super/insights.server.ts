@@ -85,6 +85,7 @@ export type InsightClaim = {
 	source: InsightSource;
 	metric: InsightMetric;
 	classification: 'strength' | 'weakness' | 'mixed';
+	practiceHref: string;
 };
 
 export type InsightUnit = {
@@ -259,6 +260,12 @@ function classify(score: number): InsightClaim['classification'] {
 	return 'mixed';
 }
 
+function practiceHrefForClaim(source: InsightSource, apClass: string, unit: string): string {
+	const params = new URLSearchParams({ apClass, unit });
+	if (source === 'frq') params.set('mode', 'frq');
+	return `/app/practice?${params.toString()}`;
+}
+
 function compareClaim(a: InsightClaim, b: InsightClaim): number {
 	return (
 		a.metric.weightedAveragePercentage - b.metric.weightedAveragePercentage ||
@@ -344,7 +351,8 @@ function makeClaim(
 		unit,
 		source,
 		metric,
-		classification: classify(metric.weightedAveragePercentage)
+		classification: classify(metric.weightedAveragePercentage),
+		practiceHref: practiceHrefForClaim(source, apClass, unit)
 	};
 }
 

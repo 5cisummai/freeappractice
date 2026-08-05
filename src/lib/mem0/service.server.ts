@@ -17,6 +17,22 @@ export type TutorMemory = {
 	createdAt: string | null;
 };
 
+/**
+ * Mem0 3.x selects a Platform project through its API key rather than constructor options.
+ * Keep a separate key/project per deployment environment and add an app scope as defense in depth.
+ */
+function getMem0ProjectScope(): string | null {
+	const configuredEnvironment = env.MEM0_ENVIRONMENT?.trim();
+	const projectId = env.MEM0_PROJECT_ID?.trim();
+	const expectedEnvironment =
+		env.VERCEL_ENV === 'production'
+			? 'production'
+			: env.VERCEL_ENV === 'preview'
+				? 'preview'
+				: 'development';
+	return configuredEnvironment === expectedEnvironment && projectId ? projectId : null;
+}
+
 /** Opaque per-user token used by the UI instead of exposing Mem0's memory identifier. */
 export async function getTutorMemoryPublicId(userId: string, memoryId: string): Promise<string> {
 	const mem0UserId = await getMem0UserId(userId);
@@ -37,7 +53,7 @@ export async function resolveTutorMemoryId(
 function getMemoryClient(): MemoryClient | null {
 	if (memoryClient !== undefined) return memoryClient;
 	const apiKey = env.MEM0_API_KEY?.trim();
-	memoryClient = apiKey ? new MemoryClient({ apiKey }) : null;
+	memoryClient = apiKey && getMem0ProjectScope() ? new MemoryClient({ apiKey }) : null;
 	return memoryClient;
 }
 
@@ -62,12 +78,13 @@ function toTutorMemory(memory: Memory): TutorMemory | null {
 /** A missing or unavailable Mem0 client is intentionally non-fatal for tutoring. */
 export async function searchTutorMemories(userId: string, query: string): Promise<TutorMemory[]> {
 	const client = getMemoryClient();
-	if (!client || !query.trim() || !(await isSuperMemoryEnabled())) return [];
+	const projectScope = getMem0ProjectScope();
+	if (!client || !projectScope || !query.trim() || !(await isSuperMemoryEnabled())) return [];
 	const profile = await getTutorProfileView(userId);
 	if (!profile.memoryEnabled || !profile.memoryDisclosureSeenAt) return [];
 	const mem0UserId = await getMem0UserId(userId);
 	const result = await client.search(query.slice(0, 1_000), {
-		filters: { user_id: mem0UserId },
+		filters: { userId: mem0UserId, appId: projectScope },
 		topK: 5,
 		latestOnly: true
 	});
@@ -81,7 +98,8 @@ export async function addTutorMemoryExchange(
 	exchange: { user: string; assistant: string }
 ): Promise<boolean> {
 	const client = getMemoryClient();
-	if (!client || !(await isSuperMemoryEnabled())) return false;
+	const projectScope = getMem0ProjectScope();
+	if (!client || !projectScope || !(await isSuperMemoryEnabled())) return false;
 	const profile = await getTutorProfileView(userId);
 	if (!profile.memoryEnabled || !profile.memoryDisclosureSeenAt) return false;
 	const mem0UserId = await getMem0UserId(userId);
@@ -93,6 +111,7 @@ export async function addTutorMemoryExchange(
 		{
 			userId: mem0UserId,
 			customInstructions: MEMORY_INSTRUCTIONS,
+			appId: projectScope,
 			metadata: { surface: 'tutor' }
 		}
 	);
@@ -101,10 +120,11 @@ export async function addTutorMemoryExchange(
 
 export async function listTutorMemories(userId: string): Promise<TutorMemory[]> {
 	const client = getMemoryClient();
-	if (!client) return [];
+	const projectScope = getMem0ProjectScope();
+	if (!client || !projectScope) return [];
 	const mem0UserId = await getMem0UserId(userId);
 	const result = await client.getAll({
-		filters: { user_id: mem0UserId },
+		filters: { userId: mem0UserId, appId: projectScope },
 		pageSize: 100,
 		latestOnly: true
 	});
@@ -125,8 +145,9 @@ export async function deleteTutorMemory(userId: string, memoryId: string): Promi
 
 export async function deleteAllTutorMemoriesById(mem0UserId: string): Promise<void> {
 	const client = getMemoryClient();
-	if (!client) throw new Error('Tutor memory is not configured');
-	await client.deleteAll({ userId: mem0UserId });
+	const projectScope = getMem0ProjectScope();
+	if (!client || !projectScope) throw new Error('Tutor memory is not configured');
+	await client.deleteAll({ userId: mem0UserId, appId: projectScope });
 }
 
 export async function deleteAllTutorMemories(userId: string): Promise<void> {

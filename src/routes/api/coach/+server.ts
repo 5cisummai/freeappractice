@@ -21,6 +21,7 @@ import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/fea
 
 const MAX_COACH_MESSAGES = 12;
 const MAX_COACH_REQUEST_BYTES = 32 * 1024;
+const COACH_STREAM_TIMEOUT_MS = 55_000;
 const coachMessagePartSchema = z
 	.object({ type: z.string().min(1).max(100), text: z.string().max(2_000).optional() })
 	.passthrough();
@@ -42,6 +43,23 @@ const coachRequestSchema = z
 	.strict();
 
 class RequestTooLargeError extends Error {}
+
+/** Keep cleanup time inside Vercel's route duration even if a provider stream stalls. */
+export const config = { maxDuration: 60 };
+
+function coachRateLimitedResponse(retryAt: number | null): Response {
+	return json(
+		{ error: 'Too many Coach requests. Please try again shortly.', retryAt },
+		retryAt
+			? {
+					status: 429,
+					headers: {
+						'Retry-After': String(Math.max(1, Math.ceil((retryAt - Date.now()) / 1000)))
+					}
+				}
+			: { status: 429 }
+	);
+}
 
 async function readCoachRequest(request: Request): Promise<unknown> {
 	const declaredLength = Number(request.headers.get('content-length'));
@@ -116,13 +134,8 @@ export const POST: RequestHandler = withAuthedHandler(
 		}
 
 		try {
-			const rate = await limitSuperAi(userId, 'coach');
-			if (!rate.allowed) {
-				return json(
-					{ error: 'Too many Coach requests. Please try again shortly.' },
-					{ status: 429 }
-				);
-			}
+			const rate = await limitSuperAi(userId);
+			if (!rate.allowed) return coachRateLimitedResponse(rate.retryAt);
 			const reservation = await reservePersonalizedTurn(userId);
 			if (!reservation) {
 				return json(
@@ -140,12 +153,15 @@ export const POST: RequestHandler = withAuthedHandler(
 			try {
 				let emittedOutput = false;
 				let cleanedUp = false;
+				const streamTimeout = new AbortController();
+				const streamTimeoutId = setTimeout(() => streamTimeout.abort(), COACH_STREAM_TIMEOUT_MS);
 				const refreshTimer = setInterval(() => {
 					void refreshLock(lock).catch(() => undefined);
 				}, 30_000);
 				cleanup = async () => {
 					if (cleanedUp) return;
 					cleanedUp = true;
+					clearTimeout(streamTimeoutId);
 					clearInterval(refreshTimer);
 					if (!emittedOutput) {
 						await releasePersonalizedTurn(userId, reservation.month).catch((error) =>
@@ -157,7 +173,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				const agent = createCoachAgent({ userId, sessionId: parsed.data.sessionId });
 				const result = await agent.stream({
 					messages,
-					abortSignal: event.request.signal
+					abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal])
 				});
 				const uiStream = result
 					.toUIMessageStream<CoachUIMessage>({

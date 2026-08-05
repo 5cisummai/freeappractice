@@ -36,6 +36,9 @@
 	let annual = $state(false);
 	let memories = $state<Array<{ id: string; text: string; createdAt: string | null }>>([]);
 	let memoryLoading = $state(false);
+	const skipHref = $derived(
+		data.entitlements.plan === 'super' ? resolve('/app/coach') : resolve('/app')
+	);
 
 	onMount(() => {
 		void loadMemories();
@@ -222,6 +225,9 @@
 						New Super checkout is temporarily unavailable. Existing members keep their access.
 					</p>
 				{/if}
+				<div class="border-t border-border/60 pt-4">
+					<Button variant="ghost" href={skipHref}>Skip for now</Button>
+				</div>
 			</Card.Content>
 		</Card.Root>
 
@@ -312,9 +318,7 @@
 				<div class="flex flex-wrap gap-2">
 					<Button variant="outline" onclick={acknowledgeMemory}
 						>{form.disclosureSeen ? 'Disclosure reviewed' : 'I understand'}</Button
-					><Button href={resolve('/app/settings#tutor-memory')} variant="outline"
-						>Review memory</Button
-					>
+					><Button href={resolve('/app/settings#super')} variant="outline">Review memory</Button>
 				</div></Card.Content
 			>
 			{#if memoryLoading}
