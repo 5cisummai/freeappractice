@@ -201,17 +201,35 @@ describe('Super API routes', () => {
 		expect(mocks.confirmAge).toHaveBeenCalledWith('user-1');
 	});
 
-	it('acknowledges memory disclosure and does not expose Mem0 ids', async () => {
+	it('acknowledges memory disclosure without requiring Super subscription', async () => {
+		mocks.getTutorProfileView.mockResolvedValue({
+			...profile,
+			ageConfirmedAt: '2026-08-04T00:00:00.000Z'
+		});
+		mocks.getSuperFeatureAccess.mockResolvedValue({
+			allowed: false,
+			reason: 'subscription'
+		});
+
+		const acknowledged = await memoryPost(event());
+		expect(acknowledged.status).toBe(200);
+		expect(mocks.markMemoryDisclosureSeen).toHaveBeenCalledWith('user-1');
+	});
+
+	it('lists memories without exposing Mem0 ids', async () => {
 		const response = await memoryGet(event());
 		const body = await response.json();
 		expect(body.memories).toEqual([
 			{ id: 'memory-token', text: 'Prefers concise explanations.', createdAt: null }
 		]);
 		expect(JSON.stringify(body)).not.toContain('mem0-secret-id');
+	});
 
-		const acknowledged = await memoryPost(event());
-		expect(acknowledged.status).toBe(200);
-		expect(mocks.markMemoryDisclosureSeen).toHaveBeenCalledWith('user-1');
+	it('rejects memory disclosure before age confirmation', async () => {
+		mocks.getTutorProfileView.mockResolvedValue({ ...profile, ageConfirmedAt: null });
+		const denied = await memoryPost(event());
+		expect(denied.status).toBe(403);
+		expect(mocks.markMemoryDisclosureSeen).not.toHaveBeenCalled();
 	});
 
 	it('deletes all memories or one selected memory', async () => {

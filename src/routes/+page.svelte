@@ -10,9 +10,11 @@
 	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
 	import BottomCtaSection from '$lib/components/marketing/bottom-cta-section.svelte';
 	import FeaturesSection from '$lib/components/marketing/features-section.svelte';
+	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
 	import SiteFooter from '$lib/components/layout/site-footer.svelte';
 	import Topbar from '$lib/components/layout/topbar.svelte';
-
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { IconArrowRight } from '@tabler/icons-svelte';
 	onMount(() => {
 		captureLandingPageViewed();
 		void authClient.getSession().then(({ data }) => {
@@ -181,10 +183,10 @@
 				},
 				{
 					"@type": "Question",
-					"name": "Is this free to use?",
+					"name": "What does Super include?",
 					"acceptedAnswer": {
 						"@type": "Answer",
-						"text": "Yes! This website is completely free to use. There are no subscriptions, no hidden fees, and no limits on how many questions you can generate."
+						"text": "Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription."
 					}
 				},
 				{
@@ -197,10 +199,10 @@
 				},
 				{
 					"@type": "Question",
-					"name": "Do I need to create an account?",
+					"name": "How much does Super cost?",
 					"acceptedAnswer": {
 						"@type": "Answer",
-						"text": "No account creation required! You can start practicing AP questions immediately without any sign-up or registration process."
+						"text": "Super costs $9 per month or $79 per year, plus applicable tax. It renews automatically until canceled, and free AP practice is still available without a subscription."
 					}
 				},
 				{
@@ -289,6 +291,9 @@
 		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-6">
+					<Badge variant="outline" class="p-4"
+						>Your Personalized Learning<IconArrowRight class="h-4 w-4" />
+					</Badge>
 					<h1
 						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
@@ -319,6 +324,8 @@
 			<FeaturesSection />
 
 			<AspiringStudentsSection />
+
+			<PricingSection />
 
 			<section class="mx-auto w-full max-w-3xl space-y-4 {twAnimateInView}">
 				<div class="space-y-1">
@@ -396,25 +403,24 @@
 						</Accordion.Content>
 					</Accordion.Item>
 
-					<Accordion.Item value="is-this-free-to-use">
-						<Accordion.Trigger level={3}>Is this free to use?</Accordion.Trigger>
+					<Accordion.Item value="what-does-super-include">
+						<Accordion.Trigger level={3}>What does Super include?</Accordion.Trigger>
 						<Accordion.Content>
 							<p>
-								Yes! This website is completely free to use. There are no subscriptions, no hidden
-								fees, and no limits on how many questions you can generate.
+								Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights,
+								weekly study plans, and 600 personalized messages per UTC calendar month. Free AP
+								practice remains available without a Super subscription.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
 
-					<Accordion.Item value="why-do-questions-take-long">
-						<Accordion.Trigger level={3}
-							>Why do the questions take a long time to load?</Accordion.Trigger
-						>
+					<Accordion.Item value="how-much-does-super-cost">
+						<Accordion.Trigger level={3}>How much does Super cost?</Accordion.Trigger>
 						<Accordion.Content>
 							<p>
-								Questions normally load directly from our prepared question pool. A unit can take
-								longer when its pool is still being filled; in that case, wait a moment and try
-								again while the background worker prepares more questions.
+								Super costs $9 per month or $79 per year, plus applicable tax. It renews
+								automatically until canceled, and free AP practice is still available without a
+								subscription.
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>

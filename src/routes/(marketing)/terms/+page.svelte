@@ -66,8 +66,8 @@
 			<section>
 				<h2 class="text-xl font-semibold">4. Super Membership</h2>
 				<p>
-					Super is an optional subscription for students aged 13 or older. It is offered at $9.99
-					per month or $79.99 per year, plus applicable tax, and renews automatically until you
+					Super is an optional subscription for students aged 13 or older. It is offered at $9
+					per month or $79 per year, plus applicable tax, and renews automatically until you
 					cancel. We do not offer a free trial, promotional pricing, discounts, or usage overages
 					for Super.
 				</p>

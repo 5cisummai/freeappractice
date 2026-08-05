@@ -20,6 +20,20 @@ async function requireMemoryAccess(userId: string): Promise<Response | null> {
 		: json({ error: superFeatureAccessMessage(access, 'Super tutor memory') }, { status: 403 });
 }
 
+async function requireMemoryDisclosureAccess(userId: string): Promise<Response | null> {
+	if (!(await isSuperMemoryEnabled())) {
+		return json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
+	}
+	const profile = await getTutorProfileView(userId);
+	if (!profile.ageConfirmedAt) {
+		return json(
+			{ error: 'Confirm that you are at least 13 to use Super tutor memory.' },
+			{ status: 403 }
+		);
+	}
+	return null;
+}
+
 async function publicMemory(
 	userId: string,
 	memory: { id: string; text: string; createdAt: string | null }
@@ -51,7 +65,7 @@ export const GET = withAuthedHandler(
 
 export const POST = withAuthedHandler(
 	async (_event, userId) => {
-		const denial = await requireMemoryAccess(userId);
+		const denial = await requireMemoryDisclosureAccess(userId);
 		if (denial) return denial;
 		await markMemoryDisclosureSeen(userId);
 		const profile = await getTutorProfileView(userId);
