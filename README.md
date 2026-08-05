@@ -117,9 +117,9 @@ Commonly needed for full functionality:
 ### Super launch configuration
 
 Super is disabled until Stripe credentials and both price IDs are present. Configure `STRIPE_SECRET_KEY`,
-`STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`, `MEM0_API_KEY`,
-`KV_REST_API_URL`, `KV_REST_API_TOKEN`, and `REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super
-Flags.
+`STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`,
+`UPSTASH_VECTOR_REST_URL`, `UPSTASH_VECTOR_REST_TOKEN`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
+`REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags.
 
 Create the Better Auth indexes before first production use:
 
@@ -132,13 +132,15 @@ the current period, and switching between the two Super prices at the next renew
 to Better Auth's `/api/auth/stripe/webhook` route. The app enables Stripe automatic tax and does not enable
 promotion codes.
 
-Configure Mem0 with a separate Platform project/API key for Development, Preview, and Production. Mem0
-3.x selects the Platform project from that key, so set `MEM0_ENVIRONMENT` to the matching deployment
-environment and `MEM0_PROJECT_ID` to that project identifier as a defense-in-depth app scope.
+Tutor memory uses the Mem0 OSS SDK with OpenAI extraction/embeddings and an Upstash Vector index. The app
+keeps Development, Preview, and Production memories isolated inside the shared index with deployment-scoped
+namespaces and metadata. Connect the Upstash Vector integration to all three Vercel environments and pull the variables locally
+with `vercel env pull .env.development.local --environment=development` when setting up a new machine.
 
-Upstash is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
-single-flight locks, idempotency keys, and 30-minute Coach approvals. MongoDB, Stripe, S3, and Mem0 remain
-the durable stores; question-selection and grading logic do not use Redis. For local Redis testing, run an
+Upstash Redis is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
+single-flight locks, idempotency keys, and 30-minute Coach approvals. Upstash Vector stores optional tutor
+memories; MongoDB, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
+use Redis. For local Redis testing, run an
 Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
 `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.
 
