@@ -1,6 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { deleteTutorMemory, isTutorMemoryConfigured } from '$lib/mem0/service.server';
+import {
+	deleteTutorMemory,
+	isTutorMemoryConfigured,
+	resolveTutorMemoryId
+} from '$lib/mem0/service.server';
 
 export const DELETE = withAuthedHandler(
 	async (event, userId) => {
@@ -13,7 +17,9 @@ export const DELETE = withAuthedHandler(
 		}
 
 		try {
-			await deleteTutorMemory(userId, memoryId);
+			const resolvedMemoryId = await resolveTutorMemoryId(userId, memoryId);
+			if (!resolvedMemoryId) return json({ error: 'Tutor memory was not found' }, { status: 404 });
+			await deleteTutorMemory(userId, resolvedMemoryId);
 		} catch (error) {
 			if (error instanceof Error && error.message === 'Tutor memory was not found') {
 				return json({ error: 'Tutor memory was not found' }, { status: 404 });

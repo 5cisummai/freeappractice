@@ -1,0 +1,214 @@
+import { json } from '@sveltejs/kit';
+import { consumeStream, createUIMessageStreamResponse } from 'ai';
+import { z } from 'zod';
+import type { RequestHandler } from './$types';
+import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { isSuperCoachEnabled } from '$lib/flags';
+import { logger } from '$lib/server/logger';
+import {
+	acquireCoachLock,
+	getPersonalizedUsageWarning,
+	limitSuperAi,
+	RedisRequiredError,
+	releaseLock,
+	releasePersonalizedTurn,
+	refreshLock,
+	reservePersonalizedTurn,
+	rollupPersonalizedUsage
+} from '$lib/super/ai-controls.server';
+import { createCoachAgent, type CoachUIMessage } from '$lib/super/coach.server';
+import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
+
+const MAX_COACH_MESSAGES = 12;
+const MAX_COACH_REQUEST_BYTES = 32 * 1024;
+const coachMessagePartSchema = z
+	.object({ type: z.string().min(1).max(100), text: z.string().max(2_000).optional() })
+	.passthrough();
+const coachRequestSchema = z
+	.object({
+		sessionId: z.string().uuid(),
+		messages: z
+			.array(
+				z
+					.object({
+						role: z.enum(['user', 'assistant']),
+						parts: z.array(coachMessagePartSchema).max(24)
+					})
+					.passthrough()
+			)
+			.min(1)
+			.max(MAX_COACH_MESSAGES * 2)
+	})
+	.strict();
+
+class RequestTooLargeError extends Error {}
+
+async function readCoachRequest(request: Request): Promise<unknown> {
+	const declaredLength = Number(request.headers.get('content-length'));
+	if (Number.isFinite(declaredLength) && declaredLength > MAX_COACH_REQUEST_BYTES) {
+		throw new RequestTooLargeError();
+	}
+	if (!request.body) return null;
+
+	const reader = request.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let receivedBytes = 0;
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		receivedBytes += value.byteLength;
+		if (receivedBytes > MAX_COACH_REQUEST_BYTES) {
+			await reader.cancel();
+			throw new RequestTooLargeError();
+		}
+		chunks.push(value);
+	}
+
+	const bytes = new Uint8Array(receivedBytes);
+	let offset = 0;
+	for (const chunk of chunks) {
+		bytes.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function toCoachModelMessages(messages: z.infer<typeof coachRequestSchema>['messages']) {
+	return messages.slice(-MAX_COACH_MESSAGES).flatMap((message) => {
+		const content = message.parts
+			.filter((part) => part.type === 'text' && typeof part.text === 'string')
+			.map((part) => part.text!.trim())
+			.filter(Boolean)
+			.join('\n')
+			.slice(0, 2_000);
+		return content ? [{ role: message.role, content } as const] : [];
+	});
+}
+
+export const POST: RequestHandler = withAuthedHandler(
+	async (event, userId) => {
+		if (!(await isSuperCoachEnabled())) {
+			return json({ error: 'Coach is temporarily unavailable.' }, { status: 503 });
+		}
+		const access = await getSuperFeatureAccess(userId, 'coach');
+		if (!access.allowed)
+			return json({ error: superFeatureAccessMessage(access, 'Coach') }, { status: 403 });
+
+		let body: unknown;
+		try {
+			body = await readCoachRequest(event.request);
+		} catch (error) {
+			return json(
+				{
+					error:
+						error instanceof RequestTooLargeError
+							? 'Coach request is too large'
+							: 'Invalid Coach request'
+				},
+				{ status: error instanceof RequestTooLargeError ? 413 : 400 }
+			);
+		}
+		const parsed = coachRequestSchema.safeParse(body);
+		if (!parsed.success) return json({ error: 'Invalid Coach request' }, { status: 400 });
+		const messages = toCoachModelMessages(parsed.data.messages);
+		if (!messages.length || messages.at(-1)?.role !== 'user') {
+			return json({ error: 'Coach needs a student message.' }, { status: 400 });
+		}
+
+		try {
+			const rate = await limitSuperAi(userId, 'coach');
+			if (!rate.allowed) {
+				return json(
+					{ error: 'Too many Coach requests. Please try again shortly.' },
+					{ status: 429 }
+				);
+			}
+			const reservation = await reservePersonalizedTurn(userId);
+			if (!reservation) {
+				return json(
+					{ error: 'Your 600 personalized messages for this month have been used.' },
+					{ status: 429 }
+				);
+			}
+			const lock = await acquireCoachLock(userId);
+			if (!lock) {
+				await releasePersonalizedTurn(userId, reservation.month).catch(() => undefined);
+				return json({ error: 'Another Coach request is still running.' }, { status: 409 });
+			}
+
+			let cleanup: (() => Promise<void>) | undefined;
+			try {
+				let emittedOutput = false;
+				let cleanedUp = false;
+				const refreshTimer = setInterval(() => {
+					void refreshLock(lock).catch(() => undefined);
+				}, 30_000);
+				cleanup = async () => {
+					if (cleanedUp) return;
+					cleanedUp = true;
+					clearInterval(refreshTimer);
+					if (!emittedOutput) {
+						await releasePersonalizedTurn(userId, reservation.month).catch((error) =>
+							logger.warn('Failed to release unused Coach reservation', { error })
+						);
+					}
+					await releaseLock(lock);
+				};
+				const agent = createCoachAgent({ userId, sessionId: parsed.data.sessionId });
+				const result = await agent.stream({
+					messages,
+					abortSignal: event.request.signal
+				});
+				const uiStream = result
+					.toUIMessageStream<CoachUIMessage>({
+						originalMessages: parsed.data.messages as unknown as CoachUIMessage[],
+						onFinish: cleanup,
+						onError: (error) => {
+							logger.error('Coach stream error', { error });
+							return 'The Coach could not complete that request. Please try again.';
+						}
+					})
+					.pipeThrough(
+						new TransformStream({
+							transform(chunk, controller) {
+								if (chunk.type === 'text-delta' && chunk.delta.trim() && !emittedOutput) {
+									emittedOutput = true;
+									void rollupPersonalizedUsage(userId, reservation).catch((error) =>
+										logger.warn('Failed to roll up Coach usage', { error })
+									);
+								}
+								controller.enqueue(chunk);
+							}
+						})
+					);
+				return createUIMessageStreamResponse({
+					stream: uiStream,
+					consumeSseStream: consumeStream,
+					headers: {
+						'Cache-Control': 'no-cache',
+						'X-Super-Usage-Remaining': String(reservation.remaining),
+						...(getPersonalizedUsageWarning(reservation)
+							? { 'X-Super-Usage-Warning': String(getPersonalizedUsageWarning(reservation)) }
+							: {})
+					}
+				});
+			} catch (error) {
+				if (cleanup) await cleanup();
+				else {
+					await releasePersonalizedTurn(userId, reservation.month).catch(() => undefined);
+					await releaseLock(lock);
+				}
+				throw error;
+			}
+		} catch (error) {
+			if (error instanceof RedisRequiredError) {
+				return json(
+					{ error: 'Coach is temporarily unavailable. Please try again.' },
+					{ status: 503 }
+				);
+			}
+			throw error;
+		}
+	},
+	{ logLabel: 'Coach request error', errorMessage: 'Failed to start Coach' }
+);

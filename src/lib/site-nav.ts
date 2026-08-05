@@ -7,6 +7,7 @@ type SiteNavItem = {
 		| '/stats'
 		| '/about'
 		| '/changelog'
+		| '/pricing'
 		| '/privacy'
 		| '/terms'
 		| '/login'
@@ -23,6 +24,7 @@ type SiteNavGroup = {
 export const topbarNavItems: SiteNavItem[] = [
 	{ href: '/subjects', label: 'Subjects' },
 	{ href: '/blog', label: 'Blog' },
+	{ href: '/pricing', label: 'Super' },
 	{ href: '/about', label: 'About' },
 	{ href: '/stats', label: 'Stats' }
 ];

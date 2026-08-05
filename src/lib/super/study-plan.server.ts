@@ -1,6 +1,7 @@
 import { connectDb } from '$lib/server/db';
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { StudyPlan } from '$lib/super/models.server';
+import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	getCurrentEligibleInsightReport,
 	type InsightClaim,
@@ -114,6 +115,7 @@ export function hasStudyPlanAccess(entitlements: Pick<Entitlements, 'studyPlans'
 async function requireStudyPlanAccess(userId: string, now = new Date()): Promise<void> {
 	const entitlements = await getEntitlements(userId, now);
 	if (!hasStudyPlanAccess(entitlements)) throw new StudyPlansLockedError();
+	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new StudyPlansLockedError();
 }
 
 function isoDate(value: Date | string | undefined): string {
@@ -264,8 +266,6 @@ export async function getCurrentStudyPlan(
 	return plan ? toStudyPlanView(plan) : null;
 }
 
-export const getActiveStudyPlan = getCurrentStudyPlan;
-
 /** Build and save a one-week plan from the latest still-eligible report. */
 export async function generateStudyPlan(
 	userId: string,
@@ -278,23 +278,10 @@ export async function generateStudyPlan(
 	return saveStudyPlan(userId, draft, { behavior: options.behavior ?? 'replace' });
 }
 
-export async function generateStudyPlanDraft(
-	userId: string,
-	options: { startsOn?: Date | string; taskMinutes?: number } = {}
-): Promise<StudyPlanDraft | null> {
+export async function deleteStudyPlan(userId: string): Promise<void> {
 	await requireStudyPlanAccess(userId);
-	const report = await getCurrentEligibleInsightReport(userId);
-	return report ? buildStudyPlanDraft(report.report, options) : null;
-}
-
-export async function saveStudyPlanDraft(
-	userId: string,
-	draft: StudyPlanDraft,
-	options: { mode?: 'replace' | 'merge'; behavior?: 'replace' | 'merge' } = {}
-): Promise<StudyPlanView> {
-	return saveStudyPlan(userId, draft, {
-		behavior: options.mode ?? options.behavior ?? 'replace'
-	});
+	await connectDb();
+	await StudyPlan.deleteOne({ userId }).exec();
 }
 
 async function updateTask(

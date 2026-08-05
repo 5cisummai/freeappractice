@@ -10,6 +10,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - Authenticated app at `/app` for dashboard, practice, progress, question history, resources, and settings.
 - SEO practice landing pages under `/practice/[...slug]` (class and unit pages with internal linking).
 - AI-generated MCQs with an in-app tutor, bookmarks, and attempt history.
+- Optional Super membership with personalized MCQ/FRQ tutoring, Coach, evidence-based Insights, and a weekly study plan.
 - Public generation stats at `/stats` (backed by `/api/question/generation-stats`).
 - Better Auth for email/password and Google sign-in (including Google One Tap when configured).
 - SvelteKit API routes for questions, signed-in user data, tutoring, and bug reports.
@@ -25,6 +26,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - [Vercel AI SDK](https://sdk.vercel.ai/) with an OpenAI-compatible API for question generation and tutor responses (OpenAI or [LM Studio](https://lmstudio.ai/) locally)
 - Resend for transactional email
 - AWS S3 for private question storage
+- Stripe + Better Auth Stripe plugin for Super subscriptions, Mem0 for optional tutor memory, and Upstash Redis for short-lived AI controls
 - Vercel for deployment (`@sveltejs/adapter-vercel`)
 
 ## Getting started
@@ -115,6 +117,30 @@ Commonly needed for full functionality:
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                          |
 | `CRON_SECRET`                                                                  | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs |
 | `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                                                                          |
+
+### Super launch configuration
+
+Super is disabled until Stripe credentials and both price IDs are present. Configure `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`, `MEM0_API_KEY`,
+`KV_REST_API_URL`, `KV_REST_API_TOKEN`, `REDIS_IDENTIFIER_SECRET`, `COACH_MODEL`, and `INSIGHTS_MODEL` in
+Vercel before enabling the Super Flags. `COACH_MODEL` and `INSIGHTS_MODEL` must be explicit in production.
+
+Create the Better Auth indexes before first production use:
+
+```sh
+bun scripts/create-better-auth-indexes.ts
+```
+
+In Stripe, configure the Customer Portal to allow cancellation at period end, restoration before the end of
+the current period, and switching between the two Super prices at the next renewal. Point the Stripe webhook
+to Better Auth's `/api/auth/stripe/webhook` route. The app enables Stripe automatic tax and does not enable
+promotion codes.
+
+Upstash is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
+single-flight locks, idempotency keys, and 30-minute Coach approvals. MongoDB, Stripe, S3, and Mem0 remain
+the durable stores; question-selection and grading logic do not use Redis. For local Redis testing, run an
+Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
+`KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.
 
 Pool fill targets, leases, and daily LLM budget are coded in `src/lib/questions/pool-constants.ts` (not env). See `docs/question-pool-runbook.md`.
 

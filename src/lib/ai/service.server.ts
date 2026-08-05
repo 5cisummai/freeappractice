@@ -8,6 +8,14 @@ import { logger } from '$lib/server/logger';
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 export const GENERATION_MODEL = env.GENERATION_MODEL ?? 'gpt-5.6-luna';
 export const TUTOR_MODEL = env.TUTOR_MODEL ?? 'gpt-5.4-mini';
+export const COACH_MODEL = env.COACH_MODEL ?? TUTOR_MODEL;
+export const INSIGHTS_MODEL = env.INSIGHTS_MODEL ?? GENERATION_MODEL;
+
+export function requireExplicitSuperModel(name: 'COACH_MODEL' | 'INSIGHTS_MODEL'): void {
+	if (env.NODE_ENV === 'production' && !env[name]?.trim()) {
+		throw new Error(`${name} must be explicitly configured in production`);
+	}
+}
 
 let provider: ReturnType<typeof createOpenAI> | null = null;
 

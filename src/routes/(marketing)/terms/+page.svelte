@@ -31,7 +31,7 @@
 		<PublicPageHero
 			title="Terms of Service"
 			description="The rules and guidelines for using Free AP Practice."
-			meta="Last Updated: June 25, 2026"
+			meta="Last Updated: August 4, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -64,7 +64,23 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">4. User Content and Rights</h2>
+				<h2 class="text-xl font-semibold">4. Super Membership</h2>
+				<p>
+					Super is an optional subscription for students aged 13 or older. It is offered at $9.99
+					per month or $79.99 per year, plus applicable tax, and renews automatically until you
+					cancel. We do not offer a free trial, promotional pricing, discounts, or usage overages
+					for Super.
+				</p>
+				<p class="mt-2">
+					You can cancel or restore a cancellation before the current billing period ends in the
+					billing portal. A cancellation takes effect at the end of the paid period. Any permitted
+					billing-interval change takes effect at the next renewal. Payments, taxes, receipts, and
+					the billing portal are provided by Stripe.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-xl font-semibold">5. User Content and Rights</h2>
 				<p>
 					Content you submit, including profile information, answers, bookmarks, feedback, bug
 					reports, and account-related requests, remains yours. By submitting content, you grant us
@@ -75,18 +91,19 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">5. AI-Generated Content</h2>
+				<h2 class="text-xl font-semibold">6. AI-Generated Content</h2>
 				<p>
 					The Service uses OpenAI to generate practice questions, explanations, and tutoring
 					content. AI-generated content can be incomplete, incorrect, or misleading. You should use
 					your own judgment and, when appropriate, verify answers against trusted sources. The
 					Service is provided for study support only and does not guarantee exam results or academic
-					outcomes.
+					outcomes. Super Insights summarize recorded study evidence; they do not predict AP exam
+					scores or guarantee academic outcomes.
 				</p>
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">6. Acceptable Use</h2>
+				<h2 class="text-xl font-semibold">7. Acceptable Use</h2>
 				<p>
 					You agree not to misuse the Service. Prohibited activities include harassment, illegal
 					activity, distributing malware, attempting unauthorized access, scraping data at scale,
@@ -96,18 +113,20 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">7. Third-Party Services</h2>
+				<h2 class="text-xl font-semibold">8. Third-Party Services</h2>
 				<p>
 					The Service depends on third-party providers, including OpenAI for question generation,
 					Google for sign-in, MongoDB for database storage, AWS S3 for file storage, Resend for
 					transactional emails, PostHog for optional product analytics when you opt in, Vercel for
-					hosting, deployment, and cookieless analytics, and GitHub for bug-report handling. Those
-					providers may process data according to their own terms and privacy policies.
+					hosting, deployment, and cookieless analytics, Stripe for payments and taxes, Mem0 for
+					optional tutor memory, Upstash for short-lived service controls, and GitHub for bug-report
+					handling. Those providers may process data according to their own terms and privacy
+					policies.
 				</p>
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">8. Disclaimers and Limitations</h2>
+				<h2 class="text-xl font-semibold">9. Disclaimers and Limitations</h2>
 				<p>
 					The Service and all content are provided "as is" and "as available" without warranties of
 					any kind, express or implied. To the maximum extent permitted by law, we disclaim
@@ -117,7 +136,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">9. Termination</h2>
+				<h2 class="text-xl font-semibold">10. Termination</h2>
 				<p>
 					We may suspend or terminate access to the Service at any time for violations of these
 					Terms, security concerns, or operational reasons. You may delete your account through the
@@ -128,7 +147,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">10. Governing Law and Disputes</h2>
+				<h2 class="text-xl font-semibold">11. Governing Law and Disputes</h2>
 				<p>
 					These Terms are governed by the laws applicable in the United States, without regard to
 					conflict-of-law principles. Any dispute will be handled in a lawful forum with competent
@@ -137,7 +156,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">11. Changes to Terms</h2>
+				<h2 class="text-xl font-semibold">12. Changes to Terms</h2>
 				<p>
 					We may update these Terms from time to time. The updated version will be posted on this
 					page with a revised "Last Updated" date. Continued use of the Service after changes take
@@ -146,7 +165,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">12. Contact Information</h2>
+				<h2 class="text-xl font-semibold">13. Contact Information</h2>
 				<p>
 					If you have questions about these Terms, contact us at:<br />
 					Operator: <strong>Ajay Saravanan</strong><br />

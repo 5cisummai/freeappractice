@@ -11,6 +11,8 @@ function attempts(
 		apClass: options.apClass ?? 'AP Biology',
 		unit: options.unit ?? 'Unit 1',
 		scorePercentage: options.scorePercentage ?? 80,
+		rubricPointsEarned: options.rubricPointsEarned,
+		rubricPointsAvailable: options.rubricPointsAvailable,
 		attemptedAt:
 			options.attemptedAt ?? `2026-07-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`
 	}));
@@ -68,6 +70,73 @@ describe('buildInsightReportData', () => {
 			weightedAveragePercentage: 85,
 			weighting: '70% recent / 30% lifetime'
 		});
+		expect(metric?.trend).toMatchObject({
+			direction: 'improving',
+			recentCount: 5,
+			priorCount: 5,
+			deltaPercentagePoints: 100
+		});
+	});
+
+	it('computes a deterministic recent-versus-prior trend without predicting an AP score', () => {
+		const report = buildInsightReportData(
+			[
+				...attempts(5, {
+					scorePercentage: 90,
+					attemptedAt: '2026-07-20T00:00:00.000Z'
+				}),
+				...attempts(5, {
+					scorePercentage: 60,
+					attemptedAt: '2026-06-20T00:00:00.000Z'
+				})
+			],
+			{ now: new Date('2026-07-31T00:00:00.000Z') }
+		);
+		const metric = report.courses[0]?.units[0]?.metrics.mcq;
+
+		expect(metric?.trend).toEqual({
+			direction: 'improving',
+			deltaPercentagePoints: 30,
+			recentCount: 5,
+			priorCount: 5,
+			recentAveragePercentage: 90,
+			priorAveragePercentage: 60
+		});
+		expect(JSON.stringify(report)).not.toContain('prediction');
+	});
+
+	it('keeps FRQ rubric points separate from MCQ accuracy and aggregates points by window', () => {
+		const report = buildInsightReportData(
+			[
+				...attempts(5, {
+					source: 'frq',
+					scorePercentage: 75,
+					rubricPointsEarned: 3,
+					rubricPointsAvailable: 4,
+					attemptedAt: '2026-07-20T00:00:00.000Z'
+				}),
+				...attempts(5, {
+					source: 'frq',
+					scorePercentage: 50,
+					rubricPointsEarned: 2,
+					rubricPointsAvailable: 4,
+					attemptedAt: '2026-06-20T00:00:00.000Z'
+				}),
+				...attempts(5, { source: 'mcq', scorePercentage: 100 })
+			],
+			{ now: new Date('2026-07-31T00:00:00.000Z') }
+		);
+		const course = report.courses[0];
+		const frqMetric = course?.units[0]?.metrics.frq;
+		const mcqMetric = course?.units[0]?.metrics.mcq;
+
+		expect(frqMetric?.rubricPointPerformance).toEqual({
+			lifetime: { count: 10, pointsEarned: 25, pointsAvailable: 40, percentage: 62.5 },
+			last30Days: { count: 5, pointsEarned: 15, pointsAvailable: 20, percentage: 75 }
+		});
+		expect(mcqMetric?.rubricPointPerformance).toBeUndefined();
+		expect(frqMetric?.lifetimeAveragePercentage).toBe(62.5);
+		expect(mcqMetric?.lifetimeAveragePercentage).toBe(100);
 	});
 
 	it('excludes future attempts from lifetime counts', () => {

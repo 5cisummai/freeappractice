@@ -23,13 +23,21 @@
 
 	let { data, form } = $props();
 
-	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'advanced' | 'about';
+	type SettingsSection =
+		| 'practice'
+		| 'appearance'
+		| 'privacy'
+		| 'super'
+		| 'account'
+		| 'advanced'
+		| 'about';
 	type Theme = 'light' | 'dark' | 'system';
 
 	const SECTIONS: { id: SettingsSection; label: string }[] = [
 		{ id: 'practice', label: 'Practice' },
 		{ id: 'appearance', label: 'Appearance' },
 		{ id: 'privacy', label: 'Privacy' },
+		{ id: 'super', label: 'Super' },
 		{ id: 'account', label: 'Account' },
 		{ id: 'advanced', label: 'Advanced' },
 		{ id: 'about', label: 'About' }
@@ -60,6 +68,7 @@
 
 	function sectionFromHash(hash: string): SettingsSection {
 		if (hash === 'danger') return 'account';
+		if (hash === 'tutor-memory') return 'super';
 		if (SECTIONS.some((section) => section.id === hash)) {
 			return hash as SettingsSection;
 		}
@@ -309,6 +318,26 @@
 				</div>
 			</Tabs.Content>
 
+			<Tabs.Content value="super" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Tutor memory and billing</p>
+							<p class="text-sm text-muted-foreground">
+								Review or delete saved learning facts, pause memory, update tutor preferences, and
+								manage Super.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							href={`${resolve('/app/super/setup')}#tutor-memory`}>Manage</Button
+						>
+					</div>
+				</div>
+			</Tabs.Content>
+
 			<Tabs.Content value="advanced" class="flex flex-col gap-3">
 				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
@@ -395,7 +424,7 @@
 							<p class="text-sm font-medium text-foreground">App version</p>
 							<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
 						</div>
-						<p class="text-sm font-medium text-foreground tabular-nums">1.5.3</p>
+						<p class="text-sm font-medium text-foreground tabular-nums">1.5.5</p>
 					</div>
 					<div
 						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"

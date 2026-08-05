@@ -412,7 +412,6 @@
 
 		{#key question.questionId}
 			<TutorWidget
-				question={question.prompt}
 				apClass={question.apClass}
 				unit={question.unit}
 				questionId={question.questionId}

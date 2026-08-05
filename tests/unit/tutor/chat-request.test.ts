@@ -6,17 +6,7 @@ import {
 } from '$lib/tutor/chat-request';
 
 const validRequest = {
-	question: 'What process produces ATP?',
-	answer: 'Cellular respiration',
-	explanation: 'Cells convert energy.',
-	apClass: 'AP Biology',
-	unit: 'Unit 3',
-	answerChoices: {
-		A: 'Photosynthesis',
-		B: 'Cellular respiration',
-		C: 'Fermentation',
-		D: 'Diffusion'
-	},
+	questionId: 'c8f3048f-1681-47f2-b1db-e912655275d0',
 	conversationHistory: [{ role: 'user' as const, content: 'Give me a hint.' }],
 	message: 'Explain further.'
 };
@@ -30,11 +20,9 @@ describe('tutorChatRequestSchema', () => {
 
 	it('defaults optional fields', () => {
 		const parsed = tutorChatRequestSchema.parse({
-			question: 'Q?',
+			questionId: validRequest.questionId,
 			message: 'Help'
 		});
-		expect(parsed.answer).toBe('');
-		expect(parsed.answerChoices).toBeNull();
 		expect(parsed.conversationHistory).toEqual([]);
 	});
 
@@ -55,7 +43,9 @@ describe('tutorChatRequestSchema', () => {
 	it('rejects payloads whose prompt characters exceed the limit', () => {
 		const oversized = {
 			...validRequest,
-			question: 'q'.repeat(MAX_TUTOR_CHAT_PROMPT_CHARACTERS),
+			conversationHistory: [
+				{ role: 'user' as const, content: 'q'.repeat(MAX_TUTOR_CHAT_PROMPT_CHARACTERS) }
+			],
 			message: 'm'
 		};
 		expect(() => tutorChatRequestSchema.parse(oversized)).toThrow(/too large/i);

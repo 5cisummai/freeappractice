@@ -31,7 +31,7 @@
 		<PublicPageHero
 			title="Privacy Policy"
 			description="How we collect, use, and protect your information when you use Free AP Practice."
-			meta="Last Updated: June 25, 2026"
+			meta="Last Updated: August 4, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -111,7 +111,24 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">5. Cookies and Local Storage</h2>
+				<h2 class="text-xl font-semibold">5. Super AI and Tutor Memory</h2>
+				<p>
+					Super’s personalized tutor, Coach, Insights, and study plans use your selected AP classes,
+					target dates, study availability, teaching-style preference, and scored practice patterns.
+					We do not use this feature to predict AP exam scores.
+				</p>
+				<p class="mt-2">
+					Tutor memory is optional and is limited to learning preferences, stable study constraints,
+					and recurring course misconceptions. It is not a transcript store. We use a pseudonymous
+					identifier rather than your account ID for this memory. You can pause memory reads and
+					writes, inspect saved facts, delete individual facts, or delete all facts in Super setup.
+					After Super access ends, tutor memory is retained for up to 90 days before scheduled
+					deletion, unless you delete it sooner or delete your account.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-xl font-semibold">6. Cookies and Local Storage</h2>
 				<p>
 					We use HTTP-only session cookies to keep you signed in, along with local browser storage
 					for theme preferences, optional analytics choice, and in-progress practice state. We also
@@ -127,7 +144,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">6. Optional Analytics</h2>
+				<h2 class="text-xl font-semibold">7. Optional Analytics</h2>
 				<p>
 					PostHog product analytics are off by default. A consent banner asks before detailed
 					PostHog tracking begins. We also use:
@@ -153,7 +170,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">7. Third-Party Services</h2>
+				<h2 class="text-xl font-semibold">8. Third-Party Services</h2>
 				<ul class="list-disc space-y-1 pl-6">
 					<li>
 						<strong>OpenAI:</strong> prompts and generated question content are processed by OpenAI's
@@ -180,6 +197,13 @@
 					<li>
 						<strong>Vercel:</strong> website hosting, deployment infrastructure, and cookieless analytics
 					</li>
+					<li>
+						<strong>Stripe:</strong> payment processing, tax calculation, and subscription management
+					</li>
+					<li><strong>Mem0:</strong> optional pseudonymous tutor-memory storage</li>
+					<li>
+						<strong>Upstash:</strong> short-lived rate-limit, usage, approval, and request-control data
+					</li>
 				</ul>
 				<p class="mt-2">
 					Each third party has its own terms and privacy practices. We do not sell your personal
@@ -188,7 +212,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">8. Your Rights</h2>
+				<h2 class="text-xl font-semibold">9. Your Rights</h2>
 				<p>
 					Depending on your location, you may have rights to access, correct, export, or delete your
 					personal data. You can delete your account through the Service or contact us for help. We
@@ -199,7 +223,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">9. Children's Privacy</h2>
+				<h2 class="text-xl font-semibold">10. Children's Privacy</h2>
 				<p>
 					The Service is intended for students, but it is not directed to children under 13. We do
 					not knowingly collect personal information from children under 13. If you believe a child
@@ -209,7 +233,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">10. International Transfers</h2>
+				<h2 class="text-xl font-semibold">11. International Transfers</h2>
 				<p>
 					Your information may be processed in the United States or other countries where we or our
 					service providers operate. Where required, we take steps intended to protect the
@@ -218,7 +242,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">11. Changes to This Privacy Policy</h2>
+				<h2 class="text-xl font-semibold">12. Changes to This Privacy Policy</h2>
 				<p>
 					We may update this Privacy Policy from time to time. Changes will be posted on this page
 					with a revised "Last Updated" date. Continued use of the Service after changes take effect
@@ -227,7 +251,7 @@
 			</section>
 
 			<section>
-				<h2 class="text-xl font-semibold">12. Contact Us</h2>
+				<h2 class="text-xl font-semibold">13. Contact Us</h2>
 				<p>
 					For questions about this policy or to exercise your privacy rights, contact us at:<br />
 					Operator: <strong>Ajay Saravanan</strong><br />

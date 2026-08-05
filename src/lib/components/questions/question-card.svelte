@@ -512,12 +512,8 @@
 	{#if session.currentQuestion}
 		{#key session.currentQuestion.questionId ?? session.currentQuestion.prompt}
 			<TutorWidget
-				question={session.currentQuestion.prompt}
-				answer={session.currentQuestion.correctAnswer ?? ''}
-				explanation={session.currentQuestion.explanation ?? ''}
 				apClass={selectedClass}
 				unit={tutorUnitLabel}
-				answerChoices={tutorAnswerChoices}
 				questionId={session.currentQuestion.questionId}
 				topic={session.currentQuestion.topic}
 			/>

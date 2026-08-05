@@ -1,17 +1,22 @@
 import { json } from '@sveltejs/kit';
-import { z } from 'zod';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import {
 	deleteAllTutorMemories,
+	getTutorMemoryPublicId,
 	isTutorMemoryConfigured,
 	listTutorMemories
 } from '$lib/mem0/service.server';
 import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/super/profile.server';
 
-const disclosureSchema = z.object({ acknowledged: z.literal(true) }).strict();
-
-function publicMemory(memory: { text: string; createdAt: string | null }) {
-	return { text: memory.text, createdAt: memory.createdAt };
+async function publicMemory(
+	userId: string,
+	memory: { id: string; text: string; createdAt: string | null }
+) {
+	return {
+		id: await getTutorMemoryPublicId(userId, memory.id),
+		text: memory.text,
+		createdAt: memory.createdAt
+	};
 }
 
 export const GET = withAuthedHandler(
@@ -19,7 +24,7 @@ export const GET = withAuthedHandler(
 		const profile = await getTutorProfileView(userId);
 		const memories = await listTutorMemories(userId);
 		return json({
-			memories: memories.map(publicMemory),
+			memories: await Promise.all(memories.map((memory) => publicMemory(userId, memory))),
 			memory: {
 				enabled: profile.memoryEnabled,
 				configured: isTutorMemoryConfigured(),
@@ -31,22 +36,7 @@ export const GET = withAuthedHandler(
 );
 
 export const POST = withAuthedHandler(
-	async (event, userId) => {
-		let body: unknown;
-		try {
-			body = await event.request.json();
-		} catch {
-			return json(
-				{ error: 'Memory disclosure acknowledgement must be valid JSON' },
-				{ status: 400 }
-			);
-		}
-
-		const parsed = disclosureSchema.safeParse(body);
-		if (!parsed.success) {
-			return json({ error: 'You must acknowledge the tutor memory disclosure.' }, { status: 400 });
-		}
-
+	async (_event, userId) => {
 		await markMemoryDisclosureSeen(userId);
 		const profile = await getTutorProfileView(userId);
 		return json({

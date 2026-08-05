@@ -15,7 +15,16 @@ import {
 } from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
 import { createHandle } from 'flags/sveltekit';
-import { frqPracticeEnabled, multiAttemptExperimentEnabled } from '$lib/flags';
+import { getTutorProfileView } from '$lib/super/profile.server';
+import {
+	frqPracticeEnabled,
+	isSuperCheckoutEnabled,
+	multiAttemptExperimentEnabled,
+	superCheckoutEnabled,
+	superCoachEnabled,
+	superInsightsEnabled,
+	superMemoryEnabled
+} from '$lib/flags';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -178,6 +187,58 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
+	if (event.request.method === 'POST' && event.url.pathname === '/api/auth/subscription/upgrade') {
+		if (!(await isSuperCheckoutEnabled())) {
+			return new Response(
+				JSON.stringify({ error: 'New Super checkout is temporarily unavailable.' }),
+				{
+					status: 503,
+					headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+				}
+			);
+		}
+		if (!event.locals.userId) {
+			return new Response(JSON.stringify({ error: 'Authentication required' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+			});
+		}
+		if (!(await getTutorProfileView(event.locals.userId)).ageConfirmedAt) {
+			return new Response(
+				JSON.stringify({ error: 'Confirm that you are at least 13 before choosing Super.' }),
+				{
+					status: 403,
+					headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+				}
+			);
+		}
+	}
+
+	const ageGateExempt =
+		event.url.pathname.startsWith('/api/auth/') ||
+		event.url.pathname === '/api/super/confirm-age' ||
+		event.url.pathname.startsWith('/app/confirm-age');
+	if (event.locals.userId && !ageGateExempt) {
+		const profile = await getTutorProfileView(event.locals.userId);
+		if (!profile.ageConfirmedAt) {
+			if (event.url.pathname.startsWith('/api/')) {
+				return new Response(
+					JSON.stringify({ error: 'Confirm that you are at least 13 before using your account.' }),
+					{
+						status: 403,
+						headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+					}
+				);
+			}
+			if (event.url.pathname.startsWith('/app')) {
+				return new Response(null, {
+					status: 303,
+					headers: { Location: '/app/confirm-age', 'Cache-Control': 'no-store' }
+				});
+			}
+		}
+	}
+
 	const requestStart = Date.now();
 
 	const resolved = await resolve(event);
@@ -204,7 +265,14 @@ export const handle = sequence(
 		? [
 				createHandle({
 					secret: env.FLAGS_SECRET,
-					flags: { multiAttemptExperimentEnabled, frqPracticeEnabled }
+					flags: {
+						multiAttemptExperimentEnabled,
+						frqPracticeEnabled,
+						superCheckoutEnabled,
+						superCoachEnabled,
+						superMemoryEnabled,
+						superInsightsEnabled
+					}
 				}) as Handle
 			]
 		: []),

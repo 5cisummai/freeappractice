@@ -48,3 +48,41 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 		return false;
 	}
 }
+
+function superKillSwitch(key: string, description: string) {
+	return flag<boolean>({
+		key,
+		description,
+		adapter: vercelAdapter(),
+		defaultValue: true,
+		options: [
+			{ value: true, label: 'On' },
+			{ value: false, label: 'Off' }
+		]
+	});
+}
+
+/** Kill switches only. Entitlements always come from durable billing/grant records. */
+export const superCheckoutEnabled = superKillSwitch('super-checkout', 'Allow new Super checkouts');
+export const superCoachEnabled = superKillSwitch('super-coach', 'Allow the Super AI Coach');
+export const superMemoryEnabled = superKillSwitch(
+	'super-memory',
+	'Allow Mem0-backed Super tutor memory'
+);
+export const superInsightsEnabled = superKillSwitch(
+	'super-insights',
+	'Allow Super insights and study plans'
+);
+
+async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>): Promise<boolean> {
+	try {
+		return Boolean(await feature());
+	} catch {
+		return true;
+	}
+}
+
+export const isSuperCheckoutEnabled = () => readSuperKillSwitch(superCheckoutEnabled);
+export const isSuperCoachEnabled = () => readSuperKillSwitch(superCoachEnabled);
+export const isSuperMemoryEnabled = () => readSuperKillSwitch(superMemoryEnabled);
+export const isSuperInsightsEnabled = () => readSuperKillSwitch(superInsightsEnabled);

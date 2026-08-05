@@ -9,6 +9,7 @@
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import { toast } from 'svelte-sonner';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';
@@ -16,12 +17,8 @@
 	};
 
 	type TutorWidgetProps = {
-		question: string;
-		answer?: string;
-		explanation?: string;
 		apClass?: string;
 		unit?: string;
-		answerChoices?: { A: string; B: string; C: string; D: string } | null;
 		questionId?: string;
 		frqQuestionId?: string;
 		frqAttemptId?: string;
@@ -29,12 +26,8 @@
 	};
 
 	let {
-		question,
-		answer = '',
-		explanation = '',
 		apClass = '',
 		unit = '',
-		answerChoices = null,
 		questionId = '',
 		frqQuestionId = '',
 		frqAttemptId = '',
@@ -45,6 +38,7 @@
 	let messages = $state<ChatMessage[]>([]);
 	let inputText = $state('');
 	let isStreaming = $state(false);
+	let lastUsageWarning = $state<number | null>(null);
 	let hasGreeted = $state(false);
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
@@ -128,50 +122,36 @@
 	function portalToBody(node: HTMLElement) {
 		document.body.appendChild(node);
 
-		return {
-			destroy() {
-				node.remove();
-			}
-		};
+		return () => node.remove();
 	}
 
 	function autofocusInput(node: HTMLTextAreaElement) {
 		const frame = requestAnimationFrame(() => node.focus());
 
-		return {
-			destroy() {
-				cancelAnimationFrame(frame);
-			}
-		};
+		return () => cancelAnimationFrame(frame);
 	}
 
-	function autoScrollMessages(node: HTMLDivElement, trigger: string) {
-		void trigger;
-		const scrollToBottom = () => {
-			node.scrollTop = node.scrollHeight;
-		};
-
-		let frame = requestAnimationFrame(scrollToBottom);
-
-		return {
-			update() {
-				cancelAnimationFrame(frame);
-				frame = requestAnimationFrame(scrollToBottom);
-			},
-			destroy() {
-				cancelAnimationFrame(frame);
-			}
+	function autoScrollMessages(_trigger: string) {
+		return (node: HTMLDivElement) => {
+			const frame = requestAnimationFrame(() => {
+				node.scrollTop = node.scrollHeight;
+			});
+			return () => cancelAnimationFrame(frame);
 		};
 	}
 
 	async function fetchGreeting() {
-		if (hasGreeted || !question) return;
+		if (hasGreeted || !questionId) return;
 		hasGreeted = true;
+		if (frqQuestionId) {
+			messages.push({ role: 'assistant', content: GREETING_FALLBACK });
+			return;
+		}
 		try {
 			const res = await apiFetch('/api/tutor/greeting', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ question })
+				body: JSON.stringify({ questionId })
 			});
 			const data = await readJsonOrNull<{ error?: string; message?: string }>(res);
 			if (!res.ok) {
@@ -203,6 +183,18 @@
 		}
 	}
 
+	function showUsageWarning(response: Response) {
+		const warning = Number(response.headers.get('X-Super-Usage-Warning'));
+		const remaining = Number(response.headers.get('X-Super-Usage-Remaining'));
+		if ((warning !== 80 && warning !== 95) || lastUsageWarning === warning) return;
+		lastUsageWarning = warning;
+		toast.message(
+			warning === 95
+				? `You have ${remaining} personalized AI messages left this month.`
+				: `You have used ${warning}% of this month's personalized AI messages.`
+		);
+	}
+
 	function trapPanelFocus(node: HTMLElement) {
 		const getFocusable = () =>
 			Array.from(
@@ -232,10 +224,13 @@
 		};
 
 		node.addEventListener('keydown', onKeyDown);
-		return {
-			destroy() {
-				node.removeEventListener('keydown', onKeyDown);
-			}
+		return () => node.removeEventListener('keydown', onKeyDown);
+	}
+
+	function rememberTrigger(node: HTMLButtonElement) {
+		triggerEl = node;
+		return () => {
+			if (triggerEl === node) triggerEl = null;
 		};
 	}
 
@@ -271,12 +266,7 @@
 								...(frqAttemptId ? { attemptId: frqAttemptId } : {})
 							}
 						: {
-								question,
-								answer,
-								explanation,
-								apClass,
-								unit,
-								answerChoices
+								questionId
 							}),
 					conversationHistory,
 					message: text
@@ -287,6 +277,12 @@
 				const payload = await readJsonOrNull<{ error?: string }>(res);
 				throw new Error(getResponseMessage(payload, 'The tutor is unavailable right now.'));
 			}
+			if (res.headers.get('X-Tutor-Personalization-Degraded') === '1') {
+				toast.message(
+					'Tutor memory is temporarily unavailable. This reply uses your current progress only.'
+				);
+			}
+			showUsageWarning(res);
 
 			const reader = res.body.getReader();
 			const decoder = new TextDecoder();
@@ -302,9 +298,13 @@
 					if (!line.startsWith('data: ')) continue;
 					const data = line.slice(6).trim();
 					if (data === '[DONE]') continue;
-					let parsed: { content?: string; error?: string };
+					let parsed: { content?: string; error?: string; memoryUpdated?: boolean };
 					try {
-						parsed = JSON.parse(data) as { content?: string; error?: string };
+						parsed = JSON.parse(data) as {
+							content?: string;
+							error?: string;
+							memoryUpdated?: boolean;
+						};
 					} catch {
 						continue;
 					}
@@ -313,6 +313,14 @@
 					}
 					if (parsed.content && streamId === activeStreamId) {
 						messages[assistantIdx].content += parsed.content;
+					}
+					if (parsed.memoryUpdated) {
+						toast.success('Tutor memory update scheduled.', {
+							action: {
+								label: 'Review',
+								onClick: () => window.location.assign('/app/settings#tutor-memory')
+							}
+						});
 					}
 				}
 			}
@@ -422,7 +430,7 @@
 	}}
 />
 
-<div use:portalToBody>
+<div {@attach portalToBody}>
 	<!-- Chat panel: clamped to viewport, opens above or below the button -->
 	{#if isOpen}
 		<div
@@ -431,7 +439,7 @@
 			aria-modal="true"
 			aria-labelledby="ai-tutor-title"
 			tabindex="-1"
-			use:trapPanelFocus
+			{@attach trapPanelFocus}
 			class="fixed z-60 flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
 			style="
 					left: {panelLeft}px;
@@ -459,7 +467,7 @@
 
 			<!-- Messages -->
 			<div
-				use:autoScrollMessages={scrollTrigger}
+				{@attach autoScrollMessages(scrollTrigger)}
 				class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
 			>
 				{#if messages.length === 0}
@@ -498,7 +506,7 @@
 					class="flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2 shadow-sm"
 				>
 					<textarea
-						use:autofocusInput
+						{@attach autofocusInput}
 						bind:value={inputText}
 						onkeydown={handleKeydown}
 						oninput={(e) => autoResize(e.currentTarget)}
@@ -523,7 +531,7 @@
 
 	<!-- Floating toggle button -->
 	<button
-		bind:this={triggerEl}
+		{@attach rememberTrigger}
 		id="ai-tutor-trigger"
 		type="button"
 		aria-expanded={isOpen}

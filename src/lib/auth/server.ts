@@ -18,6 +18,11 @@ import {
 } from '$lib/auth/email.server';
 import { ensureUserProfile } from '$lib/users/profile.server';
 import { deleteAppDataForUsers } from '$lib/users/delete-app-data.server';
+import {
+	prepareAccountDeletion,
+	processAccountDeletionCleanup
+} from '$lib/super/account-cleanup.server';
+import { createSuperStripePlugin } from '$lib/super/stripe-plugin.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
 import { getAdminUserIds } from '$lib/auth/admin.server';
 import {
@@ -34,6 +39,7 @@ const client = await getMongoClient();
 const authSecret =
 	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
 const authBaseUrl = env.BETTER_AUTH_URL;
+const superStripePlugin = createSuperStripePlugin();
 
 export const auth = betterAuth({
 	appName: 'Free AP Practice',
@@ -76,11 +82,15 @@ export const auth = betterAuth({
 		},
 		deleteUser: {
 			enabled: true,
+			beforeDelete: async (user) => {
+				await prepareAccountDeletion(user.id);
+			},
 			sendDeleteAccountVerification: async ({ user, url }) => {
 				await sendDeleteAccountEmail(user.email, url);
 			},
 			afterDelete: async (user) => {
 				await deleteAppDataForUsers(user.id);
+				waitUntil(processAccountDeletionCleanup(user.id));
 			}
 		}
 	},
@@ -167,6 +177,7 @@ export const auth = betterAuth({
 		admin({
 			adminUserIds: getAdminUserIds()
 		}),
+		...(superStripePlugin ? [superStripePlugin] : []),
 		sveltekitCookies(getRequestEvent)
 	]
 });

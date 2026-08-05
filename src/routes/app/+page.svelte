@@ -23,6 +23,8 @@
 
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
+	const superEntitlements = $derived(data.entitlements);
+	const superPlan = $derived(data.superPlan);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -198,6 +200,46 @@
 			</div>
 		</section>
 
+		{#if superEntitlements?.plan === 'super'}
+			<div class="grid gap-3 sm:grid-cols-2">
+				<a
+					href={resolve('/app/coach')}
+					class="group flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 shadow-sm transition-colors hover:bg-primary/10"
+				>
+					<div>
+						<p class="font-medium">Coach</p>
+						<p class="text-sm text-muted-foreground">
+							Turn your progress into a practical next step.
+						</p>
+					</div>
+					<ArrowRightIcon class="size-4 shrink-0 text-primary" />
+				</a>
+				<a
+					href={resolve('/app/insights')}
+					class="group flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm transition-colors hover:bg-muted/40"
+				>
+					<div>
+						<p class="font-medium">Weekly study plan</p>
+						<p class="text-sm text-muted-foreground">
+							{superPlan?.tasks.filter((task) => task.status !== 'done').length ?? 0} tasks remaining
+						</p>
+					</div>
+					<ArrowRightIcon class="size-4 shrink-0 text-muted-foreground" />
+				</a>
+			</div>
+		{:else}
+			<a
+				href={resolve('/pricing')}
+				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
+			>
+				<span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study
+					plans.</span
+				>
+				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
+			</a>
+		{/if}
+
 		<section class="space-y-4" aria-labelledby="your-subjects">
 			<div class="flex flex-wrap items-end justify-between gap-3">
 				<h2 id="your-subjects" class="font-display text-xl font-medium tracking-tight sm:text-2xl">
@@ -274,6 +316,18 @@
 			</Card.Root>
 		</section>
 	{:else}
+		{#if superEntitlements?.plan !== 'super'}
+			<a
+				href={resolve('/pricing')}
+				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
+			>
+				<span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study
+					plans.</span
+				>
+				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
+			</a>
+		{/if}
 		<EmptyState
 			title="No subjects selected yet"
 			description="Choose the subjects you want to see on your dashboard."
