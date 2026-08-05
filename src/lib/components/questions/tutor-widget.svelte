@@ -7,6 +7,7 @@
 	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { toast } from 'svelte-sonner';
@@ -23,6 +24,7 @@
 		frqQuestionId?: string;
 		frqAttemptId?: string;
 		topic?: string;
+		showFirstUseHint?: boolean;
 	};
 
 	let {
@@ -31,7 +33,8 @@
 		questionId = '',
 		frqQuestionId = '',
 		frqAttemptId = '',
-		topic = ''
+		topic = '',
+		showFirstUseHint = false
 	}: TutorWidgetProps = $props();
 
 	let isOpen = $state(false);
@@ -561,4 +564,13 @@
 			<MessageSquareIcon class="h-5 w-5" />
 		{/if}
 	</button>
+	{#if showFirstUseHint}
+		<FirstUseHint
+			id="tutor-widget"
+			anchorId="ai-tutor-trigger"
+			text="Ask the Tutor about this question."
+			side="top"
+			align="end"
+		/>
+	{/if}
 </div>

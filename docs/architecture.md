@@ -148,7 +148,7 @@ flowchart LR
     subgraph API["API"]
         AUTH["/api/auth/*<br/>Better Auth"]
         Q["/api/question<br/>/api/question/frq · /frq/grade<br/>/generation-stats"]
-        ME["/api/me/*<br/>stats · progress · history<br/>record-attempt · bookmarks<br/>practice-experiment · frq-attempt"]
+        ME["/api/me/*<br/>stats · progress · history<br/>record-attempt · bookmarks<br/>frq-attempt"]
         T["/api/tutor/chat · greeting · frq"]
         BR["/api/bug-report"]
         CRON["/api/cron/question-pool<br/>CRON_SECRET"]

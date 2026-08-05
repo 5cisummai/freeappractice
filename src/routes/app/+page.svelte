@@ -5,6 +5,7 @@
 	import FlameIcon from '@lucide/svelte/icons/flame';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
@@ -184,10 +185,16 @@
 						</div>
 					</div>
 
-					<Button href={recommendation.href}>
+					<Button id="dashboard-practice-hint-target" href={recommendation.href}>
 						{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
 						<ArrowRightIcon class="size-4" aria-hidden="true" />
 					</Button>
+					<FirstUseHint
+						id="dashboard-practice"
+						anchorId="dashboard-practice-hint-target"
+						text="Start here. Choose a subject and begin practicing."
+						align="start"
+					/>
 				</div>
 
 				<div

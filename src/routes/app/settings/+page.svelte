@@ -12,6 +12,7 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
+	import { resetUiHints } from '$lib/client/ui-hints.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import CheckIcon from '@lucide/svelte/icons/check';
@@ -25,13 +26,7 @@
 	let { data, form } = $props();
 
 	type SettingsSection =
-		| 'practice'
-		| 'appearance'
-		| 'privacy'
-		| 'super'
-		| 'account'
-		| 'advanced'
-		| 'about';
+		'practice' | 'appearance' | 'privacy' | 'super' | 'account' | 'advanced' | 'about';
 	type Theme = 'light' | 'dark' | 'system';
 
 	const SECTIONS: { id: SettingsSection; label: string }[] = [
@@ -108,6 +103,11 @@
 
 	function resetAccountForm() {
 		accountForm = { name: data.user.name, email: data.user.email };
+	}
+
+	function resetProductHints() {
+		resetUiHints();
+		toast.success('First-use hints will show again.');
 	}
 
 	async function handleDeleteAccount() {
@@ -466,6 +466,20 @@
 							size="sm"
 							href={resolve('/app/onboarding?reset=1')}
 						>
+							Reset
+						</Button>
+					</div>
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
+					>
+						<div class="min-w-0 flex-1 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Reset first-use hints</p>
+							<p class="text-sm text-muted-foreground">
+								Show the small tips for the dashboard, practice selector, question tools, and Tutor
+								again.
+							</p>
+						</div>
+						<Button type="button" variant="outline" size="sm" onclick={resetProductHints}>
 							Reset
 						</Button>
 					</div>

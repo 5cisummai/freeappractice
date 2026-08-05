@@ -148,6 +148,7 @@ export type InsightReportView = {
 	evidenceAttemptCount: number;
 	generatedAt: string;
 	manual: boolean;
+	pdfAvailable: boolean;
 	feedback?: 'helpful' | 'not_helpful';
 	feedbackReason?: string;
 	lockedAt: string | null;
@@ -623,6 +624,9 @@ export function toInsightReportView(report: {
 	evidenceAttemptCount: number;
 	generatedAt: Date | string;
 	manual: boolean;
+	pdfData?: Buffer;
+	pdfGeneratedAt?: Date | string;
+	pdfGenerationVersion?: number;
 	feedback?: 'helpful' | 'not_helpful';
 	feedbackReason?: string;
 	lockedAt?: Date | string;
@@ -641,12 +645,47 @@ export function toInsightReportView(report: {
 		evidenceAttemptCount: report.evidenceAttemptCount,
 		generatedAt,
 		manual: report.manual,
+		pdfAvailable: Boolean(report.pdfData && report.pdfData.length > 0),
 		...(report.feedback ? { feedback: report.feedback } : {}),
 		...(report.feedbackReason ? { feedbackReason: report.feedbackReason } : {}),
 		lockedAt: isoDate(report.lockedAt),
 		createdAt,
 		updatedAt
 	};
+}
+
+export async function attachInsightReportPdf(
+	userId: string,
+	reportId: string,
+	pdfData: Uint8Array,
+	narrative?: string | null
+): Promise<InsightReportView | null> {
+	await connectDb();
+	const updated = await InsightReport.findOneAndUpdate(
+		{ _id: reportId, userId },
+		{
+			$set: {
+				pdfData: Buffer.from(pdfData),
+				pdfGeneratedAt: new Date(),
+				pdfGenerationVersion: 1,
+				...(narrative ? { 'report.narrative': narrative } : {})
+			}
+		},
+		{ new: true }
+	)
+		.lean()
+		.exec();
+	return updated ? toInsightReportView(updated) : null;
+}
+
+export async function getStoredInsightReportPdf(userId: string): Promise<Buffer | null> {
+	await connectDb();
+	const report = await InsightReport.findOne({ userId })
+		.sort({ generatedAt: -1, _id: -1 })
+		.select({ pdfData: 1 })
+		.lean()
+		.exec();
+	return report?.pdfData ? Buffer.from(report.pdfData) : null;
 }
 
 async function getReadableStoredReport(
@@ -699,7 +738,12 @@ export async function getCurrentEligibleInsightReport(
 
 export async function buildAndStoreInsightReport(
 	userId: string,
-	options: { now?: Date; manual?: boolean; narrative?: string | null } = {}
+	options: {
+		now?: Date;
+		manual?: boolean;
+		narrative?: string | null;
+		pdfData?: Uint8Array;
+	} = {}
 ): Promise<InsightReportView | null> {
 	await requireInsightAccess(userId);
 	const now = options.now ? new Date(options.now.getTime()) : new Date();
@@ -716,7 +760,14 @@ export async function buildAndStoreInsightReport(
 		report: reportData,
 		evidenceAttemptCount: reportData.eligibility.totalScoredAttempts,
 		generatedAt: now,
-		manual: Boolean(options.manual)
+		manual: Boolean(options.manual),
+		...(options.pdfData
+			? {
+					pdfData: Buffer.from(options.pdfData),
+					pdfGeneratedAt: now,
+					pdfGenerationVersion: 1
+				}
+			: {})
 	});
 	const snapshotsToRemove = await InsightReport.find({
 		userId,

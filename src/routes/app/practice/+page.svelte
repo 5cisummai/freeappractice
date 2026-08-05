@@ -112,6 +112,7 @@
 			bind:unitRange
 			bind:requestVersion
 			bind:mode
+			showFirstUseHints
 			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
 			onAnswered={handleAnswered}
 			onFrqGraded={handleFrqGraded}

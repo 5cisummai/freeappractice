@@ -21,6 +21,7 @@
 		selectedUnit?: string;
 		unitRange?: readonly number[];
 		requestVersion?: number;
+		showFirstUseHint?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
 	};
 
@@ -29,6 +30,7 @@
 		selectedUnit = '',
 		unitRange,
 		requestVersion = 0,
+		showFirstUseHint = false,
 		onGraded
 	}: Props = $props();
 
@@ -418,6 +420,7 @@
 				frqQuestionId={question.questionId}
 				frqAttemptId={attemptId}
 				topic={question.formatId}
+				{showFirstUseHint}
 			/>
 		{/key}
 	</div>

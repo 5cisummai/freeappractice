@@ -164,6 +164,9 @@ export interface IInsightReport extends Document {
 	evidenceAttemptCount: number;
 	generatedAt: Date;
 	manual: boolean;
+	pdfData?: Buffer;
+	pdfGeneratedAt?: Date;
+	pdfGenerationVersion?: number;
 	feedback?: 'helpful' | 'not_helpful';
 	feedbackReason?: string;
 	lockedAt?: Date;
@@ -178,6 +181,9 @@ const insightReportSchema = new Schema<IInsightReport>(
 		evidenceAttemptCount: { type: Number, required: true, min: 0 },
 		generatedAt: { type: Date, required: true, index: true },
 		manual: { type: Boolean, required: true },
+		pdfData: { type: Buffer },
+		pdfGeneratedAt: { type: Date },
+		pdfGenerationVersion: { type: Number, min: 1 },
 		feedback: { type: String, enum: ['helpful', 'not_helpful'] },
 		feedbackReason: { type: String, maxlength: 120 },
 		lockedAt: { type: Date }

@@ -17,7 +17,7 @@ import {
 } from '$lib/super/insights.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import {
-	createInsightNarrative,
+	createInsightPdfArtifact,
 	getOrBuildWeeklyInsightReport
 } from '$lib/super/insight-lifecycle.server';
 
@@ -72,8 +72,14 @@ export const POST: RequestHandler = withAuthedHandler(
 					);
 				}
 				const reportData = buildInsightReportData(await getScoredAttemptsForUser(userId));
-				const narrative = await createInsightNarrative(reportData);
-				const report = await buildAndStoreInsightReport(userId, { manual: true, narrative });
+				const artifact = await createInsightPdfArtifact(reportData);
+				const report = artifact
+					? await buildAndStoreInsightReport(userId, {
+							manual: true,
+							narrative: artifact.narrative,
+							pdfData: artifact.pdfData
+						})
+					: null;
 				return json({ eligibility, report });
 			} finally {
 				await releaseLock(lock);

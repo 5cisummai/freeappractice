@@ -1,4 +1,4 @@
-import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
+import { apiFetch } from '$lib/client/api.js';
 import {
 	captureFirstAnswerSubmitted,
 	captureQuestionRequestFailed,
@@ -26,31 +26,6 @@ import type { AnswerResult, GeneratedQuestion, QuestionCardProps } from '$lib/qu
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
-
-type PracticeExperimentResponse = {
-	assignedVariant: PracticeVariant;
-	experimentEnabled: boolean;
-	experimentKey: string;
-	experimentVersion: number;
-};
-
-/** One network fetch per tab — remounts must not re-hit the API. */
-let practiceExperimentCache: Promise<PracticeExperimentResponse | null> | null = null;
-
-function loadPracticeExperiment(): Promise<PracticeExperimentResponse | null> {
-	if (!practiceExperimentCache) {
-		practiceExperimentCache = (async () => {
-			try {
-				const response = await apiFetch('/api/me/practice-experiment');
-				if (response.status === 401 || !response.ok) return null;
-				return await readJsonOrNull<PracticeExperimentResponse>(response);
-			} catch {
-				return null;
-			}
-		})();
-	}
-	return practiceExperimentCache;
-}
 
 export type QuestionCardSessionOpts = {
 	getSelectedClass: () => string;
@@ -83,8 +58,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let poolWarmingAutoAttempts = $state(0);
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
-	let assignedVariant = $state<PracticeVariant>('control');
-	let experimentEnabled = $state(false);
+	const assignedVariant = $state<PracticeVariant>('control');
+	const experimentEnabled = $state(false);
 	let displayedVariant = $state<PracticeVariant>('control');
 	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
 	let questionFeedbackReason = $state<string | null>(null);
@@ -151,18 +126,6 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		multiAttemptState = createMultiAttemptState();
 		startedAtMs = Date.now();
 		if (clearSelection) opts.setSelectedOption(null);
-	}
-
-	async function fetchPracticeExperiment(): Promise<void> {
-		const payload = await loadPracticeExperiment();
-		if (!payload) {
-			assignedVariant = 'control';
-			experimentEnabled = false;
-			return;
-		}
-		assignedVariant =
-			payload.assignedVariant === 'multi_attempt_hints' ? 'multi_attempt_hints' : 'control';
-		experimentEnabled = Boolean(payload.experimentEnabled);
 	}
 
 	function applyQuestionExperimentExposure(
@@ -533,7 +496,6 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		questionLoadFailed = false;
 		resetInteractionState(true);
 		statusMessage = 'Choose the best answer and then check your response.';
-		await fetchPracticeExperiment();
 	}
 
 	function destroy(): void {
@@ -621,7 +583,6 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		},
 		rememberSeenQuestion,
 		resetInteractionState,
-		fetchPracticeExperiment,
 		applyQuestionExperimentExposure,
 		buildAnswerResult,
 		loadQuestion,

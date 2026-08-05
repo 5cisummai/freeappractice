@@ -27,7 +27,6 @@ This app already has **half** of the Flags stack: `flags` + SvelteKit `createHan
 1. **`multi-attempt-experiment`** (`multiAttemptExperimentEnabled`)
    - Kill-switch for sticky multi-attempt experiment ([DEV-60](https://linear.app/freeappractice/issue/DEV-60)).
    - Currently hard-off: `decide() → false`, `isMultiAttemptExperimentEnabled() → false`.
-   - API `GET /api/me/practice-experiment` also hard-returns `experimentEnabled: false` (bypasses the flag).
 
 2. **`frq-practice`** (`frqPracticeEnabled`)
    - Pilot gate for authenticated FRQ practice ([DEV-82](https://linear.app/freeappractice/issue/DEV-82)).
@@ -101,7 +100,7 @@ For user/team targeting (e.g. beta testers, course pilots), add an `identify` fu
 
 ### Cleanup when connecting Dashboard
 
-- Route `GET /api/me/practice-experiment` should call `isMultiAttemptExperimentEnabled()` / assignment helpers instead of hardcoding `false`.
+- Multi-attempt enrollment should call `isMultiAttemptExperimentEnabled()` / assignment helpers instead of hardcoding `false`.
 - Restore `isMultiAttemptExperimentEnabled()` to evaluate the flag (not always `false`).
 - After Dashboard owns values, drop `FRQ_PRACTICE_ENABLED` env fallback (or keep only as emergency `defaultValue` / offline fallback).
 
@@ -117,7 +116,7 @@ For user/team targeting (e.g. beta testers, course pilots), add an `identify` fu
 6. [ ] Optionally add `identify` (user id, email, plan/course) for targeting
 7. [ ] Deploy production → open **Flags → Drafts** → promote `frq-practice` and `multi-attempt-experiment`
 8. [ ] Configure per-env defaults in Dashboard (e.g. FRQ on in Development, off in Production until pilot)
-9. [ ] Un-hardcode multi-attempt helpers + practice-experiment API
+9. [ ] Un-hardcode multi-attempt helpers and enrollment
 10. [ ] Verify Toolbar → Flags Explorer overrides; check evaluations in Runtime Logs / Web Analytics ([observability](https://vercel.com/docs/flags/observability))
 
 ---

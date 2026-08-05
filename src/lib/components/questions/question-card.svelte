@@ -10,6 +10,7 @@
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
@@ -47,6 +48,7 @@
 		nextLabel = 'Next Question',
 		showExplanationLabel = 'Show Explanation',
 		showUtilityActions = true,
+		showFirstUseHint = false,
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -395,7 +397,7 @@
 					</div>
 				{/if}
 				{#if hasCalculator || hasReferenceSheet}
-					<div class="flex gap-0.5">
+					<div id="question-tools-hint-target" class="flex gap-0.5">
 						{#if hasCalculator}
 							<Tooltip.Root>
 								<Tooltip.Trigger>
@@ -439,6 +441,15 @@
 							</Tooltip.Root>
 						{/if}
 					</div>
+					{#if showFirstUseHint}
+						<FirstUseHint
+							id="question-tools"
+							anchorId="question-tools-hint-target"
+							text="These tools give you extra help while you work."
+							side="top"
+							align="end"
+						/>
+					{/if}
 				{/if}
 			</div>
 			<div class="flex gap-2">
@@ -516,6 +527,7 @@
 				unit={tutorUnitLabel}
 				questionId={session.currentQuestion.questionId}
 				topic={session.currentQuestion.topic}
+				{showFirstUseHint}
 			/>
 		{/key}
 	{/if}
