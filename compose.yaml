@@ -26,5 +26,32 @@ services:
       retries: 5
       start_period: 10s
 
+  redis:
+    image: redis/redis-stack-server:6.2.6-v6
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  serverless-redis-http:
+    image: hiett/serverless-redis-http:latest
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - '8079:80'
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: local-upstash-token
+      SRH_CONNECTION_STRING: redis://redis:6379
+
 volumes:
   mongodb_data:
+  redis_data:

@@ -24,11 +24,6 @@
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
 	const superEntitlements = $derived(data.entitlements);
-	const superPlan = $derived(data.superPlan);
-	const superInsights = $derived(data.superInsights);
-	const openPlanTasks = $derived(
-		superPlan?.tasks.filter((task) => task.status !== 'done').slice(0, 3) ?? []
-	);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -112,12 +107,6 @@
 		if (diffDays === 1) return 'Yesterday';
 		if (diffDays < 30) return `${diffDays} days ago`;
 		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
-	}
-
-	function formatPlanDate(value: string): string {
-		return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(
-			new Date(value)
-		);
 	}
 
 	function progressBarClass(iconClass: string): string {
@@ -210,85 +199,7 @@
 			</div>
 		</section>
 
-		{#if superEntitlements?.plan === 'super'}
-			<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-				<a
-					href={resolve('/app/coach')}
-					class="group flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 shadow-sm transition-colors hover:bg-primary/10"
-				>
-					<div>
-						<p class="text-sm font-medium">Coach</p>
-						<p class="text-xs leading-5 text-muted-foreground">
-							Turn your progress into a practical next step.
-						</p>
-					</div>
-					<ArrowRightIcon class="size-3.5 shrink-0 text-primary" />
-				</a>
-				<Card.Root class="border-border/60 bg-card shadow-sm ring-0">
-					<Card.Content class="p-4">
-						<div class="flex items-start justify-between gap-3">
-							<div>
-								<p class="text-sm font-medium">Active study plan</p>
-								<p class="text-xs text-muted-foreground">
-									{superPlan?.tasks.filter((task) => task.status !== 'done').length ?? 0} tasks remaining
-								</p>
-							</div>
-							<a
-								href={resolve('/app/insights')}
-								class="text-xs text-primary underline-offset-4 hover:underline">View plan</a
-							>
-						</div>
-						{#if openPlanTasks.length}
-							<div class="mt-3 space-y-1.5 border-t border-border/60 pt-2.5">
-								{#each openPlanTasks as task (task.id)}
-									<a
-										href={resolve(
-											`/app/practice?apClass=${encodeURIComponent(task.apClass)}&unit=${encodeURIComponent(task.unit)}${task.mode === 'frq' ? '&mode=frq' : ''}`
-										)}
-										class="block rounded-lg px-1.5 py-1 text-xs transition-colors hover:bg-muted/60"
-									>
-										<div class="flex items-center justify-between gap-2">
-											<span class="truncate font-medium">{task.apClass} · {task.unit}</span>
-											<span class="shrink-0 text-[11px] text-muted-foreground"
-												>{formatPlanDate(task.date)}</span
-											>
-										</div>
-										<p class="text-[11px] text-muted-foreground">
-											{task.mode === 'frq' ? 'FRQ' : task.mode === 'mcq' ? 'MCQ' : 'Review'} ·
-											{task.durationMinutes} min
-										</p>
-									</a>
-								{/each}
-							</div>
-						{:else}
-							<p
-								class="mt-3 border-t border-border/60 pt-2.5 text-xs leading-5 text-muted-foreground"
-							>
-								Your active plan is complete. Open Insights for the next one.
-							</p>
-						{/if}
-					</Card.Content>
-				</Card.Root>
-				<a
-					href={resolve('/app/insights')}
-					class="group flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm transition-colors hover:bg-muted/40"
-				>
-					<div>
-						<p class="text-sm font-medium">Weekly insights</p>
-						<p class="text-xs leading-5 text-muted-foreground">
-							{#if superInsights.status === 'current'}
-								Your latest report is up to date.
-							{:else if superInsights.status === 'setup'}
-								Finish setup to unlock personalized insights.
-							{:else}
-								Your next report is ready to review.
-							{/if}
-						</p>
-					</div>
-					<ArrowRightIcon class="size-3.5 shrink-0 text-muted-foreground" />
-				</a>
-			</div>
-		{:else}
+		{#if superEntitlements?.plan !== 'super'}
 			<a
 				href={resolve('/pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"

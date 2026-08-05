@@ -1,10 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Chat } from '@ai-sdk/svelte';
+	import type { ChatStatus } from 'ai';
 	import { DefaultChatTransport } from 'ai';
+	import CopyIcon from '@lucide/svelte/icons/copy';
+	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
+	import * as Message from '$lib/components/ai-elements/message/index.js';
+	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
+	import * as Tool from '$lib/components/ai-elements/tool/index.js';
+	import * as Suggestion from '$lib/components/ai-elements/suggestion/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
 	import { toast } from 'svelte-sonner';
@@ -17,19 +25,14 @@
 	let lastUsageWarning = $state<number | null>(null);
 	let undoingAuditId = $state<string | null>(null);
 
+	const suggestions = [
+		'What should I study next?',
+		'Build me a plan for this week',
+		'Help me focus on my weakest unit'
+	];
+
 	const coach = new Chat<CoachUIMessage>({
-		messages: [
-			{
-				id: 'welcome',
-				role: 'assistant',
-				parts: [
-					{
-						type: 'text',
-						text: 'I can turn your recent practice into a realistic plan. Ask about a course, a target date, or what to study next.'
-					}
-				]
-			}
-		],
+		messages: [],
 		transport: new DefaultChatTransport<CoachUIMessage>({
 			api: '/api/coach',
 			fetch: async (url, init) => {
@@ -42,7 +45,25 @@
 			})
 		})
 	});
+
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
+	let lastMessage = $derived(coach.messages.at(-1));
+	let hasMessages = $derived(coach.messages.length > 0);
+
+	type CoachToolState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
+
+	type CoachToolPart = {
+		type: `tool-${string}`;
+		state?: string;
+		input?: unknown;
+		output?: unknown;
+		errorText?: string;
+	};
+
+	type ApprovalProposal = {
+		category: 'goals' | 'study_plans';
+		proposed: unknown;
+	};
 
 	onMount(() => {
 		const key = 'super-coach-session-id';
@@ -62,6 +83,67 @@
 		);
 	}
 
+	function getToolPart(part: unknown): CoachToolPart | null {
+		if (!part || typeof part !== 'object') return null;
+		const candidate = part as { type?: unknown };
+		return typeof candidate.type === 'string' && candidate.type.startsWith('tool-')
+			? (part as CoachToolPart)
+			: null;
+	}
+
+	function getToolState(state: string | undefined): CoachToolState {
+		if (
+			state === 'input-streaming' ||
+			state === 'input-available' ||
+			state === 'output-available' ||
+			state === 'output-error'
+		) {
+			return state;
+		}
+		return 'input-available';
+	}
+
+	function getApprovalProposal(part: CoachToolPart): ApprovalProposal | null {
+		if (!part.output || typeof part.output !== 'object') return null;
+		const output = part.output as {
+			approvalRequired?: unknown;
+			category?: unknown;
+			proposed?: unknown;
+		};
+		if (
+			output.approvalRequired !== true ||
+			(output.category !== 'goals' && output.category !== 'study_plans')
+		) {
+			return null;
+		}
+		return { category: output.category, proposed: output.proposed };
+	}
+
+	function formatToolName(type: string): string {
+		return type
+			.replace(/^tool-/, '')
+			.replaceAll('_', ' ')
+			.replace(/\b\w/g, (letter) => letter.toUpperCase());
+	}
+
+	function messageText(message: CoachUIMessage): string {
+		return message.parts
+			.filter((part) => part.type === 'text')
+			.map((part) => part.text)
+			.join('\n');
+	}
+
+	function isWaitingForResponse(message: CoachUIMessage): boolean {
+		return message.role === 'assistant' && message.parts.every((part) => part.type !== 'text');
+	}
+
+	async function copyMessage(message: CoachUIMessage) {
+		const text = messageText(message);
+		if (!text) return;
+		await navigator.clipboard.writeText(text);
+		toast.success('Response copied.');
+	}
+
 	async function approve(categories: Array<'goals' | 'study_plans'>) {
 		if (!sessionId || approving) return;
 		approving = true;
@@ -74,7 +156,7 @@
 			const result = await readJsonOrNull<{ error?: string }>(response);
 			if (!response.ok)
 				throw new Error(getResponseMessage(result, 'Could not approve Coach changes.'));
-			toast.success('Coach can make those approved changes for the next 30 minutes.');
+			toast.success('Coach can make that change for the next 30 minutes.');
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not approve Coach changes.');
 		} finally {
@@ -82,12 +164,12 @@
 		}
 	}
 
-	function approveProposedCategory(category: unknown) {
-		if (category === 'goals' || category === 'study_plans') void approve([category]);
+	function approveProposedCategory(category: ApprovalProposal['category']) {
+		void approve([category]);
 	}
 
-	async function send() {
-		const message = input.trim();
+	async function send(text: string) {
+		const message = text.trim();
 		if (!message || streaming || !sessionId) return;
 		input = '';
 		try {
@@ -124,144 +206,194 @@
 
 <svelte:head><title>Coach – Free AP Practice</title></svelte:head>
 
-<PageShell
-	title="Coach"
-	description="A constrained planning assistant that works from your own AP practice data."
->
-	{#if !data.entitlements.coach}
-		<Card.Root class="mx-auto max-w-2xl"
-			><Card.Content class="space-y-3 p-6"
-				><h2 class="font-display text-2xl">Super feature</h2>
+{#if !data.entitlements.coach}
+	<div class="mx-auto max-w-2xl p-4 sm:p-8">
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>Super Coach</Card.Title>
+				<Card.Description>Personalized planning from your practice data.</Card.Description>
+			</Card.Header>
+			<Card.Content class="space-y-4">
 				<p class="text-sm text-muted-foreground">
 					Coach is available with Super. Your free practice and progress stay exactly as they are.
 				</p>
-				<Button href="/pricing">See Super</Button></Card.Content
-			></Card.Root
-		>
-	{:else if !data.coachEnabled}
-		<Card.Root class="mx-auto max-w-2xl"
-			><Card.Content class="p-6 text-sm text-muted-foreground"
-				>Coach is temporarily unavailable. Your saved profile, insights, and study plan are
-				unaffected.</Card.Content
-			></Card.Root
-		>
-	{:else if !data.profile.ageConfirmedAt}
-		<Card.Root class="mx-auto max-w-2xl"
-			><Card.Content class="space-y-3 p-6"
-				><h2 class="font-display text-2xl">Confirm your age</h2>
+				<Button href="/pricing">See Super</Button>
+			</Card.Content>
+		</Card.Root>
+	</div>
+{:else if !data.coachEnabled}
+	<div class="mx-auto max-w-2xl p-4 sm:p-8">
+		<Card.Root>
+			<Card.Content class="p-6 text-sm text-muted-foreground">
+				Coach is temporarily unavailable. Your saved profile, insights, and study plan are
+				unaffected.
+			</Card.Content>
+		</Card.Root>
+	</div>
+{:else if !data.profile.ageConfirmedAt}
+	<div class="mx-auto max-w-2xl p-4 sm:p-8">
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>Confirm your age</Card.Title>
+				<Card.Description>Coach uses personalized study information.</Card.Description>
+			</Card.Header>
+			<Card.Content class="space-y-4">
 				<p class="text-sm text-muted-foreground">
-					Coach uses personalized study information and is available to students aged 13 or older.
+					Coach is available to students aged 13 or older.
 				</p>
-				<Button href="/app/confirm-age">Confirm age</Button></Card.Content
-			></Card.Root
-		>
-	{:else}
-		<div class="mx-auto grid max-w-3xl gap-4">
-			<Card.Root
-				><Card.Content class="space-y-3 p-4"
-					><p class="text-sm font-medium">
-						Coach can only change selected AP classes, target dates, study availability, and your
-						study plan — never grades, attempts, memory/privacy, age, billing, or your calendar.
-					</p>
-					<p class="text-sm text-muted-foreground">
-						When Coach proposes one of those changes, approve that specific category for 30 minutes
-						from its approval card.
-					</p></Card.Content
-				></Card.Root
-			>
-			<Card.Root
-				><Card.Content class="space-y-4 p-5"
-					><div class="max-h-[28rem] space-y-3 overflow-y-auto" aria-live="polite">
-						{#each coach.messages as message (message.id)}<div
-								class={message.role === 'user'
-									? 'ml-auto max-w-[85%] rounded-2xl bg-primary px-3 py-2 text-sm text-primary-foreground'
-									: 'max-w-[90%] rounded-2xl bg-muted px-3 py-2 text-sm text-foreground'}
-							>
-								{#each message.parts as part, index (`${message.id}-${index}`)}
-									{#if part.type === 'text'}{part.text}
-									{:else if part.type === 'tool-update_goals' || part.type === 'tool-update_study_plan'}
-										{#if part.state === 'output-available' && part.output.updated === false && part.output.approvalRequired}
-											<div
-												class="space-y-2 rounded-md border border-primary/30 bg-background p-3 text-xs"
+				<Button href="/app/confirm-age">Confirm age</Button>
+			</Card.Content>
+		</Card.Root>
+	</div>
+{:else}
+	<div class="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
+		<div class="flex min-h-0 flex-1">
+			<main class="flex min-w-0 flex-1 flex-col">
+				<Conversation.Root class="min-h-0 flex-1">
+					<Conversation.Content
+						class="mx-auto w-full max-w-3xl gap-7 px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
+						aria-live="polite"
+					>
+						{#if hasMessages}
+							{#each coach.messages as message (message.id)}
+								<Message.Root from={message.role} class="max-w-3xl">
+									{#if message.role === 'user'}
+										<Message.Content class="max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap">
+											{messageText(message)}
+										</Message.Content>
+									{:else}
+										{#each message.parts as part, index (`${message.id}-${index}`)}
+											{@const toolPart = getToolPart(part)}
+											{#if part.type === 'text'}
+												<Message.Content class="max-w-3xl leading-7">
+													<Message.Response content={part.text} />
+												</Message.Content>
+											{:else if toolPart}
+												{@const approval = getApprovalProposal(toolPart)}
+												<Tool.Root class="max-w-3xl bg-background">
+													<Tool.Header
+														type={formatToolName(toolPart.type)}
+														state={getToolState(toolPart.state)}
+													/>
+													<Tool.Content>
+														{#if toolPart.input !== undefined}
+															<Tool.Input input={toolPart.input} />
+														{/if}
+														{#if approval}
+															<div class="border-t p-4">
+																<div class="flex items-start gap-3">
+																	<div
+																		class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+																	></div>
+																	<div class="min-w-0 flex-1 space-y-1">
+																		<p class="text-sm font-medium">Approval needed</p>
+																		<p class="text-sm leading-6 text-muted-foreground">
+																			Coach is ready to update your {approval.category === 'goals'
+																				? 'goals and availability'
+																				: 'study plan'}.
+																		</p>
+																	</div>
+																</div>
+																<pre
+																	class="mt-3 max-h-36 overflow-auto rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">{JSON.stringify(
+																		approval.proposed,
+																		null,
+																		2
+																	)}</pre>
+																<Button
+																	size="sm"
+																	class="mt-3"
+																	disabled={approving}
+																	onclick={() => approveProposedCategory(approval.category)}
+																>
+																	{approving ? 'Approving…' : 'Approve update'}
+																</Button>
+															</div>
+														{:else}
+															<Tool.Output
+																output={toolPart.output}
+																errorText={toolPart.errorText}
+															/>
+														{/if}
+													</Tool.Content>
+												</Tool.Root>
+											{/if}
+										{/each}
+										{#if messageText(message)}
+											<Message.Actions
+												class="mt-0 opacity-0 transition-opacity group-hover:opacity-100"
 											>
-												<p class="font-medium">Coach is proposing a permitted change.</p>
-												<pre
-													class="max-h-40 overflow-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(
-														part.output.proposed,
-														null,
-														2
-													)}</pre>
-												<Button
-													size="sm"
-													disabled={approving}
-													onclick={() => approveProposedCategory(part.output.category)}
-													>{approving ? 'Approving…' : 'Approve this category for 30 min'}</Button
+												<Message.Action
+													tooltip="Copy response"
+													label="Copy response"
+													onclick={() => void copyMessage(message)}
 												>
+													<CopyIcon />
+												</Message.Action>
+											</Message.Actions>
+										{/if}
+										{#if streaming && lastMessage?.id === message.id && isWaitingForResponse(message)}
+											<div class="flex items-center gap-2 text-sm text-muted-foreground">
+												<LoaderCircleIcon class="size-4 animate-spin" />
+												<span>Coach is thinking…</span>
 											</div>
-										{:else}<p
-												class="rounded-md border border-border/70 px-2 py-1 text-xs text-muted-foreground"
-											>
-												{part.state === 'output-available'
-													? 'Coach completed a permitted update.'
-													: part.state === 'output-error'
-														? 'Coach could not complete that update.'
-														: 'Coach is preparing an allowed update…'}
-											</p>{/if}
-									{:else if part.type.startsWith('tool-')}
-										<p class="text-xs text-muted-foreground">Coach is checking your study data…</p>
+										{/if}
 									{/if}
-								{/each}
-							</div>{/each}
-					</div>
-					<form
-						class="flex gap-2"
-						onsubmit={(event) => {
-							event.preventDefault();
-							void send();
-						}}
-					>
-						<textarea
-							bind:value={input}
-							rows="2"
-							placeholder="Ask Coach about your next study step…"
-							disabled={streaming}
-							class="min-h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-						></textarea><Button type="submit" disabled={streaming || !input.trim() || !sessionId}
-							>{streaming ? 'Thinking…' : 'Send'}</Button
-						>
-					</form></Card.Content
-				></Card.Root
-			>
-			{#if data.audits.length}
-				<Card.Root>
-					<Card.Header
-						><Card.Title>Recent Coach changes</Card.Title><Card.Description
-							>Coach changes are retained for 90 days and can be undone once.</Card.Description
-						></Card.Header
-					>
-					<Card.Content class="space-y-2">
-						{#each data.audits as audit (audit.id)}
-							<div
-								class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3"
+								</Message.Root>
+							{/each}
+						{:else}
+							<Conversation.EmptyState
+								title="Start with a study question"
+								description="Coach can use your practice, goals, and current plan to help you choose a next step."
 							>
-								<p class="text-sm">
-									{audit.toolName === 'update_goals'
-										? 'Updated courses or goals'
-										: 'Updated study plan'} · {new Date(audit.createdAt).toLocaleString()}
-								</p>
-								{#if audit.undoneAt}<span class="text-sm text-muted-foreground">Undone</span
-									>{:else}<Button
-										variant="outline"
-										size="sm"
-										disabled={undoingAuditId === audit.id}
-										onclick={() => undoChange(audit.id)}
-										>{undoingAuditId === audit.id ? 'Undoing…' : 'Undo'}</Button
-									>{/if}
-							</div>
-						{/each}
-					</Card.Content>
-				</Card.Root>
-			{/if}
+								{#snippet icon()}
+									<div
+										class="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+									>
+										<SparklesIcon class="size-5" />
+									</div>
+								{/snippet}
+							</Conversation.EmptyState>
+						{/if}
+					</Conversation.Content>
+					<Conversation.ScrollButton aria-label="Scroll to latest message" />
+				</Conversation.Root>
+
+				<div class="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4 sm:px-8 sm:pb-6">
+					{#if !hasMessages && !streaming}
+						<Suggestion.Suggestions class="mb-3 overflow-x-auto pb-1">
+							{#each suggestions as suggestion (suggestion)}
+								<Suggestion.Suggestion {suggestion} onclick={(value) => void send(value)} />
+							{/each}
+						</Suggestion.Suggestions>
+					{/if}
+
+					<PromptInput.Root
+						class="rounded-[32px] border border-border/80 bg-muted/40 shadow-sm transition-[border-color,box-shadow,background-color] focus-within:border-border focus-within:bg-background focus-within:shadow-md"
+						onSubmit={({ text }) => send(text)}
+						clearOnSubmit={false}
+					>
+						<div class="flex items-end gap-2 py-2 pr-3 pl-6">
+							<PromptInput.Body class="min-w-0 flex-1">
+								<PromptInput.Textarea
+									bind:value={input}
+									placeholder="Ask Coach anything…"
+									class="text-md md:text-md min-h-10 px-1 py-2 leading-7"
+								/>
+							</PromptInput.Body>
+							<PromptInput.Submit
+								status={coach.status as ChatStatus}
+								disabled={!sessionId || (!streaming && !input.trim())}
+								onStop={() => coach.stop()}
+								class="mb-0.5 size-9 shrink-0 rounded-full"
+							/>
+						</div>
+					</PromptInput.Root>
+					<p class="mt-2 text-center text-[11px] text-muted-foreground">
+						Coach is powered by AI and can make mistakes.
+					</p>
+				</div>
+			</main>
 		</div>
-	{/if}
-</PageShell>
+	</div>
+{/if}

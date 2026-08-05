@@ -6,16 +6,33 @@ import { vercelAdapter } from '@flags-sdk/vercel';
  * Managed in the Vercel Flags dashboard (`multi-attempt-experiment`).
  * Default off in all environments until you flip it there — no env var.
  */
-export const multiAttemptExperimentEnabled = flag<boolean>({
-	key: 'multi-attempt-experiment',
-	description: 'Enable sticky multi-attempt-with-hints practice experiment',
-	adapter: vercelAdapter(),
-	defaultValue: false,
-	options: [
-		{ value: true, label: 'On' },
-		{ value: false, label: 'Off' }
-	]
-});
+function vercelFlag(key: string, description: string, defaultValue: boolean) {
+	const adapter = vercelAdapter();
+	return flag<boolean>({
+		key,
+		description,
+		defaultValue,
+		options: [
+			{ value: true, label: 'On' },
+			{ value: false, label: 'Off' }
+		],
+		// Catch adapter failures here so flags/sveltekit does not stash a rejected
+		// promise in usedFlags and then 500 during createHandle's HTML transform.
+		async decide(params) {
+			try {
+				return Boolean(await adapter.decide({ key, ...params }));
+			} catch {
+				return defaultValue;
+			}
+		}
+	});
+}
+
+export const multiAttemptExperimentEnabled = vercelFlag(
+	'multi-attempt-experiment',
+	'Enable sticky multi-attempt-with-hints practice experiment',
+	false
+);
 
 export async function isMultiAttemptExperimentEnabled(): Promise<boolean> {
 	try {
@@ -30,16 +47,11 @@ export async function isMultiAttemptExperimentEnabled(): Promise<boolean> {
  * Managed in the Vercel Flags dashboard (`frq-practice`).
  * Default off until you flip it there — no env var.
  */
-export const frqPracticeEnabled = flag<boolean>({
-	key: 'frq-practice',
-	description: 'Enable authenticated written-response practice for pilot courses',
-	adapter: vercelAdapter(),
-	defaultValue: false,
-	options: [
-		{ value: true, label: 'On' },
-		{ value: false, label: 'Off' }
-	]
-});
+export const frqPracticeEnabled = vercelFlag(
+	'frq-practice',
+	'Enable authenticated written-response practice for pilot courses',
+	false
+);
 
 export async function isFrqPracticeEnabled(): Promise<boolean> {
 	try {
@@ -50,16 +62,7 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 }
 
 function superKillSwitch(key: string, description: string) {
-	return flag<boolean>({
-		key,
-		description,
-		adapter: vercelAdapter(),
-		defaultValue: true,
-		options: [
-			{ value: true, label: 'On' },
-			{ value: false, label: 'Off' }
-		]
-	});
+	return vercelFlag(key, description, true);
 }
 
 /** Kill switches only. Entitlements always come from durable billing/grant records. */

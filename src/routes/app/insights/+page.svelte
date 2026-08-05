@@ -130,10 +130,7 @@
 
 <svelte:head><title>Insights – Free AP Practice</title></svelte:head>
 
-<PageShell
-	title="Insights"
-	description="Evidence-based patterns from scored practice — not an AP score prediction."
->
+<PageShell title="Insights" description="Evidence-based patterns from your practice sessions">
 	{#if !data.entitlements.aiInsights}
 		<Card.Root class="mx-auto max-w-2xl"
 			><Card.Content class="space-y-3 p-6"
