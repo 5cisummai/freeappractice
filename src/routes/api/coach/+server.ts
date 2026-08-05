@@ -18,6 +18,7 @@ import {
 } from '$lib/super/ai-controls.server';
 import { createCoachAgent, type CoachUIMessage } from '$lib/super/coach.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
+import { getTutorProfileView } from '$lib/super/profile.server';
 
 const MAX_COACH_MESSAGES = 12;
 const MAX_COACH_REQUEST_BYTES = 32 * 1024;
@@ -170,7 +171,12 @@ export const POST: RequestHandler = withAuthedHandler(
 					}
 					await releaseLock(lock);
 				};
-				const agent = createCoachAgent({ userId, sessionId: parsed.data.sessionId });
+				const profile = await getTutorProfileView(userId);
+				const agent = createCoachAgent({
+					userId,
+					sessionId: parsed.data.sessionId,
+					selectedApClasses: profile.selectedApClasses
+				});
 				const result = await agent.stream({
 					messages,
 					abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal])

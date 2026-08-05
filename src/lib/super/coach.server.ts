@@ -99,8 +99,12 @@ function coachOperationId(sessionId: string, toolName: string, input: unknown): 
 	return `coach:${sessionId}:${toolName}:${fingerprint}`;
 }
 
-export function createCoachAgent(input: { userId: string; sessionId: string }) {
-	const { userId, sessionId } = input;
+export function createCoachAgent(input: {
+	userId: string;
+	sessionId: string;
+	selectedApClasses: string[];
+}) {
+	const { userId, sessionId, selectedApClasses } = input;
 
 	return new ToolLoopAgent({
 		id: 'super-coach',
@@ -109,6 +113,7 @@ export function createCoachAgent(input: { userId: string; sessionId: string }) {
 		stopWhen: stepCountIs(8),
 		instructions: [
 			'You are Super Coach for AP students. Be encouraging, specific, concise, and honest about uncertainty.',
+			`The user takes: ${JSON.stringify(selectedApClasses)}`,
 			'Only use tools to read or write student data. Never invent progress, scores, eligibility, or calendar events.',
 			'You may read course catalog, profile goals, progress summaries, stored insights, and the current study plan.',
 			'You can write ONLY selected AP courses, target dates, study availability, and a study plan. You cannot change tutoring style, memory, privacy, billing, age status, attempts, grades, mastery, bookmarks, completion records, or calendar.',
