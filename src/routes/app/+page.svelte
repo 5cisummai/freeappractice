@@ -25,7 +25,6 @@
 	const progressData = $derived(data.progress as ProgressEntry[]);
 	const superEntitlements = $derived(data.entitlements);
 	const superPlan = $derived(data.superPlan);
-	const superUsage = $derived(data.superUsage);
 	const superInsights = $derived(data.superInsights);
 	const openPlanTasks = $derived(
 		superPlan?.tasks.filter((task) => task.status !== 'done').slice(0, 3) ?? []
@@ -212,50 +211,49 @@
 		</section>
 
 		{#if superEntitlements?.plan === 'super'}
-			<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
 				<a
 					href={resolve('/app/coach')}
-					class="group flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 shadow-sm transition-colors hover:bg-primary/10"
+					class="group flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 shadow-sm transition-colors hover:bg-primary/10"
 				>
 					<div>
-						<p class="font-medium">Coach</p>
-						<p class="text-sm text-muted-foreground">
+						<p class="text-sm font-medium">Coach</p>
+						<p class="text-xs leading-5 text-muted-foreground">
 							Turn your progress into a practical next step.
 						</p>
 					</div>
-					<ArrowRightIcon class="size-4 shrink-0 text-primary" />
+					<ArrowRightIcon class="size-3.5 shrink-0 text-primary" />
 				</a>
 				<Card.Root class="border-border/60 bg-card shadow-sm ring-0">
-					<Card.Content class="p-5">
+					<Card.Content class="p-4">
 						<div class="flex items-start justify-between gap-3">
 							<div>
-								<p class="font-medium">Active study plan</p>
-								<p class="text-sm text-muted-foreground">
-									{superPlan?.tasks.filter((task) => task.status !== 'done').length ?? 0} tasks
-									remaining
+								<p class="text-sm font-medium">Active study plan</p>
+								<p class="text-xs text-muted-foreground">
+									{superPlan?.tasks.filter((task) => task.status !== 'done').length ?? 0} tasks remaining
 								</p>
 							</div>
 							<a
 								href={resolve('/app/insights')}
-								class="text-sm text-primary underline-offset-4 hover:underline">View plan</a
+								class="text-xs text-primary underline-offset-4 hover:underline">View plan</a
 							>
 						</div>
 						{#if openPlanTasks.length}
-							<div class="mt-4 space-y-2 border-t border-border/60 pt-3">
+							<div class="mt-3 space-y-1.5 border-t border-border/60 pt-2.5">
 								{#each openPlanTasks as task (task.id)}
 									<a
 										href={resolve(
 											`/app/practice?apClass=${encodeURIComponent(task.apClass)}&unit=${encodeURIComponent(task.unit)}${task.mode === 'frq' ? '&mode=frq' : ''}`
 										)}
-										class="block rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/60"
+										class="block rounded-lg px-1.5 py-1 text-xs transition-colors hover:bg-muted/60"
 									>
 										<div class="flex items-center justify-between gap-2">
 											<span class="truncate font-medium">{task.apClass} · {task.unit}</span>
-											<span class="shrink-0 text-xs text-muted-foreground"
+											<span class="shrink-0 text-[11px] text-muted-foreground"
 												>{formatPlanDate(task.date)}</span
 											>
 										</div>
-										<p class="text-xs text-muted-foreground">
+										<p class="text-[11px] text-muted-foreground">
 											{task.mode === 'frq' ? 'FRQ' : task.mode === 'mcq' ? 'MCQ' : 'Review'} ·
 											{task.durationMinutes} min
 										</p>
@@ -263,7 +261,9 @@
 								{/each}
 							</div>
 						{:else}
-							<p class="mt-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
+							<p
+								class="mt-3 border-t border-border/60 pt-2.5 text-xs leading-5 text-muted-foreground"
+							>
 								Your active plan is complete. Open Insights for the next one.
 							</p>
 						{/if}
@@ -271,11 +271,11 @@
 				</Card.Root>
 				<a
 					href={resolve('/app/insights')}
-					class="group flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm transition-colors hover:bg-muted/40"
+					class="group flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm transition-colors hover:bg-muted/40"
 				>
 					<div>
-						<p class="font-medium">Weekly insights</p>
-						<p class="text-sm text-muted-foreground">
+						<p class="text-sm font-medium">Weekly insights</p>
+						<p class="text-xs leading-5 text-muted-foreground">
 							{#if superInsights.status === 'current'}
 								Your latest report is up to date.
 							{:else if superInsights.status === 'setup'}
@@ -285,36 +285,16 @@
 							{/if}
 						</p>
 					</div>
-					<ArrowRightIcon class="size-4 shrink-0 text-muted-foreground" />
+					<ArrowRightIcon class="size-3.5 shrink-0 text-muted-foreground" />
 				</a>
 			</div>
-			{#if superUsage.status !== 'not_available'}
-				<div class="rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm">
-					<p class="font-medium">Personalized AI usage</p>
-					{#if superUsage.status === 'available'}
-						<p class="text-sm text-muted-foreground">
-							{superUsage.remaining} of 600 messages remaining this month.
-						</p>
-						{#if superUsage.warning}
-							<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-								You have used {superUsage.warning}% of this month's personalized messages.
-							</p>
-						{/if}
-					{:else}
-						<p class="text-sm text-muted-foreground">
-							Usage is unavailable right now. Your tutor and Coach access are unchanged.
-						</p>
-					{/if}
-				</div>
-			{/if}
 		{:else}
 			<a
 				href={resolve('/pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
 				<span
-					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study
-					plans.</span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study plans.</span
 				>
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>
@@ -402,8 +382,7 @@
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
 				<span
-					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study
-					plans.</span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study plans.</span
 				>
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>

@@ -74,6 +74,7 @@
 		"@better-auth/stripe": "1.6.26",
 		"@flags-sdk/vercel": "^1.4.5",
 		"@sentry/sveltekit": "^10",
+		"@tabler/icons-svelte": "^3.46.0",
 		"@tanstack/table-core": "^8.21.3",
 		"@upstash/ratelimit": "^2.0.8",
 		"@upstash/redis": "^1.38.2",

@@ -548,12 +548,13 @@
 				</div>
 
 				<div
-					class="onboarding-enter flex flex-col-reverse items-stretch justify-between gap-3 border-t border-border/60 pt-6 sm:flex-row sm:items-center"
+					class="onboarding-enter flex flex-col-reverse items-stretch justify-between gap-3 pt-6 sm:flex-row sm:items-center"
 					style="--onboarding-delay: 240ms"
 				>
 					<div class="flex flex-wrap items-center gap-2">
 						{#if !isFirst}
-							<Button variant="ghost" onclick={goBack} disabled={saving || billingBusy}>Back</Button
+							<Button variant="outline" onclick={goBack} disabled={saving || billingBusy}
+								><ArrowLeftIcon class="size-4" /> Back</Button
 							>
 						{/if}
 						{#if step !== 'plan'}

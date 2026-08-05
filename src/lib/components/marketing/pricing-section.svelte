@@ -10,7 +10,6 @@
 	aria-labelledby="pricing-section-heading"
 >
 	<div class="mx-auto max-w-2xl space-y-5 text-center">
-		<p class="text-sm font-semibold tracking-wide text-primary uppercase">Free AP Practice Super</p>
 		<svelte:element
 			this={asPage ? 'h1' : 'h2'}
 			id="pricing-section-heading"
@@ -28,8 +27,7 @@
 	<PricingCards />
 
 	<p class="mx-auto max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-		No free trial, promotions, referral discounts, or overages. Cancel at the end of your billing
-		period and restore before it ends. Personalized features require confirmation that you are 13 or
-		older.
+		Must be 13+ to use personalized features. No free trials, promotions, or overages. Cancel
+		anytime before your billing period ends.
 	</p>
 </section>

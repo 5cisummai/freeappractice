@@ -14,7 +14,8 @@
 	import SiteFooter from '$lib/components/layout/site-footer.svelte';
 	import Topbar from '$lib/components/layout/topbar.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { IconArrowRight } from '@tabler/icons-svelte';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	onMount(() => {
 		captureLandingPageViewed();
 		void authClient.getSession().then(({ data }) => {
@@ -291,8 +292,15 @@
 		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-6">
-					<Badge variant="outline" class="p-4"
-						>Your Personalized Learning<IconArrowRight class="h-4 w-4" />
+					<Badge
+						variant="outline"
+						class="gap-2 border-violet-300/50 bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70 hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15"
+					>
+						<SparklesIcon class="size-4 text-violet-500" aria-hidden="true" />
+						<span class="font-semibold text-violet-700 dark:text-violet-300">Start here</span>
+						<span class="text-muted-foreground/60" aria-hidden="true">•</span>
+						<span>Your Personalized Learning</span>
+						<ArrowRightIcon class="size-4" aria-hidden="true" />
 					</Badge>
 					<h1
 						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
