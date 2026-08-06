@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import CheckIcon from '@lucide/svelte/icons/check';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import PricingCards from '$lib/components/marketing/pricing-cards.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -13,7 +11,6 @@
 	import logo from '$lib/assets/logo.png';
 	import { authClient } from '$lib/auth/client.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -81,7 +78,6 @@
 	let memories = $state<Array<{ id: string; text: string; createdAt: string | null }>>([]);
 	let memoryLoading = $state(false);
 	let stepKey = $state(0);
-	let claimingFreeBeta = $state(false);
 
 	const steps = $derived(
 		data.freeBetaEnabled
@@ -92,7 +88,8 @@
 				? [...BASE_STEPS, ...SUPER_STEPS]
 				: BASE_STEPS
 	);
-	const stepIndex = $derived(steps.findIndex((entry) => entry.id === step));
+	const activeStep = $derived(isSuperMember && step === 'plan' ? 'style' : step);
+	const stepIndex = $derived(steps.findIndex((entry) => entry.id === activeStep));
 	const current = $derived.by(() => {
 		const entry = steps[stepIndex] ?? steps[0];
 		if (entry.id !== 'plan' || !isSuperMember) return entry;
@@ -111,7 +108,7 @@
 		if (window.location.hash === '#tutor-memory') {
 			optedIntoSuper = true;
 			goTo('memory');
-		} else if (step === 'memory' && isSuperMember) {
+		} else if (activeStep === 'memory' && isSuperMember) {
 			void loadMemories();
 		}
 	});
@@ -218,42 +215,22 @@
 		goTo('style');
 	}
 
-	async function claimFreeBeta() {
-		if (claimingFreeBeta) return;
-		claimingFreeBeta = true;
-		try {
-			const response = await apiFetch('/api/super/claim-free-beta', { method: 'POST' });
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok) {
-				throw new Error(getResponseMessage(result, 'Could not claim the free Super offer.'));
-			}
-			toast.success('Super unlocked. Enjoy the free beta!');
-			await invalidateAll();
-			optedIntoSuper = true;
-			goTo('style');
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
-		} finally {
-			claimingFreeBeta = false;
-		}
-	}
-
 	async function advance() {
 		if (saving) return;
 		saving = true;
 		try {
-			if (step === 'age') {
+			if (activeStep === 'age') {
 				if (!form.ageConfirmed) await confirmAge();
-			} else if (step === 'plan') {
+			} else if (activeStep === 'plan') {
 				if (isSuperMember) {
 					goTo('style');
 					return;
 				}
 				window.location.assign(resolve('/app'));
 				return;
-			} else if (step === 'style') {
+			} else if (activeStep === 'style') {
 				await saveProfile();
-			} else if (step === 'memory') {
+			} else if (activeStep === 'memory') {
 				await saveProfile();
 				await acknowledgeMemory();
 				if (!isSuperMember && data.checkoutEnabled) {
@@ -263,7 +240,7 @@
 				window.location.assign(continueHref);
 				return;
 			} else {
-				const _exhaustive: never = step;
+				const _exhaustive: never = activeStep;
 				void _exhaustive;
 			}
 
@@ -327,14 +304,15 @@
 
 	const primaryLabel = $derived.by(() => {
 		if (saving || billingBusy) return 'Saving…';
-		if (step === 'age' && !form.ageConfirmed) return 'I am at least 13';
-		if (step === 'plan') return isSuperMember ? 'Continue setup' : 'Stay on Free';
-		if (step === 'memory' && !isSuperMember && data.checkoutEnabled) return 'Continue to checkout';
+		if (activeStep === 'age' && !form.ageConfirmed) return 'I am at least 13';
+		if (activeStep === 'plan') return isSuperMember ? 'Continue setup' : 'Stay on Free';
+		if (activeStep === 'memory' && !isSuperMember && data.checkoutEnabled)
+			return 'Continue to checkout';
 		if (isLast) return isSuperMember ? 'Continue to Coach' : 'Finish setup';
 		return 'Continue';
 	});
 
-	const showFooterContinue = $derived(step !== 'plan' || isSuperMember);
+	const showFooterContinue = $derived(activeStep !== 'plan' || isSuperMember);
 </script>
 
 <svelte:head><title>Set up Super – Free AP Practice</title></svelte:head>
@@ -361,7 +339,7 @@
 		>
 			{#each steps as entry, index (entry.id)}
 				{@const complete = index < stepIndex}
-				{@const active = entry.id === step}
+				{@const active = entry.id === activeStep}
 				{@const chipClass = complete
 					? 'border-primary bg-primary text-primary-foreground'
 					: active
@@ -388,8 +366,8 @@
 		{#key stepKey}
 			<div
 				class="mx-auto mt-10 space-y-8 sm:mt-14"
-				class:max-w-2xl={step !== 'plan'}
-				class:max-w-4xl={step === 'plan'}
+				class:max-w-2xl={activeStep !== 'plan'}
+				class:max-w-4xl={activeStep === 'plan'}
 			>
 				<div
 					class="animate-in space-y-3 text-center duration-[560ms] [--onboarding-delay:80ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
@@ -407,7 +385,7 @@
 				<div
 					class="animate-in space-y-5 duration-[560ms] [--onboarding-delay:160ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 				>
-					{#if step === 'age'}
+					{#if activeStep === 'age'}
 						<div
 							class="rounded-xl border border-border/70 bg-card/40 px-5 py-6 text-sm leading-6 text-muted-foreground"
 						>
@@ -418,96 +396,89 @@
 								personalized Super features.
 							{/if}
 						</div>
-					{:else if step === 'plan'}
-						<PricingCards>
-							{#snippet freeBadge()}
-								{#if !isSuperMember}
-									<span
-										class="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground"
-									>
-										Current
-									</span>
-								{/if}
-							{/snippet}
-							{#snippet freeAction()}
-								{#if isSuperMember}
-									<Button variant="outline" class="mt-8 w-full" disabled>Not your plan</Button>
-								{:else}
-									<Button variant="outline" class="mt-8 w-full" href={resolve('/app')}>
-										Stay on Free
-									</Button>
-								{/if}
-							{/snippet}
-							{#snippet superBadge()}
-								{#if isSuperMember}
-									<span
-										class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"
-									>
-										Current
-									</span>
-								{:else}
-									<span
-										class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"
-									>
-										Upgrade
-									</span>
-								{/if}
-							{/snippet}
-							{#snippet superAction()}
-								{#if isSuperMember}
-									<div class="mt-8 space-y-2">
-										<Button class="w-full" onclick={continueWithSuper}>
-											Continue setup <ArrowRightIcon class="size-4" />
+					{:else if activeStep === 'plan'}
+						{#if !data.freeBetaEnabled}
+							<PricingCards>
+								{#snippet freeBadge()}
+									{#if !isSuperMember}
+										<span
+											class="rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-muted-foreground"
+										>
+											Current
+										</span>
+									{/if}
+								{/snippet}
+								{#snippet freeAction()}
+									{#if isSuperMember}
+										<Button variant="outline" class="mt-8 w-full" disabled>Not your plan</Button>
+									{:else}
+										<Button variant="outline" class="mt-8 w-full" href={resolve('/app')}>
+											Stay on Free
 										</Button>
-										{#if !data.freeBetaEnabled}
-											<Button
-												variant="outline"
-												class="w-full"
-												onclick={manageBilling}
-												disabled={billingBusy}
-											>
-												{billingBusy ? 'Opening…' : 'Manage billing'}
+									{/if}
+								{/snippet}
+								{#snippet superBadge()}
+									{#if isSuperMember}
+										<span
+											class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"
+										>
+											Current
+										</span>
+									{:else}
+										<span
+											class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"
+										>
+											Upgrade
+										</span>
+									{/if}
+								{/snippet}
+								{#snippet superAction()}
+									{#if isSuperMember}
+										<div class="mt-8 space-y-2">
+											<Button class="w-full" onclick={continueWithSuper}>
+												Continue setup <ArrowRightIcon class="size-4" />
 											</Button>
-										{/if}
-									</div>
-								{:else if data.freeBetaEnabled}
-									<Button
-										class="mt-8 w-full rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
-										onclick={claimFreeBeta}
-										disabled={claimingFreeBeta}
-									>
-										<SparklesIcon class="size-4" />
-										{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
-									</Button>
-								{:else if data.checkoutEnabled}
-									<div class="mt-6 flex flex-wrap gap-2">
-										<Button
-											size="sm"
-											onclick={() => (annual = false)}
-											variant={annual ? 'outline' : 'default'}
-										>
-											Monthly
+											{#if !data.freeBetaEnabled}
+												<Button
+													variant="outline"
+													class="w-full"
+													onclick={manageBilling}
+													disabled={billingBusy}
+												>
+													{billingBusy ? 'Opening…' : 'Manage billing'}
+												</Button>
+											{/if}
+										</div>
+									{:else if data.checkoutEnabled}
+										<div class="mt-6 flex flex-wrap gap-2">
+											<Button
+												size="sm"
+												onclick={() => (annual = false)}
+												variant={annual ? 'outline' : 'default'}
+											>
+												Monthly
+											</Button>
+											<Button
+												size="sm"
+												onclick={() => (annual = true)}
+												variant={annual ? 'default' : 'outline'}
+											>
+												Yearly
+											</Button>
+										</div>
+										<Button class="mt-3 w-full" onclick={continueWithSuper}>
+											Upgrade to Super <ArrowRightIcon class="size-4" />
 										</Button>
-										<Button
-											size="sm"
-											onclick={() => (annual = true)}
-											variant={annual ? 'default' : 'outline'}
-										>
-											Yearly
-										</Button>
-									</div>
-									<Button class="mt-3 w-full" onclick={continueWithSuper}>
-										Upgrade to Super <ArrowRightIcon class="size-4" />
-									</Button>
-								{:else}
-									<p class="mt-8 text-sm text-muted-foreground">
-										New Super checkout is temporarily unavailable. Existing members keep their
-										access.
-									</p>
-								{/if}
-							{/snippet}
-						</PricingCards>
-					{:else if step === 'style'}
+									{:else}
+										<p class="mt-8 text-sm text-muted-foreground">
+											New Super checkout is temporarily unavailable. Existing members keep their
+											access.
+										</p>
+									{/if}
+								{/snippet}
+							</PricingCards>
+						{/if}
+					{:else if activeStep === 'style'}
 						<fieldset class="space-y-3">
 							<legend class="sr-only">Teaching style</legend>
 							{#each [{ value: 'socratic' as const, title: 'Socratic hints', detail: 'Guiding questions that help you reason it out.' }, { value: 'concise' as const, title: 'Concise explanations', detail: 'Short, direct answers when you want clarity fast.' }, { value: 'step_by_step' as const, title: 'Step by step', detail: 'Walk through problems in ordered stages.' }] as option (option.value)}
@@ -531,7 +502,7 @@
 								</label>
 							{/each}
 						</fieldset>
-					{:else if step === 'memory'}
+					{:else if activeStep === 'memory'}
 						<div class="space-y-4" id="tutor-memory">
 							<div
 								class="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-4"
@@ -601,7 +572,7 @@
 								><ArrowLeftIcon class="size-4" /> Back</Button
 							>
 						{/if}
-						{#if step !== 'plan'}
+						{#if activeStep !== 'plan'}
 							<Button variant="ghost" href={skipHref}>Skip for now</Button>
 						{/if}
 					</div>
