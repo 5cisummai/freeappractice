@@ -82,9 +82,9 @@
 				<h2 class="text-xl font-semibold">5. Super Membership</h2>
 				{#if data.superFreeBetaEnabled}
 					<p>
-						During the Super free beta, every authenticated student aged 13 or older receives
-						personalized multiple-choice and written-response tutoring, Coach, Insights, weekly
-						study plans, and up to 300 personalized messages per UTC calendar month at no charge.
+						During the Super free beta, authenticated students aged 13 or older can claim free
+						access to personalized multiple-choice and written-response tutoring, Coach, Insights,
+						weekly study plans, and up to 300 personalized messages per UTC calendar month.
 					</p>
 				{:else}
 					<p>

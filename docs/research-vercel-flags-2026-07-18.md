@@ -7,35 +7,35 @@
 
 ## Verdict
 
-This app already has **half** of the Flags stack: `flags` + SvelteKit `createHandle` + Toolbar + two declared flags. It does **not** yet connect evaluations to the **Vercel Dashboard Flags** provider — that requires `@flags-sdk/vercel` + `vercelAdapter()`, OIDC/`FLAGS` credentials, and promoting drafts in the dashboard.
+This app uses the full Flags stack: `flags` + SvelteKit `createHandle` + Toolbar + seven declared flags + the Vercel adapter. Dashboard values still require OIDC/`FLAGS` credentials and promoting code-defined drafts in the dashboard.
 
 ---
 
 ## What you already have
 
-| Piece                                 | Status                     | Where                                      |
-| ------------------------------------- | -------------------------- | ------------------------------------------ |
-| `flags` package                       | ✅ `^4.2.0`                | `package.json`                             |
-| Flag declarations                     | ✅ two flags               | `src/lib/flags.ts`                         |
-| Discovery + overrides hook            | ✅ gated on `FLAGS_SECRET` | `src/hooks.server.ts`                      |
-| Vercel Toolbar (local)                | ✅                         | `vite.config.ts`, `+layout.svelte`         |
-| `@flags-sdk/vercel` / `vercelAdapter` | ❌ missing                 | —                                          |
-| Dashboard-managed values              | ❌                         | Local `decide()` / hardcoded `false` / env |
+| Piece                                 | Status                     | Where                                 |
+| ------------------------------------- | -------------------------- | ------------------------------------- |
+| `flags` package                       | ✅ `^4.2.0`                | `package.json`                        |
+| Flag declarations                     | ✅ seven flags             | `src/lib/flags.ts`                    |
+| Discovery + overrides hook            | ✅ gated on `FLAGS_SECRET` | `src/hooks.server.ts`                 |
+| Vercel Toolbar (local)                | ✅                         | `vite.config.ts`, `+layout.svelte`    |
+| `@flags-sdk/vercel` / `vercelAdapter` | ✅                         | `src/lib/flags.ts`                    |
+| Dashboard-managed values              | ✅ adapter wired           | `src/lib/flags.ts` + Vercel promotion |
 
 ### Declared flags today
 
 1. **`multi-attempt-experiment`** (`multiAttemptExperimentEnabled`)
-   - Kill-switch for sticky multi-attempt experiment ([DEV-60](https://linear.app/freeappractice/issue/DEV-60)).
-   - Currently hard-off: `decide() → false`, `isMultiAttemptExperimentEnabled() → false`.
+   - Dashboard-controlled master gate for the sticky multi-attempt experiment ([DEV-60](https://linear.app/freeappractice/issue/DEV-60)).
+   - The server assigns and persists a 50/50 variant only while the flag is enabled.
 
 2. **`frq-practice`** (`frqPracticeEnabled`)
    - Pilot gate for authenticated FRQ practice ([DEV-82](https://linear.app/freeappractice/issue/DEV-82)).
-   - `decide()` reads `FRQ_PRACTICE_ENABLED === 'true'`.
+   - Uses the Vercel adapter with a false default.
    - Used by practice page load, FRQ gate, dashboard, history API.
 
 ### Explorer wiring
 
-When `FLAGS_SECRET` is set, `createHandle` exposes `/.well-known/vercel/flags` and honors Toolbar overrides. Without it, Explorer cannot authenticate and flags fall back to `decide()` only. See [Flags Explorer getting started](https://vercel.com/docs/flags/flags-explorer/getting-started).
+When `FLAGS_SECRET` is set, `createHandle` exposes `/.well-known/vercel/flags` and honors Toolbar overrides. It is required in each Vercel environment for discovery, overrides, and SDK value reporting. See [Flags Explorer getting started](https://vercel.com/docs/flags/flags-explorer/getting-started).
 
 ---
 
@@ -47,7 +47,7 @@ Two layers (easy to confuse):
    - Code declares flags → discovery endpoint → Toolbar can list & override.
    - Needs `FLAGS_SECRET` + Toolbar.
 
-2. **Vercel Flags as provider** (the gap)
+2. **Vercel Flags as provider**
    - Dashboard owns on/off, targeting, rollouts, per-env values.
    - Needs `@flags-sdk/vercel`, `adapter: vercelAdapter()`, and project auth via OIDC (`vercel env pull` locally; automatic on Vercel) or an SDK key in `FLAGS`.
    - Code-defined flags appear as **drafts** after deploy; promote in Dashboard to manage them.  
@@ -108,15 +108,15 @@ For user/team targeting (e.g. beta testers, course pilots), add an `identify` fu
 
 ## Setup checklist (to finish Dashboard connection)
 
-1. [ ] `bun add @flags-sdk/vercel`
+1. [x] `@flags-sdk/vercel` is installed
 2. [ ] Ensure project is linked: `vercel link`
 3. [ ] Set `FLAGS_SECRET` in Vercel for Development / Preview / Production (Sensitive on Preview+Prod). Generate: `node -e "console.log(crypto.randomBytes(32).toString('base64url'))"`
 4. [ ] `vercel env pull` (pulls OIDC / `FLAGS` after flags exist)
-5. [ ] Add `adapter: vercelAdapter()` to both flags in `src/lib/flags.ts`
+5. [x] Add `adapter: vercelAdapter()` to the declarations in `src/lib/flags.ts`
 6. [ ] Optionally add `identify` (user id, email, plan/course) for targeting
-7. [ ] Deploy production → open **Flags → Drafts** → promote `frq-practice` and `multi-attempt-experiment`
+7. [ ] Deploy production → open **Flags → Drafts** → promote the declared flags you want managed in Vercel
 8. [ ] Configure per-env defaults in Dashboard (e.g. FRQ on in Development, off in Production until pilot)
-9. [ ] Un-hardcode multi-attempt helpers and enrollment
+9. [x] Wire server assignment into the practice page and keep the client assignment non-authoritative
 10. [ ] Verify Toolbar → Flags Explorer overrides; check evaluations in Runtime Logs / Web Analytics ([observability](https://vercel.com/docs/flags/observability))
 
 ---
@@ -129,4 +129,4 @@ Flags SDK evaluations report automatically (`reportValue` under the hood). This 
 
 ## Bottom line
 
-You are **not** missing the Flags SDK — you are missing the **Vercel provider adapter** and **Dashboard promotion**. Wire `vercelAdapter`, set secrets, promote the two existing draft keys, then drive FRQ and multi-attempt from the Flags tab instead of env vars / hardcoded offs.
+The code-side Vercel Flags integration is complete. Set secrets, promote the seven code-defined drafts, configure targeting if needed, and drive rollout from the Flags tab.

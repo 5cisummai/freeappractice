@@ -1,5 +1,10 @@
 import mongoose, { Schema, type Document, type Model } from 'mongoose';
-import type { StudyTask, SuperBillingStatus, TutorTeachingStyle } from '$lib/super/types';
+import type {
+	StudyTask,
+	SuperBillingIssue,
+	SuperBillingStatus,
+	TutorTeachingStyle
+} from '$lib/super/types';
 
 export interface ITutorProfile extends Document {
 	userId: string;
@@ -11,6 +16,7 @@ export interface ITutorProfile extends Document {
 	teachingStyle: TutorTeachingStyle;
 	memoryEnabled: boolean;
 	memoryDisclosureSeenAt?: Date;
+	superFreeBetaClaimedAt?: Date;
 	superAccessStartedAt?: Date;
 	superEndedAt?: Date;
 	memoryPurgedAt?: Date;
@@ -41,6 +47,7 @@ const tutorProfileSchema = new Schema<ITutorProfile>(
 		},
 		memoryEnabled: { type: Boolean, default: true },
 		memoryDisclosureSeenAt: { type: Date },
+		superFreeBetaClaimedAt: { type: Date },
 		superAccessStartedAt: { type: Date },
 		superEndedAt: { type: Date },
 		memoryPurgedAt: { type: Date }
@@ -64,6 +71,11 @@ export interface ISuperBillingAccess extends Document {
 	cancelAt?: Date;
 	pastDueSince?: Date;
 	superEndedAt?: Date;
+	billingIssue?: SuperBillingIssue;
+	billingIssueAt?: Date;
+	lastStripeEventId?: string;
+	lastStripeEventCreated?: Date;
+	lastBillingEventCreated?: Date;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -93,7 +105,15 @@ const superBillingAccessSchema = new Schema<ISuperBillingAccess>(
 		cancelAtPeriodEnd: { type: Boolean, default: false },
 		cancelAt: { type: Date },
 		pastDueSince: { type: Date },
-		superEndedAt: { type: Date }
+		superEndedAt: { type: Date },
+		billingIssue: {
+			type: String,
+			enum: ['payment_failed', 'payment_action_required', 'invoice_finalization_failed']
+		},
+		billingIssueAt: { type: Date },
+		lastStripeEventId: { type: String },
+		lastStripeEventCreated: { type: Date },
+		lastBillingEventCreated: { type: Date }
 	},
 	{ timestamps: true }
 );

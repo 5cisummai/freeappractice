@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import CheckIcon from '@lucide/svelte/icons/check';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import PricingCards from '$lib/components/marketing/pricing-cards.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -11,6 +13,7 @@
 	import logo from '$lib/assets/logo.png';
 	import { authClient } from '$lib/auth/client.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -78,10 +81,13 @@
 	let memories = $state<Array<{ id: string; text: string; createdAt: string | null }>>([]);
 	let memoryLoading = $state(false);
 	let stepKey = $state(0);
+	let claimingFreeBeta = $state(false);
 
 	const steps = $derived(
 		data.freeBetaEnabled
-			? [...BASE_STEPS.slice(0, 1), ...SUPER_STEPS]
+			? isSuperMember
+				? [...BASE_STEPS.slice(0, 1), ...SUPER_STEPS]
+				: [...BASE_STEPS, ...SUPER_STEPS]
 			: optedIntoSuper || isSuperMember
 				? [...BASE_STEPS, ...SUPER_STEPS]
 				: BASE_STEPS
@@ -212,6 +218,26 @@
 		goTo('style');
 	}
 
+	async function claimFreeBeta() {
+		if (claimingFreeBeta) return;
+		claimingFreeBeta = true;
+		try {
+			const response = await apiFetch('/api/super/claim-free-beta', { method: 'POST' });
+			const result = await readJsonOrNull<{ error?: string }>(response);
+			if (!response.ok) {
+				throw new Error(getResponseMessage(result, 'Could not claim the free Super offer.'));
+			}
+			toast.success('Super unlocked. Enjoy the free beta!');
+			await invalidateAll();
+			optedIntoSuper = true;
+			goTo('style');
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
+		} finally {
+			claimingFreeBeta = false;
+		}
+	}
+
 	async function advance() {
 		if (saving) return;
 		saving = true;
@@ -270,9 +296,7 @@
 				successUrl: `${window.location.origin}${resolve('/app/super/setup')}?checkout=success`,
 				cancelUrl: `${window.location.origin}${resolve('/pricing')}`,
 				returnUrl: `${window.location.origin}${resolve('/app/super/setup')}`,
-				...(data.billing?.subscriptionId
-					? { subscriptionId: data.billing.subscriptionId }
-					: {}),
+				...(data.billing?.subscriptionId ? { subscriptionId: data.billing.subscriptionId } : {}),
 				disableRedirect: true
 			});
 			if (error || !checkout?.url) throw new Error(error?.message ?? 'Could not start checkout.');
@@ -435,15 +459,26 @@
 										<Button class="w-full" onclick={continueWithSuper}>
 											Continue setup <ArrowRightIcon class="size-4" />
 										</Button>
-										<Button
-											variant="outline"
-											class="w-full"
-											onclick={manageBilling}
-											disabled={billingBusy}
-										>
-											{billingBusy ? 'Opening…' : 'Manage billing'}
-										</Button>
+										{#if !data.freeBetaEnabled}
+											<Button
+												variant="outline"
+												class="w-full"
+												onclick={manageBilling}
+												disabled={billingBusy}
+											>
+												{billingBusy ? 'Opening…' : 'Manage billing'}
+											</Button>
+										{/if}
 									</div>
+								{:else if data.freeBetaEnabled}
+									<Button
+										class="mt-8 w-full rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
+										onclick={claimFreeBeta}
+										disabled={claimingFreeBeta}
+									>
+										<SparklesIcon class="size-4" />
+										{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
+									</Button>
 								{:else if data.checkoutEnabled}
 									<div class="mt-6 flex flex-wrap gap-2">
 										<Button

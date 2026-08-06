@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { isSuperCoachEnabled } from '$lib/flags';
 import { claimIdempotencyKey, RedisRequiredError } from '$lib/super/ai-controls.server';
 import { undoCoachAudit } from '$lib/super/coach.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
@@ -10,6 +11,9 @@ const undoSchema = z.object({ auditId: z.string().regex(/^[a-f\d]{24}$/i) }).str
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
+		if (!(await isSuperCoachEnabled())) {
+			return json({ error: 'Coach is temporarily unavailable.' }, { status: 503 });
+		}
 		const access = await getSuperFeatureAccess(userId, 'coach');
 		if (!access.allowed)
 			return json({ error: superFeatureAccessMessage(access, 'Coach') }, { status: 403 });

@@ -7,24 +7,15 @@ import { vercelAdapter } from '@flags-sdk/vercel';
  * Default off in all environments until you flip it there — no env var.
  */
 function vercelFlag(key: string, description: string, defaultValue: boolean) {
-	const adapter = vercelAdapter();
 	return flag<boolean>({
 		key,
 		description,
+		adapter: vercelAdapter(),
 		defaultValue,
 		options: [
 			{ value: true, label: 'On' },
 			{ value: false, label: 'Off' }
-		],
-		// Catch adapter failures here so flags/sveltekit does not stash a rejected
-		// promise in usedFlags and then 500 during createHandle's HTML transform.
-		async decide(params) {
-			try {
-				return Boolean(await adapter.decide({ key, ...params }));
-			} catch {
-				return defaultValue;
-			}
-		}
+		]
 	});
 }
 
@@ -62,13 +53,13 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 }
 
 /**
- * Free Super beta for every authenticated user.
+ * Free Super beta offer for authenticated users (claim required).
  * Managed in the Vercel Flags dashboard (`super-free-beta`).
  * Default off until you flip it there — no env var.
  */
 export const superFreeBetaEnabled = vercelFlag(
 	'super-free-beta',
-	'Give every authenticated user free Super access during the beta',
+	'Offer authenticated users a claimable free Super beta',
 	false
 );
 

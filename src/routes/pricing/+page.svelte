@@ -11,7 +11,7 @@
 	<meta
 		name="description"
 		content={data.superFreeBetaEnabled
-			? 'Get Super free during the beta with personalized AP tutoring, AI coaching, and actionable study insights.'
+			? 'Claim your free Super beta offer with personalized AP tutoring, AI coaching, and actionable study insights.'
 			: 'Upgrade to Super for personalized AP tutoring, AI coaching, and actionable study insights.'}
 	/>
 </svelte:head>

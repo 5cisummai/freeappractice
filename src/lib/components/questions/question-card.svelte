@@ -107,12 +107,6 @@
 			(session.currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
 	);
 	const expandedTwoColumn = $derived(!isMobileViewport && (isExpanded || effectiveTwoColumn));
-	const tutorAnswerChoices = $derived.by(() => {
-		if (!session.currentQuestion?.options) return null;
-		const map: Record<string, string> = {};
-		for (const opt of session.currentQuestion.options) map[opt.id] = opt.text;
-		return map.A && map.B ? (map as { A: string; B: string; C: string; D: string }) : null;
-	});
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		isLongQuestion = measureLongQuestion({

@@ -8,8 +8,11 @@ import { getMem0UserId } from '$lib/super/profile.server';
 const RETRY_DELAY_MS = 60 * 60 * 1000;
 
 /** Runs before Better Auth removes the account; a Stripe failure aborts deletion. */
-export async function prepareAccountDeletion(userId: string): Promise<void> {
-	await cancelStripeSubscriptionsForUser(userId);
+export async function prepareAccountDeletion(
+	userId: string,
+	stripeCustomerId?: string
+): Promise<void> {
+	await cancelStripeSubscriptionsForUser(userId, stripeCustomerId);
 	const mem0UserId = await getMem0UserId(userId);
 	await SuperCleanupJob.findOneAndUpdate(
 		{ userId, kind: 'account_delete', completedAt: { $exists: false } },

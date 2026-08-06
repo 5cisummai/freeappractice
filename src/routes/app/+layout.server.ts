@@ -1,7 +1,10 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
+import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
+import { getEntitlements } from '$lib/super/entitlements.server';
+import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
 import {
 	ONBOARDING_COOKIE_MAX_AGE,
 	ONBOARDING_COOKIE_NAME,
@@ -31,8 +34,20 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 	const userId = locals.userId!;
 	await claimReferralFromCookie(cookies, userId, request);
 
+	const freeBetaEnabled = await isSuperFreeBetaEnabled();
+	let showFreeBetaClaimDialog = false;
+	if (freeBetaEnabled && !url.pathname.endsWith('/onboarding')) {
+		const [claimed, entitlements] = await Promise.all([
+			hasClaimedSuperFreeBeta(userId),
+			getEntitlements(userId)
+		]);
+		showFreeBetaClaimDialog = !claimed && entitlements.plan !== 'super';
+	}
+
 	return {
 		user: locals.user!,
-		isAdmin: isAdminUser(locals.user)
+		isAdmin: isAdminUser(locals.user),
+		freeBetaEnabled,
+		showFreeBetaClaimDialog
 	};
 };

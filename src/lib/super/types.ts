@@ -21,6 +21,9 @@ export function isSuperBillingStatus(value: string): value is SuperBillingStatus
 	return (SUPER_BILLING_STATUSES as readonly string[]).includes(value);
 }
 
+export type SuperBillingIssue =
+	'payment_failed' | 'payment_action_required' | 'invoice_finalization_failed';
+
 export type SuperAccessReason =
 	'subscription' | 'past_due_grace' | 'admin_grant' | 'free_beta' | null;
 

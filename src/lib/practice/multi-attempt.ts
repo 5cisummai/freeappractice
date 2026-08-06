@@ -1,5 +1,6 @@
 export const MULTI_ATTEMPT_EXPERIMENT_KEY = 'multi_attempt_hints';
-export const MULTI_ATTEMPT_EXPERIMENT_VERSION = 1;
+// Version 2 avoids inheriting control assignments created while the flag was disabled.
+export const MULTI_ATTEMPT_EXPERIMENT_VERSION = 2;
 const MAX_MULTI_ATTEMPT_SUBMISSIONS = 3;
 
 export type PracticeVariant = 'control' | 'multi_attempt_hints';

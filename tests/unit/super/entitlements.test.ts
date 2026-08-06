@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
 	isSuperFreeBetaEnabled: vi.fn(),
 	billingFind: vi.fn(),
 	grantFindOne: vi.fn(),
+	tutorExists: vi.fn(),
 	markSuperAccessStarted: vi.fn()
 }));
 
@@ -12,7 +13,8 @@ vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
 vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
 vi.mock('$lib/super/models.server', () => ({
 	SuperBillingAccess: { find: mocks.billingFind },
-	SuperGrant: { findOne: mocks.grantFindOne }
+	SuperGrant: { findOne: mocks.grantFindOne },
+	TutorProfile: { exists: mocks.tutorExists }
 }));
 vi.mock('$lib/super/profile.server', () => ({
 	markSuperAccessStarted: mocks.markSuperAccessStarted
@@ -36,10 +38,25 @@ describe('Super entitlements', () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(false);
 		mocks.markSuperAccessStarted.mockResolvedValue(undefined);
 		mocks.grantFindOne.mockReturnValue(query(null));
+		mocks.tutorExists.mockReturnValue({ exec: vi.fn().mockResolvedValue(null) });
+		mocks.billingFind.mockReturnValue(query([]));
 	});
 
-	it('grants every authenticated user Super access during the free beta', async () => {
+	it('does not auto-grant Super during free beta until the offer is claimed', async () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
+
+		await expect(getEntitlements('student-1', now)).resolves.toMatchObject({
+			plan: 'free',
+			accessReason: null
+		});
+		expect(mocks.markSuperAccessStarted).not.toHaveBeenCalled();
+	});
+
+	it('grants Super after the free beta offer is claimed', async () => {
+		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
+		mocks.tutorExists.mockReturnValue({
+			exec: vi.fn().mockResolvedValue({ _id: 'profile-1' })
+		});
 
 		await expect(getEntitlements('student-1', now)).resolves.toMatchObject({
 			plan: 'super',
@@ -49,7 +66,7 @@ describe('Super entitlements', () => {
 			aiInsights: true,
 			studyPlans: true
 		});
-		expect(mocks.connectDb).not.toHaveBeenCalled();
+		expect(mocks.markSuperAccessStarted).toHaveBeenCalledWith('student-1', now);
 	});
 
 	it('does not grant access to an active subscription once its paid period ended', async () => {
@@ -94,5 +111,20 @@ describe('Super entitlements', () => {
 			plan: 'super',
 			accessReason: 'past_due_grace'
 		});
+	});
+
+	it('does not grant active access while Stripe reports a billing issue', async () => {
+		mocks.billingFind.mockReturnValue(
+			query([
+				{
+					status: 'active',
+					periodEnd: new Date('2026-09-01T00:00:00.000Z'),
+					billingIssue: 'invoice_finalization_failed',
+					superEndedAt: undefined
+				}
+			])
+		);
+
+		await expect(getEntitlements('student-1', now)).resolves.toMatchObject({ plan: 'free' });
 	});
 });

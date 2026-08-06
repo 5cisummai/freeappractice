@@ -36,14 +36,14 @@
 				Super beta
 			</span>
 			<h2 class="mt-4 font-display text-3xl font-medium tracking-tight">
-				Super is free during beta.
+				Claim your free Super offer.
 			</h2>
 			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
-				Every account gets personalized tutoring, AI Coach, insights, weekly study plans, and 300
-				personalized messages per UTC calendar month.
+				Unlock personalized tutoring, AI Coach, insights, weekly study plans, and 300 personalized
+				messages per UTC calendar month — free during the Super beta.
 			</p>
 			<Button href={resolve('/signup')} size="lg" class="mt-6 rounded-full px-6">
-				Get started with Super
+				Claim free Super
 			</Button>
 		</div>
 	{:else}

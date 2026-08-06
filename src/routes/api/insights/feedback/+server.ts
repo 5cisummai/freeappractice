@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { isSuperInsightsEnabled } from '$lib/flags';
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { InsightReport } from '$lib/super/models.server';
 
@@ -15,6 +16,9 @@ const feedbackSchema = z
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
+		if (!(await isSuperInsightsEnabled())) {
+			return json({ error: 'Insights are temporarily unavailable.' }, { status: 503 });
+		}
 		if (!(await getEntitlements(userId)).aiInsights) {
 			return json({ error: 'Super subscription required' }, { status: 403 });
 		}

@@ -1,8 +1,13 @@
 import { stripe as stripePlugin, type Subscription } from '@better-auth/stripe';
 import { env } from '$env/dynamic/private';
-import { getStripeClient, mirrorSuperSubscription } from '$lib/super/billing.server';
+import {
+	getStripeClient,
+	isSuperStripeConfigured,
+	markSubscriptionBillingIssue,
+	mirrorSuperSubscription
+} from '$lib/super/billing.server';
 
-function toSubscriptionMirror(subscription: Subscription) {
+function toSubscriptionMirror(subscription: Subscription, event?: { id: string; created: number }) {
 	return {
 		userId: subscription.referenceId,
 		stripeCustomerId: subscription.stripeCustomerId,
@@ -13,24 +18,51 @@ function toSubscriptionMirror(subscription: Subscription) {
 		periodEnd: subscription.periodEnd,
 		cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
 		cancelAt: subscription.cancelAt,
-		endedAt: subscription.endedAt
+		endedAt: subscription.endedAt,
+		...(event
+			? {
+					eventId: event.id,
+					eventCreated: new Date(event.created * 1000)
+				}
+			: {})
 	};
 }
 
 /** Stripe is disabled until all credentials and both Super prices are configured. */
 export function createSuperStripePlugin() {
 	const stripeClient = getStripeClient();
-	const webhookSecret = env.STRIPE_WEBHOOK_SECRET?.trim();
 	const monthlyPriceId = env.STRIPE_SUPER_MONTHLY_PRICE_ID?.trim();
 	const annualPriceId = env.STRIPE_SUPER_ANNUAL_PRICE_ID?.trim();
-	if (!stripeClient || !webhookSecret || !monthlyPriceId || !annualPriceId) return null;
+	if (!stripeClient || !isSuperStripeConfigured() || !monthlyPriceId || !annualPriceId) return null;
 
 	return stripePlugin({
 		stripeClient,
-		stripeWebhookSecret: webhookSecret,
+		stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET!.trim(),
 		createCustomerOnSignUp: false,
 		schema: {
 			subscription: { modelName: 'authSubscriptions' }
+		},
+		onEvent: async (event) => {
+			const issue =
+				event.type === 'invoice.finalization_failed'
+					? 'invoice_finalization_failed'
+					: event.type === 'invoice.payment_action_required'
+						? 'payment_action_required'
+						: event.type === 'invoice.payment_failed'
+							? 'payment_failed'
+							: event.type === 'invoice.paid'
+								? null
+								: undefined;
+			if (issue === undefined) return;
+
+			const invoice = event.data.object as {
+				subscription?: string | { id: string } | null;
+			};
+			const subscriptionId =
+				typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+			if (!subscriptionId) return;
+
+			await markSubscriptionBillingIssue(subscriptionId, issue, new Date(event.created * 1000));
 		},
 		subscription: {
 			enabled: true,
@@ -43,26 +75,27 @@ export function createSuperStripePlugin() {
 					limits: { personalizedMessagesPerMonth: 600 }
 				}
 			],
-			getCheckoutSessionParams: () => ({
+			getCheckoutSessionParams: ({ subscription }) => ({
 				params: {
 					automatic_tax: { enabled: true },
 					allow_promotion_codes: false
-				}
+				},
+				options: { idempotencyKey: `super-checkout:${subscription.id}` }
 			}),
-			onSubscriptionComplete: async ({ subscription }) => {
-				await mirrorSuperSubscription(toSubscriptionMirror(subscription));
+			onSubscriptionComplete: async ({ event, subscription }) => {
+				await mirrorSuperSubscription(toSubscriptionMirror(subscription, event));
 			},
-			onSubscriptionCreated: async ({ subscription }) => {
-				await mirrorSuperSubscription(toSubscriptionMirror(subscription));
+			onSubscriptionCreated: async ({ event, subscription }) => {
+				await mirrorSuperSubscription(toSubscriptionMirror(subscription, event));
 			},
-			onSubscriptionUpdate: async ({ subscription }) => {
-				await mirrorSuperSubscription(toSubscriptionMirror(subscription));
+			onSubscriptionUpdate: async ({ event, subscription }) => {
+				await mirrorSuperSubscription(toSubscriptionMirror(subscription, event));
 			},
-			onSubscriptionCancel: async ({ subscription }) => {
-				await mirrorSuperSubscription(toSubscriptionMirror(subscription));
+			onSubscriptionCancel: async ({ event, subscription }) => {
+				await mirrorSuperSubscription(toSubscriptionMirror(subscription, event));
 			},
-			onSubscriptionDeleted: async ({ subscription }) => {
-				await mirrorSuperSubscription(toSubscriptionMirror(subscription));
+			onSubscriptionDeleted: async ({ event, subscription }) => {
+				await mirrorSuperSubscription(toSubscriptionMirror(subscription, event));
 			}
 		}
 	});

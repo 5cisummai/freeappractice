@@ -83,7 +83,11 @@ export const auth = betterAuth({
 		deleteUser: {
 			enabled: true,
 			beforeDelete: async (user) => {
-				await prepareAccountDeletion(user.id);
+				const stripeCustomerId =
+					'stripeCustomerId' in user && typeof user.stripeCustomerId === 'string'
+						? user.stripeCustomerId
+						: undefined;
+				await prepareAccountDeletion(user.id, stripeCustomerId);
 			},
 			sendDeleteAccountVerification: async ({ user, url }) => {
 				await sendDeleteAccountEmail(user.email, url);

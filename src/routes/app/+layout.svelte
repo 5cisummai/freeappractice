@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
+	import FreeBetaClaimDialog from '$lib/components/super/free-beta-claim-dialog.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
@@ -15,6 +16,15 @@
 
 	let { data, children } = $props();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
+	let freeBetaClaimOpen = $state(false);
+
+	$effect(() => {
+		if (data.showFreeBetaClaimDialog && !isOnboarding) {
+			freeBetaClaimOpen = true;
+		} else if (!data.showFreeBetaClaimDialog) {
+			freeBetaClaimOpen = false;
+		}
+	});
 
 	onMount(() => {
 		if (data.user) {
@@ -41,6 +51,9 @@
 </svelte:head>
 
 <Toaster />
+{#if !isOnboarding}
+	<FreeBetaClaimDialog bind:open={freeBetaClaimOpen} />
+{/if}
 
 {#if isOnboarding}
 	<main id="main-content" class="min-h-svh bg-background">

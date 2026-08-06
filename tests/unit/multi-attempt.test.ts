@@ -134,7 +134,7 @@ describe('isMultiAttemptRequestBody backwards compatibility', () => {
 				selectedAnswer: 'A',
 				displayedVariant: 'control',
 				experimentKey: 'multi_attempt_hints',
-				experimentVersion: 1
+				experimentVersion: 2
 			})
 		).toBe(true);
 	});

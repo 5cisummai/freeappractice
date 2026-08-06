@@ -49,7 +49,7 @@
 					acceptedAnswer: {
 						'@type': 'Answer',
 						text: data.superFreeBetaEnabled
-							? 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 300 personalized messages per UTC calendar month during the free beta.'
+							? 'During the free beta, you can claim Super for personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 300 personalized messages per UTC calendar month.'
 							: 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'
 					}
 				},

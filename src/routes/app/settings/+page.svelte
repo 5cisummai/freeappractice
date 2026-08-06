@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -10,12 +11,15 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
 	import { resetUiHints } from '$lib/client/ui-hints.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import CheckIcon from '@lucide/svelte/icons/check';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { userPrefersMode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
@@ -52,6 +56,7 @@
 	let deletePassword = $state('');
 	let signOutPending = $state(false);
 	let billingBusy = $state(false);
+	let claimingFreeBeta = $state(false);
 
 	const theme = $derived(userPrefersMode.current);
 	const themeLabel = $derived(
@@ -168,6 +173,24 @@
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not open billing management.');
 			billingBusy = false;
+		}
+	}
+
+	async function claimFreeBeta() {
+		if (claimingFreeBeta) return;
+		claimingFreeBeta = true;
+		try {
+			const response = await apiFetch('/api/super/claim-free-beta', { method: 'POST' });
+			const result = await readJsonOrNull<{ error?: string }>(response);
+			if (!response.ok) {
+				throw new Error(getResponseMessage(result, 'Could not claim the free Super offer.'));
+			}
+			toast.success('Super unlocked. Enjoy the free beta!');
+			await invalidateAll();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
+		} finally {
+			claimingFreeBeta = false;
 		}
 	}
 </script>
@@ -358,10 +381,11 @@
 							</p>
 							<p class="text-sm text-muted-foreground">
 								{#if data.billing?.billingIssue}
-									Payment needs attention. Please open the Customer Portal to update your payment method.
+									Payment needs attention. Please open the Customer Portal to update your payment
+									method.
 								{:else if data.entitlements.plan === 'super'}
 									{#if data.freeBetaEnabled}
-										Super access is free during the beta for every account.
+										Super access is free during the beta after you claim the offer.
 									{:else if data.entitlements.accessReason === 'admin_grant'}
 										Super access granted by the team.
 									{:else if data.billing?.status === 'past_due'}
@@ -369,6 +393,8 @@
 									{:else}
 										Personalized tutoring, Coach, insights, and study plans are active.
 									{/if}
+								{:else if data.freeBetaEnabled}
+									Claim your free Super offer for personalized tutoring and study planning.
 								{:else}
 									Upgrade when you want personalized tutoring and study planning.
 								{/if}
@@ -383,6 +409,17 @@
 								disabled={billingBusy}
 							>
 								{billingBusy ? 'Opening…' : 'Customer Portal'}
+							</Button>
+						{:else if data.entitlements.plan !== 'super' && data.freeBetaEnabled}
+							<Button
+								type="button"
+								size="sm"
+								class="rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
+								onclick={claimFreeBeta}
+								disabled={claimingFreeBeta}
+							>
+								<SparklesIcon class="size-3.5" />
+								{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
 							</Button>
 						{:else if data.entitlements.plan !== 'super' && !data.billing?.billingIssue}
 							<Button type="button" variant="outline" size="sm" href={resolve('/pricing')}

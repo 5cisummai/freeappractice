@@ -27,6 +27,7 @@ import {
 	superMemoryEnabled,
 	superFreeBetaEnabled
 } from '$lib/flags';
+import { isSuperStripeConfigured } from '$lib/super/billing.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -197,7 +198,9 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	if (event.request.method === 'POST' && event.url.pathname === '/api/auth/subscription/upgrade') {
 		if (await isSuperFreeBetaEnabled()) {
 			return new Response(
-				JSON.stringify({ error: 'Super is free for everyone during the beta.' }),
+				JSON.stringify({
+					error: 'Super checkout is paused while the free beta offer is available.'
+				}),
 				{
 					status: 410,
 					headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
@@ -212,6 +215,12 @@ const appHandle: Handle = async ({ event, resolve }) => {
 					headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 				}
 			);
+		}
+		if (!isSuperStripeConfigured()) {
+			return new Response(JSON.stringify({ error: 'Super checkout is not configured.' }), {
+				status: 503,
+				headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+			});
 		}
 		if (!event.locals.userId) {
 			return new Response(JSON.stringify({ error: 'Authentication required' }), {

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { connectDb } from '$lib/server/db';
+import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { InsightReport, TutorProfile, type ITutorProfile } from '$lib/super/models.server';
 import type { TutorProfileUpdate, TutorProfileView } from '$lib/super/types';
 
@@ -68,6 +69,41 @@ export async function confirmAge(userId: string): Promise<TutorProfileView> {
 		await profile.save();
 	}
 	return toTutorProfileView(profile);
+}
+
+export class SuperFreeBetaUnavailableError extends Error {
+	constructor(message = 'The free Super beta offer is not available.') {
+		super(message);
+		this.name = 'SuperFreeBetaUnavailableError';
+	}
+}
+
+/** Persist an explicit free-beta claim. Idempotent once claimed. */
+export async function claimSuperFreeBeta(
+	userId: string,
+	claimedAt = new Date()
+): Promise<{ claimedAt: string }> {
+	if (!(await isSuperFreeBetaEnabled())) {
+		throw new SuperFreeBetaUnavailableError();
+	}
+
+	const profile = await ensureTutorProfile(userId);
+	if (!profile.superFreeBetaClaimedAt) {
+		profile.superFreeBetaClaimedAt = claimedAt;
+		await profile.save();
+	}
+	await markSuperAccessStarted(userId, profile.superFreeBetaClaimedAt);
+	return { claimedAt: profile.superFreeBetaClaimedAt.toISOString() };
+}
+
+export async function hasClaimedSuperFreeBeta(userId: string): Promise<boolean> {
+	await connectDb();
+	return Boolean(
+		await TutorProfile.exists({
+			userId,
+			superFreeBetaClaimedAt: { $exists: true }
+		}).exec()
+	);
 }
 
 export async function markMemoryDisclosureSeen(userId: string): Promise<void> {

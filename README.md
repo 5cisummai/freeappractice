@@ -129,8 +129,11 @@ bun scripts/create-better-auth-indexes.ts
 
 In Stripe, configure the Customer Portal to allow cancellation at period end, restoration before the end of
 the current period, and switching between the two Super prices at the next renewal. Point the Stripe webhook
-to Better Auth's `/api/auth/stripe/webhook` route. The app enables Stripe automatic tax and does not enable
-promotion codes.
+to Better Auth's `/api/auth/stripe/webhook` route and enable at least `checkout.session.completed`,
+`customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`,
+`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, and
+`invoice.finalization_failed`. Configure Stripe Tax registrations before enabling automatic tax. The app
+enables automatic tax and does not enable promotion codes.
 
 Tutor memory uses the Mem0 OSS SDK with OpenAI extraction/embeddings and an Upstash Vector index. The app
 keeps Development, Preview, and Production memories isolated inside the shared index with deployment-scoped

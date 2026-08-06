@@ -26,12 +26,19 @@ function superEntitlements(reason: Exclude<SuperAccessReason, null>): Entitlemen
 }
 
 export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
+	await connectDb();
+
 	if (await isSuperFreeBetaEnabled()) {
-		await markSuperAccessStarted(userId, now);
-		return superEntitlements('free_beta');
+		const claimed = await TutorProfile.exists({
+			userId,
+			superFreeBetaClaimedAt: { $exists: true }
+		}).exec();
+		if (claimed) {
+			await markSuperAccessStarted(userId, now);
+			return superEntitlements('free_beta');
+		}
 	}
 
-	await connectDb();
 	const [billing, grant] = await Promise.all([
 		SuperBillingAccess.find({ userId, plan: 'super' }).sort({ updatedAt: -1 }).lean().exec(),
 		SuperGrant.findOne({
@@ -53,6 +60,7 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 			(subscription) =>
 				subscription.status === 'active' &&
 				!subscription.superEndedAt &&
+				!subscription.billingIssue &&
 				subscription.periodEnd &&
 				new Date(subscription.periodEnd) > now
 		)

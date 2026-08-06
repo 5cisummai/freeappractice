@@ -41,18 +41,9 @@ async function processCleanupJob(
 ): Promise<'completed' | 'retried'> {
 	try {
 		if (job.kind === 'downgrade_purge') {
-			const activeGrant = await SuperGrant.findOne({
-				userId: job.userId,
-				startsAt: { $lte: now },
-				expiresAt: { $gt: now },
-				revokedAt: { $exists: false }
-			})
-				.select({ _id: 1 })
-				.lean()
-				.exec();
-			if (activeGrant) {
+			if ((await getEntitlements(job.userId, now)).plan === 'super') {
 				// A newly created grant can arrive after this job was queued. Removing this disposable
-				// job lets maintenance create a fresh one if the grant later expires without a restore.
+				// job lets maintenance create a fresh one if access later ends without a restore.
 				await job.deleteOne();
 				return 'completed';
 			}
@@ -108,6 +99,7 @@ export async function runSuperMaintenance(
 		superEndedAt: { $exists: false }
 	})
 		.select({ userId: 1, pastDueSince: 1 })
+		.limit(Math.max(1, Math.min(batchSize, 100)))
 		.lean()
 		.exec();
 	const pastDueEndByUser = new Map<string, Date>();
@@ -143,6 +135,7 @@ export async function runSuperMaintenance(
 		]
 	})
 		.select({ userId: 1 })
+		.limit(Math.max(1, Math.min(batchSize, 100)))
 		.lean()
 		.exec();
 	await Promise.all(
@@ -151,6 +144,7 @@ export async function runSuperMaintenance(
 
 	const expiredGrantRecords = await SuperGrant.find({ expiresAt: { $lte: now } })
 		.select({ userId: 1, startsAt: 1, expiresAt: 1, revokedAt: 1 })
+		.limit(Math.max(1, Math.min(batchSize, 100)))
 		.lean()
 		.exec();
 	const grantEndByUser = new Map<string, Date>();

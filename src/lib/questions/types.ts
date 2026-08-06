@@ -1,3 +1,5 @@
+import type { PracticeVariant } from '$lib/practice/multi-attempt';
+
 export type QuestionOption = {
 	id: string;
 	label: string;
@@ -72,6 +74,10 @@ export type QuestionCardProps = {
 	showUtilityActions?: boolean;
 	showFirstUseHint?: boolean;
 	isPersonalizedTutor?: boolean;
+	practiceExperiment?: {
+		assignedVariant: PracticeVariant;
+		experimentEnabled: boolean;
+	};
 	skipLabel?: string;
 	notLearnedLabel?: string;
 	reportBugLabel?: string;

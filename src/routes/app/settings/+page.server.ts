@@ -53,6 +53,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		billing: billing
 			? {
 					status: billing.status,
+					billingIssue: billing.billingIssue ?? null,
+					subscriptionId: billing.stripeSubscriptionId ?? null,
 					periodStart: billing.periodStart?.toISOString() ?? null,
 					periodEnd: billing.periodEnd?.toISOString() ?? null,
 					cancelAt: billing.cancelAt?.toISOString() ?? null,
