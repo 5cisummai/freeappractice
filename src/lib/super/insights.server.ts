@@ -1,5 +1,6 @@
 import { connectDb } from '$lib/server/db';
 import { FrqAttempt } from '$lib/frq/model.server';
+import { isSuperInsightsEnabled } from '$lib/flags';
 import { InsightReport } from '$lib/super/models.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
@@ -607,6 +608,7 @@ export function hasInsightAccess(entitlements: Pick<Entitlements, 'aiInsights'>)
 }
 
 async function requireInsightAccess(userId: string, now = new Date()): Promise<void> {
+	if (!(await isSuperInsightsEnabled())) throw new SuperInsightsLockedError();
 	const entitlements = await getEntitlements(userId, now);
 	if (!hasInsightAccess(entitlements)) throw new SuperInsightsLockedError();
 	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new SuperInsightsLockedError();

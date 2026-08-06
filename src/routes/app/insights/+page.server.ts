@@ -13,24 +13,27 @@ export const load: PageServerLoad = async ({ locals }) => {
 		getEntitlements(userId),
 		getTutorProfileView(userId)
 	]);
+	const insightsEnabled = await isSuperInsightsEnabled();
 	const report =
-		entitlements.aiInsights && profile.ageConfirmedAt
+		insightsEnabled && entitlements.aiInsights && profile.ageConfirmedAt
 			? await getOrBuildWeeklyInsightReport(userId)
 			: null;
 	return {
 		entitlements,
 		profile,
-		insightsEnabled: await isSuperInsightsEnabled(),
+		insightsEnabled,
 		eligibility:
-			entitlements.aiInsights && profile.ageConfirmedAt
+			insightsEnabled && entitlements.aiInsights && profile.ageConfirmedAt
 				? await getInsightEligibilityForUser(userId)
 				: null,
 		report,
 		proposal: report?.report.eligibility.eligible ? buildStudyPlanDraft(report.report) : null,
 		plan:
-			entitlements.studyPlans && profile.ageConfirmedAt ? await getCurrentStudyPlan(userId) : null,
+			insightsEnabled && entitlements.studyPlans && profile.ageConfirmedAt
+				? await getCurrentStudyPlan(userId)
+				: null,
 		planAudits:
-			entitlements.studyPlans && profile.ageConfirmedAt
+			insightsEnabled && entitlements.studyPlans && profile.ageConfirmedAt
 				? await getRecentStudyPlanAudits(userId)
 				: []
 	};

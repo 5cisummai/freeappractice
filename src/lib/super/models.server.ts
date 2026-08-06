@@ -11,6 +11,7 @@ export interface ITutorProfile extends Document {
 	teachingStyle: TutorTeachingStyle;
 	memoryEnabled: boolean;
 	memoryDisclosureSeenAt?: Date;
+	superAccessStartedAt?: Date;
 	superEndedAt?: Date;
 	memoryPurgedAt?: Date;
 	createdAt: Date;
@@ -40,6 +41,7 @@ const tutorProfileSchema = new Schema<ITutorProfile>(
 		},
 		memoryEnabled: { type: Boolean, default: true },
 		memoryDisclosureSeenAt: { type: Date },
+		superAccessStartedAt: { type: Date },
 		superEndedAt: { type: Date },
 		memoryPurgedAt: { type: Date }
 	},

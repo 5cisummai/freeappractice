@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { isSuperInsightsEnabled } from '$lib/flags';
 import { claimIdempotencyKey, RedisRequiredError } from '$lib/super/ai-controls.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import { undoStudyPlanAudit } from '$lib/super/study-plan-audit.server';
@@ -10,6 +11,8 @@ const undoSchema = z.object({ auditId: z.string().regex(/^[a-f\d]{24}$/i) }).str
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
+		if (!(await isSuperInsightsEnabled()))
+			return json({ error: 'Study plans are temporarily unavailable.' }, { status: 503 });
 		const access = await getSuperFeatureAccess(userId, 'studyPlans');
 		if (!access.allowed)
 			return json(

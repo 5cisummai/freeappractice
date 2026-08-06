@@ -4,7 +4,8 @@ const mocks = vi.hoisted(() => ({
 	connectDb: vi.fn(),
 	isSuperFreeBetaEnabled: vi.fn(),
 	billingFind: vi.fn(),
-	grantFindOne: vi.fn()
+	grantFindOne: vi.fn(),
+	markSuperAccessStarted: vi.fn()
 }));
 
 vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
@@ -12,6 +13,9 @@ vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnab
 vi.mock('$lib/super/models.server', () => ({
 	SuperBillingAccess: { find: mocks.billingFind },
 	SuperGrant: { findOne: mocks.grantFindOne }
+}));
+vi.mock('$lib/super/profile.server', () => ({
+	markSuperAccessStarted: mocks.markSuperAccessStarted
 }));
 
 import { getEntitlements } from '$lib/super/entitlements.server';
@@ -30,6 +34,7 @@ describe('Super entitlements', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(false);
+		mocks.markSuperAccessStarted.mockResolvedValue(undefined);
 		mocks.grantFindOne.mockReturnValue(query(null));
 	});
 

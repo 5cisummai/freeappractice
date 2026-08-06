@@ -1,6 +1,12 @@
 import { connectDb } from '$lib/server/db';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { SuperBillingAccess, SuperGrant } from '$lib/super/models.server';
+import { markSuperAccessStarted } from '$lib/super/profile.server';
+import {
+	InsightReport,
+	SuperBillingAccess,
+	SuperGrant,
+	TutorProfile
+} from '$lib/super/models.server';
 import {
 	FREE_ENTITLEMENTS,
 	SUPER_PAST_DUE_GRACE_MS,
@@ -20,7 +26,10 @@ function superEntitlements(reason: Exclude<SuperAccessReason, null>): Entitlemen
 }
 
 export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
-	if (await isSuperFreeBetaEnabled()) return superEntitlements('free_beta');
+	if (await isSuperFreeBetaEnabled()) {
+		await markSuperAccessStarted(userId, now);
+		return superEntitlements('free_beta');
+	}
 
 	await connectDb();
 	const [billing, grant] = await Promise.all([
@@ -35,7 +44,10 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 			.exec()
 	]);
 
-	if (grant) return superEntitlements('admin_grant');
+	if (grant) {
+		await markSuperAccessStarted(userId, now);
+		return superEntitlements('admin_grant');
+	}
 	if (
 		billing.some(
 			(subscription) =>
@@ -45,6 +57,7 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 				new Date(subscription.periodEnd) > now
 		)
 	) {
+		await markSuperAccessStarted(userId, now);
 		return superEntitlements('subscription');
 	}
 	if (
@@ -56,7 +69,30 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 				now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
 		)
 	) {
+		await markSuperAccessStarted(userId, now);
 		return superEntitlements('past_due_grace');
 	}
 	return FREE_ENTITLEMENTS;
+}
+
+/** End Super retention only after every current access source has ended. */
+export async function markSuperAccessEndedIfNoAccess(
+	userId: string,
+	endedAt: Date,
+	now = endedAt
+): Promise<boolean> {
+	const access = await getEntitlements(userId, now);
+	if (access.plan === 'super') return false;
+	await connectDb();
+	await Promise.all([
+		TutorProfile.updateOne(
+			{ userId, superEndedAt: { $exists: false } },
+			{ $set: { superEndedAt: endedAt } }
+		).exec(),
+		InsightReport.updateMany(
+			{ userId, lockedAt: { $exists: false } },
+			{ $set: { lockedAt: endedAt } }
+		).exec()
+	]);
+	return true;
 }

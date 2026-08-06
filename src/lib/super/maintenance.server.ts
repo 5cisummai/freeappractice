@@ -9,7 +9,7 @@ import {
 	TutorProfile,
 	type ISuperCleanupJob
 } from '$lib/super/models.server';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
 
 const MEMORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
@@ -132,6 +132,41 @@ export async function runSuperMaintenance(
 			).exec()
 		]);
 	}
+
+	const reportUsers = await InsightReport.distinct('userId').exec();
+	const betaProfiles = await TutorProfile.find({
+		superEndedAt: { $exists: false },
+		$or: [
+			{ superAccessStartedAt: { $exists: true } },
+			{ memoryDisclosureSeenAt: { $exists: true } },
+			{ userId: { $in: reportUsers } }
+		]
+	})
+		.select({ userId: 1 })
+		.lean()
+		.exec();
+	await Promise.all(
+		betaProfiles.map((profile) => markSuperAccessEndedIfNoAccess(profile.userId, now, now))
+	);
+
+	const expiredGrantRecords = await SuperGrant.find({ expiresAt: { $lte: now } })
+		.select({ userId: 1, startsAt: 1, expiresAt: 1, revokedAt: 1 })
+		.lean()
+		.exec();
+	const grantEndByUser = new Map<string, Date>();
+	for (const grant of expiredGrantRecords) {
+		if (grant.startsAt > now) continue;
+		const endedAt =
+			grant.revokedAt && grant.revokedAt < grant.expiresAt ? grant.revokedAt : grant.expiresAt;
+		const previous = grantEndByUser.get(grant.userId);
+		if (!previous || endedAt > previous) grantEndByUser.set(grant.userId, endedAt);
+	}
+	await Promise.all(
+		[...grantEndByUser].map(([userId, endedAt]) =>
+			markSuperAccessEndedIfNoAccess(userId, endedAt, now)
+		)
+	);
+
 	const cutoff = memoryRetentionCutoff(now);
 	const expiredProfiles = await TutorProfile.find({
 		superEndedAt: { $lte: cutoff },

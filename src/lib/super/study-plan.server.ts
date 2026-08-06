@@ -1,4 +1,5 @@
 import { connectDb } from '$lib/server/db';
+import { isSuperInsightsEnabled } from '$lib/flags';
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { StudyPlan } from '$lib/super/models.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
@@ -113,6 +114,7 @@ export function hasStudyPlanAccess(entitlements: Pick<Entitlements, 'studyPlans'
 }
 
 async function requireStudyPlanAccess(userId: string, now = new Date()): Promise<void> {
+	if (!(await isSuperInsightsEnabled())) throw new StudyPlansLockedError();
 	const entitlements = await getEntitlements(userId, now);
 	if (!hasStudyPlanAccess(entitlements)) throw new StudyPlansLockedError();
 	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new StudyPlansLockedError();

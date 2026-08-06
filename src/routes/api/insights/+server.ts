@@ -23,11 +23,13 @@ import {
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (_event, userId) => {
+		if (!(await isSuperInsightsEnabled()))
+			return json({ error: 'Insights are temporarily unavailable.' }, { status: 503 });
 		const access = await getSuperFeatureAccess(userId, 'aiInsights');
 		if (!access.allowed)
 			return json({ error: superFeatureAccessMessage(access, 'Super insights') }, { status: 403 });
 		return json({
-			insightsEnabled: await isSuperInsightsEnabled(),
+			insightsEnabled: true,
 			eligibility: await getInsightEligibilityForUser(userId),
 			report: await getOrBuildWeeklyInsightReport(userId)
 		});

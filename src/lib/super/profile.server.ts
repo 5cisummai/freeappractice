@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { connectDb } from '$lib/server/db';
-import { TutorProfile, type ITutorProfile } from '$lib/super/models.server';
+import { InsightReport, TutorProfile, type ITutorProfile } from '$lib/super/models.server';
 import type { TutorProfileUpdate, TutorProfileView } from '$lib/super/types';
 
 const MAX_SELECTED_CLASSES = 20;
@@ -41,6 +41,26 @@ export async function getTutorProfileView(userId: string): Promise<TutorProfileV
 	return toTutorProfileView(await ensureTutorProfile(userId));
 }
 
+export async function markSuperAccessStarted(
+	userId: string,
+	startedAt = new Date()
+): Promise<void> {
+	const profile = await ensureTutorProfile(userId);
+	const shouldRestore = Boolean(profile.superEndedAt || profile.memoryPurgedAt);
+	if (!profile.superAccessStartedAt) profile.superAccessStartedAt = startedAt;
+	if (shouldRestore) {
+		profile.superEndedAt = undefined;
+		profile.memoryPurgedAt = undefined;
+	}
+	if (profile.isModified()) await profile.save();
+	if (shouldRestore) {
+		await InsightReport.updateMany(
+			{ userId, lockedAt: { $exists: true } },
+			{ $unset: { lockedAt: 1 } }
+		).exec();
+	}
+}
+
 export async function confirmAge(userId: string): Promise<TutorProfileView> {
 	const profile = await ensureTutorProfile(userId);
 	if (!profile.ageConfirmedAt) {
@@ -52,10 +72,16 @@ export async function confirmAge(userId: string): Promise<TutorProfileView> {
 
 export async function markMemoryDisclosureSeen(userId: string): Promise<void> {
 	const profile = await ensureTutorProfile(userId);
+	let changed = false;
 	if (!profile.memoryDisclosureSeenAt) {
 		profile.memoryDisclosureSeenAt = new Date();
-		await profile.save();
+		changed = true;
 	}
+	if (!profile.superAccessStartedAt) {
+		profile.superAccessStartedAt = profile.memoryDisclosureSeenAt ?? new Date();
+		changed = true;
+	}
+	if (changed) await profile.save();
 }
 
 export async function updateTutorProfile(

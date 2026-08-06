@@ -1,10 +1,12 @@
-import { Memory as Mem0Memory, type MemoryItem } from 'mem0ai/oss';
+import { Index } from '@upstash/vector';
+import { Memory as Mem0Memory } from 'mem0ai/oss';
 import { createHmac } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 import { isSuperMemoryEnabled } from '$lib/flags';
 import { getMem0UserId, getTutorProfileView } from '$lib/super/profile.server';
 
 let memoryClient: Mem0Memory | null | undefined;
+let memoryIndex: Index<Record<string, unknown>> | null | undefined;
 
 const TUTOR_MEMORY_NAMESPACE = 'tutor-memory';
 const TUTOR_MEMORY_DIMENSION = 1536;
@@ -101,6 +103,21 @@ function getMemoryClient(): Mem0Memory | null {
 	return memoryClient;
 }
 
+function getMemoryIndex(): Index<Record<string, unknown>> | null {
+	if (memoryIndex !== undefined) return memoryIndex;
+	const vectorUrl = env.UPSTASH_VECTOR_REST_URL?.trim();
+	const vectorToken = env.UPSTASH_VECTOR_REST_TOKEN?.trim();
+	memoryIndex =
+		vectorUrl && vectorToken
+			? new Index<Record<string, unknown>>({
+					url: vectorUrl,
+					token: vectorToken,
+					enableTelemetry: false
+				})
+			: null;
+	return memoryIndex;
+}
+
 export function isTutorMemoryConfigured(): boolean {
 	return getMemoryClient() !== null;
 }
@@ -109,13 +126,24 @@ export async function isTutorMemoryAvailable(): Promise<boolean> {
 	return getMemoryClient() !== null && (await isSuperMemoryEnabled());
 }
 
-function toTutorMemory(memory: MemoryItem): TutorMemory | null {
-	const text = memory.memory;
-	if (!memory.id || !text?.trim()) return null;
+function toTutorMemory(memory: {
+	id?: unknown;
+	memory?: unknown;
+	createdAt?: unknown;
+	metadata?: Record<string, unknown>;
+}): TutorMemory | null {
+	const text =
+		typeof memory.memory === 'string'
+			? memory.memory
+			: typeof memory.metadata?.data === 'string'
+				? memory.metadata.data
+				: null;
+	if (typeof memory.id !== 'string' || !text?.trim()) return null;
+	const createdAt = memory.createdAt ?? memory.metadata?.createdAt;
 	return {
 		id: memory.id,
 		text: text.trim(),
-		createdAt: memory.createdAt ? new Date(memory.createdAt).toISOString() : null
+		createdAt: createdAt ? new Date(createdAt as string | number | Date).toISOString() : null
 	};
 }
 
@@ -159,12 +187,37 @@ export async function addTutorMemoryExchange(
 }
 
 export async function listTutorMemories(userId: string): Promise<TutorMemory[]> {
+	const mem0UserId = await getMem0UserId(userId);
+	const index = getMemoryIndex();
+	if (index) {
+		const memories: TutorMemory[] = [];
+		const seenCursors = new Set<string>();
+		let cursor = '0';
+		while (!seenCursors.has(cursor)) {
+			seenCursors.add(cursor);
+			const page = await index.range(
+				{ cursor, limit: 100, includeMetadata: true },
+				{ namespace: getTutorMemoryNamespace() }
+			);
+			for (const vector of page.vectors) {
+				if (vector.metadata?.user_id !== mem0UserId) continue;
+				const memory = toTutorMemory({
+					id: String(vector.id),
+					metadata: vector.metadata
+				});
+				if (memory) memories.push(memory);
+			}
+			if (!page.nextCursor || page.nextCursor === cursor) break;
+			cursor = page.nextCursor;
+		}
+		return memories;
+	}
+
 	const client = getMemoryClient();
 	if (!client) return [];
-	const mem0UserId = await getMem0UserId(userId);
 	const result = await client.getAll({
 		filters: getTutorMemoryFilters(mem0UserId),
-		topK: 100
+		topK: 1_000
 	});
 	return result.results
 		.map(toTutorMemory)
@@ -172,24 +225,56 @@ export async function listTutorMemories(userId: string): Promise<TutorMemory[]> 
 }
 
 export async function deleteTutorMemory(userId: string, memoryId: string): Promise<void> {
-	const client = getMemoryClient();
-	if (!client) throw new Error('Tutor memory is not configured');
 	const memories = await listTutorMemories(userId);
 	if (!memories.some((memory) => memory.id === memoryId)) {
 		throw new Error('Tutor memory was not found');
 	}
+	const index = getMemoryIndex();
+	if (index) {
+		await index.delete(memoryId, { namespace: getTutorMemoryNamespace() });
+		return;
+	}
+	const client = getMemoryClient();
+	if (!client) throw new Error('Tutor memory is not configured');
 	await client.delete(memoryId);
 }
 
 export async function deleteAllTutorMemoriesById(mem0UserId: string): Promise<void> {
+	const index = getMemoryIndex();
+	if (index) {
+		const memoryIds: string[] = [];
+		const seenCursors = new Set<string>();
+		let cursor = '0';
+		while (!seenCursors.has(cursor)) {
+			seenCursors.add(cursor);
+			const page = await index.range(
+				{ cursor, limit: 100, includeMetadata: true },
+				{ namespace: getTutorMemoryNamespace() }
+			);
+			for (const vector of page.vectors) {
+				if (vector.metadata?.user_id === mem0UserId) memoryIds.push(String(vector.id));
+			}
+			if (!page.nextCursor || page.nextCursor === cursor) break;
+			cursor = page.nextCursor;
+		}
+		for (let offset = 0; offset < memoryIds.length; offset += 100) {
+			await index.delete(memoryIds.slice(offset, offset + 100), {
+				namespace: getTutorMemoryNamespace()
+			});
+		}
+		return;
+	}
+
 	const client = getMemoryClient();
 	if (!client) throw new Error('Tutor memory is not configured');
-	const memories = await client.getAll({
-		filters: getTutorMemoryFilters(mem0UserId),
-		topK: 1_000
-	});
-	for (const memory of memories.results) {
-		await client.delete(memory.id);
+	while (true) {
+		const memories = await client.getAll({
+			filters: getTutorMemoryFilters(mem0UserId),
+			topK: 1_000,
+			showExpired: true
+		});
+		if (!memories.results.length) break;
+		for (const memory of memories.results) await client.delete(memory.id);
 	}
 }
 

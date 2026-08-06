@@ -32,6 +32,8 @@ const requestSchema = z.discriminatedUnion('action', [
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (_event, userId) => {
+		if (!(await isSuperInsightsEnabled()))
+			return json({ error: 'Study plans are temporarily unavailable.' }, { status: 503 });
 		const access = await getSuperFeatureAccess(userId, 'studyPlans');
 		if (!access.allowed)
 			return json(

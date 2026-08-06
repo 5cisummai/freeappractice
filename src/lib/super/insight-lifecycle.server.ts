@@ -1,6 +1,7 @@
 import { generateText, hasToolCall, tool } from 'ai';
 import { INSIGHTS_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
+import { isSuperInsightsEnabled } from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { acquireInsightLock, RedisRequiredError, releaseLock } from '$lib/super/ai-controls.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
@@ -149,6 +150,7 @@ export async function getOrBuildWeeklyInsightReport(
 	userId: string,
 	now = new Date()
 ): Promise<InsightReportView | null> {
+	if (!(await isSuperInsightsEnabled())) return null;
 	if (!(await getEntitlements(userId, now)).aiInsights) return null;
 	if (!(await getTutorProfileView(userId)).ageConfirmedAt) return null;
 	const current = await getCurrentStoredInsightReport(userId, now);

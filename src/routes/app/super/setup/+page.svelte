@@ -315,8 +315,7 @@
 <div class="min-h-svh px-5 py-8 sm:px-8 sm:py-10">
 	<div class="mx-auto w-full max-w-3xl">
 		<header
-			class="flex animate-in items-center justify-between gap-3 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
-			style="--onboarding-delay: 0ms"
+			class="flex animate-in items-center justify-between gap-3 duration-[560ms] [--onboarding-delay:0ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 		>
 			<div class="flex items-center gap-2 font-medium tracking-tight">
 				<img src={logo} alt="Free AP Practice" class="size-7 rounded-sm" />
@@ -330,8 +329,7 @@
 		</header>
 
 		<nav
-			class="mt-8 flex animate-in flex-wrap gap-2 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
-			style="--onboarding-delay: 40ms"
+			class="mt-8 flex animate-in flex-wrap gap-2 duration-[560ms] [--onboarding-delay:40ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 			aria-label="Setup progress"
 		>
 			{#each steps as entry, index (entry.id)}
@@ -367,8 +365,7 @@
 				class:max-w-4xl={step === 'plan'}
 			>
 				<div
-					class="animate-in space-y-3 text-center duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
-					style="--onboarding-delay: 80ms"
+					class="animate-in space-y-3 text-center duration-[560ms] [--onboarding-delay:80ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 				>
 					<h1
 						class="font-display text-3xl leading-[1.08] font-medium tracking-tight text-balance sm:text-4xl"
@@ -381,8 +378,7 @@
 				</div>
 
 				<div
-					class="animate-in space-y-5 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
-					style="--onboarding-delay: 160ms"
+					class="animate-in space-y-5 duration-[560ms] [--onboarding-delay:160ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 				>
 					{#if step === 'age'}
 						<div
@@ -559,8 +555,7 @@
 				</div>
 
 				<div
-					class="flex animate-in flex-col-reverse items-stretch justify-between gap-3 pt-6 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:flex-row sm:items-center"
-					style="--onboarding-delay: 240ms"
+					class="flex animate-in flex-col-reverse items-stretch justify-between gap-3 pt-6 duration-[560ms] [--onboarding-delay:240ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:flex-row sm:items-center"
 				>
 					<div class="flex flex-wrap items-center gap-2">
 						{#if !isFirst}

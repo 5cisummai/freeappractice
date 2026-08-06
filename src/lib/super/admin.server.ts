@@ -1,10 +1,12 @@
 import { Types } from 'mongoose';
 import { connectDb } from '$lib/server/db';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import {
+	InsightReport,
 	SuperBillingAccess,
 	SuperCleanupJob,
 	SuperGrant,
+	TutorProfile,
 	SuperUsageRollup,
 	type ISuperCleanupJob
 } from '$lib/super/models.server';
@@ -229,16 +231,38 @@ export async function createSuperGrant(input: {
 	if (input.expiresAt <= input.startsAt) throw new Error('A grant must expire after it starts');
 	await connectDb();
 	const grant = await SuperGrant.create(input);
+	if (input.startsAt <= new Date()) {
+		await Promise.all([
+			TutorProfile.updateOne(
+				{ userId: input.userId },
+				{ $unset: { superEndedAt: 1, memoryPurgedAt: 1 } }
+			).exec(),
+			InsightReport.updateMany(
+				{ userId: input.userId, lockedAt: { $exists: true } },
+				{ $unset: { lockedAt: 1 } }
+			).exec()
+		]);
+	}
 	return toGrantView(grant);
 }
 
 export async function revokeSuperGrant(grantId: string, revokedAt = new Date()): Promise<boolean> {
 	if (!Types.ObjectId.isValid(grantId)) return false;
 	await connectDb();
+	const grant = await SuperGrant.findOne({
+		_id: grantId,
+		revokedAt: { $exists: false }
+	})
+		.lean()
+		.exec();
+	if (!grant) return false;
 	const result = await SuperGrant.updateOne(
 		{ _id: grantId, revokedAt: { $exists: false } },
 		{ $set: { revokedAt } }
 	).exec();
+	if (result.modifiedCount === 1 && grant.startsAt <= revokedAt && grant.expiresAt > revokedAt) {
+		await markSuperAccessEndedIfNoAccess(grant.userId, revokedAt, revokedAt);
+	}
 	return result.modifiedCount === 1;
 }
 
