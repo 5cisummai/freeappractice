@@ -41,6 +41,7 @@ export type QuestionCardSessionOpts = {
 	onSkip?: QuestionCardProps['onSkip'];
 	onNotLearned?: QuestionCardProps['onNotLearned'];
 	onAnswered?: QuestionCardProps['onAnswered'];
+	practiceExperiment?: QuestionCardProps['practiceExperiment'];
 };
 
 export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
@@ -58,8 +59,10 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let poolWarmingAutoAttempts = $state(0);
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
-	const assignedVariant = $state<PracticeVariant>('control');
-	const experimentEnabled = $state(false);
+	const assignedVariant = $state<PracticeVariant>(
+		opts.practiceExperiment?.assignedVariant ?? 'control'
+	);
+	const experimentEnabled = $state(opts.practiceExperiment?.experimentEnabled ?? false);
 	let displayedVariant = $state<PracticeVariant>('control');
 	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
 	let questionFeedbackReason = $state<string | null>(null);

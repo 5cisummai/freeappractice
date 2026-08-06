@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -50,6 +50,7 @@
 		showUtilityActions = true,
 		showFirstUseHint = false,
 		isPersonalizedTutor = false,
+		practiceExperiment,
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -85,7 +86,8 @@
 		onCheckAnswer: (value) => onCheckAnswer?.(value),
 		onSkip: () => onSkip?.(),
 		onNotLearned: () => onNotLearned?.(),
-		onAnswered: (result) => onAnswered?.(result)
+		onAnswered: (result) => onAnswered?.(result),
+		practiceExperiment: untrack(() => practiceExperiment)
 	});
 
 	type SubjectToolEntry = {

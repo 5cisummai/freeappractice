@@ -270,6 +270,9 @@
 				successUrl: `${window.location.origin}${resolve('/app/super/setup')}?checkout=success`,
 				cancelUrl: `${window.location.origin}${resolve('/pricing')}`,
 				returnUrl: `${window.location.origin}${resolve('/app/super/setup')}`,
+				...(data.billing?.subscriptionId
+					? { subscriptionId: data.billing.subscriptionId }
+					: {}),
 				disableRedirect: true
 			});
 			if (error || !checkout?.url) throw new Error(error?.message ?? 'Could not start checkout.');
