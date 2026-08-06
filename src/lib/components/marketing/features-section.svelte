@@ -15,9 +15,7 @@
 	import FlaskConicalIcon from '@lucide/svelte/icons/flask-conical';
 	import XIcon from '@lucide/svelte/icons/x';
 
-	const featuredSubjects = onboardingSubjects
-		.filter((s) => !s.name.includes('Lunch'))
-		.slice(0, 6);
+	const featuredSubjects = onboardingSubjects.filter((s) => !s.name.includes('Lunch')).slice(0, 6);
 
 	const dashboardSubjects = [
 		{
@@ -138,9 +136,7 @@
 						<span
 							class="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[0.65rem] font-medium shadow-sm"
 						>
-							<span
-								class="flex size-5 items-center justify-center rounded-md {subject.iconClass}"
-							>
+							<span class="flex size-5 items-center justify-center rounded-md {subject.iconClass}">
 								<SubjectIcon class="size-3" />
 							</span>
 							{subject.name.replace(/^AP /, '')}
@@ -168,7 +164,9 @@
 								<p class="text-[0.7rem] text-muted-foreground">Continue where you left off</p>
 							</div>
 							<div class="space-y-1.5">
-								<p class="text-[0.65rem] text-muted-foreground">47% complete · 47 / 100 questions</p>
+								<p class="text-[0.65rem] text-muted-foreground">
+									47% complete · 47 / 100 questions
+								</p>
 								<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
 									<div class="h-full w-[47%] rounded-full bg-primary"></div>
 								</div>
@@ -204,7 +202,9 @@
 				<div class="overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm">
 					<div class="flex items-center justify-between border-b border-border/70 px-3 py-2">
 						<p class="text-[0.7rem] font-semibold">Your subjects</p>
-						<span class="inline-flex items-center gap-1 text-[0.65rem] font-semibold text-orange-500">
+						<span
+							class="inline-flex items-center gap-1 text-[0.65rem] font-semibold text-orange-500"
+						>
 							<FlameIcon class="size-3" />
 							5
 						</span>
@@ -266,9 +266,7 @@
 							</span>
 						{/each}
 					</div>
-					<div
-						class="rounded-[22px] border border-border/80 bg-muted/40 px-3 py-2 shadow-sm"
-					>
+					<div class="rounded-[22px] border border-border/80 bg-muted/40 px-3 py-2 shadow-sm">
 						<div class="flex items-end gap-2">
 							<span class="min-w-0 flex-1 px-1 py-1.5 text-[0.65rem] text-muted-foreground">
 								Ask Coach anything…
@@ -331,9 +329,7 @@
 							{/each}
 						</div>
 					</div>
-					<div
-						class="flex items-center justify-between border-t border-border/70 px-3.5 py-2"
-					>
+					<div class="flex items-center justify-between border-t border-border/70 px-3.5 py-2">
 						<p class="text-[0.65rem] text-muted-foreground">Correct! Nice work.</p>
 						<span
 							class="rounded-md border border-border bg-background px-2 py-1 text-[0.6rem] font-medium"
@@ -354,7 +350,9 @@
 		<!-- Bottom right: Personalized Tutor -->
 		<article class="{cardClass} {twAnimateInViewSubtle}">
 			<div class="flex min-h-44 flex-1 items-center justify-center px-4 py-5" aria-hidden="true">
-				<div class="w-full max-w-56 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+				<div
+					class="w-full max-w-56 overflow-hidden rounded-2xl border border-border bg-card shadow-lg"
+				>
 					<div class="flex items-center justify-between px-3 py-2.5">
 						<div class="flex min-w-0 items-center gap-1.5">
 							<span
@@ -415,8 +413,3 @@
 		</article>
 	</div>
 </section>
-
-
-
-
-
