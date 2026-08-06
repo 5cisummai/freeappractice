@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { isSuperCoachEnabled } from '$lib/flags';
+import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
 import { logger } from '$lib/server/logger';
 import {
 	acquireCoachLock,
@@ -20,6 +21,8 @@ import {
 import { createCoachAgent, type CoachUIMessage } from '$lib/super/coach.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
+import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
+import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
 
 const MAX_COACH_MESSAGES = 12;
 const MAX_COACH_REQUEST_BYTES = 32 * 1024;
@@ -105,6 +108,17 @@ function toCoachModelMessages(messages: z.infer<typeof coachRequestSchema>['mess
 	});
 }
 
+function textFromCoachParts(
+	parts: Array<{ type?: string; text?: string }> | undefined
+): string {
+	return (parts ?? [])
+		.filter((part) => part.type === 'text' && typeof part.text === 'string')
+		.map((part) => part.text!.trim())
+		.filter(Boolean)
+		.join('\n')
+		.slice(0, 2_000);
+}
+
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		if (!(await isSuperCoachEnabled())) {
@@ -175,10 +189,14 @@ export const POST: RequestHandler = withAuthedHandler(
 					await releaseLock(lock);
 				};
 				const profile = await getTutorProfileView(userId);
+				const lastUserMessage = messages.at(-1)?.content ?? '';
+				const personalization = await buildTutorPersonalization(userId, lastUserMessage);
+				const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
 				const agent = createCoachAgent({
 					userId,
 					sessionId: parsed.data.sessionId,
-					selectedApClasses: profile.selectedApClasses
+					selectedApClasses: profile.selectedApClasses,
+					personalizationContext: personalization.context
 				});
 				const result = await agent.stream({
 					messages,
@@ -187,7 +205,27 @@ export const POST: RequestHandler = withAuthedHandler(
 				const uiStream = result
 					.toUIMessageStream<CoachUIMessage>({
 						originalMessages: parsed.data.messages as unknown as CoachUIMessage[],
-						onFinish: cleanup,
+						onFinish: async ({ responseMessage, isAborted }) => {
+							try {
+								if (!isAborted && memoryConsentGiven && (await isTutorMemoryAvailable())) {
+									const assistantResponse = textFromCoachParts(
+										responseMessage.parts as Array<{ type?: string; text?: string }>
+									);
+									if (lastUserMessage.trim() && assistantResponse.trim()) {
+										scheduleTutorMemoryWrite(
+											addTutorMemoryExchange(
+												userId,
+												{ user: lastUserMessage, assistant: assistantResponse },
+												{ surface: 'coach' }
+											),
+											'Coach'
+										);
+									}
+								}
+							} finally {
+								await cleanup?.();
+							}
+						},
 						onError: (error) => {
 							logger.error('Coach stream error', { error });
 							return 'The Coach could not complete that request. Please try again.';
@@ -211,6 +249,7 @@ export const POST: RequestHandler = withAuthedHandler(
 					consumeSseStream: consumeStream,
 					headers: {
 						'Cache-Control': 'no-cache',
+						'X-Tutor-Personalization-Degraded': personalization.memoryDegraded ? '1' : '0',
 						'X-Super-Usage-Remaining': String(reservation.remaining),
 						...(getPersonalizedUsageWarning(reservation)
 							? { 'X-Super-Usage-Warning': String(getPersonalizedUsageWarning(reservation)) }

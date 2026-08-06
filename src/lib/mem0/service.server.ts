@@ -165,7 +165,8 @@ export async function searchTutorMemories(userId: string, query: string): Promis
 
 export async function addTutorMemoryExchange(
 	userId: string,
-	exchange: { user: string; assistant: string }
+	exchange: { user: string; assistant: string },
+	options?: { surface?: 'tutor' | 'coach' }
 ): Promise<boolean> {
 	const client = getMemoryClient();
 	if (!client || !(await isSuperMemoryEnabled())) return false;
@@ -180,7 +181,7 @@ export async function addTutorMemoryExchange(
 		{
 			userId: mem0UserId,
 			filters: getTutorMemoryFilters(mem0UserId),
-			metadata: { appId: getTutorMemoryScope(), surface: 'tutor' }
+			metadata: { appId: getTutorMemoryScope(), surface: options?.surface ?? 'tutor' }
 		}
 	);
 	return true;

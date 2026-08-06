@@ -16,7 +16,10 @@ export function tutorRateLimitedResponse(retryAt: number | null): Response {
 	);
 }
 
-export function scheduleTutorMemoryWrite(work: Promise<unknown>, surface: 'MCQ' | 'FRQ'): void {
+export function scheduleTutorMemoryWrite(
+	work: Promise<unknown>,
+	surface: 'MCQ' | 'FRQ' | 'Coach'
+): void {
 	const safeWork = work.catch((error) =>
 		logger.warn(`${surface} tutor memory update failed`, { error })
 	);
