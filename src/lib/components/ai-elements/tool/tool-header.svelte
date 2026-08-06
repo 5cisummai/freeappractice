@@ -35,7 +35,7 @@
 <CollapsibleTrigger
 	{id}
 	class={cn(
-		'group flex w-fit max-w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+		'group flex w-fit max-w-full items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
 		className
 	)}
 	{...restProps}

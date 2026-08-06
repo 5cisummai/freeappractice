@@ -1,19 +1,25 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, type Component } from 'svelte';
+	import { fade } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
 	import { DefaultChatTransport } from 'ai';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CopyIcon from '@lucide/svelte/icons/copy';
-	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import SquareIcon from '@lucide/svelte/icons/square';
+	import TargetIcon from '@lucide/svelte/icons/target';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
 	import * as Message from '$lib/components/ai-elements/message/index.js';
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
-	import * as Tool from '$lib/components/ai-elements/tool/index.js';
-	import * as Suggestion from '$lib/components/ai-elements/suggestion/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
+	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -22,12 +28,23 @@
 	let input = $state('');
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
+	let motionMs = $state(320);
 
-	const suggestions = [
-		'What should I study next?',
-		'Build me a plan for this week',
-		'Help me focus on my weakest unit'
+	const suggestions: Array<{ text: string; icon: Component }> = [
+		{ text: 'What should I study next?', icon: BookOpenIcon },
+		{ text: 'Build me a plan for this week', icon: CalendarDaysIcon },
+		{ text: 'Help me focus on my weakest unit', icon: TargetIcon }
 	];
+
+	const toolActionLabels: Record<string, string> = {
+		'tool-read_course_catalog': 'Reading course catalog…',
+		'tool-read_profile': 'Reading profile…',
+		'tool-read_progress': 'Reading progress…',
+		'tool-read_insights': 'Reading insights…',
+		'tool-read_study_plan': 'Reading study plan…',
+		'tool-update_goals': 'Updating goals…',
+		'tool-update_study_plan': 'Updating study plan…'
+	};
 
 	const coach = new Chat<CoachUIMessage>({
 		messages: [],
@@ -46,8 +63,7 @@
 
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
 	let hasMessages = $derived(coach.messages.length > 0);
-
-	type CoachToolState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
+	let emptyChat = $derived(!hasMessages);
 
 	type CoachToolPart = {
 		type: `tool-${string}`;
@@ -62,10 +78,57 @@
 		proposed: unknown;
 	};
 
+	function getToolPart(part: unknown): CoachToolPart | null {
+		if (!part || typeof part !== 'object') return null;
+		const candidate = part as { type?: unknown };
+		return typeof candidate.type === 'string' && candidate.type.startsWith('tool-')
+			? (part as CoachToolPart)
+			: null;
+	}
+
+	function toolActionLabel(type: string): string {
+		return (
+			toolActionLabels[type] ??
+			`${type
+				.replace(/^tool-/, '')
+				.replaceAll('_', ' ')
+				.replace(/^./, (letter) => letter.toUpperCase())}…`
+		);
+	}
+
+	function isToolInProgress(state: string | undefined): boolean {
+		return state === 'input-streaming' || state === 'input-available';
+	}
+
+	function messageText(message: CoachUIMessage): string {
+		return message.parts
+			.filter((part) => part.type === 'text')
+			.map((part) => part.text)
+			.join('\n');
+	}
+
+	let statusLabel = $derived.by(() => {
+		if (!streaming) return null;
+
+		const last = coach.messages.at(-1);
+		if (!last || last.role !== 'assistant') return 'Thinking…';
+		if (messageText(last).trim()) return null;
+
+		const tools = last.parts.map(getToolPart).filter((part): part is CoachToolPart => part !== null);
+		for (let index = tools.length - 1; index >= 0; index -= 1) {
+			const tool = tools[index];
+			if (isToolInProgress(tool.state)) return toolActionLabel(tool.type);
+		}
+		return 'Thinking…';
+	});
+
 	onMount(() => {
 		const key = 'super-coach-session-id';
 		sessionId = sessionStorage.getItem(key) ?? crypto.randomUUID();
 		sessionStorage.setItem(key, sessionId);
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			motionMs = 0;
+		}
 	});
 
 	function showUsageWarning(response: Response) {
@@ -78,26 +141,6 @@
 				? `You have ${remaining} personalized AI messages left this month.`
 				: `You have used ${warning}% of this month's personalized AI messages.`
 		);
-	}
-
-	function getToolPart(part: unknown): CoachToolPart | null {
-		if (!part || typeof part !== 'object') return null;
-		const candidate = part as { type?: unknown };
-		return typeof candidate.type === 'string' && candidate.type.startsWith('tool-')
-			? (part as CoachToolPart)
-			: null;
-	}
-
-	function getToolState(state: string | undefined): CoachToolState {
-		if (
-			state === 'input-streaming' ||
-			state === 'input-available' ||
-			state === 'output-available' ||
-			state === 'output-error'
-		) {
-			return state;
-		}
-		return 'input-available';
 	}
 
 	function getApprovalProposal(part: CoachToolPart): ApprovalProposal | null {
@@ -114,20 +157,6 @@
 			return null;
 		}
 		return { category: output.category, proposed: output.proposed };
-	}
-
-	function formatToolName(type: string): string {
-		return type
-			.replace(/^tool-/, '')
-			.replaceAll('_', ' ')
-			.replace(/\b\w/g, (letter) => letter.toUpperCase());
-	}
-
-	function messageText(message: CoachUIMessage): string {
-		return message.parts
-			.filter((part) => part.type === 'text')
-			.map((part) => part.text)
-			.join('\n');
 	}
 
 	async function copyMessage(message: CoachUIMessage) {
@@ -218,156 +247,184 @@
 	<div
 		class="flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden bg-background md:min-h-[calc(100svh-5rem)]"
 	>
-		<div class="flex min-h-0 flex-1">
-			<main class="flex min-w-0 flex-1 flex-col">
-				<Conversation.Root class="min-h-0 flex-1">
-					<Conversation.Content
-						class="mx-auto w-full max-w-3xl gap-7 px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
-						aria-live="polite"
+		<main class="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div
+				class={cn(
+					'relative min-h-0 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+					hasMessages ? 'flex-1' : 'flex-none'
+				)}
+			>
+				{#if hasMessages}
+					<div
+						class="flex h-full min-h-0 flex-col"
+						in:fade={{ duration: motionMs, easing: cubicOut }}
 					>
-						{#if hasMessages}
-							{#each coach.messages as message (message.id)}
-								<Message.Root from={message.role} class="max-w-3xl">
-									{#if message.role === 'user'}
-										<Message.Content class="max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap">
-											{messageText(message)}
-										</Message.Content>
-									{:else}
-										{#each message.parts as part, index (`${message.id}-${index}`)}
-											{@const toolPart = getToolPart(part)}
-											{#if part.type === 'text'}
-												<Message.Content class="max-w-3xl leading-7">
-													<Message.Response content={part.text} />
-												</Message.Content>
-											{:else if toolPart}
-												{@const approval = getApprovalProposal(toolPart)}
-												<Tool.Root class="max-w-3xl bg-background">
-													<Tool.Header
-														type={formatToolName(toolPart.type)}
-														state={getToolState(toolPart.state)}
-													/>
-													<Tool.Content>
-														{#if toolPart.input !== undefined}
-															<Tool.Input input={toolPart.input} />
-														{/if}
-														{#if approval}
-															<div class="border-t p-4">
-																<div class="flex items-start gap-3">
-																	<div
-																		class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-																	></div>
-																	<div class="min-w-0 flex-1 space-y-1">
-																		<p class="text-sm font-medium">Approval needed</p>
-																		<p class="text-sm leading-6 text-muted-foreground">
-																			Coach is ready to update your {approval.category === 'goals'
-																				? 'goals and availability'
-																				: 'study plan'}.
-																		</p>
-																	</div>
-																</div>
-																<pre
-																	class="mt-3 max-h-36 overflow-auto rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">{JSON.stringify(
-																		approval.proposed,
-																		null,
-																		2
-																	)}</pre>
-																<Button
-																	size="sm"
-																	class="mt-3"
-																	disabled={approving}
-																	onclick={() => approveProposedCategory(approval.category)}
-																>
-																	{approving ? 'Approving…' : 'Approve update'}
-																</Button>
-															</div>
-														{:else}
-															<Tool.Output
-																output={toolPart.output}
-																errorText={toolPart.errorText}
-															/>
-														{/if}
-													</Tool.Content>
-												</Tool.Root>
-											{/if}
-										{/each}
-										{#if messageText(message)}
-											<Message.Actions
-												class="mt-0 opacity-0 transition-opacity group-hover:opacity-100"
-											>
-												<Message.Action
-													tooltip="Copy response"
-													label="Copy response"
-													onclick={() => void copyMessage(message)}
-												>
-													<CopyIcon />
-												</Message.Action>
-											</Message.Actions>
-										{/if}
-									{/if}
-								</Message.Root>
-							{/each}
-							{#if streaming}
-								<Message.Root from="assistant" class="max-w-3xl">
-									<div
-										class="flex items-center gap-2 text-sm text-muted-foreground"
-										role="status"
-										aria-label="Coach is thinking"
-									>
-										<LoaderCircleIcon class="size-4 animate-spin" aria-hidden="true" />
-										<span>Coach is thinking…</span>
-									</div>
-								</Message.Root>
-							{/if}
-						{:else}
-							<div
-								class="flex size-full min-h-[18rem] items-center justify-center px-6 py-16 text-center"
+						<Conversation.Root class="min-h-0 flex-1">
+							<Conversation.Content
+								class="mx-auto w-full max-w-3xl gap-7 px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
+								aria-live="polite"
 							>
-								<p
-									class="max-w-2xl font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
-								>
-									Ask me any study questions
-								</p>
-							</div>
-						{/if}
-					</Conversation.Content>
-					<Conversation.ScrollButton aria-label="Scroll to latest message" />
-				</Conversation.Root>
+								{#each coach.messages as message (message.id)}
+									<Message.Root from={message.role} class="max-w-3xl gap-1">
+										{#if message.role === 'user'}
+											<Message.Content
+												class="max-w-[min(42rem,88%)] text-md leading-6 whitespace-pre-wrap"
+											>
+												{messageText(message)}
+											</Message.Content>
+										{:else}
+											{#each message.parts as part, index (`${message.id}-${index}`)}
+												{@const toolPart = getToolPart(part)}
+												{#if part.type === 'text'}
+													{#if part.text.trim()}
+														<Message.Content class="max-w-3xl text-md leading-7">
+															<Message.Response content={part.text} />
+														</Message.Content>
+													{/if}
+												{:else if toolPart}
+													{@const approval = getApprovalProposal(toolPart)}
+													{#if approval}
+														<div
+															class="mt-2 max-w-3xl rounded-2xl border border-border/70 bg-muted/30 p-4"
+														>
+															<p class="text-sm font-medium">Approval needed</p>
+															<p class="mt-1 text-sm leading-6 text-muted-foreground">
+																Coach is ready to update your {approval.category === 'goals'
+																	? 'goals and availability'
+																	: 'study plan'}.
+															</p>
+															<pre
+																class="mt-3 max-h-36 overflow-auto rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">{JSON.stringify(
+																	approval.proposed,
+																	null,
+																	2
+																)}</pre>
+															<Button
+																size="sm"
+																class="mt-3"
+																disabled={approving}
+																onclick={() => approveProposedCategory(approval.category)}
+															>
+																{approving ? 'Approving…' : 'Approve update'}
+															</Button>
+														</div>
+													{/if}
+												{/if}
+											{/each}
+											{#if messageText(message)}
+												<Message.Actions
+													class="mt-0 opacity-0 transition-opacity group-hover:opacity-100"
+												>
+													<Message.Action
+														tooltip="Copy response"
+														label="Copy response"
+														onclick={() => void copyMessage(message)}
+													>
+														<CopyIcon />
+													</Message.Action>
+												</Message.Actions>
+											{/if}
+										{/if}
+									</Message.Root>
+								{/each}
+								{#if statusLabel}
+									<Message.Root from="assistant" class="max-w-3xl">
+										<div role="status" aria-live="polite" aria-label={statusLabel}>
+											{#key statusLabel}
+												<span in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}>
+													<Shimmer as="span" content_length={statusLabel.length} class="text-md">
+														{statusLabel}
+													</Shimmer>
+												</span>
+											{/key}
+										</div>
+									</Message.Root>
+								{/if}
+							</Conversation.Content>
+							<Conversation.ScrollButton aria-label="Scroll to latest message" />
+						</Conversation.Root>
+					</div>
+				{/if}
+			</div>
 
-				<div class="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4 sm:px-8 sm:pb-6">
-					{#if !hasMessages && !streaming}
-						<Suggestion.Suggestions class="mb-3 overflow-x-auto pb-1">
-							{#each suggestions as suggestion (suggestion)}
-								<Suggestion.Suggestion {suggestion} onclick={(value) => void send(value)} />
-							{/each}
-						</Suggestion.Suggestions>
-					{/if}
-
-					<PromptInput.Root
-						class="rounded-[32px] border border-border/80 bg-muted/40 shadow-sm transition-[border-color,box-shadow,background-color] focus-within:border-border focus-within:bg-background focus-within:shadow-md"
-						onSubmit={({ text }) => send(text)}
-						clearOnSubmit={false}
+			<div
+				class={cn(
+					'mx-auto flex w-full max-w-3xl flex-col px-4 transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-8',
+					emptyChat ? 'min-h-0 flex-1 justify-center pb-10 sm:pb-16' : 'shrink-0 pb-4 sm:pb-6'
+				)}
+			>
+				{#if emptyChat}
+					<div
+						class="mb-8 text-center sm:mb-10"
+						out:fade={{ duration: motionMs * 0.7, easing: cubicOut }}
 					>
-						<div class="flex items-end gap-2 py-2 pr-3 pl-6">
-							<PromptInput.Body class="min-w-0 flex-1">
-								<PromptInput.Textarea
-									bind:value={input}
-									placeholder="Ask Coach anything…"
-									class="text-md md:text-md min-h-10 px-1 py-2 leading-7"
-								/>
-							</PromptInput.Body>
-							<PromptInput.Submit
-								status={coach.status as ChatStatus}
-								disabled={!sessionId || (!streaming && !input.trim())}
-								onStop={() => coach.stop()}
-								class="mb-0.5 size-9 shrink-0 rounded-full"
+						<h1
+							class="font-display text-3xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-4xl"
+						>
+							Ask me about your progress
+						</h1>
+					</div>
+				{/if}
+
+				<PromptInput.Root
+					class="rounded-full border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
+					onSubmit={({ text }) => send(text)}
+					clearOnSubmit={false}
+				>
+					<div class="flex items-end gap-2 py-1.5 pr-1.5 pl-5 sm:pl-6">
+						<PromptInput.Body class="min-w-0 flex-1">
+							<PromptInput.Textarea
+								bind:value={input}
+								placeholder="Ask Coach anything…"
+								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
 							/>
-						</div>
-					</PromptInput.Root>
-					<p class="mt-2 text-center text-[11px] text-muted-foreground">
+						</PromptInput.Body>
+						<PromptInput.Submit
+							status={coach.status as ChatStatus}
+							disabled={!sessionId || (!streaming && !input.trim())}
+							onStop={() => coach.stop()}
+							class="size-9 shrink-0 self-end rounded-full"
+						>
+							{#if streaming}
+								<SquareIcon class="size-4" />
+							{:else}
+								<ArrowUpIcon class="size-4" />
+							{/if}
+						</PromptInput.Submit>
+					</div>
+				</PromptInput.Root>
+
+				{#if emptyChat}
+					<ul
+						class="mt-5 w-full space-y-0.5 px-1 sm:mt-6 sm:px-2"
+						out:fade={{ duration: motionMs * 0.65, easing: cubicOut }}
+					>
+						{#each suggestions as suggestion (suggestion.text)}
+							{@const Icon = suggestion.icon}
+							<li>
+								<button
+									type="button"
+									class="group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted/80 focus-visible:bg-muted/80 focus-visible:outline-none"
+									disabled={!sessionId || streaming}
+									onclick={() => void send(suggestion.text)}
+								>
+									<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<span class="min-w-0 flex-1 text-sm leading-5 text-foreground/85">
+										{suggestion.text}
+									</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p
+						class="mt-2 text-center text-[11px] text-muted-foreground"
+						in:fade={{ duration: motionMs * 0.5, delay: motionMs * 0.25, easing: cubicOut }}
+					>
 						Coach is powered by AI and can make mistakes.
 					</p>
-				</div>
-			</main>
-		</div>
+				{/if}
+			</div>
+		</main>
 	</div>
 {/if}

@@ -16,6 +16,6 @@
 	let id = $derived.by(() => crypto.randomUUID());
 </script>
 
-<Collapsible {id} class={cn('not-prose mb-3 w-fit max-w-full', className)} {...restProps}>
+<Collapsible {id} class={cn('not-prose mb-0 w-fit max-w-full', className)} {...restProps}>
 	{@render children?.()}
 </Collapsible>
