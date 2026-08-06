@@ -94,7 +94,7 @@ function getMemoryClient(): Mem0Memory | null {
 						provider: 'openai',
 						config: {
 							apiKey,
-							model: 'gpt-5-mini',
+							model: 'gpt-5.4-nano',
 							...(baseURL ? { baseURL } : {})
 						}
 					}

@@ -68,9 +68,7 @@
 				/>
 
 				<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
-				<div
-					class="max-w-none font-serif text-base leading-[1.75] text-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-[3px] [&_a:hover]:opacity-80 [&_blockquote]:my-0 [&_blockquote]:border-l-[3px] [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:font-normal [&_blockquote]:text-muted-foreground [&_blockquote]:italic [&_code]:font-mono [&_code]:text-[0.875em] [&_code:not(pre_code)]:rounded-[0.3em] [&_code:not(pre_code)]:border [&_code:not(pre_code)]:border-border [&_code:not(pre_code)]:bg-muted [&_code:not(pre_code)]:px-[0.4em] [&_code:not(pre_code)]:py-[0.15em] [&_h1]:mt-[2em] [&_h1]:mb-3 [&_h1]:text-[2em] [&_h1]:font-semibold [&_h1]:tracking-[-0.025em] [&_h2]:mt-[2em] [&_h2]:mb-3 [&_h2]:text-[1.5em] [&_h2]:font-semibold [&_h2]:tracking-[-0.025em] [&_h3]:mt-[2em] [&_h3]:mb-3 [&_h3]:text-[1.25em] [&_h3]:font-semibold [&_h3]:tracking-[-0.025em] [&_h4]:mt-[2em] [&_h4]:mb-3 [&_h4]:text-[1.1em] [&_h4]:font-semibold [&_h4]:tracking-[-0.025em] [&_hr]:my-[2em] [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-border [&_img]:my-6 [&_img]:max-w-full [&_img]:rounded-lg [&_li]:mb-[0.4em] [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-0 [&_p]:mb-5 [&_pre]:mb-6 [&_pre]:overflow-x-auto [&_pre]:rounded-[0.6em] [&_pre]:border [&_pre]:border-border [&_pre]:bg-card [&_pre]:p-4 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:mb-6 [&_table]:w-full [&_table]:border-collapse [&_table]:text-[0.9em] [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-left [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6"
-				>
+				<div class="prose">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html data.htmlContent}
 				</div>
