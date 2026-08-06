@@ -357,7 +357,9 @@
 								{data.entitlements.plan === 'super' ? 'Super plan' : 'Free plan'}
 							</p>
 							<p class="text-sm text-muted-foreground">
-								{#if data.entitlements.plan === 'super'}
+								{#if data.billing?.billingIssue}
+									Payment needs attention. Please open the Customer Portal to update your payment method.
+								{:else if data.entitlements.plan === 'super'}
 									{#if data.freeBetaEnabled}
 										Super access is free during the beta for every account.
 									{:else if data.entitlements.accessReason === 'admin_grant'}
@@ -372,7 +374,7 @@
 								{/if}
 							</p>
 						</div>
-						{#if data.entitlements.plan === 'super' && data.billing?.hasCustomer}
+						{#if data.billing?.hasCustomer}
 							<Button
 								type="button"
 								variant="outline"
@@ -382,7 +384,7 @@
 							>
 								{billingBusy ? 'Opening…' : 'Customer Portal'}
 							</Button>
-						{:else if data.entitlements.plan !== 'super'}
+						{:else if data.entitlements.plan !== 'super' && !data.billing?.billingIssue}
 							<Button type="button" variant="outline" size="sm" href={resolve('/pricing')}
 								>Upgrade</Button
 							>
