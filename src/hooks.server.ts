@@ -18,12 +18,14 @@ import { createHandle } from 'flags/sveltekit';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	frqPracticeEnabled,
+	isSuperFreeBetaEnabled,
 	isSuperCheckoutEnabled,
 	multiAttemptExperimentEnabled,
 	superCheckoutEnabled,
 	superCoachEnabled,
 	superInsightsEnabled,
-	superMemoryEnabled
+	superMemoryEnabled,
+	superFreeBetaEnabled
 } from '$lib/flags';
 
 // ── Security headers ────────────────────────────────────────
@@ -193,6 +195,15 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	}
 
 	if (event.request.method === 'POST' && event.url.pathname === '/api/auth/subscription/upgrade') {
+		if (await isSuperFreeBetaEnabled()) {
+			return new Response(
+				JSON.stringify({ error: 'Super is free for everyone during the beta.' }),
+				{
+					status: 410,
+					headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+				}
+			);
+		}
 		if (!(await isSuperCheckoutEnabled())) {
 			return new Response(
 				JSON.stringify({ error: 'New Super checkout is temporarily unavailable.' }),
@@ -273,6 +284,7 @@ export const handle = sequence(
 					flags: {
 						multiAttemptExperimentEnabled,
 						frqPracticeEnabled,
+						superFreeBetaEnabled,
 						superCheckoutEnabled,
 						superCoachEnabled,
 						superMemoryEnabled,

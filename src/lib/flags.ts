@@ -61,6 +61,25 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 	}
 }
 
+/**
+ * Free Super beta for every authenticated user.
+ * Managed in the Vercel Flags dashboard (`super-free-beta`).
+ * Default off until you flip it there — no env var.
+ */
+export const superFreeBetaEnabled = vercelFlag(
+	'super-free-beta',
+	'Give every authenticated user free Super access during the beta',
+	false
+);
+
+export async function isSuperFreeBetaEnabled(): Promise<boolean> {
+	try {
+		return Boolean(await superFreeBetaEnabled());
+	} catch {
+		return false;
+	}
+}
+
 function superKillSwitch(key: string, description: string) {
 	return vercelFlag(key, description, true);
 }

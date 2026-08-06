@@ -1,4 +1,5 @@
 import { connectDb } from '$lib/server/db';
+import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { SuperBillingAccess, SuperGrant } from '$lib/super/models.server';
 import {
 	FREE_ENTITLEMENTS,
@@ -19,6 +20,8 @@ function superEntitlements(reason: Exclude<SuperAccessReason, null>): Entitlemen
 }
 
 export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
+	if (await isSuperFreeBetaEnabled()) return superEntitlements('free_beta');
+
 	await connectDb();
 	const [billing, grant] = await Promise.all([
 		SuperBillingAccess.find({ userId, plan: 'super' }).sort({ updatedAt: -1 }).lean().exec(),

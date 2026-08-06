@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import PricingCards from '$lib/components/marketing/pricing-cards.svelte';
 	import { twAnimateInView } from '$lib/tw-animate';
 
-	let { asPage = false }: { asPage?: boolean } = $props();
+	let { asPage = false, freeBeta = false }: { asPage?: boolean; freeBeta?: boolean } = $props();
 </script>
 
 <section
@@ -24,10 +26,32 @@
 		</p>
 	</div>
 
-	<PricingCards />
+	{#if freeBeta}
+		<div
+			class="mx-auto max-w-2xl rounded-3xl border-2 border-violet-300/50 bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 p-8 text-center shadow-sm shadow-violet-500/10"
+		>
+			<span
+				class="inline-flex rounded-full border border-violet-300/50 bg-background/70 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm dark:text-violet-300"
+			>
+				Super beta
+			</span>
+			<h2 class="mt-4 font-display text-3xl font-medium tracking-tight">
+				Super is free during beta.
+			</h2>
+			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
+				Every account gets personalized tutoring, AI Coach, insights, weekly study plans, and 300
+				personalized messages per UTC calendar month.
+			</p>
+			<Button href={resolve('/signup')} size="lg" class="mt-6 rounded-full px-6">
+				Get started with Super
+			</Button>
+		</div>
+	{:else}
+		<PricingCards />
 
-	<p class="mx-auto max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-		Must be 13+ to use personalized features. No free trials, promotions, or overages. Cancel
-		anytime before your billing period ends.
-	</p>
+		<p class="mx-auto max-w-2xl text-center text-sm leading-6 text-muted-foreground">
+			Must be 13+ to use personalized features. No free trials, promotions, or overages. Cancel
+			anytime before your billing period ends.
+		</p>
+	{/if}
 </section>

@@ -19,6 +19,91 @@
 	import GiftIcon from '@lucide/svelte/icons/gift';
 	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+
+	let { data } = $props();
+
+	const homeFaqJsonLd = $derived.by(() =>
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'FAQPage',
+			mainEntity: [
+				{
+					'@type': 'Question',
+					name: 'What is this website?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'Free AP Practice is the fastest way to practice AP online: pick a subject, click generate, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects.'
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'How does it work?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: "Select an AP class from the dropdown menu and click Generate Question. The AI will create a multiple-choice question with four options (A-D). After selecting your answer, you'll receive immediate feedback and a detailed explanation."
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'What does Super include?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: data.superFreeBetaEnabled
+							? 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 300 personalized messages per UTC calendar month during the free beta.'
+							: 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'Which AP subjects are covered?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'We cover 20+ AP subjects including Sciences (Biology, Chemistry, Physics 1/2/C), Mathematics (Calculus AB/BC, Statistics, Precalculus), Computer Science (A and Principles), English (Language and Literature), History (US, World, European), Social Sciences (Psychology, Human Geography, Government), and Economics (Macro and Micro).'
+					}
+				},
+				...(data.superFreeBetaEnabled
+					? []
+					: [
+							{
+								'@type': 'Question',
+								name: 'How much does Super cost?',
+								acceptedAnswer: {
+									'@type': 'Answer',
+									text: 'Super costs $9 per month or $79 per year, plus applicable tax. It renews automatically until canceled, and free AP practice is still available without a subscription.'
+								}
+							}
+						]),
+				{
+					'@type': 'Question',
+					name: 'How accurate are the AI-generated questions?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: "Our questions are generated using OpenAI's advanced gpt-5-mini reasoning model, specifically designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'Can I use this over the summer before my AP class starts?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'Yes. Many students use summer to preview Unit 1, build a daily practice habit, and plan which AP classes to take. See our Summer AP Study Guide for a realistic 4-week outline.'
+					}
+				},
+				{
+					'@type': 'Question',
+					name: "I'm not in an AP class yet—can I still practice here?",
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'If you know which AP you might take next year, you can preview Unit 1 now. If you are still deciding, start with our guide on which APs to take before heavy practice.'
+					}
+				}
+			]
+		})
+	);
+	const homeFaqJsonLdMarkup = $derived(
+		'<script type="application/ld+json">' + homeFaqJsonLd + '</' + 'script>'
+	);
+
 	onMount(() => {
 		captureLandingPageViewed();
 		void authClient.getSession().then(({ data }) => {
@@ -164,78 +249,8 @@
 		}
 	</script>
 
-	<script type="application/ld+json">
-		{
-			"@context": "https://schema.org",
-			"@type": "FAQPage",
-			"mainEntity": [
-				{
-					"@type": "Question",
-					"name": "What is this website?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Free AP Practice is the fastest way to practice AP online: pick a subject, click generate, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "How does it work?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Select an AP class from the dropdown menu and click Generate Question. The AI will create a multiple-choice question with four options (A-D). After selecting your answer, you'll receive immediate feedback and a detailed explanation."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "What does Super include?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "Which AP subjects are covered?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "We cover 20+ AP subjects including Sciences (Biology, Chemistry, Physics 1/2/C), Mathematics (Calculus AB/BC, Statistics, Precalculus), Computer Science (A and Principles), English (Language and Literature), History (US, World, European), Social Sciences (Psychology, Human Geography, Government), and Economics (Macro and Micro)."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "How much does Super cost?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Super costs $9 per month or $79 per year, plus applicable tax. It renews automatically until canceled, and free AP practice is still available without a subscription."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "How accurate are the AI-generated questions?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Our questions are generated using OpenAI's advanced gpt-5-mini reasoning model, specifically designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "Can I use this over the summer before my AP class starts?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Yes. Many students use summer to preview Unit 1, build a daily practice habit, and plan which AP classes to take. See our Summer AP Study Guide for a realistic 4-week outline."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "I'm not in an AP class yet—can I still practice here?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "If you know which AP you might take next year, you can preview Unit 1 now. If you are still deciding, start with our guide on which APs to take before heavy practice."
-					}
-				}
-			]
-		}
-	</script>
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html homeFaqJsonLdMarkup}
 
 	<script type="application/ld+json">
 		{
@@ -287,7 +302,7 @@
 </svelte:head>
 
 <div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-	<Topbar />
+	<Topbar showPricing={!data.superFreeBetaEnabled} />
 
 	<main id="main-content" class="flex-1">
 		<div
@@ -336,7 +351,7 @@
 
 			<AspiringStudentsSection />
 
-			<PricingSection />
+			<PricingSection freeBeta={data.superFreeBetaEnabled} />
 
 			<section class="mx-auto w-full max-w-3xl space-y-4 {twAnimateInView}">
 				<div class="space-y-1">
@@ -419,22 +434,26 @@
 						<Accordion.Content>
 							<p>
 								Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights,
-								weekly study plans, and 600 personalized messages per UTC calendar month. Free AP
-								practice remains available without a Super subscription.
+								weekly study plans, and
+								{data.superFreeBetaEnabled
+									? ' 300 personalized messages per UTC calendar month during the free beta.'
+									: ' 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'}
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
 
-					<Accordion.Item value="how-much-does-super-cost">
-						<Accordion.Trigger level={3}>How much does Super cost?</Accordion.Trigger>
-						<Accordion.Content>
-							<p>
-								Super costs $9 per month or $79 per year, plus applicable tax. It renews
-								automatically until canceled, and free AP practice is still available without a
-								subscription.
-							</p>
-						</Accordion.Content>
-					</Accordion.Item>
+					{#if !data.superFreeBetaEnabled}
+						<Accordion.Item value="how-much-does-super-cost">
+							<Accordion.Trigger level={3}>How much does Super cost?</Accordion.Trigger>
+							<Accordion.Content>
+								<p>
+									Super costs $9 per month or $79 per year, plus applicable tax. It renews
+									automatically until canceled, and free AP practice is still available without a
+									subscription.
+								</p>
+							</Accordion.Content>
+						</Accordion.Item>
+					{/if}
 				</Accordion.Root>
 			</section>
 

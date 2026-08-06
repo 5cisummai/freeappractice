@@ -2,11 +2,11 @@
 	import Topbar from '$lib/components/layout/topbar.svelte';
 	import SiteFooter from '$lib/components/layout/site-footer.svelte';
 
-	let { children } = $props();
+	let { data, children } = $props();
 </script>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">
-	<Topbar />
+	<Topbar showPricing={!data.superFreeBetaEnabled} />
 	{@render children()}
 	<SiteFooter />
 </div>

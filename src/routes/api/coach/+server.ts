@@ -7,6 +7,7 @@ import { isSuperCoachEnabled } from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import {
 	acquireCoachLock,
+	getSuperMonthlyMessageLimit,
 	getPersonalizedUsageWarning,
 	limitSuperAi,
 	RedisRequiredError,
@@ -140,7 +141,9 @@ export const POST: RequestHandler = withAuthedHandler(
 			const reservation = await reservePersonalizedTurn(userId);
 			if (!reservation) {
 				return json(
-					{ error: 'Your 600 personalized messages for this month have been used.' },
+					{
+						error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
+					},
 					{ status: 429 }
 				);
 			}

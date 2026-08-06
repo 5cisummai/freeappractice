@@ -358,7 +358,9 @@
 							</p>
 							<p class="text-sm text-muted-foreground">
 								{#if data.entitlements.plan === 'super'}
-									{#if data.entitlements.accessReason === 'admin_grant'}
+									{#if data.freeBetaEnabled}
+										Super access is free during the beta for every account.
+									{:else if data.entitlements.accessReason === 'admin_grant'}
 										Super access granted by the team.
 									{:else if data.billing?.status === 'past_due'}
 										Payment is past due; Super access remains available during the grace period.
@@ -415,7 +417,7 @@
 								</p>
 								{#if data.usage.status === 'available'}
 									<p class="mt-1 text-sm">
-										{data.usage.remaining} of 600 messages remaining this month.
+										{data.usage.remaining} of {data.usage.limit} messages remaining this month.
 									</p>
 									{#if data.usage.warning}
 										<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">

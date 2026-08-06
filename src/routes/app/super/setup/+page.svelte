@@ -80,7 +80,11 @@
 	let stepKey = $state(0);
 
 	const steps = $derived(
-		optedIntoSuper || isSuperMember ? [...BASE_STEPS, ...SUPER_STEPS] : BASE_STEPS
+		data.freeBetaEnabled
+			? [...BASE_STEPS.slice(0, 1), ...SUPER_STEPS]
+			: optedIntoSuper || isSuperMember
+				? [...BASE_STEPS, ...SUPER_STEPS]
+				: BASE_STEPS
 	);
 	const stepIndex = $derived(steps.findIndex((entry) => entry.id === step));
 	const current = $derived.by(() => {
@@ -385,7 +389,7 @@
 							class="rounded-xl border border-border/70 bg-card/40 px-5 py-6 text-sm leading-6 text-muted-foreground"
 						>
 							{#if form.ageConfirmed}
-								You’re confirmed. Continue to choose Free or Super.
+								You’re confirmed. Continue to set up your personalized Super features.
 							{:else}
 								By continuing, you confirm that you are at least 13 years old and can use
 								personalized Super features.

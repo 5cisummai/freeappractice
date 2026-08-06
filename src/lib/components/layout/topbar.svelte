@@ -13,6 +13,7 @@
 		topbarResourceItems
 	} from '$lib/site-nav.js';
 
+	let { showPricing = true }: { showPricing?: boolean } = $props();
 	let mobileOpen = $state(false);
 </script>
 
@@ -80,14 +81,16 @@
 							</NavigationMenu.Content>
 						</NavigationMenu.Item>
 
-						<NavigationMenu.Item>
-							<NavigationMenu.Link
-								href={resolve(topbarPricingItem.href)}
-								class="font-medium text-muted-foreground hover:text-foreground"
-							>
-								{topbarPricingItem.label}
-							</NavigationMenu.Link>
-						</NavigationMenu.Item>
+						{#if showPricing}
+							<NavigationMenu.Item>
+								<NavigationMenu.Link
+									href={resolve(topbarPricingItem.href)}
+									class="font-medium text-muted-foreground hover:text-foreground"
+								>
+									{topbarPricingItem.label}
+								</NavigationMenu.Link>
+							</NavigationMenu.Item>
+						{/if}
 					</NavigationMenu.List>
 				</NavigationMenu.Root>
 
@@ -130,12 +133,14 @@
 						</a>
 					{/each}
 				</div>
-				<a
-					href={resolve(topbarPricingItem.href)}
-					class="block rounded-md px-2 py-2 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
-				>
-					{topbarPricingItem.label}
-				</a>
+				{#if showPricing}
+					<a
+						href={resolve(topbarPricingItem.href)}
+						class="block rounded-md px-2 py-2 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+					>
+						{topbarPricingItem.label}
+					</a>
+				{/if}
 				{#each topbarAuthItems as item (item.href)}
 					<a
 						href={resolve(item.href)}

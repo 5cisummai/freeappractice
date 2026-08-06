@@ -6,8 +6,12 @@ import {
 	redisNamespace,
 	withRedisTimeout
 } from '$lib/redis/server';
+import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { SuperUsageRollup } from '$lib/super/models.server';
-import { SUPER_MONTHLY_MESSAGE_LIMIT } from '$lib/super/types';
+import {
+	SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT,
+	SUPER_MONTHLY_MESSAGE_LIMIT
+} from '$lib/super/types';
 
 const RATE_WINDOW = '10 m' as const;
 const GENERIC_ANONYMOUS_LIMIT = 12;
@@ -102,6 +106,12 @@ export async function limitSuperAi(userId: string): Promise<RateLimitDecision> {
 	return limit(SUPER_AI_LIMIT, 'super-ai', `user:${userId}`, false);
 }
 
+export async function getSuperMonthlyMessageLimit(): Promise<number> {
+	return (await isSuperFreeBetaEnabled())
+		? SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT
+		: SUPER_MONTHLY_MESSAGE_LIMIT;
+}
+
 function currentUtcMonth(now = new Date()): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
@@ -141,6 +151,7 @@ return redis.call('DECR', KEYS[1])
 export type UsageReservation = {
 	month: string;
 	used: number;
+	limit: number;
 	remaining: number;
 };
 
@@ -148,9 +159,9 @@ export type PersonalizedUsageWarning = 80 | 95 | null;
 
 /** Warn once at 80% and again at 95%; the caller decides how to present the warning. */
 export function getPersonalizedUsageWarning(
-	usage: Pick<UsageReservation, 'used'>
+	usage: Pick<UsageReservation, 'used'> & Partial<Pick<UsageReservation, 'limit'>>
 ): PersonalizedUsageWarning {
-	const percentage = (usage.used / SUPER_MONTHLY_MESSAGE_LIMIT) * 100;
+	const percentage = (usage.used / (usage.limit ?? SUPER_MONTHLY_MESSAGE_LIMIT)) * 100;
 	if (percentage >= 95) return 95;
 	if (percentage >= 80) return 80;
 	return null;
@@ -164,20 +175,21 @@ export async function reservePersonalizedTurn(
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();
 	const month = currentUtcMonth(now);
+	const limitCount = await getSuperMonthlyMessageLimit();
 	try {
 		const result = await withRedisTimeout(
 			redis
 				.createScript<number[]>(RESERVE_USAGE_SCRIPT)
 				.exec(
 					[usageKey(userId, month)],
-					[String(SUPER_MONTHLY_MESSAGE_LIMIT), String(secondsUntilUsageExpiry(now))]
+					[String(limitCount), String(secondsUntilUsageExpiry(now))]
 				),
 			750
 		);
 		const allowed = Number(result[0]) === 1;
 		const used = Number(result[1]);
 		if (!allowed) return null;
-		return { month, used, remaining: Math.max(0, SUPER_MONTHLY_MESSAGE_LIMIT - used) };
+		return { month, used, limit: limitCount, remaining: Math.max(0, limitCount - used) };
 	} catch (error) {
 		if (error instanceof RedisRequiredError) throw error;
 		throw new RedisRequiredError();
@@ -206,11 +218,12 @@ export async function getPersonalizedUsage(
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();
 	const month = currentUtcMonth(now);
+	const limitCount = await getSuperMonthlyMessageLimit();
 	try {
 		const used = Number(
 			(await withRedisTimeout(redis.get<number>(usageKey(userId, month)), 750)) ?? 0
 		);
-		return { month, used, remaining: Math.max(0, SUPER_MONTHLY_MESSAGE_LIMIT - used) };
+		return { month, used, limit: limitCount, remaining: Math.max(0, limitCount - used) };
 	} catch (error) {
 		if (error instanceof RedisRequiredError) throw error;
 		throw new RedisRequiredError();

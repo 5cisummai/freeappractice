@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
 	connectDb: vi.fn(),
+	isSuperFreeBetaEnabled: vi.fn(),
 	billingFind: vi.fn(),
 	grantFindOne: vi.fn()
 }));
 
 vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
+vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
 vi.mock('$lib/super/models.server', () => ({
 	SuperBillingAccess: { find: mocks.billingFind },
 	SuperGrant: { findOne: mocks.grantFindOne }
@@ -27,7 +29,22 @@ describe('Super entitlements', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.isSuperFreeBetaEnabled.mockResolvedValue(false);
 		mocks.grantFindOne.mockReturnValue(query(null));
+	});
+
+	it('grants every authenticated user Super access during the free beta', async () => {
+		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
+
+		await expect(getEntitlements('student-1', now)).resolves.toMatchObject({
+			plan: 'super',
+			accessReason: 'free_beta',
+			personalizedTutor: true,
+			coach: true,
+			aiInsights: true,
+			studyPlans: true
+		});
+		expect(mocks.connectDb).not.toHaveBeenCalled();
 	});
 
 	it('does not grant access to an active subscription once its paid period ended', async () => {

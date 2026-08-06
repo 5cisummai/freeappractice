@@ -2,6 +2,8 @@
 	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
 	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
+
+	let { data } = $props();
 </script>
 
 <svelte:head>
@@ -78,22 +80,30 @@
 
 			<section>
 				<h2 class="text-xl font-semibold">5. Super Membership</h2>
-				<p>
-					Super is an optional subscription for students aged 13 or older. It is offered at $9 per
-					month or $79 per year, plus applicable tax, and renews automatically until you cancel.
-					Super includes personalized multiple-choice and written-response tutoring, Coach,
-					Insights, weekly study plans, and up to 600 personalized messages per UTC calendar month.
-					We do not offer a free trial, promotional pricing, discounts, or usage overages for Super
-					unless the checkout page expressly says otherwise.
-				</p>
-				<p class="mt-2">
-					You can cancel or restore a cancellation before the current billing period ends in the
-					billing portal. A cancellation takes effect at the end of the paid period. Any permitted
-					billing-interval change takes effect at the next renewal. Failed or past-due payments may
-					limit or end access after the applicable grace period. Payments, taxes, receipts, and the
-					billing portal are provided by Stripe. Any refund rights are governed by applicable law
-					and the disclosures made at checkout.
-				</p>
+				{#if data.superFreeBetaEnabled}
+					<p>
+						During the Super free beta, every authenticated student aged 13 or older receives
+						personalized multiple-choice and written-response tutoring, Coach, Insights, weekly
+						study plans, and up to 300 personalized messages per UTC calendar month at no charge.
+					</p>
+				{:else}
+					<p>
+						Super is an optional subscription for students aged 13 or older. It is offered at $9 per
+						month or $79 per year, plus applicable tax, and renews automatically until you cancel.
+						Super includes personalized multiple-choice and written-response tutoring, Coach,
+						Insights, weekly study plans, and up to 600 personalized messages per UTC calendar
+						month. We do not offer a free trial, promotional pricing, discounts, or usage overages
+						for Super unless the checkout page expressly says otherwise.
+					</p>
+					<p class="mt-2">
+						You can cancel or restore a cancellation before the current billing period ends in the
+						billing portal. A cancellation takes effect at the end of the paid period. Any permitted
+						billing-interval change takes effect at the next renewal. Failed or past-due payments
+						may limit or end access after the applicable grace period. Payments, taxes, receipts,
+						and the billing portal are provided by Stripe. Any refund rights are governed by
+						applicable law and the disclosures made at checkout.
+					</p>
+				{/if}
 			</section>
 
 			<section>

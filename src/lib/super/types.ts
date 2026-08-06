@@ -1,4 +1,5 @@
 export const SUPER_MONTHLY_MESSAGE_LIMIT = 600;
+export const SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT = 300;
 export const SUPER_PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Plan = 'free' | 'super';
@@ -20,7 +21,8 @@ export function isSuperBillingStatus(value: string): value is SuperBillingStatus
 	return (SUPER_BILLING_STATUSES as readonly string[]).includes(value);
 }
 
-export type SuperAccessReason = 'subscription' | 'past_due_grace' | 'admin_grant' | null;
+export type SuperAccessReason =
+	'subscription' | 'past_due_grace' | 'admin_grant' | 'free_beta' | null;
 
 export type Entitlements = {
 	plan: Plan;
