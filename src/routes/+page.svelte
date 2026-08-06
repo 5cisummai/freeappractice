@@ -312,7 +312,7 @@
 				<div class="mx-auto max-w-3xl space-y-6">
 					<Badge
 						variant="outline"
-						class="gap-2 border-violet-300/50 bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70 hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15"
+						class="super-tier-gradient super-tier-gradient-hover gap-2 border-violet-300/50 p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70"
 					>
 						<SparklesIcon class="size-4 text-violet-500" aria-hidden="true" />
 						<span class="font-semibold text-violet-700 dark:text-violet-300">Start here</span>

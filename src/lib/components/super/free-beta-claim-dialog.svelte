@@ -39,7 +39,7 @@
 	<Dialog.Content class="sm:max-w-md" showCloseButton={!claiming}>
 		<Dialog.Header>
 			<div
-				class="mx-auto mb-1 flex size-12 items-center justify-center rounded-full border border-violet-300/50 bg-linear-to-r from-violet-500/15 via-fuchsia-500/15 to-cyan-400/15 text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
+				class="mx-auto mb-1 flex size-12 items-center justify-center rounded-full border border-violet-300/50 super-tier-gradient text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
 			>
 				<SparklesIcon class="size-5" />
 			</div>
@@ -48,7 +48,7 @@
 			</Dialog.Title>
 			<Dialog.Description class="text-center text-sm leading-6">
 				Unlock personalized tutoring, AI Coach, insights, weekly study plans, and 300 personalized
-				messages per UTC calendar month — free during the Super beta.
+				messages a month.
 			</Dialog.Description>
 		</Dialog.Header>
 

@@ -462,7 +462,7 @@
 					{#if isPersonalizedTutor}
 						<Badge
 							variant="outline"
-							class="gap-1 border-violet-300/50 bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
+							class="super-tier-gradient gap-1 border-violet-300/50 px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
 						>
 							Personalized
 						</Badge>
@@ -566,10 +566,10 @@
 			}
 		}}
 		class={[
-			'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-shadow select-none hover:shadow-xl',
+			'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full select-none',
 			isPersonalizedTutor
-				? 'border border-violet-300/50 bg-linear-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-violet-500/25'
-				: 'bg-primary text-primary-foreground'
+				? 'super-tier-gradient-fab'
+				: 'bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl'
 		]}
 		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
 		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}

@@ -426,6 +426,23 @@
 	}
 }
 
+@utility super-tier-gradient {
+	@apply bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10;
+}
+
+@utility super-tier-gradient-hover {
+	@apply hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15;
+}
+
+/* Shine treatment for Super CTAs — neutral base so the subtle gradient reads cleanly. */
+.super-tier-gradient-button {
+	@apply border border-violet-300/50 bg-background bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 font-semibold text-violet-700 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70 hover:bg-background hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15 dark:text-violet-300;
+}
+
+.super-tier-gradient-fab {
+	@apply border border-violet-300/50 bg-background bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 text-violet-600 shadow-sm shadow-violet-500/10 transition-[box-shadow,border-color,background] duration-300 hover:border-violet-400/70 hover:bg-background hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15 hover:shadow-md hover:shadow-violet-500/15 dark:text-violet-300;
+}
+
 /* ── Highlight.js dark-mode overrides ────────────────────────────────────────
  * github.min.css is the default (light) theme imported in +layout.svelte.
  * When mode-watcher adds .dark to <html>, these overrides activate the

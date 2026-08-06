@@ -60,7 +60,7 @@
 	</article>
 
 	<article
-		class="flex flex-col rounded-3xl border-2 border-violet-300/50 bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 p-7 shadow-sm shadow-violet-500/10"
+		class="super-tier-gradient flex flex-col rounded-3xl border-2 border-violet-300/50 p-7 shadow-sm shadow-violet-500/10"
 	>
 		<div class="flex items-start justify-between gap-3">
 			<div>
