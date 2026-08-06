@@ -308,10 +308,10 @@
 
 <svelte:head><title>Set up Super – Free AP Practice</title></svelte:head>
 
-<div class="onboarding-shell min-h-svh px-5 py-8 sm:px-8 sm:py-10">
+<div class="min-h-svh px-5 py-8 sm:px-8 sm:py-10">
 	<div class="mx-auto w-full max-w-3xl">
 		<header
-			class="onboarding-enter flex items-center justify-between gap-3"
+			class="flex animate-in items-center justify-between gap-3 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 			style="--onboarding-delay: 0ms"
 		>
 			<div class="flex items-center gap-2 font-medium tracking-tight">
@@ -326,7 +326,7 @@
 		</header>
 
 		<nav
-			class="onboarding-enter mt-8 flex flex-wrap gap-2"
+			class="mt-8 flex animate-in flex-wrap gap-2 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 			style="--onboarding-delay: 40ms"
 			aria-label="Setup progress"
 		>
@@ -362,7 +362,10 @@
 				class:max-w-2xl={step !== 'plan'}
 				class:max-w-4xl={step === 'plan'}
 			>
-				<div class="onboarding-enter space-y-3 text-center" style="--onboarding-delay: 80ms">
+				<div
+					class="animate-in space-y-3 text-center duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
+					style="--onboarding-delay: 80ms"
+				>
 					<h1
 						class="font-display text-3xl leading-[1.08] font-medium tracking-tight text-balance sm:text-4xl"
 					>
@@ -373,7 +376,10 @@
 					</p>
 				</div>
 
-				<div class="onboarding-enter space-y-5" style="--onboarding-delay: 160ms">
+				<div
+					class="animate-in space-y-5 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
+					style="--onboarding-delay: 160ms"
+				>
 					{#if step === 'age'}
 						<div
 							class="rounded-xl border border-border/70 bg-card/40 px-5 py-6 text-sm leading-6 text-muted-foreground"
@@ -549,7 +555,7 @@
 				</div>
 
 				<div
-					class="onboarding-enter flex flex-col-reverse items-stretch justify-between gap-3 pt-6 sm:flex-row sm:items-center"
+					class="flex animate-in flex-col-reverse items-stretch justify-between gap-3 pt-6 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:flex-row sm:items-center"
 					style="--onboarding-delay: 240ms"
 				>
 					<div class="flex flex-wrap items-center gap-2">
@@ -572,31 +578,3 @@
 		{/key}
 	</div>
 </div>
-
-<style>
-	@keyframes onboarding-rise {
-		from {
-			opacity: 0;
-			transform: translateY(14px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	.onboarding-shell {
-		opacity: 1;
-	}
-
-	.onboarding-enter {
-		animation: onboarding-rise 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-		animation-delay: var(--onboarding-delay, 0ms);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.onboarding-enter {
-			animation: none;
-		}
-	}
-</style>

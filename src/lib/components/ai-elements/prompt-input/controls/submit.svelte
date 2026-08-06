@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import type { ChatStatus } from '../context/types.js';
-	import LoaderIcon from '@lucide/svelte/icons/loader';
 	import SendIcon from '@lucide/svelte/icons/send';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import XIcon from '@lucide/svelte/icons/x';
@@ -45,9 +44,7 @@
 	let isGenerating = $derived(status === 'submitted' || status === 'streaming');
 
 	let Icon = $derived.by(() => {
-		if (status === 'submitted') {
-			return LoaderIcon;
-		} else if (status === 'streaming') {
+		if (status === 'submitted' || status === 'streaming') {
 			return SquareIcon;
 		} else if (status === 'error') {
 			return XIcon;
@@ -65,9 +62,6 @@
 	});
 
 	let iconClass = $derived.by(() => {
-		if (status === 'submitted') {
-			return 'size-4 animate-spin';
-		}
 		return 'size-4';
 	});
 

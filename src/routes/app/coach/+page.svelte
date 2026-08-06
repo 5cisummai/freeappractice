@@ -5,7 +5,6 @@
 	import { DefaultChatTransport } from 'ai';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
 	import * as Message from '$lib/components/ai-elements/message/index.js';
@@ -23,7 +22,6 @@
 	let input = $state('');
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
-	let undoingAuditId = $state<string | null>(null);
 
 	const suggestions = [
 		'What should I study next?',
@@ -47,7 +45,6 @@
 	});
 
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
-	let lastMessage = $derived(coach.messages.at(-1));
 	let hasMessages = $derived(coach.messages.length > 0);
 
 	type CoachToolState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
@@ -133,10 +130,6 @@
 			.join('\n');
 	}
 
-	function isWaitingForResponse(message: CoachUIMessage): boolean {
-		return message.role === 'assistant' && message.parts.every((part) => part.type !== 'text');
-	}
-
 	async function copyMessage(message: CoachUIMessage) {
 		const text = messageText(message);
 		if (!text) return;
@@ -176,30 +169,6 @@
 			await coach.sendMessage({ text: message });
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Coach is unavailable right now.');
-		}
-	}
-
-	async function undoChange(auditId: string) {
-		if (undoingAuditId) return;
-		undoingAuditId = auditId;
-		try {
-			const response = await apiFetch('/api/coach/undo', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Idempotency-Key': crypto.randomUUID()
-				},
-				body: JSON.stringify({ auditId })
-			});
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok)
-				throw new Error(getResponseMessage(result, 'Could not undo that Coach change.'));
-			toast.success('Coach change undone.');
-			window.location.reload();
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not undo that Coach change.');
-		} finally {
-			undoingAuditId = null;
 		}
 	}
 </script>
@@ -246,7 +215,9 @@
 		</Card.Root>
 	</div>
 {:else}
-	<div class="flex min-h-[calc(100svh-4rem)] flex-col bg-background">
+	<div
+		class="flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden bg-background md:min-h-[calc(100svh-5rem)]"
+	>
 		<div class="flex min-h-0 flex-1">
 			<main class="flex min-w-0 flex-1 flex-col">
 				<Conversation.Root class="min-h-0 flex-1">
@@ -332,28 +303,31 @@
 												</Message.Action>
 											</Message.Actions>
 										{/if}
-										{#if streaming && lastMessage?.id === message.id && isWaitingForResponse(message)}
-											<div class="flex items-center gap-2 text-sm text-muted-foreground">
-												<LoaderCircleIcon class="size-4 animate-spin" />
-												<span>Coach is thinking…</span>
-											</div>
-										{/if}
 									{/if}
 								</Message.Root>
 							{/each}
-						{:else}
-							<Conversation.EmptyState
-								title="Start with a study question"
-								description="Coach can use your practice, goals, and current plan to help you choose a next step."
-							>
-								{#snippet icon()}
+							{#if streaming}
+								<Message.Root from="assistant" class="max-w-3xl">
 									<div
-										class="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+										class="flex items-center gap-2 text-sm text-muted-foreground"
+										role="status"
+										aria-label="Coach is thinking"
 									>
-										<SparklesIcon class="size-5" />
+										<LoaderCircleIcon class="size-4 animate-spin" aria-hidden="true" />
+										<span>Coach is thinking…</span>
 									</div>
-								{/snippet}
-							</Conversation.EmptyState>
+								</Message.Root>
+							{/if}
+						{:else}
+							<div
+								class="flex size-full min-h-[18rem] items-center justify-center px-6 py-16 text-center"
+							>
+								<p
+									class="max-w-2xl font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
+								>
+									Ask me any study questions
+								</p>
+							</div>
 						{/if}
 					</Conversation.Content>
 					<Conversation.ScrollButton aria-label="Scroll to latest message" />

@@ -12,100 +12,87 @@
 	} = $props();
 
 	const renderedHtml = $derived(renderRichTextHtml(text));
+	const richTextClass = [
+		'rich-text',
+		'[&_p]:mb-2',
+		'[&_p:last-child]:mb-0',
+		'[&_pre]:my-2',
+		'[&_pre]:overflow-x-auto',
+		'[&_pre]:rounded-lg',
+		'[&_pre]:p-0',
+		'[&_pre]:text-[0.8125rem]',
+		'[&_pre]:leading-relaxed',
+		'[&_pre_code.hljs]:rounded-[inherit]',
+		'[&_code]:font-mono',
+		'[&_code]:text-[0.8125rem]',
+		'[&_code:not(pre_code)]:rounded',
+		'[&_code:not(pre_code)]:bg-muted',
+		'[&_code:not(pre_code)]:px-1.5',
+		'[&_code:not(pre_code)]:py-0.5',
+		'[&_ul]:my-1',
+		'[&_ul]:list-disc',
+		'[&_ul]:pl-6',
+		'[&_ol]:my-1',
+		'[&_ol]:list-decimal',
+		'[&_ol]:pl-6',
+		'[&_li]:mb-0.5',
+		'[&_strong]:font-semibold',
+		'[&_em]:italic',
+		'[&_a]:underline',
+		'[&_a]:underline-offset-2',
+		'[&_a]:transition-opacity',
+		'[&_a:hover]:opacity-70',
+		'[&_blockquote]:my-2',
+		'[&_blockquote]:border-l-4',
+		'[&_blockquote]:border-border',
+		'[&_blockquote]:pl-4',
+		'[&_blockquote]:text-muted-foreground',
+		'[&_blockquote]:italic',
+		'[&_h1]:mt-4',
+		'[&_h1]:mb-2',
+		'[&_h1]:text-2xl',
+		'[&_h1]:font-bold',
+		'[&_h2]:mt-3',
+		'[&_h2]:mb-2',
+		'[&_h2]:text-xl',
+		'[&_h2]:font-bold',
+		'[&_h3]:mt-3',
+		'[&_h3]:mb-1',
+		'[&_h3]:text-lg',
+		'[&_h3]:font-semibold',
+		'[&_h4]:mt-2',
+		'[&_h4]:mb-1',
+		'[&_h4]:text-base',
+		'[&_h4]:font-semibold',
+		'[&_hr]:my-4',
+		'[&_hr]:border-border',
+		'[&_table]:my-2',
+		'[&_table]:w-full',
+		'[&_table]:border-collapse',
+		'[&_table]:text-sm',
+		'[&_th]:border',
+		'[&_th]:border-border',
+		'[&_th]:bg-muted',
+		'[&_th]:px-3',
+		'[&_th]:py-1.5',
+		'[&_th]:text-left',
+		'[&_th]:font-semibold',
+		'[&_td]:border',
+		'[&_td]:border-border',
+		'[&_td]:px-3',
+		'[&_td]:py-1.5',
+		'[&_.math-block]:my-3',
+		'[&_.math-block]:overflow-x-auto',
+		'[&_.math-block]:text-center',
+		'[&_.math-inline]:inline',
+		'[&_.katex-display]:m-0'
+	].join(' ');
 </script>
 
 {#if inline}
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-	<span class="rich-text {className}">{@html renderedHtml}</span>
+	<span class={[richTextClass, className]}>{@html renderedHtml}</span>
 {:else}
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-	<div class="rich-text {className}">{@html renderedHtml}</div>
+	<div class={[richTextClass, className]}>{@html renderedHtml}</div>
 {/if}
-
-<style lang="postcss">
-	@reference "../../../routes/layout.css";
-
-	.rich-text :global(p) {
-		@apply mb-2;
-	}
-	.rich-text :global(p:last-child) {
-		@apply mb-0;
-	}
-	.rich-text :global(pre) {
-		@apply my-2 overflow-x-auto rounded-lg text-[0.8125rem] leading-relaxed;
-		padding: 0;
-	}
-	.rich-text :global(pre code.hljs) {
-		border-radius: inherit;
-	}
-	.rich-text :global(code) {
-		@apply font-mono text-[0.8125rem];
-	}
-	.rich-text :global(:not(pre) > code) {
-		@apply rounded px-1.5 py-0.5;
-		background: var(--color-muted);
-	}
-	.rich-text :global(ul) {
-		@apply my-1 list-disc pl-6;
-	}
-	.rich-text :global(ol) {
-		@apply my-1 list-decimal pl-6;
-	}
-	.rich-text :global(li) {
-		@apply mb-0.5;
-	}
-	.rich-text :global(strong) {
-		@apply font-semibold;
-	}
-	.rich-text :global(em) {
-		@apply italic;
-	}
-	.rich-text :global(a) {
-		@apply underline underline-offset-2 transition-opacity;
-	}
-	.rich-text :global(a:hover) {
-		@apply opacity-70;
-	}
-	.rich-text :global(blockquote) {
-		@apply my-2 border-l-4 pl-4 italic;
-		border-color: var(--color-border);
-		color: var(--color-muted-foreground);
-	}
-	.rich-text :global(h1) {
-		@apply mt-4 mb-2 text-2xl font-bold;
-	}
-	.rich-text :global(h2) {
-		@apply mt-3 mb-2 text-xl font-bold;
-	}
-	.rich-text :global(h3) {
-		@apply mt-3 mb-1 text-lg font-semibold;
-	}
-	.rich-text :global(h4) {
-		@apply mt-2 mb-1 text-base font-semibold;
-	}
-	.rich-text :global(hr) {
-		@apply my-4;
-		border-color: var(--color-border);
-	}
-	.rich-text :global(table) {
-		@apply my-2 w-full border-collapse text-sm;
-	}
-	.rich-text :global(th) {
-		@apply border px-3 py-1.5 text-left font-semibold;
-		background: var(--color-muted);
-		border-color: var(--color-border);
-	}
-	.rich-text :global(td) {
-		@apply border px-3 py-1.5;
-		border-color: var(--color-border);
-	}
-	.rich-text :global(.math-block) {
-		@apply my-3 overflow-x-auto text-center;
-	}
-	.rich-text :global(.math-inline) {
-		@apply inline;
-	}
-	.rich-text :global(.katex-display) {
-		@apply m-0;
-	}
-</style>

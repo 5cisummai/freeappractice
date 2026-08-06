@@ -22,7 +22,7 @@
 		alt={imageAlt}
 		loading="lazy"
 		decoding="async"
-		class="mx-auto mb-4 h-64 w-auto max-w-xs"
+		class="mx-auto mb-4 h-64 w-auto max-w-xs dark:invert"
 	/>
 	<h2 class="font-medium text-muted-foreground">{title}</h2>
 	<p class="mt-1 text-sm text-muted-foreground">{description}</p>

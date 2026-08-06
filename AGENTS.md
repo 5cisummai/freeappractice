@@ -27,6 +27,8 @@ Follow these without exception.
 | **Serverless deploy**                       | This app deploys to Vercel (serverless). Design and implement with that environment in mind (cold starts, no long-lived local process assumptions, no shared memory, etc.).                                                                                                                                                                         |
 | **Do not overuse Superpowers skills**       | This file and the user’s request win over Superpowers ceremony. Do not run brainstorming, writing-plans, TDD skill loops, or other Superpowers workflows for straightforward edits, rewrites, or clear instructions. Use a Superpowers skill only when it clearly helps the specific task — never by default, and never when it slows a simple job. |
 
+| **Tailwind-first styling** | Use Tailwind utility classes for all component and page styling. Do not add `<style>` blocks to `.svelte` files; put shared Tailwind theme definitions or unavoidable global keyframes in `src/routes/layout.css`, and reserve inline `style=` attributes for runtime data values only. |
+
 ---
 
 ## Working style

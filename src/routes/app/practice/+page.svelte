@@ -114,6 +114,7 @@
 			bind:mode
 			showFirstUseHints
 			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
+			isPersonalizedTutor={data.isPersonalizedTutor}
 			onAnswered={handleAnswered}
 			onFrqGraded={handleFrqGraded}
 		/>

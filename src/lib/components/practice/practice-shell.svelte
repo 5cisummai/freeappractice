@@ -14,6 +14,7 @@
 		allowFrq?: boolean;
 		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
+		isPersonalizedTutor?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -30,6 +31,7 @@
 		allowFrq = false,
 		showFirstUseHints = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
+		isPersonalizedTutor = false,
 		generateLabel,
 		onGenerate,
 		onSelectionChange,
@@ -96,6 +98,7 @@
 				{unitRange}
 				{requestVersion}
 				showFirstUseHint={showFirstUseHints}
+				{isPersonalizedTutor}
 				onGraded={onFrqGraded}
 			/>
 		{:else}
@@ -105,6 +108,7 @@
 				{unitRange}
 				{requestVersion}
 				showFirstUseHint={showFirstUseHints}
+				{isPersonalizedTutor}
 				{onAnswered}
 				{...cardProps}
 			/>

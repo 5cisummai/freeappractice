@@ -49,6 +49,7 @@
 		showExplanationLabel = 'Show Explanation',
 		showUtilityActions = true,
 		showFirstUseHint = false,
+		isPersonalizedTutor = false,
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -527,6 +528,7 @@
 				unit={tutorUnitLabel}
 				questionId={session.currentQuestion.questionId}
 				topic={session.currentQuestion.topic}
+				{isPersonalizedTutor}
 				{showFirstUseHint}
 			/>
 		{/key}

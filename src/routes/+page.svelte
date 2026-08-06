@@ -15,6 +15,9 @@
 	import Topbar from '$lib/components/layout/topbar.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
+	import GiftIcon from '@lucide/svelte/icons/gift';
+	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	onMount(() => {
 		captureLandingPageViewed();
@@ -310,16 +313,16 @@
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><span aria-hidden="true">📚</span> 20+ AP Subjects</span
+							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							><BookOpenIcon class="size-4 text-primary" aria-hidden="true" /> 20+ AP Subjects</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><span aria-hidden="true">🎓</span> Student Developed</span
+							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							><GraduationCapIcon class="size-4 text-primary" aria-hidden="true" /> Student Developed</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><span aria-hidden="true">🎁</span> 100% Free</span
+							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							><GiftIcon class="size-4 text-primary" aria-hidden="true" /> 100% Free</span
 						>
 					</div>
 				</div>

@@ -24,84 +24,21 @@
 		highlight: box.with(() => highlight),
 		lang: box.with(() => lang)
 	});
+
+	function setRef(node: HTMLDivElement) {
+		ref = node;
+		return () => {
+			if (ref === node) ref = null;
+		};
+	}
 </script>
 
-<div {...rest} bind:this={ref} class={cn(codeVariants({ variant }), className)}>
-	<div class="ai-code-wrapper">
+<div {...rest} class={cn(codeVariants({ variant }), className)} {@attach setRef}>
+	<div
+		class="ai-code-wrapper [&_.line]:inline-block [&_.line]:min-h-4 [&_.line]:w-full [&_.line]:px-4 [&_.line]:py-0.5 [&_.line-numbers]:[counter-increment:step_0] [&_.line-numbers]:[counter-reset:step] [&_.line-numbers_.line]:inline-block [&_.line-numbers_.line]:min-h-4 [&_.line-numbers_.line]:w-full [&_.line-numbers_.line]:px-2 [&_.line-numbers_.line]:py-0.5 [&_.line-numbers_.line::before]:mr-[1.4rem] [&_.line-numbers_.line::before]:inline-block [&_.line-numbers_.line::before]:w-[1.8rem] [&_.line-numbers_.line::before]:text-right [&_.line-numbers_.line::before]:text-muted-foreground [&_.line-numbers_.line::before]:[content:counter(step)] [&_.line-numbers_.line::before]:[counter-increment:step] [&_.line.line--highlighted]:bg-secondary [&_.line.line--highlighted_span]:relative [&_.shiki]:overflow-x-auto [&_.shiki]:rounded-lg [&_.shiki]:bg-inherit [&_.shiki]:py-4 [&_.shiki]:text-sm dark:[&_.shiki]:!text-[var(--shiki-dark)] [&_.shiki_code]:grid [&_.shiki_code]:min-w-full [&_.shiki_code]:rounded-none [&_.shiki_code]:border-0 [&_.shiki_code]:bg-transparent [&_.shiki_code]:[box-decoration-break:clone] [&_.shiki_code]:p-0 [&_.shiki_code]:wrap-break-word dark:[&_.shiki_span]:![font-weight:var(--shiki-dark-font-weight)] dark:[&_.shiki_span]:!text-[var(--shiki-dark)] dark:[&_.shiki_span]:![font-style:var(--shiki-dark-font-style)] dark:[&_.shiki_span]:![text-decoration:var(--shiki-dark-text-decoration)] [&_.shiki:not([data-code-overflow])]:max-h-[min(100%,650px)] [&_.shiki:not([data-code-overflow])]:overflow-y-auto"
+	>
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html codeState.highlighted}
 		{@render children?.()}
 	</div>
 </div>
-
-<style lang="postcss">
-	@reference '../../../../routes/layout.css';
-
-	/* Scoped global styles - only affect elements within .ai-code-wrapper */
-	/* Dark mode: check dark class on parent, then scope to wrapper */
-	:global(.dark) .ai-code-wrapper :global(.shiki),
-	:global(.dark) .ai-code-wrapper :global(.shiki span) {
-		color: var(--shiki-dark) !important;
-		font-style: var(--shiki-dark-font-style) !important;
-		font-weight: var(--shiki-dark-font-weight) !important;
-		text-decoration: var(--shiki-dark-text-decoration) !important;
-	}
-
-	/* Shiki see: https://shiki.matsu.io/guide/dual-themes#class-based-dark-mode */
-	:global(html.dark) .ai-code-wrapper :global(.shiki),
-	:global(html.dark) .ai-code-wrapper :global(.shiki span) {
-		color: var(--shiki-dark) !important;
-		font-style: var(--shiki-dark-font-style) !important;
-		font-weight: var(--shiki-dark-font-weight) !important;
-		text-decoration: var(--shiki-dark-text-decoration) !important;
-	}
-
-	.ai-code-wrapper :global(pre.shiki) {
-		@apply overflow-x-auto rounded-lg bg-inherit py-4 text-sm;
-	}
-
-	.ai-code-wrapper :global(pre.shiki:not([data-code-overflow] *):not([data-code-overflow])) {
-		@apply overflow-y-auto;
-		max-height: min(100%, 650px);
-	}
-
-	.ai-code-wrapper :global(pre.shiki code) {
-		@apply grid min-w-full rounded-none border-0 bg-transparent p-0 wrap-break-word;
-		counter-reset: line;
-		box-decoration-break: clone;
-	}
-
-	.ai-code-wrapper :global(pre.line-numbers) {
-		counter-reset: step;
-		counter-increment: step 0;
-	}
-
-	.ai-code-wrapper :global(pre.line-numbers .line::before) {
-		content: counter(step);
-		counter-increment: step;
-		display: inline-block;
-		width: 1.8rem;
-		margin-right: 1.4rem;
-		text-align: right;
-	}
-
-	.ai-code-wrapper :global(pre.line-numbers .line::before) {
-		@apply text-muted-foreground;
-	}
-
-	.ai-code-wrapper :global(pre .line.line--highlighted) {
-		@apply bg-secondary;
-		/* border-l-2 border-primary/40 if needed */
-	}
-
-	.ai-code-wrapper :global(pre .line.line--highlighted span) {
-		@apply relative;
-	}
-
-	.ai-code-wrapper :global(pre .line) {
-		@apply inline-block min-h-4 w-full px-4 py-0.5;
-	}
-
-	.ai-code-wrapper :global(pre.line-numbers .line) {
-		@apply px-2;
-	}
-</style>

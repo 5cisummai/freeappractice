@@ -71,6 +71,7 @@ export type QuestionCardProps = {
 	showExplanationLabel?: string;
 	showUtilityActions?: boolean;
 	showFirstUseHint?: boolean;
+	isPersonalizedTutor?: boolean;
 	skipLabel?: string;
 	notLearnedLabel?: string;
 	reportBugLabel?: string;

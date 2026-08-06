@@ -32,18 +32,3 @@
 >
 	{@render children()}
 </svelte:element>
-
-<style>
-	@keyframes shimmer {
-		from {
-			background-position: 100% center;
-		}
-		to {
-			background-position: 0% center;
-		}
-	}
-
-	:global(.animate-shimmer) {
-		animation: shimmer var(--shimmer-duration, 2s) linear infinite;
-	}
-</style>

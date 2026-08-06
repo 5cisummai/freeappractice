@@ -143,10 +143,7 @@
 	<title>Insights - Free AP Practice</title>
 </svelte:head>
 
-<PageShell
-	title="Insights"
-	description="An AI-authored PDF report built from your practice evidence"
->
+<PageShell title="Insights" description="View a report of your practice for the last week">
 	{#snippet actions()}
 		{#if data.entitlements.aiInsights && data.insightsEnabled && data.profile.ageConfirmedAt}
 			<Button
@@ -188,60 +185,90 @@
 			</Card.Content>
 		</Card.Root>
 	{:else if !data.report}
-		<section class="report-empty" aria-labelledby="empty-report-title">
-			<div class="report-empty-icon"><FileTextIcon size={22} /></div>
-			<p class="report-eyebrow">AI report</p>
-			<h2 id="empty-report-title" class="font-display">Your first report is almost ready.</h2>
-			<p>
+		<section
+			class="mx-auto max-w-[52rem] rounded-2xl border border-border bg-card p-[clamp(2rem,6vw,4rem)] text-center shadow-lg"
+			aria-labelledby="empty-report-title"
+		>
+			<div
+				class="mx-auto mb-5 grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"
+			>
+				<FileTextIcon size={22} />
+			</div>
+			<h2
+				id="empty-report-title"
+				class="m-0 font-display text-[clamp(2rem,5vw,3.5rem)] font-medium tracking-[-0.05em]"
+			>
+				Your first report is almost ready.
+			</h2>
+			<p class="mx-auto mt-4 max-w-xl text-[0.95rem] leading-[1.7] text-muted-foreground">
 				Complete the evidence threshold below, then refresh to have the AI turn your practice
 				history into a PDF report.
 			</p>
-			<div class="evidence-card">
-				<div class="evidence-count">
-					<strong>{data.eligibility?.totalScoredAttempts ?? 0}</strong>
-					<span>/ {data.eligibility?.minimumTotalAttempts ?? 20} scored attempts</span>
+			<div class="mt-8 border-t border-border pt-5 text-left">
+				<div class="flex items-baseline gap-2">
+					<strong class="font-display text-5xl leading-none font-medium tracking-[-0.06em]"
+						>{data.eligibility?.totalScoredAttempts ?? 0}</strong
+					>
+					<span class="text-xs text-muted-foreground"
+						>/ {data.eligibility?.minimumTotalAttempts ?? 20} scored attempts</span
+					>
 				</div>
-				<div class="evidence-meter" aria-hidden="true">
-					<span style={`width: ${evidenceProgress}%`}></span>
+				<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+					<span
+						class="block h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
+						style={`width: ${evidenceProgress}%`}
+					></span>
 				</div>
-				<p>
+				<p class="mt-3 mb-0 text-xs leading-[1.55] text-muted-foreground">
 					{data.eligibility?.eligibleClaimCount ?? 0} course/unit evidence groups have at least
 					{data.eligibility?.minimumAttemptsPerClaim ?? 5} attempts. MCQ and FRQ are calculated separately.
 				</p>
 			</div>
 		</section>
 	{:else}
-		<section class="pdf-shell" aria-labelledby="pdf-report-title">
-			<header class="pdf-toolbar">
-				<div class="pdf-toolbar-title">
-					<div class="pdf-icon"><FileTextIcon size={19} /></div>
-					<div>
-						<p class="report-eyebrow">AI-generated document</p>
-						<h2 id="pdf-report-title">Personal assessment brief</h2>
-					</div>
-				</div>
-				<div class="pdf-toolbar-actions">
-					<Button href={pdfUrl} target="_blank" rel="noreferrer" variant="outline" size="sm">
+		<section class="relative overflow-hidden" aria-labelledby="pdf-report-title">
+			<h2 id="pdf-report-title" class="sr-only">Personal assessment brief</h2>
+			<div class="relative">
+				<iframe
+					title="AI-generated Insights PDF"
+					src={pdfUrl}
+					class="block h-[min(78vh,980px)] min-h-[620px] w-full border-0 bg-white max-[560px]:h-[72vh] max-[560px]:min-h-[520px]"
+				></iframe>
+				<div class="absolute top-4 right-4 z-10 flex gap-1.5 max-[560px]:top-2 max-[560px]:right-2">
+					<Button
+						href={pdfUrl}
+						target="_blank"
+						rel="noreferrer"
+						variant="ghost"
+						size="sm"
+						class="bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background"
+					>
 						<ExternalLinkIcon size={14} /> Open PDF
 					</Button>
-					<Button href={pdfUrl} download size="sm">
+					<Button
+						href={pdfUrl}
+						download
+						size="sm"
+						variant="ghost"
+						class="bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background"
+					>
 						<DownloadIcon size={14} /> Download
 					</Button>
 				</div>
-			</header>
-			<div class="pdf-frame-wrap">
-				<iframe title="AI-generated Insights PDF" src={pdfUrl} class="pdf-frame"></iframe>
 			</div>
-			<p class="pdf-caption">
+			<p class="m-0 pt-3 text-xs text-muted-foreground">
 				Generated {new Date(data.report.generatedAt).toLocaleDateString()} from {data.report
 					.evidenceAttemptCount}
 				scored attempts. Refreshing creates a new AI-authored PDF after 10 additional attempts.
 			</p>
 		</section>
 
-		<section class="support-grid" aria-label="Study plan and report feedback">
+		<section
+			class="grid grid-cols-2 gap-5 max-[720px]:grid-cols-1"
+			aria-label="Study plan and report feedback"
+		>
 			{#if data.proposal?.tasks.length}
-				<Card.Root class="support-card">
+				<Card.Root class="rounded-2xl border border-border bg-card shadow-none">
 					<Card.Header>
 						<Card.Title>Proposed seven-day plan</Card.Title>
 						<Card.Description>
@@ -250,20 +277,25 @@
 					</Card.Header>
 					<Card.Content class="space-y-3">
 						{#each data.proposal.tasks as task, index (task.id)}
-							<div class="plan-row">
-								<div>
+							<div
+								class="flex min-w-0 items-start justify-between gap-3 border-b border-border py-3 last:border-b-0 max-[560px]:flex-wrap"
+							>
+								<div class="min-w-0 flex-1">
 									<p class="font-medium">Day {index + 1} · {task.apClass} · {task.unit}</p>
 									<p class="text-xs text-muted-foreground">
 										{new Date(task.date).toLocaleDateString()} · {task.durationMinutes} min · {task.mode.toUpperCase()}
 									</p>
 								</div>
-								{#if task.practiceHref}<Button href={task.practiceHref} size="sm" variant="outline"
-										><BookOpenIcon size={13} /> Practice</Button
+								{#if task.practiceHref}<Button
+										href={task.practiceHref}
+										size="sm"
+										variant="outline"
+										class="max-[560px]:ml-auto"><BookOpenIcon size={13} /> Practice</Button
 									>{/if}
 							</div>
 						{/each}
-						<div class="plan-actions">
-							<p class="text-sm font-medium">
+						<div class="border-t border-border pt-4">
+							<p class="mt-0 mb-3 text-sm font-medium">
 								{data.plan
 									? 'Choose how to apply this proposal.'
 									: 'Ready to start this proposed plan?'}
@@ -284,7 +316,7 @@
 				</Card.Root>
 			{/if}
 
-			<Card.Root class="support-card">
+			<Card.Root class="rounded-2xl border border-border bg-card shadow-none">
 				<Card.Header>
 					<Card.Title>Active weekly study plan</Card.Title>
 					<Card.Description>One active plan. Every task is capped at 30 minutes.</Card.Description>
@@ -292,8 +324,10 @@
 				<Card.Content class="space-y-3">
 					{#if data.plan}
 						{#each data.plan.tasks as task (task.id)}
-							<div class="plan-row" class:plan-row-done={task.status === 'done'}>
-								<div>
+							<div
+								class="flex min-w-0 items-start justify-between gap-3 border-b border-border py-3 last:border-b-0 max-[560px]:flex-wrap"
+							>
+								<div class="min-w-0 flex-1">
 									<p class="font-medium" class:line-through={task.status === 'done'}>
 										{task.apClass} · {task.unit}
 									</p>
@@ -321,7 +355,9 @@
 				</Card.Content>
 			</Card.Root>
 
-			<Card.Root class="support-card feedback-card">
+			<Card.Root
+				class="col-span-2 rounded-2xl border border-border bg-card shadow-none max-[720px]:col-span-1"
+			>
 				<Card.Header>
 					<Card.Title>Report feedback</Card.Title>
 					<Card.Description>Was the AI-generated report useful?</Card.Description>
@@ -345,7 +381,10 @@
 					</div>
 					<label>
 						<span class="sr-only">Optional feedback reason</span>
-						<select bind:value={feedbackReason}>
+						<select
+							bind:value={feedbackReason}
+							class="w-full rounded-[0.4rem] border border-input bg-background px-3 py-2 text-sm text-foreground"
+						>
 							<option value="">Optional: tell us more</option>
 							<option value="not_actionable">Not actionable</option>
 							<option value="not_accurate">Evidence did not feel accurate</option>
@@ -358,7 +397,7 @@
 		</section>
 
 		{#if data.planAudits.length}
-			<Card.Root class="audit-card">
+			<Card.Root class="rounded-2xl border border-border bg-card shadow-none">
 				<Card.Header>
 					<Card.Title>Recent plan changes</Card.Title>
 					<Card.Description
@@ -367,8 +406,10 @@
 				</Card.Header>
 				<Card.Content class="space-y-2">
 					{#each data.planAudits as audit (audit.id)}
-						<div class="audit-row">
-							<p class="text-sm">
+						<div
+							class="flex min-w-0 items-start justify-between gap-3 border-b border-border py-3 last:border-b-0 max-[560px]:flex-wrap"
+						>
+							<p class="m-0 min-w-0 text-sm">
 								{audit.action === 'generate'
 									? 'Created or updated the weekly plan'
 									: audit.action === 'complete'
@@ -381,6 +422,7 @@
 									size="sm"
 									disabled={undoingAuditId === audit.id}
 									onclick={() => undoPlanChange(audit.id)}
+									class="max-[560px]:ml-auto"
 									><Undo2Icon size={13} />{undoingAuditId === audit.id
 										? 'Undoing...'
 										: 'Undo'}</Button
@@ -392,269 +434,3 @@
 		{/if}
 	{/if}
 </PageShell>
-
-<style>
-	.report-empty,
-	.pdf-shell,
-	:global(.audit-card),
-	:global(.support-card) {
-		border: 1px solid var(--border);
-		border-radius: 1rem;
-		background: var(--card);
-		box-shadow: 0 12px 30px color-mix(in oklab, var(--foreground) 6%, transparent);
-	}
-
-	.report-empty {
-		max-width: 52rem;
-		margin: 0 auto;
-		padding: clamp(2rem, 6vw, 4rem);
-		text-align: center;
-	}
-
-	.report-empty-icon,
-	.pdf-icon {
-		display: grid;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: 0.75rem;
-		background: color-mix(in oklab, var(--primary) 12%, transparent);
-		color: var(--primary);
-	}
-
-	.report-empty-icon {
-		margin: 0 auto 1.25rem;
-	}
-
-	.report-eyebrow {
-		margin: 0 0 0.35rem;
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--primary);
-	}
-
-	.report-empty h2 {
-		margin: 0;
-		font-size: clamp(2rem, 5vw, 3.5rem);
-		font-weight: 500;
-		letter-spacing: -0.05em;
-	}
-
-	.report-empty > p:not(.report-eyebrow) {
-		max-width: 36rem;
-		margin: 1rem auto 0;
-		font-size: 0.95rem;
-		line-height: 1.7;
-		color: var(--muted-foreground);
-	}
-
-	.evidence-card {
-		margin-top: 2rem;
-		border-top: 1px solid var(--border);
-		padding-top: 1.25rem;
-		text-align: left;
-	}
-
-	.evidence-count {
-		display: flex;
-		align-items: baseline;
-		gap: 0.5rem;
-	}
-
-	.evidence-count strong {
-		font-family: var(--font-display);
-		font-size: 3rem;
-		font-weight: 500;
-		letter-spacing: -0.06em;
-		line-height: 1;
-	}
-
-	.evidence-count span,
-	.evidence-card > p,
-	.pdf-caption {
-		font-size: 0.8rem;
-		color: var(--muted-foreground);
-	}
-
-	.evidence-meter {
-		height: 0.5rem;
-		margin-top: 0.75rem;
-		overflow: hidden;
-		border-radius: 999px;
-		background: var(--muted);
-	}
-
-	.evidence-meter span {
-		display: block;
-		height: 100%;
-		border-radius: inherit;
-		background: var(--primary);
-		transition: width 300ms ease;
-	}
-
-	.evidence-card > p {
-		margin: 0.75rem 0 0;
-		line-height: 1.55;
-	}
-
-	.pdf-shell {
-		overflow: hidden;
-	}
-
-	.pdf-toolbar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1rem 1.25rem;
-		border-bottom: 1px solid var(--border);
-	}
-
-	.pdf-toolbar-title,
-	.pdf-toolbar-actions,
-	.plan-row,
-	.audit-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.pdf-toolbar-title {
-		min-width: 0;
-	}
-
-	.pdf-toolbar-title h2 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: 1.25rem;
-		font-weight: 500;
-		letter-spacing: -0.02em;
-	}
-
-	.pdf-toolbar-title .report-eyebrow {
-		margin-bottom: 0.15rem;
-		font-size: 0.6rem;
-	}
-
-	.pdf-frame-wrap {
-		background: color-mix(in oklab, var(--muted) 42%, var(--background));
-		padding: clamp(0.75rem, 2vw, 1.5rem);
-	}
-
-	.pdf-frame {
-		display: block;
-		width: 100%;
-		height: min(78vh, 980px);
-		min-height: 620px;
-		border: 0;
-		border-radius: 0.4rem;
-		background: white;
-		box-shadow: 0 10px 24px color-mix(in oklab, var(--foreground) 12%, transparent);
-	}
-
-	.pdf-caption {
-		margin: 0;
-		padding: 0.8rem 1.25rem 1rem;
-	}
-
-	.support-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1.25rem;
-	}
-
-	:global(.support-card),
-	:global(.audit-card) {
-		box-shadow: none;
-	}
-
-	:global(.feedback-card) {
-		grid-column: span 2;
-	}
-
-	.plan-row,
-	.audit-row {
-		justify-content: space-between;
-		align-items: flex-start;
-		padding: 0.75rem 0;
-		border-bottom: 1px solid var(--border);
-	}
-
-	.plan-row:last-child,
-	.audit-row:last-child {
-		border-bottom: 0;
-	}
-
-	.plan-row > div:first-child,
-	.audit-row > p {
-		min-width: 0;
-		margin: 0;
-	}
-
-	.plan-actions {
-		border-top: 1px solid var(--border);
-		padding-top: 1rem;
-	}
-
-	.plan-actions p {
-		margin: 0 0 0.75rem;
-	}
-
-	:global(.feedback-card) select {
-		width: 100%;
-		border: 1px solid var(--input);
-		border-radius: 0.4rem;
-		background: var(--background);
-		padding: 0.55rem 0.7rem;
-		font-size: 0.8rem;
-		color: var(--foreground);
-	}
-
-	@media (max-width: 720px) {
-		.pdf-toolbar {
-			align-items: flex-start;
-			flex-direction: column;
-		}
-
-		.pdf-toolbar-actions {
-			width: 100%;
-		}
-
-		.pdf-toolbar-actions :global([data-slot='button']) {
-			flex: 1;
-		}
-
-		.support-grid {
-			grid-template-columns: 1fr;
-		}
-
-		:global(.feedback-card) {
-			grid-column: auto;
-		}
-	}
-
-	@media (max-width: 560px) {
-		.pdf-frame {
-			height: 72vh;
-			min-height: 520px;
-		}
-
-		.plan-row,
-		.audit-row {
-			flex-wrap: wrap;
-		}
-
-		.plan-row > div:last-child,
-		.audit-row > :global([data-slot='button']) {
-			margin-left: auto;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.evidence-meter span {
-			transition: none;
-		}
-	}
-</style>

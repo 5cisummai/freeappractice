@@ -28,19 +28,22 @@
 		}
 	];
 
-	const resources = [
+	type ResourcePath =
+		'/blog/which-aps-to-take' | '/blog/summer-ap-study-plan' | '/blog/science-of-studying';
+
+	const resources: Array<{ href: ResourcePath; title: string; description: string }> = [
 		{
-			href: resolve('/blog/which-aps-to-take'),
+			href: '/blog/which-aps-to-take',
 			title: 'Which APs should you take?',
 			description: 'Choose classes that fit your goals and schedule—not every AP on the list.'
 		},
 		{
-			href: resolve('/blog/summer-ap-study-plan'),
+			href: '/blog/summer-ap-study-plan',
 			title: 'Summer AP study plan',
 			description: 'A realistic 4-week preview schedule with daily pacing.'
 		},
 		{
-			href: resolve('/blog/science-of-studying'),
+			href: '/blog/science-of-studying',
 			title: 'The science of studying',
 			description: 'Why short, spaced practice beats cramming—especially before the school year.'
 		}
@@ -104,7 +107,9 @@
 						</p>
 					</header>
 
-					<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
+					<div
+						class="max-w-none font-serif text-base leading-[1.75] text-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-[3px] [&_a:hover]:opacity-80 [&_h1]:mt-[2em] [&_h1]:mb-3 [&_h1]:font-semibold [&_h1]:tracking-[-0.025em] [&_h2]:mt-[2em] [&_h2]:mb-3 [&_h2]:text-[1.5em] [&_h2]:font-semibold [&_h2]:tracking-[-0.025em] [&_h3]:mt-[2em] [&_h3]:mb-3 [&_h3]:text-[1.25em] [&_h3]:font-semibold [&_h3]:tracking-[-0.025em] [&_h4]:mt-[2em] [&_h4]:mb-3 [&_h4]:text-[1.1em] [&_h4]:font-semibold [&_h4]:tracking-[-0.025em] [&_hr]:my-[2em] [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-border [&_li]:mb-[0.4em] [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-0 [&_p]:mb-5 [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6"
+					>
 						<h2>Who this is for</h2>
 						<p>
 							This guide is meant for students who want a light, realistic summer routine—not a
@@ -180,7 +185,7 @@
 								{#each resources as link (link.href)}
 									<li>
 										<a
-											href={link.href}
+											href={resolve(link.href)}
 											class="block rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground"
 										>
 											{link.title}
@@ -207,67 +212,3 @@
 		</div>
 	</main>
 </div>
-
-<style>
-	.blog-serif {
-		font-family:
-			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
-			serif;
-	}
-
-	:global(.prose) {
-		color: oklch(var(--foreground));
-		line-height: 1.75;
-		font-size: 1rem;
-		font-family:
-			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
-			serif;
-	}
-	:global(.prose h1),
-	:global(.prose h2),
-	:global(.prose h3),
-	:global(.prose h4) {
-		font-weight: 600;
-		letter-spacing: -0.025em;
-		margin-top: 2em;
-		margin-bottom: 0.75em;
-		color: inherit;
-	}
-	:global(.prose h2) {
-		font-size: 1.5em;
-	}
-	:global(.prose h3) {
-		font-size: 1.25em;
-	}
-	:global(.prose p) {
-		margin-top: 0;
-		margin-bottom: 1.25em;
-	}
-	:global(.prose a) {
-		color: oklch(var(--primary));
-		text-decoration: underline;
-		text-underline-offset: 3px;
-	}
-	:global(.prose a:hover) {
-		opacity: 0.8;
-	}
-	:global(.prose ul),
-	:global(.prose ol) {
-		padding-left: 1.5em;
-		margin-bottom: 1.25em;
-	}
-	:global(.prose ul) {
-		list-style-type: disc;
-	}
-	:global(.prose ol) {
-		list-style-type: decimal;
-	}
-	:global(.prose li) {
-		margin-bottom: 0.4em;
-	}
-	:global(.prose hr) {
-		border: none;
-		border-top: 1px solid oklch(var(--border));
-		margin: 2em 0;
-	}
-</style>

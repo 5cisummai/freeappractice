@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { SvelteMap } from 'svelte/reactivity';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import FlameIcon from '@lucide/svelte/icons/flame';
@@ -35,7 +36,7 @@
 	);
 
 	const lastMcqAtBySubject = $derived.by(() => {
-		const map = new Map<string, string>();
+		const map = new SvelteMap<string, string>();
 		for (const entry of progressData) {
 			if (!entry.lastAttemptAt) continue;
 			const current = map.get(entry.apClass);
@@ -165,30 +166,32 @@
 						</p>
 					</div>
 
-					<div class="space-y-2">
-						<p class="text-sm text-muted-foreground">
-							{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
-							questions
-						</p>
-						<div
-							class="h-2 w-full max-w-md overflow-hidden rounded-full bg-muted"
-							role="progressbar"
-							aria-valuenow={recommendation.percent}
-							aria-valuemin={0}
-							aria-valuemax={100}
-							aria-label={`${recommendation.name} progress`}
-						>
+					<div class="flex items-end gap-4 max-sm:flex-col max-sm:items-stretch">
+						<div class="min-w-0 flex-1 space-y-2">
+							<p class="text-sm text-muted-foreground">
+								{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
+								questions
+							</p>
 							<div
-								class="h-full rounded-full bg-primary transition-all"
-								style:width="{recommendation.percent}%"
-							></div>
+								class="h-2 w-full overflow-hidden rounded-full bg-muted"
+								role="progressbar"
+								aria-valuenow={recommendation.percent}
+								aria-valuemin={0}
+								aria-valuemax={100}
+								aria-label={`${recommendation.name} progress`}
+							>
+								<div
+									class="h-full rounded-full bg-primary transition-all"
+									style:width="{recommendation.percent}%"
+								></div>
+							</div>
 						</div>
-					</div>
 
-					<Button id="dashboard-practice-hint-target" href={recommendation.href}>
-						{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
-						<ArrowRightIcon class="size-4" aria-hidden="true" />
-					</Button>
+						<Button id="dashboard-practice-hint-target" href={recommendation.href} class="shrink-0">
+							{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
+							<ArrowRightIcon class="size-4" aria-hidden="true" />
+						</Button>
+					</div>
 					<FirstUseHint
 						id="dashboard-practice"
 						anchorId="dashboard-practice-hint-target"
@@ -237,7 +240,7 @@
 						{@const SubjectIcon = subject.icon}
 						{@const hasPracticed = Boolean(subject.lastPracticedAt)}
 						<a
-							href={subject.href}
+							href={resolve(`/app/practice?apClass=${encodeURIComponent(subject.name)}`)}
 							class="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
 						>
 							<div

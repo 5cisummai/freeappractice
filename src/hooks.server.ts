@@ -62,6 +62,11 @@ function postProcessResponse(
 		response.headers.set(key, value);
 	}
 
+	if (event.url.pathname === '/api/insights/pdf') {
+		response.headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'self'");
+		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+	}
+
 	if (event.url.pathname === '/' || event.url.pathname === '') {
 		response.headers.set('Link', buildHomepageLinkHeader());
 	}

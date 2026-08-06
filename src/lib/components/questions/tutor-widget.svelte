@@ -8,6 +8,7 @@
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { toast } from 'svelte-sonner';
@@ -25,6 +26,7 @@
 		frqAttemptId?: string;
 		topic?: string;
 		showFirstUseHint?: boolean;
+		isPersonalizedTutor?: boolean;
 	};
 
 	let {
@@ -34,7 +36,8 @@
 		frqQuestionId = '',
 		frqAttemptId = '',
 		topic = '',
-		showFirstUseHint = false
+		showFirstUseHint = false,
+		isPersonalizedTutor = false
 	}: TutorWidgetProps = $props();
 
 	let isOpen = $state(false);
@@ -456,6 +459,14 @@
 			<!-- Header -->
 			<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
 				<div class="flex items-center gap-2">
+					{#if isPersonalizedTutor}
+						<Badge
+							variant="outline"
+							class="gap-1 border-violet-300/50 bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
+						>
+							Personalized
+						</Badge>
+					{/if}
 					<SparklesIcon class="h-4 w-4" />
 					<span id="ai-tutor-title" class="text-sm font-semibold">AI Tutor</span>
 				</div>
@@ -554,7 +565,12 @@
 				handleOpen();
 			}
 		}}
-		class="fixed z-60 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
+		class={[
+			'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-shadow select-none hover:shadow-xl',
+			isPersonalizedTutor
+				? 'border border-violet-300/50 bg-linear-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-violet-500/25'
+				: 'bg-primary text-primary-foreground'
+		]}
 		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
 		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
 	>

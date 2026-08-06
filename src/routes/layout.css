@@ -124,6 +124,7 @@
 	--animate-line-shadow: line-shadow 15s linear infinite;
 	--animate-meteor: meteor 5s linear infinite;
 	--animate-shine: shine var(--duration) infinite linear;
+	--animate-shimmer: shimmer var(--shimmer-duration, 2s) linear infinite;
 	@keyframes aurora {
 		0% {
 			background-position: 0% 50%;
@@ -197,6 +198,14 @@
 		}
 		100% {
 			background-position: 0% 0%;
+		}
+	}
+	@keyframes shimmer {
+		from {
+			background-position: 100% center;
+		}
+		to {
+			background-position: 0% center;
 		}
 	}
 }

@@ -68,7 +68,9 @@
 				/>
 
 				<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->
-				<div class="blog-serif prose prose-neutral dark:prose-invert max-w-none">
+				<div
+					class="max-w-none font-serif text-base leading-[1.75] text-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-[3px] [&_a:hover]:opacity-80 [&_blockquote]:my-0 [&_blockquote]:border-l-[3px] [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:font-normal [&_blockquote]:text-muted-foreground [&_blockquote]:italic [&_code]:font-mono [&_code]:text-[0.875em] [&_code:not(pre_code)]:rounded-[0.3em] [&_code:not(pre_code)]:border [&_code:not(pre_code)]:border-border [&_code:not(pre_code)]:bg-muted [&_code:not(pre_code)]:px-[0.4em] [&_code:not(pre_code)]:py-[0.15em] [&_h1]:mt-[2em] [&_h1]:mb-3 [&_h1]:text-[2em] [&_h1]:font-semibold [&_h1]:tracking-[-0.025em] [&_h2]:mt-[2em] [&_h2]:mb-3 [&_h2]:text-[1.5em] [&_h2]:font-semibold [&_h2]:tracking-[-0.025em] [&_h3]:mt-[2em] [&_h3]:mb-3 [&_h3]:text-[1.25em] [&_h3]:font-semibold [&_h3]:tracking-[-0.025em] [&_h4]:mt-[2em] [&_h4]:mb-3 [&_h4]:text-[1.1em] [&_h4]:font-semibold [&_h4]:tracking-[-0.025em] [&_hr]:my-[2em] [&_hr]:border-0 [&_hr]:border-t [&_hr]:border-border [&_img]:my-6 [&_img]:max-w-full [&_img]:rounded-lg [&_li]:mb-[0.4em] [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-0 [&_p]:mb-5 [&_pre]:mb-6 [&_pre]:overflow-x-auto [&_pre]:rounded-[0.6em] [&_pre]:border [&_pre]:border-border [&_pre]:bg-card [&_pre]:p-4 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:mb-6 [&_table]:w-full [&_table]:border-collapse [&_table]:text-[0.9em] [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-left [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6"
+				>
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html data.htmlContent}
 				</div>
@@ -100,125 +102,3 @@
 		</div>
 	</main>
 </div>
-
-<style>
-	.blog-serif {
-		font-family:
-			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
-			serif;
-	}
-
-	/* Prose styles since @tailwindcss/typography may not be installed */
-	:global(.prose) {
-		color: oklch(var(--foreground));
-		line-height: 1.75;
-		font-size: 1rem;
-		font-family:
-			'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman',
-			serif;
-	}
-	:global(.prose h1),
-	:global(.prose h2),
-	:global(.prose h3),
-	:global(.prose h4) {
-		font-weight: 600;
-		letter-spacing: -0.025em;
-		margin-top: 2em;
-		margin-bottom: 0.75em;
-		color: inherit;
-	}
-	:global(.prose h1) {
-		font-size: 2em;
-	}
-	:global(.prose h2) {
-		font-size: 1.5em;
-	}
-	:global(.prose h3) {
-		font-size: 1.25em;
-	}
-	:global(.prose h4) {
-		font-size: 1.1em;
-	}
-	:global(.prose p) {
-		margin-top: 0;
-		margin-bottom: 1.25em;
-	}
-	:global(.prose a) {
-		color: oklch(var(--primary));
-		text-decoration: underline;
-		text-underline-offset: 3px;
-	}
-	:global(.prose a:hover) {
-		opacity: 0.8;
-	}
-	:global(.prose ul),
-	:global(.prose ol) {
-		padding-left: 1.5em;
-		margin-bottom: 1.25em;
-	}
-	:global(.prose ul) {
-		list-style-type: disc;
-	}
-	:global(.prose ol) {
-		list-style-type: decimal;
-	}
-	:global(.prose li) {
-		margin-bottom: 0.4em;
-	}
-	:global(.prose blockquote) {
-		border-left: 3px solid oklch(var(--border));
-		padding-left: 1em;
-		margin-left: 0;
-		color: oklch(var(--muted-foreground));
-		font-style: italic;
-	}
-	:global(.prose code:not(pre code)) {
-		background: oklch(var(--muted));
-		border: 1px solid oklch(var(--border));
-		border-radius: 0.3em;
-		padding: 0.15em 0.4em;
-		font-size: 0.875em;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-	}
-	:global(.prose pre) {
-		background: oklch(var(--card));
-		border: 1px solid oklch(var(--border));
-		border-radius: 0.6em;
-		padding: 1em 1.25em;
-		overflow-x: auto;
-		margin-bottom: 1.5em;
-	}
-	:global(.prose pre code) {
-		background: none;
-		border: none;
-		padding: 0;
-		font-size: 0.875em;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-	}
-	:global(.prose hr) {
-		border: none;
-		border-top: 1px solid oklch(var(--border));
-		margin: 2em 0;
-	}
-	:global(.prose img) {
-		max-width: 100%;
-		border-radius: 0.5em;
-		margin: 1.5em 0;
-	}
-	:global(.prose table) {
-		width: 100%;
-		border-collapse: collapse;
-		margin-bottom: 1.5em;
-		font-size: 0.9em;
-	}
-	:global(.prose th),
-	:global(.prose td) {
-		border: 1px solid oklch(var(--border));
-		padding: 0.5em 0.75em;
-		text-align: left;
-	}
-	:global(.prose th) {
-		background: oklch(var(--muted));
-		font-weight: 600;
-	}
-</style>

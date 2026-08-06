@@ -22,6 +22,7 @@
 		unitRange?: readonly number[];
 		requestVersion?: number;
 		showFirstUseHint?: boolean;
+		isPersonalizedTutor?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
 	};
 
@@ -31,6 +32,7 @@
 		unitRange,
 		requestVersion = 0,
 		showFirstUseHint = false,
+		isPersonalizedTutor = false,
 		onGraded
 	}: Props = $props();
 
@@ -420,6 +422,7 @@
 				frqQuestionId={question.questionId}
 				frqAttemptId={attemptId}
 				topic={question.formatId}
+				{isPersonalizedTutor}
 				{showFirstUseHint}
 			/>
 		{/key}
