@@ -112,7 +112,10 @@
 			bind:unitRange
 			bind:requestVersion
 			bind:mode
+			showFirstUseHints
 			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
+			isPersonalizedTutor={data.isPersonalizedTutor}
+			practiceExperiment={data.practiceExperiment}
 			onAnswered={handleAnswered}
 			onFrqGraded={handleFrqGraded}
 		/>

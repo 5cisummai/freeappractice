@@ -12,6 +12,8 @@
 	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
 
 	let {
 		isAdmin,
@@ -25,7 +27,9 @@
 		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
 		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
 		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
-		{ href: '/app/resources', label: 'Resources', icon: CompassIcon }
+		{ href: '/app/resources', label: 'Resources', icon: CompassIcon },
+		{ href: '/app/coach', label: 'Coach', icon: BrainCircuitIcon },
+		{ href: '/app/insights', label: 'Insights', icon: SparklesIcon }
 	] as const;
 
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;

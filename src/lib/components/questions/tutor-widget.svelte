@@ -7,8 +7,11 @@
 	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import { toast } from 'svelte-sonner';
 
 	type ChatMessage = {
 		role: 'user' | 'assistant';
@@ -16,35 +19,32 @@
 	};
 
 	type TutorWidgetProps = {
-		question: string;
-		answer?: string;
-		explanation?: string;
 		apClass?: string;
 		unit?: string;
-		answerChoices?: { A: string; B: string; C: string; D: string } | null;
 		questionId?: string;
 		frqQuestionId?: string;
 		frqAttemptId?: string;
 		topic?: string;
+		showFirstUseHint?: boolean;
+		isPersonalizedTutor?: boolean;
 	};
 
 	let {
-		question,
-		answer = '',
-		explanation = '',
 		apClass = '',
 		unit = '',
-		answerChoices = null,
 		questionId = '',
 		frqQuestionId = '',
 		frqAttemptId = '',
-		topic = ''
+		topic = '',
+		showFirstUseHint = false,
+		isPersonalizedTutor = false
 	}: TutorWidgetProps = $props();
 
 	let isOpen = $state(false);
 	let messages = $state<ChatMessage[]>([]);
 	let inputText = $state('');
 	let isStreaming = $state(false);
+	let lastUsageWarning = $state<number | null>(null);
 	let hasGreeted = $state(false);
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
@@ -128,50 +128,36 @@
 	function portalToBody(node: HTMLElement) {
 		document.body.appendChild(node);
 
-		return {
-			destroy() {
-				node.remove();
-			}
-		};
+		return () => node.remove();
 	}
 
 	function autofocusInput(node: HTMLTextAreaElement) {
 		const frame = requestAnimationFrame(() => node.focus());
 
-		return {
-			destroy() {
-				cancelAnimationFrame(frame);
-			}
-		};
+		return () => cancelAnimationFrame(frame);
 	}
 
-	function autoScrollMessages(node: HTMLDivElement, trigger: string) {
-		void trigger;
-		const scrollToBottom = () => {
-			node.scrollTop = node.scrollHeight;
-		};
-
-		let frame = requestAnimationFrame(scrollToBottom);
-
-		return {
-			update() {
-				cancelAnimationFrame(frame);
-				frame = requestAnimationFrame(scrollToBottom);
-			},
-			destroy() {
-				cancelAnimationFrame(frame);
-			}
+	function autoScrollMessages(_trigger: string) {
+		return (node: HTMLDivElement) => {
+			const frame = requestAnimationFrame(() => {
+				node.scrollTop = node.scrollHeight;
+			});
+			return () => cancelAnimationFrame(frame);
 		};
 	}
 
 	async function fetchGreeting() {
-		if (hasGreeted || !question) return;
+		if (hasGreeted || !questionId) return;
 		hasGreeted = true;
+		if (frqQuestionId) {
+			messages.push({ role: 'assistant', content: GREETING_FALLBACK });
+			return;
+		}
 		try {
 			const res = await apiFetch('/api/tutor/greeting', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ question })
+				body: JSON.stringify({ questionId })
 			});
 			const data = await readJsonOrNull<{ error?: string; message?: string }>(res);
 			if (!res.ok) {
@@ -203,6 +189,18 @@
 		}
 	}
 
+	function showUsageWarning(response: Response) {
+		const warning = Number(response.headers.get('X-Super-Usage-Warning'));
+		const remaining = Number(response.headers.get('X-Super-Usage-Remaining'));
+		if ((warning !== 80 && warning !== 95) || lastUsageWarning === warning) return;
+		lastUsageWarning = warning;
+		toast.message(
+			warning === 95
+				? `You have ${remaining} personalized AI messages left this month.`
+				: `You have used ${warning}% of this month's personalized AI messages.`
+		);
+	}
+
 	function trapPanelFocus(node: HTMLElement) {
 		const getFocusable = () =>
 			Array.from(
@@ -232,10 +230,13 @@
 		};
 
 		node.addEventListener('keydown', onKeyDown);
-		return {
-			destroy() {
-				node.removeEventListener('keydown', onKeyDown);
-			}
+		return () => node.removeEventListener('keydown', onKeyDown);
+	}
+
+	function rememberTrigger(node: HTMLButtonElement) {
+		triggerEl = node;
+		return () => {
+			if (triggerEl === node) triggerEl = null;
 		};
 	}
 
@@ -271,12 +272,7 @@
 								...(frqAttemptId ? { attemptId: frqAttemptId } : {})
 							}
 						: {
-								question,
-								answer,
-								explanation,
-								apClass,
-								unit,
-								answerChoices
+								questionId
 							}),
 					conversationHistory,
 					message: text
@@ -287,6 +283,12 @@
 				const payload = await readJsonOrNull<{ error?: string }>(res);
 				throw new Error(getResponseMessage(payload, 'The tutor is unavailable right now.'));
 			}
+			if (res.headers.get('X-Tutor-Personalization-Degraded') === '1') {
+				toast.message(
+					'Tutor memory is temporarily unavailable. This reply uses your current progress only.'
+				);
+			}
+			showUsageWarning(res);
 
 			const reader = res.body.getReader();
 			const decoder = new TextDecoder();
@@ -302,9 +304,13 @@
 					if (!line.startsWith('data: ')) continue;
 					const data = line.slice(6).trim();
 					if (data === '[DONE]') continue;
-					let parsed: { content?: string; error?: string };
+					let parsed: { content?: string; error?: string; memoryUpdated?: boolean };
 					try {
-						parsed = JSON.parse(data) as { content?: string; error?: string };
+						parsed = JSON.parse(data) as {
+							content?: string;
+							error?: string;
+							memoryUpdated?: boolean;
+						};
 					} catch {
 						continue;
 					}
@@ -313,6 +319,14 @@
 					}
 					if (parsed.content && streamId === activeStreamId) {
 						messages[assistantIdx].content += parsed.content;
+					}
+					if (parsed.memoryUpdated) {
+						toast.success('Tutor memory update scheduled.', {
+							action: {
+								label: 'Review',
+								onClick: () => window.location.assign('/app/settings#tutor-memory')
+							}
+						});
 					}
 				}
 			}
@@ -422,7 +436,7 @@
 	}}
 />
 
-<div use:portalToBody>
+<div {@attach portalToBody}>
 	<!-- Chat panel: clamped to viewport, opens above or below the button -->
 	{#if isOpen}
 		<div
@@ -431,7 +445,7 @@
 			aria-modal="true"
 			aria-labelledby="ai-tutor-title"
 			tabindex="-1"
-			use:trapPanelFocus
+			{@attach trapPanelFocus}
 			class="fixed z-60 flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
 			style="
 					left: {panelLeft}px;
@@ -445,6 +459,14 @@
 			<!-- Header -->
 			<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
 				<div class="flex items-center gap-2">
+					{#if isPersonalizedTutor}
+						<Badge
+							variant="outline"
+							class="super-tier-gradient gap-1 border-violet-300/50 px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
+						>
+							Personalized
+						</Badge>
+					{/if}
 					<SparklesIcon class="h-4 w-4" />
 					<span id="ai-tutor-title" class="text-sm font-semibold">AI Tutor</span>
 				</div>
@@ -459,7 +481,7 @@
 
 			<!-- Messages -->
 			<div
-				use:autoScrollMessages={scrollTrigger}
+				{@attach autoScrollMessages(scrollTrigger)}
 				class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
 			>
 				{#if messages.length === 0}
@@ -498,7 +520,7 @@
 					class="flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2 shadow-sm"
 				>
 					<textarea
-						use:autofocusInput
+						{@attach autofocusInput}
 						bind:value={inputText}
 						onkeydown={handleKeydown}
 						oninput={(e) => autoResize(e.currentTarget)}
@@ -523,7 +545,7 @@
 
 	<!-- Floating toggle button -->
 	<button
-		bind:this={triggerEl}
+		{@attach rememberTrigger}
 		id="ai-tutor-trigger"
 		type="button"
 		aria-expanded={isOpen}
@@ -543,7 +565,12 @@
 				handleOpen();
 			}
 		}}
-		class="fixed z-60 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl"
+		class={[
+			'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full select-none',
+			isPersonalizedTutor
+				? 'super-tier-gradient-fab'
+				: 'bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl'
+		]}
 		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
 		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
 	>
@@ -553,4 +580,13 @@
 			<MessageSquareIcon class="h-5 w-5" />
 		{/if}
 	</button>
+	{#if showFirstUseHint}
+		<FirstUseHint
+			id="tutor-widget"
+			anchorId="ai-tutor-trigger"
+			text="Ask the Tutor about this question."
+			side="top"
+			align="end"
+		/>
+	{/if}
 </div>

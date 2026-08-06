@@ -39,7 +39,19 @@ export async function getOrAssignMultiAttemptVariant(userId: string): Promise<{
 		};
 	}
 
-	const variant: PracticeVariant = enabled ? assignPracticeVariant(userId) : 'control';
+	if (!enabled) {
+		return {
+			assigned: 'control',
+			assignment: {
+				key: MULTI_ATTEMPT_EXPERIMENT_KEY,
+				version: MULTI_ATTEMPT_EXPERIMENT_VERSION,
+				variant: 'control'
+			},
+			enabled: false
+		};
+	}
+
+	const variant: PracticeVariant = assignPracticeVariant(userId);
 	const assignment: PracticeExperimentAssignment = {
 		key: MULTI_ATTEMPT_EXPERIMENT_KEY,
 		version: MULTI_ATTEMPT_EXPERIMENT_VERSION,

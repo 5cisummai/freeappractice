@@ -12,8 +12,6 @@ vi.mock('$env/static/private', () => ({
 
 vi.mock('$env/dynamic/private', () => ({
 	env: {
-		GENERATION_MODEL: 'test-generation-model',
-		TUTOR_MODEL: 'test-tutor-model',
 		OPENAI_BASE_URL: 'https://api.openai.com/v1'
 	}
 }));
@@ -93,7 +91,7 @@ describe('MCQ live generation pipeline', () => {
 		expect(result.answer.hint1).toBe(validGeneratedQuestion.hint1);
 		expect(result.answer.hint2).toBe(validGeneratedQuestion.hint2);
 		expect(result.provider).toBe('ai');
-		expect(result.model).toBe('test-generation-model');
+		expect(result.model).toBe('gpt-5.6-luna');
 		expect(result.timing?.generationMs).toBeGreaterThanOrEqual(0);
 		expect(result.timing?.persistenceMs).toBeGreaterThanOrEqual(0);
 	});

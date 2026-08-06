@@ -4,6 +4,10 @@
 		{
 			"path": "/api/cron/question-pool",
 			"schedule": "0 3 * * *"
+		},
+		{
+			"path": "/api/cron/super-maintenance",
+			"schedule": "30 3 * * *"
 		}
 	]
 }

@@ -5,8 +5,15 @@
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
-	import { topbarAuthItems, topbarNavItems } from '$lib/site-nav.js';
+	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
+	import {
+		topbarAuthItems,
+		topbarNavItems,
+		topbarPricingItem,
+		topbarResourceItems
+	} from '$lib/site-nav.js';
 
+	let { showPricing = true }: { showPricing?: boolean } = $props();
 	let mobileOpen = $state(false);
 </script>
 
@@ -39,10 +46,54 @@
 				{/if}
 			</Button>
 
-			<nav class="hidden items-center gap-2 text-base sm:flex" aria-label="Main navigation">
-				{#each topbarNavItems as item (item.href)}
-					<Button href={resolve(item.href)} variant="ghost">{item.label}</Button>
-				{/each}
+			<nav class="hidden items-center gap-3 text-base sm:flex" aria-label="Main navigation">
+				<NavigationMenu.Root class="relative z-50">
+					<NavigationMenu.List class="gap-1">
+						{#each topbarNavItems as item (item.href)}
+							<NavigationMenu.Item>
+								<NavigationMenu.Link
+									href={resolve(item.href)}
+									class="font-medium text-muted-foreground hover:text-foreground"
+								>
+									{item.label}
+								</NavigationMenu.Link>
+							</NavigationMenu.Item>
+						{/each}
+
+						<NavigationMenu.Item value="resources">
+							<NavigationMenu.Trigger>Resources</NavigationMenu.Trigger>
+							<NavigationMenu.Content>
+								<ul class="grid w-72 gap-1 p-1">
+									{#each topbarResourceItems as item (item.href)}
+										<li>
+											<NavigationMenu.Link
+												href={resolve(item.href)}
+												class="flex-col items-start gap-1.5 p-3"
+											>
+												<span class="text-sm font-medium text-foreground">{item.label}</span>
+												<span class="text-xs leading-5 text-muted-foreground">
+													{item.description}
+												</span>
+											</NavigationMenu.Link>
+										</li>
+									{/each}
+								</ul>
+							</NavigationMenu.Content>
+						</NavigationMenu.Item>
+
+						{#if showPricing}
+							<NavigationMenu.Item>
+								<NavigationMenu.Link
+									href={resolve(topbarPricingItem.href)}
+									class="font-medium text-muted-foreground hover:text-foreground"
+								>
+									{topbarPricingItem.label}
+								</NavigationMenu.Link>
+							</NavigationMenu.Item>
+						{/if}
+					</NavigationMenu.List>
+				</NavigationMenu.Root>
+
 				{#each topbarAuthItems as item, index (item.href)}
 					<Button
 						href={resolve(item.href)}
@@ -69,6 +120,27 @@
 						{item.label}
 					</a>
 				{/each}
+				<div class="mt-2 border-t border-border/70 pt-2">
+					<p class="px-2 py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+						Resources
+					</p>
+					{#each topbarResourceItems as item (item.href)}
+						<a
+							href={resolve(item.href)}
+							class="block rounded-md px-2 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						>
+							{item.label}
+						</a>
+					{/each}
+				</div>
+				{#if showPricing}
+					<a
+						href={resolve(topbarPricingItem.href)}
+						class="block rounded-md px-2 py-2 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+					>
+						{topbarPricingItem.label}
+					</a>
+				{/if}
 				{#each topbarAuthItems as item (item.href)}
 					<a
 						href={resolve(item.href)}

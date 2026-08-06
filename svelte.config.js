@@ -51,7 +51,8 @@ const config = {
 					'https://public.assets.freeappractice.org',
 					'https://images.unsplash.com',
 					'https://*.googleapis.com',
-					'https://*.gstatic.com'
+					'https://*.gstatic.com',
+					'https://lh3.googleusercontent.com'
 				],
 				'connect-src': [
 					'self',

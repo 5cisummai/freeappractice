@@ -3,21 +3,27 @@ import { createTutorChatStream, type TutorChatFunction } from '$lib/tutor/chat-s
 import type { TutorChatRequest } from '$lib/tutor/chat-request';
 
 const payload: TutorChatRequest = {
+	questionId: 'c8f3048f-1681-47f2-b1db-e912655275d0',
+	conversationHistory: [],
+	message: 'Give me a hint.'
+};
+
+const context = {
 	question: 'What process produces ATP?',
-	answer: 'Cellular respiration',
+	correctAnswer: 'Cellular respiration',
 	explanation: '',
 	apClass: 'AP Biology',
 	unit: 'Unit 3',
-	answerChoices: null,
-	conversationHistory: [],
-	message: 'Give me a hint.'
+	answerChoices: null
 };
 
 test('streams legitimate tutor output with the existing SSE contract', async () => {
 	const chatImpl: TutorChatFunction = async function* () {
 		yield 'Start with the mitochondria.';
 	};
-	const stream = createTutorChatStream(payload, new AbortController().signal, { chatImpl });
+	const stream = createTutorChatStream(context, payload, new AbortController().signal, {
+		chatImpl
+	});
 	const text = await new Response(stream).text();
 
 	expect(text).toMatch(/data: {"content":"Start with the mitochondria\."}/);
@@ -37,7 +43,7 @@ test('aborts provider work and reports a timeout', async () => {
 			);
 		});
 	};
-	const stream = createTutorChatStream(payload, new AbortController().signal, {
+	const stream = createTutorChatStream(context, payload, new AbortController().signal, {
 		chatImpl,
 		timeoutMs: 5
 	});
@@ -54,7 +60,9 @@ test('cancelling the response aborts provider work', async () => {
 		providerSignal = options.signal;
 		await new Promise(() => undefined);
 	};
-	const stream = createTutorChatStream(payload, new AbortController().signal, { chatImpl });
+	const stream = createTutorChatStream(context, payload, new AbortController().signal, {
+		chatImpl
+	});
 	const reader = stream.getReader();
 	void reader.read();
 

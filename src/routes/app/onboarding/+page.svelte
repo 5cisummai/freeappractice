@@ -43,10 +43,15 @@
 	<title>Choose Your Subjects – Free AP Practice</title>
 </svelte:head>
 
-<div class:leaving={isLeaving} class="onboarding-shell min-h-svh px-5 py-8 sm:px-8 sm:py-10">
+<div
+	class={[
+		'min-h-svh px-5 py-8 opacity-100 transition-opacity duration-[420ms] ease-in-out motion-reduce:transition-none sm:px-8 sm:py-10',
+		isLeaving && 'pointer-events-none opacity-0'
+	]}
+>
 	<div class="mx-auto w-full max-w-5xl">
 		<header
-			class="onboarding-enter flex items-center justify-between"
+			class="flex animate-in items-center justify-between duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 			style="--onboarding-delay: 0ms"
 		>
 			<div class="flex items-center gap-2 font-medium tracking-tight">
@@ -61,7 +66,10 @@
 		</header>
 
 		<div class="mx-auto mt-12 max-w-4xl space-y-8 sm:mt-16">
-			<div class="onboarding-enter space-y-3 text-center" style="--onboarding-delay: 100ms">
+			<div
+				class="animate-in space-y-3 text-center duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
+				style="--onboarding-delay: 100ms"
+			>
 				<h1
 					class="font-display text-4xl leading-[1.08] font-medium tracking-tight text-balance sm:text-5xl"
 				>
@@ -78,10 +86,13 @@
 				class="space-y-6"
 				aria-busy={isSubmitting || isLeaving}
 			>
-				<div class="onboarding-enter space-y-8" style="--onboarding-delay: 180ms">
+				<div
+					class="animate-in space-y-8 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
+					style="--onboarding-delay: 180ms"
+				>
 					{#each onboardingSubjectGroups as group, groupIndex (group.label)}
 						<section
-							class="onboarding-enter space-y-3"
+							class="animate-in space-y-3 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 							style="--onboarding-delay: {260 + groupIndex * 70}ms"
 							aria-labelledby={subjectId(group.label)}
 						>
@@ -102,7 +113,7 @@
 									{@const id = subjectId(subject.name)}
 									{@const SubjectIcon = subject.icon}
 									<div
-										class="onboarding-enter"
+										class="animate-in duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none"
 										style="--onboarding-delay: {320 + groupIndex * 70 + subjectIndex * 25}ms"
 									>
 										<input
@@ -142,7 +153,7 @@
 				{/if}
 
 				<div
-					class="onboarding-enter flex flex-col-reverse items-center justify-between gap-3 sm:flex-row"
+					class="flex animate-in flex-col-reverse items-center justify-between gap-3 duration-[560ms] [animation-delay:var(--onboarding-delay,0ms)] [animation-fill-mode:both] [animation-timing-function:cubic-bezier(0.22,1,0.36,1)] fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:flex-row"
 					style="--onboarding-delay: 500ms"
 				>
 					<p class="text-center text-sm text-muted-foreground sm:text-left">
@@ -156,41 +167,3 @@
 		</div>
 	</div>
 </div>
-
-<style>
-	@keyframes onboarding-rise {
-		from {
-			opacity: 0;
-			transform: translateY(14px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	.onboarding-shell {
-		opacity: 1;
-		transition: opacity 420ms ease;
-	}
-
-	.onboarding-shell.leaving {
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.onboarding-enter {
-		animation: onboarding-rise 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-		animation-delay: var(--onboarding-delay, 0ms);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.onboarding-shell {
-			transition: none;
-		}
-
-		.onboarding-enter {
-			animation: none;
-		}
-	}
-</style>

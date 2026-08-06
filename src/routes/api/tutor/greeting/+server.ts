@@ -1,19 +1,31 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getGreeting } from '$lib/tutor/service.server';
+import { auth } from '$lib/auth/server';
+import { getQuestionFromS3 } from '$lib/questions/storage.server';
 import { logger } from '$lib/server/logger';
+import { limitGenericTutor } from '$lib/super/ai-controls.server';
+import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
+import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
+import { getGreeting } from '$lib/tutor/service.server';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
 	try {
-		const { question } = await request.json();
-		if (!question) {
-			return json({ error: 'Question is required' }, { status: 400 });
-		}
+		const parsed = tutorGreetingRequestSchema.safeParse(await event.request.json());
+		if (!parsed.success) return json({ error: 'Invalid tutor greeting request' }, { status: 400 });
 
-		const message = await getGreeting(question);
+		const userId =
+			event.locals.userId ??
+			(await auth.api.getSession({ headers: event.request.headers }))?.user?.id;
+		const rate = await limitGenericTutor(event.request, userId);
+		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
+
+		const question = await getQuestionFromS3(parsed.data.questionId).catch(() => null);
+		if (!question) return json({ error: 'Question not found' }, { status: 404 });
+
+		const message = await getGreeting(question.question);
 		return json({ message });
-	} catch (err) {
-		logger.error('Tutor greeting error', { error: err });
+	} catch (error) {
+		logger.error('Tutor greeting error', { error });
 		return json(
 			{
 				error: 'Failed to get tutor greeting',

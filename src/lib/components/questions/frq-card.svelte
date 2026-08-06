@@ -21,6 +21,8 @@
 		selectedUnit?: string;
 		unitRange?: readonly number[];
 		requestVersion?: number;
+		showFirstUseHint?: boolean;
+		isPersonalizedTutor?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
 	};
 
@@ -29,6 +31,8 @@
 		selectedUnit = '',
 		unitRange,
 		requestVersion = 0,
+		showFirstUseHint = false,
+		isPersonalizedTutor = false,
 		onGraded
 	}: Props = $props();
 
@@ -412,13 +416,14 @@
 
 		{#key question.questionId}
 			<TutorWidget
-				question={question.prompt}
 				apClass={question.apClass}
 				unit={question.unit}
 				questionId={question.questionId}
 				frqQuestionId={question.questionId}
 				frqAttemptId={attemptId}
 				topic={question.formatId}
+				{isPersonalizedTutor}
+				{showFirstUseHint}
 			/>
 		{/key}
 	</div>

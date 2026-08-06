@@ -124,6 +124,7 @@
 	--animate-line-shadow: line-shadow 15s linear infinite;
 	--animate-meteor: meteor 5s linear infinite;
 	--animate-shine: shine var(--duration) infinite linear;
+	--animate-shimmer: shimmer var(--shimmer-duration, 2s) linear infinite;
 	@keyframes aurora {
 		0% {
 			background-position: 0% 50%;
@@ -199,6 +200,14 @@
 			background-position: 0% 0%;
 		}
 	}
+	@keyframes shimmer {
+		from {
+			background-position: 100% center;
+		}
+		to {
+			background-position: 0% center;
+		}
+	}
 }
 
 @layer base {
@@ -211,6 +220,142 @@
 	html {
 		@apply font-sans;
 	}
+}
+
+.prose {
+	max-width: none;
+	color: var(--foreground);
+	font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+	font-size: 1rem;
+	line-height: 1.75;
+}
+
+.prose a {
+	color: var(--primary);
+	text-decoration-line: underline;
+	text-underline-offset: 3px;
+}
+
+.prose a:hover {
+	opacity: 0.8;
+}
+
+.prose blockquote {
+	margin-block: 0;
+	border-left: 3px solid var(--border);
+	padding-left: 1rem;
+	color: var(--muted-foreground);
+	font-style: italic;
+	font-weight: 400;
+}
+
+.prose code {
+	font-family:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+		monospace;
+	font-size: 0.875em;
+}
+
+.prose code:not(pre code) {
+	border: 1px solid var(--border);
+	border-radius: 0.3em;
+	background-color: var(--muted);
+	padding: 0.15em 0.4em;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+	margin-top: 2em;
+	margin-bottom: 0.75rem;
+	font-weight: 600;
+	letter-spacing: -0.025em;
+}
+
+.prose h1 {
+	font-size: 2em;
+}
+
+.prose h2 {
+	font-size: 1.5em;
+}
+
+.prose h3 {
+	font-size: 1.25em;
+}
+
+.prose h4 {
+	font-size: 1.1em;
+}
+
+.prose hr {
+	margin-block: 2em;
+	border: 0;
+	border-top: 1px solid var(--border);
+}
+
+.prose img {
+	max-width: 100%;
+	margin-block: 1.5rem;
+	border-radius: 0.5rem;
+}
+
+.prose li {
+	margin-bottom: 0.4em;
+}
+
+.prose ol,
+.prose ul {
+	margin-bottom: 1.25rem;
+	padding-left: 1.5rem;
+}
+
+.prose ol {
+	list-style-type: decimal;
+}
+
+.prose ul {
+	list-style-type: disc;
+}
+
+.prose p {
+	margin-top: 0;
+	margin-bottom: 1.25rem;
+}
+
+.prose pre {
+	margin-bottom: 1.5rem;
+	overflow-x: auto;
+	border: 1px solid var(--border);
+	border-radius: 0.6em;
+	background-color: var(--card);
+	padding: 1rem;
+}
+
+.prose pre code {
+	border: 0;
+	background-color: transparent;
+	padding: 0;
+}
+
+.prose table {
+	width: 100%;
+	margin-bottom: 1.5rem;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.prose td,
+.prose th {
+	border: 1px solid var(--border);
+	padding: 0.5rem 0.75rem;
+	text-align: left;
+}
+
+.prose th {
+	background-color: var(--muted);
+	font-weight: 600;
 }
 
 @custom-variant data-open {
@@ -279,6 +424,23 @@
 	&::-webkit-scrollbar {
 		display: none;
 	}
+}
+
+@utility super-tier-gradient {
+	@apply bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10;
+}
+
+@utility super-tier-gradient-hover {
+	@apply hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15;
+}
+
+/* Shine treatment for Super CTAs — neutral base so the subtle gradient reads cleanly. */
+.super-tier-gradient-button {
+	@apply border border-violet-300/50 bg-background bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 font-semibold text-violet-700 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70 hover:bg-background hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15 dark:text-violet-300;
+}
+
+.super-tier-gradient-fab {
+	@apply border border-violet-300/50 bg-background bg-linear-to-r from-violet-500/10 via-fuchsia-500/10 to-cyan-400/10 text-violet-600 shadow-sm shadow-violet-500/10 transition-[box-shadow,border-color,background] duration-300 hover:border-violet-400/70 hover:bg-background hover:from-violet-500/15 hover:via-fuchsia-500/15 hover:to-cyan-400/15 hover:shadow-md hover:shadow-violet-500/15 dark:text-violet-300;
 }
 
 /* ── Highlight.js dark-mode overrides ────────────────────────────────────────

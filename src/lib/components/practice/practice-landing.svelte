@@ -15,7 +15,8 @@
 		};
 	}
 
-	let { page: practicePage }: { page: PracticePage } = $props();
+	let { page: practicePage, showPricing = true }: { page: PracticePage; showPricing?: boolean } =
+		$props();
 
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
 	const initial = $derived(getInitialSelection(practicePage));
@@ -39,7 +40,7 @@
 </script>
 
 <div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-	<Topbar />
+	<Topbar {showPricing} />
 
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-12 px-5 py-10 sm:px-8 lg:px-10 lg:py-14">

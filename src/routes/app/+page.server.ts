@@ -1,6 +1,15 @@
 import type { PageServerLoad } from './$types';
 import { loadUserDashboardData } from '$lib/users/dashboard.server';
+import { getEntitlements } from '$lib/super/entitlements.server';
 
 export const load: PageServerLoad = async ({ cookies, locals }) => {
-	return loadUserDashboardData(locals.userId!, cookies);
+	const userId = locals.userId!;
+	const [dashboard, entitlements] = await Promise.all([
+		loadUserDashboardData(userId, cookies),
+		getEntitlements(userId)
+	]);
+	return {
+		...dashboard,
+		entitlements
+	};
 };

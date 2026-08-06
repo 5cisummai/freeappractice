@@ -11,6 +11,7 @@
 	import Share2Icon from '@lucide/svelte/icons/share-2';
 	import SlidersHorizontalIcon from '@lucide/svelte/icons/sliders-horizontal';
 	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
@@ -27,6 +28,7 @@
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
+		showFirstUseHint?: boolean;
 	};
 
 	const courses = $derived(getCourses());
@@ -37,7 +39,8 @@
 		unitRange = $bindable<number[] | undefined>(undefined),
 		generateLabel = 'Generate Question',
 		onGenerate,
-		onSelectionChange
+		onSelectionChange,
+		showFirstUseHint = false
 	}: QuestionSelectorProps = $props();
 
 	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
@@ -178,6 +181,7 @@
 					{#snippet child({ props })}
 						<Button
 							{...props}
+							id="practice-class-hint-target"
 							variant="outline"
 							role="combobox"
 							aria-labelledby="question-selector-class-label"
@@ -215,6 +219,14 @@
 					</Command.Root>
 				</Popover.Content>
 			</Popover.Root>
+			{#if showFirstUseHint}
+				<FirstUseHint
+					id="practice-selector"
+					anchorId="practice-class-hint-target"
+					text="Choose your AP class first, then pick a unit."
+					align="start"
+				/>
+			{/if}
 		</div>
 
 		<div class="flex min-w-48 flex-1 flex-col gap-2">

@@ -5,6 +5,69 @@
 
 	const changelog = [
 		{
+			version: '1.6.0 - Super Beta',
+			date: 'August 6, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Introduced Super membership with personalized multiple-choice and written-response tutoring, Coach, Insights, and weekly study plans',
+						'Added optional tutor memory that keeps stable learning preferences and recurring misconceptions across sessions',
+						'Coach now reads and writes the same memory store as the tutor, so planning and tutoring stay aligned',
+						'Opened a Super free beta with an explicit claim flow and monthly personalized message limits',
+						'Super settings now surface billing issues so students can resolve payment problems without leaving the app'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Refreshed Super pricing and marketing pages to explain membership benefits more clearly',
+						'Polished the Coach chat layout and tool activity headers for a clearer coaching flow',
+						'Centralized AI model configuration and moved tutoring onto Luna'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Hardened Super lifecycle handling, memory retention cleanup, and personalization controls',
+						'Added stronger rate limiting and per-turn reservation for Super AI requests'
+					]
+				}
+			]
+		},
+		{
+			version: '1.5.4',
+			date: 'August 4, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Settings now includes subject selection so students can choose which AP classes to practice',
+						'Practice history supports search and filters for faster review of past work'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Clarified onboarding subject descriptions and empty states across the signed-in app',
+						'Streamlined dashboard and progress layouts, and added a Settings link in the sidebar',
+						'Tightened question-card spacing and utility actions for everyday practice'
+					]
+				},
+				{
+					title: 'Changes',
+					items: [
+						'Removed AP PE from supported courses and practice content',
+						'Removed realistic mode from practice configuration'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: ['Fixed signup completion navigation so new accounts land in the app reliably']
+				}
+			]
+		},
+		{
 			version: '1.5.3',
 			date: 'August 3, 2026',
 			sections: [

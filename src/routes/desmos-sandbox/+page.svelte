@@ -51,6 +51,13 @@
 		}
 	}
 
+	function setCalcContainer(node: HTMLDivElement) {
+		calcContainer = node;
+		return () => {
+			if (calcContainer === node) calcContainer = null;
+		};
+	}
+
 	function loadScript(src: string): Promise<void> {
 		return new Promise((resolve, reject) => {
 			const existing = document.getElementById('desmos-script');
@@ -119,19 +126,4 @@
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<div bind:this={calcContainer} class="calc-container"></div>
-
-<style>
-	:global(html, body) {
-		margin: 0;
-		padding: 0;
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
-	}
-
-	.calc-container {
-		width: 100%;
-		height: 100vh;
-	}
-</style>
+<div class="h-svh w-full overflow-hidden" {@attach setCalcContainer}></div>

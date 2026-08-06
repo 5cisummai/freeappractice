@@ -7,6 +7,7 @@ type SiteNavItem = {
 		| '/stats'
 		| '/about'
 		| '/changelog'
+		| '/pricing'
 		| '/privacy'
 		| '/terms'
 		| '/login'
@@ -20,12 +21,27 @@ type SiteNavGroup = {
 };
 
 /** Primary links shown in the desktop and mobile topbar. */
-export const topbarNavItems: SiteNavItem[] = [
-	{ href: '/subjects', label: 'Subjects' },
-	{ href: '/blog', label: 'Blog' },
-	{ href: '/about', label: 'About' },
-	{ href: '/stats', label: 'Stats' }
-];
+export const topbarNavItems: SiteNavItem[] = [{ href: '/subjects', label: 'Subjects' }];
+
+export const topbarResourceItems = [
+	{
+		href: '/about',
+		label: 'About',
+		description: 'Learn more about Free AP Practice.'
+	},
+	{
+		href: '/blog',
+		label: 'Blog',
+		description: 'Study tips, guides, and AP resources.'
+	},
+	{
+		href: '/stats',
+		label: 'Stats',
+		description: 'See practice activity and progress.'
+	}
+] satisfies Array<SiteNavItem & { description: string }>;
+
+export const topbarPricingItem: SiteNavItem = { href: '/pricing', label: 'Pricing' };
 
 export const topbarAuthItems: SiteNavItem[] = [
 	{ href: '/login', label: 'Sign In' },

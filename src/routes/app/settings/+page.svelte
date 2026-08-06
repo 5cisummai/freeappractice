@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -10,12 +11,17 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { settingsController } from '$lib/client/settings.svelte.js';
+	import { resetUiHints } from '$lib/client/ui-hints.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import CheckIcon from '@lucide/svelte/icons/check';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { userPrefersMode } from 'mode-watcher';
+	import { toast } from 'svelte-sonner';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
 	import MoonIcon from '@lucide/svelte/icons/moon';
@@ -23,13 +29,15 @@
 
 	let { data, form } = $props();
 
-	type SettingsSection = 'practice' | 'appearance' | 'privacy' | 'account' | 'advanced' | 'about';
+	type SettingsSection =
+		'practice' | 'appearance' | 'privacy' | 'super' | 'account' | 'advanced' | 'about';
 	type Theme = 'light' | 'dark' | 'system';
 
 	const SECTIONS: { id: SettingsSection; label: string }[] = [
 		{ id: 'practice', label: 'Practice' },
 		{ id: 'appearance', label: 'Appearance' },
 		{ id: 'privacy', label: 'Privacy' },
+		{ id: 'super', label: 'Super' },
 		{ id: 'account', label: 'Account' },
 		{ id: 'advanced', label: 'Advanced' },
 		{ id: 'about', label: 'About' }
@@ -47,6 +55,8 @@
 	let accountForm = $state({ name: '', email: '' });
 	let deletePassword = $state('');
 	let signOutPending = $state(false);
+	let billingBusy = $state(false);
+	let claimingFreeBeta = $state(false);
 
 	const theme = $derived(userPrefersMode.current);
 	const themeLabel = $derived(
@@ -60,6 +70,7 @@
 
 	function sectionFromHash(hash: string): SettingsSection {
 		if (hash === 'danger') return 'account';
+		if (hash === 'tutor-memory') return 'super';
 		if (SECTIONS.some((section) => section.id === hash)) {
 			return hash as SettingsSection;
 		}
@@ -99,6 +110,11 @@
 		accountForm = { name: data.user.name, email: data.user.email };
 	}
 
+	function resetProductHints() {
+		resetUiHints();
+		toast.success('First-use hints will show again.');
+	}
+
 	async function handleDeleteAccount() {
 		const result = await settingsController.deleteAccount(deletePassword || undefined);
 		if (result) {
@@ -128,6 +144,53 @@
 			});
 		} finally {
 			signOutPending = false;
+		}
+	}
+
+	function formatDate(value: string | null | undefined): string {
+		if (!value) return 'Not available';
+		const date = new Date(value);
+		return Number.isFinite(date.getTime())
+			? new Intl.DateTimeFormat(undefined, {
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				}).format(date)
+			: 'Not available';
+	}
+
+	async function manageBilling() {
+		if (billingBusy) return;
+		billingBusy = true;
+		try {
+			const { data: portal, error } = await authClient.subscription.billingPortal({
+				returnUrl: `${window.location.origin}${resolve('/app/settings')}`,
+				disableRedirect: true
+			});
+			if (error || !portal?.url)
+				throw new Error(error?.message ?? 'Could not open billing management.');
+			window.location.assign(portal.url);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not open billing management.');
+			billingBusy = false;
+		}
+	}
+
+	async function claimFreeBeta() {
+		if (claimingFreeBeta) return;
+		claimingFreeBeta = true;
+		try {
+			const response = await apiFetch('/api/super/claim-free-beta', { method: 'POST' });
+			const result = await readJsonOrNull<{ error?: string }>(response);
+			if (!response.ok) {
+				throw new Error(getResponseMessage(result, 'Could not claim the free Super offer.'));
+			}
+			toast.success('Super unlocked. Enjoy the free beta!');
+			await invalidateAll();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
+		} finally {
+			claimingFreeBeta = false;
 		}
 	}
 </script>
@@ -309,6 +372,126 @@
 				</div>
 			</Tabs.Content>
 
+			<Tabs.Content value="super" class="flex flex-col gap-3">
+				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+					<div class="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
+						<div class="min-w-0 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">
+								{data.entitlements.plan === 'super' ? 'Super plan' : 'Free plan'}
+							</p>
+							<p class="text-sm text-muted-foreground">
+								{#if data.billing?.billingIssue}
+									Payment needs attention. Please open the Customer Portal to update your payment
+									method.
+								{:else if data.entitlements.plan === 'super'}
+									{#if data.freeBetaEnabled}
+										Super access is free during the beta after you claim the offer.
+									{:else if data.entitlements.accessReason === 'admin_grant'}
+										Super access granted by the team.
+									{:else if data.billing?.status === 'past_due'}
+										Payment is past due; Super access remains available during the grace period.
+									{:else}
+										Personalized tutoring, Coach, insights, and study plans are active.
+									{/if}
+								{:else if data.freeBetaEnabled}
+									Claim your free Super offer for personalized tutoring and study planning.
+								{:else}
+									Upgrade when you want personalized tutoring and study planning.
+								{/if}
+							</p>
+						</div>
+						{#if data.billing?.hasCustomer}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onclick={manageBilling}
+								disabled={billingBusy}
+							>
+								{billingBusy ? 'Opening…' : 'Customer Portal'}
+							</Button>
+						{:else if data.entitlements.plan !== 'super' && data.freeBetaEnabled}
+							<Button
+								type="button"
+								size="sm"
+								class="rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
+								onclick={claimFreeBeta}
+								disabled={claimingFreeBeta}
+							>
+								<SparklesIcon class="size-3.5" />
+								{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
+							</Button>
+						{:else if data.entitlements.plan !== 'super' && !data.billing?.billingIssue}
+							<Button type="button" variant="outline" size="sm" href={resolve('/pricing')}
+								>Upgrade</Button
+							>
+						{/if}
+					</div>
+
+					{#if data.entitlements.plan === 'super'}
+						<div class="space-y-3 border-t border-border/60 px-4 py-4">
+							<div class="grid gap-3 sm:grid-cols-2">
+								<div>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Status
+									</p>
+									<p class="mt-1 text-sm font-medium capitalize">
+										{data.billing?.status?.replaceAll('_', ' ') ?? 'Active'}
+									</p>
+								</div>
+								<div>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										{data.billing?.cancelAt || data.billing?.cancelAtPeriodEnd
+											? 'Cancels'
+											: 'Renews'}
+									</p>
+									<p class="mt-1 text-sm font-medium">
+										{formatDate(data.billing?.cancelAt ?? data.billing?.periodEnd)}
+									</p>
+								</div>
+							</div>
+							<div>
+								<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									Personalized AI usage
+								</p>
+								{#if data.usage.status === 'available'}
+									<p class="mt-1 text-sm">
+										{data.usage.remaining} of {data.usage.limit} messages remaining this month.
+									</p>
+									{#if data.usage.warning}
+										<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+											You have used {data.usage.warning}% of this month's personalized messages.
+										</p>
+									{/if}
+								{:else}
+									<p class="mt-1 text-sm text-muted-foreground">
+										Usage is unavailable right now. Try again later.
+									</p>
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<div
+						class="flex flex-wrap items-center justify-between gap-4 border-t border-border/60 px-4 py-4"
+					>
+						<div class="min-w-0 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Tutor memory</p>
+							<p class="text-sm text-muted-foreground">
+								Memory is {data.profile.memoryEnabled ? 'on' : 'paused'}. Review, delete, or update
+								your memory preferences.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							href={`${resolve('/app/super/setup')}#tutor-memory`}>Manage memory</Button
+						>
+					</div>
+				</div>
+			</Tabs.Content>
+
 			<Tabs.Content value="advanced" class="flex flex-col gap-3">
 				<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
 					<div class="flex items-center justify-between gap-4 px-4 py-3.5">
@@ -324,6 +507,20 @@
 							size="sm"
 							href={resolve('/app/onboarding?reset=1')}
 						>
+							Reset
+						</Button>
+					</div>
+					<div
+						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
+					>
+						<div class="min-w-0 flex-1 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Reset first-use hints</p>
+							<p class="text-sm text-muted-foreground">
+								Show the small tips for the dashboard, practice selector, question tools, and Tutor
+								again.
+							</p>
+						</div>
+						<Button type="button" variant="outline" size="sm" onclick={resetProductHints}>
 							Reset
 						</Button>
 					</div>
@@ -395,7 +592,7 @@
 							<p class="text-sm font-medium text-foreground">App version</p>
 							<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
 						</div>
-						<p class="text-sm font-medium text-foreground tabular-nums">1.5.3</p>
+						<p class="text-sm font-medium text-foreground tabular-nums">1.5.5</p>
 					</div>
 					<div
 						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"

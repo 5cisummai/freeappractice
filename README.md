@@ -10,6 +10,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - Authenticated app at `/app` for dashboard, practice, progress, question history, resources, and settings.
 - SEO practice landing pages under `/practice/[...slug]` (class and unit pages with internal linking).
 - AI-generated MCQs with an in-app tutor, bookmarks, and attempt history.
+- Optional Super membership with personalized MCQ/FRQ tutoring, Coach, evidence-based Insights, and a weekly study plan.
 - Public generation stats at `/stats` (backed by `/api/question/generation-stats`).
 - Better Auth for email/password and Google sign-in (including Google One Tap when configured).
 - SvelteKit API routes for questions, signed-in user data, tutoring, and bug reports.
@@ -25,6 +26,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - [Vercel AI SDK](https://sdk.vercel.ai/) with an OpenAI-compatible API for question generation and tutor responses (OpenAI or [LM Studio](https://lmstudio.ai/) locally)
 - Resend for transactional email
 - AWS S3 for private question storage
+- Stripe + Better Auth Stripe plugin for Super subscriptions, Mem0 for optional tutor memory, and Upstash Redis for short-lived AI controls
 - Vercel for deployment (`@sveltejs/adapter-vercel`)
 
 ## Getting started
@@ -95,12 +97,8 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 | `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
 | `OPENAI_BASE_URL`    | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`)       |
 
-Optional model overrides (defaults are set in `src/lib/ai/service.server.ts`):
-
-| Variable           | Purpose                                                    |
-| ------------------ | ---------------------------------------------------------- |
-| `GENERATION_MODEL` | Model for question generation (defaults to `gpt-5.6-luna`) |
-| `TUTOR_MODEL`      | Model for the in-app tutor chat                            |
+Model choices for every AI use case are plain exported constants in
+`src/lib/ai/ai-models-config.ts`.
 
 Commonly needed for full functionality:
 
@@ -116,6 +114,39 @@ Commonly needed for full functionality:
 | `CRON_SECRET`                                                                  | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs |
 | `PUBLIC_DESMOS_API_KEY`                                                        | Desmos calculator embeds                                                                          |
 
+### Super launch configuration
+
+Super is disabled until Stripe credentials and both price IDs are present. Configure `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`,
+`UPSTASH_VECTOR_REST_URL`, `UPSTASH_VECTOR_REST_TOKEN`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
+`REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags.
+
+Create the Better Auth indexes before first production use:
+
+```sh
+bun scripts/create-better-auth-indexes.ts
+```
+
+In Stripe, configure the Customer Portal to allow cancellation at period end, restoration before the end of
+the current period, and switching between the two Super prices at the next renewal. Point the Stripe webhook
+to Better Auth's `/api/auth/stripe/webhook` route and enable at least `checkout.session.completed`,
+`customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`,
+`invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, and
+`invoice.finalization_failed`. Configure Stripe Tax registrations before enabling automatic tax. The app
+enables automatic tax and does not enable promotion codes.
+
+Tutor memory uses the Mem0 OSS SDK with OpenAI extraction/embeddings and an Upstash Vector index. The app
+keeps Development, Preview, and Production memories isolated inside the shared index with deployment-scoped
+namespaces and metadata. Connect the Upstash Vector integration to all three Vercel environments and pull the variables locally
+with `vercel env pull .env.development.local --environment=development` when setting up a new machine.
+
+Upstash Redis is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
+single-flight locks, idempotency keys, and 30-minute Coach approvals. Upstash Vector stores optional tutor
+memories; MongoDB, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
+use Redis. For local Redis testing, run an
+Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
+`KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.
+
 Pool fill targets, leases, and daily LLM budget are coded in `src/lib/questions/pool-constants.ts` (not env). See `docs/question-pool-runbook.md`.
 
 ### Local AI with LM Studio
@@ -128,11 +159,9 @@ To run question generation and tutoring against a local model instead of OpenAI:
    ```env
    OPENAI_BASE_URL=http://localhost:1234/v1
    OPEN_AI_KEY=lm-studio
-   GENERATION_MODEL=your-loaded-model-id
-   TUTOR_MODEL=your-loaded-model-id
    ```
 
-   Use the model identifier shown in LM Studio for the `*_MODEL` values.
+   Set the model identifier shown in LM Studio in `src/lib/ai/ai-models-config.ts`.
 
 ## API overview
 

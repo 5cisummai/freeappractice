@@ -32,7 +32,29 @@ async function main() {
 				{ providerId: 1, accountId: 1 },
 				{ unique: true, name: 'provider_account_unique' }
 			),
-		db.collection('authVerifications').createIndex({ identifier: 1 }, { name: 'identifier_idx' })
+		db.collection('authVerifications').createIndex({ identifier: 1 }, { name: 'identifier_idx' }),
+		db.collection('authSubscriptions').createIndex({ referenceId: 1 }, { name: 'referenceId_idx' }),
+		db
+			.collection('authSubscriptions')
+			.createIndex(
+				{ stripeSubscriptionId: 1 },
+				{ unique: true, sparse: true, name: 'stripeSubscription_unique' }
+			),
+		db
+			.collection('super_billing_access')
+			.createIndex({ userId: 1, status: 1 }, { name: 'user_status_idx' }),
+		db
+			.collection('super_grants')
+			.createIndex({ userId: 1, startsAt: 1, expiresAt: 1 }, { name: 'access_window_idx' }),
+		db
+			.collection('super_usage_rollups')
+			.createIndex({ userId: 1, month: 1 }, { unique: true, name: 'user_month_unique' }),
+		db
+			.collection('super_cleanup_jobs')
+			.createIndex({ nextAttemptAt: 1, completedAt: 1 }, { name: 'cleanup_due_idx' }),
+		db
+			.collection('insight_reports')
+			.createIndex({ userId: 1, generatedAt: -1 }, { name: 'user_generatedAt_idx' })
 	]);
 
 	console.log('Better Auth indexes created.');

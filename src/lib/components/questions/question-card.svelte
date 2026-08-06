@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -10,6 +10,7 @@
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
@@ -47,6 +48,9 @@
 		nextLabel = 'Next Question',
 		showExplanationLabel = 'Show Explanation',
 		showUtilityActions = true,
+		showFirstUseHint = false,
+		isPersonalizedTutor = false,
+		practiceExperiment,
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -82,7 +86,8 @@
 		onCheckAnswer: (value) => onCheckAnswer?.(value),
 		onSkip: () => onSkip?.(),
 		onNotLearned: () => onNotLearned?.(),
-		onAnswered: (result) => onAnswered?.(result)
+		onAnswered: (result) => onAnswered?.(result),
+		practiceExperiment: untrack(() => practiceExperiment)
 	});
 
 	type SubjectToolEntry = {
@@ -102,12 +107,6 @@
 			(session.currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
 	);
 	const expandedTwoColumn = $derived(!isMobileViewport && (isExpanded || effectiveTwoColumn));
-	const tutorAnswerChoices = $derived.by(() => {
-		if (!session.currentQuestion?.options) return null;
-		const map: Record<string, string> = {};
-		for (const opt of session.currentQuestion.options) map[opt.id] = opt.text;
-		return map.A && map.B ? (map as { A: string; B: string; C: string; D: string }) : null;
-	});
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		isLongQuestion = measureLongQuestion({
@@ -395,7 +394,7 @@
 					</div>
 				{/if}
 				{#if hasCalculator || hasReferenceSheet}
-					<div class="flex gap-0.5">
+					<div id="question-tools-hint-target" class="flex gap-0.5">
 						{#if hasCalculator}
 							<Tooltip.Root>
 								<Tooltip.Trigger>
@@ -439,6 +438,15 @@
 							</Tooltip.Root>
 						{/if}
 					</div>
+					{#if showFirstUseHint}
+						<FirstUseHint
+							id="question-tools"
+							anchorId="question-tools-hint-target"
+							text="These tools give you extra help while you work."
+							side="top"
+							align="end"
+						/>
+					{/if}
 				{/if}
 			</div>
 			<div class="flex gap-2">
@@ -512,14 +520,12 @@
 	{#if session.currentQuestion}
 		{#key session.currentQuestion.questionId ?? session.currentQuestion.prompt}
 			<TutorWidget
-				question={session.currentQuestion.prompt}
-				answer={session.currentQuestion.correctAnswer ?? ''}
-				explanation={session.currentQuestion.explanation ?? ''}
 				apClass={selectedClass}
 				unit={tutorUnitLabel}
-				answerChoices={tutorAnswerChoices}
 				questionId={session.currentQuestion.questionId}
 				topic={session.currentQuestion.topic}
+				{isPersonalizedTutor}
+				{showFirstUseHint}
 			/>
 		{/key}
 	{/if}

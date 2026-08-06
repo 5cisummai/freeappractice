@@ -12,7 +12,9 @@
 		unitRange?: number[];
 		requestVersion?: number;
 		allowFrq?: boolean;
+		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
+		isPersonalizedTutor?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -27,7 +29,9 @@
 		unitRange = $bindable<number[] | undefined>(undefined),
 		requestVersion = $bindable(0),
 		allowFrq = false,
+		showFirstUseHints = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
+		isPersonalizedTutor = false,
 		generateLabel,
 		onGenerate,
 		onSelectionChange,
@@ -78,6 +82,7 @@
 		bind:selectedClass
 		bind:selectedUnit
 		bind:unitRange
+		showFirstUseHint={showFirstUseHints}
 		{generateLabel}
 		onSelectionChange={handleSelectionChange}
 		onGenerate={handleGenerate}
@@ -87,13 +92,23 @@
 <div class="mx-auto min-h-40 max-w-6xl">
 	{#key `${mode}:${selectedClass}:${selectedUnit}`}
 		{#if mode === 'frq' && allowFrq}
-			<FrqCard {selectedClass} {selectedUnit} {unitRange} {requestVersion} onGraded={onFrqGraded} />
+			<FrqCard
+				{selectedClass}
+				{selectedUnit}
+				{unitRange}
+				{requestVersion}
+				showFirstUseHint={showFirstUseHints}
+				{isPersonalizedTutor}
+				onGraded={onFrqGraded}
+			/>
 		{:else}
 			<QuestionCard
 				{selectedClass}
 				{selectedUnit}
 				{unitRange}
 				{requestVersion}
+				showFirstUseHint={showFirstUseHints}
+				{isPersonalizedTutor}
 				{onAnswered}
 				{...cardProps}
 			/>

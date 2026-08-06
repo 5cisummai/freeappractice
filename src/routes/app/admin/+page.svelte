@@ -4,6 +4,7 @@
 	import ChartColumnBigIcon from '@lucide/svelte/icons/chart-column-big';
 	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -42,6 +43,12 @@
 	description="User management, question pool readiness, and generation visibility."
 >
 	<div class="space-y-6">
+		<div class="flex justify-end">
+			<Button href={resolve('/app/admin/super')} variant="outline">
+				<SparklesIcon />
+				Super admin
+			</Button>
+		</div>
 		<div class="flex flex-wrap gap-2 border-b border-border/70 pb-3">
 			{#each tabItems as item (item.value)}
 				<Button

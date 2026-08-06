@@ -14,17 +14,11 @@ export const GET: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		const summary = await runQuestionPoolRefillWorker(QUESTION_POOL_CONFIG);
-		logger.info('[cron/question-pool] refill run complete', summary);
-		return json(summary);
+		const pool = await runQuestionPoolRefillWorker(QUESTION_POOL_CONFIG);
+		logger.info('[cron/question-pool] refill run complete', pool);
+		return json({ questionPool: pool });
 	} catch (error) {
 		logger.error('[cron/question-pool] refill run failed', { error });
-		return json(
-			{
-				error: 'Question pool refill failed',
-				details: error instanceof Error ? error.message : String(error)
-			},
-			{ status: 500 }
-		);
+		return json({ error: 'Question-pool maintenance failed' }, { status: 500 });
 	}
 };

@@ -1,6 +1,7 @@
 import { zodSchema } from 'ai';
 import { z } from 'zod';
-import { GENERATION_MODEL, structuredObject } from '$lib/ai/service.server';
+import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
+import { structuredObject } from '$lib/ai/service.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { FrqQuestionModel, FrqRecentTopic, newFrqPoolRandomKey } from '$lib/frq/model.server';
 import { saveFrqToS3 } from '$lib/frq/storage.server';
@@ -135,7 +136,7 @@ async function generateFrq(
 
 	const { parsed } = await structuredObject({
 		callName: 'generateFrqQuestion',
-		model: GENERATION_MODEL,
+		model: FRQ_GENERATION_MODEL,
 		system: prompt.system,
 		user: prompt.user,
 		schema: GeneratedFrqSchema,
@@ -224,5 +225,5 @@ export async function generateAndPersistFrq(
 		recentTopics ?? (await getRecentFrqTopics(apClass, cacheUnit).catch(() => [] as string[]));
 	const question = await generateFrq(apClass, cacheUnit, topics);
 	const generationMs = Date.now() - generationStarted;
-	return persistFrqQuestion(question, generationMs, GENERATION_MODEL);
+	return persistFrqQuestion(question, generationMs, FRQ_GENERATION_MODEL);
 }

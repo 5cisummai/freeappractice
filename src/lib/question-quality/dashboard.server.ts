@@ -1,4 +1,8 @@
 import { env } from '$env/dynamic/private';
+import {
+	QUESTION_QUALITY_CALIBRATED_MODEL,
+	QUESTION_QUALITY_MODEL
+} from '$lib/ai/ai-models-config';
 import { connectDb } from '$lib/server/db';
 import { getQuestionFromS3 } from '$lib/questions/storage.server';
 import { QuestionId } from '$lib/questions/question-id-model.server';
@@ -18,13 +22,13 @@ import {
 } from './types.js';
 
 export function modelName(): string {
-	return env.QUESTION_QUALITY_MODEL?.trim() || 'gpt-5.6-luna';
+	return QUESTION_QUALITY_MODEL;
 }
 
 export function isAgentCalibrated(): boolean {
 	return (
 		env.QUESTION_QUALITY_AGENT_CALIBRATED === 'true' &&
-		env.QUESTION_QUALITY_CALIBRATED_MODEL === modelName() &&
+		QUESTION_QUALITY_CALIBRATED_MODEL === modelName() &&
 		env.QUESTION_QUALITY_CALIBRATED_RUBRIC === QUESTION_QUALITY_RUBRIC_VERSION &&
 		env.QUESTION_QUALITY_CALIBRATED_REASONING_EFFORT ===
 			(env.QUESTION_QUALITY_REASONING_EFFORT || 'medium')

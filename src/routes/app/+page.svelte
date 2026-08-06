@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { SvelteMap } from 'svelte/reactivity';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import FlameIcon from '@lucide/svelte/icons/flame';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
@@ -23,6 +25,7 @@
 
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
+	const superEntitlements = $derived(data.entitlements);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -33,7 +36,7 @@
 	);
 
 	const lastMcqAtBySubject = $derived.by(() => {
-		const map = new Map<string, string>();
+		const map = new SvelteMap<string, string>();
 		for (const entry of progressData) {
 			if (!entry.lastAttemptAt) continue;
 			const current = map.get(entry.apClass);
@@ -163,30 +166,38 @@
 						</p>
 					</div>
 
-					<div class="space-y-2">
-						<p class="text-sm text-muted-foreground">
-							{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
-							questions
-						</p>
-						<div
-							class="h-2 w-full max-w-md overflow-hidden rounded-full bg-muted"
-							role="progressbar"
-							aria-valuenow={recommendation.percent}
-							aria-valuemin={0}
-							aria-valuemax={100}
-							aria-label={`${recommendation.name} progress`}
-						>
+					<div class="flex items-end gap-4 max-sm:flex-col max-sm:items-stretch">
+						<div class="min-w-0 flex-1 space-y-2">
+							<p class="text-sm text-muted-foreground">
+								{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
+								questions
+							</p>
 							<div
-								class="h-full rounded-full bg-primary transition-all"
-								style:width="{recommendation.percent}%"
-							></div>
+								class="h-2 w-full overflow-hidden rounded-full bg-muted"
+								role="progressbar"
+								aria-valuenow={recommendation.percent}
+								aria-valuemin={0}
+								aria-valuemax={100}
+								aria-label={`${recommendation.name} progress`}
+							>
+								<div
+									class="h-full rounded-full bg-primary transition-all"
+									style:width="{recommendation.percent}%"
+								></div>
+							</div>
 						</div>
-					</div>
 
-					<Button href={recommendation.href}>
-						{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
-						<ArrowRightIcon class="size-4" aria-hidden="true" />
-					</Button>
+						<Button id="dashboard-practice-hint-target" href={recommendation.href} class="shrink-0">
+							{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
+							<ArrowRightIcon class="size-4" aria-hidden="true" />
+						</Button>
+					</div>
+					<FirstUseHint
+						id="dashboard-practice"
+						anchorId="dashboard-practice-hint-target"
+						text="Start here. Choose a subject and begin practicing."
+						align="start"
+					/>
 				</div>
 
 				<div
@@ -197,6 +208,18 @@
 				</div>
 			</div>
 		</section>
+
+		{#if superEntitlements?.plan !== 'super'}
+			<a
+				href={resolve('/pricing')}
+				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
+			>
+				<span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study plans.</span
+				>
+				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
+			</a>
+		{/if}
 
 		<section class="space-y-4" aria-labelledby="your-subjects">
 			<div class="flex flex-wrap items-end justify-between gap-3">
@@ -217,7 +240,7 @@
 						{@const SubjectIcon = subject.icon}
 						{@const hasPracticed = Boolean(subject.lastPracticedAt)}
 						<a
-							href={subject.href}
+							href={resolve(`/app/practice?apClass=${encodeURIComponent(subject.name)}`)}
 							class="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
 						>
 							<div
@@ -274,6 +297,17 @@
 			</Card.Root>
 		</section>
 	{:else}
+		{#if superEntitlements?.plan !== 'super'}
+			<a
+				href={resolve('/pricing')}
+				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
+			>
+				<span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study plans.</span
+				>
+				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
+			</a>
+		{/if}
 		<EmptyState
 			title="No subjects selected yet"
 			description="Choose the subjects you want to see on your dashboard."

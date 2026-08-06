@@ -10,8 +10,99 @@
 	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
 	import BottomCtaSection from '$lib/components/marketing/bottom-cta-section.svelte';
 	import FeaturesSection from '$lib/components/marketing/features-section.svelte';
+	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
 	import SiteFooter from '$lib/components/layout/site-footer.svelte';
 	import Topbar from '$lib/components/layout/topbar.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
+	import GiftIcon from '@lucide/svelte/icons/gift';
+	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+
+	let { data } = $props();
+
+	const homeFaqJsonLd = $derived.by(() =>
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'FAQPage',
+			mainEntity: [
+				{
+					'@type': 'Question',
+					name: 'What is this website?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'Free AP Practice is the fastest way to practice AP online: pick a subject, click generate, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects.'
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'How does it work?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: "Select an AP class from the dropdown menu and click Generate Question. The AI will create a multiple-choice question with four options (A-D). After selecting your answer, you'll receive immediate feedback and a detailed explanation."
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'What does Super include?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: data.superFreeBetaEnabled
+							? 'During the free beta, you can claim Super for personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 300 personalized messages per UTC calendar month.'
+							: 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'Which AP subjects are covered?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'We cover 20+ AP subjects including Sciences (Biology, Chemistry, Physics 1/2/C), Mathematics (Calculus AB/BC, Statistics, Precalculus), Computer Science (A and Principles), English (Language and Literature), History (US, World, European), Social Sciences (Psychology, Human Geography, Government), and Economics (Macro and Micro).'
+					}
+				},
+				...(data.superFreeBetaEnabled
+					? []
+					: [
+							{
+								'@type': 'Question',
+								name: 'How much does Super cost?',
+								acceptedAnswer: {
+									'@type': 'Answer',
+									text: 'Super costs $9 per month or $79 per year, plus applicable tax. It renews automatically until canceled, and free AP practice is still available without a subscription.'
+								}
+							}
+						]),
+				{
+					'@type': 'Question',
+					name: 'How accurate are the AI-generated questions?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: "Our questions are generated using OpenAI's advanced gpt-5-mini reasoning model, specifically designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
+					}
+				},
+				{
+					'@type': 'Question',
+					name: 'Can I use this over the summer before my AP class starts?',
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'Yes. Many students use summer to preview Unit 1, build a daily practice habit, and plan which AP classes to take. See our Summer AP Study Guide for a realistic 4-week outline.'
+					}
+				},
+				{
+					'@type': 'Question',
+					name: "I'm not in an AP class yet—can I still practice here?",
+					acceptedAnswer: {
+						'@type': 'Answer',
+						text: 'If you know which AP you might take next year, you can preview Unit 1 now. If you are still deciding, start with our guide on which APs to take before heavy practice.'
+					}
+				}
+			]
+		})
+	);
+	const homeFaqJsonLdMarkup = $derived(
+		'<script type="application/ld+json">' + homeFaqJsonLd + '</' + 'script>'
+	);
 
 	onMount(() => {
 		captureLandingPageViewed();
@@ -158,78 +249,8 @@
 		}
 	</script>
 
-	<script type="application/ld+json">
-		{
-			"@context": "https://schema.org",
-			"@type": "FAQPage",
-			"mainEntity": [
-				{
-					"@type": "Question",
-					"name": "What is this website?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Free AP Practice is the fastest way to practice AP online: pick a subject, click generate, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "How does it work?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Select an AP class from the dropdown menu and click Generate Question. The AI will create a multiple-choice question with four options (A-D). After selecting your answer, you'll receive immediate feedback and a detailed explanation."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "Is this free to use?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Yes! This website is completely free to use. There are no subscriptions, no hidden fees, and no limits on how many questions you can generate."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "Which AP subjects are covered?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "We cover 20+ AP subjects including Sciences (Biology, Chemistry, Physics 1/2/C), Mathematics (Calculus AB/BC, Statistics, Precalculus), Computer Science (A and Principles), English (Language and Literature), History (US, World, European), Social Sciences (Psychology, Human Geography, Government), and Economics (Macro and Micro)."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "Do I need to create an account?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "No account creation required! You can start practicing AP questions immediately without any sign-up or registration process."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "How accurate are the AI-generated questions?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Our questions are generated using OpenAI's advanced gpt-5-mini reasoning model, specifically designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "Can I use this over the summer before my AP class starts?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "Yes. Many students use summer to preview Unit 1, build a daily practice habit, and plan which AP classes to take. See our Summer AP Study Guide for a realistic 4-week outline."
-					}
-				},
-				{
-					"@type": "Question",
-					"name": "I'm not in an AP class yet—can I still practice here?",
-					"acceptedAnswer": {
-						"@type": "Answer",
-						"text": "If you know which AP you might take next year, you can preview Unit 1 now. If you are still deciding, start with our guide on which APs to take before heavy practice."
-					}
-				}
-			]
-		}
-	</script>
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html homeFaqJsonLdMarkup}
 
 	<script type="application/ld+json">
 		{
@@ -281,7 +302,7 @@
 </svelte:head>
 
 <div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-	<Topbar />
+	<Topbar showPricing={!data.superFreeBetaEnabled} />
 
 	<main id="main-content" class="flex-1">
 		<div
@@ -289,6 +310,16 @@
 		>
 			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
 				<div class="mx-auto max-w-3xl space-y-6">
+					<Badge
+						variant="outline"
+						class="super-tier-gradient super-tier-gradient-hover gap-2 border-violet-300/50 p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70"
+					>
+						<SparklesIcon class="size-4 text-violet-500" aria-hidden="true" />
+						<span class="font-semibold text-violet-700 dark:text-violet-300">Start here</span>
+						<span class="text-muted-foreground/60" aria-hidden="true">•</span>
+						<span>Your Personalized Learning</span>
+						<ArrowRightIcon class="size-4" aria-hidden="true" />
+					</Badge>
 					<h1
 						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
@@ -297,16 +328,16 @@
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><span aria-hidden="true">📚</span> 20+ AP Subjects</span
+							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							><BookOpenIcon class="size-4 text-primary" aria-hidden="true" /> 20+ AP Subjects</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><span aria-hidden="true">🎓</span> Student Developed</span
+							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							><GraduationCapIcon class="size-4 text-primary" aria-hidden="true" /> Student Developed</span
 						>
 						<span
-							class="animate-in rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><span aria-hidden="true">🎁</span> 100% Free</span
+							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
+							><GiftIcon class="size-4 text-primary" aria-hidden="true" /> 100% Free</span
 						>
 					</div>
 				</div>
@@ -319,6 +350,8 @@
 			<FeaturesSection />
 
 			<AspiringStudentsSection />
+
+			<PricingSection freeBeta={data.superFreeBetaEnabled} />
 
 			<section class="mx-auto w-full max-w-3xl space-y-4 {twAnimateInView}">
 				<div class="space-y-1">
@@ -396,28 +429,31 @@
 						</Accordion.Content>
 					</Accordion.Item>
 
-					<Accordion.Item value="is-this-free-to-use">
-						<Accordion.Trigger level={3}>Is this free to use?</Accordion.Trigger>
+					<Accordion.Item value="what-does-super-include">
+						<Accordion.Trigger level={3}>What does Super include?</Accordion.Trigger>
 						<Accordion.Content>
 							<p>
-								Yes! This website is completely free to use. There are no subscriptions, no hidden
-								fees, and no limits on how many questions you can generate.
+								Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights,
+								weekly study plans, and
+								{data.superFreeBetaEnabled
+									? ' 300 personalized messages per UTC calendar month during the free beta.'
+									: ' 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'}
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>
 
-					<Accordion.Item value="why-do-questions-take-long">
-						<Accordion.Trigger level={3}
-							>Why do the questions take a long time to load?</Accordion.Trigger
-						>
-						<Accordion.Content>
-							<p>
-								Questions normally load directly from our prepared question pool. A unit can take
-								longer when its pool is still being filled; in that case, wait a moment and try
-								again while the background worker prepares more questions.
-							</p>
-						</Accordion.Content>
-					</Accordion.Item>
+					{#if !data.superFreeBetaEnabled}
+						<Accordion.Item value="how-much-does-super-cost">
+							<Accordion.Trigger level={3}>How much does Super cost?</Accordion.Trigger>
+							<Accordion.Content>
+								<p>
+									Super costs $9 per month or $79 per year, plus applicable tax. It renews
+									automatically until canceled, and free AP practice is still available without a
+									subscription.
+								</p>
+							</Accordion.Content>
+						</Accordion.Item>
+					{/if}
 				</Accordion.Root>
 			</section>
 
