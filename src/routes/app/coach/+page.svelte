@@ -114,7 +114,9 @@
 		if (!last || last.role !== 'assistant') return 'Thinking…';
 		if (messageText(last).trim()) return null;
 
-		const tools = last.parts.map(getToolPart).filter((part): part is CoachToolPart => part !== null);
+		const tools = last.parts
+			.map(getToolPart)
+			.filter((part): part is CoachToolPart => part !== null);
 		for (let index = tools.length - 1; index >= 0; index -= 1) {
 			const tool = tools[index];
 			if (isToolInProgress(tool.state)) return toolActionLabel(tool.type);
@@ -268,7 +270,7 @@
 									<Message.Root from={message.role} class="max-w-3xl gap-1">
 										{#if message.role === 'user'}
 											<Message.Content
-												class="max-w-[min(42rem,88%)] text-md leading-6 whitespace-pre-wrap"
+												class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap"
 											>
 												{messageText(message)}
 											</Message.Content>
@@ -277,7 +279,7 @@
 												{@const toolPart = getToolPart(part)}
 												{#if part.type === 'text'}
 													{#if part.text.trim()}
-														<Message.Content class="max-w-3xl text-md leading-7">
+														<Message.Content class="text-md max-w-3xl leading-7">
 															<Message.Response content={part.text} />
 														</Message.Content>
 													{/if}

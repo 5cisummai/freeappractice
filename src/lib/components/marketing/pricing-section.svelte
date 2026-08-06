@@ -28,7 +28,7 @@
 
 	{#if freeBeta}
 		<div
-			class="super-tier-gradient mx-auto max-w-2xl rounded-3xl border-2 border-violet-300/50 p-8 text-center shadow-sm shadow-violet-500/10"
+			class="mx-auto max-w-2xl rounded-3xl border-2 border-violet-300/50 super-tier-gradient p-8 text-center shadow-sm shadow-violet-500/10"
 		>
 			<span
 				class="inline-flex rounded-full border border-violet-300/50 bg-background/70 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm dark:text-violet-300"

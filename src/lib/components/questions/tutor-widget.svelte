@@ -462,7 +462,7 @@
 					{#if isPersonalizedTutor}
 						<Badge
 							variant="outline"
-							class="super-tier-gradient gap-1 border-violet-300/50 px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
+							class="gap-1 border-violet-300/50 super-tier-gradient px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
 						>
 							Personalized
 						</Badge>

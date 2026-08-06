@@ -312,7 +312,8 @@
 				<div class="mx-auto max-w-3xl space-y-6">
 					<Badge
 						variant="outline"
-						class="super-tier-gradient super-tier-gradient-hover gap-2 border-violet-300/50 p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70"
+						class="gap-2 border-violet-300/50 super-tier-gradient super-tier-gradient-hover p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70"
+						href={resolve('/app')}
 					>
 						<SparklesIcon class="size-4 text-violet-500" aria-hidden="true" />
 						<span class="font-semibold text-violet-700 dark:text-violet-300">Start here</span>

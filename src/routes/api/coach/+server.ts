@@ -108,9 +108,7 @@ function toCoachModelMessages(messages: z.infer<typeof coachRequestSchema>['mess
 	});
 }
 
-function textFromCoachParts(
-	parts: Array<{ type?: string; text?: string }> | undefined
-): string {
+function textFromCoachParts(parts: Array<{ type?: string; text?: string }> | undefined): string {
 	return (parts ?? [])
 		.filter((part) => part.type === 'text' && typeof part.text === 'string')
 		.map((part) => part.text!.trim())

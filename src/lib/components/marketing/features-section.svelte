@@ -284,7 +284,7 @@
 				<div class="flex items-center gap-2">
 					<h3 class="text-base font-semibold tracking-tight">AI Coach</h3>
 					<span
-						class="super-tier-gradient inline-flex items-center rounded-full border border-violet-300/50 px-2 py-0.5 text-[0.65rem] font-semibold text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
+						class="inline-flex items-center rounded-full border border-violet-300/50 super-tier-gradient px-2 py-0.5 text-[0.65rem] font-semibold text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
 					>
 						Super
 					</span>
@@ -356,7 +356,7 @@
 					<div class="flex items-center justify-between px-3 py-2.5">
 						<div class="flex min-w-0 items-center gap-1.5">
 							<span
-								class="super-tier-gradient shrink-0 rounded-full border border-violet-300/50 px-1.5 py-0.5 text-[0.55rem] font-medium shadow-sm shadow-violet-500/10"
+								class="shrink-0 rounded-full border border-violet-300/50 super-tier-gradient px-1.5 py-0.5 text-[0.55rem] font-medium shadow-sm shadow-violet-500/10"
 							>
 								Personalized
 							</span>
@@ -400,7 +400,7 @@
 				<div class="flex items-center gap-2">
 					<h3 class="text-base font-semibold tracking-tight">Personalized Tutor</h3>
 					<span
-						class="super-tier-gradient inline-flex items-center rounded-full border border-violet-300/50 px-2 py-0.5 text-[0.65rem] font-semibold text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
+						class="inline-flex items-center rounded-full border border-violet-300/50 super-tier-gradient px-2 py-0.5 text-[0.65rem] font-semibold text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
 					>
 						Super
 					</span>
