@@ -121,12 +121,6 @@ Super is disabled until Stripe credentials and both price IDs are present. Confi
 `UPSTASH_VECTOR_REST_URL`, `UPSTASH_VECTOR_REST_TOKEN`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
 `REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags.
 
-Create the Better Auth indexes before first production use:
-
-```sh
-bun scripts/create-better-auth-indexes.ts
-```
-
 In Stripe, configure the Customer Portal to allow cancellation at period end, restoration before the end of
 the current period, and switching between the two Super prices at the next renewal. Point the Stripe webhook
 to Better Auth's `/api/auth/stripe/webhook` route and enable at least `checkout.session.completed`,

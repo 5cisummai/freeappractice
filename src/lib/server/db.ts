@@ -1,3 +1,10 @@
+/**
+ * Legacy Mongo connection seam.
+ *
+ * New application code must use `$lib/server/neon/db` and Drizzle. This
+ * adapter remains only while the existing domain modules are moved and while
+ * Mongo is retained as the read-only migration source.
+ */
 import mongoose from 'mongoose';
 import { DATABASE_URI } from '$env/static/private';
 import { logger } from '$lib/server/logger';

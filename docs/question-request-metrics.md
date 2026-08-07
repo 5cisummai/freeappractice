@@ -83,9 +83,7 @@ Vercel serverless functions and MongoDB Atlas **must** run in the same cloud reg
 1. Confirm the Vercel project region (Project → Settings → Functions / Deployment region).
 2. Confirm the Atlas cluster region matches.
 3. After deploy, inspect p95 `db_connect_ms` and `pool_query_ms` on `pool_hit` — a healthy same-region setup should keep warm-isolate `db_connect_ms` near 0 and `pool_query_ms` well under the hit-latency alert below.
-4. Run `bun run pool:verify-indexes` against production URI so selection uses IXSCAN, not COLLSCAN.
-
-Index verification script: `scripts/verify-question-pool-indexes.ts` (`bun run pool:verify-indexes`). Fails if the compound `{ apClass, unit, active, randomKey }` index is missing or explain shows a collection scan.
+4. Validate the equivalent Neon query plans after the relational pool adapter is cut over.
 
 ## PostHog: p50 / p95 total time by AP class and unit
 

@@ -220,7 +220,7 @@ flowchart TD
 - Empty buckets return typed `POOL_WARMING` immediately and request asynchronous population — there is no synchronous generation fallback.
 - The final count-and-write is serialized per bucket. Workers stop writing once the configured target is reached, while any older surplus rows remain active until an explicit retirement operation.
 - **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`bun run pool:reconcile` → `reconcilePoolRefillJobs`) is an ops tool — it is **not** run on every cron tick (that N+1 would starve generation inside the serverless time budget).
-- Ops: `bun run pool:backfill-s3`, `bun run pool:retire` (replaces the old clear-cache script), `bun run pool:verify-indexes`. See [question-pool-runbook.md](./question-pool-runbook.md).
+- Ops: `bun run pool:backfill-s3`, `bun run pool:retire` (replaces the old clear-cache script). See [question-pool-runbook.md](./question-pool-runbook.md).
 
 User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.
 
@@ -431,4 +431,7 @@ erDiagram
 
 Question pool hits are Mongo-bound. **Vercel serverless functions and MongoDB Atlas must share the same region** (verify in Vercel project settings and the Atlas cluster region). Cross-region RTT shows up as elevated `db_connect_ms` / `pool_query_ms` on `question_request` metrics and cannot be papered over in code.
 
-Operational checks and alert thresholds live in [`docs/question-request-metrics.md`](question-request-metrics.md). Index health: `bun run pool:verify-indexes`. Public MCQ `POST /api/question` skips Better Auth session lookup in `hooks.server.ts` to avoid auth round-trips on the hot path; FRQ and `/api/me/*` retain full session resolution.
+Operational checks and alert thresholds live in [`docs/question-request-metrics.md`](question-request-metrics.md). Public MCQ `POST /api/question` skips Better Auth session lookup in `hooks.server.ts` to avoid auth round-trips on the hot path; FRQ and `/api/me/*` retain full session resolution.
+# Database migration status
+
+The relational target is defined in `src/lib/server/neon/schema.ts` and is accessed through `src/lib/server/neon/db.ts` using Drizzle's Neon HTTP adapter. `scripts/migrate-mongo-to-neon.ts` is the controlled, resumable data loader. Existing Mongo domain modules remain a legacy implementation until their callers are moved and the cutover verification is complete; do not remove Mongo credentials or packages during this staging step.
