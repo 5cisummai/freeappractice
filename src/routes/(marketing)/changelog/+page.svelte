@@ -5,6 +5,20 @@
 
 	const changelog = [
 		{
+			version: '1.6.1',
+			date: 'August 7, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Improved Coach chat with clearer message layout, loading states, and follow-up prompts',
+						'Streamlined Super setup steps and hid beta pricing for free users',
+						'Normalized marketing page class ordering for consistency across pricing and features'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.0 - Super Beta',
 			date: 'August 6, 2026',
 			sections: [
