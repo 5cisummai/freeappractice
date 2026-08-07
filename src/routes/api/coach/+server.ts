@@ -25,7 +25,7 @@ import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
 import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
 
 const MAX_COACH_MESSAGES = 12;
-const MAX_COACH_REQUEST_BYTES = 32 * 1024;
+const MAX_COACH_REQUEST_BYTES = 2048 * 1024;
 const COACH_STREAM_TIMEOUT_MS = 55_000;
 const coachMessagePartSchema = z
 	.object({ type: z.string().min(1).max(100), text: z.string().max(2_000).optional() })

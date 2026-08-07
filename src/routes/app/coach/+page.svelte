@@ -1,14 +1,18 @@
 <script lang="ts">
 	import { onMount, type Component } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
 	import { DefaultChatTransport } from 'ai';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import PencilIcon from '@lucide/svelte/icons/pencil';
+	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import TargetIcon from '@lucide/svelte/icons/target';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -19,6 +23,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
 
@@ -36,14 +41,35 @@
 		{ text: 'Help me focus on my weakest unit', icon: TargetIcon }
 	];
 
-	const toolActionLabels: Record<string, string> = {
-		'tool-read_course_catalog': 'Reading course catalog…',
-		'tool-read_profile': 'Reading profile…',
-		'tool-read_progress': 'Reading progress…',
-		'tool-read_insights': 'Reading insights…',
-		'tool-read_study_plan': 'Reading study plan…',
-		'tool-update_goals': 'Updating goals…',
-		'tool-update_study_plan': 'Updating study plan…'
+	const toolActivityLabels: Record<string, { running: string; complete: string }> = {
+		'tool-read_course_catalog': {
+			running: 'Checking the course catalog…',
+			complete: 'Checked the course catalog'
+		},
+		'tool-read_profile': {
+			running: 'Reviewing your goals…',
+			complete: 'Reviewed your goals'
+		},
+		'tool-read_progress': {
+			running: 'Checking your recent practice…',
+			complete: 'Checked your recent practice'
+		},
+		'tool-read_insights': {
+			running: 'Reviewing your insights…',
+			complete: 'Reviewed your insights'
+		},
+		'tool-read_study_plan': {
+			running: 'Checking your study plan…',
+			complete: 'Checked your study plan'
+		},
+		'tool-update_goals': {
+			running: 'Preparing a goals update…',
+			complete: 'Prepared a goals update'
+		},
+		'tool-update_study_plan': {
+			running: 'Preparing a study plan…',
+			complete: 'Prepared a study plan'
+		}
 	};
 
 	const coach = new Chat<CoachUIMessage>({
@@ -78,6 +104,20 @@
 		proposed: unknown;
 	};
 
+	type ToolActivity = {
+		key: string;
+		type: string;
+		label: string;
+		state: 'running' | 'complete' | 'error';
+	};
+
+	type ApprovalSummary = {
+		title: string;
+		lines: string[];
+	};
+
+	let activityOpen = $state<Record<string, boolean>>({});
+
 	function getToolPart(part: unknown): CoachToolPart | null {
 		if (!part || typeof part !== 'object') return null;
 		const candidate = part as { type?: unknown };
@@ -86,14 +126,16 @@
 			: null;
 	}
 
-	function toolActionLabel(type: string): string {
-		return (
-			toolActionLabels[type] ??
-			`${type
-				.replace(/^tool-/, '')
-				.replaceAll('_', ' ')
-				.replace(/^./, (letter) => letter.toUpperCase())}…`
-		);
+	function toolActivityLabel(type: string, state: ToolActivity['state']): string {
+		const labels = toolActivityLabels[type];
+		if (labels) return state === 'running' ? labels.running : labels.complete;
+		const name = type
+			.replace(/^tool-/, '')
+			.replaceAll('_', ' ')
+			.replace(/^./, (letter) => letter.toUpperCase());
+		return state === 'running'
+			? `Working on ${name.toLowerCase()}…`
+			: `Finished ${name.toLowerCase()}`;
 	}
 
 	function isToolInProgress(state: string | undefined): boolean {
@@ -107,21 +149,128 @@
 			.join('\n');
 	}
 
+	function getToolActivity(part: CoachToolPart, index: number): ToolActivity {
+		const state =
+			part.errorText || part.state === 'output-error'
+				? 'error'
+				: isToolInProgress(part.state)
+					? 'running'
+					: 'complete';
+		return {
+			key: `${part.type}-${index}`,
+			type: part.type,
+			label: state === 'error' ? 'Could not finish this step' : toolActivityLabel(part.type, state),
+			state
+		};
+	}
+
+	function getToolActivityIcon(type: string): Component {
+		return type.startsWith('tool-update_') ? PencilIcon : SearchIcon;
+	}
+
+	function getToolActivities(message: CoachUIMessage): ToolActivity[] {
+		return message.parts.flatMap((part, index) => {
+			const toolPart = getToolPart(part);
+			return toolPart ? [getToolActivity(toolPart, index)] : [];
+		});
+	}
+
+	function activitySummary(activities: ToolActivity[]): string {
+		const active = activities.find((activity) => activity.state === 'running');
+		if (active) return active.label;
+		if (activities.some((activity) => activity.state === 'error'))
+			return 'Some activity could not finish';
+		return `Activity · ${activities.length} step${activities.length === 1 ? '' : 's'} completed`;
+	}
+
+	function isActivityOpen(messageId: string): boolean {
+		return activityOpen[messageId] ?? streaming;
+	}
+
+	function toggleActivity(messageId: string): void {
+		activityOpen[messageId] = !isActivityOpen(messageId);
+	}
+
+	function asRecord(value: unknown): Record<string, unknown> {
+		return value && typeof value === 'object' && !Array.isArray(value)
+			? (value as Record<string, unknown>)
+			: {};
+	}
+
+	function formatDate(value: unknown): string | null {
+		if (typeof value !== 'string') return null;
+		const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+			? new Date(`${value}T12:00:00`)
+			: new Date(value);
+		if (Number.isNaN(date.getTime())) return null;
+		return date.toLocaleDateString(undefined, {
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric'
+		});
+	}
+
+	function formatStudyTask(value: unknown): string | null {
+		const task = asRecord(value);
+		const pieces = [
+			formatDate(task.date),
+			typeof task.apClass === 'string' ? task.apClass : null,
+			typeof task.unit === 'string' ? task.unit : null,
+			typeof task.durationMinutes === 'number' ? `${task.durationMinutes} min` : null
+		].filter((piece): piece is string => Boolean(piece));
+		return pieces.length ? pieces.join(' · ') : null;
+	}
+
+	function getApprovalSummary(approval: ApprovalProposal): ApprovalSummary {
+		const proposed = asRecord(approval.proposed);
+		if (approval.category === 'goals') {
+			const lines: string[] = [];
+			if (Array.isArray(proposed.selectedApClasses)) {
+				const classes = proposed.selectedApClasses.filter(
+					(value): value is string => typeof value === 'string'
+				);
+				if (classes.length) lines.push(`Courses: ${classes.join(', ')}`);
+			}
+			if (Array.isArray(proposed.targetDates)) {
+				for (const target of proposed.targetDates.slice(0, 3)) {
+					const item = asRecord(target);
+					const apClass = typeof item.apClass === 'string' ? item.apClass : 'AP course';
+					const date = formatDate(item.targetDate);
+					lines.push(date ? `${apClass} target: ${date}` : `${apClass} target date`);
+				}
+			}
+			if (typeof proposed.studyAvailability === 'string' && proposed.studyAvailability.trim()) {
+				lines.push(`Availability: ${proposed.studyAvailability.trim()}`);
+			}
+			return {
+				title: 'Update your goals',
+				lines: lines.length ? lines : ['Review the proposed changes to your goals.']
+			};
+		}
+
+		const tasks = Array.isArray(proposed.tasks)
+			? proposed.tasks.map(formatStudyTask).filter((task): task is string => Boolean(task))
+			: [];
+		const lines = tasks.slice(0, 4);
+		if (tasks.length > 4) lines.push(`Plus ${tasks.length - 4} more study sessions`);
+		return {
+			title: 'Update your study plan',
+			lines: lines.length ? lines : ['Review the proposed changes to your study plan.']
+		};
+	}
+
 	let statusLabel = $derived.by(() => {
 		if (!streaming) return null;
 
 		const last = coach.messages.at(-1);
-		if (!last || last.role !== 'assistant') return 'Thinking…';
-		if (messageText(last).trim()) return null;
+		if (!last || last.role !== 'assistant') return 'Working on it…';
 
 		const tools = last.parts
 			.map(getToolPart)
 			.filter((part): part is CoachToolPart => part !== null);
-		for (let index = tools.length - 1; index >= 0; index -= 1) {
-			const tool = tools[index];
-			if (isToolInProgress(tool.state)) return toolActionLabel(tool.type);
-		}
-		return 'Thinking…';
+		if (tools.some((tool) => isToolInProgress(tool.state))) return null;
+		if (messageText(last).trim()) return null;
+		return tools.length ? null : 'Working on it…';
 	});
 
 	onMount(() => {
@@ -166,6 +315,15 @@
 		if (!text) return;
 		await navigator.clipboard.writeText(text);
 		toast.success('Response copied.');
+	}
+
+	async function regenerateMessage(messageId: string) {
+		if (streaming) return;
+		try {
+			await coach.regenerate({ messageId });
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not regenerate the response.');
+		}
 	}
 
 	async function approve(categories: Array<'goals' | 'study_plans'>) {
@@ -247,7 +405,7 @@
 	</div>
 {:else}
 	<div
-		class="flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden bg-background md:min-h-[calc(100svh-5rem)]"
+		class="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background md:h-[calc(100svh-5rem)]"
 	>
 		<main class="flex min-h-0 min-w-0 flex-1 flex-col">
 			<div
@@ -261,12 +419,12 @@
 						class="flex h-full min-h-0 flex-col"
 						in:fade={{ duration: motionMs, easing: cubicOut }}
 					>
-						<Conversation.Root class="min-h-0 flex-1">
+						<Conversation.Root class="min-h-0 min-w-0 flex-1">
 							<Conversation.Content
-								class="mx-auto w-full max-w-3xl gap-7 px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
+								class="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
 								aria-live="polite"
 							>
-								{#each coach.messages as message (message.id)}
+								{#each coach.messages as message, messageIndex (message.id)}
 									<Message.Root from={message.role} class="max-w-3xl gap-1">
 										{#if message.role === 'user'}
 											<Message.Content
@@ -275,32 +433,34 @@
 												{messageText(message)}
 											</Message.Content>
 										{:else}
-											{#each message.parts as part, index (`${message.id}-${index}`)}
+											{@const activities = getToolActivities(message)}
+											{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 												{@const toolPart = getToolPart(part)}
-												{#if part.type === 'text'}
-													{#if part.text.trim()}
-														<Message.Content class="text-md max-w-3xl leading-7">
-															<Message.Response content={part.text} />
-														</Message.Content>
-													{/if}
-												{:else if toolPart}
+												{#if toolPart}
 													{@const approval = getApprovalProposal(toolPart)}
 													{#if approval}
+														{@const summary = getApprovalSummary(approval)}
 														<div
 															class="mt-2 max-w-3xl rounded-2xl border border-border/70 bg-muted/30 p-4"
+															in:fly={{ y: 6, duration: motionMs * 0.55, easing: cubicOut }}
 														>
 															<p class="text-sm font-medium">Approval needed</p>
 															<p class="mt-1 text-sm leading-6 text-muted-foreground">
-																Coach is ready to update your {approval.category === 'goals'
-																	? 'goals and availability'
-																	: 'study plan'}.
+																Coach is ready to make this change.
 															</p>
-															<pre
-																class="mt-3 max-h-36 overflow-auto rounded-lg bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">{JSON.stringify(
-																	approval.proposed,
-																	null,
-																	2
-																)}</pre>
+															<div class="mt-3 rounded-xl bg-muted/60 p-3">
+																<p class="text-sm font-medium">{summary.title}</p>
+																<ul class="mt-2 space-y-1 text-sm leading-5 text-muted-foreground">
+																	{#each summary.lines as line, index (`${line}-${index}`)}
+																		<li class="flex gap-2">
+																			<span
+																				class="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60"
+																			></span>
+																			<span>{line}</span>
+																		</li>
+																	{/each}
+																</ul>
+															</div>
 															<Button
 																size="sm"
 																class="mt-3"
@@ -313,10 +473,89 @@
 													{/if}
 												{/if}
 											{/each}
+											{#if activities.length}
+												{@const SummaryIcon = getToolActivityIcon(activities[0].type)}
+												<div
+													class="mt-2 max-w-3xl"
+													in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}
+												>
+													<button
+														type="button"
+														class="group text-md flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-muted-foreground transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+														aria-expanded={isActivityOpen(message.id)}
+														aria-controls={`activity-${message.id}`}
+														onclick={() => toggleActivity(message.id)}
+													>
+														<SummaryIcon
+															class={cn(
+																'size-4 shrink-0',
+																activities.some((activity) => activity.state === 'running') &&
+																	'animate-pulse motion-reduce:animate-none',
+																activities.some((activity) => activity.state === 'error') &&
+																	'text-destructive'
+															)}
+															aria-hidden="true"
+														/>
+														<span>{activitySummary(activities)}</span>
+														<ChevronDownIcon
+															class={cn(
+																'size-3.5 opacity-60 transition-transform group-hover:opacity-100',
+																isActivityOpen(message.id) && 'rotate-180'
+															)}
+															aria-hidden="true"
+														/>
+													</button>
+													{#if isActivityOpen(message.id)}
+														<ul
+															id={`activity-${message.id}`}
+															class="text-md ml-3 space-y-1.5 border-l border-border/70 py-1.5 pl-3 leading-6 text-muted-foreground"
+														>
+															{#each activities as activity (activity.key)}
+																{@const ActivityIcon = getToolActivityIcon(activity.type)}
+																<li
+																	class="flex items-center gap-2"
+																	in:fly={{ y: 4, duration: motionMs * 0.4, easing: cubicOut }}
+																>
+																	<ActivityIcon
+																		class={cn(
+																			'size-4 shrink-0',
+																			activity.state === 'running' &&
+																				'animate-pulse motion-reduce:animate-none',
+																			activity.state === 'error' && 'text-destructive'
+																		)}
+																		aria-hidden="true"
+																	/>
+																	<span>{activity.label}</span>
+																</li>
+															{/each}
+														</ul>
+													{/if}
+												</div>
+											{/if}
+											{#each message.parts as part, index (`text-${message.id}-${index}`)}
+												{#if part.type === 'text' && part.text.trim()}
+													<Message.Content class="text-md max-w-3xl leading-7">
+														<Message.Response content={part.text} />
+													</Message.Content>
+												{/if}
+											{/each}
 											{#if messageText(message)}
 												<Message.Actions
-													class="mt-0 opacity-0 transition-opacity group-hover:opacity-100"
+													class={cn(
+														'mt-0 transition-opacity',
+														messageIndex === coach.messages.length - 1
+															? 'opacity-100'
+															: 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'
+													)}
 												>
+													<Message.Action
+														tooltip="Regenerate response"
+														label="Regenerate response"
+														disabled={streaming}
+														onclick={() => void regenerateMessage(message.id)}
+													>
+														<RefreshCwIcon />
+													</Message.Action>
 													<Message.Action
 														tooltip="Copy response"
 														label="Copy response"
@@ -385,7 +624,7 @@
 							status={coach.status as ChatStatus}
 							disabled={!sessionId || (!streaming && !input.trim())}
 							onStop={() => coach.stop()}
-							class="size-9 shrink-0 self-end rounded-full"
+							class="size-9 shrink-0 self-end rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
 						>
 							{#if streaming}
 								<SquareIcon class="size-4" />
