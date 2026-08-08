@@ -1,26 +1,27 @@
-# Local MongoDB for development.
+# Local PostgreSQL for schema/migration development.
 #
 # Start:  docker compose up -d
 # Stop:   docker compose down
-# Logs:   docker compose logs -f mongodb
+# Logs:   docker compose logs -f postgres
 #
-# Set in .env:
-#   DATABASE_URI=mongodb://root:password@localhost:27017/freeappractice?authSource=admin
+# The deployed application uses DATABASE_URL from Neon through the HTTPS
+# serverless driver. This local container is for SQL inspection and Drizzle
+# migrations; the app itself should use a Neon branch URL.
 
 services:
-  mongodb:
-    # Keep this pinned: the persistent development volume currently uses FCV 7.0.
-    image: mongo:7
+  postgres:
+    image: postgres:17
     restart: unless-stopped
     ports:
-      - '27017:27017'
+      - '5432:5432'
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: freeappractice
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d freeappractice']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,5 +54,5 @@ services:
       SRH_CONNECTION_STRING: redis://redis:6379
 
 volumes:
-  mongodb_data:
+  postgres_data:
   redis_data:

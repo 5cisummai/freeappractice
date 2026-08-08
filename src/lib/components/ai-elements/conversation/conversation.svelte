@@ -8,7 +8,6 @@
 		initial?: ScrollBehavior;
 		resize?: ScrollBehavior;
 	}
-	// indexing
 </script>
 
 <script lang="ts">

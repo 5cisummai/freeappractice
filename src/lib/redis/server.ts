@@ -12,10 +12,6 @@ export function getRedisClient(): Redis | null {
 	return redisClient;
 }
 
-export function resetRedisClientForTests(): void {
-	redisClient = undefined;
-}
-
 export function redisNamespace(): string {
 	const vercelEnvironment = env.VERCEL_ENV;
 	const environment =

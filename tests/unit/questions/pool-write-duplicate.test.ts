@@ -50,7 +50,7 @@ describe('generateQuestionForPool duplicate insertion', () => {
 		getRecentTopics.mockClear();
 	});
 
-	it('marks skippedDuplicate when Mongo reports a duplicate key', async () => {
+	it('marks skippedDuplicate when Postgres reports a unique violation', async () => {
 		generateAPQuestion.mockResolvedValueOnce({
 			answer: sampleAnswer,
 			questionId: 'q-dup-1',
@@ -58,7 +58,7 @@ describe('generateQuestionForPool duplicate insertion', () => {
 			model: 'test',
 			timing: { generationMs: 10, persistenceMs: 5 }
 		});
-		QuestionCreate.mockRejectedValueOnce({ code: 11000 });
+		QuestionCreate.mockRejectedValueOnce({ code: '23505' });
 
 		const result = await generateQuestionForPool('AP Biology', 'Unit 1');
 
@@ -75,10 +75,10 @@ describe('generateQuestionForPool duplicate insertion', () => {
 			model: 'test',
 			timing: { generationMs: 10, persistenceMs: 5 }
 		});
-		QuestionCreate.mockRejectedValueOnce(new Error('mongo write failed'));
+		QuestionCreate.mockRejectedValueOnce(new Error('pool write failed'));
 
 		await expect(generateQuestionForPool('AP Biology', 'Unit 1')).rejects.toThrow(
-			'mongo write failed'
+			'pool write failed'
 		);
 	});
 });

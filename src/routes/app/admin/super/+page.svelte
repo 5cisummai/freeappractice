@@ -180,7 +180,7 @@
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Mongo usage rollups</Card.Title>
+				<Card.Title>Neon usage rollups</Card.Title>
 				<Card.Description>
 					Personalized turns recorded for {data.month}. Redis remains the hot-path allowance
 					control.

@@ -25,19 +25,19 @@ Server-side timing and reliability metrics for selection-only question serves (`
 | `ap_class`      | string  | AP course name (catalog value)                            |
 | `unit`          | string  | Normalized unit label                                     |
 | `validation_ms` | number  | Request JSON + validation                                 |
-| `db_connect_ms` | number  | Mongoose `connectDb()` (≈0 on a warm serverless instance) |
-| `pool_query_ms` | number  | Indexed random Mongo selection only                       |
+| `db_connect_ms` | number  | Neon database seam setup (usually near-zero after module reuse) |
+| `pool_query_ms` | number  | Indexed random Neon selection only                       |
 | `total_ms`      | number  | End-to-end handler latency                                |
 | `http_status`   | number  | Response status                                           |
 | `ok`            | boolean | `true` when `http_status < 400`                           |
-| `cached`        | boolean | Whether the served question came from the Mongo pool      |
+| `cached`        | boolean | Whether the served question came from the Neon pool       |
 | `error_type`    | string? | `validation` \| `busy` \| `unknown`                       |
 
 **Segments**
 
 | Segment        | Meaning                                         |
 | -------------- | ----------------------------------------------- |
-| `pool_hit`     | Active row found; body returned from Mongo      |
+| `pool_hit`     | Active row found; body returned from Neon       |
 | `pool_warming` | Empty / unavailable bucket → `503 POOL_WARMING` |
 | `pool_error`   | DB connect or selection failure → `503`         |
 | `error`        | Validation or unexpected handler failure        |
@@ -74,18 +74,16 @@ Full-catalog reconcile (`bun run pool:reconcile`) is a separate ops command and 
 
 Capture helpers: `capturePathQuestionRequestMetric` / `captureQuestionPoolHealthMetric` in `src/lib/server/question-request-metrics.ts` (wraps `captureAnonymousServerMetric` in `src/lib/server/posthog.ts`).
 
-## Region requirement (Vercel + MongoDB)
+## Region requirement (Vercel + Neon)
 
-Vercel serverless functions and MongoDB Atlas **must** run in the same cloud region (for example both `iad1` / US East). Cross-region RTT dominates `db_connect_ms` and `pool_query_ms` and cannot be fixed in application code.
+Choose a Neon region close to the primary Vercel deployment (for example Vercel `iad1` / US East with a nearby Neon region). Cross-region RTT dominates `db_connect_ms` and `pool_query_ms` and cannot be fixed in application code.
 
 **Operational check (not automated in CI):**
 
 1. Confirm the Vercel project region (Project → Settings → Functions / Deployment region).
-2. Confirm the Atlas cluster region matches.
-3. After deploy, inspect p95 `db_connect_ms` and `pool_query_ms` on `pool_hit` — a healthy same-region setup should keep warm-isolate `db_connect_ms` near 0 and `pool_query_ms` well under the hit-latency alert below.
-4. Run `bun run pool:verify-indexes` against production URI so selection uses IXSCAN, not COLLSCAN.
-
-Index verification script: `scripts/verify-question-pool-indexes.ts` (`bun run pool:verify-indexes`). Fails if the compound `{ apClass, unit, active, randomKey }` index is missing or explain shows a collection scan.
+2. Confirm the Neon project region.
+3. After deploy, inspect p95 `db_connect_ms` and `pool_query_ms` on `pool_hit` — a healthy nearby deployment should keep `db_connect_ms` near 0 and `pool_query_ms` well under the hit-latency alert below.
+4. Validate the `content.mcq_questions` and `content.frq_questions` bucket indexes with Neon query plans.
 
 ## PostHog: p50 / p95 total time by AP class and unit
 
@@ -174,7 +172,7 @@ GROUP BY stopped_reason
 ## Dashboard (suggested tiles)
 
 1. **p50 / p95 `total_ms`** — trend by `segment`, filtered by `ap_class` / `unit`
-2. **p95 `pool_query_ms`** and **p95 `db_connect_ms`** on `pool_hit` — isolate Mongo latency vs cold connect
+2. **p95 `pool_query_ms`** and **p95 `db_connect_ms`** on `pool_hit` — isolate Neon latency vs cold setup
 3. **Error rate** — `ok = false` / all `question_request`, by `ap_class` and `error_type`
 4. **Pool mix** — share of `pool_hit` vs `pool_warming` vs `pool_error`
 5. **Refill health** — `empty_observed_buckets`, `oldest_job_age_ms`, `budget_remaining`, `failed_jobs` from `question_pool_health`

@@ -1,24 +1,20 @@
-import mongoose, { Schema, type Document, type Model } from 'mongoose';
+import { randomUUID } from 'node:crypto';
+import { referrals } from '$lib/server/neon/schema';
+import { model, type PostgresModel } from '$lib/server/neon/model';
 
-export interface IReferral extends Document {
+export interface IReferral {
+	_id: string;
 	referrerUserId: string;
 	referredUserId: string;
 	activatedAt?: Date;
 	createdAt: Date;
 	updatedAt: Date;
+	save: () => Promise<unknown>;
 }
 
-const referralSchema = new Schema<IReferral>(
-	{
-		referrerUserId: { type: String, required: true, index: true },
-		referredUserId: { type: String, required: true, unique: true, index: true },
-		activatedAt: { type: Date }
-	},
-	{ timestamps: true }
-);
-
-referralSchema.index({ referrerUserId: 1, activatedAt: 1 });
-
-export const Referral: Model<IReferral> =
-	(mongoose.models.Referral as Model<IReferral>) ??
-	mongoose.model<IReferral>('Referral', referralSchema);
+export const Referral: PostgresModel<IReferral> = model<IReferral>({
+	table: referrals as any,
+	columns: referrals as any,
+	idField: 'id',
+	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
+});

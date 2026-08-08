@@ -2,9 +2,9 @@ import { auth } from '$lib/auth/server';
 import { connectDb } from '$lib/server/db';
 import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/questions/pool-constants';
 import { UserProfile } from '$lib/users/model.server';
-import { Question } from '$lib/questions/cache-model.server';
 import { QuestionRecentTopic } from '$lib/questions/recent-topic-model.server';
-import { FrqQuestionModel } from '$lib/frq/model.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { frqQuestions, mcqQuestions } from '$lib/server/neon/schema';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
@@ -135,24 +135,35 @@ function summarizeGenerationData(stats: Awaited<ReturnType<typeof getGenerationS
 async function aggregateActiveBuckets(
 	questionType: PoolRefillQuestionType
 ): Promise<Map<string, BucketAggRow>> {
-	const model = questionType === 'mcq' ? Question : FrqQuestionModel;
-	const rows = (await model
-		.aggregate([
-			{ $match: { active: { $ne: false } } },
-			{
-				$group: {
-					_id: { apClass: '$apClass', unit: '$unit' },
-					total: { $sum: 1 },
-					oldestCreatedAt: { $min: '$createdAt' },
-					newestCreatedAt: { $max: '$createdAt' }
-				}
-			}
-		])
-		.exec()) as BucketAggRow[];
-
 	const map = new Map<string, BucketAggRow>();
-	for (const row of rows) {
-		map.set(`${row._id.apClass}::${row._id.unit}`, row);
+	const db = getNeonDatabase() as any;
+	const rows = await db
+		.select({
+			apClass:
+				questionType === 'mcq' ? (mcqQuestions as any).apClass : (frqQuestions as any).apClass,
+			unit: questionType === 'mcq' ? (mcqQuestions as any).unit : (frqQuestions as any).unit,
+			createdAt:
+				questionType === 'mcq' ? (mcqQuestions as any).createdAt : (frqQuestions as any).createdAt
+		})
+		.from(questionType === 'mcq' ? (mcqQuestions as any) : (frqQuestions as any))
+		.where(questionType === 'mcq' ? (mcqQuestions as any).active : (frqQuestions as any).active);
+	for (const row of rows as Array<{ apClass: string; unit: string; createdAt: Date }>) {
+		const key = `${row.apClass}::${row.unit}`;
+		const current = map.get(key);
+		if (!current) {
+			map.set(key, {
+				_id: { apClass: row.apClass, unit: row.unit },
+				total: 1,
+				oldestCreatedAt: row.createdAt,
+				newestCreatedAt: row.createdAt
+			});
+		} else {
+			current.total += 1;
+			if (!current.oldestCreatedAt || row.createdAt < current.oldestCreatedAt)
+				current.oldestCreatedAt = row.createdAt;
+			if (!current.newestCreatedAt || row.createdAt > current.newestCreatedAt)
+				current.newestCreatedAt = row.createdAt;
+		}
 	}
 	return map;
 }

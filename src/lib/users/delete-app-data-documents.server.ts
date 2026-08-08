@@ -15,7 +15,7 @@ import {
 
 /**
  * Deletes app-owned rows for the given user ids (profile, FRQ attempts, referrals).
- * Caller must ensure mongoose is connected. Does not touch auth collections.
+ * Does not touch Better Auth's auth tables.
  */
 export async function deleteAppDataDocuments(userIds: string[]): Promise<void> {
 	if (userIds.length === 0) return;

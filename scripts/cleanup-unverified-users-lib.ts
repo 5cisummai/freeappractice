@@ -10,7 +10,7 @@ export type CleanupCandidate = {
 const SAFE_USER_ID = /^[a-zA-Z0-9_-]{1,128}$/;
 const SAFE_EMAIL = /^[^\s@$]+@[^\s@$]+\.[^\s@$]+$/;
 
-/** Reject anything that could be interpreted as a Mongo operator payload. */
+/** Reject anything that could be interpreted as an unsafe database identifier. */
 export function assertSafeUserId(value: unknown): string {
 	if (typeof value !== 'string' || !SAFE_USER_ID.test(value)) {
 		throw new Error(`Safety abort: invalid user id ${String(value)}`);
@@ -43,7 +43,7 @@ export function isEligibleUnverifiedUser(
 }
 
 /**
- * Mongo filter that can never match a verified account.
+ * Filter that can never match a verified account.
  * Uses exact `false` (not `$ne: true`) so missing/odd values are never deleted.
  */
 export function unverifiedStaleFilter(cutoff: Date) {

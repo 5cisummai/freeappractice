@@ -32,7 +32,6 @@ export async function writePoolBucketBelowTarget<T>(
 		unit: bucket.unit
 	};
 	const owner = randomUUID();
-
 	try {
 		await PoolBucketWriteLock.updateOne(
 			key,

@@ -6,7 +6,6 @@ const { updateOne, findOneAndUpdate, countActivePoolRows } = vi.hoisted(() => ({
 	countActivePoolRows: vi.fn()
 }));
 
-vi.mock('$env/static/private', () => ({ DATABASE_URI: 'mongodb://localhost/test' }));
 vi.mock('$lib/server/db', () => ({ connectDb: vi.fn(async () => ({})) }));
 vi.mock('$lib/questions/pool-refill-model.server', () => ({
 	PoolBucketWriteLock: { updateOne, findOneAndUpdate }

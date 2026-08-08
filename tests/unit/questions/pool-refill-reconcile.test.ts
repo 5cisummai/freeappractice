@@ -7,11 +7,6 @@ const { findOneAndUpdate, updateOne, mcqCount, frqCount } = vi.hoisted(() => ({
 	frqCount: vi.fn()
 }));
 
-vi.mock('$env/static/private', () => ({
-	DATABASE_URI: 'mongodb://localhost/test',
-	CRON_SECRET: 'test'
-}));
-
 vi.mock('$lib/server/db', () => ({
 	connectDb: vi.fn(async () => ({}))
 }));

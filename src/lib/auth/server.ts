@@ -1,5 +1,5 @@
 import { betterAuth } from 'better-auth/minimal';
-import { mongodbAdapter } from 'better-auth/adapters/mongodb';
+import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { oneTap } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
@@ -8,7 +8,8 @@ import { building } from '$app/environment';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/private';
 import bcrypt from 'bcryptjs';
-import { getMongoClient, getMongoDb } from '$lib/server/mongo-native';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { betterAuthSchema } from '$lib/server/neon/schema';
 import {
 	sendChangeEmailConfirmationEmail,
 	sendConfirmationEmail,
@@ -33,8 +34,7 @@ import {
 import { classifyAccountCreationMethod } from '$lib/auth/analytics';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
-const db = await getMongoDb();
-const client = await getMongoClient();
+const db = getNeonDatabase();
 
 const authSecret =
 	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
@@ -45,7 +45,13 @@ export const auth = betterAuth({
 	appName: 'Free AP Practice',
 	...(authSecret ? { secret: authSecret } : {}),
 	...(authBaseUrl ? { baseURL: authBaseUrl } : {}),
-	database: mongodbAdapter(db, { client, transaction: false }),
+	database: drizzleAdapter(db, {
+		provider: 'pg',
+		schema: betterAuthSchema,
+		// Neon HTTP has no interactive transaction/session API. Better Auth's
+		// adapter will issue its independent statements sequentially.
+		transaction: false
+	}),
 	trustedOrigins: getTrustedOrigins(),
 	experimental: { joins: true },
 	rateLimit: {

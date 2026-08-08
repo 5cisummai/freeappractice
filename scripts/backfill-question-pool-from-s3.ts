@@ -1,7 +1,7 @@
 /**
  * scripts/backfill-question-pool-from-s3.ts
  *
- * Import existing canonical S3 questions into the Mongo active library.
+ * Import existing canonical S3 questions into the PostgreSQL active library.
  * Never deletes or rewrites S3 objects. Prefer dry-run before writes.
  *
  *   bun run pool:backfill-s3 --dry-run
@@ -14,26 +14,30 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
-import mongoose from 'mongoose';
 import { createLimiter, getArg, loadCombos } from './shared';
 import { getFrqCourseNames } from '../src/lib/frq/profiles.server';
 import { FrqQuestionSchema } from '../src/lib/frq/types';
+import { FrqQuestionModel } from '../src/lib/frq/model.server';
+import { Question } from '../src/lib/questions/cache-model.server';
 import {
 	QUESTION_POOL_CONFIG,
 	poolTargetForBucket,
 	type QuestionPoolConfig
 } from '../src/lib/questions/pool-constants';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
+import { PoolRefillState } from '../src/lib/questions/pool-refill-model.server';
+import { isDuplicateKeyError } from '../src/lib/questions/util.server';
+import { connectDb } from '../src/lib/server/db';
 
-const DATABASE_URI = process.env.DATABASE_URI;
+const DATABASE_URL = process.env.DATABASE_URL;
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
 const isDryRun = process.argv.includes('--dry-run');
 const enqueueDeficits = process.argv.includes('--enqueue-deficits');
 const typeFilter = (getArg('--type') ?? 'all').toLowerCase();
 const concurrency = Math.max(1, Number.parseInt(getArg('--concurrency') ?? '6', 10) || 6);
 
-if (!DATABASE_URI) {
-	console.error('Error: DATABASE_URI is not set.');
+if (!DATABASE_URL) {
+	console.error('Error: DATABASE_URL is not set.');
 	process.exit(1);
 }
 if (!AWS_S3_BUCKET?.trim()) {
@@ -109,77 +113,6 @@ async function getJson<T>(s3: S3Client, bucket: string, key: string): Promise<T>
 	const raw = await resp.Body.transformToString('utf-8');
 	return JSON.parse(raw) as T;
 }
-
-const questionSchema = new mongoose.Schema(
-	{
-		apClass: String,
-		unit: String,
-		contentHash: String,
-		topicsCovered: String,
-		question: String,
-		optionA: String,
-		optionB: String,
-		optionC: String,
-		optionD: String,
-		correctAnswer: String,
-		explanation: String,
-		hint1: String,
-		hint2: String,
-		s3QuestionId: { type: String, unique: true },
-		randomKey: Number,
-		active: Boolean
-	},
-	{ timestamps: true }
-);
-
-const frqSchema = new mongoose.Schema(
-	{
-		apClass: String,
-		unit: String,
-		formatId: String,
-		profileVersion: String,
-		promptVersion: String,
-		rubricVersion: String,
-		schemaVersion: Number,
-		prompt: String,
-		materials: Array,
-		sections: Array,
-		rubric: Array,
-		totalPoints: Number,
-		topicsCovered: String,
-		contentHash: String,
-		s3QuestionId: { type: String, unique: true },
-		randomKey: Number,
-		active: Boolean
-	},
-	{ timestamps: true }
-);
-
-const refillSchema = new mongoose.Schema(
-	{
-		questionType: String,
-		apClass: String,
-		unit: String,
-		status: String,
-		target: Number,
-		observedCount: Number,
-		requestedAt: Date,
-		attempts: { type: Number, default: 0 },
-		generatedCount: { type: Number, default: 0 }
-	},
-	{ timestamps: true }
-);
-refillSchema.index({ questionType: 1, apClass: 1, unit: 1 }, { unique: true });
-
-const Question =
-	(mongoose.models.Question as mongoose.Model<mongoose.Document>) ??
-	mongoose.model('Question', questionSchema);
-const FrqQuestion =
-	(mongoose.models.FrqQuestion as mongoose.Model<mongoose.Document>) ??
-	mongoose.model('FrqQuestion', frqSchema);
-const PoolRefillState =
-	(mongoose.models.PoolRefillState as mongoose.Model<mongoose.Document>) ??
-	mongoose.model('PoolRefillState', refillSchema);
 
 type McqStored = {
 	id?: string;
@@ -334,8 +267,7 @@ async function backfillMcq(
 						});
 						counters.imported += 1;
 					} catch (error) {
-						const code = (error as { code?: number })?.code;
-						if (code === 11000) {
+						if (isDuplicateKeyError(error)) {
 							counters.duplicates += 1;
 							return;
 						}
@@ -416,8 +348,7 @@ async function backfillFrq(
 						});
 						counters.imported += 1;
 					} catch (error) {
-						const code = (error as { code?: number })?.code;
-						if (code === 11000) {
+						if (isDuplicateKeyError(error)) {
 							counters.duplicates += 1;
 							return;
 						}
@@ -464,7 +395,7 @@ async function enqueueDeficitsForType(
 	catalogBuckets: Array<{ className: string; unit: string }>,
 	generationCountsByClass: Record<string, number>
 ): Promise<number> {
-	const Model = questionType === 'mcq' ? Question : FrqQuestion;
+	const Model = questionType === 'mcq' ? Question : FrqQuestionModel;
 	let enqueued = 0;
 	for (const { className, unit } of catalogBuckets) {
 		const target = poolTargetForBucket({
@@ -529,10 +460,10 @@ async function main() {
 	const bucket = AWS_S3_BUCKET!.trim();
 	const limit = createLimiter(concurrency);
 
-	console.log(isDryRun ? 'Dry-run S3 → Mongo backfill…' : 'Running S3 → Mongo backfill…');
+	console.log(isDryRun ? 'Dry-run S3 → PostgreSQL backfill…' : 'Running S3 → PostgreSQL backfill…');
 	console.log(`Concurrency=${concurrency}, type=${typeFilter}`);
 
-	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
+	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 
 	if (typeFilter === 'all' || typeFilter === 'mcq') {
@@ -566,7 +497,6 @@ async function main() {
 		console.log('\nDry-run: skipping --enqueue-deficits writes.');
 	}
 
-	await mongoose.disconnect();
 	console.log('\nDone. S3 objects were not modified.');
 }
 

@@ -1,6 +1,6 @@
 # Question pool runbook
 
-Operational guide for the large Mongo serving library backed by the S3 canonical archive. Generation runs only in refill workers — never on user question requests.
+Operational guide for the Neon PostgreSQL serving library backed by the S3 canonical archive. Generation runs only in refill workers — never on user question requests.
 
 Related: [architecture.md](./architecture.md), [question-request-metrics.md](./question-request-metrics.md).
 
@@ -8,36 +8,24 @@ Related: [architecture.md](./architecture.md), [question-request-metrics.md](./q
 
 | Layer                              | Behavior                                                                                                        |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `POST /api/question` / FRQ         | Indexed random Mongo select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM.        |
+| `POST /api/question` / FRQ         | Indexed random Neon select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM.         |
 | Cron `GET /api/cron/question-pool` | Claim due refill leases and generate within daily/run budgets (does **not** full-catalog reconcile every tick). |
 | S3                                 | Canonical archive + question IDs. Never deleted by pool tools.                                                  |
-| Mongo                              | Active serving library (`active`, `randomKey`, inline bodies).                                                  |
+| Neon PostgreSQL                    | Active serving library (`active`, `randomKey`, inline bodies).                                                  |
 
 **Feature-flag note:** Selection-only serving is already the unconditional request path (legacy miss-lock / sync-generate code is removed). There is no dual-path flag to flip off generation on the request path. Use Vercel Flags only for unrelated product pilots (`frq-practice`, `multi-attempt-experiment`). Rollout canary = deploy → seed → watch metrics / admin readiness → expand traffic confidence, not a code flag.
 
 ## Prerequisites
 
-- `DATABASE_URI` points at the intended MongoDB (confirm host before any write script).
+- `DATABASE_URL` points at the intended Neon project/branch (confirm environment before any write script).
 - AWS credentials + `AWS_S3_BUCKET` for backfill.
 - `CRON_SECRET` for production cron / manual cron calls.
 - Prefer a non-production URI for first dry-runs.
 
-## 1. Schema / indexes
+## 1. Backfill dry-run and cost estimation
 
 ```bash
-# Idempotent: assign randomKey/active, create compound indexes
-bun run pool:migrate-schema
-
-# Fail if compound { apClass, unit, active, randomKey } missing or explain is COLLSCAN
-bun run pool:verify-indexes
-```
-
-Run migrate once per environment before relying on random selection. Re-run verify after deploy or index changes.
-
-## 2. Backfill dry-run and cost estimation
-
-```bash
-# Report only — no Mongo writes
+# Report only — no PostgreSQL writes
 bun run pool:backfill-s3 --dry-run
 ```
 
@@ -57,19 +45,9 @@ bun run pool:backfill-s3
 bun run pool:backfill-s3 --enqueue-deficits
 ```
 
-For a legacy local database, repair canonical links before migration. This command is dry-run by
-default. It archives local-only MCQs under deterministic S3 IDs and deactivates (but never deletes)
-legacy FRQs that lack the modern sections/rubric schema.
+## 2. Initial seeding (two stages)
 
-```bash
-bun run pool:repair-local
-bun run pool:repair-local -- --apply --confirm=REPAIR-LOCAL-POOL
-bun run pool:repair-local # must report zero remaining work
-```
-
-## 3. Initial seeding (two stages)
-
-1. **S3 → Mongo** via `pool:backfill-s3` (above).
+1. **S3 → Neon PostgreSQL** via `pool:backfill-s3` (above).
 2. **Deficit enqueue** — either `--enqueue-deficits` or admin “enqueue all deficits”, then let cron drain:
 
 ```bash
@@ -103,7 +81,7 @@ bun run pool:batch-submit -- --type frq --limit 200
 # Narrow to one bucket
 bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
 
-# After OpenAI finishes (often hours), persist results to S3 + Mongo
+# After OpenAI finishes (often hours), persist results to S3 + Neon PostgreSQL
 bun run pool:batch-collect -- --batch batch_...
 ```
 
@@ -120,7 +98,7 @@ bun run pool:batch-collect -- --batch batch_...
 
 Priority tip: enqueue high-traffic class/units first from the admin pool tab, then catalog-wide deficits. For large deficits, use `pool:batch-submit` instead of `pool:fill`.
 
-## 4. Empty buckets / POOL_WARMING
+## 3. Empty buckets / POOL_WARMING
 
 Symptoms: practice shows warming UI; metrics `segment=pool_warming`; admin empty-bucket count > 0.
 
@@ -131,7 +109,7 @@ Actions:
 3. If jobs sit pending with `budget_exhausted`, raise daily budget or wait until next UTC day.
 4. If generation fails repeatedly, inspect `lastError` on the refill doc and worker logs.
 
-## 5. Stuck leases
+## 4. Stuck leases
 
 A job in `running` with `leaseExpiresAt` in the past is reclaimable by the next worker (acquisition filter allows expired leases).
 
@@ -139,18 +117,18 @@ If a lease looks stuck before expiry:
 
 1. Wait for TTL (`QUESTION_POOL_LEASE_TTL_MS` in `pool-constants.ts`, default 2 minutes) and re-run cron.
 2. Do not manually delete S3 objects.
-3. Only clear `leaseOwner` / `leaseExpiresAt` in Mongo if you are sure no worker is still generating for that bucket.
+3. Only clear `leaseOwner` / `leaseExpiresAt` in Neon if you are sure no worker is still generating for that bucket.
 
-## 6. Daily budget exhaustion
+## 5. Daily budget exhaustion
 
 Worker summary `stoppedReason: daily_budget` or refill status `budget_exhausted`.
 
 - Budget key is UTC day (`PoolGenerationBudget.dayKey`).
 - Options: wait for next UTC day, temporarily raise `QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts`, or reduce targets for non-critical buckets while seeding.
 
-## 7. Safe retirement (replaces clear-cache)
+## 6. Safe retirement (replaces clear-cache)
 
-Retiring sets `active=false` on Mongo rows. S3 and history IDs remain valid; practice for those buckets returns warming until refill restores inventory.
+Retiring sets `active=false` on Neon rows. S3 and history IDs remain valid; practice for those buckets returns warming until refill restores inventory.
 
 ```bash
 bun run pool:retire --dry-run
@@ -160,15 +138,7 @@ bun run pool:retire --confirm=RETIRE-POOL
 
 Never use a “delete everything” shortcut in production without the dry-run impact report.
 
-## 8. Index verification
-
-```bash
-bun run pool:verify-indexes
-```
-
-If this fails in production, do not ignore it — selection may degrade to collection scans and hit-latency alerts will fire. Fix indexes via `pool:migrate-schema` / Atlas, then re-verify.
-
-## 9. Observability checks
+## 7. Observability checks
 
 - PostHog `question_request`: mix of `pool_hit` / `pool_warming` / `pool_error`; p95 `pool_query_ms` and `total_ms` on hits.
 - PostHog `question_pool_health`: `empty_observed_buckets`, `oldest_job_age_ms`, `budget_remaining`, `failed_jobs`.
@@ -177,11 +147,11 @@ If this fails in production, do not ignore it — selection may degrade to colle
 
 Alert thresholds: [question-request-metrics.md](./question-request-metrics.md).
 
-## 10. Rollout / canary (ops, not a dual-path flag)
+## 8. Rollout / canary (ops, not a dual-path flag)
 
 Selection-only is already shipped in code. Operational canary:
 
-1. Deploy schema migration + indexes; verify with `pool:verify-indexes`.
+1. Deploy the reviewed database migration and verify the Neon query paths on a branch.
 2. Dry-run then run S3 backfill; seed priority buckets to a safe minimum.
 3. Enable cron; confirm `question_pool_health` shows progress and no sustained `failed_jobs`.
 4. Smoke internal traffic: hit, warming UI + retry, class/unit switch, exclusion reset, FRQ (if flag on).
@@ -195,7 +165,7 @@ Selection-only is already shipped in code. Operational canary:
 
 Prefer fixing inventory over restoring sync generation.
 
-## 11. Manual browser verification checklist
+## 9. Manual browser verification checklist
 
 With `bun dev` (or a preview deploy):
 
@@ -205,46 +175,11 @@ With `bun dev` (or a preview deploy):
 4. If FRQ flag is on, repeat hit/warming for FRQ.
 5. Confirm Network tab: `/api/question` never stays open for tens of seconds waiting on generation.
 
-## 12. Isolated v2 collection migration
-
-The v2 migration copies only active, modern-schema pool rows. It never deletes, renames, or mutates
-the source collections. Rehearse locally before supplying production credentials.
-
-```bash
-# Source audit only
-bun run pool:migrate-v2 -- --local-target
-
-# Prepare isolated local collections, then independently verify count + SHA-256 digest
-bun run pool:migrate-v2 -- --local-target --prepare --confirm=PREPARE-POOL-V2
-bun run pool:migrate-v2 -- --local-target --verify
-
-# Repeat against production with an explicit target URI
-TARGET_DATABASE_URI='mongodb+srv://…/database' bun run pool:migrate-v2
-TARGET_DATABASE_URI='mongodb+srv://…/database' \
-  bun run pool:migrate-v2 -- --prepare --confirm=PREPARE-POOL-V2
-TARGET_DATABASE_URI='mongodb+srv://…/database' bun run pool:migrate-v2 -- --verify
-```
-
-The migration blocks on missing/empty required fields, invalid field types, duplicate content hashes,
-duplicate S3 IDs, count mismatch, or digest mismatch. Only after verification, set the application to:
-
-```env
-QUESTION_POOL_MCQ_COLLECTION=questions_pool_v2
-QUESTION_POOL_FRQ_COLLECTION=frqquestions_pool_v2
-```
-
-Rollback is an environment-only collection switch to `questions` / `frqquestions`; the old
-collections remain intact.
-
 ## Useful package scripts
 
-| Script                        | Purpose                                                                      |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| `bun run pool:migrate-schema` | Indexes + `randomKey`/`active` backfill                                      |
-| `bun run pool:migrate-v2`     | Dry-run/prepare/verify isolated v2 collections                               |
-| `bun run pool:verify-indexes` | Explain / index presence check                                               |
-| `bun run pool:backfill-s3`    | S3 → Mongo import (`--dry-run`, `--enqueue-deficits`)                        |
-| `bun run pool:repair-local`   | Archive/link local MCQs and deactivate invalid legacy FRQs (dry-run default) |
-| `bun run pool:batch-submit`   | Submit JSON-target deficits (`--type mcq\|frq`)                              |
-| `bun run pool:batch-collect`  | Validate/persist a completed batch                                           |
-| `bun run pool:retire`         | Retire active Mongo rows (`--dry-run`, `--confirm=RETIRE-POOL`)              |
+| Script                       | Purpose                                                         |
+| ---------------------------- | --------------------------------------------------------------- |
+| `bun run pool:backfill-s3`   | S3 → Neon PostgreSQL import (`--dry-run`, `--enqueue-deficits`) |
+| `bun run pool:batch-submit`  | Submit JSON-target deficits (`--type mcq\|frq`)                 |
+| `bun run pool:batch-collect` | Validate/persist a completed batch                              |
+| `bun run pool:retire`        | Retire active Neon rows (`--dry-run`, `--confirm=RETIRE-POOL`)  |
