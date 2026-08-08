@@ -10,7 +10,7 @@
 	// indexing
 </script>
 
-<div class={cn(className, 'flex flex-col')} {...props}>
+<div class={cn('flex flex-wrap items-center gap-1 p-1', className)} {...props}>
 	{#if children}
 		{@render children()}
 	{/if}

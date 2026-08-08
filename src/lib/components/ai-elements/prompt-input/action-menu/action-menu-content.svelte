@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 
 	interface Props {
 		class?: string;
@@ -7,11 +8,10 @@
 	}
 
 	let { class: className, children, ...props }: Props = $props();
-	// indexing
 </script>
 
-<div class={cn(className, 'flex flex-col')} {...props}>
+<DropdownMenu.Content preventScroll={false} align="start" class={cn(className)} {...props}>
 	{#if children}
 		{@render children()}
 	{/if}
-</div>
+</DropdownMenu.Content>
