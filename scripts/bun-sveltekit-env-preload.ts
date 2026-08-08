@@ -6,6 +6,7 @@ import { plugin } from 'bun';
 
 function privateEnvExports(): string {
 	const keys = [
+		'DATABASE_URL',
 		'DATABASE_URI',
 		'OPEN_AI_KEY',
 		'CRON_SECRET',

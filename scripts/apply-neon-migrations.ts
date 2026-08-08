@@ -11,9 +11,9 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { neon } from '@neondatabase/serverless';
 
-const databaseUrl = process.env.NEON_DATABASE_URL?.trim();
-if (!databaseUrl) throw new Error('NEON_DATABASE_URL is required');
-if (!/^postgres(?:ql)?:\/\//i.test(databaseUrl)) throw new Error('NEON_DATABASE_URL must be a Neon PostgreSQL connection string');
+const databaseUrl = (process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL)?.trim();
+if (!databaseUrl) throw new Error('DATABASE_URL is required');
+if (!/^postgres(?:ql)?:\/\//i.test(databaseUrl)) throw new Error('DATABASE_URL must be a Neon PostgreSQL connection string');
 
 const sql = neon(databaseUrl);
 const migrationsDirectory = resolve(process.env.DRIZZLE_MIGRATIONS_DIR ?? 'drizzle');
@@ -24,9 +24,8 @@ function checksum(contents: string): string {
 }
 
 async function main(): Promise<void> {
-	await sql.query('CREATE SCHEMA IF NOT EXISTS ops');
 	await sql.query(`
-		CREATE TABLE IF NOT EXISTS ops.schema_migrations (
+		CREATE TABLE IF NOT EXISTS public._neon_schema_migrations (
 			id text PRIMARY KEY,
 			checksum text NOT NULL,
 			applied_at timestamptz NOT NULL DEFAULT NOW()
@@ -41,7 +40,7 @@ async function main(): Promise<void> {
 		const id = file.replace(/\.sql$/, '');
 		const contents = await readFile(join(migrationsDirectory, file), 'utf8');
 		const digest = checksum(contents);
-		const existing = (await sql.query('SELECT checksum FROM ops.schema_migrations WHERE id = $1', [id])) as Array<{ checksum: string }>;
+		const existing = (await sql.query('SELECT checksum FROM public._neon_schema_migrations WHERE id = $1', [id])) as Array<{ checksum: string }>;
 		if (existing[0]) {
 			if (existing[0].checksum !== digest) throw new Error(`Applied migration was modified: ${file}`);
 			continue;
@@ -53,7 +52,7 @@ async function main(): Promise<void> {
 			.filter(Boolean)
 			.map((statement) => sql.query(statement));
 		if (statements.length) await sql.transaction(statements);
-		await sql.query('INSERT INTO ops.schema_migrations (id, checksum) VALUES ($1, $2)', [id, digest]);
+		await sql.query('INSERT INTO public._neon_schema_migrations (id, checksum) VALUES ($1, $2)', [id, digest]);
 	}
 }
 

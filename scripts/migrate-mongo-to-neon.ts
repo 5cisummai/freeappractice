@@ -20,23 +20,37 @@ type Phase = 'inventory' | 'load' | 'verify';
 type RawDocument = Document & { _id?: unknown; createdAt?: Date; updatedAt?: Date };
 
 const sourceUri = process.env.SOURCE_DATABASE_URI ?? process.env.DATABASE_URI;
-const neonUrl = process.env.NEON_DATABASE_URL;
+const neonUrl = process.env.DATABASE_URL ?? process.env.NEON_DATABASE_URL;
 const phase = (process.argv.find((arg) => arg.startsWith('--phase='))?.split('=')[1] ?? 'inventory') as Phase;
 const runId = process.argv.find((arg) => arg.startsWith('--run-id='))?.split('=')[1] ?? `mongo-neon-${Date.now()}`;
 const dryRun = process.argv.includes('--dry-run');
 const batchSize = Number(process.argv.find((arg) => arg.startsWith('--batch-size='))?.split('=')[1] ?? 100);
+const upsertsPerBatch = Number(process.env.MIGRATION_UPSERTS_PER_BATCH ?? 50);
 
 if (!['inventory', 'load', 'verify'].includes(phase)) {
 	throw new Error(`Unsupported phase ${JSON.stringify(phase)}`);
 }
 if (!sourceUri) throw new Error('SOURCE_DATABASE_URI or DATABASE_URI is required');
-if (!neonUrl) throw new Error('NEON_DATABASE_URL is required');
-if (!/^postgres(?:ql)?:\/\//i.test(neonUrl)) throw new Error('NEON_DATABASE_URL must be a Neon PostgreSQL connection string');
+if (!neonUrl) throw new Error('DATABASE_URL is required');
+if (!/^postgres(?:ql)?:\/\//i.test(neonUrl)) throw new Error('DATABASE_URL must be a Neon PostgreSQL connection string');
 if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 500) {
 	throw new Error('--batch-size must be an integer between 1 and 500');
 }
+if (!Number.isInteger(upsertsPerBatch) || upsertsPerBatch < 1 || upsertsPerBatch > 100) {
+	throw new Error('MIGRATION_UPSERTS_PER_BATCH must be an integer between 1 and 100');
+}
 
 const sql = neon(neonUrl);
+
+type PendingUpsert = {
+	table: string;
+	columns: string[];
+	values: unknown[];
+	conflict: string;
+	updates: string[];
+};
+
+let pendingUpserts: PendingUpsert[] = [];
 
 function idOf(value: unknown): string {
 	if (value && typeof value === 'object' && 'toHexString' in value && typeof value.toHexString === 'function') {
@@ -65,7 +79,7 @@ function optionalDate(value: unknown): Date | null {
 }
 
 function stringValue(value: unknown): string | null {
-	return value == null ? null : String(value);
+	return value == null ? null : removeNullBytes(String(value));
 }
 
 function boolValue(value: unknown, fallback = false): boolean {
@@ -105,6 +119,31 @@ function normalizeObject(value: unknown): Record<string, unknown> {
 	return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
+function removeNullBytes(value: string): string {
+	return value.replaceAll('\u0000', '');
+}
+
+function cleanParameter(value: unknown): unknown {
+	if (typeof value === 'string') return removeNullBytes(value);
+	if (Array.isArray(value)) return value.map(cleanParameter);
+	return value;
+}
+
+function nullBytePaths(value: unknown, path = '', paths: string[] = []): string[] {
+	if (typeof value === 'string') {
+		if (value.includes('\u0000')) paths.push(path || '<root>');
+		return paths;
+	}
+	if (!value || typeof value !== 'object' || value instanceof Date || Buffer.isBuffer(value)) return paths;
+	if ('toHexString' in value && typeof value.toHexString === 'function') return paths;
+	if (Array.isArray(value)) {
+		value.forEach((item, index) => nullBytePaths(item, `${path}[${index}]`, paths));
+		return paths;
+	}
+	for (const [key, nested] of Object.entries(value)) nullBytePaths(nested, path ? `${path}.${key}` : key, paths);
+	return paths;
+}
+
 function unique(values: string[]): string[] {
 	return [...new Set(values.filter(Boolean))];
 }
@@ -114,6 +153,66 @@ async function query(text: string, values: unknown[] = []): Promise<unknown[]> {
 	return (await sql.query(text, values)) as unknown[];
 }
 
+async function flushWrites(): Promise<void> {
+	if (dryRun || pendingUpserts.length === 0) return;
+	const upserts = pendingUpserts;
+	pendingUpserts = [];
+	const groups = new Map<string, PendingUpsert[]>();
+	for (const upsert of upserts) {
+		const key = [upsert.table, ...upsert.columns, upsert.conflict, ...upsert.updates].join('\u001f');
+		const group = groups.get(key) ?? [];
+		group.push(upsert);
+		groups.set(key, group);
+	}
+
+	const statements = [...groups.values()].map((group) => {
+		const first = group[0];
+		const values: unknown[] = [];
+		const rows = group.map((item, rowIndex) => {
+			const placeholders = item.values.map((value, columnIndex) => {
+				values.push(value);
+				return `$${rowIndex * item.values.length + columnIndex + 1}`;
+			});
+			return `(${placeholders.join(', ')})`;
+		});
+		const updateClause = first.updates.length
+			? ` DO UPDATE SET ${first.updates.map((column) => `"${column}" = EXCLUDED."${column}"`).join(', ')}`
+			: ' DO NOTHING';
+		return {
+			table: first.table,
+			rowCount: group.length,
+			parameterCount: values.length,
+			statement: () =>
+				sql.query(
+					`INSERT INTO ${first.table} (${first.columns.map((column) => `"${column}"`).join(', ')}) VALUES ${rows.join(', ')} ON CONFLICT (${first.conflict})${updateClause}`,
+					values
+				)
+		};
+	});
+	for (const item of statements) {
+		await item.statement();
+	}
+}
+
+async function targetHasRow(table: string, column: string, value: string): Promise<boolean> {
+	if (dryRun) return true;
+	const rows = await query(`SELECT 1 FROM ${table} WHERE "${column}" = $1 LIMIT 1`, [value]);
+	return rows.length > 0;
+}
+
+async function recordNullByteTransform(collection: string, document: RawDocument): Promise<void> {
+	const fields = nullBytePaths(document);
+	if (!fields.length) return;
+	const sourceId = requiredId(document, collection);
+	await upsert(
+		'ops.migration_transforms',
+		['id', 'run_id', 'source_collection', 'source_id', 'field_paths', 'transformation'],
+		[stableId(runId, collection, sourceId, 'remove-nul'), runId, collection, sourceId, fields, 'Removed NUL bytes because PostgreSQL text cannot encode U+0000'],
+		'"id"',
+		['field_paths', 'transformation']
+	);
+}
+
 async function upsert(
 	table: string,
 	columns: string[],
@@ -121,14 +220,8 @@ async function upsert(
 	conflict: string,
 	updates: string[]
 ): Promise<void> {
-	const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
-	const updateClause = updates.length
-		? ` DO UPDATE SET ${updates.map((column) => `"${column}" = EXCLUDED."${column}"`).join(', ')}`
-		: ' DO NOTHING';
-	await query(
-		`INSERT INTO ${table} (${columns.map((column) => `"${column}"`).join(', ')}) VALUES (${placeholders}) ON CONFLICT (${conflict})${updateClause}`,
-		values
-	);
+	if (dryRun) return;
+	pendingUpserts.push({ table, columns, values: values.map(cleanParameter), conflict, updates });
 }
 
 async function recordLedger(
@@ -157,6 +250,17 @@ async function reject(collection: string, sourceId: string | null, reason: strin
 	);
 }
 
+async function archiveLegacyDocument(collection: string, sourceId: string, document: RawDocument): Promise<void> {
+	await upsert(
+		'ops.legacy_documents',
+		['source_collection', 'source_id', 'run_id', 'document', 'archived_at'],
+		[collection, sourceId, runId, jsonValue(document), new Date()],
+		'"source_collection", "source_id"',
+		['run_id', 'document', 'archived_at']
+	);
+	await recordLedger(collection, sourceId, 'ops.legacy_documents', `${collection}:${sourceId}`, document);
+}
+
 function sourceCollections(db: Db): Promise<string[]> {
 	return db.listCollections({}, { nameOnly: true }).toArray().then((rows) => rows.map((row) => row.name).sort());
 }
@@ -168,11 +272,16 @@ const knownCollections = new Set([
 	'authVerifications',
 	'authSubscriptions',
 	'rateLimit',
+	'betterAuthMigrationMap',
 	'users',
 	'userprofiles',
 	'question_ids',
 	'questionrecenttopics',
-	'questionrecenttopics',
+	'frqrecenttopics',
+	'conversations',
+	'seenquestions',
+	'blogposts',
+	'cachemisslocks',
 	'questions',
 	'questions_pool_v2',
 	'frqquestions',
@@ -214,10 +323,10 @@ const frqPoolNames = new Set([
 async function createRun(): Promise<void> {
 	await upsert(
 		'ops.migration_runs',
-		['id', 'phase', 'status', 'started_at', 'options'],
-		[runId, phase, 'running', new Date(), jsonValue({ dryRun, batchSize, source: 'mongo' })],
+		['id', 'phase', 'status', 'started_at', 'completed_at', 'options', 'error'],
+		[runId, phase, 'running', new Date(), null, jsonValue({ dryRun, batchSize, source: 'mongo' }), null],
 		'"id"',
-		['phase', 'status', 'options']
+		['phase', 'status', 'started_at', 'completed_at', 'options', 'error']
 	);
 }
 
@@ -248,8 +357,14 @@ async function eachDocument(db: Db, names: string[], handler: (collection: strin
 	for (const collectionName of names) {
 		const collection = db.collection<RawDocument>(collectionName);
 		const cursor = collection.find({}).batchSize(batchSize);
-		for await (const document of cursor) {
-			await handler(collectionName, document);
+		try {
+			for await (const document of cursor) {
+				await recordNullByteTransform(collectionName, document);
+				await handler(collectionName, document);
+				if (pendingUpserts.length >= upsertsPerBatch) await flushWrites();
+			}
+		} finally {
+			await flushWrites();
 		}
 	}
 }
@@ -291,7 +406,9 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 
 async function migrateProfile(collectionName: string, document: RawDocument): Promise<void> {
 	const userId = String(document.userId ?? '');
-	if (!userId) return reject(collectionName, requiredId(document, collectionName), 'profile has no userId', document);
+	const sourceId = requiredId(document, collectionName);
+	if (!userId) return archiveLegacyDocument(collectionName, sourceId, document);
+	if (!(await targetHasRow('auth.users', 'id', userId))) return archiveLegacyDocument(collectionName, sourceId, document);
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
 	await upsert('app.user_profiles', ['user_id', 'referral_code', 'subjects', 'created_at', 'updated_at'], [userId, stringValue(document.referralCode), arrayValue(document.subjects).map(String), created, updated], '"user_id"', ['referral_code', 'subjects', 'updated_at']);
@@ -315,7 +432,79 @@ async function migrateProfile(collectionName: string, document: RawDocument): Pr
 		const row = normalizeObject(assignment);
 		await upsert('app.experiment_assignments', ['user_id', 'key', 'version', 'variant', 'created_at', 'updated_at'], [userId, row.key ?? '', intValue(row.version), row.variant ?? 'control', created, updated], '"user_id", "key"', ['version', 'variant', 'updated_at']);
 	}
-	await recordLedger(collectionName, requiredId(document, collectionName), 'app.user_profiles', userId, document);
+	await recordLedger(collectionName, sourceId, 'app.user_profiles', userId, document);
+}
+
+async function migrateLegacyUser(collectionName: string, document: RawDocument): Promise<void> {
+	const sourceId = requiredId(document, collectionName);
+	if (await targetHasRow('auth.users', 'id', sourceId)) {
+		await recordLedger(collectionName, sourceId, 'auth.users', sourceId, document);
+		return;
+	}
+	await archiveLegacyDocument(collectionName, sourceId, document);
+}
+
+async function migrateBetterAuthMigrationMap(collectionName: string, document: RawDocument): Promise<void> {
+	const sourceId = String(document.legacyUserId ?? '');
+	const betterAuthUserId = String(document.betterAuthUserId ?? '');
+	if (!sourceId || !betterAuthUserId || !(await targetHasRow('auth.users', 'id', betterAuthUserId))) {
+		return archiveLegacyDocument(collectionName, requiredId(document, collectionName), document);
+	}
+	await upsert(
+		'ops.better_auth_migration_map',
+		['legacy_user_id', 'better_auth_user_id', 'email', 'has_credential', 'has_google', 'migrated_at', 'status'],
+		[sourceId, betterAuthUserId, document.email ?? '', boolValue(document.hasCredential), boolValue(document.hasGoogle), dateOf(document.migratedAt), document.status ?? 'unknown'],
+		'"legacy_user_id"',
+		['better_auth_user_id', 'email', 'has_credential', 'has_google', 'migrated_at', 'status']
+	);
+	await recordLedger(collectionName, sourceId, 'ops.better_auth_migration_map', sourceId, document);
+}
+
+async function migrateConversation(collectionName: string, document: RawDocument): Promise<void> {
+	const sourceId = requiredId(document, collectionName);
+	const userId = String(document.userId ?? '');
+	if (!userId || !(await targetHasRow('auth.users', 'id', userId))) return archiveLegacyDocument(collectionName, sourceId, document);
+	const created = dateOf(document.createdAt);
+	const updated = dateOf(document.updatedAt, created);
+	await upsert(
+		'app.conversations',
+		['id', 'user_id', 'title', 'last_message_at', 'created_at', 'updated_at'],
+		[sourceId, userId, document.title ?? 'New conversation', optionalDate(document.lastMessageAt), created, updated],
+		'"id"',
+		['user_id', 'title', 'last_message_at', 'updated_at']
+	);
+	for (const [position, message] of arrayValue(document.messages).entries()) {
+		const row = normalizeObject(message);
+		if (typeof row.role !== 'string' || typeof row.content !== 'string') {
+			return reject(collectionName, sourceId, `conversation message ${position} is missing role/content`, document);
+		}
+		const messageId = stableId(sourceId, 'message', position, row.id ?? '');
+		await upsert(
+			'app.conversation_messages',
+			['id', 'conversation_id', 'position', 'role', 'content', 'created_at'],
+			[messageId, sourceId, position, row.role, row.content, dateOf(row.createdAt, created)],
+			'"id"',
+			['conversation_id', 'position', 'role', 'content', 'created_at']
+		);
+	}
+	await recordLedger(collectionName, sourceId, 'app.conversations', sourceId, document);
+}
+
+async function migrateSeenQuestion(collectionName: string, document: RawDocument): Promise<void> {
+	const sourceId = requiredId(document, collectionName);
+	const userId = String(document.userId ?? '');
+	if (!userId || !(await targetHasRow('auth.users', 'id', userId))) return archiveLegacyDocument(collectionName, sourceId, document);
+	if (!document.contentHash || !document.questionType || !document.apClass || !document.unit) {
+		return reject(collectionName, sourceId, 'seen question is missing a required dimension', document);
+	}
+	await upsert(
+		'app.seen_questions',
+		['id', 'user_id', 'content_hash', 'question_type', 'ap_class', 'unit', 'seen_at'],
+		[sourceId, userId, String(document.contentHash), String(document.questionType), String(document.apClass), String(document.unit), dateOf(document.seenAt)],
+		'"id"',
+		['user_id', 'content_hash', 'question_type', 'ap_class', 'unit', 'seen_at']
+	);
+	await recordLedger(collectionName, sourceId, 'app.seen_questions', sourceId, document);
 }
 
 async function migrateQuestion(collectionName: string, document: RawDocument, kind: 'mcq' | 'frq'): Promise<void> {
@@ -323,6 +512,14 @@ async function migrateQuestion(collectionName: string, document: RawDocument, ki
 	const questionId = String(document.s3QuestionId ?? document.questionId ?? sourceId);
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
+	if (kind === 'frq' && document.contentHash) {
+		const existing = await query('SELECT question_id FROM content.frq_questions WHERE content_hash = $1 LIMIT 1', [String(document.contentHash)]);
+		const existingQuestionId = existing[0] && typeof existing[0] === 'object' ? String((existing[0] as { question_id?: unknown }).question_id ?? '') : '';
+		if (existingQuestionId && existingQuestionId !== questionId) {
+			await recordLedger(collectionName, sourceId, 'content.frq_questions', existingQuestionId, document);
+			return;
+		}
+	}
 	await upsert('content.question_registry', ['question_id', 'kind', 'ap_class', 'unit', 'question_created_at', 'content_hash', 'content_length', 'created_at', 'updated_at'], [questionId, kind, stringValue(document.apClass), stringValue(document.unit), created, stringValue(document.contentHash), intValue(document.contentLength, String(document.question ?? document.prompt ?? '').length), created, updated], '"question_id"', ['kind', 'ap_class', 'unit', 'question_created_at', 'content_hash', 'content_length', 'updated_at']);
 	if (kind === 'mcq') {
 		await upsert('content.mcq_questions', ['question_id', 'ap_class', 'unit', 'content_hash', 'topics_covered', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'explanation', 'hint_1', 'hint_2', 'random_key', 'active', 'created_at', 'updated_at'], [questionId, document.apClass ?? '', document.unit ?? 'all-units', document.contentHash ?? '', stringValue(document.topicsCovered), document.question ?? '', document.optionA ?? '', document.optionB ?? '', document.optionC ?? '', document.optionD ?? '', document.correctAnswer ?? '', document.explanation ?? '', stringValue(document.hint1), stringValue(document.hint2), numberValue(document.randomKey, Math.random()), boolValue(document.active, true), created, updated], '"question_id"', ['ap_class', 'unit', 'content_hash', 'topics_covered', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'explanation', 'hint_1', 'hint_2', 'random_key', 'active', 'updated_at']);
@@ -361,6 +558,8 @@ async function migrateQuestionRegistry(collectionName: string, document: RawDocu
 
 async function migrateFrqAttempt(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
+	const userId = String(document.userId ?? '');
+	if (!userId || !(await targetHasRow('auth.users', 'id', userId))) return archiveLegacyDocument(collectionName, sourceId, document);
 	const id = sourceId;
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
@@ -378,10 +577,11 @@ async function migrateFrqAttempt(collectionName: string, document: RawDocument):
 
 async function migrateSuper(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
+	const userId = String(document.userId ?? '');
+	if (!userId || !(await targetHasRow('auth.users', 'id', userId))) return archiveLegacyDocument(collectionName, sourceId, document);
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
 	if (collectionName === 'tutor_profiles') {
-		const userId = String(document.userId ?? '');
 		await upsert('app.tutor_profiles', ['user_id', 'age_confirmed_at', 'mem0_user_id', 'study_availability', 'teaching_style', 'memory_enabled', 'memory_disclosure_seen_at', 'super_free_beta_claimed_at', 'super_access_started_at', 'super_ended_at', 'memory_purged_at', 'created_at', 'updated_at'], [userId, optionalDate(document.ageConfirmedAt), document.mem0UserId ?? '', document.studyAvailability ?? '', document.teachingStyle ?? 'socratic', boolValue(document.memoryEnabled, true), optionalDate(document.memoryDisclosureSeenAt), optionalDate(document.superFreeBetaClaimedAt), optionalDate(document.superAccessStartedAt), optionalDate(document.superEndedAt), optionalDate(document.memoryPurgedAt), created, updated], '"user_id"', ['age_confirmed_at', 'mem0_user_id', 'study_availability', 'teaching_style', 'memory_enabled', 'memory_disclosure_seen_at', 'super_free_beta_claimed_at', 'super_access_started_at', 'super_ended_at', 'memory_purged_at', 'updated_at']);
 		for (const [position, apClass] of arrayValue(document.selectedApClasses).entries()) await upsert('app.tutor_profile_classes', ['user_id', 'ap_class', 'position'], [userId, String(apClass), position], '"user_id", "ap_class"', ['position']);
 		for (const target of arrayValue(document.targetDates)) {
@@ -467,9 +667,14 @@ async function migrateGenerationRollup(collectionName: string, document: RawDocu
 
 async function migrateReferral(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
+	const referrerUserId = String(document.referrerUserId ?? '');
+	const referredUserId = String(document.referredUserId ?? '');
+	if (!referrerUserId || !referredUserId || !(await targetHasRow('auth.users', 'id', referrerUserId)) || !(await targetHasRow('auth.users', 'id', referredUserId))) {
+		return archiveLegacyDocument(collectionName, sourceId, document);
+	}
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
-	await upsert('app.referrals', ['id', 'referrer_user_id', 'referred_user_id', 'activated_at', 'created_at', 'updated_at'], [sourceId, document.referrerUserId ?? '', document.referredUserId ?? '', optionalDate(document.activatedAt), created, updated], '"id"', ['referrer_user_id', 'referred_user_id', 'activated_at', 'updated_at']);
+	await upsert('app.referrals', ['id', 'referrer_user_id', 'referred_user_id', 'activated_at', 'created_at', 'updated_at'], [sourceId, referrerUserId, referredUserId, optionalDate(document.activatedAt), created, updated], '"id"', ['referrer_user_id', 'referred_user_id', 'activated_at', 'updated_at']);
 	await recordLedger(collectionName, sourceId, 'app.referrals', sourceId, document);
 }
 
@@ -481,10 +686,15 @@ async function migrateRecentTopic(collectionName: string, document: RawDocument,
 
 async function load(db: Db): Promise<void> {
 	await eachDocument(db, ['authUsers', 'authSessions', 'authAccounts', 'authVerifications', 'authSubscriptions', 'rateLimit'], migrateAuth);
-	await eachDocument(db, ['userprofiles', 'users'], migrateProfile);
+	await eachDocument(db, ['betterAuthMigrationMap'], migrateBetterAuthMigrationMap);
+	await eachDocument(db, ['userprofiles'], migrateProfile);
+	await eachDocument(db, ['users'], migrateLegacyUser);
+	await eachDocument(db, ['conversations'], migrateConversation);
+	await eachDocument(db, ['seenquestions'], migrateSeenQuestion);
 	await eachDocument(db, ['question_ids'], migrateQuestionRegistry);
 	await eachDocument(db, [...mcqPoolNames], (collection, document) => migrateQuestion(collection, document, 'mcq'));
-	await eachDocument(db, [...frqPoolNames], (collection, document) => migrateQuestion(collection, document, 'frq'));
+	await eachDocument(db, ['frqquestions_pool_v2'], (collection, document) => migrateQuestion(collection, document, 'frq'));
+	await eachDocument(db, ['frqquestions'], (collection, document) => migrateQuestion(collection, document, 'frq'));
 	await eachDocument(db, ['frqattempts'], migrateFrqAttempt);
 	await eachDocument(db, ['referrals'], migrateReferral);
 	await eachDocument(db, ['tutor_profiles', 'super_billing_access', 'super_grants', 'super_usage_rollups', 'insight_reports', 'study_plans', 'study_plan_audits', 'coach_audits', 'super_cleanup_jobs'], migrateSuper);
@@ -508,6 +718,57 @@ async function verify(db: Db): Promise<void> {
 	}
 	const targetRows = await query('SELECT target_table, COUNT(*)::int AS count FROM ops.migration_ledger WHERE run_id = $1 GROUP BY target_table ORDER BY target_table', [runId]);
 	for (const row of targetRows) console.log(JSON.stringify({ phase: 'verify-target-ledger', ...row }));
+	const targetTables = [
+		'auth.users',
+		'auth.accounts',
+		'auth.sessions',
+		'auth.subscriptions',
+		'auth.rate_limits',
+		'app.user_profiles',
+		'app.user_subjects',
+		'app.user_progress',
+		'app.conversations',
+		'app.conversation_messages',
+		'app.seen_questions',
+		'app.tutor_profiles',
+		'app.tutor_profile_classes',
+		'app.tutor_target_dates',
+		'content.question_registry',
+		'content.mcq_questions',
+		'content.frq_questions',
+		'content.frq_materials',
+		'content.frq_sections',
+		'content.frq_rubric_criteria',
+		'content.frq_rubric_levels',
+		'content.question_recent_topics',
+		'ops.better_auth_migration_map',
+		'ops.generation_rollup_snapshots',
+		'ops.legacy_documents',
+		'ops.migration_transforms'
+	] as const;
+	for (const table of targetTables) {
+		const rows = await query(`SELECT COUNT(*)::int AS count FROM ${table}`);
+		const count = Number((rows[0] as { count?: unknown } | undefined)?.count ?? 0);
+		console.log(JSON.stringify({ phase: 'verify-target-count', target_table: table, count }));
+	}
+	const integrityChecks = [
+		['profiles-without-users', 'SELECT COUNT(*)::int AS count FROM app.user_profiles p WHERE NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = p.user_id)'],
+		['conversations-without-users', 'SELECT COUNT(*)::int AS count FROM app.conversations c WHERE NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = c.user_id)'],
+		['messages-without-conversations', 'SELECT COUNT(*)::int AS count FROM app.conversation_messages m WHERE NOT EXISTS (SELECT 1 FROM app.conversations c WHERE c.id = m.conversation_id)'],
+		['mcq-without-registry', 'SELECT COUNT(*)::int AS count FROM content.mcq_questions q WHERE NOT EXISTS (SELECT 1 FROM content.question_registry r WHERE r.question_id = q.question_id)'],
+		['frq-without-registry', 'SELECT COUNT(*)::int AS count FROM content.frq_questions q WHERE NOT EXISTS (SELECT 1 FROM content.question_registry r WHERE r.question_id = q.question_id)'],
+		['frq-materials-without-questions', 'SELECT COUNT(*)::int AS count FROM content.frq_materials m WHERE NOT EXISTS (SELECT 1 FROM content.frq_questions q WHERE q.question_id = m.question_id)'],
+		['frq-sections-without-questions', 'SELECT COUNT(*)::int AS count FROM content.frq_sections s WHERE NOT EXISTS (SELECT 1 FROM content.frq_questions q WHERE q.question_id = s.question_id)'],
+		['frq-criteria-without-questions', 'SELECT COUNT(*)::int AS count FROM content.frq_rubric_criteria c WHERE NOT EXISTS (SELECT 1 FROM content.frq_questions q WHERE q.question_id = c.question_id)'],
+		['frq-levels-without-criteria', 'SELECT COUNT(*)::int AS count FROM content.frq_rubric_levels l WHERE NOT EXISTS (SELECT 1 FROM content.frq_rubric_criteria c WHERE c.question_id = l.question_id AND c.criterion_id = l.criterion_id)'],
+		['ledger-without-run', 'SELECT COUNT(*)::int AS count FROM ops.migration_ledger l WHERE NOT EXISTS (SELECT 1 FROM ops.migration_runs r WHERE r.id = l.run_id)']
+	] as const;
+	for (const [name, statement] of integrityChecks) {
+		const rows = await query(statement);
+		const count = Number((rows[0] as { count?: unknown } | undefined)?.count ?? 0);
+		console.log(JSON.stringify({ phase: 'verify-integrity', check: name, count }));
+		if (count !== 0) throw new Error(`Migration integrity check failed: ${name}=${count}`);
+	}
 	const rejectRows = await query('SELECT source_collection, COUNT(*)::int AS count FROM ops.migration_rejects WHERE run_id = $1 GROUP BY source_collection ORDER BY source_collection', [runId]);
 	if (rejectRows.length) throw new Error(`Migration has rejected documents: ${JSON.stringify(rejectRows)}`);
 }

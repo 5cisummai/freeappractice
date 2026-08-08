@@ -1,8 +1,8 @@
 import {
 	bigint,
 	boolean,
-	bytea,
 	check,
+	customType,
 	date,
 	index,
 	integer,
@@ -19,6 +19,9 @@ import { sql } from 'drizzle-orm';
 
 const createdAt = () => timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+	dataType: () => 'bytea'
+});
 
 export const authSchema = pgSchema('auth');
 export const appSchema = pgSchema('app');
@@ -530,6 +533,58 @@ export const coachAudits = appSchema.table(
 	(table) => [index('coach_audits_user_session_idx').on(table.userId, table.sessionId)]
 );
 
+export const conversations = appSchema.table(
+	'conversations',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		title: text('title').notNull(),
+		lastMessageAt: timestamp('last_message_at', { withTimezone: true, mode: 'date' }),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [index('conversations_user_updated_idx').on(table.userId, table.updatedAt)]
+);
+
+export const conversationMessages = appSchema.table(
+	'conversation_messages',
+	{
+		id: text('id').primaryKey(),
+		conversationId: text('conversation_id')
+			.notNull()
+			.references(() => conversations.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+		role: text('role').notNull(),
+		content: text('content').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull()
+	},
+	(table) => [
+		uniqueIndex('conversation_messages_conversation_position_uq').on(table.conversationId, table.position),
+		index('conversation_messages_conversation_created_idx').on(table.conversationId, table.createdAt)
+	]
+);
+
+export const seenQuestions = appSchema.table(
+	'seen_questions',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		contentHash: text('content_hash').notNull(),
+		questionType: text('question_type').notNull(),
+		apClass: text('ap_class').notNull(),
+		unit: text('unit').notNull(),
+		seenAt: timestamp('seen_at', { withTimezone: true, mode: 'date' }).notNull()
+	},
+	(table) => [
+		index('seen_questions_user_seen_idx').on(table.userId, table.seenAt),
+		index('seen_questions_user_hash_idx').on(table.userId, table.contentHash)
+	]
+);
+
 // Canonical content registry and serving library.
 export const questionRegistry = contentSchema.table(
 	'question_registry',
@@ -541,7 +596,6 @@ export const questionRegistry = contentSchema.table(
 		questionCreatedAt: timestamp('question_created_at', { withTimezone: true, mode: 'date' }),
 		s3Etag: text('s3_etag'),
 		contentHash: text('content_hash'),
-		contentLength: integer('content_length'),
 		contentLength: integer('content_length'),
 		metadataSyncedAt: timestamp('metadata_synced_at', { withTimezone: true, mode: 'date' }),
 		createdAt: createdAt(),
@@ -1004,6 +1058,52 @@ export const migrationRuns = opsSchema.table(
 	}
 );
 
+export const betterAuthMigrationMap = opsSchema.table(
+	'better_auth_migration_map',
+	{
+		legacyUserId: text('legacy_user_id').primaryKey(),
+		betterAuthUserId: text('better_auth_user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'restrict' }),
+		email: text('email').notNull(),
+		hasCredential: boolean('has_credential').notNull(),
+		hasGoogle: boolean('has_google').notNull(),
+		migratedAt: timestamp('migrated_at', { withTimezone: true, mode: 'date' }).notNull(),
+		status: text('status').notNull()
+	},
+	(table) => [index('better_auth_migration_map_better_auth_user_idx').on(table.betterAuthUserId)]
+);
+
+export const legacyDocuments = opsSchema.table(
+	'legacy_documents',
+	{
+		sourceCollection: text('source_collection').notNull(),
+		sourceId: text('source_id').notNull(),
+		runId: text('run_id')
+			.notNull()
+			.references(() => migrationRuns.id, { onDelete: 'cascade' }),
+		document: jsonb('document').$type<Record<string, unknown>>().notNull(),
+		archivedAt: timestamp('archived_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow()
+	},
+	(table) => [primaryKey({ columns: [table.sourceCollection, table.sourceId] }), index('legacy_documents_run_idx').on(table.runId)]
+);
+
+export const migrationTransforms = opsSchema.table(
+	'migration_transforms',
+	{
+		id: text('id').primaryKey(),
+		runId: text('run_id')
+			.notNull()
+			.references(() => migrationRuns.id, { onDelete: 'cascade' }),
+		sourceCollection: text('source_collection').notNull(),
+		sourceId: text('source_id').notNull(),
+		fieldPaths: text('field_paths').array().notNull(),
+		transformation: text('transformation').notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [index('migration_transforms_run_idx').on(table.runId, table.sourceCollection)]
+);
+
 export const schemaMigrations = opsSchema.table('schema_migrations', {
 		id: text('id').primaryKey(),
 		checksum: text('checksum').notNull(),
@@ -1073,6 +1173,9 @@ export const schema = {
 	studyTasks,
 	studyPlanAudits,
 	coachAudits,
+	conversations,
+	conversationMessages,
+	seenQuestions,
 	questionRegistry,
 	mcqQuestions,
 	frqQuestions,
@@ -1097,6 +1200,9 @@ export const schema = {
 	generationRollupSnapshots,
 	superCleanupJobs,
 	migrationRuns,
+	betterAuthMigrationMap,
+	legacyDocuments,
+	migrationTransforms,
 	schemaMigrations,
 	migrationLedger,
 	migrationRejects

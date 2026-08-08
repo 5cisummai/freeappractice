@@ -120,7 +120,7 @@ export async function reserveGenerationBudget(
 		WHERE ops.pool_generation_budgets.generations + ${delta} <= ${maximum}
 		RETURNING generations
 	`);
-	return rows[0]?.generations ?? null;
+	return rows.rows[0]?.generations ?? null;
 }
 
 /**
@@ -155,7 +155,7 @@ export async function claimPoolRefill(
 		WHERE state.id = candidate.id
 		RETURNING state.id, state.question_type, state.ap_class, state.unit
 	`);
-	const row = rows[0];
+	const row = rows.rows[0];
 	return row
 		? { id: row.id, questionType: row.question_type, apClass: row.ap_class, unit: row.unit }
 		: null;

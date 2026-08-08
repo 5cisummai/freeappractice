@@ -236,7 +236,13 @@ async function findStripeBillingRecords(userId: string): Promise<StripeBillingRe
 			.from(authSubscriptions)
 			.where(and(eq(authSubscriptions.referenceId, userId), eq(authSubscriptions.plan, 'super')))
 	]);
-	return [...localRecords, ...authRecords];
+	return [
+		...localRecords,
+		...authRecords.map((record) => ({
+			stripeCustomerId: record.stripeCustomerId ?? undefined,
+			stripeSubscriptionId: record.stripeSubscriptionId ?? undefined
+		}))
+	];
 }
 
 export async function cancelStripeSubscriptionsForUser(

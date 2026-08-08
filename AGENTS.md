@@ -31,6 +31,12 @@ Follow these without exception.
 
 ---
 
+## Aside Browser — required for account setup
+
+Use the Aside Browser skill at `.agents/skills/aside-browser/SKILL.md` whenever completing work that requires the user’s logged-in browser accounts or interactive website setup, including logging into Neon or Vercel, provisioning databases, changing dashboard settings, or configuring integrations through a web UI.
+
+Use the browser skill for those account-bound actions and verify the resulting UI state. Continue using the CLI or APIs for ordinary non-interactive checks and scripted work. This rule does not authorize browser automation for testing; the no-Playwright testing constraint above still applies.
+
 ## Working style
 
 Act like a lazy senior engineer: solve the real problem with the fewest moving parts.
