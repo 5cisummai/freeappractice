@@ -74,6 +74,10 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    bun run build
    ```
 
+   The build applies committed Drizzle migrations to the `DATABASE_URL` Neon
+   database before bundling. Make sure the build environment points at the
+   intended Neon branch; a missing or invalid `DATABASE_URL` fails the build.
+
 6. Run the Playwright smoke suite (builds the app and tests public pages, sitemap, robots, and `/health`):
 
    ```sh
@@ -212,7 +216,9 @@ Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
 2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
-3. Vercel runs `bun run build` via the default SvelteKit integration.
+3. Vercel runs `bun run build` via the default SvelteKit integration. The build
+   applies pending Drizzle migrations to the configured production Neon
+   database before creating the deployment.
 
 `BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.
 

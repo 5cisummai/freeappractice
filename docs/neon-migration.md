@@ -32,6 +32,8 @@ The physical database is divided into `auth`, `app`, `content`, and `ops` schema
 
 The loader in `scripts/migrate-mongo-to-neon.ts` is read-only against the legacy Mongo source and idempotent against Neon. It records a checksum ledger for every source document, rejects malformed rows explicitly, and fails when it discovers a collection that is not in the allow-list.
 
+The production `build` script runs `db:apply` first, so Vercel applies committed Drizzle SQL to the `DATABASE_URL` target before bundling. The build environment must therefore point at the intended Neon branch.
+
 Use a unique run ID for each load. The intended sequence is:
 
 1. Apply a reviewed Drizzle migration to an isolated Neon branch.
