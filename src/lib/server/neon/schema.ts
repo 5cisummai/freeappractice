@@ -15,7 +15,7 @@ import {
 	timestamp,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 const createdAt = () =>
 	timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
@@ -153,6 +153,27 @@ export const authRateLimits = authSchema.table(
 	},
 	(table) => [uniqueIndex('auth_rate_limits_key_uq').on(table.key)]
 );
+
+// Relation keys must match Better Auth adapter modelNames (see auth/server.ts).
+// Required when experimental.joins is enabled so session lookups can join user.
+export const authUsersRelations = relations(authUsers, ({ many }) => ({
+	authSessions: many(authSessions),
+	authAccounts: many(authAccounts)
+}));
+
+export const authSessionsRelations = relations(authSessions, ({ one }) => ({
+	authUsers: one(authUsers, {
+		fields: [authSessions.userId],
+		references: [authUsers.id]
+	})
+}));
+
+export const authAccountsRelations = relations(authAccounts, ({ one }) => ({
+	authUsers: one(authUsers, {
+		fields: [authAccounts.userId],
+		references: [authUsers.id]
+	})
+}));
 
 // User-owned application data. Arrays and JSONB are limited to values that
 // are genuinely document-shaped; facts that are queried or joined are rows.
@@ -1294,5 +1315,8 @@ export const betterAuthSchema = {
 	authAccounts,
 	authVerifications,
 	authSubscriptions,
-	rateLimit: authRateLimits
+	rateLimit: authRateLimits,
+	authUsersRelations,
+	authSessionsRelations,
+	authAccountsRelations
 };
