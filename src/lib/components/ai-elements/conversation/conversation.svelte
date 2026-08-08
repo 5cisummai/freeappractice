@@ -5,8 +5,6 @@
 
 	export interface ConversationProps extends WithElementRef<HTMLAttributes<HTMLDivElement>> {
 		children?: Snippet;
-		initial?: ScrollBehavior;
-		resize?: ScrollBehavior;
 	}
 </script>
 
@@ -16,13 +14,11 @@
 	let {
 		class: className,
 		children,
-		initial = 'smooth',
-		resize = 'smooth',
 		ref = $bindable(null),
 		...restProps
 	}: ConversationProps = $props();
 
-	let context = setStickToBottomContext();
+	setStickToBottomContext();
 </script>
 
 <div

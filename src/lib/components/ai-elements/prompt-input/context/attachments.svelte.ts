@@ -57,12 +57,14 @@ export class AttachmentsContext {
 		previous: PromptInputAttachment[],
 		next: PromptInputAttachment[]
 	) => {
-		let nextUrls = new Set(
+		// This set is a local cleanup helper, not reactive state.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const nextUrls = new Set(
 			next.map((attachment) => attachment.previewUrl).filter((url): url is string => Boolean(url))
 		);
 
-		for (let attachment of previous) {
-			let previewUrl = attachment.previewUrl;
+		for (const attachment of previous) {
+			const previewUrl = attachment.previewUrl;
 			if (previewUrl?.startsWith('blob:') && !nextUrls.has(previewUrl)) {
 				URL.revokeObjectURL(previewUrl);
 			}
@@ -88,7 +90,7 @@ export class AttachmentsContext {
 			return true;
 		}
 
-		let patterns = this.accept
+		const patterns = this.accept
 			.split(',')
 			.map((pattern) => pattern.trim())
 			.filter(Boolean);
@@ -103,8 +105,8 @@ export class AttachmentsContext {
 	};
 
 	add = (files: File[] | FileList) => {
-		let incoming = Array.from(files);
-		let accepted = incoming.filter((f) => this.matchesAccept(f));
+		const incoming = Array.from(files);
+		const accepted = incoming.filter((f) => this.matchesAccept(f));
 
 		if (accepted.length === 0) {
 			this.onError?.({
@@ -114,8 +116,8 @@ export class AttachmentsContext {
 			return;
 		}
 
-		let withinSize = (f: File) => (this.maxFileSize ? f.size <= this.maxFileSize : true);
-		let sized = accepted.filter(withinSize);
+		const withinSize = (f: File) => (this.maxFileSize ? f.size <= this.maxFileSize : true);
+		const sized = accepted.filter(withinSize);
 
 		if (sized.length === 0 && accepted.length > 0) {
 			this.onError?.({
@@ -125,18 +127,18 @@ export class AttachmentsContext {
 			return;
 		}
 
-		let effectiveMaxFiles =
+		const effectiveMaxFiles =
 			this.multiple === false
 				? typeof this.maxFiles === 'number'
 					? Math.min(this.maxFiles, 1)
 					: 1
 				: this.maxFiles;
 
-		let capacity =
+		const capacity =
 			typeof effectiveMaxFiles === 'number'
 				? Math.max(0, effectiveMaxFiles - this.attachments.length)
 				: undefined;
-		let capped = typeof capacity === 'number' ? sized.slice(0, capacity) : sized;
+		const capped = typeof capacity === 'number' ? sized.slice(0, capacity) : sized;
 
 		if (typeof capacity === 'number' && sized.length > capacity) {
 			this.onError?.({
@@ -145,8 +147,8 @@ export class AttachmentsContext {
 			});
 		}
 
-		let added: PromptInputAttachment[] = [];
-		for (let file of capped) {
+		const added: PromptInputAttachment[] = [];
+		for (const file of capped) {
 			added.push({
 				id: crypto.randomUUID(),
 				file,
@@ -160,7 +162,7 @@ export class AttachmentsContext {
 			return [];
 		}
 
-		let next = [...this.attachments, ...added];
+		const next = [...this.attachments, ...added];
 		this.setAttachments(next);
 		this.onFileAdd?.(added, next);
 
@@ -168,12 +170,12 @@ export class AttachmentsContext {
 	};
 
 	remove = (id: string) => {
-		let removed = this.attachments.filter((attachment) => attachment.id === id);
+		const removed = this.attachments.filter((attachment) => attachment.id === id);
 		if (removed.length === 0) {
 			return [];
 		}
 
-		let next = this.attachments.filter((attachment) => attachment.id !== id);
+		const next = this.attachments.filter((attachment) => attachment.id !== id);
 		this.setAttachments(next);
 		this.onFileRemove?.(removed, next);
 
@@ -181,7 +183,7 @@ export class AttachmentsContext {
 	};
 
 	clear = () => {
-		let removed = this.attachments;
+		const removed = this.attachments;
 		if (removed.length === 0) {
 			return [];
 		}
@@ -206,7 +208,7 @@ export function setAttachmentsContext(context: AttachmentsContext) {
 }
 
 export function getAttachmentsContext(): AttachmentsContext {
-	let context = getContext<AttachmentsContext>(ATTACHMENTS_CONTEXT_KEY);
+	const context = getContext<AttachmentsContext>(ATTACHMENTS_CONTEXT_KEY);
 	if (!context) {
 		throw new Error('usePromptInputAttachments must be used within a PromptInput');
 	}

@@ -74,9 +74,12 @@
 	class="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-shadow hover:shadow-md"
 >
 	{#if external}
+		<!-- External URLs intentionally bypass SvelteKit's route resolver. -->
+		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		<a {href} class="flex h-full flex-col" target="_blank" rel="noopener noreferrer">
 			{@render cardContent()}
 		</a>
+		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	{:else}
 		<a
 			href={resolve(href as '/blog' | '/blog/science-of-studying' | '/blog/summer-ap-study-plan')}

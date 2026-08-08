@@ -35,7 +35,7 @@ export function getPromptInputProvider(): Controller | null {
 }
 
 export function usePromptInput(): Controller {
-	let context = getContext<Controller>(PROVIDER_CONTEXT_KEY);
+	const context = getContext<Controller>(PROVIDER_CONTEXT_KEY);
 	if (!context) {
 		throw new Error('usePromptInput must be used within a PromptInputProvider');
 	}

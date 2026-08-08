@@ -2,7 +2,7 @@
 	import { cn } from '$lib/utils';
 	import type { ButtonProps } from '$lib/components/ui/button/index.js';
 
-	export interface ConversationScrollButtonProps extends ButtonProps {}
+	export type ConversationScrollButtonProps = ButtonProps;
 </script>
 
 <script lang="ts">

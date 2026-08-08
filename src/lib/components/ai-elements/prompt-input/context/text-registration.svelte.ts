@@ -17,7 +17,7 @@ export function setPromptInputTextRegistration(registration: PromptInputTextRegi
 }
 
 export function getPromptInputTextRegistration(): PromptInputTextRegistration {
-	let context = getContext<PromptInputTextRegistration>(PROMPT_INPUT_TEXT_REGISTRATION_KEY);
+	const context = getContext<PromptInputTextRegistration>(PROMPT_INPUT_TEXT_REGISTRATION_KEY);
 	if (!context) {
 		throw new Error('PromptInput.Textarea must be used within PromptInput.Root');
 	}

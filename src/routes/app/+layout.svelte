@@ -40,6 +40,8 @@
 		const url = new URL(page.url);
 		url.searchParams.delete('signup');
 		const appHref = `${resolve('/app')}${url.search}`;
+		// appHref is resolved above; the query string is appended after resolution.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		void goto(appHref, { replaceState: true, keepFocus: true, noScroll: true });
 	});
 </script>
