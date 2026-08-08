@@ -253,45 +253,39 @@ export const FrqQuestionModel = {
 			.delete(frqRubricLevels as any)
 			.where(eq((frqRubricLevels as any).questionId, questionId));
 		if (input.materials?.length)
-			await db
-				.insert(frqMaterials as any)
-				.values(
-					input.materials.map((item: FrqMaterial, position: number) => ({
-						questionId,
-						materialId: item.id,
-						title: item.title ?? null,
-						content: item.content,
-						position
-					}))
-				);
+			await db.insert(frqMaterials as any).values(
+				input.materials.map((item: FrqMaterial, position: number) => ({
+					questionId,
+					materialId: item.id,
+					title: item.title ?? null,
+					content: item.content,
+					position
+				}))
+			);
 		if (input.sections?.length)
-			await db
-				.insert(frqSections as any)
-				.values(
-					input.sections.map((item: FrqSection, position: number) => ({
-						questionId,
-						sectionId: item.id,
-						label: item.label,
-						prompt: item.prompt,
-						responseKind: item.responseKind,
-						maxPoints: item.maxPoints,
-						position
-					}))
-				);
+			await db.insert(frqSections as any).values(
+				input.sections.map((item: FrqSection, position: number) => ({
+					questionId,
+					sectionId: item.id,
+					label: item.label,
+					prompt: item.prompt,
+					responseKind: item.responseKind,
+					maxPoints: item.maxPoints,
+					position
+				}))
+			);
 		if (input.rubric?.length) {
-			await db
-				.insert(frqRubricCriteria as any)
-				.values(
-					input.rubric.map((item: FrqRubricCriterion, position: number) => ({
-						questionId,
-						criterionId: item.id,
-						sectionId: item.sectionId,
-						label: item.label,
-						maxPoints: item.maxPoints,
-						referenceAnswer: item.referenceAnswer,
-						position
-					}))
-				);
+			await db.insert(frqRubricCriteria as any).values(
+				input.rubric.map((item: FrqRubricCriterion, position: number) => ({
+					questionId,
+					criterionId: item.id,
+					sectionId: item.sectionId,
+					label: item.label,
+					maxPoints: item.maxPoints,
+					referenceAnswer: item.referenceAnswer,
+					position
+				}))
+			);
 			const levelRows = input.rubric.flatMap((item: FrqRubricCriterion) =>
 				item.levels.map((level, position: number) => ({
 					questionId,
@@ -373,15 +367,13 @@ async function hydrateAttempt(row: IFrqAttempt): Promise<IFrqAttempt> {
 				.delete(frqAttemptCriterionGrades as any)
 				.where(eq((frqAttemptCriterionGrades as any).attemptId, document._id));
 			if (document.grade) {
-				await db
-					.insert(frqAttemptGrades as any)
-					.values({
-						attemptId: document._id,
-						pointsEarned: document.grade.pointsEarned,
-						pointsAvailable: document.grade.pointsAvailable,
-						percentage: document.grade.percentage,
-						overallFeedback: document.grade.overallFeedback
-					});
+				await db.insert(frqAttemptGrades as any).values({
+					attemptId: document._id,
+					pointsEarned: document.grade.pointsEarned,
+					pointsAvailable: document.grade.pointsAvailable,
+					percentage: document.grade.percentage,
+					overallFeedback: document.grade.overallFeedback
+				});
 				if (document.grade.criteria.length)
 					await db
 						.insert(frqAttemptCriterionGrades as any)

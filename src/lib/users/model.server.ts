@@ -155,15 +155,13 @@ async function saveProfile(profile: IUserProfile): Promise<void> {
 
 	await db.delete(userProgress as any).where(eq((userProgress as any).userId, profile.userId));
 	if (profile.progress.length) {
-		await db
-			.insert(userProgress as any)
-			.values(
-				profile.progress.map((entry) => ({
-					userId: profile.userId,
-					...entry,
-					updatedAt: new Date()
-				}))
-			);
+		await db.insert(userProgress as any).values(
+			profile.progress.map((entry) => ({
+				userId: profile.userId,
+				...entry,
+				updatedAt: new Date()
+			}))
+		);
 	}
 
 	await db.delete(mcqAttempts as any).where(eq((mcqAttempts as any).userId, profile.userId));

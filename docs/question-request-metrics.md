@@ -18,20 +18,20 @@ Server-side timing and reliability metrics for selection-only question serves (`
 
 ## Properties — `question_request` (allowlisted)
 
-| Property        | Type    | Notes                                                     |
-| --------------- | ------- | --------------------------------------------------------- |
-| `question_type` | string  | `mcq` \| `frq`                                            |
-| `segment`       | string  | `pool_hit` \| `pool_warming` \| `pool_error` \| `error`   |
-| `ap_class`      | string  | AP course name (catalog value)                            |
-| `unit`          | string  | Normalized unit label                                     |
-| `validation_ms` | number  | Request JSON + validation                                 |
+| Property        | Type    | Notes                                                           |
+| --------------- | ------- | --------------------------------------------------------------- |
+| `question_type` | string  | `mcq` \| `frq`                                                  |
+| `segment`       | string  | `pool_hit` \| `pool_warming` \| `pool_error` \| `error`         |
+| `ap_class`      | string  | AP course name (catalog value)                                  |
+| `unit`          | string  | Normalized unit label                                           |
+| `validation_ms` | number  | Request JSON + validation                                       |
 | `db_connect_ms` | number  | Neon database seam setup (usually near-zero after module reuse) |
-| `pool_query_ms` | number  | Indexed random Neon selection only                       |
-| `total_ms`      | number  | End-to-end handler latency                                |
-| `http_status`   | number  | Response status                                           |
-| `ok`            | boolean | `true` when `http_status < 400`                           |
-| `cached`        | boolean | Whether the served question came from the Neon pool       |
-| `error_type`    | string? | `validation` \| `busy` \| `unknown`                       |
+| `pool_query_ms` | number  | Indexed random Neon selection only                              |
+| `total_ms`      | number  | End-to-end handler latency                                      |
+| `http_status`   | number  | Response status                                                 |
+| `ok`            | boolean | `true` when `http_status < 400`                                 |
+| `cached`        | boolean | Whether the served question came from the Neon pool             |
+| `error_type`    | string? | `validation` \| `busy` \| `unknown`                             |
 
 **Segments**
 

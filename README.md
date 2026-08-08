@@ -91,12 +91,12 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command                   | Purpose                                        |
-| ------------------------- | ---------------------------------------------- |
-| `bun check`               | Type-check with `svelte-check`                 |
-| `bun test:unit`           | Run Vitest unit tests                          |
-| `bun run db:apply`        | Apply committed Drizzle migrations to Neon     |
-| `bun lint` / `bun format` | ESLint and Prettier                            |
+| Command                   | Purpose                                    |
+| ------------------------- | ------------------------------------------ |
+| `bun check`               | Type-check with `svelte-check`             |
+| `bun test:unit`           | Run Vitest unit tests                      |
+| `bun run db:apply`        | Apply committed Drizzle migrations to Neon |
+| `bun lint` / `bun format` | ESLint and Prettier                        |
 
 ## Environment variables
 

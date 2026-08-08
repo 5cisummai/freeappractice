@@ -538,7 +538,7 @@ export class PostgresModel<T extends Record<string, any>> {
 			const field = fieldName(this.config, key);
 			if (this.config.columns[field]) values[field] = value;
 		}
-	for (const [key] of Object.entries(update.$unset ?? {})) {
+		for (const [key] of Object.entries(update.$unset ?? {})) {
 			if (this.config.columns[key]) values[key] = null;
 		}
 		for (const [key, value] of Object.entries(update.$inc ?? {})) {

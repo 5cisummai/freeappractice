@@ -323,15 +323,13 @@ export const QuestionQualityReviewJob = {
 			);
 		}
 		if (Array.isArray(input.batches) && input.batches.length) {
-			await db
-				.insert(qualityReviewBatches as any)
-				.values(
-					input.batches.map((batch: Record<string, unknown>) => ({
-						id: randomUUID(),
-						jobId: row._id,
-						...batch
-					}))
-				);
+			await db.insert(qualityReviewBatches as any).values(
+				input.batches.map((batch: Record<string, unknown>) => ({
+					id: randomUUID(),
+					jobId: row._id,
+					...batch
+				}))
+			);
 		}
 		return hydrateJob(row);
 	},
@@ -371,7 +369,7 @@ export const QuestionQualityReviewJob = {
 				}
 				mutable[key] = value;
 			}
-		for (const [key] of Object.entries(update.$unset ?? {})) mutable[key] = undefined;
+			for (const [key] of Object.entries(update.$unset ?? {})) mutable[key] = undefined;
 			for (const [key, value] of Object.entries(update.$inc ?? {}))
 				mutable[key] = Number(mutable[key] ?? 0) + Number(value);
 			if (update.$push?.batches) current.batches.push(update.$push.batches);

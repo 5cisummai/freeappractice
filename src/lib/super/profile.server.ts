@@ -53,29 +53,25 @@ async function saveTutorProfile(profile: ITutorProfile): Promise<void> {
 		.delete(tutorProfileClasses as any)
 		.where(eq((tutorProfileClasses as any).userId, profile.userId));
 	if (profile.selectedApClasses.length) {
-		await db
-			.insert(tutorProfileClasses as any)
-			.values(
-				profile.selectedApClasses.map((apClass, position) => ({
-					userId: profile.userId,
-					apClass,
-					position
-				}))
-			);
+		await db.insert(tutorProfileClasses as any).values(
+			profile.selectedApClasses.map((apClass, position) => ({
+				userId: profile.userId,
+				apClass,
+				position
+			}))
+		);
 	}
 	await db
 		.delete(tutorTargetDates as any)
 		.where(eq((tutorTargetDates as any).userId, profile.userId));
 	if (profile.targetDates.length) {
-		await db
-			.insert(tutorTargetDates as any)
-			.values(
-				profile.targetDates.map((target) => ({
-					userId: profile.userId,
-					apClass: target.apClass,
-					targetDate: target.targetDate
-				}))
-			);
+		await db.insert(tutorTargetDates as any).values(
+			profile.targetDates.map((target) => ({
+				userId: profile.userId,
+				apClass: target.apClass,
+				targetDate: target.targetDate
+			}))
+		);
 	}
 }
 

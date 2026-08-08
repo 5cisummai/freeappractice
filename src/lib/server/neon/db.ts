@@ -22,8 +22,11 @@ export function getNeonDatabase(): NeonDatabase {
 	const globalNeon = globalThis as NeonGlobal;
 	if (globalNeon.__freeApPracticeNeon) return globalNeon.__freeApPracticeNeon;
 
-	const url = env.DATABASE_URL?.trim() ||
-		(building ? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require' : undefined);
+	const url =
+		env.DATABASE_URL?.trim() ||
+		(building
+			? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require'
+			: undefined);
 	if (!url) {
 		throw new Error('DATABASE_URL is required for the Neon database');
 	}
@@ -43,8 +46,11 @@ export function getNeonDatabase(): NeonDatabase {
  * number of SQL statements that are clearer than a Drizzle expression.
  */
 export function getNeonSql() {
-	const url = env.DATABASE_URL?.trim() ||
-		(building ? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require' : undefined);
+	const url =
+		env.DATABASE_URL?.trim() ||
+		(building
+			? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require'
+			: undefined);
 	if (!url) throw new Error('DATABASE_URL is required for the Neon database');
 	if (!/^postgres(?:ql)?:\/\//i.test(url)) {
 		throw new Error('DATABASE_URL must be a Neon PostgreSQL connection string');
