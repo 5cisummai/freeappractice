@@ -5,6 +5,16 @@
 
 	const changelog = [
 		{
+			version: '1.6.2',
+			date: 'August 8, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: ['Sped up the questions API so practice sessions load the next question faster']
+				}
+			]
+		},
+		{
 			version: '1.6.1',
 			date: 'August 7, 2026',
 			sections: [
