@@ -9,19 +9,14 @@
  *   bun run auth:cleanup-unverified -- --confirm --days 1
  */
 import 'dotenv/config';
-import { and, eq, lt, or } from 'drizzle-orm';
+import { MongoClient, ObjectId, type Db } from 'mongodb';
+import mongoose from 'mongoose';
 import { deleteAppDataDocuments } from '../src/lib/users/delete-app-data-documents.server.ts';
-import { getNeonDatabase } from '../src/lib/server/neon/db';
-import {
-	authAccounts,
-	authSessions,
-	authUsers,
-	authVerifications
-} from '../src/lib/server/neon/schema';
 import {
 	assertSafeEmail,
 	assertSafeUserId,
 	isEligibleUnverifiedUser,
+	unverifiedStaleFilter,
 	type CleanupCandidate
 } from './cleanup-unverified-users-lib';
 
@@ -34,9 +29,22 @@ export {
 
 const DEFAULT_MAX_AGE_DAYS = 1;
 
+type AuthUserDoc = {
+	_id: string;
+	email?: string;
+	emailVerified?: boolean | null;
+	createdAt?: Date;
+};
+
 function getArg(flag: string): string | undefined {
 	const idx = process.argv.indexOf(flag);
 	return idx !== -1 && process.argv[idx + 1] ? process.argv[idx + 1] : undefined;
+}
+
+function getDbName(uri: string): string {
+	const name = new URL(uri).pathname.replace(/^\//, '');
+	if (!name) throw new Error('DATABASE_URI must include a database name');
+	return name;
 }
 
 function parseDays(): number {
@@ -54,33 +62,30 @@ function cutoffFromDays(days: number, now = new Date()): Date {
 	return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
-async function loadCandidates(cutoff: Date): Promise<CleanupCandidate[]> {
-	const db = getNeonDatabase();
+async function loadCandidates(db: Db, cutoff: Date): Promise<CleanupCandidate[]> {
 	const docs = await db
-		.select({
-			id: authUsers.id,
-			email: authUsers.email,
-			emailVerified: authUsers.emailVerified,
-			createdAt: authUsers.createdAt
-		})
-		.from(authUsers)
-		.where(and(eq(authUsers.emailVerified, false), lt(authUsers.createdAt, cutoff)));
+		.collection<AuthUserDoc>('authUsers')
+		.find(unverifiedStaleFilter(cutoff))
+		.project({ _id: 1, email: 1, emailVerified: 1, createdAt: 1 })
+		.toArray();
 
 	const candidates: CleanupCandidate[] = [];
 	for (const doc of docs) {
 		if (doc.emailVerified !== false) {
 			throw new Error(
-				`Safety abort: non-unverified user ${String(doc.id)} appeared in candidate set`
+				`Safety abort: non-unverified user ${String(doc._id)} appeared in candidate set`
 			);
 		}
 		if (!isEligibleUnverifiedUser(doc, cutoff)) {
-			throw new Error(`Safety abort: query returned ineligible user ${String(doc.id)}`);
+			throw new Error(
+				`Safety abort: query returned ineligible user ${String(doc._id)} (emailVerified=${String(doc.emailVerified)})`
+			);
 		}
 		if (!(doc.createdAt instanceof Date)) {
-			throw new Error(`Safety abort: candidate ${String(doc.id)} missing createdAt`);
+			throw new Error(`Safety abort: candidate ${String(doc._id)} missing createdAt`);
 		}
 		candidates.push({
-			id: assertSafeUserId(String(doc.id)),
+			id: assertSafeUserId(String(doc._id)),
 			email: assertSafeEmail(doc.email),
 			emailVerified: doc.emailVerified,
 			createdAt: doc.createdAt
@@ -89,53 +94,42 @@ async function loadCandidates(cutoff: Date): Promise<CleanupCandidate[]> {
 	return candidates;
 }
 
-async function deleteOneUnverifiedUser(candidate: CleanupCandidate, cutoff: Date) {
-	const db = getNeonDatabase();
+async function deleteOneUnverifiedUser(db: Db, candidate: CleanupCandidate, cutoff: Date) {
+	const authUsers = db.collection<AuthUserDoc>('authUsers');
 	const userId = assertSafeUserId(candidate.id);
 	const email = assertSafeEmail(candidate.email);
+	if (!ObjectId.isValid(userId)) {
+		throw new Error(`Safety abort: user id is not a valid ObjectId: ${userId}`);
+	}
+	const objectId = new ObjectId(userId);
 
-	// The predicate is repeated in the DELETE so a user verified between the
-	// candidate read and this call cannot be cascaded.
-	const deleted = await db
-		.delete(authUsers)
-		.where(
-			and(
-				eq(authUsers.id, userId),
-				eq(authUsers.email, email),
-				eq(authUsers.emailVerified, false),
-				lt(authUsers.createdAt, cutoff)
-			)
-		)
-		.returning({
-			id: authUsers.id,
-			email: authUsers.email,
-			emailVerified: authUsers.emailVerified
-		});
+	// Atomic: only deletes if still unverified, same email, and still older than cutoff.
+	// authUsers._id is BSON ObjectId; related rows store userId as string.
+	const deleted = await authUsers.findOneAndDelete({
+		_id: objectId as unknown as string,
+		email,
+		emailVerified: false,
+		createdAt: { $lt: cutoff }
+	});
 
-	const deletedUser = deleted[0];
-	if (!deletedUser) {
+	if (!deleted) {
 		console.log(`  skipped ${email} (${userId}) — no longer eligible`);
 		return false;
 	}
 
-	if (deletedUser.emailVerified !== false) {
+	if (deleted.emailVerified !== false) {
 		throw new Error(`Safety abort: refuse to cascade-delete non-unverified user ${userId}`);
 	}
 
-	const deletedId = assertSafeUserId(String(deletedUser.id));
-	const deletedEmail = assertSafeEmail(deletedUser.email ?? email);
+	const deletedId = assertSafeUserId(String(deleted._id));
+	const deletedEmail = assertSafeEmail(deleted.email ?? email);
 
 	await Promise.all([
-		db.delete(authSessions).where(eq(authSessions.userId, deletedId)),
-		db.delete(authAccounts).where(eq(authAccounts.userId, deletedId)),
-		db
-			.delete(authVerifications)
-			.where(
-				or(
-					eq(authVerifications.identifier, deletedEmail),
-					eq(authVerifications.identifier, deletedEmail.toLowerCase())
-				)
-			)
+		db.collection('authSessions').deleteMany({ userId: deletedId }),
+		db.collection('authAccounts').deleteMany({ userId: deletedId }),
+		db.collection('authVerifications').deleteMany({
+			$or: [{ identifier: deletedEmail }, { identifier: deletedEmail.toLowerCase() }]
+		})
 	]);
 	await deleteAppDataDocuments([deletedId]);
 
@@ -143,26 +137,26 @@ async function deleteOneUnverifiedUser(candidate: CleanupCandidate, cutoff: Date
 }
 
 async function main() {
-	const DATABASE_URL = process.env.DATABASE_URL;
-	if (!DATABASE_URL) {
-		console.error('Error: DATABASE_URL is not set in your environment / .env file.');
+	const DATABASE_URI = process.env.DATABASE_URI;
+	if (!DATABASE_URI) {
+		console.error('Error: DATABASE_URI is not set in your environment / .env file.');
 		process.exit(1);
 	}
 
 	const confirm = process.argv.includes('--confirm');
 	const days = parseDays();
 	const cutoff = cutoffFromDays(days);
-	try {
-		console.log(`Connecting to Neon PostgreSQL…`);
-		getNeonDatabase();
-		console.log(`Connected. Cutoff: createdAt < ${cutoff.toISOString()} (${days} day(s)).`);
-		console.log('Target table: auth.users only (never legacy users).');
+	const client = new MongoClient(DATABASE_URI);
 
-		const db = getNeonDatabase();
-		const verifiedBefore = (
-			await db.select({ id: authUsers.id }).from(authUsers).where(eq(authUsers.emailVerified, true))
-		).length;
-		const candidates = await loadCandidates(cutoff);
+	try {
+		console.log(`Connecting to MongoDB…`);
+		await client.connect();
+		const db = client.db(getDbName(DATABASE_URI));
+		console.log(`Connected. Cutoff: createdAt < ${cutoff.toISOString()} (${days} day(s)).`);
+		console.log('Target collection: authUsers only (never legacy users).');
+
+		const verifiedBefore = await db.collection('authUsers').countDocuments({ emailVerified: true });
+		const candidates = await loadCandidates(db, cutoff);
 		if (candidates.some((c) => c.emailVerified !== false)) {
 			throw new Error('Safety abort: candidate list includes a non-unverified user');
 		}
@@ -184,18 +178,17 @@ async function main() {
 			return;
 		}
 
+		await mongoose.connect(DATABASE_URI);
 		console.log('\nDeleting…');
 		let deletedCount = 0;
 		for (const candidate of candidates) {
-			if (await deleteOneUnverifiedUser(candidate, cutoff)) {
+			if (await deleteOneUnverifiedUser(db, candidate, cutoff)) {
 				deletedCount += 1;
 				console.log(`  deleted ${candidate.email} (${candidate.id})`);
 			}
 		}
 
-		const verifiedAfter = (
-			await db.select({ id: authUsers.id }).from(authUsers).where(eq(authUsers.emailVerified, true))
-		).length;
+		const verifiedAfter = await db.collection('authUsers').countDocuments({ emailVerified: true });
 		if (verifiedAfter !== verifiedBefore) {
 			throw new Error(
 				`Safety abort: verified user count changed (${verifiedBefore} → ${verifiedAfter})`
@@ -205,7 +198,10 @@ async function main() {
 		console.log(`\n✓ Deleted ${deletedCount} of ${candidates.length} candidate(s).`);
 		console.log(`Verified users unchanged: ${verifiedAfter}`);
 	} finally {
-		// Neon HTTP has no client/socket to disconnect.
+		if (mongoose.connection.readyState !== 0) {
+			await mongoose.disconnect();
+		}
+		await client.close();
 	}
 }
 

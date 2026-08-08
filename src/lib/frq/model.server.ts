@@ -1,31 +1,8 @@
-import { randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import mongoose, { Schema, type Document, type Model } from 'mongoose';
 import type { FrqGrade, FrqMaterial, FrqRubricCriterion, FrqSection } from '$lib/frq/types';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import {
-	frqAttemptCriterionGrades,
-	frqAttemptGrades,
-	frqAttempts,
-	frqMaterials,
-	frqQuestions,
-	frqRubricCriteria,
-	frqRubricLevels,
-	frqSections,
-	questionRecentTopics,
-	questionRegistry
-} from '$lib/server/neon/schema';
-import {
-	applyProjection,
-	model,
-	PostgresQuery,
-	type Projection,
-	type SortSpec,
-	type WriteResult
-} from '$lib/server/neon/model';
+import { FRQ_POOL_COLLECTION } from '$lib/questions/pool-collections.server';
 
-type DocumentFields = { _id: string; save: () => Promise<unknown> };
-
-export interface IFrqQuestion extends DocumentFields {
+export interface IFrqQuestion extends Document {
 	apClass: string;
 	unit: string;
 	formatId: string;
@@ -41,17 +18,20 @@ export interface IFrqQuestion extends DocumentFields {
 	topicsCovered: string;
 	contentHash: string;
 	s3QuestionId: string;
+	/** Stable random pivot for indexed selection; assigned once at insert/backfill. */
 	randomKey: number;
+	/** Soft-active flag — quality rejection / rotation without deleting S3 history. */
 	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
+/** Assign a one-time random pivot in [0, 1). */
 export function newFrqPoolRandomKey(): number {
 	return Math.random();
 }
 
-export interface IFrqRecentTopic extends DocumentFields {
+export interface IFrqRecentTopic extends Document {
 	apClass: string;
 	unit: string;
 	topicsCovered: string;
@@ -59,7 +39,7 @@ export interface IFrqRecentTopic extends DocumentFields {
 	createdAt: Date;
 }
 
-export interface IFrqAttempt extends DocumentFields {
+export interface IFrqAttempt extends Document {
 	userId: string;
 	submissionId: string;
 	questionId: string;
@@ -78,410 +58,142 @@ export interface IFrqAttempt extends DocumentFields {
 	updatedAt: Date;
 }
 
-const frqBase = model<IFrqQuestion>({
-	table: frqQuestions as any,
-	columns: frqQuestions as any,
-	idField: 'questionId',
-	fieldAliases: { s3QuestionId: 'questionId' },
-	fromRow: (row) => ({
-		...(row as unknown as IFrqQuestion),
-		s3QuestionId: String(row.questionId),
-		materials: [],
-		sections: [],
-		rubric: []
-	})
-});
+const materialSchema = new Schema<FrqMaterial>(
+	{
+		id: { type: String, required: true },
+		title: { type: String },
+		content: { type: String, required: true }
+	},
+	{ _id: false }
+);
 
-async function hydrateFrqQuestion(row: IFrqQuestion): Promise<IFrqQuestion> {
-	const db = getNeonDatabase() as any;
-	const questionId = row.s3QuestionId;
-	const [materials, sections, criteria, levels] = await Promise.all([
-		db
-			.select()
-			.from(frqMaterials as any)
-			.where(eq((frqMaterials as any).questionId, questionId))
-			.orderBy(asc((frqMaterials as any).position)),
-		db
-			.select()
-			.from(frqSections as any)
-			.where(eq((frqSections as any).questionId, questionId))
-			.orderBy(asc((frqSections as any).position)),
-		db
-			.select()
-			.from(frqRubricCriteria as any)
-			.where(eq((frqRubricCriteria as any).questionId, questionId))
-			.orderBy(asc((frqRubricCriteria as any).position)),
-		db
-			.select()
-			.from(frqRubricLevels as any)
-			.where(eq((frqRubricLevels as any).questionId, questionId))
-			.orderBy(asc((frqRubricLevels as any).position))
-	]);
-	const levelsByCriterion = new Map<string, Array<Record<string, any>>>();
-	for (const level of levels as Array<Record<string, any>>) {
-		const list = levelsByCriterion.get(level.criterionId) ?? [];
-		list.push(level);
-		levelsByCriterion.set(level.criterionId, list);
-	}
-	const document: IFrqQuestion = {
-		...row,
-		materials: (materials as Array<Record<string, any>>).map((item) => ({
-			id: item.materialId,
-			title: item.title ?? undefined,
-			content: item.content
-		})),
-		sections: (sections as Array<Record<string, any>>).map((item) => ({
-			id: item.sectionId,
-			label: item.label,
-			prompt: item.prompt,
-			responseKind: item.responseKind,
-			maxPoints: item.maxPoints
-		})),
-		rubric: (criteria as Array<Record<string, any>>).map((item) => ({
-			id: item.criterionId,
-			sectionId: item.sectionId,
-			label: item.label,
-			maxPoints: item.maxPoints,
-			referenceAnswer: item.referenceAnswer,
-			levels: (levelsByCriterion.get(item.criterionId) ?? []).map((level) => ({
-				points: level.points,
-				description: level.description
-			}))
-		})),
-		save: async () => document
-	};
-	return document;
-}
+const sectionSchema = new Schema<FrqSection>(
+	{
+		id: { type: String, required: true },
+		label: { type: String, required: true },
+		prompt: { type: String, required: true },
+		responseKind: { type: String, enum: ['text'], required: true },
+		maxPoints: { type: Number, required: true }
+	},
+	{ _id: false }
+);
 
-export const FrqQuestionModel = {
-	find(
-		filter: Record<string, unknown> = {},
-		projection?: Projection,
-		options?: { sort?: SortSpec; limit?: number }
-	): PostgresQuery<IFrqQuestion[]> {
-		return new PostgresQuery(async (queryOptions) => {
-			const rows = await frqBase
-				.find(filter, undefined, {
-					sort: queryOptions.sort ?? options?.sort,
-					limit: queryOptions.limit ?? options?.limit
-				})
-				.exec();
-			const hydrated = await Promise.all(rows.map(hydrateFrqQuestion));
-			return hydrated.map((row) => applyProjection(row, queryOptions.projection ?? projection));
-		});
+const rubricLevelSchema = new Schema(
+	{
+		points: { type: Number, required: true },
+		description: { type: String, required: true }
 	},
-	findOne(
-		filter: Record<string, unknown> = {},
-		projection?: Projection | null,
-		options?: { sort?: SortSpec }
-	): PostgresQuery<IFrqQuestion | null> {
-		return new PostgresQuery(async (queryOptions) => {
-			const row = await frqBase.findOne(filter, undefined, options).exec();
-			return row
-				? applyProjection(
-						await hydrateFrqQuestion(row),
-						queryOptions.projection ?? projection ?? undefined
-					)
-				: null;
-		});
-	},
-	countDocuments(filter: Record<string, unknown> = {}): PostgresQuery<number> {
-		return frqBase.countDocuments(filter);
-	},
-	updateMany(
-		filter: Record<string, unknown>,
-		update: Record<string, unknown>
-	): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => frqBase.updateMany(filter, update).exec());
-	},
-	async create(input: Record<string, any>): Promise<IFrqQuestion> {
-		const db = getNeonDatabase() as any;
-		const questionId = String(input.s3QuestionId ?? input.questionId ?? '');
-		if (!questionId) throw new Error('FRQ question requires s3QuestionId');
-		const createdAt = input.createdAt ?? new Date();
-		const updatedAt = input.updatedAt ?? createdAt;
-		await db
-			.insert(questionRegistry as any)
-			.values({
-				questionId,
-				kind: 'frq',
-				apClass: input.apClass,
-				unit: input.unit,
-				contentHash: input.contentHash,
-				questionCreatedAt: createdAt,
-				contentLength: String(input.prompt ?? '').length,
-				createdAt,
-				updatedAt
-			})
-			.onConflictDoUpdate({
-				target: (questionRegistry as any).questionId,
-				set: {
-					kind: 'frq',
-					apClass: input.apClass,
-					unit: input.unit,
-					contentHash: input.contentHash,
-					updatedAt
-				}
-			});
-		await db
-			.insert(frqQuestions as any)
-			.values({
-				questionId,
-				apClass: input.apClass,
-				unit: input.unit,
-				formatId: input.formatId,
-				profileVersion: input.profileVersion,
-				promptVersion: input.promptVersion,
-				rubricVersion: input.rubricVersion,
-				schemaVersion: input.schemaVersion ?? 1,
-				prompt: input.prompt,
-				totalPoints: input.totalPoints,
-				topicsCovered: input.topicsCovered,
-				contentHash: input.contentHash,
-				randomKey: input.randomKey ?? newFrqPoolRandomKey(),
-				active: input.active ?? true,
-				createdAt,
-				updatedAt
-			})
-			.onConflictDoNothing();
-		await db.delete(frqMaterials as any).where(eq((frqMaterials as any).questionId, questionId));
-		await db.delete(frqSections as any).where(eq((frqSections as any).questionId, questionId));
-		await db
-			.delete(frqRubricCriteria as any)
-			.where(eq((frqRubricCriteria as any).questionId, questionId));
-		await db
-			.delete(frqRubricLevels as any)
-			.where(eq((frqRubricLevels as any).questionId, questionId));
-		if (input.materials?.length)
-			await db
-				.insert(frqMaterials as any)
-				.values(
-					input.materials.map((item: FrqMaterial, position: number) => ({
-						questionId,
-						materialId: item.id,
-						title: item.title ?? null,
-						content: item.content,
-						position
-					}))
-				);
-		if (input.sections?.length)
-			await db
-				.insert(frqSections as any)
-				.values(
-					input.sections.map((item: FrqSection, position: number) => ({
-						questionId,
-						sectionId: item.id,
-						label: item.label,
-						prompt: item.prompt,
-						responseKind: item.responseKind,
-						maxPoints: item.maxPoints,
-						position
-					}))
-				);
-		if (input.rubric?.length) {
-			await db
-				.insert(frqRubricCriteria as any)
-				.values(
-					input.rubric.map((item: FrqRubricCriterion, position: number) => ({
-						questionId,
-						criterionId: item.id,
-						sectionId: item.sectionId,
-						label: item.label,
-						maxPoints: item.maxPoints,
-						referenceAnswer: item.referenceAnswer,
-						position
-					}))
-				);
-			const levelRows = input.rubric.flatMap((item: FrqRubricCriterion) =>
-				item.levels.map((level, position: number) => ({
-					questionId,
-					criterionId: item.id,
-					points: level.points,
-					description: level.description,
-					position
-				}))
-			);
-			if (levelRows.length) await db.insert(frqRubricLevels as any).values(levelRows);
-		}
-		const row = await frqBase.findOne({ _id: questionId }).exec();
-		if (!row) throw new Error('FRQ question was not created');
-		return hydrateFrqQuestion(row);
-	}
-};
+	{ _id: false }
+);
 
-const frqRecentBase = model<IFrqRecentTopic>({
-	table: questionRecentTopics as any,
-	columns: questionRecentTopics as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({
-		...input,
-		id: input.id ?? randomUUID(),
-		kind: 'frq',
-		questionId: input.questionId ?? input.s3QuestionId
-	})
-});
+const rubricCriterionSchema = new Schema<FrqRubricCriterion>(
+	{
+		id: { type: String, required: true },
+		sectionId: { type: String, required: true },
+		label: { type: String, required: true },
+		maxPoints: { type: Number, required: true },
+		levels: { type: [rubricLevelSchema], required: true },
+		referenceAnswer: { type: String, required: true }
+	},
+	{ _id: false }
+);
 
-export const FrqRecentTopic = frqRecentBase;
+const frqQuestionSchema = new Schema<IFrqQuestion>(
+	{
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		formatId: { type: String, required: true },
+		profileVersion: { type: String, required: true },
+		promptVersion: { type: String, required: true },
+		rubricVersion: { type: String, required: true },
+		schemaVersion: { type: Number, enum: [1], required: true },
+		prompt: { type: String, required: true },
+		materials: { type: [materialSchema], default: [] },
+		sections: { type: [sectionSchema], required: true },
+		rubric: { type: [rubricCriterionSchema], required: true },
+		totalPoints: { type: Number, required: true },
+		topicsCovered: { type: String, required: true },
+		contentHash: { type: String, required: true },
+		s3QuestionId: { type: String, required: true },
+		randomKey: { type: Number, required: true, default: newFrqPoolRandomKey },
+		active: { type: Boolean, required: true, default: true }
+	},
+	{ timestamps: true }
+);
 
-const frqAttemptBase = model<IFrqAttempt>({
-	table: frqAttempts as any,
-	columns: frqAttempts as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
-});
+frqQuestionSchema.index({ apClass: 1, unit: 1, createdAt: 1 });
+frqQuestionSchema.index({ apClass: 1, unit: 1, active: 1, randomKey: 1 });
+frqQuestionSchema.index({ contentHash: 1 }, { unique: true });
+frqQuestionSchema.index({ s3QuestionId: 1 }, { unique: true });
 
-async function hydrateAttempt(row: IFrqAttempt): Promise<IFrqAttempt> {
-	const db = getNeonDatabase() as any;
-	const grade = (
-		await db
-			.select()
-			.from(frqAttemptGrades as any)
-			.where(eq((frqAttemptGrades as any).attemptId, row._id))
-			.limit(1)
-	)[0] as Record<string, any> | undefined;
-	const criteria = await db
-		.select()
-		.from(frqAttemptCriterionGrades as any)
-		.where(eq((frqAttemptCriterionGrades as any).attemptId, row._id));
-	const document: IFrqAttempt = {
-		...row,
-		grade: grade
-			? {
-					criteria: (criteria as Array<Record<string, any>>).map((item) => ({
-						criterionId: item.criterionId,
-						sectionId: item.sectionId,
-						label: item.label,
-						points: item.points,
-						pointsAvailable: item.pointsAvailable,
-						evidence: item.evidence,
-						feedback: item.feedback
-					})),
-					pointsEarned: grade.pointsEarned,
-					pointsAvailable: grade.pointsAvailable,
-					percentage: grade.percentage,
-					overallFeedback: grade.overallFeedback
-				}
-			: undefined,
-		save: async () => {
-			await frqAttemptBase
-				.updateOne({ _id: document._id }, { $set: { ...document, grade: undefined } })
-				.exec();
-			await db
-				.delete(frqAttemptGrades as any)
-				.where(eq((frqAttemptGrades as any).attemptId, document._id));
-			await db
-				.delete(frqAttemptCriterionGrades as any)
-				.where(eq((frqAttemptCriterionGrades as any).attemptId, document._id));
-			if (document.grade) {
-				await db
-					.insert(frqAttemptGrades as any)
-					.values({
-						attemptId: document._id,
-						pointsEarned: document.grade.pointsEarned,
-						pointsAvailable: document.grade.pointsAvailable,
-						percentage: document.grade.percentage,
-						overallFeedback: document.grade.overallFeedback
-					});
-				if (document.grade.criteria.length)
-					await db
-						.insert(frqAttemptCriterionGrades as any)
-						.values(document.grade.criteria.map((item) => ({ attemptId: document._id, ...item })));
-			}
-			return document;
-		}
-	};
-	return document;
-}
+const frqRecentTopicSchema = new Schema<IFrqRecentTopic>(
+	{
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		topicsCovered: { type: String, required: true },
+		s3QuestionId: { type: String, required: true }
+	},
+	{ timestamps: { createdAt: true, updatedAt: false } }
+);
 
-export const FrqAttempt = {
-	find(
-		filter: Record<string, unknown> = {},
-		projection?: Projection
-	): PostgresQuery<IFrqAttempt[]> {
-		return new PostgresQuery(async (options) => {
-			const sqlFilter = Object.fromEntries(
-				Object.entries(filter).filter(([key]) => !key.startsWith('grade.'))
-			);
-			const rows = await frqAttemptBase.find(sqlFilter).exec();
-			const hydrated = await Promise.all(rows.map(hydrateAttempt));
-			const filtered = hydrated.filter((row) => {
-				const percentage = filter['grade.percentage'];
-				if (percentage === undefined) return true;
-				if (!row.grade) return false;
-				if (typeof percentage === 'object' && percentage !== null && '$exists' in percentage) {
-					return (
-						Boolean((percentage as { $exists?: unknown }).$exists) ===
-						(row.grade.percentage !== undefined)
-					);
-				}
-				return row.grade.percentage === percentage;
-			});
-			return filtered.map((row) => applyProjection(row, options.projection ?? projection));
-		});
+frqRecentTopicSchema.index({ apClass: 1, unit: 1, createdAt: -1 });
+
+const criterionGradeSchema = new Schema(
+	{
+		criterionId: { type: String, required: true },
+		sectionId: { type: String, required: true },
+		label: { type: String, required: true },
+		points: { type: Number, required: true },
+		pointsAvailable: { type: Number, required: true },
+		evidence: { type: String, default: '' },
+		feedback: { type: String, required: true }
 	},
-	findOne(
-		filter: Record<string, unknown> = {},
-		projection?: Projection
-	): PostgresQuery<IFrqAttempt | null> {
-		return new PostgresQuery(async (options) => {
-			const row = await frqAttemptBase.findOne(filter).exec();
-			return row
-				? applyProjection(await hydrateAttempt(row), options.projection ?? projection)
-				: null;
-		});
+	{ _id: false }
+);
+
+const gradeSchema = new Schema(
+	{
+		criteria: { type: [criterionGradeSchema], required: true },
+		pointsEarned: { type: Number, required: true },
+		pointsAvailable: { type: Number, required: true },
+		percentage: { type: Number, required: true },
+		overallFeedback: { type: String, required: true }
 	},
-	async create(input: Record<string, any>): Promise<IFrqAttempt> {
-		const row = await frqAttemptBase.create(input);
-		return hydrateAttempt(row);
+	{ _id: false }
+);
+
+const frqAttemptSchema = new Schema<IFrqAttempt>(
+	{
+		userId: { type: String, required: true, index: true },
+		submissionId: { type: String, required: true },
+		questionId: { type: String, required: true, index: true },
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		formatId: { type: String, required: true },
+		responses: { type: Schema.Types.Mixed, required: true },
+		status: { type: String, enum: ['grading', 'graded'], required: true },
+		grade: { type: gradeSchema },
+		timeTakenMs: { type: Number, required: true, min: 0 },
+		profileVersion: { type: String, required: true },
+		rubricVersion: { type: String, required: true },
+		promptVersion: { type: String, required: true },
+		gradingModel: { type: String }
 	},
-	deleteOne(filter: Record<string, unknown>): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => frqAttemptBase.deleteOne(filter).exec());
-	},
-	deleteMany(filter: Record<string, unknown>): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => frqAttemptBase.deleteMany(filter).exec());
-	},
-	aggregate<T = Record<string, unknown>>(pipeline: unknown[]): PostgresQuery<T[]> {
-		return new PostgresQuery(async () => {
-			const firstStage =
-				Array.isArray(pipeline) && pipeline[0] && typeof pipeline[0] === 'object'
-					? (pipeline[0] as { $match?: Record<string, unknown> })
-					: {};
-			const rows = await this.find(firstStage.$match ?? { status: 'graded' }).exec();
-			const grouped = new Map<
-				string,
-				{
-					apClass: string;
-					unit: string;
-					attempts: number;
-					pointsEarned: number;
-					pointsAvailable: number;
-					lastAttemptAt?: Date;
-				}
-			>();
-			for (const row of rows) {
-				if (!row.grade) continue;
-				const key = `${row.apClass}\u0000${row.unit}`;
-				const current = grouped.get(key) ?? {
-					apClass: row.apClass,
-					unit: row.unit,
-					attempts: 0,
-					pointsEarned: 0,
-					pointsAvailable: 0
-				};
-				current.attempts += 1;
-				current.pointsEarned += row.grade.pointsEarned;
-				current.pointsAvailable += row.grade.pointsAvailable;
-				if (!current.lastAttemptAt || row.createdAt > current.lastAttemptAt)
-					current.lastAttemptAt = row.createdAt;
-				grouped.set(key, current);
-			}
-			return [...grouped.values()].map((row) => ({
-				_id: { apClass: row.apClass, unit: row.unit },
-				attempts: row.attempts,
-				pointsEarned: row.pointsEarned,
-				pointsAvailable: row.pointsAvailable,
-				lastAttemptAt: row.lastAttemptAt
-			})) as T[];
-		});
-	}
-};
+	{ timestamps: true }
+);
+
+frqAttemptSchema.index({ userId: 1, submissionId: 1 }, { unique: true });
+frqAttemptSchema.index({ userId: 1, createdAt: -1 });
+frqAttemptSchema.index({ userId: 1, apClass: 1, unit: 1, createdAt: -1 });
+
+export const FrqQuestionModel: Model<IFrqQuestion> =
+	(mongoose.models.FrqQuestion as Model<IFrqQuestion>) ??
+	mongoose.model<IFrqQuestion>('FrqQuestion', frqQuestionSchema, FRQ_POOL_COLLECTION);
+
+export const FrqRecentTopic: Model<IFrqRecentTopic> =
+	(mongoose.models.FrqRecentTopic as Model<IFrqRecentTopic>) ??
+	mongoose.model<IFrqRecentTopic>('FrqRecentTopic', frqRecentTopicSchema);
+
+export const FrqAttempt: Model<IFrqAttempt> =
+	(mongoose.models.FrqAttempt as Model<IFrqAttempt>) ??
+	mongoose.model<IFrqAttempt>('FrqAttempt', frqAttemptSchema);

@@ -47,8 +47,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Choose at least one subject to continue.' });
 		}
 
-		// Load full profile before save — projected docs omit arrays and wipe/crash on save.
-		const userProfile = await findUserProfileOrFail(locals.userId!);
+		const userProfile = await findUserProfileOrFail(locals.userId!, 'subjects');
 		userProfile.subjects = subjects;
 		await userProfile.save();
 

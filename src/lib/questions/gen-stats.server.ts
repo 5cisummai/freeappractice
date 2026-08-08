@@ -1,68 +1,100 @@
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { connectDb } from '$lib/server/db';
 import {
-	questionGenerationByClass,
-	questionGenerationByGlobalUnit,
-	questionGenerationByUnit
-} from '$lib/server/neon/schema';
+	QuestionGenClassTotal,
+	QuestionGenUnitDetail,
+	QuestionGenUnitGlobal
+} from '$lib/questions/gen-stats-model.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 
 /**
- * Generation totals are derived from the canonical Postgres question registry.
- * Keeping this function as a no-op preserves the worker seam without reintroducing
- * mutable counter documents.
+ * Call after a new MCQ is written to S3. Updates class totals, per-class unit rows,
+ * and global unit rollup (same labels across courses are summed in global).
  */
-export async function recordMcqGenerated(_opts: {
+export async function recordMcqGenerated(opts: {
 	apClass: string;
 	unit?: string | null;
 	questionText: string;
 }): Promise<void> {
-	void _opts;
-	return;
+	await connectDb();
+	const unit = normalizeUnit(opts.unit, '(none)');
+	const len = opts.questionText.length;
+
+	await Promise.all([
+		QuestionGenClassTotal.findOneAndUpdate(
+			{ apClass: opts.apClass },
+			{ $inc: { count: 1, totalQuestionChars: len } },
+			{ upsert: true, returnDocument: 'after' }
+		).exec(),
+		QuestionGenUnitDetail.findOneAndUpdate(
+			{ apClass: opts.apClass, unit },
+			{ $inc: { count: 1, totalQuestionChars: len } },
+			{ upsert: true, returnDocument: 'after' }
+		).exec(),
+		QuestionGenUnitGlobal.findOneAndUpdate(
+			{ unit },
+			{ $inc: { count: 1, totalQuestionChars: len } },
+			{ upsert: true, returnDocument: 'after' }
+		).exec()
+	]);
 }
 
 export interface GenerationStatsPayload {
 	byApClass: Record<string, number>;
 	byUnit: Record<string, number>;
 	byClassAndUnit: Record<string, Record<string, number>>;
-	totals: { questions: number; totalQuestionChars: number };
+	totals: {
+		questions: number;
+		totalQuestionChars: number;
+	};
 }
 
 export async function getGenerationStatsForApi(): Promise<GenerationStatsPayload> {
-	const db = getNeonDatabase() as any;
-	const [classes, units, details] = await Promise.all([
-		db.select().from(questionGenerationByClass as any),
-		db.select().from(questionGenerationByGlobalUnit as any),
-		db.select().from(questionGenerationByUnit as any)
+	await connectDb();
+
+	const [classes, unitGlobals, unitDetails] = await Promise.all([
+		QuestionGenClassTotal.find().lean().exec(),
+		QuestionGenUnitGlobal.find().lean().exec(),
+		QuestionGenUnitDetail.find().lean().exec()
 	]);
 
 	const byApClass: Record<string, number> = {};
-	let questions = 0;
-	let totalQuestionChars = 0;
-	for (const row of classes as Array<{
-		apClass: string;
-		count: number;
-		totalQuestionChars: number;
-	}>) {
-		byApClass[row.apClass] = Number(row.count);
-		questions += Number(row.count);
-		totalQuestionChars += Number(row.totalQuestionChars);
+	for (const row of classes) {
+		byApClass[row.apClass] = row.count;
 	}
 
 	const byUnit: Record<string, number> = {};
-	for (const row of units as Array<{ unit: string; count: number }>)
-		byUnit[row.unit] = Number(row.count);
-
-	const byClassAndUnit: Record<string, Record<string, number>> = {};
-	for (const row of details as Array<{ apClass: string; unit: string; count: number }>) {
-		(byClassAndUnit[row.apClass] ??= {})[row.unit] = Number(row.count);
+	for (const row of unitGlobals) {
+		byUnit[row.unit] = row.count;
 	}
 
-	return { byApClass, byUnit, byClassAndUnit, totals: { questions, totalQuestionChars } };
+	const byClassAndUnit: Record<string, Record<string, number>> = {};
+	for (const row of unitDetails) {
+		if (!byClassAndUnit[row.apClass]) byClassAndUnit[row.apClass] = {};
+		byClassAndUnit[row.apClass][row.unit] = row.count;
+	}
+
+	let questions = 0;
+	let totalQuestionChars = 0;
+	for (const row of classes) {
+		questions += row.count;
+		totalQuestionChars += row.totalQuestionChars;
+	}
+
+	return {
+		byApClass,
+		byUnit,
+		byClassAndUnit,
+		totals: { questions, totalQuestionChars }
+	};
 }
 
+/** Per-class MCQ generation counts used to demand-scale pool targets. */
 export async function getMcqGenerationCountsByClass(): Promise<Record<string, number>> {
-	const stats = await getGenerationStatsForApi();
-	return stats.byApClass;
+	await connectDb();
+	const classes = await QuestionGenClassTotal.find().lean().exec();
+	const byApClass: Record<string, number> = {};
+	for (const row of classes) {
+		byApClass[row.apClass] = row.count;
+	}
+	return byApClass;
 }
-
-export { normalizeUnit };

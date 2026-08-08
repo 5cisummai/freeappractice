@@ -21,7 +21,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - SvelteKit + Svelte 5
 - TypeScript
 - Tailwind CSS
-- Neon PostgreSQL + Drizzle ORM (`@neondatabase/serverless` HTTPS driver)
+- MongoDB + Mongoose
 - [Better Auth](https://www.better-auth.com/) for sessions, email flows, and OAuth
 - [Vercel AI SDK](https://sdk.vercel.ai/) with an OpenAI-compatible API for question generation and tutor responses (OpenAI or [LM Studio](https://lmstudio.ai/) locally)
 - Resend for transactional email
@@ -35,7 +35,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 - Node.js 20+
 - [Bun](https://bun.sh/)
-- A Neon PostgreSQL project/branch for the environment you are running
+- MongoDB (Atlas or local via Docker Compose)
 
 ### Setup
 
@@ -51,16 +51,13 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    cp .env.example .env
    ```
 
-3. (Optional) Start local PostgreSQL and Redis services with `compose.yaml`:
+3. (Optional) Start a local MongoDB instance with `compose.yaml`:
 
    ```sh
    docker compose up -d
    ```
 
-   The deployed app uses the Neon `DATABASE_URL`. The local PostgreSQL service is
-   available at `postgresql://postgres:password@localhost:5432/freeappractice` for
-   SQL inspection and migration work; the runtime must use a Neon branch URL so
-   `@neondatabase/serverless` can send requests over HTTPS.
+   Then set `DATABASE_URI=mongodb://root:password@localhost:27017/freeappractice?authSource=admin` in `.env`.
 
 4. Start the dev server:
 
@@ -74,14 +71,10 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    bun run build
    ```
 
-   The build applies committed Drizzle migrations to the `DATABASE_URL` Neon
-   database before bundling. Make sure the build environment points at the
-   intended Neon branch; a missing or invalid `DATABASE_URL` fails the build.
-
-6. Run the unit test suite:
+6. Run the Playwright smoke suite (builds the app and tests public pages, sitemap, robots, and `/health`):
 
    ```sh
-   bun test:unit
+   bun test
    ```
 
 ### Useful scripts
@@ -98,7 +91,7 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 | Variable             | Purpose                                                                        |
 | -------------------- | ------------------------------------------------------------------------------ |
-| `DATABASE_URL`       | Neon PostgreSQL connection string used by Drizzle over HTTPS                   |
+| `DATABASE_URI`       | MongoDB connection string                                                      |
 | `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
 | `BETTER_AUTH_URL`    | App base URL for auth callbacks (e.g. `http://localhost:5173`)                 |
 | `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
@@ -128,6 +121,12 @@ Super is disabled until Stripe credentials and both price IDs are present. Confi
 `UPSTASH_VECTOR_REST_URL`, `UPSTASH_VECTOR_REST_TOKEN`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
 `REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags.
 
+Create the Better Auth indexes before first production use:
+
+```sh
+bun scripts/create-better-auth-indexes.ts
+```
+
 In Stripe, configure the Customer Portal to allow cancellation at period end, restoration before the end of
 the current period, and switching between the two Super prices at the next renewal. Point the Stripe webhook
 to Better Auth's `/api/auth/stripe/webhook` route and enable at least `checkout.session.completed`,
@@ -143,7 +142,7 @@ with `vercel env pull .env.development.local --environment=development` when set
 
 Upstash Redis is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
 single-flight locks, idempotency keys, and 30-minute Coach approvals. Upstash Vector stores optional tutor
-memories; Neon PostgreSQL, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
+memories; MongoDB, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
 use Redis. For local Redis testing, run an
 Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
 `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.
@@ -215,10 +214,8 @@ The in-app bug report form creates GitHub Issues in this repository via the GitH
 Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
-2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
-3. Vercel runs `bun run build` via the default SvelteKit integration. The build
-   applies pending Drizzle migrations to the configured production Neon
-   database before creating the deployment.
+2. Set production environment variables (at minimum `DATABASE_URI`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
+3. Vercel runs `bun run build` via the default SvelteKit integration.
 
 `BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.
 

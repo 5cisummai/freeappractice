@@ -41,7 +41,7 @@ jobs:
           BETTER_AUTH_SECRET: build-time-placeholder-secret-min-32-chars
           BETTER_AUTH_URL: http://localhost:4173
           PUBLIC_BASE_URL: http://localhost:4173
-          DATABASE_URL: postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require
+          DATABASE_URI: mongodb://127.0.0.1:27017/ci
           OPEN_AI_KEY: sk-ci-placeholder
           PUBLIC_GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
           PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci
@@ -78,7 +78,7 @@ jobs:
           BETTER_AUTH_SECRET: build-time-placeholder-secret-min-32-chars
           BETTER_AUTH_URL: http://localhost:4173
           PUBLIC_BASE_URL: http://localhost:4173
-          DATABASE_URL: postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require
+          DATABASE_URI: mongodb://127.0.0.1:27017/ci
           OPEN_AI_KEY: sk-ci-placeholder
           PUBLIC_GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
           PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci

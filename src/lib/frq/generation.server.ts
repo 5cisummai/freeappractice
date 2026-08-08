@@ -211,7 +211,7 @@ export async function persistGeneratedFrqToPool(
 }
 
 /**
- * Worker-only: AI → S3 → Neon PostgreSQL active FRQ library.
+ * Worker-only: AI → S3 → Mongo active FRQ library.
  * Must not be imported by request-path selection modules.
  */
 export async function generateAndPersistFrq(

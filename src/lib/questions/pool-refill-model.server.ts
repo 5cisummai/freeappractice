@@ -1,17 +1,10 @@
-import { randomUUID } from 'node:crypto';
-import {
-	poolBucketWriteLocks,
-	poolGenerationBudgets,
-	poolRefillStates
-} from '$lib/server/neon/schema';
-import { model, type PostgresModel } from '$lib/server/neon/model';
+import mongoose, { Schema, type Document, type Model } from 'mongoose';
 
 export type PoolRefillQuestionType = 'mcq' | 'frq';
+
 export type PoolRefillStatus = 'pending' | 'running' | 'idle' | 'failed' | 'budget_exhausted';
 
-type DocumentFields = { _id: string; save: () => Promise<unknown> };
-
-export interface IPoolRefillState extends DocumentFields {
+export interface IPoolRefillState extends Document {
 	questionType: PoolRefillQuestionType;
 	apClass: string;
 	unit: string;
@@ -30,7 +23,39 @@ export interface IPoolRefillState extends DocumentFields {
 	updatedAt: Date;
 }
 
-export interface IPoolBucketWriteLock extends DocumentFields {
+const poolRefillSchema = new Schema<IPoolRefillState>(
+	{
+		questionType: { type: String, enum: ['mcq', 'frq'], required: true },
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		status: {
+			type: String,
+			enum: ['pending', 'running', 'idle', 'failed', 'budget_exhausted'],
+			required: true,
+			default: 'pending'
+		},
+		target: { type: Number, required: true },
+		observedCount: { type: Number, required: true, default: 0 },
+		requestedAt: { type: Date, required: true, default: () => new Date() },
+		leaseOwner: { type: String, default: null },
+		leaseExpiresAt: { type: Date, default: null },
+		attempts: { type: Number, required: true, default: 0 },
+		generatedCount: { type: Number, required: true, default: 0 },
+		lastError: { type: String, default: null },
+		nextAttemptAt: { type: Date, default: null },
+		lastSuccessAt: { type: Date, default: null }
+	},
+	{ timestamps: true }
+);
+
+poolRefillSchema.index({ questionType: 1, apClass: 1, unit: 1 }, { unique: true });
+poolRefillSchema.index({ status: 1, nextAttemptAt: 1, leaseExpiresAt: 1 });
+
+export const PoolRefillState: Model<IPoolRefillState> =
+	(mongoose.models.PoolRefillState as Model<IPoolRefillState>) ??
+	mongoose.model<IPoolRefillState>('PoolRefillState', poolRefillSchema);
+
+export interface IPoolBucketWriteLock extends Document {
 	questionType: PoolRefillQuestionType;
 	apClass: string;
 	unit: string;
@@ -40,41 +65,39 @@ export interface IPoolBucketWriteLock extends DocumentFields {
 	updatedAt: Date;
 }
 
-export interface IPoolGenerationBudget extends DocumentFields {
+const poolBucketWriteLockSchema = new Schema<IPoolBucketWriteLock>(
+	{
+		questionType: { type: String, enum: ['mcq', 'frq'], required: true },
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		leaseOwner: { type: String, default: null },
+		leaseExpiresAt: { type: Date, default: null }
+	},
+	{ timestamps: true }
+);
+
+poolBucketWriteLockSchema.index({ questionType: 1, apClass: 1, unit: 1 }, { unique: true });
+
+export const PoolBucketWriteLock: Model<IPoolBucketWriteLock> =
+	(mongoose.models.PoolBucketWriteLock as Model<IPoolBucketWriteLock>) ??
+	mongoose.model<IPoolBucketWriteLock>('PoolBucketWriteLock', poolBucketWriteLockSchema);
+
+/** Daily LLM generation counter for hard budget enforcement. */
+export interface IPoolGenerationBudget extends Document {
 	dayKey: string;
 	generations: number;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
-export const PoolRefillState: PostgresModel<IPoolRefillState> = model<IPoolRefillState>({
-	table: poolRefillStates as any,
-	columns: poolRefillStates as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({
-		...input,
-		id: input.id ?? randomUUID(),
-		requestedAt: input.requestedAt ?? new Date(),
-		status: input.status ?? 'pending',
-		observedCount: input.observedCount ?? 0,
-		attempts: input.attempts ?? 0,
-		generatedCount: input.generatedCount ?? 0
-	})
-});
-
-export const PoolBucketWriteLock: PostgresModel<IPoolBucketWriteLock> = model<IPoolBucketWriteLock>(
+const poolGenerationBudgetSchema = new Schema<IPoolGenerationBudget>(
 	{
-		table: poolBucketWriteLocks as any,
-		columns: poolBucketWriteLocks as any,
-		idField: 'id',
-		prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
-	}
+		dayKey: { type: String, required: true, unique: true },
+		generations: { type: Number, required: true, default: 0 }
+	},
+	{ timestamps: true }
 );
 
-export const PoolGenerationBudget: PostgresModel<IPoolGenerationBudget> =
-	model<IPoolGenerationBudget>({
-		table: poolGenerationBudgets as any,
-		columns: poolGenerationBudgets as any,
-		idField: 'dayKey',
-		prepareInsert: async (input) => ({ ...input, generations: input.generations ?? 0 })
-	});
+export const PoolGenerationBudget: Model<IPoolGenerationBudget> =
+	(mongoose.models.PoolGenerationBudget as Model<IPoolGenerationBudget>) ??
+	mongoose.model<IPoolGenerationBudget>('PoolGenerationBudget', poolGenerationBudgetSchema);

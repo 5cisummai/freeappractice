@@ -4,7 +4,6 @@ import {
 	QUESTION_QUALITY_MODEL
 } from '$lib/ai/ai-models-config';
 import { connectDb } from '$lib/server/db';
-import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { getQuestionFromS3 } from '$lib/questions/storage.server';
 import { QuestionId } from '$lib/questions/question-id-model.server';
 import {
@@ -85,7 +84,7 @@ export async function submitQuestionFeedback(opts: {
 		);
 		accepted = result.upsertedCount > 0;
 	} catch (error) {
-		if (!isDuplicateKeyError(error)) {
+		if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 11000)) {
 			throw error;
 		}
 	}

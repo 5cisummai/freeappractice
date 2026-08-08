@@ -1,7 +1,7 @@
 /**
  * scripts/batch-collect-question-pool.ts
  *
- * Download a completed OpenAI Batch and persist MCQs to S3 + PostgreSQL pool.
+ * Download a completed OpenAI Batch and persist MCQs to S3 + Mongo pool.
  *
  *   bun run pool:batch-collect -- --batch batch_...
  *   bun run pool:batch-collect -- --batch batch_... --dry-run
@@ -45,8 +45,8 @@ async function main() {
 		console.error('Usage: bun run pool:batch-collect -- --batch batch_...');
 		process.exit(1);
 	}
-	if (!process.env.DATABASE_URL) {
-		console.error('DATABASE_URL is not set');
+	if (!process.env.DATABASE_URI) {
+		console.error('DATABASE_URI is not set');
 		process.exit(1);
 	}
 	if (!process.env.OPEN_AI_KEY) {

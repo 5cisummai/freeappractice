@@ -1,77 +1,72 @@
-import { mcqQuestions, questionRegistry } from '$lib/server/neon/schema';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { model, type PostgresModel } from '$lib/server/neon/model';
+import mongoose, { Schema, type Document, type Model } from 'mongoose';
+import { MCQ_POOL_COLLECTION } from '$lib/questions/pool-collections.server';
 
-type DocumentFields = { _id: string; save: () => Promise<unknown> };
-
+/** Shared pool metadata. */
 interface IPoolDocMetadata {
 	apClass: string;
 	unit: string;
 	topicsCovered?: string;
+	/** Stable random pivot for indexed selection; assigned once at insert/backfill. */
 	randomKey: number;
+	/** Soft-active flag — quality rejection / rotation without deleting S3 history. */
 	active: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
-export type IQuestion = DocumentFields &
-	IPoolDocMetadata & {
-		s3QuestionId: string;
-		contentHash: string;
-		question: string;
-		optionA: string;
-		optionB: string;
-		optionC: string;
-		optionD: string;
-		correctAnswer: 'A' | 'B' | 'C' | 'D';
-		explanation: string;
-		hint1?: string;
-		hint2?: string;
-	};
+/** Active serving-library entry — full MCQ body inline plus durable S3 id. */
+type HotPoolDoc = IPoolDocMetadata & {
+	s3QuestionId: string;
+	contentHash: string;
+	question: string;
+	optionA: string;
+	optionB: string;
+	optionC: string;
+	optionD: string;
+	correctAnswer: 'A' | 'B' | 'C' | 'D';
+	explanation: string;
+	hint1?: string;
+	hint2?: string;
+};
 
+/**
+ * MongoDB active question library. Full MCQ inline for fast serves, with S3 written
+ * once by the shared generation/backfill path before a doc enters the pool.
+ */
+export interface IQuestion extends Document, HotPoolDoc {}
+
+/** Assign a one-time random pivot in [0, 1). */
 export function newPoolRandomKey(): number {
 	return Math.random();
 }
 
-export const Question: PostgresModel<IQuestion> = model<IQuestion>({
-	table: mcqQuestions as any,
-	columns: mcqQuestions as any,
-	idField: 'questionId',
-	fieldAliases: { s3QuestionId: 'questionId' },
-	fromRow: (row) => ({
-		...(row as unknown as IQuestion),
-		s3QuestionId: String(row.questionId)
-	}),
-	prepareInsert: async (input) => {
-		const questionId = String(input.questionId ?? input.s3QuestionId ?? '');
-		if (!questionId) throw new Error('MCQ question requires s3QuestionId');
-		const db = getNeonDatabase() as any;
-		await db
-			.insert(questionRegistry as any)
-			.values({
-				questionId,
-				kind: 'mcq',
-				apClass: input.apClass,
-				unit: input.unit ?? 'all-units',
-				contentHash: input.contentHash,
-				contentLength: String(input.question ?? '').length
-			})
-			.onConflictDoUpdate({
-				target: (questionRegistry as any).questionId,
-				set: {
-					kind: 'mcq',
-					apClass: input.apClass,
-					unit: input.unit ?? 'all-units',
-					contentHash: input.contentHash,
-					contentLength: String(input.question ?? '').length
-				}
-			});
-		return {
-			...input,
-			questionId,
-			unit: input.unit ?? 'all-units',
-			randomKey: input.randomKey ?? newPoolRandomKey(),
-			active: input.active ?? true
-		};
-	}
-});
+const questionSchema = new Schema<IQuestion>(
+	{
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true, default: 'all-units' },
+		contentHash: { type: String, required: true },
+		topicsCovered: { type: String },
+		question: { type: String, required: true },
+		optionA: { type: String, required: true },
+		optionB: { type: String, required: true },
+		optionC: { type: String, required: true },
+		optionD: { type: String, required: true },
+		correctAnswer: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
+		explanation: { type: String, required: true },
+		hint1: { type: String },
+		hint2: { type: String },
+		s3QuestionId: { type: String, required: true },
+		randomKey: { type: Number, required: true, default: newPoolRandomKey },
+		active: { type: Boolean, required: true, default: true }
+	},
+	{ timestamps: true }
+);
+
+questionSchema.index({ apClass: 1, unit: 1, createdAt: 1 });
+questionSchema.index({ apClass: 1, unit: 1, active: 1, randomKey: 1 });
+questionSchema.index({ contentHash: 1 }, { unique: true, sparse: true });
+questionSchema.index({ s3QuestionId: 1 }, { unique: true, sparse: true });
+
+export const Question: Model<IQuestion> =
+	(mongoose.models.Question as Model<IQuestion>) ??
+	mongoose.model<IQuestion>('Question', questionSchema, MCQ_POOL_COLLECTION);

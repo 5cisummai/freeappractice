@@ -1,11 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import { connectDb } from '$lib/server/db';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { InsightReport, TutorProfile, type ITutorProfile } from '$lib/super/models.server';
 import type { TutorProfileUpdate, TutorProfileView } from '$lib/super/types';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { tutorProfileClasses, tutorTargetDates } from '$lib/server/neon/schema';
-import { isDuplicateKeyError } from '$lib/questions/util.server';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;
@@ -25,70 +22,17 @@ function toTutorProfileView(profile: ITutorProfile): TutorProfileView {
 	};
 }
 
-async function hydrateTutorRelations(profile: ITutorProfile): Promise<ITutorProfile> {
-	const db = getNeonDatabase() as any;
-	const [classes, dates] = await Promise.all([
-		db
-			.select()
-			.from(tutorProfileClasses as any)
-			.where(eq((tutorProfileClasses as any).userId, profile.userId))
-			.orderBy(asc((tutorProfileClasses as any).position)),
-		db
-			.select()
-			.from(tutorTargetDates as any)
-			.where(eq((tutorTargetDates as any).userId, profile.userId))
-	]);
-	profile.selectedApClasses = (classes as Array<{ apClass: string }>).map((row) => row.apClass);
-	profile.targetDates = (dates as Array<{ apClass: string; targetDate: Date }>).map((row) => ({
-		apClass: row.apClass,
-		targetDate: row.targetDate
-	}));
-	return profile;
-}
-
-async function saveTutorProfile(profile: ITutorProfile): Promise<void> {
-	await profile.save();
-	const db = getNeonDatabase() as any;
-	await db
-		.delete(tutorProfileClasses as any)
-		.where(eq((tutorProfileClasses as any).userId, profile.userId));
-	if (profile.selectedApClasses.length) {
-		await db
-			.insert(tutorProfileClasses as any)
-			.values(
-				profile.selectedApClasses.map((apClass, position) => ({
-					userId: profile.userId,
-					apClass,
-					position
-				}))
-			);
-	}
-	await db
-		.delete(tutorTargetDates as any)
-		.where(eq((tutorTargetDates as any).userId, profile.userId));
-	if (profile.targetDates.length) {
-		await db
-			.insert(tutorTargetDates as any)
-			.values(
-				profile.targetDates.map((target) => ({
-					userId: profile.userId,
-					apClass: target.apClass,
-					targetDate: target.targetDate
-				}))
-			);
-	}
-}
-
 export async function ensureTutorProfile(userId: string): Promise<ITutorProfile> {
+	await connectDb();
 	const existing = await TutorProfile.findOne({ userId }).exec();
-	if (existing) return hydrateTutorRelations(existing);
+	if (existing) return existing;
 
 	try {
-		return hydrateTutorRelations(await TutorProfile.create({ userId, mem0UserId: randomUUID() }));
+		return await TutorProfile.create({ userId, mem0UserId: randomUUID() });
 	} catch (error) {
-		if (isDuplicateKeyError(error)) {
+		if (error instanceof Error && 'code' in error && (error as { code?: number }).code === 11000) {
 			const concurrent = await TutorProfile.findOne({ userId }).exec();
-			if (concurrent) return hydrateTutorRelations(concurrent);
+			if (concurrent) return concurrent;
 		}
 		throw error;
 	}
@@ -104,17 +48,12 @@ export async function markSuperAccessStarted(
 ): Promise<void> {
 	const profile = await ensureTutorProfile(userId);
 	const shouldRestore = Boolean(profile.superEndedAt || profile.memoryPurgedAt);
-	let changed = false;
-	if (!profile.superAccessStartedAt) {
-		profile.superAccessStartedAt = startedAt;
-		changed = true;
-	}
+	if (!profile.superAccessStartedAt) profile.superAccessStartedAt = startedAt;
 	if (shouldRestore) {
 		profile.superEndedAt = undefined;
 		profile.memoryPurgedAt = undefined;
-		changed = true;
 	}
-	if (changed) await saveTutorProfile(profile);
+	if (profile.isModified()) await profile.save();
 	if (shouldRestore) {
 		await InsightReport.updateMany(
 			{ userId, lockedAt: { $exists: true } },
@@ -127,7 +66,7 @@ export async function confirmAge(userId: string): Promise<TutorProfileView> {
 	const profile = await ensureTutorProfile(userId);
 	if (!profile.ageConfirmedAt) {
 		profile.ageConfirmedAt = new Date();
-		await saveTutorProfile(profile);
+		await profile.save();
 	}
 	return toTutorProfileView(profile);
 }
@@ -158,6 +97,7 @@ export async function claimSuperFreeBeta(
 }
 
 export async function hasClaimedSuperFreeBeta(userId: string): Promise<boolean> {
+	await connectDb();
 	return Boolean(
 		await TutorProfile.exists({
 			userId,
@@ -177,7 +117,7 @@ export async function markMemoryDisclosureSeen(userId: string): Promise<void> {
 		profile.superAccessStartedAt = profile.memoryDisclosureSeenAt ?? new Date();
 		changed = true;
 	}
-	if (changed) await saveTutorProfile(profile);
+	if (changed) await profile.save();
 }
 
 export async function updateTutorProfile(
@@ -206,7 +146,7 @@ export async function updateTutorProfile(
 	if (patch.teachingStyle !== undefined) profile.teachingStyle = patch.teachingStyle;
 	if (patch.memoryEnabled !== undefined) profile.memoryEnabled = patch.memoryEnabled;
 
-	await saveTutorProfile(profile);
+	await profile.save();
 	return toTutorProfileView(profile);
 }
 

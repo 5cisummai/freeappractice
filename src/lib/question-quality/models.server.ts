@@ -1,5 +1,4 @@
-import { randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import mongoose, { Schema, type Model } from 'mongoose';
 import type {
 	AiQualityAssessment,
 	FeedbackSummary,
@@ -9,27 +8,8 @@ import type {
 	ReviewFilters,
 	ReviewJobStatus
 } from './types.js';
-import {
-	qualityReviewBatches,
-	qualityReviewJobCandidates,
-	qualityReviewJobItems,
-	qualityReviewJobs,
-	questionFeedback,
-	questionQuality
-} from '$lib/server/neon/schema';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import {
-	applyProjection,
-	model,
-	PostgresQuery,
-	type Projection,
-	type SortSpec,
-	type WriteResult
-} from '$lib/server/neon/model';
 
-type DocumentFields = { _id: string; save: () => Promise<unknown> };
-
-export interface QuestionQualityDocument extends DocumentFields {
+export interface QuestionQualityDocument {
 	questionId: string;
 	sourceHash?: string;
 	sourceEtag?: string;
@@ -58,74 +38,69 @@ export interface QuestionQualityDocument extends DocumentFields {
 	updatedAt: Date;
 }
 
-function summaryFromRow(row: Record<string, any>): FeedbackSummary {
-	return {
-		answerIncorrect: Number(row.answerIncorrectCount ?? 0),
-		questionUnclear: Number(row.questionUnclearCount ?? 0),
-		explanationUnclear: Number(row.explanationUnclearCount ?? 0),
-		uniqueReporters: Number(row.uniqueReporters ?? 0),
-		priority: row.feedbackPriority ?? 'none'
-	};
-}
-
-const qualityBase = model<QuestionQualityDocument>({
-	table: questionQuality as any,
-	columns: questionQuality as any,
-	idField: 'questionId',
-	fieldAliases: {
-		'feedbackSummary.answerIncorrect': 'answerIncorrectCount',
-		'feedbackSummary.questionUnclear': 'questionUnclearCount',
-		'feedbackSummary.explanationUnclear': 'explanationUnclearCount',
-		'feedbackSummary.uniqueReporters': 'uniqueReporters',
-		'feedbackSummary.priority': 'feedbackPriority'
+const feedbackSummarySchema = new Schema<FeedbackSummary>(
+	{
+		answerIncorrect: { type: Number, default: 0 },
+		questionUnclear: { type: Number, default: 0 },
+		explanationUnclear: { type: Number, default: 0 },
+		uniqueReporters: { type: Number, default: 0 },
+		priority: { type: String, enum: ['none', 'normal', 'high'], default: 'none' }
 	},
-	fromRow: (row) => ({
-		...(row as unknown as QuestionQualityDocument),
-		feedbackSummary: summaryFromRow(row),
-		audit: []
-	}),
-	prepareInsert: async (input) => ({
-		...input,
-		feedbackSummary: undefined,
-		state: input.state ?? 'unreviewed',
-		needsHumanReview: input.needsHumanReview ?? false,
-		blindHumanReview: input.blindHumanReview ?? false,
-		answerIncorrectCount:
-			(input.feedbackSummary as Partial<FeedbackSummary> | undefined)?.answerIncorrect ??
-			input.answerIncorrectCount ??
-			0,
-		questionUnclearCount:
-			(input.feedbackSummary as Partial<FeedbackSummary> | undefined)?.questionUnclear ??
-			input.questionUnclearCount ??
-			0,
-		explanationUnclearCount:
-			(input.feedbackSummary as Partial<FeedbackSummary> | undefined)?.explanationUnclear ??
-			input.explanationUnclearCount ??
-			0,
-		uniqueReporters:
-			(input.feedbackSummary as Partial<FeedbackSummary> | undefined)?.uniqueReporters ??
-			input.uniqueReporters ??
-			0,
-		feedbackPriority:
-			(input.feedbackSummary as Partial<FeedbackSummary> | undefined)?.priority ??
-			input.feedbackPriority ??
-			'none'
-	})
-});
+	{ _id: false }
+);
 
-const qualitySchemaMetadata = {
-	indexes: () =>
-		[[{ questionId: 1 }, { unique: true }]] as Array<
-			[Record<string, unknown>, { unique?: boolean }]
-		>
-};
+const questionQualitySchema = new Schema<QuestionQualityDocument>(
+	{
+		questionId: { type: String, required: true, unique: true, index: true },
+		sourceHash: String,
+		sourceEtag: String,
+		sourceCreatedAt: Date,
+		apClass: { type: String, index: true },
+		unit: { type: String, index: true },
+		state: {
+			type: String,
+			enum: ['unreviewed', 'awaiting_human', 'final'],
+			default: 'unreviewed',
+			index: true
+		},
+		aiAssessment: { type: Schema.Types.Mixed },
+		humanAssessment: { type: Schema.Types.Mixed },
+		finalVerdict: { type: String, enum: ['good', 'bad'], index: true },
+		finalSource: { type: String, enum: ['ai', 'human'] },
+		finalizedAt: Date,
+		needsHumanReview: { type: Boolean, default: false, index: true },
+		humanReviewReason: String,
+		blindHumanReview: { type: Boolean, default: false },
+		feedbackSummary: { type: feedbackSummarySchema, default: () => ({}) },
+		audit: {
+			type: [
+				new Schema(
+					{
+						at: { type: Date, required: true },
+						actorId: { type: String, required: true },
+						action: { type: String, required: true },
+						fromVerdict: { type: String, enum: ['good', 'bad'] },
+						toVerdict: { type: String, enum: ['good', 'bad'] },
+						note: String
+					},
+					{ _id: false }
+				)
+			],
+			default: []
+		}
+	},
+	{ timestamps: true }
+);
 
-export const QuestionQuality = Object.assign(qualityBase, {
-	collection: qualityBase,
-	schema: qualitySchemaMetadata
-});
+export const QuestionQuality: Model<QuestionQualityDocument> =
+	(mongoose.models.QuestionQuality as Model<QuestionQualityDocument>) ??
+	mongoose.model<QuestionQualityDocument>(
+		'QuestionQuality',
+		questionQualitySchema,
+		'question_quality'
+	);
 
-export interface QuestionFeedbackDocument extends DocumentFields {
+export interface QuestionFeedbackDocument {
 	questionId: string;
 	userId: string;
 	type: FeedbackType;
@@ -135,23 +110,31 @@ export interface QuestionFeedbackDocument extends DocumentFields {
 	updatedAt: Date;
 }
 
-const feedbackBase = model<QuestionFeedbackDocument>({
-	table: questionFeedback as any,
-	columns: questionFeedback as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
-});
-export const QuestionFeedback = Object.assign(feedbackBase, {
-	schema: {
-		indexes: () =>
-			[[{ questionId: 1, userId: 1, type: 1 }, { unique: true }]] as Array<
-				[Record<string, unknown>, { unique?: boolean }]
-			>
-	}
-});
+const questionFeedbackSchema = new Schema<QuestionFeedbackDocument>(
+	{
+		questionId: { type: String, required: true, index: true },
+		userId: { type: String, required: true },
+		type: {
+			type: String,
+			required: true,
+			enum: ['answer_incorrect', 'question_unclear', 'explanation_unclear']
+		},
+		apClass: String,
+		unit: String
+	},
+	{ timestamps: true }
+);
+questionFeedbackSchema.index({ questionId: 1, userId: 1, type: 1 }, { unique: true });
 
-export interface ReviewJobDocument extends DocumentFields {
-	id: string;
+export const QuestionFeedback: Model<QuestionFeedbackDocument> =
+	(mongoose.models.QuestionFeedback as Model<QuestionFeedbackDocument>) ??
+	mongoose.model<QuestionFeedbackDocument>(
+		'QuestionFeedback',
+		questionFeedbackSchema,
+		'question_quality_feedback'
+	);
+
+export interface ReviewJobDocument {
 	status: ReviewJobStatus;
 	filters: ReviewFilters;
 	selectedQuestionIds: string[];
@@ -192,218 +175,80 @@ export interface ReviewJobDocument extends DocumentFields {
 	updatedAt: Date;
 }
 
-const jobBase = model<ReviewJobDocument>({
-	table: qualityReviewJobs as any,
-	columns: qualityReviewJobs as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
-});
+const reviewJobSchema = new Schema<ReviewJobDocument>(
+	{
+		status: {
+			type: String,
+			required: true,
+			enum: [
+				'preview',
+				'preparing',
+				'in_progress',
+				'paused',
+				'awaiting_human',
+				'completed',
+				'cancelled',
+				'failed'
+			],
+			index: true
+		},
+		filters: { type: Schema.Types.Mixed, required: true },
+		selectedQuestionIds: { type: [String], default: [] },
+		selectedCount: { type: Number, default: 0 },
+		skippedCount: { type: Number, default: 0 },
+		queuedCount: { type: Number, default: 0 },
+		submittedCount: { type: Number, default: 0 },
+		awaitingHumanCount: { type: Number, default: 0 },
+		finalCount: { type: Number, default: 0 },
+		failedCount: { type: Number, default: 0 },
+		estimatedInputTokens: { type: Number, default: 0 },
+		estimatedOutputTokens: { type: Number, default: 0 },
+		estimatedMaximumCostUsd: { type: Number, default: 0 },
+		actualCostUsd: { type: Number, default: 0 },
+		model: { type: String, required: true },
+		rubricVersion: { type: String, required: true },
+		calibrated: { type: Boolean, default: false },
+		createdBy: { type: String, required: true },
+		expiresAt: Date,
+		activeBatchId: String,
+		activeInputFileId: String,
+		activeOutputFileId: String,
+		activeSubmissionKey: String,
+		batches: {
+			type: [
+				new Schema(
+					{
+						submissionKey: { type: String, required: true },
+						inputFileId: { type: String, required: true },
+						batchId: String,
+						status: { type: String, required: true },
+						outputFileId: String,
+						errorFileId: String,
+						createdAt: { type: Date, required: true },
+						completedAt: Date
+					},
+					{ _id: false }
+				)
+			],
+			default: []
+		},
+		processingLeaseUntil: Date,
+		submissionLeaseUntil: Date,
+		error: String
+	},
+	{ timestamps: true }
+);
 
-async function hydrateJob(row: ReviewJobDocument): Promise<ReviewJobDocument> {
-	const db = getNeonDatabase() as any;
-	const [candidates, batches] = await Promise.all([
-		db
-			.select()
-			.from(qualityReviewJobCandidates as any)
-			.where(eq((qualityReviewJobCandidates as any).jobId, row._id))
-			.orderBy(asc((qualityReviewJobCandidates as any).position)),
-		db
-			.select()
-			.from(qualityReviewBatches as any)
-			.where(eq((qualityReviewBatches as any).jobId, row._id))
-			.orderBy(asc((qualityReviewBatches as any).createdAt))
-	]);
-	const document: ReviewJobDocument = {
-		...row,
-		selectedQuestionIds: (candidates as Array<{ questionId: string; selected: boolean }>)
-			.filter((item) => item.selected)
-			.map((item) => item.questionId),
-		batches: (batches as Array<Record<string, any>>).map((item) => ({
-			submissionKey: item.submissionKey,
-			inputFileId: item.inputFileId,
-			batchId: item.batchId ?? undefined,
-			status: item.status,
-			outputFileId: item.outputFileId ?? undefined,
-			errorFileId: item.errorFileId ?? undefined,
-			createdAt: item.createdAt,
-			completedAt: item.completedAt ?? undefined
-		})),
-		save: async () => document
-	};
-	document.save = async () => persistJobDocument(document);
-	return document;
-}
+export const QuestionQualityReviewJob: Model<ReviewJobDocument> =
+	(mongoose.models.QuestionQualityReviewJob as Model<ReviewJobDocument>) ??
+	mongoose.model<ReviewJobDocument>(
+		'QuestionQualityReviewJob',
+		reviewJobSchema,
+		'question_quality_review_jobs'
+	);
 
-async function persistJobDocument(document: ReviewJobDocument): Promise<ReviewJobDocument> {
-	const db = getNeonDatabase() as any;
-	await jobBase.updateOne({ _id: document._id }, { $set: document }).exec();
-	await db
-		.delete(qualityReviewJobCandidates as any)
-		.where(eq((qualityReviewJobCandidates as any).jobId, document._id));
-	if (document.selectedQuestionIds.length) {
-		await db.insert(qualityReviewJobCandidates as any).values(
-			document.selectedQuestionIds.map((questionId, position) => ({
-				jobId: document._id,
-				questionId,
-				position,
-				selected: true
-			}))
-		);
-	}
-	await db
-		.delete(qualityReviewBatches as any)
-		.where(eq((qualityReviewBatches as any).jobId, document._id));
-	if (document.batches.length) {
-		await db
-			.insert(qualityReviewBatches as any)
-			.values(
-				document.batches.map((batch) => ({ id: randomUUID(), jobId: document._id, ...batch }))
-			);
-	}
-	return document;
-}
-
-function batchMatchesFilters(batch: Record<string, unknown>, filters: unknown): boolean {
-	if (!Array.isArray(filters) || !filters.length) return true;
-	const filter = filters[0];
-	if (!filter || typeof filter !== 'object') return true;
-	return Object.entries(filter as Record<string, unknown>).every(([key, value]) => {
-		const field = key.replace(/^entry\./, '');
-		return batch[field] === value;
-	});
-}
-
-export const QuestionQualityReviewJob = {
-	find(
-		filter: Record<string, unknown> = {},
-		projection?: Projection | null,
-		options?: { sort?: SortSpec; limit?: number }
-	): PostgresQuery<ReviewJobDocument[]> {
-		return new PostgresQuery(async (queryOptions) => {
-			const rows = await jobBase
-				.find(filter, undefined, {
-					sort: queryOptions.sort ?? options?.sort,
-					limit: queryOptions.limit ?? options?.limit
-				})
-				.exec();
-			const hydrated = await Promise.all(rows.map(hydrateJob));
-			return hydrated.map((row) =>
-				applyProjection(row, queryOptions.projection ?? projection ?? undefined)
-			);
-		});
-	},
-	findOne(
-		filter: Record<string, unknown> = {},
-		projection?: Projection | null
-	): PostgresQuery<ReviewJobDocument | null> {
-		return new PostgresQuery(async (queryOptions) => {
-			const row = await jobBase.findOne(filter).exec();
-			return row
-				? applyProjection(await hydrateJob(row), queryOptions.projection ?? projection ?? undefined)
-				: null;
-		});
-	},
-	findById(id: string): PostgresQuery<ReviewJobDocument | null> {
-		return this.findOne({ _id: id });
-	},
-	async create(input: Record<string, any>): Promise<ReviewJobDocument> {
-		const row = await jobBase.create(input);
-		const db = getNeonDatabase() as any;
-		const selectedQuestionIds = Array.isArray(input.selectedQuestionIds)
-			? input.selectedQuestionIds
-			: [];
-		if (selectedQuestionIds.length) {
-			await db.insert(qualityReviewJobCandidates as any).values(
-				selectedQuestionIds.map((questionId: string, position: number) => ({
-					jobId: row._id,
-					questionId,
-					position,
-					selected: true
-				}))
-			);
-		}
-		if (Array.isArray(input.batches) && input.batches.length) {
-			await db
-				.insert(qualityReviewBatches as any)
-				.values(
-					input.batches.map((batch: Record<string, unknown>) => ({
-						id: randomUUID(),
-						jobId: row._id,
-						...batch
-					}))
-				);
-		}
-		return hydrateJob(row);
-	},
-	countDocuments(filter: Record<string, unknown> = {}): PostgresQuery<number> {
-		return jobBase.countDocuments(filter);
-	},
-	findOneAndUpdate(
-		filter: Record<string, unknown>,
-		update: Record<string, any>,
-		options: Record<string, any> = {}
-	): PostgresQuery<ReviewJobDocument | null> {
-		return new PostgresQuery(async () => {
-			const current = await QuestionQualityReviewJob.findOne(filter).exec();
-			if (!current) {
-				if (!options.upsert) return null;
-				const row = await jobBase.findOneAndUpdate(filter, update, options).exec();
-				return row ? hydrateJob(row) : null;
-			}
-			const mutable = current as unknown as Record<string, any>;
-			for (const [key, value] of Object.entries(update.$set ?? {})) {
-				const nestedBatch = key.match(/^batches\.\$\[([^\]]+)\]\.(.+)$/);
-				if (nestedBatch) {
-					const filterIndex = Array.isArray(options.arrayFilters)
-						? options.arrayFilters.findIndex((entry: Record<string, unknown>) =>
-								Object.keys(entry).some((name) => name.startsWith(`${nestedBatch[1]}.`))
-							)
-						: -1;
-					for (const batch of current.batches as unknown as Array<Record<string, unknown>>) {
-						if (
-							filterIndex === -1 ||
-							batchMatchesFilters(batch, [options.arrayFilters[filterIndex]])
-						) {
-							batch[nestedBatch[2]] = value;
-						}
-					}
-					continue;
-				}
-				mutable[key] = value;
-			}
-		for (const [key] of Object.entries(update.$unset ?? {})) mutable[key] = undefined;
-			for (const [key, value] of Object.entries(update.$inc ?? {}))
-				mutable[key] = Number(mutable[key] ?? 0) + Number(value);
-			if (update.$push?.batches) current.batches.push(update.$push.batches);
-			await persistJobDocument(current);
-			return current;
-		});
-	},
-	updateOne(
-		filter: Record<string, unknown>,
-		update: Record<string, any>,
-		options: Record<string, any> = {}
-	): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => {
-			const before = await QuestionQualityReviewJob.findOne(filter).exec();
-			const after = await QuestionQualityReviewJob.findOneAndUpdate(filter, update, options).exec();
-			return {
-				acknowledged: true,
-				matchedCount: before ? 1 : 0,
-				modifiedCount: after && before ? 1 : 0,
-				deletedCount: 0,
-				upsertedCount: !before && after ? 1 : 0,
-				upsertedId: !before && after ? after._id : undefined
-			};
-		});
-	},
-	deleteMany(filter: Record<string, unknown>): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => jobBase.deleteMany(filter).exec());
-	}
-};
-
-export interface ReviewJobItemDocument extends DocumentFields {
-	jobId: string;
+export interface ReviewJobItemDocument {
+	jobId: mongoose.Types.ObjectId;
 	questionId: string;
 	status: 'queued' | 'preparing' | 'submitted' | 'awaiting_human' | 'final' | 'failed';
 	attempts: number;
@@ -416,24 +261,31 @@ export interface ReviewJobItemDocument extends DocumentFields {
 	updatedAt: Date;
 }
 
-const jobItemBase = model<ReviewJobItemDocument>({
-	table: qualityReviewJobItems as any,
-	columns: qualityReviewJobItems as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({
-		...input,
-		id: input.id ?? randomUUID(),
-		attempts: input.attempts ?? 0,
-		blind: input.blind ?? false,
-		requiresWebSearch: input.requiresWebSearch ?? true
-	})
-});
+const reviewJobItemSchema = new Schema<ReviewJobItemDocument>(
+	{
+		jobId: { type: Schema.Types.ObjectId, required: true, index: true },
+		questionId: { type: String, required: true, unique: true, index: true },
+		status: {
+			type: String,
+			required: true,
+			enum: ['queued', 'preparing', 'submitted', 'awaiting_human', 'final', 'failed'],
+			index: true
+		},
+		attempts: { type: Number, default: 0 },
+		batchId: String,
+		submissionKey: String,
+		blind: { type: Boolean, default: false },
+		requiresWebSearch: { type: Boolean, default: true },
+		error: String
+	},
+	{ timestamps: true }
+);
+reviewJobItemSchema.index({ jobId: 1, status: 1 });
 
-export const QuestionQualityReviewJobItem = Object.assign(jobItemBase, {
-	schema: {
-		indexes: () =>
-			[[{ questionId: 1 }, { unique: true }]] as Array<
-				[Record<string, unknown>, { unique?: boolean }]
-			>
-	}
-});
+export const QuestionQualityReviewJobItem: Model<ReviewJobItemDocument> =
+	(mongoose.models.QuestionQualityReviewJobItem as Model<ReviewJobItemDocument>) ??
+	mongoose.model<ReviewJobItemDocument>(
+		'QuestionQualityReviewJobItem',
+		reviewJobItemSchema,
+		'question_quality_review_job_items'
+	);

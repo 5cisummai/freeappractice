@@ -60,8 +60,8 @@ async function main() {
 		console.error('--type must be mcq or frq');
 		process.exit(1);
 	}
-	if (!process.env.DATABASE_URL) {
-		console.error('DATABASE_URL is not set');
+	if (!process.env.DATABASE_URI) {
+		console.error('DATABASE_URI is not set');
 		process.exit(1);
 	}
 	if (!dryRun && !process.env.OPEN_AI_KEY) {

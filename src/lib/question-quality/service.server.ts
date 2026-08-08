@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { questionQualityAudits } from '$lib/server/neon/schema';
+import mongoose from 'mongoose';
 import { env } from '$env/dynamic/private';
 import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
@@ -45,27 +44,6 @@ import {
 const ACTIVE_JOB_STATUSES = ['preparing', 'in_progress', 'paused'] as const;
 const PREVIEW_TTL_MS = 30 * 60 * 1000;
 const MAX_BATCH_FILE_BYTES = 190 * 1024 * 1024;
-
-async function appendQualityAudit(input: {
-	questionId: string;
-	at: Date;
-	actorId: string;
-	action: string;
-	fromVerdict?: QualityVerdict;
-	toVerdict?: QualityVerdict;
-	note?: string;
-}): Promise<void> {
-	await (getNeonDatabase() as any).insert(questionQualityAudits as any).values({
-		id: randomUUID(),
-		questionId: input.questionId,
-		at: input.at,
-		actorId: input.actorId,
-		action: input.action,
-		fromVerdict: input.fromVerdict,
-		toVerdict: input.toVerdict,
-		note: input.note
-	});
-}
 
 function confidenceThreshold(): number {
 	const value = Number(env.QUESTION_QUALITY_CONFIDENCE_THRESHOLD || '0.85');
@@ -172,20 +150,6 @@ export async function reconcileQuestionInventory(
 			);
 			const valid = rows.filter((row): row is NonNullable<typeof row> => row !== null);
 			if (valid.length) {
-				const changedRows = (
-					await Promise.all(
-						valid.map(async (row) =>
-							(await QuestionQuality.findOne({
-								questionId: row.questionId,
-								sourceHash: { $exists: true, $ne: row.contentHash }
-							})
-								.lean()
-								.exec())
-								? row
-								: null
-						)
-					)
-				).filter((row): row is NonNullable<typeof row> => row !== null);
 				await QuestionId.bulkWrite(
 					valid.map((row) => ({
 						updateOne: {
@@ -229,17 +193,6 @@ export async function reconcileQuestionInventory(
 						}
 					})),
 					{ ordered: false }
-				);
-				await Promise.all(
-					changedRows.map((row) =>
-						appendQualityAudit({
-							questionId: row.questionId,
-							at: new Date(),
-							actorId: 'inventory-reconcile',
-							action: 'source_changed',
-							note: 'Canonical S3 content hash changed; prior verdict cleared.'
-						})
-					)
 				);
 				hydrated += valid.length;
 			}
@@ -357,16 +310,16 @@ export async function previewReviewJob(
 	};
 }
 
-async function refreshJobCounts(jobId: string): Promise<void> {
+async function refreshJobCounts(jobId: mongoose.Types.ObjectId | string): Promise<void> {
 	const [counts, costs] = await Promise.all([
 		QuestionQualityReviewJobItem.aggregate<{ _id: string; count: number }>([
-			{ $match: { jobId: String(jobId) } },
+			{ $match: { jobId: new mongoose.Types.ObjectId(String(jobId)) } },
 			{ $group: { _id: '$status', count: { $sum: 1 } } }
 		]),
 		QuestionQualityReviewJobItem.aggregate<{ total: number }>([
 			{
 				$match: {
-					jobId: String(jobId),
+					jobId: new mongoose.Types.ObjectId(String(jobId)),
 					status: { $in: ['final', 'awaiting_human'] }
 				}
 			},
@@ -404,7 +357,7 @@ async function refreshJobCounts(jobId: string): Promise<void> {
 }
 
 async function persistCreatedBatch(opts: {
-	jobId: string;
+	jobId: mongoose.Types.ObjectId;
 	submissionKey: string;
 	batch: { id: string; status: string };
 }): Promise<boolean> {
@@ -672,7 +625,7 @@ export async function createReviewJob(
 }
 
 async function updateQualityFromBatchLine(
-	job: { _id: string; model: string; calibrated: boolean },
+	job: { _id: mongoose.Types.ObjectId; model: string; calibrated: boolean },
 	line: string
 ): Promise<void> {
 	const parsed = JSON.parse(line) as {
@@ -769,14 +722,6 @@ async function updateQualityFromBatchLine(
 			}
 		});
 		if (qualityWrite.modifiedCount) {
-			await appendQualityAudit({
-				questionId,
-				at: now,
-				actorId: 'question-quality-agent',
-				action: human.required ? 'ai_assessed_for_human' : 'ai_finalized',
-				...(!human.required ? { toVerdict: assessment.verdict } : {}),
-				note: human.reason
-			});
 			item.status = human.required ? 'awaiting_human' : 'final';
 		} else {
 			let persisted = await QuestionQuality.findOne({ questionId }).lean().exec();
@@ -795,13 +740,6 @@ async function updateQualityFromBatchLine(
 						}
 					}
 				);
-				await appendQualityAudit({
-					questionId,
-					at: now,
-					actorId: 'question-quality-agent',
-					action: 'ai_assessed_for_human',
-					note: persisted.humanReviewReason || 'student_feedback'
-				});
 				persisted = await QuestionQuality.findOne({ questionId }).lean().exec();
 			}
 			item.status = persisted?.needsHumanReview ? 'awaiting_human' : 'final';
@@ -828,7 +766,10 @@ async function updateQualityFromBatchLine(
 	}
 }
 
-async function importBatch(job: ReviewJobDocument, outputFileId?: string): Promise<void> {
+async function importBatch(
+	job: mongoose.HydratedDocument<ReviewJobDocument>,
+	outputFileId?: string
+): Promise<void> {
 	if (outputFileId) {
 		const contents = await downloadOpenAiFile(outputFileId);
 		for (const line of contents.split('\n').filter(Boolean)) {
@@ -942,7 +883,7 @@ export async function setReviewJobState(
 	}
 	await job.save();
 	if (action === 'resume') return refreshReviewJob(jobId);
-	return toJobSummary(job);
+	return toJobSummary(job.toObject());
 }
 
 export async function recoverActiveReviewJobs(): Promise<number> {
@@ -976,37 +917,47 @@ export async function recordHumanDecision(opts: {
 }): Promise<void> {
 	await connectDb();
 	const now = new Date();
-	const existing = await QuestionQuality.findOne({ questionId: opts.questionId }).exec();
-	const result = await QuestionQuality.updateOne(
-		{ questionId: opts.questionId },
+	const result = await QuestionQuality.collection.updateOne({ questionId: opts.questionId }, [
 		{
 			$set: {
 				humanAssessment: {
-					verdict: opts.verdict,
-					notes: opts.notes,
-					reviewerId: opts.reviewerId,
-					blind: existing?.blindHumanReview ?? false,
+					verdict: { $literal: opts.verdict },
+					notes: { $literal: opts.notes },
+					reviewerId: { $literal: opts.reviewerId },
+					blind: '$blindHumanReview',
 					reviewedAt: now
 				},
-				finalVerdict: opts.verdict,
+				finalVerdict: { $literal: opts.verdict },
 				finalSource: 'human',
 				finalizedAt: now,
 				state: 'final',
 				needsHumanReview: false,
-				blindHumanReview: false
+				blindHumanReview: false,
+				audit: {
+					$concatArrays: [
+						{ $ifNull: ['$audit', []] },
+						[
+							{
+								at: now,
+								actorId: { $literal: opts.reviewerId },
+								action: {
+									$cond: [
+										{ $ne: [{ $ifNull: ['$finalVerdict', null] }, null] },
+										'human_corrected',
+										'human_finalized'
+									]
+								},
+								fromVerdict: '$finalVerdict',
+								toVerdict: { $literal: opts.verdict },
+								note: { $literal: opts.notes }
+							}
+						]
+					]
+				}
 			}
 		}
-	);
+	]);
 	if (!result.matchedCount) throw new Error('Question quality record not found');
-	await appendQualityAudit({
-		questionId: opts.questionId,
-		at: now,
-		actorId: opts.reviewerId,
-		action: 'human_decision',
-		fromVerdict: existing?.finalVerdict,
-		toVerdict: opts.verdict,
-		note: opts.notes
-	});
 	const item = await QuestionQualityReviewJobItem.findOneAndUpdate(
 		{ questionId: opts.questionId },
 		{ $set: { status: 'final' } },

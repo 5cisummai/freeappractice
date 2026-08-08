@@ -188,7 +188,7 @@
 		<div>
 			<p class="text-sm font-medium">Question pool readiness</p>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Active Neon inventory, refill queue status, and estimated remaining generation cost. Admin
+				Active Mongo inventory, refill queue status, and estimated remaining generation cost. Admin
 				actions only enqueue work — they never generate synchronously.
 			</p>
 		</div>

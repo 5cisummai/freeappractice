@@ -84,7 +84,7 @@ async function processCleanupJob(
 }
 
 /**
- * Daily, idempotent maintenance. Durable user data stays in Neon/Mem0; Redis is intentionally
+ * Daily, idempotent maintenance. Durable user data stays in Mongo/Mem0; Redis is intentionally
  * not involved here because jobs must survive restarts and downtime.
  */
 export async function runSuperMaintenance(

@@ -8,8 +8,8 @@
 import 'dotenv/config';
 import { readFile, writeFile } from 'node:fs/promises';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import mongoose from 'mongoose';
 import { buildBatchLine } from '../src/lib/question-quality/batch-line';
-import { QuestionQuality } from '../src/lib/question-quality/models.server';
 import { extractResponseOutputText } from '../src/lib/question-quality/rubric.server';
 
 type GoldItem = { questionId: string; verdict: 'good' | 'bad'; apClass: string };
@@ -70,10 +70,10 @@ const candidates: Candidate[] = [
 const args = process.argv.slice(2);
 const statePath = valueAfter('--state') || '.question-quality-eval.json';
 const apiKey = process.env.OPEN_AI_KEY?.trim();
-const databaseUrl = process.env.DATABASE_URL?.trim();
+const databaseUri = process.env.DATABASE_URI?.trim();
 const bucket = process.env.AWS_S3_BUCKET?.trim();
-if (!apiKey || !databaseUrl || !bucket) {
-	throw new Error('OPEN_AI_KEY, DATABASE_URL, and AWS_S3_BUCKET are required');
+if (!apiKey || !databaseUri || !bucket) {
+	throw new Error('OPEN_AI_KEY, DATABASE_URI, and AWS_S3_BUCKET are required');
 }
 
 function valueAfter(flag: string): string | undefined {
@@ -152,12 +152,16 @@ function stratified(items: GoldItem[], maximum: number): GoldItem[] {
 
 async function submit() {
 	const maximum = Math.min(500, Math.max(20, Number(valueAfter('--max') || '200')));
-	const raw = (await QuestionQuality.find({}).limit(2_000).lean()).filter((row) => {
-		const assessment = row.humanAssessment;
-		return (
-			assessment?.blind === true && (assessment.verdict === 'good' || assessment.verdict === 'bad')
-		);
-	}) as Array<{
+	await mongoose.connect(databaseUri!);
+	const raw = (await mongoose.connection
+		.collection('question_quality')
+		.find({
+			'humanAssessment.verdict': { $in: ['good', 'bad'] },
+			'humanAssessment.blind': true
+		})
+		.project({ questionId: 1, apClass: 1, 'humanAssessment.verdict': 1 })
+		.limit(2_000)
+		.toArray()) as Array<{
 		questionId: string;
 		apClass?: string;
 		humanAssessment: { verdict: 'good' | 'bad' };
@@ -210,6 +214,7 @@ async function submit() {
 		statePath,
 		JSON.stringify({ createdAt: new Date().toISOString(), gold, runs }, null, 2)
 	);
+	await mongoose.disconnect();
 	console.log(`Saved evaluation state to ${statePath}`);
 }
 

@@ -1,9 +1,7 @@
-import { randomUUID } from 'node:crypto';
-import { questionRecentTopics } from '$lib/server/neon/schema';
-import { model, type PostgresModel } from '$lib/server/neon/model';
+import mongoose, { Schema, type Document, type Model } from 'mongoose';
 
-export interface IQuestionRecentTopic {
-	_id: string;
+/** Rolling log of recently generated topics for LLM diversity prompts. */
+export interface IQuestionRecentTopic extends Document {
 	apClass: string;
 	unit: string;
 	topicsCovered: string;
@@ -11,20 +9,18 @@ export interface IQuestionRecentTopic {
 	createdAt: Date;
 }
 
-export const QuestionRecentTopic: PostgresModel<IQuestionRecentTopic> = model<IQuestionRecentTopic>(
+const recentTopicSchema = new Schema<IQuestionRecentTopic>(
 	{
-		table: questionRecentTopics as any,
-		columns: questionRecentTopics as any,
-		idField: 'id',
-		prepareInsert: async (input) => ({
-			...input,
-			id: input.id ?? randomUUID(),
-			kind: 'mcq',
-			questionId: input.questionId ?? input.s3QuestionId ?? null
-		}),
-		fromRow: (row) => ({
-			...(row as unknown as IQuestionRecentTopic),
-			s3QuestionId: (row.questionId as string | null) ?? undefined
-		})
-	}
+		apClass: { type: String, required: true },
+		unit: { type: String, required: true },
+		topicsCovered: { type: String, required: true },
+		s3QuestionId: { type: String }
+	},
+	{ timestamps: { createdAt: true, updatedAt: false } }
 );
+
+recentTopicSchema.index({ apClass: 1, unit: 1, createdAt: -1 });
+
+export const QuestionRecentTopic: Model<IQuestionRecentTopic> =
+	(mongoose.models.QuestionRecentTopic as Model<IQuestionRecentTopic>) ??
+	mongoose.model<IQuestionRecentTopic>('QuestionRecentTopic', recentTopicSchema);

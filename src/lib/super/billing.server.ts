@@ -1,10 +1,8 @@
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
 import { connectDb } from '$lib/server/db';
+import { getMongoDb } from '$lib/server/mongo-native';
 import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { authSubscriptions, authUsers } from '$lib/server/neon/schema';
-import { and, eq } from 'drizzle-orm';
 import { InsightReport, SuperBillingAccess, TutorProfile } from '$lib/super/models.server';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import {
@@ -93,13 +91,8 @@ async function resolveCurrentSubscription(input: SubscriptionMirror): Promise<Su
 }
 
 async function authUserExists(userId: string): Promise<boolean> {
-	const db = getNeonDatabase();
-	const rows = await db
-		.select({ id: authUsers.id })
-		.from(authUsers)
-		.where(eq(authUsers.id, userId))
-		.limit(1);
-	return rows.length > 0;
+	const db = await getMongoDb();
+	return Boolean(await db.collection('authUsers').findOne({ id: userId }));
 }
 
 export async function mirrorSuperSubscription(input: SubscriptionMirror): Promise<void> {
@@ -228,21 +221,13 @@ async function findStripeBillingRecords(userId: string): Promise<StripeBillingRe
 			.select({ stripeCustomerId: 1, stripeSubscriptionId: 1 })
 			.lean()
 			.exec(),
-		getNeonDatabase()
-			.select({
-				stripeCustomerId: authSubscriptions.stripeCustomerId,
-				stripeSubscriptionId: authSubscriptions.stripeSubscriptionId
-			})
-			.from(authSubscriptions)
-			.where(and(eq(authSubscriptions.referenceId, userId), eq(authSubscriptions.plan, 'super')))
+		(await getMongoDb())
+			.collection('authSubscriptions')
+			.find({ referenceId: userId, plan: 'super' })
+			.project({ stripeCustomerId: 1, stripeSubscriptionId: 1 })
+			.toArray()
 	]);
-	return [
-		...localRecords,
-		...authRecords.map((record) => ({
-			stripeCustomerId: record.stripeCustomerId ?? undefined,
-			stripeSubscriptionId: record.stripeSubscriptionId ?? undefined
-		}))
-	];
+	return [...localRecords, ...authRecords];
 }
 
 export async function cancelStripeSubscriptionsForUser(

@@ -76,21 +76,16 @@ export function buildProgressData(user: IUserProfile): ProgressEntry[] {
 		wasCorrect: attempt.wasCorrect,
 		attemptedAt: attempt.attemptedAt
 	}));
-	return (user.progress ?? []).map((entry) => {
-		const result: ProgressEntry = {
-			apClass: entry.apClass,
-			unit: entry.unit,
-			totalAttempts: entry.totalAttempts,
-			correctAttempts: entry.correctAttempts,
-			mastery: entry.mastery,
-			lastAttemptAt: entry.lastAttemptAt?.toISOString()
-		};
-		if (attempts.length) {
-			result.recentDelta = computeRecentDelta(attempts, entry.apClass, entry.unit);
-			result.recentMistakes = computeRecentMistakes(attempts, entry.apClass, entry.unit);
-		}
-		return result;
-	});
+	return (user.progress ?? []).map((entry) => ({
+		apClass: entry.apClass,
+		unit: entry.unit,
+		totalAttempts: entry.totalAttempts,
+		correctAttempts: entry.correctAttempts,
+		mastery: entry.mastery,
+		lastAttemptAt: entry.lastAttemptAt?.toISOString(),
+		recentDelta: computeRecentDelta(attempts, entry.apClass, entry.unit),
+		recentMistakes: computeRecentMistakes(attempts, entry.apClass, entry.unit)
+	}));
 }
 
 function topicName(value: string): string {

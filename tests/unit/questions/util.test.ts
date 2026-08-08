@@ -20,11 +20,9 @@ describe('computeContentHash', () => {
 });
 
 describe('isDuplicateKeyError', () => {
-	it('detects Postgres unique-violation errors', () => {
-		expect(isDuplicateKeyError({ code: '23505' })).toBe(true);
-		expect(isDuplicateKeyError({ cause: { code: '23505' } })).toBe(true);
-		expect(isDuplicateKeyError({ code: 11000 })).toBe(false);
-		expect(isDuplicateKeyError({ code: '23503' })).toBe(false);
+	it('detects Mongo duplicate-key errors', () => {
+		expect(isDuplicateKeyError({ code: 11000 })).toBe(true);
+		expect(isDuplicateKeyError({ code: 11001 })).toBe(false);
 		expect(isDuplicateKeyError(null)).toBe(false);
 		expect(isDuplicateKeyError('nope')).toBe(false);
 	});

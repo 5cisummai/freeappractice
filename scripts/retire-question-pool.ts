@@ -1,7 +1,7 @@
 /**
  * scripts/retire-question-pool.ts
  *
- * Explicitly retire active PostgreSQL pool rows (set active=false). S3 objects are
+ * Explicitly retire active Mongo pool rows (set active=false). S3 objects are
  * untouched — history and bookmarks keep working — but practice becomes
  * unavailable for affected buckets until refill restores inventory.
  *
@@ -14,13 +14,11 @@
  */
 
 import 'dotenv/config';
-import { Question } from '../src/lib/questions/cache-model.server';
-import { FrqQuestionModel } from '../src/lib/frq/model.server';
-import { connectDb } from '../src/lib/server/db';
+import mongoose from 'mongoose';
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-	console.error('Error: DATABASE_URL is not set in your environment / .env file.');
+const DATABASE_URI = process.env.DATABASE_URI;
+if (!DATABASE_URI) {
+	console.error('Error: DATABASE_URI is not set in your environment / .env file.');
 	process.exit(1);
 }
 
@@ -51,6 +49,33 @@ type BucketRow = {
 	total: number;
 };
 
+const questionSchema = new mongoose.Schema(
+	{
+		apClass: String,
+		unit: String,
+		s3QuestionId: String,
+		active: { type: Boolean, default: true }
+	},
+	{ timestamps: true, collection: 'questions' }
+);
+
+const frqSchema = new mongoose.Schema(
+	{
+		apClass: String,
+		unit: String,
+		s3QuestionId: String,
+		active: { type: Boolean, default: true }
+	},
+	{ timestamps: true, collection: 'frqquestions' }
+);
+
+const Question =
+	(mongoose.models['Question'] as mongoose.Model<mongoose.Document>) ??
+	mongoose.model('Question', questionSchema);
+const FrqQuestion =
+	(mongoose.models['FrqQuestion'] as mongoose.Model<mongoose.Document>) ??
+	mongoose.model('FrqQuestion', frqSchema);
+
 function buildFilter(): Record<string, unknown> {
 	const filter: Record<string, unknown> = { active: { $ne: false } };
 	if (classFilter?.trim()) filter.apClass = classFilter.trim();
@@ -59,27 +84,25 @@ function buildFilter(): Record<string, unknown> {
 }
 
 async function summarize(
-	model: typeof Question | typeof FrqQuestionModel,
+	model: mongoose.Model<mongoose.Document>,
 	filter: Record<string, unknown>
 ): Promise<{ total: number; buckets: BucketRow[] }> {
-	const rows = await model.find(filter, { apClass: 1, unit: 1, _id: 0 }).lean();
-	const grouped = new Map<string, BucketRow>();
-	for (const row of rows) {
-		const key = `${String(row.apClass)}\u0000${String(row.unit)}`;
-		const current = grouped.get(key) ?? {
-			_id: { apClass: String(row.apClass), unit: String(row.unit) },
-			total: 0
-		};
-		current.total += 1;
-		grouped.set(key, current);
-	}
-	const buckets = [...grouped.values()].sort(
-		(a, b) =>
-			b.total - a.total ||
-			a._id.apClass.localeCompare(b._id.apClass) ||
-			a._id.unit.localeCompare(b._id.unit)
-	);
-	return { total: rows.length, buckets };
+	const [total, buckets] = await Promise.all([
+		model.countDocuments(filter),
+		model
+			.aggregate<BucketRow>([
+				{ $match: filter },
+				{
+					$group: {
+						_id: { apClass: '$apClass', unit: '$unit' },
+						total: { $sum: 1 }
+					}
+				},
+				{ $sort: { total: -1, '_id.apClass': 1, '_id.unit': 1 } }
+			])
+			.exec()
+	]);
+	return { total, buckets };
 }
 
 function printBucketReport(label: string, buckets: BucketRow[], total: number): void {
@@ -100,12 +123,12 @@ async function main() {
 		process.exit(1);
 	}
 
-	console.log('Connecting to Neon PostgreSQL…');
-	await connectDb();
+	console.log('Connecting to MongoDB…');
+	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
 	console.log('Connected.');
 	console.log('S3 question objects are never modified by this script.');
 	console.log(
-		'Retiring Neon pool rows makes practice unavailable for affected buckets until refill restores them.'
+		'Retiring Mongo pool rows makes practice unavailable for affected buckets until refill restores them.'
 	);
 
 	const filter = buildFilter();
@@ -116,7 +139,7 @@ async function main() {
 		? await summarize(Question, filter)
 		: { total: 0, buckets: [] as BucketRow[] };
 	const frq = includeFrq
-		? await summarize(FrqQuestionModel, filter)
+		? await summarize(FrqQuestion, filter)
 		: { total: 0, buckets: [] as BucketRow[] };
 
 	if (includeMcq) printBucketReport('MCQ pool impact', mcq.buckets, mcq.total);
@@ -153,7 +176,7 @@ async function main() {
 		console.log(`✓ Retired ${result.modifiedCount} MCQ row(s).`);
 	}
 	if (includeFrq && frq.total > 0) {
-		const result = await FrqQuestionModel.updateMany(filter, { $set: { active: false } });
+		const result = await FrqQuestion.updateMany(filter, { $set: { active: false } });
 		retired += result.modifiedCount;
 		console.log(`✓ Retired ${result.modifiedCount} FRQ row(s).`);
 	}
@@ -162,7 +185,9 @@ async function main() {
 	);
 }
 
-main().catch((err) => {
-	console.error('Script failed:', err);
-	process.exitCode = 1;
-});
+main()
+	.catch((err) => {
+		console.error('Script failed:', err);
+		process.exitCode = 1;
+	})
+	.finally(() => mongoose.disconnect());
