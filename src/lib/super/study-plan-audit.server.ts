@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { StudyPlanAudit } from '$lib/super/models.server';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView } from '$lib/super/types';
@@ -52,7 +51,7 @@ export async function getRecentStudyPlanAudits(userId: string): Promise<StudyPla
 
 /** An undo is accepted only when the plan still exactly matches the audited change. */
 export async function undoStudyPlanAudit(userId: string, auditId: string): Promise<boolean> {
-	if (!Types.ObjectId.isValid(auditId)) return false;
+	if (!auditId.trim()) return false;
 	const audit = await StudyPlanAudit.findOne({
 		_id: auditId,
 		userId,

@@ -17,8 +17,10 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-const createdAt = () => timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
-const updatedAt = () => timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
+const createdAt = () =>
+	timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
+const updatedAt = () =>
+	timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	dataType: () => 'bytea'
 });
@@ -79,7 +81,10 @@ export const authAccounts = authSchema.table(
 		accessToken: text('access_token'),
 		refreshToken: text('refresh_token'),
 		idToken: text('id_token'),
-		accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true, mode: 'date' }),
+		accessTokenExpiresAt: timestamp('access_token_expires_at', {
+			withTimezone: true,
+			mode: 'date'
+		}),
 		refreshTokenExpiresAt: timestamp('refresh_token_expires_at', {
 			withTimezone: true,
 			mode: 'date'
@@ -158,7 +163,10 @@ export const userProfiles = appSchema.table(
 			.primaryKey()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		referralCode: text('referral_code'),
-		subjects: text('subjects').array().notNull().default(sql`ARRAY[]::text[]`),
+		subjects: text('subjects')
+			.array()
+			.notNull()
+			.default(sql`ARRAY[]::text[]`),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -344,9 +352,18 @@ export const tutorProfiles = appSchema.table(
 		studyAvailability: text('study_availability').notNull().default(''),
 		teachingStyle: text('teaching_style').notNull().default('socratic'),
 		memoryEnabled: boolean('memory_enabled').notNull().default(true),
-		memoryDisclosureSeenAt: timestamp('memory_disclosure_seen_at', { withTimezone: true, mode: 'date' }),
-		superFreeBetaClaimedAt: timestamp('super_free_beta_claimed_at', { withTimezone: true, mode: 'date' }),
-		superAccessStartedAt: timestamp('super_access_started_at', { withTimezone: true, mode: 'date' }),
+		memoryDisclosureSeenAt: timestamp('memory_disclosure_seen_at', {
+			withTimezone: true,
+			mode: 'date'
+		}),
+		superFreeBetaClaimedAt: timestamp('super_free_beta_claimed_at', {
+			withTimezone: true,
+			mode: 'date'
+		}),
+		superAccessStartedAt: timestamp('super_access_started_at', {
+			withTimezone: true,
+			mode: 'date'
+		}),
 		superEndedAt: timestamp('super_ended_at', { withTimezone: true, mode: 'date' }),
 		memoryPurgedAt: timestamp('memory_purged_at', { withTimezone: true, mode: 'date' }),
 		createdAt: createdAt(),
@@ -399,8 +416,14 @@ export const superBillingAccess = appSchema.table(
 		billingIssue: text('billing_issue'),
 		billingIssueAt: timestamp('billing_issue_at', { withTimezone: true, mode: 'date' }),
 		lastStripeEventId: text('last_stripe_event_id'),
-		lastStripeEventCreated: timestamp('last_stripe_event_created', { withTimezone: true, mode: 'date' }),
-		lastBillingEventCreated: timestamp('last_billing_event_created', { withTimezone: true, mode: 'date' }),
+		lastStripeEventCreated: timestamp('last_stripe_event_created', {
+			withTimezone: true,
+			mode: 'date'
+		}),
+		lastBillingEventCreated: timestamp('last_billing_event_created', {
+			withTimezone: true,
+			mode: 'date'
+		}),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -426,7 +449,9 @@ export const superGrants = appSchema.table(
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
-	(table) => [index('super_grants_user_expiry_idx').on(table.userId, table.startsAt, table.expiresAt)]
+	(table) => [
+		index('super_grants_user_expiry_idx').on(table.userId, table.startsAt, table.expiresAt)
+	]
 );
 
 export const superUsageRollups = appSchema.table(
@@ -561,8 +586,14 @@ export const conversationMessages = appSchema.table(
 		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull()
 	},
 	(table) => [
-		uniqueIndex('conversation_messages_conversation_position_uq').on(table.conversationId, table.position),
-		index('conversation_messages_conversation_created_idx').on(table.conversationId, table.createdAt)
+		uniqueIndex('conversation_messages_conversation_position_uq').on(
+			table.conversationId,
+			table.position
+		),
+		index('conversation_messages_conversation_created_idx').on(
+			table.conversationId,
+			table.createdAt
+		)
 	]
 );
 
@@ -634,7 +665,12 @@ export const mcqQuestions = contentSchema.table(
 	},
 	(table) => [
 		index('mcq_questions_bucket_created_idx').on(table.apClass, table.unit, table.createdAt),
-		index('mcq_questions_bucket_random_idx').on(table.apClass, table.unit, table.active, table.randomKey),
+		index('mcq_questions_bucket_random_idx').on(
+			table.apClass,
+			table.unit,
+			table.active,
+			table.randomKey
+		),
 		uniqueIndex('mcq_questions_content_hash_uq').on(table.contentHash)
 	]
 );
@@ -663,7 +699,12 @@ export const frqQuestions = contentSchema.table(
 	},
 	(table) => [
 		index('frq_questions_bucket_created_idx').on(table.apClass, table.unit, table.createdAt),
-		index('frq_questions_bucket_random_idx').on(table.apClass, table.unit, table.active, table.randomKey),
+		index('frq_questions_bucket_random_idx').on(
+			table.apClass,
+			table.unit,
+			table.active,
+			table.randomKey
+		),
 		uniqueIndex('frq_questions_content_hash_uq').on(table.contentHash)
 	]
 );
@@ -737,10 +778,17 @@ export const questionRecentTopics = contentSchema.table(
 		questionId: text('question_id'),
 		createdAt: createdAt()
 	},
-	(table) => [index('question_recent_topics_bucket_created_idx').on(table.kind, table.apClass, table.unit, table.createdAt)]
+	(table) => [
+		index('question_recent_topics_bucket_created_idx').on(
+			table.kind,
+			table.apClass,
+			table.unit,
+			table.createdAt
+		)
+	]
 );
 
-/** Rollups replace the three Mongo counter collections and are always derived. */
+/** Rollups replace the three legacy counter collections and are always derived. */
 export const questionGenerationByClass = contentSchema
 	.view('question_generation_by_class', {
 		apClass: text('ap_class').notNull(),
@@ -748,12 +796,12 @@ export const questionGenerationByClass = contentSchema
 		totalQuestionChars: integer('total_question_chars').notNull()
 	})
 	.as(
-	sql`SELECT ap_class, COUNT(*)::int AS count,
+		sql`SELECT ap_class, COUNT(*)::int AS count,
 		COALESCE(SUM(content_length), 0)::int AS total_question_chars
 	FROM content.question_registry
 	WHERE kind = 'mcq'
 	GROUP BY ap_class`
-);
+	);
 
 export const questionGenerationByUnit = contentSchema
 	.view('question_generation_by_unit', {
@@ -763,12 +811,12 @@ export const questionGenerationByUnit = contentSchema
 		totalQuestionChars: integer('total_question_chars').notNull()
 	})
 	.as(
-	sql`SELECT ap_class, unit, COUNT(*)::int AS count,
+		sql`SELECT ap_class, unit, COUNT(*)::int AS count,
 		COALESCE(SUM(content_length), 0)::int AS total_question_chars
 	FROM content.question_registry
 	WHERE kind = 'mcq'
 	GROUP BY ap_class, unit`
-);
+	);
 
 export const questionGenerationByGlobalUnit = contentSchema
 	.view('question_generation_by_global_unit', {
@@ -777,12 +825,12 @@ export const questionGenerationByGlobalUnit = contentSchema
 		totalQuestionChars: integer('total_question_chars').notNull()
 	})
 	.as(
-	sql`SELECT unit, COUNT(*)::int AS count,
+		sql`SELECT unit, COUNT(*)::int AS count,
 		COALESCE(SUM(content_length), 0)::int AS total_question_chars
 	FROM content.question_registry
 	WHERE kind = 'mcq'
 	GROUP BY unit`
-);
+	);
 
 // Quality data is split into current state, feedback facts, and append-only
 // audit/batch rows. Assessments remain JSONB because their versioned shape is
@@ -856,7 +904,11 @@ export const questionFeedback = contentSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		uniqueIndex('question_feedback_user_question_type_uq').on(table.questionId, table.userId, table.type),
+		uniqueIndex('question_feedback_user_question_type_uq').on(
+			table.questionId,
+			table.userId,
+			table.type
+		),
 		index('question_feedback_question_idx').on(table.questionId)
 	]
 );
@@ -876,8 +928,16 @@ export const qualityReviewJobs = contentSchema.table(
 		failedCount: integer('failed_count').notNull().default(0),
 		estimatedInputTokens: integer('estimated_input_tokens').notNull().default(0),
 		estimatedOutputTokens: integer('estimated_output_tokens').notNull().default(0),
-		estimatedMaximumCostUsd: numeric('estimated_maximum_cost_usd', { precision: 12, scale: 6, mode: 'number' }).notNull().default(0),
-		actualCostUsd: numeric('actual_cost_usd', { precision: 12, scale: 6, mode: 'number' }).notNull().default(0),
+		estimatedMaximumCostUsd: numeric('estimated_maximum_cost_usd', {
+			precision: 12,
+			scale: 6,
+			mode: 'number'
+		})
+			.notNull()
+			.default(0),
+		actualCostUsd: numeric('actual_cost_usd', { precision: 12, scale: 6, mode: 'number' })
+			.notNull()
+			.default(0),
 		model: text('model').notNull(),
 		rubricVersion: text('rubric_version').notNull(),
 		calibrated: boolean('calibrated').notNull().default(false),
@@ -981,7 +1041,11 @@ export const poolRefillStates = opsSchema.table(
 	},
 	(table) => [
 		uniqueIndex('pool_refill_states_bucket_uq').on(table.questionType, table.apClass, table.unit),
-		index('pool_refill_states_claim_idx').on(table.status, table.nextAttemptAt, table.leaseExpiresAt)
+		index('pool_refill_states_claim_idx').on(
+			table.status,
+			table.nextAttemptAt,
+			table.leaseExpiresAt
+		)
 	]
 );
 
@@ -997,18 +1061,21 @@ export const poolBucketWriteLocks = opsSchema.table(
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
-	(table) => [uniqueIndex('pool_bucket_write_locks_bucket_uq').on(table.questionType, table.apClass, table.unit)]
+	(table) => [
+		uniqueIndex('pool_bucket_write_locks_bucket_uq').on(
+			table.questionType,
+			table.apClass,
+			table.unit
+		)
+	]
 );
 
-export const poolGenerationBudgets = opsSchema.table(
-	'pool_generation_budgets',
-	{
-		dayKey: text('day_key').primaryKey(),
-		generations: integer('generations').notNull().default(0),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	}
-);
+export const poolGenerationBudgets = opsSchema.table('pool_generation_budgets', {
+	dayKey: text('day_key').primaryKey(),
+	generations: integer('generations').notNull().default(0),
+	createdAt: createdAt(),
+	updatedAt: updatedAt()
+});
 
 /** Immutable source rollups retained for migration audit; serving uses views. */
 export const generationRollupSnapshots = opsSchema.table(
@@ -1022,7 +1089,13 @@ export const generationRollupSnapshots = opsSchema.table(
 		totalQuestionChars: integer('total_question_chars').notNull(),
 		createdAt: createdAt()
 	},
-	(table) => [uniqueIndex('generation_rollup_snapshots_source_uq').on(table.sourceCollection, table.apClass, table.unit)]
+	(table) => [
+		uniqueIndex('generation_rollup_snapshots_source_uq').on(
+			table.sourceCollection,
+			table.apClass,
+			table.unit
+		)
+	]
 );
 
 export const superCleanupJobs = opsSchema.table(
@@ -1045,18 +1118,18 @@ export const superCleanupJobs = opsSchema.table(
 	]
 );
 
-export const migrationRuns = opsSchema.table(
-	'migration_runs',
-	{
-		id: text('id').primaryKey(),
-		phase: text('phase').notNull(),
-		status: text('status').notNull(),
-		startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
-		completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }),
-		options: jsonb('options').$type<Record<string, unknown>>().notNull().default(sql`'{}'::jsonb`),
-		error: text('error')
-	}
-);
+export const migrationRuns = opsSchema.table('migration_runs', {
+	id: text('id').primaryKey(),
+	phase: text('phase').notNull(),
+	status: text('status').notNull(),
+	startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
+	completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }),
+	options: jsonb('options')
+		.$type<Record<string, unknown>>()
+		.notNull()
+		.default(sql`'{}'::jsonb`),
+	error: text('error')
+});
 
 export const betterAuthMigrationMap = opsSchema.table(
 	'better_auth_migration_map',
@@ -1083,9 +1156,14 @@ export const legacyDocuments = opsSchema.table(
 			.notNull()
 			.references(() => migrationRuns.id, { onDelete: 'cascade' }),
 		document: jsonb('document').$type<Record<string, unknown>>().notNull(),
-		archivedAt: timestamp('archived_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow()
+		archivedAt: timestamp('archived_at', { withTimezone: true, mode: 'date' })
+			.notNull()
+			.defaultNow()
 	},
-	(table) => [primaryKey({ columns: [table.sourceCollection, table.sourceId] }), index('legacy_documents_run_idx').on(table.runId)]
+	(table) => [
+		primaryKey({ columns: [table.sourceCollection, table.sourceId] }),
+		index('legacy_documents_run_idx').on(table.runId)
+	]
 );
 
 export const migrationTransforms = opsSchema.table(
@@ -1105,10 +1183,10 @@ export const migrationTransforms = opsSchema.table(
 );
 
 export const schemaMigrations = opsSchema.table('schema_migrations', {
-		id: text('id').primaryKey(),
-		checksum: text('checksum').notNull(),
-		appliedAt: timestamp('applied_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow()
-	});
+	id: text('id').primaryKey(),
+	checksum: text('checksum').notNull(),
+	appliedAt: timestamp('applied_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow()
+});
 
 export const migrationLedger = opsSchema.table(
 	'migration_ledger',
@@ -1121,7 +1199,9 @@ export const migrationLedger = opsSchema.table(
 		targetTable: text('target_table').notNull(),
 		targetId: text('target_id').notNull(),
 		checksum: text('checksum').notNull(),
-		migratedAt: timestamp('migrated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow()
+		migratedAt: timestamp('migrated_at', { withTimezone: true, mode: 'date' })
+			.notNull()
+			.defaultNow()
 	},
 	(table) => [
 		primaryKey({ columns: [table.sourceCollection, table.sourceId, table.targetTable] }),

@@ -1,6 +1,6 @@
 # Question pool runbook
 
-Operational guide for the large Mongo serving library backed by the S3 canonical archive. Generation runs only in refill workers — never on user question requests.
+Operational guide for the Neon PostgreSQL serving library backed by the S3 canonical archive. Generation runs only in refill workers — never on user question requests.
 
 Related: [architecture.md](./architecture.md), [question-request-metrics.md](./question-request-metrics.md).
 
@@ -8,16 +8,16 @@ Related: [architecture.md](./architecture.md), [question-request-metrics.md](./q
 
 | Layer                              | Behavior                                                                                                        |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `POST /api/question` / FRQ         | Indexed random Mongo select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM.        |
+| `POST /api/question` / FRQ         | Indexed random Neon select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM.         |
 | Cron `GET /api/cron/question-pool` | Claim due refill leases and generate within daily/run budgets (does **not** full-catalog reconcile every tick). |
 | S3                                 | Canonical archive + question IDs. Never deleted by pool tools.                                                  |
-| Mongo                              | Active serving library (`active`, `randomKey`, inline bodies).                                                  |
+| Neon PostgreSQL                    | Active serving library (`active`, `randomKey`, inline bodies).                                                  |
 
 **Feature-flag note:** Selection-only serving is already the unconditional request path (legacy miss-lock / sync-generate code is removed). There is no dual-path flag to flip off generation on the request path. Use Vercel Flags only for unrelated product pilots (`frq-practice`, `multi-attempt-experiment`). Rollout canary = deploy → seed → watch metrics / admin readiness → expand traffic confidence, not a code flag.
 
 ## Prerequisites
 
-- `DATABASE_URI` points at the intended MongoDB (confirm host before any write script).
+- `DATABASE_URL` points at the intended Neon project/branch (confirm environment before any write script).
 - AWS credentials + `AWS_S3_BUCKET` for backfill.
 - `CRON_SECRET` for production cron / manual cron calls.
 - Prefer a non-production URI for first dry-runs.
@@ -25,7 +25,7 @@ Related: [architecture.md](./architecture.md), [question-request-metrics.md](./q
 ## 1. Backfill dry-run and cost estimation
 
 ```bash
-# Report only — no Mongo writes
+# Report only — no PostgreSQL writes
 bun run pool:backfill-s3 --dry-run
 ```
 
@@ -47,7 +47,7 @@ bun run pool:backfill-s3 --enqueue-deficits
 
 ## 2. Initial seeding (two stages)
 
-1. **S3 → Mongo** via `pool:backfill-s3` (above).
+1. **S3 → Neon PostgreSQL** via `pool:backfill-s3` (above).
 2. **Deficit enqueue** — either `--enqueue-deficits` or admin “enqueue all deficits”, then let cron drain:
 
 ```bash
@@ -81,7 +81,7 @@ bun run pool:batch-submit -- --type frq --limit 200
 # Narrow to one bucket
 bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
 
-# After OpenAI finishes (often hours), persist results to S3 + Mongo
+# After OpenAI finishes (often hours), persist results to S3 + Neon PostgreSQL
 bun run pool:batch-collect -- --batch batch_...
 ```
 
@@ -117,7 +117,7 @@ If a lease looks stuck before expiry:
 
 1. Wait for TTL (`QUESTION_POOL_LEASE_TTL_MS` in `pool-constants.ts`, default 2 minutes) and re-run cron.
 2. Do not manually delete S3 objects.
-3. Only clear `leaseOwner` / `leaseExpiresAt` in Mongo if you are sure no worker is still generating for that bucket.
+3. Only clear `leaseOwner` / `leaseExpiresAt` in Neon if you are sure no worker is still generating for that bucket.
 
 ## 5. Daily budget exhaustion
 
@@ -128,7 +128,7 @@ Worker summary `stoppedReason: daily_budget` or refill status `budget_exhausted`
 
 ## 6. Safe retirement (replaces clear-cache)
 
-Retiring sets `active=false` on Mongo rows. S3 and history IDs remain valid; practice for those buckets returns warming until refill restores inventory.
+Retiring sets `active=false` on Neon rows. S3 and history IDs remain valid; practice for those buckets returns warming until refill restores inventory.
 
 ```bash
 bun run pool:retire --dry-run
@@ -177,9 +177,9 @@ With `bun dev` (or a preview deploy):
 
 ## Useful package scripts
 
-| Script                        | Purpose                                                                      |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| `bun run pool:backfill-s3`    | S3 → Mongo import (`--dry-run`, `--enqueue-deficits`)                        |
-| `bun run pool:batch-submit`   | Submit JSON-target deficits (`--type mcq\|frq`)                              |
-| `bun run pool:batch-collect`  | Validate/persist a completed batch                                           |
-| `bun run pool:retire`         | Retire active Mongo rows (`--dry-run`, `--confirm=RETIRE-POOL`)              |
+| Script                       | Purpose                                                         |
+| ---------------------------- | --------------------------------------------------------------- |
+| `bun run pool:backfill-s3`   | S3 → Neon PostgreSQL import (`--dry-run`, `--enqueue-deficits`) |
+| `bun run pool:batch-submit`  | Submit JSON-target deficits (`--type mcq\|frq`)                 |
+| `bun run pool:batch-collect` | Validate/persist a completed batch                              |
+| `bun run pool:retire`        | Retire active Neon rows (`--dry-run`, `--confirm=RETIRE-POOL`)  |

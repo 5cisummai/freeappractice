@@ -21,7 +21,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - SvelteKit + Svelte 5
 - TypeScript
 - Tailwind CSS
-- MongoDB + Mongoose
+- Neon PostgreSQL + Drizzle ORM (`@neondatabase/serverless` HTTPS driver)
 - [Better Auth](https://www.better-auth.com/) for sessions, email flows, and OAuth
 - [Vercel AI SDK](https://sdk.vercel.ai/) with an OpenAI-compatible API for question generation and tutor responses (OpenAI or [LM Studio](https://lmstudio.ai/) locally)
 - Resend for transactional email
@@ -35,7 +35,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 - Node.js 20+
 - [Bun](https://bun.sh/)
-- MongoDB (Atlas or local via Docker Compose)
+- A Neon PostgreSQL project/branch for the environment you are running
 
 ### Setup
 
@@ -51,13 +51,16 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    cp .env.example .env
    ```
 
-3. (Optional) Start a local MongoDB instance with `compose.yaml`:
+3. (Optional) Start local PostgreSQL and Redis services with `compose.yaml`:
 
    ```sh
    docker compose up -d
    ```
 
-   Then set `DATABASE_URI=mongodb://root:password@localhost:27017/freeappractice?authSource=admin` in `.env`.
+   The deployed app uses the Neon `DATABASE_URL`. The local PostgreSQL service is
+   available at `postgresql://postgres:password@localhost:5432/freeappractice` for
+   SQL inspection and migration work; the runtime must use a Neon branch URL so
+   `@neondatabase/serverless` can send requests over HTTPS.
 
 4. Start the dev server:
 
@@ -91,7 +94,7 @@ Copy `.env.example` to `.env`. Required for a working local setup:
 
 | Variable             | Purpose                                                                        |
 | -------------------- | ------------------------------------------------------------------------------ |
-| `DATABASE_URI`       | MongoDB connection string                                                      |
+| `DATABASE_URL`       | Neon PostgreSQL connection string used by Drizzle over HTTPS                   |
 | `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
 | `BETTER_AUTH_URL`    | App base URL for auth callbacks (e.g. `http://localhost:5173`)                 |
 | `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
@@ -136,7 +139,7 @@ with `vercel env pull .env.development.local --environment=development` when set
 
 Upstash Redis is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
 single-flight locks, idempotency keys, and 30-minute Coach approvals. Upstash Vector stores optional tutor
-memories; MongoDB, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
+memories; Neon PostgreSQL, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
 use Redis. For local Redis testing, run an
 Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
 `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.
@@ -208,7 +211,7 @@ The in-app bug report form creates GitHub Issues in this repository via the GitH
 Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
-2. Set production environment variables (at minimum `DATABASE_URI`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
+2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
 3. Vercel runs `bun run build` via the default SvelteKit integration.
 
 `BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.

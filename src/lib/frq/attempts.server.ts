@@ -1,5 +1,4 @@
 import { structuredObject } from '$lib/ai/service.server';
-import mongoose from 'mongoose';
 import { FrqAttempt, type IFrqAttempt } from '$lib/frq/model.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqGradingModel } from '$lib/frq/service.server';
@@ -13,7 +12,6 @@ import {
 	type FrqQuestion
 } from '$lib/frq/types';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
-import { connectDb } from '$lib/server/db';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { logger } from '$lib/server/logger';
 
@@ -54,7 +52,6 @@ async function claimSubmission(
 	request: FrqGradeRequest,
 	question: Awaited<ReturnType<typeof getFrqFromS3>>
 ): Promise<ClaimResult> {
-	await connectDb();
 	try {
 		const attempt = await FrqAttempt.create({
 			userId,
@@ -191,14 +188,11 @@ export async function getFrqAttemptForUser(
 	userId: string,
 	attemptId: string
 ): Promise<FrqAttemptView | null> {
-	if (!mongoose.isValidObjectId(attemptId)) return null;
-	await connectDb();
 	const attempt = await FrqAttempt.findOne({ _id: attemptId, userId, status: 'graded' });
 	return attempt ? toAttemptView(attempt) : null;
 }
 
 export async function getFrqProgressForUser(userId: string): Promise<FrqProgressSummary[]> {
-	await connectDb();
 	const rows = await FrqAttempt.aggregate<{
 		_id: { apClass: string; unit: string };
 		attempts: number;
@@ -238,7 +232,6 @@ export type FrqActivity = {
 };
 
 export async function getFrqActivityForUser(userId: string): Promise<FrqActivity[]> {
-	await connectDb();
 	const rows = await FrqAttempt.find(
 		{ userId, status: 'graded' },
 		{ createdAt: 1, timeTakenMs: 1, apClass: 1, 'grade.percentage': 1 }

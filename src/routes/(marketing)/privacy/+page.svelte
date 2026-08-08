@@ -149,12 +149,12 @@
 			<section>
 				<h2 class="text-xl font-semibold">4. Data Storage and Security</h2>
 				<p>
-					We store account, practice, personalization, billing-mirror, and feature data in MongoDB.
-					Generated question content and related assets may also be stored in MongoDB and AWS S3.
-					Passwords are stored as hashes, not plain text, and OAuth tokens are encrypted by the
-					authentication system. Authentication uses secure HTTP-only session cookies. We use access
-					controls, validation, rate limits, and monitoring appropriate to a personal project, but
-					no method of transmission or storage is completely secure.
+					We store account, practice, personalization, billing-mirror, and feature data in
+					Neon-hosted PostgreSQL. Generated question content and related assets may also be stored
+					in PostgreSQL and AWS S3. Passwords are stored as hashes, not plain text, and OAuth tokens
+					are encrypted by the authentication system. Authentication uses secure HTTP-only session
+					cookies. We use access controls, validation, rate limits, and monitoring appropriate to a
+					personal project, but no method of transmission or storage is completely secure.
 				</p>
 			</section>
 
@@ -237,7 +237,8 @@
 						and used
 					</li>
 					<li>
-						<strong>MongoDB:</strong> database storage for accounts, practice, and feature data
+						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, and feature
+						data
 					</li>
 					<li>
 						<strong>AWS S3:</strong> storage for generated question content and related assets

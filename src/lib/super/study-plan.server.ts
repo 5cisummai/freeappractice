@@ -1,7 +1,9 @@
-import { connectDb } from '$lib/server/db';
+import { randomUUID } from 'node:crypto';
+import { asc, eq } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { studyPlans, studyTasks } from '$lib/server/neon/schema';
 import { isSuperInsightsEnabled } from '$lib/flags';
 import { getEntitlements } from '$lib/super/entitlements.server';
-import { StudyPlan } from '$lib/super/models.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	getCurrentEligibleInsightReport,
@@ -190,6 +192,85 @@ function cappedTasks(tasks: StudyTask[]): StudyTask[] {
 		}));
 }
 
+type StoredPlanTask = StudyTask & { date: Date };
+type StoredPlan = {
+	_id: string;
+	userId: string;
+	startsOn: Date;
+	tasks: StoredPlanTask[];
+	updatedAt: Date;
+};
+
+async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
+	const db = getNeonDatabase() as any;
+	const plan = (
+		await db
+			.select()
+			.from(studyPlans as any)
+			.where(eq((studyPlans as any).userId, userId))
+			.limit(1)
+	)[0] as Record<string, any> | undefined;
+	if (!plan) return null;
+	const tasks = await db
+		.select()
+		.from(studyTasks as any)
+		.where(eq((studyTasks as any).planId, plan.id))
+		.orderBy(asc((studyTasks as any).taskDate));
+	return {
+		_id: plan.id,
+		userId: plan.userId,
+		startsOn: plan.startsOn,
+		updatedAt: plan.updatedAt,
+		tasks: (tasks as Array<Record<string, any>>).map((task) => ({
+			id: task.id,
+			apClass: task.apClass,
+			unit: task.unit,
+			mode: task.mode,
+			date: task.taskDate,
+			durationMinutes: task.durationMinutes,
+			status: task.status,
+			practiceHref: task.practiceHref ?? undefined
+		}))
+	};
+}
+
+async function writeStoredPlan(
+	userId: string,
+	startsOn: Date,
+	tasks: StudyTask[]
+): Promise<StoredPlan> {
+	const db = getNeonDatabase() as any;
+	const existing = await readStoredPlan(userId);
+	const planId = existing?._id ?? randomUUID();
+	if (existing) {
+		await db
+			.update(studyPlans as any)
+			.set({ startsOn, updatedAt: new Date() })
+			.where(eq((studyPlans as any).id, planId));
+	} else {
+		await db.insert(studyPlans as any).values({ id: planId, userId, startsOn });
+	}
+	await db.delete(studyTasks as any).where(eq((studyTasks as any).planId, planId));
+	if (tasks.length) {
+		await db.insert(studyTasks as any).values(
+			tasks.map((task) => ({
+				id: task.id,
+				planId,
+				apClass: task.apClass,
+				unit: task.unit,
+				mode: task.mode,
+				taskDate: startOfUtcDay(task.date),
+				durationMinutes: task.durationMinutes,
+				status: task.status,
+				practiceHref: task.practiceHref ?? null
+			}))
+		);
+	}
+	const saved = await readStoredPlan(userId);
+	if (!saved) throw new Error('Study plan could not be saved');
+	return saved;
+}
+
 /** Replace or merge through the unique userId key, preserving completion for matching task IDs. */
 export async function saveStudyPlan(
 	userId: string,
@@ -199,22 +280,15 @@ export async function saveStudyPlan(
 	await requireStudyPlanAccess(userId);
 	const startsOn = startOfUtcDay(draft.startsOn);
 	const tasks = cappedTasks(draft.tasks);
-	await connectDb();
 
 	if (options.behavior === 'merge') {
 		// Optimistic matching prevents a concurrent completion/reschedule from being lost.
 		// A retry reads the latest task state before merging again.
 		for (let attempt = 0; attempt < 3; attempt++) {
-			const existing = await StudyPlan.findOne({ userId }).lean().exec();
+			const existing = await readStoredPlan(userId);
 			if (!existing) {
 				try {
-					const inserted = await StudyPlan.findOneAndUpdate(
-						{ userId },
-						{ $set: { userId, startsOn, tasks } },
-						{ upsert: true, new: true, setDefaultsOnInsert: true }
-					).exec();
-					if (!inserted) throw new Error('Study plan could not be saved');
-					return toStudyPlanView(inserted);
+					return toStudyPlanView(await writeStoredPlan(userId, startsOn, tasks));
 				} catch (error) {
 					if (
 						error instanceof Error &&
@@ -226,30 +300,13 @@ export async function saveStudyPlan(
 					throw error;
 				}
 			}
-			const nextTasks = mergeTasks((existing.tasks ?? []) as StudyTask[], tasks);
-			const saved = await StudyPlan.findOneAndUpdate(
-				{ userId, updatedAt: existing.updatedAt },
-				{ $set: { startsOn, tasks: nextTasks } },
-				{ new: true }
-			).exec();
-			if (saved) return toStudyPlanView(saved);
+			const nextTasks = mergeTasks(existing.tasks as StudyTask[], tasks);
+			return toStudyPlanView(await writeStoredPlan(userId, startsOn, nextTasks));
 		}
 		throw new Error('Study plan changed while merging; please retry');
 	}
 
-	const saved = await StudyPlan.findOneAndUpdate(
-		{ userId },
-		{
-			$set: {
-				userId,
-				startsOn,
-				tasks
-			}
-		},
-		{ upsert: true, new: true, setDefaultsOnInsert: true }
-	).exec();
-	if (!saved) throw new Error('Study plan could not be saved');
-	return toStudyPlanView(saved);
+	return toStudyPlanView(await writeStoredPlan(userId, startsOn, tasks));
 }
 
 /** Returns the one stored plan only while the study-plan entitlement is valid. */
@@ -263,8 +320,7 @@ export async function getCurrentStudyPlan(
 		if (error instanceof StudyPlansLockedError) return null;
 		throw error;
 	}
-	await connectDb();
-	const plan = await StudyPlan.findOne({ userId }).lean().exec();
+	const plan = await readStoredPlan(userId);
 	return plan ? toStudyPlanView(plan) : null;
 }
 
@@ -282,8 +338,8 @@ export async function generateStudyPlan(
 
 export async function deleteStudyPlan(userId: string): Promise<void> {
 	await requireStudyPlanAccess(userId);
-	await connectDb();
-	await StudyPlan.deleteOne({ userId }).exec();
+	const db = getNeonDatabase() as any;
+	await db.delete(studyPlans as any).where(eq((studyPlans as any).userId, userId));
 }
 
 async function updateTask(
@@ -292,19 +348,13 @@ async function updateTask(
 	update: Record<string, unknown>
 ): Promise<StudyPlanView | null> {
 	await requireStudyPlanAccess(userId);
-	await connectDb();
-	const plan = await StudyPlan.findOneAndUpdate(
-		{ userId, 'tasks.id': taskId },
-		{
-			$set: Object.fromEntries(
-				Object.entries(update).map(([key, value]) => [`tasks.$.${key}`, value])
-			)
-		},
-		{ new: true }
-	)
-		.lean()
-		.exec();
-	return plan ? toStudyPlanView(plan) : null;
+	const plan = await readStoredPlan(userId);
+	if (!plan) return null;
+	const task = plan.tasks.find((item) => item.id === taskId);
+	if (!task) return null;
+	Object.assign(task, update);
+	const saved = await writeStoredPlan(userId, plan.startsOn, plan.tasks);
+	return toStudyPlanView(saved);
 }
 
 export async function setStudyTaskStatus(

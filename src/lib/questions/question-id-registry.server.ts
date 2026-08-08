@@ -31,7 +31,7 @@ async function registerQuestionId(
 	);
 }
 
-/** Register without failing the caller if Mongo is unavailable. */
+/** Register without failing the caller if the Neon registry is unavailable. */
 export async function registerQuestionIdSafe(
 	questionId: string,
 	metadata: QuestionRegistryMetadata = {}

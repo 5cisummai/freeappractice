@@ -84,7 +84,7 @@ async function insertHotPoolDoc(
 }
 
 /**
- * Worker-only: AI → S3 → Mongo active library.
+ * Worker-only: AI → S3 → Neon PostgreSQL active library.
  * Must not be imported by request-path selection modules.
  */
 export async function generateQuestionForPool(
@@ -112,7 +112,7 @@ export async function generateQuestionForPool(
 	});
 }
 
-/** Persist a batch/sync-parsed MCQ into S3 + Mongo (worker/batch collect only). */
+/** Persist a batch/sync-parsed MCQ into S3 + Neon (worker/batch collect only). */
 export async function persistParsedQuestionToPool(
 	className: string,
 	unit: string,

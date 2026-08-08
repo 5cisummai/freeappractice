@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { connectDb } from '$lib/server/db';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import {
@@ -247,7 +246,7 @@ export async function createSuperGrant(input: {
 }
 
 export async function revokeSuperGrant(grantId: string, revokedAt = new Date()): Promise<boolean> {
-	if (!Types.ObjectId.isValid(grantId)) return false;
+	if (!grantId.trim()) return false;
 	await connectDb();
 	const grant = await SuperGrant.findOne({
 		_id: grantId,
@@ -270,11 +269,17 @@ export async function retrySuperCleanupJob(
 	jobId: string,
 	nextAttemptAt = new Date()
 ): Promise<boolean> {
-	if (!Types.ObjectId.isValid(jobId)) return false;
+	const normalizedId = jobId.trim();
+	if (
+		!/^(?:[a-f\d]{24}|[a-f\d]{8}-[a-f\d]{4}-[4-5][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12})$/i.test(
+			normalizedId
+		)
+	)
+		return false;
 	await connectDb();
 	const result = await SuperCleanupJob.updateOne(
 		{
-			_id: jobId,
+			_id: normalizedId,
 			completedAt: { $exists: false },
 			lastError: { $exists: true, $nin: [null, ''] }
 		},

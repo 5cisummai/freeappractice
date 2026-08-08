@@ -23,7 +23,6 @@ export function getNeonDatabase(): NeonDatabase {
 	if (globalNeon.__freeApPracticeNeon) return globalNeon.__freeApPracticeNeon;
 
 	const url = env.DATABASE_URL?.trim() ||
-		env.NEON_DATABASE_URL?.trim() ||
 		(building ? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require' : undefined);
 	if (!url) {
 		throw new Error('DATABASE_URL is required for the Neon database');
@@ -45,7 +44,6 @@ export function getNeonDatabase(): NeonDatabase {
  */
 export function getNeonSql() {
 	const url = env.DATABASE_URL?.trim() ||
-		env.NEON_DATABASE_URL?.trim() ||
 		(building ? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require' : undefined);
 	if (!url) throw new Error('DATABASE_URL is required for the Neon database');
 	if (!/^postgres(?:ql)?:\/\//i.test(url)) {

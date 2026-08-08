@@ -30,12 +30,12 @@ The physical database is divided into `auth`, `app`, `content`, and `ops` schema
 
 ## Migration protocol
 
-The loader in `scripts/migrate-mongo-to-neon.ts` is read-only against Mongo and idempotent against Neon. It records a checksum ledger for every source document, rejects malformed rows explicitly, and fails when it discovers a collection that is not in the allow-list.
+The loader in `scripts/migrate-mongo-to-neon.ts` is read-only against the legacy Mongo source and idempotent against Neon. It records a checksum ledger for every source document, rejects malformed rows explicitly, and fails when it discovers a collection that is not in the allow-list.
 
 Use a unique run ID for each load. The intended sequence is:
 
 1. Apply a reviewed Drizzle migration to an isolated Neon branch.
-2. Inventory every Mongo collection and resolve any unmapped collection before loading.
+2. Inventory every legacy Mongo collection and resolve any unmapped collection before loading.
 3. Load Better Auth rows first, then profiles, registry/content, attempts, quality, and operational state.
 4. Verify source counts, target ledger counts, rejected documents, foreign-key integrity, and derived generation views.
 5. Repeat the load with the same run ID to prove idempotency, then run a delta load after the write freeze.
@@ -44,6 +44,6 @@ The loader is deliberately not invoked by the application and has not been execu
 
 ## Cutover seam
 
-The new database seam is `$lib/server/neon/db.ts` and the first invariant-preserving operations are in `$lib/server/neon/queries.ts`. Existing Mongo domain modules remain present until their callers are moved to these tables. This avoids a partial cutover where Better Auth, profile writes, pool workers, and account deletion disagree about the authoritative store.
+The database seam is `$lib/server/neon/db.ts`, backed by `drizzle-orm/neon-http`, and the compatibility repository is `$lib/server/neon/model.ts`. Better Auth, profile writes, pool workers, content, quality review, FRQ grading, and account deletion now use the normalized Neon tables.
 
-After domain adapters are moved, the final cutover should use the existing Vercel Flags implementation for a short write-maintenance window: stop writes and webhooks, run the final delta, verify, switch the database flag, smoke-test authentication and critical user flows, then reopen writes. Mongo should remain read-only for the agreed retention period before its credentials and dependencies are removed.
+The remaining production step is data cutover: use a short write-maintenance window, run the final delta from an explicitly configured `SOURCE_DATABASE_URI`, verify counts and foreign keys, smoke-test authentication and critical user flows, then reopen writes. Keep the legacy Mongo source read-only for the agreed retention period before removing its credentials and the `mongodb` migration-only dependency.

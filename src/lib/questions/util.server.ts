@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 
-/** Check if an error is a MongoDB duplicate-key error (E11000). */
+/** Check if a Neon/PostgreSQL write hit a unique constraint. */
 export function isDuplicateKeyError(err: unknown): boolean {
-	return typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
+	if (typeof err !== 'object' || err === null) return false;
+	const code = (err as { code?: number | string }).code;
+	return code === 11000 || code === '23505';
 }
 
 /** Normalize and hash text for deduplication (SHA-256). */

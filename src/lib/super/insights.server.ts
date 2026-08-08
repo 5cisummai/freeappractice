@@ -554,7 +554,7 @@ function fromMcqAttempt(attempt: IQuestionAttempt, index: number): InsightScored
 	};
 }
 
-/** Read both v1 embedded MCQ history and durable graded FRQ attempts from Mongo. */
+/** Read MCQ history and durable graded FRQ attempts from Neon PostgreSQL. */
 export async function getScoredAttemptsForUser(userId: string): Promise<InsightScoredAttempt[]> {
 	await connectDb();
 	const [profile, frqAttempts] = await Promise.all([
@@ -618,7 +618,7 @@ function reportFromStored(value: Record<string, unknown>): InsightReportData {
 	return value as unknown as InsightReportData;
 }
 
-/** Convert a Mongoose/lean report into a Date-free view safe for JSON serialization. */
+/** Convert a database report into a Date-free view safe for JSON serialization. */
 export function toInsightReportView(report: {
 	_id?: unknown;
 	userId: string;

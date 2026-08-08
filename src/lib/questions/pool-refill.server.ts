@@ -132,7 +132,6 @@ async function tryReserveDailyBudget(env: QuestionPoolConfig): Promise<boolean> 
 export async function releaseDailyGenerationBudget(amount: number): Promise<number> {
 	if (amount <= 0) return 0;
 	const dayKey = utcDayKey();
-
 	const updated = await PoolGenerationBudget.findOneAndUpdate(
 		{ dayKey, generations: { $gte: amount } },
 		{ $inc: { generations: -amount } },
@@ -144,7 +143,6 @@ export async function releaseDailyGenerationBudget(amount: number): Promise<numb
 	const doc = await PoolGenerationBudget.findOne({ dayKey }).lean();
 	const available = Math.max(0, doc?.generations ?? 0);
 	if (available <= 0) return 0;
-
 	const partial = await PoolGenerationBudget.findOneAndUpdate(
 		{ dayKey, generations: { $gte: available } },
 		{ $inc: { generations: -available } },

@@ -1,7 +1,7 @@
 /**
  * scripts/sync-question-ids-from-s3.ts
  *
- * Backfill the MongoDB `question_ids` registry from every object under `questions/` in S3.
+ * Backfill the PostgreSQL question registry from every object under `questions/` in S3.
  *
  *   bun run sync:question-ids
  *   bun run sync:question-ids --dry-run
@@ -11,17 +11,18 @@
 import 'dotenv/config';
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { createHash } from 'node:crypto';
-import mongoose from 'mongoose';
+import { QuestionId } from '../src/lib/questions/question-id-model.server';
+import { connectDb } from '../src/lib/server/db';
 
-const DATABASE_URI = process.env.DATABASE_URI;
+const DATABASE_URL = process.env.DATABASE_URL;
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
 const isDryRun = process.argv.includes('--dry-run');
 const hydrateMetadata = process.argv.includes('--hydrate');
 const BATCH_SIZE = 1000;
 const QUESTION_KEY_RE = /^questions\/([^/]+)\.json$/;
 
-if (!DATABASE_URI) {
-	console.error('Error: DATABASE_URI is not set in your environment / .env file.');
+if (!DATABASE_URL) {
+	console.error('Error: DATABASE_URL is not set in your environment / .env file.');
 	process.exit(1);
 }
 
@@ -29,23 +30,6 @@ if (!AWS_S3_BUCKET?.trim()) {
 	console.error('Error: AWS_S3_BUCKET is not set in your environment / .env file.');
 	process.exit(1);
 }
-
-const questionIdSchema = new mongoose.Schema(
-	{
-		questionId: { type: String, required: true, unique: true, index: true },
-		apClass: { type: String, index: true },
-		unit: { type: String, index: true },
-		questionCreatedAt: { type: Date, index: true },
-		contentHash: String,
-		contentLength: Number,
-		metadataSyncedAt: Date
-	},
-	{ timestamps: true }
-);
-
-const QuestionId =
-	(mongoose.models.QuestionId as mongoose.Model<{ questionId: string }>) ??
-	mongoose.model('QuestionId', questionIdSchema, 'question_ids');
 
 function createS3Client(): S3Client {
 	const region = process.env.AWS_REGION;
@@ -103,8 +87,8 @@ async function main() {
 	const s3Ids = [...new Set(await listQuestionIdsFromS3(s3, bucket))].sort();
 	console.log(`Found ${s3Ids.length} unique question id(s) in S3.`);
 
-	console.log('Connecting to MongoDB…');
-	await mongoose.connect(DATABASE_URI!, { serverSelectionTimeoutMS: 10_000 });
+	console.log('Connecting to Neon PostgreSQL…');
+	await connectDb();
 	console.log('Connected.');
 
 	const existingCount = await QuestionId.countDocuments({});
@@ -186,9 +170,7 @@ async function main() {
 	}
 }
 
-main()
-	.catch((err) => {
-		console.error('Script failed:', err);
-		process.exitCode = 1;
-	})
-	.finally(() => mongoose.disconnect());
+main().catch((err) => {
+	console.error('Script failed:', err);
+	process.exitCode = 1;
+});
