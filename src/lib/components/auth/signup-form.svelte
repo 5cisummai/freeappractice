@@ -89,7 +89,13 @@
 				errorCallbackURL: authCallbackUrl('/signup'),
 				newUserCallbackURL: `${authCallbackUrl('/app')}?signup=google`
 			});
-			if (error) errorMessage = error.message ?? 'Google sign-in failed';
+			if (error) {
+				const message = error.message ?? '';
+				errorMessage =
+					message.toLowerCase().replaceAll('_', ' ') === 'account not linked'
+						? 'This email already has an account. Sign in with email and password, verify your email, then try Google again.'
+						: message || 'Google sign-in failed';
+			}
 		} finally {
 			googleLoading = false;
 		}
