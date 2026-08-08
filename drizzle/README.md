@@ -8,4 +8,4 @@ Generate and apply:
 
 1. `bun run db:generate` — write SQL under `drizzle/` from schema changes.
 2. Review the generated migration.
-3. `bun run db:apply` — apply committed SQL to `DATABASE_URL` (also runs as part of `bun run build`).
+3. `bun run db:apply` — apply committed SQL to `DATABASE_URL` (locally, or automatically on push to `main` / `staging` via CI).

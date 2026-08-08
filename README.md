@@ -74,11 +74,16 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    bun run build
    ```
 
-   The build applies committed Drizzle migrations to the `DATABASE_URL` Neon
-   database before bundling. Make sure the build environment points at the
-   intended Neon branch; a missing or invalid `DATABASE_URL` fails the build.
+6. Apply pending schema migrations (when `drizzle/` SQL changed):
 
-6. Run the unit test suite:
+   ```sh
+   bun run db:apply
+   ```
+
+   Point `DATABASE_URL` at the intended Neon branch before running. On push to
+   `main` or `staging`, CI applies migrations before Vercel deploys.
+
+7. Run the unit test suite:
 
    ```sh
    bun test:unit
@@ -86,11 +91,12 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 ### Useful scripts
 
-| Command                   | Purpose                        |
-| ------------------------- | ------------------------------ |
-| `bun check`               | Type-check with `svelte-check` |
-| `bun test:unit`           | Run Vitest unit tests          |
-| `bun lint` / `bun format` | ESLint and Prettier            |
+| Command                   | Purpose                                        |
+| ------------------------- | ---------------------------------------------- |
+| `bun check`               | Type-check with `svelte-check`                 |
+| `bun test:unit`           | Run Vitest unit tests                          |
+| `bun run db:apply`        | Apply committed Drizzle migrations to Neon     |
+| `bun lint` / `bun format` | ESLint and Prettier                            |
 
 ## Environment variables
 
@@ -215,10 +221,9 @@ The in-app bug report form creates GitHub Issues in this repository via the GitH
 Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
-2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`).
-3. Vercel runs `bun run build` via the default SvelteKit integration. The build
-   applies pending Drizzle migrations to the configured production Neon
-   database before creating the deployment.
+2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`). Runtime only — the Vercel build does not need database access.
+3. Add `DATABASE_URL` (and `STAGING_DATABASE_URL` if you use the `staging` branch) as GitHub Actions secrets. Pushes to `main` / `staging` run `bun run db:apply` in CI before Vercel bundles the app.
+4. Vercel runs `bun run build` (`vite build`) via the default SvelteKit integration.
 
 `BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.
 

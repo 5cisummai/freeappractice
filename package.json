@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "bun run db:apply && vite build",
+		"build": "vite build",
 		"preview": "vite preview",
 		"test": "bun run test:unit",
 		"test:unit": "vitest run",
