@@ -101,6 +101,14 @@ function intValue(value: unknown, fallback = 0): number {
 	return typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : fallback;
 }
 
+const maxAttemptTimeMs = 30 * 60 * 1000;
+
+function legacyAttemptTimeMs(value: unknown): { value: number; clamped: boolean } {
+	const parsed = intValue(value);
+	const normalized = Math.max(0, Math.min(parsed, maxAttemptTimeMs));
+	return { value: normalized, clamped: parsed !== normalized };
+}
+
 function numberValue(value: unknown, fallback = 0): number {
 	return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
@@ -203,7 +211,19 @@ async function flushWrites(): Promise<void> {
 		};
 	});
 	for (const item of statements) {
-		await item.statement();
+		try {
+			await item.statement();
+		} catch (error) {
+			console.error(
+				JSON.stringify({
+					phase: 'load-write-failed',
+					table: item.table,
+					rowCount: item.rowCount,
+					parameterCount: item.parameterCount
+				})
+			);
+			throw error;
+		}
 	}
 }
 
@@ -211,6 +231,46 @@ async function targetHasRow(table: string, column: string, value: string): Promi
 	if (dryRun) return true;
 	const rows = await query(`SELECT 1 FROM ${table} WHERE "${column}" = $1 LIMIT 1`, [value]);
 	return rows.length > 0;
+}
+
+const sourceUserIdMap = new Map<string, string>();
+
+async function mappedUserId(value: unknown): Promise<string> {
+	const sourceId = String(value ?? '');
+	if (!sourceId) return '';
+	return sourceUserIdMap.get(sourceId) ?? sourceId;
+}
+
+async function targetIdForAuthUser(sourceId: string, email: unknown): Promise<string> {
+	const normalizedEmail = String(email ?? '')
+		.trim()
+		.toLowerCase();
+	if (!normalizedEmail) {
+		sourceUserIdMap.set(sourceId, sourceId);
+		return sourceId;
+	}
+	const rows = await query(' SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 2', [
+		normalizedEmail
+	]);
+	if (rows.length > 1)
+		throw new Error(`Target Neon has multiple users for source email ${normalizedEmail}`);
+	const targetId = String((rows[0] as { id?: unknown } | undefined)?.id ?? sourceId);
+	sourceUserIdMap.set(sourceId, targetId);
+	return targetId;
+}
+
+async function targetIdForAuthAccount(
+	sourceId: string,
+	providerId: unknown,
+	accountId: unknown
+): Promise<string> {
+	const rows = await query(
+		' SELECT id FROM auth.accounts WHERE provider_id = $1 AND account_id = $2 LIMIT 2',
+		[String(providerId ?? ''), String(accountId ?? '')]
+	);
+	if (rows.length > 1)
+		throw new Error('Target Neon has multiple auth accounts for one provider/account key');
+	return String((rows[0] as { id?: unknown } | undefined)?.id ?? sourceId);
 }
 
 async function recordNullByteTransform(collection: string, document: RawDocument): Promise<void> {
@@ -445,6 +505,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
 	if (collectionName === 'authUsers') {
+		const targetId = await targetIdForAuthUser(id, document.email);
 		await upsert(
 			'auth.users',
 			[
@@ -458,7 +519,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 				'updated_at'
 			],
 			[
-				id,
+				targetId,
 				document.name ?? '',
 				document.email ?? '',
 				boolValue(document.emailVerified),
@@ -470,10 +531,13 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 			'"id"',
 			['name', 'email', 'email_verified', 'image', 'stripe_customer_id', 'updated_at']
 		);
-		await recordLedger(collectionName, id, 'auth.users', id, document);
+		await recordLedger(collectionName, id, 'auth.users', targetId, document);
 		return;
 	}
 	if (collectionName === 'authSessions') {
+		const userId = await mappedUserId(document.userId);
+		if (!userId || !(await targetHasRow('auth.users', 'id', userId)))
+			return archiveLegacyDocument(collectionName, id, document);
 		await upsert(
 			'auth.sessions',
 			[
@@ -494,7 +558,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 				updated,
 				stringValue(document.ipAddress),
 				stringValue(document.userAgent),
-				String(document.userId ?? '')
+				userId
 			],
 			'"id"',
 			['expires_at', 'token', 'updated_at', 'ip_address', 'user_agent', 'user_id']
@@ -503,6 +567,10 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 		return;
 	}
 	if (collectionName === 'authAccounts') {
+		const userId = await mappedUserId(document.userId);
+		if (!userId || !(await targetHasRow('auth.users', 'id', userId)))
+			return archiveLegacyDocument(collectionName, id, document);
+		const targetId = await targetIdForAuthAccount(id, document.providerId, document.accountId);
 		await upsert(
 			'auth.accounts',
 			[
@@ -521,10 +589,10 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 				'updated_at'
 			],
 			[
-				id,
+				targetId,
 				document.accountId ?? '',
 				document.providerId ?? '',
-				String(document.userId ?? ''),
+				userId,
 				stringValue(document.accessToken),
 				stringValue(document.refreshToken),
 				stringValue(document.idToken),
@@ -550,7 +618,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 				'updated_at'
 			]
 		);
-		await recordLedger(collectionName, id, 'auth.accounts', id, document);
+		await recordLedger(collectionName, id, 'auth.accounts', targetId, document);
 		return;
 	}
 	if (collectionName === 'authVerifications') {
@@ -572,6 +640,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 		return;
 	}
 	if (collectionName === 'authSubscriptions') {
+		const referenceId = await mappedUserId(document.referenceId ?? document.userId);
 		await upsert(
 			'auth.subscriptions',
 			[
@@ -598,7 +667,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 			[
 				id,
 				document.plan ?? 'super',
-				document.referenceId ?? document.userId ?? '',
+				referenceId,
 				stringValue(document.stripeCustomerId),
 				stringValue(document.stripeSubscriptionId),
 				document.status ?? 'incomplete',
@@ -653,7 +722,7 @@ async function migrateAuth(collectionName: string, document: RawDocument): Promi
 }
 
 async function migrateProfile(collectionName: string, document: RawDocument): Promise<void> {
-	const userId = String(document.userId ?? '');
+	const userId = await mappedUserId(document.userId);
 	const sourceId = requiredId(document, collectionName);
 	if (!userId) return archiveLegacyDocument(collectionName, sourceId, document);
 	if (!(await targetHasRow('auth.users', 'id', userId)))
@@ -726,6 +795,23 @@ async function migrateProfile(collectionName: string, document: RawDocument): Pr
 	for (const [position, attempt] of arrayValue(document.questionHistory).entries()) {
 		const row = normalizeObject(attempt);
 		const attemptId = stableId(userId, 'mcq-history', position, row.questionId, row.attemptedAt);
+		const attemptTime = legacyAttemptTimeMs(row.timeTakenMs);
+		if (attemptTime.clamped) {
+			await upsert(
+				'ops.migration_transforms',
+				['id', 'run_id', 'source_collection', 'source_id', 'field_paths', 'transformation'],
+				[
+					stableId(sourceId, 'questionHistory', position, 'timeTakenMs'),
+					runId,
+					collectionName,
+					sourceId,
+					[`questionHistory[${position}].timeTakenMs`],
+					`Clamped legacy MCQ attempt duration to ${maxAttemptTimeMs} milliseconds`
+				],
+				'"id"',
+				['field_paths', 'transformation']
+			);
+		}
 		await upsert(
 			'app.mcq_attempts',
 			[
@@ -755,7 +841,7 @@ async function migrateProfile(collectionName: string, document: RawDocument): Pr
 				row.unit ?? '',
 				stringValue(row.selectedAnswer),
 				row.wasCorrect == null ? null : boolValue(row.wasCorrect),
-				row.timeTakenMs == null ? null : intValue(row.timeTakenMs),
+				row.timeTakenMs == null ? null : attemptTime.value,
 				dateOf(row.attemptedAt, created),
 				stringValue(row.finalAnswer),
 				row.answerCount == null ? null : intValue(row.answerCount),
@@ -810,8 +896,9 @@ async function migrateProfile(collectionName: string, document: RawDocument): Pr
 
 async function migrateLegacyUser(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
-	if (await targetHasRow('auth.users', 'id', sourceId)) {
-		await recordLedger(collectionName, sourceId, 'auth.users', sourceId, document);
+	const userId = await mappedUserId(sourceId);
+	if (await targetHasRow('auth.users', 'id', userId)) {
+		await recordLedger(collectionName, sourceId, 'auth.users', userId, document);
 		return;
 	}
 	await archiveLegacyDocument(collectionName, sourceId, document);
@@ -822,7 +909,7 @@ async function migrateBetterAuthMigrationMap(
 	document: RawDocument
 ): Promise<void> {
 	const sourceId = String(document.legacyUserId ?? '');
-	const betterAuthUserId = String(document.betterAuthUserId ?? '');
+	const betterAuthUserId = await mappedUserId(document.betterAuthUserId);
 	if (
 		!sourceId ||
 		!betterAuthUserId ||
@@ -830,6 +917,7 @@ async function migrateBetterAuthMigrationMap(
 	) {
 		return archiveLegacyDocument(collectionName, requiredId(document, collectionName), document);
 	}
+	sourceUserIdMap.set(sourceId, betterAuthUserId);
 	await upsert(
 		'ops.better_auth_migration_map',
 		[
@@ -858,7 +946,7 @@ async function migrateBetterAuthMigrationMap(
 
 async function migrateConversation(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
-	const userId = String(document.userId ?? '');
+	const userId = await mappedUserId(document.userId);
 	if (!userId || !(await targetHasRow('auth.users', 'id', userId)))
 		return archiveLegacyDocument(collectionName, sourceId, document);
 	const created = dateOf(document.createdAt);
@@ -901,7 +989,7 @@ async function migrateConversation(collectionName: string, document: RawDocument
 
 async function migrateSeenQuestion(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
-	const userId = String(document.userId ?? '');
+	const userId = await mappedUserId(document.userId);
 	if (!userId || !(await targetHasRow('auth.users', 'id', userId)))
 		return archiveLegacyDocument(collectionName, sourceId, document);
 	if (!document.contentHash || !document.questionType || !document.apClass || !document.unit) {
@@ -939,9 +1027,9 @@ async function migrateQuestion(
 	const questionId = String(document.s3QuestionId ?? document.questionId ?? sourceId);
 	const created = dateOf(document.createdAt);
 	const updated = dateOf(document.updatedAt, created);
-	if (kind === 'frq' && document.contentHash) {
+	if (document.contentHash) {
 		const existing = await query(
-			'SELECT question_id FROM content.frq_questions WHERE content_hash = $1 LIMIT 1',
+			`SELECT question_id FROM content.${kind === 'frq' ? 'frq' : 'mcq'}_questions WHERE content_hash = $1 LIMIT 1`,
 			[String(document.contentHash)]
 		);
 		const existingQuestionId =
@@ -952,7 +1040,7 @@ async function migrateQuestion(
 			await recordLedger(
 				collectionName,
 				sourceId,
-				'content.frq_questions',
+				`content.${kind === 'frq' ? 'frq' : 'mcq'}_questions`,
 				existingQuestionId,
 				document
 			);
@@ -1250,7 +1338,7 @@ async function migrateQuestionRegistry(
 
 async function migrateFrqAttempt(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
-	const userId = String(document.userId ?? '');
+	const userId = await mappedUserId(document.userId);
 	if (!userId || !(await targetHasRow('auth.users', 'id', userId)))
 		return archiveLegacyDocument(collectionName, sourceId, document);
 	const id = sourceId;
@@ -1278,7 +1366,7 @@ async function migrateFrqAttempt(collectionName: string, document: RawDocument):
 		],
 		[
 			id,
-			document.userId ?? '',
+			userId,
 			document.submissionId ?? id,
 			document.questionId ?? '',
 			document.apClass ?? '',
@@ -1361,7 +1449,7 @@ async function migrateFrqAttempt(collectionName: string, document: RawDocument):
 
 async function migrateSuper(collectionName: string, document: RawDocument): Promise<void> {
 	const sourceId = requiredId(document, collectionName);
-	const userId = String(document.userId ?? '');
+	const userId = await mappedUserId(document.userId);
 	if (!userId || !(await targetHasRow('auth.users', 'id', userId)))
 		return archiveLegacyDocument(collectionName, sourceId, document);
 	const created = dateOf(document.createdAt);
@@ -1458,7 +1546,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			],
 			[
 				sourceId,
-				document.userId ?? '',
+				userId,
 				stringValue(document.stripeCustomerId),
 				stringValue(document.stripeSubscriptionId),
 				document.plan ?? 'super',
@@ -1514,7 +1602,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			],
 			[
 				sourceId,
-				document.userId ?? '',
+				userId,
 				dateOf(document.startsAt),
 				dateOf(document.expiresAt),
 				document.reason ?? '',
@@ -1530,12 +1618,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 		await upsert(
 			'app.super_usage_rollups',
 			['user_id', 'month', 'personalized_messages', 'updated_at'],
-			[
-				document.userId ?? '',
-				document.month ?? '',
-				intValue(document.personalizedMessages),
-				updated
-			],
+			[userId, document.month ?? '', intValue(document.personalizedMessages), updated],
 			'"user_id", "month"',
 			['personalized_messages', 'updated_at']
 		);
@@ -1560,7 +1643,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			],
 			[
 				sourceId,
-				document.userId ?? '',
+				userId,
 				jsonValue(document.report),
 				intValue(document.evidenceAttemptCount),
 				dateOf(document.generatedAt, created),
@@ -1591,7 +1674,6 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			]
 		);
 	} else if (collectionName === 'study_plans') {
-		const userId = String(document.userId ?? '');
 		await upsert(
 			'app.study_plans',
 			['id', 'user_id', 'starts_on', 'created_at', 'updated_at'],
@@ -1645,7 +1727,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			['id', 'user_id', 'action', 'before', 'after', 'undone_at', 'created_at', 'updated_at'],
 			[
 				sourceId,
-				document.userId ?? '',
+				userId,
 				document.action ?? '',
 				jsonValue(document.before),
 				jsonValue(document.after),
@@ -1673,7 +1755,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			],
 			[
 				sourceId,
-				document.userId ?? '',
+				userId,
 				document.sessionId ?? '',
 				document.toolName ?? '',
 				jsonValue(document.before),
@@ -1712,7 +1794,7 @@ async function migrateSuper(collectionName: string, document: RawDocument): Prom
 			],
 			[
 				sourceId,
-				document.userId ?? '',
+				userId,
 				document.mem0UserId ?? '',
 				document.kind ?? '',
 				dateOf(document.nextAttemptAt),
@@ -1838,13 +1920,14 @@ async function migrateQuality(collectionName: string, document: RawDocument): Pr
 			);
 		}
 	} else if (collectionName === 'question_quality_feedback') {
+		const userId = await mappedUserId(document.userId);
 		await upsert(
 			'content.question_feedback',
 			['id', 'question_id', 'user_id', 'type', 'ap_class', 'unit', 'created_at', 'updated_at'],
 			[
 				sourceId,
 				document.questionId ?? '',
-				document.userId ?? '',
+				userId,
 				document.type ?? '',
 				stringValue(document.apClass),
 				stringValue(document.unit),
@@ -2167,8 +2250,8 @@ async function migrateGenerationRollup(
 			intValue(document.count),
 			intValue(document.totalQuestionChars)
 		],
-		'"source_collection", "ap_class", "unit"',
-		['id', 'count', 'total_question_chars']
+		'"id"',
+		['source_collection', 'ap_class', 'unit', 'count', 'total_question_chars']
 	);
 	await recordLedger(collectionName, sourceId, 'ops.generation_rollup_snapshots', id, document);
 }
@@ -2253,7 +2336,7 @@ async function load(db: Db): Promise<void> {
 	await eachDocument(db, ['conversations'], migrateConversation);
 	await eachDocument(db, ['seenquestions'], migrateSeenQuestion);
 	await eachDocument(db, ['question_ids'], migrateQuestionRegistry);
-	await eachDocument(db, [...mcqPoolNames], (collection, document) =>
+	await eachDocument(db, ['questions_pool_v2', 'questions'], (collection, document) =>
 		migrateQuestion(collection, document, 'mcq')
 	);
 	await eachDocument(db, ['frqquestions_pool_v2'], (collection, document) =>
