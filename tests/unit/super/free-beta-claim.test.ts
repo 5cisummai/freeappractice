@@ -1,15 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-	connectDb: vi.fn(),
 	isSuperFreeBetaEnabled: vi.fn(),
 	findOne: vi.fn(),
 	create: vi.fn(),
 	exists: vi.fn(),
-	insightUpdateMany: vi.fn()
+	insightUpdateMany: vi.fn(),
+	neonDatabase: {
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({
+				where: vi.fn(() => {
+					const query = Promise.resolve([]) as Promise<never[]> & {
+						orderBy: ReturnType<typeof vi.fn>;
+					};
+					query.orderBy = vi.fn().mockResolvedValue([]);
+					return query;
+				})
+			}))
+		})),
+		delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) }))
+	}
 }));
 
-vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
+vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: () => mocks.neonDatabase }));
 vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
 vi.mock('$lib/super/models.server', () => ({
 	TutorProfile: {
