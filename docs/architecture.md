@@ -435,4 +435,4 @@ Operational checks and alert thresholds live in [`docs/question-request-metrics.
 
 # Database migration status
 
-The relational target is defined in `src/lib/server/neon/schema.ts` and is accessed through `src/lib/server/neon/db.ts` using Drizzle's Neon HTTP adapter. All application and operational runtime modules now use this seam. `scripts/migrate-mongo-to-neon.ts` is retained only as a controlled, read-only legacy-source loader; it is not part of the deployed runtime.
+The relational target is defined in `src/lib/server/neon/schema.ts` and is accessed through `src/lib/server/neon/db.ts` using Drizzle's Neon HTTP adapter. All application and operational runtime modules use this seam. The one-shot Mongo→Neon loader and `mongodb` dependency have been removed after cutover.

@@ -2,16 +2,14 @@
 	import { cn } from '$lib/utils';
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import type { MessageRole } from '../context/message-context.svelte.js';
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
-		from: MessageRole;
+		from: string;
 		class?: string;
 		children: Snippet;
 	}
 
 	let { from, class: className, children, ...restProps }: Props = $props();
-	// indexing
 </script>
 
 <div

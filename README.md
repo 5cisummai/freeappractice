@@ -78,10 +78,10 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    database before bundling. Make sure the build environment points at the
    intended Neon branch; a missing or invalid `DATABASE_URL` fails the build.
 
-6. Run the Playwright smoke suite (builds the app and tests public pages, sitemap, robots, and `/health`):
+6. Run the unit test suite:
 
    ```sh
-   bun test
+   bun test:unit
    ```
 
 ### Useful scripts

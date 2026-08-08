@@ -7,7 +7,6 @@
 	}
 
 	let { class: className, children, ...props }: Props = $props();
-	// indexing
 </script>
 
 <div class={cn(className, 'flex flex-col')} {...props}>

@@ -16,7 +16,6 @@
 	type SubmitClickEvent = MouseEvent & {
 		currentTarget: EventTarget & HTMLButtonElement;
 	};
-	// indexing
 
 	interface Props extends Omit<HTMLButtonAttributes, 'type' | 'onclick' | 'aria-label'> {
 		class?: string;

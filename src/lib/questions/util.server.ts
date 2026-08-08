@@ -3,8 +3,9 @@ import { createHash } from 'node:crypto';
 /** Check if a Neon/PostgreSQL write hit a unique constraint. */
 export function isDuplicateKeyError(err: unknown): boolean {
 	if (typeof err !== 'object' || err === null) return false;
-	const code = (err as { code?: number | string }).code;
-	return code === 11000 || code === '23505';
+	const e = err as { code?: number | string; cause?: unknown };
+	if (e.code === '23505') return true;
+	return e.cause !== undefined ? isDuplicateKeyError(e.cause) : false;
 }
 
 /** Normalize and hash text for deduplication (SHA-256). */

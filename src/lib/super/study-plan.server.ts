@@ -12,6 +12,7 @@ import {
 } from '$lib/super/insights.server';
 import type { StudyPlanView, StudyTask } from '$lib/super/types';
 import type { Entitlements } from '$lib/super/types';
+import { isDuplicateKeyError } from '$lib/questions/util.server';
 
 export const STUDY_PLAN_DAYS = 7;
 export const STUDY_PLAN_MAX_TASK_MINUTES = 30;
@@ -290,11 +291,7 @@ export async function saveStudyPlan(
 				try {
 					return toStudyPlanView(await writeStoredPlan(userId, startsOn, tasks));
 				} catch (error) {
-					if (
-						error instanceof Error &&
-						'code' in error &&
-						(error as { code?: number }).code === 11000
-					) {
+					if (isDuplicateKeyError(error)) {
 						continue;
 					}
 					throw error;

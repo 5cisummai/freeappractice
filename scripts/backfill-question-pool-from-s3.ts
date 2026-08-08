@@ -26,6 +26,7 @@ import {
 } from '../src/lib/questions/pool-constants';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
 import { PoolRefillState } from '../src/lib/questions/pool-refill-model.server';
+import { isDuplicateKeyError } from '../src/lib/questions/util.server';
 import { connectDb } from '../src/lib/server/db';
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -266,8 +267,7 @@ async function backfillMcq(
 						});
 						counters.imported += 1;
 					} catch (error) {
-						const code = (error as { code?: number })?.code;
-						if (code === 11000) {
+						if (isDuplicateKeyError(error)) {
 							counters.duplicates += 1;
 							return;
 						}
@@ -348,8 +348,7 @@ async function backfillFrq(
 						});
 						counters.imported += 1;
 					} catch (error) {
-						const code = (error as { code?: number })?.code;
-						if (code === 11000) {
+						if (isDuplicateKeyError(error)) {
 							counters.duplicates += 1;
 							return;
 						}
