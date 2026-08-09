@@ -1,21 +1,23 @@
 import { env } from '$env/dynamic/private';
+import { desc, eq, sql } from 'drizzle-orm';
 import {
 	QUESTION_QUALITY_CALIBRATED_MODEL,
 	QUESTION_QUALITY_MODEL
 } from '$lib/ai/ai-models-config';
-import { connectDb } from '$lib/server/db';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import {
+	questionFeedback,
+	questionQuality,
+	questionRegistry,
+	qualityReviewJobs
+} from '$lib/server/neon/schema';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { getQuestionById } from '$lib/questions/storage.server';
-import { QuestionId } from '$lib/questions/question-id-model.server';
-import {
-	QuestionFeedback,
-	QuestionQuality,
-	QuestionQualityReviewJob,
-	type ReviewJobDocument
-} from './models.server.js';
+import { QuestionFeedback, QuestionQuality, type ReviewJobDocument } from './models.server.js';
 import { feedbackSummaryFromCounts } from './rules.js';
 import {
 	QUESTION_QUALITY_RUBRIC_VERSION,
+	type AiQualityAssessment,
 	type FeedbackSummary,
 	type FeedbackType,
 	type QualityDashboardSnapshot,
@@ -64,10 +66,13 @@ export async function submitQuestionFeedback(opts: {
 	apClass?: string;
 	unit?: string;
 }): Promise<{ accepted: boolean; summary: FeedbackSummary }> {
-	await connectDb();
 	const questionId = opts.questionId.trim();
-	if (!questionId || !(await QuestionId.exists({ questionId })))
-		throw new Error('Question not found');
+	if (!questionId) throw new Error('Question not found');
+	const [{ questionExists }] = await getNeonDatabase()
+		.select({ questionExists: sql<number>`count(*)::int` })
+		.from(questionRegistry)
+		.where(eq(questionRegistry.questionId, questionId));
+	if (!questionExists) throw new Error('Question not found');
 	let accepted = false;
 	try {
 		const result = await QuestionFeedback.updateOne(
@@ -89,17 +94,29 @@ export async function submitQuestionFeedback(opts: {
 			throw error;
 		}
 	}
-	const aggregates = await QuestionFeedback.aggregate<{
-		_id: FeedbackType;
-		users: string[];
-	}>([{ $match: { questionId } }, { $group: { _id: '$type', users: { $addToSet: '$userId' } } }]);
+	const db = getNeonDatabase();
+	const [aggregates, [{ uniqueReporters }]] = await Promise.all([
+		db
+			.select({
+				type: questionFeedback.type,
+				users: sql<number>`count(distinct ${questionFeedback.userId})::int`
+			})
+			.from(questionFeedback)
+			.where(eq(questionFeedback.questionId, questionId))
+			.groupBy(questionFeedback.type),
+		db
+			.select({ uniqueReporters: sql<number>`count(distinct ${questionFeedback.userId})::int` })
+			.from(questionFeedback)
+			.where(eq(questionFeedback.questionId, questionId))
+	]);
 	const counts: Partial<Record<FeedbackType, number>> = {};
-	const allUsers = new Set<string>();
 	for (const aggregate of aggregates) {
-		counts[aggregate._id] = aggregate.users.length;
-		for (const userId of aggregate.users) allUsers.add(userId);
+		counts[aggregate.type as FeedbackType] = Number(aggregate.users);
 	}
-	const summary = { ...feedbackSummaryFromCounts(counts), uniqueReporters: allUsers.size };
+	const summary = {
+		...feedbackSummaryFromCounts(counts),
+		uniqueReporters: Number(uniqueReporters)
+	};
 	await QuestionQuality.updateOne(
 		{ questionId },
 		{ $setOnInsert: { questionId, state: 'unreviewed' } },
@@ -145,31 +162,52 @@ export async function submitQuestionFeedback(opts: {
 }
 
 export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSnapshot> {
-	await connectDb();
-	const [totalQuestions, finalGood, finalBad, awaitingHuman, highPriority, jobs, queue] =
-		await Promise.all([
-			QuestionId.countDocuments({}),
-			QuestionQuality.countDocuments({ finalVerdict: 'good' }),
-			QuestionQuality.countDocuments({ finalVerdict: 'bad' }),
-			QuestionQuality.countDocuments({ needsHumanReview: true }),
-			QuestionQuality.countDocuments({ 'feedbackSummary.priority': 'high' }),
-			QuestionQualityReviewJob.find({ status: { $ne: 'preview' } })
-				.sort({ createdAt: -1 })
-				.limit(10)
-				.lean()
-				.exec(),
-			QuestionQuality.find({ needsHumanReview: true })
-				.sort({ updatedAt: 1 })
-				.limit(100)
-				.lean()
-				.exec()
-		]);
-	queue.sort((a, b) => {
-		const score = (priority?: string) => (priority === 'high' ? 2 : priority === 'normal' ? 1 : 0);
-		return score(b.feedbackSummary?.priority) - score(a.feedbackSummary?.priority);
-	});
+	const db = getNeonDatabase();
+	const [countsRows, jobs, queue] = await Promise.all([
+		db
+			.select({
+				total: sql<number>`count(${questionRegistry.questionId})::int`,
+				good: sql<number>`count(*) filter (where ${questionQuality.finalVerdict} = 'good')::int`,
+				bad: sql<number>`count(*) filter (where ${questionQuality.finalVerdict} = 'bad')::int`,
+				awaitingHuman: sql<number>`count(*) filter (where ${questionQuality.needsHumanReview} = true)::int`,
+				highPriority: sql<number>`count(*) filter (where ${questionQuality.feedbackPriority} = 'high')::int`
+			})
+			.from(questionRegistry)
+			.leftJoin(questionQuality, eq(questionQuality.questionId, questionRegistry.questionId)),
+		db
+			.select()
+			.from(qualityReviewJobs)
+			.where(sql`${qualityReviewJobs.status} <> 'preview'`)
+			.orderBy(desc(qualityReviewJobs.createdAt))
+			.limit(10),
+		db
+			.select({
+				questionId: questionQuality.questionId,
+				apClass: sql<
+					string | null
+				>`coalesce(${questionQuality.apClass}, ${questionRegistry.apClass})`,
+				unit: sql<string | null>`coalesce(${questionQuality.unit}, ${questionRegistry.unit})`,
+				feedbackPriority: questionQuality.feedbackPriority,
+				blindHumanReview: questionQuality.blindHumanReview,
+				aiAssessment: questionQuality.aiAssessment,
+				humanReviewReason: questionQuality.humanReviewReason,
+				feedbackAnswerIncorrect: questionQuality.answerIncorrectCount,
+				feedbackQuestionUnclear: questionQuality.questionUnclearCount,
+				feedbackExplanationUnclear: questionQuality.explanationUnclearCount,
+				uniqueReporters: questionQuality.uniqueReporters
+			})
+			.from(questionQuality)
+			.leftJoin(questionRegistry, eq(questionRegistry.questionId, questionQuality.questionId))
+			.where(eq(questionQuality.needsHumanReview, true))
+			.orderBy(
+				sql`case when ${questionQuality.feedbackPriority} = 'high' then 2 when ${questionQuality.feedbackPriority} = 'normal' then 1 else 0 end desc`,
+				questionQuality.updatedAt
+			)
+			.limit(20)
+	]);
+	const counts = countsRows[0] ?? { total: 0, good: 0, bad: 0, awaitingHuman: 0, highPriority: 0 };
 	const humanQueue = await Promise.all(
-		queue.slice(0, 20).map(async (quality) => {
+		queue.map(async (quality) => {
 			let question: Awaited<ReturnType<typeof getQuestionById>> | null = null;
 			try {
 				question = await getQuestionById(quality.questionId);
@@ -203,22 +241,34 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 				explanation: question?.explanation,
 				reason: quality.humanReviewReason || 'human_review',
 				blind: quality.blindHumanReview,
-				aiAssessment: quality.blindHumanReview ? null : quality.aiAssessment,
-				feedbackSummary: quality.feedbackSummary ?? feedbackSummaryFromCounts({})
+				aiAssessment: quality.blindHumanReview
+					? null
+					: (quality.aiAssessment as AiQualityAssessment | null),
+				feedbackSummary: {
+					...feedbackSummaryFromCounts({
+						answer_incorrect: quality.feedbackAnswerIncorrect,
+						question_unclear: quality.feedbackQuestionUnclear,
+						explanation_unclear: quality.feedbackExplanationUnclear
+					}),
+					uniqueReporters: quality.uniqueReporters,
+					priority: quality.feedbackPriority as 'none' | 'normal' | 'high'
+				}
 			};
 		})
 	);
 	return {
 		counts: {
-			unreviewed: Math.max(0, totalQuestions - finalGood - finalBad),
-			awaitingHuman,
-			good: finalGood,
-			bad: finalBad,
-			highPriority
+			unreviewed: Math.max(0, Number(counts.total) - Number(counts.good) - Number(counts.bad)),
+			awaitingHuman: Number(counts.awaitingHuman),
+			good: Number(counts.good),
+			bad: Number(counts.bad),
+			highPriority: Number(counts.highPriority)
 		},
 		model: modelName(),
 		calibrated: isAgentCalibrated(),
-		jobs: jobs.map((job) => toJobSummary(job)),
+		jobs: jobs.map((job: Record<string, unknown>) =>
+			toJobSummary({ ...job, _id: job.id } as Partial<ReviewJobDocument> & { _id: unknown })
+		),
 		humanQueue
 	};
 }

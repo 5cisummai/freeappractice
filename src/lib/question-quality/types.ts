@@ -1,6 +1,7 @@
 export const QUESTION_QUALITY_RUBRIC_VERSION = 'ap-quality-v2';
 
 export type QualityVerdict = 'good' | 'bad';
+export type QualityState = 'unreviewed' | 'awaiting_human' | 'final';
 export type FeedbackType = 'answer_incorrect' | 'question_unclear' | 'explanation_unclear';
 
 export type ReviewJobStatus =

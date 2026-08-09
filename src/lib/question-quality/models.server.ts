@@ -5,6 +5,7 @@ import type {
 	FeedbackSummary,
 	FeedbackType,
 	HumanQualityAssessment,
+	QualityState,
 	QualityVerdict,
 	ReviewFilters,
 	ReviewJobStatus
@@ -36,7 +37,7 @@ export interface QuestionQualityDocument extends DocumentFields {
 	sourceCreatedAt?: Date;
 	apClass?: string;
 	unit?: string;
-	state: 'unreviewed' | 'awaiting_human' | 'final';
+	state: QualityState;
 	aiAssessment?: AiQualityAssessment;
 	humanAssessment?: HumanQualityAssessment;
 	finalVerdict?: QualityVerdict;
@@ -46,14 +47,6 @@ export interface QuestionQualityDocument extends DocumentFields {
 	humanReviewReason?: string;
 	blindHumanReview: boolean;
 	feedbackSummary: FeedbackSummary;
-	audit: Array<{
-		at: Date;
-		actorId: string;
-		action: string;
-		fromVerdict?: QualityVerdict;
-		toVerdict?: QualityVerdict;
-		note?: string;
-	}>;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -81,8 +74,7 @@ const qualityBase = model<QuestionQualityDocument>({
 	},
 	fromRow: (row) => ({
 		...(row as unknown as QuestionQualityDocument),
-		feedbackSummary: summaryFromRow(row),
-		audit: []
+		feedbackSummary: summaryFromRow(row)
 	}),
 	prepareInsert: async (input) => ({
 		...input,
@@ -120,10 +112,12 @@ const qualitySchemaMetadata = {
 		>
 };
 
-export const QuestionQuality = Object.assign(qualityBase, {
-	collection: qualityBase,
+export const QuestionQuality = {
+	find: qualityBase.find.bind(qualityBase),
+	findOne: qualityBase.findOne.bind(qualityBase),
+	updateOne: qualityBase.updateOne.bind(qualityBase),
 	schema: qualitySchemaMetadata
-});
+};
 
 export interface QuestionFeedbackDocument extends DocumentFields {
 	questionId: string;
@@ -141,14 +135,16 @@ const feedbackBase = model<QuestionFeedbackDocument>({
 	idField: 'id',
 	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
 });
-export const QuestionFeedback = Object.assign(feedbackBase, {
+export const QuestionFeedback = {
+	updateOne: feedbackBase.updateOne.bind(feedbackBase),
+	deleteMany: feedbackBase.deleteMany.bind(feedbackBase),
 	schema: {
 		indexes: () =>
 			[[{ questionId: 1, userId: 1, type: 1 }, { unique: true }]] as Array<
 				[Record<string, unknown>, { unique?: boolean }]
 			>
 	}
-});
+};
 
 export interface ReviewJobDocument extends DocumentFields {
 	id: string;
@@ -199,6 +195,34 @@ const jobBase = model<ReviewJobDocument>({
 	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
 });
 
+function jobTableValues(input: Record<string, unknown>): Record<string, unknown> {
+	const values: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(input)) {
+		if (key === '_id' || key === 'save' || key === 'then') continue;
+		if (key in qualityReviewJobs && value !== undefined) values[key] = value;
+	}
+	return values;
+}
+
+function jobRowWithId(row: Record<string, unknown>): ReviewJobDocument {
+	const id = row._id ?? row.id;
+	if (!id) throw new Error('PostgreSQL insert returned no job id');
+	return { ...row, _id: id, id } as ReviewJobDocument;
+}
+
+function candidateValues(jobId: string, selectedQuestionIds: string[]) {
+	return selectedQuestionIds.map((questionId, position) => ({
+		jobId,
+		questionId,
+		position,
+		selected: true
+	}));
+}
+
+function batchValues(jobId: string, batches: Array<Record<string, unknown>>) {
+	return batches.map((batch) => ({ id: randomUUID(), jobId, ...batch }));
+}
+
 async function hydrateJob(row: ReviewJobDocument): Promise<ReviewJobDocument> {
 	const db = getNeonDatabase() as any;
 	const [candidates, batches] = await Promise.all([
@@ -236,30 +260,37 @@ async function hydrateJob(row: ReviewJobDocument): Promise<ReviewJobDocument> {
 
 async function persistJobDocument(document: ReviewJobDocument): Promise<ReviewJobDocument> {
 	const db = getNeonDatabase() as any;
-	await jobBase.updateOne({ _id: document._id }, { $set: document }).exec();
-	await db
+	const jobId = document._id;
+	const parentUpdate = db
+		.update(qualityReviewJobs as any)
+		.set({
+			...jobTableValues(document as unknown as Record<string, unknown>),
+			updatedAt: new Date()
+		})
+		.where(eq((qualityReviewJobs as any).id, jobId));
+	const deleteCandidates = db
 		.delete(qualityReviewJobCandidates as any)
-		.where(eq((qualityReviewJobCandidates as any).jobId, document._id));
+		.where(eq((qualityReviewJobCandidates as any).jobId, jobId));
+	const deleteBatches = db
+		.delete(qualityReviewBatches as any)
+		.where(eq((qualityReviewBatches as any).jobId, jobId));
+	const queries: unknown[] = [parentUpdate, deleteCandidates];
 	if (document.selectedQuestionIds.length) {
-		await db.insert(qualityReviewJobCandidates as any).values(
-			document.selectedQuestionIds.map((questionId, position) => ({
-				jobId: document._id,
-				questionId,
-				position,
-				selected: true
-			}))
+		queries.push(
+			db
+				.insert(qualityReviewJobCandidates as any)
+				.values(candidateValues(jobId, document.selectedQuestionIds))
 		);
 	}
-	await db
-		.delete(qualityReviewBatches as any)
-		.where(eq((qualityReviewBatches as any).jobId, document._id));
+	queries.push(deleteBatches);
 	if (document.batches.length) {
-		await db
-			.insert(qualityReviewBatches as any)
-			.values(
-				document.batches.map((batch) => ({ id: randomUUID(), jobId: document._id, ...batch }))
-			);
+		queries.push(
+			db
+				.insert(qualityReviewBatches as any)
+				.values(batchValues(jobId, document.batches as unknown as Array<Record<string, unknown>>))
+		);
 	}
+	await db.batch(queries);
 	return document;
 }
 
@@ -270,6 +301,48 @@ function batchMatchesFilters(batch: Record<string, unknown>, filters: unknown): 
 	return Object.entries(filter as Record<string, unknown>).every(([key, value]) => {
 		const field = key.replace(/^entry\./, '');
 		return batch[field] === value;
+	});
+}
+
+function findOneAndUpdateReviewJob(
+	filter: Record<string, unknown>,
+	update: Record<string, any>,
+	options: Record<string, any> = {}
+): PostgresQuery<ReviewJobDocument | null> {
+	return new PostgresQuery(async () => {
+		const current = await QuestionQualityReviewJob.findOne(filter).exec();
+		if (!current) {
+			if (!options.upsert) return null;
+			const row = await jobBase.findOneAndUpdate(filter, update, options).exec();
+			return row ? hydrateJob(row) : null;
+		}
+		const mutable = current as unknown as Record<string, any>;
+		for (const [key, value] of Object.entries(update.$set ?? {})) {
+			const nestedBatch = key.match(/^batches\.\$\[([^\]]+)\]\.(.+)$/);
+			if (nestedBatch) {
+				const filterIndex = Array.isArray(options.arrayFilters)
+					? options.arrayFilters.findIndex((entry: Record<string, unknown>) =>
+							Object.keys(entry).some((name) => name.startsWith(`${nestedBatch[1]}.`))
+						)
+					: -1;
+				for (const batch of current.batches as unknown as Array<Record<string, unknown>>) {
+					if (
+						filterIndex === -1 ||
+						batchMatchesFilters(batch, [options.arrayFilters[filterIndex]])
+					) {
+						batch[nestedBatch[2]] = value;
+					}
+				}
+				continue;
+			}
+			mutable[key] = value;
+		}
+		for (const [key] of Object.entries(update.$unset ?? {})) mutable[key] = undefined;
+		for (const [key, value] of Object.entries(update.$inc ?? {}))
+			mutable[key] = Number(mutable[key] ?? 0) + Number(value);
+		if (update.$push?.batches) current.batches.push(update.$push.batches);
+		await persistJobDocument(current);
+		return current;
 	});
 }
 
@@ -307,75 +380,33 @@ export const QuestionQualityReviewJob = {
 		return this.findOne({ _id: id });
 	},
 	async create(input: Record<string, any>): Promise<ReviewJobDocument> {
-		const row = await jobBase.create(input);
 		const db = getNeonDatabase() as any;
 		const selectedQuestionIds = Array.isArray(input.selectedQuestionIds)
 			? input.selectedQuestionIds
 			: [];
+		const batches = Array.isArray(input.batches) ? input.batches : [];
+		const prepared = { ...input, id: input.id ?? randomUUID() };
+		const parentInsert = db
+			.insert(qualityReviewJobs as any)
+			.values(jobTableValues(prepared))
+			.returning();
+		const queries: unknown[] = [parentInsert];
 		if (selectedQuestionIds.length) {
-			await db.insert(qualityReviewJobCandidates as any).values(
-				selectedQuestionIds.map((questionId: string, position: number) => ({
-					jobId: row._id,
-					questionId,
-					position,
-					selected: true
-				}))
+			queries.push(
+				db
+					.insert(qualityReviewJobCandidates as any)
+					.values(candidateValues(prepared.id, selectedQuestionIds))
 			);
 		}
-		if (Array.isArray(input.batches) && input.batches.length) {
-			await db.insert(qualityReviewBatches as any).values(
-				input.batches.map((batch: Record<string, unknown>) => ({
-					id: randomUUID(),
-					jobId: row._id,
-					...batch
-				}))
+		if (batches.length) {
+			queries.push(
+				db.insert(qualityReviewBatches as any).values(batchValues(prepared.id, batches))
 			);
 		}
-		return hydrateJob(row);
-	},
-	countDocuments(filter: Record<string, unknown> = {}): PostgresQuery<number> {
-		return jobBase.countDocuments(filter);
-	},
-	findOneAndUpdate(
-		filter: Record<string, unknown>,
-		update: Record<string, any>,
-		options: Record<string, any> = {}
-	): PostgresQuery<ReviewJobDocument | null> {
-		return new PostgresQuery(async () => {
-			const current = await QuestionQualityReviewJob.findOne(filter).exec();
-			if (!current) {
-				if (!options.upsert) return null;
-				const row = await jobBase.findOneAndUpdate(filter, update, options).exec();
-				return row ? hydrateJob(row) : null;
-			}
-			const mutable = current as unknown as Record<string, any>;
-			for (const [key, value] of Object.entries(update.$set ?? {})) {
-				const nestedBatch = key.match(/^batches\.\$\[([^\]]+)\]\.(.+)$/);
-				if (nestedBatch) {
-					const filterIndex = Array.isArray(options.arrayFilters)
-						? options.arrayFilters.findIndex((entry: Record<string, unknown>) =>
-								Object.keys(entry).some((name) => name.startsWith(`${nestedBatch[1]}.`))
-							)
-						: -1;
-					for (const batch of current.batches as unknown as Array<Record<string, unknown>>) {
-						if (
-							filterIndex === -1 ||
-							batchMatchesFilters(batch, [options.arrayFilters[filterIndex]])
-						) {
-							batch[nestedBatch[2]] = value;
-						}
-					}
-					continue;
-				}
-				mutable[key] = value;
-			}
-			for (const [key] of Object.entries(update.$unset ?? {})) mutable[key] = undefined;
-			for (const [key, value] of Object.entries(update.$inc ?? {}))
-				mutable[key] = Number(mutable[key] ?? 0) + Number(value);
-			if (update.$push?.batches) current.batches.push(update.$push.batches);
-			await persistJobDocument(current);
-			return current;
-		});
+		const [rows] = await db.batch(queries);
+		const row = (rows as Array<Record<string, unknown>> | undefined)?.[0];
+		if (!row) throw new Error('PostgreSQL insert returned no row');
+		return hydrateJob(jobRowWithId(row));
 	},
 	updateOne(
 		filter: Record<string, unknown>,
@@ -384,7 +415,7 @@ export const QuestionQualityReviewJob = {
 	): PostgresQuery<WriteResult> {
 		return new PostgresQuery(async () => {
 			const before = await QuestionQualityReviewJob.findOne(filter).exec();
-			const after = await QuestionQualityReviewJob.findOneAndUpdate(filter, update, options).exec();
+			const after = await findOneAndUpdateReviewJob(filter, update, options).exec();
 			return {
 				acknowledged: true,
 				matchedCount: before ? 1 : 0,
@@ -394,9 +425,6 @@ export const QuestionQualityReviewJob = {
 				upsertedId: !before && after ? after._id : undefined
 			};
 		});
-	},
-	deleteMany(filter: Record<string, unknown>): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => jobBase.deleteMany(filter).exec());
 	}
 };
 
@@ -427,11 +455,15 @@ const jobItemBase = model<ReviewJobItemDocument>({
 	})
 });
 
-export const QuestionQualityReviewJobItem = Object.assign(jobItemBase, {
+export const QuestionQualityReviewJobItem = {
+	find: jobItemBase.find.bind(jobItemBase),
+	findOne: jobItemBase.findOne.bind(jobItemBase),
+	updateOne: jobItemBase.updateOne.bind(jobItemBase),
+	findOneAndUpdate: jobItemBase.findOneAndUpdate.bind(jobItemBase),
 	schema: {
 		indexes: () =>
 			[[{ questionId: 1 }, { unique: true }]] as Array<
 				[Record<string, unknown>, { unique?: boolean }]
 			>
 	}
-});
+};
