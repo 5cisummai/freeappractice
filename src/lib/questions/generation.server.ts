@@ -262,7 +262,7 @@ OUTPUT:
 ${scopeBlock}
 
 QUESTION QUALITY:
-- Match actual AP exam difficulty and style
+- Match actual AP exam difficulty and style, aim for the medium difficulty level, rather the very hard ones.
 - Test understanding, not just memorization
 - Include real-world scenarios or experimental contexts
 - Plausible distractors reflecting common misconceptions

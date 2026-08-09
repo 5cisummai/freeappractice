@@ -1,4 +1,7 @@
-import { StudyPlanAudit } from '$lib/super/models.server';
+import { randomUUID } from 'node:crypto';
+import { and, desc, eq, isNull } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { studyPlanAudits } from '$lib/server/neon/schema';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView } from '$lib/super/types';
 
@@ -16,13 +19,13 @@ function sameValue(left: unknown, right: unknown): boolean {
 }
 
 function toView(audit: {
-	_id: unknown;
+	id: string;
 	action: StudyPlanAuditAction;
 	createdAt: Date;
-	undoneAt?: Date;
+	undoneAt?: Date | null;
 }): StudyPlanAuditView {
 	return {
-		id: String(audit._id),
+		id: audit.id,
 		action: audit.action,
 		createdAt: audit.createdAt.toISOString(),
 		undoneAt: audit.undoneAt?.toISOString() ?? null
@@ -35,28 +38,51 @@ export async function writeStudyPlanAudit(input: {
 	before: StudyPlanView | null;
 	after: StudyPlanView;
 }): Promise<StudyPlanAuditView> {
-	const audit = await StudyPlanAudit.create(input);
-	return toView(audit);
+	const [audit] = await getNeonDatabase()
+		.insert(studyPlanAudits)
+		.values({ id: randomUUID(), ...input })
+		.returning({
+			id: studyPlanAudits.id,
+			action: studyPlanAudits.action,
+			createdAt: studyPlanAudits.createdAt,
+			undoneAt: studyPlanAudits.undoneAt
+		});
+	if (!audit) throw new Error('Study plan audit insert returned no row');
+	return toView({ ...audit, action: audit.action as StudyPlanAuditAction });
 }
 
 export async function getRecentStudyPlanAudits(userId: string): Promise<StudyPlanAuditView[]> {
-	const audits = await StudyPlanAudit.find({ userId })
-		.sort({ createdAt: -1, _id: -1 })
-		.limit(25)
-		.select({ action: 1, createdAt: 1, undoneAt: 1 })
-		.lean()
-		.exec();
-	return audits.map(toView);
+	const audits = await getNeonDatabase()
+		.select({
+			id: studyPlanAudits.id,
+			action: studyPlanAudits.action,
+			createdAt: studyPlanAudits.createdAt,
+			undoneAt: studyPlanAudits.undoneAt
+		})
+		.from(studyPlanAudits)
+		.where(eq(studyPlanAudits.userId, userId))
+		.orderBy(desc(studyPlanAudits.createdAt), desc(studyPlanAudits.id))
+		.limit(25);
+	return audits
+		.map((audit) => ({ ...audit, action: audit.action as StudyPlanAuditAction }))
+		.map(toView);
 }
 
 /** An undo is accepted only when the plan still exactly matches the audited change. */
 export async function undoStudyPlanAudit(userId: string, auditId: string): Promise<boolean> {
 	if (!auditId.trim()) return false;
-	const audit = await StudyPlanAudit.findOne({
-		_id: auditId,
-		userId,
-		undoneAt: { $exists: false }
-	}).exec();
+	const db = getNeonDatabase();
+	const [audit] = await db
+		.select()
+		.from(studyPlanAudits)
+		.where(
+			and(
+				eq(studyPlanAudits.id, auditId),
+				eq(studyPlanAudits.userId, userId),
+				isNull(studyPlanAudits.undoneAt)
+			)
+		)
+		.limit(1);
 	if (!audit) return false;
 
 	const current = await getCurrentStudyPlan(userId);
@@ -71,7 +97,16 @@ export async function undoStudyPlanAudit(userId: string, auditId: string): Promi
 	} else {
 		await deleteStudyPlan(userId);
 	}
-	audit.undoneAt = new Date();
-	await audit.save();
-	return true;
+	const updated = await db
+		.update(studyPlanAudits)
+		.set({ undoneAt: new Date(), updatedAt: new Date() })
+		.where(
+			and(
+				eq(studyPlanAudits.id, auditId),
+				eq(studyPlanAudits.userId, userId),
+				isNull(studyPlanAudits.undoneAt)
+			)
+		)
+		.returning({ id: studyPlanAudits.id });
+	return updated.length === 1;
 }

@@ -27,9 +27,6 @@ vi.mock('$lib/questions/pool-refill-queue.server', () => ({
 	requestPoolRefill: vi.fn(),
 	enqueueAllCatalogDeficits: vi.fn()
 }));
-vi.mock('$lib/questions/pool-refill-model.server', () => ({
-	PoolRefillState: { find: vi.fn(() => ({ lean: () => ({ exec: async () => [] }) })) }
-}));
 vi.mock('$lib/questions/pool-constants', () => ({
 	QUESTION_POOL_CONFIG: { mcqTarget: 10, frqTarget: 2 },
 	poolTargetForBucket: vi.fn(() => 10)

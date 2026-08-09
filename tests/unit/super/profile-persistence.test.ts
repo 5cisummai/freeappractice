@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
 
@@ -7,8 +8,6 @@ const mocks = vi.hoisted(() => ({
 	update: vi.fn(),
 	delete: vi.fn(),
 	insert: vi.fn(),
-	findOne: vi.fn(),
-	profileSave: vi.fn(),
 	writes: [] as Array<Record<string, unknown>>
 }));
 
@@ -20,14 +19,6 @@ vi.mock('$lib/server/neon/db', () => ({
 		delete: mocks.delete,
 		insert: mocks.insert
 	})
-}));
-vi.mock('$lib/super/models.server', () => ({
-	TutorProfile: {
-		findOne: mocks.findOne,
-		create: vi.fn(),
-		exists: vi.fn()
-	},
-	InsightReport: { updateMany: vi.fn() }
 }));
 vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: vi.fn(async () => true) }));
 
@@ -43,28 +34,33 @@ describe('tutor profile persistence', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.writes.length = 0;
-		mocks.findOne.mockReturnValue({
-			exec: vi.fn().mockResolvedValue({
-				_id: 'user-1',
-				userId: 'user-1',
-				mem0UserId: 'memory-1',
-				selectedApClasses: [],
-				targetDates: [],
-				studyAvailability: '',
-				teachingStyle: 'socratic',
-				memoryEnabled: true,
-				createdAt: new Date('2026-01-01T00:00:00.000Z'),
-				updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-				save: mocks.profileSave
-			})
-		});
 		mocks.select.mockImplementation(() => ({
-			from: (table: unknown) => ({
-				where: () =>
-					table === tutorProfileClasses
-						? { orderBy: vi.fn().mockResolvedValue([]) }
-						: Promise.resolve([])
-			})
+			from: (table: unknown) => {
+				const query: any = {
+					where: () => query,
+					orderBy: vi.fn().mockResolvedValue([]),
+					limit: vi.fn().mockResolvedValue(
+						table === tutorProfiles
+							? [
+									{
+										userId: 'user-1',
+										mem0UserId: 'memory-1',
+										selectedApClasses: [],
+										targetDates: [],
+										studyAvailability: '',
+										teachingStyle: 'socratic',
+										memoryEnabled: true,
+										createdAt: new Date('2026-01-01T00:00:00.000Z'),
+										updatedAt: new Date('2026-01-01T00:00:00.000Z')
+									}
+								]
+							: []
+					),
+					then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) =>
+						Promise.resolve([]).then(resolve, reject)
+				};
+				return query;
+			}
 		}));
 		mocks.update.mockImplementation((table: unknown) => {
 			const result = query('update', table);
@@ -106,7 +102,6 @@ describe('tutor profile persistence', () => {
 			tutorTargetDates,
 			tutorTargetDates
 		]);
-		expect(mocks.profileSave).not.toHaveBeenCalled();
 		expect(result.selectedApClasses).toEqual(['AP Biology', 'AP Chemistry']);
 		expect(result.studyAvailability).toBe('Weeknights');
 	});

@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
-import type { PoolRefillQuestionType } from '$lib/questions/pool-refill-model.server';
+import type { PoolRefillQuestionType } from '$lib/questions/pool-refill-types.server';
 
 const OPEN_REFILL_STATUSES = ['pending', 'failed', 'budget_exhausted', 'running'] as const;
 

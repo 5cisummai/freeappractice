@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
+import { and, asc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { poolGenerationBudgets, poolRefillStates } from '$lib/server/neon/schema';
 import { generateAndPersistFrq } from '$lib/frq/generation.server';
-import {
-	PoolGenerationBudget,
-	PoolRefillState,
-	type IPoolRefillState
-} from '$lib/questions/pool-refill-model.server';
+import type { PoolRefillState as PoolRefillStateRow } from '$lib/questions/pool-refill-types.server';
 import {
 	countActivePoolRows,
 	getPoolRefillHealthCounts,
@@ -54,10 +53,51 @@ function utcDayKey(date = new Date()): string {
 	return date.toISOString().slice(0, 10);
 }
 
+async function ensureGenerationBudget(dayKey: string): Promise<void> {
+	await getNeonDatabase()
+		.insert(poolGenerationBudgets)
+		.values({ dayKey, generations: 0 })
+		.onConflictDoNothing();
+}
+
+async function readGenerationBudget(dayKey: string): Promise<number> {
+	const rows = await getNeonDatabase()
+		.select({ generations: poolGenerationBudgets.generations })
+		.from(poolGenerationBudgets)
+		.where(eq(poolGenerationBudgets.dayKey, dayKey))
+		.limit(1);
+	return rows[0]?.generations ?? 0;
+}
+
+async function reserveGenerationSlots(
+	dayKey: string,
+	max: number,
+	amount: number
+): Promise<boolean> {
+	const rows = await getNeonDatabase()
+		.update(poolGenerationBudgets)
+		.set({ generations: sql`${poolGenerationBudgets.generations} + ${amount}` })
+		.where(
+			and(eq(poolGenerationBudgets.dayKey, dayKey), lte(poolGenerationBudgets.generations, max))
+		)
+		.returning({ dayKey: poolGenerationBudgets.dayKey });
+	return rows.length > 0;
+}
+
+async function releaseGenerationSlots(dayKey: string, amount: number): Promise<boolean> {
+	const rows = await getNeonDatabase()
+		.update(poolGenerationBudgets)
+		.set({ generations: sql`${poolGenerationBudgets.generations} - ${amount}` })
+		.where(
+			and(eq(poolGenerationBudgets.dayKey, dayKey), gte(poolGenerationBudgets.generations, amount))
+		)
+		.returning({ dayKey: poolGenerationBudgets.dayKey });
+	return rows.length > 0;
+}
+
 export async function getDailyBudgetRemaining(env: QuestionPoolConfig): Promise<number> {
 	const dayKey = utcDayKey();
-	const doc = await PoolGenerationBudget.findOne({ dayKey }).lean();
-	const used = doc?.generations ?? 0;
+	const used = await readGenerationBudget(dayKey);
 	return Math.max(0, env.dailyLlmGenerationBudget - used);
 }
 
@@ -71,23 +111,14 @@ export async function reserveDailyGenerationBudget(
 ): Promise<number> {
 	if (requested <= 0) return 0;
 	const dayKey = utcDayKey();
-	await PoolGenerationBudget.updateOne(
-		{ dayKey },
-		{ $setOnInsert: { generations: 0 } },
-		{ upsert: true }
-	).exec();
+	await ensureGenerationBudget(dayKey);
 
 	const remaining = await getDailyBudgetRemaining(env);
 	const toReserve = Math.min(requested, remaining);
 	if (toReserve <= 0) return 0;
 
-	const updated = await PoolGenerationBudget.findOneAndUpdate(
-		{ dayKey, generations: { $lte: env.dailyLlmGenerationBudget - toReserve } },
-		{ $inc: { generations: toReserve } },
-		{ returnDocument: 'after' }
-	).exec();
-
-	if (updated) return toReserve;
+	if (await reserveGenerationSlots(dayKey, env.dailyLlmGenerationBudget - toReserve, toReserve))
+		return toReserve;
 
 	// Concurrent reservation raced — fall back to single-slot loop.
 	let reserved = 0;
@@ -105,18 +136,8 @@ export async function reserveDailyGenerationBudget(
  */
 async function tryReserveDailyBudget(env: QuestionPoolConfig): Promise<boolean> {
 	const dayKey = utcDayKey();
-	await PoolGenerationBudget.updateOne(
-		{ dayKey },
-		{ $setOnInsert: { generations: 0 } },
-		{ upsert: true }
-	).exec();
-
-	const updated = await PoolGenerationBudget.findOneAndUpdate(
-		{ dayKey, generations: { $lt: env.dailyLlmGenerationBudget } },
-		{ $inc: { generations: 1 } },
-		{ returnDocument: 'after' }
-	).exec();
-	return updated !== null;
+	await ensureGenerationBudget(dayKey);
+	return reserveGenerationSlots(dayKey, env.dailyLlmGenerationBudget - 1, 1);
 }
 
 /**
@@ -126,23 +147,12 @@ async function tryReserveDailyBudget(env: QuestionPoolConfig): Promise<boolean> 
 export async function releaseDailyGenerationBudget(amount: number): Promise<number> {
 	if (amount <= 0) return 0;
 	const dayKey = utcDayKey();
-	const updated = await PoolGenerationBudget.findOneAndUpdate(
-		{ dayKey, generations: { $gte: amount } },
-		{ $inc: { generations: -amount } },
-		{ returnDocument: 'after' }
-	).exec();
-	if (updated) return amount;
+	if (await releaseGenerationSlots(dayKey, amount)) return amount;
 
 	// Concurrent refunds or partial counter — drain whatever remains without going negative.
-	const doc = await PoolGenerationBudget.findOne({ dayKey }).lean();
-	const available = Math.max(0, doc?.generations ?? 0);
+	const available = Math.max(0, await readGenerationBudget(dayKey));
 	if (available <= 0) return 0;
-	const partial = await PoolGenerationBudget.findOneAndUpdate(
-		{ dayKey, generations: { $gte: available } },
-		{ $inc: { generations: -available } },
-		{ returnDocument: 'after' }
-	).exec();
-	return partial ? available : 0;
+	return (await releaseGenerationSlots(dayKey, available)) ? available : 0;
 }
 
 /** Soft headroom so we don't reserve then get killed mid-LLM on Vercel cron. */
@@ -161,15 +171,17 @@ function minRemainingMsForGeneration(questionType: 'mcq' | 'frq'): number {
 }
 
 async function renewRefillLease(
-	doc: IPoolRefillState,
+	doc: PoolRefillStateRow,
 	leaseTtlMs: number
-): Promise<IPoolRefillState> {
+): Promise<PoolRefillStateRow> {
+	if (!doc.leaseOwner) throw new Error('Refill lease has no owner');
 	const leaseExpiresAt = new Date(Date.now() + leaseTtlMs);
-	const updated = await PoolRefillState.findOneAndUpdate(
-		{ _id: doc._id, leaseOwner: doc.leaseOwner },
-		{ $set: { leaseExpiresAt } },
-		{ returnDocument: 'after' }
-	).exec();
+	const rows = await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({ leaseExpiresAt, updatedAt: new Date() })
+		.where(and(eq(poolRefillStates.id, doc.id), eq(poolRefillStates.leaseOwner, doc.leaseOwner)))
+		.returning();
+	const updated = rows[0] as PoolRefillStateRow | undefined;
 	if (!updated) {
 		throw new Error('Lost refill lease while generating');
 	}
@@ -182,72 +194,74 @@ export async function tryAcquireRefillLease(
 		owner: randomUUID(),
 		leaseTtlMs: QUESTION_POOL_CONFIG.leaseTtlMs
 	}
-): Promise<IPoolRefillState | null> {
+): Promise<PoolRefillStateRow | null> {
 	const now = opts.now ?? new Date();
 	const leaseExpiresAt = new Date(now.getTime() + opts.leaseTtlMs);
 
-	return PoolRefillState.findOneAndUpdate(
-		{
-			questionType: bucket.questionType,
-			apClass: bucket.apClass,
-			unit: bucket.unit,
-			status: { $in: ['pending', 'failed', 'budget_exhausted', 'running'] },
-			$and: [
-				{
-					$or: [{ nextAttemptAt: null }, { nextAttemptAt: { $lte: now } }]
-				},
-				{
-					$or: [
-						{ status: { $ne: 'running' } },
-						{ leaseExpiresAt: null },
-						{ leaseExpiresAt: { $lte: now } }
-					]
-				}
-			]
-		},
-		{
-			$set: {
-				status: 'running',
-				leaseOwner: opts.owner,
-				leaseExpiresAt,
-				lastError: null
-			},
-			$inc: { attempts: 1 }
-		},
-		{ returnDocument: 'after' }
-	).exec();
+	const rows = await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({
+			status: 'running',
+			leaseOwner: opts.owner,
+			leaseExpiresAt,
+			lastError: null,
+			attempts: sql`${poolRefillStates.attempts} + 1`,
+			updatedAt: new Date()
+		})
+		.where(
+			and(
+				eq(poolRefillStates.questionType, bucket.questionType),
+				eq(poolRefillStates.apClass, bucket.apClass),
+				eq(poolRefillStates.unit, bucket.unit),
+				or(
+					eq(poolRefillStates.status, 'pending'),
+					eq(poolRefillStates.status, 'failed'),
+					eq(poolRefillStates.status, 'budget_exhausted'),
+					eq(poolRefillStates.status, 'running')
+				),
+				or(isNull(poolRefillStates.nextAttemptAt), lte(poolRefillStates.nextAttemptAt, now)),
+				or(
+					ne(poolRefillStates.status, 'running'),
+					isNull(poolRefillStates.leaseExpiresAt),
+					lte(poolRefillStates.leaseExpiresAt, now)
+				)
+			)
+		)
+		.returning();
+	return (rows[0] as PoolRefillStateRow | undefined) ?? null;
 }
 
 async function releaseLeaseSuccess(
-	doc: IPoolRefillState,
+	doc: PoolRefillStateRow,
 	observedCount: number,
 	generatedDelta: number
 ): Promise<void> {
+	if (!doc.leaseOwner) return;
 	const done = observedCount >= doc.target;
-	await PoolRefillState.updateOne(
-		{ _id: doc._id, leaseOwner: doc.leaseOwner },
-		{
-			$set: {
-				status: done ? 'idle' : 'pending',
-				observedCount,
-				leaseOwner: null,
-				leaseExpiresAt: null,
-				lastError: null,
-				lastSuccessAt: new Date(),
-				nextAttemptAt: done ? null : new Date(),
-				...(done ? {} : { requestedAt: new Date() })
-			},
-			$inc: { generatedCount: generatedDelta }
-		}
-	).exec();
+	await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({
+			status: done ? 'idle' : 'pending',
+			observedCount,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			lastError: null,
+			lastSuccessAt: new Date(),
+			nextAttemptAt: done ? null : new Date(),
+			requestedAt: done ? doc.requestedAt : new Date(),
+			generatedCount: sql`${poolRefillStates.generatedCount} + ${generatedDelta}`,
+			updatedAt: new Date()
+		})
+		.where(and(eq(poolRefillStates.id, doc.id), eq(poolRefillStates.leaseOwner, doc.leaseOwner)));
 }
 
 async function releaseLeaseFailure(
-	doc: IPoolRefillState,
+	doc: PoolRefillStateRow,
 	error: unknown,
 	env: QuestionPoolConfig,
 	status: 'failed' | 'budget_exhausted' = 'failed'
 ): Promise<void> {
+	if (!doc.leaseOwner) return;
 	const message = error instanceof Error ? error.message : String(error);
 	const attempts = doc.attempts;
 	const backoffMs = Math.min(env.retryDelayMs * 2 ** Math.max(0, attempts - 1), 60 * 60_000);
@@ -267,18 +281,17 @@ async function releaseLeaseFailure(
 		}
 	}
 
-	await PoolRefillState.updateOne(
-		{ _id: doc._id, leaseOwner: doc.leaseOwner },
-		{
-			$set: {
-				status: nextStatus,
-				leaseOwner: null,
-				leaseExpiresAt: null,
-				lastError: message.slice(0, 2000),
-				nextAttemptAt: new Date(Date.now() + backoffMs)
-			}
-		}
-	).exec();
+	await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({
+			status: nextStatus,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			lastError: message.slice(0, 2000),
+			nextAttemptAt: new Date(Date.now() + backoffMs),
+			updatedAt: new Date()
+		})
+		.where(and(eq(poolRefillStates.id, doc.id), eq(poolRefillStates.leaseOwner, doc.leaseOwner)));
 }
 
 async function generateOne(
@@ -307,7 +320,7 @@ async function generateOne(
 }
 
 export async function processRefillJob(
-	doc: IPoolRefillState,
+	doc: PoolRefillStateRow,
 	env: QuestionPoolConfig,
 	opts: { maxGenerations: number; deadlineMs: number }
 ): Promise<{ generated: number; skippedDuplicates: number; failed: boolean; budgetHit: boolean }> {
@@ -426,22 +439,30 @@ export async function runQuestionPoolRefillWorker(
 	let generationsLeft = Math.min(env.maxGenerationsPerRun, budgetRemaining);
 
 	while (generationsLeft > 0 && Date.now() < deadlineMs) {
-		const candidate = await PoolRefillState.findOne({
-			...(opts?.questionType ? { questionType: opts.questionType } : {}),
-			status: { $in: ['pending', 'failed', 'budget_exhausted', 'running'] },
-			$and: [
-				{ $or: [{ nextAttemptAt: null }, { nextAttemptAt: { $lte: new Date() } }] },
-				{
-					$or: [
-						{ status: { $ne: 'running' } },
-						{ leaseExpiresAt: null },
-						{ leaseExpiresAt: { $lte: new Date() } }
-					]
-				}
-			]
-		})
-			.sort({ requestedAt: 1 })
-			.exec();
+		const now = new Date();
+		const candidateRows = await getNeonDatabase()
+			.select()
+			.from(poolRefillStates)
+			.where(
+				and(
+					opts?.questionType ? eq(poolRefillStates.questionType, opts.questionType) : sql`true`,
+					or(
+						eq(poolRefillStates.status, 'pending'),
+						eq(poolRefillStates.status, 'failed'),
+						eq(poolRefillStates.status, 'budget_exhausted'),
+						eq(poolRefillStates.status, 'running')
+					),
+					or(isNull(poolRefillStates.nextAttemptAt), lte(poolRefillStates.nextAttemptAt, now)),
+					or(
+						ne(poolRefillStates.status, 'running'),
+						isNull(poolRefillStates.leaseExpiresAt),
+						lte(poolRefillStates.leaseExpiresAt, now)
+					)
+				)
+			)
+			.orderBy(asc(poolRefillStates.requestedAt))
+			.limit(1);
+		const candidate = candidateRows[0] as PoolRefillStateRow | undefined;
 
 		if (!candidate) {
 			stoppedReason = processed > 0 ? 'complete' : 'no_work';

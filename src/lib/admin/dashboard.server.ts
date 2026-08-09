@@ -3,7 +3,7 @@ import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/questions/pool-c
 import { countUserProfiles } from '$lib/users/model.server';
 import { getLatestRecentTopics } from '$lib/questions/recent-topic.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqQuestions, mcqQuestions } from '$lib/server/neon/schema';
+import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
 import { count, eq, max, min } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
@@ -11,11 +11,12 @@ import {
 	enqueueAllCatalogDeficits,
 	type PoolBucketKey
 } from '$lib/questions/pool-refill-queue.server';
-import {
-	PoolRefillState,
-	type PoolRefillQuestionType,
-	type PoolRefillStatus
-} from '$lib/questions/pool-refill-model.server';
+
+import type {
+	PoolRefillQuestionType,
+	PoolRefillState as PoolRefillStateRow,
+	PoolRefillStatus
+} from '$lib/questions/pool-refill-types.server';
 import {
 	getGenerationStatsForApi,
 	getMcqGenerationCountsByClass
@@ -58,7 +59,7 @@ interface AdminDashboardData {
 }
 
 type BucketAggRow = {
-	_id: { apClass: string; unit: string };
+	bucket: { apClass: string; unit: string };
 	total: number;
 	oldestCreatedAt?: Date;
 	newestCreatedAt?: Date;
@@ -164,7 +165,7 @@ async function aggregateActiveBuckets(
 	for (const row of rows) {
 		const key = `${row.apClass}::${row.unit}`;
 		map.set(key, {
-			_id: { apClass: row.apClass, unit: row.unit },
+			bucket: { apClass: row.apClass, unit: row.unit },
 			total: Number(row.total),
 			oldestCreatedAt: row.oldestCreatedAt ?? undefined,
 			newestCreatedAt: row.newestCreatedAt ?? undefined
@@ -268,7 +269,7 @@ export async function getPoolReadinessSnapshot(): Promise<{
 	const [mcqActive, frqActive, refillStates] = await Promise.all([
 		aggregateActiveBuckets('mcq'),
 		aggregateActiveBuckets('frq'),
-		PoolRefillState.find({}).lean().exec()
+		getNeonDatabase().select().from(poolRefillStates)
 	]);
 
 	const refillByType = {
@@ -292,7 +293,7 @@ export async function getPoolReadinessSnapshot(): Promise<{
 		>()
 	};
 
-	for (const state of refillStates) {
+	for (const state of refillStates as PoolRefillStateRow[]) {
 		const map = refillByType[state.questionType];
 		map.set(`${state.apClass}::${state.unit}`, {
 			status: state.status,

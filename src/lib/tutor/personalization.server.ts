@@ -1,5 +1,5 @@
 import { searchTutorMemories } from '$lib/mem0/service.server';
-import { FrqAttempt } from '$lib/frq/model.server';
+import { findRecentGradedFrqAttempts } from '$lib/frq/model.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import { getUserProgress } from '$lib/users/model.server';
 
@@ -37,22 +37,10 @@ function compactLabel(value: string | undefined): string {
 }
 
 async function getRecentFrqEvidence(userId: string): Promise<string[]> {
-	const attempts = (await FrqAttempt.find(
-		{ userId, status: 'graded' },
-		{
-			_id: 0,
-			apClass: 1,
-			unit: 1,
-			createdAt: 1,
-			'grade.percentage': 1,
-			'grade.pointsEarned': 1,
-			'grade.pointsAvailable': 1
-		}
-	)
-		.sort({ createdAt: -1 })
-		.limit(MAX_FRQ_EVIDENCE_ATTEMPTS)
-		.lean()
-		.exec()) as FrqEvidenceAttempt[];
+	const attempts = (await findRecentGradedFrqAttempts(
+		userId,
+		MAX_FRQ_EVIDENCE_ATTEMPTS
+	)) as FrqEvidenceAttempt[];
 
 	const groups = new Map<string, FrqEvidenceGroup>();
 	for (const attempt of attempts) {

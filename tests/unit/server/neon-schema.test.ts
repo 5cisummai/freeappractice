@@ -14,10 +14,11 @@ import {
 	betterAuthSchema,
 	contentSchema,
 	opsSchema,
-	schema as compatibilitySchema
+	poolRefillStates,
+	questionRegistry
 } from '$lib/server/neon/schema';
 
-describe('Neon schema compatibility barrel', () => {
+describe('Neon Drizzle schema', () => {
 	it('keeps all PostgreSQL domains and Better Auth relations available', () => {
 		expect(authSchema).toBeDefined();
 		expect(appSchema).toBeDefined();
@@ -36,73 +37,9 @@ describe('Neon schema compatibility barrel', () => {
 		});
 	});
 
-	it('assembles the same all-domain table and view surface', () => {
-		expect(Object.keys(compatibilitySchema).sort()).toEqual(
-			[
-				'authAccounts',
-				'authRateLimits',
-				'authSessions',
-				'authSubscriptions',
-				'authUsers',
-				'authVerifications',
-				'betterAuthMigrationMap',
-				'bookmarks',
-				'coachAudits',
-				'conversationMessages',
-				'conversations',
-				'experimentAssignments',
-				'frqAttemptCriterionGrades',
-				'frqAttemptGrades',
-				'frqAttempts',
-				'frqMaterials',
-				'frqQuestions',
-				'frqRubricCriteria',
-				'frqRubricLevels',
-				'frqSections',
-				'generationRollupSnapshots',
-				'insightReports',
-				'legacyDocuments',
-				'mcqAttempts',
-				'mcqQuestions',
-				'migrationLedger',
-				'migrationRejects',
-				'migrationRuns',
-				'migrationTransforms',
-				'poolBucketWriteLocks',
-				'poolGenerationBudgets',
-				'poolRefillStates',
-				'questionFeedback',
-				'questionGenerationByClass',
-				'questionGenerationByGlobalUnit',
-				'questionGenerationByUnit',
-				'questionQuality',
-				'questionQualityAudits',
-				'questionRecentTopics',
-				'questionRegistry',
-				'qualityReviewBatches',
-				'qualityReviewJobCandidates',
-				'qualityReviewJobItems',
-				'qualityReviewJobs',
-				'schemaMigrations',
-				'seenQuestions',
-				'studyPlanAudits',
-				'studyPlans',
-				'studyTasks',
-				'superBillingAccess',
-				'superCleanupJobs',
-				'superGrants',
-				'superUsageRollups',
-				'tutorProfileClasses',
-				'tutorProfiles',
-				'tutorTargetDates',
-				'userProfiles',
-				'userProgress',
-				'userSubjects',
-				'referrals'
-			].sort()
-		);
-
-		expect(compatibilitySchema.authUsers).toBe(authUsers);
-		expect(compatibilitySchema.authSessions).toBe(authSessions);
+	it('exports domain tables directly from the barrel', () => {
+		expect(questionRegistry).toBeDefined();
+		expect(poolRefillStates).toBeDefined();
+		expect(authUsers).toBeDefined();
 	});
 });

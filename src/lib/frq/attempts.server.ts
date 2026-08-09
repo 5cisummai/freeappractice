@@ -1,5 +1,12 @@
 import { structuredObject } from '$lib/ai/service.server';
-import { FrqAttempt, type IFrqAttempt } from '$lib/frq/model.server';
+import {
+	createFrqAttempt,
+	deleteFrqAttemptIfGrading,
+	findFrqAttemptBySubmission,
+	findGradedFrqAttempt,
+	updateFrqAttemptGrade,
+	type IFrqAttempt
+} from '$lib/frq/model.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqGradingModel } from '$lib/frq/service.server';
 import { getFrqQuestionById } from '$lib/frq/question.server';
@@ -25,7 +32,7 @@ function toAttemptView(attempt: IFrqAttempt): FrqAttemptView {
 		throw new Error('FRQ attempt has not finished grading');
 	}
 	return {
-		id: attempt._id.toString(),
+		id: attempt.id,
 		questionId: attempt.questionId,
 		apClass: attempt.apClass,
 		unit: attempt.unit,
@@ -56,7 +63,7 @@ async function claimSubmission(
 	question: FrqQuestion
 ): Promise<ClaimResult> {
 	try {
-		const attempt = await FrqAttempt.create({
+		const attempt = await createFrqAttempt({
 			userId,
 			submissionId: request.submissionId,
 			questionId: request.questionId,
@@ -73,7 +80,7 @@ async function claimSubmission(
 		return { status: 'claimed', attempt };
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) throw error;
-		const existing = await FrqAttempt.findOne({ userId, submissionId: request.submissionId });
+		const existing = await findFrqAttemptBySubmission(userId, request.submissionId);
 		if (!existing) throw error;
 		if (existing.status === 'graded') return { status: 'graded', view: toAttemptView(existing) };
 		throw new FrqAttemptInProgressError('This response is already being graded');
@@ -164,22 +171,22 @@ export async function gradeFrqAttempt(
 			logContext: { questionId: request.questionId, apClass: question.apClass }
 		});
 		const grade = buildFrqGrade(question, request.responses, parsed);
+		await updateFrqAttemptGrade(attempt, grade, model);
 		attempt.status = 'graded';
 		attempt.grade = grade;
 		attempt.gradingModel = model;
-		await attempt.save();
 		return toAttemptView(attempt);
 	} catch (error) {
 		try {
-			const cleanup = await FrqAttempt.deleteOne({ _id: attempt._id, status: 'grading' });
-			if (cleanup.deletedCount !== 1) {
+			const deleted = await deleteFrqAttemptIfGrading(attempt.id);
+			if (deleted !== 1) {
 				logger.error('[frq] failed to remove incomplete grading placeholder', {
-					attemptId: attempt._id.toString()
+					attemptId: attempt.id
 				});
 			}
 		} catch (cleanupError) {
 			logger.error('[frq] failed to remove incomplete grading placeholder', {
-				attemptId: attempt._id.toString(),
+				attemptId: attempt.id,
 				error: cleanupError
 			});
 		}
@@ -191,7 +198,7 @@ export async function getFrqAttemptForUser(
 	userId: string,
 	attemptId: string
 ): Promise<FrqAttemptView | null> {
-	const attempt = await FrqAttempt.findOne({ _id: attemptId, userId, status: 'graded' });
+	const attempt = await findGradedFrqAttempt(userId, attemptId);
 	return attempt ? toAttemptView(attempt) : null;
 }
 

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Ratelimit } from '@upstash/ratelimit';
+import { sql } from 'drizzle-orm';
 import {
 	getRedisClient,
 	hashRedisIdentifier,
@@ -7,7 +8,8 @@ import {
 	withRedisTimeout
 } from '$lib/redis/server';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { SuperUsageRollup } from '$lib/super/models.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { superUsageRollups } from '$lib/server/neon/schema';
 import {
 	SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT,
 	SUPER_MONTHLY_MESSAGE_LIMIT
@@ -235,11 +237,22 @@ export async function rollupPersonalizedUsage(
 	userId: string,
 	usage: UsageReservation
 ): Promise<void> {
-	await SuperUsageRollup.findOneAndUpdate(
-		{ userId, month: usage.month },
-		{ $max: { personalizedMessages: usage.used } },
-		{ upsert: true, setDefaultsOnInsert: true }
-	).exec();
+	const now = new Date();
+	await getNeonDatabase()
+		.insert(superUsageRollups)
+		.values({
+			userId,
+			month: usage.month,
+			personalizedMessages: usage.used,
+			updatedAt: now
+		})
+		.onConflictDoUpdate({
+			target: [superUsageRollups.userId, superUsageRollups.month],
+			set: {
+				personalizedMessages: sql`GREATEST(${superUsageRollups.personalizedMessages}, ${usage.used})`,
+				updatedAt: now
+			}
+		});
 }
 
 export type CoachWriteCategory = 'goals' | 'study_plans';

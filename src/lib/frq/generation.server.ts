@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { structuredObject } from '$lib/ai/service.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { FrqQuestionModel, newFrqPoolRandomKey } from '$lib/frq/model.server';
+import { createFrqQuestion, newFrqPoolRandomKey } from '$lib/frq/model.server';
 import {
 	FRQ_SCHEMA_VERSION,
 	FrqMaterialSchema,
@@ -160,7 +160,7 @@ async function persistFrqQuestion(
 
 	let skippedDuplicate = false;
 	try {
-		await FrqQuestionModel.create({
+		await createFrqQuestion({
 			...question,
 			contentHash,
 			questionId,

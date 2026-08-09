@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
 import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
 import { getFrqCourseNames } from '$lib/frq/profiles.server';
 import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
@@ -6,10 +8,9 @@ import {
 	countActivePoolRowsByBucket,
 	getPoolRefillHealthCounts
 } from '$lib/questions/pool-counts.server';
-import {
-	PoolRefillState,
-	type PoolRefillQuestionType
-} from '$lib/questions/pool-refill-model.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { poolRefillStates } from '$lib/server/neon/schema';
+import type { PoolRefillQuestionType } from '$lib/questions/pool-refill-types.server';
 import {
 	QUESTION_POOL_CONFIG,
 	isBelowLowWater,
@@ -82,76 +83,82 @@ export async function requestPoolRefill(
 	};
 
 	// Refresh counts only — do not touch status/lease here (stomping a live lease is unsafe).
-	await PoolRefillState.findOneAndUpdate(
-		key,
-		{
-			$set: {
-				target,
-				observedCount,
-				requestedAt: now
-			},
-			$setOnInsert: {
-				status: observedCount < target ? ('pending' as const) : ('idle' as const),
-				attempts: 0,
-				generatedCount: 0,
-				leaseOwner: null,
-				leaseExpiresAt: null,
-				lastError: null,
-				nextAttemptAt: observedCount < target ? now : null
-			}
-		},
-		{ upsert: true }
-	).exec();
+	await getNeonDatabase()
+		.insert(poolRefillStates)
+		.values({
+			id: randomUUID(),
+			...key,
+			target,
+			observedCount,
+			requestedAt: now,
+			status: observedCount < target ? 'pending' : 'idle',
+			attempts: 0,
+			generatedCount: 0,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			lastError: null,
+			nextAttemptAt: observedCount < target ? now : null
+		})
+		.onConflictDoUpdate({
+			target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+			set: { target, observedCount, requestedAt: now, updatedAt: now }
+		});
 
 	if (observedCount < target) {
 		// Promote to pending only when not holding a live lease.
-		await PoolRefillState.updateOne(
-			{
-				...key,
-				$or: [
-					{ status: { $in: ['idle', 'failed', 'budget_exhausted', 'pending'] } },
-					{ status: 'running', leaseExpiresAt: null },
-					{ status: 'running', leaseExpiresAt: { $lte: now } }
-				]
-			},
-			{
-				$set: {
-					status: 'pending',
-					target,
-					observedCount,
-					requestedAt: now,
-					nextAttemptAt: now,
-					lastError: null,
-					leaseOwner: null,
-					leaseExpiresAt: null
-				}
-			}
-		).exec();
+		await getNeonDatabase()
+			.update(poolRefillStates)
+			.set({
+				status: 'pending',
+				target,
+				observedCount,
+				requestedAt: now,
+				nextAttemptAt: now,
+				lastError: null,
+				leaseOwner: null,
+				leaseExpiresAt: null,
+				updatedAt: now
+			})
+			.where(
+				and(
+					eq(poolRefillStates.questionType, key.questionType),
+					eq(poolRefillStates.apClass, key.apClass),
+					eq(poolRefillStates.unit, key.unit),
+					or(
+						inArray(poolRefillStates.status, ['idle', 'failed', 'budget_exhausted', 'pending']),
+						and(eq(poolRefillStates.status, 'running'), isNull(poolRefillStates.leaseExpiresAt)),
+						and(eq(poolRefillStates.status, 'running'), lte(poolRefillStates.leaseExpiresAt, now))
+					)
+				)
+			);
 		return;
 	}
 
 	// At/above target: idle only if not actively running with a live lease.
-	await PoolRefillState.updateOne(
-		{
-			...key,
-			$or: [
-				{ status: { $in: ['pending', 'failed', 'budget_exhausted'] } },
-				{ status: 'running', leaseExpiresAt: null },
-				{ status: 'running', leaseExpiresAt: { $lte: now } }
-			]
-		},
-		{
-			$set: {
-				status: 'idle',
-				observedCount,
-				target,
-				leaseOwner: null,
-				leaseExpiresAt: null,
-				lastError: null,
-				nextAttemptAt: null
-			}
-		}
-	).exec();
+	await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({
+			status: 'idle',
+			observedCount,
+			target,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			lastError: null,
+			nextAttemptAt: null,
+			updatedAt: now
+		})
+		.where(
+			and(
+				eq(poolRefillStates.questionType, key.questionType),
+				eq(poolRefillStates.apClass, key.apClass),
+				eq(poolRefillStates.unit, key.unit),
+				or(
+					inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
+					and(eq(poolRefillStates.status, 'running'), isNull(poolRefillStates.leaseExpiresAt)),
+					and(eq(poolRefillStates.status, 'running'), lte(poolRefillStates.leaseExpiresAt, now))
+				)
+			)
+		);
 }
 
 /**
@@ -175,52 +182,60 @@ export async function reconcilePoolRefillJobs(
 			});
 			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
 			reconciled += 1;
-			await PoolRefillState.findOneAndUpdate(
-				{
+			await getNeonDatabase()
+				.insert(poolRefillStates)
+				.values({
+					id: randomUUID(),
 					questionType,
 					apClass: bucket.apClass,
-					unit: bucket.unit
-				},
-				{
-					$set: { target, observedCount },
-					$setOnInsert: {
-						status: 'idle',
-						attempts: 0,
-						generatedCount: 0,
-						requestedAt: new Date(),
-						leaseOwner: null,
-						leaseExpiresAt: null
-					}
-				},
-				{ upsert: true }
-			).exec();
+					unit: bucket.unit,
+					target,
+					observedCount,
+					status: 'idle',
+					attempts: 0,
+					generatedCount: 0,
+					requestedAt: new Date(),
+					leaseOwner: null,
+					leaseExpiresAt: null
+				})
+				.onConflictDoUpdate({
+					target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+					set: { target, observedCount, updatedAt: new Date() }
+				});
 
 			if (isBelowLowWater(observedCount, target, env.lowWaterRatio)) {
 				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
 				enqueued += 1;
 			} else if (observedCount >= target) {
 				const now = new Date();
-				await PoolRefillState.updateOne(
-					{
-						questionType,
-						apClass: bucket.apClass,
-						unit: bucket.unit,
-						$or: [
-							{ status: { $in: ['pending', 'failed', 'budget_exhausted'] } },
-							{ status: 'running', leaseExpiresAt: null },
-							{ status: 'running', leaseExpiresAt: { $lte: now } }
-						]
-					},
-					{
-						$set: {
-							status: 'idle',
-							leaseOwner: null,
-							leaseExpiresAt: null,
-							lastError: null,
-							nextAttemptAt: null
-						}
-					}
-				).exec();
+				await getNeonDatabase()
+					.update(poolRefillStates)
+					.set({
+						status: 'idle',
+						leaseOwner: null,
+						leaseExpiresAt: null,
+						lastError: null,
+						nextAttemptAt: null,
+						updatedAt: now
+					})
+					.where(
+						and(
+							eq(poolRefillStates.questionType, questionType),
+							eq(poolRefillStates.apClass, bucket.apClass),
+							eq(poolRefillStates.unit, bucket.unit),
+							or(
+								inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
+								and(
+									eq(poolRefillStates.status, 'running'),
+									isNull(poolRefillStates.leaseExpiresAt)
+								),
+								and(
+									eq(poolRefillStates.status, 'running'),
+									lte(poolRefillStates.leaseExpiresAt, now)
+								)
+							)
+						)
+					);
 			}
 		}
 	}

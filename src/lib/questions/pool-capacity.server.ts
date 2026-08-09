@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { PoolBucketWriteLock } from '$lib/questions/pool-refill-model.server';
+import { and, eq, isNull, lte, or } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { poolBucketWriteLocks } from '$lib/server/neon/schema';
 import { countActivePoolRows, type PoolBucketKey } from '$lib/questions/pool-refill-queue.server';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 
@@ -30,12 +32,12 @@ export async function writePoolBucketBelowTarget<T>(
 		unit: bucket.unit
 	};
 	const owner = randomUUID();
+	const db = getNeonDatabase();
 	try {
-		await PoolBucketWriteLock.updateOne(
-			key,
-			{ $setOnInsert: { ...key, leaseOwner: null, leaseExpiresAt: null } },
-			{ upsert: true }
-		).exec();
+		await db
+			.insert(poolBucketWriteLocks)
+			.values({ id: randomUUID(), ...key, leaseOwner: null, leaseExpiresAt: null })
+			.onConflictDoNothing();
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) throw error;
 	}
@@ -43,20 +45,23 @@ export async function writePoolBucketBelowTarget<T>(
 	let acquired = false;
 	for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {
 		const now = new Date();
-		const lock = await PoolBucketWriteLock.findOneAndUpdate(
-			{
-				...key,
-				$or: [{ leaseOwner: null }, { leaseExpiresAt: null }, { leaseExpiresAt: { $lte: now } }]
-			},
-			{
-				$set: {
-					leaseOwner: owner,
-					leaseExpiresAt: new Date(now.getTime() + LOCK_TTL_MS)
-				}
-			},
-			{ returnDocument: 'after' }
-		).exec();
-		if (lock) {
+		const lock = await db
+			.update(poolBucketWriteLocks)
+			.set({ leaseOwner: owner, leaseExpiresAt: new Date(now.getTime() + LOCK_TTL_MS) })
+			.where(
+				and(
+					eq(poolBucketWriteLocks.questionType, key.questionType),
+					eq(poolBucketWriteLocks.apClass, key.apClass),
+					eq(poolBucketWriteLocks.unit, key.unit),
+					or(
+						isNull(poolBucketWriteLocks.leaseOwner),
+						isNull(poolBucketWriteLocks.leaseExpiresAt),
+						lte(poolBucketWriteLocks.leaseExpiresAt, now)
+					)
+				)
+			)
+			.returning({ id: poolBucketWriteLocks.id });
+		if (lock.length) {
 			acquired = true;
 			break;
 		}
@@ -71,9 +76,16 @@ export async function writePoolBucketBelowTarget<T>(
 		if (activeCount >= target) return { status: 'at_target', activeCount };
 		return { status: 'written', value: await write() };
 	} finally {
-		await PoolBucketWriteLock.updateOne(
-			{ ...key, leaseOwner: owner },
-			{ $set: { leaseOwner: null, leaseExpiresAt: null } }
-		).exec();
+		await db
+			.update(poolBucketWriteLocks)
+			.set({ leaseOwner: null, leaseExpiresAt: null })
+			.where(
+				and(
+					eq(poolBucketWriteLocks.questionType, key.questionType),
+					eq(poolBucketWriteLocks.apClass, key.apClass),
+					eq(poolBucketWriteLocks.unit, key.unit),
+					eq(poolBucketWriteLocks.leaseOwner, owner)
+				)
+			);
 	}
 }

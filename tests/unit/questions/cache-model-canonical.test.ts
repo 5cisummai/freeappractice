@@ -4,8 +4,7 @@ const mocks = vi.hoisted(() => ({
 	database: {
 		insert: vi.fn(),
 		batch: vi.fn()
-	},
-	model: vi.fn()
+	}
 }));
 
 vi.mock('$lib/server/neon/db', () => ({
@@ -16,10 +15,6 @@ vi.mock('$lib/server/neon/schema', () => ({
 	mcqQuestions: { name: 'mcqQuestions' },
 	questionRecentTopics: { name: 'questionRecentTopics' },
 	questionRegistry: { questionId: 'questionRegistry.questionId', name: 'questionRegistry' }
-}));
-
-vi.mock('$lib/server/neon/model', () => ({
-	model: mocks.model
 }));
 
 import { createCanonicalMcqQuestion } from '$lib/questions/cache-model.server';
@@ -59,10 +54,6 @@ function makeInsertBuilder(table: unknown) {
 describe('canonical MCQ persistence', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.model.mockReturnValue({
-			updateOne: vi.fn(),
-			deleteOne: vi.fn(() => ({ exec: vi.fn() }))
-		});
 		mocks.database.insert.mockImplementation((table: unknown) => makeInsertBuilder(table));
 		mocks.database.batch.mockResolvedValue([
 			[],
@@ -109,7 +100,7 @@ describe('canonical MCQ persistence', () => {
 				questionId: 'mcq-1'
 			})
 		);
-		expect(result).toMatchObject({ questionId: 'mcq-1', _id: 'mcq-1' });
+		expect(result).toMatchObject({ questionId: 'mcq-1' });
 	});
 
 	it('keeps blank recent topics out of the batch', async () => {

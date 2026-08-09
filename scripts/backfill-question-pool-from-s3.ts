@@ -12,7 +12,7 @@
  */
 
 import 'dotenv/config';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { createLimiter, getArg, loadCombos } from './shared';
 import { getFrqCourseNames } from '../src/lib/frq/profiles.server';
@@ -24,7 +24,11 @@ import {
 } from '../src/lib/questions/pool-constants';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
 import { countActivePoolRows } from '../src/lib/questions/pool-counts.server';
-import { PoolRefillState } from '../src/lib/questions/pool-refill-model.server';
+import { createCanonicalMcqQuestion } from '../src/lib/questions/cache-model.server';
+import { createFrqQuestion, findFrqQuestionById } from '../src/lib/frq/model.server';
+import { getNeonDatabase } from '../src/lib/server/neon/db';
+import { mcqQuestions, poolRefillStates } from '../src/lib/server/neon/schema';
+import { eq } from 'drizzle-orm';
 import { isDuplicateKeyError } from '../src/lib/questions/util.server';
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -211,39 +215,29 @@ async function backfillMcq(
 
 					if (isDryRun) return;
 
-					const existing = await Question.findOne({ questionId }).select({ _id: 1 }).lean();
-					if (existing) {
+					const db = getNeonDatabase();
+					const existing = await db
+						.select({ questionId: mcqQuestions.questionId })
+						.from(mcqQuestions)
+						.where(eq(mcqQuestions.questionId, questionId))
+						.limit(1);
+					if (existing.length) {
 						counters.skippedExisting += 1;
 						return;
 					}
 
-					const existingByContent = await Question.findOne({ contentHash })
-						.select({ _id: 1, questionId: 1 })
-						.lean();
-					if (existingByContent) {
-						if (!existingByContent.questionId) {
-							const result = await Question.updateOne(
-								{
-									_id: existingByContent._id,
-									$or: [
-										{ questionId: { $exists: false } },
-										{ questionId: null },
-										{ questionId: '' }
-									]
-								},
-								{ $set: { questionId } }
-							);
-							if (result.modifiedCount === 1) {
-								counters.linkedExisting += 1;
-								return;
-							}
-						}
+					const existingByContent = await db
+						.select({ questionId: mcqQuestions.questionId })
+						.from(mcqQuestions)
+						.where(eq(mcqQuestions.contentHash, contentHash))
+						.limit(1);
+					if (existingByContent.length) {
 						counters.duplicates += 1;
 						return;
 					}
 
 					try {
-						await Question.create({
+						await createCanonicalMcqQuestion({
 							questionId,
 							apClass,
 							unit,
@@ -326,14 +320,14 @@ async function backfillFrq(
 
 					if (isDryRun) return;
 
-					const existing = await FrqQuestion.findOne({ questionId }).select({ _id: 1 }).lean();
+					const existing = await findFrqQuestionById(questionId);
 					if (existing) {
 						counters.skippedExisting += 1;
 						return;
 					}
 
 					try {
-						await FrqQuestion.create({
+						await createFrqQuestion({
 							...question,
 							contentHash,
 							questionId,
@@ -399,26 +393,26 @@ async function enqueueDeficitsForType(
 		});
 		const observedCount = await countActivePoolRows(questionType, className, unit);
 		if (observedCount >= target) continue;
-		await PoolRefillState.findOneAndUpdate(
-			{ questionType, apClass: className, unit },
-			{
-				$set: {
-					status: 'pending',
-					target,
-					observedCount,
-					requestedAt: new Date(),
-					nextAttemptAt: new Date(),
-					lastError: null
-				},
-				$setOnInsert: {
-					attempts: 0,
-					generatedCount: 0,
-					leaseOwner: null,
-					leaseExpiresAt: null
-				}
-			},
-			{ upsert: true }
-		);
+		const now = new Date();
+		await getNeonDatabase()
+			.insert(poolRefillStates)
+			.values({
+				id: randomUUID(),
+				questionType,
+				apClass: className,
+				unit,
+				target,
+				observedCount,
+				status: 'pending',
+				requestedAt: now,
+				nextAttemptAt: now,
+				attempts: 0,
+				generatedCount: 0
+			})
+			.onConflictDoUpdate({
+				target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+				set: { status: 'pending', target, observedCount, requestedAt: now, nextAttemptAt: now }
+			});
 		enqueued += 1;
 	}
 	return enqueued;

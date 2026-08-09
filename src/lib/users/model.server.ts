@@ -58,7 +58,6 @@ export async function ensureUserReferralCode(userId: string): Promise<string> {
 }
 
 export interface IUserProfile {
-	_id: string;
 	userId: string;
 	referralCode?: string;
 	subjects: string[];
@@ -70,10 +69,10 @@ export interface IUserProfile {
 	updatedAt: Date;
 }
 
-type ProfileFilter = { userId?: string; _id?: string; referralCode?: string };
+type ProfileFilter = { userId?: string; referralCode?: string };
 
 function whereFor(filter: ProfileFilter) {
-	if (filter.userId || filter._id) return eq(userProfiles.userId, filter.userId ?? filter._id!);
+	if (filter.userId) return eq(userProfiles.userId, filter.userId);
 	if (filter.referralCode) return eq(userProfiles.referralCode, filter.referralCode);
 	return undefined;
 }

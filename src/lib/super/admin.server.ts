@@ -1,17 +1,32 @@
-import { and, count, eq, gt, inArray, isNull, lte, sql, sum } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gt,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	ne,
+	sql,
+	sum
+} from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { superBillingAccess, superGrants, superUsageRollups } from '$lib/server/neon/schema';
+import {
+	superBillingAccess,
+	superCleanupJobs,
+	superGrants,
+	superUsageRollups,
+	tutorProfiles
+} from '$lib/server/neon/schema';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import { unlockInsightReports } from '$lib/super/insight-locks.server';
-import {
-	SuperBillingAccess,
-	SuperCleanupJob,
-	SuperGrant,
-	TutorProfile,
-	SuperUsageRollup,
-	type ISuperCleanupJob
-} from '$lib/super/models.server';
 import type { SuperAccessReason } from '$lib/super/types';
+
+type CleanupJobKind = 'account_delete' | 'downgrade_purge';
 
 export type SuperGrantView = {
 	id: string;
@@ -47,7 +62,7 @@ export type SuperUsageRollupView = {
 export type SuperCleanupJobView = {
 	id: string;
 	userId: string;
-	kind: ISuperCleanupJob['kind'];
+	kind: CleanupJobKind;
 	attempts: number;
 	nextAttemptAt: string;
 	lastError: string;
@@ -77,22 +92,22 @@ function toIso(value: Date | string | null | undefined): string | null {
 
 function toSubscriptionView(
 	subscription: {
-		_id: unknown;
+		id: unknown;
 		userId: string;
-		stripeCustomerId?: string;
-		stripeSubscriptionId?: string;
+		stripeCustomerId?: string | null;
+		stripeSubscriptionId?: string | null;
 		status: string;
-		periodStart?: Date;
-		periodEnd?: Date;
+		periodStart?: Date | null;
+		periodEnd?: Date | null;
 		cancelAtPeriodEnd: boolean;
-		cancelAt?: Date;
-		pastDueSince?: Date;
-		superEndedAt?: Date;
+		cancelAt?: Date | null;
+		pastDueSince?: Date | null;
+		superEndedAt?: Date | null;
 	},
 	accessReason: SuperAccessReason
 ): SuperSubscriptionView {
 	return {
-		id: String(subscription._id),
+		id: String(subscription.id),
 		userId: subscription.userId,
 		stripeCustomerId: subscription.stripeCustomerId ?? null,
 		stripeSubscriptionId: subscription.stripeSubscriptionId ?? null,
@@ -108,19 +123,19 @@ function toSubscriptionView(
 }
 
 function toCleanupJobView(job: {
-	_id: unknown;
+	id: unknown;
 	userId: string;
-	kind: ISuperCleanupJob['kind'];
+	kind: string;
 	attempts: number;
 	nextAttemptAt: Date;
-	lastError?: string;
+	lastError?: string | null;
 	createdAt: Date;
 	updatedAt: Date;
 }): SuperCleanupJobView {
 	return {
-		id: String(job._id),
+		id: String(job.id),
 		userId: job.userId,
-		kind: job.kind,
+		kind: job.kind as CleanupJobKind,
 		attempts: job.attempts,
 		nextAttemptAt: job.nextAttemptAt.toISOString(),
 		lastError: job.lastError ?? 'Unknown cleanup failure',
@@ -130,7 +145,7 @@ function toCleanupJobView(job: {
 }
 
 function toGrantView(grant: {
-	_id: unknown;
+	id: unknown;
 	userId: string;
 	startsAt: Date;
 	expiresAt: Date;
@@ -139,7 +154,7 @@ function toGrantView(grant: {
 	createdAt: Date;
 }): SuperGrantView {
 	return {
-		id: String(grant._id),
+		id: String(grant.id),
 		userId: grant.userId,
 		startsAt: grant.startsAt.toISOString(),
 		expiresAt: grant.expiresAt.toISOString(),
@@ -181,35 +196,48 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 					isNull(superGrants.revokedAt)
 				)
 			),
-		SuperBillingAccess.find({ plan: 'super' }).sort({ updatedAt: -1 }).limit(100).lean().exec(),
-		SuperGrant.find({
-			startsAt: { $lte: now },
-			expiresAt: { $gt: now },
-			revokedAt: { $exists: false }
-		})
-			.sort({ expiresAt: 1, createdAt: -1 })
-			.limit(100)
-			.lean()
-			.exec(),
+		db
+			.select()
+			.from(superBillingAccess)
+			.where(eq(superBillingAccess.plan, 'super'))
+			.orderBy(desc(superBillingAccess.updatedAt))
+			.limit(100),
+		db
+			.select()
+			.from(superGrants)
+			.where(
+				and(
+					lte(superGrants.startsAt, now),
+					gt(superGrants.expiresAt, now),
+					isNull(superGrants.revokedAt)
+				)
+			)
+			.orderBy(asc(superGrants.expiresAt), desc(superGrants.createdAt))
+			.limit(100),
 		db
 			.select({
 				total: sql<number>`coalesce(${sum(superUsageRollups.personalizedMessages)}, 0)::int`
 			})
 			.from(superUsageRollups)
 			.where(eq(superUsageRollups.month, month)),
-		SuperUsageRollup.find({ month })
-			.sort({ personalizedMessages: -1, updatedAt: -1 })
+		db
+			.select()
+			.from(superUsageRollups)
+			.where(eq(superUsageRollups.month, month))
+			.orderBy(desc(superUsageRollups.personalizedMessages), desc(superUsageRollups.updatedAt))
+			.limit(100),
+		db
+			.select()
+			.from(superCleanupJobs)
+			.where(
+				and(
+					isNull(superCleanupJobs.completedAt),
+					isNotNull(superCleanupJobs.lastError),
+					ne(superCleanupJobs.lastError, '')
+				)
+			)
+			.orderBy(desc(superCleanupJobs.updatedAt))
 			.limit(100)
-			.lean()
-			.exec(),
-		SuperCleanupJob.find({
-			completedAt: { $exists: false },
-			lastError: { $exists: true, $nin: [null, ''] }
-		})
-			.sort({ updatedAt: -1 })
-			.limit(100)
-			.lean()
-			.exec()
 	]);
 
 	const accessByUser = new Map(
@@ -251,13 +279,17 @@ export async function createSuperGrant(input: {
 	createdBy: string;
 }): Promise<SuperGrantView> {
 	if (input.expiresAt <= input.startsAt) throw new Error('A grant must expire after it starts');
-	const grant = await SuperGrant.create(input);
+	const [grant] = await getNeonDatabase()
+		.insert(superGrants)
+		.values({ id: randomUUID(), ...input })
+		.returning();
+	if (!grant) throw new Error('Super grant insert returned no row');
 	if (input.startsAt <= new Date()) {
 		await Promise.all([
-			TutorProfile.updateOne(
-				{ userId: input.userId },
-				{ $unset: { superEndedAt: 1, memoryPurgedAt: 1 } }
-			).exec(),
+			getNeonDatabase()
+				.update(tutorProfiles)
+				.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: new Date() })
+				.where(eq(tutorProfiles.userId, input.userId)),
 			unlockInsightReports(input.userId)
 		]);
 	}
@@ -266,21 +298,22 @@ export async function createSuperGrant(input: {
 
 export async function revokeSuperGrant(grantId: string, revokedAt = new Date()): Promise<boolean> {
 	if (!grantId.trim()) return false;
-	const grant = await SuperGrant.findOne({
-		_id: grantId,
-		revokedAt: { $exists: false }
-	})
-		.lean()
-		.exec();
+	const db = getNeonDatabase();
+	const [grant] = await db
+		.select()
+		.from(superGrants)
+		.where(and(eq(superGrants.id, grantId), isNull(superGrants.revokedAt)))
+		.limit(1);
 	if (!grant) return false;
-	const result = await SuperGrant.updateOne(
-		{ _id: grantId, revokedAt: { $exists: false } },
-		{ $set: { revokedAt } }
-	).exec();
-	if (result.modifiedCount === 1 && grant.startsAt <= revokedAt && grant.expiresAt > revokedAt) {
+	const result = await db
+		.update(superGrants)
+		.set({ revokedAt, updatedAt: revokedAt })
+		.where(and(eq(superGrants.id, grantId), isNull(superGrants.revokedAt)))
+		.returning({ id: superGrants.id });
+	if (result.length === 1 && grant.startsAt <= revokedAt && grant.expiresAt > revokedAt) {
 		await markSuperAccessEndedIfNoAccess(grant.userId, revokedAt, revokedAt);
 	}
-	return result.modifiedCount === 1;
+	return result.length === 1;
 }
 
 export async function retrySuperCleanupJob(
@@ -294,13 +327,17 @@ export async function retrySuperCleanupJob(
 		)
 	)
 		return false;
-	const result = await SuperCleanupJob.updateOne(
-		{
-			_id: normalizedId,
-			completedAt: { $exists: false },
-			lastError: { $exists: true, $nin: [null, ''] }
-		},
-		{ $set: { nextAttemptAt } }
-	).exec();
-	return result.modifiedCount === 1;
+	const result = await getNeonDatabase()
+		.update(superCleanupJobs)
+		.set({ nextAttemptAt, updatedAt: new Date() })
+		.where(
+			and(
+				eq(superCleanupJobs.id, normalizedId),
+				isNull(superCleanupJobs.completedAt),
+				isNotNull(superCleanupJobs.lastError),
+				ne(superCleanupJobs.lastError, '')
+			)
+		)
+		.returning({ id: superCleanupJobs.id });
+	return result.length === 1;
 }

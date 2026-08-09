@@ -462,4 +462,4 @@ Operational checks and alert thresholds live in [`docs/question-request-metrics.
 
 The relational target is defined under `src/lib/server/neon/` and accessed through `db.ts` with Drizzle's Neon HTTP adapter. All application and operational runtime paths use Neon PostgreSQL.
 
-The one-shot `scripts/migrate-mongo-to-neon.ts` loader and the `mongodb` dependency are intentionally retained for audited legacy imports and verification. They are operational tooling, not a runtime persistence path. Some domain models still expose a Mongo-shaped compatibility API over Drizzle while callers are migrated incrementally to explicit domain operations; new code should use focused Drizzle reads and writes instead of expanding that adapter.
+The application uses Neon PostgreSQL and Drizzle directly. Domain functions issue focused Drizzle reads and writes; there is no Mongo-shaped compatibility layer.

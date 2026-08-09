@@ -138,7 +138,7 @@ function isoDate(value: Date | string | undefined): string {
 
 /** Convert a stored plan to a Date-free, JSON-safe view. */
 export function toStudyPlanView(plan: {
-	_id?: unknown;
+	id: unknown;
 	userId: string;
 	startsOn: Date | string;
 	tasks: Array<{
@@ -154,7 +154,7 @@ export function toStudyPlanView(plan: {
 	updatedAt: Date | string;
 }): StudyPlanView {
 	return {
-		id: plan._id === undefined ? '' : String(plan._id),
+		id: String(plan.id),
 		startsOn: isoDate(plan.startsOn),
 		tasks: plan.tasks.map((task) => ({
 			id: task.id,
@@ -202,7 +202,7 @@ function cappedTasks(tasks: StudyTask[]): StudyTask[] {
 
 type StoredPlanTask = StudyTask & { date: Date };
 type StoredPlan = {
-	_id: string;
+	id: string;
 	userId: string;
 	startsOn: Date;
 	tasks: StoredPlanTask[];
@@ -230,7 +230,7 @@ async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
 		.where(eq((studyTasks as any).planId, plan.id))
 		.orderBy(asc((studyTasks as any).taskDate));
 	return {
-		_id: plan.id,
+		id: plan.id,
 		userId: plan.userId,
 		startsOn: plan.startsOn,
 		updatedAt: plan.updatedAt,
@@ -259,7 +259,7 @@ async function writeStoredPlan(
 		options.expectedUpdatedAt === undefined
 			? (existing?.updatedAt ?? null)
 			: options.expectedUpdatedAt;
-	const planId = existing?._id ?? randomUUID();
+	const planId = existing?.id ?? randomUUID();
 	const updatedAt = new Date(
 		Math.max(Date.now(), (expectedUpdatedAt?.getTime() ?? 0) + (existing ? 1 : 0))
 	);

@@ -21,10 +21,10 @@ Treat this as a focused product surface, not a playground for framework experime
 | `src/lib/users`, `src/lib/referrals`, `src/lib/auth` | Accounts, attempts, progress, history, bookmarks, and referrals          |
 | `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, Insights, billing, and memory |
 | `src/lib/question-quality`, `src/lib/admin`          | Review jobs and operational dashboards                                   |
-| `src/lib/server/neon`                                | Drizzle schema and the shrinking legacy compatibility adapter            |
-| `scripts`                                            | Operations and the retained one-shot Mongo-to-Neon migration tooling     |
+| `src/lib/server/neon`                                | Drizzle schema and the Neon database client                              |
+| `scripts`                                            | Operations and database maintenance tooling                              |
 
-Neon PostgreSQL is the runtime source of truth. The `mongodb` dependency remains only for the explicit legacy migration script; normal application paths must not depend on MongoDB.
+Neon PostgreSQL is the only application database. Domain functions call Drizzle directly; there is no compatibility model or MongoDB runtime dependency.
 
 ---
 

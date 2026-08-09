@@ -1,5 +1,6 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { ToolLoopAgent, type InferAgentUIMessage, stepCountIs, tool } from 'ai';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
@@ -12,7 +13,8 @@ import {
 } from '$lib/super/ai-controls.server';
 import { getSuperFeatureAccess } from '$lib/super/feature-access.server';
 import { getCurrentStoredInsightReport } from '$lib/super/insights.server';
-import { CoachAudit } from '$lib/super/models.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { coachAudits } from '$lib/server/neon/schema';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView, StudyTask, TutorProfileView } from '$lib/super/types';
@@ -42,17 +44,22 @@ export type CoachAuditView = {
 };
 
 export async function getRecentCoachAudits(userId: string): Promise<CoachAuditView[]> {
-	const audits = await CoachAudit.find({ userId })
-		.sort({ createdAt: -1, _id: -1 })
-		.limit(25)
-		.select({ toolName: 1, createdAt: 1, undoneAt: 1 })
-		.lean()
-		.exec();
+	const audits = await getNeonDatabase()
+		.select({
+			id: coachAudits.id,
+			toolName: coachAudits.toolName,
+			createdAt: coachAudits.createdAt,
+			undoneAt: coachAudits.undoneAt
+		})
+		.from(coachAudits)
+		.where(eq(coachAudits.userId, userId))
+		.orderBy(desc(coachAudits.createdAt), desc(coachAudits.id))
+		.limit(25);
 	return audits.flatMap((audit) => {
 		if (audit.toolName !== 'update_goals' && audit.toolName !== 'update_study_plan') return [];
 		return [
 			{
-				id: String(audit._id),
+				id: audit.id,
 				toolName: audit.toolName,
 				createdAt: audit.createdAt.toISOString(),
 				undoneAt: audit.undoneAt?.toISOString() ?? null
@@ -68,7 +75,15 @@ async function writeAudit(
 	before: Record<string, unknown>,
 	after: Record<string, unknown>
 ): Promise<void> {
-	await CoachAudit.create({ userId, sessionId, toolName, before, after, modelId: COACH_MODEL });
+	await getNeonDatabase().insert(coachAudits).values({
+		id: randomUUID(),
+		userId,
+		sessionId,
+		toolName,
+		before,
+		after,
+		modelId: COACH_MODEL
+	});
 }
 
 async function authorized(
@@ -269,11 +284,14 @@ export function createCoachAgent(input: {
 export type CoachUIMessage = InferAgentUIMessage<ReturnType<typeof createCoachAgent>>;
 
 export async function undoCoachAudit(userId: string, auditId: string): Promise<boolean> {
-	const audit = await CoachAudit.findOne({
-		_id: auditId,
-		userId,
-		undoneAt: { $exists: false }
-	}).exec();
+	const db = getNeonDatabase();
+	const [audit] = await db
+		.select()
+		.from(coachAudits)
+		.where(
+			and(eq(coachAudits.id, auditId), eq(coachAudits.userId, userId), isNull(coachAudits.undoneAt))
+		)
+		.limit(1);
 	if (!audit) return false;
 	if (audit.toolName === 'update_goals') {
 		const current = await getTutorProfileView(userId);
@@ -296,7 +314,12 @@ export async function undoCoachAudit(userId: string, auditId: string): Promise<b
 	} else {
 		return false;
 	}
-	audit.undoneAt = new Date();
-	await audit.save();
-	return true;
+	const updated = await db
+		.update(coachAudits)
+		.set({ undoneAt: new Date(), updatedAt: new Date() })
+		.where(
+			and(eq(coachAudits.id, auditId), eq(coachAudits.userId, userId), isNull(coachAudits.undoneAt))
+		)
+		.returning({ id: coachAudits.id });
+	return updated.length === 1;
 }

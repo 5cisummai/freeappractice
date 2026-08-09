@@ -41,7 +41,7 @@ describe('insight PDF persistence', () => {
 		});
 		mocks.returning.mockResolvedValueOnce([
 			{
-				_id: 'report-1',
+				id: 'report-1',
 				userId: 'student-1',
 				report,
 				evidenceAttemptCount: 20,

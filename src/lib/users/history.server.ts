@@ -62,18 +62,6 @@ type McqHistoryRow = {
 	displayedVariant: string | null;
 };
 
-type FrqHistoryRow = {
-	id: string;
-	questionId: string;
-	apClass: string;
-	unit: string;
-	timeTakenMs: number;
-	attemptedAt: Date;
-	pointsEarned: number;
-	pointsAvailable: number;
-	percentage: number;
-};
-
 type HistorySqlRow = McqHistoryRow & {
 	kind: 'mcq' | 'frq';
 	id: string;

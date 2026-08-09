@@ -1,5 +1,5 @@
 type BlogEntry = {
-	_id: string;
+	id: string;
 	title: string;
 	slug: string;
 	excerpt: string;
@@ -136,7 +136,7 @@ function listMarkdownPosts(): BlogEntry[] {
 		const publishedAt = parsed.publishedAt ?? new Date();
 
 		posts.push({
-			_id: `file:${slugFromFile}`,
+			id: `file:${slugFromFile}`,
 			title,
 			slug: slugFromFile,
 			excerpt,

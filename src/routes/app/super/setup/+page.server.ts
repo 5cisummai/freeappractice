@@ -1,7 +1,9 @@
+import { and, desc, eq } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { superBillingAccess } from '$lib/server/neon/schema';
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
-import { SuperBillingAccess } from '$lib/super/models.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 
@@ -11,7 +13,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		await Promise.all([
 			getTutorProfileViewForRequest(locals, userId),
 			getEntitlements(userId),
-			SuperBillingAccess.findOne({ userId, plan: 'super' }).sort({ updatedAt: -1 }).lean().exec(),
+			getNeonDatabase()
+				.select()
+				.from(superBillingAccess)
+				.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
+				.orderBy(desc(superBillingAccess.updatedAt))
+				.limit(1)
+				.then(([record]) => record ?? null),
 			isSuperCheckoutEnabled(),
 			isSuperFreeBetaEnabled(),
 			isSuperStripeConfigured()

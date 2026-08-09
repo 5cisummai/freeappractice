@@ -15,7 +15,6 @@ import {
 } from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
 import { createHandle } from 'flags/sveltekit';
-import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,

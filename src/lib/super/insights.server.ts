@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import { isSuperInsightsEnabled } from '$lib/flags';
+import { getNeonDatabase } from '$lib/server/neon/db';
 import { insightReports } from '$lib/server/neon/schema';
 import { insightReportDataSchema } from '$lib/super/insight-schema';
 import type { Entitlements } from '$lib/super/types';
@@ -544,7 +546,6 @@ export async function getScoredAttemptsForUser(userId: string): Promise<InsightS
 }
 
 async function getInsightDatabase() {
-	const { getNeonDatabase } = await import('$lib/server/neon/db');
 	return getNeonDatabase();
 }
 
@@ -556,11 +557,6 @@ async function getInsightEntitlements(userId: string, now?: Date) {
 async function getInsightTutorProfileView(userId: string) {
 	const { getTutorProfileView } = await import('$lib/super/profile.server');
 	return getTutorProfileView(userId);
-}
-
-async function getInsightReportModel() {
-	const { InsightReport } = await import('$lib/super/models.server');
-	return InsightReport;
 }
 
 export function hasInsightAccess(entitlements: Pick<Entitlements, 'aiInsights'>): boolean {
@@ -581,13 +577,13 @@ function reportFromStored(value: Record<string, unknown>): InsightReportData {
 
 /** Convert a database report into a Date-free view safe for JSON serialization. */
 export function toInsightReportView(report: {
-	_id?: unknown;
+	id: unknown;
 	userId: string;
 	report: Record<string, unknown>;
 	evidenceAttemptCount: number;
 	generatedAt: Date | string;
 	manual: boolean;
-	pdfData?: Buffer;
+	pdfData?: Buffer | null;
 	pdfAvailable?: boolean;
 	pdfGeneratedAt?: Date | string;
 	pdfGenerationVersion?: number;
@@ -607,7 +603,7 @@ export function toInsightReportView(report: {
 			? report.feedback
 			: undefined;
 	return {
-		id: report._id === undefined ? '' : String(report._id),
+		id: String(report.id),
 		userId: report.userId,
 		report: reportFromStored(report.report),
 		evidenceAttemptCount: report.evidenceAttemptCount,
@@ -650,7 +646,7 @@ export async function attachInsightReportPdf(
 		})
 		.where(and(eq(insightReports.id, reportId), eq(insightReports.userId, userId)))
 		.returning({
-			_id: insightReports.id,
+			id: insightReports.id,
 			userId: insightReports.userId,
 			report: insightReports.report,
 			evidenceAttemptCount: insightReports.evidenceAttemptCount,
@@ -687,7 +683,7 @@ async function getReadableStoredReport(
 	const db = await getInsightDatabase();
 	const [report] = await db
 		.select({
-			_id: insightReports.id,
+			id: insightReports.id,
 			userId: insightReports.userId,
 			report: insightReports.report,
 			evidenceAttemptCount: insightReports.evidenceAttemptCount,
@@ -760,22 +756,39 @@ export async function buildAndStoreInsightReport(
 	});
 	if (!reportData.eligibility.eligible) return null;
 
-	const InsightReport = await getInsightReportModel();
-	const created = await InsightReport.create({
-		userId,
-		report: reportData,
-		evidenceAttemptCount: reportData.eligibility.totalScoredAttempts,
-		generatedAt: now,
-		manual: Boolean(options.manual),
-		...(options.pdfData
-			? {
-					pdfData: Buffer.from(options.pdfData),
-					pdfGeneratedAt: now,
-					pdfGenerationVersion: 1
-				}
-			: {})
-	});
 	const db = await getInsightDatabase();
+	const [created] = await db
+		.insert(insightReports)
+		.values({
+			id: randomUUID(),
+			userId,
+			report: reportData,
+			evidenceAttemptCount: reportData.eligibility.totalScoredAttempts,
+			generatedAt: now,
+			manual: Boolean(options.manual),
+			...(options.pdfData
+				? {
+						pdfData: Buffer.from(options.pdfData),
+						pdfGeneratedAt: now,
+						pdfGenerationVersion: 1
+					}
+				: {})
+		})
+		.returning({
+			id: insightReports.id,
+			userId: insightReports.userId,
+			report: insightReports.report,
+			evidenceAttemptCount: insightReports.evidenceAttemptCount,
+			generatedAt: insightReports.generatedAt,
+			manual: insightReports.manual,
+			pdfData: insightReports.pdfData,
+			feedback: insightReports.feedback,
+			feedbackReason: insightReports.feedbackReason,
+			lockedAt: insightReports.lockedAt,
+			createdAt: insightReports.createdAt,
+			updatedAt: insightReports.updatedAt
+		});
+	if (!created) throw new Error('Insight report insert returned no row');
 	const retentionCutoff = new Date(
 		now.getTime() - INSIGHT_SNAPSHOT_RETENTION_DAYS * 24 * 60 * 60 * 1000
 	);
@@ -785,7 +798,7 @@ export async function buildAndStoreInsightReport(
 		.where(
 			and(
 				eq(insightReports.userId, userId),
-				ne(insightReports.id, String(created._id)),
+				ne(insightReports.id, String(created.id)),
 				or(
 					lt(insightReports.generatedAt, retentionCutoff),
 					sql`${insightReports.lockedAt} is not null`

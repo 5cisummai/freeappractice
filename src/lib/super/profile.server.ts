@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { TutorProfile, type ITutorProfile } from '$lib/super/models.server';
 import { unlockInsightReports } from '$lib/super/insight-locks.server';
-import type { TutorProfileUpdate, TutorProfileView } from '$lib/super/types';
+import type { TutorProfileUpdate, TutorProfileView, TutorTeachingStyle } from '$lib/super/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
@@ -12,7 +11,34 @@ import { isDuplicateKeyError } from '$lib/questions/util.server';
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;
 
-function toTutorProfileView(profile: ITutorProfile): TutorProfileView {
+type TutorProfileRecord = {
+	userId: string;
+	ageConfirmedAt: Date | null;
+	mem0UserId: string;
+	selectedApClasses: string[];
+	targetDates: Array<{ apClass: string; targetDate: Date }>;
+	studyAvailability: string;
+	teachingStyle: TutorTeachingStyle;
+	memoryEnabled: boolean;
+	memoryDisclosureSeenAt: Date | null;
+	superFreeBetaClaimedAt: Date | null;
+	superAccessStartedAt: Date | null;
+	superEndedAt: Date | null;
+	memoryPurgedAt: Date | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+function toTutorProfileRecord(row: typeof tutorProfiles.$inferSelect): TutorProfileRecord {
+	return {
+		...row,
+		teachingStyle: row.teachingStyle as TutorTeachingStyle,
+		selectedApClasses: [],
+		targetDates: []
+	};
+}
+
+function toTutorProfileView(profile: TutorProfileRecord): TutorProfileView {
 	return {
 		ageConfirmedAt: profile.ageConfirmedAt?.toISOString() ?? null,
 		selectedApClasses: [...profile.selectedApClasses],
@@ -27,37 +53,48 @@ function toTutorProfileView(profile: ITutorProfile): TutorProfileView {
 	};
 }
 
-async function hydrateTutorRelations(profile: ITutorProfile): Promise<ITutorProfile> {
-	const db = getNeonDatabase() as any;
+async function hydrateTutorRelations(profile: TutorProfileRecord): Promise<TutorProfileRecord> {
+	const db = getNeonDatabase();
 	const [classes, dates] = await Promise.all([
 		db
 			.select()
-			.from(tutorProfileClasses as any)
-			.where(eq((tutorProfileClasses as any).userId, profile.userId))
-			.orderBy(asc((tutorProfileClasses as any).position)),
-		db
-			.select()
-			.from(tutorTargetDates as any)
-			.where(eq((tutorTargetDates as any).userId, profile.userId))
+			.from(tutorProfileClasses)
+			.where(eq(tutorProfileClasses.userId, profile.userId))
+			.orderBy(asc(tutorProfileClasses.position)),
+		db.select().from(tutorTargetDates).where(eq(tutorTargetDates.userId, profile.userId))
 	]);
-	profile.selectedApClasses = (classes as Array<{ apClass: string }>).map((row) => row.apClass);
-	profile.targetDates = (dates as Array<{ apClass: string; targetDate: Date }>).map((row) => ({
+	profile.selectedApClasses = classes.map((row) => row.apClass);
+	profile.targetDates = dates.map((row) => ({
 		apClass: row.apClass,
 		targetDate: row.targetDate
 	}));
 	return profile;
 }
 
-export async function ensureTutorProfile(userId: string): Promise<ITutorProfile> {
-	const existing = await TutorProfile.findOne({ userId }).exec();
-	if (existing) return hydrateTutorRelations(existing);
+export async function ensureTutorProfile(userId: string): Promise<TutorProfileRecord> {
+	const db = getNeonDatabase();
+	const [existing] = await db
+		.select()
+		.from(tutorProfiles)
+		.where(eq(tutorProfiles.userId, userId))
+		.limit(1);
+	if (existing) return hydrateTutorRelations(toTutorProfileRecord(existing));
 
 	try {
-		return hydrateTutorRelations(await TutorProfile.create({ userId, mem0UserId: randomUUID() }));
+		const [created] = await db
+			.insert(tutorProfiles)
+			.values({ userId, mem0UserId: randomUUID() })
+			.returning();
+		if (!created) throw new Error('Tutor profile insert returned no row');
+		return hydrateTutorRelations(toTutorProfileRecord(created));
 	} catch (error) {
 		if (isDuplicateKeyError(error)) {
-			const concurrent = await TutorProfile.findOne({ userId }).exec();
-			if (concurrent) return hydrateTutorRelations(concurrent);
+			const [concurrent] = await db
+				.select()
+				.from(tutorProfiles)
+				.where(eq(tutorProfiles.userId, userId))
+				.limit(1);
+			if (concurrent) return hydrateTutorRelations(toTutorProfileRecord(concurrent));
 		}
 		throw error;
 	}
@@ -79,8 +116,8 @@ export async function markSuperAccessStarted(
 		changed = true;
 	}
 	if (shouldRestore) {
-		profile.superEndedAt = undefined;
-		profile.memoryPurgedAt = undefined;
+		profile.superEndedAt = null;
+		profile.memoryPurgedAt = null;
 		changed = true;
 	}
 	if (changed) {
@@ -136,7 +173,7 @@ export async function claimSuperFreeBeta(
 			.set({ superFreeBetaClaimedAt: claimedAt, updatedAt: claimedAt })
 			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superFreeBetaClaimedAt)))
 			.returning({ claimedAt: tutorProfiles.superFreeBetaClaimedAt });
-		profile.superFreeBetaClaimedAt = claimed[0]?.claimedAt ?? undefined;
+		profile.superFreeBetaClaimedAt = claimed[0]?.claimedAt ?? null;
 		if (!profile.superFreeBetaClaimedAt) {
 			const [current] = await getNeonDatabase()
 				.select({ claimedAt: tutorProfiles.superFreeBetaClaimedAt })
@@ -146,17 +183,18 @@ export async function claimSuperFreeBeta(
 			profile.superFreeBetaClaimedAt = current?.claimedAt ?? claimedAt;
 		}
 	}
-	await markSuperAccessStarted(userId, profile.superFreeBetaClaimedAt);
-	return { claimedAt: profile.superFreeBetaClaimedAt.toISOString() };
+	const effectiveClaimedAt = profile.superFreeBetaClaimedAt ?? claimedAt;
+	await markSuperAccessStarted(userId, effectiveClaimedAt);
+	return { claimedAt: effectiveClaimedAt.toISOString() };
 }
 
 export async function hasClaimedSuperFreeBeta(userId: string): Promise<boolean> {
-	return Boolean(
-		await TutorProfile.exists({
-			userId,
-			superFreeBetaClaimedAt: { $exists: true }
-		}).exec()
-	);
+	const [profile] = await getNeonDatabase()
+		.select({ userId: tutorProfiles.userId })
+		.from(tutorProfiles)
+		.where(and(eq(tutorProfiles.userId, userId), isNotNull(tutorProfiles.superFreeBetaClaimedAt)))
+		.limit(1);
+	return Boolean(profile);
 }
 
 export async function markMemoryDisclosureSeen(userId: string): Promise<void> {

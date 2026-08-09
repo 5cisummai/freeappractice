@@ -1,10 +1,12 @@
+import { and, desc, eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getCourses } from '$lib/catalog/ap-classes.js';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { superBillingAccess } from '$lib/server/neon/schema';
 import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/super/ai-controls.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
-import { SuperBillingAccess } from '$lib/super/models.server';
 import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
 
@@ -40,7 +42,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 	]);
 	const [profile, billing, usage] = await Promise.all([
 		getTutorProfileViewForRequest(locals, userId),
-		SuperBillingAccess.findOne({ userId, plan: 'super' }).sort({ updatedAt: -1 }).lean().exec(),
+		getNeonDatabase()
+			.select()
+			.from(superBillingAccess)
+			.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
+			.orderBy(desc(superBillingAccess.updatedAt))
+			.limit(1)
+			.then(([record]) => record ?? null),
 		readSettingsUsage(userId, entitlements.personalizedTutor)
 	]);
 

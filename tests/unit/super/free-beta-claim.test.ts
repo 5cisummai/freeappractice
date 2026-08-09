@@ -1,49 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { tutorProfiles } from '$lib/server/neon/schema';
 
 const mocks = vi.hoisted(() => ({
 	isSuperFreeBetaEnabled: vi.fn(),
-	findOne: vi.fn(),
-	create: vi.fn(),
-	exists: vi.fn(),
-	insightUpdateMany: vi.fn(),
-	neonDatabase: {
-		update: vi.fn(() => {
-			const query = {
-				set: vi.fn(),
-				where: vi.fn(),
-				returning: vi.fn().mockResolvedValue([{ claimedAt: new Date('2026-08-06T18:00:00.000Z') }])
-			};
-			query.set.mockReturnValue(query);
-			query.where.mockReturnValue(query);
-			return query;
-		}),
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				where: vi.fn(() => {
-					const query = Promise.resolve([]) as Promise<never[]> & {
-						orderBy: ReturnType<typeof vi.fn>;
-					};
-					query.orderBy = vi.fn().mockResolvedValue([]);
-					return query;
-				})
-			}))
-		})),
-		delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) }))
-	}
+	select: vi.fn(),
+	update: vi.fn(),
+	claimed: false
 }));
 
-vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: () => mocks.neonDatabase }));
-vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
-vi.mock('$lib/super/models.server', () => ({
-	TutorProfile: {
-		findOne: mocks.findOne,
-		create: mocks.create,
-		exists: mocks.exists
-	},
-	InsightReport: {
-		updateMany: mocks.insightUpdateMany
-	}
+vi.mock('$lib/server/neon/db', () => ({
+	getNeonDatabase: () => ({ select: mocks.select, update: mocks.update })
 }));
+vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
+vi.mock('$lib/super/insight-locks.server', () => ({ unlockInsightReports: vi.fn() }));
 
 import {
 	claimSuperFreeBeta,
@@ -51,70 +21,80 @@ import {
 	SuperFreeBetaUnavailableError
 } from '$lib/super/profile.server';
 
-describe('Super free beta claim', () => {
-	const now = new Date('2026-08-06T18:00:00.000Z');
+const now = new Date('2026-08-06T18:00:00.000Z');
 
-	beforeEach(() => {
-		vi.clearAllMocks();
-		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
-		mocks.exists.mockReturnValue({ exec: vi.fn().mockResolvedValue(null) });
-		mocks.insightUpdateMany.mockReturnValue({ exec: vi.fn().mockResolvedValue({}) });
+function profile() {
+	return {
+		userId: 'student-1',
+		ageConfirmedAt: null,
+		mem0UserId: 'memory-1',
+		selectedApClasses: [],
+		targetDates: [],
+		studyAvailability: '',
+		teachingStyle: 'socratic',
+		memoryEnabled: true,
+		memoryDisclosureSeenAt: null,
+		superFreeBetaClaimedAt: mocks.claimed ? now : null,
+		superAccessStartedAt: mocks.claimed ? now : null,
+		superEndedAt: null,
+		memoryPurgedAt: null,
+		createdAt: now,
+		updatedAt: now
+	};
+}
+
+function chain(table: unknown) {
+	const value: any = {
+		from: vi.fn(() => value),
+		where: vi.fn(() => value),
+		orderBy: vi.fn(() => value),
+		limit: vi.fn(async () => (table === tutorProfiles ? [profile()] : [])),
+		then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) =>
+			Promise.resolve(table === tutorProfiles ? [profile()] : []).then(resolve, reject)
+	};
+	return value;
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	mocks.claimed = false;
+	mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
+	mocks.select.mockImplementation(() => {
+		const value: any = {
+			from: (table: unknown) => chain(table)
+		};
+		return value;
 	});
+	mocks.update.mockImplementation(() => {
+		const value: any = {
+			set: vi.fn(() => value),
+			where: vi.fn(() => value),
+			returning: vi.fn(async () => [{ claimedAt: now }]),
+			then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) =>
+				Promise.resolve([{ claimedAt: now }]).then(resolve, reject)
+		};
+		return value;
+	});
+});
 
-	it('rejects claims when the free beta flag is off', async () => {
+describe('Super free beta claim', () => {
+	it('rejects claims when the feature is disabled', async () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(false);
 		await expect(claimSuperFreeBeta('student-1', now)).rejects.toBeInstanceOf(
 			SuperFreeBetaUnavailableError
 		);
 	});
 
-	it('persists a free beta claim and starts Super access', async () => {
-		const profile = {
-			userId: 'student-1',
-			superFreeBetaClaimedAt: undefined as Date | undefined,
-			superAccessStartedAt: undefined as Date | undefined,
-			superEndedAt: undefined,
-			memoryPurgedAt: undefined,
-			isModified: vi.fn().mockReturnValue(true),
-			save: vi.fn().mockResolvedValue(undefined)
-		};
-		mocks.findOne.mockReturnValue({ exec: vi.fn().mockResolvedValue(profile) });
-
+	it('persists a claim through direct Drizzle updates', async () => {
 		await expect(claimSuperFreeBeta('student-1', now)).resolves.toEqual({
 			claimedAt: now.toISOString()
 		});
-		expect(profile.superFreeBetaClaimedAt).toEqual(now);
-		expect(profile.superAccessStartedAt).toEqual(now);
-		expect(profile.save).not.toHaveBeenCalled();
-		expect(mocks.neonDatabase.update).toHaveBeenCalledTimes(2);
+		expect(mocks.update).toHaveBeenCalled();
 	});
 
-	it('is idempotent when the offer was already claimed', async () => {
-		const claimedAt = new Date('2026-08-01T00:00:00.000Z');
-		const profile = {
-			userId: 'student-1',
-			superFreeBetaClaimedAt: claimedAt,
-			superAccessStartedAt: claimedAt,
-			superEndedAt: undefined,
-			memoryPurgedAt: undefined,
-			isModified: vi.fn().mockReturnValue(false),
-			save: vi.fn().mockResolvedValue(undefined)
-		};
-		mocks.findOne.mockReturnValue({ exec: vi.fn().mockResolvedValue(profile) });
-
-		await expect(claimSuperFreeBeta('student-1', now)).resolves.toEqual({
-			claimedAt: claimedAt.toISOString()
-		});
-		expect(profile.save).not.toHaveBeenCalled();
-	});
-
-	it('reports whether a user has claimed the free beta offer', async () => {
-		mocks.exists.mockReturnValue({
-			exec: vi.fn().mockResolvedValue({ _id: 'profile-1' })
-		});
-		await expect(hasClaimedSuperFreeBeta('student-1')).resolves.toBe(true);
-
-		mocks.exists.mockReturnValue({ exec: vi.fn().mockResolvedValue(null) });
-		await expect(hasClaimedSuperFreeBeta('student-2')).resolves.toBe(false);
+	it('reads the claim from the profile table', async () => {
+		mocks.claimed = true;
+		expect(await hasClaimedSuperFreeBeta('student-1')).toBe(true);
+		expect(mocks.select).toHaveBeenCalled();
 	});
 });

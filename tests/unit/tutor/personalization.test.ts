@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
 	getTutorProfileView: vi.fn(),
 	searchTutorMemories: vi.fn(),
 	getUserProgress: vi.fn(),
-	frqFind: vi.fn()
+	findRecentGradedFrqAttempts: vi.fn()
 }));
 
 vi.mock('$lib/mem0/service.server', () => ({
@@ -17,25 +17,10 @@ vi.mock('$lib/users/model.server', () => ({
 	getUserProgress: mocks.getUserProgress
 }));
 vi.mock('$lib/frq/model.server', () => ({
-	FrqAttempt: { find: mocks.frqFind }
+	findRecentGradedFrqAttempts: mocks.findRecentGradedFrqAttempts
 }));
 
 import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
-
-function queryChain<T>(value: T) {
-	const exec = vi.fn(async () => value);
-	const lean = vi.fn(() => ({ exec }));
-	const limit = vi.fn(() => ({ lean }));
-	const sort = vi.fn(() => ({ limit }));
-	const select = vi.fn(() => ({ lean }));
-	return {
-		select,
-		sort,
-		limit,
-		lean,
-		exec
-	};
-}
 
 describe('buildTutorPersonalization', () => {
 	beforeEach(() => {
@@ -64,35 +49,33 @@ describe('buildTutorPersonalization', () => {
 	it('adds bounded graded FRQ course/unit evidence without reading response or rubric text', async () => {
 		const forbiddenResponse = 'STUDENT_RESPONSE_SHOULD_NOT_ENTER_CONTEXT';
 		const forbiddenFeedback = 'RUBRIC_FEEDBACK_SHOULD_NOT_ENTER_CONTEXT';
-		mocks.frqFind.mockReturnValue(
-			queryChain([
-				{
-					apClass: 'AP Biology',
-					unit: 'Unit 2',
-					createdAt: new Date('2026-07-20T00:00:00.000Z'),
-					responses: { response: forbiddenResponse },
-					grade: {
-						percentage: 80,
-						pointsEarned: 8,
-						pointsAvailable: 10,
-						overallFeedback: forbiddenFeedback,
-						criteria: [{ evidence: forbiddenResponse, feedback: forbiddenFeedback }]
-					}
-				},
-				{
-					apClass: 'AP Biology',
-					unit: 'Unit 2',
-					createdAt: new Date('2026-07-19T00:00:00.000Z'),
-					grade: { percentage: 50, pointsEarned: 5, pointsAvailable: 10 }
-				},
-				{
-					apClass: 'AP Chemistry',
-					unit: 'Unit 1',
-					createdAt: new Date('2026-07-18T00:00:00.000Z'),
-					grade: { percentage: 75, pointsEarned: 9, pointsAvailable: 12 }
+		mocks.findRecentGradedFrqAttempts.mockResolvedValue([
+			{
+				apClass: 'AP Biology',
+				unit: 'Unit 2',
+				createdAt: new Date('2026-07-20T00:00:00.000Z'),
+				responses: { response: forbiddenResponse },
+				grade: {
+					percentage: 80,
+					pointsEarned: 8,
+					pointsAvailable: 10,
+					overallFeedback: forbiddenFeedback,
+					criteria: [{ evidence: forbiddenResponse, feedback: forbiddenFeedback }]
 				}
-			])
-		);
+			},
+			{
+				apClass: 'AP Biology',
+				unit: 'Unit 2',
+				createdAt: new Date('2026-07-19T00:00:00.000Z'),
+				grade: { percentage: 50, pointsEarned: 5, pointsAvailable: 10 }
+			},
+			{
+				apClass: 'AP Chemistry',
+				unit: 'Unit 1',
+				createdAt: new Date('2026-07-18T00:00:00.000Z'),
+				grade: { percentage: 75, pointsEarned: 9, pointsAvailable: 12 }
+			}
+		]);
 
 		const result = await buildTutorPersonalization('user-1', 'How can I improve?');
 
@@ -106,41 +89,24 @@ describe('buildTutorPersonalization', () => {
 		expect(result.context).not.toContain(forbiddenFeedback);
 		expect(result.memoryDegraded).toBe(false);
 
-		expect(mocks.frqFind).toHaveBeenCalledWith(
-			{ userId: 'user-1', status: 'graded' },
-			expect.objectContaining({
-				apClass: 1,
-				unit: 1,
-				createdAt: 1,
-				'grade.percentage': 1,
-				'grade.pointsEarned': 1,
-				'grade.pointsAvailable': 1,
-				_id: 0
-			})
-		);
-		const projection = mocks.frqFind.mock.calls[0]?.[1] as Record<string, unknown>;
-		expect(projection).not.toHaveProperty('responses');
-		expect(projection).not.toHaveProperty('grade.criteria');
-		expect(projection).not.toHaveProperty('grade.overallFeedback');
+		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenCalledWith('user-1', 12);
 	});
 
 	it('limits evidence to the most recent course/unit groups and ignores incomplete grades', async () => {
-		mocks.frqFind.mockReturnValue(
-			queryChain([
-				...Array.from({ length: 6 }, (_, index) => ({
-					apClass: `AP Course ${index + 1}`,
-					unit: 'Unit 1',
-					createdAt: new Date(Date.UTC(2026, 6, 20 - index)),
-					grade: { percentage: 70, pointsEarned: 7, pointsAvailable: 10 }
-				})),
-				{
-					apClass: 'AP Course 7',
-					unit: 'Unit 1',
-					createdAt: new Date('2026-07-01T00:00:00.000Z'),
-					grade: { percentage: 100, pointsEarned: 10, pointsAvailable: 0 }
-				}
-			])
-		);
+		mocks.findRecentGradedFrqAttempts.mockResolvedValue([
+			...Array.from({ length: 6 }, (_, index) => ({
+				apClass: `AP Course ${index + 1}`,
+				unit: 'Unit 1',
+				createdAt: new Date(Date.UTC(2026, 6, 20 - index)),
+				grade: { percentage: 70, pointsEarned: 7, pointsAvailable: 10 }
+			})),
+			{
+				apClass: 'AP Course 7',
+				unit: 'Unit 1',
+				createdAt: new Date('2026-07-01T00:00:00.000Z'),
+				grade: { percentage: 100, pointsEarned: 10, pointsAvailable: 0 }
+			}
+		]);
 
 		const result = await buildTutorPersonalization('user-1', 'Review my weak units');
 
@@ -150,8 +116,6 @@ describe('buildTutorPersonalization', () => {
 		expect(result.context).not.toContain('AP Course 6 Unit 1');
 		expect(result.context).not.toContain('AP Course 7 Unit 1');
 
-		const chain = mocks.frqFind.mock.results[0]?.value;
-		expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
-		expect(chain.sort.mock.results[0]?.value.limit).toHaveBeenCalledWith(12);
+		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenCalledWith('user-1', 12);
 	});
 });

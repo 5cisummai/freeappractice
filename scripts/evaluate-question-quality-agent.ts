@@ -7,8 +7,9 @@
  */
 import 'dotenv/config';
 import { readFile, writeFile } from 'node:fs/promises';
+import { getNeonDatabase } from '../src/lib/server/neon/db';
+import { questionQuality } from '../src/lib/server/neon/schema';
 import { buildBatchLine } from '../src/lib/question-quality/batch-line';
-import { QuestionQuality } from '../src/lib/question-quality/models.server';
 import { getQuestionById } from '../src/lib/questions/storage.server';
 import { extractResponseOutputText } from '../src/lib/question-quality/rubric.server';
 
@@ -128,7 +129,16 @@ function stratified(items: GoldItem[], maximum: number): GoldItem[] {
 
 async function submit() {
 	const maximum = Math.min(500, Math.max(20, Number(valueAfter('--max') || '200')));
-	const raw = (await QuestionQuality.find({}).limit(2_000).lean()).filter((row) => {
+	const raw = (
+		await getNeonDatabase()
+			.select({
+				questionId: questionQuality.questionId,
+				apClass: questionQuality.apClass,
+				humanAssessment: questionQuality.humanAssessment
+			})
+			.from(questionQuality)
+			.limit(2_000)
+	).filter((row) => {
 		const assessment = row.humanAssessment;
 		return (
 			assessment?.blind === true && (assessment.verdict === 'good' || assessment.verdict === 'bad')

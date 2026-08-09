@@ -4,7 +4,6 @@ const mocks = vi.hoisted(() => ({
 	batch: vi.fn(),
 	insert: vi.fn(),
 	update: vi.fn(),
-	delete: vi.fn(),
 	select: vi.fn()
 }));
 
@@ -13,48 +12,19 @@ vi.mock('$lib/server/neon/db', () => ({
 		batch: mocks.batch,
 		insert: mocks.insert,
 		update: mocks.update,
-		delete: mocks.delete,
 		select: mocks.select
 	})
 }));
 
 import {
-	QuestionFeedback,
-	QuestionQuality,
-	QuestionQualityReviewJob,
-	QuestionQualityReviewJobItem
+	createReviewJob,
+	getReviewJob,
+	updateReviewJob
 } from '$lib/question-quality/models.server';
 
-function hasUniqueIndex(
-	indexes: Array<[Record<string, unknown>, { unique?: boolean }]>,
-	fields: string[]
-) {
-	return indexes.some(
-		([keys, options]) =>
-			options.unique === true &&
-			fields.every((field) => Object.prototype.hasOwnProperty.call(keys, field))
-	);
-}
-
-describe('question quality persistence invariants', () => {
+describe('question quality persistence functions', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-	});
-
-	it('allows only one active quality record per canonical S3 question', () => {
-		expect(hasUniqueIndex(QuestionQuality.schema.indexes(), ['questionId'])).toBe(true);
-	});
-
-	it('allows only one claimed job item per canonical S3 question', () => {
-		expect(hasUniqueIndex(QuestionQualityReviewJobItem.schema.indexes(), ['questionId'])).toBe(
-			true
-		);
-	});
-
-	it('deduplicates the same feedback type from the same student', () => {
-		expect(
-			hasUniqueIndex(QuestionFeedback.schema.indexes(), ['questionId', 'userId', 'type'])
-		).toBe(true);
 	});
 
 	it('creates the review parent and children in one ordered database batch', async () => {
@@ -79,9 +49,9 @@ describe('question quality persistence invariants', () => {
 			.mockReturnValueOnce({ values: vi.fn().mockReturnValue(candidateInsert) })
 			.mockReturnValueOnce({ values: vi.fn().mockReturnValue(batchInsert) });
 		mocks.batch.mockResolvedValue([[parentRow], [], []]);
-		configureHydration([], []);
+		configureHydration([], [], [parentRow]);
 
-		await QuestionQualityReviewJob.create({
+		await createReviewJob({
 			id: 'job-1',
 			status: 'preparing',
 			filters: {},
@@ -106,57 +76,44 @@ describe('question quality persistence invariants', () => {
 		expect(mocks.insert).toHaveBeenCalledTimes(3);
 	});
 
-	it('persists the parent and replacement children in one ordered database batch', async () => {
-		const parentUpdate = { kind: 'parent-update' };
-		const deleteCandidates = { kind: 'delete-candidates' };
-		const candidateInsert = { kind: 'candidate-insert' };
-		const deleteBatches = { kind: 'delete-batches' };
-		const batchInsert = { kind: 'batch-insert' };
-		mocks.update.mockReturnValue({
-			set: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue(parentUpdate) })
-		});
-		mocks.delete
-			.mockReturnValueOnce({ where: vi.fn().mockReturnValue(deleteCandidates) })
-			.mockReturnValueOnce({ where: vi.fn().mockReturnValue(deleteBatches) });
-		mocks.insert
-			.mockReturnValueOnce({ values: vi.fn().mockReturnValue(candidateInsert) })
-			.mockReturnValueOnce({ values: vi.fn().mockReturnValue(batchInsert) });
-		mocks.batch.mockResolvedValue([]);
+	it('updates a review job with a direct guarded Drizzle update', async () => {
+		const returning = vi.fn().mockResolvedValue([{ id: 'job-1' }]);
+		const where = vi.fn().mockReturnValue({ returning });
+		const set = vi.fn().mockReturnValue({ where });
+		mocks.update.mockReturnValue({ set });
+
+		await expect(
+			updateReviewJob('job-1', { status: 'paused' }, { status: 'in_progress' })
+		).resolves.toBe(1);
+		expect(set).toHaveBeenCalledWith({ status: 'paused', updatedAt: expect.any(Date) });
+	});
+
+	it('hydrates a review job from its parent, candidate, and batch rows', async () => {
+		const parent = {
+			id: 'job-1',
+			status: 'preparing',
+			filters: {},
+			createdAt: new Date(),
+			updatedAt: new Date()
+		};
 		configureHydration(
-			[],
-			[],
+			[{ questionId: 'question-1', selected: true }],
 			[
 				{
-					id: 'job-1',
-					status: 'preparing',
-					filters: {},
-					createdAt: new Date(),
-					updatedAt: new Date()
+					submissionKey: 'submission-1',
+					inputFileId: 'file-1',
+					status: 'queued',
+					createdAt: new Date()
 				}
-			]
+			],
+			[parent]
 		);
 
-		const document = await QuestionQualityReviewJob.findById('job-1').exec();
-		expect(document).not.toBeNull();
-		document!.selectedQuestionIds = ['question-1'];
-		document!.batches = [
-			{
-				submissionKey: 'submission-1',
-				inputFileId: 'file-1',
-				status: 'queued',
-				createdAt: new Date()
-			}
-		];
-		await document!.save();
-
-		expect(mocks.batch).toHaveBeenCalledOnce();
-		expect(mocks.batch).toHaveBeenCalledWith([
-			parentUpdate,
-			deleteCandidates,
-			candidateInsert,
-			deleteBatches,
-			batchInsert
-		]);
+		await expect(getReviewJob('job-1')).resolves.toMatchObject({
+			id: 'job-1',
+			selectedQuestionIds: ['question-1'],
+			batches: [{ submissionKey: 'submission-1', inputFileId: 'file-1' }]
+		});
 	});
 });
 

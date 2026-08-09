@@ -156,7 +156,7 @@ describe('buildInsightReportData', () => {
 			now: new Date('2026-07-31T00:00:00.000Z')
 		});
 		const view = toInsightReportView({
-			_id: 'report-1',
+			id: 'report-1',
 			userId: 'user-1',
 			report,
 			evidenceAttemptCount: 20,
@@ -170,7 +170,7 @@ describe('buildInsightReportData', () => {
 		expect(view.pdfAvailable).toBe(true);
 		expect(() =>
 			toInsightReportView({
-				_id: 'report-2',
+				id: 'report-2',
 				userId: 'user-1',
 				report: { schemaVersion: 1 },
 				evidenceAttemptCount: 20,

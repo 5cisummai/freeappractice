@@ -6,7 +6,6 @@ vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
 vi.mock('$lib/ai/service.server', () => ({ structuredObject: vi.fn() }));
-vi.mock('$lib/frq/model.server', () => ({ FrqAttempt: {} }));
 vi.mock('$lib/frq/profiles.server', () => ({ getFrqCourseProfile: vi.fn() }));
 vi.mock('$lib/frq/service.server', () => ({ getFrqGradingModel: vi.fn() }));
 vi.mock('$lib/frq/question.server', () => ({ getFrqQuestionById: vi.fn() }));

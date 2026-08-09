@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		post: {
-			_id: post._id,
+			id: post.id,
 			title: post.title,
 			slug: post.slug,
 			excerpt: post.excerpt,

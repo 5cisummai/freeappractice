@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { randomUUID } from 'node:crypto';
 import { desc, eq, sql } from 'drizzle-orm';
 import {
 	QUESTION_QUALITY_CALIBRATED_MODEL,
@@ -13,7 +14,7 @@ import {
 } from '$lib/server/neon/schema';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { getQuestionById } from '$lib/questions/storage.server';
-import { QuestionFeedback, QuestionQuality, type ReviewJobDocument } from './models.server.js';
+import { ensureQuestionQuality, type ReviewJobDocument } from './models.server.js';
 import { feedbackSummaryFromCounts } from './rules.js';
 import {
 	QUESTION_QUALITY_RUBRIC_VERSION,
@@ -38,11 +39,9 @@ export function isAgentCalibrated(): boolean {
 	);
 }
 
-export function toJobSummary(
-	job: Partial<ReviewJobDocument> & { _id?: unknown }
-): QualityJobSummary {
+export function toJobSummary(job: Partial<ReviewJobDocument>): QualityJobSummary {
 	return {
-		id: String(job._id),
+		id: String(job.id),
 		status: job.status as QualityJobSummary['status'],
 		selectedCount: Number(job.selectedCount ?? 0),
 		queuedCount: Number(job.queuedCount ?? 0),
@@ -75,20 +74,21 @@ export async function submitQuestionFeedback(opts: {
 	if (!questionExists) throw new Error('Question not found');
 	let accepted = false;
 	try {
-		const result = await QuestionFeedback.updateOne(
-			{ questionId, userId: opts.userId, type: opts.type },
-			{
-				$setOnInsert: {
-					questionId,
-					userId: opts.userId,
-					type: opts.type,
-					apClass: opts.apClass,
-					unit: opts.unit
-				}
-			},
-			{ upsert: true }
-		);
-		accepted = result.upsertedCount > 0;
+		const inserted = await getNeonDatabase()
+			.insert(questionFeedback)
+			.values({
+				id: randomUUID(),
+				questionId,
+				userId: opts.userId,
+				type: opts.type,
+				apClass: opts.apClass,
+				unit: opts.unit
+			})
+			.onConflictDoNothing({
+				target: [questionFeedback.questionId, questionFeedback.userId, questionFeedback.type]
+			})
+			.returning({ id: questionFeedback.id });
+		accepted = inserted.length > 0;
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) {
 			throw error;
@@ -117,47 +117,32 @@ export async function submitQuestionFeedback(opts: {
 		...feedbackSummaryFromCounts(counts),
 		uniqueReporters: Number(uniqueReporters)
 	};
-	await QuestionQuality.updateOne(
-		{ questionId },
-		{ $setOnInsert: { questionId, state: 'unreviewed' } },
-		{ upsert: true }
-	);
-	await QuestionQuality.updateOne(
-		{ questionId },
-		{
-			$max: {
-				'feedbackSummary.answerIncorrect': summary.answerIncorrect,
-				'feedbackSummary.questionUnclear': summary.questionUnclear,
-				'feedbackSummary.explanationUnclear': summary.explanationUnclear,
-				'feedbackSummary.uniqueReporters': summary.uniqueReporters
-			},
+	await ensureQuestionQuality(questionId);
+	const nextPriority =
+		summary.priority === 'high'
+			? sql`'high'`
+			: sql`case when ${questionQuality.feedbackPriority} = 'high' then 'high' else 'normal' end`;
+	await getNeonDatabase()
+		.update(questionQuality)
+		.set({
+			answerIncorrectCount:
+				sql`greatest(${questionQuality.answerIncorrectCount}, ${summary.answerIncorrect})` as unknown as number,
+			questionUnclearCount:
+				sql`greatest(${questionQuality.questionUnclearCount}, ${summary.questionUnclear})` as unknown as number,
+			explanationUnclearCount:
+				sql`greatest(${questionQuality.explanationUnclearCount}, ${summary.explanationUnclear})` as unknown as number,
+			uniqueReporters:
+				sql`greatest(${questionQuality.uniqueReporters}, ${summary.uniqueReporters})` as unknown as number,
 			...(summary.priority !== 'none'
 				? {
-						$set: {
-							needsHumanReview: true,
-							humanReviewReason:
-								summary.priority === 'high' ? 'student_feedback_escalation' : 'student_feedback'
-						}
+						feedbackPriority: nextPriority as unknown as string,
+						needsHumanReview: true,
+						humanReviewReason:
+							summary.priority === 'high' ? 'student_feedback_escalation' : 'student_feedback'
 					}
 				: {})
-		}
-	);
-	if (summary.priority === 'high') {
-		await QuestionQuality.updateOne(
-			{ questionId },
-			{
-				$set: {
-					'feedbackSummary.priority': 'high',
-					humanReviewReason: 'student_feedback_escalation'
-				}
-			}
-		);
-	} else if (summary.priority === 'normal') {
-		await QuestionQuality.updateOne(
-			{ questionId, 'feedbackSummary.priority': { $ne: 'high' } },
-			{ $set: { 'feedbackSummary.priority': 'normal' } }
-		);
-	}
+		})
+		.where(eq(questionQuality.questionId, questionId));
 	return { accepted, summary };
 }
 
@@ -267,7 +252,7 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 		model: modelName(),
 		calibrated: isAgentCalibrated(),
 		jobs: jobs.map((job: Record<string, unknown>) =>
-			toJobSummary({ ...job, _id: job.id } as Partial<ReviewJobDocument> & { _id: unknown })
+			toJobSummary(job as Partial<ReviewJobDocument>)
 		),
 		humanQueue
 	};

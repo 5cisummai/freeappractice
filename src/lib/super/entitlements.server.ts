@@ -1,7 +1,9 @@
+import { and, desc, eq, gt, isNotNull, isNull, lte } from 'drizzle-orm';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { superBillingAccess, superGrants, tutorProfiles } from '$lib/server/neon/schema';
 import { lockInsightReports } from '$lib/super/insight-locks.server';
 import { markSuperAccessStarted } from '$lib/super/profile.server';
-import { SuperBillingAccess, SuperGrant, TutorProfile } from '$lib/super/models.server';
 import {
 	FREE_ENTITLEMENTS,
 	SUPER_PAST_DUE_GRACE_MS,
@@ -22,27 +24,38 @@ function superEntitlements(reason: Exclude<SuperAccessReason, null>): Entitlemen
 
 export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
 	if (await isSuperFreeBetaEnabled()) {
-		const claimed = await TutorProfile.exists({
-			userId,
-			superFreeBetaClaimedAt: { $exists: true }
-		}).exec();
+		const [claimed] = await getNeonDatabase()
+			.select({ userId: tutorProfiles.userId })
+			.from(tutorProfiles)
+			.where(and(eq(tutorProfiles.userId, userId), isNotNull(tutorProfiles.superFreeBetaClaimedAt)))
+			.limit(1);
 		if (claimed) {
 			await markSuperAccessStarted(userId, now);
 			return superEntitlements('free_beta');
 		}
 	}
 
-	const [billing, grant] = await Promise.all([
-		SuperBillingAccess.find({ userId, plan: 'super' }).sort({ updatedAt: -1 }).lean().exec(),
-		SuperGrant.findOne({
-			userId,
-			startsAt: { $lte: now },
-			expiresAt: { $gt: now },
-			revokedAt: { $exists: false }
-		})
-			.lean()
-			.exec()
+	const db = getNeonDatabase();
+	const [billing, grants] = await Promise.all([
+		db
+			.select()
+			.from(superBillingAccess)
+			.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
+			.orderBy(desc(superBillingAccess.updatedAt)),
+		db
+			.select()
+			.from(superGrants)
+			.where(
+				and(
+					eq(superGrants.userId, userId),
+					lte(superGrants.startsAt, now),
+					gt(superGrants.expiresAt, now),
+					isNull(superGrants.revokedAt)
+				)
+			)
+			.limit(1)
 	]);
+	const grant = grants[0];
 
 	if (grant) {
 		await markSuperAccessStarted(userId, now);
@@ -85,10 +98,10 @@ export async function markSuperAccessEndedIfNoAccess(
 	const access = await getEntitlements(userId, now);
 	if (access.plan === 'super') return false;
 	await Promise.all([
-		TutorProfile.updateOne(
-			{ userId, superEndedAt: { $exists: false } },
-			{ $set: { superEndedAt: endedAt } }
-		).exec(),
+		getNeonDatabase()
+			.update(tutorProfiles)
+			.set({ superEndedAt: endedAt, updatedAt: endedAt })
+			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superEndedAt))),
 		lockInsightReports(userId, endedAt)
 	]);
 	return true;
