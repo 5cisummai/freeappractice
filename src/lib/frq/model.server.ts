@@ -109,6 +109,7 @@ const frqBase = model<IFrqQuestion>({
 	idField: 'questionId',
 	fromRow: (row) => ({
 		...(row as unknown as IFrqQuestion),
+		_id: String((row as { questionId: string }).questionId),
 		materials: [],
 		sections: [],
 		rubric: []

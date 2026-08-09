@@ -75,11 +75,14 @@ describe('MCQ live generation pipeline', () => {
 			output: validGeneratedQuestion,
 			usage: { inputTokens: 1, outputTokens: 1 }
 		});
-		await expect(
-			generateAPQuestion({
-				className: 'AP Biology',
-				unit: 'Unit 1'
-			})
-		).resolves.toMatchObject({ answer: validGeneratedQuestion });
+
+		const result = await generateAPQuestion({
+			className: 'AP Biology',
+			unit: 'Unit 1'
+		});
+
+		expect(result).toMatchObject({ answer: validGeneratedQuestion });
+		expect(result.questionId).toEqual(expect.any(String));
+		expect(result.timing?.persistenceMs).toBe(0);
 	});
 });

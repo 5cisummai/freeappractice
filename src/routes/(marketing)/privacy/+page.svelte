@@ -31,7 +31,7 @@
 		<PublicPageHero
 			title="Privacy Policy"
 			description="How we collect, use, and protect your information when you use Free AP Practice."
-			meta="Last Updated: August 5, 2026"
+			meta="Last Updated: August 9, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">

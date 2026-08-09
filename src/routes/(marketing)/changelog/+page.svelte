@@ -931,7 +931,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 3, 2026"
+			meta="Last Updated: August 9, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

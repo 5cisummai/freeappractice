@@ -22,6 +22,9 @@ export const QuestionRecentTopic: PostgresModel<IQuestionRecentTopic> = model<IQ
 			kind: 'mcq',
 			questionId: input.questionId ?? null
 		}),
-		fromRow: (row) => row as unknown as IQuestionRecentTopic
+		fromRow: (row) => ({
+			...(row as unknown as IQuestionRecentTopic),
+			_id: String((row as { id: string }).id)
+		})
 	}
 );

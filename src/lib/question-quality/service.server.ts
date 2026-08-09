@@ -114,7 +114,7 @@ function normalizeFilters(
 }
 
 export async function reconcileQuestionInventory(
-	opts: { hydrateMetadata?: boolean } = { hydrateMetadata: true }
+	opts: { hydrateMetadata?: boolean } = { hydrateMetadata: false }
 ): Promise<{
 	discovered: number;
 	hydrated: number;
@@ -217,7 +217,6 @@ export async function previewReviewJob(
 ): Promise<ReviewPreview> {
 	await connectDb();
 	const normalized = normalizeFilters(filters);
-	await reconcileQuestionInventory();
 	if (normalized.qualityState && normalized.qualityState !== 'unreviewed') {
 		throw new Error(
 			'V1 review runs only accept unreviewed questions to prevent duplicate labeling'
