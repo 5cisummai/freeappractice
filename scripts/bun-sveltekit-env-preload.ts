@@ -49,7 +49,6 @@ plugin({
 				export const PUBLIC_POSTHOG_PROJECT_TOKEN = process.env.PUBLIC_POSTHOG_PROJECT_TOKEN;
 				export const PUBLIC_POSTHOG_HOST = process.env.PUBLIC_POSTHOG_HOST;
 				export const PUBLIC_GOOGLE_CLIENT_ID = process.env.PUBLIC_GOOGLE_CLIENT_ID;
-				export const PUBLIC_DESMOS_API_KEY = process.env.PUBLIC_DESMOS_API_KEY;
 			`,
 			loader: 'js'
 		}));

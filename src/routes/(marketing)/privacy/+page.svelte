@@ -240,10 +240,6 @@
 						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, and feature
 						data
 					</li>
-					<li>
-						<strong>Desmos:</strong> calculator functionality and related browser requests when you use
-						the calculator
-					</li>
 					<li><strong>GitHub:</strong> bug reports submitted as GitHub Issues</li>
 					<li><strong>Resend:</strong> verification and password-reset email delivery</li>
 					<li>
