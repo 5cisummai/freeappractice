@@ -34,6 +34,7 @@
         "marked-highlight": "^2.2.4",
         "mem0ai": "3.1.4",
         "mode-watcher": "^1.1.0",
+        "mongodb": "^7.3.0",
         "motion-sv": "^0.1.13",
         "opentype.js": "^2.0.0",
         "pdf-lib": "^1.17.1",
