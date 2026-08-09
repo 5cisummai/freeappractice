@@ -1,12 +1,7 @@
-import { connectDb } from '$lib/server/db';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
+import { lockInsightReports } from '$lib/super/insight-locks.server';
 import { markSuperAccessStarted } from '$lib/super/profile.server';
-import {
-	InsightReport,
-	SuperBillingAccess,
-	SuperGrant,
-	TutorProfile
-} from '$lib/super/models.server';
+import { SuperBillingAccess, SuperGrant, TutorProfile } from '$lib/super/models.server';
 import {
 	FREE_ENTITLEMENTS,
 	SUPER_PAST_DUE_GRACE_MS,
@@ -26,8 +21,6 @@ function superEntitlements(reason: Exclude<SuperAccessReason, null>): Entitlemen
 }
 
 export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
-	await connectDb();
-
 	if (await isSuperFreeBetaEnabled()) {
 		const claimed = await TutorProfile.exists({
 			userId,
@@ -91,16 +84,12 @@ export async function markSuperAccessEndedIfNoAccess(
 ): Promise<boolean> {
 	const access = await getEntitlements(userId, now);
 	if (access.plan === 'super') return false;
-	await connectDb();
 	await Promise.all([
 		TutorProfile.updateOne(
 			{ userId, superEndedAt: { $exists: false } },
 			{ $set: { superEndedAt: endedAt } }
 		).exec(),
-		InsightReport.updateMany(
-			{ userId, lockedAt: { $exists: false } },
-			{ $set: { lockedAt: endedAt } }
-		).exec()
+		lockInsightReports(userId, endedAt)
 	]);
 	return true;
 }

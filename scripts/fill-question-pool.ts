@@ -14,11 +14,10 @@ import {
 	enqueueAllCatalogDeficits,
 	listCatalogBuckets,
 	countActivePoolRows,
+	countOpenPoolRefillJobs,
 	requestPoolRefill
 } from '../src/lib/questions/pool-refill-queue.server';
-import { PoolRefillState } from '../src/lib/questions/pool-refill-model.server';
 import { runQuestionPoolRefillWorker } from '../src/lib/questions/pool-refill.server';
-import { connectDb } from '../src/lib/server/db';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
 import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '../src/lib/questions/pool-constants';
 
@@ -61,10 +60,9 @@ async function printDeficitSummary(
 		}
 	}
 
-	const pending = await PoolRefillState.countDocuments({
-		status: { $in: ['pending', 'failed', 'budget_exhausted', 'running'] },
-		...(typeFilter === 'mcq' || typeFilter === 'frq' ? { questionType: typeFilter } : {})
-	});
+	const pending = await countOpenPoolRefillJobs(
+		typeFilter === 'mcq' || typeFilter === 'frq' ? typeFilter : undefined
+	);
 
 	console.log(`Deficit remaining: ${deficit}`);
 	console.log(`Open refill jobs: ${pending}`);
@@ -87,7 +85,6 @@ async function main() {
 		maxRounds
 	});
 
-	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	await printDeficitSummary(generationCountsByClass);
 

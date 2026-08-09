@@ -47,6 +47,10 @@ export async function processAccountDeletionCleanup(userId: string): Promise<voi
 		job.lastError =
 			error instanceof Error ? error.message.slice(0, 500) : 'Unknown Mem0 cleanup failure';
 		await job.save();
-		logger.error('Account Mem0 cleanup failed', { userId, attempts: job.attempts, error });
+		logger.error('Account Mem0 cleanup failed', {
+			resource: 'account_mem0_cleanup',
+			attempts: job.attempts,
+			error
+		});
 	}
 }

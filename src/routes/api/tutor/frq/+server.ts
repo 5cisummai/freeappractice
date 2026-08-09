@@ -7,21 +7,22 @@ import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqQuestionById } from '$lib/frq/question.server';
 import { chatFrq } from '$lib/tutor/service.server';
 import { createFrqTutorChatStream } from '$lib/tutor/chat-stream.server';
-import { frqTutorChatRequestSchema, TUTOR_CHAT_STREAM_TIMEOUT_MS } from '$lib/tutor/chat-request';
+import {
+	frqTutorChatRequestSchema,
+	MAX_TUTOR_CHAT_REQUEST_BYTES,
+	TUTOR_CHAT_STREAM_TIMEOUT_MS
+} from '$lib/tutor/chat-request';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { logger } from '$lib/server/logger';
 import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
-import {
-	limitGenericTutor,
-	getPersonalizedUsageWarning,
-	limitSuperAi,
-	RedisRequiredError,
-	releasePersonalizedTurn,
-	reservePersonalizedTurn,
-	rollupPersonalizedUsage
-} from '$lib/super/ai-controls.server';
+import { limitGenericTutor, RedisRequiredError } from '$lib/super/ai-controls.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
-import { getTutorProfileView } from '$lib/super/profile.server';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import {
+	startPersonalizedTurn,
+	type ReservedPersonalizedTurn
+} from '$lib/super/personalized-turn.server';
+import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
 import {
 	scheduleTutorMemoryWrite,
@@ -35,8 +36,11 @@ export const POST: RequestHandler = withAuthedHandler(
 
 		let body: unknown;
 		try {
-			body = await event.request.json();
-		} catch {
+			body = await readJsonBody(event.request, MAX_TUTOR_CHAT_REQUEST_BYTES);
+		} catch (error) {
+			if (error instanceof RequestBodyTooLargeError) {
+				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
+			}
 			return json({ error: 'Invalid tutor chat request' }, { status: 400 });
 		}
 		const result = frqTutorChatRequestSchema.safeParse(body);
@@ -71,10 +75,10 @@ export const POST: RequestHandler = withAuthedHandler(
 		let personalizationContext: string | undefined;
 		let memoryDegraded = false;
 		let memoryConsentGiven = false;
-		let reservation: Awaited<ReturnType<typeof reservePersonalizedTurn>> = null;
+		let personalizedTurn: ReservedPersonalizedTurn | null = null;
 
 		if (isPersonalized) {
-			const profile = await getTutorProfileView(userId);
+			const profile = await getTutorProfileViewForRequest(event.locals, userId);
 			if (!profile.ageConfirmedAt) {
 				return json(
 					{ error: 'Confirm that you are at least 13 to use Super tutoring.' },
@@ -82,24 +86,25 @@ export const POST: RequestHandler = withAuthedHandler(
 				);
 			}
 			try {
-				const rate = await limitSuperAi(userId);
-				if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
-				reservation = await reservePersonalizedTurn(userId);
-				if (!reservation) {
+				const turn = await startPersonalizedTurn(userId);
+				if (turn.kind === 'rate-limited') return tutorRateLimitedResponse(turn.retryAt);
+				if (turn.kind === 'exhausted') {
 					// The student keeps the existing Free tutor after their personalized allowance resets.
 					isPersonalized = false;
-				}
-				if (reservation) {
+				} else {
+					personalizedTurn = turn;
 					const personalization = await buildTutorPersonalization(userId, result.data.message);
 					personalizationContext = personalization.context;
 					memoryDegraded = personalization.memoryDegraded;
 					memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
 				}
 			} catch (error) {
-				if (reservation) {
-					await releasePersonalizedTurn(userId, reservation.month).catch((releaseError) =>
-						logger.warn('Failed to release unused FRQ tutor reservation', { error: releaseError })
-					);
+				if (personalizedTurn) {
+					await personalizedTurn
+						.releaseIfUnused()
+						.catch((releaseError) =>
+							logger.warn('Failed to release unused FRQ tutor reservation', { error: releaseError })
+						);
 				}
 				if (error instanceof RedisRequiredError) {
 					return json(
@@ -134,10 +139,10 @@ export const POST: RequestHandler = withAuthedHandler(
 			{
 				chatImpl: chatFrq,
 				timeoutMs: TUTOR_CHAT_STREAM_TIMEOUT_MS,
-				callbacks: reservation
+				callbacks: personalizedTurn
 					? {
-							onFirstChunk: () => rollupPersonalizedUsage(userId, reservation!),
-							onFailureBeforeOutput: () => releasePersonalizedTurn(userId, reservation!.month),
+							onFirstChunk: () => personalizedTurn!.markOutput(),
+							onFailureBeforeOutput: () => personalizedTurn!.releaseIfUnused(),
 							onComplete: async (assistantResponse) => {
 								if (
 									!assistantResponse.trim() ||
@@ -164,11 +169,11 @@ export const POST: RequestHandler = withAuthedHandler(
 				'Cache-Control': 'no-cache',
 				Connection: 'keep-alive',
 				'X-Tutor-Personalization-Degraded': memoryDegraded ? '1' : '0',
-				...(reservation
+				...(personalizedTurn
 					? {
-							'X-Super-Usage-Remaining': String(reservation.remaining),
-							...(getPersonalizedUsageWarning(reservation)
-								? { 'X-Super-Usage-Warning': String(getPersonalizedUsageWarning(reservation)) }
+							'X-Super-Usage-Remaining': String(personalizedTurn.reservation.remaining),
+							...(personalizedTurn.usageWarning
+								? { 'X-Super-Usage-Warning': String(personalizedTurn.usageWarning) }
 								: {})
 						}
 					: {})

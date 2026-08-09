@@ -47,7 +47,7 @@ export const FrqRubricCriterionSchema = z
 	})
 	.strict();
 
-export const FrqQuestionSchema = z
+const FrqQuestionBaseSchema = z
 	.object({
 		schemaVersion: z.literal(FRQ_SCHEMA_VERSION),
 		formatId: stableId,
@@ -63,67 +63,72 @@ export const FrqQuestionSchema = z
 		apClass: z.string().trim().min(1).max(120),
 		unit: z.string().trim().min(1).max(200)
 	})
-	.strict()
-	.superRefine((question, context) => {
-		const sectionIds = new Set<string>();
-		for (const section of question.sections) {
-			if (sectionIds.has(section.id)) {
-				context.addIssue({ code: 'custom', message: `Duplicate section ID: ${section.id}` });
-			}
-			sectionIds.add(section.id);
+	.strict();
+
+export const FrqQuestionSchema = FrqQuestionBaseSchema.superRefine((question, context) => {
+	const sectionIds = new Set<string>();
+	for (const section of question.sections) {
+		if (sectionIds.has(section.id)) {
+			context.addIssue({ code: 'custom', message: `Duplicate section ID: ${section.id}` });
+		}
+		sectionIds.add(section.id);
+	}
+
+	const criterionIds = new Set<string>();
+	let rubricTotal = 0;
+	for (const criterion of question.rubric) {
+		if (criterionIds.has(criterion.id)) {
+			context.addIssue({ code: 'custom', message: `Duplicate criterion ID: ${criterion.id}` });
+		}
+		criterionIds.add(criterion.id);
+		if (!sectionIds.has(criterion.sectionId)) {
+			context.addIssue({
+				code: 'custom',
+				message: `Criterion ${criterion.id} references an unknown section`
+			});
 		}
 
-		const criterionIds = new Set<string>();
-		let rubricTotal = 0;
-		for (const criterion of question.rubric) {
-			if (criterionIds.has(criterion.id)) {
-				context.addIssue({ code: 'custom', message: `Duplicate criterion ID: ${criterion.id}` });
-			}
-			criterionIds.add(criterion.id);
-			if (!sectionIds.has(criterion.sectionId)) {
-				context.addIssue({
-					code: 'custom',
-					message: `Criterion ${criterion.id} references an unknown section`
-				});
-			}
-
-			const points = criterion.levels.map((level) => level.points);
-			if (new Set(points).size !== points.length || !points.includes(0)) {
-				context.addIssue({
-					code: 'custom',
-					message: `Criterion ${criterion.id} needs unique levels including zero`
-				});
-			}
-			if (Math.max(...points) !== criterion.maxPoints) {
-				context.addIssue({
-					code: 'custom',
-					message: `Criterion ${criterion.id} levels must reach maxPoints`
-				});
-			}
-			rubricTotal += criterion.maxPoints;
+		const points = criterion.levels.map((level) => level.points);
+		if (new Set(points).size !== points.length || !points.includes(0)) {
+			context.addIssue({
+				code: 'custom',
+				message: `Criterion ${criterion.id} needs unique levels including zero`
+			});
 		}
-
-		if (rubricTotal !== question.totalPoints) {
-			context.addIssue({ code: 'custom', message: 'Rubric points must equal totalPoints' });
+		if (Math.max(...points) !== criterion.maxPoints) {
+			context.addIssue({
+				code: 'custom',
+				message: `Criterion ${criterion.id} levels must reach maxPoints`
+			});
 		}
+		rubricTotal += criterion.maxPoints;
+	}
 
-		for (const section of question.sections) {
-			const sectionTotal = question.rubric
-				.filter((criterion) => criterion.sectionId === section.id)
-				.reduce((sum, criterion) => sum + criterion.maxPoints, 0);
-			if (sectionTotal !== section.maxPoints) {
-				context.addIssue({
-					code: 'custom',
-					message: `Rubric points for ${section.id} must equal the section maxPoints`
-				});
-			}
+	if (rubricTotal !== question.totalPoints) {
+		context.addIssue({ code: 'custom', message: 'Rubric points must equal totalPoints' });
+	}
+
+	for (const section of question.sections) {
+		const sectionTotal = question.rubric
+			.filter((criterion) => criterion.sectionId === section.id)
+			.reduce((sum, criterion) => sum + criterion.maxPoints, 0);
+		if (sectionTotal !== section.maxPoints) {
+			context.addIssue({
+				code: 'custom',
+				message: `Rubric points for ${section.id} must equal the section maxPoints`
+			});
 		}
-	});
+	}
+});
 
 export type FrqQuestion = z.infer<typeof FrqQuestionSchema>;
 export type FrqMaterial = z.infer<typeof FrqMaterialSchema>;
 export type FrqSection = z.infer<typeof FrqSectionSchema>;
 export type FrqRubricCriterion = z.infer<typeof FrqRubricCriterionSchema>;
+
+export const PublicFrqQuestionSchema = FrqQuestionBaseSchema.omit({ rubric: true }).extend({
+	questionId: stableId
+});
 
 export type PublicFrqQuestion = Omit<FrqQuestion, 'rubric'> & { questionId: string };
 

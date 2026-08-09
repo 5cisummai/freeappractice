@@ -1,14 +1,12 @@
 import { json } from '@sveltejs/kit';
 import { GITHUB_BUG_REPORT_TOKEN } from '$env/static/private';
+import { limitBugReports } from '$lib/bug-report/rate-limit.server';
 import { bugReportSchema, type BugReportPayload } from '$lib/schemas/bug-report';
 import { logger } from '$lib/server/logger';
 
 const GITHUB_OWNER = '5cisummai';
 const GITHUB_REPO = 'freeappractice';
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const recentReportByIp = new Map<string, number>();
-
 const SEVERITY_LABEL: Record<string, string> = {
 	low: 'severity: low',
 	medium: 'severity: medium',
@@ -54,24 +52,27 @@ function buildIssueBody(parsed: BugReportPayload): string {
 	return lines.join('\n\n');
 }
 
-function pruneExpiredRateLimits(now: number) {
-	for (const [ip, lastSubmittedAt] of recentReportByIp.entries()) {
-		if (now - lastSubmittedAt >= RATE_LIMIT_WINDOW_MS) {
-			recentReportByIp.delete(ip);
-		}
-	}
-}
-
 export async function submitBugReport(request: Request, clientIp: string): Promise<Response> {
 	try {
-		const now = Date.now();
-		pruneExpiredRateLimits(now);
+		let body: unknown;
+		try {
+			body = await request.json();
+		} catch {
+			return json({ error: 'Invalid request body' }, { status: 400 });
+		}
 
-		const lastSubmittedAt = recentReportByIp.get(clientIp);
-		const retryAfterMs = lastSubmittedAt
-			? Math.max(0, RATE_LIMIT_WINDOW_MS - (now - lastSubmittedAt))
-			: 0;
-		if (retryAfterMs > 0) {
+		const result = bugReportSchema.safeParse(body);
+		if (!result.success) {
+			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
+		}
+		const parsed = result.data;
+		const now = Date.now();
+		const rateLimit = await limitBugReports(clientIp);
+		if (rateLimit.degraded) {
+			logger.warn('Bug report rate limiting is temporarily degraded');
+		}
+		if (!rateLimit.allowed) {
+			const retryAfterMs = Math.max(0, (rateLimit.retryAt ?? now) - now);
 			const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
 			return json(
 				{
@@ -89,19 +90,6 @@ export async function submitBugReport(request: Request, clientIp: string): Promi
 				}
 			);
 		}
-
-		let body: unknown;
-		try {
-			body = await request.json();
-		} catch {
-			return json({ error: 'Invalid request body' }, { status: 400 });
-		}
-
-		const result = bugReportSchema.safeParse(body);
-		if (!result.success) {
-			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
-		}
-		const parsed = result.data;
 
 		const issuePayload = {
 			title: `[Bug] ${escapeMarkdown(parsed.title.replace(/[\r\n]+/g, ' ').trim())}`,
@@ -121,19 +109,15 @@ export async function submitBugReport(request: Request, clientIp: string): Promi
 		});
 
 		if (!response.ok) {
-			const errorText = await response.text();
-			logger.error('GitHub Issues API error', { status: response.status, body: errorText });
+			logger.error('GitHub Issues API error', { status: response.status });
 			return json({ error: 'Failed to submit bug report' }, { status: 500 });
 		}
 
 		const issue = (await response.json()) as { number: number; html_url: string };
-		recentReportByIp.set(clientIp, now);
-
 		logger.info('Bug report submitted as GitHub issue', {
 			issue: issue.number,
 			url: issue.html_url,
-			severity: parsed.severity,
-			title: parsed.title
+			severity: parsed.severity
 		});
 
 		return json({ ok: true, id: `GH-${issue.number}` }, { status: 201 });

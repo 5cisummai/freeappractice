@@ -113,7 +113,8 @@ function event(body?: unknown, params: Record<string, string> = {}): TestEvent {
 			...(body === undefined ? {} : { body: JSON.stringify(body) }),
 			headers: { 'content-type': 'application/json' }
 		}),
-		params
+		params,
+		locals: {}
 	} as TestEvent;
 }
 

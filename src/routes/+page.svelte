@@ -11,8 +11,7 @@
 	import BottomCtaSection from '$lib/components/marketing/bottom-cta-section.svelte';
 	import FeaturesSection from '$lib/components/marketing/features-section.svelte';
 	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
-	import SiteFooter from '$lib/components/layout/site-footer.svelte';
-	import Topbar from '$lib/components/layout/topbar.svelte';
+	import PublicShell from '$lib/components/layout/public-shell.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
@@ -192,9 +191,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.4.1",
+			"softwareVersion": "1.6.3",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-06-19",
+			"dateModified": "2026-08-09",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
@@ -301,9 +300,7 @@
 	</script>
 </svelte:head>
 
-<div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-	<Topbar showPricing={!data.superFreeBetaEnabled} />
-
+<PublicShell showPricing={!data.superFreeBetaEnabled}>
 	<main id="main-content" class="flex-1">
 		<div
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 py-12 sm:px-8 lg:space-y-24 lg:px-10 lg:py-16"
@@ -461,6 +458,4 @@
 			<BottomCtaSection />
 		</div>
 	</main>
-
-	<SiteFooter />
-</div>
+</PublicShell>

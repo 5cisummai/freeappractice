@@ -12,6 +12,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { formatDateOnly } from '$lib/date-only.js';
 	import { toast } from 'svelte-sonner';
 
 	type InsightFeedback = 'helpful' | 'not_helpful';
@@ -283,7 +284,7 @@
 								<div class="min-w-0 flex-1">
 									<p class="font-medium">Day {index + 1} · {task.apClass} · {task.unit}</p>
 									<p class="text-xs text-muted-foreground">
-										{new Date(task.date).toLocaleDateString()} · {task.durationMinutes} min · {task.mode.toUpperCase()}
+										{formatDateOnly(task.date)} · {task.durationMinutes} min · {task.mode.toUpperCase()}
 									</p>
 								</div>
 								{#if task.practiceHref}<Button
@@ -332,7 +333,7 @@
 										{task.apClass} · {task.unit}
 									</p>
 									<p class="text-xs text-muted-foreground">
-										{new Date(task.date).toLocaleDateString()} · {task.durationMinutes} min · {task.mode.toUpperCase()}
+										{formatDateOnly(task.date)} · {task.durationMinutes} min · {task.mode.toUpperCase()}
 									</p>
 								</div>
 								<div class="flex gap-2">

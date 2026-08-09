@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { PoolBucketWriteLock } from '$lib/questions/pool-refill-model.server';
 import { countActivePoolRows, type PoolBucketKey } from '$lib/questions/pool-refill-queue.server';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
-import { connectDb } from '$lib/server/db';
 
 const LOCK_TTL_MS = 120_000;
 const LOCK_RETRY_MS = 50;
@@ -25,7 +24,6 @@ export async function writePoolBucketBelowTarget<T>(
 	target: number,
 	write: () => Promise<T>
 ): Promise<CapacityResult<T>> {
-	await connectDb();
 	const key = {
 		questionType: bucket.questionType,
 		apClass: bucket.apClass,

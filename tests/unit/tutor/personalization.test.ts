@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
 	getTutorProfileView: vi.fn(),
 	searchTutorMemories: vi.fn(),
-	profileFindOne: vi.fn(),
+	getUserProgress: vi.fn(),
 	frqFind: vi.fn()
 }));
 
@@ -14,7 +14,7 @@ vi.mock('$lib/super/profile.server', () => ({
 	getTutorProfileView: mocks.getTutorProfileView
 }));
 vi.mock('$lib/users/model.server', () => ({
-	UserProfile: { findOne: mocks.profileFindOne }
+	getUserProgress: mocks.getUserProgress
 }));
 vi.mock('$lib/frq/model.server', () => ({
 	FrqAttempt: { find: mocks.frqFind }
@@ -49,19 +49,15 @@ describe('buildTutorPersonalization', () => {
 			memoryDisclosureSeenAt: null,
 			ageConfirmedAt: '2026-07-01T00:00:00.000Z'
 		});
-		mocks.profileFindOne.mockReturnValue(
-			queryChain({
-				progress: [
-					{
-						apClass: 'AP Biology',
-						unit: 'Unit 2',
-						mastery: 62,
-						totalAttempts: 4,
-						lastAttemptAt: new Date('2026-07-20T00:00:00.000Z')
-					}
-				]
-			})
-		);
+		mocks.getUserProgress.mockResolvedValue([
+			{
+				apClass: 'AP Biology',
+				unit: 'Unit 2',
+				mastery: 62,
+				totalAttempts: 4,
+				lastAttemptAt: new Date('2026-07-20T00:00:00.000Z')
+			}
+		]);
 		mocks.searchTutorMemories.mockResolvedValue([]);
 	});
 

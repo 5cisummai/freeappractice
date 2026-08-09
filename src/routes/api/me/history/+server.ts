@@ -1,7 +1,5 @@
 import { json } from '@sveltejs/kit';
 import {
-	getMcqHistoryPage,
-	hydrateMcqHistoryItems,
 	getPracticeHistoryPage,
 	hydratePracticeHistoryItems,
 	parseHistorySort,
@@ -9,7 +7,6 @@ import {
 	parseHistoryResult
 } from '$lib/users/history.server';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { isFrqPracticeEnabled } from '$lib/flags';
 
 export const GET = withAuthedHandler(
@@ -30,30 +27,17 @@ export const GET = withAuthedHandler(
 			event.url.searchParams.get('sortDir')
 		);
 
-		const user = await findUserProfileOrFail(userId, 'questionHistory');
-
 		const frqEnabled = await isFrqPracticeEnabled();
-		if (frqEnabled) {
-			const pageResult = await getPracticeHistoryPage(user, userId, {
-				page,
-				limit,
-				apClass,
-				search,
-				sort,
-				filters
-			});
-			const items = await hydratePracticeHistoryItems(pageResult.items);
-			return json({
-				items,
-				total: pageResult.total,
-				page: pageResult.page,
-				limit: pageResult.limit,
-				summary: pageResult.summary
-			});
-		}
-
-		const pageResult = getMcqHistoryPage(user, { page, limit, apClass, search, sort, filters });
-		const items = await hydrateMcqHistoryItems(pageResult.items);
+		const pageResult = await getPracticeHistoryPage(userId, {
+			page,
+			limit,
+			apClass,
+			search,
+			sort,
+			filters,
+			includeFrq: frqEnabled
+		});
+		const items = await hydratePracticeHistoryItems(pageResult.items);
 
 		return json({
 			items,

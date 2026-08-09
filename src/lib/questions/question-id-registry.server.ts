@@ -1,4 +1,3 @@
-import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { QuestionId } from '$lib/questions/question-id-model.server';
 
@@ -20,7 +19,6 @@ async function registerQuestionId(
 	const trimmed = questionId.trim();
 	if (!trimmed) return;
 
-	await connectDb();
 	await QuestionId.updateOne(
 		{ questionId: trimmed },
 		{

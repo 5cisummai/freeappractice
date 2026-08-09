@@ -6,7 +6,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import { settingsController } from '$lib/client/settings.svelte.js';
+	import { themeController } from '$lib/client/theme.svelte.js';
 	import type { ClassValue } from 'svelte/elements';
 
 	type Theme = 'light' | 'dark' | 'system';
@@ -23,7 +23,7 @@
 
 	function onThemeChange(value: string) {
 		if (value === 'light' || value === 'dark' || value === 'system') {
-			settingsController.setTheme(value);
+			themeController.set(value);
 		}
 	}
 </script>

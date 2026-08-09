@@ -5,13 +5,13 @@ import { getInsightEligibilityForUser } from '$lib/super/insights.server';
 import { buildStudyPlanDraft, getCurrentStudyPlan } from '$lib/super/study-plan.server';
 import { getRecentStudyPlanAudits } from '$lib/super/study-plan-audit.server';
 import { getOrBuildWeeklyInsightReport } from '$lib/super/insight-lifecycle.server';
-import { getTutorProfileView } from '$lib/super/profile.server';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;
 	const [entitlements, profile] = await Promise.all([
 		getEntitlements(userId),
-		getTutorProfileView(userId)
+		getTutorProfileViewForRequest(locals, userId)
 	]);
 	const insightsEnabled = await isSuperInsightsEnabled();
 	const report =

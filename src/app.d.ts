@@ -1,4 +1,5 @@
 import type { Session, User } from 'better-auth/db';
+import type { TutorProfileView } from '$lib/super/types';
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
@@ -18,6 +19,7 @@ declare global {
 			userId?: string;
 			user?: User;
 			session?: Session;
+			tutorProfileView?: Promise<TutorProfileView>;
 		}
 		// interface PageData {}
 		// interface PageState {}

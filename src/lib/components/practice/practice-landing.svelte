@@ -2,8 +2,7 @@
 	import QuestionShell from '$lib/components/questions/question-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice/practice-breadcrumbs.svelte';
 	import PracticeHubNav from '$lib/components/practice/practice-hub-nav.svelte';
-	import SiteFooter from '$lib/components/layout/site-footer.svelte';
-	import Topbar from '$lib/components/layout/topbar.svelte';
+	import PublicShell from '$lib/components/layout/public-shell.svelte';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 
@@ -39,9 +38,7 @@
 	}
 </script>
 
-<div class="relative isolate flex min-h-screen flex-col bg-background text-foreground">
-	<Topbar {showPricing} />
-
+<PublicShell {showPricing}>
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-12 px-5 py-10 sm:px-8 lg:px-10 lg:py-14">
 			<section class="mx-auto max-w-5xl space-y-6">
@@ -101,6 +98,4 @@
 			</section>
 		</div>
 	</main>
-
-	<SiteFooter />
-</div>
+</PublicShell>

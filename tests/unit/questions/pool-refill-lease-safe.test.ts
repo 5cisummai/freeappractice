@@ -15,6 +15,10 @@ const { findOneAndUpdate, updateOne, countDocuments } = vi.hoisted(() => ({
 	countDocuments: vi.fn()
 }));
 
+vi.mock('$lib/questions/pool-counts.server', () => ({
+	countActivePoolRows: vi.fn(async () => countDocuments())
+}));
+
 vi.mock('$lib/server/db', () => ({
 	connectDb: vi.fn(async () => ({}))
 }));

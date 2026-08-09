@@ -1,10 +1,10 @@
 import { auth } from '$lib/auth/server';
-import { connectDb } from '$lib/server/db';
 import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/questions/pool-constants';
-import { UserProfile } from '$lib/users/model.server';
-import { QuestionRecentTopic } from '$lib/questions/recent-topic-model.server';
+import { countUserProfiles } from '$lib/users/model.server';
+import { getLatestRecentTopics } from '$lib/questions/recent-topic.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions } from '$lib/server/neon/schema';
+import { count, eq, max, min } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
@@ -136,34 +136,39 @@ async function aggregateActiveBuckets(
 	questionType: PoolRefillQuestionType
 ): Promise<Map<string, BucketAggRow>> {
 	const map = new Map<string, BucketAggRow>();
-	const db = getNeonDatabase() as any;
-	const rows = await db
-		.select({
-			apClass:
-				questionType === 'mcq' ? (mcqQuestions as any).apClass : (frqQuestions as any).apClass,
-			unit: questionType === 'mcq' ? (mcqQuestions as any).unit : (frqQuestions as any).unit,
-			createdAt:
-				questionType === 'mcq' ? (mcqQuestions as any).createdAt : (frqQuestions as any).createdAt
-		})
-		.from(questionType === 'mcq' ? (mcqQuestions as any) : (frqQuestions as any))
-		.where(questionType === 'mcq' ? (mcqQuestions as any).active : (frqQuestions as any).active);
-	for (const row of rows as Array<{ apClass: string; unit: string; createdAt: Date }>) {
+	const db = getNeonDatabase();
+	const rows =
+		questionType === 'mcq'
+			? await db
+					.select({
+						apClass: mcqQuestions.apClass,
+						unit: mcqQuestions.unit,
+						total: count(),
+						oldestCreatedAt: min(mcqQuestions.createdAt),
+						newestCreatedAt: max(mcqQuestions.createdAt)
+					})
+					.from(mcqQuestions)
+					.where(eq(mcqQuestions.active, true))
+					.groupBy(mcqQuestions.apClass, mcqQuestions.unit)
+			: await db
+					.select({
+						apClass: frqQuestions.apClass,
+						unit: frqQuestions.unit,
+						total: count(),
+						oldestCreatedAt: min(frqQuestions.createdAt),
+						newestCreatedAt: max(frqQuestions.createdAt)
+					})
+					.from(frqQuestions)
+					.where(eq(frqQuestions.active, true))
+					.groupBy(frqQuestions.apClass, frqQuestions.unit);
+	for (const row of rows) {
 		const key = `${row.apClass}::${row.unit}`;
-		const current = map.get(key);
-		if (!current) {
-			map.set(key, {
-				_id: { apClass: row.apClass, unit: row.unit },
-				total: 1,
-				oldestCreatedAt: row.createdAt,
-				newestCreatedAt: row.createdAt
-			});
-		} else {
-			current.total += 1;
-			if (!current.oldestCreatedAt || row.createdAt < current.oldestCreatedAt)
-				current.oldestCreatedAt = row.createdAt;
-			if (!current.newestCreatedAt || row.createdAt > current.newestCreatedAt)
-				current.newestCreatedAt = row.createdAt;
-		}
+		map.set(key, {
+			_id: { apClass: row.apClass, unit: row.unit },
+			total: Number(row.total),
+			oldestCreatedAt: row.oldestCreatedAt ?? undefined,
+			newestCreatedAt: row.newestCreatedAt ?? undefined
+		});
 	}
 	return map;
 }
@@ -255,7 +260,6 @@ export async function getPoolReadinessSnapshot(): Promise<{
 	overview: CacheOverview;
 	buckets: CacheBucketSummary[];
 }> {
-	await connectDb();
 	const env = QUESTION_POOL_CONFIG;
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	const mcqTarget = env.mcqTarget;
@@ -364,18 +368,9 @@ export async function getAdminDashboardData(opts: {
 	limit: number;
 	tab: string | null;
 }): Promise<AdminDashboardData> {
-	await connectDb();
-
 	const activeTab = normalizeAdminTab(opts.tab);
 	const offset = (opts.page - 1) * opts.limit;
-
-	const [
-		usersResult,
-		userProfilesResult,
-		poolSnapshotResult,
-		recentTopicsResult,
-		generationStatsResult
-	] = await Promise.allSettled([
+	const listUsers = () =>
 		auth.api.listUsers({
 			headers: opts.headers,
 			query: {
@@ -391,66 +386,86 @@ export async function getAdminDashboardData(opts: {
 						}
 					: {})
 			}
-		}),
-		UserProfile.countDocuments({}).exec(),
-		getPoolReadinessSnapshot(),
-		QuestionRecentTopic.find({}).sort({ createdAt: -1 }).limit(10).lean().exec(),
-		getGenerationStatsForApi()
-	]);
+		});
+	const emptyPool = {
+		overview: summarizePoolOverview(
+			[],
+			QUESTION_POOL_CONFIG.mcqTarget,
+			QUESTION_POOL_CONFIG.frqTarget
+		),
+		buckets: [] as CacheBucketSummary[]
+	};
+	const emptyGeneration = {
+		overview: {
+			totalQuestions: 0,
+			totalQuestionChars: 0,
+			apClassesCount: 0,
+			unitsCount: 0
+		},
+		byClass: [] as GenerationClassSummary[],
+		topUnits: [] as GenerationUnitSummary[]
+	};
+	const emptyQuality: QualityDashboardSnapshot = {
+		counts: { unreviewed: 0, awaitingHuman: 0, good: 0, bad: 0, highPriority: 0 },
+		model: '',
+		calibrated: false,
+		jobs: [],
+		humanQueue: []
+	};
 
-	const usersPayload = usersResult.status === 'fulfilled' ? usersResult.value : null;
-	const userError = usersResult.status === 'rejected' ? 'Unable to load users right now.' : null;
-	const users = (usersPayload?.users ?? []) as AdminUserRow[];
-	const totalUsers = usersPayload?.total ?? 0;
-	const totalUserProfiles =
-		userProfilesResult.status === 'fulfilled' ? userProfilesResult.value : 0;
+	let users: AdminUserRow[] = [];
+	let totalUsers = 0;
+	let totalUserProfiles = 0;
+	let errorMessage: string | null = null;
+	let poolSnapshot = emptyPool;
+	let recentTopics: RecentTopicSnapshot[] = [];
+	let generationPayload = emptyGeneration;
+	let quality = emptyQuality;
 
-	const poolSnapshot =
-		poolSnapshotResult.status === 'fulfilled'
-			? poolSnapshotResult.value
-			: {
-					overview: summarizePoolOverview(
-						[],
-						QUESTION_POOL_CONFIG.mcqTarget,
-						QUESTION_POOL_CONFIG.frqTarget
-					),
-					buckets: [] as CacheBucketSummary[]
-				};
-
-	const recentTopics: RecentTopicSnapshot[] =
-		recentTopicsResult.status === 'fulfilled'
-			? recentTopicsResult.value.map((topic) => ({
-					apClass: topic.apClass,
-					unit: topic.unit,
-					topicsCovered: topic.topicsCovered,
-					createdAt: topic.createdAt
-				}))
-			: [];
-
-	const generationPayload =
-		generationStatsResult.status === 'fulfilled'
-			? summarizeGenerationData(generationStatsResult.value)
-			: {
-					overview: {
-						totalQuestions: 0,
-						totalQuestionChars: 0,
-						apClassesCount: 0,
-						unitsCount: 0
-					},
-					byClass: [],
-					topUnits: []
-				};
-
-	const quality =
-		activeTab === 'quality'
-			? await getQualityDashboardSnapshot()
-			: {
-					counts: { unreviewed: 0, awaitingHuman: 0, good: 0, bad: 0, highPriority: 0 },
-					model: '',
-					calibrated: false,
-					jobs: [],
-					humanQueue: []
-				};
+	if (activeTab === 'overview') {
+		const [usersResult, profilesResult, poolResult, generationResult] = await Promise.allSettled([
+			listUsers(),
+			countUserProfiles(),
+			getPoolReadinessSnapshot(),
+			getGenerationStatsForApi()
+		]);
+		if (usersResult.status === 'fulfilled') totalUsers = usersResult.value.total;
+		if (profilesResult.status === 'fulfilled') totalUserProfiles = profilesResult.value;
+		if (poolResult.status === 'fulfilled') poolSnapshot = poolResult.value;
+		if (generationResult.status === 'fulfilled') {
+			generationPayload = summarizeGenerationData(generationResult.value);
+		}
+	} else if (activeTab === 'users') {
+		try {
+			const payload = await listUsers();
+			users = payload.users as AdminUserRow[];
+			totalUsers = payload.total;
+		} catch {
+			errorMessage = 'Unable to load users right now.';
+		}
+	} else if (activeTab === 'cache') {
+		const [poolResult, recentResult] = await Promise.allSettled([
+			getPoolReadinessSnapshot(),
+			getLatestRecentTopics()
+		]);
+		if (poolResult.status === 'fulfilled') poolSnapshot = poolResult.value;
+		if (recentResult.status === 'fulfilled') {
+			recentTopics = recentResult.value.map((topic) => ({
+				apClass: topic.apClass,
+				unit: topic.unit,
+				topicsCovered: topic.topicsCovered,
+				createdAt: topic.createdAt
+			}));
+		}
+	} else if (activeTab === 'generation') {
+		try {
+			generationPayload = summarizeGenerationData(await getGenerationStatsForApi());
+		} catch {
+			generationPayload = emptyGeneration;
+		}
+	} else {
+		quality = await getQualityDashboardSnapshot();
+	}
 
 	return {
 		activeTab,
@@ -460,7 +475,7 @@ export async function getAdminDashboardData(opts: {
 		limit: opts.limit,
 		offset,
 		search: opts.search,
-		errorMessage: userError,
+		errorMessage,
 		cacheOverview: poolSnapshot.overview,
 		cacheBuckets: poolSnapshot.buckets,
 		recentTopics,

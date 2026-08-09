@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { structuredObject } from '$lib/ai/service.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { FrqQuestionModel, FrqRecentTopic, newFrqPoolRandomKey } from '$lib/frq/model.server';
+import { FrqQuestionModel, newFrqPoolRandomKey } from '$lib/frq/model.server';
 import {
 	FRQ_SCHEMA_VERSION,
 	FrqMaterialSchema,
@@ -16,7 +16,7 @@ import {
 	type PublicFrqQuestion
 } from '$lib/frq/types';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
-import { connectDb } from '$lib/server/db';
+import { getRecentTopics } from '$lib/questions/recent-topic.server';
 import { logger } from '$lib/server/logger';
 
 const PROMPT_VERSION = 'frq-generation-v1';
@@ -53,13 +53,7 @@ export type FrqGenerateResult = {
 };
 
 export async function getRecentFrqTopics(apClass: string, unit: string): Promise<string[]> {
-	await connectDb();
-	const topics = await FrqRecentTopic.find(
-		{ apClass, unit },
-		{ topicsCovered: 1 },
-		{ sort: { createdAt: -1 }, limit: RECENT_TOPICS_WINDOW }
-	).lean();
-	return topics.map((topic) => topic.topicsCovered).filter(Boolean);
+	return getRecentTopics({ kind: 'frq', apClass, unit, limit: RECENT_TOPICS_WINDOW });
 }
 
 export function buildFrqGenerationPrompt(
@@ -172,12 +166,6 @@ async function persistFrqQuestion(
 			questionId,
 			randomKey: newFrqPoolRandomKey(),
 			active: true
-		});
-		await FrqRecentTopic.create({
-			apClass,
-			unit,
-			topicsCovered: question.topicsCovered,
-			questionId
 		});
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) throw error;

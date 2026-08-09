@@ -16,7 +16,7 @@ import { CoachAudit } from '$lib/super/models.server';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView, StudyTask, TutorProfileView } from '$lib/super/types';
-import { UserProfile } from '$lib/users/model.server';
+import { getUserProgress } from '$lib/users/model.server';
 
 const targetDateSchema = z.object({
 	apClass: z.string().trim().min(1).max(100),
@@ -148,8 +148,8 @@ export function createCoachAgent(input: {
 					'Read a concise server-calculated progress summary. It never includes question text or answers.',
 				inputSchema: z.object({}),
 				execute: async () => {
-					const profile = await UserProfile.findOne({ userId }, { progress: 1 }).lean().exec();
-					return (profile?.progress ?? []).map((item) => ({
+					const progress = await getUserProgress(userId);
+					return progress.map((item) => ({
 						apClass: item.apClass,
 						unit: item.unit,
 						mastery: item.mastery,

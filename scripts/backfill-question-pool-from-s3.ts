@@ -17,17 +17,15 @@ import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/clien
 import { createLimiter, getArg, loadCombos } from './shared';
 import { getFrqCourseNames } from '../src/lib/frq/profiles.server';
 import { FrqQuestionSchema } from '../src/lib/frq/types';
-import { FrqQuestionModel } from '../src/lib/frq/model.server';
-import { Question } from '../src/lib/questions/cache-model.server';
 import {
 	QUESTION_POOL_CONFIG,
 	poolTargetForBucket,
 	type QuestionPoolConfig
 } from '../src/lib/questions/pool-constants';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
+import { countActivePoolRows } from '../src/lib/questions/pool-counts.server';
 import { PoolRefillState } from '../src/lib/questions/pool-refill-model.server';
 import { isDuplicateKeyError } from '../src/lib/questions/util.server';
-import { connectDb } from '../src/lib/server/db';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
@@ -391,7 +389,6 @@ async function enqueueDeficitsForType(
 	catalogBuckets: Array<{ className: string; unit: string }>,
 	generationCountsByClass: Record<string, number>
 ): Promise<number> {
-	const Model = questionType === 'mcq' ? Question : FrqQuestionModel;
 	let enqueued = 0;
 	for (const { className, unit } of catalogBuckets) {
 		const target = poolTargetForBucket({
@@ -400,11 +397,7 @@ async function enqueueDeficitsForType(
 			generationCountsByClass,
 			config: env
 		});
-		const observedCount = await Model.countDocuments({
-			apClass: className,
-			unit,
-			active: { $ne: false }
-		});
+		const observedCount = await countActivePoolRows(questionType, className, unit);
 		if (observedCount >= target) continue;
 		await PoolRefillState.findOneAndUpdate(
 			{ questionType, apClass: className, unit },
@@ -459,7 +452,6 @@ async function main() {
 	console.log(isDryRun ? 'Dry-run S3 → PostgreSQL backfill…' : 'Running S3 → PostgreSQL backfill…');
 	console.log(`Concurrency=${concurrency}, type=${typeFilter}`);
 
-	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 
 	if (typeFilter === 'all' || typeFilter === 'mcq') {

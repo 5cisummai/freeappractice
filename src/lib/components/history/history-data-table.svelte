@@ -54,14 +54,6 @@
 		detailOpen = true;
 	}
 
-	function handleRowKeydown(event: KeyboardEvent, item: HistoryItem) {
-		if (event.target !== event.currentTarget) return;
-		if (event.key !== 'Enter' && event.key !== ' ') return;
-
-		event.preventDefault();
-		viewDetails(item);
-	}
-
 	const table = createSvelteTable({
 		get data() {
 			return data;
@@ -179,22 +171,9 @@
 			</Table.Header>
 			<Table.Body>
 				{#each table.getRowModel().rows as row (row.id)}
-					<Table.Row
-						class="cursor-pointer even:bg-muted/30"
-						tabindex={0}
-						aria-label={`View ${row.original.attempt.apClass} question details`}
-						onclick={() => viewDetails(row.original)}
-						onkeydown={(event) => handleRowKeydown(event, row.original)}
-					>
+					<Table.Row class="even:bg-muted/30">
 						{#each row.getVisibleCells() as cell (cell.id)}
-							<Table.Cell
-								class={cell.column.id === 'subject' ? 'ps-4' : undefined}
-								onclick={(e) => {
-									if (cell.column.id === 'actions') {
-										e.stopPropagation();
-									}
-								}}
-							>
+							<Table.Cell class={cell.column.id === 'subject' ? 'ps-4' : undefined}>
 								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 							</Table.Cell>
 						{/each}

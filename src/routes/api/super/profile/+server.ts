@@ -2,7 +2,8 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { isTutorMemoryConfigured } from '$lib/mem0/service.server';
-import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
+import { updateTutorProfile } from '$lib/super/profile.server';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;
@@ -45,8 +46,8 @@ function validationError(message: string, details?: string[]): Response {
 }
 
 export const GET = withAuthedHandler(
-	async (_event, userId) => {
-		const profile = await getTutorProfileView(userId);
+	async (event, userId) => {
+		const profile = await getTutorProfileViewForRequest(event.locals, userId);
 		return json({
 			profile,
 			memory: {

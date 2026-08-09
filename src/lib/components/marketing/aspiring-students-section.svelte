@@ -75,6 +75,7 @@
 	let pageCount = $state(1);
 	let canScrollPrev = $state(false);
 	let canScrollNext = $state(true);
+	let prefersReducedMotion = $state(false);
 
 	function getPageWidth(): number {
 		if (!carouselEl) return 0;
@@ -114,12 +115,18 @@
 
 	function scrollByPage(direction: -1 | 1): void {
 		if (!carouselEl) return;
-		carouselEl.scrollBy({ left: direction * getPageWidth(), behavior: 'smooth' });
+		carouselEl.scrollBy({
+			left: direction * getPageWidth(),
+			behavior: prefersReducedMotion ? 'auto' : 'smooth'
+		});
 	}
 
 	function scrollToPage(page: number): void {
 		if (!carouselEl) return;
-		carouselEl.scrollTo({ left: page * getPageWidth(), behavior: 'smooth' });
+		carouselEl.scrollTo({
+			left: page * getPageWidth(),
+			behavior: prefersReducedMotion ? 'auto' : 'smooth'
+		});
 	}
 
 	function scrollToNextPage(): void {
@@ -137,6 +144,7 @@
 
 	function startAutoScroll(): void {
 		stopAutoScroll();
+		if (prefersReducedMotion || document.hidden || carouselEl?.matches(':focus-within')) return;
 		autoScrollInterval = setInterval(scrollToNextPage, 3000);
 	}
 
@@ -149,6 +157,16 @@
 
 	onMount(() => {
 		if (!carouselEl) return;
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+		const updateMotionPreference = () => {
+			prefersReducedMotion = reducedMotion.matches;
+			if (prefersReducedMotion) stopAutoScroll();
+			else startAutoScroll();
+		};
+		const handleVisibilityChange = () => {
+			if (document.hidden) stopAutoScroll();
+			else startAutoScroll();
+		};
 
 		const resizeObserver = new ResizeObserver(() => {
 			updatePageCount();
@@ -158,6 +176,9 @@
 		carouselEl.addEventListener('scroll', updateCarouselState, { passive: true });
 		carouselEl.addEventListener('mouseenter', stopAutoScroll);
 		carouselEl.addEventListener('mouseleave', startAutoScroll);
+		reducedMotion.addEventListener('change', updateMotionPreference);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		prefersReducedMotion = reducedMotion.matches;
 		updatePageCount();
 		startAutoScroll();
 
@@ -167,6 +188,8 @@
 			carouselEl?.removeEventListener('scroll', updateCarouselState);
 			carouselEl?.removeEventListener('mouseenter', stopAutoScroll);
 			carouselEl?.removeEventListener('mouseleave', startAutoScroll);
+			reducedMotion.removeEventListener('change', updateMotionPreference);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
 		};
 	});
 </script>
@@ -216,8 +239,15 @@
 
 	<div
 		bind:this={carouselEl}
-		class="flex snap-x snap-mandatory scrollbar-none gap-4 overflow-x-auto scroll-smooth mask-[linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+		id="student-stories-carousel"
+		class="flex snap-x snap-mandatory scrollbar-none gap-4 overflow-x-auto mask-[linear-gradient(to_right,transparent,black_2.5rem,black_calc(100%-2.5rem),transparent)] pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden {prefersReducedMotion
+			? 'scroll-auto'
+			: 'scroll-smooth'}"
+		role="region"
 		aria-label="Student testimonials carousel"
+		aria-roledescription="carousel"
+		onfocusin={stopAutoScroll}
+		onfocusout={startAutoScroll}
 	>
 		{#each stories as story (story.name)}
 			<article
@@ -244,17 +274,24 @@
 	</div>
 
 	<div class="flex justify-center">
-		<div class="flex items-center gap-2" role="tablist" aria-label="Carousel pages">
+		<div class="flex items-center gap-2" role="group" aria-label="Carousel pages">
 			{#each Array.from({ length: pageCount }, (_, index) => index) as page (page)}
 				<button
 					type="button"
-					role="tab"
-					aria-selected={activePage === page}
+					aria-current={activePage === page ? 'true' : undefined}
+					aria-controls="student-stories-carousel"
 					aria-label={`Go to page ${page + 1}`}
 					class="size-2 rounded-full transition-colors {activePage === page
 						? 'bg-foreground'
 						: 'bg-muted-foreground/30 hover:bg-muted-foreground/50'}"
 					onclick={() => scrollToPage(page)}
+					onkeydown={(event) => {
+						if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+							event.preventDefault();
+							const direction = event.key === 'ArrowLeft' ? -1 : 1;
+							scrollToPage(Math.max(0, Math.min(pageCount - 1, page + direction)));
+						}
+					}}
 				></button>
 			{/each}
 		</div>

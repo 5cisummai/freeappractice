@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto';
+import { and, eq } from 'drizzle-orm';
 import type { PracticeExperimentAssignment, PracticeVariant } from '$lib/practice/multi-attempt';
 import {
 	MULTI_ATTEMPT_EXPERIMENT_KEY,
 	MULTI_ATTEMPT_EXPERIMENT_VERSION
 } from '$lib/practice/multi-attempt';
-import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { isMultiAttemptExperimentEnabled } from '$lib/flags';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { experimentAssignments } from '$lib/server/neon/schema';
 
 /** Stable 50/50 assignment from user id + experiment identity (not client-chosen). */
 export function assignPracticeVariant(
@@ -24,17 +26,32 @@ export async function getOrAssignMultiAttemptVariant(userId: string): Promise<{
 	enabled: boolean;
 }> {
 	const enabled = await isMultiAttemptExperimentEnabled();
-	const user = await findUserProfileOrFail(userId);
-	const existing = user.practiceExperiments?.find(
-		(entry) =>
-			entry.key === MULTI_ATTEMPT_EXPERIMENT_KEY &&
-			entry.version === MULTI_ATTEMPT_EXPERIMENT_VERSION
-	);
+	const db = getNeonDatabase();
+	const [existing] = await db
+		.select({
+			key: experimentAssignments.key,
+			version: experimentAssignments.version,
+			variant: experimentAssignments.variant
+		})
+		.from(experimentAssignments)
+		.where(
+			and(
+				eq(experimentAssignments.userId, userId),
+				eq(experimentAssignments.key, MULTI_ATTEMPT_EXPERIMENT_KEY),
+				eq(experimentAssignments.version, MULTI_ATTEMPT_EXPERIMENT_VERSION)
+			)
+		)
+		.limit(1);
 
 	if (existing) {
+		const assignment: PracticeExperimentAssignment = {
+			key: existing.key,
+			version: existing.version,
+			variant: existing.variant as PracticeVariant
+		};
 		return {
-			assigned: existing.variant,
-			assignment: existing,
+			assigned: assignment.variant,
+			assignment,
 			enabled
 		};
 	}
@@ -58,9 +75,20 @@ export async function getOrAssignMultiAttemptVariant(userId: string): Promise<{
 		variant
 	};
 
-	if (!user.practiceExperiments) user.practiceExperiments = [];
-	user.practiceExperiments.push(assignment);
-	await user.save();
+	await db
+		.insert(experimentAssignments)
+		.values({
+			userId,
+			...assignment
+		})
+		.onConflictDoUpdate({
+			target: [experimentAssignments.userId, experimentAssignments.key],
+			set: {
+				version: assignment.version,
+				variant: assignment.variant,
+				updatedAt: new Date()
+			}
+		});
 
 	return { assigned: variant, assignment, enabled };
 }

@@ -7,6 +7,19 @@ const { findOneAndUpdate, updateOne, mcqCount, frqCount } = vi.hoisted(() => ({
 	frqCount: vi.fn()
 }));
 
+vi.mock('$lib/questions/pool-counts.server', () => ({
+	countActivePoolRows: vi.fn(async (questionType: 'mcq' | 'frq') =>
+		questionType === 'mcq' ? mcqCount() : frqCount()
+	),
+	countActivePoolRowsByBucket: vi.fn(
+		async (questionType: 'mcq' | 'frq') =>
+			new Map([
+				[`AP Biology\u0000Unit 1`, questionType === 'mcq' ? await mcqCount() : await frqCount()]
+			])
+	),
+	getPoolRefillHealthCounts: vi.fn()
+}));
+
 vi.mock('$lib/server/db', () => ({
 	connectDb: vi.fn(async () => ({}))
 }));

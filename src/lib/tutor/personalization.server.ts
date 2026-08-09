@@ -1,7 +1,7 @@
 import { searchTutorMemories } from '$lib/mem0/service.server';
 import { FrqAttempt } from '$lib/frq/model.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
-import { UserProfile } from '$lib/users/model.server';
+import { getUserProgress } from '$lib/users/model.server';
 
 const MAX_FRQ_EVIDENCE_ATTEMPTS = 12;
 const MAX_FRQ_EVIDENCE_GROUPS = 5;
@@ -113,14 +113,14 @@ export async function buildTutorPersonalization(
 ): Promise<TutorPersonalization> {
 	const [profile, practiceProfile, memoryResult, frqEvidence] = await Promise.all([
 		getTutorProfileView(userId),
-		UserProfile.findOne({ userId }).select({ progress: 1 }).lean().exec(),
+		getUserProgress(userId),
 		searchTutorMemories(userId, query)
 			.then((memories) => ({ memories, memoryDegraded: false }))
 			.catch(() => ({ memories: [], memoryDegraded: true })),
 		getRecentFrqEvidence(userId)
 	]);
 
-	const recentProgress = [...(practiceProfile?.progress ?? [])]
+	const recentProgress = [...practiceProfile]
 		.sort(
 			(a, b) =>
 				(b.lastAttemptAt ? new Date(b.lastAttemptAt).getTime() : 0) -

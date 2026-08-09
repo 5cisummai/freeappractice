@@ -7,15 +7,14 @@ import {
 	serializeCompletedOnboarding
 } from '$lib/onboarding.js';
 import { getCourses } from '$lib/catalog/ap-classes.js';
-import { findUserProfileOrFail } from '$lib/users/profile.server.js';
+import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
 
 const validSubjects = new Set(getCourses().map((course) => course.name));
 
 export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 	const currentState = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME));
 	const isReset = url.searchParams.get('reset') === '1';
-	const userProfile = await findUserProfileOrFail(locals.userId!, 'subjects');
-	const selectedSubjects = userProfile.subjects ?? [];
+	const selectedSubjects = await getUserSubjects(locals.userId!);
 
 	if (isReset) {
 		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', {
@@ -47,10 +46,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Choose at least one subject to continue.' });
 		}
 
-		// Load full profile before save — projected docs omit arrays and wipe/crash on save.
-		const userProfile = await findUserProfileOrFail(locals.userId!);
-		userProfile.subjects = subjects;
-		await userProfile.save();
+		await updateUserSubjects(locals.userId!, subjects);
 
 		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(), {
 			path: '/',

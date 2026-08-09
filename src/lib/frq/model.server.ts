@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 import {
 	FrqQuestionSchema,
 	type FrqGrade,
@@ -76,14 +77,6 @@ export function toFrqQuestion(doc: IFrqQuestion): FrqQuestion {
 	});
 }
 
-export interface IFrqRecentTopic extends DocumentFields {
-	apClass: string;
-	unit: string;
-	topicsCovered: string;
-	questionId: string;
-	createdAt: Date;
-}
-
 export interface IFrqAttempt extends DocumentFields {
 	userId: string;
 	submissionId: string;
@@ -116,65 +109,85 @@ const frqBase = model<IFrqQuestion>({
 	})
 });
 
-async function hydrateFrqQuestion(row: IFrqQuestion): Promise<IFrqQuestion> {
+function groupRowsByQuestion(
+	rows: Array<Record<string, any>>
+): Map<string, Array<Record<string, any>>> {
+	const grouped = new Map<string, Array<Record<string, any>>>();
+	for (const row of rows) {
+		const list = grouped.get(row.questionId) ?? [];
+		list.push(row);
+		grouped.set(row.questionId, list);
+	}
+	return grouped;
+}
+
+async function hydrateFrqQuestions(rows: IFrqQuestion[]): Promise<IFrqQuestion[]> {
+	if (!rows.length) return [];
+
 	const db = getNeonDatabase() as any;
-	const questionId = row.questionId;
+	const questionIds = [...new Set(rows.map((row) => row.questionId))];
 	const [materials, sections, criteria, levels] = await Promise.all([
 		db
 			.select()
 			.from(frqMaterials as any)
-			.where(eq((frqMaterials as any).questionId, questionId))
+			.where(inArray((frqMaterials as any).questionId, questionIds))
 			.orderBy(asc((frqMaterials as any).position)),
 		db
 			.select()
 			.from(frqSections as any)
-			.where(eq((frqSections as any).questionId, questionId))
+			.where(inArray((frqSections as any).questionId, questionIds))
 			.orderBy(asc((frqSections as any).position)),
 		db
 			.select()
 			.from(frqRubricCriteria as any)
-			.where(eq((frqRubricCriteria as any).questionId, questionId))
+			.where(inArray((frqRubricCriteria as any).questionId, questionIds))
 			.orderBy(asc((frqRubricCriteria as any).position)),
 		db
 			.select()
 			.from(frqRubricLevels as any)
-			.where(eq((frqRubricLevels as any).questionId, questionId))
+			.where(inArray((frqRubricLevels as any).questionId, questionIds))
 			.orderBy(asc((frqRubricLevels as any).position))
 	]);
-	const levelsByCriterion = new Map<string, Array<Record<string, any>>>();
-	for (const level of levels as Array<Record<string, any>>) {
-		const list = levelsByCriterion.get(level.criterionId) ?? [];
-		list.push(level);
-		levelsByCriterion.set(level.criterionId, list);
-	}
-	const document: IFrqQuestion = {
-		...row,
-		materials: (materials as Array<Record<string, any>>).map((item) => ({
-			id: item.materialId,
-			title: item.title ?? undefined,
-			content: item.content
-		})),
-		sections: (sections as Array<Record<string, any>>).map((item) => ({
-			id: item.sectionId,
-			label: item.label,
-			prompt: item.prompt,
-			responseKind: item.responseKind,
-			maxPoints: item.maxPoints
-		})),
-		rubric: (criteria as Array<Record<string, any>>).map((item) => ({
-			id: item.criterionId,
-			sectionId: item.sectionId,
-			label: item.label,
-			maxPoints: item.maxPoints,
-			referenceAnswer: item.referenceAnswer,
-			levels: (levelsByCriterion.get(item.criterionId) ?? []).map((level) => ({
-				points: level.points,
-				description: level.description
-			}))
-		})),
-		save: async () => document
-	};
-	return document;
+	const materialsByQuestion = groupRowsByQuestion(materials as Array<Record<string, any>>);
+	const sectionsByQuestion = groupRowsByQuestion(sections as Array<Record<string, any>>);
+	const criteriaByQuestion = groupRowsByQuestion(criteria as Array<Record<string, any>>);
+	const levelsByQuestion = groupRowsByQuestion(levels as Array<Record<string, any>>);
+
+	return rows.map((row) => {
+		const questionId = row.questionId;
+		const rubricLevels = levelsByQuestion.get(questionId) ?? [];
+		const document: IFrqQuestion = {
+			...row,
+			materials: (materialsByQuestion.get(questionId) ?? []).map((item) => ({
+				id: item.materialId,
+				title: item.title ?? undefined,
+				content: item.content
+			})),
+			sections: (sectionsByQuestion.get(questionId) ?? []).map((item) => ({
+				id: item.sectionId,
+				label: item.label,
+				prompt: item.prompt,
+				responseKind: item.responseKind,
+				maxPoints: item.maxPoints
+			})),
+			rubric: (criteriaByQuestion.get(questionId) ?? []).map((item) => ({
+				id: item.criterionId,
+				sectionId: item.sectionId,
+				label: item.label,
+				maxPoints: item.maxPoints,
+				referenceAnswer: item.referenceAnswer,
+				levels: rubricLevels
+					.filter((level) => level.criterionId === item.criterionId)
+					.map((level) => ({ points: level.points, description: level.description }))
+			})),
+			save: async () => document
+		};
+		return document;
+	});
+}
+
+async function hydrateFrqQuestion(row: IFrqQuestion): Promise<IFrqQuestion> {
+	return (await hydrateFrqQuestions([row]))[0];
 }
 
 export const FrqQuestionModel = {
@@ -190,7 +203,7 @@ export const FrqQuestionModel = {
 					limit: queryOptions.limit ?? options?.limit
 				})
 				.exec();
-			const hydrated = await Promise.all(rows.map(hydrateFrqQuestion));
+			const hydrated = await hydrateFrqQuestions(rows);
 			return hydrated.map((row) => applyProjection(row, queryOptions.projection ?? projection));
 		});
 	},
@@ -209,23 +222,35 @@ export const FrqQuestionModel = {
 				: null;
 		});
 	},
-	countDocuments(filter: Record<string, unknown> = {}): PostgresQuery<number> {
-		return frqBase.countDocuments(filter);
-	},
-	updateMany(
-		filter: Record<string, unknown>,
-		update: Record<string, unknown>
-	): PostgresQuery<WriteResult> {
-		return new PostgresQuery(async () => frqBase.updateMany(filter, update).exec());
-	},
-	async create(input: Record<string, any>): Promise<IFrqQuestion> {
-		const db = getNeonDatabase() as any;
+	async create(input: {
+		questionId?: string;
+		apClass: string;
+		unit: string;
+		formatId: string;
+		profileVersion: string;
+		promptVersion: string;
+		rubricVersion: string;
+		schemaVersion?: 1;
+		prompt: string;
+		materials?: FrqMaterial[];
+		sections?: FrqSection[];
+		rubric?: FrqRubricCriterion[];
+		totalPoints: number;
+		topicsCovered: string;
+		contentHash: string;
+		randomKey?: number;
+		active?: boolean;
+		createdAt?: Date;
+		updatedAt?: Date;
+	}): Promise<IFrqQuestion> {
+		const db = getNeonDatabase();
 		const questionId = String(input.questionId ?? '');
 		if (!questionId) throw new Error('FRQ question requires questionId');
 		const createdAt = input.createdAt ?? new Date();
 		const updatedAt = input.updatedAt ?? createdAt;
-		await db
-			.insert(questionRegistry as any)
+
+		const registryInsert = db
+			.insert(questionRegistry)
 			.values({
 				questionId,
 				kind: 'frq',
@@ -238,7 +263,7 @@ export const FrqQuestionModel = {
 				updatedAt
 			})
 			.onConflictDoUpdate({
-				target: (questionRegistry as any).questionId,
+				target: questionRegistry.questionId,
 				set: {
 					kind: 'frq',
 					apClass: input.apClass,
@@ -247,8 +272,8 @@ export const FrqQuestionModel = {
 					updatedAt
 				}
 			});
-		await db
-			.insert(frqQuestions as any)
+		const questionInsert = db
+			.insert(frqQuestions)
 			.values({
 				questionId,
 				apClass: input.apClass,
@@ -267,51 +292,83 @@ export const FrqQuestionModel = {
 				createdAt,
 				updatedAt
 			})
-			.onConflictDoNothing();
-		await db.delete(frqMaterials as any).where(eq((frqMaterials as any).questionId, questionId));
-		await db.delete(frqSections as any).where(eq((frqSections as any).questionId, questionId));
-		await db
-			.delete(frqRubricCriteria as any)
-			.where(eq((frqRubricCriteria as any).questionId, questionId));
-		await db
-			.delete(frqRubricLevels as any)
-			.where(eq((frqRubricLevels as any).questionId, questionId));
-		if (input.materials?.length)
-			await db.insert(frqMaterials as any).values(
-				input.materials.map((item: FrqMaterial, position: number) => ({
-					questionId,
-					materialId: item.id,
-					title: item.title ?? null,
-					content: item.content,
-					position
-				}))
+			.onConflictDoUpdate({
+				target: frqQuestions.questionId,
+				set: {
+					apClass: input.apClass,
+					unit: input.unit,
+					formatId: input.formatId,
+					profileVersion: input.profileVersion,
+					promptVersion: input.promptVersion,
+					rubricVersion: input.rubricVersion,
+					schemaVersion: input.schemaVersion ?? 1,
+					prompt: input.prompt,
+					totalPoints: input.totalPoints,
+					topicsCovered: input.topicsCovered,
+					contentHash: input.contentHash,
+					randomKey: input.randomKey ?? newFrqPoolRandomKey(),
+					active: input.active ?? true,
+					updatedAt
+				}
+			});
+
+		// Keep the registry, parent, and child replacement writes atomic in Neon.
+		const writes: [BatchItem<'pg'>, ...BatchItem<'pg'>[]] = [
+			registryInsert,
+			questionInsert,
+			db.delete(frqMaterials).where(eq(frqMaterials.questionId, questionId)),
+			db.delete(frqSections).where(eq(frqSections.questionId, questionId)),
+			db.delete(frqRubricCriteria).where(eq(frqRubricCriteria.questionId, questionId)),
+			db.delete(frqRubricLevels).where(eq(frqRubricLevels.questionId, questionId))
+		];
+
+		if (input.materials?.length) {
+			writes.push(
+				db.insert(frqMaterials).values(
+					input.materials.map((item, position) => ({
+						questionId,
+						materialId: item.id,
+						title: item.title ?? null,
+						content: item.content,
+						position
+					}))
+				)
 			);
-		if (input.sections?.length)
-			await db.insert(frqSections as any).values(
-				input.sections.map((item: FrqSection, position: number) => ({
-					questionId,
-					sectionId: item.id,
-					label: item.label,
-					prompt: item.prompt,
-					responseKind: item.responseKind,
-					maxPoints: item.maxPoints,
-					position
-				}))
+		}
+
+		if (input.sections?.length) {
+			writes.push(
+				db.insert(frqSections).values(
+					input.sections.map((item, position) => ({
+						questionId,
+						sectionId: item.id,
+						label: item.label,
+						prompt: item.prompt,
+						responseKind: item.responseKind,
+						maxPoints: item.maxPoints,
+						position
+					}))
+				)
 			);
+		}
+
 		if (input.rubric?.length) {
-			await db.insert(frqRubricCriteria as any).values(
-				input.rubric.map((item: FrqRubricCriterion, position: number) => ({
-					questionId,
-					criterionId: item.id,
-					sectionId: item.sectionId,
-					label: item.label,
-					maxPoints: item.maxPoints,
-					referenceAnswer: item.referenceAnswer,
-					position
-				}))
+			writes.push(
+				db.insert(frqRubricCriteria).values(
+					input.rubric.map((item, position) => ({
+						questionId,
+						criterionId: item.id,
+						sectionId: item.sectionId,
+						label: item.label,
+						maxPoints: item.maxPoints,
+						referenceAnswer: item.referenceAnswer,
+						position
+					}))
+				)
 			);
-			const levelRows = input.rubric.flatMap((item: FrqRubricCriterion) =>
-				item.levels.map((level, position: number) => ({
+
+			const levelRows = input.rubric.flatMap((item) =>
+				item.levels.map((level, position) => ({
 					questionId,
 					criterionId: item.id,
 					points: level.points,
@@ -319,27 +376,32 @@ export const FrqQuestionModel = {
 					position
 				}))
 			);
-			if (levelRows.length) await db.insert(frqRubricLevels as any).values(levelRows);
+			if (levelRows.length) {
+				writes.push(db.insert(frqRubricLevels).values(levelRows));
+			}
 		}
+
+		const topicsCovered = input.topicsCovered.trim();
+		if (topicsCovered) {
+			writes.push(
+				db.insert(questionRecentTopics).values({
+					id: randomUUID(),
+					kind: 'frq',
+					apClass: input.apClass,
+					unit: input.unit,
+					topicsCovered,
+					questionId
+				})
+			);
+		}
+
+		await db.batch(writes);
+
 		const row = await frqBase.findOne({ _id: questionId }).exec();
 		if (!row) throw new Error('FRQ question was not created');
 		return hydrateFrqQuestion(row);
 	}
 };
-
-const frqRecentBase = model<IFrqRecentTopic>({
-	table: questionRecentTopics as any,
-	columns: questionRecentTopics as any,
-	idField: 'id',
-	prepareInsert: async (input) => ({
-		...input,
-		id: input.id ?? randomUUID(),
-		kind: 'frq',
-		questionId: input.questionId
-	})
-});
-
-export const FrqRecentTopic = frqRecentBase;
 
 const frqAttemptBase = model<IFrqAttempt>({
 	table: frqAttempts as any,
@@ -348,65 +410,109 @@ const frqAttemptBase = model<IFrqAttempt>({
 	prepareInsert: async (input) => ({ ...input, id: input.id ?? randomUUID() })
 });
 
-async function hydrateAttempt(row: IFrqAttempt): Promise<IFrqAttempt> {
+async function hydrateAttempts(rows: IFrqAttempt[]): Promise<IFrqAttempt[]> {
+	if (!rows.length) return [];
+
 	const db = getNeonDatabase() as any;
-	const grade = (
-		await db
+	const attemptIds = [...new Set(rows.map((row) => row._id))];
+	const [gradeRows, criterionRows] = await Promise.all([
+		db
 			.select()
 			.from(frqAttemptGrades as any)
-			.where(eq((frqAttemptGrades as any).attemptId, row._id))
-			.limit(1)
-	)[0] as Record<string, any> | undefined;
-	const criteria = await db
-		.select()
-		.from(frqAttemptCriterionGrades as any)
-		.where(eq((frqAttemptCriterionGrades as any).attemptId, row._id));
-	const document: IFrqAttempt = {
-		...row,
-		grade: grade
-			? {
-					criteria: (criteria as Array<Record<string, any>>).map((item) => ({
-						criterionId: item.criterionId,
-						sectionId: item.sectionId,
-						label: item.label,
-						points: item.points,
-						pointsAvailable: item.pointsAvailable,
-						evidence: item.evidence,
-						feedback: item.feedback
-					})),
-					pointsEarned: grade.pointsEarned,
-					pointsAvailable: grade.pointsAvailable,
-					percentage: grade.percentage,
-					overallFeedback: grade.overallFeedback
+			.where(inArray((frqAttemptGrades as any).attemptId, attemptIds)),
+		db
+			.select()
+			.from(frqAttemptCriterionGrades as any)
+			.where(inArray((frqAttemptCriterionGrades as any).attemptId, attemptIds))
+	]);
+	const gradesByAttempt = new Map(
+		(gradeRows as Array<Record<string, any>>).map((grade) => [grade.attemptId, grade])
+	);
+	const criteriaByAttempt = new Map<string, Array<Record<string, any>>>();
+	for (const criterion of criterionRows as Array<Record<string, any>>) {
+		const list = criteriaByAttempt.get(criterion.attemptId) ?? [];
+		list.push(criterion);
+		criteriaByAttempt.set(criterion.attemptId, list);
+	}
+
+	return rows.map((row) => {
+		const grade = gradesByAttempt.get(row._id);
+		const document: IFrqAttempt = {
+			...row,
+			grade: grade
+				? {
+						criteria: (criteriaByAttempt.get(row._id) ?? []).map((item) => ({
+							criterionId: item.criterionId,
+							sectionId: item.sectionId,
+							label: item.label,
+							points: item.points,
+							pointsAvailable: item.pointsAvailable,
+							evidence: item.evidence,
+							feedback: item.feedback
+						})),
+						pointsEarned: grade.pointsEarned,
+						pointsAvailable: grade.pointsAvailable,
+						percentage: grade.percentage,
+						overallFeedback: grade.overallFeedback
+					}
+				: undefined,
+			save: async () => {
+				const writes = [
+					db
+						.update(frqAttempts as any)
+						.set({
+							userId: document.userId,
+							submissionId: document.submissionId,
+							questionId: document.questionId,
+							apClass: document.apClass,
+							unit: document.unit,
+							formatId: document.formatId,
+							responses: document.responses,
+							status: document.status,
+							timeTakenMs: document.timeTakenMs,
+							profileVersion: document.profileVersion,
+							rubricVersion: document.rubricVersion,
+							promptVersion: document.promptVersion,
+							gradingModel: document.gradingModel ?? null,
+							updatedAt: document.updatedAt
+						})
+						.where(eq((frqAttempts as any).id, document._id)),
+					db
+						.delete(frqAttemptGrades as any)
+						.where(eq((frqAttemptGrades as any).attemptId, document._id)),
+					db
+						.delete(frqAttemptCriterionGrades as any)
+						.where(eq((frqAttemptCriterionGrades as any).attemptId, document._id))
+				];
+				if (document.grade) {
+					writes.push(
+						db.insert(frqAttemptGrades as any).values({
+							attemptId: document._id,
+							pointsEarned: document.grade.pointsEarned,
+							pointsAvailable: document.grade.pointsAvailable,
+							percentage: document.grade.percentage,
+							overallFeedback: document.grade.overallFeedback
+						})
+					);
+					if (document.grade.criteria.length)
+						writes.push(
+							db
+								.insert(frqAttemptCriterionGrades as any)
+								.values(
+									document.grade.criteria.map((item) => ({ attemptId: document._id, ...item }))
+								)
+						);
 				}
-			: undefined,
-		save: async () => {
-			await frqAttemptBase
-				.updateOne({ _id: document._id }, { $set: { ...document, grade: undefined } })
-				.exec();
-			await db
-				.delete(frqAttemptGrades as any)
-				.where(eq((frqAttemptGrades as any).attemptId, document._id));
-			await db
-				.delete(frqAttemptCriterionGrades as any)
-				.where(eq((frqAttemptCriterionGrades as any).attemptId, document._id));
-			if (document.grade) {
-				await db.insert(frqAttemptGrades as any).values({
-					attemptId: document._id,
-					pointsEarned: document.grade.pointsEarned,
-					pointsAvailable: document.grade.pointsAvailable,
-					percentage: document.grade.percentage,
-					overallFeedback: document.grade.overallFeedback
-				});
-				if (document.grade.criteria.length)
-					await db
-						.insert(frqAttemptCriterionGrades as any)
-						.values(document.grade.criteria.map((item) => ({ attemptId: document._id, ...item })));
+				await db.batch(writes);
+				return document;
 			}
-			return document;
-		}
-	};
-	return document;
+		};
+		return document;
+	});
+}
+
+async function hydrateAttempt(row: IFrqAttempt): Promise<IFrqAttempt> {
+	return (await hydrateAttempts([row]))[0];
 }
 
 export const FrqAttempt = {
@@ -419,7 +525,7 @@ export const FrqAttempt = {
 				Object.entries(filter).filter(([key]) => !key.startsWith('grade.'))
 			);
 			const rows = await frqAttemptBase.find(sqlFilter).exec();
-			const hydrated = await Promise.all(rows.map(hydrateAttempt));
+			const hydrated = await hydrateAttempts(rows);
 			const filtered = hydrated.filter((row) => {
 				const percentage = filter['grade.percentage'];
 				if (percentage === undefined) return true;
@@ -455,49 +561,5 @@ export const FrqAttempt = {
 	},
 	deleteMany(filter: Record<string, unknown>): PostgresQuery<WriteResult> {
 		return new PostgresQuery(async () => frqAttemptBase.deleteMany(filter).exec());
-	},
-	aggregate<T = Record<string, unknown>>(pipeline: unknown[]): PostgresQuery<T[]> {
-		return new PostgresQuery(async () => {
-			const firstStage =
-				Array.isArray(pipeline) && pipeline[0] && typeof pipeline[0] === 'object'
-					? (pipeline[0] as { $match?: Record<string, unknown> })
-					: {};
-			const rows = await this.find(firstStage.$match ?? { status: 'graded' }).exec();
-			const grouped = new Map<
-				string,
-				{
-					apClass: string;
-					unit: string;
-					attempts: number;
-					pointsEarned: number;
-					pointsAvailable: number;
-					lastAttemptAt?: Date;
-				}
-			>();
-			for (const row of rows) {
-				if (!row.grade) continue;
-				const key = `${row.apClass}\u0000${row.unit}`;
-				const current = grouped.get(key) ?? {
-					apClass: row.apClass,
-					unit: row.unit,
-					attempts: 0,
-					pointsEarned: 0,
-					pointsAvailable: 0
-				};
-				current.attempts += 1;
-				current.pointsEarned += row.grade.pointsEarned;
-				current.pointsAvailable += row.grade.pointsAvailable;
-				if (!current.lastAttemptAt || row.createdAt > current.lastAttemptAt)
-					current.lastAttemptAt = row.createdAt;
-				grouped.set(key, current);
-			}
-			return [...grouped.values()].map((row) => ({
-				_id: { apClass: row.apClass, unit: row.unit },
-				attempts: row.attempts,
-				pointsEarned: row.pointsEarned,
-				pointsAvailable: row.pointsAvailable,
-				lastAttemptAt: row.lastAttemptAt
-			})) as T[];
-		});
 	}
 };

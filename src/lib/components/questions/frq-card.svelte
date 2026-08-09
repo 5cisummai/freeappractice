@@ -9,7 +9,13 @@
 	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import { PoolWarmingError } from '$lib/questions/request-mcq.client';
+	import {
+		parseFrqLatestDraft,
+		parseFrqQuestionDraft,
+		serializeFrqLatestDraft,
+		serializeFrqQuestionDraft
+	} from '$lib/questions/frq-draft.client.js';
+	import { PoolWarmingError } from '$lib/questions/request.client.js';
 	import { requestFrqQuestion } from '$lib/questions/request-frq.client';
 	import lightbulbImage from '$lib/assets/lightbulb.png';
 
@@ -75,45 +81,37 @@
 	}
 
 	function restoreDraft(nextQuestion: PublicFrqQuestion): Record<string, string> {
-		if (typeof sessionStorage === 'undefined') {
-			return Object.fromEntries(nextQuestion.sections.map((section) => [section.id, '']));
-		}
-		try {
-			const saved = JSON.parse(
-				sessionStorage.getItem(`frq-draft:${nextQuestion.questionId}`) ?? 'null'
-			);
-			if (saved && typeof saved === 'object') return saved as Record<string, string>;
-		} catch {
-			// Ignore stale or malformed drafts.
-		}
-		return Object.fromEntries(nextQuestion.sections.map((section) => [section.id, '']));
+		const emptyResponses = () =>
+			Object.fromEntries(nextQuestion.sections.map((section) => [section.id, '']));
+		if (typeof sessionStorage === 'undefined') return emptyResponses();
+		return (
+			parseFrqQuestionDraft(
+				sessionStorage.getItem(`frq-draft:${nextQuestion.questionId}`),
+				nextQuestion
+			) ?? emptyResponses()
+		);
 	}
 
 	function restoreLatestDraft(): boolean {
 		if (!draftScopeKey || typeof sessionStorage === 'undefined') return false;
-		try {
-			const saved = JSON.parse(sessionStorage.getItem(draftScopeKey) ?? 'null') as {
-				question?: PublicFrqQuestion;
-				responses?: Record<string, string>;
-			} | null;
-			if (!saved?.question || !saved.responses || saved.question.apClass !== selectedClass) {
-				return false;
-			}
-			question = saved.question;
-			responses = saved.responses;
-			startedAt = Date.now();
-			statusMessage = 'Draft restored. Continue writing, then submit for rubric feedback.';
-			return true;
-		} catch {
-			return false;
-		}
+		const saved = parseFrqLatestDraft(sessionStorage.getItem(draftScopeKey), {
+			apClass: selectedClass,
+			unit: selectedUnit || undefined
+		});
+		if (!saved) return false;
+		question = saved.question;
+		responses = saved.responses;
+		startedAt = Date.now();
+		statusMessage = 'Draft restored. Continue writing, then submit for rubric feedback.';
+		return true;
 	}
 
 	function saveDraft(): void {
 		if (!draftKey || typeof sessionStorage === 'undefined' || grade) return;
-		sessionStorage.setItem(draftKey, JSON.stringify(responses));
+		if (!question) return;
+		sessionStorage.setItem(draftKey, serializeFrqQuestionDraft(question, responses));
 		if (draftScopeKey && question) {
-			sessionStorage.setItem(draftScopeKey, JSON.stringify({ question, responses }));
+			sessionStorage.setItem(draftScopeKey, serializeFrqLatestDraft(question, responses));
 		}
 	}
 
@@ -122,7 +120,11 @@
 		if (draftKey) sessionStorage.removeItem(draftKey);
 		if (draftScopeKey) {
 			const saved = sessionStorage.getItem(draftScopeKey);
-			if (!saved || saved.includes(question?.questionId ?? ''))
+			const latest = parseFrqLatestDraft(saved, {
+				apClass: selectedClass,
+				unit: selectedUnit || undefined
+			});
+			if (!latest || latest.question.questionId === question?.questionId)
 				sessionStorage.removeItem(draftScopeKey);
 		}
 	}

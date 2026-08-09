@@ -1,13 +1,15 @@
 import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
 import { getFrqCourseNames } from '$lib/frq/profiles.server';
-import { FrqQuestionModel } from '$lib/frq/model.server';
-import { Question } from '$lib/questions/cache-model.server';
 import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
+import {
+	countActivePoolRows,
+	countActivePoolRowsByBucket,
+	getPoolRefillHealthCounts
+} from '$lib/questions/pool-counts.server';
 import {
 	PoolRefillState,
 	type PoolRefillQuestionType
 } from '$lib/questions/pool-refill-model.server';
-import { connectDb } from '$lib/server/db';
 import {
 	QUESTION_POOL_CONFIG,
 	isBelowLowWater,
@@ -48,23 +50,7 @@ export function listCatalogBuckets(questionType: PoolRefillQuestionType): PoolBu
 	return buckets;
 }
 
-export async function countActivePoolRows(
-	questionType: PoolRefillQuestionType,
-	apClass: string,
-	unit: string
-): Promise<number> {
-	const filter = { apClass, unit, active: { $ne: false } };
-	switch (questionType) {
-		case 'mcq':
-			return Question.countDocuments(filter);
-		case 'frq':
-			return FrqQuestionModel.countDocuments(filter);
-		default: {
-			const _exhaustive: never = questionType;
-			return _exhaustive;
-		}
-	}
-}
+export { countActivePoolRows, countActivePoolRowsByBucket, getPoolRefillHealthCounts };
 
 /**
  * Upsert a refill request for a bucket. Safe to call from request paths (no LLM).
@@ -73,9 +59,9 @@ export async function countActivePoolRows(
 export async function requestPoolRefill(
 	bucket: PoolBucketKey,
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG,
-	generationCountsByClass?: Record<string, number>
+	generationCountsByClass?: Record<string, number>,
+	observedCountOverride?: number
 ): Promise<void> {
-	await connectDb();
 	const counts =
 		generationCountsByClass ??
 		(bucket.questionType === 'mcq' ? await getMcqGenerationCountsByClass() : {});
@@ -85,7 +71,9 @@ export async function requestPoolRefill(
 		generationCountsByClass: counts,
 		config: env
 	});
-	const observedCount = await countActivePoolRows(bucket.questionType, bucket.apClass, bucket.unit);
+	const observedCount =
+		observedCountOverride ??
+		(await countActivePoolRows(bucket.questionType, bucket.apClass, bucket.unit));
 	const now = new Date();
 	const key = {
 		questionType: bucket.questionType,
@@ -172,12 +160,12 @@ export async function requestPoolRefill(
 export async function reconcilePoolRefillJobs(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<{ reconciled: number; enqueued: number }> {
-	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	let reconciled = 0;
 	let enqueued = 0;
 
 	for (const questionType of ['mcq', 'frq'] as const) {
+		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = poolTargetForBucket({
 				questionType,
@@ -185,7 +173,7 @@ export async function reconcilePoolRefillJobs(
 				generationCountsByClass,
 				config: env
 			});
-			const observedCount = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
 			reconciled += 1;
 			await PoolRefillState.findOneAndUpdate(
 				{
@@ -208,7 +196,7 @@ export async function reconcilePoolRefillJobs(
 			).exec();
 
 			if (isBelowLowWater(observedCount, target, env.lowWaterRatio)) {
-				await requestPoolRefill(bucket, env, generationCountsByClass);
+				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
 				enqueued += 1;
 			} else if (observedCount >= target) {
 				const now = new Date();
@@ -244,10 +232,10 @@ export async function reconcilePoolRefillJobs(
 export async function enqueueAllCatalogDeficits(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<number> {
-	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	let enqueued = 0;
 	for (const questionType of ['mcq', 'frq'] as const) {
+		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = poolTargetForBucket({
 				questionType,
@@ -255,9 +243,9 @@ export async function enqueueAllCatalogDeficits(
 				generationCountsByClass,
 				config: env
 			});
-			const observedCount = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
 			if (observedCount < target) {
-				await requestPoolRefill(bucket, env, generationCountsByClass);
+				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
 				enqueued += 1;
 			}
 		}

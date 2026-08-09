@@ -1,5 +1,5 @@
-import { connectDb } from '$lib/server/db';
 import { QUESTION_POOL_CONFIG } from '$lib/questions/pool-constants';
+import { countActivePoolRows } from '$lib/questions/pool-counts.server';
 import { logger } from '$lib/server/logger';
 
 interface PoolDocument {
@@ -19,7 +19,6 @@ interface PoolModel<TDoc extends PoolDocument> {
 		projection?: Record<string, 0 | 1> | null,
 		options?: { sort?: Record<string, 1 | -1> }
 	): LeanFindChain<TDoc> | Promise<TDoc | null>;
-	countDocuments(filter: Record<string, unknown>): Promise<number>;
 }
 
 interface QuestionPoolConfig<TDoc extends PoolDocument, TCached> {
@@ -112,11 +111,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 	config: QuestionPoolConfig<TDoc, TCached>
 ) {
 	async function countActive(className: string, cacheUnit: string): Promise<number> {
-		return config.model.countDocuments({
-			apClass: className,
-			unit: cacheUnit,
-			active: { $ne: false }
-		});
+		return countActivePoolRows(config.questionType, className, cacheUnit);
 	}
 
 	async function getQuestion(
@@ -129,22 +124,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
 
-		const connectStarted = Date.now();
-		try {
-			await connectDb();
-		} catch (err) {
-			if (metrics) {
-				metrics.dbConnectMs = Date.now() - connectStarted;
-				metrics.segment = 'pool_error';
-			}
-			logger.error(`[${config.logScope}] DB connect failed`, {
-				className,
-				unit: cacheUnit,
-				error: err
-			});
-			return { status: 'failed', error: err };
-		}
-		if (metrics) metrics.dbConnectMs = Date.now() - connectStarted;
+		if (metrics) metrics.dbConnectMs = 0;
 
 		const queryStarted = Date.now();
 		try {

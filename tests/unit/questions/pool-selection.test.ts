@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { connectDb } = vi.hoisted(() => ({
-	connectDb: vi.fn(async () => ({}))
-}));
+const { countActivePoolRows } = vi.hoisted(() => ({ countActivePoolRows: vi.fn() }));
 
-vi.mock('$lib/server/db', () => ({ connectDb }));
+vi.mock('$lib/questions/pool-counts.server', () => ({ countActivePoolRows }));
 vi.mock('$lib/server/logger', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
@@ -100,8 +98,8 @@ describe('selectRandomActiveDoc', () => {
 
 describe('createQuestionPool selection boundary', () => {
 	beforeEach(() => {
-		connectDb.mockReset();
-		connectDb.mockResolvedValue({});
+		countActivePoolRows.mockReset();
+		countActivePoolRows.mockResolvedValue(0);
 	});
 
 	it('returns warming for an empty bucket and requests refill', async () => {
@@ -126,12 +124,12 @@ describe('createQuestionPool selection boundary', () => {
 			retryAfterSeconds: QUESTION_POOL_CONFIG.warmingRetryAfterSeconds
 		});
 		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1');
-		expect(connectDb).toHaveBeenCalled();
 	});
 
 	it('resets exclusions when the bucket still has active rows', async () => {
 		const docs: FakeDoc[] = [{ _id: { toString: () => '1' }, questionId: 'keep', randomKey: 0.5 }];
 		const model = createFakeModel(docs);
+		countActivePoolRows.mockResolvedValue(1);
 		const pool = createQuestionPool({
 			questionType: 'mcq',
 			logScope: 'test',
@@ -151,15 +149,20 @@ describe('createQuestionPool selection boundary', () => {
 		}
 	});
 
-	it('returns failed when the database is unavailable', async () => {
-		connectDb.mockRejectedValueOnce(new Error('db down'));
+	it('returns failed when the pool query is unavailable', async () => {
 		const pool = createQuestionPool({
 			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
-			model: createFakeModel([]),
+			model: {
+				findOne: vi.fn(() => ({
+					lean: async () => {
+						throw new Error('db down');
+					}
+				}))
+			},
 			projection: { questionId: 1 },
-			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId })
+			serveCached: async () => ({ cached: true, questionId: '' })
 		});
 
 		const outcome = await pool.getQuestion('AP Biology', 'Unit 1');

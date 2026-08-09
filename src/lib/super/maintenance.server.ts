@@ -1,6 +1,8 @@
 import { deleteAllTutorMemoriesById } from '$lib/mem0/service.server';
-import { connectDb } from '$lib/server/db';
+import { and, eq, exists, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { logger } from '$lib/server/logger';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { insightReports, tutorProfiles } from '$lib/server/neon/schema';
 import {
 	InsightReport,
 	SuperBillingAccess,
@@ -10,6 +12,7 @@ import {
 	type ISuperCleanupJob
 } from '$lib/super/models.server';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { lockInsightReports } from '$lib/super/insight-locks.server';
 import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
 
 const MEMORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
@@ -74,7 +77,6 @@ async function processCleanupJob(
 	} catch (error) {
 		await retryCleanupJob(job, error);
 		logger.error('Super memory cleanup failed', {
-			userId: job.userId,
 			kind: job.kind,
 			attempts: job.attempts,
 			error
@@ -91,7 +93,6 @@ export async function runSuperMaintenance(
 	now = new Date(),
 	batchSize = DEFAULT_BATCH_SIZE
 ): Promise<SuperMaintenanceSummary> {
-	await connectDb();
 	const pastDueGraceCutoff = new Date(now.getTime() - SUPER_PAST_DUE_GRACE_MS);
 	const expiredPastDueRecords = await SuperBillingAccess.find({
 		status: 'past_due',
@@ -118,26 +119,30 @@ export async function runSuperMaintenance(
 				{ userId, superEndedAt: { $exists: false } },
 				{ $set: { superEndedAt: accessEndedAt } }
 			).exec(),
-			InsightReport.updateMany(
-				{ userId, lockedAt: { $exists: false } },
-				{ $set: { lockedAt: accessEndedAt } }
-			).exec()
+			lockInsightReports(userId, accessEndedAt)
 		]);
 	}
 
-	const reportUsers = await InsightReport.distinct('userId').exec();
-	const betaProfiles = await TutorProfile.find({
-		superEndedAt: { $exists: false },
-		$or: [
-			{ superAccessStartedAt: { $exists: true } },
-			{ memoryDisclosureSeenAt: { $exists: true } },
-			{ userId: { $in: reportUsers } }
-		]
-	})
-		.select({ userId: 1 })
-		.limit(Math.max(1, Math.min(batchSize, 100)))
-		.lean()
-		.exec();
+	const db = getNeonDatabase();
+	const betaProfiles = await db
+		.select({ userId: tutorProfiles.userId })
+		.from(tutorProfiles)
+		.where(
+			and(
+				isNull(tutorProfiles.superEndedAt),
+				or(
+					isNotNull(tutorProfiles.superAccessStartedAt),
+					isNotNull(tutorProfiles.memoryDisclosureSeenAt),
+					exists(
+						db
+							.select({ one: sql<number>`1` })
+							.from(insightReports)
+							.where(eq(insightReports.userId, tutorProfiles.userId))
+					)
+				)
+			)
+		)
+		.limit(Math.max(1, Math.min(batchSize, 100)));
 	await Promise.all(
 		betaProfiles.map((profile) => markSuperAccessEndedIfNoAccess(profile.userId, now, now))
 	);

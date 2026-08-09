@@ -1,11 +1,7 @@
-import { connectDb } from '$lib/server/db';
-import { FrqAttempt } from '$lib/frq/model.server';
+import { and, desc, eq, gte, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import { isSuperInsightsEnabled } from '$lib/flags';
-import { InsightReport } from '$lib/super/models.server';
-import { getEntitlements } from '$lib/super/entitlements.server';
-import { getTutorProfileView } from '$lib/super/profile.server';
-import { UserProfile } from '$lib/users/model.server';
-import type { IQuestionAttempt } from '$lib/users/records.server';
+import { insightReports } from '$lib/server/neon/schema';
+import { insightReportDataSchema } from '$lib/super/insight-schema';
 import type { Entitlements } from '$lib/super/types';
 
 export const INSIGHT_MIN_TOTAL_SCORED_ATTEMPTS = 20;
@@ -168,12 +164,12 @@ function roundPercentage(value: number): number {
 	return Math.round(value * 100) / 100;
 }
 
-function asValidDate(value: Date | string | undefined): Date | null {
+function asValidDate(value: Date | string | null | undefined): Date | null {
 	const date = value instanceof Date ? new Date(value.getTime()) : value ? new Date(value) : null;
 	return date && Number.isFinite(date.getTime()) ? date : null;
 }
 
-function isoDate(value: Date | string | undefined): string | null {
+function isoDate(value: Date | string | null | undefined): string | null {
 	return asValidDate(value)?.toISOString() ?? null;
 }
 
@@ -540,67 +536,31 @@ export function buildInsightReportData(
 	};
 }
 
-function fromMcqAttempt(attempt: IQuestionAttempt, index: number): InsightScoredAttempt | null {
-	if (attempt.wasCorrect === undefined) return null;
-	const attemptedAt = asValidDate(attempt.attemptedAt);
-	if (!attemptedAt) return null;
-	return {
-		id: `mcq:${attempt.questionId}:${index}`,
-		source: 'mcq',
-		apClass: attempt.apClass,
-		unit: attempt.unit,
-		scorePercentage: attempt.wasCorrect ? 100 : 0,
-		attemptedAt
-	};
+/** Read only the scored evidence required by the pure report calculation. */
+export async function getScoredAttemptsForUser(userId: string): Promise<InsightScoredAttempt[]> {
+	const { getScoredAttemptsForUser: readEvidence } =
+		await import('$lib/super/insight-evidence.server');
+	return readEvidence(userId);
 }
 
-/** Read MCQ history and durable graded FRQ attempts from Neon PostgreSQL. */
-export async function getScoredAttemptsForUser(userId: string): Promise<InsightScoredAttempt[]> {
-	await connectDb();
-	const [profile, frqAttempts] = await Promise.all([
-		UserProfile.findOne({ userId }, { questionHistory: 1 }).lean().exec(),
-		FrqAttempt.find(
-			{ userId, status: 'graded', 'grade.percentage': { $exists: true } },
-			{
-				_id: 1,
-				apClass: 1,
-				unit: 1,
-				'grade.percentage': 1,
-				'grade.pointsEarned': 1,
-				'grade.pointsAvailable': 1,
-				createdAt: 1
-			}
-		)
-			.lean()
-			.exec()
-	]);
+async function getInsightDatabase() {
+	const { getNeonDatabase } = await import('$lib/server/neon/db');
+	return getNeonDatabase();
+}
 
-	const mcq = (profile?.questionHistory ?? [])
-		.map(fromMcqAttempt)
-		.filter((attempt): attempt is InsightScoredAttempt => attempt !== null);
-	const frq = frqAttempts.reduce<InsightScoredAttempt[]>((scored, attempt) => {
-		const attemptedAt = asValidDate(attempt.createdAt);
-		const percentage = attempt.grade?.percentage;
-		if (!attemptedAt || typeof percentage !== 'number' || !Number.isFinite(percentage))
-			return scored;
-		scored.push({
-			id: `frq:${String(attempt._id)}`,
-			source: 'frq',
-			apClass: attempt.apClass,
-			unit: attempt.unit,
-			scorePercentage: percentage,
-			rubricPointsEarned: attempt.grade?.pointsEarned,
-			rubricPointsAvailable: attempt.grade?.pointsAvailable,
-			attemptedAt
-		});
-		return scored;
-	}, []);
+async function getInsightEntitlements(userId: string, now?: Date) {
+	const { getEntitlements } = await import('$lib/super/entitlements.server');
+	return getEntitlements(userId, now);
+}
 
-	return [...mcq, ...frq].sort(
-		(a, b) =>
-			new Date(a.attemptedAt).getTime() - new Date(b.attemptedAt).getTime() ||
-			(a.id ?? '').localeCompare(b.id ?? '')
-	);
+async function getInsightTutorProfileView(userId: string) {
+	const { getTutorProfileView } = await import('$lib/super/profile.server');
+	return getTutorProfileView(userId);
+}
+
+async function getInsightReportModel() {
+	const { InsightReport } = await import('$lib/super/models.server');
+	return InsightReport;
 }
 
 export function hasInsightAccess(entitlements: Pick<Entitlements, 'aiInsights'>): boolean {
@@ -609,13 +569,14 @@ export function hasInsightAccess(entitlements: Pick<Entitlements, 'aiInsights'>)
 
 async function requireInsightAccess(userId: string, now = new Date()): Promise<void> {
 	if (!(await isSuperInsightsEnabled())) throw new SuperInsightsLockedError();
-	const entitlements = await getEntitlements(userId, now);
+	const entitlements = await getInsightEntitlements(userId, now);
 	if (!hasInsightAccess(entitlements)) throw new SuperInsightsLockedError();
-	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new SuperInsightsLockedError();
+	if (!(await getInsightTutorProfileView(userId)).ageConfirmedAt)
+		throw new SuperInsightsLockedError();
 }
 
 function reportFromStored(value: Record<string, unknown>): InsightReportData {
-	return value as unknown as InsightReportData;
+	return insightReportDataSchema.parse(value) as InsightReportData;
 }
 
 /** Convert a database report into a Date-free view safe for JSON serialization. */
@@ -627,11 +588,12 @@ export function toInsightReportView(report: {
 	generatedAt: Date | string;
 	manual: boolean;
 	pdfData?: Buffer;
+	pdfAvailable?: boolean;
 	pdfGeneratedAt?: Date | string;
 	pdfGenerationVersion?: number;
-	feedback?: 'helpful' | 'not_helpful';
-	feedbackReason?: string;
-	lockedAt?: Date | string;
+	feedback?: string | null;
+	feedbackReason?: string | null;
+	lockedAt?: Date | string | null;
 	createdAt: Date | string;
 	updatedAt: Date | string;
 }): InsightReportView {
@@ -640,6 +602,10 @@ export function toInsightReportView(report: {
 	const updatedAt = isoDate(report.updatedAt);
 	if (!generatedAt || !createdAt || !updatedAt)
 		throw new Error('Insight report has invalid timestamps');
+	const feedback =
+		report.feedback === 'helpful' || report.feedback === 'not_helpful'
+			? report.feedback
+			: undefined;
 	return {
 		id: report._id === undefined ? '' : String(report._id),
 		userId: report.userId,
@@ -647,8 +613,8 @@ export function toInsightReportView(report: {
 		evidenceAttemptCount: report.evidenceAttemptCount,
 		generatedAt,
 		manual: report.manual,
-		pdfAvailable: Boolean(report.pdfData && report.pdfData.length > 0),
-		...(report.feedback ? { feedback: report.feedback } : {}),
+		pdfAvailable: report.pdfAvailable ?? Boolean(report.pdfData && report.pdfData.length > 0),
+		...(feedback ? { feedback } : {}),
 		...(report.feedbackReason ? { feedbackReason: report.feedbackReason } : {}),
 		lockedAt: isoDate(report.lockedAt),
 		createdAt,
@@ -662,31 +628,51 @@ export async function attachInsightReportPdf(
 	pdfData: Uint8Array,
 	narrative?: string | null
 ): Promise<InsightReportView | null> {
-	await connectDb();
-	const updated = await InsightReport.findOneAndUpdate(
-		{ _id: reportId, userId },
-		{
-			$set: {
-				pdfData: Buffer.from(pdfData),
-				pdfGeneratedAt: new Date(),
-				pdfGenerationVersion: 1,
-				...(narrative ? { 'report.narrative': narrative } : {})
-			}
-		},
-		{ new: true }
-	)
-		.lean()
-		.exec();
-	return updated ? toInsightReportView(updated) : null;
+	const db = await getInsightDatabase();
+	const now = new Date();
+	const [updated] = await db
+		.update(insightReports)
+		.set({
+			pdfData: Buffer.from(pdfData),
+			pdfGeneratedAt: now,
+			pdfGenerationVersion: 1,
+			updatedAt: now,
+			...(narrative
+				? {
+						report: sql<Record<string, unknown>>`jsonb_set(
+							${insightReports.report},
+							'{narrative}',
+							to_jsonb(${narrative}::text),
+							true
+						)`
+					}
+				: {})
+		})
+		.where(and(eq(insightReports.id, reportId), eq(insightReports.userId, userId)))
+		.returning({
+			_id: insightReports.id,
+			userId: insightReports.userId,
+			report: insightReports.report,
+			evidenceAttemptCount: insightReports.evidenceAttemptCount,
+			generatedAt: insightReports.generatedAt,
+			manual: insightReports.manual,
+			feedback: insightReports.feedback,
+			feedbackReason: insightReports.feedbackReason,
+			lockedAt: insightReports.lockedAt,
+			createdAt: insightReports.createdAt,
+			updatedAt: insightReports.updatedAt
+		});
+	return updated ? toInsightReportView({ ...updated, pdfAvailable: true }) : null;
 }
 
 export async function getStoredInsightReportPdf(userId: string): Promise<Buffer | null> {
-	await connectDb();
-	const report = await InsightReport.findOne({ userId })
-		.sort({ generatedAt: -1, _id: -1 })
-		.select({ pdfData: 1 })
-		.lean()
-		.exec();
+	const db = await getInsightDatabase();
+	const [report] = await db
+		.select({ pdfData: insightReports.pdfData })
+		.from(insightReports)
+		.where(eq(insightReports.userId, userId))
+		.orderBy(desc(insightReports.generatedAt), desc(insightReports.id))
+		.limit(1);
 	return report?.pdfData ? Buffer.from(report.pdfData) : null;
 }
 
@@ -695,11 +681,29 @@ async function getReadableStoredReport(
 	now = new Date()
 ): Promise<InsightReportView | null> {
 	await requireInsightAccess(userId, now);
-	await connectDb();
-	const report = await InsightReport.findOne({ userId })
-		.sort({ generatedAt: -1, _id: -1 })
-		.lean()
-		.exec();
+	const pdfAvailable = sql<boolean>`coalesce(octet_length(${insightReports.pdfData}), 0) > 0`.as(
+		'pdfAvailable'
+	);
+	const db = await getInsightDatabase();
+	const [report] = await db
+		.select({
+			_id: insightReports.id,
+			userId: insightReports.userId,
+			report: insightReports.report,
+			evidenceAttemptCount: insightReports.evidenceAttemptCount,
+			generatedAt: insightReports.generatedAt,
+			manual: insightReports.manual,
+			pdfAvailable,
+			feedback: insightReports.feedback,
+			feedbackReason: insightReports.feedbackReason,
+			lockedAt: insightReports.lockedAt,
+			createdAt: insightReports.createdAt,
+			updatedAt: insightReports.updatedAt
+		})
+		.from(insightReports)
+		.where(eq(insightReports.userId, userId))
+		.orderBy(desc(insightReports.generatedAt), desc(insightReports.id))
+		.limit(1);
 	return report ? toInsightReportView(report) : null;
 }
 
@@ -709,7 +713,7 @@ export async function getCurrentStoredInsightReport(
 	now = new Date()
 ): Promise<InsightReportView | null> {
 	try {
-		const entitlements = await getEntitlements(userId, now);
+		const entitlements = await getInsightEntitlements(userId, now);
 		if (!hasInsightAccess(entitlements)) return null;
 		return await getReadableStoredReport(userId, now);
 	} catch (error) {
@@ -756,7 +760,7 @@ export async function buildAndStoreInsightReport(
 	});
 	if (!reportData.eligibility.eligible) return null;
 
-	await connectDb();
+	const InsightReport = await getInsightReportModel();
 	const created = await InsightReport.create({
 		userId,
 		report: reportData,
@@ -771,42 +775,45 @@ export async function buildAndStoreInsightReport(
 				}
 			: {})
 	});
-	const snapshotsToRemove = await InsightReport.find({
-		userId,
-		_id: { $ne: created._id },
-		$or: [
-			{
-				generatedAt: {
-					$lt: new Date(now.getTime() - INSIGHT_SNAPSHOT_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-				}
-			},
-			{ lockedAt: { $exists: true } }
-		]
-	})
-		.select({ _id: 1 })
-		.lean()
-		.exec();
+	const db = await getInsightDatabase();
+	const retentionCutoff = new Date(
+		now.getTime() - INSIGHT_SNAPSHOT_RETENTION_DAYS * 24 * 60 * 60 * 1000
+	);
+	const snapshotsToRemove = await db
+		.select({ id: insightReports.id })
+		.from(insightReports)
+		.where(
+			and(
+				eq(insightReports.userId, userId),
+				ne(insightReports.id, String(created._id)),
+				or(
+					lt(insightReports.generatedAt, retentionCutoff),
+					sql`${insightReports.lockedAt} is not null`
+				)
+			)
+		);
 	if (snapshotsToRemove.length) {
-		await InsightReport.deleteMany({
-			_id: { $in: snapshotsToRemove.map((report) => report._id) }
-		}).exec();
+		await db.delete(insightReports).where(
+			inArray(
+				insightReports.id,
+				snapshotsToRemove.map(({ id }) => id)
+			)
+		);
 	}
 
-	const excessSnapshots = await InsightReport.find({
-		userId,
-		generatedAt: {
-			$gte: new Date(now.getTime() - INSIGHT_SNAPSHOT_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-		}
-	})
-		.sort({ generatedAt: -1, _id: -1 })
-		.skip(INSIGHT_SNAPSHOT_MAX_PER_USER)
-		.select({ _id: 1 })
-		.lean()
-		.exec();
+	const excessSnapshots = await db
+		.select({ id: insightReports.id })
+		.from(insightReports)
+		.where(and(eq(insightReports.userId, userId), gte(insightReports.generatedAt, retentionCutoff)))
+		.orderBy(desc(insightReports.generatedAt), desc(insightReports.id))
+		.offset(INSIGHT_SNAPSHOT_MAX_PER_USER);
 	if (excessSnapshots.length) {
-		await InsightReport.deleteMany({
-			_id: { $in: excessSnapshots.map((report) => report._id) }
-		}).exec();
+		await db.delete(insightReports).where(
+			inArray(
+				insightReports.id,
+				excessSnapshots.map(({ id }) => id)
+			)
+		);
 	}
 	return toInsightReportView(created);
 }

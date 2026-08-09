@@ -5,10 +5,13 @@ import {
 	PoolRefillState,
 	type IPoolRefillState
 } from '$lib/questions/pool-refill-model.server';
-import { countActivePoolRows, type PoolBucketKey } from '$lib/questions/pool-refill-queue.server';
+import {
+	countActivePoolRows,
+	getPoolRefillHealthCounts,
+	type PoolBucketKey
+} from '$lib/questions/pool-refill-queue.server';
 import { writePoolBucketBelowTarget } from '$lib/questions/pool-capacity.server';
 import { generateQuestionForPool } from '$lib/questions/pool-write.server';
-import { connectDb } from '$lib/server/db';
 import { QUESTION_POOL_CONFIG, type QuestionPoolConfig } from '$lib/questions/pool-constants';
 import { logger } from '$lib/server/logger';
 import { captureQuestionPoolHealthMetric } from '$lib/server/question-request-metrics';
@@ -28,18 +31,7 @@ const MAX_ATTEMPTS = 8;
 
 async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {
 	const now = Date.now();
-	const [emptyObserved, failedJobs, budgetExhaustedJobs, pendingJobs, oldest] = await Promise.all([
-		PoolRefillState.countDocuments({ observedCount: 0 }),
-		PoolRefillState.countDocuments({ status: 'failed' }),
-		PoolRefillState.countDocuments({ status: 'budget_exhausted' }),
-		PoolRefillState.countDocuments({ status: 'pending' }),
-		PoolRefillState.findOne({
-			status: { $in: ['pending', 'failed', 'budget_exhausted', 'running'] }
-		})
-			.sort({ requestedAt: 1 })
-			.select({ requestedAt: 1 })
-			.lean()
-	]);
+	const health = await getPoolRefillHealthCounts();
 
 	captureQuestionPoolHealthMetric({
 		processed: summary.processed,
@@ -48,11 +40,13 @@ async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {
 		failed: summary.failed,
 		budget_remaining: summary.budgetRemaining,
 		stopped_reason: summary.stoppedReason,
-		empty_observed_buckets: emptyObserved,
-		failed_jobs: failedJobs,
-		budget_exhausted_jobs: budgetExhaustedJobs,
-		pending_jobs: pendingJobs,
-		oldest_job_age_ms: oldest?.requestedAt ? Math.max(0, now - oldest.requestedAt.getTime()) : 0
+		empty_observed_buckets: health.emptyObserved,
+		failed_jobs: health.failedJobs,
+		budget_exhausted_jobs: health.budgetExhaustedJobs,
+		pending_jobs: health.pendingJobs,
+		oldest_job_age_ms: health.oldestRequestedAt
+			? Math.max(0, now - health.oldestRequestedAt.getTime())
+			: 0
 	});
 }
 
@@ -189,7 +183,6 @@ export async function tryAcquireRefillLease(
 		leaseTtlMs: QUESTION_POOL_CONFIG.leaseTtlMs
 	}
 ): Promise<IPoolRefillState | null> {
-	await connectDb();
 	const now = opts.now ?? new Date();
 	const leaseExpiresAt = new Date(now.getTime() + opts.leaseTtlMs);
 
@@ -404,7 +397,6 @@ export async function runQuestionPoolRefillWorker(
 		questionType?: PoolBucketKey['questionType'];
 	}
 ): Promise<RefillRunSummary> {
-	await connectDb();
 	const startedAt = opts?.startedAt ?? Date.now();
 	const deadlineMs = startedAt + env.workerTimeBudgetMs;
 	const owner = opts?.owner ?? randomUUID();

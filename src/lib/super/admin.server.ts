@@ -1,7 +1,9 @@
-import { connectDb } from '$lib/server/db';
+import { and, count, eq, gt, inArray, isNull, lte, sql, sum } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { superBillingAccess, superGrants, superUsageRollups } from '$lib/server/neon/schema';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
-	InsightReport,
 	SuperBillingAccess,
 	SuperCleanupJob,
 	SuperGrant,
@@ -148,18 +150,37 @@ function toGrantView(grant: {
 }
 
 export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdminOverview> {
-	await connectDb();
+	const db = getNeonDatabase();
+	const month = monthKey(now);
 	const [
-		activeSubscriptions,
-		pastDueSubscriptions,
+		subscriptionCounts,
+		activeGrantCount,
 		subscriptions,
 		grants,
-		usage,
+		usageTotal,
 		usageRollups,
 		jobs
 	] = await Promise.all([
-		SuperBillingAccess.countDocuments({ plan: 'super', status: 'active' }).exec(),
-		SuperBillingAccess.countDocuments({ plan: 'super', status: 'past_due' }).exec(),
+		db
+			.select({ status: superBillingAccess.status, total: count() })
+			.from(superBillingAccess)
+			.where(
+				and(
+					eq(superBillingAccess.plan, 'super'),
+					inArray(superBillingAccess.status, ['active', 'past_due'])
+				)
+			)
+			.groupBy(superBillingAccess.status),
+		db
+			.select({ total: count() })
+			.from(superGrants)
+			.where(
+				and(
+					lte(superGrants.startsAt, now),
+					gt(superGrants.expiresAt, now),
+					isNull(superGrants.revokedAt)
+				)
+			),
 		SuperBillingAccess.find({ plan: 'super' }).sort({ updatedAt: -1 }).limit(100).lean().exec(),
 		SuperGrant.find({
 			startsAt: { $lte: now },
@@ -170,11 +191,13 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 			.limit(100)
 			.lean()
 			.exec(),
-		SuperUsageRollup.aggregate<{ total: number }>([
-			{ $match: { month: monthKey(now) } },
-			{ $group: { _id: null, total: { $sum: '$personalizedMessages' } } }
-		]).exec(),
-		SuperUsageRollup.find({ month: monthKey(now) })
+		db
+			.select({
+				total: sql<number>`coalesce(${sum(superUsageRollups.personalizedMessages)}, 0)::int`
+			})
+			.from(superUsageRollups)
+			.where(eq(superUsageRollups.month, month)),
+		SuperUsageRollup.find({ month })
 			.sort({ personalizedMessages: -1, updatedAt: -1 })
 			.limit(100)
 			.lean()
@@ -198,15 +221,15 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 	);
 
 	return {
-		activeSubscriptions,
-		pastDueSubscriptions,
-		activeGrants: await SuperGrant.countDocuments({
-			startsAt: { $lte: now },
-			expiresAt: { $gt: now },
-			revokedAt: { $exists: false }
-		}).exec(),
-		month: monthKey(now),
-		personalizedMessagesThisMonth: usage[0]?.total ?? 0,
+		activeSubscriptions: Number(
+			subscriptionCounts.find((row) => row.status === 'active')?.total ?? 0
+		),
+		pastDueSubscriptions: Number(
+			subscriptionCounts.find((row) => row.status === 'past_due')?.total ?? 0
+		),
+		activeGrants: Number(activeGrantCount[0]?.total ?? 0),
+		month,
+		personalizedMessagesThisMonth: Number(usageTotal[0]?.total ?? 0),
 		subscriptions: subscriptions.map((subscription) =>
 			toSubscriptionView(subscription, accessByUser.get(subscription.userId) ?? null)
 		),
@@ -228,7 +251,6 @@ export async function createSuperGrant(input: {
 	createdBy: string;
 }): Promise<SuperGrantView> {
 	if (input.expiresAt <= input.startsAt) throw new Error('A grant must expire after it starts');
-	await connectDb();
 	const grant = await SuperGrant.create(input);
 	if (input.startsAt <= new Date()) {
 		await Promise.all([
@@ -236,10 +258,7 @@ export async function createSuperGrant(input: {
 				{ userId: input.userId },
 				{ $unset: { superEndedAt: 1, memoryPurgedAt: 1 } }
 			).exec(),
-			InsightReport.updateMany(
-				{ userId: input.userId, lockedAt: { $exists: true } },
-				{ $unset: { lockedAt: 1 } }
-			).exec()
+			unlockInsightReports(input.userId)
 		]);
 	}
 	return toGrantView(grant);
@@ -247,7 +266,6 @@ export async function createSuperGrant(input: {
 
 export async function revokeSuperGrant(grantId: string, revokedAt = new Date()): Promise<boolean> {
 	if (!grantId.trim()) return false;
-	await connectDb();
 	const grant = await SuperGrant.findOne({
 		_id: grantId,
 		revokedAt: { $exists: false }
@@ -276,7 +294,6 @@ export async function retrySuperCleanupJob(
 		)
 	)
 		return false;
-	await connectDb();
 	const result = await SuperCleanupJob.updateOne(
 		{
 			_id: normalizedId,

@@ -1,12 +1,12 @@
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
-import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { authSubscriptions, authUsers } from '$lib/server/neon/schema';
 import { and, eq } from 'drizzle-orm';
-import { InsightReport, SuperBillingAccess, TutorProfile } from '$lib/super/models.server';
+import { SuperBillingAccess, TutorProfile } from '$lib/super/models.server';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
 	isSuperBillingStatus,
 	type SuperBillingIssue,
@@ -108,15 +108,14 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 	const status = current.status.toLowerCase();
 	if (!isSuperBillingStatus(status)) {
 		logger.warn('Ignoring Stripe subscription with an unsupported status', {
-			userId: current.userId,
+			resource: 'subscription',
 			status: current.status
 		});
 		return;
 	}
-	await connectDb();
 	if (!(await authUserExists(current.userId))) {
 		logger.warn('Ignoring Stripe subscription for a deleted Better Auth user', {
-			userId: current.userId,
+			resource: 'subscription',
 			stripeSubscriptionId: current.stripeSubscriptionId
 		});
 		return;
@@ -173,10 +172,7 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 				{ userId: current.userId },
 				{ $unset: { superEndedAt: 1, memoryPurgedAt: 1 } }
 			).exec(),
-			InsightReport.updateMany(
-				{ userId: current.userId, lockedAt: { $exists: true } },
-				{ $unset: { lockedAt: 1 } }
-			).exec()
+			unlockInsightReports(current.userId)
 		]);
 	}
 }
@@ -186,7 +182,6 @@ export async function markSubscriptionBillingIssue(
 	issue: SuperBillingIssue | null,
 	eventCreated: Date
 ): Promise<void> {
-	await connectDb();
 	const update = issue
 		? {
 				$set: {
@@ -222,7 +217,6 @@ type StripeBillingRecord = {
 };
 
 async function findStripeBillingRecords(userId: string): Promise<StripeBillingRecord[]> {
-	await connectDb();
 	const [localRecords, authRecords] = await Promise.all([
 		SuperBillingAccess.find({ userId, plan: 'super' })
 			.select({ stripeCustomerId: 1, stripeSubscriptionId: 1 })

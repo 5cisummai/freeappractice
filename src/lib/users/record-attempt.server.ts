@@ -9,12 +9,10 @@ import {
 } from '$lib/practice/multi-attempt';
 import { getOrAssignMultiAttemptVariant } from '$lib/practice/assign-variant.server';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
-import { findUserProfileOrFail } from '$lib/users/profile.server';
-import { findOrCreateProgressEntry } from '$lib/users/progress.server';
+import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { getQuestionById } from '$lib/questions/storage.server';
-import { activateReferralForUser } from '$lib/referrals/referrals.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
 export type RecordAttemptResult =
@@ -30,6 +28,7 @@ export async function recordQuestionAttempt(
 	request: Request
 ): Promise<RecordAttemptResult> {
 	const { questionId, selectedAnswer, timeTakenMs } = body;
+	const attemptId = typeof body.attemptId === 'string' ? body.attemptId.trim() : '';
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
 	// Correctness is derived server-side from the canonical Neon question row.
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
@@ -39,6 +38,12 @@ export async function recordQuestionAttempt(
 			status: 400,
 			body: { error: 'Missing required fields: questionId and selectedAnswer' }
 		};
+	}
+	if (
+		attemptId &&
+		!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attemptId)
+	) {
+		return { status: 400, body: { error: 'Invalid attempt ID' } };
 	}
 
 	const question = await getQuestionById(normalizedQuestionId).catch(() => null);
@@ -52,7 +57,6 @@ export async function recordQuestionAttempt(
 		return { status: 422, body: { error: 'Question metadata is missing class or unit' } };
 	}
 
-	const user = await findUserProfileOrFail(userId);
 	const experimentRequest = hasPracticeExperimentMetadata(body);
 	const experimentContext = experimentRequest ? await getOrAssignMultiAttemptVariant(userId) : null;
 	const displayedExperiment = experimentContext
@@ -145,43 +149,37 @@ export async function recordQuestionAttempt(
 		};
 	}
 
-	user.questionHistory.push(attempt);
-
-	const progressEntry = findOrCreateProgressEntry(user.progress, apClass, normalizedUnit);
-
-	if (attempt.wasCorrect !== undefined) {
-		progressEntry.totalAttempts++;
-		if (attempt.wasCorrect) progressEntry.correctAttempts++;
-		progressEntry.mastery = Math.round(
-			(progressEntry.correctAttempts / progressEntry.totalAttempts) * 100
-		);
+	const progress = await persistQuestionAttempt(userId, attempt, attemptId || undefined);
+	if (progress.referralActivated) {
+		capturePostHogServerEvent(request, {
+			distinctId: userId,
+			event: 'referral_activated',
+			properties: { source: 'first_attempt' }
+		});
 	}
-	progressEntry.lastAttemptAt = new Date();
 
-	await user.save();
-	await activateReferralForUser(userId, request);
-
-	capturePostHogServerEvent(request, {
-		distinctId: userId,
-		event: 'question_attempt_recorded',
-		properties: {
-			question_id: normalizedQuestionId,
-			ap_class: apClass,
-			unit: normalizedUnit,
-			was_correct: attempt.wasCorrect,
-			time_taken_ms: elapsedTimeMs,
-			mastery: progressEntry.mastery,
-			total_attempts: progressEntry.totalAttempts,
-			...(attempt.displayedVariant
-				? {
-						displayed_variant: attempt.displayedVariant,
-						terminal_outcome: attempt.terminalOutcome,
-						answer_count: attempt.answerCount,
-						hints_shown: attempt.hintsShown
-					}
-				: {})
-		}
-	});
+	if (progress.newlyRecorded)
+		capturePostHogServerEvent(request, {
+			distinctId: userId,
+			event: 'question_attempt_recorded',
+			properties: {
+				question_id: normalizedQuestionId,
+				ap_class: apClass,
+				unit: normalizedUnit,
+				was_correct: attempt.wasCorrect,
+				time_taken_ms: elapsedTimeMs,
+				mastery: progress.mastery,
+				total_attempts: progress.totalAttempts,
+				...(attempt.displayedVariant
+					? {
+							displayed_variant: attempt.displayedVariant,
+							terminal_outcome: attempt.terminalOutcome,
+							answer_count: attempt.answerCount,
+							hints_shown: attempt.hintsShown
+						}
+					: {})
+			}
+		});
 
 	// Response shape stays backwards compatible; extras are additive only.
 	return {
@@ -189,8 +187,8 @@ export async function recordQuestionAttempt(
 		body: {
 			message: 'Attempt recorded successfully',
 			questionId: normalizedQuestionId,
-			mastery: progressEntry.mastery,
-			totalAttempts: progressEntry.totalAttempts
+			mastery: progress.mastery,
+			totalAttempts: progress.totalAttempts
 		}
 	};
 }

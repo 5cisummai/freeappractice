@@ -9,18 +9,15 @@ import { logger } from '$lib/server/logger';
 import {
 	acquireCoachLock,
 	getSuperMonthlyMessageLimit,
-	getPersonalizedUsageWarning,
-	limitSuperAi,
 	RedisRequiredError,
 	releaseLock,
-	releasePersonalizedTurn,
-	refreshLock,
-	reservePersonalizedTurn,
-	rollupPersonalizedUsage
+	refreshLock
 } from '$lib/super/ai-controls.server';
 import { createCoachAgent, type CoachUIMessage } from '$lib/super/coach.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
-import { getTutorProfileView } from '$lib/super/profile.server';
+import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
 import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
 import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
 
@@ -47,8 +44,6 @@ const coachRequestSchema = z
 	})
 	.strict();
 
-class RequestTooLargeError extends Error {}
-
 /** Keep cleanup time inside Vercel's route duration even if a provider stream stalls. */
 export const config = { maxDuration: 60 };
 
@@ -64,36 +59,6 @@ function coachRateLimitedResponse(retryAt: number | null): Response {
 				}
 			: { status: 429 }
 	);
-}
-
-async function readCoachRequest(request: Request): Promise<unknown> {
-	const declaredLength = Number(request.headers.get('content-length'));
-	if (Number.isFinite(declaredLength) && declaredLength > MAX_COACH_REQUEST_BYTES) {
-		throw new RequestTooLargeError();
-	}
-	if (!request.body) return null;
-
-	const reader = request.body.getReader();
-	const chunks: Uint8Array[] = [];
-	let receivedBytes = 0;
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		receivedBytes += value.byteLength;
-		if (receivedBytes > MAX_COACH_REQUEST_BYTES) {
-			await reader.cancel();
-			throw new RequestTooLargeError();
-		}
-		chunks.push(value);
-	}
-
-	const bytes = new Uint8Array(receivedBytes);
-	let offset = 0;
-	for (const chunk of chunks) {
-		bytes.set(chunk, offset);
-		offset += chunk.byteLength;
-	}
-	return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 function toCoachModelMessages(messages: z.infer<typeof coachRequestSchema>['messages']) {
@@ -128,16 +93,16 @@ export const POST: RequestHandler = withAuthedHandler(
 
 		let body: unknown;
 		try {
-			body = await readCoachRequest(event.request);
+			body = await readJsonBody(event.request, MAX_COACH_REQUEST_BYTES);
 		} catch (error) {
 			return json(
 				{
 					error:
-						error instanceof RequestTooLargeError
+						error instanceof RequestBodyTooLargeError
 							? 'Coach request is too large'
 							: 'Invalid Coach request'
 				},
-				{ status: error instanceof RequestTooLargeError ? 413 : 400 }
+				{ status: error instanceof RequestBodyTooLargeError ? 413 : 400 }
 			);
 		}
 		const parsed = coachRequestSchema.safeParse(body);
@@ -148,10 +113,11 @@ export const POST: RequestHandler = withAuthedHandler(
 		}
 
 		try {
-			const rate = await limitSuperAi(userId);
-			if (!rate.allowed) return coachRateLimitedResponse(rate.retryAt);
-			const reservation = await reservePersonalizedTurn(userId);
-			if (!reservation) {
+			const personalizedTurn = await startPersonalizedTurn(userId);
+			if (personalizedTurn.kind === 'rate-limited') {
+				return coachRateLimitedResponse(personalizedTurn.retryAt);
+			}
+			if (personalizedTurn.kind === 'exhausted') {
 				return json(
 					{
 						error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
@@ -159,9 +125,15 @@ export const POST: RequestHandler = withAuthedHandler(
 					{ status: 429 }
 				);
 			}
-			const lock = await acquireCoachLock(userId);
+			let lock: Awaited<ReturnType<typeof acquireCoachLock>>;
+			try {
+				lock = await acquireCoachLock(userId);
+			} catch (error) {
+				await personalizedTurn.releaseIfUnused().catch(() => undefined);
+				throw error;
+			}
 			if (!lock) {
-				await releasePersonalizedTurn(userId, reservation.month).catch(() => undefined);
+				await personalizedTurn.releaseIfUnused().catch(() => undefined);
 				return json({ error: 'Another Coach request is still running.' }, { status: 409 });
 			}
 
@@ -180,13 +152,15 @@ export const POST: RequestHandler = withAuthedHandler(
 					clearTimeout(streamTimeoutId);
 					clearInterval(refreshTimer);
 					if (!emittedOutput) {
-						await releasePersonalizedTurn(userId, reservation.month).catch((error) =>
-							logger.warn('Failed to release unused Coach reservation', { error })
-						);
+						await personalizedTurn
+							.releaseIfUnused()
+							.catch((error) =>
+								logger.warn('Failed to release unused Coach reservation', { error })
+							);
 					}
 					await releaseLock(lock);
 				};
-				const profile = await getTutorProfileView(userId);
+				const profile = await getTutorProfileViewForRequest(event.locals, userId);
 				const lastUserMessage = messages.at(-1)?.content ?? '';
 				const personalization = await buildTutorPersonalization(userId, lastUserMessage);
 				const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
@@ -234,9 +208,9 @@ export const POST: RequestHandler = withAuthedHandler(
 							transform(chunk, controller) {
 								if (chunk.type === 'text-delta' && chunk.delta.trim() && !emittedOutput) {
 									emittedOutput = true;
-									void rollupPersonalizedUsage(userId, reservation).catch((error) =>
-										logger.warn('Failed to roll up Coach usage', { error })
-									);
+									void personalizedTurn
+										.markOutput()
+										.catch((error) => logger.warn('Failed to roll up Coach usage', { error }));
 								}
 								controller.enqueue(chunk);
 							}
@@ -248,16 +222,16 @@ export const POST: RequestHandler = withAuthedHandler(
 					headers: {
 						'Cache-Control': 'no-cache',
 						'X-Tutor-Personalization-Degraded': personalization.memoryDegraded ? '1' : '0',
-						'X-Super-Usage-Remaining': String(reservation.remaining),
-						...(getPersonalizedUsageWarning(reservation)
-							? { 'X-Super-Usage-Warning': String(getPersonalizedUsageWarning(reservation)) }
+						'X-Super-Usage-Remaining': String(personalizedTurn.reservation.remaining),
+						...(personalizedTurn.usageWarning
+							? { 'X-Super-Usage-Warning': String(personalizedTurn.usageWarning) }
 							: {})
 					}
 				});
 			} catch (error) {
 				if (cleanup) await cleanup();
 				else {
-					await releasePersonalizedTurn(userId, reservation.month).catch(() => undefined);
+					await personalizedTurn.releaseIfUnused().catch(() => undefined);
 					await releaseLock(lock);
 				}
 				throw error;

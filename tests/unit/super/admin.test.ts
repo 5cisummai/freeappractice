@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
 	connectDb: vi.fn(),
+	select: vi.fn(),
 	getEntitlements: vi.fn(),
 	SuperBillingAccess: {
 		countDocuments: vi.fn(),
@@ -24,6 +25,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
+vi.mock('$lib/server/neon/db', () => ({
+	getNeonDatabase: () => ({ select: mocks.select })
+}));
 vi.mock('$lib/super/entitlements.server', () => ({
 	getEntitlements: mocks.getEntitlements
 }));
@@ -43,9 +47,19 @@ function query<T>(value: T) {
 describe('Super admin operations', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.SuperBillingAccess.countDocuments
-			.mockReturnValueOnce(query(2))
-			.mockReturnValueOnce(query(1));
+		mocks.select
+			.mockReturnValueOnce({
+				from: () => ({
+					where: () => ({
+						groupBy: async () => [
+							{ status: 'active', total: 2 },
+							{ status: 'past_due', total: 1 }
+						]
+					})
+				})
+			})
+			.mockReturnValueOnce({ from: () => ({ where: async () => [{ total: 3 }] }) })
+			.mockReturnValueOnce({ from: () => ({ where: async () => [{ total: 12 }] }) });
 		mocks.SuperBillingAccess.find.mockReturnValue(
 			query([
 				{
@@ -62,8 +76,6 @@ describe('Super admin operations', () => {
 			])
 		);
 		mocks.SuperGrant.find.mockReturnValue(query([]));
-		mocks.SuperGrant.countDocuments.mockReturnValue(query(3));
-		mocks.SuperUsageRollup.aggregate.mockReturnValue(query([{ total: 12 }]));
 		mocks.SuperUsageRollup.find.mockReturnValue(
 			query([
 				{

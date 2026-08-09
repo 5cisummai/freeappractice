@@ -7,6 +7,7 @@ const {
 	budgetFindOne,
 	budgetFindOneAndUpdate,
 	countActivePoolRows,
+	getPoolRefillHealthCounts,
 	generateQuestionForPool,
 	generateAndPersistFrq
 } = vi.hoisted(() => ({
@@ -23,6 +24,13 @@ const {
 	budgetFindOne: vi.fn(),
 	budgetFindOneAndUpdate: vi.fn(),
 	countActivePoolRows: vi.fn(),
+	getPoolRefillHealthCounts: vi.fn(async () => ({
+		emptyObserved: 0,
+		failedJobs: 0,
+		budgetExhaustedJobs: 0,
+		pendingJobs: 0,
+		oldestRequestedAt: null
+	})),
 	generateQuestionForPool: vi.fn(),
 	generateAndPersistFrq: vi.fn()
 }));
@@ -70,6 +78,7 @@ vi.mock('$lib/questions/pool-refill-queue.server', async () => {
 	return {
 		...actual,
 		countActivePoolRows,
+		getPoolRefillHealthCounts,
 		requestPoolRefill: vi.fn(),
 		enqueueAllCatalogDeficits: vi.fn(),
 		listCatalogBuckets: vi.fn(() => [])

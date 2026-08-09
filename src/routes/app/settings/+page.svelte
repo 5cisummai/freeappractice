@@ -11,9 +11,11 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
+	import { APP_VERSION } from '$lib/app-meta';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { settingsController } from '$lib/client/settings.svelte.js';
+	import { accountActions } from '$lib/client/settings.svelte.js';
+	import { themeController } from '$lib/client/theme.svelte.js';
 	import { resetUiHints } from '$lib/client/ui-hints.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
@@ -97,13 +99,13 @@
 
 	function onThemeChange(value: string) {
 		if (value === 'light' || value === 'dark' || value === 'system') {
-			settingsController.setTheme(value);
+			themeController.set(value);
 		}
 	}
 
 	function handleUpdateAccount(e: SubmitEvent) {
 		e.preventDefault();
-		settingsController.updateAccount(data.user, accountForm);
+		accountActions.updateAccount(data.user, accountForm);
 	}
 
 	function resetAccountForm() {
@@ -116,7 +118,7 @@
 	}
 
 	async function handleDeleteAccount() {
-		const result = await settingsController.deleteAccount(deletePassword || undefined);
+		const result = await accountActions.deleteAccount(deletePassword || undefined);
 		if (result) {
 			deleteAccountOpen = false;
 			deletePassword = '';
@@ -124,7 +126,7 @@
 	}
 
 	async function handleClearPracticeData() {
-		const result = await settingsController.clearPracticeData();
+		const result = await accountActions.clearPracticeData();
 		if (result) {
 			clearPracticeOpen = false;
 		}
@@ -539,8 +541,8 @@
 							<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
 						</div>
 						<div class="flex flex-wrap gap-2 pt-1">
-							<Button type="submit" size="sm" disabled={settingsController.accountPending}>
-								{settingsController.accountPending ? 'Saving...' : 'Save changes'}
+							<Button type="submit" size="sm" disabled={accountActions.accountPending}>
+								{accountActions.accountPending ? 'Saving...' : 'Save changes'}
 							</Button>
 							<Button type="button" variant="outline" size="sm" onclick={resetAccountForm}>
 								Reset
@@ -592,7 +594,7 @@
 							<p class="text-sm font-medium text-foreground">App version</p>
 							<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
 						</div>
-						<p class="text-sm font-medium text-foreground tabular-nums">1.5.5</p>
+						<p class="text-sm font-medium text-foreground tabular-nums">{APP_VERSION}</p>
 					</div>
 					<div
 						class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5"
@@ -645,9 +647,9 @@
 			<AlertDialog.Action
 				class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
 				onclick={handleClearPracticeData}
-				disabled={settingsController.clearPracticePending}
+				disabled={accountActions.clearPracticePending}
 			>
-				{settingsController.clearPracticePending ? 'Clearing...' : 'Clear practice data'}
+				{accountActions.clearPracticePending ? 'Clearing...' : 'Clear practice data'}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
@@ -678,9 +680,9 @@
 			<AlertDialog.Action
 				class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
 				onclick={handleDeleteAccount}
-				disabled={settingsController.deletePending}
+				disabled={accountActions.deletePending}
 			>
-				{settingsController.deletePending ? 'Sending...' : 'Send deletion email'}
+				{accountActions.deletePending ? 'Sending...' : 'Send deletion email'}
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>

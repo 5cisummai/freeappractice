@@ -5,8 +5,8 @@ import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/super/ai-controls.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
 import { SuperBillingAccess } from '$lib/super/models.server';
-import { getTutorProfileView } from '$lib/super/profile.server';
-import { findUserProfileOrFail } from '$lib/users/profile.server.js';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
 
 const validSubjects = new Set(getCourses().map((course) => course.name));
 
@@ -34,18 +34,18 @@ async function readSettingsUsage(userId: string, enabled: boolean): Promise<Sett
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;
 	const [userProfile, entitlements, freeBetaEnabled] = await Promise.all([
-		findUserProfileOrFail(userId, 'subjects'),
+		getUserSubjects(userId),
 		getEntitlements(userId),
 		isSuperFreeBetaEnabled()
 	]);
 	const [profile, billing, usage] = await Promise.all([
-		getTutorProfileView(userId),
+		getTutorProfileViewForRequest(locals, userId),
 		SuperBillingAccess.findOne({ userId, plan: 'super' }).sort({ updatedAt: -1 }).lean().exec(),
 		readSettingsUsage(userId, entitlements.personalizedTutor)
 	]);
 
 	return {
-		selectedSubjects: userProfile.subjects ?? [],
+		selectedSubjects: userProfile,
 		entitlements,
 		freeBetaEnabled,
 		profile,
@@ -78,9 +78,7 @@ export const actions: Actions = {
 			return fail(400, { subjectError: 'Choose at least one class.' });
 		}
 
-		const userProfile = await findUserProfileOrFail(locals.userId!, 'subjects');
-		userProfile.subjects = subjects;
-		await userProfile.save();
+		await updateUserSubjects(locals.userId!, subjects);
 
 		return { success: true };
 	}

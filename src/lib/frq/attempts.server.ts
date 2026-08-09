@@ -14,6 +14,9 @@ import {
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { logger } from '$lib/server/logger';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { frqAttemptGrades, frqAttempts } from '$lib/server/neon/schema';
+import { and, count, eq, max, sql, sum } from 'drizzle-orm';
 
 export class FrqAttemptInProgressError extends Error {}
 
@@ -193,35 +196,32 @@ export async function getFrqAttemptForUser(
 }
 
 export async function getFrqProgressForUser(userId: string): Promise<FrqProgressSummary[]> {
-	const rows = await FrqAttempt.aggregate<{
-		_id: { apClass: string; unit: string };
-		attempts: number;
-		pointsEarned: number;
-		pointsAvailable: number;
-		lastAttemptAt: Date;
-	}>([
-		{ $match: { userId, status: 'graded' } },
-		{
-			$group: {
-				_id: { apClass: '$apClass', unit: '$unit' },
-				attempts: { $sum: 1 },
-				pointsEarned: { $sum: '$grade.pointsEarned' },
-				pointsAvailable: { $sum: '$grade.pointsAvailable' },
-				lastAttemptAt: { $max: '$createdAt' }
-			}
-		}
-	]);
-	return rows.map((row) => ({
-		apClass: row._id.apClass,
-		unit: row._id.unit,
-		attempts: row.attempts,
-		pointsEarned: row.pointsEarned,
-		pointsAvailable: row.pointsAvailable,
-		averagePercentage: row.pointsAvailable
-			? Math.round((row.pointsEarned / row.pointsAvailable) * 100)
-			: 0,
-		lastAttemptAt: row.lastAttemptAt?.toISOString()
-	}));
+	const rows = await getNeonDatabase()
+		.select({
+			apClass: frqAttempts.apClass,
+			unit: frqAttempts.unit,
+			attempts: count(),
+			pointsEarned: sql<number>`coalesce(${sum(frqAttemptGrades.pointsEarned)}, 0)`,
+			pointsAvailable: sql<number>`coalesce(${sum(frqAttemptGrades.pointsAvailable)}, 0)`,
+			lastAttemptAt: max(frqAttempts.createdAt)
+		})
+		.from(frqAttempts)
+		.innerJoin(frqAttemptGrades, eq(frqAttemptGrades.attemptId, frqAttempts.id))
+		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
+		.groupBy(frqAttempts.apClass, frqAttempts.unit);
+	return rows.map((row) => {
+		const pointsEarned = Number(row.pointsEarned);
+		const pointsAvailable = Number(row.pointsAvailable);
+		return {
+			apClass: row.apClass,
+			unit: row.unit,
+			attempts: Number(row.attempts),
+			pointsEarned,
+			pointsAvailable,
+			averagePercentage: pointsAvailable ? Math.round((pointsEarned / pointsAvailable) * 100) : 0,
+			lastAttemptAt: row.lastAttemptAt?.toISOString()
+		};
+	});
 }
 
 export type FrqActivity = {
@@ -230,18 +230,3 @@ export type FrqActivity = {
 	apClass: string;
 	percentage: number;
 };
-
-export async function getFrqActivityForUser(userId: string): Promise<FrqActivity[]> {
-	const rows = await FrqAttempt.find(
-		{ userId, status: 'graded' },
-		{ createdAt: 1, timeTakenMs: 1, apClass: 1, 'grade.percentage': 1 }
-	)
-		.lean()
-		.exec();
-	return rows.map((row) => ({
-		attemptedAt: row.createdAt,
-		timeTakenMs: row.timeTakenMs,
-		apClass: row.apClass,
-		percentage: row.grade?.percentage ?? 0
-	}));
-}

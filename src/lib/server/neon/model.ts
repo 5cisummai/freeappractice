@@ -72,6 +72,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 	);
 }
 
+function isUniqueViolation(error: unknown): boolean {
+	if (!error || typeof error !== 'object') return false;
+	const candidate = error as { code?: string | number; cause?: unknown };
+	return candidate.code === '23505' || isUniqueViolation(candidate.cause);
+}
+
 function fieldName(config: ModelConfig<unknown>, field: string): string {
 	if (field === '_id') return config.idField;
 	return config.fieldAliases?.[field] ?? field;
@@ -429,95 +435,6 @@ export class PostgresModel<T extends Record<string, any>> {
 		});
 	}
 
-	countDocuments(filter: MongoFilter = {}): PostgresQuery<number> {
-		return new PostgresQuery(async () => (await this.find(filter).exec()).length);
-	}
-
-	distinct(field: string, filter: MongoFilter = {}): PostgresQuery<unknown[]> {
-		return new PostgresQuery(async () => {
-			const rows = await this.find(filter).exec();
-			return [...new Set(rows.map((row) => row[field]))];
-		});
-	}
-
-	aggregate<R = Record<string, unknown>>(pipeline: unknown[]): PostgresQuery<R[]> {
-		return new PostgresQuery(async () => {
-			const first = pipeline[0] as { $match?: MongoFilter } | undefined;
-			let rows: Array<Record<string, unknown>> = (await this.find(
-				first?.$match ?? {}
-			).exec()) as Array<Record<string, unknown>>;
-			for (const stage of pipeline.slice(first?.$match ? 1 : 0) as Array<Record<string, any>>) {
-				if (stage.$group) {
-					const spec = stage.$group as Record<string, any>;
-					const groups = new Map<string, Record<string, unknown>>();
-					for (const row of rows) {
-						const idSpec = spec._id;
-						const idValue =
-							idSpec && typeof idSpec === 'object'
-								? Object.fromEntries(
-										Object.entries(idSpec).map(([key, path]) => [
-											key,
-											readPath(row, String(path).replace(/^\$/, ''))
-										])
-									)
-								: typeof idSpec === 'string' && idSpec.startsWith('$')
-									? readPath(row, idSpec.slice(1))
-									: idSpec;
-						const key = JSON.stringify(idValue);
-						const group = (groups.get(key) ?? { _id: idValue }) as Record<string, unknown>;
-						for (const [name, operation] of Object.entries(spec)) {
-							if (name === '_id') continue;
-							if ('$sum' in operation) {
-								const operand = operation.$sum;
-								const amount =
-									operand === 1
-										? 1
-										: Number(readPath(row, String(operand).replace(/^\$/, '')) ?? 0);
-								group[name] = Number(group[name] ?? 0) + amount;
-							} else if ('$min' in operation || '$max' in operation) {
-								const operand = operation.$min ?? operation.$max;
-								const value = readPath(row, String(operand).replace(/^\$/, ''));
-								const current = group[name];
-								if (
-									current === undefined ||
-									('$min' in operation
-										? String(value) < String(current)
-										: String(value) > String(current))
-								)
-									group[name] = value;
-							} else if ('$addToSet' in operation) {
-								const value =
-									operation.$addToSet === '$$ROOT'
-										? row
-										: readPath(row, String(operation.$addToSet).replace(/^\$/, ''));
-								const set = (group[name] as unknown[] | undefined) ?? [];
-								if (!set.some((item) => JSON.stringify(item) === JSON.stringify(value)))
-									set.push(value);
-								group[name] = set;
-							}
-						}
-						groups.set(key, group);
-					}
-					rows = [...groups.values()];
-				} else if (stage.$sort) {
-					const sort = stage.$sort as SortSpec;
-					rows.sort((a, b) => {
-						for (const [field, direction] of Object.entries(sort)) {
-							const left = readPath(a, field);
-							const right = readPath(b, field);
-							if (left === right) continue;
-							return (String(left) < String(right) ? -1 : 1) * direction;
-						}
-						return 0;
-					});
-				} else if (stage.$limit) {
-					rows = rows.slice(0, stage.$limit);
-				}
-			}
-			return rows as R[];
-		});
-	}
-
 	async create(input: Record<string, unknown>): Promise<T> {
 		const prepared = this.config.prepareInsert ? await this.config.prepareInsert(input) : input;
 		const values = inputValues(this.config, prepared);
@@ -536,25 +453,34 @@ export class PostgresModel<T extends Record<string, any>> {
 		const values: Record<string, unknown> = {};
 		for (const [key, value] of Object.entries(update.$set ?? {})) {
 			const field = fieldName(this.config, key);
-			if (this.config.columns[field]) values[field] = value;
+			if (!this.config.columns[field])
+				throw new Error(`Unsupported PostgreSQL update field: ${key}`);
+			values[field] = value;
 		}
 		for (const [key] of Object.entries(update.$unset ?? {})) {
-			if (this.config.columns[key]) values[key] = null;
+			const field = fieldName(this.config, key);
+			if (!this.config.columns[field])
+				throw new Error(`Unsupported PostgreSQL update field: ${key}`);
+			values[field] = null;
 		}
 		for (const [key, value] of Object.entries(update.$inc ?? {})) {
-			const column = this.config.columns[key];
-			if (column) values[key] = sql`${column} + ${value}`;
+			const field = fieldName(this.config, key);
+			const column = this.config.columns[field];
+			if (!column) throw new Error(`Unsupported PostgreSQL update field: ${key}`);
+			values[field] = sql`${column} + ${value}`;
 		}
 		for (const [key, value] of Object.entries(update.$max ?? {})) {
-			const column = this.config.columns[key];
-			if (column) values[key] = sql`GREATEST(${column}, ${value})`;
+			const field = fieldName(this.config, key);
+			const column = this.config.columns[field];
+			if (!column) throw new Error(`Unsupported PostgreSQL update field: ${key}`);
+			values[field] = sql`GREATEST(${column}, ${value})`;
 		}
 		for (const [key, value] of Object.entries(update.$push ?? {})) {
-			const column = this.config.columns[key];
-			if (column) {
-				const previous = current?.[key];
-				values[key] = [...(Array.isArray(previous) ? previous : []), value];
-			}
+			const field = fieldName(this.config, key);
+			const column = this.config.columns[field];
+			if (!column) throw new Error(`Unsupported PostgreSQL update field: ${key}`);
+			const previous = current?.[key];
+			values[field] = [...(Array.isArray(previous) ? previous : []), value];
 		}
 		return values;
 	}
@@ -564,7 +490,7 @@ export class PostgresModel<T extends Record<string, any>> {
 		updateInput: MongoUpdate | Record<string, unknown>,
 		options: { upsert?: boolean; returnDocument?: 'before' | 'after'; new?: boolean } = {}
 	): Promise<T | null> {
-		const current = await this.findOne(filter).exec();
+		let current = await this.findOne(filter).exec();
 		let update = updateObject(updateInput);
 		if (this.config.prepareUpdate)
 			update = await this.config.prepareUpdate(update, filter, current);
@@ -577,7 +503,16 @@ export class PostgresModel<T extends Record<string, any>> {
 			}
 			Object.assign(base, update.$setOnInsert ?? {}, update.$set ?? {});
 			for (const [key, value] of Object.entries(update.$inc ?? {})) base[key] = value;
-			return this.create(base);
+			try {
+				return await this.create(base);
+			} catch (error) {
+				if (!isUniqueViolation(error)) throw error;
+				current = await this.findOne(filter).exec();
+				if (!current) throw error;
+				update = updateObject(updateInput);
+				if (this.config.prepareUpdate)
+					update = await this.config.prepareUpdate(update, filter, current);
+			}
 		}
 		if (!current) return null;
 
@@ -616,27 +551,6 @@ export class PostgresModel<T extends Record<string, any>> {
 					deletedCount: 0,
 					upsertedCount: !current && options.upsert && updated ? 1 : 0,
 					upsertedId: !current && options.upsert ? updated?._id : undefined
-				};
-			})()
-		);
-	}
-
-	updateMany(
-		filter: MongoFilter,
-		update: MongoUpdate | Record<string, unknown>,
-		_options: Record<string, unknown> = {}
-	): PostgresWriteQuery<WriteResult> {
-		void _options;
-		return new PostgresWriteQuery(
-			(async () => {
-				const rows = await this.find(filter).exec();
-				for (const row of rows) await this.applyUpdate({ _id: row._id }, update);
-				return {
-					acknowledged: true,
-					matchedCount: rows.length,
-					modifiedCount: rows.length,
-					deletedCount: 0,
-					upsertedCount: 0
 				};
 			})()
 		);
@@ -691,33 +605,6 @@ export class PostgresModel<T extends Record<string, any>> {
 				};
 			})()
 		);
-	}
-
-	async bulkWrite(
-		operations: Array<{
-			updateOne: {
-				filter: MongoFilter;
-				update: MongoUpdate | Record<string, unknown>;
-				upsert?: boolean;
-			};
-		}>,
-		_options: Record<string, unknown> = {}
-	): Promise<WriteResult> {
-		void _options;
-		let matchedCount = 0;
-		let modifiedCount = 0;
-		let upsertedCount = 0;
-		for (const operation of operations) {
-			const before = await this.findOne(operation.updateOne.filter).exec();
-			const result = await this.updateOne(operation.updateOne.filter, operation.updateOne.update, {
-				upsert: operation.updateOne.upsert
-			}).exec();
-			matchedCount += result.matchedCount;
-			modifiedCount += result.modifiedCount;
-			upsertedCount += result.upsertedCount;
-			void before;
-		}
-		return { acknowledged: true, matchedCount, modifiedCount, deletedCount: 0, upsertedCount };
 	}
 }
 

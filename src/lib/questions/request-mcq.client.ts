@@ -1,75 +1,22 @@
-import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api';
-import {
-	QuestionRequestError,
-	questionSourceFromCachedFlag,
-	type QuestionSource
-} from '$lib/client/activation-analytics';
-import {
-	isPoolWarmingResponse,
-	parseQuestionPayloadFromResponse,
-	type QuestionApiResponse
-} from '$lib/questions/payload';
+import { requestQuestion, type QuestionRequestResult } from '$lib/questions/request.client';
+import { parseQuestionPayloadFromResponse } from '$lib/questions/payload';
 import type { GeneratedQuestion } from '$lib/questions/types';
 
-export class PoolWarmingError extends QuestionRequestError {
-	readonly retryAfterSeconds: number;
+export type QuestionFetchResult = QuestionRequestResult<GeneratedQuestion>;
 
-	constructor(message: string, retryAfterSeconds: number) {
-		super(message, 503);
-		this.name = 'PoolWarmingError';
-		this.retryAfterSeconds = retryAfterSeconds;
-	}
-}
-
-export type QuestionFetchResult = {
-	question: GeneratedQuestion;
-	source: QuestionSource;
-	latencyMs: number;
-	exclusionsReset: boolean;
-};
-
-/** Load one MCQ from POST /api/question with shared error/latency shaping. */
-export async function requestMcqQuestion(
+/** Load one MCQ from POST /api/question. */
+export function requestMcqQuestion(
 	className: string,
 	unit: string,
 	excludeQuestionIds: string[] = []
 ): Promise<QuestionFetchResult> {
-	const startedAt = Date.now();
-	const body: Record<string, string | string[]> = { className, unit };
-	if (excludeQuestionIds.length) body.excludeQuestionIds = excludeQuestionIds;
-
-	try {
-		const response = await apiFetch('/api/question', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-
-		const payload = await readJsonOrNull<QuestionApiResponse>(response);
-		if (isPoolWarmingResponse(payload)) {
-			throw new PoolWarmingError(
-				payload.error || 'Question pool is warming up. Please retry shortly.',
-				Math.max(1, Math.floor(payload.retryAfterSeconds))
-			);
-		}
-		if (!response.ok || !payload) {
-			throw new QuestionRequestError(
-				getResponseMessage(payload, 'Failed to load question.'),
-				response.ok ? null : response.status
-			);
-		}
-
-		return {
-			question: parseQuestionPayloadFromResponse(payload),
-			source: questionSourceFromCachedFlag(payload.cached),
-			latencyMs: Date.now() - startedAt,
-			exclusionsReset: payload.exclusionsReset === true
-		};
-	} catch (error) {
-		if (error instanceof QuestionRequestError) throw error;
-		throw new QuestionRequestError(
-			error instanceof Error ? error.message : 'Could not load question.',
-			null
-		);
-	}
+	return requestQuestion({
+		endpoint: '/api/question',
+		className,
+		unit,
+		excludeQuestionIds,
+		warmingMessage: 'Question pool is warming up. Please retry shortly.',
+		errorMessage: 'Failed to load question.',
+		parseQuestion: parseQuestionPayloadFromResponse
+	});
 }

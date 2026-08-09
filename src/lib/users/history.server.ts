@@ -1,9 +1,9 @@
 import type { IQuestionAttempt } from '$lib/users/records.server';
 import type { FrqHistoryItem, HistorySummary } from '$lib/users/types';
-import { getQuestionsLookupMap } from '$lib/questions/storage.server';
 import type { StoredQuestion } from '$lib/questions/storage.server';
-import { FrqAttempt } from '$lib/frq/model.server';
-import { connectDb } from '$lib/server/db';
+import { inArray, sql, type SQL } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { frqAttemptGrades, frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
 
 type McqHistoryItem = {
 	kind: 'mcq';
@@ -12,14 +12,6 @@ type McqHistoryItem = {
 };
 
 type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem;
-
-type McqHistoryPageResult = {
-	items: McqHistoryItem[];
-	total: number;
-	page: number;
-	limit: number;
-	summary: HistorySummary;
-};
 
 type PracticeHistoryPageResult = {
 	items: PracticeHistoryItem[];
@@ -42,6 +34,63 @@ export type HistoryFilters = {
 
 const FRQ_PASS_THRESHOLD = 70;
 
+type HistoryQueryOptions = {
+	page: number;
+	limit: number;
+	apClass?: string;
+	search?: string;
+	sort?: HistorySort;
+	filters?: HistoryFilters;
+	/** Feature/configuration gate for the FRQ source. Defaults to enabled. */
+	includeFrq?: boolean;
+};
+
+type McqHistoryRow = {
+	questionId: string;
+	apClass: string;
+	unit: string;
+	selectedAnswer: string | null;
+	wasCorrect: boolean | null;
+	timeTakenMs: number | null;
+	attemptedAt: Date;
+	finalAnswer: string | null;
+	answerCount: number | null;
+	hintsShown: number | null;
+	terminalOutcome: string | null;
+	experimentKey: string | null;
+	experimentVersion: number | null;
+	displayedVariant: string | null;
+};
+
+type FrqHistoryRow = {
+	id: string;
+	questionId: string;
+	apClass: string;
+	unit: string;
+	timeTakenMs: number;
+	attemptedAt: Date;
+	pointsEarned: number;
+	pointsAvailable: number;
+	percentage: number;
+};
+
+type HistorySqlRow = McqHistoryRow & {
+	kind: 'mcq' | 'frq';
+	id: string;
+	pointsEarned: number | null;
+	pointsAvailable: number | null;
+	percentage: number | null;
+	resultScore: number;
+};
+
+type HistorySummaryRow = {
+	total: number;
+	answered: number;
+	correct: number;
+	graded: number;
+	avgTimeMs: number | null;
+};
+
 export function parseHistoryResult(
 	value: string | null | undefined
 ): HistoryResultFilter | undefined {
@@ -60,57 +109,6 @@ function parseHistoryDate(value: string | null | undefined, endOfDay = false): n
 	}
 	const time = date.getTime();
 	return Number.isNaN(time) ? undefined : time;
-}
-
-function attemptOutcome(
-	attempt: IQuestionAttempt | FrqHistoryItem['attempt']
-): 'correct' | 'incorrect' | 'other' {
-	if ('percentage' in attempt) {
-		return attempt.percentage >= FRQ_PASS_THRESHOLD ? 'correct' : 'incorrect';
-	}
-	if (attempt.wasCorrect === undefined) return 'other';
-	return attempt.wasCorrect ? 'correct' : 'incorrect';
-}
-
-function matchesHistoryFilters(
-	attempt: IQuestionAttempt | FrqHistoryItem['attempt'],
-	filters: HistoryFilters
-): boolean {
-	if (filters.unit && (attempt.unit ?? '') !== filters.unit) return false;
-	if (filters.result && attemptOutcome(attempt) !== filters.result) return false;
-	const from = parseHistoryDate(filters.from);
-	if (from !== undefined && new Date(attempt.attemptedAt).getTime() < from) return false;
-	const to = parseHistoryDate(filters.to, true);
-	if (to !== undefined && new Date(attempt.attemptedAt).getTime() > to) return false;
-	return true;
-}
-
-function summarizeHistory(items: PracticeHistoryItem[]): HistorySummary {
-	let answered = 0;
-	let correct = 0;
-	let graded = 0;
-	let timeTotal = 0;
-	let timeCount = 0;
-	for (const item of items) {
-		const outcome = attemptOutcome(item.attempt);
-		if (item.kind === 'mcq' && item.attempt.selectedAnswer) answered += 1;
-		if (item.kind === 'frq') answered += 1;
-		if (outcome !== 'other') {
-			graded += 1;
-			if (outcome === 'correct') correct += 1;
-		}
-		if (item.attempt.timeTakenMs && item.attempt.timeTakenMs > 0) {
-			timeTotal += item.attempt.timeTakenMs;
-			timeCount += 1;
-		}
-	}
-	return {
-		total: items.length,
-		answered,
-		correct,
-		accuracy: graded > 0 ? Math.round((correct / graded) * 100) : null,
-		avgTimeMs: timeCount > 0 ? Math.round(timeTotal / timeCount) : null
-	};
 }
 
 type HistorySort = {
@@ -132,109 +130,53 @@ export function parseHistorySort(
 	};
 }
 
-function matchesHistorySearch(
-	attempt: { apClass: string; unit?: string },
-	search?: string
-): boolean {
-	const query = search?.trim().toLowerCase();
-	if (!query) return true;
-	const haystack = [attempt.apClass, attempt.unit ?? ''].join(' ').toLowerCase();
-	return haystack.includes(query);
-}
-
-function compareAttempts(
-	a: IQuestionAttempt | FrqHistoryItem['attempt'],
-	b: IQuestionAttempt | FrqHistoryItem['attempt'],
-	sort: HistorySort
-): number {
-	let comparison: number;
-	switch (sort.field) {
-		case 'attemptedAt':
-			comparison = new Date(a.attemptedAt).getTime() - new Date(b.attemptedAt).getTime();
-			break;
-		case 'subject':
-			comparison = a.apClass.localeCompare(b.apClass) || (a.unit ?? '').localeCompare(b.unit ?? '');
-			break;
-		case 'result':
-			comparison =
-				('percentage' in a
-					? a.percentage
-					: a.wasCorrect === undefined
-						? -1
-						: a.wasCorrect
-							? 100
-							: 0) -
-				('percentage' in b
-					? b.percentage
-					: b.wasCorrect === undefined
-						? -1
-						: b.wasCorrect
-							? 100
-							: 0);
-			break;
-		default: {
-			const _exhaustive: never = sort.field;
-			return _exhaustive;
-		}
-	}
-	if (comparison === 0) {
-		comparison = new Date(a.attemptedAt).getTime() - new Date(b.attemptedAt).getTime();
-	}
-	return sort.direction === 'asc' ? comparison : -comparison;
-}
-
-export function getMcqHistoryPage(
-	user: { questionHistory: IQuestionAttempt[] },
-	options: {
-		page: number;
-		limit: number;
-		apClass?: string;
-		search?: string;
-		sort?: HistorySort;
-		filters?: HistoryFilters;
-	}
-): McqHistoryPageResult {
-	const {
-		page,
-		limit,
-		apClass,
-		search,
-		sort = { field: 'attemptedAt', direction: 'desc' },
-		filters = {}
-	} = options;
-
-	if (filters.kind === 'frq') {
-		return { items: [], total: 0, page, limit, summary: summarizeHistory([]) };
-	}
-
-	let attempts = user.questionHistory.slice();
-	if (apClass) attempts = attempts.filter((entry) => entry.apClass === apClass);
-	if (search?.trim()) attempts = attempts.filter((entry) => matchesHistorySearch(entry, search));
-	attempts = attempts.filter((entry) => matchesHistoryFilters(entry, filters));
-	attempts.sort((a, b) => compareAttempts(a, b, sort));
-
-	const allItems: McqHistoryItem[] = attempts.map((attempt) => ({
-		kind: 'mcq' as const,
-		attempt,
-		question: null
-	}));
-	const total = allItems.length;
-	const skip = (page - 1) * limit;
-
-	return {
-		items: allItems.slice(skip, skip + limit),
-		total,
-		page,
-		limit,
-		summary: summarizeHistory(allItems)
-	};
-}
-
 export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<McqHistoryItem[]> {
 	const uniqueIds = [...new Set(items.map((item) => item.attempt.questionId))];
 	if (uniqueIds.length === 0) return items;
 
-	const lookup = await getQuestionsLookupMap(uniqueIds);
+	const db = getNeonDatabase();
+	const rows = await db
+		.select({
+			id: mcqQuestions.questionId,
+			question: mcqQuestions.question,
+			optionA: mcqQuestions.optionA,
+			optionB: mcqQuestions.optionB,
+			optionC: mcqQuestions.optionC,
+			optionD: mcqQuestions.optionD,
+			correctAnswer: mcqQuestions.correctAnswer,
+			explanation: mcqQuestions.explanation,
+			hint1: mcqQuestions.hint1,
+			hint2: mcqQuestions.hint2,
+			apClass: mcqQuestions.apClass,
+			unit: mcqQuestions.unit,
+			contentHash: mcqQuestions.contentHash,
+			topicsCovered: mcqQuestions.topicsCovered,
+			createdAt: mcqQuestions.createdAt
+		})
+		.from(mcqQuestions)
+		.where(inArray(mcqQuestions.questionId, uniqueIds));
+	const lookup = new Map<string, StoredQuestion>(
+		rows.map((row) => [
+			row.id,
+			{
+				id: row.id,
+				question: row.question,
+				optionA: row.optionA,
+				optionB: row.optionB,
+				optionC: row.optionC,
+				optionD: row.optionD,
+				explanation: row.explanation,
+				correctAnswer: row.correctAnswer as StoredQuestion['correctAnswer'],
+				createdAt: row.createdAt.toISOString(),
+				...(row.hint1 !== null ? { hint1: row.hint1 } : {}),
+				...(row.hint2 !== null ? { hint2: row.hint2 } : {}),
+				...(row.apClass !== null ? { apClass: row.apClass } : {}),
+				...(row.unit !== null ? { unit: row.unit } : {}),
+				...(row.contentHash !== null ? { contentHash: row.contentHash } : {}),
+				...(row.topicsCovered !== null ? { topicsCovered: row.topicsCovered } : {})
+			}
+		])
+	);
 
 	return items.map((item) => ({
 		kind: 'mcq' as const,
@@ -243,27 +185,9 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 	}));
 }
 
-function comparePracticeItems(
-	a: PracticeHistoryItem,
-	b: PracticeHistoryItem,
-	sort: HistorySort
-): number {
-	const comparison = compareAttempts(a.attempt, b.attempt, sort);
-	if (comparison !== 0) return comparison;
-	return a.kind.localeCompare(b.kind);
-}
-
 export async function getPracticeHistoryPage(
-	user: { questionHistory: IQuestionAttempt[] },
 	userId: string,
-	options: {
-		page: number;
-		limit: number;
-		apClass?: string;
-		search?: string;
-		sort?: HistorySort;
-		filters?: HistoryFilters;
-	}
+	options: HistoryQueryOptions
 ): Promise<PracticeHistoryPageResult> {
 	const {
 		page,
@@ -271,83 +195,208 @@ export async function getPracticeHistoryPage(
 		apClass,
 		search,
 		sort = { field: 'attemptedAt', direction: 'desc' },
-		filters = {}
+		filters = {},
+		includeFrq = true
 	} = options;
-	await connectDb();
+	if (!includeFrq && filters.kind === 'frq') {
+		return {
+			items: [],
+			total: 0,
+			page,
+			limit,
+			summary: { total: 0, answered: 0, correct: 0, accuracy: null, avgTimeMs: null }
+		};
+	}
 
-	const mcqItems: McqHistoryItem[] =
-		filters.kind === 'frq'
-			? []
-			: user.questionHistory
-					.filter(
-						(attempt) =>
-							(!apClass || attempt.apClass === apClass) &&
-							matchesHistorySearch(attempt, search) &&
-							matchesHistoryFilters(attempt, filters)
-					)
-					.map((attempt) => ({ kind: 'mcq', attempt, question: null }));
-	const frqQuery: { userId: string; status: 'graded'; apClass?: string } = {
-		userId,
-		status: 'graded',
-		...(apClass ? { apClass } : {})
-	};
-	const frqAttempts = await FrqAttempt.find(frqQuery, {
-		_id: 1,
-		questionId: 1,
-		apClass: 1,
-		unit: 1,
-		timeTakenMs: 1,
-		createdAt: 1,
-		grade: 1
-	})
-		.lean()
-		.exec();
-	const frqItems: FrqHistoryItem[] = frqAttempts
-		.filter(
-			(attempt) =>
-				attempt.grade &&
-				filters.kind !== 'mcq' &&
-				matchesHistorySearch(attempt, search) &&
-				matchesHistoryFilters(
-					{
-						id: String(attempt._id),
-						questionId: attempt.questionId,
-						apClass: attempt.apClass,
-						unit: attempt.unit,
-						pointsEarned: attempt.grade.pointsEarned,
-						pointsAvailable: attempt.grade.pointsAvailable,
-						percentage: attempt.grade.percentage,
-						timeTakenMs: attempt.timeTakenMs,
-						attemptedAt: attempt.createdAt.toISOString()
+	const db = getNeonDatabase();
+	const from = parseHistoryDate(filters.from);
+	const to = parseHistoryDate(filters.to, true);
+	const searchText = search?.trim();
+	const commonConditions = (columns: {
+		userId: unknown;
+		apClass: unknown;
+		unit: unknown;
+		attemptedAt: unknown;
+	}): SQL[] => [
+		sql`${columns.userId} = ${userId}`,
+		...(apClass ? [sql`${columns.apClass} = ${apClass}`] : []),
+		...(filters.unit ? [sql`${columns.unit} = ${filters.unit}`] : []),
+		...(searchText
+			? [
+					sql`position(lower(${searchText}) in lower(${columns.apClass} || ' ' || ${columns.unit})) > 0`
+				]
+			: []),
+		...(from ? [sql`${columns.attemptedAt} >= ${new Date(from)}`] : []),
+		...(to ? [sql`${columns.attemptedAt} <= ${new Date(to)}`] : [])
+	];
+	const sources: SQL[] = [];
+	if (filters.kind !== 'frq') {
+		const conditions = [
+			...commonConditions(mcqAttempts),
+			...(filters.result === 'correct' ? [sql`${mcqAttempts.wasCorrect} = true`] : []),
+			...(filters.result === 'incorrect' ? [sql`${mcqAttempts.wasCorrect} = false`] : [])
+		];
+		sources.push(sql`
+			SELECT
+				'mcq'::text AS kind,
+				${mcqAttempts.id} AS id,
+				${mcqAttempts.questionId} AS "questionId",
+				${mcqAttempts.apClass} AS "apClass",
+				${mcqAttempts.unit} AS unit,
+				${mcqAttempts.selectedAnswer} AS "selectedAnswer",
+				${mcqAttempts.wasCorrect} AS "wasCorrect",
+				${mcqAttempts.timeTakenMs} AS "timeTakenMs",
+				${mcqAttempts.attemptedAt} AS "attemptedAt",
+				${mcqAttempts.finalAnswer} AS "finalAnswer",
+				${mcqAttempts.answerCount} AS "answerCount",
+				${mcqAttempts.hintsShown} AS "hintsShown",
+				${mcqAttempts.terminalOutcome} AS "terminalOutcome",
+				${mcqAttempts.experimentKey} AS "experimentKey",
+				${mcqAttempts.experimentVersion} AS "experimentVersion",
+				${mcqAttempts.displayedVariant} AS "displayedVariant",
+				NULL::integer AS "pointsEarned",
+				NULL::integer AS "pointsAvailable",
+				NULL::integer AS percentage,
+				CASE WHEN ${mcqAttempts.wasCorrect} THEN 100
+					WHEN ${mcqAttempts.wasCorrect} = false THEN 0 ELSE -1 END AS "resultScore"
+			FROM ${mcqAttempts}
+			WHERE ${sql.join(conditions, sql` AND `)}
+		`);
+	}
+	if (includeFrq && filters.kind !== 'mcq') {
+		const conditions = [
+			sql`${frqAttempts.status} = 'graded'`,
+			...commonConditions({
+				userId: frqAttempts.userId,
+				apClass: frqAttempts.apClass,
+				unit: frqAttempts.unit,
+				attemptedAt: frqAttempts.createdAt
+			}),
+			...(filters.result === 'correct'
+				? [sql`${frqAttemptGrades.percentage} >= ${FRQ_PASS_THRESHOLD}`]
+				: []),
+			...(filters.result === 'incorrect'
+				? [sql`${frqAttemptGrades.percentage} < ${FRQ_PASS_THRESHOLD}`]
+				: [])
+		];
+		sources.push(sql`
+			SELECT
+				'frq'::text AS kind,
+				${frqAttempts.id} AS id,
+				${frqAttempts.questionId} AS "questionId",
+				${frqAttempts.apClass} AS "apClass",
+				${frqAttempts.unit} AS unit,
+				NULL::text AS "selectedAnswer",
+				NULL::boolean AS "wasCorrect",
+				${frqAttempts.timeTakenMs} AS "timeTakenMs",
+				${frqAttempts.createdAt} AS "attemptedAt",
+				NULL::text AS "finalAnswer",
+				NULL::integer AS "answerCount",
+				NULL::integer AS "hintsShown",
+				NULL::text AS "terminalOutcome",
+				NULL::text AS "experimentKey",
+				NULL::integer AS "experimentVersion",
+				NULL::text AS "displayedVariant",
+				${frqAttemptGrades.pointsEarned} AS "pointsEarned",
+				${frqAttemptGrades.pointsAvailable} AS "pointsAvailable",
+				${frqAttemptGrades.percentage} AS percentage,
+				${frqAttemptGrades.percentage} AS "resultScore"
+			FROM ${frqAttempts}
+			INNER JOIN ${frqAttemptGrades}
+				ON ${frqAttemptGrades.attemptId} = ${frqAttempts.id}
+			WHERE ${sql.join(conditions, sql` AND `)}
+		`);
+	}
+
+	const history = sql.join(sources, sql` UNION ALL `);
+	const direction = sql.raw(sort.direction === 'asc' ? 'ASC' : 'DESC');
+	const primarySort =
+		sort.field === 'subject'
+			? sql`"apClass" ${direction}, unit ${direction}, "attemptedAt" ${direction}`
+			: sort.field === 'result'
+				? sql`"resultScore" ${direction}, "attemptedAt" ${direction}`
+				: sql`"attemptedAt" ${direction}`;
+	const offset = (page - 1) * limit;
+	const [pageResult, summaryResult] = await Promise.all([
+		db.execute<HistorySqlRow>(sql`
+			WITH history AS (${history})
+			SELECT * FROM history
+			ORDER BY ${primarySort}, kind ASC
+			LIMIT ${limit} OFFSET ${offset}
+		`),
+		db.execute<HistorySummaryRow>(sql`
+			WITH history AS (${history})
+			SELECT
+				count(*)::int AS total,
+				count(*) FILTER (WHERE kind = 'frq' OR "selectedAnswer" IS NOT NULL)::int AS answered,
+				count(*) FILTER (WHERE "resultScore" >= ${FRQ_PASS_THRESHOLD})::int AS correct,
+				count(*) FILTER (WHERE "resultScore" >= 0)::int AS graded,
+				round(avg("timeTakenMs") FILTER (WHERE "timeTakenMs" > 0))::int AS "avgTimeMs"
+			FROM history
+		`)
+	]);
+	const items: PracticeHistoryItem[] = pageResult.rows.map((row) =>
+		row.kind === 'mcq'
+			? {
+					kind: 'mcq',
+					attempt: {
+						questionId: row.questionId,
+						apClass: row.apClass,
+						unit: row.unit,
+						selectedAnswer: (row.selectedAnswer as IQuestionAttempt['selectedAnswer']) ?? undefined,
+						wasCorrect: row.wasCorrect ?? undefined,
+						timeTakenMs: row.timeTakenMs ?? undefined,
+						attemptedAt: new Date(row.attemptedAt),
+						finalAnswer: (row.finalAnswer as IQuestionAttempt['finalAnswer']) ?? undefined,
+						answerCount: row.answerCount ?? undefined,
+						hintsShown: row.hintsShown ?? undefined,
+						terminalOutcome:
+							(row.terminalOutcome as IQuestionAttempt['terminalOutcome']) ?? undefined,
+						experimentKey: row.experimentKey ?? undefined,
+						experimentVersion: row.experimentVersion ?? undefined,
+						displayedVariant:
+							(row.displayedVariant as IQuestionAttempt['displayedVariant']) ?? undefined
 					},
-					filters
-				)
-		)
-		.map((attempt) => ({
-			kind: 'frq',
-			attempt: {
-				id: String(attempt._id),
-				questionId: attempt.questionId,
-				apClass: attempt.apClass,
-				unit: attempt.unit,
-				pointsEarned: attempt.grade!.pointsEarned,
-				pointsAvailable: attempt.grade!.pointsAvailable,
-				percentage: attempt.grade!.percentage,
-				timeTakenMs: attempt.timeTakenMs,
-				attemptedAt: attempt.createdAt.toISOString()
-			},
-			question: null
-		}));
-
-	const allItems = [...mcqItems, ...frqItems].sort((a, b) => comparePracticeItems(a, b, sort));
-	const total = allItems.length;
-	const skip = (page - 1) * limit;
+					question: null
+				}
+			: {
+					kind: 'frq',
+					attempt: {
+						id: row.id,
+						questionId: row.questionId,
+						apClass: row.apClass,
+						unit: row.unit,
+						pointsEarned: Number(row.pointsEarned),
+						pointsAvailable: Number(row.pointsAvailable),
+						percentage: Number(row.percentage),
+						timeTakenMs: row.timeTakenMs ?? 0,
+						attemptedAt: new Date(row.attemptedAt).toISOString()
+					},
+					question: null
+				}
+	);
+	const summaryRow = summaryResult.rows[0] ?? {
+		total: 0,
+		answered: 0,
+		correct: 0,
+		graded: 0,
+		avgTimeMs: null
+	};
+	const total = Number(summaryRow.total);
+	const correct = Number(summaryRow.correct);
+	const graded = Number(summaryRow.graded);
 	return {
-		items: allItems.slice(skip, skip + limit),
+		items,
 		total,
 		page,
 		limit,
-		summary: summarizeHistory(allItems)
+		summary: {
+			total,
+			answered: Number(summaryRow.answered),
+			correct,
+			accuracy: graded ? Math.round((correct / graded) * 100) : null,
+			avgTimeMs: summaryRow.avgTimeMs === null ? null : Number(summaryRow.avgTimeMs)
+		}
 	};
 }
 

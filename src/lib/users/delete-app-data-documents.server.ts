@@ -1,4 +1,4 @@
-import { UserProfile } from '$lib/users/model.server';
+import { deleteUserProfiles } from '$lib/users/model.server';
 import { Referral } from '$lib/referrals/model.server';
 import { FrqAttempt } from '$lib/frq/model.server';
 import { QuestionFeedback } from '$lib/question-quality/models.server';
@@ -23,7 +23,7 @@ export async function deleteAppDataDocuments(userIds: string[]): Promise<void> {
 	const userIdFilter = userIds.length === 1 ? userIds[0]! : { $in: userIds };
 
 	await Promise.all([
-		UserProfile.deleteMany({ userId: userIdFilter }),
+		deleteUserProfiles(userIds),
 		TutorProfile.deleteMany({ userId: userIdFilter }),
 		FrqAttempt.deleteMany({ userId: userIdFilter }),
 		QuestionFeedback.deleteMany({ userId: userIdFilter }),

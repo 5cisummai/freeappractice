@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { InsightReport, TutorProfile, type ITutorProfile } from '$lib/super/models.server';
+import { TutorProfile, type ITutorProfile } from '$lib/super/models.server';
+import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import type { TutorProfileUpdate, TutorProfileView } from '$lib/super/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { tutorProfileClasses, tutorTargetDates } from '$lib/server/neon/schema';
+import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 
 const MAX_SELECTED_CLASSES = 20;
@@ -46,35 +48,6 @@ async function hydrateTutorRelations(profile: ITutorProfile): Promise<ITutorProf
 	return profile;
 }
 
-async function saveTutorProfile(profile: ITutorProfile): Promise<void> {
-	await profile.save();
-	const db = getNeonDatabase() as any;
-	await db
-		.delete(tutorProfileClasses as any)
-		.where(eq((tutorProfileClasses as any).userId, profile.userId));
-	if (profile.selectedApClasses.length) {
-		await db.insert(tutorProfileClasses as any).values(
-			profile.selectedApClasses.map((apClass, position) => ({
-				userId: profile.userId,
-				apClass,
-				position
-			}))
-		);
-	}
-	await db
-		.delete(tutorTargetDates as any)
-		.where(eq((tutorTargetDates as any).userId, profile.userId));
-	if (profile.targetDates.length) {
-		await db.insert(tutorTargetDates as any).values(
-			profile.targetDates.map((target) => ({
-				userId: profile.userId,
-				apClass: target.apClass,
-				targetDate: target.targetDate
-			}))
-		);
-	}
-}
-
 export async function ensureTutorProfile(userId: string): Promise<ITutorProfile> {
 	const existing = await TutorProfile.findOne({ userId }).exec();
 	if (existing) return hydrateTutorRelations(existing);
@@ -110,12 +83,20 @@ export async function markSuperAccessStarted(
 		profile.memoryPurgedAt = undefined;
 		changed = true;
 	}
-	if (changed) await saveTutorProfile(profile);
+	if (changed) {
+		profile.updatedAt = new Date();
+		await getNeonDatabase()
+			.update(tutorProfiles)
+			.set({
+				superAccessStartedAt: profile.superAccessStartedAt ?? null,
+				superEndedAt: profile.superEndedAt ?? null,
+				memoryPurgedAt: profile.memoryPurgedAt ?? null,
+				updatedAt: profile.updatedAt
+			})
+			.where(eq(tutorProfiles.userId, userId));
+	}
 	if (shouldRestore) {
-		await InsightReport.updateMany(
-			{ userId, lockedAt: { $exists: true } },
-			{ $unset: { lockedAt: 1 } }
-		).exec();
+		await unlockInsightReports(userId);
 	}
 }
 
@@ -123,7 +104,11 @@ export async function confirmAge(userId: string): Promise<TutorProfileView> {
 	const profile = await ensureTutorProfile(userId);
 	if (!profile.ageConfirmedAt) {
 		profile.ageConfirmedAt = new Date();
-		await saveTutorProfile(profile);
+		profile.updatedAt = profile.ageConfirmedAt;
+		await getNeonDatabase()
+			.update(tutorProfiles)
+			.set({ ageConfirmedAt: profile.ageConfirmedAt, updatedAt: profile.updatedAt })
+			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.ageConfirmedAt)));
 	}
 	return toTutorProfileView(profile);
 }
@@ -146,8 +131,20 @@ export async function claimSuperFreeBeta(
 
 	const profile = await ensureTutorProfile(userId);
 	if (!profile.superFreeBetaClaimedAt) {
-		profile.superFreeBetaClaimedAt = claimedAt;
-		await profile.save();
+		const claimed = await getNeonDatabase()
+			.update(tutorProfiles)
+			.set({ superFreeBetaClaimedAt: claimedAt, updatedAt: claimedAt })
+			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superFreeBetaClaimedAt)))
+			.returning({ claimedAt: tutorProfiles.superFreeBetaClaimedAt });
+		profile.superFreeBetaClaimedAt = claimed[0]?.claimedAt ?? undefined;
+		if (!profile.superFreeBetaClaimedAt) {
+			const [current] = await getNeonDatabase()
+				.select({ claimedAt: tutorProfiles.superFreeBetaClaimedAt })
+				.from(tutorProfiles)
+				.where(eq(tutorProfiles.userId, userId))
+				.limit(1);
+			profile.superFreeBetaClaimedAt = current?.claimedAt ?? claimedAt;
+		}
 	}
 	await markSuperAccessStarted(userId, profile.superFreeBetaClaimedAt);
 	return { claimedAt: profile.superFreeBetaClaimedAt.toISOString() };
@@ -173,7 +170,17 @@ export async function markMemoryDisclosureSeen(userId: string): Promise<void> {
 		profile.superAccessStartedAt = profile.memoryDisclosureSeenAt ?? new Date();
 		changed = true;
 	}
-	if (changed) await saveTutorProfile(profile);
+	if (changed) {
+		profile.updatedAt = new Date();
+		await getNeonDatabase()
+			.update(tutorProfiles)
+			.set({
+				memoryDisclosureSeenAt: profile.memoryDisclosureSeenAt ?? null,
+				superAccessStartedAt: profile.superAccessStartedAt ?? null,
+				updatedAt: profile.updatedAt
+			})
+			.where(eq(tutorProfiles.userId, userId));
+	}
 }
 
 export async function updateTutorProfile(
@@ -181,11 +188,23 @@ export async function updateTutorProfile(
 	patch: TutorProfileUpdate
 ): Promise<TutorProfileView> {
 	const profile = await ensureTutorProfile(userId);
+	const db = getNeonDatabase();
+	const writes: BatchItem<'pg'>[] = [];
 
 	if (patch.selectedApClasses !== undefined) {
 		profile.selectedApClasses = [...new Set(patch.selectedApClasses.map((value) => value.trim()))]
 			.filter(Boolean)
 			.slice(0, MAX_SELECTED_CLASSES);
+		writes.push(db.delete(tutorProfileClasses).where(eq(tutorProfileClasses.userId, userId)));
+		if (profile.selectedApClasses.length) {
+			writes.push(
+				db
+					.insert(tutorProfileClasses)
+					.values(
+						profile.selectedApClasses.map((apClass, position) => ({ userId, apClass, position }))
+					)
+			);
+		}
 	}
 	if (patch.targetDates !== undefined) {
 		profile.targetDates = patch.targetDates
@@ -195,6 +214,14 @@ export async function updateTutorProfile(
 			}))
 			.filter((target) => target.apClass && Number.isFinite(target.targetDate.getTime()))
 			.slice(0, MAX_TARGET_DATES);
+		writes.push(db.delete(tutorTargetDates).where(eq(tutorTargetDates.userId, userId)));
+		if (profile.targetDates.length) {
+			writes.push(
+				db
+					.insert(tutorTargetDates)
+					.values(profile.targetDates.map((target) => ({ userId, ...target })))
+			);
+		}
 	}
 	if (patch.studyAvailability !== undefined) {
 		profile.studyAvailability = patch.studyAvailability.trim().slice(0, 500);
@@ -202,7 +229,30 @@ export async function updateTutorProfile(
 	if (patch.teachingStyle !== undefined) profile.teachingStyle = patch.teachingStyle;
 	if (patch.memoryEnabled !== undefined) profile.memoryEnabled = patch.memoryEnabled;
 
-	await saveTutorProfile(profile);
+	if (
+		writes.length > 0 ||
+		patch.studyAvailability !== undefined ||
+		patch.teachingStyle !== undefined ||
+		patch.memoryEnabled !== undefined
+	) {
+		profile.updatedAt = new Date();
+		writes.unshift(
+			db
+				.update(tutorProfiles)
+				.set({
+					...(patch.studyAvailability !== undefined && {
+						studyAvailability: profile.studyAvailability
+					}),
+					...(patch.teachingStyle !== undefined && { teachingStyle: profile.teachingStyle }),
+					...(patch.memoryEnabled !== undefined && { memoryEnabled: profile.memoryEnabled }),
+					updatedAt: profile.updatedAt
+				})
+				.where(eq(tutorProfiles.userId, userId))
+		);
+	}
+	if (writes.length) {
+		await db.batch(writes as [BatchItem<'pg'>, ...BatchItem<'pg'>[]]);
+	}
 	return toTutorProfileView(profile);
 }
 

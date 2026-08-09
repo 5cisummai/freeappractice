@@ -9,6 +9,7 @@ import {
 import { isSuperMemoryEnabled } from '$lib/flags';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/super/profile.server';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 
 async function requireMemoryAccess(userId: string): Promise<Response | null> {
 	if (!(await isSuperMemoryEnabled())) {
@@ -46,10 +47,10 @@ async function publicMemory(
 }
 
 export const GET = withAuthedHandler(
-	async (_event, userId) => {
+	async (event, userId) => {
 		const denial = await requireMemoryAccess(userId);
 		if (denial) return denial;
-		const profile = await getTutorProfileView(userId);
+		const profile = await getTutorProfileViewForRequest(event.locals, userId);
 		const memories = await listTutorMemories(userId);
 		return json({
 			memories: await Promise.all(memories.map((memory) => publicMemory(userId, memory))),

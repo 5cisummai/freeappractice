@@ -38,6 +38,8 @@
 				size="icon"
 				class="block sm:hidden"
 				aria-label="Toggle navigation"
+				aria-expanded={mobileOpen}
+				aria-controls="mobile-navigation"
 			>
 				{#if mobileOpen}
 					<XIcon class="h-5 w-5" />
@@ -109,6 +111,7 @@
 
 		{#if mobileOpen}
 			<nav
+				id="mobile-navigation"
 				class="absolute top-full right-0 left-0 z-50 rounded-b-xl border border-border/70 bg-background px-5 py-3 shadow-lg sm:hidden"
 				aria-label="Mobile navigation"
 			>

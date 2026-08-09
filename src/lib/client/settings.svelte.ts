@@ -1,4 +1,3 @@
-import { setMode } from 'mode-watcher';
 import { invalidateAll } from '$app/navigation';
 import { toast } from 'svelte-sonner';
 import { authClient } from '$lib/auth/client.js';
@@ -7,62 +6,15 @@ import { getSiteUrl } from '$lib/site-url.js';
 import { resetPostHogUser } from '$lib/client/posthog-analytics';
 import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 
-type SettingsData = {
-	theme: 'light' | 'dark' | 'system';
-};
-
 type AccountUser = {
 	name: string;
 	email: string;
 };
 
-class SettingsController {
-	settings = $state<SettingsData>({
-		theme: 'system'
-	});
+class AccountActions {
 	accountPending = $state(false);
 	deletePending = $state(false);
 	clearPracticePending = $state(false);
-
-	constructor() {
-		if (typeof window === 'undefined') return;
-
-		this.load();
-		setMode(this.settings.theme);
-		document.documentElement.style.fontSize = '';
-	}
-
-	private load() {
-		if (typeof window === 'undefined') return;
-		const saved = localStorage.getItem('fap_settings');
-		if (saved) {
-			try {
-				const data = JSON.parse(saved) as Partial<SettingsData>;
-				const theme =
-					data.theme === 'light' || data.theme === 'dark' || data.theme === 'system'
-						? data.theme
-						: this.settings.theme;
-				this.settings = { theme };
-			} catch {
-				localStorage.removeItem('fap_settings');
-			}
-		}
-	}
-
-	private save() {
-		if (typeof window === 'undefined') return;
-		try {
-			localStorage.setItem('fap_settings', JSON.stringify(this.settings));
-		} catch {
-			// Keep the current in-memory settings even if persistence fails.
-		}
-	}
-
-	setTheme(theme: 'light' | 'dark' | 'system') {
-		this.settings.theme = theme;
-		setMode(theme);
-		this.save();
-	}
 
 	async updateAccount(user: AccountUser, data: { name: string; email: string }) {
 		if (this.accountPending) return false;
@@ -155,4 +107,4 @@ class SettingsController {
 	}
 }
 
-export const settingsController = new SettingsController();
+export const accountActions = new AccountActions();

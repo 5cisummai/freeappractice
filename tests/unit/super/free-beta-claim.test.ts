@@ -7,6 +7,16 @@ const mocks = vi.hoisted(() => ({
 	exists: vi.fn(),
 	insightUpdateMany: vi.fn(),
 	neonDatabase: {
+		update: vi.fn(() => {
+			const query = {
+				set: vi.fn(),
+				where: vi.fn(),
+				returning: vi.fn().mockResolvedValue([{ claimedAt: new Date('2026-08-06T18:00:00.000Z') }])
+			};
+			query.set.mockReturnValue(query);
+			query.where.mockReturnValue(query);
+			return query;
+		}),
 		select: vi.fn(() => ({
 			from: vi.fn(() => ({
 				where: vi.fn(() => {
@@ -75,7 +85,8 @@ describe('Super free beta claim', () => {
 		});
 		expect(profile.superFreeBetaClaimedAt).toEqual(now);
 		expect(profile.superAccessStartedAt).toEqual(now);
-		expect(profile.save).toHaveBeenCalled();
+		expect(profile.save).not.toHaveBeenCalled();
+		expect(mocks.neonDatabase.update).toHaveBeenCalledTimes(2);
 	});
 
 	it('is idempotent when the offer was already claimed', async () => {

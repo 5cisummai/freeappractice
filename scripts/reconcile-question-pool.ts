@@ -11,10 +11,8 @@
 import 'dotenv/config';
 import { reconcilePoolRefillJobs } from '../src/lib/questions/pool-refill-queue.server';
 import { QUESTION_POOL_CONFIG } from '../src/lib/questions/pool-constants';
-import { connectDb } from '../src/lib/server/db';
 
 async function main() {
-	await connectDb();
 	const result = await reconcilePoolRefillJobs(QUESTION_POOL_CONFIG);
 	console.log(
 		`Reconciled ${result.reconciled} bucket(s); enqueued ${result.enqueued} deficit job(s).`

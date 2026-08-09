@@ -31,7 +31,6 @@ import {
 } from '../src/lib/questions/pool-batch.server';
 import { getRecentTopics } from '../src/lib/questions/recent-topic.server';
 import { getRecentFrqTopics } from '../src/lib/frq/generation.server';
-import { connectDb } from '../src/lib/server/db';
 import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
 
 function argValue(flag: string): string | undefined {
@@ -70,7 +69,6 @@ async function main() {
 	}
 
 	const env = QUESTION_POOL_CONFIG;
-	await connectDb();
 
 	const budgetRemaining = await getDailyBudgetRemaining(env);
 	const maxRequests = dryRun ? limit : Math.min(limit, budgetRemaining);
