@@ -7,7 +7,7 @@ export interface IQuestionRecentTopic {
 	apClass: string;
 	unit: string;
 	topicsCovered: string;
-	s3QuestionId?: string;
+	questionId?: string;
 	createdAt: Date;
 }
 
@@ -20,11 +20,11 @@ export const QuestionRecentTopic: PostgresModel<IQuestionRecentTopic> = model<IQ
 			...input,
 			id: input.id ?? randomUUID(),
 			kind: 'mcq',
-			questionId: input.questionId ?? input.s3QuestionId ?? null
+			questionId: input.questionId ?? null
 		}),
 		fromRow: (row) => ({
 			...(row as unknown as IQuestionRecentTopic),
-			s3QuestionId: (row.questionId as string | null) ?? undefined
+			_id: String((row as { id: string }).id)
 		})
 	}
 );

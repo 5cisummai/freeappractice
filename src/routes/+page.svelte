@@ -78,7 +78,7 @@
 					name: 'How accurate are the AI-generated questions?',
 					acceptedAnswer: {
 						'@type': 'Answer',
-						text: "Our questions are generated using OpenAI's advanced gpt-5-mini reasoning model, specifically designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
+						text: "Our questions are generated using OpenAI's GPT-5.6 Luna reasoning model, designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
 					}
 				},
 				{

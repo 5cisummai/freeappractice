@@ -46,7 +46,6 @@ jobs:
           PUBLIC_GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
           PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci
           PUBLIC_POSTHOG_HOST: https://us.i.posthog.com
-          PUBLIC_DESMOS_API_KEY: ci
           RESEND_API_KEY: re_ci
           GITHUB_BUG_REPORT_TOKEN: ghp_ci
 
@@ -107,6 +106,5 @@ jobs:
           PUBLIC_GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
           PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci
           PUBLIC_POSTHOG_HOST: https://us.i.posthog.com
-          PUBLIC_DESMOS_API_KEY: ci
           RESEND_API_KEY: re_ci
           GITHUB_BUG_REPORT_TOKEN: ghp_ci

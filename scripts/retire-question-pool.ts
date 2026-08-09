@@ -1,8 +1,8 @@
 /**
  * scripts/retire-question-pool.ts
  *
- * Explicitly retire active PostgreSQL pool rows (set active=false). S3 objects are
- * untouched — history and bookmarks keep working — but practice becomes
+ * Explicitly retire active PostgreSQL pool rows (set active=false). History and
+ * bookmarks continue resolving the same Neon rows, but practice becomes
  * unavailable for affected buckets until refill restores inventory.
  *
  * Always prints an impact report. Writes require an explicit confirmation token.
@@ -103,7 +103,6 @@ async function main() {
 	console.log('Connecting to Neon PostgreSQL…');
 	await connectDb();
 	console.log('Connected.');
-	console.log('S3 question objects are never modified by this script.');
 	console.log(
 		'Retiring Neon pool rows makes practice unavailable for affected buckets until refill restores them.'
 	);

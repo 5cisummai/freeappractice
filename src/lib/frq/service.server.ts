@@ -1,11 +1,6 @@
 import { FRQ_GRADING_MODEL } from '$lib/ai/ai-models-config';
-import { FrqQuestionModel, type IFrqQuestion } from '$lib/frq/model.server';
-import {
-	FrqQuestionSchema,
-	toPublicFrqQuestion,
-	type FrqQuestion,
-	type PublicFrqQuestion
-} from '$lib/frq/types';
+import { FrqQuestionModel, toFrqQuestion, type IFrqQuestion } from '$lib/frq/model.server';
+import { toPublicFrqQuestion, type FrqQuestion, type PublicFrqQuestion } from '$lib/frq/types';
 import {
 	createQuestionPool,
 	type GetQuestionOptions,
@@ -24,7 +19,7 @@ type FrqServiceResult = {
 };
 
 const FRQ_PROJECTION = {
-	s3QuestionId: 1,
+	questionId: 1,
 	schemaVersion: 1,
 	formatId: 1,
 	profileVersion: 1,
@@ -40,24 +35,6 @@ const FRQ_PROJECTION = {
 	unit: 1
 } as const;
 
-function questionFromDoc(doc: IFrqQuestion): FrqQuestion {
-	return FrqQuestionSchema.parse({
-		schemaVersion: doc.schemaVersion,
-		formatId: doc.formatId,
-		profileVersion: doc.profileVersion,
-		promptVersion: doc.promptVersion,
-		rubricVersion: doc.rubricVersion,
-		prompt: doc.prompt,
-		materials: doc.materials,
-		sections: doc.sections,
-		rubric: doc.rubric,
-		totalPoints: doc.totalPoints,
-		topicsCovered: doc.topicsCovered,
-		apClass: doc.apClass,
-		unit: doc.unit
-	});
-}
-
 const frqPool = createQuestionPool<IFrqQuestion, FrqServiceResult>({
 	questionType: 'frq',
 	logScope: 'frq-pool',
@@ -65,20 +42,20 @@ const frqPool = createQuestionPool<IFrqQuestion, FrqServiceResult>({
 	model: FrqQuestionModel,
 	projection: { ...FRQ_PROJECTION },
 	serveCached: (doc) => {
-		const question = questionFromDoc(doc);
+		const question = toFrqQuestion(doc);
 		return {
 			question,
-			publicQuestion: toPublicFrqQuestion(doc.s3QuestionId, question),
+			publicQuestion: toPublicFrqQuestion(doc.questionId, question),
 			provider: 'cache',
 			model: 'cached',
-			questionId: doc.s3QuestionId,
+			questionId: doc.questionId,
 			cached: true
 		};
 	},
 	requestRefill: (apClass, unit) => requestPoolRefill({ questionType: 'frq', apClass, unit })
 });
 
-/** Selection-only FRQ serve. Never invokes LLM or S3 generation. */
+/** Selection-only FRQ serve. Never invokes LLM or generation. */
 export async function getFrqQuestion(
 	apClass: string,
 	unit?: string,

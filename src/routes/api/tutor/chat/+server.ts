@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth/server';
-import { getQuestionFromS3 } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/questions/storage.server';
 import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { logger } from '$lib/server/logger';
@@ -93,7 +93,7 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
-		const question = await getQuestionFromS3(result.data.questionId).catch(() => null);
+		const question = await getQuestionById(result.data.questionId).catch(() => null);
 		if (!question) return json({ error: 'Question not found' }, { status: 404 });
 
 		const userId = await getOptionalUserId(event);

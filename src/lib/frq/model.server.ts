@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { asc, eq } from 'drizzle-orm';
-import type { FrqGrade, FrqMaterial, FrqRubricCriterion, FrqSection } from '$lib/frq/types';
+import {
+	FrqQuestionSchema,
+	type FrqGrade,
+	type FrqMaterial,
+	type FrqRubricCriterion,
+	type FrqSection,
+	type FrqQuestion
+} from '$lib/frq/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	frqAttemptCriterionGrades,
@@ -40,7 +47,7 @@ export interface IFrqQuestion extends DocumentFields {
 	totalPoints: number;
 	topicsCovered: string;
 	contentHash: string;
-	s3QuestionId: string;
+	questionId: string;
 	randomKey: number;
 	active: boolean;
 	createdAt: Date;
@@ -51,11 +58,29 @@ export function newFrqPoolRandomKey(): number {
 	return Math.random();
 }
 
+export function toFrqQuestion(doc: IFrqQuestion): FrqQuestion {
+	return FrqQuestionSchema.parse({
+		schemaVersion: doc.schemaVersion,
+		formatId: doc.formatId,
+		profileVersion: doc.profileVersion,
+		promptVersion: doc.promptVersion,
+		rubricVersion: doc.rubricVersion,
+		prompt: doc.prompt,
+		materials: doc.materials,
+		sections: doc.sections,
+		rubric: doc.rubric,
+		totalPoints: doc.totalPoints,
+		topicsCovered: doc.topicsCovered,
+		apClass: doc.apClass,
+		unit: doc.unit
+	});
+}
+
 export interface IFrqRecentTopic extends DocumentFields {
 	apClass: string;
 	unit: string;
 	topicsCovered: string;
-	s3QuestionId: string;
+	questionId: string;
 	createdAt: Date;
 }
 
@@ -82,10 +107,9 @@ const frqBase = model<IFrqQuestion>({
 	table: frqQuestions as any,
 	columns: frqQuestions as any,
 	idField: 'questionId',
-	fieldAliases: { s3QuestionId: 'questionId' },
 	fromRow: (row) => ({
 		...(row as unknown as IFrqQuestion),
-		s3QuestionId: String(row.questionId),
+		_id: String((row as { questionId: string }).questionId),
 		materials: [],
 		sections: [],
 		rubric: []
@@ -94,7 +118,7 @@ const frqBase = model<IFrqQuestion>({
 
 async function hydrateFrqQuestion(row: IFrqQuestion): Promise<IFrqQuestion> {
 	const db = getNeonDatabase() as any;
-	const questionId = row.s3QuestionId;
+	const questionId = row.questionId;
 	const [materials, sections, criteria, levels] = await Promise.all([
 		db
 			.select()
@@ -196,8 +220,8 @@ export const FrqQuestionModel = {
 	},
 	async create(input: Record<string, any>): Promise<IFrqQuestion> {
 		const db = getNeonDatabase() as any;
-		const questionId = String(input.s3QuestionId ?? input.questionId ?? '');
-		if (!questionId) throw new Error('FRQ question requires s3QuestionId');
+		const questionId = String(input.questionId ?? '');
+		if (!questionId) throw new Error('FRQ question requires questionId');
 		const createdAt = input.createdAt ?? new Date();
 		const updatedAt = input.updatedAt ?? createdAt;
 		await db
@@ -311,7 +335,7 @@ const frqRecentBase = model<IFrqRecentTopic>({
 		...input,
 		id: input.id ?? randomUUID(),
 		kind: 'frq',
-		questionId: input.questionId ?? input.s3QuestionId
+		questionId: input.questionId
 	})
 });
 

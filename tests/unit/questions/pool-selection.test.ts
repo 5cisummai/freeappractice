@@ -12,7 +12,7 @@ vi.mock('$lib/server/logger', () => ({
 import { createQuestionPool, selectRandomActiveDoc } from '$lib/questions/pool.server';
 import { QUESTION_POOL_CONFIG } from '$lib/questions/pool-constants';
 
-type FakeDoc = { _id: { toString(): string }; s3QuestionId: string; randomKey: number };
+type FakeDoc = { _id: { toString(): string }; questionId: string; randomKey: number };
 
 function createFakeModel(docs: FakeDoc[]) {
 	return {
@@ -22,10 +22,10 @@ function createFakeModel(docs: FakeDoc[]) {
 			options?: { sort?: Record<string, 1 | -1> }
 		) {
 			const randomKey = filter.randomKey as { $gte?: number; $lt?: number } | undefined;
-			const excluded = (filter.s3QuestionId as { $nin?: string[] } | undefined)?.$nin ?? [];
+			const excluded = (filter.questionId as { $nin?: string[] } | undefined)?.$nin ?? [];
 
 			let matched = docs.filter((doc) => {
-				if (excluded.includes(doc.s3QuestionId)) return false;
+				if (excluded.includes(doc.questionId)) return false;
 				if (randomKey?.$gte !== undefined && !(doc.randomKey >= randomKey.$gte)) return false;
 				if (randomKey?.$lt !== undefined && !(doc.randomKey < randomKey.$lt)) return false;
 				return true;
@@ -44,9 +44,9 @@ function createFakeModel(docs: FakeDoc[]) {
 
 describe('selectRandomActiveDoc', () => {
 	const docs: FakeDoc[] = [
-		{ _id: { toString: () => '1' }, s3QuestionId: 'a', randomKey: 0.1 },
-		{ _id: { toString: () => '2' }, s3QuestionId: 'b', randomKey: 0.4 },
-		{ _id: { toString: () => '3' }, s3QuestionId: 'c', randomKey: 0.8 }
+		{ _id: { toString: () => '1' }, questionId: 'a', randomKey: 0.1 },
+		{ _id: { toString: () => '2' }, questionId: 'b', randomKey: 0.4 },
+		{ _id: { toString: () => '3' }, questionId: 'c', randomKey: 0.8 }
 	];
 
 	it('selects the first doc with randomKey >= pivot', async () => {
@@ -55,10 +55,10 @@ describe('selectRandomActiveDoc', () => {
 			apClass: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: [],
-			projection: { s3QuestionId: 1, randomKey: 1 },
+			projection: { questionId: 1, randomKey: 1 },
 			pivot: 0.35
 		});
-		expect(hit?.s3QuestionId).toBe('b');
+		expect(hit?.questionId).toBe('b');
 	});
 
 	it('wraps around when no doc has randomKey >= pivot', async () => {
@@ -67,10 +67,10 @@ describe('selectRandomActiveDoc', () => {
 			apClass: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: [],
-			projection: { s3QuestionId: 1, randomKey: 1 },
+			projection: { questionId: 1, randomKey: 1 },
 			pivot: 0.95
 		});
-		expect(hit?.s3QuestionId).toBe('a');
+		expect(hit?.questionId).toBe('a');
 	});
 
 	it('honors exclusion list on both pivot passes', async () => {
@@ -79,10 +79,10 @@ describe('selectRandomActiveDoc', () => {
 			apClass: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: ['a', 'b'],
-			projection: { s3QuestionId: 1, randomKey: 1 },
+			projection: { questionId: 1, randomKey: 1 },
 			pivot: 0.95
 		});
-		expect(hit?.s3QuestionId).toBe('c');
+		expect(hit?.questionId).toBe('c');
 	});
 
 	it('returns null when every active id is excluded', async () => {
@@ -91,7 +91,7 @@ describe('selectRandomActiveDoc', () => {
 			apClass: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: ['a', 'b', 'c'],
-			projection: { s3QuestionId: 1, randomKey: 1 },
+			projection: { questionId: 1, randomKey: 1 },
 			pivot: 0.2
 		});
 		expect(hit).toBeNull();
@@ -115,8 +115,8 @@ describe('createQuestionPool selection boundary', () => {
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			model,
-			projection: { s3QuestionId: 1 },
-			serveCached: async (doc) => ({ cached: true, questionId: doc.s3QuestionId }),
+			projection: { questionId: 1 },
+			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
 			requestRefill
 		});
 
@@ -130,17 +130,15 @@ describe('createQuestionPool selection boundary', () => {
 	});
 
 	it('resets exclusions when the bucket still has active rows', async () => {
-		const docs: FakeDoc[] = [
-			{ _id: { toString: () => '1' }, s3QuestionId: 'keep', randomKey: 0.5 }
-		];
+		const docs: FakeDoc[] = [{ _id: { toString: () => '1' }, questionId: 'keep', randomKey: 0.5 }];
 		const model = createFakeModel(docs);
 		const pool = createQuestionPool({
 			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			model,
-			projection: { s3QuestionId: 1 },
-			serveCached: async (doc) => ({ cached: true, questionId: doc.s3QuestionId })
+			projection: { questionId: 1 },
+			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId })
 		});
 
 		const outcome = await pool.getQuestion('AP Biology', 'Unit 1', {
@@ -160,8 +158,8 @@ describe('createQuestionPool selection boundary', () => {
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			model: createFakeModel([]),
-			projection: { s3QuestionId: 1 },
-			serveCached: async (doc) => ({ cached: true, questionId: doc.s3QuestionId })
+			projection: { questionId: 1 },
+			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId })
 		});
 
 		const outcome = await pool.getQuestion('AP Biology', 'Unit 1');

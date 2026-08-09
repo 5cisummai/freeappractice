@@ -4,7 +4,7 @@ import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { getFrqFromS3 } from '$lib/frq/storage.server';
+import { getFrqQuestionById } from '$lib/frq/question.server';
 import { chatFrq } from '$lib/tutor/service.server';
 import { createFrqTutorChatStream } from '$lib/tutor/chat-stream.server';
 import { frqTutorChatRequestSchema, TUTOR_CHAT_STREAM_TIMEOUT_MS } from '$lib/tutor/chat-request';
@@ -50,7 +50,7 @@ export const POST: RequestHandler = withAuthedHandler(
 			);
 		}
 
-		const question = await getFrqFromS3(result.data.questionId);
+		const question = await getFrqQuestionById(result.data.questionId);
 		if (!getFrqCourseProfile(question.apClass)) {
 			return json(
 				{ error: 'Written-response practice is unavailable for this course' },

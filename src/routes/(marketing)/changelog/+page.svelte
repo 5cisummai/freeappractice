@@ -5,6 +5,25 @@
 
 	const changelog = [
 		{
+			version: '1.6.3',
+			date: 'August 9, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Coach now includes AP curriculum knowledge for more useful, course-aware study guidance',
+						'Removed the calculator and reference sheet tools from practice sessions'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Moved question storage from legacy S3-backed paths into Neon PostgreSQL for a more durable serving library'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.2',
 			date: 'August 8, 2026',
 			sections: [
@@ -912,7 +931,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 3, 2026"
+			meta="Last Updated: August 9, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

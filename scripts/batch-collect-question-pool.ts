@@ -1,7 +1,7 @@
 /**
  * scripts/batch-collect-question-pool.ts
  *
- * Download a completed OpenAI Batch and persist MCQs to S3 + PostgreSQL pool.
+ * Download a completed OpenAI Batch and persist questions to the Neon PostgreSQL pool.
  *
  *   bun run pool:batch-collect -- --batch batch_...
  *   bun run pool:batch-collect -- --batch batch_... --dry-run

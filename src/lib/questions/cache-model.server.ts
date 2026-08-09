@@ -16,7 +16,7 @@ interface IPoolDocMetadata {
 
 export type IQuestion = DocumentFields &
 	IPoolDocMetadata & {
-		s3QuestionId: string;
+		questionId: string;
 		contentHash: string;
 		question: string;
 		optionA: string;
@@ -37,14 +37,10 @@ export const Question: PostgresModel<IQuestion> = model<IQuestion>({
 	table: mcqQuestions as any,
 	columns: mcqQuestions as any,
 	idField: 'questionId',
-	fieldAliases: { s3QuestionId: 'questionId' },
-	fromRow: (row) => ({
-		...(row as unknown as IQuestion),
-		s3QuestionId: String(row.questionId)
-	}),
+	fromRow: (row) => row as unknown as IQuestion,
 	prepareInsert: async (input) => {
-		const questionId = String(input.questionId ?? input.s3QuestionId ?? '');
-		if (!questionId) throw new Error('MCQ question requires s3QuestionId');
+		const questionId = String(input.questionId ?? '');
+		if (!questionId) throw new Error('MCQ question requires questionId');
 		const db = getNeonDatabase() as any;
 		await db
 			.insert(questionRegistry as any)

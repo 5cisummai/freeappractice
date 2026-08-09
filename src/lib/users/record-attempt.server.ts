@@ -13,7 +13,7 @@ import { findUserProfileOrFail } from '$lib/users/profile.server';
 import { findOrCreateProgressEntry } from '$lib/users/progress.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { getQuestionFromS3 } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/questions/storage.server';
 import { activateReferralForUser } from '$lib/referrals/referrals.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
@@ -31,7 +31,7 @@ export async function recordQuestionAttempt(
 ): Promise<RecordAttemptResult> {
 	const { questionId, selectedAnswer, timeTakenMs } = body;
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
-	// Correctness is derived server-side from S3; only clamp client-reported duration.
+	// Correctness is derived server-side from the canonical Neon question row.
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
 	if (!normalizedQuestionId) {
@@ -41,7 +41,7 @@ export async function recordQuestionAttempt(
 		};
 	}
 
-	const question = await getQuestionFromS3(normalizedQuestionId).catch(() => null);
+	const question = await getQuestionById(normalizedQuestionId).catch(() => null);
 	if (!question) {
 		return { status: 404, body: { error: 'Question metadata was not found' } };
 	}

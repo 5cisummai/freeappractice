@@ -213,29 +213,27 @@ async function backfillMcq(
 
 					if (isDryRun) return;
 
-					const existing = await Question.findOne({ s3QuestionId: questionId })
-						.select({ _id: 1 })
-						.lean();
+					const existing = await Question.findOne({ questionId }).select({ _id: 1 }).lean();
 					if (existing) {
 						counters.skippedExisting += 1;
 						return;
 					}
 
 					const existingByContent = await Question.findOne({ contentHash })
-						.select({ _id: 1, s3QuestionId: 1 })
+						.select({ _id: 1, questionId: 1 })
 						.lean();
 					if (existingByContent) {
-						if (!existingByContent.s3QuestionId) {
+						if (!existingByContent.questionId) {
 							const result = await Question.updateOne(
 								{
 									_id: existingByContent._id,
 									$or: [
-										{ s3QuestionId: { $exists: false } },
-										{ s3QuestionId: null },
-										{ s3QuestionId: '' }
+										{ questionId: { $exists: false } },
+										{ questionId: null },
+										{ questionId: '' }
 									]
 								},
-								{ $set: { s3QuestionId: questionId } }
+								{ $set: { questionId } }
 							);
 							if (result.modifiedCount === 1) {
 								counters.linkedExisting += 1;
@@ -248,7 +246,7 @@ async function backfillMcq(
 
 					try {
 						await Question.create({
-							s3QuestionId: questionId,
+							questionId,
 							apClass,
 							unit,
 							contentHash,
@@ -330,9 +328,7 @@ async function backfillFrq(
 
 					if (isDryRun) return;
 
-					const existing = await FrqQuestion.findOne({ s3QuestionId: questionId })
-						.select({ _id: 1 })
-						.lean();
+					const existing = await FrqQuestion.findOne({ questionId }).select({ _id: 1 }).lean();
 					if (existing) {
 						counters.skippedExisting += 1;
 						return;
@@ -342,7 +338,7 @@ async function backfillFrq(
 						await FrqQuestion.create({
 							...question,
 							contentHash,
-							s3QuestionId: questionId,
+							questionId,
 							randomKey: Math.random(),
 							active: true
 						});

@@ -10,28 +10,17 @@
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { cn } from '$lib/utils.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-	import {
-		measureLongQuestion,
-		portalToBody,
-		withTooltipTriggerClick
-	} from '$lib/components/questions/question-card-dom';
+	import { measureLongQuestion, portalToBody } from '$lib/components/questions/question-card-dom';
 	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
 	import type { BugReportContext, QuestionCardProps } from '$lib/questions/types';
 	import lightbulbImage from '$lib/assets/lightbulb.png';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
-	import CalculatorIcon from '@lucide/svelte/icons/calculator';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
-	import DesmosCalculator from '$lib/components/questions/desmos-calculator.svelte';
-	import ReferenceSheet from '$lib/components/questions/reference-sheet.svelte';
-	import subjectToolsData from '$lib/data/subject-tools.json';
 
 	let {
 		class: className,
@@ -68,8 +57,6 @@
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
-	let calculatorOpen = $state(false);
-	let referenceSheetOpen = $state(false);
 
 	const session = createQuestionCardSession({
 		getSelectedClass: () => selectedClass,
@@ -89,17 +76,6 @@
 		onAnswered: (result) => onAnswered?.(result),
 		practiceExperiment: untrack(() => practiceExperiment)
 	});
-
-	type SubjectToolEntry = {
-		calculator: 'none' | 'scientific' | 'graphing';
-		referenceSheet: { title: string; sections: { heading: string; content: string }[] } | null;
-	};
-	const toolConfig = $derived(
-		(subjectToolsData as Record<string, SubjectToolEntry>)[selectedClass] ??
-			({ calculator: 'none', referenceSheet: null } as SubjectToolEntry)
-	);
-	const hasCalculator = $derived(toolConfig.calculator !== 'none');
-	const hasReferenceSheet = $derived(toolConfig.referenceSheet !== null);
 
 	const tutorUnitLabel = $derived(selectedUnit);
 	const effectiveTwoColumn = $derived(
@@ -159,8 +135,6 @@
 	}
 
 	onMount(() => {
-		calculatorOpen = false;
-		referenceSheetOpen = false;
 		mounted = true;
 
 		const onResize = () => {
@@ -393,61 +367,6 @@
 						<p class="text-sm text-muted-foreground">{session.feedbackMessage}</p>
 					</div>
 				{/if}
-				{#if hasCalculator || hasReferenceSheet}
-					<div id="question-tools-hint-target" class="flex gap-0.5">
-						{#if hasCalculator}
-							<Tooltip.Root>
-								<Tooltip.Trigger>
-									{#snippet child({ props })}
-										<Button
-											{...props}
-											variant="ghost"
-											size="icon"
-											class="h-7 w-7 text-muted-foreground hover:text-foreground"
-											onclick={withTooltipTriggerClick(props, () => {
-												calculatorOpen = !calculatorOpen;
-											})}
-											aria-label="Open Calculator"
-										>
-											<CalculatorIcon class="h-3.5 w-3.5" />
-										</Button>
-									{/snippet}
-								</Tooltip.Trigger>
-								<Tooltip.Content side="top" sideOffset={6}>Open Calculator</Tooltip.Content>
-							</Tooltip.Root>
-						{/if}
-						{#if hasReferenceSheet}
-							<Tooltip.Root>
-								<Tooltip.Trigger>
-									{#snippet child({ props })}
-										<Button
-											{...props}
-											variant="ghost"
-											size="icon"
-											class="h-7 w-7 text-muted-foreground hover:text-foreground"
-											onclick={withTooltipTriggerClick(props, () => {
-												referenceSheetOpen = !referenceSheetOpen;
-											})}
-											aria-label="Reference Sheet"
-										>
-											<BookOpenIcon class="h-3.5 w-3.5" />
-										</Button>
-									{/snippet}
-								</Tooltip.Trigger>
-								<Tooltip.Content side="top" sideOffset={6}>Reference Sheet</Tooltip.Content>
-							</Tooltip.Root>
-						{/if}
-					</div>
-					{#if showFirstUseHint}
-						<FirstUseHint
-							id="question-tools"
-							anchorId="question-tools-hint-target"
-							text="These tools give you extra help while you work."
-							side="top"
-							align="end"
-						/>
-					{/if}
-				{/if}
 			</div>
 			<div class="flex gap-2">
 				{#if session.hasCheckedAnswer && session.currentQuestion?.explanation}
@@ -529,15 +448,6 @@
 			/>
 		{/key}
 	{/if}
-
-	{#if calculatorOpen}
-		<DesmosCalculator
-			type={toolConfig.calculator as 'scientific' | 'graphing'}
-			onClose={() => (calculatorOpen = false)}
-		/>
-	{/if}
-
-	<ReferenceSheet bind:open={referenceSheetOpen} referenceSheet={toolConfig.referenceSheet} />
 
 	<BugReportDialog
 		bind:open={bugReportOpen}

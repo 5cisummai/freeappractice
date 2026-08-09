@@ -1,10 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { zodSchema } from 'ai';
 import { z } from 'zod';
 import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { structuredObject } from '$lib/ai/service.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { FrqQuestionModel, FrqRecentTopic, newFrqPoolRandomKey } from '$lib/frq/model.server';
-import { saveFrqToS3 } from '$lib/frq/storage.server';
 import {
 	FRQ_SCHEMA_VERSION,
 	FrqMaterialSchema,
@@ -155,7 +155,7 @@ async function persistFrqQuestion(
 ): Promise<FrqGenerateResult> {
 	const { apClass, unit } = question;
 	const persistenceStarted = Date.now();
-	const questionId = await saveFrqToS3(question);
+	const questionId = randomUUID();
 	const contentHash = computeContentHash(
 		JSON.stringify({
 			prompt: question.prompt,
@@ -169,7 +169,7 @@ async function persistFrqQuestion(
 		await FrqQuestionModel.create({
 			...question,
 			contentHash,
-			s3QuestionId: questionId,
+			questionId,
 			randomKey: newFrqPoolRandomKey(),
 			active: true
 		});
@@ -177,7 +177,7 @@ async function persistFrqQuestion(
 			apClass,
 			unit,
 			topicsCovered: question.topicsCovered,
-			s3QuestionId: questionId
+			questionId
 		});
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) throw error;
@@ -211,7 +211,7 @@ export async function persistGeneratedFrqToPool(
 }
 
 /**
- * Worker-only: AI → S3 → Neon PostgreSQL active FRQ library.
+ * Worker-only: AI → Neon PostgreSQL active FRQ library.
  * Must not be imported by request-path selection modules.
  */
 export async function generateAndPersistFrq(

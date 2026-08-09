@@ -7,9 +7,9 @@
  */
 import 'dotenv/config';
 import { readFile, writeFile } from 'node:fs/promises';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { buildBatchLine } from '../src/lib/question-quality/batch-line';
 import { QuestionQuality } from '../src/lib/question-quality/models.server';
+import { getQuestionById } from '../src/lib/questions/storage.server';
 import { extractResponseOutputText } from '../src/lib/question-quality/rubric.server';
 
 type GoldItem = { questionId: string; verdict: 'good' | 'bad'; apClass: string };
@@ -71,37 +71,13 @@ const args = process.argv.slice(2);
 const statePath = valueAfter('--state') || '.question-quality-eval.json';
 const apiKey = process.env.OPEN_AI_KEY?.trim();
 const databaseUrl = process.env.DATABASE_URL?.trim();
-const bucket = process.env.AWS_S3_BUCKET?.trim();
-if (!apiKey || !databaseUrl || !bucket) {
-	throw new Error('OPEN_AI_KEY, DATABASE_URL, and AWS_S3_BUCKET are required');
+if (!apiKey || !databaseUrl) {
+	throw new Error('OPEN_AI_KEY and DATABASE_URL are required');
 }
 
 function valueAfter(flag: string): string | undefined {
 	const index = args.indexOf(flag);
 	return index >= 0 ? args[index + 1] : undefined;
-}
-
-function s3Client(): S3Client {
-	return new S3Client({
-		region: process.env.AWS_REGION,
-		...(process.env.AWS_S3_ENDPOINT
-			? {
-					endpoint: process.env.AWS_S3_ENDPOINT,
-					forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true'
-				}
-			: {}),
-		...(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
-			? {
-					credentials: {
-						accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-						secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-						...(process.env.AWS_SESSION_TOKEN
-							? { sessionToken: process.env.AWS_SESSION_TOKEN }
-							: {})
-					}
-				}
-			: {})
-	});
 }
 
 async function openAi(path: string, init: RequestInit = {}): Promise<Response> {
@@ -175,14 +151,12 @@ async function submit() {
 			`At least 100 human-reviewed gold questions are required; found ${gold.length}`
 		);
 	}
-	const s3 = s3Client();
 	const questions = new Map<string, Record<string, unknown>>();
 	for (const item of gold) {
-		const response = await s3.send(
-			new GetObjectCommand({ Bucket: bucket, Key: `questions/${item.questionId}.json` })
+		questions.set(
+			item.questionId,
+			(await getQuestionById(item.questionId)) as Record<string, unknown>
 		);
-		if (!response.Body) throw new Error(`Missing S3 question ${item.questionId}`);
-		questions.set(item.questionId, JSON.parse(await response.Body.transformToString()));
 	}
 	const runs: EvalRun[] = [];
 	for (const candidate of candidates) {

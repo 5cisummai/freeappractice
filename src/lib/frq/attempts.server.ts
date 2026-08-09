@@ -2,7 +2,7 @@ import { structuredObject } from '$lib/ai/service.server';
 import { FrqAttempt, type IFrqAttempt } from '$lib/frq/model.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqGradingModel } from '$lib/frq/service.server';
-import { getFrqFromS3 } from '$lib/frq/storage.server';
+import { getFrqQuestionById } from '$lib/frq/question.server';
 import {
 	FrqGradeModelOutputSchema,
 	type FrqAttemptView,
@@ -50,7 +50,7 @@ type ClaimResult =
 async function claimSubmission(
 	userId: string,
 	request: FrqGradeRequest,
-	question: Awaited<ReturnType<typeof getFrqFromS3>>
+	question: FrqQuestion
 ): Promise<ClaimResult> {
 	try {
 		const attempt = await FrqAttempt.create({
@@ -125,7 +125,7 @@ export async function gradeFrqAttempt(
 	userId: string,
 	request: FrqGradeRequest
 ): Promise<FrqAttemptView> {
-	const question = await getFrqFromS3(request.questionId);
+	const question = await getFrqQuestionById(request.questionId);
 	const profile = getFrqCourseProfile(question.apClass);
 	if (!profile || profile.profileVersion !== question.profileVersion) {
 		throw new Error('This FRQ course profile is no longer available');

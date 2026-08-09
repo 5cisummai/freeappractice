@@ -1,6 +1,6 @@
 # Question pool runbook
 
-Operational guide for the Neon PostgreSQL serving library backed by the S3 canonical archive. Generation runs only in refill workers — never on user question requests.
+Operational guide for the Neon PostgreSQL question library. Generation runs only in refill workers — never on user question requests. S3 is retained only as an optional legacy import source.
 
 Related: [architecture.md](./architecture.md), [question-request-metrics.md](./question-request-metrics.md).
 
@@ -10,15 +10,15 @@ Related: [architecture.md](./architecture.md), [question-request-metrics.md](./q
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `POST /api/question` / FRQ         | Indexed random Neon select; `503 POOL_WARMING` when empty; `503 POOL_UNAVAILABLE` on DB errors. No LLM.         |
 | Cron `GET /api/cron/question-pool` | Claim due refill leases and generate within daily/run budgets (does **not** full-catalog reconcile every tick). |
-| S3                                 | Canonical archive + question IDs. Never deleted by pool tools.                                                  |
-| Neon PostgreSQL                    | Active serving library (`active`, `randomKey`, inline bodies).                                                  |
+| Legacy S3 import                   | Optional one-time source for importing older question objects.                                                  |
+| Neon PostgreSQL                    | Canonical question library and serving store (`active`, `randomKey`, inline bodies).                            |
 
 **Feature-flag note:** Selection-only serving is already the unconditional request path (legacy miss-lock / sync-generate code is removed). There is no dual-path flag to flip off generation on the request path. Use Vercel Flags only for unrelated product pilots (`frq-practice`, `multi-attempt-experiment`). Rollout canary = deploy → seed → watch metrics / admin readiness → expand traffic confidence, not a code flag.
 
 ## Prerequisites
 
 - `DATABASE_URL` points at the intended Neon project/branch (confirm environment before any write script).
-- AWS credentials + `AWS_S3_BUCKET` for backfill.
+- AWS credentials + `AWS_S3_BUCKET` only when importing older S3 questions.
 - `CRON_SECRET` for production cron / manual cron calls.
 - Prefer a non-production URI for first dry-runs.
 
@@ -47,7 +47,7 @@ bun run pool:backfill-s3 --enqueue-deficits
 
 ## 2. Initial seeding (two stages)
 
-1. **S3 → Neon PostgreSQL** via `pool:backfill-s3` (above).
+1. **Optional legacy S3 → Neon PostgreSQL** via `pool:backfill-s3` (above).
 2. **Deficit enqueue** — either `--enqueue-deficits` or admin “enqueue all deficits”, then let cron drain:
 
 ```bash
@@ -81,7 +81,7 @@ bun run pool:batch-submit -- --type frq --limit 200
 # Narrow to one bucket
 bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
 
-# After OpenAI finishes (often hours), persist results to S3 + Neon PostgreSQL
+# After OpenAI finishes (often hours), persist results to Neon PostgreSQL
 bun run pool:batch-collect -- --batch batch_...
 ```
 
@@ -116,7 +116,7 @@ A job in `running` with `leaseExpiresAt` in the past is reclaimable by the next 
 If a lease looks stuck before expiry:
 
 1. Wait for TTL (`QUESTION_POOL_LEASE_TTL_MS` in `pool-constants.ts`, default 2 minutes) and re-run cron.
-2. Do not manually delete S3 objects.
+2. Do not manually delete question rows; retirement is an explicit `active=false` update.
 3. Only clear `leaseOwner` / `leaseExpiresAt` in Neon if you are sure no worker is still generating for that bucket.
 
 ## 5. Daily budget exhaustion
@@ -128,7 +128,7 @@ Worker summary `stoppedReason: daily_budget` or refill status `budget_exhausted`
 
 ## 6. Safe retirement (replaces clear-cache)
 
-Retiring sets `active=false` on Neon rows. S3 and history IDs remain valid; practice for those buckets returns warming until refill restores inventory.
+Retiring sets `active=false` on Neon rows. History and bookmark IDs remain valid, but practice for those buckets returns warming until refill restores inventory.
 
 ```bash
 bun run pool:retire --dry-run
@@ -152,7 +152,7 @@ Alert thresholds: [question-request-metrics.md](./question-request-metrics.md).
 Selection-only is already shipped in code. Operational canary:
 
 1. Deploy the reviewed database migration and verify the Neon query paths on a branch.
-2. Dry-run then run S3 backfill; seed priority buckets to a safe minimum.
+2. If older S3 questions have not been imported yet, dry-run and run the legacy backfill; seed priority buckets to a safe minimum.
 3. Enable cron; confirm `question_pool_health` shows progress and no sustained `failed_jobs`.
 4. Smoke internal traffic: hit, warming UI + retry, class/unit switch, exclusion reset, FRQ (if flag on).
 5. Watch p95 hit latency and `pool_warming` rate; expand confidence as readiness stays healthy.
@@ -177,9 +177,9 @@ With `bun dev` (or a preview deploy):
 
 ## Useful package scripts
 
-| Script                       | Purpose                                                         |
-| ---------------------------- | --------------------------------------------------------------- |
-| `bun run pool:backfill-s3`   | S3 → Neon PostgreSQL import (`--dry-run`, `--enqueue-deficits`) |
-| `bun run pool:batch-submit`  | Submit JSON-target deficits (`--type mcq\|frq`)                 |
-| `bun run pool:batch-collect` | Validate/persist a completed batch                              |
-| `bun run pool:retire`        | Retire active Neon rows (`--dry-run`, `--confirm=RETIRE-POOL`)  |
+| Script                       | Purpose                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------- |
+| `bun run pool:backfill-s3`   | Optional legacy S3 → Neon PostgreSQL import (`--dry-run`, `--enqueue-deficits`) |
+| `bun run pool:batch-submit`  | Submit JSON-target deficits (`--type mcq\|frq`)                                 |
+| `bun run pool:batch-collect` | Validate/persist a completed batch                                              |
+| `bun run pool:retire`        | Retire active Neon rows (`--dry-run`, `--confirm=RETIRE-POOL`)                  |

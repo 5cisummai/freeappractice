@@ -74,17 +74,6 @@ function postProcessResponse(
 		response.headers.set('Link', buildHomepageLinkHeader());
 	}
 
-	if (event.url.pathname.startsWith('/desmos-sandbox')) {
-		const csp = response.headers.get('Content-Security-Policy');
-		if (csp) {
-			const patched = csp
-				.replace(/(script-src\s)/, "$1'unsafe-eval' ")
-				.replace(/frame-ancestors\s+'none'/, "frame-ancestors 'self'");
-			response.headers.set('Content-Security-Policy', patched);
-		}
-		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-	}
-
 	if (event.url.pathname.startsWith('/api/')) {
 		response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 		response.headers.set('Pragma', 'no-cache');

@@ -26,7 +26,7 @@ flowchart TB
 
     subgraph Lib["Server libraries ($lib)"]
         AuthLib["auth/* — Better Auth + API helpers"]
-        QGen["questions/* — pool select, refill worker, S3 archive"]
+        QGen["questions/* — pool select, refill worker, Neon content"]
         FrqLib["frq/* — FRQ select, grade, worker generation"]
         PracticeExp["practice/* — multi-attempt experiment"]
         AI["ai/service.server.ts — Vercel AI SDK"]
@@ -40,7 +40,7 @@ flowchart TB
 
     subgraph Data["Persistence"]
         NeonDB[("Neon PostgreSQL<br/>Drizzle + Neon HTTPS")]
-        S3[("AWS S3<br/>questions/ + frqs/")]
+        LegacyS3[("Legacy AWS S3<br/>import source")]
         StaticJSON["Static data<br/>unit-descriptionsrevised.json<br/>practice-pages.json"]
         BlogMD["Markdown<br/>src/content/blog/*.md"]
     end
@@ -66,10 +66,8 @@ flowchart TB
     UsersLib --> FrqLib
     UsersLib --> Referrals
     QGen --> NeonDB
-    QGen --> S3
     QGen --> AI
     FrqLib --> NeonDB
-    FrqLib --> S3
     FrqLib --> AI
     PracticeExp --> UsersLib
     AI --> OpenAI
@@ -176,10 +174,10 @@ Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShe
 
 | Store / path                              | Role                                                                                                 |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **S3** (`questions/`, `frqs/`)            | Canonical archive and ID source. History/bookmarks keep working even if Postgres rows are retired.   |
+| **Legacy S3** (`questions/`, `frqs/`)     | Optional one-time import source for older question objects; normal app paths never read or write it. |
 | **Neon active library**                   | Serving library: full question bodies in relational tables, indexed random selection per class/unit. |
 | **User request path**                     | Selection only — never calls the LLM, never writes S3, never waits on a generation lock.             |
-| **Refill workers** (cron + admin enqueue) | Only place that generates: S3-first write, then insert/upsert an active Postgres row.                |
+| **Refill workers** (cron + admin enqueue) | Only place that generates and inserts/upserts an active Neon PostgreSQL row.                         |
 
 Targets default to demand-scaled MCQ floors (JSON in `src/lib/data/question-pool-targets.json`: Biology preferred **35**, default preferred **20**, min **10** from generation-stats share) and **8 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
 
@@ -202,8 +200,7 @@ flowchart TD
 
     Cron["Vercel cron / admin"] --> Worker["Bounded refill worker<br/>lease · daily budget"]
     RefillReq --> Worker
-    Worker --> S3First["Import or generate<br/>S3 canonical object"]
-    S3First --> NeonInsert["Insert active Postgres row<br/>randomKey + contentHash"]
+    Worker --> NeonInsert["Generate or import<br/>then insert active Neon row"]
 
     Return --> UI["QuestionCard or FrqCard"]
     UI --> Attempt["User answers"]
@@ -216,15 +213,15 @@ flowchart TD
 - Signed-in and anonymous users share the same Neon serving library (per question type).
 - The browser sends current-session `excludeQuestionIds` (capped at 100). If every active ID is excluded but the bucket is non-empty, selection resets exclusions and returns a random active question.
 - Multiple users can receive the same question at the same time; rows are not claimed or deleted on serve.
-- `contentHash` (SHA-256 of normalized question text) deduplicates inserts into the library; duplicate keys during refill are skipped and counted toward the run budget (S3 objects may remain as archive orphans).
+- `contentHash` (SHA-256 of normalized question text) deduplicates inserts into the library; duplicate keys during refill are skipped and counted toward the run budget.
 - Empty buckets return typed `POOL_WARMING` immediately and request asynchronous population — there is no synchronous generation fallback.
 - The final count-and-write is serialized per bucket. Workers stop writing once the configured target is reached, while any older surplus rows remain active until an explicit retirement operation.
 - **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`bun run pool:reconcile` → `reconcilePoolRefillJobs`) is an ops tool — it is **not** run on every cron tick (that N+1 would starve generation inside the serverless time budget).
-- Ops: `bun run pool:backfill-s3`, `bun run pool:retire` (replaces the old clear-cache script). See [question-pool-runbook.md](./question-pool-runbook.md).
+- Ops: `bun run pool:backfill-s3` for optional legacy imports, and `bun run pool:retire` (replaces the old clear-cache script). See [question-pool-runbook.md](./question-pool-runbook.md).
 
 User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.
 
-This is simpler than the retired synchronous-cache design: the request interface has one responsibility (selection), the worker interface has one responsibility (population), and Neon PostgreSQL is the single serving store. S3 remains the canonical archive rather than a second store queried during normal serves. The old cache-lock, cache-miss, synchronous-generation fallback, and clear-cache paths are intentionally absent.
+This is simpler than the retired synchronous-cache design: the request interface has one responsibility (selection), the worker interface has one responsibility (population), and Neon PostgreSQL is the single canonical and serving store. Legacy S3 is not queried during normal serves. The old cache-lock, cache-miss, synchronous-generation fallback, and clear-cache paths are intentionally absent.
 
 ---
 
@@ -330,7 +327,7 @@ sequenceDiagram
     end
 ```
 
-Practice serve paths never call the LLM or read S3 for the question body — only Neon PostgreSQL. Generation happens asynchronously via `/api/cron/question-pool` (and admin enqueue). History/bookmark loads still resolve canonical bodies from S3 by `questionId` when needed.
+Practice serve paths never call the LLM or read S3 for the question body — only Neon PostgreSQL. Generation happens asynchronously via `/api/cron/question-pool` (and admin enqueue). History/bookmark loads resolve canonical bodies from Neon by `questionId` when needed.
 
 `QuestionShell` is a thin public MCQ-only wrapper around `PracticeShell`. MCQ answer/load/experiment state lives in `createQuestionCardSession` (`question-card-session.svelte.ts`); markup stays in `question-card.svelte`.
 
@@ -370,7 +367,7 @@ erDiagram
     }
 
     QUESTION_POOL {
-        string s3QuestionId UK
+        string questionId UK
         string apClass
         string unit
         string contentHash UK
@@ -405,9 +402,6 @@ erDiagram
         counters for public /stats
     }
 
-    QUESTION_POOL }o--|| S3_OBJECT : "s3QuestionId from archive/generation"
-    USER_PROFILE }o--o{ S3_OBJECT : "history references questionId"
-    FRQ_ATTEMPT }o--o{ S3_OBJECT : "FRQ questionId"
     POOL_REFILL_STATE }o--|| QUESTION_POOL : "maintains active counts"
 ```
 
@@ -415,15 +409,15 @@ erDiagram
 
 ## How the pieces fit together
 
-| Layer                | Role                                                                                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Public site**      | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                |
-| **/app**             | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings                                                                   |
-| **Question library** | S3 = canonical archive; Neon PostgreSQL = active serving library; refill workers generate; request path is selection-only (`POOL_WARMING` when empty) |
-| **Better Auth**      | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete                       |
-| **AI layer**         | One OpenAI-compatible provider for **worker** generation, FRQ grading, and tutor chat — not for `/api/question` serves                                |
-| **Referrals**        | Invite cookie → claim → activate on first meaningful attempt                                                                                          |
-| **Vercel**           | Hosting, cron refill route, `waitUntil` for background auth tasks, Flags SDK, optional Analytics/Speed Insights                                       |
+| Layer                | Role                                                                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Public site**      | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                         |
+| **/app**             | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings                                                                            |
+| **Question library** | Neon PostgreSQL = canonical and serving library; legacy S3 is import-only; refill workers generate; request path is selection-only (`POOL_WARMING` when empty) |
+| **Better Auth**      | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete                                |
+| **AI layer**         | One OpenAI-compatible provider for **worker** generation, FRQ grading, and tutor chat — not for `/api/question` serves                                         |
+| **Referrals**        | Invite cookie → claim → activate on first meaningful attempt                                                                                                   |
+| **Vercel**           | Hosting, cron refill route, `waitUntil` for background auth tasks, Flags SDK, optional Analytics/Speed Insights                                                |
 
 ---
 

@@ -33,7 +33,7 @@
 		<PublicPageHero
 			title="Terms of Service"
 			description="The rules and guidelines for using Free AP Practice."
-			meta="Last Updated: August 5, 2026"
+			meta="Last Updated: August 9, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -155,13 +155,13 @@
 				<h2 class="text-xl font-semibold">9. Third-Party Services</h2>
 				<p>
 					The Service depends on third-party providers, including OpenAI for AI operations, Google
-					for sign-in and Google One Tap, Neon-hosted PostgreSQL for database storage, AWS S3 for
-					file storage, Desmos for calculator functionality, Resend for transactional emails,
-					PostHog for optional product analytics, Vercel for hosting and infrastructure, Sentry for
-					error and performance monitoring, Stripe for payments and taxes, Mem0 for optional tutor
-					memory, Upstash for short-lived service controls, and GitHub for bug-report handling.
-					Those providers may process data according to their own terms and privacy policies. We are
-					not responsible for third-party services that we do not control.
+					for sign-in and Google One Tap, Neon-hosted PostgreSQL for database storage, Resend for
+					transactional emails, PostHog for optional product analytics, Vercel for hosting and
+					infrastructure, Sentry for error and performance monitoring, Stripe for payments and
+					taxes, Mem0 for optional tutor memory, Upstash for short-lived service controls, and
+					GitHub for bug-report handling. Those providers may process data according to their own
+					terms and privacy policies. We are not responsible for third-party services that we do not
+					control.
 				</p>
 			</section>
 

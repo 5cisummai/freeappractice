@@ -4,7 +4,7 @@ import { logger } from '$lib/server/logger';
 
 interface PoolDocument {
 	_id: { toString(): string };
-	s3QuestionId?: string;
+	questionId?: string;
 	randomKey?: number;
 	active?: boolean;
 }
@@ -92,7 +92,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		active: { $ne: false }
 	};
 	if (opts.excludeQuestionIds.length) {
-		base.s3QuestionId = { $nin: opts.excludeQuestionIds };
+		base.questionId = { $nin: opts.excludeQuestionIds };
 	}
 
 	const first = await leanFindOne<TDoc>(
