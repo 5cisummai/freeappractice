@@ -5,7 +5,7 @@ import {
 } from '$lib/ai/ai-models-config';
 import { connectDb } from '$lib/server/db';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
-import { getQuestionFromS3 } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/questions/storage.server';
 import { QuestionId } from '$lib/questions/question-id-model.server';
 import {
 	QuestionFeedback,
@@ -170,13 +170,13 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 	});
 	const humanQueue = await Promise.all(
 		queue.slice(0, 20).map(async (quality) => {
-			let question: Awaited<ReturnType<typeof getQuestionFromS3>> | null = null;
+			let question: Awaited<ReturnType<typeof getQuestionById>> | null = null;
 			try {
-				question = await getQuestionFromS3(quality.questionId);
+				question = await getQuestionById(quality.questionId);
 			} catch {
-				// The reviewer can still resolve metadata-only records if S3 is temporarily unavailable.
+				// The reviewer can still resolve metadata-only records if the question row is unavailable.
 			}
-			// S3 payloads may include stimulus/passage/context beyond StoredQuestion.
+			// Keep supporting optional stimulus fields if older rows contain them.
 			const raw = question as Record<string, unknown> | null;
 			return {
 				questionId: quality.questionId,

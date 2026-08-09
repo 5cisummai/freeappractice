@@ -29,7 +29,7 @@ type CachedResult = {
 };
 
 const MCQ_PROJECTION = {
-	s3QuestionId: 1,
+	questionId: 1,
 	question: 1,
 	optionA: 1,
 	optionB: 1,
@@ -44,7 +44,7 @@ const MCQ_PROJECTION = {
 	unit: 1
 } as const;
 
-/** Read full MCQ body directly from an active-library pool doc (no S3 round trip). */
+/** Read full MCQ body directly from an active-library Neon row. */
 function hotPoolBodyFromDoc(
 	doc: Pick<
 		IQuestion,
@@ -85,13 +85,13 @@ const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 		provider: 'cache',
 		model: 'cached',
 		cached: true,
-		questionId: doc.s3QuestionId
+		questionId: doc.questionId
 	}),
 	requestRefill: (className, unit) =>
 		requestPoolRefill({ questionType: 'mcq', apClass: className, unit })
 });
 
-/** Selection-only MCQ serve. Never invokes LLM or S3 generation. */
+/** Selection-only MCQ serve. Never invokes LLM or generation. */
 export async function getQuestion(
 	className: string,
 	unit?: string,

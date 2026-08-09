@@ -1,8 +1,7 @@
-import { createHash, randomUUID } from 'crypto';
-import * as s3 from '$lib/questions/s3.server';
-import { registerQuestionIdSafe } from '$lib/questions/question-id-registry.server';
+import { Question, type IQuestion } from '$lib/questions/cache-model.server';
 
-export interface QuestionData {
+export interface StoredQuestion {
+	id: string;
 	question: string;
 	optionA: string;
 	optionB: string;
@@ -16,69 +15,65 @@ export interface QuestionData {
 	unit?: string;
 	contentHash?: string;
 	topicsCovered?: string;
-}
-
-export interface StoredQuestion extends QuestionData {
-	id: string;
 	createdAt: string;
 }
 
-export async function saveQuestionToS3(questionData: QuestionData): Promise<string> {
-	const questionId = randomUUID();
-	const key = `questions/${questionId}.json`;
-
-	const payload: StoredQuestion = {
-		id: questionId,
-		...questionData,
-		createdAt: new Date().toISOString()
+function toStoredQuestion(question: IQuestion): StoredQuestion {
+	return {
+		id: question.questionId,
+		question: question.question,
+		optionA: question.optionA,
+		optionB: question.optionB,
+		optionC: question.optionC,
+		optionD: question.optionD,
+		correctAnswer: question.correctAnswer,
+		explanation: question.explanation,
+		...(question.hint1 !== undefined ? { hint1: question.hint1 } : {}),
+		...(question.hint2 !== undefined ? { hint2: question.hint2 } : {}),
+		apClass: question.apClass,
+		unit: question.unit,
+		contentHash: question.contentHash,
+		topicsCovered: question.topicsCovered,
+		createdAt: new Date(question.createdAt).toISOString()
 	};
-
-	const body = JSON.stringify(payload);
-	await s3.putObject({ key, body, contentType: 'application/json' });
-	await registerQuestionIdSafe(questionId, {
-		apClass: questionData.apClass,
-		unit: questionData.unit,
-		questionCreatedAt: new Date(payload.createdAt),
-		contentHash: createHash('sha256').update(body).digest('hex'),
-		contentLength: body.length,
-		metadataSyncedAt: new Date()
-	});
-	return questionId;
 }
 
-export async function getQuestionFromS3(questionId: string): Promise<StoredQuestion> {
-	return s3.getObjectJson<StoredQuestion>({ key: `questions/${questionId}.json` });
+/** Resolve an MCQ body from its canonical Neon row. */
+export async function getQuestionById(questionId: string): Promise<StoredQuestion> {
+	const normalizedId = questionId.trim();
+	if (!normalizedId) throw new Error('Question id is required');
+
+	const question = await Question.findOne({ questionId: normalizedId }).lean();
+	if (!question) throw new Error(`Question not found: ${normalizedId}`);
+	return toStoredQuestion(question);
 }
 
-async function getQuestionsFromS3(questionIds: string[]): Promise<StoredQuestion[]> {
-	const results = await Promise.all(
-		questionIds.map((id) => getQuestionFromS3(id).catch(() => null))
-	);
-	return results.filter((q): q is StoredQuestion => q !== null);
-}
-
-/** Build a lookup map keyed by canonical S3 ids. */
+/** Build a lookup map from canonical Neon MCQ rows. */
 export async function getQuestionsLookupMap(
 	questionIds: string[]
 ): Promise<Map<string, StoredQuestion>> {
-	const uniqueIds = [...new Set(questionIds)];
+	const uniqueIds = [...new Set(questionIds.map((id) => id.trim()).filter(Boolean))];
 	const map = new Map<string, StoredQuestion>();
 	if (uniqueIds.length === 0) return map;
 
-	const fromS3 = await getQuestionsFromS3(uniqueIds);
-
-	for (const question of fromS3) {
-		map.set(question.id, question);
+	const questions = await Question.find({ questionId: { $in: uniqueIds } }).lean();
+	for (const question of questions) {
+		const stored = toStoredQuestion(question);
+		map.set(stored.id, stored);
 	}
-
 	return map;
 }
 
-/** Resolve question payloads by canonical S3 id. */
 export async function getQuestionsByIds(questionIds: string[]): Promise<StoredQuestion[]> {
-	const uniqueIds = [...new Set(questionIds)];
+	const uniqueIds = [...new Set(questionIds.map((id) => id.trim()).filter(Boolean))];
 	if (uniqueIds.length === 0) return [];
 
 	const map = await getQuestionsLookupMap(uniqueIds);
 	return uniqueIds.map((id) => map.get(id)).filter((q): q is StoredQuestion => q !== undefined);
+}
+
+/** List all canonical MCQs for maintenance and quality tooling. */
+export async function getAllQuestions(): Promise<StoredQuestion[]> {
+	const questions = await Question.find({}).lean();
+	return questions.map(toStoredQuestion);
 }

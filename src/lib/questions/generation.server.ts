@@ -1,16 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { saveQuestionToS3 } from '$lib/questions/storage.server';
-import { recordMcqGenerated } from '$lib/questions/gen-stats.server';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
-import { logger } from '$lib/server/logger';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { structuredObject } from '$lib/ai/service.server';
 import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
-import { QuestionGenerationError } from '$lib/questions/question-errors.server';
-import { normalizeUnit } from '$lib/questions/util.server';
 
 /**
- * MCQ generation: prompts, structured AI calls, and S3 persistence.
+ * MCQ generation: prompts, structured AI calls, and generation metrics.
  */
 
 // ── Data-lookup types ──────────────────────────────────────────
@@ -198,35 +194,6 @@ export interface GenerateResult {
 	timing?: GenerateTiming;
 }
 
-// ── Persistence ────────────────────────────────────────────────
-
-async function persistMcqQuestionToS3(
-	parsed: APQuestionData,
-	className: string,
-	unit: string | undefined
-): Promise<string> {
-	const unitLabel = normalizeUnit(unit, 'General');
-	const id = await saveQuestionToS3({
-		...parsed,
-		apClass: className,
-		unit: unitLabel
-	});
-	try {
-		await recordMcqGenerated({
-			apClass: className,
-			unit: unitLabel,
-			questionText: parsed.question
-		});
-	} catch (e) {
-		logger.error('recordMcqGenerated failed after S3 save', {
-			error: e instanceof Error ? e.message : String(e),
-			className,
-			unit: unitLabel
-		});
-	}
-	return id;
-}
-
 function isAPLunch(className: string): boolean {
 	return (className ?? '').toLowerCase().includes('ap lunch');
 }
@@ -342,15 +309,6 @@ async function generateAPQuestionBody(opts: {
 	});
 }
 
-/** Persist an already-parsed MCQ to S3 (canonical archive). */
-export async function persistParsedMcqToS3(
-	parsed: APQuestionData,
-	className: string,
-	unit: string | undefined
-): Promise<string> {
-	return persistMcqQuestionToS3(parsed, className, unit);
-}
-
 export async function generateAPQuestion(opts: {
 	className: string;
 	unit?: string;
@@ -365,18 +323,7 @@ export async function generateAPQuestion(opts: {
 	});
 	const generationMs = Date.now() - generationStarted;
 
-	let questionId: string;
-	const persistenceStarted = Date.now();
-	try {
-		questionId = await persistMcqQuestionToS3(parsed, className, unit);
-	} catch (err) {
-		logger.error('Failed to persist generated question to S3', {
-			className,
-			unit,
-			error: err
-		});
-		throw new QuestionGenerationError('Failed to persist generated question', { cause: err });
-	}
+	const questionId = randomUUID();
 	return {
 		answer: parsed,
 		provider: 'ai',
@@ -384,7 +331,7 @@ export async function generateAPQuestion(opts: {
 		questionId,
 		timing: {
 			generationMs,
-			persistenceMs: Date.now() - persistenceStarted
+			persistenceMs: 0
 		}
 	};
 }

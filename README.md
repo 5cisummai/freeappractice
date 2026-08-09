@@ -14,7 +14,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - Public generation stats at `/stats` (backed by `/api/question/generation-stats`).
 - Better Auth for email/password and Google sign-in (including Google One Tap when configured).
 - SvelteKit API routes for questions, signed-in user data, tutoring, and bug reports.
-- Markdown blog posts in `src/content/blog/`; private question batches stored in S3 for bookmarks and history.
+- Markdown blog posts in `src/content/blog/`; question content is stored in Neon PostgreSQL for practice, bookmarks, and history.
 
 ## Tech stack
 
@@ -25,7 +25,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 - [Better Auth](https://www.better-auth.com/) for sessions, email flows, and OAuth
 - [Vercel AI SDK](https://sdk.vercel.ai/) with an OpenAI-compatible API for question generation and tutor responses (OpenAI or [LM Studio](https://lmstudio.ai/) locally)
 - Resend for transactional email
-- AWS S3 for private question storage
+- AWS S3-compatible storage for one-time legacy question imports
 - Stripe + Better Auth Stripe plugin for Super subscriptions, Mem0 for optional tutor memory, and Upstash Redis for short-lived AI controls
 - Vercel for deployment (`@sveltejs/adapter-vercel`)
 
@@ -120,7 +120,7 @@ Commonly needed for full functionality:
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                                    | Google OAuth                                                                                      |
 | `PUBLIC_GOOGLE_CLIENT_ID`                                                      | Google One Tap on the client                                                                      |
 | `RESEND_API_KEY` / `RESEND_FROM`                                               | Transactional email                                                                               |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Private S3 bucket for question batches                                                            |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Optional legacy S3 import tooling                                                                 |
 | `AWS_SESSION_TOKEN`                                                            | Optional temporary/assumed-role credentials                                                       |
 | `PUBLIC_BASE_URL`                                                              | Canonical site URL                                                                                |
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                          |
@@ -149,7 +149,7 @@ with `vercel env pull .env.development.local --environment=development` when set
 
 Upstash Redis is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
 single-flight locks, idempotency keys, and 30-minute Coach approvals. Upstash Vector stores optional tutor
-memories; Neon PostgreSQL, Stripe, and S3 remain the other durable stores. Question-selection and grading logic do not
+memories; Neon PostgreSQL and Stripe remain the other durable stores. Question-selection and grading logic do not
 use Redis. For local Redis testing, run an
 Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
 `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.

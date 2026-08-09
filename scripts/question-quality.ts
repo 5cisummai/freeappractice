@@ -7,7 +7,7 @@
  *   bun run quality --preview --approve --max 500
  * Refresh/pause/resume/cancel:
  *   bun run quality --refresh <jobId>
- * Reconcile the S3 inventory (add --hydrate for class/unit metadata):
+ * Reconcile the Neon question inventory (add --hydrate for compatibility):
  *   bun run quality --reconcile --hydrate
  */
 import 'dotenv/config';

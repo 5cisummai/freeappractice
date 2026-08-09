@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth/server';
-import { getQuestionFromS3 } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/questions/storage.server';
 import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
@@ -19,7 +19,7 @@ export const POST: RequestHandler = async (event) => {
 		const rate = await limitGenericTutor(event.request, userId);
 		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
 
-		const question = await getQuestionFromS3(parsed.data.questionId).catch(() => null);
+		const question = await getQuestionById(parsed.data.questionId).catch(() => null);
 		if (!question) return json({ error: 'Question not found' }, { status: 404 });
 
 		const message = await getGreeting(question.question);

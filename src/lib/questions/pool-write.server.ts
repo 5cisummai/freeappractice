@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { Question, newPoolRandomKey, type IQuestion } from '$lib/questions/cache-model.server';
 import {
 	generateAPQuestion,
-	persistParsedMcqToS3,
 	type APQuestionData,
 	type GenerateResult
 } from '$lib/questions/generation.server';
@@ -12,7 +12,7 @@ import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
 /** Build an active-library pool document with the full MCQ body inline. */
 function buildHotPoolDoc(opts: {
-	s3QuestionId: string;
+	questionId: string;
 	apClass: string;
 	unit: string;
 	contentHash: string;
@@ -21,7 +21,7 @@ function buildHotPoolDoc(opts: {
 	active?: boolean;
 }): Pick<
 	IQuestion,
-	| 's3QuestionId'
+	| 'questionId'
 	| 'apClass'
 	| 'unit'
 	| 'contentHash'
@@ -40,7 +40,7 @@ function buildHotPoolDoc(opts: {
 > {
 	const { answer } = opts;
 	return {
-		s3QuestionId: opts.s3QuestionId,
+		questionId: opts.questionId,
 		apClass: opts.apClass,
 		unit: opts.unit,
 		contentHash: opts.contentHash,
@@ -63,13 +63,13 @@ async function insertHotPoolDoc(
 	className: string,
 	cacheUnit: string,
 	answer: APQuestionData,
-	s3QuestionId: string
+	questionId: string
 ): Promise<IQuestion> {
 	await recordRecentTopic({
 		apClass: className,
 		unit: cacheUnit,
 		topicsCovered: answer.topicsCovered ?? '',
-		s3QuestionId
+		questionId
 	});
 
 	return Question.create(
@@ -78,13 +78,13 @@ async function insertHotPoolDoc(
 			unit: cacheUnit,
 			contentHash: computeContentHash(answer.question),
 			answer,
-			s3QuestionId
+			questionId
 		})
 	);
 }
 
 /**
- * Worker-only: AI → S3 → Neon PostgreSQL active library.
+ * Worker-only: AI → Neon PostgreSQL active library.
  * Must not be imported by request-path selection modules.
  */
 export async function generateQuestionForPool(
@@ -99,7 +99,7 @@ export async function generateQuestionForPool(
 	const result = await generateAPQuestion({ className, unit, recentTopics: topics });
 	const { answer, questionId } = result;
 	if (!questionId) {
-		throw new QuestionGenerationError('Generated question was not persisted to S3');
+		throw new QuestionGenerationError('Generated question did not receive an id');
 	}
 
 	return insertGeneratedQuestionIntoPool({
@@ -112,14 +112,14 @@ export async function generateQuestionForPool(
 	});
 }
 
-/** Persist a batch/sync-parsed MCQ into S3 + Neon (worker/batch collect only). */
+/** Persist a batch/sync-parsed MCQ into Neon (worker/batch collect only). */
 export async function persistParsedQuestionToPool(
 	className: string,
 	unit: string,
 	answer: APQuestionData
 ): Promise<{ questionId: string; skippedDuplicate?: boolean }> {
 	const cacheUnit = normalizeUnit(unit);
-	const questionId = await persistParsedMcqToS3(answer, className, unit);
+	const questionId = randomUUID();
 	const inserted = await insertGeneratedQuestionIntoPool({
 		className,
 		unit: cacheUnit,

@@ -12,7 +12,7 @@ export interface QuestionRegistryMetadata {
 	metadataSyncedAt?: Date;
 }
 
-/** Record a canonical S3 question id and any known metadata (idempotent upsert). */
+/** Record a canonical question id and its metadata (idempotent upsert). */
 async function registerQuestionId(
 	questionId: string,
 	metadata: QuestionRegistryMetadata = {}

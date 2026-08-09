@@ -86,7 +86,7 @@ MARKDOWN AND FORMATTING GATE:
 - If any Markdown or other formatting is malformed, return BAD automatically. This includes unclosed code fences, broken Markdown links, malformed tables or lists, unmatched emphasis delimiters, broken inline formatting, or invalid or mismatched LaTeX delimiters when present.
 
 Return BAD if any material defect could teach the wrong idea, make the answer ambiguous, mis-key the answer, make the explanation misleading, or leave Markdown or formatting malformed. Return GOOD only when the item is ready to use. Set requires_human_review when evidence is incomplete, domain verification is uncertain, or confidence is below 0.85. Use concise issue codes such as WRONG_KEY, FACTUAL_ERROR, AMBIGUOUS, MULTIPLE_ANSWERS, WEAK_DISTRACTORS, BAD_EXPLANATION, COURSE_MISMATCH, UNIT_MISMATCH, MALFORMED_FORMATTING, FORMAT_OR_ACCESSIBILITY, or SAFETY.`,
-		user: `Review this canonical S3 question:\n${JSON.stringify(question)}`
+		user: `Review this canonical Neon question:\n${JSON.stringify(question)}`
 	};
 }
 

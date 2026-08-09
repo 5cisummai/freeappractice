@@ -5,8 +5,7 @@ import { env } from '$env/dynamic/private';
 import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { QuestionId } from '$lib/questions/question-id-model.server';
-import { getQuestionFromS3 } from '$lib/questions/storage.server';
-import { listQuestionObjects } from '$lib/questions/s3.server';
+import { getAllQuestions, getQuestionById } from '$lib/questions/storage.server';
 import { isAgentCalibrated, modelName, toJobSummary } from './dashboard.server.js';
 import {
 	QuestionQuality,
@@ -115,13 +114,19 @@ function normalizeFilters(
 }
 
 export async function reconcileQuestionInventory(
-	opts: { hydrateMetadata?: boolean } = {}
+	opts: { hydrateMetadata?: boolean } = { hydrateMetadata: true }
 ): Promise<{
 	discovered: number;
 	hydrated: number;
 }> {
 	await connectDb();
-	const objects = await listQuestionObjects();
+	const questions = await getAllQuestions();
+	const questionsById = new Map(questions.map((question) => [question.id, question]));
+	const objects = questions.map((question) => ({
+		questionId: question.id,
+		lastModified: new Date(question.createdAt),
+		size: JSON.stringify(question).length
+	}));
 	if (objects.length) {
 		await QuestionId.bulkWrite(
 			objects.map((object) => ({
@@ -130,7 +135,6 @@ export async function reconcileQuestionInventory(
 					update: {
 						$setOnInsert: { questionId: object.questionId },
 						$set: {
-							...(object.etag ? { s3Etag: object.etag } : {}),
 							...(object.lastModified ? { questionCreatedAt: object.lastModified } : {}),
 							...(typeof object.size === 'number' ? { contentLength: object.size } : {})
 						}
@@ -149,7 +153,8 @@ export async function reconcileQuestionInventory(
 			const rows = await Promise.all(
 				group.map(async (object) => {
 					try {
-						const question = await getQuestionFromS3(object.questionId);
+						const question = questionsById.get(object.questionId);
+						if (!question) throw new Error('Question row was not found');
 						const serialized = JSON.stringify(question);
 						return {
 							questionId: object.questionId,
@@ -158,7 +163,8 @@ export async function reconcileQuestionInventory(
 							questionCreatedAt: question.createdAt
 								? new Date(question.createdAt)
 								: object.lastModified,
-							contentHash: createHash('sha256').update(serialized).digest('hex'),
+							contentHash:
+								question.contentHash ?? createHash('sha256').update(serialized).digest('hex'),
 							contentLength: serialized.length
 						};
 					} catch (error) {
@@ -172,20 +178,6 @@ export async function reconcileQuestionInventory(
 			);
 			const valid = rows.filter((row): row is NonNullable<typeof row> => row !== null);
 			if (valid.length) {
-				const changedRows = (
-					await Promise.all(
-						valid.map(async (row) =>
-							(await QuestionQuality.findOne({
-								questionId: row.questionId,
-								sourceHash: { $exists: true, $ne: row.contentHash }
-							})
-								.lean()
-								.exec())
-								? row
-								: null
-						)
-					)
-				).filter((row): row is NonNullable<typeof row> => row !== null);
 				await QuestionId.bulkWrite(
 					valid.map((row) => ({
 						updateOne: {
@@ -195,51 +187,21 @@ export async function reconcileQuestionInventory(
 					})),
 					{ ordered: false }
 				);
+				// Legacy S3 source hashes are not comparable to the Neon row hash. Refresh
+				// the baseline without invalidating existing quality decisions.
 				await QuestionQuality.bulkWrite(
 					valid.map((row) => ({
 						updateOne: {
-							filter: {
-								questionId: row.questionId,
-								sourceHash: { $exists: true, $ne: row.contentHash }
-							},
+							filter: { questionId: row.questionId },
 							update: {
 								$set: {
 									sourceHash: row.contentHash,
-									sourceCreatedAt: row.questionCreatedAt,
-									state: 'awaiting_human',
-									needsHumanReview: true,
-									humanReviewReason: 'source_changed',
-									blindHumanReview: false
-								},
-								$unset: {
-									aiAssessment: 1,
-									finalVerdict: 1,
-									finalSource: 1,
-									finalizedAt: 1
-								},
-								$push: {
-									audit: {
-										at: new Date(),
-										actorId: 'inventory-reconcile',
-										action: 'source_changed',
-										note: 'Canonical S3 content hash changed; prior verdict cleared.'
-									}
+									sourceCreatedAt: row.questionCreatedAt
 								}
 							}
 						}
 					})),
 					{ ordered: false }
-				);
-				await Promise.all(
-					changedRows.map((row) =>
-						appendQualityAudit({
-							questionId: row.questionId,
-							at: new Date(),
-							actorId: 'inventory-reconcile',
-							action: 'source_changed',
-							note: 'Canonical S3 content hash changed; prior verdict cleared.'
-						})
-					)
 				);
 				hydrated += valid.length;
 			}
@@ -264,9 +226,7 @@ export async function previewReviewJob(
 	if (normalized.apClass || normalized.unit) {
 		const unsynced = await QuestionId.countDocuments({ metadataSyncedAt: { $exists: false } });
 		if (unsynced) {
-			throw new Error(
-				`Hydrate the S3 registry before class/unit filtering: bun run sync:question-ids --hydrate (${unsynced} unsynced)`
-			);
+			throw new Error(`Question metadata is not synchronized (${unsynced} unsynced)`);
 		}
 	}
 
@@ -516,7 +476,7 @@ async function submitNextBatch(jobId: string): Promise<void> {
 		let batchBytes = 0;
 		for (const item of claimedItems) {
 			try {
-				const question = await getQuestionFromS3(item.questionId);
+				const question = await getQuestionById(item.questionId);
 				const requiresWebSearch = requiresWebSearchForQuestion(
 					question as unknown as Record<string, unknown>
 				);

@@ -151,8 +151,8 @@
 				<p>
 					We store account, practice, personalization, billing-mirror, and feature data in
 					Neon-hosted PostgreSQL. Generated question content and related assets may also be stored
-					in PostgreSQL and AWS S3. Passwords are stored as hashes, not plain text, and OAuth tokens
-					are encrypted by the authentication system. Authentication uses secure HTTP-only session
+					in PostgreSQL. Passwords are stored as hashes, not plain text, and OAuth tokens are
+					encrypted by the authentication system. Authentication uses secure HTTP-only session
 					cookies. We use access controls, validation, rate limits, and monitoring appropriate to a
 					personal project, but no method of transmission or storage is completely secure.
 				</p>
@@ -239,9 +239,6 @@
 					<li>
 						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, and feature
 						data
-					</li>
-					<li>
-						<strong>AWS S3:</strong> storage for generated question content and related assets
 					</li>
 					<li>
 						<strong>Desmos:</strong> calculator functionality and related browser requests when you use

@@ -7,7 +7,7 @@ export async function recordRecentTopic(opts: {
 	apClass: string;
 	unit: string;
 	topicsCovered: string;
-	s3QuestionId?: string;
+	questionId?: string;
 }): Promise<void> {
 	const topicsCovered = opts.topicsCovered.trim();
 	if (!topicsCovered) return;
@@ -17,7 +17,7 @@ export async function recordRecentTopic(opts: {
 		apClass: opts.apClass,
 		unit: opts.unit,
 		topicsCovered,
-		s3QuestionId: opts.s3QuestionId
+		questionId: opts.questionId
 	});
 }
 
