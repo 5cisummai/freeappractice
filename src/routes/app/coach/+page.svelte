@@ -421,7 +421,7 @@
 					>
 						<Conversation.Root class="min-h-0 min-w-0 flex-1">
 							<Conversation.Content
-								class="no-scrollbar mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
+								class="mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
 								aria-live="polite"
 							>
 								{#each coach.messages as message, messageIndex (message.id)}
