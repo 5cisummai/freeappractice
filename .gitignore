@@ -28,6 +28,7 @@ vite.config.ts.timestamp-*
 .question-quality-eval*.json
 
 backups/
+*.archive.gz
 .env.local
 /tmp/
 tmp/

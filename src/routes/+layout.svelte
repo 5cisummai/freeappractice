@@ -51,16 +51,6 @@
 <svelte:head>
 	<link rel="icon" href={logo} />
 </svelte:head>
-<div
-	role="status"
-	aria-live="polite"
-	class="border-b border-red-300 bg-red-600 px-4 py-8 text-center text-white shadow-md dark:border-red-800 dark:bg-red-950"
->
-	<p class="text-2xl font-bold tracking-tight sm:text-3xl">Site is currently down</p>
-	<p class="mt-2 text-base text-red-50 sm:text-lg">
-		We’re working to restore service. Please check back soon.
-	</p>
-</div>
 <SkipToMain />
 <ModeWatcher />
 <GoogleOneTapPrompt />
