@@ -1008,41 +1008,31 @@
 				{
 					"unit": "Unit 4: Contextual Applications of Differentiation",
 					"description": "Applied derivative problems, optimization, and modeling in varied contexts.",
-					"topics": [
-						"Related rates, optimization, modeling with derivatives"
-					],
+					"topics": ["Related rates, optimization, modeling with derivatives"],
 					"keywords": []
 				},
 				{
 					"unit": "Unit 5: Analytical Applications of Differentiation",
 					"description": "Function analysis, curve sketching, and theorems about derivatives.",
-					"topics": [
-						"Extrema, Mean Value Theorem, concavity and inflection points"
-					],
+					"topics": ["Extrema, Mean Value Theorem, concavity and inflection points"],
 					"keywords": []
 				},
 				{
 					"unit": "Unit 6: Integration and Accumulation of Change",
 					"description": "Definite/indefinite integrals, Fundamental Theorem of Calculus, and integration techniques.",
-					"topics": [
-						"Riemann sums, FTC, u-substitution, applications to accumulation"
-					],
+					"topics": ["Riemann sums, FTC, u-substitution, applications to accumulation"],
 					"keywords": []
 				},
 				{
 					"unit": "Unit 7: Differential Equations",
 					"description": "Separable and other first-order differential equations and applications including logistic growth; slope fields.",
-					"topics": [
-						"Separable ODEs, exponential/logistic growth, slope fields"
-					],
+					"topics": ["Separable ODEs, exponential/logistic growth, slope fields"],
 					"keywords": []
 				},
 				{
 					"unit": "Unit 8: Applications of Integration",
 					"description": "Applied integration problems including advanced volume and physical applications.",
-					"topics": [
-						"Volumes by slicing/shells, work, arc length (introductory contexts)"
-					],
+					"topics": ["Volumes by slicing/shells, work, arc length (introductory contexts)"],
 					"keywords": []
 				},
 				{
@@ -1436,14 +1426,7 @@
 						"Analyzing tone, word choice, and arrangement to influence audience",
 						"Comparing appeal strategies across genres and time periods"
 					],
-					"keywords": [
-						"Ethos",
-						"Pathos",
-						"Logos",
-						"Appeals",
-						"Diction",
-						"Tone"
-					]
+					"keywords": ["Ethos", "Pathos", "Logos", "Appeals", "Diction", "Tone"]
 				},
 				{
 					"unit": "Unit 3: Claims and Evidence",
@@ -1487,14 +1470,7 @@
 						"Revising prose for precision, concision, and persuasive force",
 						"Using figurative and rhetorical devices strategically in argument"
 					],
-					"keywords": [
-						"Style",
-						"Syntax",
-						"Diction",
-						"Imagery",
-						"Parallelism",
-						"Sentence variety"
-					]
+					"keywords": ["Style", "Syntax", "Diction", "Imagery", "Parallelism", "Sentence variety"]
 				},
 				{
 					"unit": "Unit 6: Argumentation",
@@ -1598,14 +1574,7 @@
 						"Interpreting figurative language and sound devices in context",
 						"Comparing poetic forms and their rhetorical/literary effects"
 					],
-					"keywords": [
-						"Imagery",
-						"Figurative language",
-						"Tone",
-						"Poetic form",
-						"Meter",
-						"Syntax"
-					]
+					"keywords": ["Imagery", "Figurative language", "Tone", "Poetic form", "Meter", "Syntax"]
 				},
 				{
 					"unit": "Unit 3: Longer Fiction or Drama I",
@@ -2186,14 +2155,7 @@
 						"Rise and operation of authoritarian states",
 						"Social and moral consequences of total war and genocide"
 					],
-					"keywords": [
-						"World wars",
-						"Fascism",
-						"Communism",
-						"Total war",
-						"Resistance",
-						"Holocaust"
-					]
+					"keywords": ["World wars", "Fascism", "Communism", "Total war", "Resistance", "Holocaust"]
 				},
 				{
 					"unit": "Unit 9: Cold War and Contemporary Europe",

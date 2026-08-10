@@ -207,7 +207,7 @@ export function getApCurriculumKnowledge(input: {
 		return {
 			kind: 'catalog',
 			...metadata(),
-		courses: supportedCourses.map((course) => ({
+			courses: supportedCourses.map((course) => ({
 				apClass: course.name,
 				units: unitsFor(course)
 			}))

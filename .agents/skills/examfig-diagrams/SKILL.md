@@ -43,15 +43,15 @@ Optional shared fields: `title`, `width`, `height`, `theme` (`"monochrome"`).
 ### 3. Validate and render
 
 ```ts
-import { renderDiagram, validateDiagram } from "examfig";
+import { renderDiagram, validateDiagram } from 'examfig';
 // or, for schema-guided LLM prompts:
-import { getDiagramJsonSchema } from "examfig/schema";
+import { getDiagramJsonSchema } from 'examfig/schema';
 
 const result = validateDiagram(spec);
 if (!result.success) {
-  // Fix result.errors — do not render
+	// Fix result.errors — do not render
 } else {
-  const svg = renderDiagram(result.spec, { theme: "monochrome" });
+	const svg = renderDiagram(result.spec, { theme: 'monochrome' });
 }
 ```
 
@@ -68,19 +68,19 @@ Filter by type name. Check overlaps, clipping, and math scale (especially unit c
 
 ## Type selection cheat sheet
 
-| Need | Type |
-|------|------|
-| y = f(x), piecewise, shade under curve | `function-graph` |
-| boxplot, scatter, histogram, bar, … | `data-plot` (+ `plotType`) |
-| Forces on a mass | `free-body` |
-| Block on a ramp | `inclined-plane` |
-| Trig angle on circle | `unit-circle` |
-| r(θ) | `polar-graph` |
-| dy/dx field + solutions | `slope-field` |
-| Supply & demand | `supply-demand` |
-| Circuits / rays / waves | `circuit` / `ray-diagram` / `wave-diagram` |
-| Lewis / particles / titration | `lewis-structure` / `particle-diagram` / `titration-curve` |
-| Pathways / food webs | `process-diagram` / `food-web` / `resource-flow` |
+| Need                                   | Type                                                       |
+| -------------------------------------- | ---------------------------------------------------------- |
+| y = f(x), piecewise, shade under curve | `function-graph`                                           |
+| boxplot, scatter, histogram, bar, …    | `data-plot` (+ `plotType`)                                 |
+| Forces on a mass                       | `free-body`                                                |
+| Block on a ramp                        | `inclined-plane`                                           |
+| Trig angle on circle                   | `unit-circle`                                              |
+| r(θ)                                   | `polar-graph`                                              |
+| dy/dx field + solutions                | `slope-field`                                              |
+| Supply & demand                        | `supply-demand`                                            |
+| Circuits / rays / waves                | `circuit` / `ray-diagram` / `wave-diagram`                 |
+| Lewis / particles / titration          | `lewis-structure` / `particle-diagram` / `titration-curve` |
+| Pathways / food webs                   | `process-diagram` / `food-web` / `resource-flow`           |
 
 Full list and required fields: [catalog.md](catalog.md). Concrete JSON: [examples.md](examples.md).
 
@@ -99,13 +99,13 @@ Full list and required fields: [catalog.md](catalog.md). Concrete JSON: [example
 
 ## Anti-patterns
 
-| Bad | Good |
-|-----|------|
-| Hand-written `<svg><path d="M…">` | `DiagramSpec` + `renderDiagram` |
-| Pixel positions for forces | `direction: "normal"` / `"up"` + `label` |
-| Skipping validation | `validateDiagram` first |
-| Overstuffed first viewport of labels | One job per diagram; split panels if needed |
-| Using `function-graph` for a unit circle | `type: "unit-circle"` |
+| Bad                                      | Good                                        |
+| ---------------------------------------- | ------------------------------------------- |
+| Hand-written `<svg><path d="M…">`        | `DiagramSpec` + `renderDiagram`             |
+| Pixel positions for forces               | `direction: "normal"` / `"up"` + `label`    |
+| Skipping validation                      | `validateDiagram` first                     |
+| Overstuffed first viewport of labels     | One job per diagram; split panels if needed |
+| Using `function-graph` for a unit circle | `type: "unit-circle"`                       |
 
 ## Package boundaries
 
