@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateText, Output, NoObjectGeneratedError } from 'ai';
+import { NoObjectGeneratedError, Output, ToolLoopAgent } from 'ai';
 import type { z } from 'zod';
 import { OPEN_AI_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
@@ -37,10 +37,9 @@ export async function structuredObject<T>(
 	const { callName, model, system, user, schema, schemaName, reasoningEffort, logContext } = opts;
 	const doneAiCall = logger.aiCall(callName, model, logContext);
 	try {
-		const result = await generateText({
+		const agent = new ToolLoopAgent({
 			model: openaiModel(model),
-			system,
-			messages: [{ role: 'user', content: user }],
+			instructions: system,
 			output: Output.object({ name: schemaName, schema }),
 			providerOptions: {
 				openai: {
@@ -49,6 +48,7 @@ export async function structuredObject<T>(
 				}
 			}
 		});
+		const result = await agent.generate({ prompt: user });
 		if (!result.output) throw new Error('No parsed output from structured response');
 		doneAiCall({
 			promptTokens: result.usage.inputTokens,

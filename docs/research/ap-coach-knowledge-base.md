@@ -1,6 +1,6 @@
 # AP Coach knowledge-base MVP research
 
-**Sweep date:** 2026-08-09 · **Scope:** College Board/AP Central primary sources only. The local product supports 25 real AP courses; **AP Lunch is excluded from all official claims**.
+**Sweep date:** 2026-08-09 · **Scope:** College Board/AP Central primary sources only. The local product supports 25 real AP courses.
 
 ## Findings and source hierarchy
 
@@ -54,7 +54,7 @@ Each pair below is a direct, official AP Central URL. Local labels are mapped to
 
 It is not safe as an authoritative assessment database yet. It has no effective school year, CED version, retrieval date per source, source section/page, learning-objective IDs, skill/practice IDs, or provenance for individual fields. Some fields visibly drift: in AP Calculus AB, Unit 3 keywords emphasize extrema/related rates while the title is composite/implicit/inverse differentiation; Unit 4 keywords are integration-heavy while its description is derivative applications; Unit 5 keywords are integration applications while its description is derivative analysis. Exam-weight strings also need validation against the current exam pages/CEDs. Treat “topics may include” as paraphrased discovery text, not a guarantee of tested scope.
 
-`ap-classes.json` is the product’s course/unit navigation list. It includes AP Lunch, which must remain an internal non-course fixture and must not be presented as an AP subject or included in counts sourced to College Board. Its Physics 2 and Physics C numbering should be checked against the current 2025–26/2026–27 CED versions before using unit numbers in user-facing claims.
+`ap-classes.json` is the product’s course/unit navigation list. Its Physics 2 and Physics C numbering should be checked against the current 2025–26/2026–27 CED versions before using unit numbers in user-facing claims.
 
 ## Recommended MVP schema, retrieval, and tools
 
@@ -70,4 +70,4 @@ The first implementation intentionally stores only current course/unit labels, d
 
 Store structured facts, short paraphrases, and links—not copied CED passages, full FRQs, scoring guidelines, sample responses, or other substantial College Board text. The CED and released materials are for verification and linking; do not republish them. For example, the official FRQ pages provide questions, scoring guidelines, samples, and distributions ([AP CSP](https://apcentral.collegeboard.org/courses/ap-computer-science-principles/exam/past-exam-questions)), but the MVP should link out and extract only minimal metadata.
 
-Before release, check: every local real course maps to a live official course and exam URL; every unit has a current CED/version and source locator; unit titles/counts match the CED; exam format/weights match the current exam page; change notices invalidate stale records; AP Lunch is excluded; citations resolve; and answers distinguish official fact, paraphrase, inference, and local study advice. Limitations: College Board pages change, some documents are gated or PDF-only, released questions may reflect retired formats, current exam dates/format vary by administration year, and College Board does not prescribe one school curriculum. This sweep is a bounded MVP baseline, not a perpetual sync.
+Before release, check: every local course maps to a live official course and exam URL; every unit has a current CED/version and source locator; unit titles/counts match the CED; exam format/weights match the current exam page; change notices invalidate stale records; citations resolve; and answers distinguish official fact, paraphrase, inference, and local study advice. Limitations: College Board pages change, some documents are gated or PDF-only, released questions may reflect retired formats, current exam dates/format vary by administration year, and College Board does not prescribe one school curriculum. This sweep is a bounded MVP baseline, not a perpetual sync.

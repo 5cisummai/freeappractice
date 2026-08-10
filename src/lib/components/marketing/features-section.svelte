@@ -15,7 +15,7 @@
 	import FlaskConicalIcon from '@lucide/svelte/icons/flask-conical';
 	import XIcon from '@lucide/svelte/icons/x';
 
-	const featuredSubjects = onboardingSubjects.filter((s) => !s.name.includes('Lunch')).slice(0, 6);
+	const featuredSubjects = onboardingSubjects.slice(0, 6);
 
 	const dashboardSubjects = [
 		{

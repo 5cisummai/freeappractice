@@ -29,16 +29,11 @@ export const assessmentJsonSchema = {
 } as const;
 
 function courseGuidance(apClass?: string): string {
-	const normalized = apClass?.toLowerCase() ?? '';
-	if (normalized.includes('lunch')) {
-		return 'This is the intentional parody course AP Lunch. Judge internal logic, clarity, answerability, distractor quality, and consistency with the playful course premise rather than real College Board curriculum.';
-	}
 	return `Judge alignment with the real ${apClass || 'AP'} course framework and the stated unit. Do not forgive factual errors merely because the question resembles an AP item.`;
 }
 
 export function requiresWebSearchForQuestion(question: Record<string, unknown>): boolean {
-	const apClass = typeof question.apClass === 'string' ? question.apClass.toLowerCase() : '';
-	return !apClass.includes('lunch');
+	return true;
 }
 
 export function hasOfficialApSource(sourceUrls: string[]): boolean {

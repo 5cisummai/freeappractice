@@ -424,7 +424,6 @@
 						'Question history in the Progress tab with pagination for signed-in users',
 						'Summer study guide at /summer with a 4-week Unit 1 preview plan',
 						'Homepage aspiring-students section and refreshed messaging around course planning',
-						'AP Lunch😂 — a joke subject with cafeteria-themed practice questions',
 						'Two new blog posts: Which APs to take and Summer AP study plan',
 						'Skip-to-main-content link for keyboard and screen-reader users',
 						'PageShell layout component for consistent app page structure'

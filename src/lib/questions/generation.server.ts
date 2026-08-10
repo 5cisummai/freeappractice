@@ -194,10 +194,6 @@ export interface GenerateResult {
 	timing?: GenerateTiming;
 }
 
-function isAPLunch(className: string): boolean {
-	return (className ?? '').toLowerCase().includes('ap lunch');
-}
-
 // ── MCQ generation ─────────────────────────────────────────────
 
 /** Build system/user prompts for one MCQ (shared by sync + Batch API paths). */
@@ -226,38 +222,11 @@ export function buildMcqGenerationPrompt(opts: {
 		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Match the difficulty of questions in the official AP Biology Course and Exam Description\n- Emphasize scientific practices over pure recall`
 		: '';
 
-	const lunchMode = isAPLunch(className);
-
-	const scopeBlock = lunchMode
-		? `TOPIC SCOPE:
-- Keep the humor centered on high school lunch culture: cafeteria lines, mystery meat, snack trades, saving tables, vending machines, brown-bag shame, lunch ladies, milk cartons, and related chaos.
-- The joke should land even if the student has never taken a real AP exam.`
-		: `CRITICAL UNIT SCOPE REQUIREMENT:
+	const scopeBlock = `CRITICAL UNIT SCOPE REQUIREMENT:
 - Your question MUST stay strictly within the unit's specified keywords and topics listed above
-- DO NOT incorporate concepts from other units, even if they seem related`;
+	- DO NOT incorporate concepts from other units, even if they seem related`;
 
-	const systemPrompt = lunchMode
-		? `You are the world's foremost scholar of AP Lunch — a totally real Advanced Placement course about cafeteria survival. Write hilarious multiple-choice questions that sound like over-serious AP prompts but are actually about lunch.${unitContext}${diversitySection}
-
-${scopeBlock}
-
-QUESTION QUALITY:
-- Be genuinely funny; dry academic tone + absurd lunch scenarios works best
-- All four options should be plausible in the joke's universe; the "correct" answer should be the funniest or most logically absurd
-- Reference the selected unit when one is provided
-- Keep it school-appropriate: no cruelty, slurs, or mean-spirited jokes about real students
-- Options should be roughly equal in length
-
-FORMATTING:
-- For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render. (only if a fake formula genuinely improves the joke)
-
-EXPLANATION:
-- Stay in character as an AP Lunch grader explaining the "correct" answer with deadpan seriousness
-- Use a newline before each option letter (A, B, C, D) when discussing them
-
-OUTPUT:
-- Return ONLY the JSON object matching the schema; no text before or after the JSON`
-		: `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
+	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
 
 ${scopeBlock}
 
@@ -283,9 +252,7 @@ EXPLANATION:
 OUTPUT:
 - Return ONLY the JSON object matching the schema; no text before or after the JSON`;
 
-	const userMessage = lunchMode
-		? `Create a hilarious AP Lunch multiple-choice question${unit ? ` for ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`
-		: `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+	const userMessage = `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
 	return { system: systemPrompt, user: userMessage };
 }
