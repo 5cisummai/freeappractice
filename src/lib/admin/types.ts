@@ -1,4 +1,4 @@
-export type AdminTab = 'overview' | 'users' | 'cache' | 'generation' | 'quality';
+export type AdminTab = 'users' | 'cache' | 'quality';
 
 export type PoolQuestionType = 'mcq' | 'frq';
 
@@ -50,30 +50,4 @@ export interface CacheBucketSummary {
 	lastSuccessAt?: Date | string | null;
 	lastError?: string | null;
 	estimatedRemainingCostUsd: number;
-}
-
-export interface RecentTopicSnapshot {
-	apClass: string;
-	unit: string;
-	topicsCovered: string;
-	createdAt: Date | string;
-}
-
-export interface GenerationOverview {
-	totalQuestions: number;
-	totalQuestionChars: number;
-	apClassesCount: number;
-	unitsCount: number;
-}
-
-export interface GenerationClassSummary {
-	apClass: string;
-	count: number;
-	share: number;
-}
-
-export interface GenerationUnitSummary {
-	apClass: string;
-	unit: string;
-	count: number;
 }

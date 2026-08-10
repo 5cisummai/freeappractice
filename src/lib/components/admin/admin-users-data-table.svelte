@@ -70,7 +70,12 @@
 <div class="space-y-5">
 	<div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
 		<div class="space-y-1">
-			<p class="text-sm font-medium">Users</p>
+			<div class="flex items-center gap-2">
+				<p class="text-sm font-medium">Users</p>
+				<span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+					{total.toLocaleString()}
+				</span>
+			</div>
 			<p class="text-xs text-muted-foreground">
 				Server search and pagination; sorting applies to the current page.
 			</p>

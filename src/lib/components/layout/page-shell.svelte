@@ -3,13 +3,13 @@
 
 	let {
 		title,
-		description,
+		description = undefined,
 		maskTitle = false,
 		actions,
 		children
 	}: {
 		title: string;
-		description: string;
+		description?: string;
 		/** When true, the title is hashed in PostHog session recordings. */
 		maskTitle?: boolean;
 		actions?: Snippet;
@@ -26,7 +26,9 @@
 			>
 				{title}
 			</h1>
-			<p class="text-base leading-7 text-muted-foreground">{description}</p>
+			{#if description}
+				<p class="text-base leading-7 text-muted-foreground">{description}</p>
+			{/if}
 		</div>
 		{#if actions}
 			<div class="shrink-0 pt-1.5">
