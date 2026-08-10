@@ -32,7 +32,7 @@ function courseGuidance(apClass?: string): string {
 	return `Judge alignment with the real ${apClass || 'AP'} course framework and the stated unit. Do not forgive factual errors merely because the question resembles an AP item.`;
 }
 
-export function requiresWebSearchForQuestion(question: Record<string, unknown>): boolean {
+export function requiresWebSearchForQuestion(_question: Record<string, unknown>): boolean {
 	return true;
 }
 
