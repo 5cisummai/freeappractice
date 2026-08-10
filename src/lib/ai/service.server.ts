@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { NoObjectGeneratedError, Output, ToolLoopAgent } from 'ai';
+import { NoObjectGeneratedError, Output, stepCountIs, ToolLoopAgent } from 'ai';
+import type { ToolSet } from 'ai';
 import type { z } from 'zod';
 import { OPEN_AI_KEY } from '$env/static/private';
 import { env } from '$env/dynamic/private';
@@ -19,7 +20,7 @@ export function openaiModel(id: string) {
 	return provider(id);
 }
 
-type StructuredObjectParams<T> = {
+type StructuredObjectParams<T, TOOLS extends ToolSet = ToolSet> = {
 	callName: string;
 	model: string;
 	system: string;
@@ -28,18 +29,22 @@ type StructuredObjectParams<T> = {
 	schemaName: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
 	logContext?: Record<string, unknown>;
+	tools?: TOOLS;
 };
 
 /** Structured object generation with shared logging and failure shaping. */
-export async function structuredObject<T>(
-	opts: StructuredObjectParams<T>
+export async function structuredObject<T, TOOLS extends ToolSet = ToolSet>(
+	opts: StructuredObjectParams<T, TOOLS>
 ): Promise<{ parsed: T; model: string }> {
-	const { callName, model, system, user, schema, schemaName, reasoningEffort, logContext } = opts;
+	const { callName, model, system, user, schema, schemaName, reasoningEffort, logContext, tools } =
+		opts;
 	const doneAiCall = logger.aiCall(callName, model, logContext);
 	try {
 		const agent = new ToolLoopAgent({
 			model: openaiModel(model),
 			instructions: system,
+			tools,
+			stopWhen: stepCountIs(4),
 			output: Output.object({ name: schemaName, schema }),
 			providerOptions: {
 				openai: {

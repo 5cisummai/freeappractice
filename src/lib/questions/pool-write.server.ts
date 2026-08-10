@@ -9,6 +9,7 @@ import {
 	type APQuestionData,
 	type GenerateResult
 } from '$lib/questions/generation.server';
+import { validateExamfigDiagram } from '$lib/ai/examfig.server';
 import { logger } from '$lib/server/logger';
 import { getRecentTopics } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
@@ -31,6 +32,8 @@ function buildHotPoolDoc(opts: {
 	| 'contentHash'
 	| 'topicsCovered'
 	| 'question'
+	| 'diagramSpec'
+	| 'hasDiagram'
 	| 'optionA'
 	| 'optionB'
 	| 'optionC'
@@ -50,6 +53,8 @@ function buildHotPoolDoc(opts: {
 		contentHash: opts.contentHash,
 		topicsCovered: answer.topicsCovered ?? '',
 		question: answer.question,
+		diagramSpec: answer.diagram ?? null,
+		hasDiagram: Boolean(answer.diagram),
 		optionA: answer.optionA,
 		optionB: answer.optionB,
 		optionC: answer.optionC,
@@ -69,6 +74,14 @@ async function insertHotPoolDoc(
 	answer: APQuestionData,
 	questionId: string
 ): Promise<IQuestion> {
+	if (answer.diagram) {
+		const validation = validateExamfigDiagram(answer.diagram);
+		if (!validation.valid) {
+			throw new Error(
+				`Generated examfig diagram failed validation: ${validation.errors.join('; ')}`
+			);
+		}
+	}
 	return createCanonicalMcqQuestion(
 		buildHotPoolDoc({
 			apClass: className,

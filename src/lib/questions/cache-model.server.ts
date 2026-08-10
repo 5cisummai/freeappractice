@@ -12,6 +12,8 @@ export interface IQuestion {
 	active: boolean;
 	contentHash: string;
 	question: string;
+	diagramSpec?: Record<string, unknown> | null;
+	hasDiagram: boolean;
 	optionA: string;
 	optionB: string;
 	optionC: string;
@@ -26,9 +28,9 @@ export interface IQuestion {
 
 export type CanonicalMcqInput = Omit<
 	IQuestion,
-	'unit' | 'randomKey' | 'active' | 'createdAt' | 'updatedAt'
+	'unit' | 'randomKey' | 'active' | 'hasDiagram' | 'createdAt' | 'updatedAt'
 > &
-	Partial<Pick<IQuestion, 'unit' | 'randomKey' | 'active'>>;
+	Partial<Pick<IQuestion, 'unit' | 'randomKey' | 'active' | 'hasDiagram'>>;
 
 export function newPoolRandomKey(): number {
 	return Math.random();
@@ -75,6 +77,8 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 			contentHash: input.contentHash,
 			topicsCovered,
 			question: input.question,
+			diagramSpec: input.diagramSpec ?? null,
+			hasDiagram: input.hasDiagram ?? Boolean(input.diagramSpec),
 			optionA: input.optionA,
 			optionB: input.optionB,
 			optionC: input.optionC,

@@ -128,6 +128,11 @@ function normalizeQuestionPayload(
 
 	const stimulus = String(obj.stimulus ?? obj.passage ?? obj.context ?? '').trim();
 	const hasStimulus = stimulus.length > 0;
+	const diagramValue = obj.diagramSpec ?? obj.diagram;
+	const diagramSpec =
+		diagramValue && typeof diagramValue === 'object' && !Array.isArray(diagramValue)
+			? (diagramValue as Record<string, unknown>)
+			: undefined;
 
 	return {
 		questionId: resolveQuestionId(obj, questionIdFromApi),
@@ -138,6 +143,8 @@ function normalizeQuestionPayload(
 		explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
 		hint1: String(obj.hint1 ?? '').trim() || undefined,
 		hint2: String(obj.hint2 ?? '').trim() || undefined,
+		diagramSpec,
+		hasDiagram: Boolean(diagramSpec) || obj.hasDiagram === true,
 		leftPanel: hasStimulus ? { title: 'Stimulus', content: parseParagraphs(stimulus) } : undefined,
 		rightPanel: hasStimulus ? { title: 'Prompt', content: parseParagraphs(prompt) } : undefined,
 		hasStimulus

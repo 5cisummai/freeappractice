@@ -20,6 +20,8 @@ export interface StoredQuestion {
 	unit?: string;
 	contentHash?: string;
 	topicsCovered?: string;
+	diagramSpec?: Record<string, unknown>;
+	hasDiagram: boolean;
 	createdAt: string;
 }
 
@@ -39,6 +41,8 @@ function toStoredQuestion(question: IQuestion): StoredQuestion {
 		unit: question.unit,
 		contentHash: question.contentHash,
 		topicsCovered: question.topicsCovered ?? undefined,
+		diagramSpec: question.diagramSpec ?? undefined,
+		hasDiagram: question.hasDiagram,
 		createdAt: new Date(question.createdAt).toISOString()
 	};
 }

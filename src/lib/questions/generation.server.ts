@@ -2,15 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
+import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
 import { structuredObject } from '$lib/ai/service.server';
+import { examfigTools } from '$lib/ai/tools/examfig.server';
+import { validateExamfigDiagram } from '$lib/ai/examfig.server';
 import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
 
 /**
  * MCQ generation: prompts, structured AI calls, and generation metrics.
  */
-
-// ── Data-lookup types ──────────────────────────────────────────
-
 interface UnitContext {
 	description: string;
 	topics: string[];
@@ -23,8 +23,6 @@ interface UnitPromptSections {
 	keywordsContext: string;
 	courseNotesContext: string;
 }
-
-// ── Unit-context lookup ────────────────────────────────────────
 
 /**
  * Fuzzy-matches `className` to course_code/course_name, then resolves the unit.
@@ -158,6 +156,13 @@ const APQuestion = z.object({
 		.string()
 		.describe(
 			'1-2 sentence description of the specific concept, subtopic, or scenario this question tests (used for diversity tracking — be precise and distinct)'
+		),
+	// Required-but-nullable keeps the field compatible with OpenAI structured outputs.
+	diagram: z
+		.record(z.string(), z.unknown())
+		.nullable()
+		.describe(
+			'Optional semantic examfig DiagramSpec. Use null when a diagram does not add instructional value.'
 		)
 });
 
@@ -229,6 +234,7 @@ export function buildMcqGenerationPrompt(opts: {
 	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
 
 ${scopeBlock}
+${EXAMFIG_DIAGRAM_SKILL}
 
 QUESTION QUALITY:
 - Match actual AP exam difficulty and style, aim for the medium difficulty level, rather the very hard ones.
@@ -272,7 +278,18 @@ async function generateAPQuestionBody(opts: {
 		schema: APQuestion,
 		schemaName: 'ap_question',
 		reasoningEffort: 'medium',
+		tools: examfigTools,
 		logContext: { className: opts.className, unit: opts.unit }
+	}).then((result) => {
+		if (result.parsed.diagram) {
+			const validation = validateExamfigDiagram(result.parsed.diagram);
+			if (!validation.valid) {
+				throw new Error(
+					`Generated examfig diagram failed validation: ${validation.errors.join('; ')}`
+				);
+			}
+		}
+		return result;
 	});
 }
 

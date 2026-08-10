@@ -52,6 +52,8 @@ export type GeneratedQuestion = {
 	explanation?: string;
 	hint1?: string;
 	hint2?: string;
+	diagramSpec?: Record<string, unknown>;
+	hasDiagram?: boolean;
 	leftPanel?: QuestionPanel;
 	rightPanel?: QuestionPanel;
 	hasStimulus: boolean;
