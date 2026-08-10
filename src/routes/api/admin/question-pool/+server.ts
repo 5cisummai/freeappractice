@@ -4,7 +4,8 @@ import { isAdminUser } from '$lib/auth/admin.server';
 import {
 	enqueueAllPoolDeficits,
 	enqueuePoolBucketRefill,
-	getPoolReadinessSnapshot
+	getPoolReadinessSnapshot,
+	retirePoolBucketQuestions
 } from '$lib/admin/dashboard.server';
 import type { PoolQuestionType } from '$lib/admin/types';
 
@@ -31,6 +32,7 @@ export const POST: RequestHandler = async (event) => {
 		questionType?: string;
 		apClass?: string;
 		unit?: string;
+		quantity?: number;
 	};
 
 	switch (body.action) {
@@ -52,6 +54,33 @@ export const POST: RequestHandler = async (event) => {
 		}
 		case 'enqueueAllDeficits': {
 			const result = await enqueueAllPoolDeficits();
+			return json({ ok: true, ...result }, { status: 202 });
+		}
+		case 'retireBucket': {
+			if (!isPoolQuestionType(body.questionType)) {
+				return json({ message: 'questionType must be mcq or frq' }, { status: 400 });
+			}
+			const apClass = body.apClass?.trim() ?? '';
+			const unit = body.unit?.trim() ?? '';
+			const quantity = body.quantity;
+			if (!apClass || !unit) {
+				return json({ message: 'apClass and unit are required' }, { status: 400 });
+			}
+			if (
+				typeof quantity !== 'number' ||
+				!Number.isInteger(quantity) ||
+				quantity < 1 ||
+				quantity > 10000
+			) {
+				return json(
+					{ message: 'quantity must be a whole number between 1 and 10,000' },
+					{ status: 400 }
+				);
+			}
+			const result = await retirePoolBucketQuestions(
+				{ questionType: body.questionType, apClass, unit },
+				quantity
+			);
 			return json({ ok: true, ...result }, { status: 202 });
 		}
 		case 'refresh':

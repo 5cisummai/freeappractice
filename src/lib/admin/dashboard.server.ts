@@ -1,10 +1,8 @@
 import { auth } from '$lib/auth/server';
 import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/questions/pool-constants';
-import { countUserProfiles } from '$lib/users/model.server';
-import { getLatestRecentTopics } from '$lib/questions/recent-topic.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
-import { count, eq, max, min } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, max, min } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
@@ -17,10 +15,7 @@ import type {
 	PoolRefillState as PoolRefillStateRow,
 	PoolRefillStatus
 } from '$lib/questions/pool-refill-types.server';
-import {
-	getGenerationStatsForApi,
-	getMcqGenerationCountsByClass
-} from '$lib/questions/gen-stats.server';
+import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
 import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
 import type {
@@ -28,12 +23,8 @@ import type {
 	AdminUserRow,
 	CacheBucketSummary,
 	CacheOverview,
-	GenerationClassSummary,
-	GenerationOverview,
-	GenerationUnitSummary,
 	PoolQuestionType,
-	PoolRefillStatusUi,
-	RecentTopicSnapshot
+	PoolRefillStatusUi
 } from '$lib/admin/types.js';
 
 /** Rough per-generation USD estimates for admin cost previews (not billing). */
@@ -44,17 +35,12 @@ interface AdminDashboardData {
 	activeTab: AdminTab;
 	users: AdminUserRow[];
 	totalUsers: number;
-	totalUserProfiles: number;
 	limit: number;
 	offset: number;
 	search: string;
 	errorMessage: string | null;
 	cacheOverview: CacheOverview;
 	cacheBuckets: CacheBucketSummary[];
-	recentTopics: RecentTopicSnapshot[];
-	generationOverview: GenerationOverview;
-	generationByClass: GenerationClassSummary[];
-	topGeneratedUnits: GenerationUnitSummary[];
 	quality: QualityDashboardSnapshot;
 }
 
@@ -66,9 +52,7 @@ type BucketAggRow = {
 };
 
 function normalizeAdminTab(value: string | null): AdminTab {
-	return value === 'users' || value === 'cache' || value === 'generation' || value === 'quality'
-		? value
-		: 'overview';
+	return value === 'users' || value === 'cache' || value === 'quality' ? value : 'users';
 }
 
 function estimateGenerationCostUsd(questionType: PoolQuestionType, deficit: number): number {
@@ -98,39 +82,6 @@ function healthForCount(activeCount: number, target: number): CacheBucketSummary
 	if (activeCount <= 0) return 'empty';
 	if (activeCount < target) return 'low';
 	return 'healthy';
-}
-
-function summarizeGenerationData(stats: Awaited<ReturnType<typeof getGenerationStatsForApi>>): {
-	overview: GenerationOverview;
-	byClass: GenerationClassSummary[];
-	topUnits: GenerationUnitSummary[];
-} {
-	const totalQuestions = stats.totals.questions;
-	const byClass = Object.entries(stats.byApClass)
-		.map(([apClass, count]) => ({
-			apClass,
-			count,
-			share: totalQuestions ? Math.round((count / totalQuestions) * 100) : 0
-		}))
-		.sort((a, b) => b.count - a.count);
-
-	const topUnits = Object.entries(stats.byClassAndUnit)
-		.flatMap(([apClass, units]) =>
-			Object.entries(units).map(([unit, count]) => ({ apClass, unit, count }))
-		)
-		.sort((a, b) => b.count - a.count)
-		.slice(0, 12);
-
-	return {
-		overview: {
-			totalQuestions,
-			totalQuestionChars: stats.totals.totalQuestionChars,
-			apClassesCount: Object.keys(stats.byApClass).length,
-			unitsCount: Object.keys(stats.byUnit).length
-		},
-		byClass,
-		topUnits
-	};
 }
 
 async function aggregateActiveBuckets(
@@ -356,6 +307,34 @@ export async function enqueuePoolBucketRefill(bucket: PoolBucketKey): Promise<{ 
 	return { enqueued: true };
 }
 
+/** Retire the oldest active questions in a bucket, then queue its refill. */
+export async function retirePoolBucketQuestions(
+	bucket: PoolBucketKey,
+	quantity: number
+): Promise<{ retired: number; enqueued: true }> {
+	const table = bucket.questionType === 'mcq' ? mcqQuestions : frqQuestions;
+	const db = getNeonDatabase();
+	const rows = await db
+		.select({ questionId: table.questionId })
+		.from(table)
+		.where(
+			and(eq(table.apClass, bucket.apClass), eq(table.unit, bucket.unit), eq(table.active, true))
+		)
+		.orderBy(asc(table.createdAt))
+		.limit(quantity);
+	const questionIds = rows.map((row) => row.questionId);
+
+	if (questionIds.length > 0) {
+		await db
+			.update(table)
+			.set({ active: false, updatedAt: new Date() })
+			.where(inArray(table.questionId, questionIds));
+	}
+
+	await requestPoolRefill(bucket);
+	return { retired: questionIds.length, enqueued: true };
+}
+
 /** Enqueue every catalog deficit for async refill. Never runs LLM generation. */
 export async function enqueueAllPoolDeficits(): Promise<{ enqueued: number }> {
 	const enqueued = await enqueueAllCatalogDeficits();
@@ -396,16 +375,6 @@ export async function getAdminDashboardData(opts: {
 		),
 		buckets: [] as CacheBucketSummary[]
 	};
-	const emptyGeneration = {
-		overview: {
-			totalQuestions: 0,
-			totalQuestionChars: 0,
-			apClassesCount: 0,
-			unitsCount: 0
-		},
-		byClass: [] as GenerationClassSummary[],
-		topUnits: [] as GenerationUnitSummary[]
-	};
 	const emptyQuality: QualityDashboardSnapshot = {
 		counts: { unreviewed: 0, awaitingHuman: 0, good: 0, bad: 0, highPriority: 0 },
 		model: '',
@@ -416,27 +385,11 @@ export async function getAdminDashboardData(opts: {
 
 	let users: AdminUserRow[] = [];
 	let totalUsers = 0;
-	let totalUserProfiles = 0;
 	let errorMessage: string | null = null;
 	let poolSnapshot = emptyPool;
-	let recentTopics: RecentTopicSnapshot[] = [];
-	let generationPayload = emptyGeneration;
 	let quality = emptyQuality;
 
-	if (activeTab === 'overview') {
-		const [usersResult, profilesResult, poolResult, generationResult] = await Promise.allSettled([
-			listUsers(),
-			countUserProfiles(),
-			getPoolReadinessSnapshot(),
-			getGenerationStatsForApi()
-		]);
-		if (usersResult.status === 'fulfilled') totalUsers = usersResult.value.total;
-		if (profilesResult.status === 'fulfilled') totalUserProfiles = profilesResult.value;
-		if (poolResult.status === 'fulfilled') poolSnapshot = poolResult.value;
-		if (generationResult.status === 'fulfilled') {
-			generationPayload = summarizeGenerationData(generationResult.value);
-		}
-	} else if (activeTab === 'users') {
+	if (activeTab === 'users') {
 		try {
 			const payload = await listUsers();
 			users = payload.users as AdminUserRow[];
@@ -445,24 +398,10 @@ export async function getAdminDashboardData(opts: {
 			errorMessage = 'Unable to load users right now.';
 		}
 	} else if (activeTab === 'cache') {
-		const [poolResult, recentResult] = await Promise.allSettled([
-			getPoolReadinessSnapshot(),
-			getLatestRecentTopics()
-		]);
-		if (poolResult.status === 'fulfilled') poolSnapshot = poolResult.value;
-		if (recentResult.status === 'fulfilled') {
-			recentTopics = recentResult.value.map((topic) => ({
-				apClass: topic.apClass,
-				unit: topic.unit,
-				topicsCovered: topic.topicsCovered,
-				createdAt: topic.createdAt
-			}));
-		}
-	} else if (activeTab === 'generation') {
 		try {
-			generationPayload = summarizeGenerationData(await getGenerationStatsForApi());
+			poolSnapshot = await getPoolReadinessSnapshot();
 		} catch {
-			generationPayload = emptyGeneration;
+			// Keep the empty snapshot when the pool is temporarily unavailable.
 		}
 	} else {
 		quality = await getQualityDashboardSnapshot();
@@ -472,17 +411,12 @@ export async function getAdminDashboardData(opts: {
 		activeTab,
 		users,
 		totalUsers,
-		totalUserProfiles,
 		limit: opts.limit,
 		offset,
 		search: opts.search,
 		errorMessage,
 		cacheOverview: poolSnapshot.overview,
 		cacheBuckets: poolSnapshot.buckets,
-		recentTopics,
-		generationOverview: generationPayload.overview,
-		generationByClass: generationPayload.byClass,
-		topGeneratedUnits: generationPayload.topUnits,
 		quality
 	};
 }

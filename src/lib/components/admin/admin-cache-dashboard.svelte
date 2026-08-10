@@ -1,42 +1,44 @@
 <script lang="ts">
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import type {
 		CacheBucketSummary,
-		CacheOverview,
 		PoolQuestionType,
-		PoolRefillStatusUi,
-		RecentTopicSnapshot
+		PoolRefillStatusUi
 	} from '$lib/admin/types.js';
+	import AdminCacheBucketActions from '$lib/components/admin/admin-cache-bucket-actions.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Table from '$lib/components/ui/table/index.js';
 
 	type Props = {
-		overview: CacheOverview;
 		buckets: CacheBucketSummary[];
-		recentTopics: RecentTopicSnapshot[];
 	};
 
 	type PoolSnapshot = {
-		overview: CacheOverview;
 		buckets: CacheBucketSummary[];
 	};
 
-	let { overview, buckets, recentTopics }: Props = $props();
+	let { buckets }: Props = $props();
 
-	let localOverview = $state<CacheOverview | null>(null);
 	let localBuckets = $state<CacheBucketSummary[] | null>(null);
 	let busyAction = $state<string | null>(null);
 	let statusMessage = $state<string | null>(null);
 	let errorMessage = $state<string | null>(null);
-	let typeFilter = $state<'all' | PoolQuestionType>('all');
+	let typeFilter = $state<PoolQuestionType>('mcq');
+	let search = $state('');
 
-	const liveOverview = $derived(localOverview ?? overview);
 	const liveBuckets = $derived(localBuckets ?? buckets);
-
+	const normalizedSearch = $derived(search.trim().toLowerCase());
 	const visibleBuckets = $derived(
-		typeFilter === 'all'
-			? liveBuckets
-			: liveBuckets.filter((bucket) => bucket.questionType === typeFilter)
+		liveBuckets.filter((bucket) => {
+			if (bucket.questionType !== typeFilter) return false;
+			if (!normalizedSearch) return true;
+			return `${bucket.apClass} ${bucket.unit}`.toLowerCase().includes(normalizedSearch);
+		})
 	);
+
+	function bucketKey(bucket: CacheBucketSummary): string {
+		return `${bucket.questionType}:${bucket.apClass}:${bucket.unit}`;
+	}
 
 	function healthClasses(health: CacheBucketSummary['health']): string {
 		if (health === 'healthy')
@@ -128,11 +130,10 @@
 		errorMessage = null;
 		try {
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
-			localOverview = snapshot.overview;
 			localBuckets = snapshot.buckets;
-			statusMessage = 'Pool readiness refreshed.';
+			statusMessage = 'Inventory refreshed.';
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Unable to refresh pool readiness.';
+			errorMessage = error instanceof Error ? error.message : 'Unable to refresh inventory.';
 		} finally {
 			busyAction = null;
 		}
@@ -145,9 +146,8 @@
 		try {
 			const result = await request<{ enqueued: number }>({ action: 'enqueueAllDeficits' });
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
-			localOverview = snapshot.overview;
 			localBuckets = snapshot.buckets;
-			statusMessage = `Enqueued ${result.enqueued} deficit bucket(s) for async refill. Generation runs via cron/worker only.`;
+			statusMessage = `Enqueued ${result.enqueued} deficit bucket(s) for async refill.`;
 		} catch (error) {
 			errorMessage = error instanceof Error ? error.message : 'Unable to enqueue deficits.';
 		} finally {
@@ -155,24 +155,26 @@
 		}
 	}
 
-	async function enqueueBucket(bucket: CacheBucketSummary): Promise<void> {
-		const key = `${bucket.questionType}:${bucket.apClass}:${bucket.unit}`;
+	async function retireBucket(bucket: CacheBucketSummary, quantity: number): Promise<void> {
+		const key = `retire:${bucketKey(bucket)}`;
 		busyAction = key;
 		statusMessage = null;
 		errorMessage = null;
 		try {
-			await request({
-				action: 'enqueueBucket',
+			const result = await request<{ retired: number }>({
+				action: 'retireBucket',
 				questionType: bucket.questionType,
 				apClass: bucket.apClass,
-				unit: bucket.unit
+				unit: bucket.unit,
+				quantity
 			});
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
-			localOverview = snapshot.overview;
 			localBuckets = snapshot.buckets;
-			statusMessage = `Queued ${bucket.questionType.toUpperCase()} refill for ${bucket.apClass} · ${bucket.unit}.`;
+			statusMessage = result.retired
+				? `Deleted ${result.retired} ${bucket.questionType.toUpperCase()} question(s) from ${bucket.apClass} · ${bucket.unit}; refill queued.`
+				: `No active ${bucket.questionType.toUpperCase()} questions were available in ${bucket.apClass} · ${bucket.unit}.`;
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Unable to enqueue this bucket.';
+			errorMessage = error instanceof Error ? error.message : 'Unable to delete questions.';
 		} finally {
 			busyAction = null;
 		}
@@ -183,16 +185,47 @@
 	}
 </script>
 
-<div class="space-y-6">
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-		<div>
-			<p class="text-sm font-medium">Question pool readiness</p>
-			<p class="mt-1 text-sm text-muted-foreground">
-				Active Neon inventory, refill queue status, and estimated remaining generation cost. Admin
-				actions only enqueue work — they never generate synchronously.
-			</p>
+<div class="space-y-5">
+	<div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+		<div class="space-y-1">
+			<p class="text-sm font-medium">Question inventory</p>
 		</div>
-		<div class="flex flex-wrap gap-2">
+
+		<div class="flex flex-wrap items-center gap-2">
+			<div class="relative w-full sm:w-64">
+				<SearchIcon
+					class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+				/>
+				<label class="sr-only" for="admin-pool-search">Search inventory</label>
+				<input
+					id="admin-pool-search"
+					bind:value={search}
+					placeholder="Search class or unit"
+					class="h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+				/>
+			</div>
+			<div
+				class="flex rounded-lg border border-border/70 p-1"
+				role="group"
+				aria-label="Question type"
+			>
+				<Button
+					size="sm"
+					variant={typeFilter === 'mcq' ? 'default' : 'ghost'}
+					aria-pressed={typeFilter === 'mcq'}
+					onclick={() => (typeFilter = 'mcq')}
+				>
+					MCQ
+				</Button>
+				<Button
+					size="sm"
+					variant={typeFilter === 'frq' ? 'default' : 'ghost'}
+					aria-pressed={typeFilter === 'frq'}
+					onclick={() => (typeFilter = 'frq')}
+				>
+					FRQ
+				</Button>
+			</div>
 			<Button variant="outline" onclick={() => void refreshSnapshot()} disabled={!!busyAction}>
 				{isBusy('refresh') ? 'Refreshing…' : 'Refresh'}
 			</Button>
@@ -219,112 +252,33 @@
 		</p>
 	{/if}
 
-	<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
-			<p class="text-sm text-muted-foreground">Aggregate readiness</p>
-			<p class="mt-2 text-3xl font-semibold tracking-tight">{liveOverview.readinessPercent}%</p>
-			<p class="mt-1 text-xs text-muted-foreground">
-				{liveOverview.totalQuestions.toLocaleString()} / {liveOverview.totalTarget.toLocaleString()} toward
-				targets
-			</p>
-		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
-			<p class="text-sm text-muted-foreground">Deficit remaining</p>
-			<p class="mt-2 text-3xl font-semibold tracking-tight">
-				{liveOverview.totalDeficit.toLocaleString()}
-			</p>
-			<p class="mt-1 text-xs text-muted-foreground">
-				Est. {formatUsd(liveOverview.estimatedRemainingCostUsd)} to fill
-			</p>
-		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
-			<p class="text-sm text-muted-foreground">Empty / below target</p>
-			<p class="mt-2 text-3xl font-semibold tracking-tight">
-				{liveOverview.emptyBuckets} / {liveOverview.underTargetBuckets}
-			</p>
-			<p class="mt-1 text-xs text-muted-foreground">
-				MCQ target {liveOverview.mcqTarget} · FRQ target {liveOverview.frqTarget}
-			</p>
-		</Card.Root>
-		<Card.Root class="rounded-2xl border border-border/60 p-4 shadow-sm">
-			<p class="text-sm text-muted-foreground">Refill queue</p>
-			<p class="mt-2 text-3xl font-semibold tracking-tight">
-				{liveOverview.pendingRefills + liveOverview.runningRefills}
-			</p>
-			<p class="mt-1 text-xs text-muted-foreground">
-				{liveOverview.pendingRefills} pending · {liveOverview.runningRefills} running · {liveOverview.failedRefills}
-				failed
-			</p>
-		</Card.Root>
-	</div>
-
-	<div class="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-		<Card.Root class="rounded-2xl border border-border/60 shadow-sm">
-			<Card.Header class="border-b border-border/70">
-				<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div>
-						<Card.Title>Bucket readiness</Card.Title>
-						<Card.Description
-							>Active count, target, deficit, refill status, and estimated remaining cost.</Card.Description
-						>
-					</div>
-					<div class="flex flex-wrap gap-2">
-						<Button
-							size="sm"
-							variant={typeFilter === 'all' ? 'default' : 'outline'}
-							onclick={() => (typeFilter = 'all')}
-						>
-							All
-						</Button>
-						<Button
-							size="sm"
-							variant={typeFilter === 'mcq' ? 'default' : 'outline'}
-							onclick={() => (typeFilter = 'mcq')}
-						>
-							MCQ
-						</Button>
-						<Button
-							size="sm"
-							variant={typeFilter === 'frq' ? 'default' : 'outline'}
-							onclick={() => (typeFilter = 'frq')}
-						>
-							FRQ
-						</Button>
-					</div>
-				</div>
-			</Card.Header>
-			<Card.Content class="space-y-3 p-6">
-				{#if visibleBuckets.length === 0}
-					<p class="text-sm text-muted-foreground">No catalog buckets matched this filter.</p>
-				{:else}
-					{#each visibleBuckets.slice(0, 24) as bucket (`${bucket.questionType}-${bucket.apClass}-${bucket.unit}`)}
-						<div class="rounded-xl border border-border/60 p-4">
-							<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-								<div class="min-w-0">
-									<p class="font-medium">
-										<span class="mr-2 text-xs tracking-[0.08em] text-muted-foreground uppercase"
-											>{bucket.questionType}</span
-										>
-										{bucket.apClass}
-									</p>
-									<p class="text-sm text-muted-foreground">{bucket.unit}</p>
-								</div>
-								<div class="flex flex-wrap items-center gap-2">
+	<div class="rounded-xl border border-border/70 bg-background">
+		<Table.Root>
+			<Table.Header>
+				<Table.Row>
+					<Table.Head>Class</Table.Head>
+					<Table.Head>Unit</Table.Head>
+					<Table.Head>Filled / quota</Table.Head>
+					<Table.Head>Status</Table.Head>
+					<Table.Head>Last refill</Table.Head>
+					<Table.Head>Est. fill</Table.Head>
+					<Table.Head class="w-12 text-right"><span class="sr-only">Actions</span></Table.Head>
+				</Table.Row>
+			</Table.Header>
+			<Table.Body>
+				{#each visibleBuckets as bucket (bucketKey(bucket))}
+					<Table.Row>
+						<Table.Cell class="font-medium">{bucket.apClass}</Table.Cell>
+						<Table.Cell class="max-w-52 truncate" title={bucket.unit}>{bucket.unit}</Table.Cell>
+						<Table.Cell>
+							<div class="min-w-36 space-y-1.5">
+								<div class="flex items-center justify-between gap-3 text-xs tabular-nums">
 									<span
-										class={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${healthClasses(bucket.health)}`}
+										>{bucket.activeCount.toLocaleString()} / {bucket.target.toLocaleString()}</span
 									>
-										{bucket.health}
-									</span>
-									<span
-										class={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${refillClasses(bucket.refillStatus)}`}
-									>
-										{bucket.refillStatus}
-									</span>
+									<span class="text-muted-foreground">{bucket.fillRatio}%</span>
 								</div>
-							</div>
-
-							<div class="mt-3 space-y-2">
-								<div class="h-2 overflow-hidden rounded-full bg-muted">
+								<div class="h-1.5 overflow-hidden rounded-full bg-muted">
 									<div
 										class={bucket.health === 'healthy'
 											? 'h-full rounded-full bg-emerald-500'
@@ -334,87 +288,52 @@
 										style={`width:${bucket.fillRatio}%`}
 									></div>
 								</div>
-								<div class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
-									<span>{bucket.activeCount}/{bucket.target} active (deficit {bucket.deficit})</span
-									>
-									<span>Est. remaining {formatUsd(bucket.estimatedRemainingCostUsd)}</span>
-									<span>Last success {formatRelativeDate(bucket.lastSuccessAt)}</span>
-									<span>Newest {formatRelativeDate(bucket.newestCreatedAt)}</span>
-								</div>
-								{#if bucket.lastError}
-									<p class="text-xs text-destructive">Last error: {bucket.lastError}</p>
-								{/if}
-								{#if bucket.deficit > 0}
-									<Button
-										size="sm"
-										variant="outline"
-										disabled={!!busyAction}
-										onclick={() => void enqueueBucket(bucket)}
-									>
-										{busyAction === `${bucket.questionType}:${bucket.apClass}:${bucket.unit}`
-											? 'Queueing…'
-											: 'Enqueue refill'}
-									</Button>
-								{/if}
 							</div>
-						</div>
-					{/each}
-				{/if}
-			</Card.Content>
-		</Card.Root>
-
-		<div class="space-y-6">
-			<Card.Root class="rounded-2xl border border-border/60 shadow-sm">
-				<Card.Header class="border-b border-border/70">
-					<Card.Title>Healthy inventory</Card.Title>
-					<Card.Description>Buckets at or above target vs tracked catalog size.</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-4 p-6">
-					<div class="grid gap-3 sm:grid-cols-3">
-						<div class="rounded-xl border border-border/60 px-4 py-3">
-							<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Active</p>
-							<p class="mt-2 text-2xl font-semibold tracking-tight">
-								{liveOverview.totalQuestions.toLocaleString()}
-							</p>
-						</div>
-						<div class="rounded-xl border border-border/60 px-4 py-3">
-							<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Healthy</p>
-							<p class="mt-2 text-2xl font-semibold tracking-tight">
-								{liveOverview.healthyBuckets}
-							</p>
-						</div>
-						<div class="rounded-xl border border-border/60 px-4 py-3">
-							<p class="text-xs tracking-[0.08em] text-muted-foreground uppercase">Tracked</p>
-							<p class="mt-2 text-2xl font-semibold tracking-tight">{liveOverview.totalBuckets}</p>
-						</div>
-					</div>
-				</Card.Content>
-			</Card.Root>
-
-			<Card.Root class="rounded-2xl border border-border/60 shadow-sm">
-				<Card.Header class="border-b border-border/70">
-					<Card.Title>Recent topic churn</Card.Title>
-					<Card.Description>Latest topics written into the question pool.</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-3 p-6">
-					{#if recentTopics.length === 0}
-						<p class="text-sm text-muted-foreground">No recent topic activity recorded.</p>
-					{:else}
-						{#each recentTopics as topic, index (`${topic.apClass}-${topic.unit}-${topic.createdAt}-${index}`)}
-							<div class="rounded-xl border border-border/60 p-4">
-								<div class="flex items-start justify-between gap-3">
-									<div>
-										<p class="font-medium">{topic.apClass}</p>
-										<p class="text-sm text-muted-foreground">{topic.unit}</p>
-									</div>
-									<p class="text-xs text-muted-foreground">{formatRelativeDate(topic.createdAt)}</p>
-								</div>
-								<p class="mt-3 text-sm leading-6 text-foreground/90">{topic.topicsCovered}</p>
+						</Table.Cell>
+						<Table.Cell>
+							<div class="flex flex-wrap gap-1.5">
+								<span
+									class={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${healthClasses(bucket.health)}`}
+								>
+									{bucket.health}
+								</span>
+								<span
+									class={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${refillClasses(bucket.refillStatus)}`}
+								>
+									{bucket.refillStatus}
+								</span>
 							</div>
-						{/each}
-					{/if}
-				</Card.Content>
-			</Card.Root>
-		</div>
+							{#if bucket.lastError}
+								<p class="mt-1 max-w-48 truncate text-xs text-destructive" title={bucket.lastError}>
+									{bucket.lastError}
+								</p>
+							{/if}
+						</Table.Cell>
+						<Table.Cell class="text-xs text-muted-foreground">
+							{formatRelativeDate(bucket.lastSuccessAt)}
+						</Table.Cell>
+						<Table.Cell class="text-xs text-muted-foreground">
+							{formatUsd(bucket.estimatedRemainingCostUsd)}
+						</Table.Cell>
+						<Table.Cell class="text-right">
+							<AdminCacheBucketActions
+								{bucket}
+								disabled={!!busyAction}
+								busy={isBusy(`retire:${bucketKey(bucket)}`)}
+								onRetire={(quantity) => retireBucket(bucket, quantity)}
+							/>
+						</Table.Cell>
+					</Table.Row>
+				{:else}
+					<Table.Row>
+						<Table.Cell colspan={7} class="h-24 text-center text-muted-foreground">
+							No {typeFilter.toUpperCase()} inventory buckets found{normalizedSearch
+								? ` for “${search.trim()}”`
+								: ''}.
+						</Table.Cell>
+					</Table.Row>
+				{/each}
+			</Table.Body>
+		</Table.Root>
 	</div>
 </div>
