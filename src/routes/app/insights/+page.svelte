@@ -221,8 +221,8 @@
 					></span>
 				</div>
 				<p class="mt-3 mb-0 text-xs leading-[1.55] text-muted-foreground">
-					{data.eligibility?.eligibleClaimCount ?? 0} course/unit evidence groups have at least
-					{data.eligibility?.minimumAttemptsPerClaim ?? 5} attempts. MCQ and FRQ are calculated separately.
+					{data.eligibility?.eligibleClaimCount ?? 0} subjects have enough practice for insights.
+					Multiple-choice and written-response progress count separately.
 				</p>
 			</div>
 		</section>

@@ -48,8 +48,8 @@
 					acceptedAnswer: {
 						'@type': 'Answer',
 						text: data.superFreeBetaEnabled
-							? 'During the free beta, you can claim Super for personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 300 personalized messages per UTC calendar month.'
-							: 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'
+							? 'During the free beta, you can claim Super for personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 300 personalized messages per month.'
+							: 'Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights, weekly study plans, and 600 personalized messages per month. Free AP practice remains available without a Super subscription.'
 					}
 				},
 				{
@@ -77,7 +77,7 @@
 					name: 'How accurate are the AI-generated questions?',
 					acceptedAnswer: {
 						'@type': 'Answer',
-						text: "Our questions are generated using OpenAI's GPT-5.6 Luna reasoning model, designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams."
+						text: 'Our questions are generated with advanced AI designed to create high-quality, exam-style AP questions that match the difficulty and format of actual AP exams.'
 					}
 				},
 				{
@@ -310,12 +310,12 @@
 					<Badge
 						variant="outline"
 						class="gap-2 border-violet-300/50 super-tier-gradient super-tier-gradient-hover p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70"
-						href={resolve('/app')}
+						href={`${resolve('/signup')}?super=1`}
 					>
 						<SparklesIcon class="size-4 text-violet-500" aria-hidden="true" />
-						<span class="font-semibold text-violet-700 dark:text-violet-300">Start here</span>
-						<span class="text-muted-foreground/60" aria-hidden="true">•</span>
-						<span>Your Personalized Learning</span>
+						<span class="font-semibold text-violet-700 dark:text-violet-300">Free Super offer</span>
+						<span class="text-muted-foreground/60" aria-hidden="true">-</span>
+						<span>Personalized learning</span>
 						<ArrowRightIcon class="size-4" aria-hidden="true" />
 					</Badge>
 					<h1
@@ -434,8 +434,8 @@
 								Super includes personalized MCQ and FRQ tutoring, AI Coach, actionable insights,
 								weekly study plans, and
 								{data.superFreeBetaEnabled
-									? ' 300 personalized messages per UTC calendar month during the free beta.'
-									: ' 600 personalized messages per UTC calendar month. Free AP practice remains available without a Super subscription.'}
+									? ' 300 personalized messages per month during the free beta.'
+									: ' 600 personalized messages per month. Free AP practice remains available without a Super subscription.'}
 							</p>
 						</Accordion.Content>
 					</Accordion.Item>

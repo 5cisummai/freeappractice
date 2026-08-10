@@ -19,9 +19,9 @@
 
 <header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
 	<div
-		class="relative mx-auto flex h-18 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
+		class="relative mx-auto flex h-18 w-full max-w-7xl items-center px-5 sm:px-8 lg:px-10"
 	>
-		<div class="topbar-logo">
+		<div class="topbar-logo flex min-w-0 flex-1 items-center">
 			<a
 				href={resolve('/')}
 				class="logo-link flex items-center gap-3 text-base font-semibold tracking-tight"
@@ -31,7 +31,59 @@
 			</a>
 		</div>
 
-		<div class="flex items-center gap-3">
+		<nav
+			class="absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center text-base sm:flex"
+			aria-label="Main navigation"
+		>
+			<NavigationMenu.Root class="relative z-50">
+				<NavigationMenu.List class="gap-1">
+					{#each topbarNavItems as item (item.href)}
+						<NavigationMenu.Item>
+							<NavigationMenu.Link
+								href={resolve(item.href)}
+								class="font-medium text-foreground hover:text-foreground"
+							>
+								{item.label}
+							</NavigationMenu.Link>
+						</NavigationMenu.Item>
+					{/each}
+
+					<NavigationMenu.Item value="resources">
+						<NavigationMenu.Trigger>Resources</NavigationMenu.Trigger>
+						<NavigationMenu.Content>
+							<ul class="grid w-72 gap-1 p-1">
+								{#each topbarResourceItems as item (item.href)}
+									<li>
+										<NavigationMenu.Link
+											href={resolve(item.href)}
+											class="flex-col items-start gap-1.5 p-3"
+										>
+											<span class="text-sm font-medium text-foreground">{item.label}</span>
+											<span class="text-xs leading-5 text-muted-foreground">
+												{item.description}
+											</span>
+										</NavigationMenu.Link>
+									</li>
+								{/each}
+							</ul>
+						</NavigationMenu.Content>
+					</NavigationMenu.Item>
+
+					{#if showPricing}
+						<NavigationMenu.Item>
+							<NavigationMenu.Link
+								href={resolve(topbarPricingItem.href)}
+								class="font-medium text-foreground hover:text-foreground"
+							>
+								{topbarPricingItem.label}
+							</NavigationMenu.Link>
+						</NavigationMenu.Item>
+					{/if}
+				</NavigationMenu.List>
+			</NavigationMenu.Root>
+		</nav>
+
+		<div class="flex flex-1 items-center justify-end gap-3">
 			<Button
 				onclick={() => (mobileOpen = !mobileOpen)}
 				variant="ghost"
@@ -48,54 +100,7 @@
 				{/if}
 			</Button>
 
-			<nav class="hidden items-center gap-3 text-base sm:flex" aria-label="Main navigation">
-				<NavigationMenu.Root class="relative z-50">
-					<NavigationMenu.List class="gap-1">
-						{#each topbarNavItems as item (item.href)}
-							<NavigationMenu.Item>
-								<NavigationMenu.Link
-									href={resolve(item.href)}
-									class="font-medium text-muted-foreground hover:text-foreground"
-								>
-									{item.label}
-								</NavigationMenu.Link>
-							</NavigationMenu.Item>
-						{/each}
-
-						<NavigationMenu.Item value="resources">
-							<NavigationMenu.Trigger>Resources</NavigationMenu.Trigger>
-							<NavigationMenu.Content>
-								<ul class="grid w-72 gap-1 p-1">
-									{#each topbarResourceItems as item (item.href)}
-										<li>
-											<NavigationMenu.Link
-												href={resolve(item.href)}
-												class="flex-col items-start gap-1.5 p-3"
-											>
-												<span class="text-sm font-medium text-foreground">{item.label}</span>
-												<span class="text-xs leading-5 text-muted-foreground">
-													{item.description}
-												</span>
-											</NavigationMenu.Link>
-										</li>
-									{/each}
-								</ul>
-							</NavigationMenu.Content>
-						</NavigationMenu.Item>
-
-						{#if showPricing}
-							<NavigationMenu.Item>
-								<NavigationMenu.Link
-									href={resolve(topbarPricingItem.href)}
-									class="font-medium text-muted-foreground hover:text-foreground"
-								>
-									{topbarPricingItem.label}
-								</NavigationMenu.Link>
-							</NavigationMenu.Item>
-						{/if}
-					</NavigationMenu.List>
-				</NavigationMenu.Root>
-
+			<div class="hidden items-center gap-3 sm:flex">
 				{#each topbarAuthItems as item, index (item.href)}
 					<Button
 						href={resolve(item.href)}
@@ -106,7 +111,7 @@
 					</Button>
 				{/each}
 				<ThemeToggle />
-			</nav>
+			</div>
 		</div>
 
 		{#if mobileOpen}
@@ -118,7 +123,7 @@
 				{#each topbarNavItems as item (item.href)}
 					<a
 						href={resolve(item.href)}
-						class="block py-2 text-muted-foreground transition-colors hover:text-foreground"
+						class="block py-2 font-medium text-foreground transition-colors hover:text-primary"
 					>
 						{item.label}
 					</a>

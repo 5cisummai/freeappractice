@@ -30,28 +30,30 @@
 		<div
 			class="mx-auto max-w-2xl rounded-3xl border-2 border-violet-300/50 super-tier-gradient p-8 text-center shadow-sm shadow-violet-500/10"
 		>
-			<span
-				class="inline-flex rounded-full border border-violet-300/50 bg-background/70 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm dark:text-violet-300"
-			>
-				Super beta
-			</span>
 			<h2 class="mt-4 font-display text-3xl font-medium tracking-tight">
 				Claim your free Super offer.
 			</h2>
 			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
 				Unlock personalized tutoring, AI Coach, insights, weekly study plans, and 300 personalized
-				messages per UTC calendar month — free during the Super beta.
+				messages per month. Free during the Super beta.
 			</p>
-			<Button href={resolve('/signup')} size="lg" class="mt-6 rounded-full px-6">
-				Claim free Super
-			</Button>
+			<div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+				<Button href={resolve('/signup?super=1')} size="lg" class="rounded-full px-6">
+					Claim free Super
+				</Button>
+				{#if !asPage}
+					<Button href={resolve('/super')} variant="outline" size="lg" class="rounded-full px-6">
+						Learn more
+					</Button>
+				{/if}
+			</div>
 		</div>
 	{:else}
 		<PricingCards />
 
 		<p class="mx-auto max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-			Must be 13+ to use personalized features. No free trials, promotions, or overages. Cancel
-			anytime before your billing period ends.
+			Must be 13+ to use personalized features. No free trials or promotional pricing. Cancel
+			anytime before your next renewal.
 		</p>
 	{/if}
 </section>

@@ -359,7 +359,7 @@
 						<div class="flex min-w-0 flex-col gap-0.5">
 							<p class="text-sm font-medium text-foreground">Analytics</p>
 							<p class="text-sm text-muted-foreground">
-								Allow PostHog to collect feature usage, errors, and session replay. Vercel Analytics
+								Allow optional product analytics, including feature usage and session replay. Vercel Analytics
 								always runs cookieless for aggregate traffic.
 							</p>
 						</div>
@@ -383,8 +383,7 @@
 							</p>
 							<p class="text-sm text-muted-foreground">
 								{#if data.billing?.billingIssue}
-									Payment needs attention. Please open the Customer Portal to update your payment
-									method.
+									Payment needs attention. Open billing to update your payment method.
 								{:else if data.entitlements.plan === 'super'}
 									{#if data.freeBetaEnabled}
 										Super access is free during the beta after you claim the offer.
@@ -410,7 +409,7 @@
 								onclick={manageBilling}
 								disabled={billingBusy}
 							>
-								{billingBusy ? 'Opening…' : 'Customer Portal'}
+								{billingBusy ? 'Opening…' : 'Manage billing'}
 							</Button>
 						{:else if data.entitlements.plan !== 'super' && data.freeBetaEnabled}
 							<Button

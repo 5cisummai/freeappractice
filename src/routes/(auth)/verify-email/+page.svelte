@@ -16,7 +16,7 @@
 	onMount(async () => {
 		if (!token) {
 			status = 'error';
-			errorMessage = 'No verification token found.';
+			errorMessage = 'This verification link is missing or invalid.';
 			return;
 		}
 		try {

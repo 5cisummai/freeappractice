@@ -9,8 +9,9 @@
 	import { resolve } from '$app/paths';
 	import {
 		isPasswordWithinLimit,
-		MAX_PASSWORD_BYTES,
-		MIN_PASSWORD_LENGTH
+		MIN_PASSWORD_LENGTH,
+		PASSWORD_LENGTH_ERROR,
+		PASSWORD_LENGTH_HINT
 	} from '$lib/auth/password-policy.js';
 	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
 
@@ -29,12 +30,8 @@
 			errorMessage = 'Passwords do not match';
 			return;
 		}
-		if (password.length < MIN_PASSWORD_LENGTH) {
-			errorMessage = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
-			return;
-		}
-		if (!isPasswordWithinLimit(password)) {
-			errorMessage = `Password must be no more than ${MAX_PASSWORD_BYTES} UTF-8 bytes`;
+		if (password.length < MIN_PASSWORD_LENGTH || !isPasswordWithinLimit(password)) {
+			errorMessage = PASSWORD_LENGTH_ERROR;
 			return;
 		}
 
@@ -68,7 +65,7 @@
 	<Card.Content>
 		{#if !token}
 			<div class="space-y-4 text-center">
-				<p class="text-sm text-destructive">Invalid or missing reset token.</p>
+				<p class="text-sm text-destructive">This reset link is missing or invalid.</p>
 				<a href={resolve('/forgot-password')} class="text-sm underline underline-offset-4"
 					>Request a new link</a
 				>
@@ -99,8 +96,7 @@
 							autocomplete="new-password"
 						/>
 						<Field.Description>
-							Must be at least {MIN_PASSWORD_LENGTH} characters and no more than {MAX_PASSWORD_BYTES}
-							UTF-8 bytes.
+							{PASSWORD_LENGTH_HINT}
 						</Field.Description>
 					</Field.Field>
 					<Field.Field>
