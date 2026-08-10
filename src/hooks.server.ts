@@ -78,6 +78,21 @@ function postProcessResponse(
 
 	if (event.url.pathname === '/' || event.url.pathname === '') {
 		response.headers.set('Link', buildHomepageLinkHeader());
+
+		// The homepage is public and identical for authenticated and anonymous users;
+		// authentication only redirects client-side. Cache it at Vercel's CDN while
+		// keeping the HTML/Markdown content-negotiation variants separate.
+		if (event.request.method === 'GET' && response.status === 200) {
+			response.headers.set('Cache-Control', 'public, max-age=0');
+			response.headers.set(
+				'Vercel-CDN-Cache-Control',
+				'public, s-maxage=60, stale-while-revalidate=60'
+			);
+			const vary = response.headers.get('Vary');
+			if (!vary?.split(',').some((value) => value.trim().toLowerCase() === 'accept')) {
+				response.headers.set('Vary', vary ? `${vary}, Accept` : 'Accept');
+			}
+		}
 	}
 
 	if (event.url.pathname.startsWith('/api/')) {
