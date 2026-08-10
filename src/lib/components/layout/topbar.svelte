@@ -18,9 +18,7 @@
 </script>
 
 <header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
-	<div
-		class="relative mx-auto flex h-18 w-full max-w-7xl items-center px-5 sm:px-8 lg:px-10"
-	>
+	<div class="relative mx-auto flex h-18 w-full max-w-7xl items-center px-5 sm:px-8 lg:px-10">
 		<div class="topbar-logo flex min-w-0 flex-1 items-center">
 			<a
 				href={resolve('/')}

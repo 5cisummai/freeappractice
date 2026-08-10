@@ -66,8 +66,8 @@
 					<p class="font-semibold text-foreground">Optional product analytics</p>
 					<p class="text-sm leading-6 text-muted-foreground">
 						This personal project uses cookieless Vercel Analytics for traffic and performance. You
-						can also opt in to detailed product analytics, including feature usage and optional session
-						replay. You can change this later in Settings. See our
+						can also opt in to detailed product analytics, including feature usage and optional
+						session replay. You can change this later in Settings. See our
 						<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 					</p>
 				</div>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SuperLandingSection from '$lib/components/marketing/super-landing-section.svelte';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';

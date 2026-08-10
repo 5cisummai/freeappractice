@@ -92,8 +92,8 @@
 						month or $79 per year, plus applicable tax, and renews automatically until you cancel.
 						Super includes personalized multiple-choice and written-response tutoring, Coach,
 						Insights, weekly study plans, and up to 600 personalized messages per month. We do not
-						offer a free trial, promotional pricing, discounts, or extra usage charges for Super
-						for Super unless the checkout page expressly says otherwise.
+						offer a free trial, promotional pricing, discounts, or extra usage charges for Super for
+						Super unless the checkout page expressly says otherwise.
 					</p>
 					<p class="mt-2">
 						You can cancel or restore a cancellation before the current subscription period ends in

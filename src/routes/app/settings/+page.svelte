@@ -359,8 +359,8 @@
 						<div class="flex min-w-0 flex-col gap-0.5">
 							<p class="text-sm font-medium text-foreground">Analytics</p>
 							<p class="text-sm text-muted-foreground">
-								Allow optional product analytics, including feature usage and session replay. Vercel Analytics
-								always runs cookieless for aggregate traffic.
+								Allow optional product analytics, including feature usage and session replay. Vercel
+								Analytics always runs cookieless for aggregate traffic.
 							</p>
 						</div>
 						<Switch
