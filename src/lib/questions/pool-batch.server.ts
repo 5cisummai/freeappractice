@@ -36,6 +36,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 	}>;
 	model?: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
+	diagramsEnabled?: boolean;
 }): { jsonl: string; manifest: PoolBatchManifest } {
 	const model = opts.model ?? getPoolBatchGenerationModel();
 	const lines: string[] = [];
@@ -49,7 +50,8 @@ export function buildMcqPoolBatchJsonl(opts: {
 				unit: req.unit,
 				recentTopics: req.recentTopics,
 				model,
-				reasoningEffort: opts.reasoningEffort
+				reasoningEffort: opts.reasoningEffort,
+				diagramsEnabled: opts.diagramsEnabled
 			})
 		);
 		entries[req.customId] = {

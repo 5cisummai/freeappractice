@@ -14,6 +14,7 @@ type PoolQuery<TDoc extends PoolDocument> = (input: {
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
+	onDatabaseInit?: (elapsedMs: number) => void;
 }) => Promise<TDoc | null>;
 
 interface QuestionPoolConfig<TDoc extends PoolDocument, TCached> {
@@ -29,6 +30,7 @@ interface QuestionPoolConfig<TDoc extends PoolDocument, TCached> {
 export type QuestionPathMetrics = {
 	questionType: 'mcq' | 'frq';
 	segment?: 'pool_hit' | 'pool_warming' | 'pool_error';
+	/** Neon HTTP client initialization; awaited network/SQL time is poolQueryMs. */
 	dbConnectMs: number;
 	poolQueryMs: number;
 };
@@ -58,6 +60,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot?: number;
+	onDatabaseInit?: (elapsedMs: number) => void;
 }): Promise<TDoc | null> {
 	const pivot = opts.pivot ?? Math.random();
 	const first = await opts.findRandom({
@@ -65,7 +68,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		unit: opts.unit,
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
-		fromPivot: 'after'
+		fromPivot: 'after',
+		onDatabaseInit: opts.onDatabaseInit
 	});
 	if (first) return first;
 
@@ -74,7 +78,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		unit: opts.unit,
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
-		fromPivot: 'before'
+		fromPivot: 'before',
+		onDatabaseInit: opts.onDatabaseInit
 	});
 }
 
@@ -95,7 +100,11 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
 
-		if (metrics) metrics.dbConnectMs = 0;
+		const onDatabaseInit = metrics
+			? (elapsedMs: number) => {
+					metrics.dbConnectMs = Math.max(metrics.dbConnectMs, elapsedMs);
+				}
+			: undefined;
 
 		const queryStarted = Date.now();
 		try {
@@ -104,7 +113,8 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 				findRandom: config.findRandom,
 				apClass: className,
 				unit: cacheUnit,
-				excludeQuestionIds
+				excludeQuestionIds,
+				onDatabaseInit
 			});
 
 			if (!doc && excludeQuestionIds.length) {
@@ -115,7 +125,8 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 						findRandom: config.findRandom,
 						apClass: className,
 						unit: cacheUnit,
-						excludeQuestionIds: []
+						excludeQuestionIds: [],
+						onDatabaseInit
 					});
 				}
 			}

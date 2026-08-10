@@ -16,7 +16,7 @@ import {
 	retrieveOpenAiBatch,
 	type PoolBatchManifest
 } from '../src/lib/questions/pool-batch.server';
-import { apQuestionSchema } from '../src/lib/questions/generation.server';
+import { parseGeneratedApQuestion } from '../src/lib/questions/generation.server';
 import { persistParsedQuestionToPool } from '../src/lib/questions/pool-write.server';
 import { parseGeneratedFrq, persistGeneratedFrqToPool } from '../src/lib/frq/generation.server';
 import { writePoolBucketBelowTarget } from '../src/lib/questions/pool-capacity.server';
@@ -126,7 +126,7 @@ async function main() {
 				if ((entry.questionType ?? 'mcq') === 'frq') {
 					parseGeneratedFrq(entry.apClass, entry.unit, generated);
 				} else {
-					apQuestionSchema.parse(generated);
+					parseGeneratedApQuestion(generated);
 				}
 				ok += 1;
 				continue;
@@ -143,7 +143,7 @@ async function main() {
 						: persistParsedQuestionToPool(
 								entry.apClass,
 								entry.unit,
-								apQuestionSchema.parse(generated)
+								parseGeneratedApQuestion(generated)
 							)
 			);
 			if (guarded.status === 'at_target') {

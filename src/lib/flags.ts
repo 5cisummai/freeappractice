@@ -53,6 +53,25 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 }
 
 /**
+ * Educational examfig diagrams.
+ * Managed in the Vercel Flags dashboard (`examfig-diagrams`).
+ * Default off until the renderer and generated content are ready for rollout.
+ */
+export const examfigDiagramsEnabled = vercelFlag(
+	'examfig-diagrams',
+	'Enable examfig diagrams in generated and served MCQs',
+	false
+);
+
+export async function isExamfigDiagramsEnabled(): Promise<boolean> {
+	try {
+		return Boolean(await examfigDiagramsEnabled());
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Free Super beta offer for authenticated users (claim required).
  * Managed in the Vercel Flags dashboard (`super-free-beta`).
  * Default off until you flip it there — no env var.

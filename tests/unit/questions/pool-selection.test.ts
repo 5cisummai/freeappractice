@@ -140,4 +140,28 @@ describe('createQuestionPool selection boundary', () => {
 		const outcome = await pool.getQuestion('AP Biology', 'Unit 1');
 		expect(outcome.status).toBe('failed');
 	});
+
+	it('records Neon client initialization separately from pool query time', async () => {
+		const metrics = {
+			questionType: 'mcq' as const,
+			dbConnectMs: 0,
+			poolQueryMs: 0
+		};
+		const pool = createQuestionPool({
+			questionType: 'mcq',
+			logScope: 'test',
+			normalizeUnit: (u) => u ?? '',
+			findRandom: async (input) => {
+				input.onDatabaseInit?.(7);
+				return { questionId: 'hit' };
+			},
+			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId })
+		});
+
+		const outcome = await pool.getQuestion('AP Biology', 'Unit 1', { metrics });
+
+		expect(outcome.status).toBe('found');
+		expect(metrics.dbConnectMs).toBe(7);
+		expect(metrics.poolQueryMs).toBeGreaterThanOrEqual(0);
+	});
 });

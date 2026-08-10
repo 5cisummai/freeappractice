@@ -116,8 +116,9 @@ export async function findCachedQuestionByPool(input: {
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
+	onDatabaseInit?: (elapsedMs: number) => void;
 }): Promise<IQuestion | null> {
-	const db = getNeonDatabase();
+	const db = getNeonDatabase(input.onDatabaseInit);
 	const predicates = [
 		eq(mcqQuestions.apClass, input.apClass),
 		eq(mcqQuestions.unit, input.unit),

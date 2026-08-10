@@ -176,6 +176,7 @@ export async function findFrqQuestionByPool(input: {
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
+	onDatabaseInit?: (elapsedMs: number) => void;
 }): Promise<IFrqQuestion | null> {
 	const predicates = [
 		eq(frqQuestions.apClass, input.apClass),
@@ -187,7 +188,7 @@ export async function findFrqQuestionByPool(input: {
 	];
 	if (input.excludeQuestionIds.length)
 		predicates.push(notInArray(frqQuestions.questionId, input.excludeQuestionIds));
-	const rows = await getNeonDatabase()
+	const rows = await getNeonDatabase(input.onDatabaseInit)
 		.select()
 		.from(frqQuestions)
 		.where(and(...predicates))

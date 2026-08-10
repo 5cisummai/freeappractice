@@ -16,7 +16,7 @@ import '$lib/flags';
 
 describe('Vercel flag declarations', () => {
 	it('attaches the provider adapter through the Flags SDK adapter option', () => {
-		expect(mocks.flag).toHaveBeenCalledTimes(7);
+		expect(mocks.flag).toHaveBeenCalledTimes(8);
 		for (const [options] of mocks.flag.mock.calls) {
 			expect(options).toMatchObject({
 				adapter: { provider: 'vercel' },

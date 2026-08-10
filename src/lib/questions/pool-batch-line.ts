@@ -9,11 +9,13 @@ export function buildMcqPoolBatchLine(opts: {
 	model: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
 	maxOutputTokens?: number;
+	diagramsEnabled?: boolean;
 }): string {
 	const { system, user } = buildMcqGenerationPrompt({
 		className: opts.className,
 		unit: opts.unit,
-		recentTopics: opts.recentTopics
+		recentTopics: opts.recentTopics,
+		diagramsEnabled: opts.diagramsEnabled
 	});
 
 	return JSON.stringify({
