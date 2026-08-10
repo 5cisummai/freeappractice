@@ -24,75 +24,46 @@ interface UnitPromptSections {
 	courseNotesContext: string;
 }
 
-/**
- * Fuzzy-matches `className` to course_code/course_name, then resolves the unit.
- */
-function getUnitContextData(className: string, unitIdentifier: string): UnitContext | null {
-	if (!className || !unitIdentifier) return null;
-	const norm = (s: string) => (s ?? '').toLowerCase().trim();
-	const cName = norm(className);
-	const uRaw = unitIdentifier.toString().trim();
-	const uNorm = norm(uRaw);
-
-	const data = unitDescriptions as {
-		courses: Array<{
-			course_code?: string;
-			course_name?: string;
-			important_notes?: string;
-			importantNotes?: string;
-			units?: Array<{
-				unit_number?: number;
-				unit_title?: string;
-				description?: string;
-				topics_may_include?: string[];
-				topics?: string[];
-				keywords?: string[];
-			}>;
+type UnitDescriptionsFile = {
+	courses: Array<{
+		apClass: string;
+		importantNotes?: string;
+		units: Array<{
+			unit: string;
+			description?: string;
+			topics?: string[];
+			keywords?: string[];
 		}>;
-	};
+	}>;
+};
 
-	if (Array.isArray(data.courses)) {
-		for (const course of data.courses) {
-			const courseNames = [course.course_code, course.course_name]
-				.filter(Boolean)
-				.map((n) => norm(n as string));
-			const importantNotes = course.important_notes ?? course.importantNotes ?? '';
-
-			if (courseNames.some((n) => n === cName || cName.includes(n) || n.includes(cName))) {
-				if (Array.isArray(course.units)) {
-					const unitNumMatch = uRaw.match(/\d+/);
-					let found = course.units.find((u) => {
-						if (unitNumMatch) {
-							const num = parseInt(unitNumMatch[0], 10);
-							return (
-								Number(u.unit_number) === num || norm(u.unit_title ?? '').includes(`unit ${num}`)
-							);
-						}
-						return false;
-					});
-					if (!found) {
-						found = course.units.find(
-							(u) =>
-								norm(u.unit_title ?? '').includes(uNorm) || uNorm.includes(norm(u.unit_title ?? ''))
-						);
-					}
-					if (found) {
-						return {
-							description: found.description ?? '',
-							topics: found.topics_may_include ?? found.topics ?? [],
-							keywords: found.keywords ?? [],
-							importantNotes
-						};
-					}
-				}
-				if (importantNotes) return { description: '', topics: [], keywords: [], importantNotes };
-			}
-		}
-	}
-	return null;
+function unitContextKey(apClass: string, unit: string): string {
+	return `${apClass}\0${unit}`;
 }
 
-// ── Prompt builders ────────────────────────────────────────────
+/** Exact apClass + unit label → CED context. Built once from catalog-aligned JSON. */
+const unitContextByKey: ReadonlyMap<string, UnitContext> = (() => {
+	const data = unitDescriptions as UnitDescriptionsFile;
+	const map = new Map<string, UnitContext>();
+	for (const course of data.courses ?? []) {
+		const importantNotes = course.importantNotes ?? '';
+		for (const unit of course.units ?? []) {
+			map.set(unitContextKey(course.apClass, unit.unit), {
+				description: unit.description ?? '',
+				topics: unit.topics ?? [],
+				keywords: unit.keywords ?? [],
+				importantNotes
+			});
+		}
+	}
+	return map;
+})();
+
+/** Exact lookup only — keys must match `ap-classes.json` class names and unit labels. */
+export function getUnitContextData(className: string, unitIdentifier: string): UnitContext | null {
+	if (!className || !unitIdentifier) return null;
+	return unitContextByKey.get(unitContextKey(className, unitIdentifier.trim())) ?? null;
+}
 
 function buildUnitSections(
 	className: string,
