@@ -44,8 +44,6 @@ function iconForSubject(name: string): SubjectIcon {
 	if (subject.includes('economics')) return BarChart3Icon;
 	if (subject.includes('spanish')) return LanguagesIcon;
 	if (subject.includes('pe')) return DumbbellIcon;
-	if (subject.includes('lunch')) return BookOpenIcon;
-
 	return BookOpenIcon;
 }
 

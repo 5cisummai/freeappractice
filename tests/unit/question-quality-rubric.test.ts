@@ -9,10 +9,7 @@ import {
 } from '$lib/question-quality/rubric.server';
 
 describe('question quality rubric', () => {
-	it('uses dedicated parody-course guidance', () => {
-		expect(buildQuestionQualityPrompt({ apClass: 'AP Lunch' }).developer).toContain(
-			'intentional parody course AP Lunch'
-		);
+	it('uses real-course guidance', () => {
 		expect(buildQuestionQualityPrompt({ apClass: 'AP Biology' }).developer).toContain(
 			'real AP Biology course framework'
 		);
@@ -26,9 +23,8 @@ describe('question quality rubric', () => {
 		expect(prompt.developer).toContain('MALFORMED_FORMATTING');
 	});
 
-	it('configures web grounding only for real AP courses', () => {
+	it('configures web grounding for supported AP courses', () => {
 		expect(requiresWebSearchForQuestion({ apClass: 'AP Biology' })).toBe(true);
-		expect(requiresWebSearchForQuestion({ apClass: 'AP Lunch' })).toBe(false);
 		expect(buildQuestionQualityWebSearchTool('high')).toEqual({
 			type: 'web_search',
 			search_context_size: 'high'

@@ -127,6 +127,8 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 		.select({
 			id: mcqQuestions.questionId,
 			question: mcqQuestions.question,
+			diagramSpec: mcqQuestions.diagramSpec,
+			hasDiagram: mcqQuestions.hasDiagram,
 			optionA: mcqQuestions.optionA,
 			optionB: mcqQuestions.optionB,
 			optionC: mcqQuestions.optionC,
@@ -149,6 +151,8 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 			{
 				id: row.id,
 				question: row.question,
+				diagramSpec: row.diagramSpec ?? undefined,
+				hasDiagram: row.hasDiagram,
 				optionA: row.optionA,
 				optionB: row.optionB,
 				optionC: row.optionC,

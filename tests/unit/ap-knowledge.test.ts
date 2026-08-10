@@ -8,9 +8,7 @@ import {
 
 describe('AP curriculum knowledge', () => {
 	it('covers every supported real AP course', () => {
-		const supportedRealCourses = [...getAllowedClassNames()].filter(
-			(apClass) => !apClass.toLowerCase().includes('ap lunch')
-		);
+		const supportedRealCourses = [...getAllowedClassNames()];
 
 		expect(listApCurriculumCourseNames().sort()).toEqual(supportedRealCourses.sort());
 	});
@@ -138,7 +136,6 @@ describe('AP curriculum knowledge', () => {
 		if (result.kind !== 'catalog') throw new Error('Expected catalog knowledge');
 		expect(result.catalogVersion).toBe(AP_KNOWLEDGE_CATALOG_VERSION);
 		expect(result.courses).toHaveLength(25);
-		expect(result.courses.some((course) => course.apClass === 'AP Lunch😂')).toBe(false);
 	});
 
 	it('fails safely for unsupported courses and units', () => {
@@ -147,9 +144,6 @@ describe('AP curriculum knowledge', () => {
 				kind: 'not_found',
 				message: expect.stringContaining('AP class')
 			})
-		);
-		expect(getApCurriculumKnowledge({ apClass: 'AP Lunch😂' })).toEqual(
-			expect.objectContaining({ kind: 'not_found' })
 		);
 		expect(
 			getApCurriculumKnowledge({ apClass: 'AP Biology', unit: 'Unit 99: Time Travel' })

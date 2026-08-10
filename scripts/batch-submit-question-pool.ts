@@ -32,6 +32,7 @@ import {
 import { getRecentTopics } from '../src/lib/questions/recent-topic.server';
 import { getRecentFrqTopics } from '../src/lib/frq/generation.server';
 import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
+import { isExamfigDiagramsEnabled } from '../src/lib/flags';
 
 function argValue(flag: string): string | undefined {
 	const eq = process.argv.find((a) => a.startsWith(`${flag}=`));
@@ -69,6 +70,7 @@ async function main() {
 	}
 
 	const env = QUESTION_POOL_CONFIG;
+	const diagramsEnabled = questionType === 'mcq' ? await isExamfigDiagramsEnabled() : false;
 
 	const budgetRemaining = await getDailyBudgetRemaining(env);
 	const maxRequests = dryRun ? limit : Math.min(limit, budgetRemaining);
@@ -81,6 +83,7 @@ async function main() {
 		classFilter: classFilter ?? null,
 		unitFilter: unitFilter ?? null,
 		questionType,
+		diagramsEnabled,
 		dryRun,
 		targetSource: 'question-pool-targets.json preferred ceilings'
 	});
@@ -161,7 +164,7 @@ async function main() {
 
 	const { jsonl, manifest } =
 		questionType === 'mcq'
-			? buildMcqPoolBatchJsonl({ requests })
+			? buildMcqPoolBatchJsonl({ requests, diagramsEnabled })
 			: buildFrqPoolBatchJsonl({ requests });
 	console.log(`Built ${requests.length} batch requests (${jsonl.length} bytes JSONL)`);
 

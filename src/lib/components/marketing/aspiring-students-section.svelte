@@ -26,7 +26,7 @@
 		},
 		{
 			name: 'Kristian K.',
-			detail: 'Freshman · AP Bio, AP Lunch',
+			detail: 'Freshman · AP Biology',
 			quote:
 				'Generating questions by unit made it easy to drill weak topics before tests. Way better than flipping through random PDFs. One day or day one.',
 			initials: 'KK',

@@ -21,6 +21,7 @@
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
+	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 
 	let {
 		class: className,
@@ -251,6 +252,13 @@
 					{/if}
 				</Button>
 			</div>
+
+			{#if session.currentQuestion?.diagramSpec}
+				<ExamfigDiagram
+					spec={session.currentQuestion.diagramSpec}
+					class="[&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
+				/>
+			{/if}
 
 			{#if session.currentQuestion?.hasStimulus && !isMobileViewport}
 				<div

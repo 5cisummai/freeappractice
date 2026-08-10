@@ -8,11 +8,9 @@ type ApCourse = {
 
 const courses = (apClassesData.courses ?? []) as ApCourse[];
 
-/** All AP courses from catalog data, with "AP Lunch" entries last. */
+/** All supported AP courses from catalog data. */
 export function getCourses(): ApCourse[] {
-	const lunch = courses.filter((c) => c.name.toLowerCase().includes('ap lunch'));
-	const rest = courses.filter((c) => !c.name.toLowerCase().includes('ap lunch'));
-	return [...rest, ...lunch];
+	return courses;
 }
 
 export function getUnitsForClass(className: string): string[] {

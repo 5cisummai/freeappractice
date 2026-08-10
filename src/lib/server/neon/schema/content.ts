@@ -51,6 +51,8 @@ export const mcqQuestions = contentSchema.table(
 		contentHash: text('content_hash').notNull(),
 		topicsCovered: text('topics_covered'),
 		question: text('question').notNull(),
+		diagramSpec: jsonb('diagram_spec').$type<Record<string, unknown> | null>(),
+		hasDiagram: boolean('has_diagram').notNull().default(false),
 		optionA: text('option_a').notNull(),
 		optionB: text('option_b').notNull(),
 		optionC: text('option_c').notNull(),

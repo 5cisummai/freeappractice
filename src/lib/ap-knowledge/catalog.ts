@@ -47,10 +47,8 @@ export type ApKnowledgeResult =
 	  };
 
 const classData = apClassesData as ApClassesData;
-const realCourses = classData.courses.filter(
-	(course) => !course.name.toLowerCase().includes('ap lunch')
-);
-const courseByName = new Map(realCourses.map((course) => [normalize(course.name), course]));
+const supportedCourses = classData.courses;
+const courseByName = new Map(supportedCourses.map((course) => [normalize(course.name), course]));
 
 const CURRENT_UNIT_OVERRIDES: Record<string, string[]> = {
 	'AP Physics 2': [
@@ -190,7 +188,7 @@ function metadata() {
 }
 
 export function listApCurriculumCourseNames(): string[] {
-	return realCourses.map((course) => course.name);
+	return supportedCourses.map((course) => course.name);
 }
 
 /** Retrieve bounded AP catalog facts and links to the current official sources. */
@@ -209,7 +207,7 @@ export function getApCurriculumKnowledge(input: {
 		return {
 			kind: 'catalog',
 			...metadata(),
-			courses: realCourses.map((course) => ({
+			courses: supportedCourses.map((course) => ({
 				apClass: course.name,
 				units: unitsFor(course)
 			}))

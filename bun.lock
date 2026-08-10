@@ -10,6 +10,9 @@
         "@aws-sdk/client-s3": "^3.1075.0",
         "@better-auth/drizzle-adapter": "1.6.26",
         "@better-auth/stripe": "1.6.26",
+        "@examfig/charts": "^0.2.0",
+        "@examfig/core": "^0.2.0",
+        "@examfig/science": "^0.2.0",
         "@flags-sdk/vercel": "^1.4.5",
         "@neondatabase/serverless": "^1.0.2",
         "@sentry/sveltekit": "^10",
@@ -308,6 +311,12 @@
     "@eslint/object-schema": ["@eslint/object-schema@3.0.5", "", {}, "sha512-vqTaUEgxzm+YDSdElad6PiRoX4t8VGDjCtt05zn4nU810UIx/uNEV7/lZJ6KwFThKZOzOxzXy48da+No7HZaMw=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.2", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A=="],
+
+    "@examfig/charts": ["@examfig/charts@0.2.0", "", { "dependencies": { "@examfig/core": "0.2.0" } }, "sha512-HOLLXAAfTjCfc4IVjOKFTy/J9l9Ty8vuoGsY5yh5kN+KQJOKRoBTwUXCuO5abHOtqBme+XRJps7gwo74qIVP7A=="],
+
+    "@examfig/core": ["@examfig/core@0.2.0", "", {}, "sha512-j/eT291rH241vs7ymDyjq+hLLKkkqJCKNTqLd9JSAHCiznoyfiMMwXqjeS+C702iU5oEnoqzYlisQvDAZOMKCw=="],
+
+    "@examfig/science": ["@examfig/science@0.2.0", "", { "dependencies": { "@examfig/core": "0.2.0" } }, "sha512-Jtb9aIeco4col+2b83IRNf/QmurFdLzhheQhgP36ALj5D169HjWJlzzGfbTv+P1E2ukUsHZenfee0c+pzNI5nw=="],
 
     "@exodus/bytes": ["@exodus/bytes@1.15.1", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-S6mL0yNB/Abt9Ei4tq8gDhcczc4S3+vQ4ra7vxnAf+YHC02srtqxKKZghx2Dq6p0e66THKwR6r8N6P95wEty7Q=="],
 

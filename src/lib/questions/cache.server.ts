@@ -18,6 +18,8 @@ type McqAnswerBody = {
 	topicsCovered: string;
 	hint1: string;
 	hint2: string;
+	diagramSpec: Record<string, unknown> | null;
+	hasDiagram: boolean;
 };
 
 type CachedResult = {
@@ -42,6 +44,8 @@ function hotPoolBodyFromDoc(
 		| 'topicsCovered'
 		| 'hint1'
 		| 'hint2'
+		| 'diagramSpec'
+		| 'hasDiagram'
 	>
 ): McqAnswerBody {
 	return {
@@ -54,7 +58,9 @@ function hotPoolBodyFromDoc(
 		explanation: doc.explanation,
 		topicsCovered: doc.topicsCovered ?? '',
 		hint1: doc.hint1 ?? '',
-		hint2: doc.hint2 ?? ''
+		hint2: doc.hint2 ?? '',
+		diagramSpec: doc.diagramSpec ?? null,
+		hasDiagram: doc.hasDiagram
 	};
 }
 
@@ -63,6 +69,8 @@ const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 	logScope: 'pool',
 	normalizeUnit,
 	findRandom: findCachedQuestionByPool,
+	// Diagram availability is decided during generation. Serving a cached row
+	// must remain a synchronous pool-hit path and never initialize Flags.
 	serveCached: (doc) => ({
 		answer: hotPoolBodyFromDoc(doc),
 		provider: 'cache',

@@ -33,12 +33,10 @@ describe('question pool constants', () => {
 	it('scales MCQ targets from generation-stats demand', () => {
 		const counts = {
 			'AP Biology': 100,
-			'AP Chemistry': 50,
-			'AP Lunch😂': 0
+			'AP Chemistry': 50
 		};
 		expect(resolveMcqTarget('AP Biology', counts)).toBe(35);
 		expect(resolveMcqTarget('AP Chemistry', counts)).toBe(15);
-		expect(resolveMcqTarget('AP Lunch😂', counts)).toBe(10);
 		expect(
 			poolTargetForBucket({
 				questionType: 'mcq',

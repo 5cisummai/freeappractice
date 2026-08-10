@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { generateTextMock } = vi.hoisted(() => ({ generateTextMock: vi.fn() }));
+const { generateMock, ToolLoopAgentMock } = vi.hoisted(() => {
+	const generateMock = vi.fn();
+	const ToolLoopAgentMock = vi.fn(function () {
+		return { generate: generateMock };
+	});
+	return { generateMock, ToolLoopAgentMock };
+});
 
 vi.mock('$env/static/private', () => ({
 	OPEN_AI_KEY: 'test-key'
@@ -16,7 +22,7 @@ vi.mock('ai', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('ai')>();
 	return {
 		...actual,
-		generateText: generateTextMock
+		ToolLoopAgent: ToolLoopAgentMock
 	};
 });
 
@@ -41,16 +47,18 @@ const validGeneratedQuestion = {
 	explanation: 'Intensive subsistence farming often centers on wet-rice cultivation.',
 	hint1: 'Think about high labor input on small parcels of land.',
 	hint2: 'Consider East and South Asian rice paddies rather than cattle ranching.',
-	topicsCovered: 'Intensive subsistence agriculture and wet-rice farming patterns'
+	topicsCovered: 'Intensive subsistence agriculture and wet-rice farming patterns',
+	diagram: null
 };
 
 describe('MCQ live generation pipeline', () => {
 	beforeEach(() => {
-		generateTextMock.mockReset();
+		generateMock.mockReset();
+		ToolLoopAgentMock.mockClear();
 	});
 
 	it('runs generateAPQuestion end-to-end without S3 persistence', async () => {
-		generateTextMock.mockResolvedValue({
+		generateMock.mockResolvedValue({
 			output: validGeneratedQuestion,
 			usage: { inputTokens: 10, outputTokens: 20 }
 		});
@@ -60,7 +68,7 @@ describe('MCQ live generation pipeline', () => {
 			unit: 'Unit 5: Agriculture and Rural Land-Use Patterns and Processes'
 		});
 
-		expect(generateTextMock).toHaveBeenCalledTimes(1);
+		expect(generateMock).toHaveBeenCalledTimes(1);
 		expect(result.questionId).toEqual(expect.any(String));
 		expect(result.answer.hint1).toBe(validGeneratedQuestion.hint1);
 		expect(result.answer.hint2).toBe(validGeneratedQuestion.hint2);
@@ -71,7 +79,7 @@ describe('MCQ live generation pipeline', () => {
 	});
 
 	it('returns a generated id without persisting the question', async () => {
-		generateTextMock.mockResolvedValue({
+		generateMock.mockResolvedValue({
 			output: validGeneratedQuestion,
 			usage: { inputTokens: 1, outputTokens: 1 }
 		});
