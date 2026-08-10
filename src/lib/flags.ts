@@ -55,11 +55,11 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 /**
  * Educational examfig diagrams.
  * Managed in the Vercel Flags dashboard (`examfig-diagrams`).
- * Default off until the renderer and generated content are ready for rollout.
+ * Controls diagram generation; cached diagram data is served as stored.
  */
 export const examfigDiagramsEnabled = vercelFlag(
 	'examfig-diagrams',
-	'Enable examfig diagrams in generated and served MCQs',
+	'Enable examfig diagrams during MCQ generation',
 	false
 );
 

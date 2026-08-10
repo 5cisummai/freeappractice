@@ -1,5 +1,4 @@
 import { findCachedQuestionByPool, type IQuestion } from '$lib/questions/cache-model.server';
-import { isExamfigDiagramsEnabled } from '$lib/flags';
 import {
 	createQuestionPool,
 	type GetQuestionOptions,
@@ -70,20 +69,15 @@ const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 	logScope: 'pool',
 	normalizeUnit,
 	findRandom: findCachedQuestionByPool,
-	serveCached: async (doc) => {
-		const answer = hotPoolBodyFromDoc(doc);
-		if (!(await isExamfigDiagramsEnabled())) {
-			answer.diagramSpec = null;
-			answer.hasDiagram = false;
-		}
-		return {
-			answer,
-			provider: 'cache',
-			model: 'cached',
-			cached: true,
-			questionId: doc.questionId
-		};
-	},
+	// Diagram availability is decided during generation. Serving a cached row
+	// must remain a synchronous pool-hit path and never initialize Flags.
+	serveCached: (doc) => ({
+		answer: hotPoolBodyFromDoc(doc),
+		provider: 'cache',
+		model: 'cached',
+		cached: true,
+		questionId: doc.questionId
+	}),
 	requestRefill: (className, unit) =>
 		requestPoolRefill({ questionType: 'mcq', apClass: className, unit })
 });
