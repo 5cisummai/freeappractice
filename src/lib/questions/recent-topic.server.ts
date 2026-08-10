@@ -1,9 +1,19 @@
-import { QuestionRecentTopic } from '$lib/questions/recent-topic-model.server';
-import { connectDb } from '$lib/server/db';
+import { randomUUID } from 'node:crypto';
+import { and, desc, eq, ne } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { questionRecentTopics } from '$lib/server/neon/schema';
 
 const DEFAULT_WINDOW = 20;
+type QuestionKind = 'mcq' | 'frq';
+export type RecentTopicSummary = {
+	apClass: string;
+	unit: string;
+	topicsCovered: string;
+	createdAt: Date;
+};
 
 export async function recordRecentTopic(opts: {
+	kind: QuestionKind;
 	apClass: string;
 	unit: string;
 	topicsCovered: string;
@@ -12,25 +22,49 @@ export async function recordRecentTopic(opts: {
 	const topicsCovered = opts.topicsCovered.trim();
 	if (!topicsCovered) return;
 
-	await connectDb();
-	await QuestionRecentTopic.create({
-		apClass: opts.apClass,
-		unit: opts.unit,
-		topicsCovered,
-		questionId: opts.questionId
-	});
+	await getNeonDatabase()
+		.insert(questionRecentTopics)
+		.values({
+			id: randomUUID(),
+			kind: opts.kind,
+			apClass: opts.apClass,
+			unit: opts.unit,
+			topicsCovered,
+			questionId: opts.questionId ?? null
+		});
 }
 
-export async function getRecentTopics(
-	className: string,
-	unit: string,
-	limit = DEFAULT_WINDOW
-): Promise<string[]> {
-	await connectDb();
-	const docs = await QuestionRecentTopic.find(
-		{ apClass: className, unit, topicsCovered: { $ne: '' } },
-		{ topicsCovered: 1 },
-		{ sort: { createdAt: -1 }, limit }
-	).lean();
-	return docs.map((d) => d.topicsCovered).filter(Boolean);
+export async function getRecentTopics(opts: {
+	kind: QuestionKind;
+	apClass: string;
+	unit: string;
+	limit?: number;
+}): Promise<string[]> {
+	const docs = await getNeonDatabase()
+		.select({ topicsCovered: questionRecentTopics.topicsCovered })
+		.from(questionRecentTopics)
+		.where(
+			and(
+				eq(questionRecentTopics.kind, opts.kind),
+				eq(questionRecentTopics.apClass, opts.apClass),
+				eq(questionRecentTopics.unit, opts.unit),
+				ne(questionRecentTopics.topicsCovered, '')
+			)
+		)
+		.orderBy(desc(questionRecentTopics.createdAt))
+		.limit(opts.limit ?? DEFAULT_WINDOW);
+	return docs.map((doc) => doc.topicsCovered);
+}
+
+export async function getLatestRecentTopics(limit = 10): Promise<RecentTopicSummary[]> {
+	return getNeonDatabase()
+		.select({
+			apClass: questionRecentTopics.apClass,
+			unit: questionRecentTopics.unit,
+			topicsCovered: questionRecentTopics.topicsCovered,
+			createdAt: questionRecentTopics.createdAt
+		})
+		.from(questionRecentTopics)
+		.orderBy(desc(questionRecentTopics.createdAt))
+		.limit(limit);
 }

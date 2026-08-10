@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { QuestionCreate, generateAPQuestion, recordRecentTopic, getRecentTopics } = vi.hoisted(
-	() => ({
-		QuestionCreate: vi.fn(),
-		generateAPQuestion: vi.fn(),
-		recordRecentTopic: vi.fn(async () => {}),
-		getRecentTopics: vi.fn(async () => [])
-	})
-);
+const { createCanonicalMcqQuestion, generateAPQuestion, getRecentTopics } = vi.hoisted(() => ({
+	createCanonicalMcqQuestion: vi.fn(),
+	generateAPQuestion: vi.fn(),
+	getRecentTopics: vi.fn(async () => [])
+}));
 
 vi.mock('$lib/questions/cache-model.server', () => ({
-	Question: { create: QuestionCreate },
+	createCanonicalMcqQuestion,
 	newPoolRandomKey: () => 0.42
 }));
 
@@ -19,8 +16,7 @@ vi.mock('$lib/questions/generation.server', () => ({
 }));
 
 vi.mock('$lib/questions/recent-topic.server', () => ({
-	getRecentTopics,
-	recordRecentTopic
+	getRecentTopics
 }));
 
 vi.mock('$lib/server/logger', () => ({
@@ -44,9 +40,8 @@ const sampleAnswer = {
 
 describe('generateQuestionForPool duplicate insertion', () => {
 	beforeEach(() => {
-		QuestionCreate.mockReset();
+		createCanonicalMcqQuestion.mockReset();
 		generateAPQuestion.mockReset();
-		recordRecentTopic.mockClear();
 		getRecentTopics.mockClear();
 	});
 
@@ -58,13 +53,13 @@ describe('generateQuestionForPool duplicate insertion', () => {
 			model: 'test',
 			timing: { generationMs: 10, persistenceMs: 5 }
 		});
-		QuestionCreate.mockRejectedValueOnce({ code: '23505' });
+		createCanonicalMcqQuestion.mockRejectedValueOnce({ code: '23505' });
 
 		const result = await generateQuestionForPool('AP Biology', 'Unit 1');
 
 		expect(result.skippedDuplicate).toBe(true);
 		expect(result.questionId).toBe('q-dup-1');
-		expect(QuestionCreate).toHaveBeenCalledOnce();
+		expect(createCanonicalMcqQuestion).toHaveBeenCalledOnce();
 	});
 
 	it('rethrows non-duplicate insert failures', async () => {
@@ -75,7 +70,7 @@ describe('generateQuestionForPool duplicate insertion', () => {
 			model: 'test',
 			timing: { generationMs: 10, persistenceMs: 5 }
 		});
-		QuestionCreate.mockRejectedValueOnce(new Error('pool write failed'));
+		createCanonicalMcqQuestion.mockRejectedValueOnce(new Error('pool write failed'));
 
 		await expect(generateQuestionForPool('AP Biology', 'Unit 1')).rejects.toThrow(
 			'pool write failed'

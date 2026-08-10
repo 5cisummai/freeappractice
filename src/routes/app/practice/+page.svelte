@@ -63,6 +63,7 @@
 			void syncAttempt(
 				'/api/me/record-attempt',
 				{
+					attemptId: crypto.randomUUID(),
 					questionId,
 					answers: result.answers ?? [],
 					terminalOutcome: result.terminalOutcome,
@@ -81,6 +82,7 @@
 		void syncAttempt(
 			'/api/me/record-attempt',
 			{
+				attemptId: crypto.randomUUID(),
 				questionId,
 				selectedAnswer: result.selectedAnswer,
 				timeTakenMs: result.timeTakenMs,

@@ -53,7 +53,7 @@
 			</div>
 		{:else}
 			<ul class="mt-12 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-				{#each data.posts as post (post._id)}
+				{#each data.posts as post (post.id)}
 					<li class="min-h-0">
 						<BlogPostCard
 							slug={post.slug}

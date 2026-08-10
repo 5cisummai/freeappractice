@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildInsightReportData, type InsightScoredAttempt } from '$lib/super/insights.server';
+import {
+	buildInsightReportData,
+	toInsightReportView,
+	type InsightScoredAttempt
+} from '$lib/super/insights.server';
 
 function attempts(
 	count: number,
@@ -145,5 +149,36 @@ describe('buildInsightReportData', () => {
 			{ now: new Date('2026-07-31T00:00:00.000Z') }
 		);
 		expect(report.courses[0]?.units[0]?.metrics.mcq).toBeUndefined();
+	});
+
+	it('validates stored report JSON before exposing it as a view', () => {
+		const report = buildInsightReportData(attempts(20), {
+			now: new Date('2026-07-31T00:00:00.000Z')
+		});
+		const view = toInsightReportView({
+			id: 'report-1',
+			userId: 'user-1',
+			report,
+			evidenceAttemptCount: 20,
+			generatedAt: report.generatedAt,
+			manual: false,
+			pdfAvailable: true,
+			createdAt: report.generatedAt,
+			updatedAt: report.generatedAt
+		});
+
+		expect(view.pdfAvailable).toBe(true);
+		expect(() =>
+			toInsightReportView({
+				id: 'report-2',
+				userId: 'user-1',
+				report: { schemaVersion: 1 },
+				evidenceAttemptCount: 20,
+				generatedAt: report.generatedAt,
+				manual: false,
+				createdAt: report.generatedAt,
+				updatedAt: report.generatedAt
+			})
+		).toThrow();
 	});
 });

@@ -32,8 +32,13 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<Button {...props} variant="ghost" size="icon" class="relative size-8 p-0">
-				<span class="sr-only">Open menu</span>
+			<Button
+				{...props}
+				variant="ghost"
+				size="icon"
+				class="relative size-8 p-0"
+				aria-label={`Actions for ${item.attempt.apClass} question`}
+			>
 				<EllipsisIcon class="size-4" />
 			</Button>
 		{/snippet}

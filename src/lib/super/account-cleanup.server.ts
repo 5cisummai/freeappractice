@@ -1,8 +1,11 @@
+import { randomUUID } from 'node:crypto';
+import { and, eq, isNull } from 'drizzle-orm';
 import { deleteAllTutorMemoriesById } from '$lib/mem0/service.server';
 import { logger } from '$lib/server/logger';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { superCleanupJobs } from '$lib/server/neon/schema';
 import { purgeKnownRedisControlsForUser } from '$lib/super/ai-controls.server';
 import { cancelStripeSubscriptionsForUser } from '$lib/super/billing.server';
-import { SuperCleanupJob } from '$lib/super/models.server';
 import { getMem0UserId } from '$lib/super/profile.server';
 
 const RETRY_DELAY_MS = 60 * 60 * 1000;
@@ -14,39 +17,62 @@ export async function prepareAccountDeletion(
 ): Promise<void> {
 	await cancelStripeSubscriptionsForUser(userId, stripeCustomerId);
 	const mem0UserId = await getMem0UserId(userId);
-	await SuperCleanupJob.findOneAndUpdate(
-		{ userId, kind: 'account_delete', completedAt: { $exists: false } },
-		{
-			$setOnInsert: {
-				userId,
-				mem0UserId,
-				kind: 'account_delete',
-				nextAttemptAt: new Date(),
-				attempts: 0
-			}
-		},
-		{ upsert: true, setDefaultsOnInsert: true }
-	).exec();
+	const db = getNeonDatabase();
+	const [existing] = await db
+		.select({ id: superCleanupJobs.id })
+		.from(superCleanupJobs)
+		.where(
+			and(
+				eq(superCleanupJobs.userId, userId),
+				eq(superCleanupJobs.kind, 'account_delete'),
+				isNull(superCleanupJobs.completedAt)
+			)
+		)
+		.limit(1);
+	if (!existing) {
+		await db.insert(superCleanupJobs).values({
+			id: randomUUID(),
+			userId,
+			mem0UserId,
+			kind: 'account_delete',
+			nextAttemptAt: new Date(),
+			attempts: 0
+		});
+	}
 }
 
 export async function processAccountDeletionCleanup(userId: string): Promise<void> {
 	await purgeKnownRedisControlsForUser(userId);
-	const job = await SuperCleanupJob.findOne({
-		userId,
-		kind: 'account_delete',
-		completedAt: { $exists: false }
-	}).exec();
+	const db = getNeonDatabase();
+	const [job] = await db
+		.select()
+		.from(superCleanupJobs)
+		.where(
+			and(
+				eq(superCleanupJobs.userId, userId),
+				eq(superCleanupJobs.kind, 'account_delete'),
+				isNull(superCleanupJobs.completedAt)
+			)
+		)
+		.limit(1);
 	if (!job) return;
 
 	try {
 		await deleteAllTutorMemoriesById(job.mem0UserId);
-		await job.deleteOne();
+		await db.delete(superCleanupJobs).where(eq(superCleanupJobs.id, job.id));
 	} catch (error) {
-		job.attempts += 1;
-		job.nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS);
-		job.lastError =
+		const attempts = job.attempts + 1;
+		const nextAttemptAt = new Date(Date.now() + RETRY_DELAY_MS);
+		const lastError =
 			error instanceof Error ? error.message.slice(0, 500) : 'Unknown Mem0 cleanup failure';
-		await job.save();
-		logger.error('Account Mem0 cleanup failed', { userId, attempts: job.attempts, error });
+		await db
+			.update(superCleanupJobs)
+			.set({ attempts, nextAttemptAt, lastError, updatedAt: new Date() })
+			.where(eq(superCleanupJobs.id, job.id));
+		logger.error('Account Mem0 cleanup failed', {
+			resource: 'account_mem0_cleanup',
+			attempts,
+			error
+		});
 	}
 }

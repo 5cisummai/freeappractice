@@ -12,6 +12,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { formatDateOnly } from '$lib/date-only.js';
 	import { toast } from 'svelte-sonner';
 
 	type InsightFeedback = 'helpful' | 'not_helpful';
@@ -220,8 +221,8 @@
 					></span>
 				</div>
 				<p class="mt-3 mb-0 text-xs leading-[1.55] text-muted-foreground">
-					{data.eligibility?.eligibleClaimCount ?? 0} course/unit evidence groups have at least
-					{data.eligibility?.minimumAttemptsPerClaim ?? 5} attempts. MCQ and FRQ are calculated separately.
+					{data.eligibility?.eligibleClaimCount ?? 0} subjects have enough practice for insights. Multiple-choice
+					and written-response progress count separately.
 				</p>
 			</div>
 		</section>
@@ -283,7 +284,7 @@
 								<div class="min-w-0 flex-1">
 									<p class="font-medium">Day {index + 1} · {task.apClass} · {task.unit}</p>
 									<p class="text-xs text-muted-foreground">
-										{new Date(task.date).toLocaleDateString()} · {task.durationMinutes} min · {task.mode.toUpperCase()}
+										{formatDateOnly(task.date)} · {task.durationMinutes} min · {task.mode.toUpperCase()}
 									</p>
 								</div>
 								{#if task.practiceHref}<Button
@@ -332,7 +333,7 @@
 										{task.apClass} · {task.unit}
 									</p>
 									<p class="text-xs text-muted-foreground">
-										{new Date(task.date).toLocaleDateString()} · {task.durationMinutes} min · {task.mode.toUpperCase()}
+										{formatDateOnly(task.date)} · {task.durationMinutes} min · {task.mode.toUpperCase()}
 									</p>
 								</div>
 								<div class="flex gap-2">

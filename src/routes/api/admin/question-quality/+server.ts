@@ -10,7 +10,7 @@ import {
 	refreshReviewJob,
 	setReviewJobState
 } from '$lib/question-quality/service.server';
-import type { QualityVerdict, ReviewFilters } from '$lib/question-quality/types';
+import { questionQualityRequestSchema } from '$lib/question-quality/payloads';
 
 export const GET: RequestHandler = async (event) => {
 	requireQuestionQualityAdmin(event);
@@ -19,35 +19,33 @@ export const GET: RequestHandler = async (event) => {
 
 export const POST: RequestHandler = async (event) => {
 	const actorId = requireQuestionQualityAdmin(event);
-	const body = (await event.request.json()) as {
-		action?: string;
-		filters?: ReviewFilters;
-		previewId?: string;
-		jobId?: string;
-		questionId?: string;
-		verdict?: QualityVerdict;
-		notes?: string;
-		hydrateMetadata?: boolean;
-	};
+	let raw: unknown;
+	try {
+		raw = await event.request.json();
+	} catch {
+		return json({ message: 'Request body must be valid JSON' }, { status: 400 });
+	}
+	const parsed = questionQualityRequestSchema.safeParse(raw);
+	if (!parsed.success) {
+		return json(
+			{ message: 'Invalid question-quality request', issues: parsed.error.issues },
+			{ status: 400 }
+		);
+	}
+	const body = parsed.data;
 
 	switch (body.action) {
 		case 'preview':
 			return json(await previewReviewJob(body.filters ?? {}, actorId));
 		case 'create':
-			if (!body.previewId) return json({ message: 'previewId is required' }, { status: 400 });
 			return json(await createReviewJob(body.previewId, actorId), { status: 202 });
 		case 'refresh':
-			if (!body.jobId) return json({ message: 'jobId is required' }, { status: 400 });
 			return json(await refreshReviewJob(body.jobId));
 		case 'pause':
 		case 'resume':
 		case 'cancel':
-			if (!body.jobId) return json({ message: 'jobId is required' }, { status: 400 });
 			return json(await setReviewJobState(body.jobId, body.action));
 		case 'humanDecision':
-			if (!body.questionId || !body.verdict) {
-				return json({ message: 'questionId and verdict are required' }, { status: 400 });
-			}
 			await recordHumanDecision({
 				questionId: body.questionId,
 				verdict: body.verdict,
@@ -56,7 +54,9 @@ export const POST: RequestHandler = async (event) => {
 			});
 			return json({ ok: true });
 		case 'reconcile':
-			return json(await reconcileQuestionInventory({ hydrateMetadata: body.hydrateMetadata }));
+			return json(
+				await reconcileQuestionInventory({ hydrateMetadata: body.hydrateMetadata ?? false })
+			);
 		default:
 			return json({ message: 'Unknown action' }, { status: 400 });
 	}

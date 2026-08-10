@@ -19,7 +19,6 @@ import {
 import { apQuestionSchema } from '../src/lib/questions/generation.server';
 import { persistParsedQuestionToPool } from '../src/lib/questions/pool-write.server';
 import { parseGeneratedFrq, persistGeneratedFrqToPool } from '../src/lib/frq/generation.server';
-import { connectDb } from '../src/lib/server/db';
 import { writePoolBucketBelowTarget } from '../src/lib/questions/pool-capacity.server';
 import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
 
@@ -83,8 +82,6 @@ async function main() {
 	const contents = await downloadOpenAiFile(batch.output_file_id);
 	const lines = contents.split('\n').filter(Boolean);
 	console.log(`Downloaded ${lines.length} output lines`);
-
-	if (!dryRun) await connectDb();
 
 	let ok = 0;
 	let skippedDuplicate = 0;

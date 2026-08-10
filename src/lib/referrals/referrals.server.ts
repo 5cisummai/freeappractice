@@ -1,8 +1,10 @@
 import { dev } from '$app/environment';
+import { randomUUID } from 'node:crypto';
 import type { Cookies } from '@sveltejs/kit';
-import { connectDb } from '$lib/server/db';
-import { createReferralCode, UserProfile } from '$lib/users/model.server';
-import { Referral } from '$lib/referrals/model.server';
+import { and, eq, isNull, sql } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { mcqAttempts, referrals, userProfiles } from '$lib/server/neon/schema';
+import { ensureUserReferralCode } from '$lib/users/model.server';
 import {
 	canAttributeReferral,
 	isValidReferralCodeShape,
@@ -26,8 +28,11 @@ export async function findReferrerByCode(code: string): Promise<string | null> {
 	const normalizedCode = normalizeReferralCode(code);
 	if (!isValidReferralCodeShape(normalizedCode)) return null;
 
-	await connectDb();
-	const profile = await UserProfile.findOne({ referralCode: normalizedCode }).select('userId');
+	const [profile] = await getNeonDatabase()
+		.select({ userId: userProfiles.userId })
+		.from(userProfiles)
+		.where(eq(userProfiles.referralCode, normalizedCode))
+		.limit(1);
 	return profile?.userId ?? null;
 }
 
@@ -63,10 +68,18 @@ export async function claimReferralFromCookie(
 	cookies.delete(REFERRAL_COOKIE, { path: '/' });
 	if (!referrerUserId) return;
 
-	await connectDb();
-	const referredProfile = await UserProfile.findOne({ userId: referredUserId }).select(
-		'createdAt questionHistory'
-	);
+	const db = getNeonDatabase();
+	const [[referredProfile], [attempts]] = await Promise.all([
+		db
+			.select({ createdAt: userProfiles.createdAt })
+			.from(userProfiles)
+			.where(eq(userProfiles.userId, referredUserId))
+			.limit(1),
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(mcqAttempts)
+			.where(eq(mcqAttempts.userId, referredUserId))
+	]);
 	if (
 		!referredProfile ||
 		!canAttributeReferral({
@@ -79,21 +92,20 @@ export async function claimReferralFromCookie(
 		return;
 	}
 
-	const attemptCount = referredProfile.questionHistory?.length ?? 0;
+	const attemptCount = Number(attempts?.count ?? 0);
 	const activateNow = shouldActivateOnClaim(attemptCount);
-	const result = await Referral.updateOne(
-		{ referredUserId },
-		{
-			$setOnInsert: {
-				referrerUserId,
-				referredUserId,
-				...(activateNow ? { activatedAt: new Date() } : {})
-			}
-		},
-		{ upsert: true }
-	);
+	const [insertedReferral] = await db
+		.insert(referrals)
+		.values({
+			id: randomUUID(),
+			referrerUserId,
+			referredUserId,
+			...(activateNow ? { activatedAt: new Date() } : {})
+		})
+		.onConflictDoNothing({ target: referrals.referredUserId })
+		.returning({ id: referrals.id });
 
-	const inserted = result.upsertedCount > 0;
+	const inserted = Boolean(insertedReferral);
 	if (!inserted) {
 		if (activateNow) {
 			await activateReferralForUser(referredUserId, request);
@@ -130,13 +142,13 @@ export async function activateReferralForUser(
 	referredUserId: string,
 	request?: Request
 ): Promise<void> {
-	await connectDb();
-	const result = await Referral.updateOne(
-		{ referredUserId, activatedAt: { $exists: false } },
-		{ $set: { activatedAt: new Date() } }
-	);
+	const [activated] = await getNeonDatabase()
+		.update(referrals)
+		.set({ activatedAt: new Date(), updatedAt: new Date() })
+		.where(and(eq(referrals.referredUserId, referredUserId), isNull(referrals.activatedAt)))
+		.returning({ id: referrals.id });
 
-	if (result.modifiedCount === 0) return;
+	if (!activated) return;
 
 	if (request) {
 		capturePostHogServerEvent(request, {
@@ -154,27 +166,21 @@ export async function getReferralSummary(userId: string): Promise<{
 	studentsHelped: number;
 	pendingInvites: number;
 }> {
-	await connectDb();
-	const profile = await UserProfile.findOne({ userId }).select('referralCode');
-	if (!profile) throw new Error('User profile not found');
+	const referralCode = await ensureUserReferralCode(userId);
 
-	if (!profile.referralCode) {
-		profile.referralCode = createReferralCode();
-		await profile.save();
-	}
-
-	const [studentsHelped, pendingInvites] = await Promise.all([
-		Referral.countDocuments({
-			referrerUserId: userId,
-			activatedAt: { $exists: true }
-		}),
-		Referral.countDocuments({
-			referrerUserId: userId,
-			activatedAt: { $exists: false }
+	const [summary] = await getNeonDatabase()
+		.select({
+			studentsHelped: sql<number>`count(*) filter (where ${referrals.activatedAt} is not null)`,
+			pendingInvites: sql<number>`count(*) filter (where ${referrals.activatedAt} is null)`
 		})
-	]);
+		.from(referrals)
+		.where(eq(referrals.referrerUserId, userId));
 
-	return { referralCode: profile.referralCode, studentsHelped, pendingInvites };
+	return {
+		referralCode,
+		studentsHelped: Number(summary?.studentsHelped ?? 0),
+		pendingInvites: Number(summary?.pendingInvites ?? 0)
+	};
 }
 
 export function captureInviteLanded(codeValid: boolean): void {

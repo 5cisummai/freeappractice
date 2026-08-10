@@ -205,7 +205,7 @@ flowchart TD
     Return --> UI["QuestionCard or FrqCard"]
     UI --> Attempt["User answers"]
     Attempt --> Record["MCQ: POST /api/me/record-attempt<br/>FRQ: POST /api/question/frq/grade"]
-    Record --> Profile["MCQ → UserProfile history/progress<br/>FRQ → FrqAttempt collection"]
+    Record --> Profile["MCQ → relational attempt + progress rows<br/>FRQ → relational attempt + grade rows"]
 ```
 
 **Pool behavior notes**
@@ -238,7 +238,7 @@ flowchart TD
     BA --> AuthDB[("Neon PostgreSQL auth schema<br/>auth.users · auth.sessions<br/>auth.accounts · auth.verifications")]
     BA --> EmailSend["Resend emails<br/>verify · reset · existing-user notice"]
     BA --> Hook["databaseHooks.user.create.after"]
-    Hook --> Profile["ensureUserProfile → UserProfile doc"]
+    Hook --> Profile["ensureUserProfile → app.user_profiles row"]
 
     subgraph Session["Most requests"]
         Cookie["Session cookie"]
@@ -253,10 +253,10 @@ flowchart TD
     end
 
     subgraph Delete["Account cleanup"]
-        Del["deleteAppDataForUsers<br/>UserProfile · FrqAttempt · Referral"]
+        Del["deleteAppDataForUsers<br/>user/profile · attempt · referral rows"]
     end
 
-    Profile --> UserData["progress[] · questionHistory[]<br/>bookmarkedQuestions[] · practiceExperiments[]"]
+    Profile --> UserData["progress · MCQ/FRQ attempts<br/>bookmarks · practice experiments"]
     BA --> Del
 ```
 
@@ -297,7 +297,7 @@ sequenceDiagram
         opt After answer
             U->>Sess: Check answer / multi-attempt hints
             Sess->>API: POST /api/me/record-attempt
-            API->>DB: UserProfile progress + history
+            API->>DB: Atomic MCQ attempt + progress update
         end
     else FRQ
         PS->>Card: FrqCard
@@ -341,23 +341,54 @@ Practice serve paths never call the LLM or read S3 for the question body — onl
 erDiagram
     AUTH_USERS ||--o{ AUTH_SESSIONS : has
     AUTH_USERS ||--o{ AUTH_ACCOUNTS : has
-    AUTH_USERS ||--|| USER_PROFILE : "1:1 via userId"
+    AUTH_USERS ||--|| USER_PROFILES : "1:1 via userId"
+    AUTH_USERS ||--o{ USER_PROGRESS : has
+    AUTH_USERS ||--o{ MCQ_ATTEMPTS : has
+    AUTH_USERS ||--o{ BOOKMARKS : has
+    AUTH_USERS ||--o{ PRACTICE_EXPERIMENTS : assigned
     AUTH_USERS ||--o{ FRQ_ATTEMPT : has
     AUTH_USERS ||--o{ REFERRAL : "referrer or referred"
 
-    USER_PROFILE {
+    USER_PROFILES {
         string userId PK
-        array progress
-        array questionHistory
-        array bookmarkedQuestions
-        array practiceExperiments
+        string referralCode
+        date createdAt
+    }
+
+    USER_PROGRESS {
+        string userId
+        string apClass
+        string unit
+        number attempts
+        number correct
+    }
+
+    MCQ_ATTEMPTS {
+        string id PK
+        string userId
+        string questionId
+        boolean wasCorrect
+        date attemptedAt
+    }
+
+    BOOKMARKS {
+        string userId
+        string questionId
     }
 
     FRQ_ATTEMPT {
         string userId
         string questionId
         string status
-        object grade
+        string id PK
+        string submissionId
+    }
+
+    FRQ_ATTEMPT_GRADE {
+        string attemptId PK
+        number pointsEarned
+        number pointsAvailable
+        number percentage
     }
 
     REFERRAL {
@@ -414,7 +445,7 @@ erDiagram
 | **Public site**      | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                         |
 | **/app**             | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings                                                                            |
 | **Question library** | Neon PostgreSQL = canonical and serving library; legacy S3 is import-only; refill workers generate; request path is selection-only (`POOL_WARMING` when empty) |
-| **Better Auth**      | Sessions, OAuth, email verification; creates `UserProfile` on signup; `deleteAppDataForUsers` cleans app rows on account delete                                |
+| **Better Auth**      | Sessions, OAuth, email verification; creates the base user-profile row on signup; `deleteAppDataForUsers` cleans related app rows on account delete            |
 | **AI layer**         | One OpenAI-compatible provider for **worker** generation, FRQ grading, and tutor chat — not for `/api/question` serves                                         |
 | **Referrals**        | Invite cookie → claim → activate on first meaningful attempt                                                                                                   |
 | **Vercel**           | Hosting, cron refill route, `waitUntil` for background auth tasks, Flags SDK, optional Analytics/Speed Insights                                                |
@@ -429,4 +460,6 @@ Operational checks and alert thresholds live in [`docs/question-request-metrics.
 
 # Database migration status
 
-The relational target is defined in `src/lib/server/neon/schema.ts` and is accessed through `src/lib/server/neon/db.ts` using Drizzle's Neon HTTP adapter. All application and operational runtime modules use this seam. The one-shot Mongo→Neon loader and `mongodb` dependency have been removed after cutover.
+The relational target is defined under `src/lib/server/neon/` and accessed through `db.ts` with Drizzle's Neon HTTP adapter. All application and operational runtime paths use Neon PostgreSQL.
+
+The application uses Neon PostgreSQL and Drizzle directly. Domain functions issue focused Drizzle reads and writes; there is no Mongo-shaped compatibility layer.

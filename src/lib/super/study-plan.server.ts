@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { studyPlans, studyTasks } from '$lib/server/neon/schema';
 import { isSuperInsightsEnabled } from '$lib/flags';
@@ -27,6 +27,13 @@ export class StudyPlansLockedError extends Error {
 	constructor(message = 'Study plans are unavailable without active access') {
 		super(message);
 		this.name = 'StudyPlansLockedError';
+	}
+}
+
+export class StudyPlanConflictError extends Error {
+	constructor(message = 'Study plan changed while saving; please retry.') {
+		super(message);
+		this.name = 'StudyPlanConflictError';
 	}
 }
 
@@ -131,7 +138,7 @@ function isoDate(value: Date | string | undefined): string {
 
 /** Convert a stored plan to a Date-free, JSON-safe view. */
 export function toStudyPlanView(plan: {
-	_id?: unknown;
+	id: unknown;
 	userId: string;
 	startsOn: Date | string;
 	tasks: Array<{
@@ -147,7 +154,7 @@ export function toStudyPlanView(plan: {
 	updatedAt: Date | string;
 }): StudyPlanView {
 	return {
-		id: plan._id === undefined ? '' : String(plan._id),
+		id: String(plan.id),
 		startsOn: isoDate(plan.startsOn),
 		tasks: plan.tasks.map((task) => ({
 			id: task.id,
@@ -195,11 +202,16 @@ function cappedTasks(tasks: StudyTask[]): StudyTask[] {
 
 type StoredPlanTask = StudyTask & { date: Date };
 type StoredPlan = {
-	_id: string;
+	id: string;
 	userId: string;
 	startsOn: Date;
 	tasks: StoredPlanTask[];
 	updatedAt: Date;
+};
+
+type StoredPlanWriteOptions = {
+	existing?: StoredPlan | null;
+	expectedUpdatedAt?: Date | null;
 };
 
 async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
@@ -218,7 +230,7 @@ async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
 		.where(eq((studyTasks as any).planId, plan.id))
 		.orderBy(asc((studyTasks as any).taskDate));
 	return {
-		_id: plan.id,
+		id: plan.id,
 		userId: plan.userId,
 		startsOn: plan.startsOn,
 		updatedAt: plan.updatedAt,
@@ -238,34 +250,86 @@ async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
 async function writeStoredPlan(
 	userId: string,
 	startsOn: Date,
-	tasks: StudyTask[]
+	tasks: StudyTask[],
+	options: StoredPlanWriteOptions = {}
 ): Promise<StoredPlan> {
 	const db = getNeonDatabase() as any;
-	const existing = await readStoredPlan(userId);
-	const planId = existing?._id ?? randomUUID();
-	if (existing) {
-		await db
-			.update(studyPlans as any)
-			.set({ startsOn, updatedAt: new Date() })
-			.where(eq((studyPlans as any).id, planId));
-	} else {
-		await db.insert(studyPlans as any).values({ id: planId, userId, startsOn });
-	}
-	await db.delete(studyTasks as any).where(eq((studyTasks as any).planId, planId));
+	const existing = options.existing === undefined ? await readStoredPlan(userId) : options.existing;
+	const expectedUpdatedAt =
+		options.expectedUpdatedAt === undefined
+			? (existing?.updatedAt ?? null)
+			: options.expectedUpdatedAt;
+	const planId = existing?.id ?? randomUUID();
+	const updatedAt = new Date(
+		Math.max(Date.now(), (expectedUpdatedAt?.getTime() ?? 0) + (existing ? 1 : 0))
+	);
+	const parentWrite = existing
+		? db
+				.update(studyPlans as any)
+				.set({ startsOn, updatedAt })
+				.where(
+					and(
+						eq((studyPlans as any).id, planId),
+						eq((studyPlans as any).updatedAt, expectedUpdatedAt)
+					)
+				)
+				.returning({ id: (studyPlans as any).id })
+		: db
+				.insert(studyPlans as any)
+				.values({ id: planId, userId, startsOn, updatedAt })
+				.returning({ id: (studyPlans as any).id });
+
+	// The parent CAS version also gates these statements. If the parent update
+	// loses, the rest of the batch becomes a no-op before we report a conflict.
+	const parentStillHasVersion = exists(
+		db
+			.select({ id: (studyPlans as any).id })
+			.from(studyPlans as any)
+			.where(and(eq((studyPlans as any).id, planId), eq((studyPlans as any).updatedAt, updatedAt)))
+	);
+	const deleteTasks = db
+		.delete(studyTasks as any)
+		.where(and(eq((studyTasks as any).planId, planId), parentStillHasVersion));
+	const statements = [parentWrite, deleteTasks];
 	if (tasks.length) {
-		await db.insert(studyTasks as any).values(
-			tasks.map((task) => ({
-				id: task.id,
-				planId,
-				apClass: task.apClass,
-				unit: task.unit,
-				mode: task.mode,
-				taskDate: startOfUtcDay(task.date),
-				durationMinutes: task.durationMinutes,
-				status: task.status,
-				practiceHref: task.practiceHref ?? null
-			}))
+		const values = sql.join(
+			tasks.map(
+				(task) =>
+					sql`(
+						${task.id},
+						${planId},
+						${task.apClass},
+						${task.unit},
+						${task.mode},
+						${startOfUtcDay(task.date)},
+						${task.durationMinutes},
+						${task.status},
+						${task.practiceHref ?? null}
+					)`
+			),
+			sql`, `
 		);
+		statements.push(
+			db.insert(studyTasks as any).select(sql`
+				SELECT incoming.id, incoming.plan_id, incoming.ap_class, incoming.unit,
+					incoming.mode, incoming.task_date, incoming.duration_minutes,
+					incoming.status, incoming.practice_href
+				FROM (VALUES ${values}) AS incoming(
+					id, plan_id, ap_class, unit, mode, task_date,
+					duration_minutes, status, practice_href
+				)
+				WHERE EXISTS (
+					SELECT 1 FROM ${studyPlans as any}
+					WHERE ${(studyPlans as any).id} = ${planId}
+						AND ${(studyPlans as any).updatedAt} = ${updatedAt}
+				)
+			`)
+		);
+	}
+
+	const [parentResult] = await db.batch(statements);
+	if (existing && (!parentResult || parentResult.length === 0)) {
+		throw new StudyPlanConflictError();
 	}
 	const saved = await readStoredPlan(userId);
 	if (!saved) throw new Error('Study plan could not be saved');
@@ -287,23 +351,37 @@ export async function saveStudyPlan(
 		// A retry reads the latest task state before merging again.
 		for (let attempt = 0; attempt < 3; attempt++) {
 			const existing = await readStoredPlan(userId);
-			if (!existing) {
-				try {
-					return toStudyPlanView(await writeStoredPlan(userId, startsOn, tasks));
-				} catch (error) {
-					if (isDuplicateKeyError(error)) {
-						continue;
-					}
-					throw error;
+			try {
+				if (!existing) {
+					return toStudyPlanView(
+						await writeStoredPlan(userId, startsOn, tasks, {
+							existing: null,
+							expectedUpdatedAt: null
+						})
+					);
 				}
+				const nextTasks = mergeTasks(existing.tasks as StudyTask[], tasks);
+				return toStudyPlanView(
+					await writeStoredPlan(userId, startsOn, nextTasks, {
+						existing,
+						expectedUpdatedAt: existing.updatedAt
+					})
+				);
+			} catch (error) {
+				if (isDuplicateKeyError(error) || error instanceof StudyPlanConflictError) continue;
+				throw error;
 			}
-			const nextTasks = mergeTasks(existing.tasks as StudyTask[], tasks);
-			return toStudyPlanView(await writeStoredPlan(userId, startsOn, nextTasks));
 		}
-		throw new Error('Study plan changed while merging; please retry');
+		throw new StudyPlanConflictError('Study plan changed while merging; please retry.');
 	}
 
-	return toStudyPlanView(await writeStoredPlan(userId, startsOn, tasks));
+	const existing = await readStoredPlan(userId);
+	return toStudyPlanView(
+		await writeStoredPlan(userId, startsOn, tasks, {
+			existing,
+			expectedUpdatedAt: existing?.updatedAt ?? null
+		})
+	);
 }
 
 /** Returns the one stored plan only while the study-plan entitlement is valid. */
@@ -350,7 +428,10 @@ async function updateTask(
 	const task = plan.tasks.find((item) => item.id === taskId);
 	if (!task) return null;
 	Object.assign(task, update);
-	const saved = await writeStoredPlan(userId, plan.startsOn, plan.tasks);
+	const saved = await writeStoredPlan(userId, plan.startsOn, plan.tasks, {
+		existing: plan,
+		expectedUpdatedAt: plan.updatedAt
+	});
 	return toStudyPlanView(saved);
 }
 

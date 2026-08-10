@@ -97,6 +97,7 @@
 </script>
 
 <section
+	id="features"
 	class="relative mx-auto w-full max-w-6xl space-y-10"
 	aria-labelledby="features-section-heading"
 >

@@ -1,4 +1,9 @@
-import { Question, type IQuestion } from '$lib/questions/cache-model.server';
+import {
+	findAllCachedQuestions,
+	findCachedQuestion,
+	findCachedQuestions,
+	type IQuestion
+} from '$lib/questions/cache-model.server';
 
 export interface StoredQuestion {
 	id: string;
@@ -28,12 +33,12 @@ function toStoredQuestion(question: IQuestion): StoredQuestion {
 		optionD: question.optionD,
 		correctAnswer: question.correctAnswer,
 		explanation: question.explanation,
-		...(question.hint1 !== undefined ? { hint1: question.hint1 } : {}),
-		...(question.hint2 !== undefined ? { hint2: question.hint2 } : {}),
+		...(question.hint1 != null ? { hint1: question.hint1 } : {}),
+		...(question.hint2 != null ? { hint2: question.hint2 } : {}),
 		apClass: question.apClass,
 		unit: question.unit,
 		contentHash: question.contentHash,
-		topicsCovered: question.topicsCovered,
+		topicsCovered: question.topicsCovered ?? undefined,
 		createdAt: new Date(question.createdAt).toISOString()
 	};
 }
@@ -43,7 +48,7 @@ export async function getQuestionById(questionId: string): Promise<StoredQuestio
 	const normalizedId = questionId.trim();
 	if (!normalizedId) throw new Error('Question id is required');
 
-	const question = await Question.findOne({ questionId: normalizedId }).lean();
+	const question = await findCachedQuestion(normalizedId);
 	if (!question) throw new Error(`Question not found: ${normalizedId}`);
 	return toStoredQuestion(question);
 }
@@ -56,7 +61,7 @@ export async function getQuestionsLookupMap(
 	const map = new Map<string, StoredQuestion>();
 	if (uniqueIds.length === 0) return map;
 
-	const questions = await Question.find({ questionId: { $in: uniqueIds } }).lean();
+	const questions = await findCachedQuestions(uniqueIds);
 	for (const question of questions) {
 		const stored = toStoredQuestion(question);
 		map.set(stored.id, stored);
@@ -74,6 +79,6 @@ export async function getQuestionsByIds(questionIds: string[]): Promise<StoredQu
 
 /** List all canonical MCQs for maintenance and quality tooling. */
 export async function getAllQuestions(): Promise<StoredQuestion[]> {
-	const questions = await Question.find({}).lean();
+	const questions = await findAllCachedQuestions();
 	return questions.map(toStoredQuestion);
 }

@@ -1,25 +1,24 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { submitQuestionFeedback } from '$lib/question-quality/dashboard.server';
-import type { FeedbackType } from '$lib/question-quality/types';
-
-const VALID_TYPES = new Set<FeedbackType>([
-	'answer_incorrect',
-	'question_unclear',
-	'explanation_unclear'
-]);
+import { feedbackRequestSchema } from '$lib/question-quality/payloads';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!locals.userId) return json({ message: 'Authentication required' }, { status: 401 });
-	const body = (await request.json()) as {
-		questionId?: string;
-		type?: FeedbackType;
-		apClass?: string;
-		unit?: string;
-	};
-	if (!body.questionId?.trim() || !body.type || !VALID_TYPES.has(body.type)) {
-		return json({ message: 'A valid questionId and feedback type are required' }, { status: 400 });
+	let raw: unknown;
+	try {
+		raw = await request.json();
+	} catch {
+		return json({ message: 'Request body must be valid JSON' }, { status: 400 });
 	}
+	const parsed = feedbackRequestSchema.safeParse(raw);
+	if (!parsed.success) {
+		return json(
+			{ message: 'Invalid feedback request', issues: parsed.error.issues },
+			{ status: 400 }
+		);
+	}
+	const body = parsed.data;
 
 	try {
 		return json(

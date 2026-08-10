@@ -1,4 +1,4 @@
-import { Question, type IQuestion } from '$lib/questions/cache-model.server';
+import { findCachedQuestionByPool, type IQuestion } from '$lib/questions/cache-model.server';
 import {
 	createQuestionPool,
 	type GetQuestionOptions,
@@ -27,22 +27,6 @@ type CachedResult = {
 	cached: boolean;
 	questionId: string;
 };
-
-const MCQ_PROJECTION = {
-	questionId: 1,
-	question: 1,
-	optionA: 1,
-	optionB: 1,
-	optionC: 1,
-	optionD: 1,
-	correctAnswer: 1,
-	explanation: 1,
-	topicsCovered: 1,
-	hint1: 1,
-	hint2: 1,
-	apClass: 1,
-	unit: 1
-} as const;
 
 /** Read full MCQ body directly from an active-library Neon row. */
 function hotPoolBodyFromDoc(
@@ -78,8 +62,7 @@ const mcqPool = createQuestionPool<IQuestion, CachedResult>({
 	questionType: 'mcq',
 	logScope: 'pool',
 	normalizeUnit,
-	model: Question,
-	projection: { ...MCQ_PROJECTION },
+	findRandom: findCachedQuestionByPool,
 	serveCached: (doc) => ({
 		answer: hotPoolBodyFromDoc(doc),
 		provider: 'cache',

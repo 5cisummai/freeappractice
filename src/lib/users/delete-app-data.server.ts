@@ -1,4 +1,3 @@
-import { connectDb } from '$lib/server/db';
 import { deleteAppDataDocuments } from '$lib/users/delete-app-data-documents.server';
 
 /**
@@ -9,6 +8,5 @@ export async function deleteAppDataForUsers(userIds: string | string[]): Promise
 	const ids = Array.isArray(userIds) ? userIds : [userIds];
 	if (ids.length === 0) return;
 
-	await connectDb();
 	await deleteAppDataDocuments(ids);
 }

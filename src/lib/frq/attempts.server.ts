@@ -1,5 +1,12 @@
 import { structuredObject } from '$lib/ai/service.server';
-import { FrqAttempt, type IFrqAttempt } from '$lib/frq/model.server';
+import {
+	createFrqAttempt,
+	deleteFrqAttemptIfGrading,
+	findFrqAttemptBySubmission,
+	findGradedFrqAttempt,
+	updateFrqAttemptGrade,
+	type IFrqAttempt
+} from '$lib/frq/model.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqGradingModel } from '$lib/frq/service.server';
 import { getFrqQuestionById } from '$lib/frq/question.server';
@@ -14,6 +21,9 @@ import {
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { logger } from '$lib/server/logger';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { frqAttemptGrades, frqAttempts } from '$lib/server/neon/schema';
+import { and, count, eq, max, sql, sum } from 'drizzle-orm';
 
 export class FrqAttemptInProgressError extends Error {}
 
@@ -22,7 +32,7 @@ function toAttemptView(attempt: IFrqAttempt): FrqAttemptView {
 		throw new Error('FRQ attempt has not finished grading');
 	}
 	return {
-		id: attempt._id.toString(),
+		id: attempt.id,
 		questionId: attempt.questionId,
 		apClass: attempt.apClass,
 		unit: attempt.unit,
@@ -53,7 +63,7 @@ async function claimSubmission(
 	question: FrqQuestion
 ): Promise<ClaimResult> {
 	try {
-		const attempt = await FrqAttempt.create({
+		const attempt = await createFrqAttempt({
 			userId,
 			submissionId: request.submissionId,
 			questionId: request.questionId,
@@ -70,7 +80,7 @@ async function claimSubmission(
 		return { status: 'claimed', attempt };
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) throw error;
-		const existing = await FrqAttempt.findOne({ userId, submissionId: request.submissionId });
+		const existing = await findFrqAttemptBySubmission(userId, request.submissionId);
 		if (!existing) throw error;
 		if (existing.status === 'graded') return { status: 'graded', view: toAttemptView(existing) };
 		throw new FrqAttemptInProgressError('This response is already being graded');
@@ -161,22 +171,22 @@ export async function gradeFrqAttempt(
 			logContext: { questionId: request.questionId, apClass: question.apClass }
 		});
 		const grade = buildFrqGrade(question, request.responses, parsed);
+		await updateFrqAttemptGrade(attempt, grade, model);
 		attempt.status = 'graded';
 		attempt.grade = grade;
 		attempt.gradingModel = model;
-		await attempt.save();
 		return toAttemptView(attempt);
 	} catch (error) {
 		try {
-			const cleanup = await FrqAttempt.deleteOne({ _id: attempt._id, status: 'grading' });
-			if (cleanup.deletedCount !== 1) {
+			const deleted = await deleteFrqAttemptIfGrading(attempt.id);
+			if (deleted !== 1) {
 				logger.error('[frq] failed to remove incomplete grading placeholder', {
-					attemptId: attempt._id.toString()
+					attemptId: attempt.id
 				});
 			}
 		} catch (cleanupError) {
 			logger.error('[frq] failed to remove incomplete grading placeholder', {
-				attemptId: attempt._id.toString(),
+				attemptId: attempt.id,
 				error: cleanupError
 			});
 		}
@@ -188,40 +198,37 @@ export async function getFrqAttemptForUser(
 	userId: string,
 	attemptId: string
 ): Promise<FrqAttemptView | null> {
-	const attempt = await FrqAttempt.findOne({ _id: attemptId, userId, status: 'graded' });
+	const attempt = await findGradedFrqAttempt(userId, attemptId);
 	return attempt ? toAttemptView(attempt) : null;
 }
 
 export async function getFrqProgressForUser(userId: string): Promise<FrqProgressSummary[]> {
-	const rows = await FrqAttempt.aggregate<{
-		_id: { apClass: string; unit: string };
-		attempts: number;
-		pointsEarned: number;
-		pointsAvailable: number;
-		lastAttemptAt: Date;
-	}>([
-		{ $match: { userId, status: 'graded' } },
-		{
-			$group: {
-				_id: { apClass: '$apClass', unit: '$unit' },
-				attempts: { $sum: 1 },
-				pointsEarned: { $sum: '$grade.pointsEarned' },
-				pointsAvailable: { $sum: '$grade.pointsAvailable' },
-				lastAttemptAt: { $max: '$createdAt' }
-			}
-		}
-	]);
-	return rows.map((row) => ({
-		apClass: row._id.apClass,
-		unit: row._id.unit,
-		attempts: row.attempts,
-		pointsEarned: row.pointsEarned,
-		pointsAvailable: row.pointsAvailable,
-		averagePercentage: row.pointsAvailable
-			? Math.round((row.pointsEarned / row.pointsAvailable) * 100)
-			: 0,
-		lastAttemptAt: row.lastAttemptAt?.toISOString()
-	}));
+	const rows = await getNeonDatabase()
+		.select({
+			apClass: frqAttempts.apClass,
+			unit: frqAttempts.unit,
+			attempts: count(),
+			pointsEarned: sql<number>`coalesce(${sum(frqAttemptGrades.pointsEarned)}, 0)`,
+			pointsAvailable: sql<number>`coalesce(${sum(frqAttemptGrades.pointsAvailable)}, 0)`,
+			lastAttemptAt: max(frqAttempts.createdAt)
+		})
+		.from(frqAttempts)
+		.innerJoin(frqAttemptGrades, eq(frqAttemptGrades.attemptId, frqAttempts.id))
+		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
+		.groupBy(frqAttempts.apClass, frqAttempts.unit);
+	return rows.map((row) => {
+		const pointsEarned = Number(row.pointsEarned);
+		const pointsAvailable = Number(row.pointsAvailable);
+		return {
+			apClass: row.apClass,
+			unit: row.unit,
+			attempts: Number(row.attempts),
+			pointsEarned,
+			pointsAvailable,
+			averagePercentage: pointsAvailable ? Math.round((pointsEarned / pointsAvailable) * 100) : 0,
+			lastAttemptAt: row.lastAttemptAt?.toISOString()
+		};
+	});
 }
 
 export type FrqActivity = {
@@ -230,18 +237,3 @@ export type FrqActivity = {
 	apClass: string;
 	percentage: number;
 };
-
-export async function getFrqActivityForUser(userId: string): Promise<FrqActivity[]> {
-	const rows = await FrqAttempt.find(
-		{ userId, status: 'graded' },
-		{ createdAt: 1, timeTakenMs: 1, apClass: 1, 'grade.percentage': 1 }
-	)
-		.lean()
-		.exec();
-	return rows.map((row) => ({
-		attemptedAt: row.createdAt,
-		timeTakenMs: row.timeTakenMs,
-		apClass: row.apClass,
-		percentage: row.grade?.percentage ?? 0
-	}));
-}

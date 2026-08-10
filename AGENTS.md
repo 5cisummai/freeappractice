@@ -1,4 +1,4 @@
-# Agent instructions — LMstudio_host
+# Agent instructions — Free AP Practice
 
 Read this before changing anything. These rules override vague defaults.
 
@@ -7,10 +7,24 @@ Read this before changing anything. These rules override vague defaults.
 ## What this project is
 
 - **Stack**: TypeScript, Bun, SvelteKit
-- **Tooling**: Prettier, ESLint, Tailwind CSS, sveltekit-adapter, MCP
-- **Product**: A SvelteKit app for hosting and managing LM Studio–related UI and client-side behavior
+- **Tooling**: Prettier, ESLint, Tailwind CSS, Vercel adapter, MCP
+- **Product**: A free AP exam-practice app with MCQ/FRQ practice, progress and history, Coach, tutoring, Insights, and optional Super features
 
 Treat this as a focused product surface, not a playground for framework experiments. Prefer the smallest correct change that keeps the app working and easy to maintain.
+
+## Repository map
+
+| Area                                                 | Primary ownership                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| `src/routes`                                         | SvelteKit pages, layouts, and thin HTTP boundaries                       |
+| `src/lib/questions`, `src/lib/frq`                   | Canonical question serving, generation, grading, and pool refill         |
+| `src/lib/users`, `src/lib/referrals`, `src/lib/auth` | Accounts, attempts, progress, history, bookmarks, and referrals          |
+| `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, Insights, billing, and memory |
+| `src/lib/question-quality`, `src/lib/admin`          | Review jobs and operational dashboards                                   |
+| `src/lib/server/neon`                                | Drizzle schema and the Neon database client                              |
+| `scripts`                                            | Operations and database maintenance tooling                              |
+
+Neon PostgreSQL is the only application database. Domain functions call Drizzle directly; there is no compatibility model or MongoDB runtime dependency.
 
 ---
 

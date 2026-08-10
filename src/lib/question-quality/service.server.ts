@@ -1,38 +1,72 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { and, asc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { questionQualityAudits } from '$lib/server/neon/schema';
+import {
+	questionQualityAudits,
+	qualityReviewJobItems,
+	questionRegistry
+} from '$lib/server/neon/schema';
 import { env } from '$env/dynamic/private';
-import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
-import { QuestionId } from '$lib/questions/question-id-model.server';
 import { getAllQuestions, getQuestionById } from '$lib/questions/storage.server';
+import { getCompletedReviewCost } from './cost.server.js';
 import { isAgentCalibrated, modelName, toJobSummary } from './dashboard.server.js';
 import {
-	QuestionQuality,
-	QuestionQualityReviewJob,
-	QuestionQualityReviewJobItem,
+	syncQuestionMetadata,
+	updateQuestionRegistryMetadata,
+	upsertQuestionInventory
+} from './inventory-writes.server.js';
+import { activateReviewJob } from './job-activation.server.js';
+import {
+	claimReviewProcessingLease,
+	claimReviewSubmissionLease,
+	releaseReviewProcessingLease,
+	releaseReviewSubmissionLease
+} from './leases.server.js';
+import {
+	createReviewJob as persistReviewJob,
+	appendReviewJobBatch,
+	clearReviewJobBatch,
+	completeReviewJobBatch,
+	getQuestionQuality,
+	getReviewJob,
+	getReviewJobItem,
+	listActiveReviewJobIds,
+	listAssessedQuestionIds,
+	listClaimedReviewQuestionIds,
+	listReviewJobItems,
+	updateQuestionQuality,
+	ensureQuestionQuality,
+	updateReviewJob,
+	updateReviewJobBatch,
+	updateReviewJobItem,
+	updateReviewJobItemByQuestion,
 	type ReviewJobDocument
 } from './models.server.js';
 import {
 	cancelOpenAiBatch,
 	createOpenAiBatch,
-	downloadOpenAiFile,
+	downloadOpenAiFileStream,
 	buildBatchLine,
 	retrieveOpenAiBatch,
 	uploadBatchInput
 } from './openai-batch.server.js';
+import { forEachJsonlLine, JsonlChunkBuilder } from './jsonl.js';
+import {
+	cancelPendingReviewItems,
+	claimQueuedReviewItems,
+	failPreparingSubmissionItems,
+	failSubmittedBatchItems,
+	markPreparingItemsSubmitted,
+	requeueStalePreparingItems
+} from './review-item-writes.server.js';
 import {
 	extractResponseOutputText,
 	extractWebSearchEvidence,
 	parseAssessmentText,
 	requiresWebSearchForQuestion
 } from './rubric.server.js';
-import {
-	estimateCostUsd,
-	feedbackSummaryFromCounts,
-	isCalibrationSample,
-	shouldRequireHumanReview
-} from './rules.js';
+import { estimateCostUsd, feedbackSummaryFromCounts, shouldRequireHumanReview } from './rules.js';
 import {
 	QUESTION_QUALITY_RUBRIC_VERSION,
 	type QualityJobSummary,
@@ -40,10 +74,16 @@ import {
 	type ReviewFilters,
 	type ReviewPreview
 } from './types.js';
+import {
+	transitionReviewItemStatus,
+	transitionReviewJobStatus,
+	transitionQualityState,
+	type ReviewItemStatus
+} from './transitions.js';
 
-const ACTIVE_JOB_STATUSES = ['preparing', 'in_progress', 'paused'] as const;
 const PREVIEW_TTL_MS = 30 * 60 * 1000;
 const MAX_BATCH_FILE_BYTES = 190 * 1024 * 1024;
+const MAX_AUDIT_ENTRIES_PER_QUESTION = 100;
 
 async function appendQualityAudit(input: {
 	questionId: string;
@@ -54,8 +94,10 @@ async function appendQualityAudit(input: {
 	toVerdict?: QualityVerdict;
 	note?: string;
 }): Promise<void> {
-	await (getNeonDatabase() as any).insert(questionQualityAudits as any).values({
-		id: randomUUID(),
+	const db = getNeonDatabase() as any;
+	const auditId = randomUUID();
+	const insert = db.insert(questionQualityAudits as any).values({
+		id: auditId,
 		questionId: input.questionId,
 		at: input.at,
 		actorId: input.actorId,
@@ -64,6 +106,25 @@ async function appendQualityAudit(input: {
 		toVerdict: input.toVerdict,
 		note: input.note
 	});
+	const trim = db.execute(sql`
+		DELETE FROM content.question_quality_audits
+		WHERE question_id = ${input.questionId}
+		  AND id NOT IN (
+			SELECT id
+			FROM content.question_quality_audits
+			WHERE question_id = ${input.questionId}
+			ORDER BY at DESC, id DESC
+			LIMIT ${MAX_AUDIT_ENTRIES_PER_QUESTION}
+		)
+	`);
+	await db.batch([insert, trim]);
+}
+
+function nextItemStatus(
+	current: string,
+	transition: Parameters<typeof transitionReviewItemStatus>[1]
+): ReviewItemStatus {
+	return transitionReviewItemStatus(current as ReviewItemStatus, transition);
 }
 
 function confidenceThreshold(): number {
@@ -119,7 +180,6 @@ export async function reconcileQuestionInventory(
 	discovered: number;
 	hydrated: number;
 }> {
-	await connectDb();
 	const questions = await getAllQuestions();
 	const questionsById = new Map(questions.map((question) => [question.id, question]));
 	const objects = questions.map((question) => ({
@@ -128,21 +188,12 @@ export async function reconcileQuestionInventory(
 		size: JSON.stringify(question).length
 	}));
 	if (objects.length) {
-		await QuestionId.bulkWrite(
+		await upsertQuestionInventory(
 			objects.map((object) => ({
-				updateOne: {
-					filter: { questionId: object.questionId },
-					update: {
-						$setOnInsert: { questionId: object.questionId },
-						$set: {
-							...(object.lastModified ? { questionCreatedAt: object.lastModified } : {}),
-							...(typeof object.size === 'number' ? { contentLength: object.size } : {})
-						}
-					},
-					upsert: true
-				}
-			})),
-			{ ordered: false }
+				questionId: object.questionId,
+				questionCreatedAt: object.lastModified,
+				contentLength: object.size
+			}))
 		);
 	}
 
@@ -178,31 +229,9 @@ export async function reconcileQuestionInventory(
 			);
 			const valid = rows.filter((row): row is NonNullable<typeof row> => row !== null);
 			if (valid.length) {
-				await QuestionId.bulkWrite(
-					valid.map((row) => ({
-						updateOne: {
-							filter: { questionId: row.questionId },
-							update: { $set: { ...row, metadataSyncedAt: new Date() } }
-						}
-					})),
-					{ ordered: false }
-				);
 				// Legacy S3 source hashes are not comparable to the Neon row hash. Refresh
 				// the baseline without invalidating existing quality decisions.
-				await QuestionQuality.bulkWrite(
-					valid.map((row) => ({
-						updateOne: {
-							filter: { questionId: row.questionId },
-							update: {
-								$set: {
-									sourceHash: row.contentHash,
-									sourceCreatedAt: row.questionCreatedAt
-								}
-							}
-						}
-					})),
-					{ ordered: false }
-				);
+				await syncQuestionMetadata(valid);
 				hydrated += valid.length;
 			}
 		}
@@ -215,7 +244,6 @@ export async function previewReviewJob(
 	filters: ReviewFilters,
 	actorId = 'admin'
 ): Promise<ReviewPreview> {
-	await connectDb();
 	const normalized = normalizeFilters(filters);
 	if (normalized.qualityState && normalized.qualityState !== 'unreviewed') {
 		throw new Error(
@@ -223,51 +251,54 @@ export async function previewReviewJob(
 		);
 	}
 	if (normalized.apClass || normalized.unit) {
-		const unsynced = await QuestionId.countDocuments({ metadataSyncedAt: { $exists: false } });
+		const db = getNeonDatabase();
+		const [{ count: unsynced }] = await db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(questionRegistry)
+			.where(sql`${questionRegistry.metadataSyncedAt} IS NULL`);
 		if (unsynced) {
 			throw new Error(`Question metadata is not synchronized (${unsynced} unsynced)`);
 		}
 	}
 
 	const cutoff = new Date(Date.now() - normalized.minimumAgeDays * 86_400_000);
-	const registryQuery: Record<string, unknown> = {
-		$or: [
-			{ questionCreatedAt: { $lte: cutoff } },
-			{ questionCreatedAt: { $exists: false }, createdAt: { $lte: cutoff } }
-		]
-	};
-	if (normalized.apClass) registryQuery.apClass = normalized.apClass;
-	if (normalized.unit) registryQuery.unit = normalized.unit;
+	const registryFilters = [
+		or(
+			lte(questionRegistry.questionCreatedAt, cutoff),
+			and(isNull(questionRegistry.questionCreatedAt), lte(questionRegistry.createdAt, cutoff))
+		)
+	];
+	if (normalized.apClass) registryFilters.push(eq(questionRegistry.apClass, normalized.apClass));
+	if (normalized.unit) registryFilters.push(eq(questionRegistry.unit, normalized.unit));
 	if (normalized.createdAfter || normalized.createdBefore) {
 		const requestedEnd = normalized.createdBefore ? new Date(normalized.createdBefore) : cutoff;
 		const end = requestedEnd < cutoff ? requestedEnd : cutoff;
-		registryQuery.questionCreatedAt = {
-			...(normalized.createdAfter ? { $gte: new Date(normalized.createdAfter) } : {}),
-			$lte: end
-		};
+		registryFilters.push(
+			and(isNull(questionRegistry.questionCreatedAt), lte(questionRegistry.createdAt, end)),
+			and(
+				...(normalized.createdAfter
+					? [gte(questionRegistry.questionCreatedAt, new Date(normalized.createdAfter))]
+					: []),
+				lte(questionRegistry.questionCreatedAt, end)
+			)
+		);
 	}
 
-	const candidates = await QuestionId.find(registryQuery)
-		.sort({ questionCreatedAt: 1, createdAt: 1 })
-		.limit(Math.min(50_000, normalized.maxCount * 20))
-		.select({ questionId: 1, contentLength: 1 })
-		.lean()
-		.exec();
+	const candidates = await getNeonDatabase()
+		.select({
+			questionId: questionRegistry.questionId,
+			contentLength: questionRegistry.contentLength
+		})
+		.from(questionRegistry)
+		.where(and(...registryFilters))
+		.orderBy(asc(questionRegistry.questionCreatedAt), asc(questionRegistry.createdAt))
+		.limit(Math.min(50_000, normalized.maxCount * 20));
 	const candidateIds = candidates.map((row) => row.questionId);
 	const [assessed, claimed] = await Promise.all([
-		QuestionQuality.find({ questionId: { $in: candidateIds }, aiAssessment: { $exists: true } })
-			.select({ questionId: 1 })
-			.lean()
-			.exec(),
-		QuestionQualityReviewJobItem.find({
-			questionId: { $in: candidateIds },
-			status: { $ne: 'failed' }
-		})
-			.select({ questionId: 1 })
-			.lean()
-			.exec()
+		listAssessedQuestionIds(candidateIds),
+		listClaimedReviewQuestionIds(candidateIds)
 	]);
-	const excluded = new Set([...assessed, ...claimed].map((row) => row.questionId));
+	const excluded = new Set([...assessed, ...claimed]);
 	const selectedQuestionIds = candidateIds
 		.filter((questionId) => !excluded.has(questionId))
 		.slice(0, normalized.maxCount);
@@ -288,7 +319,7 @@ export async function previewReviewJob(
 		)
 	};
 	const expiresAt = new Date(Date.now() + PREVIEW_TTL_MS);
-	const job = await QuestionQualityReviewJob.create({
+	const job = await persistReviewJob({
 		status: 'preview',
 		filters: normalized,
 		selectedQuestionIds,
@@ -305,7 +336,7 @@ export async function previewReviewJob(
 	});
 
 	return {
-		previewId: String(job._id),
+		previewId: job.id,
 		filters: normalized,
 		selectedCount: selectedQuestionIds.length,
 		skippedCount: excluded.size,
@@ -317,49 +348,26 @@ export async function previewReviewJob(
 }
 
 async function refreshJobCounts(jobId: string): Promise<void> {
-	const [counts, costs] = await Promise.all([
-		QuestionQualityReviewJobItem.aggregate<{ _id: string; count: number }>([
-			{ $match: { jobId: String(jobId) } },
-			{ $group: { _id: '$status', count: { $sum: 1 } } }
-		]),
-		QuestionQualityReviewJobItem.aggregate<{ total: number }>([
-			{
-				$match: {
-					jobId: String(jobId),
-					status: { $in: ['final', 'awaiting_human'] }
-				}
-			},
-			{
-				$lookup: {
-					from: 'question_quality',
-					localField: 'questionId',
-					foreignField: 'questionId',
-					as: 'quality'
-				}
-			},
-			{ $unwind: { path: '$quality', preserveNullAndEmptyArrays: true } },
-			{
-				$group: {
-					_id: null,
-					total: { $sum: { $ifNull: ['$quality.aiAssessment.usage.estimatedCostUsd', 0] } }
-				}
-			}
-		])
+	const db = getNeonDatabase();
+	const [counts, actualCostUsd] = await Promise.all([
+		db
+			.select({ status: qualityReviewJobItems.status, count: sql<number>`count(*)::int` })
+			.from(qualityReviewJobItems)
+			.where(eq(qualityReviewJobItems.jobId, String(jobId)))
+			.groupBy(qualityReviewJobItems.status),
+		getCompletedReviewCost(jobId)
 	]);
-	const byStatus = Object.fromEntries(counts.map((row) => [row._id, row.count]));
-	await QuestionQualityReviewJob.updateOne(
-		{ _id: jobId },
-		{
-			$set: {
-				queuedCount: (byStatus.queued ?? 0) + (byStatus.preparing ?? 0),
-				submittedCount: byStatus.submitted ?? 0,
-				awaitingHumanCount: byStatus.awaiting_human ?? 0,
-				finalCount: byStatus.final ?? 0,
-				failedCount: byStatus.failed ?? 0,
-				actualCostUsd: costs[0]?.total ?? 0
-			}
-		}
+	const byStatus = Object.fromEntries(
+		counts.map((row: { status: string; count: number }) => [row.status, row.count])
 	);
+	await updateReviewJob(jobId, {
+		queuedCount: (byStatus.queued ?? 0) + (byStatus.preparing ?? 0),
+		submittedCount: byStatus.submitted ?? 0,
+		awaitingHumanCount: byStatus.awaiting_human ?? 0,
+		finalCount: byStatus.final ?? 0,
+		failedCount: byStatus.failed ?? 0,
+		actualCostUsd
+	});
 }
 
 async function persistCreatedBatch(opts: {
@@ -367,57 +375,36 @@ async function persistCreatedBatch(opts: {
 	submissionKey: string;
 	batch: { id: string; status: string };
 }): Promise<boolean> {
-	const latest = await QuestionQualityReviewJob.findById(opts.jobId).lean().exec();
+	const latest = await getReviewJob(opts.jobId);
 	if (!latest || latest.status === 'cancelled') {
 		await cancelOpenAiBatch(opts.batch.id).catch(() => undefined);
-		await QuestionQualityReviewJobItem.updateMany(
-			{ jobId: opts.jobId, status: 'preparing', submissionKey: opts.submissionKey },
-			{ $set: { status: 'failed', error: 'Cancelled by administrator during submission' } }
+		await failPreparingSubmissionItems(
+			opts.jobId,
+			opts.submissionKey,
+			'Cancelled by administrator during submission'
 		);
 		return false;
 	}
-	const nextStatus = latest.status === 'paused' ? 'paused' : 'in_progress';
-	await Promise.all([
-		QuestionQualityReviewJob.updateOne(
-			{ _id: opts.jobId, status: { $ne: 'cancelled' } },
-			{
-				$set: {
-					status: nextStatus,
-					activeBatchId: opts.batch.id,
-					'batches.$[entry].batchId': opts.batch.id,
-					'batches.$[entry].status': opts.batch.status
-				}
-			},
-			{ arrayFilters: [{ 'entry.submissionKey': opts.submissionKey }] }
-		),
-		QuestionQualityReviewJobItem.updateMany(
-			{ jobId: opts.jobId, status: 'preparing', submissionKey: opts.submissionKey },
-			{ $set: { status: 'submitted', batchId: opts.batch.id } }
-		)
-	]);
+	const nextStatus =
+		latest.status === 'paused'
+			? 'paused'
+			: latest.status === 'preparing'
+				? transitionReviewJobStatus(latest.status, 'start')
+				: latest.status;
+	await updateReviewJob(opts.jobId, { status: nextStatus }, { notStatus: 'cancelled' });
+	await updateReviewJobBatch(opts.jobId, opts.submissionKey, opts.batch);
+	await markPreparingItemsSubmitted(opts.jobId, opts.submissionKey, opts.batch.id);
 	return true;
 }
 
 async function submitNextBatch(jobId: string): Promise<void> {
-	const leaseUntil = new Date(Date.now() + 5 * 60_000);
-	const job = await QuestionQualityReviewJob.findOneAndUpdate(
-		{
-			_id: jobId,
-			status: { $in: ['preparing', 'in_progress'] },
-			$or: [{ activeBatchId: { $exists: false } }, { activeBatchId: null }],
-			$and: [
-				{
-					$or: [
-						{ submissionLeaseUntil: { $exists: false } },
-						{ submissionLeaseUntil: { $lt: new Date() } }
-					]
-				}
-			]
-		},
-		{ $set: { submissionLeaseUntil: leaseUntil } },
-		{ new: true }
-	).exec();
-	if (!job) return;
+	const leaseUntil = await claimReviewSubmissionLease(jobId);
+	if (!leaseUntil) return;
+	const job = await getReviewJob(jobId);
+	if (!job) {
+		await releaseReviewSubmissionLease(jobId, leaseUntil);
+		return;
+	}
 	try {
 		if (job.activeInputFileId && job.activeSubmissionKey) {
 			const batch = await createOpenAiBatch({
@@ -425,53 +412,36 @@ async function submitNextBatch(jobId: string): Promise<void> {
 				idempotencyKey: job.activeSubmissionKey
 			});
 			await persistCreatedBatch({
-				jobId: job._id,
+				jobId: job.id,
 				submissionKey: job.activeSubmissionKey,
 				batch
 			});
-			await refreshJobCounts(job._id);
+			await refreshJobCounts(job.id);
 			return;
 		}
-		await QuestionQualityReviewJobItem.updateMany(
-			{
-				jobId: job._id,
-				status: 'preparing',
-				updatedAt: { $lt: new Date(Date.now() - 5 * 60_000) }
-			},
-			{ $set: { status: 'queued' }, $inc: { attempts: -1 } }
-		);
+		await requeueStalePreparingItems(job.id, new Date(Date.now() - 5 * 60_000));
 
-		const items = await QuestionQualityReviewJobItem.find({ jobId: job._id, status: 'queued' })
-			.sort({ createdAt: 1 })
-			.limit(batchSize())
-			.exec();
+		const items = await listReviewJobItems({ jobId: job.id, status: 'queued', limit: batchSize() });
 		if (!items.length) {
-			await refreshJobCounts(job._id);
-			const awaiting = await QuestionQualityReviewJobItem.countDocuments({
-				jobId: job._id,
-				status: 'awaiting_human'
+			await refreshJobCounts(job.id);
+			const [{ count: awaiting }] = await getNeonDatabase()
+				.select({ count: sql<number>`count(*)::int` })
+				.from(qualityReviewJobItems)
+				.where(
+					sql`${qualityReviewJobItems.jobId} = ${job.id} AND ${qualityReviewJobItems.status} = 'awaiting_human'`
+				);
+			await updateReviewJob(job.id, {
+				status: transitionReviewJobStatus(job.status, awaiting ? 'await_human' : 'complete')
 			});
-			await QuestionQualityReviewJob.updateOne(
-				{ _id: job._id },
-				{ $set: { status: awaiting ? 'awaiting_human' : 'completed' } }
-			);
 			return;
 		}
 
 		const submissionKey = `${job.id}-${randomUUID()}`;
-		const itemIds = items.map((item) => item._id);
-		await QuestionQualityReviewJobItem.updateMany(
-			{ _id: { $in: itemIds }, status: 'queued' },
-			{ $set: { status: 'preparing', submissionKey }, $inc: { attempts: 1 } }
-		);
-		const claimedItems = await QuestionQualityReviewJobItem.find({
-			_id: { $in: itemIds },
-			status: 'preparing',
-			submissionKey
-		}).exec();
+		const itemIds = items.map((item) => item.id);
+		const claimedItems = await claimQueuedReviewItems(itemIds, submissionKey);
 		if (!claimedItems.length) return;
 
-		const lines: string[] = [];
+		const input = new JsonlChunkBuilder();
 		let batchBytes = 0;
 		for (const item of claimedItems) {
 			try {
@@ -479,10 +449,7 @@ async function submitNextBatch(jobId: string): Promise<void> {
 				const requiresWebSearch = requiresWebSearchForQuestion(
 					question as unknown as Record<string, unknown>
 				);
-				await QuestionQualityReviewJobItem.updateOne(
-					{ _id: item._id },
-					{ $set: { requiresWebSearch } }
-				);
+				await updateReviewJobItem(item.id, { requiresWebSearch });
 				const line = buildBatchLine({
 					questionId: item.questionId,
 					question: question as unknown as Record<string, unknown>,
@@ -492,78 +459,50 @@ async function submitNextBatch(jobId: string): Promise<void> {
 				const lineBytes = Buffer.byteLength(line) + 1;
 				if (batchBytes + lineBytes > MAX_BATCH_FILE_BYTES) {
 					const cannotFitAlone = lineBytes > MAX_BATCH_FILE_BYTES;
-					await QuestionQualityReviewJobItem.updateOne(
-						{ _id: item._id, status: 'preparing' },
+					await updateReviewJobItem(
+						item.id,
 						{
-							$set: {
-								status: cannotFitAlone ? 'failed' : 'queued',
-								...(cannotFitAlone
-									? { error: 'Question exceeds the Batch API file-size limit' }
-									: {})
-							},
-							$inc: { attempts: -1 }
-						}
+							status: cannotFitAlone
+								? nextItemStatus('preparing', 'fail')
+								: nextItemStatus('preparing', 'retry'),
+							...(cannotFitAlone
+								? { error: 'Question exceeds the Batch API file-size limit' }
+								: {}),
+							attempts: Math.max(0, item.attempts - 1)
+						},
+						{ status: 'preparing' }
 					);
 					continue;
 				}
-				lines.push(line);
+				input.add(line);
 				batchBytes += lineBytes;
 				const serialized = JSON.stringify(question);
-				await QuestionId.updateOne(
-					{ questionId: item.questionId },
-					{
-						$set: {
-							apClass: question.apClass,
-							unit: question.unit,
-							questionCreatedAt: question.createdAt ? new Date(question.createdAt) : undefined,
-							contentHash: createHash('sha256').update(serialized).digest('hex'),
-							contentLength: serialized.length,
-							metadataSyncedAt: new Date()
-						}
-					}
-				);
+				await updateQuestionRegistryMetadata({
+					questionId: item.questionId,
+					apClass: question.apClass,
+					unit: question.unit,
+					questionCreatedAt: question.createdAt ? new Date(question.createdAt) : undefined,
+					contentHash: createHash('sha256').update(serialized).digest('hex'),
+					contentLength: serialized.length
+				});
 			} catch (error) {
-				await QuestionQualityReviewJobItem.updateOne(
-					{ _id: item._id },
-					{
-						$set: {
-							status: 'failed',
-							error: error instanceof Error ? error.message : String(error)
-						}
-					}
-				);
+				await updateReviewJobItem(item.id, {
+					status: nextItemStatus('preparing', 'fail'),
+					error: error instanceof Error ? error.message : String(error)
+				});
 			}
 		}
-		if (!lines.length) {
+		if (!batchBytes) {
 			return;
 		}
 
-		const inputFileId = await uploadBatchInput(
-			lines.join('\n'),
-			`question-quality-${job.id}.jsonl`
-		);
-		await QuestionQualityReviewJob.updateOne(
-			{ _id: job._id },
-			{
-				$set: { activeInputFileId: inputFileId, activeSubmissionKey: submissionKey },
-				$push: {
-					batches: {
-						submissionKey,
-						inputFileId,
-						status: 'uploaded',
-						createdAt: new Date()
-					}
-				}
-			}
-		);
+		const inputFileId = await uploadBatchInput(input.toParts(), `question-quality-${job.id}.jsonl`);
+		await appendReviewJobBatch(job.id, inputFileId, submissionKey);
 		const batch = await createOpenAiBatch({ inputFileId, idempotencyKey: submissionKey });
-		await persistCreatedBatch({ jobId: job._id, submissionKey, batch });
-		await refreshJobCounts(job._id);
+		await persistCreatedBatch({ jobId: job.id, submissionKey, batch });
+		await refreshJobCounts(job.id);
 	} finally {
-		await QuestionQualityReviewJob.updateOne(
-			{ _id: job._id, submissionLeaseUntil: leaseUntil },
-			{ $unset: { submissionLeaseUntil: 1 } }
-		);
+		await releaseReviewSubmissionLease(job.id, leaseUntil);
 	}
 }
 
@@ -571,67 +510,18 @@ export async function createReviewJob(
 	previewId: string,
 	actorId = 'admin'
 ): Promise<QualityJobSummary> {
-	await connectDb();
-	const job = await QuestionQualityReviewJob.findOneAndUpdate(
-		{
-			_id: previewId,
-			status: 'preview',
-			expiresAt: { $gt: new Date() },
-			createdBy: actorId
-		},
-		{ $set: { status: 'preparing' } },
-		{ new: true }
-	).exec();
-	if (!job)
+	const activation = await activateReviewJob(previewId, actorId);
+	if (!activation)
 		throw new Error('Preview is missing, expired, already used, or belongs to another admin');
 
-	let inserted = 0;
-	for (const questionId of job.selectedQuestionIds) {
-		const result = await QuestionQualityReviewJobItem.updateOne(
-			{ questionId },
-			{
-				$setOnInsert: {
-					jobId: job._id,
-					questionId,
-					status: 'queued',
-					attempts: 0,
-					blind: isCalibrationSample(questionId, job.rubricVersion)
-				}
-			},
-			{ upsert: true }
-		);
-		if (result.upsertedCount) {
-			inserted += 1;
-			continue;
-		}
-		const reclaimed = await QuestionQualityReviewJobItem.updateOne(
-			{ questionId, status: 'failed' },
-			{
-				$set: {
-					jobId: job._id,
-					status: 'queued',
-					attempts: 0,
-					blind: isCalibrationSample(questionId, job.rubricVersion),
-					error: undefined,
-					batchId: undefined,
-					submissionKey: undefined
-				}
-			}
-		);
-		inserted += reclaimed.modifiedCount;
-	}
-	job.selectedQuestionIds = [];
-	job.selectedCount = inserted;
-	job.queuedCount = inserted;
-	await job.save();
-	await submitNextBatch(job.id);
-	const refreshed = await QuestionQualityReviewJob.findById(job.id).lean().exec();
+	await submitNextBatch(activation.jobId);
+	const refreshed = await getReviewJob(activation.jobId);
 	if (!refreshed) throw new Error('Review job disappeared after creation');
 	return toJobSummary(refreshed);
 }
 
 async function updateQualityFromBatchLine(
-	job: { _id: string; model: string; calibrated: boolean },
+	job: { id: string; model: string; calibrated: boolean },
 	line: string
 ): Promise<void> {
 	const parsed = JSON.parse(line) as {
@@ -640,20 +530,20 @@ async function updateQualityFromBatchLine(
 		error?: { message?: string } | null;
 	};
 	const questionId = parsed.custom_id;
-	const item = await QuestionQualityReviewJobItem.findOne({ jobId: job._id, questionId }).exec();
+	const item = await getReviewJobItem(job.id, questionId);
 	if (!item || item.status !== 'submitted') return;
 
 	if (parsed.error || !parsed.response?.body || parsed.response.status_code !== 200) {
 		if (item.attempts < 3) {
-			item.status = 'queued';
+			item.status = nextItemStatus(item.status, 'retry');
 			item.error =
 				parsed.error?.message ||
 				`OpenAI response status ${parsed.response?.status_code ?? 'unknown'}`;
 		} else {
-			item.status = 'failed';
+			item.status = nextItemStatus(item.status, 'fail');
 			item.error = parsed.error?.message || 'OpenAI request failed after three attempts';
 		}
-		await item.save();
+		await updateReviewJobItem(item.id, { status: item.status, error: item.error });
 		return;
 	}
 
@@ -673,7 +563,7 @@ async function updateQualityFromBatchLine(
 			estimatedCostUsd: estimateCostUsd(inputTokens, outputTokens, inputPrice(), outputPrice()),
 			...webEvidence
 		});
-		const existing = await QuestionQuality.findOne({ questionId }).lean().exec();
+		const existing = await getQuestionQuality(questionId);
 		const feedback = existing?.feedbackSummary ?? feedbackSummaryFromCounts({});
 		const human = shouldRequireHumanReview({
 			assessment,
@@ -685,27 +575,33 @@ async function updateQualityFromBatchLine(
 			webSearchUsed: assessment.webSearchUsed,
 			sourceUrls: assessment.sourceUrls
 		});
-		const registry = await QuestionId.findOne({ questionId }).lean().exec();
+		const registryRows = await getNeonDatabase()
+			.select({
+				contentHash: questionRegistry.contentHash,
+				s3Etag: questionRegistry.s3Etag,
+				questionCreatedAt: questionRegistry.questionCreatedAt,
+				apClass: questionRegistry.apClass,
+				unit: questionRegistry.unit
+			})
+			.from(questionRegistry)
+			.where(eq(questionRegistry.questionId, questionId))
+			.limit(1);
+		const registry = registryRows[0];
 		const now = new Date();
-		await QuestionQuality.updateOne(
-			{ questionId },
-			{ $setOnInsert: { questionId, state: 'unreviewed' } },
-			{ upsert: true }
-		);
-		const assessmentFilter: Record<string, unknown> = {
+		await ensureQuestionQuality(questionId);
+		const qualityWrite = await updateQuestionQuality(
 			questionId,
-			aiAssessment: { $exists: false },
-			...(!human.required ? { needsHumanReview: { $ne: true } } : {})
-		};
-		const qualityWrite = await QuestionQuality.updateOne(assessmentFilter, {
-			$set: {
+			{
 				aiAssessment: assessment,
-				sourceHash: registry?.contentHash,
-				sourceEtag: registry?.s3Etag,
-				sourceCreatedAt: registry?.questionCreatedAt,
-				apClass: registry?.apClass,
-				unit: registry?.unit,
-				state: human.required ? 'awaiting_human' : 'final',
+				sourceHash: registry?.contentHash ?? null,
+				sourceEtag: registry?.s3Etag ?? null,
+				sourceCreatedAt: registry?.questionCreatedAt ?? null,
+				apClass: registry?.apClass ?? null,
+				unit: registry?.unit ?? null,
+				state: transitionQualityState(
+					existing?.state ?? 'unreviewed',
+					human.required ? 'assess_for_human' : 'finalize'
+				),
 				needsHumanReview: human.required,
 				humanReviewReason: human.required ? human.reason : undefined,
 				blindHumanReview: human.required && item.blind,
@@ -717,16 +613,8 @@ async function updateQualityFromBatchLine(
 						}
 					: {})
 			},
-			$push: {
-				audit: {
-					at: now,
-					actorId: 'question-quality-agent',
-					action: human.required ? 'ai_assessed_for_human' : 'ai_finalized',
-					...(!human.required ? { toVerdict: assessment.verdict } : {}),
-					note: human.reason
-				}
-			}
-		});
+			{ requireUnassessed: true, ...(human.required ? {} : { requireHumanReview: false }) }
+		);
 		if (qualityWrite.modifiedCount) {
 			await appendQualityAudit({
 				questionId,
@@ -736,23 +624,17 @@ async function updateQualityFromBatchLine(
 				...(!human.required ? { toVerdict: assessment.verdict } : {}),
 				note: human.reason
 			});
-			item.status = human.required ? 'awaiting_human' : 'final';
+			item.status = nextItemStatus(item.status, human.required ? 'await_human' : 'finalize');
 		} else {
-			let persisted = await QuestionQuality.findOne({ questionId }).lean().exec();
+			let persisted = await getQuestionQuality(questionId);
 			if (persisted && !persisted.aiAssessment && persisted.needsHumanReview) {
-				await QuestionQuality.updateOne(
-					{ questionId, aiAssessment: { $exists: false }, needsHumanReview: true },
+				await updateQuestionQuality(
+					questionId,
 					{
-						$set: { aiAssessment: assessment, state: 'awaiting_human' },
-						$push: {
-							audit: {
-								at: now,
-								actorId: 'question-quality-agent',
-								action: 'ai_assessed_for_human',
-								note: persisted.humanReviewReason || 'student_feedback'
-							}
-						}
-					}
+						aiAssessment: assessment,
+						state: transitionQualityState(persisted.state, 'assess_for_human')
+					},
+					{ requireUnassessed: true, requireHumanReview: true }
 				);
 				await appendQualityAudit({
 					questionId,
@@ -761,76 +643,57 @@ async function updateQualityFromBatchLine(
 					action: 'ai_assessed_for_human',
 					note: persisted.humanReviewReason || 'student_feedback'
 				});
-				persisted = await QuestionQuality.findOne({ questionId }).lean().exec();
+				persisted = await getQuestionQuality(questionId);
 			}
-			item.status = persisted?.needsHumanReview ? 'awaiting_human' : 'final';
+			item.status = nextItemStatus(
+				item.status,
+				persisted?.needsHumanReview ? 'await_human' : 'finalize'
+			);
 		}
 		item.error = undefined;
-		await item.save();
+		await updateReviewJobItem(item.id, { status: item.status, error: null });
 	} catch (error) {
-		await QuestionQuality.updateOne(
-			{ questionId },
-			{
-				$setOnInsert: { questionId },
-				$set: {
-					state: 'awaiting_human',
-					needsHumanReview: true,
-					humanReviewReason: 'schema_failure',
-					blindHumanReview: false
-				}
-			},
-			{ upsert: true }
-		);
-		item.status = 'awaiting_human';
+		await ensureQuestionQuality(questionId);
+		await updateQuestionQuality(questionId, {
+			state: transitionQualityState('unreviewed', 'assess_for_human'),
+			needsHumanReview: true,
+			humanReviewReason: 'schema_failure',
+			blindHumanReview: false
+		});
+		item.status = nextItemStatus(item.status, 'await_human');
 		item.error = error instanceof Error ? error.message : String(error);
-		await item.save();
+		await updateReviewJobItem(item.id, { status: item.status, error: item.error });
 	}
 }
 
 async function importBatch(job: ReviewJobDocument, outputFileId?: string): Promise<void> {
 	if (outputFileId) {
-		const contents = await downloadOpenAiFile(outputFileId);
-		for (const line of contents.split('\n').filter(Boolean)) {
-			await updateQualityFromBatchLine(job, line);
-		}
+		const stream = await downloadOpenAiFileStream(outputFileId);
+		await forEachJsonlLine(stream, (line) => updateQualityFromBatchLine(job, line));
 	}
 
-	const unresolved = await QuestionQualityReviewJobItem.find({
-		jobId: job._id,
-		batchId: job.activeBatchId,
-		status: 'submitted'
-	}).exec();
+	const unresolved = job.activeBatchId
+		? await listReviewJobItems({ jobId: job.id, batchId: job.activeBatchId, status: 'submitted' })
+		: [];
 	for (const item of unresolved) {
-		item.status = item.attempts < 3 ? 'queued' : 'failed';
+		item.status = nextItemStatus(item.status, item.attempts < 3 ? 'retry' : 'fail');
 		item.error = 'Batch completed without a result for this question';
-		await item.save();
+		await updateReviewJobItem(item.id, { status: item.status, error: item.error });
 	}
-	job.activeBatchId = undefined;
-	job.activeInputFileId = undefined;
-	job.activeOutputFileId = outputFileId;
-	job.activeSubmissionKey = undefined;
-	await job.save();
+	await clearReviewJobBatch(job.id, outputFileId);
 }
 
 export async function refreshReviewJob(jobId: string): Promise<QualityJobSummary> {
-	await connectDb();
-	const leaseUntil = new Date(Date.now() + 55_000);
-	const job = await QuestionQualityReviewJob.findOneAndUpdate(
-		{
-			_id: jobId,
-			status: { $in: ACTIVE_JOB_STATUSES },
-			$or: [
-				{ processingLeaseUntil: { $exists: false } },
-				{ processingLeaseUntil: { $lt: new Date() } }
-			]
-		},
-		{ $set: { processingLeaseUntil: leaseUntil } },
-		{ new: true }
-	).exec();
-	if (!job) {
-		const existing = await QuestionQualityReviewJob.findById(jobId).lean().exec();
+	const leaseUntil = await claimReviewProcessingLease(jobId);
+	if (!leaseUntil) {
+		const existing = await getReviewJob(jobId);
 		if (!existing) throw new Error('Review job not found');
 		return toJobSummary(existing);
+	}
+	const job = await getReviewJob(jobId);
+	if (!job) {
+		await releaseReviewProcessingLease(jobId, leaseUntil);
+		throw new Error('Review job not found after claiming its processing lease');
 	}
 
 	try {
@@ -842,17 +705,12 @@ export async function refreshReviewJob(jobId: string): Promise<QualityJobSummary
 				batch.status === 'failed' ||
 				batch.status === 'cancelled'
 			) {
-				await QuestionQualityReviewJob.updateOne(
-					{ _id: job._id },
-					{
-						$set: {
-							'batches.$[entry].status': batch.status,
-							'batches.$[entry].outputFileId': batch.output_file_id,
-							'batches.$[entry].errorFileId': batch.error_file_id,
-							'batches.$[entry].completedAt': new Date()
-						}
-					},
-					{ arrayFilters: [{ 'entry.batchId': batch.id }] }
+				await completeReviewJobBatch(
+					job.id,
+					batch.id,
+					batch.status,
+					batch.output_file_id,
+					batch.error_file_id
 				);
 				await importBatch(job, batch.output_file_id);
 			}
@@ -860,18 +718,16 @@ export async function refreshReviewJob(jobId: string): Promise<QualityJobSummary
 		if (job.status !== 'paused' && job.status !== 'cancelled' && !job.activeBatchId) {
 			await submitNextBatch(job.id);
 		}
-		await refreshJobCounts(job._id);
+		await refreshJobCounts(job.id);
 	} catch (error) {
-		job.error = error instanceof Error ? error.message : String(error);
-		await job.save();
+		await updateReviewJob(job.id, {
+			error: error instanceof Error ? error.message : String(error)
+		});
 		throw error;
 	} finally {
-		await QuestionQualityReviewJob.updateOne(
-			{ _id: job._id, processingLeaseUntil: leaseUntil },
-			{ $unset: { processingLeaseUntil: 1 } }
-		);
+		await releaseReviewProcessingLease(job.id, leaseUntil);
 	}
-	const refreshed = await QuestionQualityReviewJob.findById(jobId).lean().exec();
+	const refreshed = await getReviewJob(jobId);
 	if (!refreshed) throw new Error('Review job not found after refresh');
 	return toJobSummary(refreshed);
 }
@@ -880,46 +736,31 @@ export async function setReviewJobState(
 	jobId: string,
 	action: 'pause' | 'resume' | 'cancel'
 ): Promise<QualityJobSummary> {
-	await connectDb();
-	const job = await QuestionQualityReviewJob.findById(jobId).exec();
+	const job = await getReviewJob(jobId);
 	if (!job) throw new Error('Review job not found');
-	if (action === 'pause') job.status = 'paused';
-	if (action === 'resume') job.status = 'preparing';
+	if (action === 'pause') job.status = transitionReviewJobStatus(job.status, 'pause');
+	if (action === 'resume') job.status = transitionReviewJobStatus(job.status, 'resume');
 	if (action === 'cancel') {
 		if (job.activeBatchId) {
 			await cancelOpenAiBatch(job.activeBatchId);
-			await QuestionQualityReviewJobItem.updateMany(
-				{ jobId: job._id, batchId: job.activeBatchId, status: 'submitted' },
-				{ $set: { status: 'failed', error: 'Cancelled by administrator' } }
-			);
+			await failSubmittedBatchItems(job.id, job.activeBatchId, 'Cancelled by administrator');
 		}
-		await QuestionQualityReviewJobItem.updateMany(
-			{ jobId: job._id, status: { $in: ['queued', 'preparing'] } },
-			{ $set: { status: 'failed', error: 'Cancelled by administrator' } }
-		);
-		job.status = 'cancelled';
+		await cancelPendingReviewItems(job.id, 'Cancelled by administrator');
+		job.status = transitionReviewJobStatus(job.status, 'cancel');
 	}
-	await job.save();
+	await updateReviewJob(job.id, { status: job.status });
 	if (action === 'resume') return refreshReviewJob(jobId);
 	return toJobSummary(job);
 }
 
 export async function recoverActiveReviewJobs(): Promise<number> {
-	await connectDb();
-	const jobs = await QuestionQualityReviewJob.find({
-		status: { $in: ['preparing', 'in_progress'] }
-	})
-		.sort({ updatedAt: 1 })
-		.limit(5)
-		.select({ _id: 1 })
-		.lean()
-		.exec();
-	for (const job of jobs) {
+	const jobs = await listActiveReviewJobIds();
+	for (const jobId of jobs) {
 		try {
-			await refreshReviewJob(String(job._id));
+			await refreshReviewJob(jobId);
 		} catch (error) {
 			logger.error('Question quality recovery failed', {
-				jobId: String(job._id),
+				jobId,
 				error: error instanceof Error ? error.message : String(error)
 			});
 		}
@@ -933,29 +774,23 @@ export async function recordHumanDecision(opts: {
 	notes: string;
 	reviewerId: string;
 }): Promise<void> {
-	await connectDb();
 	const now = new Date();
-	const existing = await QuestionQuality.findOne({ questionId: opts.questionId }).exec();
-	const result = await QuestionQuality.updateOne(
-		{ questionId: opts.questionId },
-		{
-			$set: {
-				humanAssessment: {
-					verdict: opts.verdict,
-					notes: opts.notes,
-					reviewerId: opts.reviewerId,
-					blind: existing?.blindHumanReview ?? false,
-					reviewedAt: now
-				},
-				finalVerdict: opts.verdict,
-				finalSource: 'human',
-				finalizedAt: now,
-				state: 'final',
-				needsHumanReview: false,
-				blindHumanReview: false
-			}
-		}
-	);
+	const existing = await getQuestionQuality(opts.questionId);
+	const result = await updateQuestionQuality(opts.questionId, {
+		humanAssessment: {
+			verdict: opts.verdict,
+			notes: opts.notes,
+			reviewerId: opts.reviewerId,
+			blind: existing?.blindHumanReview ?? false,
+			reviewedAt: now
+		},
+		finalVerdict: opts.verdict,
+		finalSource: 'human',
+		finalizedAt: now,
+		state: transitionQualityState(existing?.state ?? 'awaiting_human', 'finalize'),
+		needsHumanReview: false,
+		blindHumanReview: false
+	});
 	if (!result.matchedCount) throw new Error('Question quality record not found');
 	await appendQualityAudit({
 		questionId: opts.questionId,
@@ -966,25 +801,27 @@ export async function recordHumanDecision(opts: {
 		toVerdict: opts.verdict,
 		note: opts.notes
 	});
-	const item = await QuestionQualityReviewJobItem.findOneAndUpdate(
-		{ questionId: opts.questionId },
-		{ $set: { status: 'final' } },
-		{ new: true }
-	).lean();
+	const item = await updateReviewJobItemByQuestion(
+		opts.questionId,
+		{ status: nextItemStatus('awaiting_human', 'finalize') },
+		'awaiting_human'
+	);
 	if (item) {
 		await refreshJobCounts(item.jobId);
-		const awaiting = await QuestionQualityReviewJobItem.countDocuments({
-			jobId: item.jobId,
-			status: 'awaiting_human'
-		});
-		const active = await QuestionQualityReviewJobItem.countDocuments({
-			jobId: item.jobId,
-			status: { $in: ['queued', 'preparing', 'submitted'] }
-		});
+		const [{ awaiting, active }] = await getNeonDatabase()
+			.select({
+				awaiting: sql<number>`count(*) filter (where ${qualityReviewJobItems.status} = 'awaiting_human')::int`,
+				active: sql<number>`count(*) filter (where ${qualityReviewJobItems.status} in ('queued', 'preparing', 'submitted'))::int`
+			})
+			.from(qualityReviewJobItems)
+			.where(eq(qualityReviewJobItems.jobId, item.jobId));
 		if (!awaiting && !active) {
-			await QuestionQualityReviewJob.updateOne(
-				{ _id: item.jobId },
-				{ $set: { status: 'completed' } }
+			const currentJob = await getReviewJob(item.jobId);
+			if (!currentJob) return;
+			await updateReviewJob(
+				item.jobId,
+				{ status: transitionReviewJobStatus(currentJob.status, 'complete') },
+				{ status: currentJob.status }
 			);
 		}
 	}

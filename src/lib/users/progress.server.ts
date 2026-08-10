@@ -76,7 +76,14 @@ export function buildProgressData(user: IUserProfile): ProgressEntry[] {
 		wasCorrect: attempt.wasCorrect,
 		attemptedAt: attempt.attemptedAt
 	}));
-	return (user.progress ?? []).map((entry) => {
+	return buildProgressDataFromAttempts(user.progress ?? [], attempts);
+}
+
+export function buildProgressDataFromAttempts(
+	progress: IProgress[],
+	attempts: { apClass: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[]
+): ProgressEntry[] {
+	return progress.map((entry) => {
 		const result: ProgressEntry = {
 			apClass: entry.apClass,
 			unit: entry.unit,

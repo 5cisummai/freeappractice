@@ -29,7 +29,8 @@ import { getAdminUserIds } from '$lib/auth/admin.server';
 import {
 	isPasswordWithinLimit,
 	MAX_PASSWORD_LENGTH,
-	MIN_PASSWORD_LENGTH
+	MIN_PASSWORD_LENGTH,
+	PASSWORD_LENGTH_ERROR
 } from '$lib/auth/password-policy';
 import { classifyAccountCreationMethod } from '$lib/auth/analytics';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
@@ -135,7 +136,7 @@ export const auth = betterAuth({
 		password: {
 			hash: async (password) => {
 				if (!isPasswordWithinLimit(password)) {
-					throw new Error('Password must be 72 UTF-8 bytes or fewer');
+					throw new Error(PASSWORD_LENGTH_ERROR);
 				}
 				return bcrypt.hash(password, 12);
 			},

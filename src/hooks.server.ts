@@ -15,7 +15,6 @@ import {
 } from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
 import { createHandle } from 'flags/sveltekit';
-import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,
@@ -28,6 +27,12 @@ import {
 	superFreeBetaEnabled
 } from '$lib/flags';
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
+import {
+	isAccountSurface,
+	isAgeGateExempt,
+	shouldSkipSessionLookup
+} from '$lib/auth/account-surface.server';
+import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -168,8 +173,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 	// Public MCQ serve path: skip Better Auth session I/O to keep pool-hit latency low.
 	// Logging, CORS, and security headers still run. FRQ and /api/me/* keep full auth.
-	const skipSessionLookup =
-		event.request.method === 'POST' && event.url.pathname === '/api/question';
+	const skipSessionLookup = shouldSkipSessionLookup(event.request.method, event.url.pathname);
 
 	if (!skipSessionLookup) {
 		try {
@@ -217,7 +221,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 				headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 			});
 		}
-		if (!(await getTutorProfileView(event.locals.userId)).ageConfirmedAt) {
+		if (!(await getTutorProfileViewForRequest(event.locals, event.locals.userId)).ageConfirmedAt) {
 			return new Response(
 				JSON.stringify({ error: 'Confirm that you are at least 13 before choosing Super.' }),
 				{
@@ -228,12 +232,9 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	const ageGateExempt =
-		event.url.pathname.startsWith('/api/auth/') ||
-		event.url.pathname === '/api/super/confirm-age' ||
-		event.url.pathname.startsWith('/app/confirm-age');
-	if (event.locals.userId && !ageGateExempt) {
-		const profile = await getTutorProfileView(event.locals.userId);
+	const ageGateExempt = isAgeGateExempt(event.url.pathname);
+	if (event.locals.userId && isAccountSurface(event.url.pathname) && !ageGateExempt) {
+		const profile = await getTutorProfileViewForRequest(event.locals, event.locals.userId);
 		if (!profile.ageConfirmedAt) {
 			if (event.url.pathname.startsWith('/api/')) {
 				return new Response(
@@ -263,11 +264,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		method: event.request.method,
 		url: event.url.pathname,
 		status: response.status,
-		requestTimeMs,
-		ip:
-			event.request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
-			event.request.headers.get('x-real-ip') ??
-			'unknown'
+		requestTimeMs
 	});
 
 	return response;

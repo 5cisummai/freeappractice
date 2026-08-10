@@ -181,7 +181,7 @@ export async function getOrBuildWeeklyInsightReport(
 			pdfData: artifact.pdfData
 		});
 	} catch (error) {
-		logger.warn('Lazy Super insight refresh failed', { userId, error });
+		logger.warn('Lazy Super insight refresh failed', { resource: 'weekly_insight', error });
 		return current;
 	} finally {
 		await releaseLock(lock);

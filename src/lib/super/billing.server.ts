@@ -1,12 +1,17 @@
+import { randomUUID } from 'node:crypto';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
-import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { authSubscriptions, authUsers } from '$lib/server/neon/schema';
-import { and, eq } from 'drizzle-orm';
-import { InsightReport, SuperBillingAccess, TutorProfile } from '$lib/super/models.server';
+import {
+	authSubscriptions,
+	authUsers,
+	superBillingAccess,
+	tutorProfiles
+} from '$lib/server/neon/schema';
+import { and, eq, isNull, lte, or } from 'drizzle-orm';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
 	isSuperBillingStatus,
 	type SuperBillingIssue,
@@ -47,7 +52,7 @@ export function isSuperStripeConfigured(): boolean {
 }
 
 export function shouldApplySubscriptionEvent(
-	existing: { lastStripeEventId?: string; lastStripeEventCreated?: Date } | null,
+	existing: { lastStripeEventId?: string | null; lastStripeEventCreated?: Date | null } | null,
 	input: Pick<SubscriptionMirror, 'eventId' | 'eventCreated'>
 ): boolean {
 	if (!existing) return true;
@@ -108,26 +113,30 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 	const status = current.status.toLowerCase();
 	if (!isSuperBillingStatus(status)) {
 		logger.warn('Ignoring Stripe subscription with an unsupported status', {
-			userId: current.userId,
+			resource: 'subscription',
 			status: current.status
 		});
 		return;
 	}
-	await connectDb();
 	if (!(await authUserExists(current.userId))) {
 		logger.warn('Ignoring Stripe subscription for a deleted Better Auth user', {
-			userId: current.userId,
+			resource: 'subscription',
 			stripeSubscriptionId: current.stripeSubscriptionId
 		});
 		return;
 	}
 
 	const now = new Date();
-	const existing = current.stripeSubscriptionId
-		? await SuperBillingAccess.findOne({
-				stripeSubscriptionId: current.stripeSubscriptionId
-			}).exec()
-		: null;
+	const db = getNeonDatabase();
+	const [existing] = await db
+		.select()
+		.from(superBillingAccess)
+		.where(
+			current.stripeSubscriptionId
+				? eq(superBillingAccess.stripeSubscriptionId, current.stripeSubscriptionId)
+				: and(eq(superBillingAccess.userId, current.userId), eq(superBillingAccess.plan, 'super'))
+		)
+		.limit(1);
 	if (!shouldApplySubscriptionEvent(existing, current)) return;
 
 	const enteringPastDue = status === 'past_due' && existing?.status !== 'past_due';
@@ -149,19 +158,17 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 		...(current.eventCreated ? { lastStripeEventCreated: current.eventCreated } : {})
 	};
 
-	await SuperBillingAccess.findOneAndUpdate(
-		current.stripeSubscriptionId
-			? { stripeSubscriptionId: current.stripeSubscriptionId }
-			: { userId: current.userId, plan: 'super' },
-		{
-			$set: set,
-			$unset: {
-				...(status !== 'past_due' ? { pastDueSince: 1 } : {}),
-				...(!isEnded ? { superEndedAt: 1 } : {})
-			}
-		},
-		{ upsert: true, new: true, setDefaultsOnInsert: true }
-	).exec();
+	const values = {
+		...set,
+		pastDueSince: status === 'past_due' ? (existing?.pastDueSince ?? now) : null,
+		superEndedAt: isEnded ? (current.endedAt ?? now) : null,
+		updatedAt: now
+	};
+	if (existing) {
+		await db.update(superBillingAccess).set(values).where(eq(superBillingAccess.id, existing.id));
+	} else {
+		await db.insert(superBillingAccess).values({ id: randomUUID(), ...values });
+	}
 
 	if (isEnded) {
 		await markSuperAccessEndedIfNoAccess(current.userId, current.endedAt ?? now, now);
@@ -169,14 +176,11 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 		const access = await getEntitlements(current.userId, now);
 		if (access.plan !== 'super') return;
 		await Promise.all([
-			TutorProfile.updateOne(
-				{ userId: current.userId },
-				{ $unset: { superEndedAt: 1, memoryPurgedAt: 1 } }
-			).exec(),
-			InsightReport.updateMany(
-				{ userId: current.userId, lockedAt: { $exists: true } },
-				{ $unset: { lockedAt: 1 } }
-			).exec()
+			db
+				.update(tutorProfiles)
+				.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: new Date() })
+				.where(eq(tutorProfiles.userId, current.userId)),
+			unlockInsightReports(current.userId)
 		]);
 	}
 }
@@ -186,30 +190,39 @@ export async function markSubscriptionBillingIssue(
 	issue: SuperBillingIssue | null,
 	eventCreated: Date
 ): Promise<void> {
-	await connectDb();
-	const update = issue
-		? {
-				$set: {
-					billingIssue: issue,
-					billingIssueAt: eventCreated,
-					lastBillingEventCreated: eventCreated
-				}
-			}
-		: {
-				$set: { lastBillingEventCreated: eventCreated },
-				$unset: { billingIssue: 1, billingIssueAt: 1 }
-			};
-	await SuperBillingAccess.findOneAndUpdate(
-		{
-			stripeSubscriptionId,
-			$or: [
-				{ lastBillingEventCreated: { $exists: false } },
-				{ lastBillingEventCreated: { $lte: eventCreated } }
-			]
-		},
-		update,
-		{ new: true }
-	).exec();
+	const db = getNeonDatabase();
+	const [existing] = await db
+		.select({ id: superBillingAccess.id })
+		.from(superBillingAccess)
+		.where(
+			and(
+				eq(superBillingAccess.stripeSubscriptionId, stripeSubscriptionId),
+				or(
+					isNull(superBillingAccess.lastBillingEventCreated),
+					lte(superBillingAccess.lastBillingEventCreated, eventCreated)
+				)
+			)
+		)
+		.limit(1);
+	if (!existing) return;
+	await db
+		.update(superBillingAccess)
+		.set(
+			issue
+				? {
+						billingIssue: issue,
+						billingIssueAt: eventCreated,
+						lastBillingEventCreated: eventCreated,
+						updatedAt: eventCreated
+					}
+				: {
+						billingIssue: null,
+						billingIssueAt: null,
+						lastBillingEventCreated: eventCreated,
+						updatedAt: eventCreated
+					}
+		)
+		.where(eq(superBillingAccess.id, existing.id));
 }
 
 function isTerminalSuperStatus(status: SuperBillingStatus): boolean {
@@ -217,17 +230,19 @@ function isTerminalSuperStatus(status: SuperBillingStatus): boolean {
 }
 
 type StripeBillingRecord = {
-	stripeCustomerId?: string;
-	stripeSubscriptionId?: string;
+	stripeCustomerId?: string | null;
+	stripeSubscriptionId?: string | null;
 };
 
 async function findStripeBillingRecords(userId: string): Promise<StripeBillingRecord[]> {
-	await connectDb();
 	const [localRecords, authRecords] = await Promise.all([
-		SuperBillingAccess.find({ userId, plan: 'super' })
-			.select({ stripeCustomerId: 1, stripeSubscriptionId: 1 })
-			.lean()
-			.exec(),
+		getNeonDatabase()
+			.select({
+				stripeCustomerId: superBillingAccess.stripeCustomerId,
+				stripeSubscriptionId: superBillingAccess.stripeSubscriptionId
+			})
+			.from(superBillingAccess)
+			.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super'))),
 		getNeonDatabase()
 			.select({
 				stripeCustomerId: authSubscriptions.stripeCustomerId,

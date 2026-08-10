@@ -1,5 +1,5 @@
 import { FRQ_GRADING_MODEL } from '$lib/ai/ai-models-config';
-import { FrqQuestionModel, toFrqQuestion, type IFrqQuestion } from '$lib/frq/model.server';
+import { findFrqQuestionByPool, toFrqQuestion, type IFrqQuestion } from '$lib/frq/model.server';
 import { toPublicFrqQuestion, type FrqQuestion, type PublicFrqQuestion } from '$lib/frq/types';
 import {
 	createQuestionPool,
@@ -18,29 +18,11 @@ type FrqServiceResult = {
 	cached: boolean;
 };
 
-const FRQ_PROJECTION = {
-	questionId: 1,
-	schemaVersion: 1,
-	formatId: 1,
-	profileVersion: 1,
-	promptVersion: 1,
-	rubricVersion: 1,
-	prompt: 1,
-	materials: 1,
-	sections: 1,
-	rubric: 1,
-	totalPoints: 1,
-	topicsCovered: 1,
-	apClass: 1,
-	unit: 1
-} as const;
-
 const frqPool = createQuestionPool<IFrqQuestion, FrqServiceResult>({
 	questionType: 'frq',
 	logScope: 'frq-pool',
 	normalizeUnit,
-	model: FrqQuestionModel,
-	projection: { ...FRQ_PROJECTION },
+	findRandom: findFrqQuestionByPool,
 	serveCached: (doc) => {
 		const question = toFrqQuestion(doc);
 		return {

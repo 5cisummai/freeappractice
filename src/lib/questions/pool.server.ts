@@ -1,33 +1,26 @@
-import { connectDb } from '$lib/server/db';
 import { QUESTION_POOL_CONFIG } from '$lib/questions/pool-constants';
+import { countActivePoolRows } from '$lib/questions/pool-counts.server';
 import { logger } from '$lib/server/logger';
 
 interface PoolDocument {
-	_id: { toString(): string };
 	questionId?: string;
 	randomKey?: number;
 	active?: boolean;
 }
 
-type LeanFindChain<TDoc> = {
-	lean(): Promise<TDoc | null>;
-};
-
-interface PoolModel<TDoc extends PoolDocument> {
-	findOne(
-		filter: Record<string, unknown>,
-		projection?: Record<string, 0 | 1> | null,
-		options?: { sort?: Record<string, 1 | -1> }
-	): LeanFindChain<TDoc> | Promise<TDoc | null>;
-	countDocuments(filter: Record<string, unknown>): Promise<number>;
-}
+type PoolQuery<TDoc extends PoolDocument> = (input: {
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	pivot: number;
+	fromPivot: 'after' | 'before';
+}) => Promise<TDoc | null>;
 
 interface QuestionPoolConfig<TDoc extends PoolDocument, TCached> {
 	questionType: 'mcq' | 'frq';
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
-	model: PoolModel<TDoc>;
-	projection: Record<string, 0 | 1>;
+	findRandom: PoolQuery<TDoc>;
 	serveCached: (doc: TDoc, className: string, cacheUnit: string) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
 	requestRefill?: (className: string, unit: string) => Promise<void>;
@@ -55,56 +48,33 @@ function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
 	return [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
 }
 
-async function leanFindOne<TDoc extends PoolDocument>(
-	model: PoolModel<TDoc>,
-	filter: Record<string, unknown>,
-	projection: Record<string, 0 | 1>,
-	sort: Record<string, 1 | -1>
-): Promise<TDoc | null> {
-	const result = model.findOne(filter, projection, { sort });
-	if (
-		result &&
-		typeof result === 'object' &&
-		'lean' in result &&
-		typeof result.lean === 'function'
-	) {
-		return result.lean();
-	}
-	return result as Promise<TDoc | null>;
-}
-
 /**
  * Indexed random selection around a pivot: first `randomKey >= pivot`, then wrap to `< pivot`.
  * Pure helper exported for unit tests.
  */
 export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
-	model: PoolModel<TDoc>;
+	findRandom: PoolQuery<TDoc>;
 	apClass: string;
 	unit: string;
 	excludeQuestionIds: string[];
-	projection: Record<string, 0 | 1>;
 	pivot?: number;
 }): Promise<TDoc | null> {
 	const pivot = opts.pivot ?? Math.random();
-	const base: Record<string, unknown> = {
+	const first = await opts.findRandom({
 		apClass: opts.apClass,
 		unit: opts.unit,
-		active: { $ne: false }
-	};
-	if (opts.excludeQuestionIds.length) {
-		base.questionId = { $nin: opts.excludeQuestionIds };
-	}
-
-	const first = await leanFindOne<TDoc>(
-		opts.model,
-		{ ...base, randomKey: { $gte: pivot } },
-		opts.projection,
-		{ randomKey: 1 }
-	);
+		excludeQuestionIds: opts.excludeQuestionIds,
+		pivot,
+		fromPivot: 'after'
+	});
 	if (first) return first;
 
-	return leanFindOne<TDoc>(opts.model, { ...base, randomKey: { $lt: pivot } }, opts.projection, {
-		randomKey: 1
+	return opts.findRandom({
+		apClass: opts.apClass,
+		unit: opts.unit,
+		excludeQuestionIds: opts.excludeQuestionIds,
+		pivot,
+		fromPivot: 'before'
 	});
 }
 
@@ -112,11 +82,7 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 	config: QuestionPoolConfig<TDoc, TCached>
 ) {
 	async function countActive(className: string, cacheUnit: string): Promise<number> {
-		return config.model.countDocuments({
-			apClass: className,
-			unit: cacheUnit,
-			active: { $ne: false }
-		});
+		return countActivePoolRows(config.questionType, className, cacheUnit);
 	}
 
 	async function getQuestion(
@@ -129,32 +95,16 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
 
-		const connectStarted = Date.now();
-		try {
-			await connectDb();
-		} catch (err) {
-			if (metrics) {
-				metrics.dbConnectMs = Date.now() - connectStarted;
-				metrics.segment = 'pool_error';
-			}
-			logger.error(`[${config.logScope}] DB connect failed`, {
-				className,
-				unit: cacheUnit,
-				error: err
-			});
-			return { status: 'failed', error: err };
-		}
-		if (metrics) metrics.dbConnectMs = Date.now() - connectStarted;
+		if (metrics) metrics.dbConnectMs = 0;
 
 		const queryStarted = Date.now();
 		try {
 			let exclusionsReset = false;
 			let doc = await selectRandomActiveDoc({
-				model: config.model,
+				findRandom: config.findRandom,
 				apClass: className,
 				unit: cacheUnit,
-				excludeQuestionIds,
-				projection: config.projection
+				excludeQuestionIds
 			});
 
 			if (!doc && excludeQuestionIds.length) {
@@ -162,11 +112,10 @@ export function createQuestionPool<TDoc extends PoolDocument, TCached>(
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					doc = await selectRandomActiveDoc({
-						model: config.model,
+						findRandom: config.findRandom,
 						apClass: className,
 						unit: cacheUnit,
-						excludeQuestionIds: [],
-						projection: config.projection
+						excludeQuestionIds: []
 					});
 				}
 			}

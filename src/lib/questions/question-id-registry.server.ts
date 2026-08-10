@@ -1,6 +1,6 @@
-import { connectDb } from '$lib/server/db';
 import { logger } from '$lib/server/logger';
-import { QuestionId } from '$lib/questions/question-id-model.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { questionRegistry } from '$lib/server/neon/schema';
 
 export interface QuestionRegistryMetadata {
 	apClass?: string;
@@ -20,15 +20,13 @@ async function registerQuestionId(
 	const trimmed = questionId.trim();
 	if (!trimmed) return;
 
-	await connectDb();
-	await QuestionId.updateOne(
-		{ questionId: trimmed },
-		{
-			$setOnInsert: { questionId: trimmed },
-			...(Object.keys(metadata).length ? { $set: metadata } : {})
-		},
-		{ upsert: true }
-	);
+	await getNeonDatabase()
+		.insert(questionRegistry)
+		.values({ questionId: trimmed, kind: 'mcq', ...metadata })
+		.onConflictDoUpdate({
+			target: questionRegistry.questionId,
+			set: metadata
+		});
 }
 
 /** Register without failing the caller if the Neon registry is unavailable. */

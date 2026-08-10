@@ -11,8 +11,9 @@
 import 'dotenv/config';
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { createHash } from 'node:crypto';
-import { QuestionId } from '../src/lib/questions/question-id-model.server';
-import { connectDb } from '../src/lib/server/db';
+import { eq, sql } from 'drizzle-orm';
+import { getNeonDatabase } from '../src/lib/server/neon/db';
+import { questionRegistry } from '../src/lib/server/neon/schema';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
@@ -87,16 +88,19 @@ async function main() {
 	const s3Ids = [...new Set(await listQuestionIdsFromS3(s3, bucket))].sort();
 	console.log(`Found ${s3Ids.length} unique question id(s) in S3.`);
 
-	console.log('Connecting to Neon PostgreSQL…');
-	await connectDb();
-	console.log('Connected.');
+	const db = getNeonDatabase();
 
-	const existingCount = await QuestionId.countDocuments({});
+	const [existingCountRow] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(questionRegistry);
+	const existingCount = Number(existingCountRow?.count ?? 0);
 	console.log(`Registry currently has ${existingCount} document(s).`);
 
 	if (isDryRun) {
 		const existingIds = new Set(
-			(await QuestionId.find({}, { questionId: 1, _id: 0 }).lean()).map((doc) => doc.questionId)
+			(await db.select({ questionId: questionRegistry.questionId }).from(questionRegistry)).map(
+				(doc) => doc.questionId
+			)
 		);
 		const missing = s3Ids.filter((id) => !existingIds.has(id));
 		console.log(`Dry-run: would insert ${missing.length} new id(s).`);
@@ -106,20 +110,16 @@ async function main() {
 	let inserted = 0;
 	for (let i = 0; i < s3Ids.length; i += BATCH_SIZE) {
 		const batch = s3Ids.slice(i, i + BATCH_SIZE);
-		const result = await QuestionId.bulkWrite(
-			batch.map((questionId) => ({
-				updateOne: {
-					filter: { questionId },
-					update: { $setOnInsert: { questionId } },
-					upsert: true
-				}
-			})),
-			{ ordered: false }
-		);
-		inserted += result.upsertedCount;
+		const result = await db
+			.insert(questionRegistry)
+			.values(batch.map((questionId) => ({ questionId, kind: 'mcq' })))
+			.onConflictDoNothing({ target: questionRegistry.questionId })
+			.returning({ questionId: questionRegistry.questionId });
+		inserted += result.length;
 	}
 
-	const finalCount = await QuestionId.countDocuments({});
+	const [finalCountRow] = await db.select({ count: sql<number>`count(*)` }).from(questionRegistry);
+	const finalCount = Number(finalCountRow?.count ?? 0);
 	console.log(`✓ Upserted ${inserted} new id(s). Registry now has ${finalCount} document(s).`);
 
 	if (hydrateMetadata) {
@@ -156,11 +156,13 @@ async function main() {
 			);
 			const valid = rows.filter((row): row is NonNullable<typeof row> => row !== null);
 			if (valid.length) {
-				await QuestionId.bulkWrite(
-					valid.map((row) => ({
-						updateOne: { filter: { questionId: row.questionId }, update: { $set: row } }
-					})),
-					{ ordered: false }
+				await db.batch(
+					valid.map((row) =>
+						db
+							.update(questionRegistry)
+							.set(row)
+							.where(eq(questionRegistry.questionId, row.questionId))
+					)
 				);
 				hydrated += valid.length;
 			}

@@ -1,12 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { Question, newPoolRandomKey, type IQuestion } from '$lib/questions/cache-model.server';
+import {
+	createCanonicalMcqQuestion,
+	newPoolRandomKey,
+	type IQuestion
+} from '$lib/questions/cache-model.server';
 import {
 	generateAPQuestion,
 	type APQuestionData,
 	type GenerateResult
 } from '$lib/questions/generation.server';
 import { logger } from '$lib/server/logger';
-import { getRecentTopics, recordRecentTopic } from '$lib/questions/recent-topic.server';
+import { getRecentTopics } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
 import { QuestionGenerationError } from '$lib/questions/question-errors.server';
 
@@ -65,14 +69,7 @@ async function insertHotPoolDoc(
 	answer: APQuestionData,
 	questionId: string
 ): Promise<IQuestion> {
-	await recordRecentTopic({
-		apClass: className,
-		unit: cacheUnit,
-		topicsCovered: answer.topicsCovered ?? '',
-		questionId
-	});
-
-	return Question.create(
+	return createCanonicalMcqQuestion(
 		buildHotPoolDoc({
 			apClass: className,
 			unit: cacheUnit,
@@ -95,7 +92,7 @@ export async function generateQuestionForPool(
 	const cacheUnit = normalizeUnit(unit);
 	const topics = recentTopics.length
 		? recentTopics
-		: await getRecentTopics(className, cacheUnit).catch(() => []);
+		: await getRecentTopics({ kind: 'mcq', apClass: className, unit: cacheUnit }).catch(() => []);
 	const result = await generateAPQuestion({ className, unit, recentTopics: topics });
 	const { answer, questionId } = result;
 	if (!questionId) {

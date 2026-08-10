@@ -8,7 +8,8 @@ import {
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-import { PoolWarmingError, requestMcqQuestion } from '$lib/questions/request-mcq.client';
+import { PoolWarmingError } from '$lib/questions/request.client';
+import { requestMcqQuestion } from '$lib/questions/request-mcq.client';
 import {
 	hasValidHints,
 	MULTI_ATTEMPT_EXPERIMENT_KEY,

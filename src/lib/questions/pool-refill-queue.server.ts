@@ -1,13 +1,16 @@
+import { randomUUID } from 'node:crypto';
+import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
 import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
 import { getFrqCourseNames } from '$lib/frq/profiles.server';
-import { FrqQuestionModel } from '$lib/frq/model.server';
-import { Question } from '$lib/questions/cache-model.server';
 import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
 import {
-	PoolRefillState,
-	type PoolRefillQuestionType
-} from '$lib/questions/pool-refill-model.server';
-import { connectDb } from '$lib/server/db';
+	countActivePoolRows,
+	countActivePoolRowsByBucket,
+	getPoolRefillHealthCounts
+} from '$lib/questions/pool-counts.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { poolRefillStates } from '$lib/server/neon/schema';
+import type { PoolRefillQuestionType } from '$lib/questions/pool-refill-types.server';
 import {
 	QUESTION_POOL_CONFIG,
 	isBelowLowWater,
@@ -48,23 +51,7 @@ export function listCatalogBuckets(questionType: PoolRefillQuestionType): PoolBu
 	return buckets;
 }
 
-export async function countActivePoolRows(
-	questionType: PoolRefillQuestionType,
-	apClass: string,
-	unit: string
-): Promise<number> {
-	const filter = { apClass, unit, active: { $ne: false } };
-	switch (questionType) {
-		case 'mcq':
-			return Question.countDocuments(filter);
-		case 'frq':
-			return FrqQuestionModel.countDocuments(filter);
-		default: {
-			const _exhaustive: never = questionType;
-			return _exhaustive;
-		}
-	}
-}
+export { countActivePoolRows, countActivePoolRowsByBucket, getPoolRefillHealthCounts };
 
 /**
  * Upsert a refill request for a bucket. Safe to call from request paths (no LLM).
@@ -73,9 +60,9 @@ export async function countActivePoolRows(
 export async function requestPoolRefill(
 	bucket: PoolBucketKey,
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG,
-	generationCountsByClass?: Record<string, number>
+	generationCountsByClass?: Record<string, number>,
+	observedCountOverride?: number
 ): Promise<void> {
-	await connectDb();
 	const counts =
 		generationCountsByClass ??
 		(bucket.questionType === 'mcq' ? await getMcqGenerationCountsByClass() : {});
@@ -85,7 +72,9 @@ export async function requestPoolRefill(
 		generationCountsByClass: counts,
 		config: env
 	});
-	const observedCount = await countActivePoolRows(bucket.questionType, bucket.apClass, bucket.unit);
+	const observedCount =
+		observedCountOverride ??
+		(await countActivePoolRows(bucket.questionType, bucket.apClass, bucket.unit));
 	const now = new Date();
 	const key = {
 		questionType: bucket.questionType,
@@ -94,76 +83,82 @@ export async function requestPoolRefill(
 	};
 
 	// Refresh counts only — do not touch status/lease here (stomping a live lease is unsafe).
-	await PoolRefillState.findOneAndUpdate(
-		key,
-		{
-			$set: {
-				target,
-				observedCount,
-				requestedAt: now
-			},
-			$setOnInsert: {
-				status: observedCount < target ? ('pending' as const) : ('idle' as const),
-				attempts: 0,
-				generatedCount: 0,
-				leaseOwner: null,
-				leaseExpiresAt: null,
-				lastError: null,
-				nextAttemptAt: observedCount < target ? now : null
-			}
-		},
-		{ upsert: true }
-	).exec();
+	await getNeonDatabase()
+		.insert(poolRefillStates)
+		.values({
+			id: randomUUID(),
+			...key,
+			target,
+			observedCount,
+			requestedAt: now,
+			status: observedCount < target ? 'pending' : 'idle',
+			attempts: 0,
+			generatedCount: 0,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			lastError: null,
+			nextAttemptAt: observedCount < target ? now : null
+		})
+		.onConflictDoUpdate({
+			target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+			set: { target, observedCount, requestedAt: now, updatedAt: now }
+		});
 
 	if (observedCount < target) {
 		// Promote to pending only when not holding a live lease.
-		await PoolRefillState.updateOne(
-			{
-				...key,
-				$or: [
-					{ status: { $in: ['idle', 'failed', 'budget_exhausted', 'pending'] } },
-					{ status: 'running', leaseExpiresAt: null },
-					{ status: 'running', leaseExpiresAt: { $lte: now } }
-				]
-			},
-			{
-				$set: {
-					status: 'pending',
-					target,
-					observedCount,
-					requestedAt: now,
-					nextAttemptAt: now,
-					lastError: null,
-					leaseOwner: null,
-					leaseExpiresAt: null
-				}
-			}
-		).exec();
+		await getNeonDatabase()
+			.update(poolRefillStates)
+			.set({
+				status: 'pending',
+				target,
+				observedCount,
+				requestedAt: now,
+				nextAttemptAt: now,
+				lastError: null,
+				leaseOwner: null,
+				leaseExpiresAt: null,
+				updatedAt: now
+			})
+			.where(
+				and(
+					eq(poolRefillStates.questionType, key.questionType),
+					eq(poolRefillStates.apClass, key.apClass),
+					eq(poolRefillStates.unit, key.unit),
+					or(
+						inArray(poolRefillStates.status, ['idle', 'failed', 'budget_exhausted', 'pending']),
+						and(eq(poolRefillStates.status, 'running'), isNull(poolRefillStates.leaseExpiresAt)),
+						and(eq(poolRefillStates.status, 'running'), lte(poolRefillStates.leaseExpiresAt, now))
+					)
+				)
+			);
 		return;
 	}
 
 	// At/above target: idle only if not actively running with a live lease.
-	await PoolRefillState.updateOne(
-		{
-			...key,
-			$or: [
-				{ status: { $in: ['pending', 'failed', 'budget_exhausted'] } },
-				{ status: 'running', leaseExpiresAt: null },
-				{ status: 'running', leaseExpiresAt: { $lte: now } }
-			]
-		},
-		{
-			$set: {
-				status: 'idle',
-				observedCount,
-				target,
-				leaseOwner: null,
-				leaseExpiresAt: null,
-				lastError: null,
-				nextAttemptAt: null
-			}
-		}
-	).exec();
+	await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({
+			status: 'idle',
+			observedCount,
+			target,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			lastError: null,
+			nextAttemptAt: null,
+			updatedAt: now
+		})
+		.where(
+			and(
+				eq(poolRefillStates.questionType, key.questionType),
+				eq(poolRefillStates.apClass, key.apClass),
+				eq(poolRefillStates.unit, key.unit),
+				or(
+					inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
+					and(eq(poolRefillStates.status, 'running'), isNull(poolRefillStates.leaseExpiresAt)),
+					and(eq(poolRefillStates.status, 'running'), lte(poolRefillStates.leaseExpiresAt, now))
+				)
+			)
+		);
 }
 
 /**
@@ -172,12 +167,12 @@ export async function requestPoolRefill(
 export async function reconcilePoolRefillJobs(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<{ reconciled: number; enqueued: number }> {
-	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	let reconciled = 0;
 	let enqueued = 0;
 
 	for (const questionType of ['mcq', 'frq'] as const) {
+		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = poolTargetForBucket({
 				questionType,
@@ -185,54 +180,62 @@ export async function reconcilePoolRefillJobs(
 				generationCountsByClass,
 				config: env
 			});
-			const observedCount = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
 			reconciled += 1;
-			await PoolRefillState.findOneAndUpdate(
-				{
+			await getNeonDatabase()
+				.insert(poolRefillStates)
+				.values({
+					id: randomUUID(),
 					questionType,
 					apClass: bucket.apClass,
-					unit: bucket.unit
-				},
-				{
-					$set: { target, observedCount },
-					$setOnInsert: {
-						status: 'idle',
-						attempts: 0,
-						generatedCount: 0,
-						requestedAt: new Date(),
-						leaseOwner: null,
-						leaseExpiresAt: null
-					}
-				},
-				{ upsert: true }
-			).exec();
+					unit: bucket.unit,
+					target,
+					observedCount,
+					status: 'idle',
+					attempts: 0,
+					generatedCount: 0,
+					requestedAt: new Date(),
+					leaseOwner: null,
+					leaseExpiresAt: null
+				})
+				.onConflictDoUpdate({
+					target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+					set: { target, observedCount, updatedAt: new Date() }
+				});
 
 			if (isBelowLowWater(observedCount, target, env.lowWaterRatio)) {
-				await requestPoolRefill(bucket, env, generationCountsByClass);
+				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
 				enqueued += 1;
 			} else if (observedCount >= target) {
 				const now = new Date();
-				await PoolRefillState.updateOne(
-					{
-						questionType,
-						apClass: bucket.apClass,
-						unit: bucket.unit,
-						$or: [
-							{ status: { $in: ['pending', 'failed', 'budget_exhausted'] } },
-							{ status: 'running', leaseExpiresAt: null },
-							{ status: 'running', leaseExpiresAt: { $lte: now } }
-						]
-					},
-					{
-						$set: {
-							status: 'idle',
-							leaseOwner: null,
-							leaseExpiresAt: null,
-							lastError: null,
-							nextAttemptAt: null
-						}
-					}
-				).exec();
+				await getNeonDatabase()
+					.update(poolRefillStates)
+					.set({
+						status: 'idle',
+						leaseOwner: null,
+						leaseExpiresAt: null,
+						lastError: null,
+						nextAttemptAt: null,
+						updatedAt: now
+					})
+					.where(
+						and(
+							eq(poolRefillStates.questionType, questionType),
+							eq(poolRefillStates.apClass, bucket.apClass),
+							eq(poolRefillStates.unit, bucket.unit),
+							or(
+								inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
+								and(
+									eq(poolRefillStates.status, 'running'),
+									isNull(poolRefillStates.leaseExpiresAt)
+								),
+								and(
+									eq(poolRefillStates.status, 'running'),
+									lte(poolRefillStates.leaseExpiresAt, now)
+								)
+							)
+						)
+					);
 			}
 		}
 	}
@@ -244,10 +247,10 @@ export async function reconcilePoolRefillJobs(
 export async function enqueueAllCatalogDeficits(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<number> {
-	await connectDb();
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	let enqueued = 0;
 	for (const questionType of ['mcq', 'frq'] as const) {
+		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = poolTargetForBucket({
 				questionType,
@@ -255,9 +258,9 @@ export async function enqueueAllCatalogDeficits(
 				generationCountsByClass,
 				config: env
 			});
-			const observedCount = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
 			if (observedCount < target) {
-				await requestPoolRefill(bucket, env, generationCountsByClass);
+				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
 				enqueued += 1;
 			}
 		}

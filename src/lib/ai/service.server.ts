@@ -60,8 +60,7 @@ export async function structuredObject<T>(
 			logger.error(`[ai] ${callName} failed — no object generated`, {
 				...logContext,
 				model,
-				text: err.text,
-				cause: err.cause
+				error: 'No structured object generated'
 			});
 			throw new Error('No parsed output from structured response', { cause: err });
 		}

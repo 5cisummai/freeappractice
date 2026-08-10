@@ -1,10 +1,12 @@
 import { json } from '@sveltejs/kit';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { isSuperInsightsEnabled } from '$lib/flags';
 import { getEntitlements } from '$lib/super/entitlements.server';
-import { InsightReport } from '$lib/super/models.server';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { insightReports } from '$lib/server/neon/schema';
 
 const feedbackSchema = z
 	.object({
@@ -24,11 +26,12 @@ export const POST: RequestHandler = withAuthedHandler(
 		}
 		const parsed = feedbackSchema.safeParse(await event.request.json().catch(() => null));
 		if (!parsed.success) return json({ error: 'Invalid insight feedback' }, { status: 400 });
-		const result = await InsightReport.updateOne(
-			{ _id: parsed.data.reportId, userId },
-			{ $set: { feedback: parsed.data.feedback, feedbackReason: parsed.data.reason ?? '' } }
-		).exec();
-		return result.matchedCount
+		const [updated] = await getNeonDatabase()
+			.update(insightReports)
+			.set({ feedback: parsed.data.feedback, feedbackReason: parsed.data.reason ?? '' })
+			.where(and(eq(insightReports.id, parsed.data.reportId), eq(insightReports.userId, userId)))
+			.returning({ id: insightReports.id });
+		return updated
 			? json({ saved: true })
 			: json({ error: 'Insight report not found' }, { status: 404 });
 	},

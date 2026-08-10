@@ -6,7 +6,7 @@ export const load: PageServerLoad = async () => {
 	const posts = await listPublishedBlogEntries();
 	return {
 		posts: posts.map((p) => ({
-			_id: p._id,
+			id: p.id,
 			title: p.title,
 			slug: p.slug,
 			excerpt: p.excerpt,

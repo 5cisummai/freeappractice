@@ -15,8 +15,9 @@
 	import { markOnboardingPendingInBrowser } from '$lib/onboarding.js';
 	import {
 		isPasswordWithinLimit,
-		MAX_PASSWORD_BYTES,
-		MIN_PASSWORD_LENGTH
+		MIN_PASSWORD_LENGTH,
+		PASSWORD_LENGTH_ERROR,
+		PASSWORD_LENGTH_HINT
 	} from '$lib/auth/password-policy.js';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
@@ -37,12 +38,8 @@
 			errorMessage = 'Passwords do not match';
 			return;
 		}
-		if (password.length < MIN_PASSWORD_LENGTH) {
-			errorMessage = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
-			return;
-		}
-		if (!isPasswordWithinLimit(password)) {
-			errorMessage = `Password must be no more than ${MAX_PASSWORD_BYTES} UTF-8 bytes`;
+		if (password.length < MIN_PASSWORD_LENGTH || !isPasswordWithinLimit(password)) {
+			errorMessage = PASSWORD_LENGTH_ERROR;
 			return;
 		}
 
@@ -174,8 +171,7 @@
 							</Field.Field>
 						</div>
 						<Field.Description>
-							Must be at least {MIN_PASSWORD_LENGTH} characters and no more than {MAX_PASSWORD_BYTES}
-							UTF-8 bytes.
+							{PASSWORD_LENGTH_HINT}
 						</Field.Description>
 					</Field.Field>
 					<Field.Field>

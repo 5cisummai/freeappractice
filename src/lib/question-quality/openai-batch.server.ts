@@ -54,10 +54,14 @@ export function buildBatchLine(opts: {
 	});
 }
 
-export async function uploadBatchInput(contents: string, filename: string): Promise<string> {
+export async function uploadBatchInput(
+	contents: string | string[],
+	filename: string
+): Promise<string> {
 	const form = new FormData();
 	form.set('purpose', 'batch');
-	form.set('file', new Blob([contents], { type: 'application/jsonl' }), filename);
+	const parts = typeof contents === 'string' ? [contents] : contents;
+	form.set('file', new Blob(parts, { type: 'application/jsonl' }), filename);
 	const response = await openAiFetch('/files', { method: 'POST', body: form });
 	const payload = (await response.json()) as { id: string };
 	return payload.id;
@@ -103,6 +107,14 @@ export async function retrieveOpenAiBatch(batchId: string): Promise<{
 export async function downloadOpenAiFile(fileId: string): Promise<string> {
 	const response = await openAiFetch(`/files/${encodeURIComponent(fileId)}/content`);
 	return response.text();
+}
+
+export async function downloadOpenAiFileStream(
+	fileId: string
+): Promise<ReadableStream<Uint8Array>> {
+	const response = await openAiFetch(`/files/${encodeURIComponent(fileId)}/content`);
+	if (!response.body) throw new Error('OpenAI file response did not include a body');
+	return response.body;
 }
 
 export async function cancelOpenAiBatch(batchId: string): Promise<void> {

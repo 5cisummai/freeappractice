@@ -84,19 +84,19 @@
 					<p>
 						During the Super free beta, authenticated students aged 13 or older can claim free
 						access to personalized multiple-choice and written-response tutoring, Coach, Insights,
-						weekly study plans, and up to 300 personalized messages per UTC calendar month.
+						weekly study plans, and up to 300 personalized messages per month.
 					</p>
 				{:else}
 					<p>
 						Super is an optional subscription for students aged 13 or older. It is offered at $9 per
 						month or $79 per year, plus applicable tax, and renews automatically until you cancel.
 						Super includes personalized multiple-choice and written-response tutoring, Coach,
-						Insights, weekly study plans, and up to 600 personalized messages per UTC calendar
-						month. We do not offer a free trial, promotional pricing, discounts, or usage overages
-						for Super unless the checkout page expressly says otherwise.
+						Insights, weekly study plans, and up to 600 personalized messages per month. We do not
+						offer a free trial, promotional pricing, discounts, or extra usage charges for Super for
+						Super unless the checkout page expressly says otherwise.
 					</p>
 					<p class="mt-2">
-						You can cancel or restore a cancellation before the current billing period ends in the
+						You can cancel or restore a cancellation before the current subscription period ends in
 						billing portal. A cancellation takes effect at the end of the paid period. Any permitted
 						billing-interval change takes effect at the next renewal. Failed or past-due payments
 						may limit or end access after the applicable grace period. Payments, taxes, receipts,

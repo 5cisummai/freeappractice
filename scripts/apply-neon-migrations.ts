@@ -49,16 +49,18 @@ async function main(): Promise<void> {
 			continue;
 		}
 
-		const statements = contents
+		const transaction = contents
 			.split(statementBreakpoint)
 			.map((statement) => statement.trim())
 			.filter(Boolean)
 			.map((statement) => sql.query(statement));
-		if (statements.length) await sql.transaction(statements);
-		await sql.query('INSERT INTO public._neon_schema_migrations (id, checksum) VALUES ($1, $2)', [
-			id,
-			digest
-		]);
+		transaction.push(
+			sql.query('INSERT INTO public._neon_schema_migrations (id, checksum) VALUES ($1, $2)', [
+				id,
+				digest
+			])
+		);
+		await sql.transaction(transaction);
 	}
 }
 
