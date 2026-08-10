@@ -5,6 +5,27 @@
 
 	const changelog = [
 		{
+			version: '1.6.5',
+			date: 'August 10, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Practice questions can now include clear, exam-style diagrams when a visual makes the concept easier to understand',
+						'Diagrams appear directly in the question card and stay readable across screen sizes'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Questions stay more closely aligned with the AP class and unit you selected',
+						'Improved question variety helps repeated practice cover a wider range of concepts',
+						'The homepage loads faster when you return for another practice session'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.3',
 			date: 'August 9, 2026',
 			sections: [
