@@ -5,6 +5,32 @@
 
 	const changelog = [
 		{
+			version: '1.6.6',
+			date: 'August 11, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added graded quizzes with configurable question counts, scoring, completion summaries, and history',
+						'Added persistent Coach conversations with switching, reload continuity, diagrams, and richer activity feedback',
+						'Added Super Tutor experiences for personalized question and FRQ support',
+						'Added code-block copy/download tools and enhanced rich-text rendering'
+					]
+				},
+				{
+					title: 'Bug Fixes',
+					items: [
+						'Improved history filtering, quiz labels, result sorting, and detail displays',
+						'Added smoother tab transitions with reduced-motion support'
+					]
+				},
+				{
+					title: 'Documentation',
+					items: ['Updated privacy disclosures for persistent conversations and stored activity']
+				}
+			]
+		},
+		{
 			version: '1.6.5',
 			date: 'August 10, 2026',
 			sections: [
