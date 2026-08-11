@@ -1,6 +1,7 @@
 <script lang="ts">
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
+	import QuizSession from '$lib/components/practice/quiz-session.svelte';
 	import FrqCard from '$lib/components/questions/frq-card.svelte';
 	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
@@ -11,6 +12,9 @@
 		selectedUnit?: string;
 		unitRange?: number[];
 		requestVersion?: number;
+		quizMode?: boolean;
+		count?: number;
+		quizGenerating?: boolean;
 		allowFrq?: boolean;
 		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
@@ -28,6 +32,9 @@
 		selectedUnit = $bindable(''),
 		unitRange = $bindable<number[] | undefined>(undefined),
 		requestVersion = $bindable(0),
+		quizMode = false,
+		count = $bindable(10),
+		quizGenerating = $bindable(false),
 		allowFrq = false,
 		showFirstUseHints = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
@@ -54,6 +61,7 @@
 
 	function handleGenerate(): void {
 		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
+		if (quizMode) count = Math.min(50, Math.max(1, Math.floor(count || 10)));
 		requestVersion += 1;
 		onGenerate?.();
 	}
@@ -83,7 +91,10 @@
 		bind:selectedUnit
 		bind:unitRange
 		showFirstUseHint={showFirstUseHints}
-		{generateLabel}
+		{quizMode}
+		bind:count
+		generateDisabled={quizMode && quizGenerating}
+		generateLabel={quizMode ? 'Generate Quiz' : generateLabel}
 		onSelectionChange={handleSelectionChange}
 		onGenerate={handleGenerate}
 	/>
@@ -100,6 +111,15 @@
 				showFirstUseHint={showFirstUseHints}
 				{isPersonalizedTutor}
 				onGraded={onFrqGraded}
+			/>
+		{:else if quizMode}
+			<QuizSession
+				{selectedClass}
+				{selectedUnit}
+				{unitRange}
+				{count}
+				{requestVersion}
+				bind:isGenerating={quizGenerating}
 			/>
 		{:else}
 			<QuestionCard

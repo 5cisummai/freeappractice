@@ -10,6 +10,7 @@
 		checkedSelection = null,
 		correctAnswer,
 		onSelect,
+		showFeedback = true,
 		compact = false,
 		lockedChoices = []
 	}: {
@@ -19,6 +20,7 @@
 		checkedSelection?: string | null;
 		correctAnswer?: string;
 		onSelect: (optionId: string) => void;
+		showFeedback?: boolean;
 		compact?: boolean;
 		/** Multi-attempt: previously incorrect choices stay unavailable. Empty by default (control). */
 		lockedChoices?: string[];
@@ -29,6 +31,11 @@
 	}
 
 	function optionButtonClasses(optionId: string): string {
+		if (!showFeedback && hasCheckedAnswer) {
+			return selectedOption === optionId
+				? 'border-primary/70 bg-primary/8'
+				: 'border-border/70 bg-background';
+		}
 		if (isLocked(optionId) && !hasCheckedAnswer) {
 			return 'border-red-500/40 bg-red-500/5 opacity-70';
 		}
@@ -50,6 +57,11 @@
 	}
 
 	function optionBadgeClasses(optionId: string): string {
+		if (!showFeedback && hasCheckedAnswer) {
+			return selectedOption === optionId
+				? 'border-primary bg-primary text-primary-foreground'
+				: 'border-border bg-muted/50 text-muted-foreground';
+		}
 		if (isLocked(optionId) && !hasCheckedAnswer) {
 			return 'border-red-500/70 bg-red-500/20 text-red-700';
 		}

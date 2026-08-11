@@ -8,6 +8,8 @@
 		selectedUnit?: string;
 		unitRange?: number[];
 		requestVersion?: number;
+		quizMode?: boolean;
+		count?: number;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -18,6 +20,8 @@
 		selectedUnit = $bindable(''),
 		unitRange = $bindable<number[] | undefined>(undefined),
 		requestVersion = $bindable(0),
+		quizMode = false,
+		count = $bindable(10),
 		...rest
 	}: QuestionShellProps = $props();
 </script>
@@ -27,6 +31,8 @@
 	bind:selectedUnit
 	bind:unitRange
 	bind:requestVersion
+	bind:count
 	allowFrq={false}
+	{quizMode}
 	{...rest}
 />

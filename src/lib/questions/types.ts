@@ -62,6 +62,12 @@ export type GeneratedQuestion = {
 export type QuestionCardProps = {
 	class?: string;
 	questionNumber?: string;
+	quizMode?: boolean;
+	quizQuestion?: GeneratedQuestion | null;
+	quizAnswer?: AnswerResult | null;
+	nextDisabled?: boolean;
+	onQuizNext?: () => void;
+	onOptionSelected?: (selectedOption: string) => void;
 	selectedClass?: string;
 	selectedUnit?: string;
 	unitRange?: readonly number[];

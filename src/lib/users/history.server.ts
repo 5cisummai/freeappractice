@@ -1,9 +1,15 @@
 import type { IQuestionAttempt } from '$lib/users/records.server';
-import type { FrqHistoryItem, HistorySummary } from '$lib/users/types';
+import type { FrqHistoryItem, HistorySummary, QuizHistoryItem } from '$lib/users/types';
 import type { StoredQuestion } from '$lib/questions/storage.server';
 import { inArray, sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttemptGrades, frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
+import {
+	frqAttemptGrades,
+	frqAttempts,
+	mcqAttempts,
+	mcqQuestions,
+	quizAttempts
+} from '$lib/server/neon/schema';
 
 type McqHistoryItem = {
 	kind: 'mcq';
@@ -11,7 +17,7 @@ type McqHistoryItem = {
 	question: StoredQuestion | null;
 };
 
-type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem;
+type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem | QuizHistoryItem;
 
 type PracticeHistoryPageResult = {
 	items: PracticeHistoryItem[];
@@ -22,7 +28,7 @@ type PracticeHistoryPageResult = {
 };
 
 export type HistoryResultFilter = 'correct' | 'incorrect';
-export type HistoryKindFilter = 'mcq' | 'frq';
+export type HistoryKindFilter = 'mcq' | 'frq' | 'quiz';
 
 export type HistoryFilters = {
 	unit?: string;
@@ -46,7 +52,7 @@ type HistoryQueryOptions = {
 };
 
 type McqHistoryRow = {
-	questionId: string;
+	questionId: string | null;
 	apClass: string;
 	unit: string;
 	selectedAnswer: string | null;
@@ -63,11 +69,16 @@ type McqHistoryRow = {
 };
 
 type HistorySqlRow = McqHistoryRow & {
-	kind: 'mcq' | 'frq';
+	kind: 'mcq' | 'frq' | 'quiz';
 	id: string;
 	pointsEarned: number | null;
 	pointsAvailable: number | null;
 	percentage: number | null;
+	requestedCount: number | null;
+	answeredCount: number | null;
+	correctCount: number | null;
+	incorrectCount: number | null;
+	scorePercent: number | null;
 	resultScore: number;
 };
 
@@ -86,7 +97,7 @@ export function parseHistoryResult(
 }
 
 export function parseHistoryKind(value: string | null | undefined): HistoryKindFilter | undefined {
-	return value === 'mcq' || value === 'frq' ? value : undefined;
+	return value === 'mcq' || value === 'frq' || value === 'quiz' ? value : undefined;
 }
 
 function parseHistoryDate(value: string | null | undefined, endOfDay = false): number | undefined {
@@ -222,7 +233,7 @@ export async function getPracticeHistoryPage(
 		...(to ? [sql`${columns.attemptedAt} <= ${new Date(to)}`] : [])
 	];
 	const sources: SQL[] = [];
-	if (filters.kind !== 'frq') {
+	if (!filters.kind || filters.kind === 'mcq') {
 		const conditions = [
 			...commonConditions(mcqAttempts),
 			...(filters.result === 'correct' ? [sql`${mcqAttempts.wasCorrect} = true`] : []),
@@ -249,13 +260,18 @@ export async function getPracticeHistoryPage(
 				NULL::integer AS "pointsEarned",
 				NULL::integer AS "pointsAvailable",
 				NULL::integer AS percentage,
+				NULL::integer AS "requestedCount",
+				NULL::integer AS "answeredCount",
+				NULL::integer AS "correctCount",
+				NULL::integer AS "incorrectCount",
+				NULL::integer AS "scorePercent",
 				CASE WHEN ${mcqAttempts.wasCorrect} THEN 100
 					WHEN ${mcqAttempts.wasCorrect} = false THEN 0 ELSE -1 END AS "resultScore"
 			FROM ${mcqAttempts}
 			WHERE ${sql.join(conditions, sql` AND `)}
 		`);
 	}
-	if (includeFrq && filters.kind !== 'mcq') {
+	if (includeFrq && (!filters.kind || filters.kind === 'frq')) {
 		const conditions = [
 			sql`${frqAttempts.status} = 'graded'`,
 			...commonConditions({
@@ -292,10 +308,61 @@ export async function getPracticeHistoryPage(
 				${frqAttemptGrades.pointsEarned} AS "pointsEarned",
 				${frqAttemptGrades.pointsAvailable} AS "pointsAvailable",
 				${frqAttemptGrades.percentage} AS percentage,
+				NULL::integer AS "requestedCount",
+				NULL::integer AS "answeredCount",
+				NULL::integer AS "correctCount",
+				NULL::integer AS "incorrectCount",
+				NULL::integer AS "scorePercent",
 				${frqAttemptGrades.percentage} AS "resultScore"
 			FROM ${frqAttempts}
 			INNER JOIN ${frqAttemptGrades}
 				ON ${frqAttemptGrades.attemptId} = ${frqAttempts.id}
+			WHERE ${sql.join(conditions, sql` AND `)}
+		`);
+	}
+	if (!filters.kind || filters.kind === 'quiz') {
+		const conditions = [
+			...commonConditions({
+				userId: quizAttempts.userId,
+				apClass: quizAttempts.apClass,
+				unit: quizAttempts.unit,
+				attemptedAt: quizAttempts.completedAt
+			}),
+			...(filters.result === 'correct'
+				? [sql`${quizAttempts.scorePercent} >= ${FRQ_PASS_THRESHOLD}`]
+				: []),
+			...(filters.result === 'incorrect'
+				? [sql`${quizAttempts.scorePercent} < ${FRQ_PASS_THRESHOLD}`]
+				: [])
+		];
+		sources.push(sql`
+			SELECT
+				'quiz'::text AS kind,
+				${quizAttempts.id} AS id,
+				NULL::text AS "questionId",
+				${quizAttempts.apClass} AS "apClass",
+				${quizAttempts.unit} AS unit,
+				NULL::text AS "selectedAnswer",
+				NULL::boolean AS "wasCorrect",
+				${quizAttempts.timeTakenMs} AS "timeTakenMs",
+				${quizAttempts.completedAt} AS "attemptedAt",
+				NULL::text AS "finalAnswer",
+				NULL::integer AS "answerCount",
+				NULL::integer AS "hintsShown",
+				NULL::text AS "terminalOutcome",
+				NULL::text AS "experimentKey",
+				NULL::integer AS "experimentVersion",
+				NULL::text AS "displayedVariant",
+				NULL::integer AS "pointsEarned",
+				NULL::integer AS "pointsAvailable",
+				NULL::integer AS percentage,
+				${quizAttempts.requestedCount} AS "requestedCount",
+				${quizAttempts.answeredCount} AS "answeredCount",
+				${quizAttempts.correctCount} AS "correctCount",
+				${quizAttempts.incorrectCount} AS "incorrectCount",
+				${quizAttempts.scorePercent} AS "scorePercent",
+				${quizAttempts.scorePercent} AS "resultScore"
+			FROM ${quizAttempts}
 			WHERE ${sql.join(conditions, sql` AND `)}
 		`);
 	}
@@ -320,53 +387,76 @@ export async function getPracticeHistoryPage(
 			WITH history AS (${history})
 			SELECT
 				count(*)::int AS total,
-				count(*) FILTER (WHERE kind = 'frq' OR "selectedAnswer" IS NOT NULL)::int AS answered,
+				count(*) FILTER (WHERE kind IN ('frq', 'quiz') OR "selectedAnswer" IS NOT NULL)::int AS answered,
 				count(*) FILTER (WHERE "resultScore" >= ${FRQ_PASS_THRESHOLD})::int AS correct,
 				count(*) FILTER (WHERE "resultScore" >= 0)::int AS graded,
 				round(avg("timeTakenMs") FILTER (WHERE "timeTakenMs" > 0))::int AS "avgTimeMs"
 			FROM history
 		`)
 	]);
-	const items: PracticeHistoryItem[] = pageResult.rows.map((row) =>
-		row.kind === 'mcq'
-			? {
-					kind: 'mcq',
-					attempt: {
-						questionId: row.questionId,
-						apClass: row.apClass,
-						unit: row.unit,
-						selectedAnswer: (row.selectedAnswer as IQuestionAttempt['selectedAnswer']) ?? undefined,
-						wasCorrect: row.wasCorrect ?? undefined,
-						timeTakenMs: row.timeTakenMs ?? undefined,
-						attemptedAt: new Date(row.attemptedAt),
-						finalAnswer: (row.finalAnswer as IQuestionAttempt['finalAnswer']) ?? undefined,
-						answerCount: row.answerCount ?? undefined,
-						hintsShown: row.hintsShown ?? undefined,
-						terminalOutcome:
-							(row.terminalOutcome as IQuestionAttempt['terminalOutcome']) ?? undefined,
-						experimentKey: row.experimentKey ?? undefined,
-						experimentVersion: row.experimentVersion ?? undefined,
-						displayedVariant:
-							(row.displayedVariant as IQuestionAttempt['displayedVariant']) ?? undefined
-					},
-					question: null
-				}
-			: {
-					kind: 'frq',
-					attempt: {
-						id: row.id,
-						questionId: row.questionId,
-						apClass: row.apClass,
-						unit: row.unit,
-						pointsEarned: Number(row.pointsEarned),
-						pointsAvailable: Number(row.pointsAvailable),
-						percentage: Number(row.percentage),
-						timeTakenMs: row.timeTakenMs ?? 0,
-						attemptedAt: new Date(row.attemptedAt).toISOString()
-					},
-					question: null
-				}
-	);
+	const items: PracticeHistoryItem[] = pageResult.rows.map((row) => {
+		if (row.kind === 'mcq' && row.questionId) {
+			return {
+				kind: 'mcq',
+				attempt: {
+					questionId: row.questionId,
+					apClass: row.apClass,
+					unit: row.unit,
+					selectedAnswer: (row.selectedAnswer as IQuestionAttempt['selectedAnswer']) ?? undefined,
+					wasCorrect: row.wasCorrect ?? undefined,
+					timeTakenMs: row.timeTakenMs ?? undefined,
+					attemptedAt: new Date(row.attemptedAt),
+					finalAnswer: (row.finalAnswer as IQuestionAttempt['finalAnswer']) ?? undefined,
+					answerCount: row.answerCount ?? undefined,
+					hintsShown: row.hintsShown ?? undefined,
+					terminalOutcome:
+						(row.terminalOutcome as IQuestionAttempt['terminalOutcome']) ?? undefined,
+					experimentKey: row.experimentKey ?? undefined,
+					experimentVersion: row.experimentVersion ?? undefined,
+					displayedVariant:
+						(row.displayedVariant as IQuestionAttempt['displayedVariant']) ?? undefined
+				},
+				question: null
+			};
+		}
+		if (row.kind === 'quiz') {
+			return {
+				kind: 'quiz',
+				attempt: {
+					id: row.id,
+					questionId: row.id,
+					apClass: row.apClass,
+					unit: row.unit,
+					requestedCount: Number(row.requestedCount ?? 0),
+					answeredCount: Number(row.answeredCount ?? 0),
+					correctCount: Number(row.correctCount ?? 0),
+					incorrectCount: Number(row.incorrectCount ?? 0),
+					scorePercent: Number(row.scorePercent ?? 0),
+					timeTakenMs: row.timeTakenMs ?? 0,
+					attemptedAt: new Date(row.attemptedAt).toISOString()
+				},
+				question: null
+			};
+		}
+		if (row.kind !== 'frq' || !row.questionId) {
+			throw new Error('History row is missing its FRQ question ID');
+		}
+		return {
+			kind: 'frq',
+			attempt: {
+				id: row.id,
+				questionId: row.questionId,
+				apClass: row.apClass,
+				unit: row.unit,
+				pointsEarned: Number(row.pointsEarned),
+				pointsAvailable: Number(row.pointsAvailable),
+				percentage: Number(row.percentage),
+				timeTakenMs: row.timeTakenMs ?? 0,
+				attemptedAt: new Date(row.attemptedAt).toISOString()
+			},
+			question: null
+		};
+	});
 	const summaryRow = summaryResult.rows[0] ?? {
 		total: 0,
 		answered: 0,

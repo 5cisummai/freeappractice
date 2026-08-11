@@ -17,15 +17,21 @@
 	import { measureLongQuestion, portalToBody } from '$lib/components/questions/question-card-dom';
 	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
 	import type { BugReportContext, QuestionCardProps } from '$lib/questions/types';
-	import lightbulbImage from '$lib/assets/lightbulb.png';
+	const lightbulbImage = '/illustrations/lightbulb.png';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
+	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 
 	let {
 		class: className,
 		questionNumber = '',
+		quizMode = false,
+		quizQuestion = null,
+		quizAnswer = null,
+		nextDisabled = false,
+		onQuizNext,
 		selectedClass = '',
 		selectedUnit = '',
 		unitRange,
@@ -45,6 +51,7 @@
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
 		onCheckAnswer,
+		onOptionSelected,
 		onSkip,
 		onNotLearned,
 		onReportBug,
@@ -65,6 +72,9 @@
 		getUnitRange: () => unitRange,
 		getRequestVersion: () => requestVersion,
 		getQuestionNumber: () => questionNumber,
+		getQuizMode: () => quizMode,
+		getQuizQuestion: () => quizQuestion,
+		getQuizAnswer: () => quizAnswer,
 		getAutoShowExplanation: () => autoShowExplanation,
 		getSelectedOption: () => selectedOption,
 		getMounted: () => mounted,
@@ -72,9 +82,11 @@
 			selectedOption = value;
 		},
 		onCheckAnswer: (value) => onCheckAnswer?.(value),
+		onOptionSelected: (value) => onOptionSelected?.(value),
 		onSkip: () => onSkip?.(),
 		onNotLearned: () => onNotLearned?.(),
 		onAnswered: (result) => onAnswered?.(result),
+		onQuizNext: () => onQuizNext?.(),
 		practiceExperiment: untrack(() => practiceExperiment)
 	});
 
@@ -228,6 +240,7 @@
 				checkedSelection={session.checkedSelection}
 				correctAnswer={session.currentQuestion?.correctAnswer}
 				onSelect={session.handleOptionSelect}
+				showFeedback={!quizMode}
 				{compact}
 				lockedChoices={session.lockedChoices}
 			/>
@@ -370,14 +383,14 @@
 						</Button>
 					</div>
 				{/if}
-				{#if session.hasCheckedAnswer || session.activeHintText}
+				{#if !quizMode && (session.hasCheckedAnswer || session.activeHintText)}
 					<div class="min-w-0 space-y-1">
 						<p class="text-sm text-muted-foreground">{session.feedbackMessage}</p>
 					</div>
 				{/if}
 			</div>
 			<div class="flex gap-2">
-				{#if session.hasCheckedAnswer && session.currentQuestion?.explanation}
+				{#if !quizMode && session.hasCheckedAnswer && session.currentQuestion?.explanation}
 					<Button
 						variant="outline"
 						onclick={() => {
@@ -398,11 +411,11 @@
 				<Button
 					variant="outline"
 					onclick={session.handleNextQuestion}
-					disabled={session.isLoading || !session.hasCheckedAnswer}
+					disabled={session.isLoading || (!quizMode && !session.hasCheckedAnswer) || nextDisabled}
 				>
 					{nextLabel}
 				</Button>
-				{#if !session.hasCheckedAnswer}
+				{#if !session.hasCheckedAnswer && !quizMode}
 					{#if session.isTreatmentActive && session.multiAttemptState.phase !== 'terminal'}
 						<Button variant="outline" onclick={session.handleRevealAnswer}>Show answer</Button>
 					{/if}
@@ -444,16 +457,26 @@
 		</div>
 	{/if}
 
-	{#if session.currentQuestion}
+	{#if session.currentQuestion && !quizMode}
 		{#key session.currentQuestion.questionId ?? session.currentQuestion.prompt}
-			<TutorWidget
-				apClass={selectedClass}
-				unit={tutorUnitLabel}
-				questionId={session.currentQuestion.questionId}
-				topic={session.currentQuestion.topic}
-				{isPersonalizedTutor}
-				{showFirstUseHint}
-			/>
+			{#if isPersonalizedTutor}
+				<SuperTutorWidget
+					apClass={selectedClass}
+					unit={tutorUnitLabel}
+					questionId={session.currentQuestion.questionId}
+					topic={session.currentQuestion.topic}
+					{showFirstUseHint}
+				/>
+			{:else}
+				<TutorWidget
+					apClass={selectedClass}
+					unit={tutorUnitLabel}
+					questionId={session.currentQuestion.questionId}
+					topic={session.currentQuestion.topic}
+					{isPersonalizedTutor}
+					{showFirstUseHint}
+				/>
+			{/if}
 		{/key}
 	{/if}
 
@@ -464,7 +487,7 @@
 		{selectedUnit}
 	/>
 
-	{#if session.currentQuestion?.explanation}
+	{#if !quizMode && session.currentQuestion?.explanation}
 		<Dialog.Root bind:open={session.showExplanation}>
 			<Dialog.Content
 				class="max-h-[min(85vh,40rem)] w-full max-w-2xl gap-0 overflow-y-auto sm:max-w-2xl"

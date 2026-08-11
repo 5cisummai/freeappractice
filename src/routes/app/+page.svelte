@@ -11,7 +11,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
-	import lightbulbImage from '$lib/assets/lightbulb.png';
+	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const SUBJECT_PROGRESS_GOAL = 100;
 

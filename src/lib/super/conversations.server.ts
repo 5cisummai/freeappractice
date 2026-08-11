@@ -1,0 +1,249 @@
+import { randomUUID } from 'node:crypto';
+import { and, asc, desc, eq, isNull, max } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { conversationMessages, conversations, coachAudits } from '$lib/server/neon/schema';
+
+export type ConversationSurface = 'coach' | 'question';
+
+export type ConversationContext = {
+	page?: 'coach' | 'practice' | 'progress' | 'history' | 'insights';
+	questionId?: string;
+	questionType?: 'mcq' | 'frq';
+	frqAttemptId?: string;
+	quizId?: string;
+};
+
+export type ConversationMessage = {
+	id: string;
+	role: 'user' | 'assistant';
+	content: string;
+	parts: unknown[];
+	position: number;
+	status: string;
+};
+
+function normalizeSurface(value: string | undefined): ConversationSurface {
+	return value === 'question' ? 'question' : 'coach';
+}
+
+function safeContext(value: ConversationContext | undefined): Record<string, unknown> {
+	return Object.fromEntries(
+		Object.entries(value ?? {}).filter(([, item]) => typeof item === 'string' && item.trim())
+	);
+}
+
+export async function createConversation(
+	userId: string,
+	input: {
+		surface: ConversationSurface;
+		title?: string;
+		context?: ConversationContext;
+		id?: string;
+	}
+): Promise<string> {
+	const id = input.id?.trim() || randomUUID();
+	await getNeonDatabase()
+		.insert(conversations)
+		.values({
+			id,
+			userId,
+			title:
+				input.title?.trim().slice(0, 160) ||
+				(input.surface === 'question' ? 'Question help' : 'Coach'),
+			surface: normalizeSurface(input.surface),
+			context: safeContext(input.context)
+		})
+		.onConflictDoNothing();
+
+	const owned = await getOwnedConversation(userId, id);
+	if (!owned) throw new Error('Conversation could not be created');
+	return id;
+}
+
+export async function getOwnedConversation(userId: string, conversationId: string) {
+	const [conversation] = await getNeonDatabase()
+		.select()
+		.from(conversations)
+		.where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+		.limit(1);
+	return conversation ?? null;
+}
+
+export async function ensureConversation(
+	userId: string,
+	input: {
+		conversationId?: string;
+		surface: ConversationSurface;
+		context?: ConversationContext;
+	}
+): Promise<string> {
+	if (input.conversationId) {
+		const existing = await getOwnedConversation(userId, input.conversationId);
+		if (!existing) throw new Error('Conversation not found');
+		if (normalizeSurface(existing.surface) !== input.surface)
+			throw new Error('Conversation surface mismatch');
+		return existing.id;
+	}
+	return createConversation(userId, input);
+}
+
+export async function getConversationMessages(
+	userId: string,
+	conversationId: string
+): Promise<ConversationMessage[]> {
+	const owned = await getOwnedConversation(userId, conversationId);
+	if (!owned) throw new Error('Conversation not found');
+	const rows = await getNeonDatabase()
+		.select({
+			id: conversationMessages.id,
+			role: conversationMessages.role,
+			content: conversationMessages.content,
+			parts: conversationMessages.parts,
+			position: conversationMessages.position,
+			status: conversationMessages.status
+		})
+		.from(conversationMessages)
+		.where(eq(conversationMessages.conversationId, conversationId))
+		.orderBy(asc(conversationMessages.position));
+	return rows.map((row) => ({
+		...row,
+		role: row.role === 'user' ? 'user' : 'assistant'
+	}));
+}
+
+async function nextPosition(conversationId: string): Promise<number> {
+	const [row] = await getNeonDatabase()
+		.select({ position: max(conversationMessages.position) })
+		.from(conversationMessages)
+		.where(eq(conversationMessages.conversationId, conversationId));
+	return Number(row?.position ?? -1) + 1;
+}
+
+export async function appendConversationMessage(
+	userId: string,
+	input: {
+		conversationId: string;
+		role: 'user' | 'assistant';
+		content?: string;
+		parts?: unknown[];
+		status?: 'streaming' | 'complete' | 'aborted' | 'error';
+		clientMessageId?: string;
+	}
+): Promise<string> {
+	const owned = await getOwnedConversation(userId, input.conversationId);
+	if (!owned) throw new Error('Conversation not found');
+
+	if (input.clientMessageId) {
+		const [existing] = await getNeonDatabase()
+			.select({ id: conversationMessages.id })
+			.from(conversationMessages)
+			.where(
+				and(
+					eq(conversationMessages.conversationId, input.conversationId),
+					eq(conversationMessages.clientMessageId, input.clientMessageId)
+				)
+			)
+			.limit(1);
+		if (existing) return existing.id;
+	}
+
+	const id = randomUUID();
+	await getNeonDatabase()
+		.insert(conversationMessages)
+		.values({
+			id,
+			conversationId: input.conversationId,
+			position: await nextPosition(input.conversationId),
+			role: input.role,
+			content: input.content ?? '',
+			parts: input.parts ?? [],
+			status: input.status ?? 'complete',
+			clientMessageId: input.clientMessageId,
+			createdAt: new Date()
+		})
+		.onConflictDoNothing();
+
+	await getNeonDatabase()
+		.update(conversations)
+		.set({ lastMessageAt: new Date(), updatedAt: new Date() })
+		.where(and(eq(conversations.id, input.conversationId), eq(conversations.userId, userId)));
+	return id;
+}
+
+export async function finalizeConversationMessage(
+	userId: string,
+	messageId: string,
+	input: {
+		content: string;
+		parts: unknown[];
+		status: 'complete' | 'aborted' | 'error';
+	}
+): Promise<void> {
+	const [message] = await getNeonDatabase()
+		.select({ conversationId: conversationMessages.conversationId })
+		.from(conversationMessages)
+		.innerJoin(conversations, eq(conversations.id, conversationMessages.conversationId))
+		.where(and(eq(conversationMessages.id, messageId), eq(conversations.userId, userId)))
+		.limit(1);
+	if (!message) throw new Error('Conversation message not found');
+
+	await getNeonDatabase()
+		.update(conversationMessages)
+		.set({
+			content: input.content,
+			parts: input.parts,
+			status: input.status,
+			updatedAt: new Date()
+		})
+		.where(eq(conversationMessages.id, messageId));
+
+	await getNeonDatabase()
+		.update(conversations)
+		.set({ lastMessageAt: new Date(), updatedAt: new Date() })
+		.where(eq(conversations.id, message.conversationId));
+}
+
+export async function linkCoachAuditToConversation(
+	userId: string,
+	auditId: string,
+	conversationId: string,
+	messageId?: string
+): Promise<void> {
+	await getNeonDatabase()
+		.update(coachAudits)
+		.set({ conversationId, messageId, updatedAt: new Date() })
+		.where(and(eq(coachAudits.id, auditId), eq(coachAudits.userId, userId)));
+}
+
+export async function linkCoachAuditsToAssistantMessage(
+	userId: string,
+	conversationId: string,
+	messageId: string,
+	parts: unknown[]
+): Promise<void> {
+	const toolParts = parts.flatMap((part) => {
+		if (!part || typeof part !== 'object') return [];
+		const item = part as Record<string, unknown>;
+		if (typeof item.type !== 'string' || !item.type.startsWith('tool-')) return [];
+		const toolName = item.type.slice('tool-'.length);
+		return toolName === 'update_goals' || toolName === 'update_study_plan' ? [{ toolName }] : [];
+	});
+	for (const toolPart of toolParts) {
+		const [audit] = await getNeonDatabase()
+			.select({ id: coachAudits.id })
+			.from(coachAudits)
+			.where(
+				and(
+					eq(coachAudits.userId, userId),
+					eq(coachAudits.conversationId, conversationId),
+					eq(coachAudits.toolName, toolPart.toolName),
+					isNull(coachAudits.messageId)
+				)
+			)
+			.orderBy(desc(coachAudits.createdAt))
+			.limit(1);
+		if (audit) {
+			await linkCoachAuditToConversation(userId, audit.id, conversationId, messageId);
+		}
+	}
+}

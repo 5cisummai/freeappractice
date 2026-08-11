@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, type Component } from 'svelte';
+	import { onMount, tick, type Component } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
@@ -30,6 +30,7 @@
 	let { data } = $props();
 
 	let sessionId = $state('');
+	let conversationId = $state('');
 	let input = $state('');
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
@@ -53,6 +54,10 @@
 		'tool-read_progress': {
 			running: 'Checking your recent practice…',
 			complete: 'Checked your recent practice'
+		},
+		'tool-read_quiz_attempt': {
+			running: 'Reviewing your quiz…',
+			complete: 'Reviewed your quiz'
 		},
 		'tool-read_insights': {
 			running: 'Reviewing your insights…',
@@ -78,11 +83,20 @@
 			api: '/api/coach',
 			fetch: async (url, init) => {
 				const response = await apiFetch(String(url), init);
+				const responseConversationId = response.headers.get('X-Super-Conversation-Id');
+				if (responseConversationId) {
+					conversationId = responseConversationId;
+					sessionStorage.setItem('super-coach-conversation-id', responseConversationId);
+				}
 				showUsageWarning(response);
 				return response;
 			},
 			prepareSendMessagesRequest: ({ messages }) => ({
-				body: { sessionId, messages: messages.slice(-12) }
+				body: {
+					sessionId,
+					...(conversationId ? { conversationId } : {}),
+					messages: messages.slice(-12)
+				}
 			})
 		})
 	});
@@ -275,12 +289,40 @@
 
 	onMount(() => {
 		const key = 'super-coach-session-id';
-		sessionId = sessionStorage.getItem(key) ?? crypto.randomUUID();
+		const conversationKey = 'super-coach-conversation-id';
+		const prompt = new URLSearchParams(window.location.search).get('prompt')?.trim() ?? '';
+		sessionId = prompt ? crypto.randomUUID() : (sessionStorage.getItem(key) ?? crypto.randomUUID());
 		sessionStorage.setItem(key, sessionId);
+		conversationId = prompt ? '' : (sessionStorage.getItem(conversationKey) ?? '');
+		if (conversationId) void loadConversation(conversationId);
+		if (prompt) {
+			const url = new URL(window.location.href);
+			url.searchParams.delete('prompt');
+			window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+			void tick().then(() => send(prompt));
+		}
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			motionMs = 0;
 		}
 	});
+
+	async function loadConversation(id: string): Promise<void> {
+		try {
+			const response = await apiFetch(`/api/super/conversations/${id}`);
+			const payload = await readJsonOrNull<{
+				messages?: Array<{
+					id: string;
+					role: 'user' | 'assistant';
+					parts: CoachUIMessage['parts'];
+				}>;
+			}>(response);
+			if (!response.ok || !payload?.messages) return;
+			coach.messages = payload.messages as CoachUIMessage[];
+		} catch {
+			conversationId = '';
+			sessionStorage.removeItem('super-coach-conversation-id');
+		}
+	}
 
 	function showUsageWarning(response: Response) {
 		const warning = Number(response.headers.get('X-Super-Usage-Warning'));

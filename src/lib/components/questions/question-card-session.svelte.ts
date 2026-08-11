@@ -34,6 +34,9 @@ export type QuestionCardSessionOpts = {
 	getUnitRange: () => readonly number[] | undefined;
 	getRequestVersion: () => number;
 	getQuestionNumber: () => string;
+	getQuizMode: () => boolean;
+	getQuizQuestion: () => GeneratedQuestion | null | undefined;
+	getQuizAnswer: () => AnswerResult | null | undefined;
 	getAutoShowExplanation: () => boolean;
 	getSelectedOption: () => string | null;
 	getMounted: () => boolean;
@@ -42,6 +45,8 @@ export type QuestionCardSessionOpts = {
 	onSkip?: QuestionCardProps['onSkip'];
 	onNotLearned?: QuestionCardProps['onNotLearned'];
 	onAnswered?: QuestionCardProps['onAnswered'];
+	onQuizNext?: QuestionCardProps['onQuizNext'];
+	onOptionSelected?: QuestionCardProps['onOptionSelected'];
 	practiceExperiment?: QuestionCardProps['practiceExperiment'];
 };
 
@@ -269,6 +274,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	function handleOptionSelect(optionId: string): void {
 		if (hasCheckedAnswer) return;
 		opts.setSelectedOption(optionId);
+		opts.onOptionSelected?.(optionId);
 	}
 
 	function captureFirstAnswerAnalytics(
@@ -435,6 +441,10 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	}
 
 	async function handleNextQuestion(): Promise<void> {
+		if (opts.getQuizMode()) {
+			opts.onQuizNext?.();
+			return;
+		}
 		await loadQuestion('next');
 	}
 
@@ -493,13 +503,28 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 
 	async function init(): Promise<void> {
 		clearWarmingRetryTimer();
-		currentQuestion = null;
+		const quizQuestion = opts.getQuizMode() ? (opts.getQuizQuestion() ?? null) : null;
+		const quizAnswer = opts.getQuizMode() ? (opts.getQuizAnswer() ?? null) : null;
+		currentQuestion = quizQuestion;
 		questionCount = 0;
 		isPoolWarming = false;
 		poolWarmingAutoAttempts = 0;
 		questionLoadFailed = false;
-		resetInteractionState(true);
+		resetInteractionState(!quizQuestion);
 		statusMessage = 'Choose the best answer and then check your response.';
+
+		if (quizQuestion) {
+			questionCount = 1;
+			displayedVariant = 'control';
+			multiAttemptState = createMultiAttemptState();
+			statusMessage = 'Select an answer, then submit it when you are ready.';
+			if (quizAnswer) {
+				hasCheckedAnswer = true;
+				checkedSelection = quizAnswer.selectedAnswer ?? null;
+				answerResult = quizAnswer;
+				opts.setSelectedOption(quizAnswer.selectedAnswer ?? null);
+			}
+		}
 	}
 
 	function destroy(): void {

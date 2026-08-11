@@ -8,6 +8,7 @@
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
+	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import {
 		parseFrqLatestDraft,
@@ -17,7 +18,7 @@
 	} from '$lib/questions/frq-draft.client.js';
 	import { PoolWarmingError } from '$lib/questions/request.client.js';
 	import { requestFrqQuestion } from '$lib/questions/request-frq.client';
-	import lightbulbImage from '$lib/assets/lightbulb.png';
+	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;
 	const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -417,16 +418,28 @@
 		{/if}
 
 		{#key question.questionId}
-			<TutorWidget
-				apClass={question.apClass}
-				unit={question.unit}
-				questionId={question.questionId}
-				frqQuestionId={question.questionId}
-				frqAttemptId={attemptId}
-				topic={question.formatId}
-				{isPersonalizedTutor}
-				{showFirstUseHint}
-			/>
+			{#if isPersonalizedTutor}
+				<SuperTutorWidget
+					apClass={question.apClass}
+					unit={question.unit}
+					questionId={question.questionId}
+					frqQuestionId={question.questionId}
+					frqAttemptId={attemptId}
+					topic={question.formatId}
+					{showFirstUseHint}
+				/>
+			{:else}
+				<TutorWidget
+					apClass={question.apClass}
+					unit={question.unit}
+					questionId={question.questionId}
+					frqQuestionId={question.questionId}
+					frqAttemptId={attemptId}
+					topic={question.formatId}
+					{isPersonalizedTutor}
+					{showFirstUseHint}
+				/>
+			{/if}
 		{/key}
 	</div>
 {/if}

@@ -1,86 +1,48 @@
 import { json } from '@sveltejs/kit';
-import { consumeStream, createUIMessageStreamResponse } from 'ai';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { isSuperCoachEnabled } from '$lib/flags';
-import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
-import { logger } from '$lib/server/logger';
-import {
-	acquireCoachLock,
-	getSuperMonthlyMessageLimit,
-	RedisRequiredError,
-	releaseLock,
-	refreshLock
-} from '$lib/super/ai-controls.server';
-import { createCoachAgent, type CoachUIMessage } from '$lib/super/coach.server';
 import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
-import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
-import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
-import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
+import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
+import { RedisRequiredError } from '$lib/super/ai-controls.server';
+import type { SuperAgentRequest } from '$lib/super/agent-request';
 
-const MAX_COACH_MESSAGES = 12;
 const MAX_COACH_REQUEST_BYTES = 2048 * 1024;
-const COACH_STREAM_TIMEOUT_MS = 55_000;
 const coachMessagePartSchema = z
 	.object({ type: z.string().min(1).max(100), text: z.string().max(2_000).optional() })
 	.passthrough();
 const coachRequestSchema = z
 	.object({
 		sessionId: z.string().uuid(),
+		conversationId: z.string().uuid().optional(),
+		context: z
+			.object({
+				page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
+				questionId: z.string().uuid().optional(),
+				questionType: z.enum(['mcq', 'frq']).optional(),
+				frqAttemptId: z.string().trim().max(100).optional(),
+				quizId: z.string().uuid().optional()
+			})
+			.optional(),
 		messages: z
 			.array(
 				z
 					.object({
+						id: z.string().max(200).optional(),
 						role: z.enum(['user', 'assistant']),
 						parts: z.array(coachMessagePartSchema).max(24)
 					})
 					.passthrough()
 			)
 			.min(1)
-			.max(MAX_COACH_MESSAGES * 2)
+			.max(24)
 	})
 	.strict();
 
 /** Keep cleanup time inside Vercel's route duration even if a provider stream stalls. */
 export const config = { maxDuration: 60 };
-
-function coachRateLimitedResponse(retryAt: number | null): Response {
-	return json(
-		{ error: 'Too many Coach requests. Please try again shortly.', retryAt },
-		retryAt
-			? {
-					status: 429,
-					headers: {
-						'Retry-After': String(Math.max(1, Math.ceil((retryAt - Date.now()) / 1000)))
-					}
-				}
-			: { status: 429 }
-	);
-}
-
-function toCoachModelMessages(messages: z.infer<typeof coachRequestSchema>['messages']) {
-	return messages.slice(-MAX_COACH_MESSAGES).flatMap((message) => {
-		const content = message.parts
-			.filter((part) => part.type === 'text' && typeof part.text === 'string')
-			.map((part) => part.text!.trim())
-			.filter(Boolean)
-			.join('\n')
-			.slice(0, 2_000);
-		return content ? [{ role: message.role, content } as const] : [];
-	});
-}
-
-function textFromCoachParts(parts: Array<{ type?: string; text?: string }> | undefined): string {
-	return (parts ?? [])
-		.filter((part) => part.type === 'text' && typeof part.text === 'string')
-		.map((part) => part.text!.trim())
-		.filter(Boolean)
-		.join('\n')
-		.slice(0, 2_000);
-}
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
@@ -88,8 +50,9 @@ export const POST: RequestHandler = withAuthedHandler(
 			return json({ error: 'Coach is temporarily unavailable.' }, { status: 503 });
 		}
 		const access = await getSuperFeatureAccess(userId, 'coach');
-		if (!access.allowed)
+		if (!access.allowed) {
 			return json({ error: superFeatureAccessMessage(access, 'Coach') }, { status: 403 });
+		}
 
 		let body: unknown;
 		try {
@@ -105,137 +68,29 @@ export const POST: RequestHandler = withAuthedHandler(
 				{ status: error instanceof RequestBodyTooLargeError ? 413 : 400 }
 			);
 		}
+
 		const parsed = coachRequestSchema.safeParse(body);
 		if (!parsed.success) return json({ error: 'Invalid Coach request' }, { status: 400 });
-		const messages = toCoachModelMessages(parsed.data.messages);
-		if (!messages.length || messages.at(-1)?.role !== 'user') {
+		const messages = parsed.data.messages as SuperAgentRequest['messages'];
+		if (!messages.some((message) => message.role === 'user')) {
 			return json({ error: 'Coach needs a student message.' }, { status: 400 });
 		}
 
 		try {
-			const personalizedTurn = await startPersonalizedTurn(userId);
-			if (personalizedTurn.kind === 'rate-limited') {
-				return coachRateLimitedResponse(personalizedTurn.retryAt);
-			}
-			if (personalizedTurn.kind === 'exhausted') {
-				return json(
-					{
-						error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
-					},
-					{ status: 429 }
-				);
-			}
-			let lock: Awaited<ReturnType<typeof acquireCoachLock>>;
-			try {
-				lock = await acquireCoachLock(userId);
-			} catch (error) {
-				await personalizedTurn.releaseIfUnused().catch(() => undefined);
-				throw error;
-			}
-			if (!lock) {
-				await personalizedTurn.releaseIfUnused().catch(() => undefined);
-				return json({ error: 'Another Coach request is still running.' }, { status: 409 });
-			}
-
-			let cleanup: (() => Promise<void>) | undefined;
-			try {
-				let emittedOutput = false;
-				let cleanedUp = false;
-				const streamTimeout = new AbortController();
-				const streamTimeoutId = setTimeout(() => streamTimeout.abort(), COACH_STREAM_TIMEOUT_MS);
-				const refreshTimer = setInterval(() => {
-					void refreshLock(lock).catch(() => undefined);
-				}, 30_000);
-				cleanup = async () => {
-					if (cleanedUp) return;
-					cleanedUp = true;
-					clearTimeout(streamTimeoutId);
-					clearInterval(refreshTimer);
-					if (!emittedOutput) {
-						await personalizedTurn
-							.releaseIfUnused()
-							.catch((error) =>
-								logger.warn('Failed to release unused Coach reservation', { error })
-							);
-					}
-					await releaseLock(lock);
-				};
-				const profile = await getTutorProfileViewForRequest(event.locals, userId);
-				const lastUserMessage = messages.at(-1)?.content ?? '';
-				const personalization = await buildTutorPersonalization(userId, lastUserMessage);
-				const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
-				const agent = createCoachAgent({
-					userId,
-					sessionId: parsed.data.sessionId,
-					selectedApClasses: profile.selectedApClasses,
-					personalizationContext: personalization.context
-				});
-				const result = await agent.stream({
-					messages,
-					abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal])
-				});
-				const uiStream = result
-					.toUIMessageStream<CoachUIMessage>({
-						originalMessages: parsed.data.messages as unknown as CoachUIMessage[],
-						onFinish: async ({ responseMessage, isAborted }) => {
-							try {
-								if (!isAborted && memoryConsentGiven && (await isTutorMemoryAvailable())) {
-									const assistantResponse = textFromCoachParts(
-										responseMessage.parts as Array<{ type?: string; text?: string }>
-									);
-									if (lastUserMessage.trim() && assistantResponse.trim()) {
-										scheduleTutorMemoryWrite(
-											addTutorMemoryExchange(
-												userId,
-												{ user: lastUserMessage, assistant: assistantResponse },
-												{ surface: 'coach' }
-											),
-											'Coach'
-										);
-									}
-								}
-							} finally {
-								await cleanup?.();
-							}
-						},
-						onError: (error) => {
-							logger.error('Coach stream error', { error });
-							return 'The Coach could not complete that request. Please try again.';
-						}
-					})
-					.pipeThrough(
-						new TransformStream({
-							transform(chunk, controller) {
-								if (chunk.type === 'text-delta' && chunk.delta.trim() && !emittedOutput) {
-									emittedOutput = true;
-									void personalizedTurn
-										.markOutput()
-										.catch((error) => logger.warn('Failed to roll up Coach usage', { error }));
-								}
-								controller.enqueue(chunk);
-							}
-						})
-					);
-				return createUIMessageStreamResponse({
-					stream: uiStream,
-					consumeSseStream: consumeStream,
-					headers: {
-						'Cache-Control': 'no-cache',
-						'X-Tutor-Personalization-Degraded': personalization.memoryDegraded ? '1' : '0',
-						'X-Super-Usage-Remaining': String(personalizedTurn.reservation.remaining),
-						...(personalizedTurn.usageWarning
-							? { 'X-Super-Usage-Warning': String(personalizedTurn.usageWarning) }
-							: {})
-					}
-				});
-			} catch (error) {
-				if (cleanup) await cleanup();
-				else {
-					await personalizedTurn.releaseIfUnused().catch(() => undefined);
-					await releaseLock(lock);
-				}
-				throw error;
-			}
+			return await createSuperAgentStreamResponse({
+				event,
+				userId,
+				sessionId: parsed.data.sessionId,
+				conversationId: parsed.data.conversationId,
+				context: {
+					mode: 'coach',
+					page: 'coach',
+					...(parsed.data.context ?? {})
+				},
+				messages,
+				surface: 'coach',
+				errorLabel: 'Coach'
+			});
 		} catch (error) {
 			if (error instanceof RedisRequiredError) {
 				return json(

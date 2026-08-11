@@ -105,7 +105,25 @@ export type FrqHistoryItem = {
 	question: null;
 };
 
-export type HistoryItem = McqHistoryItem | FrqHistoryItem;
+export type QuizHistoryItem = {
+	kind: 'quiz';
+	attempt: {
+		id: string;
+		questionId: string;
+		apClass: string;
+		unit: string;
+		requestedCount: number;
+		answeredCount: number;
+		correctCount: number;
+		incorrectCount: number;
+		scorePercent: number;
+		timeTakenMs: number;
+		attemptedAt: string;
+	};
+	question: null;
+};
+
+export type HistoryItem = McqHistoryItem | FrqHistoryItem | QuizHistoryItem;
 
 export type HistorySummary = {
 	total: number;

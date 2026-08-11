@@ -85,6 +85,10 @@
 						<Badge variant={item.attempt.percentage >= 70 ? 'secondary' : 'outline'}>
 							{item.attempt.percentage}% · FRQ
 						</Badge>
+					{:else if item.kind === 'quiz'}
+						<Badge variant={item.attempt.scorePercent >= 70 ? 'secondary' : 'outline'}>
+							{item.attempt.scorePercent}% · Quiz
+						</Badge>
 					{:else}
 						<Badge
 							variant={item.attempt.wasCorrect === undefined
@@ -108,6 +112,8 @@
 					{/if}
 					{#if item.kind === 'frq'}
 						· {item.attempt.pointsEarned}/{item.attempt.pointsAvailable} points
+					{:else if item.kind === 'quiz'}
+						· {item.attempt.correctCount}/{item.attempt.requestedCount} correct
 					{:else}
 						{#if item.attempt.selectedAnswer}
 							· You chose {item.attempt.selectedAnswer}
@@ -155,6 +161,40 @@
 					{:else}
 						<p class="text-sm text-muted-foreground">This attempt is unavailable.</p>
 					{/if}
+				{:else if item.kind === 'quiz'}
+					<div class="space-y-4">
+						<div>
+							<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+								Quiz summary
+							</p>
+							<p class="text-sm leading-6">
+								You answered {item.attempt.answeredCount} of {item.attempt.requestedCount} questions,
+								with {item.attempt.correctCount} correct and {item.attempt.incorrectCount} incorrect.
+							</p>
+						</div>
+						<div
+							class="grid grid-cols-3 divide-x divide-border border-y border-border py-3 text-center"
+						>
+							<div>
+								<p class="font-semibold text-emerald-600 dark:text-emerald-400">
+									{item.attempt.correctCount}
+								</p>
+								<p class="text-xs text-muted-foreground">Correct</p>
+							</div>
+							<div>
+								<p class="font-semibold text-red-600 dark:text-red-400">
+									{item.attempt.incorrectCount}
+								</p>
+								<p class="text-xs text-muted-foreground">Incorrect</p>
+							</div>
+							<div>
+								<p class="font-semibold text-muted-foreground">
+									{item.attempt.requestedCount - item.attempt.answeredCount}
+								</p>
+								<p class="text-xs text-muted-foreground">Unanswered</p>
+							</div>
+						</div>
+					</div>
 				{:else if !item.question}
 					<p class="text-sm text-muted-foreground">
 						This question is no longer available in storage. Your attempt was still recorded.
