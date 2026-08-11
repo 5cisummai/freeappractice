@@ -31,7 +31,7 @@
 		<PublicPageHero
 			title="Privacy Policy"
 			description="How we collect, use, and protect your information when you use Free AP Practice."
-			meta="Last Updated: August 9, 2026"
+			meta="Last Updated: August 11, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -70,6 +70,11 @@
 						you send to the standard tutor, personalized tutor, Coach, or other AI features. Coach and
 						Insights may also process your practice data to generate recommendations, study plans, and
 						summaries.
+					</li>
+					<li>
+						<strong>Super conversations:</strong> Super Coach and question-focused Super Tutor conversations,
+						tool activity, and approved actions are stored for continuity and personalization. The standard
+						free Tutor does not use this durable Super conversation system.
 					</li>
 					<li>
 						<strong>Tutor memory:</strong> when you enable it and acknowledge its disclosure, the tutor
@@ -121,7 +126,10 @@
 					<li>Theme, layout, and settings preferences</li>
 					<li>Analytics consent, an analytics journey key, and related opt-in measurement flags</li>
 					<li>Onboarding, first-use hint, referral, timezone, and sidebar-state cookies</li>
-					<li>Temporary Coach and written-response drafts in session storage</li>
+					<li>
+						Temporary conversation identifiers, Coach state, and written-response drafts in session
+						storage
+					</li>
 				</ul>
 			</section>
 
@@ -176,6 +184,12 @@
 					After Super access ends, tutor memory is retained for up to 90 days before scheduled
 					deletion, unless you delete it sooner or delete your account.
 				</p>
+				<p class="mt-2">
+					Super Coach and question Tutor use separate durable conversation threads, while sharing
+					the student learning model and approved long-term memory. Question references and attempt
+					identifiers are validated on the server; the browser does not provide canonical answers,
+					grades, or hidden grading context as trusted input.
+				</p>
 			</section>
 
 			<section>
@@ -185,7 +199,8 @@
 					onboarding, first-use hints, referral attribution, timezone, analytics consent, and
 					sidebar state. Local storage stores theme and settings preferences and opt-in analytics
 					controls. Session storage can hold temporary written-response drafts and Coach session
-					state.
+					state. Durable Super conversation messages remain server-side so a signed-in student can
+					continue a Coach or question Tutor thread after reload.
 				</p>
 				<p class="mt-2">
 					If you accept optional PostHog analytics, PostHog may set first-party cookies and use
@@ -276,7 +291,11 @@
 					product retention behavior includes:
 				</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
-					<li>Study-plan and Coach audit records expire after approximately 90 days.</li>
+					<li>Study-plan records expire after approximately 90 days.</li>
+					<li>
+						Durable Super conversation messages and Coach audit records are retained while needed
+						for Super continuity and are removed with the account.
+					</li>
 					<li>
 						Insight snapshots may be retained for up to 365 days while the feature remains
 						available, subject to per-user limits.

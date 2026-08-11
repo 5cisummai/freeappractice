@@ -15,6 +15,7 @@
 	} = $props();
 
 	async function copyQuestionId(): Promise<void> {
+		if (item.kind === 'quiz') return;
 		if (!navigator.clipboard?.writeText) {
 			toast.error('Could not copy the question ID. Please try again.');
 			return;
@@ -48,9 +49,11 @@
 			<DropdownMenu.Label>Actions</DropdownMenu.Label>
 			<DropdownMenu.Item onclick={() => onView(item)}>
 				<EyeIcon class="size-4" />
-				View question
+				{item.kind === 'quiz' ? 'View quiz' : 'View question'}
 			</DropdownMenu.Item>
-			<DropdownMenu.Item onclick={copyQuestionId}>Copy question ID</DropdownMenu.Item>
+			{#if item.kind !== 'quiz'}
+				<DropdownMenu.Item onclick={copyQuestionId}>Copy question ID</DropdownMenu.Item>
+			{/if}
 		</DropdownMenu.Group>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>

@@ -54,6 +54,10 @@
 		detailOpen = true;
 	}
 
+	function itemKey(item: HistoryItem): string {
+		return `${item.kind}-${item.kind === 'mcq' ? item.attempt.questionId : item.attempt.id}-${item.attempt.attemptedAt}`;
+	}
+
 	const table = createSvelteTable({
 		get data() {
 			return data;
@@ -66,8 +70,7 @@
 		get pageCount() {
 			return pageCount;
 		},
-		getRowId: (row, index) =>
-			`${row.kind}-${row.attempt.questionId}-${row.attempt.attemptedAt}-${index}`,
+		getRowId: (row, index) => `${itemKey(row)}-${index}`,
 		state: {
 			get pagination() {
 				return { pageIndex, pageSize };
@@ -214,6 +217,6 @@
 	</div>
 </div>
 
-{#key selectedItem ? selectedItem.kind + ':' + selectedItem.attempt.questionId + ':' + selectedItem.attempt.attemptedAt : 'empty'}
+{#key selectedItem ? itemKey(selectedItem) : 'empty'}
 	<HistoryDetailSheet item={selectedItem} bind:open={detailOpen} />
 {/key}

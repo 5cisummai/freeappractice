@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
 import type { HistoryItem } from '$lib/users/types.js';
+import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants.js';
 import { escapeHtml } from '$lib/escape-html.js';
 import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
@@ -64,7 +65,11 @@ export function createHistoryColumns(
 		{
 			id: 'answer',
 			accessorFn: (row) =>
-				row.kind === 'mcq' ? (row.attempt.selectedAnswer ?? '') : row.attempt.percentage,
+				row.kind === 'mcq'
+					? (row.attempt.selectedAnswer ?? '')
+					: row.kind === 'frq'
+						? row.attempt.percentage
+						: row.attempt.correctCount,
 			header: 'Answer / score',
 			cell: ({ row }) => {
 				const answerSnippet = createRawSnippet<[{ answer: string }]>((getData) => {
@@ -77,7 +82,9 @@ export function createHistoryColumns(
 					answer:
 						row.original.kind === 'mcq'
 							? (row.original.attempt.selectedAnswer ?? '—')
-							: `${row.original.attempt.pointsEarned}/${row.original.attempt.pointsAvailable} (${row.original.attempt.percentage}%)`
+							: row.original.kind === 'frq'
+								? `${row.original.attempt.pointsEarned}/${row.original.attempt.pointsAvailable} (${row.original.attempt.percentage}%)`
+								: `${row.original.attempt.correctCount}/${row.original.attempt.requestedCount}`
 				});
 			},
 			enableSorting: false
@@ -85,7 +92,13 @@ export function createHistoryColumns(
 		{
 			id: 'result',
 			accessorFn: (row) =>
-				row.kind === 'mcq' ? (row.attempt.wasCorrect ? 1 : 0) : row.attempt.percentage,
+				row.kind === 'mcq'
+					? row.attempt.wasCorrect
+						? 1
+						: 0
+					: row.kind === 'frq'
+						? row.attempt.percentage
+						: row.attempt.scorePercent,
 			header: ({ column }) =>
 				renderComponent(HistoryDataTableSortButton, {
 					label: 'Result',
@@ -104,24 +117,32 @@ export function createHistoryColumns(
 						? {
 								label: `${row.original.attempt.percentage}%`,
 								classes:
-									row.original.attempt.percentage >= 70
+									row.original.attempt.percentage >= FRQ_PASS_THRESHOLD
 										? 'bg-secondary text-secondary-foreground'
 										: 'bg-muted text-muted-foreground'
 							}
-						: {
-								label:
-									row.original.attempt.wasCorrect === undefined
-										? 'Revealed'
-										: row.original.attempt.wasCorrect
-											? 'Correct'
-											: 'Incorrect',
-								classes:
-									row.original.attempt.wasCorrect === undefined
-										? 'bg-muted text-muted-foreground'
-										: row.original.attempt.wasCorrect
-											? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-											: 'bg-destructive/10 text-destructive'
-							};
+						: row.original.kind === 'quiz'
+							? {
+									label: `${row.original.attempt.scorePercent}% · Quiz`,
+									classes:
+										row.original.attempt.scorePercent >= FRQ_PASS_THRESHOLD
+											? 'bg-secondary text-secondary-foreground'
+											: 'bg-muted text-muted-foreground'
+								}
+							: {
+									label:
+										row.original.attempt.wasCorrect === undefined
+											? 'Revealed'
+											: row.original.attempt.wasCorrect
+												? 'Correct'
+												: 'Incorrect',
+									classes:
+										row.original.attempt.wasCorrect === undefined
+											? 'bg-muted text-muted-foreground'
+											: row.original.attempt.wasCorrect
+												? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+												: 'bg-destructive/10 text-destructive'
+								};
 				return renderSnippet(resultSnippet, {
 					...result
 				});
@@ -130,11 +151,13 @@ export function createHistoryColumns(
 				const score = (item: HistoryItem) =>
 					item.kind === 'frq'
 						? item.attempt.percentage
-						: item.attempt.wasCorrect === undefined
-							? -1
-							: item.attempt.wasCorrect
-								? 100
-								: 0;
+						: item.kind === 'quiz'
+							? item.attempt.scorePercent
+							: item.attempt.wasCorrect === undefined
+								? -1
+								: item.attempt.wasCorrect
+									? 100
+									: 0;
 				return score(rowB.original) - score(rowA.original);
 			}
 		},

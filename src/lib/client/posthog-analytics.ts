@@ -31,7 +31,7 @@ export function initPostHogAnalytics() {
 		capture_pageview: false,
 		session_recording: {
 			maskAllInputs: true,
-			// Elements marked with .ph-mask-pii (names, emails, etc.) are hashed in replays.
+			// Elements marked with .ph-mask-pii (including conversation messages) are hashed in replays.
 			maskTextSelector: '.ph-mask-pii',
 			maskCapturedNetworkRequestFn: (request) => {
 				if (request.name) {

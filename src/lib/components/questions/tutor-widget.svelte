@@ -493,14 +493,14 @@
 					<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
 						{#if message.role === 'user'}
 							<div
-								class="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+								class="ph-mask-pii max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
 							>
 								{message.content}
 							</div>
 						{:else}
-							<div class="max-w-[90%] text-sm text-foreground/90">
+							<div class="ph-mask-pii max-w-[90%] text-sm text-foreground/90">
 								{#if message.content}
-									<RichText text={message.content} />
+									<RichText text={message.content} blocks />
 								{:else if isStreaming && i === messages.length - 1}
 									<span class="inline-flex gap-1 text-muted-foreground">
 										<span class="animate-bounce" style="animation-delay: 0ms">·</span>

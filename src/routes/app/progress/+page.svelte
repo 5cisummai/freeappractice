@@ -10,7 +10,7 @@
 	import MasteryPanel from '$lib/components/progress/mastery-panel.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import targetImage from '$lib/assets/target.png';
+	const targetImage = '/illustrations/target.png';
 
 	type ProgressView = 'mastery' | 'history';
 

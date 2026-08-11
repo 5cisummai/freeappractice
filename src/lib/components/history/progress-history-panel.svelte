@@ -8,7 +8,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
-	import notebookImage from '$lib/assets/notebook.png';
+	const notebookImage = '/illustrations/notebook.png';
 	import type { SortingState } from '@tanstack/table-core';
 
 	const PAGE_SIZE = 20;
@@ -17,7 +17,7 @@
 	const ALL_FILTER_VALUE = '__all__';
 
 	type ResultFilter = '' | 'correct' | 'incorrect';
-	type KindFilter = '' | 'mcq' | 'frq';
+	type KindFilter = '' | 'mcq' | 'frq' | 'quiz';
 	type HistoryFilters = {
 		apClass: string;
 		unit: string;
@@ -315,12 +315,15 @@
 										? 'Multiple choice'
 										: filters.kind === 'frq'
 											? 'Written response'
-											: 'All types'}
+											: filters.kind === 'quiz'
+												? 'Graded quiz'
+												: 'All types'}
 								</Select.Trigger>
 								<Select.Content>
 									<Select.Item value={ALL_FILTER_VALUE}>All types</Select.Item>
 									<Select.Item value="mcq">Multiple choice</Select.Item>
 									<Select.Item value="frq">Written response</Select.Item>
+									<Select.Item value="quiz">Graded quiz</Select.Item>
 								</Select.Content>
 							</Select.Root>
 						</label>

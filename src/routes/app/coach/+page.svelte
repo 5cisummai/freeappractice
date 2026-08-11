@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { onMount, type Component } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { onMount, tick, type Component } from 'svelte';
+	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
@@ -9,7 +9,9 @@
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import CopyIcon from '@lucide/svelte/icons/copy';
+	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import SearchIcon from '@lucide/svelte/icons/search';
@@ -21,7 +23,10 @@
 	import * as Message from '$lib/components/ai-elements/message/index.js';
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import RichText from '$lib/components/content/rich-text.svelte';
+	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
@@ -30,10 +35,28 @@
 	let { data } = $props();
 
 	let sessionId = $state('');
+	let conversationId = $state('');
 	let input = $state('');
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
 	let motionMs = $state(320);
+	let conversations = $state<CoachConversation[]>([]);
+	let conversationsLoading = $state(false);
+	let conversationsError = $state('');
+	let conversationsOpen = $state(false);
+	let loadingConversationId = $state<string | null>(null);
+	let conversationLoadRequest = 0;
+
+	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
+	const COACH_CONVERSATION_STORAGE_KEY = 'super-coach-conversation-id';
+
+	type CoachConversation = {
+		id: string;
+		title: string;
+		lastMessageAt: string | null;
+		createdAt: string;
+		updatedAt: string;
+	};
 
 	const suggestions: Array<{ text: string; icon: Component }> = [
 		{ text: 'What should I study next?', icon: BookOpenIcon },
@@ -54,6 +77,10 @@
 			running: 'Checking your recent practice…',
 			complete: 'Checked your recent practice'
 		},
+		'tool-read_quiz_attempt': {
+			running: 'Reviewing your quiz…',
+			complete: 'Reviewed your quiz'
+		},
 		'tool-read_insights': {
 			running: 'Reviewing your insights…',
 			complete: 'Reviewed your insights'
@@ -69,6 +96,10 @@
 		'tool-update_study_plan': {
 			running: 'Preparing a study plan…',
 			complete: 'Prepared a study plan'
+		},
+		'tool-generate_diagram': {
+			running: 'Drawing a diagram…',
+			complete: 'Drew a diagram'
 		}
 	};
 
@@ -78,11 +109,21 @@
 			api: '/api/coach',
 			fetch: async (url, init) => {
 				const response = await apiFetch(String(url), init);
+				const responseConversationId = response.headers.get('X-Super-Conversation-Id');
+				if (responseConversationId && responseConversationId !== conversationId) {
+					conversationId = responseConversationId;
+					sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, responseConversationId);
+					void loadConversations();
+				}
 				showUsageWarning(response);
 				return response;
 			},
 			prepareSendMessagesRequest: ({ messages }) => ({
-				body: { sessionId, messages: messages.slice(-12) }
+				body: {
+					sessionId,
+					...(conversationId ? { conversationId } : {}),
+					messages: messages.slice(-12)
+				}
 			})
 		})
 	});
@@ -180,7 +221,8 @@
 		if (active) return active.label;
 		if (activities.some((activity) => activity.state === 'error'))
 			return 'Some activity could not finish';
-		return `Activity · ${activities.length} step${activities.length === 1 ? '' : 's'} completed`;
+		if (activities.length === 1) return activities[0].label;
+		return `Completed ${activities.length} steps`;
 	}
 
 	function isActivityOpen(messageId: string): boolean {
@@ -208,6 +250,14 @@
 			month: 'short',
 			day: 'numeric'
 		});
+	}
+
+	function formatConversationDate(conversation: CoachConversation): string {
+		return (
+			formatDate(conversation.lastMessageAt ?? conversation.updatedAt) ??
+			formatDate(conversation.createdAt) ??
+			'No messages yet'
+		);
 	}
 
 	function formatStudyTask(value: unknown): string | null {
@@ -274,13 +324,89 @@
 	});
 
 	onMount(() => {
-		const key = 'super-coach-session-id';
-		sessionId = sessionStorage.getItem(key) ?? crypto.randomUUID();
-		sessionStorage.setItem(key, sessionId);
+		const prompt = new URLSearchParams(window.location.search).get('prompt')?.trim() ?? '';
+		sessionId = prompt
+			? crypto.randomUUID()
+			: (sessionStorage.getItem(COACH_SESSION_STORAGE_KEY) ?? crypto.randomUUID());
+		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
+		conversationId = prompt ? '' : (sessionStorage.getItem(COACH_CONVERSATION_STORAGE_KEY) ?? '');
+		if (conversationId) {
+			const storedConversationId = conversationId;
+			void loadConversation(storedConversationId).then((loaded) => {
+				if (!loaded && conversationId === storedConversationId) {
+					conversationId = '';
+					sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
+				}
+			});
+		}
+		void loadConversations();
+		if (prompt) {
+			const url = new URL(window.location.href);
+			url.searchParams.delete('prompt');
+			window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+			void tick().then(() => send(prompt));
+		}
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			motionMs = 0;
 		}
 	});
+
+	async function loadConversations(): Promise<void> {
+		conversationsLoading = true;
+		conversationsError = '';
+		try {
+			const response = await apiFetch('/api/super/conversations');
+			const payload = await readJsonOrNull<{ conversations?: CoachConversation[] }>(response);
+			if (!response.ok || !payload?.conversations) {
+				conversationsError = 'Could not load conversations.';
+				return;
+			}
+			conversations = payload.conversations;
+		} catch {
+			conversationsError = 'Could not load conversations.';
+		} finally {
+			conversationsLoading = false;
+		}
+	}
+
+	async function loadConversation(id: string): Promise<boolean> {
+		const request = ++conversationLoadRequest;
+		try {
+			const response = await apiFetch(`/api/super/conversations/${id}`);
+			const payload = await readJsonOrNull<{
+				messages?: Array<{
+					id: string;
+					role: 'user' | 'assistant';
+					parts: CoachUIMessage['parts'];
+				}>;
+			}>(response);
+			if (!response.ok || !payload?.messages || request !== conversationLoadRequest) return false;
+			await coach.stop();
+			coach.messages = payload.messages as CoachUIMessage[];
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	async function selectConversation(id: string): Promise<void> {
+		if (id === conversationId || loadingConversationId) return;
+		if (streaming) await coach.stop();
+		conversationsOpen = false;
+		loadingConversationId = id;
+		const loaded = await loadConversation(id);
+		if (loadingConversationId !== id) return;
+		if (loaded) {
+			conversationId = id;
+			sessionId = crypto.randomUUID();
+			activityOpen = {};
+			sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
+			sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, id);
+		} else if (conversationLoadRequest > 0) {
+			toast.error('Could not load that conversation.');
+		}
+		loadingConversationId = null;
+	}
 
 	function showUsageWarning(response: Response) {
 		const warning = Number(response.headers.get('X-Super-Usage-Warning'));
@@ -310,20 +436,50 @@
 		return { category: output.category, proposed: output.proposed };
 	}
 
-	async function copyMessage(message: CoachUIMessage) {
-		const text = messageText(message);
+	async function copyText(text: string, successMessage: string): Promise<void> {
 		if (!text) return;
-		await navigator.clipboard.writeText(text);
-		toast.success('Response copied.');
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success(successMessage);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not copy that text.');
+		}
 	}
 
-	async function regenerateMessage(messageId: string) {
+	async function copyMessage(message: CoachUIMessage): Promise<void> {
+		const text = messageText(message);
+		await copyText(text, 'Response copied.');
+	}
+
+	async function copyPrompt(message: CoachUIMessage): Promise<void> {
+		await copyText(messageText(message), 'Prompt copied.');
+	}
+
+	async function regenerateMessage(messageId: string): Promise<void> {
 		if (streaming) return;
 		try {
 			await coach.regenerate({ messageId });
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not regenerate the response.');
 		}
+	}
+
+	async function retryPrompt(messageId: string): Promise<void> {
+		if (streaming) return;
+		const messageIndex = coach.messages.findIndex((message) => message.id === messageId);
+		const prompt = coach.messages[messageIndex];
+		if (!prompt) return;
+
+		const response = coach.messages
+			.slice(messageIndex + 1)
+			.find((message) => message.role === 'assistant');
+		if (response) {
+			await regenerateMessage(response.id);
+			return;
+		}
+		const text = messageText(prompt);
+		coach.messages = coach.messages.slice(0, messageIndex);
+		await send(text);
 	}
 
 	async function approve(categories: Array<'goals' | 'study_plans'>) {
@@ -359,6 +515,19 @@
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Coach is unavailable right now.');
 		}
+	}
+
+	async function startNewConversation(): Promise<void> {
+		if (streaming) await coach.stop();
+		conversationLoadRequest++;
+		coach.messages = [];
+		conversationId = '';
+		sessionId = crypto.randomUUID();
+		activityOpen = {};
+		conversationsOpen = false;
+		loadingConversationId = null;
+		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
+		sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
 	}
 </script>
 
@@ -408,6 +577,88 @@
 		class="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background md:h-[calc(100svh-5rem)]"
 	>
 		<main class="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div class="mx-auto flex w-full max-w-3xl justify-end gap-2 px-4 pt-3 sm:px-8">
+				<Button
+					variant="ghost"
+					class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+					onclick={startNewConversation}
+					aria-label="Start a new chat"
+					title="New chat"
+				>
+					<PencilIcon class="size-4" strokeWidth={1.5} aria-hidden="true" />
+					<span>New Chat</span>
+				</Button>
+				<Popover.Root bind:open={conversationsOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								variant="ghost"
+								class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+								aria-expanded={conversationsOpen}
+								aria-label="Show conversations"
+							>
+								<span>Conversations</span>
+								<ChevronDownIcon
+									class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
+									aria-hidden="true"
+								/>
+							</Button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
+						<div class="flex items-center justify-between px-3 py-2">
+							<span class="text-sm font-medium">Conversations</span>
+							{#if conversationsLoading}
+								<Loader2Icon
+									class="size-4 animate-spin text-muted-foreground"
+									aria-label="Loading"
+								/>
+							{/if}
+						</div>
+						{#if conversationsError}
+							<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
+								<p>{conversationsError}</p>
+								<button
+									type="button"
+									class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+									onclick={() => void loadConversations()}
+								>
+									Try again
+								</button>
+							</div>
+						{:else if conversationsLoading && !conversations.length}
+							<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
+						{:else if !conversations.length}
+							<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
+						{:else}
+							<div class="max-h-72 overflow-y-auto">
+								{#each conversations as conversation (conversation.id)}
+									<button
+										type="button"
+										class={cn(
+											'flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none',
+											conversation.id === conversationId && 'bg-muted'
+										)}
+										aria-current={conversation.id === conversationId ? 'page' : undefined}
+										disabled={loadingConversationId !== null}
+										onclick={() => void selectConversation(conversation.id)}
+									>
+										<span
+											class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+										>
+											{conversation.title}
+										</span>
+										<span class="shrink-0 text-xs text-muted-foreground">
+											{formatConversationDate(conversation)}
+										</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
+			</div>
 			<div
 				class={cn(
 					'relative min-h-0 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
@@ -425,18 +676,56 @@
 								aria-live="polite"
 							>
 								{#each coach.messages as message, messageIndex (message.id)}
-									<Message.Root from={message.role} class="max-w-3xl gap-1">
+									<Message.Root from={message.role} class="ph-mask-pii max-w-3xl gap-1">
 										{#if message.role === 'user'}
 											<Message.Content
 												class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap"
 											>
 												{messageText(message)}
 											</Message.Content>
+											{#if messageText(message)}
+												<Message.Actions class="mt-0 ml-auto">
+													<Message.Action
+														tooltip="Copy prompt"
+														label="Copy prompt"
+														onclick={() => void copyPrompt(message)}
+													>
+														<CopyIcon />
+													</Message.Action>
+													<Message.Action
+														tooltip="Retry prompt"
+														label="Retry prompt"
+														disabled={streaming}
+														onclick={() => void retryPrompt(message.id)}
+													>
+														<RefreshCwIcon />
+													</Message.Action>
+												</Message.Actions>
+											{/if}
 										{:else}
 											{@const activities = getToolActivities(message)}
 											{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 												{@const toolPart = getToolPart(part)}
 												{#if toolPart}
+													{@const diagram = getDiagramOutput(toolPart.output)}
+													{#if diagram}
+														<figure
+															class="mt-3 max-w-xl overflow-hidden rounded-xl border border-border/70 bg-white p-2"
+														>
+															<img
+																src={diagramDataUrl(diagram.svg)}
+																alt={diagram.accessibleDescription}
+																width={diagram.width}
+																height={diagram.height}
+																class="h-auto max-h-96 w-full object-contain"
+															/>
+															{#if diagram.title}
+																<figcaption class="px-1 pt-1 text-xs text-muted-foreground">
+																	{diagram.title}
+																</figcaption>
+															{/if}
+														</figure>
+													{/if}
 													{@const approval = getApprovalProposal(toolPart)}
 													{#if approval}
 														{@const summary = getApprovalSummary(approval)}
@@ -476,12 +765,12 @@
 											{#if activities.length}
 												{@const SummaryIcon = getToolActivityIcon(activities[0].type)}
 												<div
-													class="mt-2 max-w-3xl"
+													class="group mt-2 max-w-3xl"
 													in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}
 												>
 													<button
 														type="button"
-														class="group text-md flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-muted-foreground transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+														class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 														aria-expanded={isActivityOpen(message.id)}
 														aria-controls={`activity-${message.id}`}
 														onclick={() => toggleActivity(message.id)}
@@ -496,46 +785,63 @@
 															)}
 															aria-hidden="true"
 														/>
-														<span>{activitySummary(activities)}</span>
+														<span class="min-w-0 flex-1 truncate font-medium text-foreground/85">
+															{activitySummary(activities)}
+														</span>
 														<ChevronDownIcon
 															class={cn(
-																'size-3.5 opacity-60 transition-transform group-hover:opacity-100',
+																'size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-hover:opacity-100',
 																isActivityOpen(message.id) && 'rotate-180'
 															)}
 															aria-hidden="true"
 														/>
 													</button>
 													{#if isActivityOpen(message.id)}
-														<ul
+														<div
 															id={`activity-${message.id}`}
-															class="text-md ml-3 space-y-1.5 border-l border-border/70 py-1.5 pl-3 leading-6 text-muted-foreground"
+															class="ml-2 border-l border-border/70 py-1 pl-4 text-sm leading-6 text-muted-foreground"
+															aria-live="polite"
+															in:slide={{ duration: motionMs * 0.45, easing: cubicOut }}
+															out:slide={{ duration: motionMs * 0.3, easing: cubicOut }}
 														>
-															{#each activities as activity (activity.key)}
-																{@const ActivityIcon = getToolActivityIcon(activity.type)}
-																<li
-																	class="flex items-center gap-2"
-																	in:fly={{ y: 4, duration: motionMs * 0.4, easing: cubicOut }}
-																>
-																	<ActivityIcon
-																		class={cn(
-																			'size-4 shrink-0',
-																			activity.state === 'running' &&
-																				'animate-pulse motion-reduce:animate-none',
-																			activity.state === 'error' && 'text-destructive'
-																		)}
-																		aria-hidden="true"
-																	/>
-																	<span>{activity.label}</span>
-																</li>
-															{/each}
-														</ul>
+															<ul class="space-y-1">
+																{#each activities as activity (activity.key)}
+																	{@const ActivityIcon = getToolActivityIcon(activity.type)}
+																	<li
+																		class="flex items-center gap-2"
+																		in:fly={{ y: 4, duration: motionMs * 0.4, easing: cubicOut }}
+																	>
+																		{#if activity.state === 'running'}
+																			<Loader2Icon
+																				class="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
+																				aria-hidden="true"
+																			/>
+																		{:else if activity.state === 'error'}
+																			<CircleAlertIcon
+																				class="size-3.5 shrink-0 text-destructive"
+																				aria-hidden="true"
+																			/>
+																		{/if}
+																		<ActivityIcon
+																			class="size-3.5 shrink-0 opacity-70"
+																			aria-hidden="true"
+																		/>
+																		<span
+																			class={cn(activity.state === 'error' && 'text-destructive')}
+																		>
+																			{activity.label}
+																		</span>
+																	</li>
+																{/each}
+															</ul>
+														</div>
 													{/if}
 												</div>
 											{/if}
 											{#each message.parts as part, index (`text-${message.id}-${index}`)}
 												{#if part.type === 'text' && part.text.trim()}
 													<Message.Content class="text-md max-w-3xl leading-7">
-														<Message.Response content={part.text} />
+														<RichText text={part.text} blocks />
 													</Message.Content>
 												{/if}
 											{/each}
@@ -608,7 +914,7 @@
 				{/if}
 
 				<PromptInput.Root
-					class="rounded-full border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
+					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>

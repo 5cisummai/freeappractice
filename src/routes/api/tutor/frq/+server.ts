@@ -28,21 +28,71 @@ import {
 	scheduleTutorMemoryWrite,
 	tutorRateLimitedResponse
 } from '$lib/tutor/response-utils.server';
+import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
+import {
+	MAX_SUPER_AGENT_REQUEST_BYTES,
+	superAgentRequestSchema,
+	toSuperAgentContext
+} from '$lib/super/agent-request';
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const gated = await requireFrqPracticeEnabled();
 		if (gated) return gated;
 
+		const entitlements = await getEntitlements(userId);
 		let body: unknown;
 		try {
-			body = await readJsonBody(event.request, MAX_TUTOR_CHAT_REQUEST_BYTES);
+			body = await readJsonBody(
+				event.request,
+				entitlements.personalizedTutor
+					? MAX_SUPER_AGENT_REQUEST_BYTES
+					: MAX_TUTOR_CHAT_REQUEST_BYTES
+			);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
 				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
 			}
 			return json({ error: 'Invalid tutor chat request' }, { status: 400 });
 		}
+
+		const superRequest = superAgentRequestSchema.safeParse(body);
+		if (superRequest.success && superRequest.data.context.mode === 'question') {
+			if (
+				superRequest.data.context.questionType !== 'frq' ||
+				!superRequest.data.context.questionId
+			) {
+				return json(
+					{ error: 'A current FRQ question is required for Super Tutor.' },
+					{ status: 400 }
+				);
+			}
+			if (!entitlements.personalizedTutor) {
+				return json({ error: 'Super subscription required' }, { status: 403 });
+			}
+			const profile = await getTutorProfileViewForRequest(event.locals, userId);
+			if (!profile.ageConfirmedAt) {
+				return json(
+					{ error: 'Confirm that you are at least 13 to use Super tutoring.' },
+					{ status: 403 }
+				);
+			}
+			try {
+				return await createSuperAgentStreamResponse({
+					event,
+					userId,
+					sessionId: superRequest.data.sessionId,
+					context: toSuperAgentContext(superRequest.data.context),
+					messages: superRequest.data.messages,
+					surface: 'question',
+					errorLabel: 'Super FRQ Tutor'
+				});
+			} catch (error) {
+				logger.error('Super FRQ Tutor chat error', { error });
+				return json({ error: 'Failed to start Super FRQ Tutor' }, { status: 500 });
+			}
+		}
+
 		const result = frqTutorChatRequestSchema.safeParse(body);
 		if (!result.success) {
 			return json(
@@ -70,7 +120,6 @@ export const POST: RequestHandler = withAuthedHandler(
 			}
 		}
 
-		const entitlements = await getEntitlements(userId);
 		let isPersonalized = entitlements.personalizedTutor;
 		let personalizationContext: string | undefined;
 		let memoryDegraded = false;

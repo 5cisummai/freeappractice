@@ -80,6 +80,49 @@ export const mcqAttempts = appSchema.table(
 	]
 );
 
+export const quizAttempts = appSchema.table(
+	'quiz_attempts',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		apClass: text('ap_class').notNull(),
+		unit: text('unit').notNull(),
+		requestedCount: integer('requested_count').notNull(),
+		answeredCount: integer('answered_count').notNull(),
+		correctCount: integer('correct_count').notNull(),
+		incorrectCount: integer('incorrect_count').notNull(),
+		scorePercent: integer('score_percent').notNull(),
+		timeTakenMs: integer('time_taken_ms'),
+		startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
+		completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }).notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		index('quiz_attempts_user_completed_idx').on(table.userId, table.completedAt),
+		index('quiz_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
+	]
+);
+
+export const quizAttemptQuestions = appSchema.table(
+	'quiz_attempt_questions',
+	{
+		quizAttemptId: text('quiz_attempt_id')
+			.notNull()
+			.references(() => quizAttempts.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+		questionId: text('question_id').notNull(),
+		selectedAnswer: text('selected_answer'),
+		wasCorrect: boolean('was_correct'),
+		timeTakenMs: integer('time_taken_ms')
+	},
+	(table) => [
+		primaryKey({ columns: [table.quizAttemptId, table.position] }),
+		index('quiz_attempt_questions_question_idx').on(table.questionId)
+	]
+);
+
 export const userProgress = appSchema.table(
 	'user_progress',
 	{
@@ -415,6 +458,8 @@ export const coachAudits = appSchema.table(
 		before: jsonb('before').$type<Record<string, unknown>>().notNull(),
 		after: jsonb('after').$type<Record<string, unknown>>().notNull(),
 		modelId: text('model_id').notNull(),
+		conversationId: text('conversation_id'),
+		messageId: text('message_id'),
 		undoneAt: timestamp('undone_at', { withTimezone: true, mode: 'date' }),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
@@ -430,6 +475,11 @@ export const conversations = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		title: text('title').notNull(),
+		surface: text('surface').notNull().default('coach'),
+		context: jsonb('context')
+			.$type<Record<string, unknown>>()
+			.notNull()
+			.default(sql`'{}'::jsonb`),
 		lastMessageAt: timestamp('last_message_at', { withTimezone: true, mode: 'date' }),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
@@ -447,12 +497,23 @@ export const conversationMessages = appSchema.table(
 		position: integer('position').notNull(),
 		role: text('role').notNull(),
 		content: text('content').notNull(),
-		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull()
+		parts: jsonb('parts')
+			.$type<unknown[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		status: text('status').notNull().default('complete'),
+		clientMessageId: text('client_message_id'),
+		createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(),
+		updatedAt: updatedAt()
 	},
 	(table) => [
 		uniqueIndex('conversation_messages_conversation_position_uq').on(
 			table.conversationId,
 			table.position
+		),
+		uniqueIndex('conversation_messages_conversation_client_uq').on(
+			table.conversationId,
+			table.clientMessageId
 		),
 		index('conversation_messages_conversation_created_idx').on(
 			table.conversationId,

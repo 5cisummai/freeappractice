@@ -21,6 +21,12 @@ import {
 	tutorRateLimitedResponse
 } from '$lib/tutor/response-utils.server';
 import { chat } from '$lib/tutor/service.server';
+import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
+import {
+	MAX_SUPER_AGENT_REQUEST_BYTES,
+	superAgentRequestSchema,
+	toSuperAgentContext
+} from '$lib/super/agent-request';
 
 async function getOptionalUserId(
 	event: Parameters<RequestHandler>[0]
@@ -33,14 +39,54 @@ async function getOptionalUserId(
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;
 	try {
+		const userId = await getOptionalUserId(event);
+		const entitlements = userId ? await getEntitlements(userId) : null;
+		const bodyLimit = entitlements?.personalizedTutor
+			? MAX_SUPER_AGENT_REQUEST_BYTES
+			: MAX_TUTOR_CHAT_REQUEST_BYTES;
 		let body: unknown;
 		try {
-			body = await readJsonBody(request, MAX_TUTOR_CHAT_REQUEST_BYTES);
+			body = await readJsonBody(request, bodyLimit);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
 				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
 			}
 			return json({ error: 'Tutor chat request must be valid JSON' }, { status: 400 });
+		}
+
+		const superRequest = superAgentRequestSchema.safeParse(body);
+		if (superRequest.success && superRequest.data.context.mode === 'question') {
+			if (!userId) return json({ error: 'Authentication required' }, { status: 401 });
+			if (!entitlements?.personalizedTutor) {
+				return json({ error: 'Super subscription required' }, { status: 403 });
+			}
+			if (
+				superRequest.data.context.questionType !== 'mcq' ||
+				!superRequest.data.context.questionId
+			) {
+				return json({ error: 'A current question is required for Super Tutor.' }, { status: 400 });
+			}
+			const profile = await getTutorProfileViewForRequest(event.locals, userId);
+			if (!profile.ageConfirmedAt) {
+				return json(
+					{ error: 'Confirm that you are at least 13 to use Super tutoring.' },
+					{ status: 403 }
+				);
+			}
+			try {
+				return await createSuperAgentStreamResponse({
+					event,
+					userId,
+					sessionId: superRequest.data.sessionId,
+					context: toSuperAgentContext(superRequest.data.context),
+					messages: superRequest.data.messages,
+					surface: 'question',
+					errorLabel: 'Super Tutor'
+				});
+			} catch (error) {
+				logger.error('Super Tutor chat error', { error });
+				return json({ error: 'Failed to start Super Tutor' }, { status: 500 });
+			}
 		}
 
 		const result = tutorChatRequestSchema.safeParse(body);
@@ -57,8 +103,6 @@ export const POST: RequestHandler = async (event) => {
 		const question = await getQuestionById(result.data.questionId).catch(() => null);
 		if (!question) return json({ error: 'Question not found' }, { status: 404 });
 
-		const userId = await getOptionalUserId(event);
-		const entitlements = userId ? await getEntitlements(userId) : null;
 		let isPersonalized = Boolean(userId && entitlements?.personalizedTutor);
 		let personalizationContext: string | undefined;
 		let memoryDegraded = false;

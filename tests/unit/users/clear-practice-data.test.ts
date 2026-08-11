@@ -19,6 +19,7 @@ describe('clearPracticeDataForUser', () => {
 		mocks.where
 			.mockReturnValueOnce({ kind: 'progress' })
 			.mockReturnValueOnce({ kind: 'mcq-attempts' })
+			.mockReturnValueOnce({ kind: 'quiz-attempts' })
 			.mockReturnValueOnce({ kind: 'bookmarks' })
 			.mockReturnValueOnce({ kind: 'frq-attempts' });
 		mocks.batch.mockResolvedValue([]);
@@ -30,6 +31,7 @@ describe('clearPracticeDataForUser', () => {
 		expect(mocks.batch).toHaveBeenCalledWith([
 			{ kind: 'progress' },
 			{ kind: 'mcq-attempts' },
+			{ kind: 'quiz-attempts' },
 			{ kind: 'bookmarks' },
 			{ kind: 'frq-attempts' }
 		]);

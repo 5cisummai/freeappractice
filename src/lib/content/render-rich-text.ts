@@ -66,6 +66,75 @@ const inlineMathExtension = {
 	}
 };
 
+type RenderCodeBlock = (code: string, lang?: string) => string;
+
+const languageLabels: Record<string, string> = {
+	bash: 'Bash',
+	css: 'CSS',
+	html: 'HTML',
+	java: 'Java',
+	javascript: 'JavaScript',
+	js: 'JavaScript',
+	json: 'JSON',
+	markdown: 'Markdown',
+	md: 'Markdown',
+	python: 'Python',
+	py: 'Python',
+	shell: 'Shell',
+	sql: 'SQL',
+	svelte: 'Svelte',
+	typescript: 'TypeScript',
+	ts: 'TypeScript',
+	xml: 'XML',
+	yaml: 'YAML',
+	yml: 'YAML'
+};
+
+function createCodeRenderer(blocks: boolean): RenderCodeBlock {
+	return (code, lang) => {
+		const rawCode = decodeEntities(code);
+		const rawLang = (lang ?? '').split(/[:\s]/)[0]!.trim().toLowerCase();
+		const validLang = rawLang && hljs.getLanguage(rawLang) ? rawLang : null;
+
+		let highlighted: string;
+		try {
+			highlighted = validLang
+				? hljs.highlight(rawCode, { language: validLang }).value
+				: hljs.highlightAuto(rawCode).value;
+		} catch {
+			highlighted = escapeHtml(rawCode);
+		}
+
+		const langClass = validLang ? ` language-${validLang}` : '';
+		if (!blocks) return `<pre><code class="hljs${langClass}">${highlighted}</code></pre>\n`;
+
+		const languageCode = rawLang || 'text';
+		const languageLabel =
+			languageLabels[languageCode] ?? languageCode.charAt(0).toUpperCase() + languageCode.slice(1);
+		const safeLanguageCode = escapeHtml(languageCode);
+		const safeLanguageLabel = escapeHtml(languageLabel);
+		return `<div class="rich-code-block" data-rich-code-block data-language="${safeLanguageCode}">
+	<div class="rich-code-toolbar">
+		<div class="rich-code-heading">
+			<span class="rich-code-icon" aria-hidden="true">&lt;/&gt;</span>
+			<span class="rich-code-language">${safeLanguageLabel}</span>
+		</div>
+		<div class="rich-code-actions">
+			<button type="button" class="rich-code-action" data-rich-code-action="copy" aria-label="Copy code" title="Copy code">
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+				<span class="sr-only">Copy code</span>
+			</button>
+			<button type="button" class="rich-code-action" data-rich-code-action="download" aria-label="Download code" title="Download code">
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+				<span class="sr-only">Download code</span>
+			</button>
+		</div>
+	</div>
+	<pre><code class="hljs${langClass}">${highlighted}</code></pre>
+</div>\n`;
+	};
+}
+
 function decodeEntities(str: string): string {
 	// Decode &amp; last so sequences like &amp;lt; stay &lt; (single unescape).
 	return str
@@ -112,55 +181,49 @@ export function normalizeFences(src: string): string {
 	return result.join('\n');
 }
 
-const markedInstance = new Marked({
-	gfm: true,
-	breaks: false,
-	async: false,
-	extensions: [blockMathExtension, inlineMathExtension],
-	renderer: {
-		html() {
-			// Drop raw HTML in markdown — XSS defense without jsdom/DOMPurify.
-			return '';
-		},
-		link({ href, title, text }) {
-			const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
-			const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
-			const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
-			const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
-			const relAttr = rel ? ` rel="${rel}"` : '';
-			return `<a href="${escapeHtml(safeHref)}"${safeTitle}${relAttr}>${text}</a>`;
-		},
-		image({ href, title, text }) {
-			if (!href || !isSafeMarkdownUrl(href)) return '';
-			const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
-			return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text ?? '')}"${safeTitle} loading="lazy" decoding="async">`;
-		},
-		code({ text: code, lang }: { text: string; lang?: string }) {
-			const rawCode = decodeEntities(code);
-			const rawLang = (lang ?? '').split(/[:\s]/)[0]!.trim().toLowerCase();
-			const validLang = rawLang && hljs.getLanguage(rawLang) ? rawLang : null;
+function createMarkedInstance(blocks: boolean): Marked {
+	const renderCode = createCodeRenderer(blocks);
 
-			let highlighted: string;
-			try {
-				highlighted = validLang
-					? hljs.highlight(rawCode, { language: validLang }).value
-					: hljs.highlightAuto(rawCode).value;
-			} catch {
-				highlighted = escapeHtml(rawCode);
+	return new Marked({
+		gfm: true,
+		breaks: false,
+		async: false,
+		extensions: [blockMathExtension, inlineMathExtension],
+		renderer: {
+			html() {
+				// Drop raw HTML in markdown — XSS defense without jsdom/DOMPurify.
+				return '';
+			},
+			link({ href, title, text }) {
+				const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
+				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
+				const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
+				const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
+				const relAttr = rel ? ` rel="${rel}"` : '';
+				return `<a href="${escapeHtml(safeHref)}"${safeTitle}${relAttr}>${text}</a>`;
+			},
+			image({ href, title, text }) {
+				if (!href || !isSafeMarkdownUrl(href)) return '';
+				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
+				return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text ?? '')}"${safeTitle} loading="lazy" decoding="async">`;
+			},
+			code({ text: code, lang }: { text: string; lang?: string }) {
+				return renderCode(code, lang);
 			}
-
-			const langClass = validLang ? ` language-${validLang}` : '';
-			return `<pre><code class="hljs${langClass}">${highlighted}</code></pre>\n`;
 		}
-	}
-});
+	});
+}
+
+const markedInstance = createMarkedInstance(false);
+const markedBlocksInstance = createMarkedInstance(true);
 
 /**
  * Render practice/tutor markdown to HTML for `{@html}`.
  * Security: deny raw HTML; allowlist link/image URLs; KaTeX/hljs emit trusted HTML.
  * Intentionally avoids isomorphic-dompurify/jsdom (breaks Vercel Lambda require(ESM)).
  */
-export function renderRichTextHtml(text: string): string {
+export function renderRichTextHtml(text: string, options: { blocks?: boolean } = {}): string {
 	if (!text) return '';
-	return markedInstance.parse(normalizeFences(text)) as string;
+	const instance = options.blocks ? markedBlocksInstance : markedInstance;
+	return instance.parse(normalizeFences(text)) as string;
 }

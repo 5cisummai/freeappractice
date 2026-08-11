@@ -13,6 +13,7 @@
 	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Slider } from '$lib/components/ui/slider/index.js';
 	import * as Command from '$lib/components/ui/command/index.js';
@@ -25,6 +26,9 @@
 		selectedClass?: string;
 		selectedUnit?: string;
 		unitRange?: number[];
+		quizMode?: boolean;
+		count?: number;
+		generateDisabled?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
@@ -37,6 +41,9 @@
 		selectedClass = $bindable(''),
 		selectedUnit = $bindable(''),
 		unitRange = $bindable<number[] | undefined>(undefined),
+		quizMode = false,
+		count = $bindable(10),
+		generateDisabled = false,
 		generateLabel = 'Generate Question',
 		onGenerate,
 		onSelectionChange,
@@ -63,6 +70,12 @@
 	let bugReportOpen = $state(false);
 	let optionsOpen = $state(false);
 	let shareStatus = $state('');
+
+	function updateCount(event: Event): void {
+		const value = Number((event.currentTarget as HTMLInputElement).value);
+		if (!Number.isFinite(value)) return;
+		count = Math.min(50, Math.max(1, Math.floor(value)));
+	}
 
 	function notifySelectionChange(): void {
 		shareStatus = '';
@@ -299,7 +312,26 @@
 			</Popover.Root>
 		</div>
 
-		<Button onclick={onGenerate} disabled={!selectedClass} class="h-10 shrink-0 px-4 text-sm">
+		{#if quizMode}
+			<div class="flex w-24 shrink-0 flex-col gap-2">
+				<Label for="quiz-question-count">Count</Label>
+				<Input
+					id="quiz-question-count"
+					type="number"
+					min="1"
+					max="50"
+					step="1"
+					value={count}
+					oninput={updateCount}
+				/>
+			</div>
+		{/if}
+
+		<Button
+			onclick={onGenerate}
+			disabled={!selectedClass || generateDisabled}
+			class="h-10 shrink-0 px-4 text-sm"
+		>
 			{generateLabel}
 		</Button>
 		<Popover.Root bind:open={optionsOpen}>
