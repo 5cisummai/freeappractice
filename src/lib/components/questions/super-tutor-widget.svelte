@@ -12,6 +12,7 @@
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import type { SuperAgentUIMessage } from '$lib/super/coach.server';
 	import { toast } from 'svelte-sonner';
 
@@ -420,9 +421,26 @@
 						{:else}
 							<div class="max-w-[94%] space-y-2 text-sm text-foreground/90">
 								{#if messageText(message)}
-									<RichText text={messageText(message)} />
+									<RichText text={messageText(message)} blocks />
 								{/if}
 								{#each toolParts(message) as part, index (`${part.type}-${index}`)}
+									{@const diagram = getDiagramOutput(part.output)}
+									{#if diagram}
+										<figure class="overflow-hidden rounded-xl border border-border/70 bg-white p-2">
+											<img
+												src={diagramDataUrl(diagram.svg)}
+												alt={diagram.accessibleDescription}
+												width={diagram.width}
+												height={diagram.height}
+												class="h-auto max-h-64 w-full object-contain"
+											/>
+											{#if diagram.title}
+												<figcaption class="px-1 pt-1 text-xs text-muted-foreground">
+													{diagram.title}
+												</figcaption>
+											{/if}
+										</figure>
+									{/if}
 									<div
 										class="flex items-center gap-2 rounded-lg bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
 									>

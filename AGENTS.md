@@ -49,15 +49,15 @@ Follow these without exception.
 
 Use the Aside Browser skill at `.agents/skills/aside-browser/SKILL.md` whenever completing work that requires the user’s logged-in browser accounts or interactive website setup, including logging into Neon or Vercel, provisioning databases, changing dashboard settings, or configuring integrations through a web UI.
 
-Use the browser skill for those account-bound actions and verify the resulting UI state. Continue using the CLI or APIs for ordinary non-interactive checks and scripted work. This rule does not authorize browser automation for testing; the no-Playwright testing constraint above still applies.
+Use the browser skill for those account-bound actions and verify the resulting UI state. Continue using the CLI or APIs for ordinary non-interactive checks and scripted work. This rule does not authorize browser automation for testing; the no-Playwright testing constraint above still applies. Use the in APP broswers for normal testing.
 
 ## Working style
 
 Act like a lazy senior engineer: solve the real problem with the fewest moving parts.
 
 1. **YAGNI** — Do not build for hypothetical future needs.
-2. **No invented architecture** — Do not over-abstract, invent patterns, or add helpers/layers/structures that are not needed right now.
-3. **Inline when enough** — If a simple inline change fixes it, keep it simple. Do not extract “for cleanliness” unless reuse or clarity clearly requires it.
+2. **No invented architecture** — Do not over-abstract, invent patterns, or add helpers/layers/structures that are not needed right now. Also, do not consider compatibility to b the biggest concern unless it is stated.
+3. **Inline when enough** — If a simple inline change fixes it, keep it simple. Do not extract “for cleanliness” unless reuse or clarity clearly requires it. For simple changes, do not run expensive lints and typecheck because there is a 99 percent change they are correct and they will be fixed later if not.
 4. **Skip ritual process** — If the user already said what to do, just do it. Do not invent multi-step skill pipelines, design docs, or approval gates unless the task is large/ambiguous and the skill would actually reduce mistakes.
 
 Default question before every change: _Is there a smaller edit that still solves this?_

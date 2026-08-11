@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, type Component } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
@@ -9,12 +9,16 @@
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import CopyIcon from '@lucide/svelte/icons/copy';
+	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import TargetIcon from '@lucide/svelte/icons/target';
+	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
+	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
@@ -22,6 +26,8 @@
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import RichText from '$lib/components/content/rich-text.svelte';
+	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
@@ -35,6 +41,9 @@
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
 	let motionMs = $state(320);
+
+	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
+	const COACH_CONVERSATION_STORAGE_KEY = 'super-coach-conversation-id';
 
 	const suggestions: Array<{ text: string; icon: Component }> = [
 		{ text: 'What should I study next?', icon: BookOpenIcon },
@@ -74,6 +83,10 @@
 		'tool-update_study_plan': {
 			running: 'Preparing a study plan…',
 			complete: 'Prepared a study plan'
+		},
+		'tool-generate_diagram': {
+			running: 'Drawing a diagram…',
+			complete: 'Drew a diagram'
 		}
 	};
 
@@ -86,7 +99,7 @@
 				const responseConversationId = response.headers.get('X-Super-Conversation-Id');
 				if (responseConversationId) {
 					conversationId = responseConversationId;
-					sessionStorage.setItem('super-coach-conversation-id', responseConversationId);
+					sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, responseConversationId);
 				}
 				showUsageWarning(response);
 				return response;
@@ -194,7 +207,8 @@
 		if (active) return active.label;
 		if (activities.some((activity) => activity.state === 'error'))
 			return 'Some activity could not finish';
-		return `Activity · ${activities.length} step${activities.length === 1 ? '' : 's'} completed`;
+		if (activities.length === 1) return activities[0].label;
+		return `Completed ${activities.length} steps`;
 	}
 
 	function isActivityOpen(messageId: string): boolean {
@@ -288,12 +302,12 @@
 	});
 
 	onMount(() => {
-		const key = 'super-coach-session-id';
-		const conversationKey = 'super-coach-conversation-id';
 		const prompt = new URLSearchParams(window.location.search).get('prompt')?.trim() ?? '';
-		sessionId = prompt ? crypto.randomUUID() : (sessionStorage.getItem(key) ?? crypto.randomUUID());
-		sessionStorage.setItem(key, sessionId);
-		conversationId = prompt ? '' : (sessionStorage.getItem(conversationKey) ?? '');
+		sessionId = prompt
+			? crypto.randomUUID()
+			: (sessionStorage.getItem(COACH_SESSION_STORAGE_KEY) ?? crypto.randomUUID());
+		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
+		conversationId = prompt ? '' : (sessionStorage.getItem(COACH_CONVERSATION_STORAGE_KEY) ?? '');
 		if (conversationId) void loadConversation(conversationId);
 		if (prompt) {
 			const url = new URL(window.location.href);
@@ -320,7 +334,7 @@
 			coach.messages = payload.messages as CoachUIMessage[];
 		} catch {
 			conversationId = '';
-			sessionStorage.removeItem('super-coach-conversation-id');
+			sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
 		}
 	}
 
@@ -352,20 +366,48 @@
 		return { category: output.category, proposed: output.proposed };
 	}
 
-	async function copyMessage(message: CoachUIMessage) {
-		const text = messageText(message);
+	async function copyText(text: string, successMessage: string): Promise<void> {
 		if (!text) return;
-		await navigator.clipboard.writeText(text);
-		toast.success('Response copied.');
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success(successMessage);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not copy that text.');
+		}
 	}
 
-	async function regenerateMessage(messageId: string) {
+	async function copyMessage(message: CoachUIMessage): Promise<void> {
+		const text = messageText(message);
+		await copyText(text, 'Response copied.');
+	}
+
+	async function copyPrompt(message: CoachUIMessage): Promise<void> {
+		await copyText(messageText(message), 'Prompt copied.');
+	}
+
+	async function regenerateMessage(messageId: string): Promise<void> {
 		if (streaming) return;
 		try {
 			await coach.regenerate({ messageId });
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not regenerate the response.');
 		}
+	}
+
+	async function retryPrompt(messageId: string): Promise<void> {
+		if (streaming) return;
+		const messageIndex = coach.messages.findIndex((message) => message.id === messageId);
+		const prompt = coach.messages[messageIndex];
+		if (!prompt) return;
+
+		const response = coach.messages
+			.slice(messageIndex + 1)
+			.find((message) => message.role === 'assistant');
+		if (response) {
+			await regenerateMessage(response.id);
+			return;
+		}
+		await send(messageText(prompt));
 	}
 
 	async function approve(categories: Array<'goals' | 'study_plans'>) {
@@ -401,6 +443,16 @@
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Coach is unavailable right now.');
 		}
+	}
+
+	function startNewConversation(): void {
+		if (streaming) coach.stop();
+		coach.messages = [];
+		conversationId = '';
+		sessionId = crypto.randomUUID();
+		activityOpen = {};
+		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
+		sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
 	}
 </script>
 
@@ -461,6 +513,18 @@
 						class="flex h-full min-h-0 flex-col"
 						in:fade={{ duration: motionMs, easing: cubicOut }}
 					>
+						<div class="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3 sm:px-8">
+							<Button
+								variant="ghost"
+								size="icon"
+								class="size-10 rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+								onclick={startNewConversation}
+								aria-label="Start a new conversation"
+								title="New conversation"
+							>
+								<PencilIcon class="size-5" strokeWidth={1.5} />
+							</Button>
+						</div>
 						<Conversation.Root class="min-h-0 min-w-0 flex-1">
 							<Conversation.Content
 								class="mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
@@ -474,11 +538,49 @@
 											>
 												{messageText(message)}
 											</Message.Content>
+											{#if messageText(message)}
+												<Message.Actions class="mt-0 ml-auto">
+													<Message.Action
+														tooltip="Copy prompt"
+														label="Copy prompt"
+														onclick={() => void copyPrompt(message)}
+													>
+														<CopyIcon />
+													</Message.Action>
+													<Message.Action
+														tooltip="Retry prompt"
+														label="Retry prompt"
+														disabled={streaming}
+														onclick={() => void retryPrompt(message.id)}
+													>
+														<RefreshCwIcon />
+													</Message.Action>
+												</Message.Actions>
+											{/if}
 										{:else}
 											{@const activities = getToolActivities(message)}
 											{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 												{@const toolPart = getToolPart(part)}
 												{#if toolPart}
+													{@const diagram = getDiagramOutput(toolPart.output)}
+													{#if diagram}
+														<figure
+															class="mt-3 max-w-xl overflow-hidden rounded-xl border border-border/70 bg-white p-2"
+														>
+															<img
+																src={diagramDataUrl(diagram.svg)}
+																alt={diagram.accessibleDescription}
+																width={diagram.width}
+																height={diagram.height}
+																class="h-auto max-h-96 w-full object-contain"
+															/>
+															{#if diagram.title}
+																<figcaption class="px-1 pt-1 text-xs text-muted-foreground">
+																	{diagram.title}
+																</figcaption>
+															{/if}
+														</figure>
+													{/if}
 													{@const approval = getApprovalProposal(toolPart)}
 													{#if approval}
 														{@const summary = getApprovalSummary(approval)}
@@ -518,12 +620,12 @@
 											{#if activities.length}
 												{@const SummaryIcon = getToolActivityIcon(activities[0].type)}
 												<div
-													class="mt-2 max-w-3xl"
+													class="group mt-2 max-w-3xl"
 													in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}
 												>
 													<button
 														type="button"
-														class="group text-md flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-muted-foreground transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+														class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 														aria-expanded={isActivityOpen(message.id)}
 														aria-controls={`activity-${message.id}`}
 														onclick={() => toggleActivity(message.id)}
@@ -538,46 +640,63 @@
 															)}
 															aria-hidden="true"
 														/>
-														<span>{activitySummary(activities)}</span>
+														<span class="min-w-0 flex-1 truncate font-medium text-foreground/85">
+															{activitySummary(activities)}
+														</span>
 														<ChevronDownIcon
 															class={cn(
-																'size-3.5 opacity-60 transition-transform group-hover:opacity-100',
+																'size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-hover:opacity-100',
 																isActivityOpen(message.id) && 'rotate-180'
 															)}
 															aria-hidden="true"
 														/>
 													</button>
 													{#if isActivityOpen(message.id)}
-														<ul
+														<div
 															id={`activity-${message.id}`}
-															class="text-md ml-3 space-y-1.5 border-l border-border/70 py-1.5 pl-3 leading-6 text-muted-foreground"
+															class="ml-2 border-l border-border/70 py-1 pl-4 text-sm leading-6 text-muted-foreground"
+															aria-live="polite"
+															in:slide={{ duration: motionMs * 0.45, easing: cubicOut }}
+															out:slide={{ duration: motionMs * 0.3, easing: cubicOut }}
 														>
-															{#each activities as activity (activity.key)}
-																{@const ActivityIcon = getToolActivityIcon(activity.type)}
-																<li
-																	class="flex items-center gap-2"
-																	in:fly={{ y: 4, duration: motionMs * 0.4, easing: cubicOut }}
-																>
-																	<ActivityIcon
-																		class={cn(
-																			'size-4 shrink-0',
-																			activity.state === 'running' &&
-																				'animate-pulse motion-reduce:animate-none',
-																			activity.state === 'error' && 'text-destructive'
-																		)}
-																		aria-hidden="true"
-																	/>
-																	<span>{activity.label}</span>
-																</li>
-															{/each}
-														</ul>
+															<ul class="space-y-1">
+																{#each activities as activity (activity.key)}
+																	{@const ActivityIcon = getToolActivityIcon(activity.type)}
+																	<li
+																		class="flex items-center gap-2"
+																		in:fly={{ y: 4, duration: motionMs * 0.4, easing: cubicOut }}
+																	>
+																		{#if activity.state === 'running'}
+																			<Loader2Icon
+																				class="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
+																				aria-hidden="true"
+																			/>
+																		{:else if activity.state === 'error'}
+																			<CircleAlertIcon
+																				class="size-3.5 shrink-0 text-destructive"
+																				aria-hidden="true"
+																			/>
+																		{/if}
+																		<ActivityIcon
+																			class="size-3.5 shrink-0 opacity-70"
+																			aria-hidden="true"
+																		/>
+																		<span
+																			class={cn(activity.state === 'error' && 'text-destructive')}
+																		>
+																			{activity.label}
+																		</span>
+																	</li>
+																{/each}
+															</ul>
+														</div>
 													{/if}
 												</div>
 											{/if}
 											{#each message.parts as part, index (`text-${message.id}-${index}`)}
 												{#if part.type === 'text' && part.text.trim()}
 													<Message.Content class="text-md max-w-3xl leading-7">
-														<Message.Response content={part.text} />
+														<RichText text={part.text} blocks />
 													</Message.Content>
 												{/if}
 											{/each}
@@ -604,6 +723,12 @@
 														onclick={() => void copyMessage(message)}
 													>
 														<CopyIcon />
+													</Message.Action>
+													<Message.Action tooltip="Helpful" label="Helpful">
+														<ThumbsUpIcon />
+													</Message.Action>
+													<Message.Action tooltip="Not helpful" label="Not helpful">
+														<ThumbsDownIcon />
 													</Message.Action>
 												</Message.Actions>
 											{/if}
@@ -650,7 +775,7 @@
 				{/if}
 
 				<PromptInput.Root
-					class="rounded-full border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
+					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>

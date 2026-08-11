@@ -64,6 +64,15 @@ describe('renderRichTextHtml', () => {
 		expect(html).not.toMatch(/<script>alert/i);
 	});
 
+	it('adds a code toolbar when block rendering is enabled', () => {
+		const html = renderRichTextHtml('```typescript\nconst answer = 42;\n```', { blocks: true });
+		expect(html).toContain('data-rich-code-block');
+		expect(html).toContain('data-language="typescript"');
+		expect(html).toContain('data-rich-code-action="copy"');
+		expect(html).toContain('data-rich-code-action="download"');
+		expect(html).toContain('>TypeScript</span>');
+	});
+
 	it('renders inline and block math via KaTeX wrappers', () => {
 		const inline = renderRichTextHtml('Energy $E=mc^2$ is famous.');
 		expect(inline).toContain('math-inline');

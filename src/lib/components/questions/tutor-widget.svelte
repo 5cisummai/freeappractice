@@ -500,7 +500,7 @@
 						{:else}
 							<div class="max-w-[90%] text-sm text-foreground/90">
 								{#if message.content}
-									<RichText text={message.content} />
+									<RichText text={message.content} blocks />
 								{:else if isStreaming && i === messages.length - 1}
 									<span class="inline-flex gap-1 text-muted-foreground">
 										<span class="animate-bounce" style="animation-delay: 0ms">·</span>

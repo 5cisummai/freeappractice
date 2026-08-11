@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { ToolLoopAgent, type InferAgentUIMessage, stepCountIs, tool } from 'ai';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
+import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import { getApCurriculumKnowledge } from '$lib/ap-knowledge/catalog';
@@ -20,6 +21,7 @@ import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/
 import type { StudyPlanView, StudyTask, TutorProfileView } from '$lib/super/types';
 import { getUserProgress } from '$lib/users/model.server';
 import { getQuizAttemptForCoach } from '$lib/users/quiz-history.server';
+import { renderDiagram } from '$lib/super/diagram-renderer.server';
 import { getCurrentSuperQuestion, getRecentSuperMistakes } from '$lib/super/context.server';
 
 export type SuperAgentMode = 'coach' | 'question';
@@ -48,6 +50,41 @@ const studyTaskSchema = z.object({
 	status: z.enum(['todo', 'done']).default('todo'),
 	practiceHref: z.string().startsWith('/app/practice').max(500).optional()
 });
+
+const diagramObjectSchema = z.object({
+	shape: z.enum(['block', 'circle']),
+	label: z.string().trim().max(80).optional()
+});
+
+const forceDirectionSchema = z.union([
+	z.enum(['up', 'down', 'left', 'right', 'normal', 'up-slope']),
+	z.object({ angle: z.number().min(-360).max(360) })
+]);
+
+const forceSchema = z.object({
+	direction: forceDirectionSchema,
+	label: z.string().trim().min(1).max(80),
+	magnitude: z.number().min(0).max(1_000_000).optional(),
+	unit: z.string().trim().max(40).optional(),
+	kind: z
+		.enum(['gravity', 'normal', 'friction', 'tension', 'spring', 'applied', 'drag', 'buoyant'])
+		.optional()
+});
+
+const diagramSpecSchema = z
+	.object({
+		type: z.string().trim().min(1).max(80),
+		accessibleDescription: z.string().trim().min(1).max(2_000),
+		title: z.string().trim().max(200).optional(),
+		width: z.number().int().min(1).max(4_000).optional(),
+		height: z.number().int().min(1).max(4_000).optional(),
+		theme: z.literal('monochrome').optional(),
+		// Type-specific semantic fields are explicit so the model can see them in the tool schema.
+		object: diagramObjectSchema.optional(),
+		forces: z.array(forceSchema).min(1).max(12).optional(),
+		angle: z.number().min(-360).max(360).optional()
+	})
+	.passthrough();
 
 export type CoachAuditView = {
 	id: string;
@@ -166,6 +203,10 @@ export function createSuperAgent(input: {
 		instructions: [
 			'You are Super Coach for AP students. Be encouraging, specific, concise, and honest about uncertainty.',
 			modeInstructions,
+			'Format every response as Markdown. Wrap inline math in single dollar delimiters like `$mg\\sin\\theta$` and display equations in double dollar delimiters like `$$N=mg\\cos\\theta$$`. Never emit bare LaTeX equations without delimiters.',
+			'Follow the EXAMFIG DIAGRAM SKILL below when using generate_diagram. In this agent, pass the semantic DiagramSpec object directly as generate_diagram.spec; do not put it in a diagram field or encode it as a string.',
+			EXAMFIG_DIAGRAM_SKILL,
+			'For a free-body diagram, the description is not enough: always include object with shape (block or circle) and forces with direction, label, and optional kind/magnitude. Example: {"type":"free-body","accessibleDescription":"A package with upward tension and downward gravity.","object":{"shape":"block","label":"m"},"forces":[{"direction":"up","label":"T","kind":"tension"},{"direction":"down","label":"mg","kind":"gravity"}]}',
 			`The user takes: ${JSON.stringify(selectedApClasses)}`,
 			currentContext ? `Current context references: ${JSON.stringify(currentContext)}` : '',
 			'Use tools only to read curated curriculum or student data, or to perform the explicitly allowed student-data writes. Never invent progress, scores, eligibility, or calendar events.',
@@ -264,6 +305,23 @@ export function createSuperAgent(input: {
 				description: 'Read the active weekly study plan and task statuses.',
 				inputSchema: z.object({}),
 				execute: () => getCurrentStudyPlan(userId)
+			}),
+			generate_diagram: tool({
+				description:
+					'Generate an educational diagram that renders inline in the chat. Use this when a visual would clarify the explanation. Pass an examfig semantic DiagramSpec in spec, never SVG or pixel coordinates. Always include accessibleDescription. Supported types include free-body, inclined-plane, mechanics-scene, vector-scene, energy-chart, motion-map, circuit, wave-diagram, ray-diagram, function-graph, unit-circle, data-plot, process-diagram, and other registered examfig science/math types. For AP Physics, prefer free-body, inclined-plane, mechanics-scene, energy-chart, motion-map, or vector-scene.',
+				inputSchema: z.object({ spec: diagramSpecSchema }),
+				execute: async ({ spec }) => {
+					try {
+						return renderDiagram(spec);
+					} catch (error) {
+						return {
+							error:
+								error instanceof Error
+									? `The diagram could not be rendered: ${error.message}`
+									: 'The diagram could not be rendered.'
+						};
+					}
+				}
 			}),
 			update_goals: tool({
 				description:
