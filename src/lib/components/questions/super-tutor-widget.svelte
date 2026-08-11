@@ -414,12 +414,12 @@
 					<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
 						{#if message.role === 'user'}
 							<div
-								class="max-w-[88%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+								class="ph-mask-pii max-w-[88%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
 							>
 								{messageText(message)}
 							</div>
 						{:else}
-							<div class="max-w-[94%] space-y-2 text-sm text-foreground/90">
+							<div class="ph-mask-pii max-w-[94%] space-y-2 text-sm text-foreground/90">
 								{#if messageText(message)}
 									<RichText text={messageText(message)} blocks />
 								{/if}

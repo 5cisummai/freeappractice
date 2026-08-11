@@ -643,7 +643,9 @@
 										disabled={loadingConversationId !== null}
 										onclick={() => void selectConversation(conversation.id)}
 									>
-										<span class="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+										<span
+											class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+										>
 											{conversation.title}
 										</span>
 										<span class="shrink-0 text-xs text-muted-foreground">
@@ -673,7 +675,7 @@
 								aria-live="polite"
 							>
 								{#each coach.messages as message, messageIndex (message.id)}
-									<Message.Root from={message.role} class="max-w-3xl gap-1">
+									<Message.Root from={message.role} class="ph-mask-pii max-w-3xl gap-1">
 										{#if message.role === 'user'}
 											<Message.Content
 												class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap"
