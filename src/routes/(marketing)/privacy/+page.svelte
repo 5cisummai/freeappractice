@@ -31,7 +31,7 @@
 		<PublicPageHero
 			title="Privacy Policy"
 			description="How we collect, use, and protect your information when you use Free AP Practice."
-			meta="Last Updated: August 9, 2026"
+			meta="Last Updated: August 11, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -291,7 +291,7 @@
 					product retention behavior includes:
 				</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
-					<li>Study-plan and Coach audit records expire after approximately 90 days.</li>
+					<li>Study-plan records expire after approximately 90 days.</li>
 					<li>
 						Durable Super conversation messages and Coach audit records are retained while needed
 						for Super continuity and are removed with the account.

@@ -7,12 +7,12 @@ import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/fea
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
 import { RedisRequiredError } from '$lib/super/ai-controls.server';
-import type { SuperAgentRequest } from '$lib/super/agent-request';
+import {
+	MAX_SUPER_AGENT_MESSAGES,
+	MAX_SUPER_AGENT_REQUEST_BYTES,
+	superAgentMessageSchema
+} from '$lib/super/agent-request';
 
-const MAX_COACH_REQUEST_BYTES = 2048 * 1024;
-const coachMessagePartSchema = z
-	.object({ type: z.string().min(1).max(100), text: z.string().max(2_000).optional() })
-	.passthrough();
 const coachRequestSchema = z
 	.object({
 		sessionId: z.string().uuid(),
@@ -20,24 +20,16 @@ const coachRequestSchema = z
 		context: z
 			.object({
 				page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
-				questionId: z.string().uuid().optional(),
+				questionId: z.uuid().optional(),
 				questionType: z.enum(['mcq', 'frq']).optional(),
 				frqAttemptId: z.string().trim().max(100).optional(),
-				quizId: z.string().uuid().optional()
+				quizId: z.uuid().optional()
 			})
 			.optional(),
 		messages: z
-			.array(
-				z
-					.object({
-						id: z.string().max(200).optional(),
-						role: z.enum(['user', 'assistant']),
-						parts: z.array(coachMessagePartSchema).max(24)
-					})
-					.passthrough()
-			)
+			.array(superAgentMessageSchema)
 			.min(1)
-			.max(24)
+			.max(MAX_SUPER_AGENT_MESSAGES * 2)
 	})
 	.strict();
 
@@ -56,7 +48,7 @@ export const POST: RequestHandler = withAuthedHandler(
 
 		let body: unknown;
 		try {
-			body = await readJsonBody(event.request, MAX_COACH_REQUEST_BYTES);
+			body = await readJsonBody(event.request, MAX_SUPER_AGENT_REQUEST_BYTES);
 		} catch (error) {
 			return json(
 				{
@@ -71,7 +63,7 @@ export const POST: RequestHandler = withAuthedHandler(
 
 		const parsed = coachRequestSchema.safeParse(body);
 		if (!parsed.success) return json({ error: 'Invalid Coach request' }, { status: 400 });
-		const messages = parsed.data.messages as SuperAgentRequest['messages'];
+		const messages = parsed.data.messages;
 		if (!messages.some((message) => message.role === 'user')) {
 			return json({ error: 'Coach needs a student message.' }, { status: 400 });
 		}

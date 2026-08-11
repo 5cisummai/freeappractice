@@ -40,11 +40,14 @@ export const POST: RequestHandler = withAuthedHandler(
 		const gated = await requireFrqPracticeEnabled();
 		if (gated) return gated;
 
+		const entitlements = await getEntitlements(userId);
 		let body: unknown;
 		try {
 			body = await readJsonBody(
 				event.request,
-				Math.max(MAX_TUTOR_CHAT_REQUEST_BYTES, MAX_SUPER_AGENT_REQUEST_BYTES)
+				entitlements.personalizedTutor
+					? MAX_SUPER_AGENT_REQUEST_BYTES
+					: MAX_TUTOR_CHAT_REQUEST_BYTES
 			);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
@@ -64,7 +67,6 @@ export const POST: RequestHandler = withAuthedHandler(
 					{ status: 400 }
 				);
 			}
-			const entitlements = await getEntitlements(userId);
 			if (!entitlements.personalizedTutor) {
 				return json({ error: 'Super subscription required' }, { status: 403 });
 			}
@@ -118,7 +120,6 @@ export const POST: RequestHandler = withAuthedHandler(
 			}
 		}
 
-		const entitlements = await getEntitlements(userId);
 		let isPersonalized = entitlements.personalizedTutor;
 		let personalizationContext: string | undefined;
 		let memoryDegraded = false;

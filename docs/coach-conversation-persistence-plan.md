@@ -1,6 +1,6 @@
 # Coach Conversation Persistence Plan
 
-Status: design only; implementation not started.
+Status: implemented for durable Coach and Super Tutor conversations; normalized tool-call storage remains deferred.
 
 ## Goal
 
@@ -123,12 +123,12 @@ System instructions, hidden personalization context, and raw provider request me
 
 Add repository functions for creating, listing, loading, appending, finalizing, and deleting owned conversations.
 
-Likely routes:
+Shipped routes:
 
-- `GET /api/coach/conversations`
-- `POST /api/coach/conversations`
-- `GET /api/coach/conversations/[id]`
-- `DELETE /api/coach/conversations/[id]`
+- `GET /api/super/conversations`
+- `POST /api/super/conversations`
+- `GET /api/super/conversations/[id]`
+- `DELETE /api/super/conversations/[id]`
 
 The Coach page should use a durable `conversationId`. Keep the existing browser `sessionId` separately for approvals and short-lived idempotency.
 

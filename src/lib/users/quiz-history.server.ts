@@ -136,6 +136,18 @@ export async function persistQuizAttempt(
 		return { status: 400, body: { error: 'A quiz must include between 1 and 50 questions.' } };
 	}
 
+	const db = getNeonDatabase();
+	if (quizId) {
+		const [existing] = await db
+			.select({ userId: quizAttempts.userId })
+			.from(quizAttempts)
+			.where(eq(quizAttempts.id, quizId))
+			.limit(1);
+		if (existing && existing.userId !== userId) {
+			return { status: 400, body: { error: 'Invalid quiz ID.' } };
+		}
+	}
+
 	const questionMap = await getQuestionsLookupMap(items.map((item) => item.questionId));
 	const missingQuestion = items.find((item) => !questionMap.has(item.questionId));
 	if (missingQuestion) {
@@ -159,7 +171,6 @@ export async function persistQuizAttempt(
 		Math.max(0, completedAt.getTime() - startedAt.getTime())
 	);
 	const persistedQuizId = quizId || randomUUID();
-	const db = getNeonDatabase();
 
 	const quizInsert = db
 		.insert(quizAttempts)
@@ -177,7 +188,20 @@ export async function persistQuizAttempt(
 			startedAt,
 			completedAt
 		})
-		.onConflictDoNothing();
+		.onConflictDoNothing()
+		.returning({ id: quizAttempts.id, userId: quizAttempts.userId });
+	const [insertedQuiz] = await quizInsert;
+	if (!insertedQuiz) {
+		const [existing] = await db
+			.select({ userId: quizAttempts.userId })
+			.from(quizAttempts)
+			.where(eq(quizAttempts.id, persistedQuizId))
+			.limit(1);
+		if (!existing || existing.userId !== userId) {
+			return { status: 400, body: { error: 'Invalid quiz ID.' } };
+		}
+	}
+
 	const questionInsert = db
 		.insert(quizAttemptQuestions)
 		.values(
@@ -195,7 +219,7 @@ export async function persistQuizAttempt(
 		)
 		.onConflictDoNothing();
 
-	await db.batch([quizInsert, questionInsert]);
+	await questionInsert;
 	return {
 		status: 200,
 		body: {
@@ -241,7 +265,8 @@ export async function getQuizAttemptForCoach(
 		})
 		.from(quizAttemptQuestions)
 		.where(eq(quizAttemptQuestions.quizAttemptId, quizId))
-		.orderBy(asc(quizAttemptQuestions.position));
+		.orderBy(asc(quizAttemptQuestions.position))
+		.limit(MAX_QUIZ_COUNT);
 	const questionMap = await getQuestionsLookupMap(items.map((item) => item.questionId));
 	const requestedPositions = questionPositions?.length ? new Set(questionPositions) : null;
 	const reviewItems = requestedPositions

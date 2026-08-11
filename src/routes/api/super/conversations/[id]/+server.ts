@@ -14,11 +14,13 @@ export const GET: RequestHandler = withAuthedHandler(
 			id: conversation.id,
 			surface: conversation.surface,
 			context: conversation.context,
-			messages: messages.map((message) => ({
-				id: message.id,
-				role: message.role,
-				parts: message.parts
-			}))
+			messages: messages
+				.filter((message) => message.status !== 'streaming' && message.parts.length > 0)
+				.map((message) => ({
+					id: message.id,
+					role: message.role,
+					parts: message.parts
+				}))
 		});
 	},
 	{ logLabel: 'Super conversation load error', errorMessage: 'Failed to load conversation' }

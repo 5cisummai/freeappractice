@@ -22,6 +22,16 @@ export type ConversationMessage = {
 	status: string;
 };
 
+export class ConversationAccessError extends Error {
+	constructor(
+		message: string,
+		readonly status: 404 | 409
+	) {
+		super(message);
+		this.name = 'ConversationAccessError';
+	}
+}
+
 function normalizeSurface(value: string | undefined): ConversationSurface {
 	return value === 'question' ? 'question' : 'coach';
 }
@@ -100,9 +110,9 @@ export async function ensureConversation(
 ): Promise<string> {
 	if (input.conversationId) {
 		const existing = await getOwnedConversation(userId, input.conversationId);
-		if (!existing) throw new Error('Conversation not found');
+		if (!existing) throw new ConversationAccessError('Conversation not found', 404);
 		if (normalizeSurface(existing.surface) !== input.surface)
-			throw new Error('Conversation surface mismatch');
+			throw new ConversationAccessError('Conversation surface mismatch', 409);
 		return existing.id;
 	}
 	return createConversation(userId, input);
@@ -110,11 +120,12 @@ export async function ensureConversation(
 
 export async function getConversationMessages(
 	userId: string,
-	conversationId: string
+	conversationId: string,
+	limit?: number
 ): Promise<ConversationMessage[]> {
 	const owned = await getOwnedConversation(userId, conversationId);
 	if (!owned) throw new Error('Conversation not found');
-	const rows = await getNeonDatabase()
+	const query = getNeonDatabase()
 		.select({
 			id: conversationMessages.id,
 			role: conversationMessages.role,
@@ -124,8 +135,11 @@ export async function getConversationMessages(
 			status: conversationMessages.status
 		})
 		.from(conversationMessages)
-		.where(eq(conversationMessages.conversationId, conversationId))
-		.orderBy(asc(conversationMessages.position));
+		.where(eq(conversationMessages.conversationId, conversationId));
+	const rows =
+		limit === undefined
+			? await query.orderBy(asc(conversationMessages.position))
+			: (await query.orderBy(desc(conversationMessages.position)).limit(limit)).reverse();
 	return rows.map((row) => ({
 		...row,
 		role: row.role === 'user' ? 'user' : 'assistant'
@@ -168,27 +182,50 @@ export async function appendConversationMessage(
 		if (existing) return existing.id;
 	}
 
-	const id = randomUUID();
-	await getNeonDatabase()
-		.insert(conversationMessages)
-		.values({
-			id,
-			conversationId: input.conversationId,
-			position: await nextPosition(input.conversationId),
-			role: input.role,
-			content: input.content ?? '',
-			parts: input.parts ?? [],
-			status: input.status ?? 'complete',
-			clientMessageId: input.clientMessageId,
-			createdAt: new Date()
-		})
-		.onConflictDoNothing();
+	const db = getNeonDatabase();
+	for (let attempt = 0; attempt < 3; attempt += 1) {
+		const id = randomUUID();
+		const position = await nextPosition(input.conversationId);
+		const [inserted] = await db
+			.insert(conversationMessages)
+			.values({
+				id,
+				conversationId: input.conversationId,
+				position,
+				role: input.role,
+				content: input.content ?? '',
+				parts: input.parts ?? [],
+				status: input.status ?? 'complete',
+				clientMessageId: input.clientMessageId,
+				createdAt: new Date()
+			})
+			.onConflictDoNothing()
+			.returning({ id: conversationMessages.id });
 
-	await getNeonDatabase()
-		.update(conversations)
-		.set({ lastMessageAt: new Date(), updatedAt: new Date() })
-		.where(and(eq(conversations.id, input.conversationId), eq(conversations.userId, userId)));
-	return id;
+		if (inserted) {
+			await db
+				.update(conversations)
+				.set({ lastMessageAt: new Date(), updatedAt: new Date() })
+				.where(and(eq(conversations.id, input.conversationId), eq(conversations.userId, userId)));
+			return inserted.id;
+		}
+
+		if (input.clientMessageId) {
+			const [existing] = await db
+				.select({ id: conversationMessages.id })
+				.from(conversationMessages)
+				.where(
+					and(
+						eq(conversationMessages.conversationId, input.conversationId),
+						eq(conversationMessages.clientMessageId, input.clientMessageId)
+					)
+				)
+				.limit(1);
+			if (existing) return existing.id;
+		}
+	}
+
+	throw new Error('Conversation message could not be stored');
 }
 
 export async function finalizeConversationMessage(

@@ -30,4 +30,10 @@ describe('Super Agent diagram rendering', () => {
 		expect(validation.success).toBe(false);
 		if (!validation.success) expect(validation.errors.join(' ')).toContain('object');
 	});
+
+	it('reports a clear error for an unregistered diagram type', () => {
+		expect(() =>
+			renderDiagram({ type: 'not-a-real-type', accessibleDescription: 'Unknown diagram.' })
+		).toThrow(/not-a-real-type/);
+	});
 });

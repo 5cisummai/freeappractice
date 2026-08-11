@@ -10,6 +10,7 @@ import {
 	mcqQuestions,
 	quizAttempts
 } from '$lib/server/neon/schema';
+import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
 type McqHistoryItem = {
 	kind: 'mcq';
@@ -37,8 +38,6 @@ export type HistoryFilters = {
 	from?: string;
 	to?: string;
 };
-
-const FRQ_PASS_THRESHOLD = 70;
 
 type HistoryQueryOptions = {
 	page: number;

@@ -19,10 +19,15 @@ import { buildSuperAgentContext } from '$lib/super/context.server';
 import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
 import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
-import { textFromSuperAgentParts, toSuperAgentModelMessages } from '$lib/super/agent-request';
+import {
+	MAX_SUPER_AGENT_MESSAGES,
+	textFromSuperAgentParts,
+	toSuperAgentModelMessages
+} from '$lib/super/agent-request';
 import {
 	appendConversationMessage,
 	ensureConversation,
+	ConversationAccessError,
 	finalizeConversationMessage,
 	getConversationMessages,
 	linkCoachAuditsToAssistantMessage
@@ -68,7 +73,18 @@ export async function createSuperAgentStreamResponse(
 		surface,
 		errorLabel
 	} = options;
-	const personalizedTurn = await startPersonalizedTurn(userId);
+	let personalizedTurn: Awaited<ReturnType<typeof startPersonalizedTurn>>;
+	try {
+		personalizedTurn = await startPersonalizedTurn(userId);
+	} catch (error) {
+		if (error instanceof RedisRequiredError) {
+			return json(
+				{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
+				{ status: 503 }
+			);
+		}
+		throw error;
+	}
 	if (personalizedTurn.kind === 'rate-limited')
 		return rateLimitedResponse(personalizedTurn.retryAt);
 	if (personalizedTurn.kind === 'exhausted') {
@@ -142,9 +158,11 @@ export async function createSuperAgentStreamResponse(
 			clientMessageId: incomingUser?.id,
 			status: 'complete'
 		});
-		const serverMessages = (await getConversationMessages(userId, conversationId))
+		const serverMessages = (
+			await getConversationMessages(userId, conversationId, MAX_SUPER_AGENT_MESSAGES)
+		)
 			.filter((message) => message.content.trim())
-			.slice(-12)
+			.slice(-MAX_SUPER_AGENT_MESSAGES)
 			.map((message) => ({ role: message.role, content: message.content }) as const);
 		assistantMessageId = await appendConversationMessage(userId, {
 			conversationId,
@@ -256,6 +274,9 @@ export async function createSuperAgentStreamResponse(
 				{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
 				{ status: 503 }
 			);
+		}
+		if (error instanceof ConversationAccessError) {
+			return json({ error: error.message }, { status: error.status });
 		}
 		throw error;
 	}

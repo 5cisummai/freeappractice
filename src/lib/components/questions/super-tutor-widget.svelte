@@ -237,7 +237,11 @@
 					parts: SuperAgentUIMessage['parts'];
 				}>;
 			}>(response);
-			if (!response.ok || !payload?.messages) return;
+			if (!response.ok || !payload?.messages) {
+				conversationId = '';
+				sessionStorage.removeItem(conversationStorageKey());
+				return;
+			}
 			chat.messages = payload.messages as SuperAgentUIMessage[];
 		} catch {
 			conversationId = '';
@@ -307,8 +311,8 @@
 
 	function onPointerMove(event: PointerEvent): void {
 		if (!isDragging) return;
-		hasDragged = true;
 		const position = clampButton(event.clientX - dragOffsetX, event.clientY - dragOffsetY);
+		if (Math.abs(position.x - btnX) > 3 || Math.abs(position.y - btnY) > 3) hasDragged = true;
 		btnX = position.x;
 		btnY = position.y;
 	}

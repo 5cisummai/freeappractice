@@ -43,8 +43,8 @@
 	let errorMessage = $state('');
 	let draftSelections = $state<Array<string | null>>([]);
 	let currentSelection = $state<string | null>(null);
-	let quizId = '';
-	let quizStartedAt = '';
+	let quizId = $state('');
+	let quizStartedAt = $state('');
 	let historyStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
 	let historyError = $state('');
 	let lastRequestVersion = 0;
@@ -162,43 +162,51 @@
 		indexes: number[],
 		seenQuestionIds: string[]
 	): Promise<void> {
-		for (const index of indexes) {
-			if (!isCurrentRun(token)) return;
+		let nextIndex = 0;
+		const seenIds = [...seenQuestionIds];
 
-			let question: GeneratedQuestion | null = null;
-			let lastError: unknown = null;
+		async function fillNextIndex(): Promise<void> {
+			while (isCurrentRun(token)) {
+				const index = indexes[nextIndex++];
+				if (index === undefined) return;
 
-			for (let attempt = 0; attempt <= MAX_DUPLICATE_RETRIES; attempt += 1) {
-				try {
-					const candidate = await fetchQuizQuestion(seenQuestionIds);
-					const candidateId = questionId(candidate);
-					if (
-						candidateId &&
-						seenQuestionIds.includes(candidateId) &&
-						attempt < MAX_DUPLICATE_RETRIES
-					) {
-						continue;
+				let question: GeneratedQuestion | null = null;
+				let lastError: unknown = null;
+
+				for (let attempt = 0; attempt <= MAX_DUPLICATE_RETRIES; attempt += 1) {
+					try {
+						const candidate = await fetchQuizQuestion([...seenIds]);
+						const candidateId = questionId(candidate);
+						if (candidateId && seenIds.includes(candidateId) && attempt < MAX_DUPLICATE_RETRIES) {
+							continue;
+						}
+
+						question = candidate;
+						if (candidateId) {
+							seenIds.push(candidateId);
+							seenQuestionIds.push(candidateId);
+						}
+						break;
+					} catch (error) {
+						lastError = error;
+						break;
 					}
-
-					question = candidate;
-					if (candidateId) seenQuestionIds.push(candidateId);
-					break;
-				} catch (error) {
-					lastError = error;
-					break;
 				}
-			}
 
-			if (!isCurrentRun(token)) return;
+				if (!isCurrentRun(token)) return;
 
-			if (question) {
-				questions[index] = question;
-			} else {
-				failedIndexes = [...failedIndexes, index];
-				if (lastError instanceof Error) errorMessage = lastError.message;
+				if (question) {
+					questions[index] = question;
+				} else {
+					failedIndexes = [...failedIndexes, index];
+					if (lastError instanceof Error) errorMessage = lastError.message;
+				}
+				loadingCount = Math.max(0, loadingCount - 1);
 			}
-			loadingCount = Math.max(0, loadingCount - 1);
 		}
+
+		const workerCount = Math.min(4, indexes.length);
+		await Promise.all(Array.from({ length: workerCount }, () => fillNextIndex()));
 
 		if (isCurrentRun(token) && loadingCount === 0) setGenerating(false);
 	}
@@ -303,13 +311,14 @@
 		return questions.map((question, index) => {
 			const selectedAnswer = draftSelections[index];
 			if (!question || !selectedAnswer || !question.correctAnswer) return null;
+			const recorded = answers[index];
 			return {
 				questionId: question.questionId?.trim() || undefined,
 				questionNumber: String(index + 1),
 				selectedAnswer,
 				correctAnswer: question.correctAnswer,
 				isCorrect: selectedAnswer === question.correctAnswer,
-				timeTakenMs: 0
+				timeTakenMs: recorded?.timeTakenMs ?? 0
 			};
 		});
 	}

@@ -4,40 +4,35 @@ import type { SuperAgentContext } from '$lib/super/coach.server';
 export const MAX_SUPER_AGENT_MESSAGES = 12;
 export const MAX_SUPER_AGENT_REQUEST_BYTES = 2 * 1024 * 1024;
 
-const messagePartSchema = z
-	.object({ type: z.string().min(1).max(100), text: z.string().max(2_000).optional() })
-	.passthrough();
+const messagePartSchema = z.looseObject({
+	type: z.string().min(1).max(100),
+	text: z.string().max(2_000).optional()
+});
 
-export const superAgentMessageSchema = z
-	.object({
-		id: z.string().max(200).optional(),
-		role: z.enum(['user', 'assistant']),
-		parts: z.array(messagePartSchema).max(24)
-	})
-	.passthrough();
+export const superAgentMessageSchema = z.looseObject({
+	id: z.string().max(200).optional(),
+	role: z.enum(['user', 'assistant']),
+	parts: z.array(messagePartSchema).max(24)
+});
 
-export const superAgentContextSchema = z
-	.object({
-		mode: z.enum(['coach', 'question']),
-		page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
-		questionId: z.string().uuid().optional(),
-		questionType: z.enum(['mcq', 'frq']).optional(),
-		frqAttemptId: z.string().trim().max(100).optional(),
-		quizId: z.string().uuid().optional()
-	})
-	.strict();
+export const superAgentContextSchema = z.strictObject({
+	mode: z.enum(['coach', 'question']),
+	page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
+	questionId: z.uuid().optional(),
+	questionType: z.enum(['mcq', 'frq']).optional(),
+	frqAttemptId: z.string().trim().max(100).optional(),
+	quizId: z.uuid().optional()
+});
 
-export const superAgentRequestSchema = z
-	.object({
-		sessionId: z.string().uuid(),
-		conversationId: z.string().uuid().optional(),
-		context: superAgentContextSchema,
-		messages: z
-			.array(superAgentMessageSchema)
-			.min(1)
-			.max(MAX_SUPER_AGENT_MESSAGES * 2)
-	})
-	.strict();
+export const superAgentRequestSchema = z.strictObject({
+	sessionId: z.uuid(),
+	conversationId: z.uuid().optional(),
+	context: superAgentContextSchema,
+	messages: z
+		.array(superAgentMessageSchema)
+		.min(1)
+		.max(MAX_SUPER_AGENT_MESSAGES * 2)
+});
 
 export type SuperAgentRequest = z.infer<typeof superAgentRequestSchema>;
 

@@ -17,8 +17,6 @@
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import TargetIcon from '@lucide/svelte/icons/target';
-	import ThumbsDownIcon from '@lucide/svelte/icons/thumbs-down';
-	import ThumbsUpIcon from '@lucide/svelte/icons/thumbs-up';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
@@ -112,7 +110,7 @@
 			fetch: async (url, init) => {
 				const response = await apiFetch(String(url), init);
 				const responseConversationId = response.headers.get('X-Super-Conversation-Id');
-				if (responseConversationId) {
+				if (responseConversationId && responseConversationId !== conversationId) {
 					conversationId = responseConversationId;
 					sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, responseConversationId);
 					void loadConversations();
@@ -383,6 +381,7 @@
 				}>;
 			}>(response);
 			if (!response.ok || !payload?.messages || request !== conversationLoadRequest) return false;
+			await coach.stop();
 			coach.messages = payload.messages as CoachUIMessage[];
 			return true;
 		} catch {
@@ -392,7 +391,7 @@
 
 	async function selectConversation(id: string): Promise<void> {
 		if (id === conversationId || loadingConversationId) return;
-		if (streaming) coach.stop();
+		if (streaming) await coach.stop();
 		conversationsOpen = false;
 		loadingConversationId = id;
 		const loaded = await loadConversation(id);
@@ -478,7 +477,9 @@
 			await regenerateMessage(response.id);
 			return;
 		}
-		await send(messageText(prompt));
+		const text = messageText(prompt);
+		coach.messages = coach.messages.slice(0, messageIndex);
+		await send(text);
 	}
 
 	async function approve(categories: Array<'goals' | 'study_plans'>) {
@@ -516,8 +517,8 @@
 		}
 	}
 
-	function startNewConversation(): void {
-		if (streaming) coach.stop();
+	async function startNewConversation(): Promise<void> {
+		if (streaming) await coach.stop();
 		conversationLoadRequest++;
 		coach.messages = [];
 		conversationId = '';
@@ -867,12 +868,6 @@
 														onclick={() => void copyMessage(message)}
 													>
 														<CopyIcon />
-													</Message.Action>
-													<Message.Action tooltip="Helpful" label="Helpful">
-														<ThumbsUpIcon />
-													</Message.Action>
-													<Message.Action tooltip="Not helpful" label="Not helpful">
-														<ThumbsDownIcon />
 													</Message.Action>
 												</Message.Actions>
 											{/if}

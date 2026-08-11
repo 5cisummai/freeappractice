@@ -1,6 +1,7 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
 import type { HistoryItem } from '$lib/users/types.js';
+import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants.js';
 import { escapeHtml } from '$lib/escape-html.js';
 import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
@@ -116,7 +117,7 @@ export function createHistoryColumns(
 						? {
 								label: `${row.original.attempt.percentage}%`,
 								classes:
-									row.original.attempt.percentage >= 70
+									row.original.attempt.percentage >= FRQ_PASS_THRESHOLD
 										? 'bg-secondary text-secondary-foreground'
 										: 'bg-muted text-muted-foreground'
 							}
@@ -124,7 +125,7 @@ export function createHistoryColumns(
 							? {
 									label: `${row.original.attempt.scorePercent}% · Quiz`,
 									classes:
-										row.original.attempt.scorePercent >= 70
+										row.original.attempt.scorePercent >= FRQ_PASS_THRESHOLD
 											? 'bg-secondary text-secondary-foreground'
 											: 'bg-muted text-muted-foreground'
 								}

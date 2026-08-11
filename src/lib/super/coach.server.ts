@@ -71,20 +71,18 @@ const forceSchema = z.object({
 		.optional()
 });
 
-const diagramSpecSchema = z
-	.object({
-		type: z.string().trim().min(1).max(80),
-		accessibleDescription: z.string().trim().min(1).max(2_000),
-		title: z.string().trim().max(200).optional(),
-		width: z.number().int().min(1).max(4_000).optional(),
-		height: z.number().int().min(1).max(4_000).optional(),
-		theme: z.literal('monochrome').optional(),
-		// Type-specific semantic fields are explicit so the model can see them in the tool schema.
-		object: diagramObjectSchema.optional(),
-		forces: z.array(forceSchema).min(1).max(12).optional(),
-		angle: z.number().min(-360).max(360).optional()
-	})
-	.passthrough();
+const diagramSpecSchema = z.looseObject({
+	type: z.string().trim().min(1).max(80),
+	accessibleDescription: z.string().trim().min(1).max(2_000),
+	title: z.string().trim().max(200).optional(),
+	width: z.number().int().min(1).max(4_000).optional(),
+	height: z.number().int().min(1).max(4_000).optional(),
+	theme: z.literal('monochrome').optional(),
+	// Type-specific semantic fields are explicit so the model can see them in the tool schema.
+	object: diagramObjectSchema.optional(),
+	forces: z.array(forceSchema).min(1).max(12).optional(),
+	angle: z.number().min(-360).max(360).optional()
+});
 
 export type CoachAuditView = {
 	id: string;
@@ -185,15 +183,20 @@ export function createSuperAgent(input: {
 		mode = 'coach',
 		currentContext
 	} = input;
+	const answerDisclosureRestriction =
+		'Never reveal the correct answer to the current MCQ, the hidden reference answer, or private FRQ rubric text. Use server-owned answer and grading facts only to guide reasoning and diagnose misconceptions.';
 	const modeInstructions =
 		mode === 'question'
 			? [
 					'You are operating in question mode. Start with the current question and the student’s likely reasoning, then connect it to relevant prior evidence.',
 					'When the student says help, infer that they want help with the current question without asking them to restate it.',
-					'Never reveal the correct answer to the current MCQ, the hidden reference answer, or private FRQ rubric text. Use server-owned answer and grading facts only to guide reasoning and diagnose misconceptions.',
+					answerDisclosureRestriction,
 					'You have the same tools and action capabilities as Coach. Goal or study-plan changes still require the existing explicit approval flow.'
 				].join('\n')
-			: 'You are operating in Coach mode. Lead with the best next action based on the student evidence and current page context.';
+			: [
+					'You are operating in Coach mode. Lead with the best next action based on the student evidence and current page context.',
+					...(currentContext?.questionId ? [answerDisclosureRestriction] : [])
+				].join('\n');
 
 	return new ToolLoopAgent({
 		id: 'super-coach',
