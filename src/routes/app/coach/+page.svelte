@@ -25,6 +25,7 @@
 	import * as Message from '$lib/components/ai-elements/message/index.js';
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
@@ -41,9 +42,23 @@
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
 	let motionMs = $state(320);
+	let conversations = $state<CoachConversation[]>([]);
+	let conversationsLoading = $state(false);
+	let conversationsError = $state('');
+	let conversationsOpen = $state(false);
+	let loadingConversationId = $state<string | null>(null);
+	let conversationLoadRequest = 0;
 
 	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
 	const COACH_CONVERSATION_STORAGE_KEY = 'super-coach-conversation-id';
+
+	type CoachConversation = {
+		id: string;
+		title: string;
+		lastMessageAt: string | null;
+		createdAt: string;
+		updatedAt: string;
+	};
 
 	const suggestions: Array<{ text: string; icon: Component }> = [
 		{ text: 'What should I study next?', icon: BookOpenIcon },
@@ -100,6 +115,7 @@
 				if (responseConversationId) {
 					conversationId = responseConversationId;
 					sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, responseConversationId);
+					void loadConversations();
 				}
 				showUsageWarning(response);
 				return response;
@@ -238,6 +254,14 @@
 		});
 	}
 
+	function formatConversationDate(conversation: CoachConversation): string {
+		return (
+			formatDate(conversation.lastMessageAt ?? conversation.updatedAt) ??
+			formatDate(conversation.createdAt) ??
+			'No messages yet'
+		);
+	}
+
 	function formatStudyTask(value: unknown): string | null {
 		const task = asRecord(value);
 		const pieces = [
@@ -308,7 +332,16 @@
 			: (sessionStorage.getItem(COACH_SESSION_STORAGE_KEY) ?? crypto.randomUUID());
 		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
 		conversationId = prompt ? '' : (sessionStorage.getItem(COACH_CONVERSATION_STORAGE_KEY) ?? '');
-		if (conversationId) void loadConversation(conversationId);
+		if (conversationId) {
+			const storedConversationId = conversationId;
+			void loadConversation(storedConversationId).then((loaded) => {
+				if (!loaded && conversationId === storedConversationId) {
+					conversationId = '';
+					sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
+				}
+			});
+		}
+		void loadConversations();
 		if (prompt) {
 			const url = new URL(window.location.href);
 			url.searchParams.delete('prompt');
@@ -320,7 +353,26 @@
 		}
 	});
 
-	async function loadConversation(id: string): Promise<void> {
+	async function loadConversations(): Promise<void> {
+		conversationsLoading = true;
+		conversationsError = '';
+		try {
+			const response = await apiFetch('/api/super/conversations');
+			const payload = await readJsonOrNull<{ conversations?: CoachConversation[] }>(response);
+			if (!response.ok || !payload?.conversations) {
+				conversationsError = 'Could not load conversations.';
+				return;
+			}
+			conversations = payload.conversations;
+		} catch {
+			conversationsError = 'Could not load conversations.';
+		} finally {
+			conversationsLoading = false;
+		}
+	}
+
+	async function loadConversation(id: string): Promise<boolean> {
+		const request = ++conversationLoadRequest;
 		try {
 			const response = await apiFetch(`/api/super/conversations/${id}`);
 			const payload = await readJsonOrNull<{
@@ -330,12 +382,31 @@
 					parts: CoachUIMessage['parts'];
 				}>;
 			}>(response);
-			if (!response.ok || !payload?.messages) return;
+			if (!response.ok || !payload?.messages || request !== conversationLoadRequest) return false;
 			coach.messages = payload.messages as CoachUIMessage[];
+			return true;
 		} catch {
-			conversationId = '';
-			sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
+			return false;
 		}
+	}
+
+	async function selectConversation(id: string): Promise<void> {
+		if (id === conversationId || loadingConversationId) return;
+		if (streaming) coach.stop();
+		conversationsOpen = false;
+		loadingConversationId = id;
+		const loaded = await loadConversation(id);
+		if (loadingConversationId !== id) return;
+		if (loaded) {
+			conversationId = id;
+			sessionId = crypto.randomUUID();
+			activityOpen = {};
+			sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
+			sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, id);
+		} else if (conversationLoadRequest > 0) {
+			toast.error('Could not load that conversation.');
+		}
+		loadingConversationId = null;
 	}
 
 	function showUsageWarning(response: Response) {
@@ -447,10 +518,13 @@
 
 	function startNewConversation(): void {
 		if (streaming) coach.stop();
+		conversationLoadRequest++;
 		coach.messages = [];
 		conversationId = '';
 		sessionId = crypto.randomUUID();
 		activityOpen = {};
+		conversationsOpen = false;
+		loadingConversationId = null;
 		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
 		sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
 	}
@@ -502,6 +576,86 @@
 		class="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background md:h-[calc(100svh-5rem)]"
 	>
 		<main class="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div class="mx-auto flex w-full max-w-3xl justify-end gap-2 px-4 pt-3 sm:px-8">
+				<Button
+					variant="ghost"
+					class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+					onclick={startNewConversation}
+					aria-label="Start a new chat"
+					title="New chat"
+				>
+					<PencilIcon class="size-4" strokeWidth={1.5} aria-hidden="true" />
+					<span>New Chat</span>
+				</Button>
+				<Popover.Root bind:open={conversationsOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								variant="ghost"
+								class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+								aria-expanded={conversationsOpen}
+								aria-label="Show conversations"
+							>
+								<span>Conversations</span>
+								<ChevronDownIcon
+									class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
+									aria-hidden="true"
+								/>
+							</Button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
+						<div class="flex items-center justify-between px-3 py-2">
+							<span class="text-sm font-medium">Conversations</span>
+							{#if conversationsLoading}
+								<Loader2Icon
+									class="size-4 animate-spin text-muted-foreground"
+									aria-label="Loading"
+								/>
+							{/if}
+						</div>
+						{#if conversationsError}
+							<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
+								<p>{conversationsError}</p>
+								<button
+									type="button"
+									class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+									onclick={() => void loadConversations()}
+								>
+									Try again
+								</button>
+							</div>
+						{:else if conversationsLoading && !conversations.length}
+							<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
+						{:else if !conversations.length}
+							<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
+						{:else}
+							<div class="max-h-72 overflow-y-auto">
+								{#each conversations as conversation (conversation.id)}
+									<button
+										type="button"
+										class={cn(
+											'flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none',
+											conversation.id === conversationId && 'bg-muted'
+										)}
+										aria-current={conversation.id === conversationId ? 'page' : undefined}
+										disabled={loadingConversationId !== null}
+										onclick={() => void selectConversation(conversation.id)}
+									>
+										<span class="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+											{conversation.title}
+										</span>
+										<span class="shrink-0 text-xs text-muted-foreground">
+											{formatConversationDate(conversation)}
+										</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
+			</div>
 			<div
 				class={cn(
 					'relative min-h-0 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
@@ -513,18 +667,6 @@
 						class="flex h-full min-h-0 flex-col"
 						in:fade={{ duration: motionMs, easing: cubicOut }}
 					>
-						<div class="mx-auto flex w-full max-w-3xl justify-end px-4 pt-3 sm:px-8">
-							<Button
-								variant="ghost"
-								size="icon"
-								class="size-10 rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-								onclick={startNewConversation}
-								aria-label="Start a new conversation"
-								title="New conversation"
-							>
-								<PencilIcon class="size-5" strokeWidth={1.5} />
-							</Button>
-						</div>
 						<Conversation.Root class="min-h-0 min-w-0 flex-1">
 							<Conversation.Content
 								class="mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"

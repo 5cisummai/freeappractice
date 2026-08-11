@@ -69,6 +69,27 @@ export async function getOwnedConversation(userId: string, conversationId: strin
 	return conversation ?? null;
 }
 
+export async function listOwnedConversations(
+	userId: string,
+	surface: ConversationSurface = 'coach'
+) {
+	return getNeonDatabase()
+		.select({
+			id: conversations.id,
+			title: conversations.title,
+			surface: conversations.surface,
+			lastMessageAt: conversations.lastMessageAt,
+			createdAt: conversations.createdAt,
+			updatedAt: conversations.updatedAt
+		})
+		.from(conversations)
+		.where(
+			and(eq(conversations.userId, userId), eq(conversations.surface, normalizeSurface(surface)))
+		)
+		.orderBy(desc(conversations.updatedAt))
+		.limit(50);
+}
+
 export async function ensureConversation(
 	userId: string,
 	input: {
