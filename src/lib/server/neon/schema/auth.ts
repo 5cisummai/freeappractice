@@ -23,6 +23,10 @@ export const authUsers = authSchema.table(
 		name: text('name').notNull(),
 		email: text('email').notNull(),
 		emailVerified: boolean('email_verified').notNull().default(false),
+		role: text('role'),
+		banned: boolean('banned').notNull().default(false),
+		banReason: text('ban_reason'),
+		banExpires: timestamp('ban_expires', { withTimezone: true, mode: 'date' }),
 		image: text('image'),
 		stripeCustomerId: text('stripe_customer_id'),
 		createdAt: createdAt(),
@@ -41,6 +45,7 @@ export const authSessions = authSchema.table(
 		updatedAt: updatedAt(),
 		ipAddress: text('ip_address'),
 		userAgent: text('user_agent'),
+		impersonatedBy: text('impersonated_by'),
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' })
