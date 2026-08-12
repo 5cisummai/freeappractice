@@ -21,6 +21,11 @@
 
 	let { data } = $props();
 
+	let selectedClass = $state('');
+	let selectedUnit = $state('');
+	let unitRange = $state<number[] | undefined>(undefined);
+	let requestVersion = $state(0);
+
 	const homeFaqJsonLd = $derived.by(() =>
 		JSON.stringify({
 			'@context': 'https://schema.org',
@@ -342,7 +347,14 @@
 			</section>
 
 			<section class={twAnimateInViewZoom}>
-				<QuestionShell />
+				<QuestionShell
+					bind:selectedClass
+					bind:selectedUnit
+					bind:unitRange
+					bind:requestVersion
+					persistQuizHistory={false}
+					alignment="center"
+				/>
 			</section>
 
 			<FeaturesSection />

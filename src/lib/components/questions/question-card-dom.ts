@@ -11,18 +11,44 @@ export function withTooltipTriggerClick(
 	};
 }
 
-/** Portal an overlay node to document.body and lock scroll while mounted. */
-export function portalToBody(node: HTMLElement) {
+/** Portal a node to document.body while enabled and lock scroll while it is open. */
+export function portalToBody(node: HTMLElement, enabled = true) {
 	if (!browser) return;
 
+	const parent = node.parentNode;
+	const anchor = document.createComment('portal-anchor');
 	const originalOverflow = document.body.style.overflow;
-	document.body.appendChild(node);
-	document.body.style.overflow = 'hidden';
+	let isPortaled = false;
+
+	function setPortaled(nextEnabled: boolean): void {
+		if (nextEnabled === isPortaled) return;
+
+		if (nextEnabled) {
+			parent?.insertBefore(anchor, node);
+			document.body.appendChild(node);
+			document.body.style.overflow = 'hidden';
+			isPortaled = true;
+			return;
+		}
+
+		anchor.parentNode?.insertBefore(node, anchor.nextSibling);
+		anchor.remove();
+		document.body.style.overflow = originalOverflow;
+		isPortaled = false;
+	}
+
+	setPortaled(enabled);
 
 	return {
+		update(nextEnabled: boolean) {
+			setPortaled(nextEnabled);
+		},
 		destroy() {
+			if (isPortaled) {
+				anchor.parentNode?.insertBefore(node, anchor.nextSibling);
+				anchor.remove();
+			}
 			document.body.style.overflow = originalOverflow;
-			node.remove();
 		}
 	};
 }

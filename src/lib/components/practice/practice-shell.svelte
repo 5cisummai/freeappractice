@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
 	import QuizSession from '$lib/components/practice/quiz-session.svelte';
@@ -6,8 +7,14 @@
 	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
+	import { portalToBody } from '$lib/components/questions/question-card-dom';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { cn } from '$lib/utils.js';
 
-	type PracticeShellProps = {
+	export type PracticeMode = 'unlimited' | 'graded';
+
+	export type PracticeShellProps = {
 		selectedClass?: string;
 		selectedUnit?: string;
 		unitRange?: number[];
@@ -15,6 +22,11 @@
 		quizMode?: boolean;
 		count?: number;
 		quizGenerating?: boolean;
+		persistQuizHistory?: boolean;
+		showModeSwitcher?: boolean;
+		modeSwitcherAlignment?: 'center' | 'left';
+		practiceMode?: PracticeMode;
+		quizRequestVersion?: number;
 		allowFrq?: boolean;
 		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
@@ -25,7 +37,18 @@
 		onModeChange?: (mode: 'mcq' | 'frq') => void;
 		onAnswered?: (result: AnswerResult) => void;
 		onFrqGraded?: (attempt: FrqAttemptView) => void;
-	} & Omit<QuestionCardProps, 'selectedClass' | 'selectedUnit' | 'requestVersion' | 'onAnswered'>;
+	} & Omit<
+		QuestionCardProps,
+		| 'selectedClass'
+		| 'selectedUnit'
+		| 'requestVersion'
+		| 'onAnswered'
+		| 'expanded'
+		| 'onExpand'
+		| 'controlsOpen'
+		| 'practiceControls'
+		| 'quizNavigation'
+	>;
 
 	let {
 		selectedClass = $bindable(''),
@@ -35,6 +58,11 @@
 		quizMode = false,
 		count = $bindable(10),
 		quizGenerating = $bindable(false),
+		persistQuizHistory = true,
+		showModeSwitcher = false,
+		modeSwitcherAlignment = 'center',
+		practiceMode = $bindable<PracticeMode>('unlimited'),
+		quizRequestVersion = $bindable(0),
 		allowFrq = false,
 		showFirstUseHints = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
@@ -48,6 +76,13 @@
 		...cardProps
 	}: PracticeShellProps = $props();
 
+	let isExpanded = $state(false);
+	let expandedSelectorOpen = $state(false);
+	const activeQuizMode = $derived(showModeSwitcher ? practiceMode === 'graded' : quizMode);
+	const activeRequestVersion = $derived(
+		showModeSwitcher && activeQuizMode ? quizRequestVersion : requestVersion
+	);
+
 	function changeMode(nextMode: 'mcq' | 'frq'): void {
 		mode = nextMode;
 		requestVersion = 0;
@@ -55,83 +90,166 @@
 	}
 
 	function handleSelectionChange(className: string, unit: string): void {
-		requestVersion = 0;
+		if (showModeSwitcher && activeQuizMode) quizRequestVersion = 0;
+		else requestVersion = 0;
 		onSelectionChange?.(className, unit);
 	}
 
 	function handleGenerate(): void {
 		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
-		if (quizMode) count = Math.min(50, Math.max(1, Math.floor(count || 10)));
-		requestVersion += 1;
+		if (activeQuizMode) count = Math.min(50, Math.max(1, Math.floor(count || 10)));
+		if (showModeSwitcher && activeQuizMode) quizRequestVersion += 1;
+		else requestVersion += 1;
 		onGenerate?.();
 	}
+
+	function toggleExpanded(): void {
+		isExpanded = !isExpanded;
+		expandedSelectorOpen = false;
+	}
+
+	onMount(() => {
+		function handleKeydown(event: KeyboardEvent): void {
+			if (event.key === 'Escape' && isExpanded) {
+				isExpanded = false;
+				expandedSelectorOpen = false;
+			}
+		}
+
+		window.addEventListener('keydown', handleKeydown);
+		return () => window.removeEventListener('keydown', handleKeydown);
+	});
 </script>
 
-<div class="mx-auto mb-8 max-w-5xl space-y-4">
-	{#if allowFrq}
-		<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
-			<button
-				type="button"
-				class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'mcq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-				onclick={() => changeMode('mcq')}
-			>
-				Multiple choice
-			</button>
-			<button
-				type="button"
-				class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'frq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-				onclick={() => changeMode('frq')}
-			>
-				Written response
-			</button>
-		</div>
-	{/if}
-	<QuestionSelector
-		bind:selectedClass
-		bind:selectedUnit
-		bind:unitRange
-		showFirstUseHint={showFirstUseHints}
-		{quizMode}
-		bind:count
-		generateDisabled={quizMode && quizGenerating}
-		generateLabel={quizMode ? 'Generate Quiz' : generateLabel}
-		onSelectionChange={handleSelectionChange}
-		onGenerate={handleGenerate}
-	/>
-</div>
+<div
+	use:portalToBody={isExpanded}
+	class={cn(
+		isExpanded
+			? 'fixed inset-0 z-40 flex min-h-0 flex-col overflow-hidden bg-background/75 shadow-2xl backdrop-blur-md'
+			: 'relative'
+	)}
+>
+	<div
+		class={cn(
+			isExpanded
+				? 'relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-card/90 backdrop-blur-sm'
+				: 'contents'
+		)}
+	>
+		{#snippet practiceControls()}
+			<div class="space-y-4">
+				<div class={cn(isExpanded && 'mx-auto max-w-5xl')}>
+					{#if showModeSwitcher}
+						<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
+							<Tabs.List
+								aria-label="Practice modes"
+								class={cn(
+									'h-auto w-full max-w-md gap-1',
+									modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
+								)}
+							>
+								<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
+								<Tabs.Trigger value="graded">
+									<Badge
+										variant="outline"
+										class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
+									>
+									Graded quizzes
+								</Tabs.Trigger>
+							</Tabs.List>
+						</Tabs.Root>
+					{/if}
 
-<div class="mx-auto min-h-40 max-w-6xl">
-	{#key `${mode}:${selectedClass}:${selectedUnit}`}
-		{#if mode === 'frq' && allowFrq}
-			<FrqCard
-				{selectedClass}
-				{selectedUnit}
-				{unitRange}
-				{requestVersion}
-				showFirstUseHint={showFirstUseHints}
-				{isPersonalizedTutor}
-				onGraded={onFrqGraded}
-			/>
-		{:else if quizMode}
-			<QuizSession
-				{selectedClass}
-				{selectedUnit}
-				{unitRange}
-				{count}
-				{requestVersion}
-				bind:isGenerating={quizGenerating}
-			/>
-		{:else}
-			<QuestionCard
-				{selectedClass}
-				{selectedUnit}
-				{unitRange}
-				{requestVersion}
-				showFirstUseHint={showFirstUseHints}
-				{isPersonalizedTutor}
-				{onAnswered}
-				{...cardProps}
-			/>
+					<div class="flex items-center justify-between gap-3">
+						{#if allowFrq}
+							<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
+								<button
+									type="button"
+									class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'mcq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+									onclick={() => changeMode('mcq')}
+								>
+									Multiple choice
+								</button>
+								<button
+									type="button"
+									class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'frq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+									onclick={() => changeMode('frq')}
+								>
+									Written response
+								</button>
+							</div>
+						{/if}
+					</div>
+
+					<QuestionSelector
+						bind:selectedClass
+						bind:selectedUnit
+						bind:unitRange
+						showFirstUseHint={showFirstUseHints}
+						quizMode={activeQuizMode}
+						bind:count
+						generateDisabled={activeQuizMode && quizGenerating}
+						generateLabel={activeQuizMode ? 'Generate Quiz' : generateLabel}
+						onSelectionChange={handleSelectionChange}
+						onGenerate={handleGenerate}
+					/>
+				</div>
+			</div>
+		{/snippet}
+
+		{#if !isExpanded}
+			<div id="practice-shell-controls" class="mx-auto mb-8 max-w-5xl">
+				{@render practiceControls()}
+			</div>
 		{/if}
-	{/key}
+
+		<div
+			class={cn(
+				isExpanded ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'mx-auto min-h-40 max-w-6xl'
+			)}
+		>
+			{#key `${activeQuizMode ? 'graded' : 'unlimited'}:${mode}:${selectedClass}:${selectedUnit}`}
+				{#if mode === 'frq' && allowFrq && !activeQuizMode}
+					<FrqCard
+						{selectedClass}
+						{selectedUnit}
+						{unitRange}
+						requestVersion={activeRequestVersion}
+						showFirstUseHint={showFirstUseHints}
+						{isPersonalizedTutor}
+						onGraded={onFrqGraded}
+					/>
+				{:else if activeQuizMode}
+					<QuizSession
+						{selectedClass}
+						{selectedUnit}
+						{unitRange}
+						{count}
+						requestVersion={activeRequestVersion}
+						expanded={isExpanded}
+						onExpand={toggleExpanded}
+						bind:controlsOpen={expandedSelectorOpen}
+						{practiceControls}
+						persistHistory={persistQuizHistory}
+						bind:isGenerating={quizGenerating}
+					/>
+				{:else}
+					<QuestionCard
+						{selectedClass}
+						{selectedUnit}
+						{unitRange}
+						requestVersion={activeRequestVersion}
+						expanded={isExpanded}
+						onExpand={toggleExpanded}
+						bind:controlsOpen={expandedSelectorOpen}
+						{practiceControls}
+						showFirstUseHint={showFirstUseHints}
+						{isPersonalizedTutor}
+						{onAnswered}
+						{...cardProps}
+					/>
+				{/if}
+			{/key}
+		</div>
+	</div>
 </div>

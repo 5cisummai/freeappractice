@@ -9,6 +9,9 @@
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
 	import { requestMcqQuestion } from '$lib/questions/request-mcq.client.js';
 	import type { AnswerResult, GeneratedQuestion } from '$lib/questions/types.js';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+	import type { Snippet } from 'svelte';
 
 	type QuizStatus = 'idle' | 'loading' | 'active' | 'review' | 'complete' | 'error';
 
@@ -19,6 +22,11 @@
 		count: number;
 		requestVersion: number;
 		isGenerating?: boolean;
+		expanded?: boolean;
+		persistHistory?: boolean;
+		onExpand?: () => void;
+		controlsOpen?: boolean;
+		practiceControls?: Snippet;
 	};
 
 	const MAX_QUIZ_COUNT = 50;
@@ -30,7 +38,12 @@
 		unitRange,
 		count,
 		requestVersion,
-		isGenerating = $bindable(false)
+		isGenerating = $bindable(false),
+		expanded = false,
+		persistHistory = true,
+		onExpand,
+		controlsOpen = $bindable(false),
+		practiceControls
 	}: QuizSessionProps = $props();
 
 	let status = $state<QuizStatus>('idle');
@@ -47,6 +60,7 @@
 	let quizStartedAt = $state('');
 	let historyStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
 	let historyError = $state('');
+	let questionNavOpen = $state(false);
 	let lastRequestVersion = 0;
 	let lastSelectionKey = '';
 	let runToken = 0;
@@ -116,6 +130,7 @@
 				draftSelections = [];
 				failedIndexes = [];
 				loadingCount = 0;
+				questionNavOpen = false;
 				historyStatus = 'idle';
 				historyError = '';
 			}
@@ -222,6 +237,7 @@
 		draftSelections = Array.from({ length: targetCount }, () => null);
 		currentIndex = 0;
 		currentSelection = null;
+		questionNavOpen = false;
 		requestedCount = targetCount;
 		loadingCount = targetCount;
 		failedIndexes = [];
@@ -290,7 +306,7 @@
 		if (result.selectedAnswer) draftSelections[currentIndex] = result.selectedAnswer;
 	}
 
-	function handleOptionSelected(selectedOption: string): void {
+	function handleOptionSelected(selectedOption: string | null): void {
 		draftSelections[currentIndex] = selectedOption;
 	}
 
@@ -327,7 +343,7 @@
 		if (!canFinish) return;
 		answers = buildQuizAnswers();
 		status = 'complete';
-		void persistQuizHistory();
+		if (persistHistory) void persistQuizHistory();
 	}
 
 	function handleQuizNext(): void {
@@ -420,17 +436,21 @@
 				<p class="text-sm text-muted-foreground">{scorePercent}% correct</p>
 			</div>
 
-			{#if historyStatus === 'saving'}
-				<p class="text-sm text-muted-foreground" role="status">Saving to your history…</p>
-			{:else if historyStatus === 'saved'}
-				<p class="text-sm text-emerald-600 dark:text-emerald-400" role="status">Saved to history</p>
-			{:else if historyStatus === 'error'}
-				<div class="space-y-2" role="alert">
-					<p class="text-sm text-destructive">{historyError}</p>
-					<Button variant="outline" size="sm" onclick={() => void persistQuizHistory()}>
-						Retry save
-					</Button>
-				</div>
+			{#if persistHistory}
+				{#if historyStatus === 'saving'}
+					<p class="text-sm text-muted-foreground" role="status">Saving to your history…</p>
+				{:else if historyStatus === 'saved'}
+					<p class="text-sm text-emerald-600 dark:text-emerald-400" role="status">
+						Saved to history
+					</p>
+				{:else if historyStatus === 'error'}
+					<div class="space-y-2" role="alert">
+						<p class="text-sm text-destructive">{historyError}</p>
+						<Button variant="outline" size="sm" onclick={() => void persistQuizHistory()}>
+							Retry save
+						</Button>
+					</div>
+				{/if}
 			{/if}
 
 			<div
@@ -451,7 +471,9 @@
 			</div>
 
 			<div class="flex flex-wrap justify-center gap-2">
-				<Button href={coachReviewHref} variant="outline">Review with Coach</Button>
+				{#if persistHistory}
+					<Button href={coachReviewHref} variant="outline">Review with Coach</Button>
+				{/if}
 				<Button onclick={() => void startQuiz()}>Try another quiz</Button>
 			</div>
 		</Card.Content>
@@ -493,28 +515,58 @@
 		</Card.Content>
 	</Card.Root>
 {:else if currentQuestion}
-	<div class="space-y-4">
-		<div class="flex flex-wrap items-center gap-2" aria-label="Quiz questions" role="navigation">
-			{#each questions as question, index (index)}
+	<div class={expanded ? 'flex min-h-0 flex-1 flex-col gap-4' : 'space-y-4'}>
+		{#snippet questionNavigation()}
+			<div class="relative flex justify-center">
+				{#if questionNavOpen}
+					<div
+						id="quiz-question-navigation"
+						class="absolute bottom-full left-1/2 z-30 mb-3 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-border/70 bg-card/98 p-2 shadow-xl backdrop-blur-sm"
+						role="dialog"
+						aria-label="Quiz questions"
+					>
+						<div class="grid max-h-48 grid-cols-5 gap-1 overflow-y-auto sm:grid-cols-8">
+							{#each questions as question, index (index)}
+								<Button
+									type="button"
+									size="icon"
+									variant={currentIndex === index
+										? 'default'
+										: draftSelections[index]
+											? 'secondary'
+											: 'outline'}
+									class="size-8"
+									disabled={!question}
+									onclick={() => handleQuestionJump(index)}
+									aria-label={`Go to question ${index + 1}${draftSelections[index] ? ', answered' : ''}`}
+									aria-current={currentIndex === index ? 'step' : undefined}
+								>
+									{index + 1}
+								</Button>
+							{/each}
+						</div>
+						<p class="mt-2 text-center text-xs text-muted-foreground">
+							{answeredQuestionCount} of {requestedCount} answered
+						</p>
+					</div>
+				{/if}
+
 				<Button
 					type="button"
-					size="icon"
-					variant={currentIndex === index
-						? 'default'
-						: draftSelections[index]
-							? 'secondary'
-							: 'outline'}
-					class="size-9"
-					disabled={!question}
-					onclick={() => handleQuestionJump(index)}
-					aria-label={`Go to question ${index + 1}${draftSelections[index] ? ', answered' : ''}`}
-					aria-current={currentIndex === index ? 'step' : undefined}
+					class="h-8 rounded-md bg-foreground px-3 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
+					onclick={() => (questionNavOpen = !questionNavOpen)}
+					aria-expanded={questionNavOpen}
+					aria-controls="quiz-question-navigation"
 				>
-					{index + 1}
+					Question {currentIndex + 1} of {requestedCount}
+					{#if questionNavOpen}
+						<ChevronDownIcon class="size-3.5" />
+					{:else}
+						<ChevronUpIcon class="size-3.5" />
+					{/if}
 				</Button>
-			{/each}
-			<p class="text-xs text-muted-foreground">{answeredQuestionCount} answered</p>
-		</div>
+			</div>
+		{/snippet}
 
 		{#if loadingCount > 0}
 			<p class="text-xs text-muted-foreground" aria-live="polite">
@@ -542,6 +594,11 @@
 				quizQuestion={currentQuestion}
 				quizAnswer={currentAnswer}
 				questionNumber={String(currentIndex + 1)}
+				{expanded}
+				{onExpand}
+				bind:controlsOpen
+				{practiceControls}
+				quizNavigation={questionNavigation}
 				{selectedClass}
 				{selectedUnit}
 				checkLabel="Submit answer"

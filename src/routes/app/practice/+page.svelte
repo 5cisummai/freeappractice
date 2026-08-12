@@ -2,13 +2,11 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import PracticeShell from '$lib/components/practice/practice-shell.svelte';
+	import QuestionShell from '$lib/components/questions/question-shell.svelte';
 	import type { AnswerResult } from '$lib/questions/types';
 	import { toast } from 'svelte-sonner';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
 
 	let { data } = $props();
 
@@ -16,11 +14,7 @@
 	let selectedUnit = $state('');
 	let unitRange = $state<number[] | undefined>(undefined);
 	let requestVersion = $state(0);
-	let quizRequestVersion = $state(0);
-	let quizCount = $state(10);
-	let quizGenerating = $state(false);
 	let mode = $state<'mcq' | 'frq'>('mcq');
-	let practiceMode = $state('unlimited');
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
 	const presetMode = $derived(page.url.searchParams.get('mode') ?? '');
@@ -114,43 +108,20 @@
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">
 	<div class="mx-auto max-w-250">
-		<Tabs.Root bind:value={practiceMode} class="space-y-6">
-			<Tabs.List aria-label="Practice modes" class="h-auto w-full max-w-md justify-start gap-1">
-				<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
-				<Tabs.Trigger value="graded">
-					Graded quizzes
-					<Badge variant="default">New</Badge>
-				</Tabs.Trigger>
-			</Tabs.List>
-
-			<Tabs.Content value="unlimited">
-				<PracticeShell
-					bind:selectedClass
-					bind:selectedUnit
-					bind:unitRange
-					bind:requestVersion
-					bind:mode
-					showFirstUseHints
-					allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
-					isPersonalizedTutor={data.isPersonalizedTutor}
-					practiceExperiment={data.practiceExperiment}
-					onAnswered={handleAnswered}
-					onFrqGraded={handleFrqGraded}
-				/>
-			</Tabs.Content>
-
-			<Tabs.Content value="graded" aria-label="Graded quizzes">
-				<PracticeShell
-					bind:selectedClass
-					bind:selectedUnit
-					bind:unitRange
-					bind:requestVersion={quizRequestVersion}
-					bind:count={quizCount}
-					bind:quizGenerating
-					quizMode
-					allowFrq={false}
-				/>
-			</Tabs.Content>
-		</Tabs.Root>
+		<QuestionShell
+			bind:selectedClass
+			bind:selectedUnit
+			bind:unitRange
+			bind:requestVersion
+			bind:mode
+			alignment="left"
+			showFirstUseHints
+			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
+			isPersonalizedTutor={data.isPersonalizedTutor}
+			practiceExperiment={data.practiceExperiment}
+			onAnswered={handleAnswered}
+			onFrqGraded={handleFrqGraded}
+			persistQuizHistory
+		/>
 	</div>
 </PageShell>

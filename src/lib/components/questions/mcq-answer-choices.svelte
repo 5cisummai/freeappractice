@@ -19,7 +19,7 @@
 		hasCheckedAnswer?: boolean;
 		checkedSelection?: string | null;
 		correctAnswer?: string;
-		onSelect: (optionId: string) => void;
+		onSelect: (optionId: string | null) => void;
 		showFeedback?: boolean;
 		compact?: boolean;
 		/** Multi-attempt: previously incorrect choices stay unavailable. Empty by default (control). */
@@ -87,7 +87,7 @@
 			role="radio"
 			aria-checked={selectedOption === option.id}
 			disabled={hasCheckedAnswer || isLocked(option.id)}
-			onclick={() => onSelect(option.id)}
+			onclick={() => onSelect(selectedOption === option.id ? null : option.id)}
 			class={cn(
 				'w-full rounded-lg border text-left transition-colors',
 				compact ? 'px-3 py-2.5' : 'px-4 py-3',

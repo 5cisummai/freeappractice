@@ -271,7 +271,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		await loadQuestion('retry');
 	}
 
-	function handleOptionSelect(optionId: string): void {
+	function handleOptionSelect(optionId: string | null): void {
 		if (hasCheckedAnswer) return;
 		opts.setSelectedOption(optionId);
 		opts.onOptionSelected?.(optionId);

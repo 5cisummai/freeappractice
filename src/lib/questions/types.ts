@@ -1,4 +1,5 @@
 import type { PracticeVariant } from '$lib/practice/multi-attempt';
+import type { Snippet } from 'svelte';
 
 export type QuestionOption = {
 	id: string;
@@ -61,13 +62,18 @@ export type GeneratedQuestion = {
 
 export type QuestionCardProps = {
 	class?: string;
+	expanded?: boolean;
+	onExpand?: () => void;
+	controlsOpen?: boolean;
+	practiceControls?: Snippet;
+	quizNavigation?: Snippet;
 	questionNumber?: string;
 	quizMode?: boolean;
 	quizQuestion?: GeneratedQuestion | null;
 	quizAnswer?: AnswerResult | null;
 	nextDisabled?: boolean;
 	onQuizNext?: () => void;
-	onOptionSelected?: (selectedOption: string) => void;
+	onOptionSelected?: (selectedOption: string | null) => void;
 	selectedClass?: string;
 	selectedUnit?: string;
 	unitRange?: readonly number[];
