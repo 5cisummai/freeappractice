@@ -9,8 +9,13 @@
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
 	import { requestMcqQuestion } from '$lib/questions/request-mcq.client.js';
 	import type { AnswerResult, GeneratedQuestion } from '$lib/questions/types.js';
+	import {
+		savePendingSharedQuizRun,
+		type PendingSharedQuizRun
+	} from '$lib/shared-practice/types.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+	import Share2Icon from '@lucide/svelte/icons/share-2';
 	import type { Snippet } from 'svelte';
 
 	type QuizStatus = 'idle' | 'loading' | 'active' | 'review' | 'complete' | 'error';
@@ -24,6 +29,8 @@
 		isGenerating?: boolean;
 		expanded?: boolean;
 		persistHistory?: boolean;
+		initialQuestions?: GeneratedQuestion[] | null;
+		sharedSlug?: string;
 		onExpand?: () => void;
 		controlsOpen?: boolean;
 		practiceControls?: Snippet;
@@ -41,6 +48,8 @@
 		isGenerating = $bindable(false),
 		expanded = false,
 		persistHistory = true,
+		initialQuestions = null,
+		sharedSlug = '',
 		onExpand,
 		controlsOpen = $bindable(false),
 		practiceControls
@@ -60,6 +69,10 @@
 	let quizStartedAt = $state('');
 	let historyStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
 	let historyError = $state('');
+	let shareStatus = $state('');
+	let shareUrl = $state('');
+	let shareCreating = $state(false);
+	let pendingClaimSaved = $state(false);
 	let questionNavOpen = $state(false);
 	let lastRequestVersion = 0;
 	let lastSelectionKey = '';
@@ -82,6 +95,13 @@
 	const unansweredCount = $derived(Math.max(requestedCount - correctCount - incorrectCount, 0));
 	const scorePercent = $derived(
 		requestedCount > 0 ? Math.round((correctCount / requestedCount) * 100) : 0
+	);
+	const isSharedQuiz = $derived(Boolean(sharedSlug));
+	const canShareQuiz = $derived(
+		!isSharedQuiz && requestedCount > 0 && loadedCount === requestedCount
+	);
+	const claimSignupHref = $derived(
+		`${resolve('/signup')}?returnTo=${encodeURIComponent(resolve('/app'))}`
 	);
 	const coachReviewHref = $derived.by(() => {
 		const missedQuestions = questions.flatMap((question, index) => {
@@ -133,6 +153,10 @@
 				questionNavOpen = false;
 				historyStatus = 'idle';
 				historyError = '';
+				shareStatus = '';
+				shareUrl = '';
+				shareCreating = false;
+				pendingClaimSaved = false;
 			}
 		}
 		if (version === 0) {
@@ -245,12 +269,26 @@
 		quizStartedAt = new Date().toISOString();
 		historyStatus = 'idle';
 		historyError = '';
+		shareStatus = '';
+		shareUrl = '';
+		shareCreating = false;
+		pendingClaimSaved = false;
 		setGenerating(true);
 
 		if (!selectedClass) {
 			status = 'error';
 			errorMessage = 'Choose an AP class before generating a quiz.';
 			loadingCount = 0;
+			setGenerating(false);
+			return;
+		}
+
+		if (initialQuestions?.length) {
+			const fixedQuestions = initialQuestions.map((question) => ({ ...question }));
+			requestedCount = fixedQuestions.length;
+			questions = fixedQuestions;
+			loadingCount = 0;
+			status = 'active';
 			setGenerating(false);
 			return;
 		}
@@ -344,6 +382,83 @@
 		answers = buildQuizAnswers();
 		status = 'complete';
 		if (persistHistory) void persistQuizHistory();
+		else if (sharedSlug) saveAnonymousSharedRun();
+	}
+
+	function saveAnonymousSharedRun(): void {
+		const run: PendingSharedQuizRun = {
+			quizId,
+			sharedSlug,
+			apClass: selectedClass,
+			unit: selectedUnit || 'All Units',
+			startedAt: quizStartedAt,
+			items: questions.map((question, position) => ({
+				position,
+				questionId: question?.questionId?.trim() ?? '',
+				selectedAnswer: answers[position]?.selectedAnswer ?? null,
+				timeTakenMs: answers[position]?.timeTakenMs ?? null
+			}))
+		};
+		if (run.items.some((item) => !item.questionId)) return;
+		savePendingSharedQuizRun(run);
+		pendingClaimSaved = true;
+	}
+
+	async function createShareLink(): Promise<void> {
+		if (!canShareQuiz || shareCreating) return;
+		shareCreating = true;
+		if (shareUrl) {
+			try {
+				await deliverShareUrl(shareUrl);
+			} finally {
+				shareCreating = false;
+			}
+			return;
+		}
+
+		shareStatus = 'Creating share link…';
+		try {
+			const questionIds = questions.map((question) => question?.questionId?.trim() ?? '');
+			if (questionIds.some((questionId) => !questionId)) {
+				throw new Error('A question is missing its ID.');
+			}
+			const response = await apiFetch('/api/shared-practice-sets', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					questionIds,
+					apClass: selectedClass,
+					unit: selectedUnit || 'All Units'
+				})
+			});
+			const payload = await readJsonOrNull<{ sharedQuiz?: { url?: string }; error?: string }>(
+				response
+			);
+			if (!response.ok || !payload?.sharedQuiz?.url) {
+				throw new Error(getResponseMessage(payload, 'Could not create a share link.'));
+			}
+			shareUrl = payload.sharedQuiz.url;
+			await deliverShareUrl(shareUrl);
+		} catch (error) {
+			shareStatus = error instanceof Error ? error.message : 'Could not create a share link.';
+		} finally {
+			shareCreating = false;
+		}
+	}
+
+	async function deliverShareUrl(url: string): Promise<void> {
+		try {
+			if (navigator.share) {
+				await navigator.share({ title: `${selectedClass} quiz`, url });
+				shareStatus = 'Share link ready.';
+				return;
+			}
+			await navigator.clipboard.writeText(url);
+			shareStatus = 'Share link copied.';
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') return;
+			shareStatus = 'Could not share the quiz link.';
+		}
 	}
 
 	function handleQuizNext(): void {
@@ -379,6 +494,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					quizId,
+					...(sharedSlug ? { sharedSlug } : {}),
 					apClass: selectedClass,
 					unit: selectedUnit || 'All Units',
 					startedAt: quizStartedAt,
@@ -453,6 +569,30 @@
 				{/if}
 			{/if}
 
+			{#if pendingClaimSaved}
+				<div class="space-y-2" role="status">
+					<p class="text-sm text-muted-foreground">Sign up to save this quiz and your progress.</p>
+					<Button href={claimSignupHref} variant="outline" size="sm">Sign up to save</Button>
+				</div>
+			{/if}
+
+			{#if canShareQuiz || shareUrl}
+				<div class="space-y-2">
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={shareCreating}
+						onclick={() => void createShareLink()}
+					>
+						<Share2Icon class="size-4" />
+						{shareUrl ? 'Share quiz again' : 'Share this quiz'}
+					</Button>
+					{#if shareStatus}
+						<p class="text-xs text-muted-foreground" role="status">{shareStatus}</p>
+					{/if}
+				</div>
+			{/if}
+
 			<div
 				class="mx-auto grid max-w-md grid-cols-3 divide-x divide-border border-y border-border py-4"
 			>
@@ -517,54 +657,73 @@
 {:else if currentQuestion}
 	<div class={expanded ? 'flex min-h-0 flex-1 flex-col gap-4' : 'space-y-4'}>
 		{#snippet questionNavigation()}
-			<div class="relative flex justify-center">
-				{#if questionNavOpen}
-					<div
-						id="quiz-question-navigation"
-						class="absolute bottom-full left-1/2 z-30 mb-3 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-border/70 bg-card/98 p-2 shadow-xl backdrop-blur-sm"
-						role="dialog"
-						aria-label="Quiz questions"
+			<div class="relative flex flex-wrap justify-center gap-2">
+				{#if canShareQuiz}
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={shareCreating}
+						onclick={() => void createShareLink()}
 					>
-						<div class="grid max-h-48 grid-cols-5 gap-1 overflow-y-auto sm:grid-cols-8">
-							{#each questions as question, index (index)}
-								<Button
-									type="button"
-									size="icon"
-									variant={currentIndex === index
-										? 'default'
-										: draftSelections[index]
-											? 'secondary'
-											: 'outline'}
-									class="size-8"
-									disabled={!question}
-									onclick={() => handleQuestionJump(index)}
-									aria-label={`Go to question ${index + 1}${draftSelections[index] ? ', answered' : ''}`}
-									aria-current={currentIndex === index ? 'step' : undefined}
-								>
-									{index + 1}
-								</Button>
-							{/each}
-						</div>
-						<p class="mt-2 text-center text-xs text-muted-foreground">
-							{answeredQuestionCount} of {requestedCount} answered
-						</p>
-					</div>
-				{/if}
-
-				<Button
-					type="button"
-					class="h-8 rounded-md bg-foreground px-3 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
-					onclick={() => (questionNavOpen = !questionNavOpen)}
-					aria-expanded={questionNavOpen}
-					aria-controls="quiz-question-navigation"
-				>
-					Question {currentIndex + 1} of {requestedCount}
-					{#if questionNavOpen}
-						<ChevronDownIcon class="size-3.5" />
-					{:else}
-						<ChevronUpIcon class="size-3.5" />
+						<Share2Icon class="size-4" />
+						Share quiz
+					</Button>
+					{#if shareStatus}
+						<span class="self-center text-xs text-muted-foreground" role="status"
+							>{shareStatus}</span
+						>
 					{/if}
-				</Button>
+				{/if}
+				<div class="relative flex justify-center">
+					{#if questionNavOpen}
+						<div
+							id="quiz-question-navigation"
+							class="absolute bottom-full left-1/2 z-30 mb-3 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-border/70 bg-card/98 p-2 shadow-xl backdrop-blur-sm"
+							role="dialog"
+							aria-label="Quiz questions"
+						>
+							<div class="grid max-h-48 grid-cols-5 gap-1 overflow-y-auto sm:grid-cols-8">
+								{#each questions as question, index (index)}
+									<Button
+										type="button"
+										size="icon"
+										variant={currentIndex === index
+											? 'default'
+											: draftSelections[index]
+												? 'secondary'
+												: 'outline'}
+										class="size-8"
+										disabled={!question}
+										onclick={() => handleQuestionJump(index)}
+										aria-label={`Go to question ${index + 1}${draftSelections[index] ? ', answered' : ''}`}
+										aria-current={currentIndex === index ? 'step' : undefined}
+									>
+										{index + 1}
+									</Button>
+								{/each}
+							</div>
+							<p class="mt-2 text-center text-xs text-muted-foreground">
+								{answeredQuestionCount} of {requestedCount} answered
+							</p>
+						</div>
+					{/if}
+
+					<Button
+						type="button"
+						class="h-8 rounded-md bg-foreground px-3 text-xs font-semibold text-background shadow-sm hover:bg-foreground/90"
+						onclick={() => (questionNavOpen = !questionNavOpen)}
+						aria-expanded={questionNavOpen}
+						aria-controls="quiz-question-navigation"
+					>
+						Question {currentIndex + 1} of {requestedCount}
+						{#if questionNavOpen}
+							<ChevronDownIcon class="size-3.5" />
+						{:else}
+							<ChevronUpIcon class="size-3.5" />
+						{/if}
+					</Button>
+				</div>
 			</div>
 		{/snippet}
 

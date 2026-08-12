@@ -22,6 +22,12 @@
 	type ApiErrorPayload = { error?: string };
 
 	onMount(() => {
+		if (data.sharedQuiz) {
+			selectedClass = data.sharedQuiz.apClass;
+			selectedUnit = data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit;
+			requestVersion = 1;
+			return;
+		}
 		if (!presetClass) return;
 		selectedClass = presetClass;
 		selectedUnit = presetUnit;
@@ -108,20 +114,28 @@
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">
 	<div class="mx-auto max-w-250">
-		<QuestionShell
-			bind:selectedClass
-			bind:selectedUnit
-			bind:unitRange
-			bind:requestVersion
-			bind:mode
-			alignment="left"
-			showFirstUseHints
-			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
-			isPersonalizedTutor={data.isPersonalizedTutor}
-			practiceExperiment={data.practiceExperiment}
-			onAnswered={handleAnswered}
-			onFrqGraded={handleFrqGraded}
-			persistQuizHistory
-		/>
+		{#if data.sharedQuizError}
+			<div class="rounded-xl border border-border/70 bg-card p-8 text-center">
+				<h2 class="text-xl font-semibold">Shared quiz unavailable</h2>
+				<p class="mt-2 text-sm text-muted-foreground">{data.sharedQuizError}</p>
+			</div>
+		{:else}
+			<QuestionShell
+				bind:selectedClass
+				bind:selectedUnit
+				bind:unitRange
+				bind:requestVersion
+				bind:mode
+				alignment="left"
+				showFirstUseHints
+				allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
+				isPersonalizedTutor={data.isPersonalizedTutor}
+				practiceExperiment={data.practiceExperiment}
+				sharedQuiz={data.sharedQuiz}
+				onAnswered={handleAnswered}
+				onFrqGraded={handleFrqGraded}
+				persistQuizHistory
+			/>
+		{/if}
 	</div>
 </PageShell>

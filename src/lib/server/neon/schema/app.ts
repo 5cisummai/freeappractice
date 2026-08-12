@@ -97,11 +97,58 @@ export const quizAttempts = appSchema.table(
 		timeTakenMs: integer('time_taken_ms'),
 		startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
 		completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }).notNull(),
+		sharedPracticeSetId: text('shared_practice_set_id'),
 		createdAt: createdAt()
 	},
 	(table) => [
 		index('quiz_attempts_user_completed_idx').on(table.userId, table.completedAt),
 		index('quiz_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
+	]
+);
+
+export const sharedPracticeSets = appSchema.table(
+	'shared_practice_sets',
+	{
+		id: text('id').primaryKey(),
+		slug: text('slug').notNull(),
+		kind: text('kind').notNull().default('quiz'),
+		creatorUserId: text('creator_user_id').references(() => authUsers.id, {
+			onDelete: 'set null'
+		}),
+		title: text('title').notNull(),
+		apClass: text('ap_class').notNull(),
+		unit: text('unit').notNull(),
+		itemCount: integer('item_count').notNull(),
+		status: text('status').notNull().default('active'),
+		expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		uniqueIndex('shared_practice_sets_slug_uq').on(table.slug),
+		index('shared_practice_sets_status_expiry_idx').on(table.status, table.expiresAt),
+		index('shared_practice_sets_creator_idx').on(table.creatorUserId, table.createdAt)
+	]
+);
+
+export const sharedPracticeSetItems = appSchema.table(
+	'shared_practice_set_items',
+	{
+		sharedPracticeSetId: text('shared_practice_set_id')
+			.notNull()
+			.references(() => sharedPracticeSets.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+		itemType: text('item_type').notNull().default('mcq'),
+		questionId: text('question_id').notNull(),
+		questionContentHash: text('question_content_hash')
+	},
+	(table) => [
+		primaryKey({ columns: [table.sharedPracticeSetId, table.position] }),
+		uniqueIndex('shared_practice_set_items_question_uq').on(
+			table.sharedPracticeSetId,
+			table.questionId
+		),
+		index('shared_practice_set_items_question_idx').on(table.questionId)
 	]
 );
 

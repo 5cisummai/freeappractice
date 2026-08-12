@@ -3,13 +3,17 @@ import { isFrqPracticeEnabled } from '$lib/flags';
 import { getFrqCourseNames } from '$lib/frq/profiles.server';
 import { getOrAssignMultiAttemptVariant } from '$lib/practice/assign-variant.server';
 import { getEntitlements } from '$lib/super/entitlements.server';
+import { resolveSharedQuiz } from '$lib/shared-practice/shared-sets.server';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	const [frqEnabled, entitlements, experiment] = await Promise.all([
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const sharedSlug = url.searchParams.get('shared')?.trim() ?? '';
+	const [frqEnabled, entitlements, experiment, sharedResult] = await Promise.all([
 		isFrqPracticeEnabled(),
 		getEntitlements(locals.userId!),
-		getOrAssignMultiAttemptVariant(locals.userId!)
+		getOrAssignMultiAttemptVariant(locals.userId!),
+		sharedSlug ? resolveSharedQuiz(sharedSlug) : Promise.resolve(null)
 	]);
+	const sharedQuiz = sharedResult?.status === 'ready' ? sharedResult.quiz : null;
 
 	return {
 		frqEnabled,
@@ -18,6 +22,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		practiceExperiment: {
 			assignedVariant: experiment.assigned,
 			experimentEnabled: experiment.enabled
-		}
+		},
+		sharedQuiz,
+		sharedQuizError:
+			sharedResult && sharedResult.status !== 'ready'
+				? 'This shared quiz is no longer available.'
+				: null
 	};
 };
