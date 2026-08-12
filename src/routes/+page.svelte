@@ -326,7 +326,8 @@
 					<h1
 						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
 					>
-						Master your AP classes with instant practice questions.
+						Practice AP Exams <span class="underline underline-offset-4">Free</span>. Two Clicks. No
+						Signup.
 					</h1>
 
 					<div class="flex flex-wrap justify-center gap-3 text-base">
