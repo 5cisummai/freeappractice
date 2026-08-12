@@ -135,10 +135,10 @@ export async function persistQuizAttempt(
 	body: Record<string, unknown>
 ): Promise<PersistQuizAttemptResult> {
 	const input = body as QuizAttemptInput;
-	const apClass = asTrimmedString(input.apClass);
-	const unit = asTrimmedString(input.unit) || 'All Units';
 	const quizId = asTrimmedString(input.quizId);
 	const sharedSlug = asTrimmedString(input.sharedSlug);
+	const apClass = sharedSlug ? '' : asTrimmedString(input.apClass);
+	const unit = sharedSlug ? 'All Units' : asTrimmedString(input.unit) || 'All Units';
 	const items = parseQuizQuestions(input.items);
 
 	if ((!apClass && !sharedSlug) || apClass.length > 120 || unit.length > 120) {
@@ -269,22 +269,25 @@ export async function persistQuizAttempt(
 		.onConflictDoNothing();
 
 	await questionInsert;
-	for (const item of items) {
-		if (!item.selectedAnswer) continue;
-		const question = questionMap.get(item.questionId);
-		if (!question) continue;
-		await persistQuestionAttempt(
-			userId,
-			{
-				questionId: item.questionId,
-				apClass: question.apClass ?? resolvedApClass,
-				unit: question.unit ?? resolvedUnit,
-				selectedAnswer: item.selectedAnswer,
-				wasCorrect: item.selectedAnswer === question.correctAnswer,
-				timeTakenMs: item.timeTakenMs ?? undefined,
-				attemptedAt: completedAt
-			},
-			stableQuestionAttemptId(persistedQuizId, item.position)
+	const answeredItems = items.filter((item) => item.selectedAnswer !== null);
+	for (let index = 0; index < answeredItems.length; index += 5) {
+		await Promise.all(
+			answeredItems.slice(index, index + 5).map((item) => {
+				const question = questionMap.get(item.questionId)!;
+				return persistQuestionAttempt(
+					userId,
+					{
+						questionId: item.questionId,
+						apClass: question.apClass ?? resolvedApClass,
+						unit: question.unit ?? resolvedUnit,
+						selectedAnswer: item.selectedAnswer!,
+						wasCorrect: item.selectedAnswer === question.correctAnswer,
+						timeTakenMs: item.timeTakenMs ?? undefined,
+						attemptedAt: completedAt
+					},
+					stableQuestionAttemptId(persistedQuizId, item.position)
+				);
+			})
 		);
 	}
 	return {

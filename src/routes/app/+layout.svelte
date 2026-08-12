@@ -15,9 +15,10 @@
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { apiFetch } from '$lib/client/api.js';
 	import {
+		recordPendingSharedQuizRunFailure,
 		readPendingSharedQuizRuns,
 		removePendingSharedQuizRun
-	} from '$lib/shared-practice/types.js';
+	} from '$lib/shared-practice/pending-runs.js';
 
 	let { data, children } = $props();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
@@ -45,9 +46,9 @@
 					.then((response) => {
 						if (response.ok || [400, 404, 422].includes(response.status)) {
 							removePendingSharedQuizRun(pendingRun.quizId);
-						}
+						} else recordPendingSharedQuizRunFailure(pendingRun.quizId);
 					})
-					.catch(() => undefined);
+					.catch(() => recordPendingSharedQuizRunFailure(pendingRun.quizId));
 			}
 		}
 	});

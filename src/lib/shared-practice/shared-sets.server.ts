@@ -18,6 +18,13 @@ export type SharedQuizResolveResult =
 	| { status: 'ready'; quiz: SharedQuizView }
 	| { status: 'missing' | 'expired' | 'revoked' | 'unavailable' };
 
+export class SharedQuizValidationError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'SharedQuizValidationError';
+	}
+}
+
 function makeSlug(): string {
 	const bytes = randomBytes(12);
 	return Array.from(bytes, (byte) => SLUG_ALPHABET[byte % SLUG_ALPHABET.length]).join('');
@@ -33,7 +40,6 @@ function buildTitle(apClass: string, unit: string, itemCount: number): string {
 }
 
 function toGeneratedQuestion(question: StoredQuestion): GeneratedQuestion {
-	const stimulus = '';
 	return {
 		questionId: question.id,
 		topic: question.topicsCovered || undefined,
@@ -50,9 +56,7 @@ function toGeneratedQuestion(question: StoredQuestion): GeneratedQuestion {
 		hint2: question.hint2,
 		diagramSpec: question.diagramSpec,
 		hasDiagram: question.hasDiagram,
-		leftPanel: stimulus ? { title: 'Stimulus', content: [stimulus] } : undefined,
-		rightPanel: stimulus ? { title: 'Prompt', content: [question.question] } : undefined,
-		hasStimulus: Boolean(stimulus)
+		hasStimulus: false
 	};
 }
 
@@ -92,7 +96,6 @@ async function findSet(slug: string): Promise<SharedSetRow | null> {
 
 export async function createSharedQuiz(input: {
 	questionIds: string[];
-	apClass?: string;
 	unit?: string;
 	creatorUserId?: string;
 }): Promise<{ id: string; slug: string; title: string; expiresAt: string }> {
@@ -102,22 +105,23 @@ export async function createSharedQuiz(input: {
 		questionIds.length > MAX_SHARED_QUIZ_ITEMS ||
 		new Set(questionIds).size !== questionIds.length
 	) {
-		throw new Error('A shared quiz must contain 1–50 unique questions.');
+		throw new SharedQuizValidationError('A shared quiz must contain 1–50 unique questions.');
 	}
 
 	const questionMap = await getQuestionsLookupMap(questionIds);
 	if (questionIds.some((id) => !questionMap.has(id))) {
-		throw new Error('One or more quiz questions are no longer available.');
+		throw new SharedQuizValidationError('One or more quiz questions are no longer available.');
 	}
 
 	const firstQuestion = questionMap.get(questionIds[0]!)!;
 	const apClass = firstQuestion.apClass?.trim() ?? '';
-	if (!apClass) throw new Error('A shared quiz question is missing its AP class.');
+	if (!apClass)
+		throw new SharedQuizValidationError('A shared quiz question is missing its AP class.');
 	const unit = input.unit?.trim() || 'All Units';
 	if (questionIds.some((id) => (questionMap.get(id)!.apClass?.trim() ?? '') !== apClass)) {
-		throw new Error('A shared quiz must contain questions from one AP class.');
+		throw new SharedQuizValidationError('A shared quiz must contain questions from one AP class.');
 	}
-	if (unit.length > 120) throw new Error('Quiz unit is too long.');
+	if (unit.length > 120) throw new SharedQuizValidationError('Quiz unit is too long.');
 
 	const db = getNeonDatabase();
 	const expiresAt = new Date(Date.now() + SHARED_QUIZ_TTL_MS);
@@ -159,16 +163,15 @@ export async function createSharedQuiz(input: {
 		return { id, slug, title, expiresAt: expiresAt.toISOString() };
 	}
 
-	throw new Error('Could not create a share link. Please try again.');
+	throw new Error('Could not create a share link.');
 }
 
 export async function resolveSharedQuiz(slug: string): Promise<SharedQuizResolveResult> {
 	const set = await findSet(slug);
 	if (!set) return { status: 'missing' };
 	if (set.status === 'revoked') return { status: 'revoked' };
-	if (set.status !== 'active' || set.expiresAt.getTime() <= Date.now()) {
-		return { status: 'expired' };
-	}
+	if (set.status !== 'active') return { status: 'unavailable' };
+	if (set.expiresAt.getTime() <= Date.now()) return { status: 'expired' };
 
 	const [items, creator] = await Promise.all([
 		getNeonDatabase()

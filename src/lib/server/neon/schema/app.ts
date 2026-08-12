@@ -12,6 +12,7 @@ import {
 	timestamp,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { authUsers } from './auth';
 import { createdAt, updatedAt, bytea } from './common';
@@ -97,7 +98,10 @@ export const quizAttempts = appSchema.table(
 		timeTakenMs: integer('time_taken_ms'),
 		startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull(),
 		completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }).notNull(),
-		sharedPracticeSetId: text('shared_practice_set_id'),
+		sharedPracticeSetId: text('shared_practice_set_id').references(
+			(): AnyPgColumn => sharedPracticeSets.id,
+			{ onDelete: 'set null' }
+		),
 		createdAt: createdAt()
 	},
 	(table) => [
@@ -125,6 +129,8 @@ export const sharedPracticeSets = appSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
+		check('shared_practice_sets_kind_check', sql`${table.kind} = 'quiz'`),
+		check('shared_practice_sets_status_check', sql`${table.status} IN ('active', 'revoked')`),
 		uniqueIndex('shared_practice_sets_slug_uq').on(table.slug),
 		index('shared_practice_sets_status_expiry_idx').on(table.status, table.expiresAt),
 		index('shared_practice_sets_creator_idx').on(table.creatorUserId, table.createdAt)

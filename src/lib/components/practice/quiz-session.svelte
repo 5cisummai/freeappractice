@@ -9,10 +9,8 @@
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
 	import { requestMcqQuestion } from '$lib/questions/request-mcq.client.js';
 	import type { AnswerResult, GeneratedQuestion } from '$lib/questions/types.js';
-	import {
-		savePendingSharedQuizRun,
-		type PendingSharedQuizRun
-	} from '$lib/shared-practice/types.js';
+	import { savePendingSharedQuizRun } from '$lib/shared-practice/pending-runs.js';
+	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import Share2Icon from '@lucide/svelte/icons/share-2';
@@ -291,6 +289,8 @@
 			const fixedQuestions = initialQuestions.map((question) => ({ ...question }));
 			requestedCount = fixedQuestions.length;
 			questions = fixedQuestions;
+			answers = Array.from({ length: fixedQuestions.length }, () => null);
+			draftSelections = Array.from({ length: fixedQuestions.length }, () => null);
 			loadingCount = 0;
 			status = 'active';
 			setGenerating(false);
@@ -396,6 +396,7 @@
 			apClass: selectedClass,
 			unit: selectedUnit || 'All Units',
 			startedAt: quizStartedAt,
+			retryCount: 0,
 			items: questions.map((question, position) => ({
 				position,
 				questionId: question?.questionId?.trim() ?? '',
@@ -403,9 +404,12 @@
 				timeTakenMs: answers[position]?.timeTakenMs ?? null
 			}))
 		};
-		if (run.items.some((item) => !item.questionId)) return;
-		savePendingSharedQuizRun(run);
-		pendingClaimSaved = true;
+		if (run.items.some((item) => !item.questionId)) {
+			historyError = 'This quiz could not be saved because a question ID was missing.';
+			return;
+		}
+		if (savePendingSharedQuizRun(run)) pendingClaimSaved = true;
+		else historyError = 'This quiz could not be saved. Please try again after signing up.';
 	}
 
 	async function createShareLink(): Promise<void> {
@@ -431,7 +435,6 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					questionIds,
-					apClass: selectedClass,
 					unit: selectedUnit || 'All Units'
 				})
 			});
@@ -578,6 +581,10 @@
 					<p class="text-sm text-muted-foreground">Sign up to save this quiz and your progress.</p>
 					<Button href={claimSignupHref} variant="outline" size="sm">Sign up to save</Button>
 				</div>
+			{/if}
+
+			{#if !persistHistory && historyError}
+				<p class="text-sm text-destructive" role="alert">{historyError}</p>
 			{/if}
 
 			{#if canShareQuiz || shareUrl}
