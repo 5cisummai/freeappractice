@@ -32,6 +32,7 @@
 		onExpand,
 		controlsOpen = $bindable(false),
 		practiceControls,
+		headerActions,
 		quizNavigation,
 		questionNumber = '',
 		quizMode = false,
@@ -258,6 +259,9 @@
 							</h2>
 						</div>
 						<div class="flex items-center gap-1">
+							{#if headerActions}
+								{@render headerActions()}
+							{/if}
 							{#if expanded && practiceControls}
 								<Popover.Trigger bind:ref={controlsTriggerRef}>
 									{#snippet child({ props })}

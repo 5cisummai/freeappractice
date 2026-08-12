@@ -215,24 +215,25 @@
 				isExpanded ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'mx-auto min-h-40 max-w-6xl'
 			)}
 		>
-			{#key `${activeQuizMode ? 'graded' : 'unlimited'}:${mode}:${selectedClass}:${selectedUnit}:${sharedQuiz?.slug ?? ''}`}
-				{#if mode === 'frq' && allowFrq && !activeQuizMode}
-					<FrqCard
-						{selectedClass}
-						{selectedUnit}
-						{unitRange}
-						requestVersion={activeRequestVersion}
-						showFirstUseHint={showFirstUseHints}
-						{isPersonalizedTutor}
-						onGraded={onFrqGraded}
-					/>
-				{:else if activeQuizMode}
+			{#if mode === 'frq' && allowFrq && !activeQuizMode}
+				<FrqCard
+					{selectedClass}
+					{selectedUnit}
+					{unitRange}
+					requestVersion={activeRequestVersion}
+					showFirstUseHint={showFirstUseHints}
+					{isPersonalizedTutor}
+					onGraded={onFrqGraded}
+				/>
+			{:else}
+				<div class={activeQuizMode ? 'contents' : 'hidden'} aria-hidden={!activeQuizMode}>
 					<QuizSession
 						{selectedClass}
 						{selectedUnit}
 						{unitRange}
 						{count}
-						requestVersion={activeRequestVersion}
+						requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
+						enabled={activeQuizMode}
 						expanded={isExpanded}
 						onExpand={toggleExpanded}
 						bind:controlsOpen={expandedSelectorOpen}
@@ -242,23 +243,26 @@
 						sharedSlug={sharedQuiz?.slug}
 						bind:isGenerating={quizGenerating}
 					/>
-				{:else}
-					<QuestionCard
-						{selectedClass}
-						{selectedUnit}
-						{unitRange}
-						requestVersion={activeRequestVersion}
-						expanded={isExpanded}
-						onExpand={toggleExpanded}
-						bind:controlsOpen={expandedSelectorOpen}
-						{practiceControls}
-						showFirstUseHint={showFirstUseHints}
-						{isPersonalizedTutor}
-						{onAnswered}
-						{...cardProps}
-					/>
+				</div>
+				{#if !activeQuizMode}
+					{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
+						<QuestionCard
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							requestVersion={activeRequestVersion}
+							expanded={isExpanded}
+							onExpand={toggleExpanded}
+							bind:controlsOpen={expandedSelectorOpen}
+							{practiceControls}
+							showFirstUseHint={showFirstUseHints}
+							{isPersonalizedTutor}
+							{onAnswered}
+							{...cardProps}
+						/>
+					{/key}
 				{/if}
-			{/key}
+			{/if}
 		</div>
 	</div>
 </div>

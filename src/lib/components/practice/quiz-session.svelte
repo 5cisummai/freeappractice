@@ -26,6 +26,7 @@
 		unitRange?: readonly number[];
 		count: number;
 		requestVersion: number;
+		enabled?: boolean;
 		isGenerating?: boolean;
 		expanded?: boolean;
 		persistHistory?: boolean;
@@ -45,6 +46,7 @@
 		unitRange,
 		count,
 		requestVersion,
+		enabled = true,
 		isGenerating = $bindable(false),
 		expanded = false,
 		persistHistory = true,
@@ -138,10 +140,11 @@
 
 	$effect(() => {
 		const version = requestVersion;
+		const isEnabled = enabled;
 		const selectionKey = `${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`;
 		if (selectionKey !== lastSelectionKey) {
 			lastSelectionKey = selectionKey;
-			if (version === 0) {
+			if (!isEnabled || version === 0) {
 				runToken += 1;
 				setGenerating(false);
 				status = 'idle';
@@ -159,6 +162,7 @@
 				pendingClaimSaved = false;
 			}
 		}
+		if (!isEnabled) return;
 		if (version === 0) {
 			lastRequestVersion = 0;
 			return;
@@ -656,25 +660,27 @@
 	</Card.Root>
 {:else if currentQuestion}
 	<div class={expanded ? 'flex min-h-0 flex-1 flex-col gap-4' : 'space-y-4'}>
+		{#snippet questionHeaderActions()}
+			{#if canShareQuiz}
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					class="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+					disabled={shareCreating}
+					onclick={() => void createShareLink()}
+					aria-label="Share quiz"
+				>
+					<Share2Icon class="size-4" />
+				</Button>
+				{#if shareStatus}
+					<span class="max-w-32 text-xs text-muted-foreground" role="status">{shareStatus}</span>
+				{/if}
+			{/if}
+		{/snippet}
+
 		{#snippet questionNavigation()}
 			<div class="relative flex flex-wrap justify-center gap-2">
-				{#if canShareQuiz}
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						disabled={shareCreating}
-						onclick={() => void createShareLink()}
-					>
-						<Share2Icon class="size-4" />
-						Share quiz
-					</Button>
-					{#if shareStatus}
-						<span class="self-center text-xs text-muted-foreground" role="status"
-							>{shareStatus}</span
-						>
-					{/if}
-				{/if}
 				<div class="relative flex justify-center">
 					{#if questionNavOpen}
 						<div
@@ -757,6 +763,7 @@
 				{onExpand}
 				bind:controlsOpen
 				{practiceControls}
+				headerActions={questionHeaderActions}
 				quizNavigation={questionNavigation}
 				{selectedClass}
 				{selectedUnit}
