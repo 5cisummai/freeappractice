@@ -36,7 +36,8 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 
 	const freeBetaEnabled = await isSuperFreeBetaEnabled();
 	let showFreeBetaClaimDialog = false;
-	if (freeBetaEnabled && !url.pathname.endsWith('/onboarding')) {
+	const isConfirmingAge = url.pathname === '/app/confirm-age';
+	if (freeBetaEnabled && !url.pathname.endsWith('/onboarding') && !isConfirmingAge) {
 		const [claimed, entitlements] = await Promise.all([
 			hasClaimedSuperFreeBeta(userId),
 			getEntitlements(userId)

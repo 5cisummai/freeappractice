@@ -168,9 +168,9 @@ export const superFreeBetaEnabled = vercelFlag(
 	false
 );
 
-export async function isSuperFreeBetaEnabled(): Promise<boolean> {
+export async function isSuperFreeBetaEnabled(request?: Request): Promise<boolean> {
 	try {
-		return Boolean(await superFreeBetaEnabled());
+		return Boolean(await superFreeBetaEnabled(request));
 	} catch {
 		return false;
 	}
