@@ -13,6 +13,12 @@
 		captureSignupCompleted
 	} from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import { apiFetch } from '$lib/client/api.js';
+	import {
+		recordPendingSharedQuizRunFailure,
+		readPendingSharedQuizRuns,
+		removePendingSharedQuizRun
+	} from '$lib/shared-practice/pending-runs.js';
 
 	let { data, children } = $props();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
@@ -30,6 +36,20 @@
 		if (data.user) {
 			identifyPostHogUser(data.user.id);
 			captureAuthenticatedStudentReturnedIfNeeded();
+			const pendingRuns = readPendingSharedQuizRuns();
+			for (const pendingRun of pendingRuns) {
+				void apiFetch('/api/me/quiz-attempts', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(pendingRun)
+				})
+					.then((response) => {
+						if (response.ok || [400, 404, 422].includes(response.status)) {
+							removePendingSharedQuizRun(pendingRun.quizId);
+						} else recordPendingSharedQuizRunFailure(pendingRun.quizId);
+					})
+					.catch(() => recordPendingSharedQuizRunFailure(pendingRun.quizId));
+			}
 		}
 	});
 

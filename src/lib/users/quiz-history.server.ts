@@ -1,8 +1,10 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { getQuestionsLookupMap } from '$lib/questions/storage.server';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
+import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
+import { getSharedQuizForCompletion } from '$lib/shared-practice/shared-sets.server';
 import { quizAttemptQuestions, quizAttempts } from '$lib/server/neon/schema';
 
 const MAX_QUIZ_COUNT = 50;
@@ -12,6 +14,7 @@ const ANSWER_LETTERS = new Set(['A', 'B', 'C', 'D']);
 
 type QuizAttemptInput = {
 	quizId?: unknown;
+	sharedSlug?: unknown;
 	apClass?: unknown;
 	unit?: unknown;
 	startedAt?: unknown;
@@ -115,18 +118,30 @@ function parseQuizQuestions(value: unknown): QuizQuestionInput[] | null {
 	return items.sort((a, b) => a.position - b.position);
 }
 
+function stableQuestionAttemptId(quizId: string, position: number): string {
+	const hex = createHash('sha256')
+		.update(`${quizId}:${position}`)
+		.digest('hex')
+		.slice(0, 32)
+		.split('');
+	hex[12] = '5';
+	hex[16] = ['8', '9', 'a', 'b'][Number.parseInt(hex[16]!, 16) % 4]!;
+	return `${hex.slice(0, 8).join('')}-${hex.slice(8, 12).join('')}-${hex.slice(12, 16).join('')}-${hex.slice(16, 20).join('')}-${hex.slice(20).join('')}`;
+}
+
 /** Persist one completed client-side quiz and verify each answer against canonical questions. */
 export async function persistQuizAttempt(
 	userId: string,
 	body: Record<string, unknown>
 ): Promise<PersistQuizAttemptResult> {
 	const input = body as QuizAttemptInput;
-	const apClass = asTrimmedString(input.apClass);
-	const unit = asTrimmedString(input.unit) || 'All Units';
 	const quizId = asTrimmedString(input.quizId);
+	const sharedSlug = asTrimmedString(input.sharedSlug);
+	const apClass = sharedSlug ? '' : asTrimmedString(input.apClass);
+	const unit = sharedSlug ? 'All Units' : asTrimmedString(input.unit) || 'All Units';
 	const items = parseQuizQuestions(input.items);
 
-	if (!apClass || apClass.length > 120 || unit.length > 120) {
+	if ((!apClass && !sharedSlug) || apClass.length > 120 || unit.length > 120) {
 		return { status: 400, body: { error: 'A valid class and unit are required.' } };
 	}
 	if (quizId && !UUID_PATTERN.test(quizId)) {
@@ -136,14 +151,40 @@ export async function persistQuizAttempt(
 		return { status: 400, body: { error: 'A quiz must include between 1 and 50 questions.' } };
 	}
 
+	const sharedQuiz = sharedSlug ? await getSharedQuizForCompletion(sharedSlug) : null;
+	if (sharedQuiz && sharedQuiz.status !== 'ready') {
+		return { status: 404, body: { error: 'This shared quiz is no longer available.' } };
+	}
+	if (sharedQuiz?.status === 'ready') {
+		if (
+			items.length !== sharedQuiz.questionIds.length ||
+			items.some(
+				(item, index) =>
+					item.position !== index || item.questionId !== sharedQuiz.questionIds[index]
+			)
+		) {
+			return { status: 400, body: { error: 'The submitted quiz does not match the shared quiz.' } };
+		}
+	}
+
+	const resolvedApClass = sharedQuiz?.status === 'ready' ? sharedQuiz.apClass : apClass;
+	const resolvedUnit = sharedQuiz?.status === 'ready' ? sharedQuiz.unit : unit;
+	const expectedSharedPracticeSetId = sharedQuiz?.status === 'ready' ? sharedQuiz.id : null;
+
 	const db = getNeonDatabase();
 	if (quizId) {
 		const [existing] = await db
-			.select({ userId: quizAttempts.userId })
+			.select({
+				userId: quizAttempts.userId,
+				sharedPracticeSetId: quizAttempts.sharedPracticeSetId
+			})
 			.from(quizAttempts)
 			.where(eq(quizAttempts.id, quizId))
 			.limit(1);
 		if (existing && existing.userId !== userId) {
+			return { status: 400, body: { error: 'Invalid quiz ID.' } };
+		}
+		if (existing && existing.sharedPracticeSetId !== expectedSharedPracticeSetId) {
 			return { status: 400, body: { error: 'Invalid quiz ID.' } };
 		}
 	}
@@ -177,8 +218,8 @@ export async function persistQuizAttempt(
 		.values({
 			id: persistedQuizId,
 			userId,
-			apClass,
-			unit,
+			apClass: resolvedApClass,
+			unit: resolvedUnit,
 			requestedCount: items.length,
 			answeredCount,
 			correctCount,
@@ -186,18 +227,26 @@ export async function persistQuizAttempt(
 			scorePercent,
 			timeTakenMs: elapsedMs,
 			startedAt,
-			completedAt
+			completedAt,
+			sharedPracticeSetId: sharedQuiz?.status === 'ready' ? sharedQuiz.id : null
 		})
 		.onConflictDoNothing()
 		.returning({ id: quizAttempts.id, userId: quizAttempts.userId });
 	const [insertedQuiz] = await quizInsert;
 	if (!insertedQuiz) {
 		const [existing] = await db
-			.select({ userId: quizAttempts.userId })
+			.select({
+				userId: quizAttempts.userId,
+				sharedPracticeSetId: quizAttempts.sharedPracticeSetId
+			})
 			.from(quizAttempts)
 			.where(eq(quizAttempts.id, persistedQuizId))
 			.limit(1);
-		if (!existing || existing.userId !== userId) {
+		if (
+			!existing ||
+			existing.userId !== userId ||
+			existing.sharedPracticeSetId !== expectedSharedPracticeSetId
+		) {
 			return { status: 400, body: { error: 'Invalid quiz ID.' } };
 		}
 	}
@@ -220,6 +269,27 @@ export async function persistQuizAttempt(
 		.onConflictDoNothing();
 
 	await questionInsert;
+	const answeredItems = items.filter((item) => item.selectedAnswer !== null);
+	for (let index = 0; index < answeredItems.length; index += 5) {
+		await Promise.all(
+			answeredItems.slice(index, index + 5).map((item) => {
+				const question = questionMap.get(item.questionId)!;
+				return persistQuestionAttempt(
+					userId,
+					{
+						questionId: item.questionId,
+						apClass: question.apClass ?? resolvedApClass,
+						unit: question.unit ?? resolvedUnit,
+						selectedAnswer: item.selectedAnswer!,
+						wasCorrect: item.selectedAnswer === question.correctAnswer,
+						timeTakenMs: item.timeTakenMs ?? undefined,
+						attemptedAt: completedAt
+					},
+					stableQuestionAttemptId(persistedQuizId, item.position)
+				);
+			})
+		);
+	}
 	return {
 		status: 200,
 		body: {

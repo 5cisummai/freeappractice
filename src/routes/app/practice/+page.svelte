@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import QuestionShell from '$lib/components/questions/question-shell.svelte';
@@ -21,8 +21,21 @@
 
 	type ApiErrorPayload = { error?: string };
 
-	onMount(() => {
-		if (!presetClass) return;
+	let initialized = $state(false);
+	let sharedQuizSlug = $state<string | null>(null);
+
+	$effect(() => {
+		if (data.sharedQuiz) {
+			if (data.sharedQuiz.slug === sharedQuizSlug) return;
+			sharedQuizSlug = data.sharedQuiz.slug;
+			selectedClass = data.sharedQuiz.apClass;
+			selectedUnit = data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit;
+			requestVersion += 1;
+			return;
+		}
+		sharedQuizSlug = null;
+		if (initialized || !presetClass) return;
+		initialized = true;
 		selectedClass = presetClass;
 		selectedUnit = presetUnit;
 		if (data.frqEnabled && presetMode === 'frq') mode = 'frq';
@@ -108,20 +121,32 @@
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">
 	<div class="mx-auto max-w-250">
-		<QuestionShell
-			bind:selectedClass
-			bind:selectedUnit
-			bind:unitRange
-			bind:requestVersion
-			bind:mode
-			alignment="left"
-			showFirstUseHints
-			allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
-			isPersonalizedTutor={data.isPersonalizedTutor}
-			practiceExperiment={data.practiceExperiment}
-			onAnswered={handleAnswered}
-			onFrqGraded={handleFrqGraded}
-			persistQuizHistory
-		/>
+		{#if data.sharedQuizError}
+			<div class="rounded-xl border border-border/70 bg-card p-8 text-center">
+				<h2 class="text-xl font-semibold">Shared quiz unavailable</h2>
+				<p class="mt-2 text-sm text-muted-foreground">{data.sharedQuizError}</p>
+				<a
+					class="mt-4 inline-flex text-sm font-medium text-primary hover:underline"
+					href={resolve('/app/practice')}>Start regular practice</a
+				>
+			</div>
+		{:else}
+			<QuestionShell
+				bind:selectedClass
+				bind:selectedUnit
+				bind:unitRange
+				bind:requestVersion
+				bind:mode
+				alignment="left"
+				showFirstUseHints
+				allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
+				isPersonalizedTutor={data.isPersonalizedTutor}
+				practiceExperiment={data.practiceExperiment}
+				sharedQuiz={data.sharedQuiz}
+				onAnswered={handleAnswered}
+				onFrqGraded={handleFrqGraded}
+				persistQuizHistory
+			/>
+		{/if}
 	</div>
 </PageShell>

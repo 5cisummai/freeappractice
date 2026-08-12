@@ -2,6 +2,7 @@
 	import PracticeShell, { type PracticeMode } from '$lib/components/practice/practice-shell.svelte';
 	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
+	import type { SharedQuizView } from '$lib/shared-practice/types';
 
 	type QuestionShellProps = {
 		selectedClass?: string;
@@ -16,6 +17,7 @@
 		allowFrq?: boolean;
 		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
+		sharedQuiz?: SharedQuizView | null;
 		isPersonalizedTutor?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
@@ -49,6 +51,7 @@
 		allowFrq = false,
 		showFirstUseHints = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
+		sharedQuiz = null,
 		isPersonalizedTutor = false,
 		generateLabel,
 		onGenerate,
@@ -76,6 +79,7 @@
 	modeSwitcherAlignment={alignment}
 	{allowFrq}
 	{showFirstUseHints}
+	{sharedQuiz}
 	bind:mode
 	{isPersonalizedTutor}
 	{generateLabel}

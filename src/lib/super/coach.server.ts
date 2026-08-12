@@ -202,7 +202,7 @@ export function createSuperAgent(input: {
 		id: 'super-coach',
 		model: openaiModel(COACH_MODEL),
 		maxOutputTokens: 700,
-		stopWhen: stepCountIs(8),
+		stopWhen: stepCountIs(14),
 		instructions: [
 			'You are Super Coach for AP students. Be encouraging, specific, concise, and honest about uncertainty.',
 			modeInstructions,

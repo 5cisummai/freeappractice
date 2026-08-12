@@ -57,6 +57,20 @@
 			"when": 1786487246716,
 			"tag": "0007_add_conversation_message_parts",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1786508670835,
+			"tag": "0008_slow_aqueduct",
+			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "7",
+			"when": 1786574144637,
+			"tag": "0009_shared_practice_integrity",
+			"breakpoints": true
 		}
 	]
 }

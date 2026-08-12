@@ -6,6 +6,7 @@
 	import FrqCard from '$lib/components/questions/frq-card.svelte';
 	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
+	import type { SharedQuizView } from '$lib/shared-practice/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import { portalToBody } from '$lib/components/questions/question-card-dom';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -30,6 +31,7 @@
 		allowFrq?: boolean;
 		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
+		sharedQuiz?: SharedQuizView | null;
 		isPersonalizedTutor?: boolean;
 		generateLabel?: string;
 		onGenerate?: () => void;
@@ -66,6 +68,7 @@
 		allowFrq = false,
 		showFirstUseHints = false,
 		mode = $bindable<'mcq' | 'frq'>('mcq'),
+		sharedQuiz = null,
 		isPersonalizedTutor = false,
 		generateLabel,
 		onGenerate,
@@ -78,9 +81,11 @@
 
 	let isExpanded = $state(false);
 	let expandedSelectorOpen = $state(false);
-	const activeQuizMode = $derived(showModeSwitcher ? practiceMode === 'graded' : quizMode);
+	const activeQuizMode = $derived(
+		Boolean(sharedQuiz) || (showModeSwitcher ? practiceMode === 'graded' : quizMode)
+	);
 	const activeRequestVersion = $derived(
-		showModeSwitcher && activeQuizMode ? quizRequestVersion : requestVersion
+		showModeSwitcher && !sharedQuiz && activeQuizMode ? quizRequestVersion : requestVersion
 	);
 
 	function changeMode(nextMode: 'mcq' | 'frq'): void {
@@ -137,67 +142,69 @@
 		)}
 	>
 		{#snippet practiceControls()}
-			<div class="space-y-4">
-				<div class={cn(isExpanded && 'mx-auto max-w-5xl')}>
-					{#if showModeSwitcher}
-						<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
-							<Tabs.List
-								aria-label="Practice modes"
-								class={cn(
-									'h-auto w-full max-w-md gap-1',
-									modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
-								)}
-							>
-								<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
-								<Tabs.Trigger value="graded">
-									<Badge
-										variant="outline"
-										class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
-									>
-									Graded quizzes
-								</Tabs.Trigger>
-							</Tabs.List>
-						</Tabs.Root>
-					{/if}
-
-					<div class="flex items-center justify-between gap-3">
-						{#if allowFrq}
-							<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
-								<button
-									type="button"
-									class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'mcq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-									onclick={() => changeMode('mcq')}
+			{#if !sharedQuiz}
+				<div class="space-y-4">
+					<div class={cn(isExpanded && 'mx-auto max-w-5xl')}>
+						{#if showModeSwitcher}
+							<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
+								<Tabs.List
+									aria-label="Practice modes"
+									class={cn(
+										'h-auto w-full max-w-md gap-1',
+										modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
+									)}
 								>
-									Multiple choice
-								</button>
-								<button
-									type="button"
-									class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'frq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-									onclick={() => changeMode('frq')}
-								>
-									Written response
-								</button>
-							</div>
+									<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
+									<Tabs.Trigger value="graded">
+										<Badge
+											variant="outline"
+											class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
+										>
+										Graded quizzes
+									</Tabs.Trigger>
+								</Tabs.List>
+							</Tabs.Root>
 						{/if}
-					</div>
 
-					<QuestionSelector
-						bind:selectedClass
-						bind:selectedUnit
-						bind:unitRange
-						showFirstUseHint={showFirstUseHints}
-						quizMode={activeQuizMode}
-						bind:count
-						generateDisabled={activeQuizMode && quizGenerating}
-						generateLabel={activeQuizMode ? 'Generate Quiz' : generateLabel}
-						onSelectionChange={handleSelectionChange}
-						onGenerate={handleGenerate}
-					/>
+						<div class="flex items-center justify-between gap-3">
+							{#if allowFrq}
+								<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
+									<button
+										type="button"
+										class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'mcq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+										onclick={() => changeMode('mcq')}
+									>
+										Multiple choice
+									</button>
+									<button
+										type="button"
+										class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'frq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+										onclick={() => changeMode('frq')}
+									>
+										Written response
+									</button>
+								</div>
+							{/if}
+						</div>
+
+						<QuestionSelector
+							bind:selectedClass
+							bind:selectedUnit
+							bind:unitRange
+							showFirstUseHint={showFirstUseHints}
+							quizMode={activeQuizMode}
+							bind:count
+							generateDisabled={activeQuizMode && quizGenerating}
+							generateLabel={activeQuizMode ? 'Generate Quiz' : generateLabel}
+							onSelectionChange={handleSelectionChange}
+							onGenerate={handleGenerate}
+						/>
+					</div>
 				</div>
-			</div>
+			{/if}
 		{/snippet}
 
-		{#if !isExpanded}
+		{#if !isExpanded && !sharedQuiz}
 			<div id="practice-shell-controls" class="mx-auto mb-8 max-w-5xl">
 				{@render practiceControls()}
 			</div>
@@ -208,48 +215,54 @@
 				isExpanded ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'mx-auto min-h-40 max-w-6xl'
 			)}
 		>
-			{#key `${activeQuizMode ? 'graded' : 'unlimited'}:${mode}:${selectedClass}:${selectedUnit}`}
-				{#if mode === 'frq' && allowFrq && !activeQuizMode}
-					<FrqCard
-						{selectedClass}
-						{selectedUnit}
-						{unitRange}
-						requestVersion={activeRequestVersion}
-						showFirstUseHint={showFirstUseHints}
-						{isPersonalizedTutor}
-						onGraded={onFrqGraded}
-					/>
-				{:else if activeQuizMode}
+			{#if mode === 'frq' && allowFrq && !activeQuizMode}
+				<FrqCard
+					{selectedClass}
+					{selectedUnit}
+					{unitRange}
+					requestVersion={activeRequestVersion}
+					showFirstUseHint={showFirstUseHints}
+					{isPersonalizedTutor}
+					onGraded={onFrqGraded}
+				/>
+			{:else}
+				<div class={activeQuizMode ? 'contents' : 'hidden'} aria-hidden={!activeQuizMode}>
 					<QuizSession
 						{selectedClass}
 						{selectedUnit}
 						{unitRange}
 						{count}
-						requestVersion={activeRequestVersion}
+						requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
+						enabled={activeQuizMode}
 						expanded={isExpanded}
 						onExpand={toggleExpanded}
 						bind:controlsOpen={expandedSelectorOpen}
 						{practiceControls}
 						persistHistory={persistQuizHistory}
+						initialQuestions={sharedQuiz?.questions}
+						sharedSlug={sharedQuiz?.slug}
 						bind:isGenerating={quizGenerating}
 					/>
-				{:else}
-					<QuestionCard
-						{selectedClass}
-						{selectedUnit}
-						{unitRange}
-						requestVersion={activeRequestVersion}
-						expanded={isExpanded}
-						onExpand={toggleExpanded}
-						bind:controlsOpen={expandedSelectorOpen}
-						{practiceControls}
-						showFirstUseHint={showFirstUseHints}
-						{isPersonalizedTutor}
-						{onAnswered}
-						{...cardProps}
-					/>
+				</div>
+				{#if !activeQuizMode}
+					{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
+						<QuestionCard
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							requestVersion={activeRequestVersion}
+							expanded={isExpanded}
+							onExpand={toggleExpanded}
+							bind:controlsOpen={expandedSelectorOpen}
+							{practiceControls}
+							showFirstUseHint={showFirstUseHints}
+							{isPersonalizedTutor}
+							{onAnswered}
+							{...cardProps}
+						/>
+					{/key}
 				{/if}
-			{/key}
+			{/if}
 		</div>
 	</div>
 </div>

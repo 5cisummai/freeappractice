@@ -66,6 +66,7 @@ export type QuestionCardProps = {
 	onExpand?: () => void;
 	controlsOpen?: boolean;
 	practiceControls?: Snippet;
+	headerActions?: Snippet;
 	quizNavigation?: Snippet;
 	questionNumber?: string;
 	quizMode?: boolean;
