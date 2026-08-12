@@ -14,6 +14,7 @@ import {
 	markdownResponse
 } from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
+import { building } from '$app/environment';
 import { createHandle } from 'flags/sveltekit';
 import {
 	examfigDiagramsEnabled,
@@ -288,7 +289,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(
 	Sentry.sentryHandle(),
-	...(env.FLAGS_SECRET
+	...(env.FLAGS_SECRET && !building
 		? [
 				createHandle({
 					secret: env.FLAGS_SECRET,
