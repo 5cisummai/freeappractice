@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { authUsers, sharedPracticeSetItems, sharedPracticeSets } from '$lib/server/neon/schema';
 import { getQuestionsLookupMap, type StoredQuestion } from '$lib/questions/storage.server';
@@ -126,33 +126,35 @@ export async function createSharedQuiz(input: {
 	for (let attempt = 0; attempt < 3; attempt += 1) {
 		const id = randomUUID();
 		const slug = makeSlug();
-		const inserted = await db
-			.insert(sharedPracticeSets)
-			.values({
-				id,
-				slug,
-				kind: 'quiz',
-				creatorUserId: input.creatorUserId,
-				title,
-				apClass,
-				unit,
-				itemCount: questionIds.length,
-				status: 'active',
-				expiresAt
-			})
-			.onConflictDoNothing({ target: sharedPracticeSets.slug })
-			.returning({ id: sharedPracticeSets.id, slug: sharedPracticeSets.slug });
-		if (!inserted[0]) continue;
-
-		await db.insert(sharedPracticeSetItems).values(
-			questionIds.map((questionId, position) => ({
-				sharedPracticeSetId: id,
-				position,
-				itemType: 'mcq',
-				questionId,
-				questionContentHash: questionMap.get(questionId)!.contentHash ?? null
-			}))
-		);
+		const result = await db.execute<{ id: string; slug: string }>(sql`
+			WITH inserted_set AS (
+				INSERT INTO "app"."shared_practice_sets" (
+					"id", "slug", "kind", "creator_user_id", "title", "ap_class", "unit",
+					"item_count", "status", "expires_at"
+				)
+				VALUES (
+					${id}, ${slug}, 'quiz', ${input.creatorUserId ?? null}, ${title}, ${apClass}, ${unit},
+					${questionIds.length}, 'active', ${expiresAt}
+				)
+				ON CONFLICT ("slug") DO NOTHING
+				RETURNING "id", "slug"
+			), inserted_items AS (
+				INSERT INTO "app"."shared_practice_set_items" (
+					"shared_practice_set_id", "position", "item_type", "question_id", "question_content_hash"
+				)
+				SELECT inserted_set.id, items.position, 'mcq', items.question_id, items.question_content_hash
+				FROM inserted_set
+				CROSS JOIN (VALUES ${sql.join(
+					questionIds.map(
+						(questionId, position) =>
+							sql`(${position}, ${questionId}, ${questionMap.get(questionId)!.contentHash ?? null}::text)`
+					),
+					sql`, `
+				)}) AS items(position, question_id, question_content_hash)
+			)
+			SELECT id, slug FROM inserted_set
+		`);
+		if (!result.rows[0]) continue;
 
 		return { id, slug, title, expiresAt: expiresAt.toISOString() };
 	}
