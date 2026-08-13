@@ -18,6 +18,9 @@ import type {
 import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
 import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
+import { getSuperAdminOverview } from '$lib/super/admin.server';
+import { getAdminUserSuperAccess } from '$lib/super/entitlements.server';
+import type { SuperAdminOverview } from '$lib/super/types';
 import type {
 	AdminTab,
 	AdminUserRow,
@@ -42,6 +45,7 @@ interface AdminDashboardData {
 	cacheOverview: CacheOverview;
 	cacheBuckets: CacheBucketSummary[];
 	quality: QualityDashboardSnapshot;
+	superOverview: SuperAdminOverview;
 }
 
 type BucketAggRow = {
@@ -52,7 +56,9 @@ type BucketAggRow = {
 };
 
 function normalizeAdminTab(value: string | null): AdminTab {
-	return value === 'users' || value === 'cache' || value === 'quality' ? value : 'users';
+	return value === 'users' || value === 'cache' || value === 'quality' || value === 'super'
+		? value
+		: 'users';
 }
 
 function estimateGenerationCostUsd(questionType: PoolQuestionType, deficit: number): number {
@@ -382,29 +388,61 @@ export async function getAdminDashboardData(opts: {
 		jobs: [],
 		humanQueue: []
 	};
+	const emptySuper: SuperAdminOverview = {
+		activeSubscriptions: 0,
+		pastDueSubscriptions: 0,
+		activeGrants: 0,
+		month: '',
+		personalizedMessagesThisMonth: 0,
+		subscriptions: [],
+		usageRollups: [],
+		failedCleanupJobs: [],
+		grants: []
+	};
 
 	let users: AdminUserRow[] = [];
 	let totalUsers = 0;
 	let errorMessage: string | null = null;
 	let poolSnapshot = emptyPool;
 	let quality = emptyQuality;
+	let superOverview = emptySuper;
 
-	if (activeTab === 'users') {
-		try {
-			const payload = await listUsers();
-			users = payload.users as AdminUserRow[];
-			totalUsers = payload.total;
-		} catch {
-			errorMessage = 'Unable to load users right now.';
+	switch (activeTab) {
+		case 'users':
+			try {
+				const payload = await listUsers();
+				const listed = payload.users as AdminUserRow[];
+				const superAccess = await getAdminUserSuperAccess(listed.map((user) => user.id));
+				users = listed.map((user) => {
+					const access = superAccess.get(user.id);
+					return {
+						...user,
+						plan: access?.plan ?? 'free',
+						hasAdminGrant: access?.hasAdminGrant ?? false
+					};
+				});
+				totalUsers = payload.total;
+			} catch {
+				errorMessage = 'Unable to load users right now.';
+			}
+			break;
+		case 'cache':
+			try {
+				poolSnapshot = await getPoolReadinessSnapshot();
+			} catch {
+				// Keep the empty snapshot when the pool is temporarily unavailable.
+			}
+			break;
+		case 'quality':
+			quality = await getQualityDashboardSnapshot();
+			break;
+		case 'super':
+			superOverview = await getSuperAdminOverview();
+			break;
+		default: {
+			const _exhaustive: never = activeTab;
+			void _exhaustive;
 		}
-	} else if (activeTab === 'cache') {
-		try {
-			poolSnapshot = await getPoolReadinessSnapshot();
-		} catch {
-			// Keep the empty snapshot when the pool is temporarily unavailable.
-		}
-	} else {
-		quality = await getQualityDashboardSnapshot();
 	}
 
 	return {
@@ -417,6 +455,7 @@ export async function getAdminDashboardData(opts: {
 		errorMessage,
 		cacheOverview: poolSnapshot.overview,
 		cacheBuckets: poolSnapshot.buckets,
-		quality
+		quality,
+		superOverview
 	};
 }

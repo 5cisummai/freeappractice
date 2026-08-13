@@ -6,6 +6,7 @@ import {
 	desc,
 	eq,
 	gt,
+	gte,
 	inArray,
 	isNotNull,
 	isNull,
@@ -24,63 +25,23 @@ import {
 } from '$lib/server/neon/schema';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import { unlockInsightReports } from '$lib/super/insight-locks.server';
-import type { SuperAccessReason } from '$lib/super/types';
+import {
+	INDEFINITE_SUPER_GRANT_EXPIRES_AT,
+	type SuperAccessReason,
+	type SuperAdminOverview,
+	type SuperCleanupJobKind,
+	type SuperCleanupJobView,
+	type SuperGrantView,
+	type SuperSubscriptionView
+} from '$lib/super/types';
 
-type CleanupJobKind = 'account_delete' | 'downgrade_purge';
-
-export type SuperGrantView = {
-	id: string;
-	userId: string;
-	startsAt: string;
-	expiresAt: string;
-	reason: string;
-	createdBy: string;
-	createdAt: string;
-};
-
-export type SuperSubscriptionView = {
-	id: string;
-	userId: string;
-	stripeCustomerId: string | null;
-	stripeSubscriptionId: string | null;
-	status: string;
-	periodStart: string | null;
-	periodEnd: string | null;
-	cancelAtPeriodEnd: boolean;
-	cancelAt: string | null;
-	pastDueSince: string | null;
-	superEndedAt: string | null;
-	accessReason: SuperAccessReason;
-};
-
-export type SuperUsageRollupView = {
-	userId: string;
-	personalizedMessages: number;
-	updatedAt: string;
-};
-
-export type SuperCleanupJobView = {
-	id: string;
-	userId: string;
-	kind: CleanupJobKind;
-	attempts: number;
-	nextAttemptAt: string;
-	lastError: string;
-	createdAt: string;
-	updatedAt: string;
-};
-
-export type SuperAdminOverview = {
-	activeSubscriptions: number;
-	pastDueSubscriptions: number;
-	activeGrants: number;
-	month: string;
-	personalizedMessagesThisMonth: number;
-	subscriptions: SuperSubscriptionView[];
-	usageRollups: SuperUsageRollupView[];
-	failedCleanupJobs: SuperCleanupJobView[];
-	grants: SuperGrantView[];
-};
+export type {
+	SuperAdminOverview,
+	SuperCleanupJobView,
+	SuperGrantView,
+	SuperSubscriptionView,
+	SuperUsageRollupView
+} from '$lib/super/types';
 
 function monthKey(now: Date): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -135,7 +96,7 @@ function toCleanupJobView(job: {
 	return {
 		id: String(job.id),
 		userId: job.userId,
-		kind: job.kind as CleanupJobKind,
+		kind: job.kind as SuperCleanupJobKind,
 		attempts: job.attempts,
 		nextAttemptAt: job.nextAttemptAt.toISOString(),
 		lastError: job.lastError ?? 'Unknown cleanup failure',
@@ -294,6 +255,108 @@ export async function createSuperGrant(input: {
 		]);
 	}
 	return toGrantView(grant);
+}
+
+const FREE_BETA_INDEFINITE_GRANT_REASON =
+	'Converted free Super beta claim to an indefinite grant';
+
+export async function grantIndefiniteSuperToClaimedFreeBetaUsers(
+	createdBy: string,
+	now = new Date()
+): Promise<{ granted: number; skipped: number }> {
+	const db = getNeonDatabase();
+	const claimed = await db
+		.select({ userId: tutorProfiles.userId })
+		.from(tutorProfiles)
+		.where(isNotNull(tutorProfiles.superFreeBetaClaimedAt));
+	if (claimed.length === 0) return { granted: 0, skipped: 0 };
+
+	const existingIndefinite = await db
+		.select({ userId: superGrants.userId })
+		.from(superGrants)
+		.where(
+			and(
+				inArray(
+					superGrants.userId,
+					claimed.map((row) => row.userId)
+				),
+				isNull(superGrants.revokedAt),
+				gte(superGrants.expiresAt, new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT))
+			)
+		);
+	const alreadyGranted = new Set(existingIndefinite.map((row) => row.userId));
+	const toGrant = claimed.filter((row) => !alreadyGranted.has(row.userId));
+	if (toGrant.length === 0) return { granted: 0, skipped: claimed.length };
+
+	const expiresAt = new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT);
+	await db.insert(superGrants).values(
+		toGrant.map((user) => ({
+			id: randomUUID(),
+			userId: user.userId,
+			startsAt: now,
+			expiresAt,
+			reason: FREE_BETA_INDEFINITE_GRANT_REASON,
+			createdBy
+		}))
+	);
+
+	const userIds = toGrant.map((user) => user.userId);
+	await Promise.all([
+		db
+			.update(tutorProfiles)
+			.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: now })
+			.where(inArray(tutorProfiles.userId, userIds)),
+		...userIds.map((userId) => unlockInsightReports(userId))
+	]);
+	return { granted: toGrant.length, skipped: alreadyGranted.size };
+}
+
+export async function grantIndefiniteSuperToUser(
+	userId: string,
+	createdBy: string,
+	now = new Date()
+): Promise<{ granted: boolean }> {
+	const [existing] = await getNeonDatabase()
+		.select({ id: superGrants.id })
+		.from(superGrants)
+		.where(
+			and(
+				eq(superGrants.userId, userId),
+				isNull(superGrants.revokedAt),
+				gte(superGrants.expiresAt, new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT))
+			)
+		)
+		.limit(1);
+	if (existing) return { granted: false };
+	await createSuperGrant({
+		userId,
+		startsAt: now,
+		expiresAt: new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT),
+		reason: 'Admin indefinite Super grant',
+		createdBy
+	});
+	return { granted: true };
+}
+
+export async function revokeActiveSuperGrantsForUser(
+	userId: string,
+	revokedAt = new Date()
+): Promise<number> {
+	const grants = await getNeonDatabase()
+		.select({ id: superGrants.id })
+		.from(superGrants)
+		.where(
+			and(
+				eq(superGrants.userId, userId),
+				isNull(superGrants.revokedAt),
+				gt(superGrants.expiresAt, revokedAt)
+			)
+		);
+	let revoked = 0;
+	for (const grant of grants) {
+		if (await revokeSuperGrant(grant.id, revokedAt)) revoked += 1;
+	}
+	return revoked;
 }
 
 export async function revokeSuperGrant(grantId: string, revokedAt = new Date()): Promise<boolean> {

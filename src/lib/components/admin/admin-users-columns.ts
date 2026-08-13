@@ -2,6 +2,8 @@ import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
 import { renderSnippet, renderComponent } from '$lib/components/ui/data-table/index.js';
 import AdminDataTableSortButton from '$lib/components/admin/admin-data-table-sort-button.svelte';
+import AdminUsersRowMenu from '$lib/components/admin/admin-users-row-menu.svelte';
+import AdminUsersTierBadge from '$lib/components/admin/admin-users-tier-badge.svelte';
 import type { AdminUserRow } from '$lib/admin/types.js';
 import { escapeHtml } from '$lib/escape-html.js';
 
@@ -87,6 +89,17 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 				formatRole(rowA.original.role).localeCompare(formatRole(rowB.original.role))
 		},
 		{
+			accessorKey: 'plan',
+			id: 'tier',
+			header: ({ column }) =>
+				renderComponent(AdminDataTableSortButton, {
+					label: 'Tier',
+					onclick: column.getToggleSortingHandler()
+				}),
+			cell: ({ row }) => renderComponent(AdminUsersTierBadge, { plan: row.original.plan }),
+			sortingFn: (rowA, rowB) => Number(rowA.original.plan === 'super') - Number(rowB.original.plan === 'super')
+		},
+		{
 			accessorKey: 'banned',
 			id: 'banned',
 			header: ({ column }) =>
@@ -151,6 +164,13 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 				return renderSnippet(idSnippet, { id: row.original.id });
 			},
 			enableSorting: false
+		},
+		{
+			id: 'actions',
+			header: '',
+			cell: ({ row }) => renderComponent(AdminUsersRowMenu, { user: row.original }),
+			enableSorting: false,
+			enableHiding: false
 		}
 	];
 }

@@ -4,16 +4,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
 	select: vi.fn(),
 	update: vi.fn(),
+	insert: vi.fn(),
 	getEntitlements: vi.fn(),
+	unlockInsightReports: vi.fn(),
 	selectResults: [] as unknown[][]
 }));
 
 vi.mock('$lib/server/neon/db', () => ({
-	getNeonDatabase: () => ({ select: mocks.select, update: mocks.update })
+	getNeonDatabase: () => ({
+		select: mocks.select,
+		update: mocks.update,
+		insert: mocks.insert
+	})
 }));
 vi.mock('$lib/super/entitlements.server', () => ({ getEntitlements: mocks.getEntitlements }));
+vi.mock('$lib/super/insight-locks.server', () => ({
+	unlockInsightReports: mocks.unlockInsightReports
+}));
 
-import { getSuperAdminOverview, retrySuperCleanupJob } from '$lib/super/admin.server';
+import {
+	getSuperAdminOverview,
+	grantIndefiniteSuperToClaimedFreeBetaUsers,
+	retrySuperCleanupJob
+} from '$lib/super/admin.server';
+import { INDEFINITE_SUPER_GRANT_EXPIRES_AT } from '$lib/super/types';
 
 function selectBuilder(result: unknown[]) {
 	const builder: any = {
@@ -68,6 +82,13 @@ beforeEach(() => {
 	];
 	mocks.select.mockImplementation(() => selectBuilder(mocks.selectResults.shift() ?? []));
 	mocks.getEntitlements.mockResolvedValue({ accessReason: 'subscription' });
+	mocks.unlockInsightReports.mockResolvedValue(undefined);
+	mocks.insert.mockImplementation(() => {
+		const builder: any = {
+			values: vi.fn(async () => undefined)
+		};
+		return builder;
+	});
 	mocks.update.mockImplementation(() => {
 		const builder: any = {
 			set: vi.fn(() => builder),
@@ -98,5 +119,27 @@ describe('direct Drizzle Super admin operations', () => {
 		expect(await retrySuperCleanupJob('not-an-object-id')).toBe(false);
 		expect(await retrySuperCleanupJob('507f1f77bcf86cd799439011')).toBe(true);
 		expect(mocks.update).toHaveBeenCalled();
+	});
+
+	it('grants indefinite Super to claimed free beta users without an existing indefinite grant', async () => {
+		mocks.selectResults = [[{ userId: 'beta-1' }, { userId: 'beta-2' }], [{ userId: 'beta-2' }]];
+		const insertValues = vi.fn(async () => undefined);
+		mocks.insert.mockImplementation(() => ({ values: insertValues }));
+
+		const result = await grantIndefiniteSuperToClaimedFreeBetaUsers(
+			'admin-1',
+			new Date('2026-08-12T00:00:00Z')
+		);
+
+		expect(result).toEqual({ granted: 1, skipped: 1 });
+		expect(insertValues).toHaveBeenCalledWith([
+			expect.objectContaining({
+				userId: 'beta-1',
+				createdBy: 'admin-1',
+				expiresAt: new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT),
+				reason: 'Converted free Super beta claim to an indefinite grant'
+			})
+		]);
+		expect(mocks.unlockInsightReports).toHaveBeenCalledWith('beta-1');
 	});
 });
