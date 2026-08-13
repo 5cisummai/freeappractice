@@ -28,11 +28,12 @@
 	let sorting = $state<SortingState>([{ id: 'createdAt', desc: true }]);
 	let columnVisibility = $state<VisibilityState>({
 		updatedAt: false,
-		id: false
+		id: false,
+		banned: false
 	});
 
 	const pageCount = $derived(Math.max(1, Math.ceil(total / pageSize)));
-	const columns = $derived(createAdminUsersColumns());
+	const columns = createAdminUsersColumns();
 
 	function buildPageHref(nextPage: number): string {
 		const params = [`tab=users`];

@@ -8,6 +8,7 @@
 	import AdminUsersDataTable from '$lib/components/admin/admin-users-data-table.svelte';
 	import AdminCacheDashboard from '$lib/components/admin/admin-cache-dashboard.svelte';
 	import AdminQualityDashboard from '$lib/components/admin/admin-quality-dashboard.svelte';
+	import AdminSuperDashboard from '$lib/components/admin/admin-super-dashboard.svelte';
 	import type { AdminTab } from '$lib/admin/types.js';
 	import { resolve } from '$app/paths';
 
@@ -16,7 +17,8 @@
 	const tabItems: Array<{ value: AdminTab; label: string; icon: typeof UsersIcon }> = [
 		{ value: 'users', label: 'Users', icon: UsersIcon },
 		{ value: 'cache', label: 'Pool', icon: DatabaseZapIcon },
-		{ value: 'quality', label: 'Quality', icon: BadgeCheckIcon }
+		{ value: 'quality', label: 'Quality', icon: BadgeCheckIcon },
+		{ value: 'super', label: 'Super', icon: SparklesIcon }
 	];
 
 	function tabHref(tab: AdminTab): string {
@@ -34,12 +36,6 @@
 
 <PageShell title="Admin">
 	<div class="space-y-6">
-		<div class="flex justify-end">
-			<Button href={resolve('/app/admin/super')} variant="outline">
-				<SparklesIcon />
-				Super admin
-			</Button>
-		</div>
 		<div class="flex flex-wrap gap-2 border-b border-border/70 pb-3">
 			{#each tabItems as item (item.value)}
 				<Button
@@ -67,6 +63,8 @@
 			<AdminCacheDashboard buckets={data.cacheBuckets} />
 		{:else if data.activeTab === 'quality'}
 			<AdminQualityDashboard snapshot={data.quality} />
+		{:else if data.activeTab === 'super'}
+			<AdminSuperDashboard overview={data.superOverview} />
 		{/if}
 	</div>
 </PageShell>

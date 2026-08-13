@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
 	isAdminUser: vi.fn(),
 	retrySuperCleanupJob: vi.fn(),
+	grantIndefiniteSuperToClaimedFreeBetaUsers: vi.fn(),
 	withAuthedHandler:
 		(handler: (event: unknown, userId: string) => Promise<Response>) => async (event: unknown) =>
 			handler(event, (event as { locals: { user?: { id: string } } }).locals.user?.id ?? 'user-1')
@@ -10,13 +11,15 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('$lib/auth/admin.server', () => ({ isAdminUser: mocks.isAdminUser }));
 vi.mock('$lib/super/admin.server', () => ({
-	retrySuperCleanupJob: mocks.retrySuperCleanupJob
+	retrySuperCleanupJob: mocks.retrySuperCleanupJob,
+	grantIndefiniteSuperToClaimedFreeBetaUsers: mocks.grantIndefiniteSuperToClaimedFreeBetaUsers
 }));
 vi.mock('$lib/auth/route-helpers.server', () => ({
 	withAuthedHandler: mocks.withAuthedHandler
 }));
 
 import { POST } from '../../../src/routes/api/admin/super/cleanup/+server';
+import { POST as grantFreeBeta } from '../../../src/routes/api/admin/super/grants/free-beta/+server';
 
 function event(body: unknown, userId = 'admin-1') {
 	return {
@@ -34,6 +37,10 @@ describe('Super admin cleanup route', () => {
 		vi.clearAllMocks();
 		mocks.isAdminUser.mockReturnValue(true);
 		mocks.retrySuperCleanupJob.mockResolvedValue(true);
+		mocks.grantIndefiniteSuperToClaimedFreeBetaUsers.mockResolvedValue({
+			granted: 2,
+			skipped: 1
+		});
 	});
 
 	it('requires admin authorization', async () => {
@@ -52,5 +59,32 @@ describe('Super admin cleanup route', () => {
 
 		const invalid = await POST(event({ jobId: '' }));
 		expect(invalid.status).toBe(400);
+	});
+});
+
+describe('Super admin free beta grant route', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.isAdminUser.mockReturnValue(true);
+		mocks.grantIndefiniteSuperToClaimedFreeBetaUsers.mockResolvedValue({
+			granted: 2,
+			skipped: 1
+		});
+	});
+
+	it('requires admin authorization', async () => {
+		mocks.isAdminUser.mockReturnValue(false);
+		const response = await grantFreeBeta(event(null));
+
+		expect(response.status).toBe(403);
+		expect(mocks.grantIndefiniteSuperToClaimedFreeBetaUsers).not.toHaveBeenCalled();
+	});
+
+	it('converts claimed free beta users to indefinite grants', async () => {
+		const response = await grantFreeBeta(event(null));
+
+		expect(response.status).toBe(200);
+		expect(mocks.grantIndefiniteSuperToClaimedFreeBetaUsers).toHaveBeenCalledWith('admin-1');
+		await expect(response.json()).resolves.toEqual({ granted: 2, skipped: 1 });
 	});
 });

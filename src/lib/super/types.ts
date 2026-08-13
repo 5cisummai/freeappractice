@@ -90,3 +90,65 @@ export type StudyPlanView = {
 };
 
 export type InsightFeedback = 'helpful' | 'not_helpful';
+
+export const INDEFINITE_SUPER_GRANT_EXPIRES_AT = '9999-12-31T23:59:59.000Z';
+
+export function isIndefiniteSuperGrantExpiry(expiresAt: string): boolean {
+	return new Date(expiresAt).getUTCFullYear() >= 9999;
+}
+
+export type SuperGrantView = {
+	id: string;
+	userId: string;
+	startsAt: string;
+	expiresAt: string;
+	reason: string;
+	createdBy: string;
+	createdAt: string;
+};
+
+export type SuperSubscriptionView = {
+	id: string;
+	userId: string;
+	stripeCustomerId: string | null;
+	stripeSubscriptionId: string | null;
+	status: string;
+	periodStart: string | null;
+	periodEnd: string | null;
+	cancelAtPeriodEnd: boolean;
+	cancelAt: string | null;
+	pastDueSince: string | null;
+	superEndedAt: string | null;
+	accessReason: SuperAccessReason;
+};
+
+export type SuperUsageRollupView = {
+	userId: string;
+	personalizedMessages: number;
+	updatedAt: string;
+};
+
+export type SuperCleanupJobKind = 'account_delete' | 'downgrade_purge';
+
+export type SuperCleanupJobView = {
+	id: string;
+	userId: string;
+	kind: SuperCleanupJobKind;
+	attempts: number;
+	nextAttemptAt: string;
+	lastError: string;
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type SuperAdminOverview = {
+	activeSubscriptions: number;
+	pastDueSubscriptions: number;
+	activeGrants: number;
+	month: string;
+	personalizedMessagesThisMonth: number;
+	subscriptions: SuperSubscriptionView[];
+	usageRollups: SuperUsageRollupView[];
+	failedCleanupJobs: SuperCleanupJobView[];
+	grants: SuperGrantView[];
+};

@@ -1,4 +1,4 @@
-export type AdminTab = 'users' | 'cache' | 'quality';
+export type AdminTab = 'users' | 'cache' | 'quality' | 'super';
 
 export type PoolQuestionType = 'mcq' | 'frq';
 
@@ -14,6 +14,8 @@ export interface AdminUserRow {
 	banned?: boolean | null;
 	createdAt?: Date | string | null;
 	updatedAt?: Date | string | null;
+	plan: 'free' | 'super';
+	hasAdminGrant: boolean;
 }
 
 export interface CacheOverview {

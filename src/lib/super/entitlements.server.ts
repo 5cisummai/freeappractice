@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNotNull, isNull, lte } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { superBillingAccess, superGrants, tutorProfiles } from '$lib/server/neon/schema';
@@ -87,6 +87,102 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 		return superEntitlements('past_due_grace');
 	}
 	return FREE_ENTITLEMENTS;
+}
+
+export type AdminUserSuperAccess = {
+	plan: 'free' | 'super';
+	accessReason: SuperAccessReason;
+	hasAdminGrant: boolean;
+};
+
+export async function getAdminUserSuperAccess(
+	userIds: string[],
+	now = new Date()
+): Promise<Map<string, AdminUserSuperAccess>> {
+	const access = new Map<string, AdminUserSuperAccess>();
+	for (const userId of userIds) {
+		access.set(userId, { plan: 'free', accessReason: null, hasAdminGrant: false });
+	}
+	if (userIds.length === 0) return access;
+
+	const db = getNeonDatabase();
+	const freeBetaEnabled = await isSuperFreeBetaEnabled();
+	const [claimed, grants, billing] = await Promise.all([
+		freeBetaEnabled
+			? db
+					.select({ userId: tutorProfiles.userId })
+					.from(tutorProfiles)
+					.where(
+						and(
+							inArray(tutorProfiles.userId, userIds),
+							isNotNull(tutorProfiles.superFreeBetaClaimedAt)
+						)
+					)
+			: Promise.resolve([] as { userId: string }[]),
+		db
+			.select({ userId: superGrants.userId })
+			.from(superGrants)
+			.where(
+				and(
+					inArray(superGrants.userId, userIds),
+					lte(superGrants.startsAt, now),
+					gt(superGrants.expiresAt, now),
+					isNull(superGrants.revokedAt)
+				)
+			),
+		db
+			.select()
+			.from(superBillingAccess)
+			.where(and(inArray(superBillingAccess.userId, userIds), eq(superBillingAccess.plan, 'super')))
+	]);
+
+	const claimedUsers = new Set(claimed.map((row) => row.userId));
+	const grantedUsers = new Set(grants.map((row) => row.userId));
+	const billingByUser = new Map<string, typeof billing>();
+	for (const subscription of billing) {
+		const rows = billingByUser.get(subscription.userId) ?? [];
+		rows.push(subscription);
+		billingByUser.set(subscription.userId, rows);
+	}
+
+	for (const userId of userIds) {
+		const hasAdminGrant = grantedUsers.has(userId);
+		let accessReason: SuperAccessReason = null;
+		if (claimedUsers.has(userId)) accessReason = 'free_beta';
+		else if (hasAdminGrant) accessReason = 'admin_grant';
+		else {
+			const subscriptions = billingByUser.get(userId) ?? [];
+			if (
+				subscriptions.some(
+					(subscription) =>
+						subscription.status === 'active' &&
+						!subscription.superEndedAt &&
+						!subscription.billingIssue &&
+						subscription.periodEnd &&
+						new Date(subscription.periodEnd) > now
+				)
+			) {
+				accessReason = 'subscription';
+			} else if (
+				subscriptions.some(
+					(subscription) =>
+						subscription.status === 'past_due' &&
+						!subscription.superEndedAt &&
+						subscription.pastDueSince &&
+						now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
+				)
+			) {
+				accessReason = 'past_due_grace';
+			}
+		}
+		access.set(userId, {
+			plan: accessReason ? 'super' : 'free',
+			accessReason,
+			hasAdminGrant
+		});
+	}
+
+	return access;
 }
 
 /** End Super retention only after every current access source has ended. */
