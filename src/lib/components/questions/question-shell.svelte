@@ -3,6 +3,7 @@
 	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
+	import { cn } from '$lib/utils.js';
 
 	type QuestionShellProps = {
 		selectedClass?: string;
@@ -25,6 +26,7 @@
 		onModeChange?: (mode: 'mcq' | 'frq') => void;
 		onAnswered?: (result: AnswerResult) => void;
 		onFrqGraded?: (attempt: FrqAttemptView) => void;
+		onHero?: boolean;
 	} & Omit<
 		QuestionCardProps,
 		| 'selectedClass'
@@ -59,34 +61,56 @@
 		onModeChange,
 		onAnswered,
 		onFrqGraded,
+		onHero = false,
 		...cardProps
 	}: QuestionShellProps = $props();
 
 	let quizRequestVersion = $state(0);
 </script>
 
-<PracticeShell
-	bind:selectedClass
-	bind:selectedUnit
-	bind:unitRange
-	bind:requestVersion
-	bind:count
-	bind:quizGenerating
-	bind:practiceMode
-	bind:quizRequestVersion
-	{persistQuizHistory}
-	showModeSwitcher
-	modeSwitcherAlignment={alignment}
-	{allowFrq}
-	{showFirstUseHints}
-	{sharedQuiz}
-	bind:mode
-	{isPersonalizedTutor}
-	{generateLabel}
-	{onGenerate}
-	{onSelectionChange}
-	{onModeChange}
-	{onAnswered}
-	{onFrqGraded}
-	{...cardProps}
-/>
+<div
+	class={cn(
+		onHero &&
+			'relative rounded-[1.35rem] pt-5 pb-5 shadow-lg sm:px-6 sm:pt-9 sm:pb-6 lg:px-8 lg:pt-10 lg:pb-7'
+	)}
+>
+	{#if onHero}
+		<div
+			class="pointer-events-none absolute inset-0 rounded-[1.35rem] border border-white/55 bg-card/58 ring-1 ring-white/35 backdrop-blur-sm dark:border-white/12 dark:bg-card/48 dark:ring-white/10"
+			aria-hidden="true"
+		></div>
+		<div class="absolute top-3.5 left-3.5 z-10 hidden items-center gap-2 sm:flex" aria-hidden="true">
+			<span class="size-3 rounded-full bg-[#ff5f57]"></span>
+			<span class="size-3 rounded-full bg-[#febc2e]"></span>
+			<span class="size-3 rounded-full bg-[#28c840]"></span>
+		</div>
+	{/if}
+
+	<div class={cn('relative', onHero && 'px-4 sm:px-0')}>
+		<PracticeShell
+			bind:selectedClass
+			bind:selectedUnit
+			bind:unitRange
+			bind:requestVersion
+			bind:count
+			bind:quizGenerating
+			bind:practiceMode
+			bind:quizRequestVersion
+			{persistQuizHistory}
+			showModeSwitcher
+			modeSwitcherAlignment={alignment}
+			{allowFrq}
+			{showFirstUseHints}
+			{sharedQuiz}
+			bind:mode
+			{isPersonalizedTutor}
+			{generateLabel}
+			{onGenerate}
+			{onSelectionChange}
+			{onModeChange}
+			{onAnswered}
+			{onFrqGraded}
+			{...cardProps}
+		/>
+	</div>
+</div>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { twAnimateInView } from '$lib/tw-animate';
+	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -194,47 +194,40 @@
 	});
 </script>
 
-<section
-	class="mx-auto w-full max-w-6xl space-y-8 {twAnimateInView}"
-	aria-labelledby="aspiring-students-heading"
->
-	<div class="relative">
-		<div class="space-y-2 px-0 text-center sm:px-14">
-			<h2
-				id="aspiring-students-heading"
-				class="font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
+<section class="mx-auto w-full max-w-7xl space-y-6" aria-labelledby="aspiring-students-heading">
+	<SectionIntro id="aspiring-students-heading">
+		{#snippet title()}
+			Used by many <span class="underline decoration-primary/70 decoration-2 underline-offset-4"
+				>aspiring students</span
 			>
-				Used by many <span class="underline decoration-primary/70 decoration-2 underline-offset-4"
-					>aspiring students</span
-				>
-			</h2>
-			<p class="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
-				See how students plan their AP year, preview courses, and build confidence before exam day.
+		{/snippet}
+		{#snippet description()}
+			<p>
+				See how students plan their AP year, preview courses, and build confidence before exam
+				day.
 			</p>
-		</div>
+		{/snippet}
+	</SectionIntro>
 
-		<div
-			class="mt-4 flex items-center justify-center gap-2 sm:absolute sm:top-0 sm:right-0 sm:mt-0"
+	<div class="flex justify-end gap-2">
+		<Button
+			variant="ghost"
+			size="icon"
+			aria-label="Previous student stories"
+			disabled={!canScrollPrev}
+			onclick={() => scrollByPage(-1)}
 		>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Previous student stories"
-				disabled={!canScrollPrev}
-				onclick={() => scrollByPage(-1)}
-			>
-				<ChevronLeftIcon />
-			</Button>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Next student stories"
-				disabled={!canScrollNext}
-				onclick={() => scrollByPage(1)}
-			>
-				<ChevronRightIcon />
-			</Button>
-		</div>
+			<ChevronLeftIcon />
+		</Button>
+		<Button
+			variant="ghost"
+			size="icon"
+			aria-label="Next student stories"
+			disabled={!canScrollNext}
+			onclick={() => scrollByPage(1)}
+		>
+			<ChevronRightIcon />
+		</Button>
 	</div>
 
 	<div
@@ -252,7 +245,7 @@
 		{#each stories as story (story.name)}
 			<article
 				data-story-card
-				class="flex w-[min(100%,20rem)] shrink-0 snap-start flex-col gap-5 rounded-3xl p-6 sm:w-80 {story.cardClass}"
+				class="flex w-[min(100%,20rem)] shrink-0 snap-start flex-col gap-5 rounded-3xl p-6 marketing-card-shadow sm:w-80 {story.cardClass}"
 			>
 				<div class="flex items-center gap-3">
 					<div

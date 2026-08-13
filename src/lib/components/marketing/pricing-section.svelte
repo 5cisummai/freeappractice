@@ -1,59 +1,36 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import PricingCards from '$lib/components/marketing/pricing-cards.svelte';
+	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import { twAnimateInView } from '$lib/tw-animate';
 
-	let { asPage = false, freeBeta = false }: { asPage?: boolean; freeBeta?: boolean } = $props();
+	let { asPage = false }: { asPage?: boolean } = $props();
 </script>
 
 <section
-	class="mx-auto w-full max-w-6xl space-y-10 {twAnimateInView}"
+	class="mx-auto w-full max-w-7xl space-y-10 {twAnimateInView}"
 	aria-labelledby="pricing-section-heading"
 >
-	<div class="mx-auto max-w-2xl space-y-5 text-center">
-		<svelte:element
-			this={asPage ? 'h1' : 'h2'}
-			id="pricing-section-heading"
-			class="font-display leading-tight font-medium tracking-tight text-balance {asPage
-				? 'text-4xl sm:text-5xl'
-				: 'text-3xl sm:text-4xl'}"
-		>
+	<SectionIntro
+		id="pricing-section-heading"
+		headingLevel={asPage ? 'h1' : 'h2'}
+		titleClass="font-display leading-tight font-medium tracking-tight text-balance {asPage
+			? 'text-4xl sm:text-5xl'
+			: 'text-3xl sm:text-4xl'}"
+	>
+		{#snippet title()}
 			A tutor that learns how you learn.
-		</svelte:element>
-		<p class="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-			A personalized tutor for your learning style and a coach that guides you to your best scores.
-		</p>
-	</div>
-
-	{#if freeBeta}
-		<div
-			class="mx-auto max-w-2xl rounded-3xl border-2 border-violet-300/50 super-tier-gradient p-8 text-center shadow-sm shadow-violet-500/10"
-		>
-			<h2 class="mt-4 font-display text-3xl font-medium tracking-tight">
-				Claim your free Super offer.
-			</h2>
-			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
-				Unlock personalized tutoring, AI Coach, insights, weekly study plans, and 300 personalized
-				messages per month. Free during the Super beta.
+		{/snippet}
+		{#snippet description()}
+			<p>
+				A personalized tutor for your learning style and a coach that guides you to your best scores.
 			</p>
-			<div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-				<Button href={resolve('/signup?super=1')} size="lg" class="rounded-full px-6">
-					Claim free Super
-				</Button>
-				{#if !asPage}
-					<Button href={resolve('/super')} variant="outline" size="lg" class="rounded-full px-6">
-						Learn more
-					</Button>
-				{/if}
-			</div>
-		</div>
-	{:else}
-		<PricingCards />
+		{/snippet}
+	</SectionIntro>
 
-		<p class="mx-auto max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-			Must be 13+ to use personalized features. No free trials or promotional pricing. Cancel
-			anytime before your next renewal.
-		</p>
-	{/if}
+	<PricingCards />
+
+	<p class="mx-auto max-w-2xl text-center text-sm leading-6 text-muted-foreground">
+		Must be 13+ to use personalized features. No free trials or promotional pricing. Cancel anytime
+		before your next renewal.
+	</p>
 </section>

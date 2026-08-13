@@ -5,24 +5,20 @@
 	import { authClient } from '$lib/auth/client.js';
 	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
 	import QuestionShell from '$lib/components/questions/question-shell.svelte';
-	import { twAnimateIn, twAnimateInView, twAnimateInViewZoom } from '$lib/tw-animate';
+	import { twAnimateInView } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
 	import BottomCtaSection from '$lib/components/marketing/bottom-cta-section.svelte';
-	import FeaturesSection from '$lib/components/marketing/features-section.svelte';
+	import LandingHero from '$lib/components/marketing/landing-hero.svelte';
+	import UnlimitedSection from '$lib/components/marketing/unlimited-section.svelte';
+	import SuperSection from '$lib/components/marketing/super-section.svelte';
 	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import GiftIcon from '@lucide/svelte/icons/gift';
-	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 
 	let { data } = $props();
 
-	let selectedClass = $state('');
-	let selectedUnit = $state('');
+	let selectedClass = $state('AP Chemistry');
+	let selectedUnit = $state('Unit 1: Atomic Structure and Properties');
 	let unitRange = $state<number[] | undefined>(undefined);
 	let requestVersion = $state(0);
 
@@ -307,62 +303,39 @@
 
 <PublicShell showPricing={!data.superFreeBetaEnabled}>
 	<main id="main-content" class="flex-1">
-		<div
-			class="mx-auto w-full max-w-7xl space-y-20 px-5 py-12 sm:px-8 lg:space-y-24 lg:px-10 lg:py-16"
+		<LandingHero freeBeta={data.superFreeBetaEnabled} />
+
+		<section
+			id="practice"
+			class="relative z-10 mx-auto w-full max-w-5xl -mt-[calc(100svh-18rem)] sm:-mt-[calc(100svh-22rem)] sm:px-8 lg:-mt-[calc(100svh-26rem)] lg:px-10"
 		>
-			<section class="mx-auto max-w-5xl space-y-10 text-center" id="hero">
-				<div class="mx-auto max-w-3xl space-y-6">
-					<Badge
-						variant="outline"
-						class="gap-2 border-violet-300/50 super-tier-gradient super-tier-gradient-hover p-4 shadow-sm shadow-violet-500/10 transition-colors duration-300 hover:border-violet-400/70"
-						href={`${resolve('/signup')}?super=1`}
-					>
-						<SparklesIcon class="size-4 text-violet-500" aria-hidden="true" />
-						<span class="font-semibold text-violet-700 dark:text-violet-300">Free Super offer</span>
-						<span class="text-muted-foreground/60" aria-hidden="true">-</span>
-						<span>Personalized learning</span>
-						<ArrowRightIcon class="size-4" aria-hidden="true" />
-					</Badge>
-					<h1
-						class="{twAnimateIn} font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance delay-150 sm:text-4xl lg:text-5xl"
-					>
-						Practice AP Exams <span class="underline underline-offset-4">Free</span>. Two Clicks. No
-						Signup.
-					</h1>
+			<div
+				class="pointer-events-none absolute inset-x-10 top-24 h-24 rounded-full bg-background/50 blur-2xl dark:bg-background/30"
+				aria-hidden="true"
+			></div>
+			<QuestionShell
+				bind:selectedClass
+				bind:selectedUnit
+				bind:unitRange
+				bind:requestVersion
+				persistQuizHistory={false}
+				alignment="center"
+				onHero
+			/>
+		</section>
 
-					<div class="flex flex-wrap justify-center gap-3 text-base">
-						<span
-							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-500 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><BookOpenIcon class="size-4 text-primary" aria-hidden="true" /> 20+ AP Subjects</span
-						>
-						<span
-							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-600 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><GraduationCapIcon class="size-4 text-primary" aria-hidden="true" /> Student Developed</span
-						>
-						<span
-							class="inline-flex animate-in items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 delay-700 duration-500 ease-out fade-in-0 fill-mode-both slide-in-from-bottom-2"
-							><GiftIcon class="size-4 text-primary" aria-hidden="true" /> 100% Free</span
-						>
-					</div>
-				</div>
-			</section>
+		<div
+			class="mx-auto w-full max-w-7xl space-y-20 px-5 pt-24 pb-12 sm:px-8 lg:space-y-24 lg:px-10 lg:pt-32 lg:pb-16"
+		>
+			<UnlimitedSection />
 
-			<section class={twAnimateInViewZoom}>
-				<QuestionShell
-					bind:selectedClass
-					bind:selectedUnit
-					bind:unitRange
-					bind:requestVersion
-					persistQuizHistory={false}
-					alignment="center"
-				/>
-			</section>
-
-			<FeaturesSection />
+			<SuperSection />
 
 			<AspiringStudentsSection />
 
-			<PricingSection freeBeta={data.superFreeBetaEnabled} />
+			{#if !data.superFreeBetaEnabled}
+				<PricingSection />
+			{/if}
 
 			<section class="mx-auto w-full max-w-3xl space-y-4 {twAnimateInView}">
 				<div class="space-y-1">

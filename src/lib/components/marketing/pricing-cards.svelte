@@ -32,7 +32,7 @@
 </script>
 
 <div class="mx-auto grid max-w-4xl gap-5 md:grid-cols-2">
-	<article class="flex flex-col rounded-3xl border border-border bg-card p-7 shadow-sm">
+	<article class="flex flex-col rounded-3xl border border-border bg-card p-7 marketing-card-shadow">
 		<div class="flex items-start justify-between gap-3">
 			<div>
 				<p class="text-sm font-semibold text-muted-foreground">Free</p>
@@ -60,7 +60,7 @@
 	</article>
 
 	<article
-		class="flex flex-col rounded-3xl border-2 border-violet-300/50 super-tier-gradient p-7 shadow-sm shadow-violet-500/10"
+		class="flex flex-col rounded-3xl border-2 border-violet-300/50 super-tier-gradient p-7 marketing-card-shadow shadow-violet-500/10"
 	>
 		<div class="flex items-start justify-between gap-3">
 			<div>
