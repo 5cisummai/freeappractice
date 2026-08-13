@@ -122,12 +122,6 @@ export type SuperSubscriptionView = {
 	accessReason: SuperAccessReason;
 };
 
-export type SuperUsageRollupView = {
-	userId: string;
-	personalizedMessages: number;
-	updatedAt: string;
-};
-
 export type SuperCleanupJobKind = 'account_delete' | 'downgrade_purge';
 
 export type SuperCleanupJobView = {
@@ -148,7 +142,5 @@ export type SuperAdminOverview = {
 	month: string;
 	personalizedMessagesThisMonth: number;
 	subscriptions: SuperSubscriptionView[];
-	usageRollups: SuperUsageRollupView[];
 	failedCleanupJobs: SuperCleanupJobView[];
-	grants: SuperGrantView[];
 };

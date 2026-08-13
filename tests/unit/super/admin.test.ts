@@ -64,9 +64,7 @@ beforeEach(() => {
 				superEndedAt: null
 			}
 		],
-		[],
 		[{ total: 12 }],
-		[{ userId: 'user-1', personalizedMessages: 12, updatedAt: new Date('2026-08-04T00:00:00Z') }],
 		[
 			{
 				id: 'job-1',
@@ -100,7 +98,7 @@ beforeEach(() => {
 });
 
 describe('direct Drizzle Super admin operations', () => {
-	it('returns subscription reasons, usage rollups, and failed jobs', async () => {
+	it('returns subscription reasons and failed jobs', async () => {
 		const result = await getSuperAdminOverview(new Date('2026-08-04T12:00:00Z'));
 		expect(result).toMatchObject({
 			activeSubscriptions: 2,
@@ -110,7 +108,6 @@ describe('direct Drizzle Super admin operations', () => {
 			subscriptions: [
 				{ userId: 'user-1', stripeSubscriptionId: 'sub_1', accessReason: 'subscription' }
 			],
-			usageRollups: [{ userId: 'user-1', personalizedMessages: 12 }],
 			failedCleanupJobs: [{ id: 'job-1', kind: 'account_delete', attempts: 2 }]
 		});
 	});
@@ -123,7 +120,11 @@ describe('direct Drizzle Super admin operations', () => {
 
 	it('grants indefinite Super to claimed free beta users without an existing indefinite grant', async () => {
 		mocks.selectResults = [[{ userId: 'beta-1' }, { userId: 'beta-2' }], [{ userId: 'beta-2' }]];
-		const insertValues = vi.fn(async () => undefined);
+		const insertValues = vi.fn(() => ({
+			onConflictDoNothing: () => ({
+				returning: async () => [{ userId: 'beta-1' }]
+			})
+		}));
 		mocks.insert.mockImplementation(() => ({ values: insertValues }));
 
 		const result = await grantIndefiniteSuperToClaimedFreeBetaUsers(

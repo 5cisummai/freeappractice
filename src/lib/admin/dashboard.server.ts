@@ -395,9 +395,7 @@ export async function getAdminDashboardData(opts: {
 		month: '',
 		personalizedMessagesThisMonth: 0,
 		subscriptions: [],
-		usageRollups: [],
-		failedCleanupJobs: [],
-		grants: []
+		failedCleanupJobs: []
 	};
 
 	let users: AdminUserRow[] = [];
@@ -437,7 +435,11 @@ export async function getAdminDashboardData(opts: {
 			quality = await getQualityDashboardSnapshot();
 			break;
 		case 'super':
-			superOverview = await getSuperAdminOverview();
+			try {
+				superOverview = await getSuperAdminOverview();
+			} catch {
+				errorMessage = 'Unable to load Super data right now.';
+			}
 			break;
 		default: {
 			const _exhaustive: never = activeTab;

@@ -410,7 +410,12 @@ export const superGrants = appSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		index('super_grants_user_expiry_idx').on(table.userId, table.startsAt, table.expiresAt)
+		index('super_grants_user_expiry_idx').on(table.userId, table.startsAt, table.expiresAt),
+		uniqueIndex('super_grants_user_indefinite_unrevoked_uq')
+			.on(table.userId)
+			.where(
+				sql`${table.revokedAt} is null and ${table.expiresAt} >= '9999-12-31 23:59:59+00'::timestamptz`
+			)
 	]
 );
 

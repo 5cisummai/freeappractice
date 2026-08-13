@@ -62,9 +62,7 @@ describe('admin dashboard query ownership', () => {
 			month: '2026-08',
 			personalizedMessagesThisMonth: 0,
 			subscriptions: [],
-			usageRollups: [],
-			failedCleanupJobs: [],
-			grants: []
+			failedCleanupJobs: []
 		});
 	});
 
@@ -94,5 +92,15 @@ describe('admin dashboard query ownership', () => {
 		expect(mocks.getSuperAdminOverview).toHaveBeenCalledOnce();
 		expect(mocks.listUsers).not.toHaveBeenCalled();
 		expect(mocks.getQualityDashboardSnapshot).not.toHaveBeenCalled();
+	});
+
+	it('keeps an empty Super overview when the Super query fails', async () => {
+		mocks.getSuperAdminOverview.mockRejectedValue(new Error('db down'));
+
+		const result = await getAdminDashboardData({ ...baseOptions, tab: 'super' });
+
+		expect(result.errorMessage).toBe('Unable to load Super data right now.');
+		expect(result.superOverview.activeSubscriptions).toBe(0);
+		expect(result.superOverview.subscriptions).toEqual([]);
 	});
 });
