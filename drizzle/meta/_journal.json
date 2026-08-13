@@ -71,6 +71,13 @@
 			"when": 1786574144637,
 			"tag": "0009_shared_practice_integrity",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1786590414633,
+			"tag": "0010_yellow_hercules",
+			"breakpoints": true
 		}
 	]
 }

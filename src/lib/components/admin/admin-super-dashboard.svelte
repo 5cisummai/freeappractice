@@ -6,7 +6,10 @@
 	import type { SuperAdminOverview } from '$lib/super/types';
 	import { toast } from 'svelte-sonner';
 
-	let { overview }: { overview: SuperAdminOverview } = $props();
+	let {
+		overview,
+		errorMessage = null
+	}: { overview: SuperAdminOverview; errorMessage?: string | null } = $props();
 	let subscriptions = $derived(overview.subscriptions);
 	let failedCleanupJobs = $derived(overview.failedCleanupJobs);
 	let convertingFreeBeta = $state(false);
@@ -55,6 +58,13 @@
 </script>
 
 <div class="grid gap-5">
+	{#if errorMessage}
+		<p
+			class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+		>
+			{errorMessage}
+		</p>
+	{/if}
 	<p class="text-sm text-muted-foreground">
 		Subscription visibility and Super operations. Per-user grants live on the Users tab. Stripe
 		remains the billing authority.

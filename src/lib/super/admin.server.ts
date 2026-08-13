@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
 	and,
-	asc,
 	count,
 	desc,
 	eq,
@@ -15,6 +14,7 @@ import {
 	sql,
 	sum
 } from 'drizzle-orm';
+import { isDuplicateKeyError } from '$lib/questions/util.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	superBillingAccess,
@@ -39,8 +39,7 @@ export type {
 	SuperAdminOverview,
 	SuperCleanupJobView,
 	SuperGrantView,
-	SuperSubscriptionView,
-	SuperUsageRollupView
+	SuperSubscriptionView
 } from '$lib/super/types';
 
 function monthKey(now: Date): string {
@@ -128,78 +127,54 @@ function toGrantView(grant: {
 export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdminOverview> {
 	const db = getNeonDatabase();
 	const month = monthKey(now);
-	const [
-		subscriptionCounts,
-		activeGrantCount,
-		subscriptions,
-		grants,
-		usageTotal,
-		usageRollups,
-		jobs
-	] = await Promise.all([
-		db
-			.select({ status: superBillingAccess.status, total: count() })
-			.from(superBillingAccess)
-			.where(
-				and(
-					eq(superBillingAccess.plan, 'super'),
-					inArray(superBillingAccess.status, ['active', 'past_due'])
+	const [subscriptionCounts, activeGrantCount, subscriptions, usageTotal, jobs] = await Promise.all(
+		[
+			db
+				.select({ status: superBillingAccess.status, total: count() })
+				.from(superBillingAccess)
+				.where(
+					and(
+						eq(superBillingAccess.plan, 'super'),
+						inArray(superBillingAccess.status, ['active', 'past_due'])
+					)
 				)
-			)
-			.groupBy(superBillingAccess.status),
-		db
-			.select({ total: count() })
-			.from(superGrants)
-			.where(
-				and(
-					lte(superGrants.startsAt, now),
-					gt(superGrants.expiresAt, now),
-					isNull(superGrants.revokedAt)
+				.groupBy(superBillingAccess.status),
+			db
+				.select({ total: count() })
+				.from(superGrants)
+				.where(
+					and(
+						lte(superGrants.startsAt, now),
+						gt(superGrants.expiresAt, now),
+						isNull(superGrants.revokedAt)
+					)
+				),
+			db
+				.select()
+				.from(superBillingAccess)
+				.where(eq(superBillingAccess.plan, 'super'))
+				.orderBy(desc(superBillingAccess.updatedAt))
+				.limit(100),
+			db
+				.select({
+					total: sql<number>`coalesce(${sum(superUsageRollups.personalizedMessages)}, 0)::int`
+				})
+				.from(superUsageRollups)
+				.where(eq(superUsageRollups.month, month)),
+			db
+				.select()
+				.from(superCleanupJobs)
+				.where(
+					and(
+						isNull(superCleanupJobs.completedAt),
+						isNotNull(superCleanupJobs.lastError),
+						ne(superCleanupJobs.lastError, '')
+					)
 				)
-			),
-		db
-			.select()
-			.from(superBillingAccess)
-			.where(eq(superBillingAccess.plan, 'super'))
-			.orderBy(desc(superBillingAccess.updatedAt))
-			.limit(100),
-		db
-			.select()
-			.from(superGrants)
-			.where(
-				and(
-					lte(superGrants.startsAt, now),
-					gt(superGrants.expiresAt, now),
-					isNull(superGrants.revokedAt)
-				)
-			)
-			.orderBy(asc(superGrants.expiresAt), desc(superGrants.createdAt))
-			.limit(100),
-		db
-			.select({
-				total: sql<number>`coalesce(${sum(superUsageRollups.personalizedMessages)}, 0)::int`
-			})
-			.from(superUsageRollups)
-			.where(eq(superUsageRollups.month, month)),
-		db
-			.select()
-			.from(superUsageRollups)
-			.where(eq(superUsageRollups.month, month))
-			.orderBy(desc(superUsageRollups.personalizedMessages), desc(superUsageRollups.updatedAt))
-			.limit(100),
-		db
-			.select()
-			.from(superCleanupJobs)
-			.where(
-				and(
-					isNull(superCleanupJobs.completedAt),
-					isNotNull(superCleanupJobs.lastError),
-					ne(superCleanupJobs.lastError, '')
-				)
-			)
-			.orderBy(desc(superCleanupJobs.updatedAt))
-			.limit(100)
-	]);
+				.orderBy(desc(superCleanupJobs.updatedAt))
+				.limit(100)
+		]
+	);
 
 	const accessByUser = new Map(
 		await Promise.all(
@@ -222,13 +197,7 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 		subscriptions: subscriptions.map((subscription) =>
 			toSubscriptionView(subscription, accessByUser.get(subscription.userId) ?? null)
 		),
-		usageRollups: usageRollups.map((rollup) => ({
-			userId: rollup.userId,
-			personalizedMessages: rollup.personalizedMessages,
-			updatedAt: rollup.updatedAt.toISOString()
-		})),
-		failedCleanupJobs: jobs.map(toCleanupJobView),
-		grants: grants.map(toGrantView)
+		failedCleanupJobs: jobs.map(toCleanupJobView)
 	};
 }
 
@@ -288,18 +257,23 @@ export async function grantIndefiniteSuperToClaimedFreeBetaUsers(
 	if (toGrant.length === 0) return { granted: 0, skipped: claimed.length };
 
 	const expiresAt = new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT);
-	await db.insert(superGrants).values(
-		toGrant.map((user) => ({
-			id: randomUUID(),
-			userId: user.userId,
-			startsAt: now,
-			expiresAt,
-			reason: FREE_BETA_INDEFINITE_GRANT_REASON,
-			createdBy
-		}))
-	);
+	const inserted = await db
+		.insert(superGrants)
+		.values(
+			toGrant.map((user) => ({
+				id: randomUUID(),
+				userId: user.userId,
+				startsAt: now,
+				expiresAt,
+				reason: FREE_BETA_INDEFINITE_GRANT_REASON,
+				createdBy
+			}))
+		)
+		.onConflictDoNothing()
+		.returning({ userId: superGrants.userId });
+	if (inserted.length === 0) return { granted: 0, skipped: claimed.length };
 
-	const userIds = toGrant.map((user) => user.userId);
+	const userIds = inserted.map((row) => row.userId);
 	await Promise.all([
 		db
 			.update(tutorProfiles)
@@ -307,7 +281,7 @@ export async function grantIndefiniteSuperToClaimedFreeBetaUsers(
 			.where(inArray(tutorProfiles.userId, userIds)),
 		...userIds.map((userId) => unlockInsightReports(userId))
 	]);
-	return { granted: toGrant.length, skipped: alreadyGranted.size };
+	return { granted: inserted.length, skipped: claimed.length - inserted.length };
 }
 
 export async function grantIndefiniteSuperToUser(
@@ -327,13 +301,18 @@ export async function grantIndefiniteSuperToUser(
 		)
 		.limit(1);
 	if (existing) return { granted: false };
-	await createSuperGrant({
-		userId,
-		startsAt: now,
-		expiresAt: new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT),
-		reason: 'Admin indefinite Super grant',
-		createdBy
-	});
+	try {
+		await createSuperGrant({
+			userId,
+			startsAt: now,
+			expiresAt: new Date(INDEFINITE_SUPER_GRANT_EXPIRES_AT),
+			reason: 'Admin indefinite Super grant',
+			createdBy
+		});
+	} catch (error) {
+		if (isDuplicateKeyError(error)) return { granted: false };
+		throw error;
+	}
 	return { granted: true };
 }
 

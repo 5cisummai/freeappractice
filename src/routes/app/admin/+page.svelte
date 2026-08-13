@@ -64,7 +64,7 @@
 		{:else if data.activeTab === 'quality'}
 			<AdminQualityDashboard snapshot={data.quality} />
 		{:else if data.activeTab === 'super'}
-			<AdminSuperDashboard overview={data.superOverview} />
+			<AdminSuperDashboard overview={data.superOverview} errorMessage={data.errorMessage} />
 		{/if}
 	</div>
 </PageShell>
