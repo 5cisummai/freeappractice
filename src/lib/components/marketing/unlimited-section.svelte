@@ -47,7 +47,8 @@
 		{ name: 'Unit 4: Cell Communication', mastery: 71, attempts: 12, expanded: false }
 	];
 
-	const wellClass = 'relative flex min-h-0 flex-1 overflow-hidden bg-background/25 dark:bg-background/10';
+	const wellClass =
+		'relative flex min-h-0 flex-1 overflow-hidden bg-background/25 dark:bg-background/10';
 	const cardChrome =
 		'flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-border/70 marketing-card-shadow';
 	const captionClass = 'space-y-2 border-t border-border/70 px-6 py-6 sm:px-8 sm:py-7';
@@ -56,10 +57,10 @@
 <section id="unlimited" class="w-full space-y-12" aria-labelledby="unlimited-section-heading">
 	<SectionIntro id="unlimited-section-heading">
 		{#snippet title()}
-			Unlimited practice
+			Truly free AP practice
 		{/snippet}
 		{#snippet description()}
-			<p>Questions, explanations, a tutor, and a unit mastery map—none of it meters out.</p>
+			<p>Questions, explanations, a tutor, and unit mastery map without those annoying limits.</p>
 		{/snippet}
 	</SectionIntro>
 

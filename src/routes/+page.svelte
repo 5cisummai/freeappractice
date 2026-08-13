@@ -307,7 +307,7 @@
 
 		<section
 			id="practice"
-			class="relative z-10 mx-auto w-full max-w-5xl -mt-[calc(100svh-18rem)] sm:-mt-[calc(100svh-22rem)] sm:px-8 lg:-mt-[calc(100svh-26rem)] lg:px-10"
+			class="relative z-10 mx-auto -mt-[calc(100svh-18rem)] w-full max-w-5xl sm:-mt-[calc(100svh-22rem)] sm:px-8 lg:-mt-[calc(100svh-26rem)] lg:px-10"
 		>
 			<div
 				class="pointer-events-none absolute inset-x-10 top-24 h-24 rounded-full bg-background/50 blur-2xl dark:bg-background/30"

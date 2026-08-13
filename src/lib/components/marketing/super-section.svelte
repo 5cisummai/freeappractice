@@ -36,12 +36,27 @@
 <section id="super" class="w-full space-y-12" aria-labelledby="super-section-heading">
 	<SectionIntro id="super-section-heading" superSignup signupHref={resolve('/signup?super=1')}>
 		{#snippet title()}
-			Your personalized Coach
+			Intelligent tutoring built around
+			<span class="relative inline-block px-1">
+				you<svg
+					class="pointer-events-none absolute -bottom-1 left-0 h-3 w-full text-primary"
+					viewBox="0 0 88 10"
+					fill="none"
+					aria-hidden="true"
+				>
+					<path
+						d="M2 7.2c12.5-3.8 26.4 1.6 39.2-.4C54.2 5 66.8 2.1 86 6.4"
+						stroke="currentColor"
+						stroke-width="2.6"
+						stroke-linecap="round"
+					/>
+				</svg>
+			</span>
 		{/snippet}
 		{#snippet description()}
 			<p>
-				Coach already has your practice history. Ask what to study next, then let Insights and weekly
-				plans keep Super pointed at the same gaps.
+				Coach remembers how you learn and reasons from your attempts—so you close the unit that's
+				slipping, not a chatbot you brief from scratch.
 			</p>
 		{/snippet}
 	</SectionIntro>
@@ -105,10 +120,8 @@
 				</div>
 			</div>
 			<div class={captionClass}>
-				<h3 class="text-base font-semibold tracking-tight">Actionable insights</h3>
-				<p class="text-sm leading-6 text-muted-foreground">
-					A weekly brief from your practice—what to keep, what to fix, what to do next.
-				</p>
+				<h3 class="text-base font-semibold tracking-tight">See what's actually slipping</h3>
+				<p class="text-sm leading-6 text-muted-foreground">A weekly brief from your attempts.</p>
 			</div>
 		</article>
 
@@ -155,10 +168,8 @@
 				</div>
 			</div>
 			<div class={captionClass}>
-				<h3 class="text-base font-semibold tracking-tight">Weekly study plans</h3>
-				<p class="text-sm leading-6 text-muted-foreground">
-					30-minute tasks Coach writes from your misses, one week at a time.
-				</p>
+				<h3 class="text-base font-semibold tracking-tight">Finish this week</h3>
+				<p class="text-sm leading-6 text-muted-foreground">30-minute tasks from those gaps.</p>
 			</div>
 		</article>
 	</div>

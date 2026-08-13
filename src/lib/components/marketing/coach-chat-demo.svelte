@@ -6,6 +6,7 @@
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import BrainIcon from '@lucide/svelte/icons/brain';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 	import SearchIcon from '@lucide/svelte/icons/search';
@@ -20,6 +21,7 @@
 		prompt: string;
 		tools: CoachDemoTool[];
 		reply: string;
+		memoryNote?: string;
 	};
 
 	const SCENES: CoachDemoScene[] = [
@@ -41,7 +43,8 @@ This week:
 2. **Saturday, 25 min** — One photosynthesis FRQ. Say the evidence sentences out loud before you type them.
 3. **Monday, 20 min** — Mixed Unit 3. If light reactions are above 70%, we move to the Calvin cycle. If not, we run the same set again.
 
-Don't add another Bio unit until this one stops leaking.`
+Don't add another Bio unit until this one stops leaking.`,
+			memoryNote: 'Bio Unit 3 leak is light reactions'
 		},
 		{
 			prompt:
@@ -93,6 +96,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 	let completedTools = $state(0);
 	let replyText = $state('');
 	let streaming = $state(false);
+	let memoryNoteVisible = $state(false);
 	let fading = $state(false);
 
 	const composerBusy = $derived(streaming || thinking || runningTool >= 0);
@@ -181,6 +185,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 			completedTools = 0;
 			replyText = '';
 			streaming = false;
+			memoryNoteVisible = false;
 		}
 
 		function showFinished(next: CoachDemoScene) {
@@ -195,6 +200,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 			completedTools = next.tools.length;
 			replyText = next.reply;
 			streaming = false;
+			memoryNoteVisible = Boolean(next.memoryNote);
 			void scrollToLatest();
 		}
 
@@ -247,6 +253,11 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 			streaming = false;
 			await wait(180);
 			toolsExpanded = false;
+			if (next.memoryNote) {
+				await wait(480);
+				memoryNoteVisible = true;
+				await scrollToLatest();
+			}
 			await wait(9000);
 
 			if (cancelled) return;
@@ -314,7 +325,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 						</div>
 					{/if}
 
-					{#if thinking || toolsVisible || replyText}
+					{#if thinking || toolsVisible || replyText || memoryNoteVisible}
 						<div class="flex w-full max-w-[95%] flex-col gap-2">
 							{#if thinking}
 								<div role="status">
@@ -371,6 +382,16 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 								<div class="max-w-3xl text-base leading-7 text-foreground">
 									<RichText text={visibleReply} blocks />
 								</div>
+							{/if}
+
+							{#if memoryNoteVisible && scene.memoryNote}
+								<p
+									class="flex items-center gap-1.5 text-sm text-muted-foreground"
+									in:fly={{ y: 4, duration: 200 }}
+								>
+									<BrainIcon class="size-3.5 shrink-0 opacity-70" />
+									<span>Added "{scene.memoryNote}" to memory</span>
+								</p>
 							{/if}
 						</div>
 					{/if}
