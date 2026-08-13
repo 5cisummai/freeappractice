@@ -169,8 +169,7 @@ export async function getAdminUserSuperAccess(
 						subscription.status === 'past_due' &&
 						!subscription.superEndedAt &&
 						subscription.pastDueSince &&
-						now.getTime() - new Date(subscription.pastDueSince).getTime() <
-							SUPER_PAST_DUE_GRACE_MS
+						now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
 				)
 			) {
 				accessReason = 'past_due_grace';

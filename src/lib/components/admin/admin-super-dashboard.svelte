@@ -104,8 +104,7 @@
 								{subscription.cancelAtPeriodEnd ? 'cancels at period end' : 'renews normally'}
 							</p>
 							<p class="text-xs break-all text-muted-foreground">
-								Stripe subscription: {subscription.stripeSubscriptionId ?? 'not mirrored'} · period
-								end:
+								Stripe subscription: {subscription.stripeSubscriptionId ?? 'not mirrored'} · period end:
 								{subscription.periodEnd
 									? new Date(subscription.periodEnd).toLocaleString()
 									: 'unknown'}
@@ -137,7 +136,8 @@
 								<p class="mt-1 text-muted-foreground">Attempts: {job.attempts}</p>
 								<p class="mt-1 break-words text-destructive">{job.lastError}</p>
 							</div>
-							<Button variant="outline" size="sm" onclick={() => retryCleanup(job.id)}>Retry</Button>
+							<Button variant="outline" size="sm" onclick={() => retryCleanup(job.id)}>Retry</Button
+							>
 						</div>
 					{/each}
 				</div>

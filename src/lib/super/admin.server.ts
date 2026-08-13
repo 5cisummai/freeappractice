@@ -257,8 +257,7 @@ export async function createSuperGrant(input: {
 	return toGrantView(grant);
 }
 
-const FREE_BETA_INDEFINITE_GRANT_REASON =
-	'Converted free Super beta claim to an indefinite grant';
+const FREE_BETA_INDEFINITE_GRANT_REASON = 'Converted free Super beta claim to an indefinite grant';
 
 export async function grantIndefiniteSuperToClaimedFreeBetaUsers(
 	createdBy: string,

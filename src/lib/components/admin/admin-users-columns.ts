@@ -97,7 +97,8 @@ export function createAdminUsersColumns(): ColumnDef<AdminUserRow>[] {
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => renderComponent(AdminUsersTierBadge, { plan: row.original.plan }),
-			sortingFn: (rowA, rowB) => Number(rowA.original.plan === 'super') - Number(rowB.original.plan === 'super')
+			sortingFn: (rowA, rowB) =>
+				Number(rowA.original.plan === 'super') - Number(rowB.original.plan === 'super')
 		},
 		{
 			accessorKey: 'banned',
