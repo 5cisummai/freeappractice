@@ -49,29 +49,9 @@ export function hasPaidCapability(access: PlanAccess, capability: PaidCapability
 	return access.plan === 'super' && PAID_PLAN_PERMISSIONS.super[capability];
 }
 
-/** @deprecated Use PlanAccess and hasPaidCapability in new request-path code. */
-export type Entitlements = PlanAccess & {
-	personalizedTutor: boolean;
-	coach: boolean;
-	aiInsights: boolean;
-	studyPlans: boolean;
-	/** Memory is covered by the personalized tutor capability. */
-	memory: boolean;
-};
-
 export const FREE_PLAN_ACCESS: PlanAccess = {
 	plan: 'free',
 	accessReason: null
-};
-
-/** @deprecated Use FREE_PLAN_ACCESS. */
-export const FREE_ENTITLEMENTS: Entitlements = {
-	...FREE_PLAN_ACCESS,
-	personalizedTutor: false,
-	coach: false,
-	aiInsights: false,
-	studyPlans: false,
-	memory: false
 };
 
 export type TutorTeachingStyle = 'socratic' | 'concise' | 'step_by_step';

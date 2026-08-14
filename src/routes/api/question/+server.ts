@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { questionBank } from '$lib/question-bank/bank.server';
+import { mcqBank } from '$lib/question-bank/mcq/bank.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 import { dev } from '$app/environment';
@@ -55,11 +55,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		const { className, unit: requestedUnit, excludeQuestionIds } = validated.value;
 		apClass = className;
 		unit = normalizeUnit(requestedUnit);
-		const { outcome } = await questionBank.get({
-			kind: 'mcq',
-			apClass: className,
-			unit: requestedUnit,
-			options: { excludeQuestionIds, metrics: path }
+		const outcome = await mcqBank.get(className, requestedUnit, {
+			excludeQuestionIds,
+			metrics: path
 		});
 
 		switch (outcome.status) {

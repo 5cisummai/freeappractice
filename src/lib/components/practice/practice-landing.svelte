@@ -1,8 +1,8 @@
 <script lang="ts">
 	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
-	import PracticeBreadcrumbs from '$lib/components/practice/practice-breadcrumbs.svelte';
 	import PracticeHubNav from '$lib/components/practice/practice-hub-nav.svelte';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
 
@@ -45,7 +45,23 @@
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-7xl space-y-12 px-5 py-10 sm:px-8 lg:px-10 lg:py-14">
 			<section class="mx-auto max-w-5xl space-y-6">
-				<PracticeBreadcrumbs {crumbs} />
+				<Breadcrumb.Root aria-label="Breadcrumb">
+					<Breadcrumb.List>
+						{#each crumbs as crumb, index (crumb.label)}
+							<Breadcrumb.Item>
+								{#if crumb.href}
+									<Breadcrumb.Link href={crumb.href}>{crumb.label}</Breadcrumb.Link>
+								{:else}
+									<Breadcrumb.Page>{crumb.label}</Breadcrumb.Page>
+								{/if}
+							</Breadcrumb.Item>
+
+							{#if index < crumbs.length - 1}
+								<Breadcrumb.Separator />
+							{/if}
+						{/each}
+					</Breadcrumb.List>
+				</Breadcrumb.Root>
 
 				<div class="space-y-3 text-center">
 					<h1

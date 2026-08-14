@@ -15,7 +15,7 @@ vi.mock('$lib/super/profile.server', () => ({
 	markSuperAccessStarted: mocks.markSuperAccessStarted
 }));
 
-import { getEntitlements } from '$lib/super/billing.server';
+import { getPlanAccess } from '$lib/super/billing.server';
 
 function selectBuilder(result: unknown[]) {
 	const builder: any = {
@@ -29,7 +29,7 @@ function selectBuilder(result: unknown[]) {
 	return builder;
 }
 
-describe('direct Drizzle entitlements', () => {
+describe('direct Drizzle plan access', () => {
 	const now = new Date('2026-08-04T12:00:00.000Z');
 
 	beforeEach(() => {
@@ -43,7 +43,7 @@ describe('direct Drizzle entitlements', () => {
 	it('does not grant access without a claim, subscription, or grant', async () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
 		mocks.selectResults.push([], [], []);
-		expect(await getEntitlements('student-1', now)).toMatchObject({
+		expect(await getPlanAccess('student-1', now)).toMatchObject({
 			plan: 'free',
 			accessReason: null
 		});
@@ -53,7 +53,7 @@ describe('direct Drizzle entitlements', () => {
 	it('grants claimed beta and active subscription access from direct rows', async () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
 		mocks.selectResults.push([{ userId: 'student-1' }]);
-		expect(await getEntitlements('student-1', now)).toMatchObject({
+		expect(await getPlanAccess('student-1', now)).toMatchObject({
 			plan: 'super',
 			accessReason: 'free_beta'
 		});
@@ -70,7 +70,7 @@ describe('direct Drizzle entitlements', () => {
 			],
 			[]
 		);
-		expect(await getEntitlements('student-1', now)).toMatchObject({
+		expect(await getPlanAccess('student-1', now)).toMatchObject({
 			plan: 'super',
 			accessReason: 'subscription'
 		});
@@ -88,6 +88,6 @@ describe('direct Drizzle entitlements', () => {
 			],
 			[]
 		);
-		expect(await getEntitlements('student-1', now)).toMatchObject({ plan: 'free' });
+		expect(await getPlanAccess('student-1', now)).toMatchObject({ plan: 'free' });
 	});
 });

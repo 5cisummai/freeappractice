@@ -4,22 +4,6 @@ import {
 	questionGenerationByGlobalUnit,
 	questionGenerationByUnit
 } from '$lib/server/neon/schema';
-import { normalizeUnit } from '$lib/question-bank/util.server';
-
-/**
- * Generation totals are derived from the canonical Postgres question registry.
- * Keeping this function as a no-op preserves the worker seam without reintroducing
- * mutable counter documents.
- */
-export async function recordMcqGenerated(_opts: {
-	apClass: string;
-	unit?: string | null;
-	questionText: string;
-}): Promise<void> {
-	void _opts;
-	return;
-}
-
 export interface GenerationStatsPayload {
 	byApClass: Record<string, number>;
 	byUnit: Record<string, number>;
@@ -64,5 +48,3 @@ export async function getMcqGenerationCountsByClass(): Promise<Record<string, nu
 	const stats = await getGenerationStatsForApi();
 	return stats.byApClass;
 }
-
-export { normalizeUnit };

@@ -3,11 +3,7 @@ import {
 	findCachedQuestionByPool,
 	type IQuestion
 } from '$lib/question-bank/mcq/repository.server';
-import {
-	QuestionBank,
-	type GetQuestionOptions,
-	type PoolSelectionResult
-} from '$lib/question-bank/runtime.server';
+import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 
 type McqAnswerBody = {
@@ -68,7 +64,6 @@ function hotPoolBodyFromDoc(
 }
 
 export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
-	questionType: 'mcq',
 	logScope: 'pool',
 	normalizeUnit,
 	countActive: countActiveMcqQuestions,
@@ -87,12 +82,3 @@ export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
 		return requestPoolRefill({ questionType: 'mcq', apClass: className, unit });
 	}
 });
-
-/** Selection-only MCQ serve. Never invokes LLM or generation. */
-export async function getQuestion(
-	className: string,
-	unit?: string,
-	options: GetQuestionOptions = {}
-): Promise<PoolSelectionResult<CachedResult>> {
-	return mcqBank.get(className, unit, options);
-}

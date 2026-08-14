@@ -8,7 +8,7 @@ const { getQuestion, capturePathQuestionRequestMetric } = vi.hoisted(() => ({
 	capturePathQuestionRequestMetric: vi.fn()
 }));
 
-vi.mock('$lib/question-bank/mcq/bank.server', () => ({ getQuestion }));
+vi.mock('$lib/question-bank/mcq/bank.server', () => ({ mcqBank: { get: getQuestion } }));
 vi.mock('$lib/server/logger', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
@@ -140,7 +140,6 @@ describe('request-path import boundary', () => {
 	const requestPathFiles = [
 		'src/routes/api/question/+server.ts',
 		'src/routes/api/question/frq/+server.ts',
-		'src/lib/question-bank/bank.server.ts',
 		'src/lib/question-bank/mcq/bank.server.ts',
 		'src/lib/question-bank/runtime.server.ts',
 		'src/lib/question-bank/frq/bank.server.ts'
@@ -159,9 +158,7 @@ describe('request-path import boundary', () => {
 		}
 	});
 
-	it('keeps type-specific bank and refill imports lazy', () => {
-		const facade = readSrc('src/lib/question-bank/bank.server.ts');
-		expect(facade).not.toMatch(/from ['"]\$lib\/question-bank\/(mcq|frq)\/bank\.server['"]/);
+	it('keeps refill imports lazy inside the type-specific banks', () => {
 		for (const file of [
 			'src/lib/question-bank/mcq/bank.server.ts',
 			'src/lib/question-bank/frq/bank.server.ts'

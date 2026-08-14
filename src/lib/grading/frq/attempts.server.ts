@@ -230,10 +230,3 @@ export async function getFrqProgressForUser(userId: string): Promise<FrqProgress
 		};
 	});
 }
-
-export type FrqActivity = {
-	attemptedAt: Date;
-	timeTakenMs: number;
-	apClass: string;
-	percentage: number;
-};

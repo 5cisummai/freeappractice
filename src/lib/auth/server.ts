@@ -17,8 +17,8 @@ import {
 	sendExistingUserSignupEmail,
 	sendResetEmail
 } from '$lib/auth/email.server';
-import { ensureUserProfile } from '$lib/users/profile.server';
-import { deleteAppDataForUsers } from '$lib/users/delete-app-data.server';
+import { createUserProfile } from '$lib/users/model.server';
+import { deleteAppDataDocuments } from '$lib/users/delete-app-data-documents.server';
 import {
 	prepareAccountDeletion,
 	processAccountDeletionCleanup
@@ -69,7 +69,7 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				after: async (user, context) => {
-					await ensureUserProfile(user.id);
+					await createUserProfile(user.id);
 					captureAnonymousServerMetric('account_created', {
 						method: classifyAccountCreationMethod(context?.path),
 						email_verified_at_creation: user.emailVerified,
@@ -100,7 +100,7 @@ export const auth = betterAuth({
 				await sendDeleteAccountEmail(user.email, url);
 			},
 			afterDelete: async (user) => {
-				await deleteAppDataForUsers(user.id);
+				await deleteAppDataDocuments([user.id]);
 				waitUntil(processAccountDeletionCleanup(user.id));
 			}
 		}

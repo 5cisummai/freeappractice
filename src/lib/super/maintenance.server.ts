@@ -10,7 +10,7 @@ import {
 	superGrants,
 	tutorProfiles
 } from '$lib/server/neon/schema';
-import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
+import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
 import { lockInsightReports } from '$lib/super/insight-locks.server';
 import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
 
@@ -55,7 +55,7 @@ async function processCleanupJob(
 ): Promise<'completed' | 'retried'> {
 	try {
 		if (job.kind === 'downgrade_purge') {
-			if ((await getEntitlements(job.userId, now)).plan === 'super') {
+			if ((await getPlanAccess(job.userId, now)).plan === 'super') {
 				// A newly created grant can arrive after this job was queued. Removing this disposable
 				// job lets maintenance create a fresh one if access later ends without a restore.
 				await db.delete(superCleanupJobs).where(eq(superCleanupJobs.id, job.id));
@@ -130,7 +130,7 @@ export async function runSuperMaintenance(
 			pastDueEndByUser.set(subscription.userId, accessEndedAt);
 	}
 	for (const [userId, accessEndedAt] of pastDueEndByUser) {
-		const access = await getEntitlements(userId, now);
+		const access = await getPlanAccess(userId, now);
 		if (access.plan === 'super') continue;
 		await Promise.all([
 			db

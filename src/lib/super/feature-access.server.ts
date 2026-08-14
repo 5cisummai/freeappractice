@@ -145,15 +145,3 @@ export async function getSuperFeatureAccess(
 								: 'subscription'
 			};
 }
-
-export function superFeatureAccessMessage(
-	access: Exclude<SuperFeatureAccess, { allowed: true }>,
-	label: string
-): string {
-	if (access.reason === 'assistant_disabled')
-		return 'Assistant features are disabled for this account.';
-	if (access.reason === 'feature_disabled') return `${label} is temporarily unavailable.`;
-	return access.reason === 'subscription'
-		? 'Super subscription required'
-		: 'You must be at least 13 to use Super features.';
-}

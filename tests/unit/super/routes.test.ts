@@ -49,8 +49,7 @@ vi.mock('$lib/flags', () => ({
 vi.mock('$lib/super/feature-access.server', () => ({
 	getSuperFeatureAccess: mocks.getSuperFeatureAccess,
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
-	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest,
-	superFeatureAccessMessage: vi.fn(() => 'Super subscription required')
+	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
 }));
 vi.mock('../../../src/routes/api/insights/+server', () => ({
 	GET: mocks.insightsGet,

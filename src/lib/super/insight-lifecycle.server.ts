@@ -4,8 +4,9 @@ import { openaiModel } from '$lib/ai/service.server';
 import { isSuperInsightsEnabled } from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { acquireInsightLock, RedisRequiredError, releaseLock } from '$lib/super/ai-controls.server';
-import { getEntitlements } from '$lib/super/billing.server';
+import { getPlanAccess } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
+import { hasPaidCapability } from '$lib/super/types';
 import {
 	attachInsightReportPdf,
 	buildAndStoreInsightReport,
@@ -151,7 +152,7 @@ export async function getOrBuildWeeklyInsightReport(
 	now = new Date()
 ): Promise<InsightReportView | null> {
 	if (!(await isSuperInsightsEnabled())) return null;
-	if (!(await getEntitlements(userId, now)).aiInsights) return null;
+	if (!hasPaidCapability(await getPlanAccess(userId, now), 'aiInsights')) return null;
 	if (!(await getTutorProfileView(userId)).ageConfirmedAt) return null;
 	const current = await getCurrentStoredInsightReport(userId, now);
 	if (!isWeeklyInsightRefreshDue(current, now) && current?.pdfAvailable) return current;

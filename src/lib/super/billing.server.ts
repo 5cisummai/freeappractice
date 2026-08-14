@@ -17,9 +17,7 @@ import { markSuperAccessStarted } from '$lib/super/profile.server';
 import {
 	FREE_PLAN_ACCESS,
 	SUPER_PAST_DUE_GRACE_MS,
-	hasPaidCapability,
 	isSuperBillingStatus,
-	type Entitlements,
 	type PlanAccess,
 	type SuperAccessReason,
 	type SuperBillingIssue,
@@ -142,19 +140,6 @@ export async function getPlanAccess(userId: string, now = new Date()): Promise<P
 	return FREE_PLAN_ACCESS;
 }
 
-/** Legacy capability shape for maintenance/admin consumers. */
-export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
-	const access = await getPlanAccess(userId, now);
-	return {
-		...access,
-		personalizedTutor: hasPaidCapability(access, 'personalizedTutor'),
-		coach: hasPaidCapability(access, 'coach'),
-		aiInsights: hasPaidCapability(access, 'aiInsights'),
-		studyPlans: hasPaidCapability(access, 'studyPlans'),
-		memory: hasPaidCapability(access, 'memory')
-	};
-}
-
 export type AdminUserSuperAccess = {
 	plan: 'free' | 'super';
 	accessReason: SuperAccessReason;
@@ -258,7 +243,7 @@ export async function markSuperAccessEndedIfNoAccess(
 	endedAt: Date,
 	now = endedAt
 ): Promise<boolean> {
-	const access = await getEntitlements(userId, now);
+	const access = await getPlanAccess(userId, now);
 	if (access.plan === 'super') return false;
 	await Promise.all([
 		getNeonDatabase()
@@ -414,7 +399,7 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 	if (isEnded) {
 		await markSuperAccessEndedIfNoAccess(current.userId, current.endedAt ?? now, now);
 	} else if (status === 'active' || status === 'past_due') {
-		const access = await getEntitlements(current.userId, now);
+		const access = await getPlanAccess(current.userId, now);
 		if (access.plan !== 'super') return;
 		await Promise.all([
 			db

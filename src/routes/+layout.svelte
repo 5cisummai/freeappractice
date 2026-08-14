@@ -4,7 +4,6 @@
 	/* hljs light theme (default); dark overrides are in layout.css under .dark */
 	import 'highlight.js/styles/github.min.css';
 	import logo from '$lib/assets/logo.png';
-	import SkipToMain from '$lib/components/layout/skip-to-main.svelte';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { afterNavigate, invalidateAll } from '$app/navigation';
@@ -51,7 +50,12 @@
 <svelte:head>
 	<link rel="icon" href={logo} />
 </svelte:head>
-<SkipToMain />
+<a
+	href="#main-content"
+	class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:rounded-md focus:border focus:border-border focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-ring focus:outline-none"
+>
+	Skip to main content
+</a>
 <ModeWatcher />
 <GoogleOneTapPrompt />
 {@render children()}

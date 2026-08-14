@@ -165,26 +165,24 @@
 			{#if !sharedQuiz}
 				<div class="space-y-4">
 					<div class={cn(isExpanded && 'mx-auto max-w-5xl')}>
-						{#if !sharedQuiz}
-							<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
-								<Tabs.List
-									aria-label="Practice modes"
-									class={cn(
-										'h-auto w-full max-w-md gap-1',
-										modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
-									)}
-								>
-									<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
-									<Tabs.Trigger value="graded">
-										<Badge
-											variant="outline"
-											class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
-										>
-										Graded quizzes
-									</Tabs.Trigger>
-								</Tabs.List>
-							</Tabs.Root>
-						{/if}
+						<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
+							<Tabs.List
+								aria-label="Practice modes"
+								class={cn(
+									'h-auto w-full max-w-md gap-1',
+									modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
+								)}
+							>
+								<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
+								<Tabs.Trigger value="graded">
+									<Badge
+										variant="outline"
+										class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
+									>
+									Graded quizzes
+								</Tabs.Trigger>
+							</Tabs.List>
+						</Tabs.Root>
 
 						<div class="flex items-center justify-between gap-3">
 							{#if allowFrq}

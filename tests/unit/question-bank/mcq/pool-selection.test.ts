@@ -89,7 +89,6 @@ describe('QuestionBank selection boundary', () => {
 	it('returns warming for an empty bucket and requests refill', async () => {
 		const requestRefill = vi.fn(async () => {});
 		const bank = new QuestionBank({
-			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			countActive: async (className, unit) => countActivePoolRows('mcq', className, unit),
@@ -110,7 +109,6 @@ describe('QuestionBank selection boundary', () => {
 		const docs: FakeDoc[] = [{ questionId: 'keep', randomKey: 0.5 }];
 		countActivePoolRows.mockResolvedValue(1);
 		const bank = new QuestionBank({
-			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			countActive: async (className, unit) => countActivePoolRows('mcq', className, unit),
@@ -130,7 +128,6 @@ describe('QuestionBank selection boundary', () => {
 
 	it('returns failed when the pool query is unavailable', async () => {
 		const bank = new QuestionBank({
-			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 0,
@@ -151,7 +148,6 @@ describe('QuestionBank selection boundary', () => {
 			poolQueryMs: 0
 		};
 		const bank = new QuestionBank({
-			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 0,

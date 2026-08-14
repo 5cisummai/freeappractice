@@ -32,8 +32,13 @@ vi.mock('$lib/flags', () => ({
 }));
 
 vi.mock('$lib/super/billing.server', () => ({
-	getEntitlements: vi.fn().mockResolvedValue({ studyPlans: true })
+	getPlanAccess: vi.fn().mockResolvedValue({ plan: 'super', accessReason: 'subscription' })
 }));
+
+vi.mock('$lib/super/types', async () => {
+	const actual = await vi.importActual<typeof import('$lib/super/types')>('$lib/super/types');
+	return { ...actual, hasPaidCapability: vi.fn().mockReturnValue(true) };
+});
 
 vi.mock('$lib/super/profile.server', () => ({
 	getTutorProfileView: vi.fn().mockResolvedValue({ ageConfirmedAt: new Date() })

@@ -23,10 +23,6 @@ export type PoolBatchManifest = {
 	entries: Record<string, PoolBatchManifestEntry>;
 };
 
-function getPoolBatchGenerationModel(): string {
-	return MCQ_GENERATION_MODEL;
-}
-
 export function buildMcqPoolBatchJsonl(opts: {
 	requests: Array<{
 		customId: string;
@@ -38,7 +34,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 	reasoningEffort?: 'low' | 'medium' | 'high';
 	diagramsEnabled?: boolean;
 }): { jsonl: string; manifest: PoolBatchManifest } {
-	const model = opts.model ?? getPoolBatchGenerationModel();
+	const model = opts.model ?? MCQ_GENERATION_MODEL;
 	const lines: string[] = [];
 	const entries: Record<string, PoolBatchManifestEntry> = {};
 
@@ -82,7 +78,7 @@ export function buildFrqPoolBatchJsonl(opts: {
 	model?: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
 }): { jsonl: string; manifest: PoolBatchManifest } {
-	const model = opts.model ?? getPoolBatchGenerationModel();
+	const model = opts.model ?? MCQ_GENERATION_MODEL;
 	const lines: string[] = [];
 	const entries: Record<string, PoolBatchManifestEntry> = {};
 

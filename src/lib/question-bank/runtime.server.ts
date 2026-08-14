@@ -17,12 +17,11 @@ type PoolQuery<TDoc extends PoolDocument> = (input: {
 }) => Promise<TDoc | null>;
 
 export interface QuestionBankConfig<TDoc extends PoolDocument, TCached> {
-	questionType: 'mcq' | 'frq';
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
 	countActive: (className: string, unit: string) => Promise<number>;
 	findRandom: PoolQuery<TDoc>;
-	serveCached: (doc: TDoc, className: string, cacheUnit: string) => Promise<TCached> | TCached;
+	serveCached: (doc: TDoc) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
 	requestRefill?: (className: string, unit: string) => Promise<void>;
 }
@@ -89,15 +88,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
  * adapters, so adding a new bank does not require copying this lifecycle.
  */
 export class QuestionBank<TDoc extends PoolDocument, TCached> {
-	readonly name: QuestionBankConfig<TDoc, TCached>['questionType'];
-
-	constructor(private readonly config: QuestionBankConfig<TDoc, TCached>) {
-		this.name = config.questionType;
-	}
-
-	async countActive(className: string, cacheUnit: string): Promise<number> {
-		return this.config.countActive(className, cacheUnit);
-	}
+	constructor(private readonly config: QuestionBankConfig<TDoc, TCached>) {}
 
 	async get(
 		className: string,
@@ -127,7 +118,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 			});
 
 			if (!doc && excludeQuestionIds.length) {
-				const activeCount = await this.countActive(className, cacheUnit);
+				const activeCount = await this.config.countActive(className, cacheUnit);
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					doc = await selectRandomActiveDoc({
@@ -146,7 +137,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 
 			if (doc) {
 				if (metrics) metrics.segment = 'pool_hit';
-				const result = await this.config.serveCached(doc, className, cacheUnit);
+				const result = await this.config.serveCached(doc);
 				return { status: 'found', result, exclusionsReset };
 			}
 
