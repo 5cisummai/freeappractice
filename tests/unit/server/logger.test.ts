@@ -79,4 +79,20 @@ describe('structured logger safety boundaries', () => {
 		expect(text).toContain('completionTokens');
 		expect(text).not.toContain('generated answer');
 	});
+
+	it('shows error details under the error key while still redacting top-level message fields', () => {
+		const logOutput = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+		const errorOutput = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+		logger.error('request failed', {
+			error: { message: 'database connection refused', code: 'ECONNREFUSED' },
+			message: 'student wrote something sensitive'
+		});
+
+		const text = [...logOutput.mock.calls, ...errorOutput.mock.calls].flat().join(' ');
+		expect(text).toContain('database connection refused');
+		expect(text).toContain('ECONNREFUSED');
+		expect(text).toContain('[REDACTED]');
+		expect(text).not.toContain('student wrote something sensitive');
+	});
 });

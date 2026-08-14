@@ -138,7 +138,7 @@ export async function createSharedQuiz(input: {
 				)
 				VALUES (
 					${id}, ${slug}, 'quiz', ${input.creatorUserId ?? null}, ${title}, ${apClass}, ${unit},
-					${questionIds.length}, 'active', ${expiresAt}
+					${questionIds.length}::integer, 'active', ${expiresAt}::timestamptz
 				)
 				ON CONFLICT ("slug") DO NOTHING
 				RETURNING "id", "slug"
@@ -151,12 +151,15 @@ export async function createSharedQuiz(input: {
 				CROSS JOIN (VALUES ${sql.join(
 					questionIds.map(
 						(questionId, position) =>
-							sql`(${position}, ${questionId}, ${questionMap.get(questionId)!.contentHash ?? null}::text)`
+							sql`(${position}::integer, ${questionId}::text, ${questionMap.get(questionId)!.contentHash ?? null}::text)`
 					),
 					sql`, `
 				)}) AS items(position, question_id, question_content_hash)
+				RETURNING "shared_practice_set_id"
 			)
-			SELECT id, slug FROM inserted_set
+			SELECT inserted_set.id, inserted_set.slug
+			FROM inserted_set
+			WHERE EXISTS (SELECT 1 FROM inserted_items)
 		`);
 		if (!result.rows[0]) continue;
 

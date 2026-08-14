@@ -277,12 +277,17 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	const response = postProcessResponse(await maybeServeMarkdown(resolved, event), event, origin);
 
 	const requestTimeMs = Date.now() - requestStart;
-	logger.info('http request', {
+	const requestMeta = {
 		method: event.request.method,
 		url: event.url.pathname,
 		status: response.status,
 		requestTimeMs
-	});
+	};
+	if (response.status >= 500) {
+		logger.error('http request failed', requestMeta);
+	} else {
+		logger.info('http request', requestMeta);
+	}
 
 	return response;
 };
@@ -312,6 +317,14 @@ export const handle = sequence(
 
 export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
 	async ({ error, event, status, message }) => {
+		logger.error('Unhandled server error', {
+			error,
+			status,
+			message,
+			method: event.request.method,
+			path: event.url.pathname
+		});
+
 		capturePostHogServerEvent(event.request, {
 			distinctId: 'server',
 			event: 'server_error',
