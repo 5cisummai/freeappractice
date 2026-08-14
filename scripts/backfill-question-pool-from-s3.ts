@@ -24,7 +24,7 @@ import {
 } from '../src/lib/questions/pool-constants';
 import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
 import { countActivePoolRows } from '../src/lib/questions/pool-counts.server';
-import { createCanonicalMcqQuestion } from '../src/lib/questions/cache-model.server';
+import { createCanonicalMcqQuestion } from '../src/lib/questions/repository.server';
 import { createFrqQuestion, findFrqQuestionById } from '../src/lib/frq/model.server';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
 import { mcqQuestions, poolRefillStates } from '../src/lib/server/neon/schema';

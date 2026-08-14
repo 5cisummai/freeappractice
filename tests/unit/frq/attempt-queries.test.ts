@@ -8,7 +8,7 @@ vi.mock('$lib/server/neon/db', () => ({
 vi.mock('$lib/ai/service.server', () => ({ structuredObject: vi.fn() }));
 vi.mock('$lib/frq/profiles.server', () => ({ getFrqCourseProfile: vi.fn() }));
 vi.mock('$lib/frq/service.server', () => ({ getFrqGradingModel: vi.fn() }));
-vi.mock('$lib/frq/question.server', () => ({ getFrqQuestionById: vi.fn() }));
+vi.mock('$lib/frq/model.server', () => ({ getFrqQuestionById: vi.fn() }));
 vi.mock('$lib/server/logger', () => ({ logger: { error: vi.fn() } }));
 
 import { getFrqProgressForUser } from '$lib/frq/attempts.server';

@@ -18,7 +18,7 @@
 		serializeFrqQuestionDraft
 	} from '$lib/questions/frq-draft.client.js';
 	import { PoolWarmingError } from '$lib/questions/request.client.js';
-	import { requestFrqQuestion } from '$lib/questions/request-frq.client';
+	import { requestFrqQuestion } from '$lib/questions/request.client';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;
@@ -423,26 +423,26 @@
 		{#key question.questionId}
 			{#if tutorMode !== 'hidden'}
 				{#if tutorMode === 'personalized'}
-				<SuperTutorWidget
-					apClass={question.apClass}
-					unit={question.unit}
-					questionId={question.questionId}
-					frqQuestionId={question.questionId}
-					frqAttemptId={attemptId}
-					topic={question.formatId}
-					{showFirstUseHint}
-				/>
+					<SuperTutorWidget
+						apClass={question.apClass}
+						unit={question.unit}
+						questionId={question.questionId}
+						frqQuestionId={question.questionId}
+						frqAttemptId={attemptId}
+						topic={question.formatId}
+						{showFirstUseHint}
+					/>
 				{:else}
-				<TutorWidget
-					apClass={question.apClass}
-					unit={question.unit}
-					questionId={question.questionId}
-					frqQuestionId={question.questionId}
-					frqAttemptId={attemptId}
-					topic={question.formatId}
-					{isPersonalizedTutor}
-					{showFirstUseHint}
-				/>
+					<TutorWidget
+						apClass={question.apClass}
+						unit={question.unit}
+						questionId={question.questionId}
+						frqQuestionId={question.questionId}
+						frqAttemptId={attemptId}
+						topic={question.formatId}
+						{isPersonalizedTutor}
+						{showFirstUseHint}
+					/>
 				{/if}
 			{/if}
 		{/key}

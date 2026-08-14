@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 import { getSuperBillingView, isSuperStripeConfigured } from '$lib/super/billing.server';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;

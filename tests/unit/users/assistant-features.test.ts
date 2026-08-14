@@ -13,7 +13,7 @@ vi.mock('$lib/server/neon/db', () => ({
 import {
 	getAssistantFeaturesEnabled,
 	getAssistantFeaturesEnabledForRequest
-} from '$lib/users/assistant-features.server';
+} from '$lib/super/assistant.server';
 
 describe('assistant feature preference', () => {
 	beforeEach(() => {

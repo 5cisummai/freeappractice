@@ -3,7 +3,7 @@ import {
 	createCanonicalMcqQuestion,
 	newPoolRandomKey,
 	type IQuestion
-} from '$lib/questions/cache-model.server';
+} from '$lib/questions/repository.server';
 import {
 	generateAPQuestion,
 	type APQuestionData,
@@ -13,7 +13,13 @@ import { validateExamfigDiagram } from '$lib/ai/examfig.server';
 import { logger } from '$lib/server/logger';
 import { getRecentTopics } from '$lib/questions/recent-topic.server';
 import { computeContentHash, isDuplicateKeyError, normalizeUnit } from '$lib/questions/util.server';
-import { QuestionGenerationError } from '$lib/questions/question-errors.server';
+
+export class QuestionGenerationError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'QuestionGenerationError';
+	}
+}
 
 /** Build an active-library pool document with the full MCQ body inline. */
 function buildHotPoolDoc(opts: {

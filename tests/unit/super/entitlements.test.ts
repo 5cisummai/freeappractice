@@ -15,7 +15,7 @@ vi.mock('$lib/super/profile.server', () => ({
 	markSuperAccessStarted: mocks.markSuperAccessStarted
 }));
 
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getEntitlements } from '$lib/super/billing.server';
 
 function selectBuilder(result: unknown[]) {
 	const builder: any = {

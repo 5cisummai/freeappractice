@@ -1,4 +1,4 @@
-import { findCachedQuestionByPool, type IQuestion } from '$lib/questions/cache-model.server';
+import { findCachedQuestionByPool, type IQuestion } from '$lib/questions/repository.server';
 import {
 	createQuestionPool,
 	type GetQuestionOptions,

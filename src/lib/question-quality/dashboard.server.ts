@@ -13,7 +13,7 @@ import {
 	qualityReviewJobs
 } from '$lib/server/neon/schema';
 import { isDuplicateKeyError } from '$lib/questions/util.server';
-import { getQuestionById } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/questions/repository.server';
 import { ensureQuestionQuality, type ReviewJobDocument } from './models.server.js';
 import { feedbackSummaryFromCounts } from './rules.js';
 import {

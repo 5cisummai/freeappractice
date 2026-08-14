@@ -17,7 +17,7 @@ vi.mock('$lib/server/neon/db', () => ({
 		insert: mocks.insert
 	})
 }));
-vi.mock('$lib/super/entitlements.server', () => ({ getEntitlements: mocks.getEntitlements }));
+vi.mock('$lib/super/billing.server', () => ({ getEntitlements: mocks.getEntitlements }));
 vi.mock('$lib/super/insight-locks.server', () => ({
 	unlockInsightReports: mocks.unlockInsightReports
 }));

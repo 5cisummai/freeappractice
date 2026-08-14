@@ -12,7 +12,7 @@ import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
 import { normalizeUnit } from '$lib/questions/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { getQuestionById } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/questions/repository.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
 export type RecordAttemptResult =

@@ -550,7 +550,7 @@ async function getInsightDatabase() {
 }
 
 async function getInsightEntitlements(userId: string, now?: Date) {
-	const { getEntitlements } = await import('$lib/super/entitlements.server');
+	const { getEntitlements } = await import('$lib/super/billing.server');
 	return getEntitlements(userId, now);
 }
 

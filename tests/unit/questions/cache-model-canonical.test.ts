@@ -17,7 +17,7 @@ vi.mock('$lib/server/neon/schema', () => ({
 	questionRegistry: { questionId: 'questionRegistry.questionId', name: 'questionRegistry' }
 }));
 
-import { createCanonicalMcqQuestion } from '$lib/questions/cache-model.server';
+import { createCanonicalMcqQuestion } from '$lib/questions/repository.server';
 
 const sampleQuestion = {
 	questionId: 'mcq-1',

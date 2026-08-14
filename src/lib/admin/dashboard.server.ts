@@ -19,7 +19,7 @@ import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
 import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
 import { getSuperAdminOverview } from '$lib/super/admin.server';
-import { getAdminUserSuperAccess } from '$lib/super/entitlements.server';
+import { getAdminUserSuperAccess } from '$lib/super/billing.server';
 import type { SuperAdminOverview } from '$lib/super/types';
 import type {
 	AdminTab,

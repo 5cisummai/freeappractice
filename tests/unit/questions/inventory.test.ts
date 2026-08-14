@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 	findFrqQuestionById: vi.fn()
 }));
 
-vi.mock('$lib/questions/storage.server', () => ({
+vi.mock('$lib/questions/repository.server', () => ({
 	getAllQuestions: mocks.getAllQuestions,
 	getQuestionById: mocks.getQuestionById
 }));

@@ -19,7 +19,7 @@ vi.mock('$lib/question-quality/dashboard.server', () => ({
 vi.mock('$lib/super/admin.server', () => ({
 	getSuperAdminOverview: mocks.getSuperAdminOverview
 }));
-vi.mock('$lib/super/entitlements.server', () => ({
+vi.mock('$lib/super/billing.server', () => ({
 	getAdminUserSuperAccess: mocks.getAdminUserSuperAccess
 }));
 vi.mock('$lib/questions/pool-refill-queue.server', () => ({

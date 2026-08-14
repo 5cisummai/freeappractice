@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { claimSuperFreeBeta, SuperFreeBetaUnavailableError } from '$lib/super/profile.server';
 
 export const POST = withAuthedHandler(

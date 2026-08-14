@@ -4,7 +4,7 @@ import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { getFrqQuestionById } from '$lib/frq/question.server';
+import { getFrqQuestionById } from '$lib/frq/model.server';
 import { chatFrq } from '$lib/tutor/service.server';
 import { createFrqTutorChatStream } from '$lib/tutor/chat-stream.server';
 import {
@@ -23,7 +23,7 @@ import {
 	superAgentRequestSchema,
 	toSuperAgentContext
 } from '$lib/super/agent-request';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 
 export const POST: RequestHandler = withAuthedHandler(

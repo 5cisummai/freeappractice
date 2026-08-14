@@ -10,7 +10,7 @@ import {
 	superGrants,
 	tutorProfiles
 } from '$lib/server/neon/schema';
-import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
 import { lockInsightReports } from '$lib/super/insight-locks.server';
 import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
 

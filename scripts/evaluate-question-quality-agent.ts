@@ -10,7 +10,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
 import { questionQuality } from '../src/lib/server/neon/schema';
 import { buildBatchLine } from '../src/lib/question-quality/batch-line';
-import { getQuestionById } from '../src/lib/questions/storage.server';
+import { getQuestionById } from '../src/lib/questions/repository.server';
 import { extractResponseOutputText } from '../src/lib/question-quality/rubric.server';
 
 type GoldItem = { questionId: string; verdict: 'good' | 'bad'; apClass: string };

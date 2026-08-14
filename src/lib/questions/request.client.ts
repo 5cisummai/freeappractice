@@ -4,7 +4,13 @@ import {
 	questionSourceFromCachedFlag,
 	type QuestionSource
 } from '$lib/client/activation-analytics';
-import { isPoolWarmingResponse, type QuestionApiResponse } from '$lib/questions/payload';
+import {
+	isPoolWarmingResponse,
+	parseQuestionPayloadFromResponse,
+	type QuestionApiResponse
+} from '$lib/questions/payload';
+import type { PublicFrqQuestion } from '$lib/frq/types';
+import type { GeneratedQuestion } from '$lib/questions/types';
 
 export class PoolWarmingError extends QuestionRequestError {
 	readonly retryAfterSeconds: number;
@@ -78,4 +84,50 @@ export async function requestQuestion<TQuestion>(
 			null
 		);
 	}
+}
+
+export type QuestionFetchResult = QuestionRequestResult<GeneratedQuestion>;
+
+/** Load one MCQ from POST /api/question. */
+export function requestMcqQuestion(
+	className: string,
+	unit: string,
+	excludeQuestionIds: string[] = []
+): Promise<QuestionFetchResult> {
+	return requestQuestion({
+		endpoint: '/api/question',
+		className,
+		unit,
+		excludeQuestionIds,
+		warmingMessage: 'Question pool is warming up. Please retry shortly.',
+		errorMessage: 'Failed to load question.',
+		parseQuestion: parseQuestionPayloadFromResponse
+	});
+}
+
+export type FrqFetchResult = QuestionRequestResult<PublicFrqQuestion>;
+
+type FrqQuestionApiResponse = QuestionApiResponse & {
+	question?: PublicFrqQuestion;
+};
+
+/** Load one FRQ from POST /api/question/frq. */
+export function requestFrqQuestion(
+	className: string,
+	unit: string,
+	excludeQuestionIds: string[] = []
+): Promise<FrqFetchResult> {
+	return requestQuestion({
+		endpoint: '/api/question/frq',
+		className,
+		unit,
+		excludeQuestionIds,
+		warmingMessage: 'Written-response pool is warming up. Please retry shortly.',
+		errorMessage: 'Could not load written-response practice.',
+		parseQuestion: (payload) => {
+			const question = (payload as FrqQuestionApiResponse).question;
+			if (!question) throw new Error('Could not load written-response practice.');
+			return question;
+		}
+	});
 }

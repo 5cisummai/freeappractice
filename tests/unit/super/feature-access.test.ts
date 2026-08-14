@@ -4,8 +4,8 @@ const mocks = vi.hoisted(() => ({
 	isSuperCoachEnabled: vi.fn(),
 	isSuperInsightsEnabled: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
-	getPlanAccessForRequest: vi.fn(),
-	getTutorProfileViewForRequest: vi.fn(),
+	getPlanAccess: vi.fn(),
+	getTutorProfileView: vi.fn(),
 	getAssistantFeaturesEnabledForRequest: vi.fn()
 }));
 
@@ -14,13 +14,13 @@ vi.mock('$lib/flags', () => ({
 	isSuperInsightsEnabled: mocks.isSuperInsightsEnabled,
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
-vi.mock('$lib/super/plan-access-cache.server', () => ({
-	getPlanAccessForRequest: mocks.getPlanAccessForRequest
+vi.mock('$lib/super/billing.server', () => ({
+	getPlanAccess: mocks.getPlanAccess
 }));
-vi.mock('$lib/super/profile-cache.server', () => ({
-	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
+vi.mock('$lib/super/profile.server', () => ({
+	getTutorProfileView: mocks.getTutorProfileView
 }));
-vi.mock('$lib/users/assistant-features.server', () => ({
+vi.mock('$lib/super/assistant.server', () => ({
 	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest
 }));
 
@@ -36,11 +36,11 @@ describe('authorizeFeatureRequest', () => {
 		mocks.isSuperCoachEnabled.mockResolvedValue(true);
 		mocks.isSuperInsightsEnabled.mockResolvedValue(true);
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
-		mocks.getPlanAccessForRequest.mockResolvedValue({
+		mocks.getPlanAccess.mockResolvedValue({
 			plan: 'super',
 			accessReason: 'subscription'
 		});
-		mocks.getTutorProfileViewForRequest.mockResolvedValue(profile);
+		mocks.getTutorProfileView.mockResolvedValue(profile);
 		mocks.getAssistantFeaturesEnabledForRequest.mockResolvedValue(true);
 	});
 
@@ -53,11 +53,11 @@ describe('authorizeFeatureRequest', () => {
 			status: 503,
 			code: 'feature_disabled'
 		});
-		expect(mocks.getPlanAccessForRequest).not.toHaveBeenCalled();
+		expect(mocks.getPlanAccess).not.toHaveBeenCalled();
 	});
 
 	it('denies unpaid access without reading the profile', async () => {
-		mocks.getPlanAccessForRequest.mockResolvedValue({ plan: 'free', accessReason: null });
+		mocks.getPlanAccess.mockResolvedValue({ plan: 'free', accessReason: null });
 		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'aiInsights');
 
 		expect(result).toMatchObject({
@@ -66,7 +66,7 @@ describe('authorizeFeatureRequest', () => {
 			code: 'subscription_required',
 			message: 'Super subscription required'
 		});
-		expect(mocks.getTutorProfileViewForRequest).not.toHaveBeenCalled();
+		expect(mocks.getTutorProfileView).not.toHaveBeenCalled();
 	});
 
 	it('denies disabled assistant features before billing, but leaves memory management available', async () => {
@@ -78,14 +78,14 @@ describe('authorizeFeatureRequest', () => {
 			code: 'assistant_disabled',
 			message: 'Assistant features are disabled for this account.'
 		});
-		expect(mocks.getPlanAccessForRequest).not.toHaveBeenCalled();
+		expect(mocks.getPlanAccess).not.toHaveBeenCalled();
 
 		const memory = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'memory');
 		expect(memory).toMatchObject({ allowed: true });
 	});
 
 	it('uses the exact common age denial', async () => {
-		mocks.getTutorProfileViewForRequest.mockResolvedValue({ ageConfirmedAt: null });
+		mocks.getTutorProfileView.mockResolvedValue({ ageConfirmedAt: null });
 		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'coach');
 
 		expect(result).toEqual({
@@ -106,7 +106,7 @@ describe('authorizeFeatureRequest', () => {
 			planAccess: { plan: 'super' },
 			profile
 		});
-		expect(mocks.getPlanAccessForRequest).toHaveBeenCalledWith(locals, 'user-1');
-		expect(mocks.getTutorProfileViewForRequest).toHaveBeenCalledWith(locals, 'user-1');
+		expect(mocks.getPlanAccess).toHaveBeenCalledWith('user-1');
+		expect(mocks.getTutorProfileView).toHaveBeenCalledWith('user-1');
 	});
 });

@@ -4,7 +4,7 @@ import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { getFrqQuestion } from '$lib/frq/service.server';
+import { questionBank } from '$lib/questions/bank.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import {
 	capturePathQuestionRequestMetric,
@@ -47,9 +47,14 @@ export const POST: RequestHandler = withAuthedHandler(
 					{ status: 400 }
 				);
 			}
-			const outcome = await getFrqQuestion(apClass, unit, {
-				excludeQuestionIds: validated.value.excludeQuestionIds,
-				metrics: path
+			const { outcome } = await questionBank.get({
+				kind: 'frq',
+				apClass,
+				unit,
+				options: {
+					excludeQuestionIds: validated.value.excludeQuestionIds,
+					metrics: path
+				}
 			});
 
 			switch (outcome.status) {

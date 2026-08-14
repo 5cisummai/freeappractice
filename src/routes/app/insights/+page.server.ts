@@ -1,14 +1,14 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { isSuperInsightsEnabled } from '$lib/flags';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
 import { getInsightEligibilityForUser } from '$lib/super/insights.server';
 import { buildStudyPlanDraft, getCurrentStudyPlan } from '$lib/super/study-plan.server';
 import { getRecentStudyPlanAudits } from '$lib/super/study-plan-audit.server';
 import { getOrBuildWeeklyInsightReport } from '$lib/super/insight-lifecycle.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;

@@ -9,11 +9,11 @@
  */
 
 import 'dotenv/config';
-import { reconcilePoolRefillJobs } from '../src/lib/questions/pool-refill-queue.server';
+import { refill } from '../src/lib/questions/bank-ops.server';
 import { QUESTION_POOL_CONFIG } from '../src/lib/questions/pool-constants';
 
 async function main() {
-	const result = await reconcilePoolRefillJobs(QUESTION_POOL_CONFIG);
+	const result = await refill({ mode: 'reconcile', config: QUESTION_POOL_CONFIG });
 	console.log(
 		`Reconciled ${result.reconciled} bucket(s); enqueued ${result.enqueued} deficit job(s).`
 	);

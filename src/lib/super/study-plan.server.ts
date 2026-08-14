@@ -3,7 +3,7 @@ import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { studyPlans, studyTasks } from '$lib/server/neon/schema';
 import { isSuperInsightsEnabled } from '$lib/flags';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getEntitlements } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	getCurrentEligibleInsightReport,

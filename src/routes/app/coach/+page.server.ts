@@ -1,11 +1,11 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { isSuperCoachEnabled } from '$lib/flags';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { getRecentCoachAudits } from '$lib/super/coach.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;

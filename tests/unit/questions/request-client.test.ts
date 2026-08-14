@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PoolWarmingError } from '$lib/questions/request.client';
-import { requestFrqQuestion } from '$lib/questions/request-frq.client';
-import { requestMcqQuestion } from '$lib/questions/request-mcq.client';
+import { requestFrqQuestion, requestMcqQuestion } from '$lib/questions/request.client';
 
 afterEach(() => {
 	vi.unstubAllGlobals();

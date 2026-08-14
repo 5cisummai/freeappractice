@@ -1,13 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth/server';
-import { resolveTutorQuestion } from '$lib/tutor/resolve-question.server';
+import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { getGreeting } from '$lib/tutor/service.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const POST: RequestHandler = async (event) => {
 	try {

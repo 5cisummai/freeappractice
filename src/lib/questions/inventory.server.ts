@@ -5,7 +5,7 @@ import {
 	getAllQuestions,
 	getQuestionById,
 	type StoredQuestion
-} from '$lib/questions/storage.server';
+} from '$lib/questions/repository.server';
 
 export type QuestionInventoryKind = 'mcq' | 'frq';
 

@@ -31,7 +31,7 @@ vi.mock('$lib/flags', () => ({
 	isSuperInsightsEnabled: vi.fn().mockResolvedValue(true)
 }));
 
-vi.mock('$lib/super/entitlements.server', () => ({
+vi.mock('$lib/super/billing.server', () => ({
 	getEntitlements: vi.fn().mockResolvedValue({ studyPlans: true })
 }));
 

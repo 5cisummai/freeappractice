@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
 		(handler: (event: unknown, userId: string) => Promise<Response>) => (event: unknown) =>
 			handler(event, 'user-1'),
 	getTutorProfileView: vi.fn(),
+	getTutorProfileViewForRequest: vi.fn(),
 	updateTutorProfile: vi.fn(),
 	confirmAge: vi.fn(),
 	markMemoryDisclosureSeen: vi.fn(),
@@ -48,6 +49,7 @@ vi.mock('$lib/flags', () => ({
 vi.mock('$lib/super/feature-access.server', () => ({
 	getSuperFeatureAccess: mocks.getSuperFeatureAccess,
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
+	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest,
 	superFeatureAccessMessage: vi.fn(() => 'Super subscription required')
 }));
 vi.mock('../../../src/routes/api/insights/+server', () => ({
@@ -124,6 +126,7 @@ describe('Super API routes', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.getTutorProfileView.mockResolvedValue(profile);
+		mocks.getTutorProfileViewForRequest.mockResolvedValue(profile);
 		mocks.updateTutorProfile.mockResolvedValue(profile);
 		mocks.confirmAge.mockResolvedValue({ ...profile, ageConfirmedAt: '2026-08-04T00:00:00.000Z' });
 		mocks.isTutorMemoryConfigured.mockReturnValue(true);

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth/server';
-import { resolveTutorQuestion } from '$lib/tutor/resolve-question.server';
+import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
@@ -16,7 +16,7 @@ import {
 	superAgentRequestSchema,
 	toSuperAgentContext
 } from '$lib/super/agent-request';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 
 async function getOptionalUserId(

@@ -34,7 +34,7 @@ import {
 	isAgeGateExempt,
 	shouldSkipSessionLookup
 } from '$lib/auth/account-surface.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {

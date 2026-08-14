@@ -1,8 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { isSuperCoachEnabled, isSuperInsightsEnabled, isSuperMemoryEnabled } from '$lib/flags';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 import {
 	hasPaidCapability,
 	type PaidCapability,
@@ -41,6 +39,26 @@ export type FeatureAccessDecision =
 			code: 'feature_disabled' | 'assistant_disabled' | 'subscription_required' | 'age_required';
 			message: string;
 	  };
+
+/** Request-local billing read shared by every Super product in this request. */
+export function getPlanAccessForRequest(
+	locals: Pick<App.Locals, 'planAccess'>,
+	userId: string
+): Promise<PlanAccess> {
+	return (locals.planAccess ??= import('$lib/super/billing.server').then(({ getPlanAccess }) =>
+		getPlanAccess(userId)
+	));
+}
+
+/** Request-local profile read shared by Super access and product pages. */
+export function getTutorProfileViewForRequest(
+	locals: Pick<App.Locals, 'tutorProfileView'>,
+	userId: string
+): Promise<TutorProfileView> {
+	return (locals.tutorProfileView ??= import('$lib/super/profile.server').then(
+		({ getTutorProfileView }) => getTutorProfileView(userId)
+	));
+}
 
 /** Resolve request-path access in flag, plan, and age order. */
 export async function authorizeFeatureRequest(

@@ -4,14 +4,14 @@ import { getCourses } from '$lib/catalog/ap-classes.js';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/super/ai-controls.server';
 import { getSuperBillingView } from '$lib/super/billing.server';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
 import {
 	getAssistantFeaturesEnabledForRequest,
 	setAssistantFeaturesEnabled
-} from '$lib/users/assistant-features.server';
+} from '$lib/super/assistant.server';
 
 const validSubjects = new Set(getCourses().map((course) => course.name));
 

@@ -9,7 +9,7 @@ import {
 } from '$lib/frq/model.server';
 import { getFrqCourseProfile } from '$lib/frq/profiles.server';
 import { getFrqGradingModel } from '$lib/frq/service.server';
-import { getFrqQuestionById } from '$lib/frq/question.server';
+import { getFrqQuestionById } from '$lib/frq/model.server';
 import {
 	FrqGradeModelOutputSchema,
 	type FrqAttemptView,

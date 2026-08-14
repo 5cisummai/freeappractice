@@ -23,7 +23,7 @@ import {
 	superUsageRollups,
 	tutorProfiles
 } from '$lib/server/neon/schema';
-import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
 import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
 	INDEFINITE_SUPER_GRANT_EXPIRES_AT,

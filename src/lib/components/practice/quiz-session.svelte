@@ -7,7 +7,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
-	import { requestMcqQuestion } from '$lib/questions/request-mcq.client.js';
+	import { requestMcqQuestion } from '$lib/questions/request.client.js';
 	import type { AnswerResult, GeneratedQuestion } from '$lib/questions/types.js';
 	import { savePendingSharedQuizRun } from '$lib/shared-practice/pending-runs.js';
 	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const getPlanAccess = vi.hoisted(() => vi.fn());
-vi.mock('$lib/super/entitlements.server', () => ({ getPlanAccess }));
+vi.mock('$lib/super/billing.server', () => ({ getPlanAccess }));
 
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 
 describe('request-local plan access cache', () => {
 	it('resolves billing once for a request locals object', async () => {

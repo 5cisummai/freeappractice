@@ -3,14 +3,14 @@ import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
-import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
 import {
 	ONBOARDING_COOKIE_MAX_AGE,
 	ONBOARDING_COOKIE_NAME,
 	readOnboardingState
 } from '$lib/onboarding.js';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) => {
 	if (!locals.session) {

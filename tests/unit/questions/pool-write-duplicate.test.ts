@@ -6,7 +6,7 @@ const { createCanonicalMcqQuestion, generateAPQuestion, getRecentTopics } = vi.h
 	getRecentTopics: vi.fn(async () => [])
 }));
 
-vi.mock('$lib/questions/cache-model.server', () => ({
+vi.mock('$lib/questions/repository.server', () => ({
 	createCanonicalMcqQuestion,
 	newPoolRandomKey: () => 0.42
 }));

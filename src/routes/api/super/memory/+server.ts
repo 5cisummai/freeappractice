@@ -9,7 +9,7 @@ import {
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { isSuperMemoryEnabled } from '$lib/flags';
 import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/super/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
 async function requireMemoryAccess(
 	event: Parameters<typeof GET>[0],

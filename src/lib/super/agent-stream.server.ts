@@ -16,7 +16,7 @@ import {
 	type SuperAgentUIMessage
 } from '$lib/super/coach.server';
 import { buildSuperAgentContext } from '$lib/super/context.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
 import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
 import {

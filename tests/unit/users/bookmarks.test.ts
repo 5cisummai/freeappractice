@@ -17,7 +17,7 @@ vi.mock('$lib/server/neon/db', () => ({
 	})
 }));
 
-vi.mock('$lib/questions/storage.server', () => ({
+vi.mock('$lib/questions/repository.server', () => ({
 	getQuestionsByIds: mocks.getQuestionsByIds
 }));
 

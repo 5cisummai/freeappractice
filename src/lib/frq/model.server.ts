@@ -206,6 +206,16 @@ export async function findFrqQuestionById(questionId: string): Promise<IFrqQuest
 	return rows[0] ? hydrateFrqQuestion(frqQuestionRow(rows[0])) : null;
 }
 
+/** Resolve a complete FRQ from its canonical Neon rows. */
+export async function getFrqQuestionById(questionId: string): Promise<FrqQuestion> {
+	const normalizedId = questionId.trim();
+	if (!normalizedId) throw new Error('FRQ question id is required');
+
+	const question = await findFrqQuestionById(normalizedId);
+	if (!question) throw new Error(`FRQ question not found: ${normalizedId}`);
+	return toFrqQuestion(question);
+}
+
 export async function createFrqQuestion(input: {
 	questionId?: string;
 	apClass: string;

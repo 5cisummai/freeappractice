@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { userProfiles } from '$lib/server/neon/schema';
 
+/** Read the account-wide switch for Tutor, Coach, and Insights. */
 export async function getAssistantFeaturesEnabled(userId: string): Promise<boolean> {
 	const [profile] = await getNeonDatabase()
 		.select({ enabled: userProfiles.assistantFeaturesEnabled })
@@ -20,6 +21,7 @@ export function getAssistantFeaturesEnabledForRequest(
 	return locals.assistantFeaturesEnabled;
 }
 
+/** Persist the hidden settings action without exposing a visible control yet. */
 export async function setAssistantFeaturesEnabled(userId: string, enabled: boolean): Promise<void> {
 	await getNeonDatabase()
 		.insert(userProfiles)

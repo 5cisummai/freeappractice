@@ -11,7 +11,6 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
-	import { APP_VERSION } from '$lib/app-meta';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { accountActions } from '$lib/client/settings.svelte.js';
@@ -20,6 +19,7 @@
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
+	const APP_VERSION = '1.6.3';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { userPrefersMode } from 'mode-watcher';
