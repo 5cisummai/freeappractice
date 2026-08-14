@@ -44,13 +44,15 @@
 
 	const uid = $props.id();
 
+	const GREETING =
+		"Hi! I'm here to help you understand this question. What would you like to know?";
+
 	let isOpen = $state(false);
-	let messages = $state<ChatMessage[]>([]);
+	let messages = $state<ChatMessage[]>([{ role: 'assistant', content: GREETING }]);
 	let inputText = $state('');
 	let inputFocused = $state(false);
 	let isStreaming = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
-	let hasGreeted = $state(false);
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
 	let activeStreamController: AbortController | null = null;
@@ -71,8 +73,6 @@
 	const VIEWPORT_MARGIN = 12;
 	const PANEL_GAP = 8;
 	const STREAM_TIMEOUT_MS = 30000;
-	const GREETING_FALLBACK =
-		"Hi! I'm here to help you understand this question. What would you like to know?";
 	const inviteInput = $derived(
 		embedded && !inputFocused && !isStreaming && inputText.trim().length === 0
 	);
@@ -154,38 +154,8 @@
 		};
 	}
 
-	async function fetchGreeting() {
-		if (hasGreeted || !questionId) return;
-		hasGreeted = true;
-		if (frqQuestionId) {
-			messages.push({ role: 'assistant', content: GREETING_FALLBACK });
-			return;
-		}
-		try {
-			const res = await apiFetch('/api/tutor/greeting', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ questionId })
-			});
-			const data = await readJsonOrNull<{ error?: string; message?: string }>(res);
-			if (!res.ok) {
-				throw new Error(getResponseMessage(data, GREETING_FALLBACK));
-			}
-			messages.push({
-				role: 'assistant',
-				content: data?.message ?? GREETING_FALLBACK
-			});
-		} catch {
-			messages.push({
-				role: 'assistant',
-				content: GREETING_FALLBACK
-			});
-		}
-	}
-
 	function handleOpen() {
 		isOpen = true;
-		fetchGreeting();
 	}
 
 	function handleClose() {
