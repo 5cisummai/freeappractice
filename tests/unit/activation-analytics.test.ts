@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ANALYTICS_CONSENT_KEY } from '$lib/analytics-consent';
+import { captureFirstAnswerSubmitted } from '$lib/client/activation-analytics';
 
 const { capturePostHogEvent } = vi.hoisted(() => ({
 	capturePostHogEvent: vi.fn()
@@ -20,7 +21,6 @@ function createStorage() {
 
 describe('captureFirstAnswerSubmitted', () => {
 	afterEach(() => {
-		vi.resetModules();
 		vi.unstubAllGlobals();
 		capturePostHogEvent.mockReset();
 	});
@@ -30,7 +30,6 @@ describe('captureFirstAnswerSubmitted', () => {
 		vi.stubGlobal('window', { localStorage });
 		vi.stubGlobal('localStorage', localStorage);
 
-		const { captureFirstAnswerSubmitted } = await import('$lib/client/activation-analytics');
 		captureFirstAnswerSubmitted({
 			apClass: 'AP Biology',
 			unit: 'Unit 1',
@@ -47,7 +46,6 @@ describe('captureFirstAnswerSubmitted', () => {
 		vi.stubGlobal('window', { localStorage });
 		vi.stubGlobal('localStorage', localStorage);
 
-		const { captureFirstAnswerSubmitted } = await import('$lib/client/activation-analytics');
 		const answer = {
 			apClass: 'AP Biology',
 			unit: 'Unit 1',
