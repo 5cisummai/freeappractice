@@ -92,6 +92,7 @@ describe('QuestionBank selection boundary', () => {
 			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
+			countActive: async (className, unit) => countActivePoolRows('mcq', className, unit),
 			findRandom: async () => null,
 			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
 			requestRefill
@@ -112,6 +113,7 @@ describe('QuestionBank selection boundary', () => {
 			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
+			countActive: async (className, unit) => countActivePoolRows('mcq', className, unit),
 			findRandom: createFindRandom(docs),
 			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId })
 		});
@@ -131,6 +133,7 @@ describe('QuestionBank selection boundary', () => {
 			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
+			countActive: async () => 0,
 			findRandom: async () => {
 				throw new Error('db down');
 			},
@@ -151,6 +154,7 @@ describe('QuestionBank selection boundary', () => {
 			questionType: 'mcq',
 			logScope: 'test',
 			normalizeUnit: (u) => u ?? '',
+			countActive: async () => 0,
 			findRandom: async (input) => {
 				input.onDatabaseInit?.(7);
 				return { questionId: 'hit' };

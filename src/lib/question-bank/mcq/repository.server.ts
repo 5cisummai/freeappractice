@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, ne, notInArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, ne, notInArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqQuestions, questionRecentTopics, questionRegistry } from '$lib/server/neon/schema';
 
@@ -34,6 +34,20 @@ export type CanonicalMcqInput = Omit<
 
 export function newPoolRandomKey(): number {
 	return Math.random();
+}
+
+export async function countActiveMcqQuestions(apClass: string, unit: string): Promise<number> {
+	const [row] = await getNeonDatabase()
+		.select({ count: sql<number>`count(*)` })
+		.from(mcqQuestions)
+		.where(
+			and(
+				eq(mcqQuestions.apClass, apClass),
+				eq(mcqQuestions.unit, unit),
+				eq(mcqQuestions.active, true)
+			)
+		);
+	return Number(row?.count ?? 0);
 }
 
 function fromRow(row: typeof mcqQuestions.$inferSelect): IQuestion {

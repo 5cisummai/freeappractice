@@ -59,7 +59,7 @@ curl -X GET "$ORIGIN/api/cron/question-pool" \
 bun run pool:reconcile
 ```
 
-Do **not** launch an unbounded sync fill. Prefer the **OpenAI Batch** path for bulk seeding (≈50% cheaper). Cron/sync refill remains for small warming top-ups. Caps are coded in `src/lib/questions/pool-constants.ts`:
+Do **not** launch an unbounded sync fill. Prefer the **OpenAI Batch** path for bulk seeding (≈50% cheaper). Cron/sync refill remains for small warming top-ups. Caps are coded in `src/lib/question-bank/pool-constants.ts`:
 
 - `QUESTION_POOL_MAX_GENERATIONS_PER_RUN` — sync worker only
 - `QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` — shared by sync + batch submit
@@ -124,7 +124,7 @@ If a lease looks stuck before expiry:
 Worker summary `stoppedReason: daily_budget` or refill status `budget_exhausted`.
 
 - Budget key is UTC day (`PoolGenerationBudget.dayKey`).
-- Options: wait for next UTC day, temporarily raise `QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts`, or reduce targets for non-critical buckets while seeding.
+- Options: wait for next UTC day, temporarily raise `QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/question-bank/pool-constants.ts`, or reduce targets for non-critical buckets while seeding.
 
 ## 6. Safe retirement (replaces clear-cache)
 

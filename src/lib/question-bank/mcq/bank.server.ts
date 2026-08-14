@@ -1,10 +1,13 @@
-import { findCachedQuestionByPool, type IQuestion } from '$lib/question-bank/mcq/repository.server';
+import {
+	countActiveMcqQuestions,
+	findCachedQuestionByPool,
+	type IQuestion
+} from '$lib/question-bank/mcq/repository.server';
 import {
 	QuestionBank,
 	type GetQuestionOptions,
 	type PoolSelectionResult
 } from '$lib/question-bank/runtime.server';
-import { requestPoolRefill } from '$lib/question-bank/pool-refill-queue.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 
 type McqAnswerBody = {
@@ -68,6 +71,7 @@ export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
 	questionType: 'mcq',
 	logScope: 'pool',
 	normalizeUnit,
+	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
 	// Diagram availability is decided during generation. Serving a cached row
 	// must remain a synchronous pool-hit path and never initialize Flags.
@@ -78,8 +82,10 @@ export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
 		cached: true,
 		questionId: doc.questionId
 	}),
-	requestRefill: (className, unit) =>
-		requestPoolRefill({ questionType: 'mcq', apClass: className, unit })
+	requestRefill: async (className, unit) => {
+		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');
+		return requestPoolRefill({ questionType: 'mcq', apClass: className, unit });
+	}
 });
 
 /** Selection-only MCQ serve. Never invokes LLM or generation. */

@@ -1,5 +1,4 @@
 import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
-import { countActivePoolRows } from '$lib/question-bank/pool-counts.server';
 import { logger } from '$lib/server/logger';
 
 export interface PoolDocument {
@@ -21,6 +20,7 @@ export interface QuestionBankConfig<TDoc extends PoolDocument, TCached> {
 	questionType: 'mcq' | 'frq';
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
+	countActive: (className: string, unit: string) => Promise<number>;
 	findRandom: PoolQuery<TDoc>;
 	serveCached: (doc: TDoc, className: string, cacheUnit: string) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
@@ -96,7 +96,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 	}
 
 	async countActive(className: string, cacheUnit: string): Promise<number> {
-		return countActivePoolRows(this.name, className, cacheUnit);
+		return this.config.countActive(className, cacheUnit);
 	}
 
 	async get(

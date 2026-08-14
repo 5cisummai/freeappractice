@@ -5,9 +5,9 @@ import {
 	deleteFrqAttemptIfGrading,
 	findFrqAttemptBySubmission,
 	findGradedFrqAttempt,
-	updateFrqAttemptGrade,
-	type IFrqAttempt
-} from '$lib/question-bank/frq/model.server';
+	updateFrqAttemptGrade
+} from '$lib/grading/frq/storage.server';
+import type { IFrqAttempt } from '$lib/grading/frq/storage.server';
 import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
 import { getFrqQuestionById } from '$lib/question-bank/frq/model.server';
 import {

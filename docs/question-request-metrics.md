@@ -68,8 +68,8 @@ Full-catalog reconcile (`bun run pool:reconcile`) is a separate ops command and 
 
 1. `src/routes/api/question/+server.ts` — validation, total latency, success/warming/error capture
 2. `src/routes/api/question/frq/+server.ts` — same segments for authenticated FRQ
-3. `src/lib/questions/pool.server.ts` — splits `dbConnectMs` vs `poolQueryMs`, sets segment
-4. `src/lib/questions/pool-refill.server.ts` — captures `question_pool_health` after each worker run
+3. `src/lib/question-bank/runtime.server.ts` — splits `dbConnectMs` vs `poolQueryMs`, sets segment
+4. `src/lib/question-bank/pool-refill.server.ts` — captures `question_pool_health` after each worker run
 5. Admin dashboard (`src/lib/admin/dashboard.server.ts`) — `cacheOverview.emptyBuckets` / bucket health for ops UI
 
 Capture helpers: `capturePathQuestionRequestMetric` / `captureQuestionPoolHealthMetric` in `src/lib/server/question-request-metrics.ts` (wraps `captureAnonymousServerMetric` in `src/lib/server/posthog.ts`).

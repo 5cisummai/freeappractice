@@ -1,6 +1,8 @@
-import { findFrqQuestionById, type IFrqQuestion } from '$lib/question-bank/frq/model.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqQuestions } from '$lib/server/neon/schema';
+import {
+	findFrqQuestionById,
+	listFrqQuestions,
+	type IFrqQuestion
+} from '$lib/question-bank/frq/model.server';
 import {
 	getAllQuestions,
 	getQuestionById,
@@ -57,18 +59,7 @@ const mcqInventory: QuestionInventoryAdapter = {
 
 const frqInventory: QuestionInventoryAdapter = {
 	kind: 'frq',
-	list: async () => {
-		const rows = await getNeonDatabase().select().from(frqQuestions);
-		return rows.map((question) =>
-			normalizeFrq({
-				...question,
-				schemaVersion: question.schemaVersion as 1,
-				materials: [],
-				sections: [],
-				rubric: []
-			})
-		);
-	},
+	list: async () => (await listFrqQuestions()).map(normalizeFrq),
 	get: async (questionId) => {
 		const question = await findFrqQuestionById(questionId.trim());
 		if (!question) throw new Error(`Question not found: ${questionId.trim()}`);

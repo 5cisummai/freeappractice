@@ -1,5 +1,6 @@
 import {
 	findFrqQuestionByPool,
+	countActiveFrqQuestions,
 	toFrqQuestion,
 	type IFrqQuestion
 } from '$lib/question-bank/frq/model.server';
@@ -13,7 +14,6 @@ import {
 	type GetQuestionOptions,
 	type PoolSelectionResult
 } from '$lib/question-bank/runtime.server';
-import { requestPoolRefill } from '$lib/question-bank/pool-refill-queue.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 
 type FrqServiceResult = {
@@ -29,6 +29,7 @@ export const frqBank = new QuestionBank<IFrqQuestion, FrqServiceResult>({
 	questionType: 'frq',
 	logScope: 'frq-pool',
 	normalizeUnit,
+	countActive: countActiveFrqQuestions,
 	findRandom: findFrqQuestionByPool,
 	serveCached: (doc) => {
 		const question = toFrqQuestion(doc);
@@ -41,7 +42,10 @@ export const frqBank = new QuestionBank<IFrqQuestion, FrqServiceResult>({
 			cached: true
 		};
 	},
-	requestRefill: (apClass, unit) => requestPoolRefill({ questionType: 'frq', apClass, unit })
+	requestRefill: async (apClass, unit) => {
+		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');
+		return requestPoolRefill({ questionType: 'frq', apClass, unit });
+	}
 });
 
 /** Selection-only FRQ serve. Never invokes LLM or generation. */

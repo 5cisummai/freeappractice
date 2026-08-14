@@ -27,18 +27,19 @@ export default defineConfig(
 		}
 	},
 	{
-		// These modules intentionally bridge Drizzle's dynamic query API and the
-		// legacy document-model interface. Keep explicit-any checks enabled elsewhere.
+		// These modules intentionally bridge Drizzle's dynamic query API and
+		// hydrated domain documents. Keep explicit-any checks enabled elsewhere.
 		files: [
 			'src/lib/admin/dashboard.server.ts',
-			'src/lib/frq/model.server.ts',
-			'src/lib/question-quality/models.server.ts',
-			'src/lib/question-quality/service.server.ts',
-			'src/lib/questions/cache-model.server.ts',
-			'src/lib/questions/gen-stats.server.ts',
-			'src/lib/questions/pool-refill-model.server.ts',
-			'src/lib/questions/question-id-model.server.ts',
-			'src/lib/questions/recent-topic-model.server.ts',
+			'src/lib/grading/frq/storage.server.ts',
+			'src/lib/question-bank/frq/model.server.ts',
+			'src/lib/question-bank/quality/models.server.ts',
+			'src/lib/question-bank/quality/service.server.ts',
+			'src/lib/question-bank/mcq/repository.server.ts',
+			'src/lib/question-bank/gen-stats.server.ts',
+			'src/lib/question-bank/pool-refill.server.ts',
+			'src/lib/question-bank/question-id-registry.server.ts',
+			'src/lib/question-bank/recent-topic.server.ts',
 			'src/lib/referrals/model.server.ts',
 			'src/lib/server/neon/model.ts',
 			'src/lib/super/models.server.ts',

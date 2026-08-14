@@ -137,11 +137,8 @@ vi.mock('$lib/server/neon/schema', async () => {
 	return actual;
 });
 
-import {
-	createFrqQuestion,
-	updateFrqAttemptGrade,
-	type IFrqAttempt
-} from '$lib/question-bank/frq/model.server';
+import { createFrqQuestion } from '$lib/question-bank/frq/model.server';
+import { updateFrqAttemptGrade, type IFrqAttempt } from '$lib/grading/frq/storage.server';
 
 const input = {
 	questionId: 'frq-1',

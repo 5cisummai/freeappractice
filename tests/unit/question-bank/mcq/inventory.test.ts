@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
 	getAllQuestions: vi.fn(),
 	getQuestionById: vi.fn(),
-	findFrqQuestionById: vi.fn()
+	findFrqQuestionById: vi.fn(),
+	listFrqQuestions: vi.fn()
 }));
 
 vi.mock('$lib/question-bank/mcq/repository.server', () => ({
@@ -11,7 +12,8 @@ vi.mock('$lib/question-bank/mcq/repository.server', () => ({
 	getQuestionById: mocks.getQuestionById
 }));
 vi.mock('$lib/question-bank/frq/model.server', () => ({
-	findFrqQuestionById: mocks.findFrqQuestionById
+	findFrqQuestionById: mocks.findFrqQuestionById,
+	listFrqQuestions: mocks.listFrqQuestions
 }));
 vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ select: () => ({ from: () => [] }) })
@@ -59,5 +61,31 @@ describe('canonical question inventories', () => {
 			unit: 'Unit 2',
 			content: { prompt: 'Explain' }
 		});
+	});
+
+	it('lists fully hydrated FRQ documents through the canonical adapter', async () => {
+		mocks.listFrqQuestions.mockResolvedValue([
+			{
+				questionId: 'frq-2',
+				apClass: 'AP Biology',
+				unit: 'Unit 3',
+				createdAt: new Date('2026-08-03T00:00:00.000Z'),
+				contentHash: 'frq-hash-2',
+				prompt: 'Analyze',
+				materials: [{ id: 'm1', content: 'Data' }],
+				sections: [{ id: 'a', label: 'A' }],
+				rubric: [{ id: 'r1', levels: [] }]
+			}
+		]);
+
+		await expect(getQuestionInventory('frq').list()).resolves.toEqual([
+			expect.objectContaining({
+				id: 'frq-2',
+				content: expect.objectContaining({
+					materials: [{ id: 'm1', content: 'Data' }],
+					sections: [{ id: 'a', label: 'A' }]
+				})
+			})
+		]);
 	});
 });

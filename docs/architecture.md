@@ -219,7 +219,7 @@ flowchart TD
 - **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`bun run pool:reconcile` → `reconcilePoolRefillJobs`) is an ops tool — it is **not** run on every cron tick (that N+1 would starve generation inside the serverless time budget).
 - Ops: `bun run pool:backfill-s3` for optional legacy imports, and `bun run pool:retire` (replaces the old clear-cache script). See [question-pool-runbook.md](./question-pool-runbook.md).
 
-User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/questions/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.
+User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/question-bank/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.
 
 This is simpler than the retired synchronous-cache design: the request interface has one responsibility (selection), the worker interface has one responsibility (population), and Neon PostgreSQL is the single canonical and serving store. Legacy S3 is not queried during normal serves. The old cache-lock, cache-miss, synchronous-generation fallback, and clear-cache paths are intentionally absent.
 
