@@ -1,5 +1,6 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getUnitsForClass } from '$lib/catalog/ap-classes';
+import { countActiveFrqQuestions } from '$lib/question-bank/frq/model.server';
 import { getFrqCourseNames } from '$lib/question-bank/frq/profiles.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions } from '$lib/server/neon/schema';
@@ -14,20 +15,6 @@ function listBuckets(): PoolKindBucket[] {
 	return getFrqCourseNames().flatMap((apClass) =>
 		getUnitsForClass(apClass).map((unit) => ({ questionType: 'frq' as const, apClass, unit }))
 	);
-}
-
-async function countActive(apClass: string, unit: string): Promise<number> {
-	const [row] = await getNeonDatabase()
-		.select({ count: sql<number>`count(*)` })
-		.from(frqQuestions)
-		.where(
-			and(
-				eq(frqQuestions.apClass, apClass),
-				eq(frqQuestions.unit, unit),
-				eq(frqQuestions.active, true)
-			)
-		);
-	return Number(row?.count ?? 0);
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
@@ -48,7 +35,7 @@ export const frqPoolKind: PoolKindAdapter = {
 	questionType: 'frq',
 	minimumGenerationHeadroomMs: 35_000,
 	listBuckets,
-	countActive,
+	countActive: countActiveFrqQuestions,
 	countActiveByBucket,
 	targetFor: (input: {
 		apClass: string;

@@ -140,6 +140,7 @@ describe('request-path import boundary', () => {
 	const requestPathFiles = [
 		'src/routes/api/question/+server.ts',
 		'src/routes/api/question/frq/+server.ts',
+		'src/lib/question-bank/bank.server.ts',
 		'src/lib/question-bank/mcq/bank.server.ts',
 		'src/lib/question-bank/runtime.server.ts',
 		'src/lib/question-bank/frq/bank.server.ts'
@@ -154,6 +155,19 @@ describe('request-path import boundary', () => {
 			// S3 body reads belong to workers/backfill, not selection
 			expect(source, `${file} must not import questions/s3.server`).not.toMatch(
 				/from ['"]\$lib\/questions\/s3\.server['"]/
+			);
+		}
+	});
+
+	it('keeps type-specific bank and refill imports lazy', () => {
+		const facade = readSrc('src/lib/question-bank/bank.server.ts');
+		expect(facade).not.toMatch(/from ['"]\$lib\/question-bank\/(mcq|frq)\/bank\.server['"]/);
+		for (const file of [
+			'src/lib/question-bank/mcq/bank.server.ts',
+			'src/lib/question-bank/frq/bank.server.ts'
+		]) {
+			expect(readSrc(file)).not.toMatch(
+				/from ['"]\$lib\/question-bank\/pool-refill-queue\.server['"]/
 			);
 		}
 	});

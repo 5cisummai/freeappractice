@@ -1,5 +1,6 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
+import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqQuestions } from '$lib/server/neon/schema';
 import { poolTargetForBucket, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
@@ -17,20 +18,6 @@ function listBuckets(): PoolKindBucket[] {
 			unit
 		}))
 	);
-}
-
-async function countActive(apClass: string, unit: string): Promise<number> {
-	const [row] = await getNeonDatabase()
-		.select({ count: sql<number>`count(*)` })
-		.from(mcqQuestions)
-		.where(
-			and(
-				eq(mcqQuestions.apClass, apClass),
-				eq(mcqQuestions.unit, unit),
-				eq(mcqQuestions.active, true)
-			)
-		);
-	return Number(row?.count ?? 0);
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
@@ -51,7 +38,7 @@ export const mcqPoolKind: PoolKindAdapter = {
 	questionType: 'mcq',
 	minimumGenerationHeadroomMs: 10_000,
 	listBuckets,
-	countActive,
+	countActive: countActiveMcqQuestions,
 	countActiveByBucket,
 	targetFor: (input: {
 		apClass: string;
