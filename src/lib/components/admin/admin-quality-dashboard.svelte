@@ -7,7 +7,7 @@
 		ReviewFilters,
 		ReviewJobStatus,
 		ReviewPreview
-	} from '$lib/question-quality/types.js';
+	} from '$lib/question-bank/quality/types.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';

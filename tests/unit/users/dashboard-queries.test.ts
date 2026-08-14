@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ select: mocks.select, execute: mocks.execute })
 }));
-vi.mock('$lib/frq/attempts.server', () => ({
+vi.mock('$lib/grading/frq/attempts.server', () => ({
 	getFrqProgressForUser: mocks.getFrqProgressForUser
 }));
 

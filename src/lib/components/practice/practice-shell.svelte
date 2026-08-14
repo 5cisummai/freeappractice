@@ -4,15 +4,15 @@
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
 	import QuizSession from '$lib/components/practice/quiz-session.svelte';
 	import FrqCard from '$lib/components/questions/frq-card.svelte';
-	import type { AnswerResult, TutorMode } from '$lib/questions/types';
-	import type { FrqAttemptView } from '$lib/frq/types';
+	import type { AnswerResult, TutorMode } from '$lib/question-bank/mcq/types';
+	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import { portalToBody } from '$lib/components/questions/question-card-dom';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { cn } from '$lib/utils.js';
-	import { unlimitedQuestionCardModel } from '$lib/questions/question-card-model';
+	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
 
 	export type PracticeMode = 'unlimited' | 'graded';
 	export type PracticeInitialState = {

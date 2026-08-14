@@ -2,7 +2,7 @@ import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isAuthorizedCronRequest } from '$lib/auth/cron-auth';
-import { recoverActiveReviewJobs } from '$lib/question-quality/service.server';
+import { recoverActiveReviewJobs } from '$lib/question-bank/quality/service.server';
 
 export const GET: RequestHandler = async ({ request }) => {
 	if (!isAuthorizedCronRequest(request, env.CRON_SECRET)) {

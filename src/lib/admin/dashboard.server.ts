@@ -1,5 +1,5 @@
 import { auth } from '$lib/auth/server';
-import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/questions/pool-constants';
+import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/question-bank/pool-constants';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
 import { and, asc, count, eq, inArray, max, min } from 'drizzle-orm';
@@ -8,16 +8,16 @@ import {
 	requestPoolRefill,
 	enqueueAllCatalogDeficits,
 	type PoolBucketKey
-} from '$lib/questions/pool-refill-queue.server';
+} from '$lib/question-bank/pool-refill-queue.server';
 
 import type {
 	PoolRefillQuestionType,
 	PoolRefillState as PoolRefillStateRow,
 	PoolRefillStatus
-} from '$lib/questions/pool-refill-types.server';
-import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
-import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
-import type { QualityDashboardSnapshot } from '$lib/question-quality/types';
+} from '$lib/question-bank/pool-refill-types.server';
+import { getMcqGenerationCountsByClass } from '$lib/question-bank/gen-stats.server';
+import { getQualityDashboardSnapshot } from '$lib/question-bank/quality/dashboard.server';
+import type { QualityDashboardSnapshot } from '$lib/question-bank/quality/types';
 import { getSuperAdminOverview } from '$lib/super/admin.server';
 import { getAdminUserSuperAccess } from '$lib/super/billing.server';
 import type { SuperAdminOverview } from '$lib/super/types';

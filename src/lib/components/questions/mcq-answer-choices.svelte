@@ -1,7 +1,7 @@
 <script lang="ts">
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { cn } from '$lib/utils.js';
-	import type { QuestionOption } from '$lib/questions/types';
+	import type { QuestionOption } from '$lib/question-bank/mcq/types';
 
 	let {
 		options,

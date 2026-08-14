@@ -1,0 +1,221 @@
+import { randomUUID } from 'node:crypto';
+import { zodSchema } from 'ai';
+import { z } from 'zod';
+import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
+import { structuredObject } from '$lib/ai/service.server';
+import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
+import { createFrqQuestion, newFrqPoolRandomKey } from '$lib/question-bank/frq/model.server';
+import {
+	FRQ_SCHEMA_VERSION,
+	FrqMaterialSchema,
+	FrqQuestionSchema,
+	FrqRubricCriterionSchema,
+	FrqSectionSchema,
+	toPublicFrqQuestion,
+	type FrqQuestion,
+	type PublicFrqQuestion
+} from '$lib/question-bank/frq/types';
+import {
+	computeContentHash,
+	isDuplicateKeyError,
+	normalizeUnit
+} from '$lib/question-bank/util.server';
+import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
+import { logger } from '$lib/server/logger';
+
+const PROMPT_VERSION = 'frq-generation-v1';
+const RECENT_TOPICS_WINDOW = 20;
+
+const GeneratedFrqMaterialSchema = FrqMaterialSchema.extend({
+	title: z.string().trim().min(1).max(160).nullable()
+}).strict();
+
+const GeneratedFrqSchema = z
+	.object({
+		prompt: z.string().trim().min(1).max(12_000),
+		materials: z.array(GeneratedFrqMaterialSchema).max(12),
+		sections: z.array(FrqSectionSchema).min(1).max(12),
+		rubric: z.array(FrqRubricCriterionSchema).min(1).max(30),
+		totalPoints: z.number().int().min(1).max(100),
+		topicsCovered: z.string().trim().min(1).max(1_000)
+	})
+	.strict();
+
+export function generatedFrqJsonSchema(): ReturnType<typeof zodSchema>['jsonSchema'] {
+	return zodSchema(GeneratedFrqSchema).jsonSchema;
+}
+
+export type FrqGenerateResult = {
+	question: FrqQuestion;
+	publicQuestion: PublicFrqQuestion;
+	provider: string;
+	model: string;
+	questionId: string;
+	cached: boolean;
+	skippedDuplicate?: boolean;
+	timing?: { generationMs: number; persistenceMs: number };
+};
+
+export async function getRecentFrqTopics(apClass: string, unit: string): Promise<string[]> {
+	return getRecentTopics({ kind: 'frq', apClass, unit, limit: RECENT_TOPICS_WINDOW });
+}
+
+export function buildFrqGenerationPrompt(
+	apClass: string,
+	unit: string,
+	recentTopics: string[]
+): { system: string; user: string } {
+	const profile = getFrqCourseProfile(apClass);
+	if (!profile) throw new Error('FRQ practice is not available for this course');
+
+	const recent = recentTopics.length
+		? `Avoid repeating these recently used concepts or scenarios:\n${recentTopics.map((topic) => `- ${topic}`).join('\n')}`
+		: '';
+	const constraints = profile.generationConstraints;
+	const system = `You create wholly original written-response practice for an independent study application. Never copy, reconstruct, or closely imitate any identifiable exam question, passage, scoring guideline, or copyrighted source.
+
+Course: ${apClass}
+Unit: ${unit}
+Format: ${profile.formatId}
+Supported formats: ${profile.supportedFormats.join(', ')}
+Allowed response types: ${profile.allowedResponseTypes.join(', ')}
+Scoring mechanics: ${profile.scoringMechanics}
+Generation constraints: ${constraints.minSections}-${constraints.maxSections} sections, at most ${constraints.maxMaterials} materials, original content only.
+${profile.generationGuidance}
+${recent}
+
+Return one coherent question and its private scoring rubric. Materials and prompts may use Markdown and $...$ or $$...$$ LaTeX. Every section needs one or more rubric criteria. Criterion levels must use unique integer points, include zero, and reach maxPoints. Section point totals and the overall total must exactly match the rubric. Reference answers are private grading facts, not student-facing copy.`;
+	return {
+		system,
+		user: `Create an original ${apClass} written-response task for ${unit}.`
+	};
+}
+
+export function parseGeneratedFrq(apClass: string, unit: string, generated: unknown): FrqQuestion {
+	const profile = getFrqCourseProfile(apClass);
+	if (!profile) throw new Error('FRQ practice is not available for this course');
+	const parsed = GeneratedFrqSchema.parse(generated);
+	const constraints = profile.generationConstraints;
+	const question = FrqQuestionSchema.parse({
+		...parsed,
+		materials: parsed.materials.map(({ title, ...material }) => ({
+			...material,
+			...(title === null ? {} : { title })
+		})),
+		schemaVersion: FRQ_SCHEMA_VERSION,
+		formatId: profile.formatId,
+		profileVersion: profile.profileVersion,
+		promptVersion: PROMPT_VERSION,
+		rubricVersion: profile.rubricVersion,
+		apClass,
+		unit
+	});
+	if (
+		question.sections.length < constraints.minSections ||
+		question.sections.length > constraints.maxSections ||
+		question.materials.length > constraints.maxMaterials ||
+		question.sections.some(
+			(section) => !profile.allowedResponseTypes.includes(section.responseKind)
+		)
+	) {
+		throw new Error('Generated FRQ does not satisfy the course profile constraints');
+	}
+	return question;
+}
+
+async function generateFrq(
+	apClass: string,
+	unit: string,
+	recentTopics: string[]
+): Promise<FrqQuestion> {
+	const profile = getFrqCourseProfile(apClass);
+	if (!profile) throw new Error('FRQ practice is not available for this course');
+	const prompt = buildFrqGenerationPrompt(apClass, unit, recentTopics);
+
+	const { parsed } = await structuredObject({
+		callName: 'generateFrqQuestion',
+		model: FRQ_GENERATION_MODEL,
+		system: prompt.system,
+		user: prompt.user,
+		schema: GeneratedFrqSchema,
+		schemaName: 'frq_question',
+		reasoningEffort: 'high',
+		logContext: { apClass, unit, profileVersion: profile.profileVersion }
+	});
+
+	return parseGeneratedFrq(apClass, unit, parsed);
+}
+
+async function persistFrqQuestion(
+	question: FrqQuestion,
+	generationMs: number,
+	model: string
+): Promise<FrqGenerateResult> {
+	const { apClass, unit } = question;
+	const persistenceStarted = Date.now();
+	const questionId = randomUUID();
+	const contentHash = computeContentHash(
+		JSON.stringify({
+			prompt: question.prompt,
+			materials: question.materials,
+			sections: question.sections
+		})
+	);
+
+	let skippedDuplicate = false;
+	try {
+		await createFrqQuestion({
+			...question,
+			contentHash,
+			questionId,
+			randomKey: newFrqPoolRandomKey(),
+			active: true
+		});
+	} catch (error) {
+		if (!isDuplicateKeyError(error)) throw error;
+		skippedDuplicate = true;
+		logger.info('[frq-generation] generated duplicate was not inserted into the pool', {
+			apClass,
+			unit,
+			contentHash
+		});
+	}
+
+	return {
+		question,
+		publicQuestion: toPublicFrqQuestion(questionId, question),
+		provider: 'ai',
+		model,
+		questionId,
+		cached: false,
+		skippedDuplicate,
+		timing: { generationMs, persistenceMs: Date.now() - persistenceStarted }
+	};
+}
+
+export async function persistGeneratedFrqToPool(
+	apClass: string,
+	unit: string,
+	generated: unknown,
+	model = 'batch'
+): Promise<FrqGenerateResult> {
+	return persistFrqQuestion(parseGeneratedFrq(apClass, normalizeUnit(unit), generated), 0, model);
+}
+
+/**
+ * Worker-only: AI → Neon PostgreSQL active FRQ library.
+ * Must not be imported by request-path selection modules.
+ */
+export async function generateAndPersistFrq(
+	apClass: string,
+	unit: string,
+	recentTopics?: string[]
+): Promise<FrqGenerateResult> {
+	const cacheUnit = normalizeUnit(unit);
+	const generationStarted = Date.now();
+	const topics =
+		recentTopics ?? (await getRecentFrqTopics(apClass, cacheUnit).catch(() => [] as string[]));
+	const question = await generateFrq(apClass, cacheUnit, topics);
+	const generationMs = Date.now() - generationStarted;
+	return persistFrqQuestion(question, generationMs, FRQ_GENERATION_MODEL);
+}

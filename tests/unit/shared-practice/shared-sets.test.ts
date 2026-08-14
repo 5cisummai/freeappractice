@@ -9,7 +9,7 @@ vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ execute: mocks.execute })
 }));
 
-vi.mock('$lib/questions/repository.server', () => ({
+vi.mock('$lib/question-bank/mcq/repository.server', () => ({
 	getQuestionsLookupMap: mocks.getQuestionsLookupMap
 }));
 

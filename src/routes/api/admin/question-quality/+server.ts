@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireQuestionQualityAdmin } from '$lib/question-quality/admin-auth.server';
-import { getQualityDashboardSnapshot } from '$lib/question-quality/dashboard.server';
+import { requireQuestionQualityAdmin } from '$lib/question-bank/quality/admin-auth.server';
+import { getQualityDashboardSnapshot } from '$lib/question-bank/quality/dashboard.server';
 import {
 	createReviewJob,
 	previewReviewJob,
@@ -9,8 +9,8 @@ import {
 	recordHumanDecision,
 	refreshReviewJob,
 	setReviewJobState
-} from '$lib/question-quality/service.server';
-import { questionQualityRequestSchema } from '$lib/question-quality/payloads';
+} from '$lib/question-bank/quality/service.server';
+import { questionQualityRequestSchema } from '$lib/question-bank/quality/payloads';
 
 export const GET: RequestHandler = async (event) => {
 	requireQuestionQualityAdmin(event);

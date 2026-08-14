@@ -43,7 +43,7 @@ vi.mock('$lib/super/insights.server', () => ({
 	getCurrentEligibleInsightReport: vi.fn()
 }));
 
-vi.mock('$lib/questions/util.server', () => ({
+vi.mock('$lib/question-bank/util.server', () => ({
 	isDuplicateKeyError: vi.fn().mockReturnValue(false)
 }));
 

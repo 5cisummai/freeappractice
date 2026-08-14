@@ -6,8 +6,12 @@
 	import { QuestionRequestError } from '$lib/client/activation-analytics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
-	import type { TutorMode } from '$lib/questions/types.js';
+	import type {
+		FrqAttemptView,
+		FrqGrade,
+		PublicFrqQuestion
+	} from '$lib/question-bank/frq/types.js';
+	import type { TutorMode } from '$lib/question-bank/mcq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
@@ -16,9 +20,9 @@
 		parseFrqQuestionDraft,
 		serializeFrqLatestDraft,
 		serializeFrqQuestionDraft
-	} from '$lib/questions/frq-draft.client.js';
-	import { PoolWarmingError } from '$lib/questions/request.client.js';
-	import { requestFrqQuestion } from '$lib/questions/request.client';
+	} from '$lib/question-bank/frq/draft.client.js';
+	import { PoolWarmingError } from '$lib/question-bank/request.client.js';
+	import { requestFrqQuestion } from '$lib/question-bank/request.client';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;

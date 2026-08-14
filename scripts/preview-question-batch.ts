@@ -10,7 +10,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { isExamfigDiagramsEnabled } from '../src/lib/flags';
 import { renderExamfigDiagram } from '../src/lib/diagrams/examfig';
-import { generateAPQuestion, type GenerateResult } from '../src/lib/questions/generation.server';
+import {
+	generateAPQuestion,
+	type GenerateResult
+} from '../src/lib/question-bank/mcq/generation.server';
 
 function argValue(flag: string): string | undefined {
 	const eq = process.argv.find((arg) => arg.startsWith(`${flag}=`));

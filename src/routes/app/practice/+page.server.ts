@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { isFrqPracticeEnabled } from '$lib/flags';
-import { getFrqCourseNames } from '$lib/frq/profiles.server';
+import { getFrqCourseNames } from '$lib/question-bank/frq/profiles.server';
 import { getOrAssignMultiAttemptVariant } from '$lib/practice/assign-variant.server';
 import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';

@@ -2,8 +2,8 @@ import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isAuthorizedCronRequest } from '$lib/auth/cron-auth';
-import { refill } from '$lib/questions/bank-ops.server';
-import { QUESTION_POOL_CONFIG } from '$lib/questions/pool-constants';
+import { refill } from '$lib/question-bank/ops.server';
+import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
 import { logger } from '$lib/server/logger';
 
 export const config = { maxDuration: 60 };

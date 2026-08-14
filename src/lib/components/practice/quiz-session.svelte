@@ -7,15 +7,15 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
-	import { requestMcqQuestion } from '$lib/questions/request.client.js';
-	import type { AnswerResult, GeneratedQuestion } from '$lib/questions/types.js';
+	import { requestMcqQuestion } from '$lib/question-bank/request.client.js';
+	import type { AnswerResult, GeneratedQuestion } from '$lib/question-bank/mcq/types.js';
 	import { savePendingSharedQuizRun } from '$lib/shared-practice/pending-runs.js';
 	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import Share2Icon from '@lucide/svelte/icons/share-2';
 	import type { Snippet } from 'svelte';
-	import { quizQuestionCardModel } from '$lib/questions/question-card-model';
+	import { quizQuestionCardModel } from '$lib/question-bank/question-card-model';
 
 	type QuizStatus = 'idle' | 'loading' | 'active' | 'review' | 'complete' | 'error';
 

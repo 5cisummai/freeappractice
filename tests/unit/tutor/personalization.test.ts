@@ -16,7 +16,7 @@ vi.mock('$lib/super/profile.server', () => ({
 vi.mock('$lib/users/model.server', () => ({
 	getUserProgress: mocks.getUserProgress
 }));
-vi.mock('$lib/frq/model.server', () => ({
+vi.mock('$lib/question-bank/frq/model.server', () => ({
 	findRecentGradedFrqAttempts: mocks.findRecentGradedFrqAttempts
 }));
 

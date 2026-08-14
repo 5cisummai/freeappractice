@@ -12,7 +12,7 @@ import {
 } from '$lib/super/insights.server';
 import type { StudyPlanView, StudyTask } from '$lib/super/types';
 import type { Entitlements } from '$lib/super/types';
-import { isDuplicateKeyError } from '$lib/questions/util.server';
+import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 
 export const STUDY_PLAN_DAYS = 7;
 export const STUDY_PLAN_MAX_TASK_MINUTES = 30;

@@ -1,7 +1,7 @@
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import type { IUserProfile } from '$lib/users/model.server';
 import type { StatsData } from '$lib/users/types';
-import type { FrqActivity } from '$lib/frq/attempts.server';
+import type { FrqActivity } from '$lib/grading/frq/attempts.server';
 
 function toLocalDayKey(date: Date, timeZone = 'UTC'): string {
 	return new Intl.DateTimeFormat('en-CA', {

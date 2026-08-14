@@ -18,20 +18,20 @@ import { randomUUID } from 'node:crypto';
 import {
 	countActivePoolRows,
 	listCatalogBuckets
-} from '../src/lib/questions/pool-refill-queue.server';
+} from '../src/lib/question-bank/pool-refill-queue.server';
 import {
 	getDailyBudgetRemaining,
 	releaseDailyGenerationBudget,
 	reserveDailyGenerationBudget
-} from '../src/lib/questions/pool-refill.server';
+} from '../src/lib/question-bank/pool-refill.server';
 import {
 	buildFrqPoolBatchJsonl,
 	buildMcqPoolBatchJsonl,
 	submitMcqPoolBatch
-} from '../src/lib/questions/pool-batch.server';
-import { getRecentTopics } from '../src/lib/questions/recent-topic.server';
-import { getRecentFrqTopics } from '../src/lib/frq/generation.server';
-import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
+} from '../src/lib/question-bank/pool-batch.server';
+import { getRecentTopics } from '../src/lib/question-bank/recent-topic.server';
+import { getRecentFrqTopics } from '../src/lib/question-bank/frq/generation.server';
+import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/question-bank/pool-constants';
 import { isExamfigDiagramsEnabled } from '../src/lib/flags';
 
 function argValue(flag: string): string | undefined {

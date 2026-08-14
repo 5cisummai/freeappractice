@@ -9,8 +9,8 @@
  */
 
 import 'dotenv/config';
-import { refill } from '../src/lib/questions/bank-ops.server';
-import { QUESTION_POOL_CONFIG } from '../src/lib/questions/pool-constants';
+import { refill } from '../src/lib/question-bank/ops.server';
+import { QUESTION_POOL_CONFIG } from '../src/lib/question-bank/pool-constants';
 
 async function main() {
 	const result = await refill({ mode: 'reconcile', config: QUESTION_POOL_CONFIG });

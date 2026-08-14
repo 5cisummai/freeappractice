@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { questionBank } from '$lib/questions/bank.server';
+import { questionBank } from '$lib/question-bank/bank.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
-import { normalizeUnit } from '$lib/questions/util.server';
+import { normalizeUnit } from '$lib/question-bank/util.server';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
 import {

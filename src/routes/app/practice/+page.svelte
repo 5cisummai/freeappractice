@@ -5,7 +5,7 @@
 	import PracticeRunner, {
 		type PracticeEvent
 	} from '$lib/components/practice/practice-shell.svelte';
-	import type { AnswerResult } from '$lib/questions/types';
+	import type { AnswerResult } from '$lib/question-bank/mcq/types';
 	import { toast } from 'svelte-sonner';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';

@@ -16,11 +16,14 @@ import {
 	countActivePoolRows,
 	countOpenPoolRefillJobs,
 	requestPoolRefill
-} from '../src/lib/questions/pool-refill-queue.server';
-import { runQuestionPoolRefillWorker } from '../src/lib/questions/pool-refill.server';
-import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
-import { QUESTION_POOL_CONFIG } from '../src/lib/questions/pool-constants';
-import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '../src/lib/questions/pool-kinds.server';
+} from '../src/lib/question-bank/pool-refill-queue.server';
+import { runQuestionPoolRefillWorker } from '../src/lib/question-bank/pool-refill.server';
+import { getMcqGenerationCountsByClass } from '../src/lib/question-bank/gen-stats.server';
+import { QUESTION_POOL_CONFIG } from '../src/lib/question-bank/pool-constants';
+import {
+	getPoolKindAdapter,
+	POOL_QUESTION_TYPES
+} from '../src/lib/question-bank/pool-kinds.server';
 
 const typeFilter = (
 	process.argv.find((arg) => arg.startsWith('--type='))?.slice('--type='.length) ??

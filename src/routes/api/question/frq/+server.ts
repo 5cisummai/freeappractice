@@ -2,9 +2,9 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
-import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
-import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { questionBank } from '$lib/questions/bank.server';
+import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
+import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
+import { questionBank } from '$lib/question-bank/bank.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import {
 	capturePathQuestionRequestMetric,

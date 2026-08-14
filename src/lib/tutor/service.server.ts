@@ -2,8 +2,8 @@ import { generateText, streamText } from 'ai';
 import { TUTOR_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import { logger } from '$lib/server/logger';
-import type { FrqAttemptView, FrqQuestion } from '$lib/frq/types';
-import { getQuestionById, type StoredQuestion } from '$lib/questions/repository.server';
+import type { FrqAttemptView, FrqQuestion } from '$lib/question-bank/frq/types';
+import { getQuestionById, type StoredQuestion } from '$lib/question-bank/mcq/repository.server';
 import { DEMO_TUTOR_QUESTION, isDemoTutorQuestionId } from '$lib/tutor/demo-question';
 
 export interface TutorMessage {

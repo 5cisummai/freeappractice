@@ -2,8 +2,11 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { asc, eq, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { authUsers, sharedPracticeSetItems, sharedPracticeSets } from '$lib/server/neon/schema';
-import { getQuestionsLookupMap, type StoredQuestion } from '$lib/questions/repository.server';
-import type { GeneratedQuestion } from '$lib/questions/types';
+import {
+	getQuestionsLookupMap,
+	type StoredQuestion
+} from '$lib/question-bank/mcq/repository.server';
+import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
 import type { SharedQuizView } from '$lib/shared-practice/types';
 
 export const MAX_SHARED_QUIZ_ITEMS = 50;

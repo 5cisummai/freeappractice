@@ -17,7 +17,7 @@
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { measureLongQuestion } from '$lib/components/questions/question-card-dom';
 	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
-	import type { BugReportContext, QuestionCardProps } from '$lib/questions/types';
+	import type { BugReportContext, QuestionCardProps } from '$lib/question-bank/mcq/types';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';

@@ -1,10 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
-import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
-import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { getFrqQuestionById } from '$lib/frq/model.server';
+import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
+import { getFrqAttemptForUser } from '$lib/grading/frq/attempts.server';
+import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
+import { getFrqQuestionById } from '$lib/question-bank/frq/model.server';
 import { chatFrq } from '$lib/tutor/service.server';
 import { createFrqTutorChatStream } from '$lib/tutor/chat-stream.server';
 import {
