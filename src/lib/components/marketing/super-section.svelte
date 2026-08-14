@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import CoachChatDemo from '$lib/components/marketing/coach-chat-demo.svelte';
 	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';
@@ -34,7 +33,7 @@
 </script>
 
 <section id="super" class="w-full space-y-12" aria-labelledby="super-section-heading">
-	<SectionIntro id="super-section-heading" superSignup signupHref={resolve('/signup?super=1')}>
+	<SectionIntro id="super-section-heading">
 		{#snippet title()}
 			Intelligent tutoring built around
 			<span class="relative inline-block px-1">

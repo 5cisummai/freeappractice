@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import type { Snippet } from 'svelte';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 
-	let { freeBeta = false }: { freeBeta?: boolean } = $props();
+	let { freeBeta = false, children }: { freeBeta?: boolean; children?: Snippet } = $props();
 
 	const superSignupHref = `${resolve('/signup')}?super=1`;
 	const badgeClass =
@@ -11,7 +12,7 @@
 
 <section
 	id="hero"
-	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-visible bg-[#ece7f4] px-5 pt-24 sm:px-8 sm:pt-28 lg:px-10 lg:pt-32 dark:bg-background"
+	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-visible bg-[#ece7f4] px-5 pt-24 pb-12 sm:px-8 sm:pt-28 sm:pb-16 lg:px-10 lg:pt-32 dark:bg-background"
 >
 	<div class="pointer-events-none absolute inset-0 -z-20 overflow-hidden" aria-hidden="true">
 		<img
@@ -81,5 +82,11 @@
 				Unlimited exam-style questions with personalized feedback across 20+ AP subjects.
 			</p>
 		</div>
+
+		{#if children}
+			<div class="mt-8 w-full sm:mt-10">
+				{@render children()}
+			</div>
+		{/if}
 	</div>
 </section>

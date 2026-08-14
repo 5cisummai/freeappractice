@@ -50,8 +50,8 @@ export const topbarResourceItems = [
 export const topbarPricingItem: SiteNavItem = { href: '/pricing', label: 'Pricing' };
 
 export const topbarAuthItems: SiteNavItem[] = [
-	{ href: '/login', label: 'Sign In' },
-	{ href: '/signup', label: 'Sign Up Free' }
+	{ href: '/login', label: 'Sign in' },
+	{ href: '/signup', label: 'Sign up free' }
 ];
 
 /** Grouped footer navigation columns. */

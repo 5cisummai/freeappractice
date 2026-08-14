@@ -303,29 +303,34 @@
 
 <PublicShell showPricing={!data.superFreeBetaEnabled}>
 	<main id="main-content" class="flex-1">
-		<LandingHero freeBeta={data.superFreeBetaEnabled} />
-
-		<section
-			id="practice"
-			class="relative z-10 mx-auto -mt-[calc(100svh-18rem)] w-full max-w-5xl sm:-mt-[calc(100svh-22rem)] sm:px-8 lg:-mt-[calc(100svh-26rem)] lg:px-10"
-		>
-			<div
-				class="pointer-events-none absolute inset-x-10 top-24 h-24 rounded-full bg-background/50 blur-2xl dark:bg-background/30"
-				aria-hidden="true"
-			></div>
-			<PracticeRunner
-				initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
-				capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
-				quiz={{ persistHistory: false }}
-				presentation="hero"
-				onEvent={(event) => {
-					if (event.type === 'selection-change') {
-						selectedClass = event.selectedClass;
-						selectedUnit = event.selectedUnit;
-					}
-				}}
-			/>
-		</section>
+		<LandingHero freeBeta={data.superFreeBetaEnabled}>
+			<section id="practice" class="relative z-10 w-full">
+				<div
+					class="relative rounded-3xl border border-border/60 bg-background/70 p-4 shadow-lg backdrop-blur-sm sm:p-6 dark:bg-background/50"
+				>
+					<div
+						class="absolute top-3 left-4 hidden items-center gap-2 sm:flex sm:top-4 sm:left-5"
+						aria-hidden="true"
+					>
+						<span class="size-3 rounded-full bg-[#ff5f57]"></span>
+						<span class="size-3 rounded-full bg-[#febc2e]"></span>
+						<span class="size-3 rounded-full bg-[#28c840]"></span>
+					</div>
+					<PracticeRunner
+						initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
+						capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
+						quiz={{ persistHistory: false }}
+						presentation="hero"
+						onEvent={(event) => {
+							if (event.type === 'selection-change') {
+								selectedClass = event.selectedClass;
+								selectedUnit = event.selectedUnit;
+							}
+						}}
+					/>
+				</div>
+			</section>
+		</LandingHero>
 
 		<div
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 pt-24 pb-12 sm:px-8 lg:space-y-24 lg:px-10 lg:pt-32 lg:pb-16"

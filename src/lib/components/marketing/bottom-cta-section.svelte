@@ -105,9 +105,8 @@
 				<span class="block sm:inline"> Unlimited questions with instant AI feedback.</span>
 			</h2>
 
-			<div class="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-				<Button href={resolve('/login')} size="lg" variant="outline">Sign in</Button>
-				<Button href={resolve('/signup')} size="lg" variant="default">Sign up for free</Button>
+			<div class="mt-8 flex items-center justify-center">
+				<Button href={resolve('/signup')} size="lg" variant="default">Sign up free</Button>
 			</div>
 		</div>
 	</div>
