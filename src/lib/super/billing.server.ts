@@ -9,7 +9,7 @@ import {
 	superBillingAccess,
 	tutorProfiles
 } from '$lib/server/neon/schema';
-import { and, eq, isNull, lte, or } from 'drizzle-orm';
+import { and, desc, eq, isNull, lte, or } from 'drizzle-orm';
 import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
 import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
@@ -49,6 +49,39 @@ export function isSuperStripeConfigured(): boolean {
 		env.STRIPE_SUPER_MONTHLY_PRICE_ID?.trim() &&
 		env.STRIPE_SUPER_ANNUAL_PRICE_ID?.trim()
 	);
+}
+
+export type SuperBillingView = {
+	status: string;
+	billingIssue: string | null;
+	subscriptionId: string | null;
+	periodStart: string | null;
+	periodEnd: string | null;
+	cancelAt: string | null;
+	cancelAtPeriodEnd: boolean;
+	hasCustomer: boolean;
+};
+
+/** Keep the durable Stripe mirror and its page-facing shape inside billing. */
+export async function getSuperBillingView(userId: string): Promise<SuperBillingView | null> {
+	const [billing] = await getNeonDatabase()
+		.select()
+		.from(superBillingAccess)
+		.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
+		.orderBy(desc(superBillingAccess.updatedAt))
+		.limit(1);
+	return billing
+		? {
+				status: billing.status,
+				billingIssue: billing.billingIssue ?? null,
+				subscriptionId: billing.stripeSubscriptionId ?? null,
+				periodStart: billing.periodStart?.toISOString() ?? null,
+				periodEnd: billing.periodEnd?.toISOString() ?? null,
+				cancelAt: billing.cancelAt?.toISOString() ?? null,
+				cancelAtPeriodEnd: billing.cancelAtPeriodEnd,
+				hasCustomer: Boolean(billing.stripeCustomerId)
+			}
+		: null;
 }
 
 export function shouldApplySubscriptionEvent(

@@ -8,7 +8,7 @@ import {
 } from '$lib/server/neon/schema';
 import { env } from '$env/dynamic/private';
 import { logger } from '$lib/server/logger';
-import { getAllQuestions, getQuestionById } from '$lib/questions/storage.server';
+import { getQuestionInventory } from '$lib/questions/inventory.server';
 import { getCompletedReviewCost } from './cost.server.js';
 import { isAgentCalibrated, modelName, toJobSummary } from './dashboard.server.js';
 import {
@@ -167,6 +167,7 @@ function normalizeFilters(
 		: 500;
 	return {
 		...filters,
+		kind: filters.kind ?? 'mcq',
 		apClass: filters.apClass?.trim() || undefined,
 		unit: filters.unit?.trim() || undefined,
 		minimumAgeDays,
@@ -180,12 +181,13 @@ export async function reconcileQuestionInventory(
 	discovered: number;
 	hydrated: number;
 }> {
-	const questions = await getAllQuestions();
+	const inventory = getQuestionInventory('mcq');
+	const questions = await inventory.list();
 	const questionsById = new Map(questions.map((question) => [question.id, question]));
 	const objects = questions.map((question) => ({
 		questionId: question.id,
 		lastModified: new Date(question.createdAt),
-		size: JSON.stringify(question).length
+		size: JSON.stringify(question.content).length
 	}));
 	if (objects.length) {
 		await upsertQuestionInventory(
@@ -206,7 +208,7 @@ export async function reconcileQuestionInventory(
 					try {
 						const question = questionsById.get(object.questionId);
 						if (!question) throw new Error('Question row was not found');
-						const serialized = JSON.stringify(question);
+						const serialized = JSON.stringify(question.content);
 						return {
 							questionId: object.questionId,
 							apClass: typeof question.apClass === 'string' ? question.apClass : undefined,
@@ -245,6 +247,9 @@ export async function previewReviewJob(
 	actorId = 'admin'
 ): Promise<ReviewPreview> {
 	const normalized = normalizeFilters(filters);
+	if (normalized.kind !== 'mcq') {
+		throw new Error('Automated quality review currently supports MCQ inventory only');
+	}
 	if (normalized.qualityState && normalized.qualityState !== 'unreviewed') {
 		throw new Error(
 			'V1 review runs only accept unreviewed questions to prevent duplicate labeling'
@@ -263,6 +268,7 @@ export async function previewReviewJob(
 
 	const cutoff = new Date(Date.now() - normalized.minimumAgeDays * 86_400_000);
 	const registryFilters = [
+		eq(questionRegistry.kind, normalized.kind),
 		or(
 			lte(questionRegistry.questionCreatedAt, cutoff),
 			and(isNull(questionRegistry.questionCreatedAt), lte(questionRegistry.createdAt, cutoff))
@@ -445,7 +451,10 @@ async function submitNextBatch(jobId: string): Promise<void> {
 		let batchBytes = 0;
 		for (const item of claimedItems) {
 			try {
-				const question = await getQuestionById(item.questionId);
+				// Automated review remains intentionally MCQ-only. The inventory seam supports
+				// FRQ maintenance without activating FRQ review jobs.
+				const inventoryItem = await getQuestionInventory('mcq').get(item.questionId);
+				const question = inventoryItem.content;
 				const requiresWebSearch = requiresWebSearchForQuestion(
 					question as unknown as Record<string, unknown>
 				);
@@ -479,9 +488,9 @@ async function submitNextBatch(jobId: string): Promise<void> {
 				const serialized = JSON.stringify(question);
 				await updateQuestionRegistryMetadata({
 					questionId: item.questionId,
-					apClass: question.apClass,
-					unit: question.unit,
-					questionCreatedAt: question.createdAt ? new Date(question.createdAt) : undefined,
+					apClass: inventoryItem.apClass,
+					unit: inventoryItem.unit,
+					questionCreatedAt: new Date(inventoryItem.createdAt),
 					contentHash: createHash('sha256').update(serialized).digest('hex'),
 					contentLength: serialized.length
 				});

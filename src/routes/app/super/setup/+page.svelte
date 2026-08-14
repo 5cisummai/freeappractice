@@ -60,11 +60,11 @@
 		};
 	}
 
-	const isSuperMember = $derived(data.entitlements.plan === 'super');
+	const isSuperMember = $derived(data.planAccess.plan === 'super');
 
 	function defaultStep(): SetupStep {
 		if (!data.profile.ageConfirmedAt) return 'age';
-		if (data.entitlements.plan !== 'super') return 'plan';
+		if (data.planAccess.plan !== 'super') return 'plan';
 		if (!data.profile.memoryDisclosureSeenAt) return 'style';
 		return 'style';
 	}

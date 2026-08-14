@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	getSuperFeatureAccess: vi.fn(),
+	authorizeFeatureRequest: vi.fn(),
 	insightsGet: vi.fn(),
 	insightsPost: vi.fn(),
 	studyPlanGet: vi.fn(),
@@ -46,6 +47,7 @@ vi.mock('$lib/flags', () => ({
 }));
 vi.mock('$lib/super/feature-access.server', () => ({
 	getSuperFeatureAccess: mocks.getSuperFeatureAccess,
+	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	superFeatureAccessMessage: vi.fn(() => 'Super subscription required')
 }));
 vi.mock('../../../src/routes/api/insights/+server', () => ({
@@ -132,6 +134,7 @@ describe('Super API routes', () => {
 		mocks.resolveTutorMemoryId.mockResolvedValue('mem0-secret-id');
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
 		mocks.getSuperFeatureAccess.mockResolvedValue({ allowed: true });
+		mocks.authorizeFeatureRequest.mockResolvedValue({ allowed: true });
 		mocks.coachUndoPost.mockResolvedValue(new Response(null, { status: 204 }));
 	});
 

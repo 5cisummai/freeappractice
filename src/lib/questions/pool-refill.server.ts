@@ -2,15 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolGenerationBudgets, poolRefillStates } from '$lib/server/neon/schema';
-import { generateAndPersistFrq } from '$lib/frq/generation.server';
 import type { PoolRefillState as PoolRefillStateRow } from '$lib/questions/pool-refill-types.server';
+import { generatePoolQuestion } from '$lib/questions/pool-kind-worker.server';
+import { getPoolKindAdapter } from '$lib/questions/pool-kinds.server';
 import {
 	countActivePoolRows,
 	getPoolRefillHealthCounts,
 	type PoolBucketKey
 } from '$lib/questions/pool-refill-queue.server';
 import { writePoolBucketBelowTarget } from '$lib/questions/pool-capacity.server';
-import { generateQuestionForPool } from '$lib/questions/pool-write.server';
 import { QUESTION_POOL_CONFIG, type QuestionPoolConfig } from '$lib/questions/pool-constants';
 import { logger } from '$lib/server/logger';
 import { captureQuestionPoolHealthMetric } from '$lib/server/question-request-metrics';
@@ -155,21 +155,6 @@ export async function releaseDailyGenerationBudget(amount: number): Promise<numb
 	return (await releaseGenerationSlots(dayKey, available)) ? available : 0;
 }
 
-/** Soft headroom so we don't reserve then get killed mid-LLM on Vercel cron. */
-function minRemainingMsForGeneration(questionType: 'mcq' | 'frq'): number {
-	switch (questionType) {
-		case 'frq':
-			// High-reasoning FRQ often exceeds 30s; skip rather than burn budget on kill.
-			return 35_000;
-		case 'mcq':
-			return 10_000;
-		default: {
-			const _exhaustive: never = questionType;
-			return _exhaustive;
-		}
-	}
-}
-
 async function renewRefillLease(
 	doc: PoolRefillStateRow,
 	leaseTtlMs: number
@@ -298,18 +283,9 @@ async function generateOne(
 	bucket: PoolBucketKey,
 	target: number
 ): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean }> {
-	const guarded = await writePoolBucketBelowTarget(bucket, target, async () => {
-		switch (bucket.questionType) {
-			case 'mcq':
-				return generateQuestionForPool(bucket.apClass, bucket.unit);
-			case 'frq':
-				return generateAndPersistFrq(bucket.apClass, bucket.unit);
-			default: {
-				const _exhaustive: never = bucket.questionType;
-				return _exhaustive;
-			}
-		}
-	});
+	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
+		generatePoolQuestion(bucket.questionType, bucket.apClass, bucket.unit)
+	);
 	if (guarded.status === 'at_target') {
 		return { skippedDuplicate: false, skippedAtTarget: true };
 	}
@@ -336,7 +312,7 @@ export async function processRefillJob(
 	try {
 		while (generated + skippedDuplicates < opts.maxGenerations) {
 			const remainingMs = opts.deadlineMs - Date.now();
-			if (remainingMs < minRemainingMsForGeneration(bucket.questionType)) break;
+			if (remainingMs < getPoolKindAdapter(bucket.questionType).minimumGenerationHeadroomMs) break;
 
 			const observedCount = await countActivePoolRows(
 				bucket.questionType,

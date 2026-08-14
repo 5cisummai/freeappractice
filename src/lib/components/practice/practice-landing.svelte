@@ -1,5 +1,5 @@
 <script lang="ts">
-	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
 	import PracticeBreadcrumbs from '$lib/components/practice/practice-breadcrumbs.svelte';
 	import PracticeHubNav from '$lib/components/practice/practice-hub-nav.svelte';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
@@ -14,8 +14,11 @@
 		};
 	}
 
-	let { page: practicePage, showPricing = true }: { page: PracticePage; showPricing?: boolean } =
-		$props();
+	let {
+		page: practicePage,
+		showPricing = true,
+		assistantFeaturesEnabled = true
+	}: { page: PracticePage; showPricing?: boolean; assistantFeaturesEnabled?: boolean } = $props();
 
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
 	const initial = $derived(getInitialSelection(practicePage));
@@ -59,7 +62,10 @@
 			</section>
 
 			<section>
-				<QuestionShell selectedClass={initial.selectedClass} selectedUnit={initial.selectedUnit} />
+				<PracticeRunner
+					{initial}
+					capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
+				/>
 			</section>
 
 			<section class="mx-auto max-w-3xl">

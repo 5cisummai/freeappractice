@@ -7,6 +7,7 @@
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
+	import type { TutorMode } from '$lib/questions/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
@@ -29,6 +30,7 @@
 		unitRange?: readonly number[];
 		requestVersion?: number;
 		showFirstUseHint?: boolean;
+		tutorMode?: TutorMode;
 		isPersonalizedTutor?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
 	};
@@ -40,6 +42,7 @@
 		requestVersion = 0,
 		showFirstUseHint = false,
 		isPersonalizedTutor = false,
+		tutorMode = isPersonalizedTutor ? 'personalized' : 'free',
 		onGraded
 	}: Props = $props();
 
@@ -418,7 +421,8 @@
 		{/if}
 
 		{#key question.questionId}
-			{#if isPersonalizedTutor}
+			{#if tutorMode !== 'hidden'}
+				{#if tutorMode === 'personalized'}
 				<SuperTutorWidget
 					apClass={question.apClass}
 					unit={question.unit}
@@ -428,7 +432,7 @@
 					topic={question.formatId}
 					{showFirstUseHint}
 				/>
-			{:else}
+				{:else}
 				<TutorWidget
 					apClass={question.apClass}
 					unit={question.unit}
@@ -439,6 +443,7 @@
 					{isPersonalizedTutor}
 					{showFirstUseHint}
 				/>
+				{/if}
 			{/if}
 		{/key}
 	</div>

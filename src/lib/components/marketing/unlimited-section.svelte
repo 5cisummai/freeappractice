@@ -9,6 +9,8 @@
 	import TargetIcon from '@lucide/svelte/icons/target';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 
+	let { showTutor = true }: { showTutor?: boolean } = $props();
+
 	const questionChoices = [
 		{ letter: 'A', text: 'Krebs cycle', correct: false },
 		{ letter: 'B', text: 'Light reactions', correct: true },
@@ -267,23 +269,23 @@
 			</article>
 		</div>
 
-		<article
-			class="{cardChrome} min-h-[52svh] bg-amber-50 lg:min-h-0 dark:bg-amber-950/40 {twAnimateInViewSubtle}"
-		>
-			<div class="{wellClass} min-h-104">
-				<div class="absolute inset-x-4 top-4 bottom-0 min-h-0">
-					<TutorWidget
-						embedded
-						questionId={DEMO_TUTOR_QUESTION.id}
-						apClass={DEMO_TUTOR_QUESTION.apClass}
-						unit={DEMO_TUTOR_QUESTION.unit}
-					/>
+		{#if showTutor}<article
+				class="{cardChrome} min-h-[52svh] bg-amber-50 lg:min-h-0 dark:bg-amber-950/40 {twAnimateInViewSubtle}"
+			>
+				<div class="{wellClass} min-h-104">
+					<div class="absolute inset-x-4 top-4 bottom-0 min-h-0">
+						<TutorWidget
+							embedded
+							questionId={DEMO_TUTOR_QUESTION.id}
+							apClass={DEMO_TUTOR_QUESTION.apClass}
+							unit={DEMO_TUTOR_QUESTION.unit}
+						/>
+					</div>
 				</div>
-			</div>
-			<div class={captionClass}>
-				<h3 class="text-base font-semibold tracking-tight">AI tutor</h3>
-				<p class="text-sm leading-6 text-muted-foreground">Ask why until it clicks.</p>
-			</div>
-		</article>
+				<div class={captionClass}>
+					<h3 class="text-base font-semibold tracking-tight">AI tutor</h3>
+					<p class="text-sm leading-6 text-muted-foreground">Ask why until it clicks.</p>
+				</div>
+			</article>{/if}
 	</div>
 </section>

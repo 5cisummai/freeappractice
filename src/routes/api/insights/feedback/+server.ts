@@ -3,8 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isSuperInsightsEnabled } from '$lib/flags';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { insightReports } from '$lib/server/neon/schema';
 
@@ -18,12 +17,8 @@ const feedbackSchema = z
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isSuperInsightsEnabled())) {
-			return json({ error: 'Insights are temporarily unavailable.' }, { status: 503 });
-		}
-		if (!(await getEntitlements(userId)).aiInsights) {
-			return json({ error: 'Super subscription required' }, { status: 403 });
-		}
+		const access = await authorizeFeatureRequest(event, userId, 'aiInsights');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 		const parsed = feedbackSchema.safeParse(await event.request.json().catch(() => null));
 		if (!parsed.success) return json({ error: 'Invalid insight feedback' }, { status: 400 });
 		const [updated] = await getNeonDatabase()

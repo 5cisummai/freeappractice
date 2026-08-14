@@ -2,7 +2,9 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import PracticeRunner, {
+		type PracticeEvent
+	} from '$lib/components/practice/practice-shell.svelte';
 	import type { AnswerResult } from '$lib/questions/types';
 	import { toast } from 'svelte-sonner';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
@@ -23,6 +25,13 @@
 
 	let initialized = $state(false);
 	let sharedQuizSlug = $state<string | null>(null);
+	const runnerInitial = $derived({
+		selectedClass,
+		selectedUnit,
+		unitRange,
+		requestVersion,
+		mode
+	});
 
 	$effect(() => {
 		if (data.sharedQuiz) {
@@ -113,6 +122,16 @@
 			unit: selectedUnit
 		});
 	}
+
+	function handlePracticeEvent(event: PracticeEvent): void {
+		if (event.type === 'selection-change') {
+			selectedClass = event.selectedClass;
+			selectedUnit = event.selectedUnit;
+		}
+		if (event.type === 'mode-change') mode = event.mode;
+		if (event.type === 'answered') handleAnswered(event.result);
+		if (event.type === 'frq-graded') handleFrqGraded();
+	}
 </script>
 
 <svelte:head>
@@ -131,21 +150,20 @@
 				>
 			</div>
 		{:else}
-			<QuestionShell
-				bind:selectedClass
-				bind:selectedUnit
-				bind:unitRange
-				bind:requestVersion
-				bind:mode
-				alignment="left"
-				showFirstUseHints
-				allowFrq={data.frqEnabled && data.frqCourses.includes(selectedClass)}
-				isPersonalizedTutor={data.isPersonalizedTutor}
-				practiceExperiment={data.practiceExperiment}
-				sharedQuiz={data.sharedQuiz}
-				onAnswered={handleAnswered}
-				onFrqGraded={handleFrqGraded}
-				persistQuizHistory
+			<PracticeRunner
+				initial={runnerInitial}
+				capabilities={{
+					frqCourses: data.frqEnabled ? data.frqCourses : [],
+					tutorMode: !data.assistantFeaturesEnabled
+						? 'hidden'
+						: data.isPersonalizedTutor
+							? 'personalized'
+							: 'free',
+					showFirstUseHints: true
+				}}
+				quiz={{ persistHistory: true, sharedQuiz: data.sharedQuiz }}
+				experiment={data.practiceExperiment}
+				onEvent={handlePracticeEvent}
 			/>
 		{/if}
 	</div>

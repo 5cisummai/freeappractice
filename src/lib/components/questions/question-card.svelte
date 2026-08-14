@@ -27,6 +27,7 @@
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 
 	let {
+		model,
 		class: className,
 		expanded = false,
 		onExpand,
@@ -34,16 +35,8 @@
 		practiceControls,
 		headerActions,
 		quizNavigation,
-		questionNumber = '',
-		quizMode = false,
-		quizQuestion = null,
-		quizAnswer = null,
 		nextDisabled = false,
 		onQuizNext,
-		selectedClass = '',
-		selectedUnit = '',
-		unitRange,
-		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
 		longQuestionThresholdChars = 450,
@@ -54,7 +47,7 @@
 		showUtilityActions = true,
 		showFirstUseHint = false,
 		isPersonalizedTutor = false,
-		practiceExperiment,
+		tutorMode = isPersonalizedTutor ? 'personalized' : 'free',
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -65,6 +58,21 @@
 		onReportBug,
 		onAnswered
 	}: QuestionCardProps = $props();
+
+	const selectedClass = $derived(model.selectedClass);
+	const selectedUnit = $derived(model.selectedUnit);
+	const quizMode = $derived(model.delivery.kind === 'quiz');
+	const questionNumber = $derived(
+		model.delivery.kind === 'quiz' ? model.delivery.questionNumber : ''
+	);
+	const quizQuestion = $derived(model.delivery.kind === 'quiz' ? model.delivery.question : null);
+	const quizAnswer = $derived(model.delivery.kind === 'quiz' ? model.delivery.answer : null);
+	const unitRange = $derived(
+		model.delivery.kind === 'unlimited' ? model.delivery.unitRange : undefined
+	);
+	const requestVersion = $derived(
+		model.delivery.kind === 'unlimited' ? model.delivery.requestVersion : 0
+	);
 
 	let promptElement: HTMLDivElement | null = null;
 	let isLongQuestion = $state(false);
@@ -95,7 +103,9 @@
 		onNotLearned: () => onNotLearned?.(),
 		onAnswered: (result) => onAnswered?.(result),
 		onQuizNext: () => onQuizNext?.(),
-		practiceExperiment: untrack(() => practiceExperiment)
+		practiceExperiment: untrack(() =>
+			model.delivery.kind === 'unlimited' ? model.delivery.experiment : undefined
+		)
 	});
 
 	const tutorUnitLabel = $derived(selectedUnit);
@@ -503,9 +513,9 @@
 				</Popover.Content>
 			{/if}
 
-			{#if session.currentQuestion && !quizMode}
+			{#if session.currentQuestion && !quizMode && tutorMode !== 'hidden'}
 				{#key session.currentQuestion.questionId ?? session.currentQuestion.prompt}
-					{#if isPersonalizedTutor}
+					{#if tutorMode === 'personalized'}
 						<SuperTutorWidget
 							apClass={selectedClass}
 							unit={tutorUnitLabel}

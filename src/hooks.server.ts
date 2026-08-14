@@ -187,6 +187,9 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
+	event.locals.planAccess = undefined;
+	event.locals.tutorProfileView = undefined;
+	event.locals.assistantFeaturesEnabled = undefined;
 
 	// Public MCQ serve path: skip Better Auth session I/O to keep pool-hit latency low.
 	// Logging, CORS, and security headers still run. FRQ and /api/me/* keep full auth.

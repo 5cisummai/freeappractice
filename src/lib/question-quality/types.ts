@@ -15,6 +15,7 @@ export type ReviewJobStatus =
 	| 'failed';
 
 export interface ReviewFilters {
+	kind?: 'mcq' | 'frq';
 	apClass?: string;
 	unit?: string;
 	qualityState?: 'unreviewed' | 'awaiting_human' | 'final';

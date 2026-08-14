@@ -54,11 +54,13 @@ describe('question quality inventory writes', () => {
 			JSON.stringify([
 				{
 					questionId: 'q-1',
+					kind: 'mcq',
 					questionCreatedAt: '2026-08-01T00:00:00.000Z',
 					contentLength: 120
 				},
 				{
 					questionId: 'q-2',
+					kind: 'mcq',
 					questionCreatedAt: '2026-08-02T00:00:00.000Z',
 					contentLength: 240
 				}

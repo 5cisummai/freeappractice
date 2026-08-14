@@ -7,6 +7,7 @@ import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { getGreeting } from '$lib/tutor/service.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-features.server';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -16,6 +17,9 @@ export const POST: RequestHandler = async (event) => {
 		const userId =
 			event.locals.userId ??
 			(await auth.api.getSession({ headers: event.request.headers }))?.user?.id;
+		if (userId && !(await getAssistantFeaturesEnabledForRequest(event.locals, userId))) {
+			return json({ error: 'Assistant features are disabled for this account.' }, { status: 403 });
+		}
 		const rate = await limitGenericTutor(event.request, userId);
 		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
 

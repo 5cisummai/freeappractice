@@ -17,10 +17,12 @@
 
 	let {
 		isAdmin,
-		user
+		user,
+		assistantFeaturesEnabled = true
 	}: {
 		isAdmin: boolean;
 		user: { name: string; email: string; image?: string | null };
+		assistantFeaturesEnabled?: boolean;
 	} = $props();
 
 	const baseNavItems = [
@@ -33,7 +35,12 @@
 	] as const;
 
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
-	const navItems = $derived(isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems);
+	const navItems = $derived([
+		...baseNavItems.filter(
+			(item) => assistantFeaturesEnabled || (item.href !== '/app/coach' && item.href !== '/app/insights')
+		),
+		...(isAdmin ? [adminNavItem] : [])
+	]);
 
 	function isActive(href: (typeof navItems)[number]['href'] | '/app/settings'): boolean {
 		const resolved = resolve(href);

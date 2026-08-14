@@ -5,24 +5,22 @@ import { superBillingAccess, superGrants, tutorProfiles } from '$lib/server/neon
 import { lockInsightReports } from '$lib/super/insight-locks.server';
 import { markSuperAccessStarted } from '$lib/super/profile.server';
 import {
-	FREE_ENTITLEMENTS,
+	FREE_PLAN_ACCESS,
 	SUPER_PAST_DUE_GRACE_MS,
 	type Entitlements,
-	type SuperAccessReason
+	type PlanAccess,
+	type SuperAccessReason,
+	hasPaidCapability
 } from '$lib/super/types';
 
-function superEntitlements(reason: Exclude<SuperAccessReason, null>): Entitlements {
+function superPlanAccess(reason: Exclude<SuperAccessReason, null>): PlanAccess {
 	return {
 		plan: 'super',
-		accessReason: reason,
-		personalizedTutor: true,
-		coach: true,
-		aiInsights: true,
-		studyPlans: true
+		accessReason: reason
 	};
 }
 
-export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
+export async function getPlanAccess(userId: string, now = new Date()): Promise<PlanAccess> {
 	if (await isSuperFreeBetaEnabled()) {
 		const [claimed] = await getNeonDatabase()
 			.select({ userId: tutorProfiles.userId })
@@ -31,7 +29,7 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 			.limit(1);
 		if (claimed) {
 			await markSuperAccessStarted(userId, now);
-			return superEntitlements('free_beta');
+			return superPlanAccess('free_beta');
 		}
 	}
 
@@ -59,7 +57,7 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 
 	if (grant) {
 		await markSuperAccessStarted(userId, now);
-		return superEntitlements('admin_grant');
+		return superPlanAccess('admin_grant');
 	}
 	if (
 		billing.some(
@@ -72,7 +70,7 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 		)
 	) {
 		await markSuperAccessStarted(userId, now);
-		return superEntitlements('subscription');
+		return superPlanAccess('subscription');
 	}
 	if (
 		billing.some(
@@ -84,9 +82,26 @@ export async function getEntitlements(userId: string, now = new Date()): Promise
 		)
 	) {
 		await markSuperAccessStarted(userId, now);
-		return superEntitlements('past_due_grace');
+		return superPlanAccess('past_due_grace');
 	}
-	return FREE_ENTITLEMENTS;
+	return FREE_PLAN_ACCESS;
+}
+
+/**
+ * @deprecated New request handlers should use getPlanAccessForRequest and
+ * hasPaidCapability. This adapter keeps existing page/maintenance consumers
+ * source-compatible while they migrate to the smaller PlanAccess shape.
+ */
+export async function getEntitlements(userId: string, now = new Date()): Promise<Entitlements> {
+	const access = await getPlanAccess(userId, now);
+	return {
+		...access,
+		personalizedTutor: hasPaidCapability(access, 'personalizedTutor'),
+		coach: hasPaidCapability(access, 'coach'),
+		aiInsights: hasPaidCapability(access, 'aiInsights'),
+		studyPlans: hasPaidCapability(access, 'studyPlans'),
+		memory: hasPaidCapability(access, 'memory')
+	};
 }
 
 export type AdminUserSuperAccess = {

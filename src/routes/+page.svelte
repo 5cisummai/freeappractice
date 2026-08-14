@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { authClient } from '$lib/auth/client.js';
 	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
-	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
 	import { twAnimateInView } from '$lib/tw-animate';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
@@ -313,21 +313,24 @@
 				class="pointer-events-none absolute inset-x-10 top-24 h-24 rounded-full bg-background/50 blur-2xl dark:bg-background/30"
 				aria-hidden="true"
 			></div>
-			<QuestionShell
-				bind:selectedClass
-				bind:selectedUnit
-				bind:unitRange
-				bind:requestVersion
-				persistQuizHistory={false}
-				alignment="center"
-				onHero
+			<PracticeRunner
+				initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
+				capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
+				quiz={{ persistHistory: false }}
+				presentation="hero"
+				onEvent={(event) => {
+					if (event.type === 'selection-change') {
+						selectedClass = event.selectedClass;
+						selectedUnit = event.selectedUnit;
+					}
+				}}
 			/>
 		</section>
 
 		<div
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 pt-24 pb-12 sm:px-8 lg:space-y-24 lg:px-10 lg:pt-32 lg:pb-16"
 		>
-			<UnlimitedSection />
+			<UnlimitedSection showTutor={data.assistantFeaturesEnabled} />
 
 			<SuperSection />
 

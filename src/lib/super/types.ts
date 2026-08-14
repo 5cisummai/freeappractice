@@ -27,22 +27,51 @@ export type SuperBillingIssue =
 export type SuperAccessReason =
 	'subscription' | 'past_due_grace' | 'admin_grant' | 'free_beta' | null;
 
-export type Entitlements = {
+export const PAID_PLAN_PERMISSIONS = {
+	super: {
+		personalizedTutor: true,
+		coach: true,
+		aiInsights: true,
+		studyPlans: true,
+		memory: true
+	}
+} as const;
+
+export type PaidCapability = keyof (typeof PAID_PLAN_PERMISSIONS)['super'];
+
+export type PlanAccess = {
 	plan: Plan;
 	accessReason: SuperAccessReason;
+};
+
+/** Return whether a paid capability is available under the resolved plan. */
+export function hasPaidCapability(access: PlanAccess, capability: PaidCapability): boolean {
+	return access.plan === 'super' && PAID_PLAN_PERMISSIONS.super[capability];
+}
+
+/** @deprecated Use PlanAccess and hasPaidCapability in new request-path code. */
+export type Entitlements = PlanAccess & {
 	personalizedTutor: boolean;
 	coach: boolean;
 	aiInsights: boolean;
 	studyPlans: boolean;
+	/** Memory is covered by the personalized tutor capability. */
+	memory: boolean;
 };
 
-export const FREE_ENTITLEMENTS: Entitlements = {
+export const FREE_PLAN_ACCESS: PlanAccess = {
 	plan: 'free',
-	accessReason: null,
+	accessReason: null
+};
+
+/** @deprecated Use FREE_PLAN_ACCESS. */
+export const FREE_ENTITLEMENTS: Entitlements = {
+	...FREE_PLAN_ACCESS,
 	personalizedTutor: false,
 	coach: false,
 	aiInsights: false,
-	studyPlans: false
+	studyPlans: false,
+	memory: false
 };
 
 export type TutorTeachingStyle = 'socratic' | 'concise' | 'step_by_step';

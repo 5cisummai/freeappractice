@@ -6,6 +6,7 @@ const WRITE_CHUNK_SIZE = 1_000;
 
 export interface QuestionInventoryWrite {
 	questionId: string;
+	kind?: 'mcq' | 'frq';
 	questionCreatedAt: Date;
 	contentLength: number;
 }
@@ -31,6 +32,7 @@ function inventoryPayload(rows: QuestionInventoryWrite[]): string {
 	return JSON.stringify(
 		rows.map((row) => ({
 			questionId: row.questionId,
+			kind: row.kind ?? 'mcq',
 			questionCreatedAt: row.questionCreatedAt.toISOString(),
 			contentLength: row.contentLength
 		}))
@@ -58,6 +60,7 @@ export async function upsertQuestionInventory(rows: QuestionInventoryWrite[]): P
 				SELECT *
 				FROM jsonb_to_recordset(${inventoryPayload(group)}::jsonb) AS row(
 					"questionId" text,
+					"kind" text,
 					"questionCreatedAt" timestamptz,
 					"contentLength" integer
 				)
@@ -72,7 +75,7 @@ export async function upsertQuestionInventory(rows: QuestionInventoryWrite[]): P
 			)
 			SELECT
 				"questionId",
-				'mcq',
+				"kind",
 				"questionCreatedAt",
 				"contentLength",
 				now(),

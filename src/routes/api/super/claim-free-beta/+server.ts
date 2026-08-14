@@ -1,17 +1,17 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
 import { claimSuperFreeBeta, SuperFreeBetaUnavailableError } from '$lib/super/profile.server';
 
 export const POST = withAuthedHandler(
-	async (_event, userId) => {
+	async (event, userId) => {
 		try {
 			const claim = await claimSuperFreeBeta(userId);
-			const entitlements = await getEntitlements(userId);
+			const planAccess = await getPlanAccessForRequest(event.locals, userId);
 			return json({
 				claimed: true,
 				claimedAt: claim.claimedAt,
-				entitlements
+				planAccess
 			});
 		} catch (error) {
 			if (error instanceof SuperFreeBetaUnavailableError) {

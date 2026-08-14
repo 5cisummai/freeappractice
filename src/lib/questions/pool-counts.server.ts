@@ -1,17 +1,10 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
+import { poolRefillStates } from '$lib/server/neon/schema';
+import { getPoolKindAdapter } from '$lib/questions/pool-kinds.server';
 import type { PoolRefillQuestionType } from '$lib/questions/pool-refill-types.server';
 
 const OPEN_REFILL_STATUSES = ['pending', 'failed', 'budget_exhausted', 'running'] as const;
-
-function poolTable(questionType: PoolRefillQuestionType) {
-	return questionType === 'mcq' ? mcqQuestions : frqQuestions;
-}
-
-function bucketKey(apClass: string, unit: string): string {
-	return `${apClass}\u0000${unit}`;
-}
 
 /** Count active canonical pool rows without hydrating any question documents. */
 export async function countActivePoolRows(
@@ -19,31 +12,14 @@ export async function countActivePoolRows(
 	apClass: string,
 	unit: string
 ): Promise<number> {
-	const table = poolTable(questionType);
-	const [row] = await getNeonDatabase()
-		.select({ count: sql<number>`count(*)` })
-		.from(table)
-		.where(and(eq(table.apClass, apClass), eq(table.unit, unit), eq(table.active, true)));
-
-	return Number(row?.count ?? 0);
+	return getPoolKindAdapter(questionType).countActive(apClass, unit);
 }
 
 /** Load active counts for every bucket in one grouped query for ops reconciliation. */
 export async function countActivePoolRowsByBucket(
 	questionType: PoolRefillQuestionType
 ): Promise<Map<string, number>> {
-	const table = poolTable(questionType);
-	const rows = await getNeonDatabase()
-		.select({
-			apClass: table.apClass,
-			unit: table.unit,
-			count: sql<number>`count(*)`
-		})
-		.from(table)
-		.where(eq(table.active, true))
-		.groupBy(table.apClass, table.unit);
-
-	return new Map(rows.map((row) => [bucketKey(row.apClass, row.unit), Number(row.count)]));
+	return getPoolKindAdapter(questionType).countActiveByBucket();
 }
 
 /** Count open refill jobs directly in ops state for scripts and dashboards. */

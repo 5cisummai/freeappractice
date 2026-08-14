@@ -1,7 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
-import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
-import { getFrqCourseNames } from '$lib/frq/profiles.server';
 import { getMcqGenerationCountsByClass } from '$lib/questions/gen-stats.server';
 import {
 	countActivePoolRows,
@@ -10,11 +8,11 @@ import {
 } from '$lib/questions/pool-counts.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolRefillStates } from '$lib/server/neon/schema';
+import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '$lib/questions/pool-kinds.server';
 import type { PoolRefillQuestionType } from '$lib/questions/pool-refill-types.server';
 import {
 	QUESTION_POOL_CONFIG,
 	isBelowLowWater,
-	poolTargetForBucket,
 	type QuestionPoolConfig
 } from '$lib/questions/pool-constants';
 
@@ -25,30 +23,7 @@ export type PoolBucketKey = {
 };
 
 export function listCatalogBuckets(questionType: PoolRefillQuestionType): PoolBucketKey[] {
-	const buckets: PoolBucketKey[] = [];
-	switch (questionType) {
-		case 'mcq': {
-			for (const course of getCourses()) {
-				for (const unit of getUnitsForClass(course.name)) {
-					buckets.push({ questionType: 'mcq', apClass: course.name, unit });
-				}
-			}
-			break;
-		}
-		case 'frq': {
-			for (const apClass of getFrqCourseNames()) {
-				for (const unit of getUnitsForClass(apClass)) {
-					buckets.push({ questionType: 'frq', apClass, unit });
-				}
-			}
-			break;
-		}
-		default: {
-			const _exhaustive: never = questionType;
-			return _exhaustive;
-		}
-	}
-	return buckets;
+	return getPoolKindAdapter(questionType).listBuckets();
 }
 
 export { countActivePoolRows, countActivePoolRowsByBucket, getPoolRefillHealthCounts };
@@ -66,8 +41,7 @@ export async function requestPoolRefill(
 	const counts =
 		generationCountsByClass ??
 		(bucket.questionType === 'mcq' ? await getMcqGenerationCountsByClass() : {});
-	const target = poolTargetForBucket({
-		questionType: bucket.questionType,
+	const target = getPoolKindAdapter(bucket.questionType).targetFor({
 		apClass: bucket.apClass,
 		generationCountsByClass: counts,
 		config: env
@@ -171,11 +145,11 @@ export async function reconcilePoolRefillJobs(
 	let reconciled = 0;
 	let enqueued = 0;
 
-	for (const questionType of ['mcq', 'frq'] as const) {
+	for (const questionType of POOL_QUESTION_TYPES) {
+		const adapter = getPoolKindAdapter(questionType);
 		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
-			const target = poolTargetForBucket({
-				questionType,
+			const target = adapter.targetFor({
 				apClass: bucket.apClass,
 				generationCountsByClass,
 				config: env
@@ -249,11 +223,11 @@ export async function enqueueAllCatalogDeficits(
 ): Promise<number> {
 	const generationCountsByClass = await getMcqGenerationCountsByClass();
 	let enqueued = 0;
-	for (const questionType of ['mcq', 'frq'] as const) {
+	for (const questionType of POOL_QUESTION_TYPES) {
+		const adapter = getPoolKindAdapter(questionType);
 		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
-			const target = poolTargetForBucket({
-				questionType,
+			const target = adapter.targetFor({
 				apClass: bucket.apClass,
 				generationCountsByClass,
 				config: env

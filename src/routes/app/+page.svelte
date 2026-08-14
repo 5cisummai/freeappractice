@@ -25,7 +25,7 @@
 
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived(data.progress as ProgressEntry[]);
-	const superEntitlements = $derived(data.entitlements);
+	const planAccess = $derived(data.planAccess);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -209,7 +209,7 @@
 			</div>
 		</section>
 
-		{#if superEntitlements?.plan !== 'super'}
+		{#if planAccess?.plan !== 'super'}
 			<a
 				href={resolve('/pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
@@ -297,7 +297,7 @@
 			</Card.Root>
 		</section>
 	{:else}
-		{#if superEntitlements?.plan !== 'super'}
+		{#if planAccess?.plan !== 'super'}
 			<a
 				href={resolve('/pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"

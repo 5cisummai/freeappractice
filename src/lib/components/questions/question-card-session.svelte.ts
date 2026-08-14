@@ -24,6 +24,7 @@ import {
 	type MultiAttemptMachineState
 } from '$lib/practice/multi-attempt-machine';
 import type { AnswerResult, GeneratedQuestion, QuestionCardProps } from '$lib/questions/types';
+import type { QuestionCardModel } from '$lib/questions/question-card-model';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -47,7 +48,7 @@ export type QuestionCardSessionOpts = {
 	onAnswered?: QuestionCardProps['onAnswered'];
 	onQuizNext?: QuestionCardProps['onQuizNext'];
 	onOptionSelected?: QuestionCardProps['onOptionSelected'];
-	practiceExperiment?: QuestionCardProps['practiceExperiment'];
+	practiceExperiment?: Extract<QuestionCardModel['delivery'], { kind: 'unlimited' }>['experiment'];
 };
 
 export function createQuestionCardSession(opts: QuestionCardSessionOpts) {

@@ -4,7 +4,7 @@
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
 	import QuizSession from '$lib/components/practice/quiz-session.svelte';
 	import FrqCard from '$lib/components/questions/frq-card.svelte';
-	import type { AnswerResult, QuestionCardProps } from '$lib/questions/types';
+	import type { AnswerResult, TutorMode } from '$lib/questions/types';
 	import type { FrqAttemptView } from '$lib/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
@@ -12,101 +12,121 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { cn } from '$lib/utils.js';
+	import { unlimitedQuestionCardModel } from '$lib/questions/question-card-model';
 
 	export type PracticeMode = 'unlimited' | 'graded';
-
-	export type PracticeShellProps = {
+	export type PracticeInitialState = {
 		selectedClass?: string;
 		selectedUnit?: string;
 		unitRange?: number[];
 		requestVersion?: number;
-		quizMode?: boolean;
-		count?: number;
-		quizGenerating?: boolean;
-		persistQuizHistory?: boolean;
-		showModeSwitcher?: boolean;
-		modeSwitcherAlignment?: 'center' | 'left';
-		practiceMode?: PracticeMode;
-		quizRequestVersion?: number;
-		allowFrq?: boolean;
-		showFirstUseHints?: boolean;
 		mode?: 'mcq' | 'frq';
+	};
+	export type PracticeCapabilities = {
+		frqCourses?: readonly string[];
+		tutorMode?: TutorMode;
+		showFirstUseHints?: boolean;
+	};
+	export type PracticeQuizConfig = {
+		count?: number;
+		persistHistory?: boolean;
 		sharedQuiz?: SharedQuizView | null;
-		isPersonalizedTutor?: boolean;
-		generateLabel?: string;
-		onGenerate?: () => void;
-		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
-		onModeChange?: (mode: 'mcq' | 'frq') => void;
-		onAnswered?: (result: AnswerResult) => void;
-		onFrqGraded?: (attempt: FrqAttemptView) => void;
-	} & Omit<
-		QuestionCardProps,
-		| 'selectedClass'
-		| 'selectedUnit'
-		| 'requestVersion'
-		| 'onAnswered'
-		| 'expanded'
-		| 'onExpand'
-		| 'controlsOpen'
-		| 'practiceControls'
-		| 'quizNavigation'
-	>;
+	};
+	export type PracticeExperiment = {
+		assignedVariant: 'control' | 'multi_attempt_hints';
+		experimentEnabled: boolean;
+	};
+	export type PracticeEvent =
+		| { type: 'selection-change'; selectedClass: string; selectedUnit: string }
+		| { type: 'mode-change'; mode: 'mcq' | 'frq' }
+		| { type: 'generate'; selectedClass: string; selectedUnit: string }
+		| { type: 'answered'; result: AnswerResult }
+		| { type: 'frq-graded'; attempt: FrqAttemptView };
 
+	export type PracticeRunnerProps = {
+		initial?: PracticeInitialState;
+		capabilities?: PracticeCapabilities;
+		quiz?: PracticeQuizConfig;
+		presentation?: 'standard' | 'hero';
+		experiment?: PracticeExperiment;
+		onEvent?: (event: PracticeEvent) => void;
+	};
+
+	// PracticeShell remains the file name for import stability; the exported component is the
+	// single runner used by public practice, the app, and shared quizzes.
 	let {
-		selectedClass = $bindable(''),
-		selectedUnit = $bindable(''),
-		unitRange = $bindable<number[] | undefined>(undefined),
-		requestVersion = $bindable(0),
-		quizMode = false,
-		count = $bindable(10),
-		quizGenerating = $bindable(false),
-		persistQuizHistory = true,
-		showModeSwitcher = false,
-		modeSwitcherAlignment = 'center',
-		practiceMode = $bindable<PracticeMode>('unlimited'),
-		quizRequestVersion = $bindable(0),
-		allowFrq = false,
-		showFirstUseHints = false,
-		mode = $bindable<'mcq' | 'frq'>('mcq'),
-		sharedQuiz = null,
-		isPersonalizedTutor = false,
-		generateLabel,
-		onGenerate,
-		onSelectionChange,
-		onModeChange,
-		onAnswered,
-		onFrqGraded,
-		...cardProps
-	}: PracticeShellProps = $props();
+		initial = {},
+		capabilities = {},
+		quiz = {},
+		presentation = 'standard',
+		experiment,
+		onEvent
+	}: PracticeRunnerProps = $props();
 
-	let isExpanded = $state(false);
+	let selectedClass = $state('');
+	let selectedUnit = $state('');
+	let unitRange = $state<number[] | undefined>();
+	let requestVersion = $state(0);
+	let mode = $state<'mcq' | 'frq'>('mcq');
+	let count = $state(10);
+	let quizGenerating = $state(false);
+	let practiceMode = $state<PracticeMode>('unlimited');
+	let quizRequestVersion = $state(0);
 	let expandedSelectorOpen = $state(false);
-	const activeQuizMode = $derived(
-		Boolean(sharedQuiz) || (showModeSwitcher ? practiceMode === 'graded' : quizMode)
-	);
+	let isExpanded = $state(false);
+	let lastInitialRequestVersion = $state(0);
+
+	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);
+	const persistQuizHistory = $derived(quiz.persistHistory ?? true);
+	const allowFrq = $derived(capabilities.frqCourses?.includes(selectedClass) ?? false);
+	const tutorMode = $derived(capabilities.tutorMode ?? 'free');
+	const showFirstUseHints = $derived(capabilities.showFirstUseHints ?? false);
+	const modeSwitcherAlignment = $derived(presentation === 'hero' ? 'center' : 'left');
+
+	const activeQuizMode = $derived(Boolean(sharedQuiz) || practiceMode === 'graded');
 	const activeRequestVersion = $derived(
-		showModeSwitcher && !sharedQuiz && activeQuizMode ? quizRequestVersion : requestVersion
+		!sharedQuiz && activeQuizMode ? quizRequestVersion : requestVersion
 	);
 
 	function changeMode(nextMode: 'mcq' | 'frq'): void {
 		mode = nextMode;
 		requestVersion = 0;
-		onModeChange?.(nextMode);
+		onEvent?.({ type: 'mode-change', mode: nextMode });
 	}
 
 	function handleSelectionChange(className: string, unit: string): void {
-		if (showModeSwitcher && activeQuizMode) quizRequestVersion = 0;
+		if (activeQuizMode) quizRequestVersion = 0;
 		else requestVersion = 0;
-		onSelectionChange?.(className, unit);
+		selectedClass = className;
+		selectedUnit = unit;
+		onEvent?.({ type: 'selection-change', selectedClass: className, selectedUnit: unit });
 	}
 
 	function handleGenerate(): void {
 		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
 		if (activeQuizMode) count = Math.min(50, Math.max(1, Math.floor(count || 10)));
-		if (showModeSwitcher && activeQuizMode) quizRequestVersion += 1;
+		if (activeQuizMode) quizRequestVersion += 1;
 		else requestVersion += 1;
-		onGenerate?.();
+		onEvent?.({ type: 'generate', selectedClass, selectedUnit });
 	}
+
+	$effect(() => {
+		if (initial.selectedClass !== undefined && initial.selectedClass !== selectedClass) {
+			selectedClass = initial.selectedClass;
+		}
+		if (initial.selectedUnit !== undefined && initial.selectedUnit !== selectedUnit) {
+			selectedUnit = initial.selectedUnit;
+		}
+		if (initial.unitRange !== undefined && initial.unitRange !== unitRange) {
+			unitRange = initial.unitRange;
+		}
+		if (initial.mode !== undefined && initial.mode !== mode) mode = initial.mode;
+		const nextVersion = initial.requestVersion ?? 0;
+		if (nextVersion !== lastInitialRequestVersion) {
+			lastInitialRequestVersion = nextVersion;
+			requestVersion = nextVersion;
+		}
+	});
 
 	function toggleExpanded(): void {
 		isExpanded = !isExpanded;
@@ -145,7 +165,7 @@
 			{#if !sharedQuiz}
 				<div class="space-y-4">
 					<div class={cn(isExpanded && 'mx-auto max-w-5xl')}>
-						{#if showModeSwitcher}
+						{#if !sharedQuiz}
 							<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
 								<Tabs.List
 									aria-label="Practice modes"
@@ -195,7 +215,7 @@
 							quizMode={activeQuizMode}
 							bind:count
 							generateDisabled={activeQuizMode && quizGenerating}
-							generateLabel={activeQuizMode ? 'Generate Quiz' : generateLabel}
+							generateLabel={activeQuizMode ? 'Generate Quiz' : undefined}
 							onSelectionChange={handleSelectionChange}
 							onGenerate={handleGenerate}
 						/>
@@ -222,8 +242,8 @@
 					{unitRange}
 					requestVersion={activeRequestVersion}
 					showFirstUseHint={showFirstUseHints}
-					{isPersonalizedTutor}
-					onGraded={onFrqGraded}
+					{tutorMode}
+					onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
 				/>
 			{:else}
 				<div class={activeQuizMode ? 'contents' : 'hidden'} aria-hidden={!activeQuizMode}>
@@ -239,6 +259,7 @@
 						bind:controlsOpen={expandedSelectorOpen}
 						{practiceControls}
 						persistHistory={persistQuizHistory}
+						showCoachReview={tutorMode !== 'hidden'}
 						initialQuestions={sharedQuiz?.questions}
 						sharedSlug={sharedQuiz?.slug}
 						bind:isGenerating={quizGenerating}
@@ -247,18 +268,20 @@
 				{#if !activeQuizMode}
 					{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
 						<QuestionCard
-							{selectedClass}
-							{selectedUnit}
-							{unitRange}
-							requestVersion={activeRequestVersion}
+							model={unlimitedQuestionCardModel({
+								selectedClass,
+								selectedUnit,
+								unitRange,
+								requestVersion: activeRequestVersion,
+								experiment
+							})}
 							expanded={isExpanded}
 							onExpand={toggleExpanded}
 							bind:controlsOpen={expandedSelectorOpen}
 							{practiceControls}
 							showFirstUseHint={showFirstUseHints}
-							{isPersonalizedTutor}
-							{onAnswered}
-							{...cardProps}
+							{tutorMode}
+							onAnswered={(result) => onEvent?.({ type: 'answered', result })}
 						/>
 					{/key}
 				{/if}

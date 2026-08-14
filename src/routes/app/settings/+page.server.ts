@@ -1,14 +1,17 @@
-import { and, desc, eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getCourses } from '$lib/catalog/ap-classes.js';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { superBillingAccess } from '$lib/server/neon/schema';
 import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/super/ai-controls.server';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getSuperBillingView } from '$lib/super/billing.server';
+import { getPlanAccessForRequest } from '$lib/super/plan-access-cache.server';
+import { hasPaidCapability } from '$lib/super/types';
 import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
 import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
+import {
+	getAssistantFeaturesEnabledForRequest,
+	setAssistantFeaturesEnabled
+} from '$lib/users/assistant-features.server';
 
 const validSubjects = new Set(getCourses().map((course) => course.name));
 
@@ -35,45 +38,39 @@ async function readSettingsUsage(userId: string, enabled: boolean): Promise<Sett
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;
-	const [userProfile, entitlements, freeBetaEnabled] = await Promise.all([
+	const [userProfile, planAccess, freeBetaEnabled, assistantFeaturesEnabled] = await Promise.all([
 		getUserSubjects(userId),
-		getEntitlements(userId),
-		isSuperFreeBetaEnabled()
+		getPlanAccessForRequest(locals, userId),
+		isSuperFreeBetaEnabled(),
+		getAssistantFeaturesEnabledForRequest(locals, userId)
 	]);
 	const [profile, billing, usage] = await Promise.all([
 		getTutorProfileViewForRequest(locals, userId),
-		getNeonDatabase()
-			.select()
-			.from(superBillingAccess)
-			.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
-			.orderBy(desc(superBillingAccess.updatedAt))
-			.limit(1)
-			.then(([record]) => record ?? null),
-		readSettingsUsage(userId, entitlements.personalizedTutor)
+		getSuperBillingView(userId),
+		readSettingsUsage(userId, hasPaidCapability(planAccess, 'personalizedTutor'))
 	]);
 
 	return {
 		selectedSubjects: userProfile,
-		entitlements,
+		assistantFeaturesEnabled,
+		planAccess,
 		freeBetaEnabled,
 		profile,
 		usage,
-		billing: billing
-			? {
-					status: billing.status,
-					billingIssue: billing.billingIssue ?? null,
-					subscriptionId: billing.stripeSubscriptionId ?? null,
-					periodStart: billing.periodStart?.toISOString() ?? null,
-					periodEnd: billing.periodEnd?.toISOString() ?? null,
-					cancelAt: billing.cancelAt?.toISOString() ?? null,
-					cancelAtPeriodEnd: billing.cancelAtPeriodEnd,
-					hasCustomer: Boolean(billing.stripeCustomerId)
-				}
-			: null
+		billing
 	};
 };
 
 export const actions: Actions = {
+	updateAssistantFeatures: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const rawEnabled = formData.get('enabled');
+		if (rawEnabled !== 'true' && rawEnabled !== 'false') {
+			return fail(400, { assistantFeaturesError: 'A valid assistant setting is required.' });
+		}
+		await setAssistantFeaturesEnabled(locals.userId!, rawEnabled === 'true');
+		return { assistantFeaturesUpdated: true };
+	},
 	updateSubjects: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const subjects = formData

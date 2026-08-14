@@ -15,6 +15,7 @@
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
 	import Share2Icon from '@lucide/svelte/icons/share-2';
 	import type { Snippet } from 'svelte';
+	import { quizQuestionCardModel } from '$lib/questions/question-card-model';
 
 	type QuizStatus = 'idle' | 'loading' | 'active' | 'review' | 'complete' | 'error';
 
@@ -28,6 +29,7 @@
 		isGenerating?: boolean;
 		expanded?: boolean;
 		persistHistory?: boolean;
+		showCoachReview?: boolean;
 		initialQuestions?: GeneratedQuestion[] | null;
 		sharedSlug?: string;
 		onExpand?: () => void;
@@ -48,6 +50,7 @@
 		isGenerating = $bindable(false),
 		expanded = false,
 		persistHistory = true,
+		showCoachReview = true,
 		initialQuestions = null,
 		sharedSlug = '',
 		onExpand,
@@ -622,7 +625,7 @@
 			</div>
 
 			<div class="flex flex-wrap justify-center gap-2">
-				{#if persistHistory}
+				{#if persistHistory && showCoachReview}
 					<Button href={coachReviewHref} variant="outline">Review with Coach</Button>
 				{/if}
 				<Button onclick={() => void startQuiz()}>Try another quiz</Button>
@@ -762,18 +765,19 @@
 
 		{#key `${currentIndex}:${currentQuestion.questionId ?? currentQuestion.prompt}`}
 			<QuestionCard
-				quizMode
-				quizQuestion={currentQuestion}
-				quizAnswer={currentAnswer}
-				questionNumber={String(currentIndex + 1)}
+				model={quizQuestionCardModel({
+					selectedClass,
+					selectedUnit,
+					question: currentQuestion,
+					answer: currentAnswer,
+					questionNumber: String(currentIndex + 1)
+				})}
 				{expanded}
 				{onExpand}
 				bind:controlsOpen
 				{practiceControls}
 				headerActions={questionHeaderActions}
 				quizNavigation={questionNavigation}
-				{selectedClass}
-				{selectedUnit}
 				checkLabel="Submit answer"
 				{nextLabel}
 				nextDisabled={isLastQuestion ? !canFinish : !nextQuestionReady}

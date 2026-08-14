@@ -28,6 +28,7 @@ export const userProfiles = appSchema.table(
 			.primaryKey()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		referralCode: text('referral_code'),
+		assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
 		subjects: text('subjects')
 			.array()
 			.notNull()

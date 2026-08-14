@@ -146,7 +146,7 @@
 
 <PageShell title="Insights" description="View a report of your practice for the last week">
 	{#snippet actions()}
-		{#if data.entitlements.aiInsights && data.insightsEnabled && data.profile.ageConfirmedAt}
+		{#if data.hasInsightsAccess && data.insightsEnabled && data.profile.ageConfirmedAt}
 			<Button
 				variant="outline"
 				disabled={refreshing || !data.eligibility?.eligible}
@@ -158,7 +158,7 @@
 		{/if}
 	{/snippet}
 
-	{#if !data.entitlements.aiInsights}
+	{#if !data.hasInsightsAccess}
 		<Card.Root class="mx-auto max-w-2xl">
 			<Card.Content class="space-y-3 p-6">
 				<h2 class="font-display text-2xl">Super feature</h2>

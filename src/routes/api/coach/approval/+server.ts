@@ -2,9 +2,8 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isSuperCoachEnabled } from '$lib/flags';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { authorizeCoachWrites, RedisRequiredError } from '$lib/super/ai-controls.server';
-import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 
 const approvalSchema = z
 	.object({
@@ -18,11 +17,8 @@ const approvalSchema = z
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isSuperCoachEnabled()))
-			return json({ error: 'Coach is temporarily unavailable.' }, { status: 503 });
-		const access = await getSuperFeatureAccess(userId, 'coach');
-		if (!access.allowed)
-			return json({ error: superFeatureAccessMessage(access, 'Coach') }, { status: 403 });
+		const access = await authorizeFeatureRequest(event, userId, 'coach');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 		const parsed = approvalSchema.safeParse(await event.request.json().catch(() => null));
 		if (!parsed.success) return json({ error: 'Invalid Coach approval' }, { status: 400 });
 		try {

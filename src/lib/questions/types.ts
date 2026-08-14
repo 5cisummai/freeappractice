@@ -1,5 +1,7 @@
-import type { PracticeVariant } from '$lib/practice/multi-attempt';
 import type { Snippet } from 'svelte';
+import type { QuestionCardModel } from '$lib/questions/question-card-model';
+
+export type TutorMode = 'hidden' | 'free' | 'personalized';
 
 export type QuestionOption = {
 	id: string;
@@ -61,6 +63,7 @@ export type GeneratedQuestion = {
 };
 
 export type QuestionCardProps = {
+	model: QuestionCardModel;
 	class?: string;
 	expanded?: boolean;
 	onExpand?: () => void;
@@ -68,17 +71,9 @@ export type QuestionCardProps = {
 	practiceControls?: Snippet;
 	headerActions?: Snippet;
 	quizNavigation?: Snippet;
-	questionNumber?: string;
-	quizMode?: boolean;
-	quizQuestion?: GeneratedQuestion | null;
-	quizAnswer?: AnswerResult | null;
 	nextDisabled?: boolean;
 	onQuizNext?: () => void;
 	onOptionSelected?: (selectedOption: string | null) => void;
-	selectedClass?: string;
-	selectedUnit?: string;
-	unitRange?: readonly number[];
-	requestVersion?: number;
 	selectedOption?: string | null;
 	autoDetectLongQuestion?: boolean;
 	longQuestionThresholdChars?: number;
@@ -88,11 +83,8 @@ export type QuestionCardProps = {
 	showExplanationLabel?: string;
 	showUtilityActions?: boolean;
 	showFirstUseHint?: boolean;
+	tutorMode?: TutorMode;
 	isPersonalizedTutor?: boolean;
-	practiceExperiment?: {
-		assignedVariant: PracticeVariant;
-		experimentEnabled: boolean;
-	};
 	skipLabel?: string;
 	notLearnedLabel?: string;
 	reportBugLabel?: string;
