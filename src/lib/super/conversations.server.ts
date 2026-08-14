@@ -76,7 +76,7 @@ export async function generateConversationTitle(
 		const { text, usage } = await generateText({
 			model: openaiModel(CONVERSATION_TITLE_MODEL),
 			system:
-				'Write a short conversation title for this student message. 3 to 8 words. Return only the title. No quotes.',
+				'Write a short conversation title for this student message. 3 to 5 words. Return only the title. No quotes.',
 			prompt: prompt.trim().slice(0, 500),
 			maxOutputTokens: 40,
 			providerOptions: {
