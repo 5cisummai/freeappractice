@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.post.title} – Free AP Practice Blog</title>
+	<title>{data.post.title} | Free AP Practice Blog</title>
 	<meta name="description" content={data.post.excerpt} />
 	<link rel="canonical" href={`https://freeappractice.org/blog/${data.post.slug}`} />
 	<meta property="og:url" content={`https://freeappractice.org/blog/${data.post.slug}`} />

@@ -40,7 +40,7 @@
 </script>
 
 <svelte:head>
-	<title>Choose Your Subjects – Free AP Practice</title>
+	<title>Choose Your Subjects | Free AP Practice</title>
 </svelte:head>
 
 <div

@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { generateText } from 'ai';
 import { and, asc, desc, eq, isNull, max } from 'drizzle-orm';
+import { CONVERSATION_TITLE_MODEL } from '$lib/ai/ai-models-config';
+import { openaiModel } from '$lib/ai/service.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
+import { logger } from '$lib/server/logger';
 import { conversationMessages, conversations, coachAudits } from '$lib/server/neon/schema';
 
 export type ConversationSurface = 'coach' | 'question';
@@ -42,6 +46,53 @@ function safeContext(value: ConversationContext | undefined): Record<string, unk
 	);
 }
 
+const DEFAULT_TITLES: Record<ConversationSurface, string> = {
+	coach: 'Coach',
+	question: 'Question help'
+};
+
+export function sanitizeConversationTitle(raw: string): string | null {
+	const cleaned = raw
+		.replace(/\s+/g, ' ')
+		.trim()
+		.replace(/^["'`]+|["'`]+$/g, '')
+		.replace(/[.]+$/g, '')
+		.trim()
+		.slice(0, 160);
+	return cleaned || null;
+}
+
+function fallbackConversationTitle(prompt: string, surface: ConversationSurface): string {
+	return sanitizeConversationTitle(prompt) ?? DEFAULT_TITLES[surface];
+}
+
+export async function generateConversationTitle(
+	prompt: string,
+	surface: ConversationSurface
+): Promise<string> {
+	const fallback = fallbackConversationTitle(prompt, surface);
+	const doneAiCall = logger.aiCall('generateConversationTitle', CONVERSATION_TITLE_MODEL);
+	try {
+		const { text, usage } = await generateText({
+			model: openaiModel(CONVERSATION_TITLE_MODEL),
+			system:
+				'Write a short conversation title for this student message. 3 to 8 words. Return only the title. No quotes.',
+			prompt: prompt.trim().slice(0, 500),
+			maxOutputTokens: 40,
+			providerOptions: {
+				openai: {
+					reasoningEffort: 'minimal'
+				}
+			}
+		});
+		doneAiCall({ completionTokens: usage.outputTokens });
+		return sanitizeConversationTitle(text) ?? fallback;
+	} catch (error) {
+		logger.warn('Conversation title generation failed', { error });
+		return fallback;
+	}
+}
+
 export async function createConversation(
 	userId: string,
 	input: {
@@ -58,8 +109,8 @@ export async function createConversation(
 			id,
 			userId,
 			title:
-				input.title?.trim().slice(0, 160) ||
-				(input.surface === 'question' ? 'Question help' : 'Coach'),
+				sanitizeConversationTitle(input.title ?? '') ||
+				DEFAULT_TITLES[normalizeSurface(input.surface)],
 			surface: normalizeSurface(input.surface),
 			context: safeContext(input.context)
 		})
@@ -106,6 +157,7 @@ export async function ensureConversation(
 		conversationId?: string;
 		surface: ConversationSurface;
 		context?: ConversationContext;
+		title?: string;
 	}
 ): Promise<string> {
 	if (input.conversationId) {

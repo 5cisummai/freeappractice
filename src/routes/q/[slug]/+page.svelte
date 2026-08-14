@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.sharedQuiz?.title ?? 'Shared quiz'} – Free AP Practice</title>
+	<title>{data.sharedQuiz?.title ?? 'Shared quiz'} | Free AP Practice</title>
 	<meta name="robots" content="noindex, nofollow" />
 	<meta name="googlebot" content="noindex, nofollow" />
 </svelte:head>

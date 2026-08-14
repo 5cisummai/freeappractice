@@ -52,7 +52,7 @@
 </script>
 
 <AuthSeoHead
-	title="Reset Password – Free AP Practice"
+	title="Reset Password | Free AP Practice"
 	description="Reset your Free AP Practice account password."
 	path="/reset-password"
 />

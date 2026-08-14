@@ -27,7 +27,7 @@
 	}
 </script>
 
-<svelte:head><title>Confirm your age – Free AP Practice</title></svelte:head>
+<svelte:head><title>Confirm your age | Free AP Practice</title></svelte:head>
 
 <PageShell
 	title="Confirm your age"

@@ -116,7 +116,7 @@
 </script>
 
 <svelte:head>
-	<title>Practice – Free AP Practice</title>
+	<title>Practice | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title="Practice" description="Select a course and unit, then generate a question.">

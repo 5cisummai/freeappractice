@@ -951,21 +951,21 @@
 </script>
 
 <svelte:head>
-	<title>Changelog – Free AP Practice</title>
+	<title>Changelog | Free AP Practice</title>
 	<meta name="description" content="Changelog and release notes for Free AP Practice" />
 	<meta name="author" content="FreeAPPractice.org" />
 	<meta name="robots" content="index, follow" />
 	<link rel="canonical" href="https://freeappractice.org/changelog" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/changelog" />
-	<meta property="og:title" content="Changelog – Free AP Practice" />
+	<meta property="og:title" content="Changelog | Free AP Practice" />
 	<meta property="og:description" content="Changelog and release notes for Free AP Practice" />
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/changelog" />
-	<meta name="twitter:title" content="Changelog – Free AP Practice" />
+	<meta name="twitter:title" content="Changelog | Free AP Practice" />
 	<meta name="twitter:description" content="Changelog and release notes for Free AP Practice" />
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>

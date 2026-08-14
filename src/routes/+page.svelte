@@ -115,8 +115,8 @@
 </script>
 
 <svelte:head>
-	<title>Free AP Practice – The Fastest Way to Practice AP Online</title>
-	<meta name="title" content="Free AP Practice – The Fastest Way to Practice AP Online" />
+	<title>Free AP Practice | The Fastest Way to Practice AP Online</title>
+	<meta name="title" content="Free AP Practice | The Fastest Way to Practice AP Online" />
 	<meta
 		name="description"
 		content="The fastest free AP practice on the internet: pick a subject, click generate, and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
@@ -142,7 +142,7 @@
 
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/" />
-	<meta property="og:title" content="Free AP Practice – Start Practicing in 2 Clicks" />
+	<meta property="og:title" content="Free AP Practice | Start Practicing in 2 Clicks" />
 	<meta
 		property="og:description"
 		content="The fastest way to practice AP online: pick a subject, generate a question, get instant feedback. Free, unlimited, no signup across 20+ subjects."
@@ -159,7 +159,7 @@
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/" />
-	<meta name="twitter:title" content="Free AP Practice – 2 Clicks, No Signup" />
+	<meta name="twitter:title" content="Free AP Practice | 2 Clicks, No Signup" />
 	<meta
 		name="twitter:description"
 		content="Fastest free AP practice online: pick a subject, click generate, get instant feedback. Unlimited questions across 20+ subjects."

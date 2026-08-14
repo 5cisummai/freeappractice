@@ -4,7 +4,7 @@
 </script>
 
 <AuthSeoHead
-	title="Login – Free AP Practice"
+	title="Login | Free AP Practice"
 	description="Sign in to your Free AP Practice account."
 	path="/login"
 />

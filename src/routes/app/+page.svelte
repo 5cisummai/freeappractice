@@ -128,7 +128,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard – Free AP Practice</title>
+	<title>Dashboard | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title={shellTitle} description={shellDescription} maskTitle>

@@ -315,7 +315,7 @@
 	const showFooterContinue = $derived(activeStep !== 'plan' || isSuperMember);
 </script>
 
-<svelte:head><title>Set up Super – Free AP Practice</title></svelte:head>
+<svelte:head><title>Set up Super | Free AP Practice</title></svelte:head>
 
 <div class="min-h-svh px-5 py-8 sm:px-8 sm:py-10">
 	<div class="mx-auto w-full max-w-3xl">

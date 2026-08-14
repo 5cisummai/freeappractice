@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Blog – Free AP Practice</title>
+	<title>Blog | Free AP Practice</title>
 	<meta
 		name="description"
 		content="AP course planning, summer study guides, and exam prep tips from the Free AP Practice team."
@@ -14,7 +14,7 @@
 	<link rel="canonical" href="https://freeappractice.org/blog" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/blog" />
-	<meta property="og:title" content="Blog – Free AP Practice" />
+	<meta property="og:title" content="Blog | Free AP Practice" />
 	<meta
 		property="og:description"
 		content="Tips, updates, and study guides from the Free AP Practice team."
@@ -24,7 +24,7 @@
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/blog" />
-	<meta name="twitter:title" content="Blog – Free AP Practice" />
+	<meta name="twitter:title" content="Blog | Free AP Practice" />
 	<meta
 		name="twitter:description"
 		content="Tips, updates, and study guides from the Free AP Practice team."

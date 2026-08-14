@@ -70,7 +70,7 @@
 </script>
 
 <svelte:head>
-	<title>Progress – Free AP Practice</title>
+	<title>Progress | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title="Progress" description="See where you're strong and what to practice next.">

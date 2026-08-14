@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-	<title>About – Free AP Practice</title>
+	<title>About | Free AP Practice</title>
 	<meta
 		name="description"
 		content="About Free AP Practice: helping high school students plan AP classes, study over the summer, and prepare for exams with free practice."
@@ -30,7 +30,7 @@
 	<link rel="canonical" href="https://freeappractice.org/about" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/about" />
-	<meta property="og:title" content="About – Free AP Practice" />
+	<meta property="og:title" content="About | Free AP Practice" />
 	<meta
 		property="og:description"
 		content="About Free AP Practice: mission, approach, and core features."
@@ -40,7 +40,7 @@
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/about" />
-	<meta name="twitter:title" content="About – Free AP Practice" />
+	<meta name="twitter:title" content="About | Free AP Practice" />
 	<meta
 		name="twitter:description"
 		content="About Free AP Practice: mission, approach, and core features."

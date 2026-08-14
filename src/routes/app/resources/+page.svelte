@@ -63,7 +63,7 @@
 </script>
 
 <svelte:head>
-	<title>Resources - Free AP Practice</title>
+	<title>Resources | Free AP Practice</title>
 	<meta
 		name="description"
 		content="Study guides from the Free AP Practice blog and trusted external AP resources."

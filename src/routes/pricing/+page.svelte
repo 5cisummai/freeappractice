@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Super – Free AP Practice</title>
+	<title>Super | Free AP Practice</title>
 	<meta
 		name="description"
 		content="Upgrade to Super for personalized AP tutoring, AI coaching, and actionable study insights."

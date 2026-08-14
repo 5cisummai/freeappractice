@@ -55,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>Summer AP Study Guide – Plan & Preview Before School Starts</title>
+	<title>Summer AP Study Guide | Plan & Preview Before School Starts</title>
 	<meta
 		name="description"
 		content="Free summer AP prep for high school students: plan your AP classes, preview Unit 1, and practice 15–30 minutes a day with instant feedback. No signup required."
@@ -67,7 +67,7 @@
 	<link rel="canonical" href="https://freeappractice.org/summer" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/summer" />
-	<meta property="og:title" content="Summer AP Study Guide – Free AP Practice" />
+	<meta property="og:title" content="Summer AP Study Guide | Free AP Practice" />
 	<meta
 		property="og:description"
 		content="Plan your AP year and preview Unit 1 this summer with free practice questions and study guides."
@@ -75,7 +75,7 @@
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="Summer AP Study Guide – Free AP Practice" />
+	<meta name="twitter:title" content="Summer AP Study Guide | Free AP Practice" />
 	<meta
 		name="twitter:description"
 		content="Plan your AP year and preview Unit 1 this summer with free practice questions."

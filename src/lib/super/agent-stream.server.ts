@@ -27,6 +27,7 @@ import {
 import {
 	appendConversationMessage,
 	ensureConversation,
+	generateConversationTitle,
 	ConversationAccessError,
 	finalizeConversationMessage,
 	getConversationMessages,
@@ -147,7 +148,10 @@ export async function createSuperAgentStreamResponse(
 		conversationId = await ensureConversation(userId, {
 			conversationId: requestedConversationId,
 			surface,
-			context
+			context,
+			...(!requestedConversationId
+				? { title: await generateConversationTitle(lastUserMessage, surface) }
+				: {})
 		});
 		const incomingUser = [...messages].reverse().find((message) => message.role === 'user');
 		await appendConversationMessage(userId, {

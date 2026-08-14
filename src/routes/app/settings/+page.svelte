@@ -198,7 +198,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings – Free AP Practice</title>
+	<title>Settings | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title="Settings" description="Manage your account and preferences.">

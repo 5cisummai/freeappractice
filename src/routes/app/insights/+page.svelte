@@ -141,7 +141,7 @@
 </script>
 
 <svelte:head>
-	<title>Insights - Free AP Practice</title>
+	<title>Insights | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title="Insights" description="View a report of your practice for the last week">
