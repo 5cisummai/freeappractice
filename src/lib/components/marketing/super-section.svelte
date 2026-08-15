@@ -27,8 +27,8 @@
 
 	const wellClass = 'relative min-h-0 flex-1 overflow-hidden';
 	const cardClass =
-		'flex min-h-0 flex-col overflow-hidden rounded-3xl bg-muted/50 ring-1 ring-foreground/5 marketing-card-shadow';
-	const captionClass = 'space-y-1 px-5 py-4 sm:px-6 sm:py-5';
+		'flex min-h-0 flex-col overflow-hidden rounded-3xl border border-border bg-background';
+	const captionClass = 'space-y-1 px-8 py-6';
 	const mockScaleClass = 'pointer-events-none w-[118%] [zoom:0.85]';
 </script>
 
@@ -54,8 +54,8 @@
 		{/snippet}
 		{#snippet description()}
 			<p>
-				Coach remembers how you learn and reasons from your attempts—so you close the unit that's
-				slipping, not a chatbot you brief from scratch.
+				Supercharge your studying with personalized intelligence that learns from your context to
+				give you the next best steps.
 			</p>
 		{/snippet}
 	</SectionIntro>
@@ -63,13 +63,13 @@
 	<div
 		class="grid min-h-[52svh] items-stretch gap-4 sm:gap-5 lg:min-h-152 lg:grid-cols-12 lg:grid-rows-2"
 	>
-		<article class="{cardClass} min-h-112 lg:col-span-8 lg:row-span-2 {twAnimateInViewSubtle}">
+		<article class="{cardClass} min-h-112 lg:col-span-7 lg:row-span-2 {twAnimateInViewSubtle}">
 			<div class="{wellClass} bg-background" aria-hidden="true">
 				<CoachChatDemo />
 			</div>
 		</article>
 
-		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-4">
+		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-5">
 			<div class="{wellClass} min-h-52 p-4 sm:p-5" aria-hidden="true">
 				<div class={mockScaleClass}>
 					<div
@@ -113,18 +113,17 @@
 							</div>
 						</div>
 					</div>
-					<p class="mt-2 text-[0.65rem] text-muted-foreground">
-						Generated Aug 11, 2026 from 47 scored attempts.
-					</p>
 				</div>
 			</div>
 			<div class={captionClass}>
-				<h3 class="text-base font-semibold tracking-tight">See what's actually slipping</h3>
-				<p class="text-sm leading-6 text-muted-foreground">A weekly brief from your attempts.</p>
+				<h3 class="text-xl font-semibold tracking-tight">See what's actually slipping</h3>
+				<p class="mt-2 text-sm leading-6 text-muted-foreground">
+					Get weekly reports on your progress and areas for improvement.
+				</p>
 			</div>
 		</article>
 
-		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-4">
+		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-5">
 			<div class="{wellClass} min-h-52 p-4 sm:p-5" aria-hidden="true">
 				<div class={mockScaleClass}>
 					<div
@@ -167,8 +166,10 @@
 				</div>
 			</div>
 			<div class={captionClass}>
-				<h3 class="text-base font-semibold tracking-tight">Finish this week</h3>
-				<p class="text-sm leading-6 text-muted-foreground">30-minute tasks from those gaps.</p>
+				<h3 class="text-xl font-semibold tracking-tight">Finish this week</h3>
+				<p class="mt-2 text-sm leading-6 text-muted-foreground">
+					Get personalized study plans to fill the gaps.
+				</p>
 			</div>
 		</article>
 	</div>

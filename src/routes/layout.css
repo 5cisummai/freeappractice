@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@fontsource-variable/geist/wght.css';
+@import '@fontsource-variable/inter/wght.css';
 @import '@fontsource-variable/fraunces';
 @import 'shadcn-svelte/tailwind.css';
 
@@ -78,7 +78,7 @@
 }
 
 @theme inline {
-	--font-sans: 'Geist Variable', sans-serif;
+	--font-sans: 'Inter Variable', sans-serif;
 	--font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);

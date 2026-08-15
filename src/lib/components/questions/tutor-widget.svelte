@@ -507,7 +507,7 @@
 {#if embedded}
 	<div
 		id="landing-ai-tutor-panel"
-		class="flex h-full min-h-0 flex-col overflow-visible rounded-t-2xl border border-b-0 border-border bg-card shadow-2xl"
+		class="flex h-full min-h-0 flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-card shadow-2xl"
 	>
 		{@render chatBody()}
 	</div>
