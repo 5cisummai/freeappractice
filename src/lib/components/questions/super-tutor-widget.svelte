@@ -1,18 +1,23 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import { DefaultChatTransport } from 'ai';
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
 	import XIcon from '@lucide/svelte/icons/x';
-	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
 	import SquareIcon from '@lucide/svelte/icons/square';
+	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import type { SuperAgentUIMessage } from '$lib/super/coach.server';
 	import { toast } from 'svelte-sonner';
 
@@ -37,6 +42,7 @@
 	}: Props = $props();
 
 	let isOpen = $state(false);
+	let isResizing = $state(false);
 	let inputText = $state('');
 	let sessionId = $state('');
 	let conversationId = $state('');
@@ -50,10 +56,24 @@
 	let hasDragged = $state(false);
 	let dragOffsetX = 0;
 	let dragOffsetY = 0;
+	let panelWidthOverride = $state<number | null>(null);
+	let panelHeightOverride = $state<number | null>(null);
+	let panelLeftOverride = $state<number | null>(null);
+	let panelTopOverride = $state<number | null>(null);
+	let resizeStartX = 0;
+	let resizeStartY = 0;
+	let resizeStartWidth = 0;
+	let resizeStartHeight = 0;
+	let resizeStartLeft = 0;
+	let resizeStartTop = 0;
 
 	const BUTTON_SIZE = 48;
 	const PANEL_WIDTH = 360;
 	const PANEL_HEIGHT = 500;
+	const PANEL_MIN_WIDTH = 300;
+	const PANEL_MIN_HEIGHT = 360;
+	const PANEL_MAX_WIDTH = 720;
+	const PANEL_MAX_HEIGHT = 800;
 	const VIEWPORT_MARGIN = 12;
 	const PANEL_GAP = 8;
 
@@ -61,21 +81,27 @@
 	const contextLabel = $derived(isFrq ? 'FRQ' : topic || unit || apClass || 'question');
 	const panelWidth = $derived(
 		viewportWidth
-			? Math.min(PANEL_WIDTH, Math.max(0, viewportWidth - VIEWPORT_MARGIN * 2))
-			: PANEL_WIDTH
+			? Math.min(
+					panelWidthOverride ?? PANEL_WIDTH,
+					Math.max(0, viewportWidth - VIEWPORT_MARGIN * 2)
+				)
+			: (panelWidthOverride ?? PANEL_WIDTH)
 	);
 	const panelHeight = $derived(
 		viewportHeight
-			? Math.min(PANEL_HEIGHT, Math.max(0, viewportHeight - VIEWPORT_MARGIN * 2))
-			: PANEL_HEIGHT
+			? Math.min(
+					panelHeightOverride ?? PANEL_HEIGHT,
+					Math.max(0, viewportHeight - VIEWPORT_MARGIN * 2)
+				)
+			: (panelHeightOverride ?? PANEL_HEIGHT)
 	);
 	const panelLeft = $derived(
 		viewportWidth
 			? Math.min(
-					Math.max(VIEWPORT_MARGIN, btnX + BUTTON_SIZE - panelWidth),
+					Math.max(VIEWPORT_MARGIN, panelLeftOverride ?? btnX + BUTTON_SIZE - panelWidth),
 					viewportWidth - panelWidth - VIEWPORT_MARGIN
 				)
-			: VIEWPORT_MARGIN
+			: (panelLeftOverride ?? VIEWPORT_MARGIN)
 	);
 	const chatAbove = $derived(
 		!viewportHeight || btnY - PANEL_GAP >= viewportHeight - (btnY + BUTTON_SIZE + PANEL_GAP)
@@ -85,7 +111,8 @@
 			? Math.min(
 					Math.max(
 						VIEWPORT_MARGIN,
-						chatAbove ? btnY - PANEL_GAP - panelHeight : btnY + BUTTON_SIZE + PANEL_GAP
+						panelTopOverride ??
+							(chatAbove ? btnY - PANEL_GAP - panelHeight : btnY + BUTTON_SIZE + PANEL_GAP)
 					),
 					viewportHeight - panelHeight - VIEWPORT_MARGIN
 				)
@@ -125,6 +152,7 @@
 	});
 
 	const streaming = $derived(chat.status === 'submitted' || chat.status === 'streaming');
+	const thinking = $derived(chat.status === 'submitted');
 	const scrollTrigger = $derived.by(() => {
 		const last = chat.messages.at(-1);
 		return `${chat.messages.length}:${last?.parts.length ?? 0}:${messageText(last).length}`;
@@ -322,6 +350,74 @@
 		(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
 	}
 
+	function resizePanel(widthDelta: number, heightDelta: number): void {
+		const rightEdge = resizeStartLeft + resizeStartWidth;
+		const availableWidth = Math.max(0, rightEdge - VIEWPORT_MARGIN);
+		const minWidth = Math.min(PANEL_MIN_WIDTH, availableWidth);
+		const nextWidth = Math.min(
+			Math.max(minWidth, resizeStartWidth + widthDelta),
+			Math.min(PANEL_MAX_WIDTH, availableWidth)
+		);
+		const bottomEdge = resizeStartTop + resizeStartHeight;
+		const availableHeight = chatAbove
+			? Math.max(0, bottomEdge - VIEWPORT_MARGIN)
+			: Math.max(0, viewportHeight - resizeStartTop - VIEWPORT_MARGIN);
+		const minHeight = Math.min(PANEL_MIN_HEIGHT, availableHeight);
+		const nextHeight = Math.min(
+			Math.max(minHeight, resizeStartHeight + heightDelta),
+			Math.min(PANEL_MAX_HEIGHT, availableHeight)
+		);
+
+		panelWidthOverride = nextWidth;
+		panelHeightOverride = nextHeight;
+		panelLeftOverride = rightEdge - nextWidth;
+		panelTopOverride = chatAbove ? bottomEdge - nextHeight : resizeStartTop;
+	}
+
+	function onResizePointerDown(event: PointerEvent): void {
+		event.preventDefault();
+		isResizing = true;
+		resizeStartX = event.clientX;
+		resizeStartY = event.clientY;
+		resizeStartWidth = panelWidth;
+		resizeStartHeight = panelHeight;
+		resizeStartLeft = panelLeft;
+		resizeStartTop = panelTop;
+		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+	}
+
+	function onResizePointerMove(event: PointerEvent): void {
+		if (!isResizing) return;
+		resizePanel(
+			resizeStartX - event.clientX,
+			chatAbove ? resizeStartY - event.clientY : event.clientY - resizeStartY
+		);
+	}
+
+	function onResizePointerUp(event: PointerEvent): void {
+		isResizing = false;
+		const target = event.currentTarget as HTMLElement;
+		if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+	}
+
+	function onResizeKeydown(event: KeyboardEvent): void {
+		const step = event.shiftKey ? 48 : 16;
+		const widthDelta = event.key === 'ArrowLeft' ? step : event.key === 'ArrowRight' ? -step : 0;
+		const heightDelta =
+			event.key === (chatAbove ? 'ArrowUp' : 'ArrowDown')
+				? step
+				: event.key === (chatAbove ? 'ArrowDown' : 'ArrowUp')
+					? -step
+					: 0;
+		if (!widthDelta && !heightDelta) return;
+		event.preventDefault();
+		resizeStartWidth = panelWidth;
+		resizeStartHeight = panelHeight;
+		resizeStartLeft = panelLeft;
+		resizeStartTop = panelTop;
+		resizePanel(widthDelta, heightDelta);
+	}
+
 	function open(): void {
 		isOpen = true;
 		void tick().then(() => {
@@ -329,6 +425,13 @@
 				document.querySelector('#super-tutor-panel textarea') as HTMLTextAreaElement | null
 			)?.focus();
 		});
+	}
+
+	function rememberTrigger(node: HTMLButtonElement) {
+		triggerEl = node;
+		return () => {
+			if (triggerEl === node) triggerEl = null;
+		};
 	}
 
 	function close(): void {
@@ -377,9 +480,28 @@
 			aria-modal="true"
 			aria-label="Super Tutor"
 			{@attach trapFocus}
-			class="pointer-events-auto fixed flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl outline-none"
+			class={[
+				'pointer-events-auto fixed flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl outline-none',
+				isResizing ? 'transition-none' : 'transition-[height,width,top,left] duration-300 ease-out'
+			]}
 			style="left: {panelLeft}px; top: {panelTop}px; width: {panelWidth}px; height: {panelHeight}px;"
+			transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
 		>
+			<button
+				type="button"
+				class="absolute top-0 left-0 z-10 h-5 w-5 cursor-nwse-resize rounded-tl-2xl text-transparent hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:text-muted-foreground"
+				aria-label="Resize Super Tutor"
+				title="Drag to resize"
+				onpointerdown={onResizePointerDown}
+				onpointermove={onResizePointerMove}
+				onpointerup={onResizePointerUp}
+				onpointercancel={onResizePointerUp}
+				onkeydown={onResizeKeydown}
+			>
+				<span
+					class="pointer-events-none absolute top-1 left-1 h-3 w-3 border-t-2 border-l-2 opacity-70"
+				></span>
+			</button>
 			<div class="flex shrink-0 items-center justify-between border-b border-border/70 px-4 py-3">
 				<div class="flex items-center gap-2">
 					<Badge
@@ -391,14 +513,16 @@
 					<SparklesIcon class="h-4 w-4" />
 					<span class="text-sm font-semibold">Tutor</span>
 				</div>
-				<button
-					type="button"
-					onclick={close}
-					class="rounded-md p-0.5 hover:bg-muted"
-					aria-label="Close Super Tutor"
-				>
-					<XIcon class="h-4 w-4" />
-				</button>
+				<div class="flex items-center gap-1">
+					<button
+						type="button"
+						onclick={close}
+						class="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						aria-label="Close Super Tutor"
+					>
+						<XIcon class="h-4 w-4" />
+					</button>
+				</div>
 			</div>
 
 			<div
@@ -475,11 +599,28 @@
 						{/if}
 					</div>
 				{/each}
+				{#if thinking}
+					<div class="flex justify-start" role="status" aria-label="Super Tutor is thinking">
+						<div class="flex items-center gap-2 text-sm text-muted-foreground">
+							<Loader2Icon class="size-3.5 animate-spin motion-reduce:animate-none" />
+							<span>Thinking</span>
+							<span class="inline-flex gap-0.5" aria-hidden="true">
+								<span class="animate-bounce motion-reduce:animate-none">·</span>
+								<span class="animate-bounce [animation-delay:100ms] motion-reduce:animate-none"
+									>·</span
+								>
+								<span class="animate-bounce [animation-delay:200ms] motion-reduce:animate-none"
+									>·</span
+								>
+							</span>
+						</div>
+					</div>
+				{/if}
 			</div>
 
 			<div class="shrink-0 border-t border-border/70 p-3">
 				<div
-					class="flex items-end gap-2 rounded-3xl border border-border bg-background px-3 py-2 shadow-sm"
+					class="flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-1.5 shadow-sm"
 				>
 					<textarea
 						bind:value={inputText}
@@ -492,18 +633,19 @@
 						rows={1}
 						placeholder="Ask for help…"
 						disabled={streaming}
-						class="min-h-9 flex-1 resize-none bg-transparent px-2 py-1 text-sm leading-5 outline-none placeholder:text-muted-foreground disabled:opacity-50"
+						class="min-h-0 flex-1 resize-none bg-transparent px-1 py-0 text-sm leading-5 outline-none placeholder:text-muted-foreground disabled:opacity-50"
 					></textarea>
 					<button
 						type="button"
 						onclick={() => (streaming ? chat.stop() : void send())}
 						disabled={!streaming && !inputText.trim()}
-						class="shrink-0 rounded-lg p-1 text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+						class={[
+							'flex size-9 shrink-0 items-center justify-center self-end rounded-full text-primary-foreground transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40',
+							SUPER_GRADIENT_BUTTON_CLASS
+						]}
 						aria-label={streaming ? 'Stop response' : 'Send message'}
 					>
-						{#if streaming}<SquareIcon class="h-4 w-4" />{:else}<SendHorizontalIcon
-								class="h-4 w-4"
-							/>{/if}
+						{#if streaming}<SquareIcon class="size-4" />{:else}<ArrowUpIcon class="size-4" />{/if}
 					</button>
 				</div>
 			</div>
@@ -511,7 +653,8 @@
 	{/if}
 
 	<button
-		bind:this={triggerEl}
+		{@attach rememberTrigger}
+		id="super-tutor-trigger"
 		type="button"
 		class="super-tier-gradient-fab pointer-events-auto fixed z-60 flex h-12 w-12 items-center justify-center rounded-full select-none"
 		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
@@ -534,10 +677,12 @@
 		{#if isOpen}<XIcon class="h-5 w-5" />{:else}<MessageSquareIcon class="h-5 w-5" />{/if}
 	</button>
 	{#if showFirstUseHint}
-		<div
-			class="pointer-events-none fixed right-20 bottom-6 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground shadow-lg"
-		>
-			Ask Super Tutor about this question.
-		</div>
+		<FirstUseHint
+			id="tutor-widget"
+			anchorId="super-tutor-trigger"
+			text="Ask Super Tutor about this question."
+			side="top"
+			align="end"
+		/>
 	{/if}
 </div>
