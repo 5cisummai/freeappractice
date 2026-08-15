@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -73,6 +74,7 @@
 	const requestVersion = $derived(
 		model.delivery.kind === 'unlimited' ? model.delivery.requestVersion : 0
 	);
+	const isLandingPage = $derived(page.route.id === '/');
 
 	let promptElement: HTMLDivElement | null = null;
 	let isLongQuestion = $state(false);
@@ -493,7 +495,9 @@
 					class={cn(
 						expanded
 							? 'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card py-6 shadow-lg ring-1 ring-foreground/10'
-							: 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0',
+							: isLandingPage
+								? 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0'
+								: 'relative overflow-visible bg-card pt-6 shadow-xs ring-1 ring-foreground/10',
 						className
 					)}
 				>

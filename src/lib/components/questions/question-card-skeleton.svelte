@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { cn } from '$lib/utils.js';
@@ -6,11 +7,15 @@
 	const optionRows = [0, 1, 2, 3];
 
 	let { class: className }: { class?: string } = $props();
+	const isLandingPage = $derived(page.route.id === '/');
 </script>
 
 <Card.Root
 	class={cn(
-		'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0',
+		'relative overflow-visible pt-6',
+		isLandingPage
+			? 'border-0 bg-transparent shadow-none ring-0'
+			: 'bg-card shadow-xs ring-1 ring-foreground/10',
 		className
 	)}
 	aria-busy="true"

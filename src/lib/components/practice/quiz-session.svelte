@@ -13,7 +13,7 @@
 	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
-	import Share2Icon from '@lucide/svelte/icons/share-2';
+	import ShareIcon from '@lucide/svelte/icons/share';
 	import type { Snippet } from 'svelte';
 	import { quizQuestionCardModel } from '$lib/question-bank/question-card-model';
 
@@ -598,7 +598,7 @@
 						disabled={shareCreating}
 						onclick={() => void createShareLink()}
 					>
-						<Share2Icon class="size-4" />
+						<ShareIcon class="size-4" />
 						{shareUrl ? 'Share quiz again' : 'Share this quiz'}
 					</Button>
 					{#if shareStatus}
@@ -681,7 +681,7 @@
 					onclick={() => void createShareLink()}
 					aria-label="Share quiz"
 				>
-					<Share2Icon class="size-4" />
+					<ShareIcon class="size-4" />
 				</Button>
 				{#if shareStatus}
 					<span class="max-w-32 text-xs text-muted-foreground" role="status">{shareStatus}</span>
