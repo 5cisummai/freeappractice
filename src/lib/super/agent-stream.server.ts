@@ -176,6 +176,7 @@ export async function createSuperAgentStreamResponse(
 		const personalization = await buildSuperAgentContext(userId, lastUserMessage, context);
 		const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
 		const agent = createSuperAgent({
+			locals: event.locals,
 			userId,
 			sessionId,
 			selectedApClasses: profile.selectedApClasses,

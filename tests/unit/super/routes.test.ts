@@ -16,7 +16,6 @@ const mocks = vi.hoisted(() => ({
 	deleteAllTutorMemories: vi.fn(),
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
-	getSuperFeatureAccess: vi.fn(),
 	authorizeFeatureRequest: vi.fn(),
 	insightsGet: vi.fn(),
 	insightsPost: vi.fn(),
@@ -47,7 +46,6 @@ vi.mock('$lib/flags', () => ({
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
 vi.mock('$lib/super/feature-access.server', () => ({
-	getSuperFeatureAccess: mocks.getSuperFeatureAccess,
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
 }));
@@ -135,7 +133,6 @@ describe('Super API routes', () => {
 		mocks.getTutorMemoryPublicId.mockResolvedValue('memory-token');
 		mocks.resolveTutorMemoryId.mockResolvedValue('mem0-secret-id');
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
-		mocks.getSuperFeatureAccess.mockResolvedValue({ allowed: true });
 		mocks.authorizeFeatureRequest.mockResolvedValue({ allowed: true });
 		mocks.coachUndoPost.mockResolvedValue(new Response(null, { status: 204 }));
 	});
@@ -212,11 +209,6 @@ describe('Super API routes', () => {
 			...profile,
 			ageConfirmedAt: '2026-08-04T00:00:00.000Z'
 		});
-		mocks.getSuperFeatureAccess.mockResolvedValue({
-			allowed: false,
-			reason: 'subscription'
-		});
-
 		const acknowledged = await memoryPost(event());
 		expect(acknowledged.status).toBe(200);
 		expect(mocks.markMemoryDisclosureSeen).toHaveBeenCalledWith('user-1');

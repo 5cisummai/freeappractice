@@ -119,29 +119,3 @@ function featureUnavailableMessage(feature: SuperFeature): string {
 	return 'Super Tutor is temporarily unavailable.';
 }
 
-/** Compatibility view for callers that only need the old allowed/reason shape. */
-export type SuperFeatureAccess =
-	| { allowed: true }
-	| { allowed: false; reason: 'subscription' | 'age' | 'feature_disabled' | 'assistant_disabled' };
-
-export async function getSuperFeatureAccess(
-	userId: string,
-	feature: SuperFeature,
-	event?: Pick<RequestEvent, 'locals'>
-): Promise<SuperFeatureAccess> {
-	const request = event ?? { locals: {} as App.Locals };
-	const access = await authorizeFeatureRequest(request, userId, feature);
-	return access.allowed
-		? { allowed: true }
-		: {
-				allowed: false,
-				reason:
-					access.code === 'age_required'
-						? 'age'
-						: access.code === 'assistant_disabled'
-							? 'assistant_disabled'
-							: access.code === 'feature_disabled'
-								? 'feature_disabled'
-								: 'subscription'
-			};
-}

@@ -68,7 +68,7 @@
 			>
 				Practice AP Exams
 				<span class="relative inline-block px-1">
-					Free<svg
+					Free.<svg
 						class="pointer-events-none absolute -bottom-1 left-0 h-3 w-full text-primary"
 						viewBox="0 0 88 10"
 						fill="none"
@@ -81,7 +81,8 @@
 							stroke-linecap="round"
 						/>
 					</svg>
-				</span>Two Clicks. No Signup.
+				</span>
+				Two Clicks. No Signup.
 			</h1>
 
 			<p

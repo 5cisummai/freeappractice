@@ -222,7 +222,13 @@
 		{/snippet}
 
 		{#if !isExpanded && !sharedQuiz}
-			<div id="practice-shell-controls" class="mx-auto mb-8 max-w-5xl">
+			<div
+				id="practice-shell-controls"
+				class={cn(
+					'mx-auto mb-8 max-w-5xl',
+					presentation === 'hero' && 'max-sm:px-4'
+				)}
+			>
 				{@render practiceControls()}
 			</div>
 		{/if}
