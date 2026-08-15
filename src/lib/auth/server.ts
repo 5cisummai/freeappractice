@@ -34,6 +34,7 @@ import {
 } from '$lib/auth/password-policy';
 import { classifyAccountCreationMethod } from '$lib/auth/analytics';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
+import { hasAgeAttestationCookie } from '$lib/auth/age-attestation';
 
 const db = getNeonDatabase();
 
@@ -68,6 +69,14 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
+				before: async (_user, context) => {
+					// New accounts must come through the 13+ self-attestation in the signup UI.
+					// The short-lived cookie is only an input gate; ageConfirmedAt remains the
+					// durable post-auth account control.
+					if (!hasAgeAttestationCookie(context?.request?.headers.get('cookie') ?? null)) {
+						return false;
+					}
+				},
 				after: async (user, context) => {
 					await createUserProfile(user.id);
 					captureAnonymousServerMetric('account_created', {

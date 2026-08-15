@@ -15,8 +15,7 @@ const ONE_TAP_ROUTE_PATTERNS = [
 	/^\/stats$/,
 	/^\/blog(\/.*)?$/,
 	/^\/practice(\/.*)?$/,
-	/^\/login$/,
-	/^\/signup$/
+	/^\/login$/
 ] as const;
 
 function isGoogleOneTapRoute(pathname: string): boolean {

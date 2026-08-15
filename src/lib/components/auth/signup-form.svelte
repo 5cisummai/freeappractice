@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Field from '$lib/components/ui/field/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
@@ -13,6 +14,7 @@
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { markOnboardingPendingInBrowser } from '$lib/onboarding.js';
+	import { persistAgeAttestation } from '$lib/auth/age-attestation.js';
 	import {
 		isPasswordWithinLimit,
 		MIN_PASSWORD_LENGTH,
@@ -29,10 +31,16 @@
 	let errorMessage = $state('');
 	let loading = $state(false);
 	let googleLoading = $state(false);
+	let ageAttested = $state(false);
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		errorMessage = '';
+		if (!ageAttested) {
+			errorMessage = 'You must confirm that you are at least 13 to create an account.';
+			return;
+		}
+		persistAgeAttestation(true);
 
 		if (password !== confirmPassword) {
 			errorMessage = 'Passwords do not match';
@@ -75,8 +83,14 @@
 	}
 
 	async function handleGoogleSignIn() {
-		if (googleLoading) return;
+		if (googleLoading || !ageAttested) {
+			if (!ageAttested) {
+				errorMessage = 'You must confirm that you are at least 13 to create an account.';
+			}
+			return;
+		}
 		errorMessage = '';
+		persistAgeAttestation(true);
 		googleLoading = true;
 		captureSignupStarted('google');
 		try {
@@ -108,12 +122,23 @@
 		<Card.Content>
 			<form onsubmit={handleSubmit}>
 				<Field.Group>
+					<Field.Field orientation="horizontal" class="items-start">
+						<Checkbox
+							id="age-attestation"
+							required
+							bind:checked={ageAttested}
+							onCheckedChange={(checked) => persistAgeAttestation(checked === true)}
+						/>
+						<Field.Label for="age-attestation" class="text-sm font-normal">
+							I confirm that I am at least 13 years old.
+						</Field.Label>
+					</Field.Field>
 					<Field.Field>
 						<Button
 							type="button"
 							variant="outline"
 							onclick={handleGoogleSignIn}
-							disabled={googleLoading}
+							disabled={googleLoading || !ageAttested}
 						>
 							<GoogleLogo />
 							{googleLoading ? 'Redirecting...' : 'Continue with Google'}
@@ -175,7 +200,7 @@
 						</Field.Description>
 					</Field.Field>
 					<Field.Field>
-						<Button type="submit" disabled={loading}>
+						<Button type="submit" disabled={loading || !ageAttested}>
 							{loading ? 'Creating account...' : 'Create Account'}
 						</Button>
 						<Field.Description class="text-center">
@@ -190,9 +215,8 @@
 		</Card.Content>
 	</Card.Root>
 	<Field.Description class="px-6 text-center">
-		By clicking continue, you agree to our <a
-			href={resolve('/terms')}
-			class="underline underline-offset-4">Terms of Service</a
+		By continuing, you agree to our <a href={resolve('/terms')} class="underline underline-offset-4"
+			>Terms of Service</a
 		>
 		and <a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
 	</Field.Description>

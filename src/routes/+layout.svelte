@@ -69,6 +69,8 @@
 				<div class="space-y-1">
 					<p class="font-semibold text-foreground">Optional product analytics</p>
 					<p class="text-sm leading-6 text-muted-foreground">
+						Free AP Practice is intended for students age 13 and older. If you are under 13, choose
+						Reject optional analytics, then do not create an account or submit personal information.
 						This personal project uses cookieless Vercel Analytics for traffic and performance. You
 						can also opt in to detailed product analytics, including feature usage and optional
 						session replay. You can change this later in Settings. See our
@@ -81,14 +83,14 @@
 						class="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
 						onclick={() => privacy.setAnalyticsConsent('denied')}
 					>
-						Reject
+						Reject optional analytics
 					</button>
 					<button
 						type="button"
 						class="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
 						onclick={() => privacy.setAnalyticsConsent('granted')}
 					>
-						Accept
+						Accept optional analytics
 					</button>
 				</div>
 			</div>

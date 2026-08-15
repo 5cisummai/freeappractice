@@ -14,6 +14,7 @@ import { hasPaidCapability, type StudyPlanView, type StudyTask } from '$lib/supe
 import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 
 export const STUDY_PLAN_DAYS = 7;
+export const STUDY_PLAN_RETENTION_DAYS = 90;
 export const STUDY_PLAN_MAX_TASK_MINUTES = 30;
 export const STUDY_PLAN_DEFAULT_TASK_MINUTES = 25;
 

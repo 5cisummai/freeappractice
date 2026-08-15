@@ -6,3 +6,4 @@ bun.lockb
 
 # Miscellaneous
 /static/
+/drizzle/meta/
