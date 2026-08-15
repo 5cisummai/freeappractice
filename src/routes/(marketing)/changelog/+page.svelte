@@ -36,6 +36,53 @@
 			]
 		},
 		{
+			version: '1.6.8',
+			date: 'August 12, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added a Super admin dashboard for reviewing subscriptions, grants, AI usage, and failed cleanup jobs',
+						'Added admin controls for managing user roles, Super access, and free-beta grants'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved admin data tables, action menus, and feedback when admin data cannot be loaded',
+						'Added clearer error handling and retry actions for failed Super maintenance jobs'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Prevented duplicate indefinite Super grants with a database uniqueness constraint'
+					]
+				}
+			]
+		},
+		{
+			version: '1.6.7',
+			date: 'August 12, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added shareable practice sets with public links and a dedicated shared-quiz experience',
+						'Students can take shared quizzes without an account, then sign up to save their score and progress'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved quiz session state, validation, persistence, and result handling',
+						'Added rate limiting and integrity checks for shared practice set creation',
+						'Polished practice question actions and navigation for shared sessions'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.6',
 			date: 'August 11, 2026',
 			sections: [
