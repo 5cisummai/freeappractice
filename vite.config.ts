@@ -7,17 +7,22 @@ import { vercelToolbar } from '@vercel/toolbar/plugins/vite';
 import { defineConfig } from 'vitest/config';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const isVitest = Boolean(process.env.VITEST);
 
 export default defineConfig({
 	plugins: [
-		sentrySvelteKit({
-			org: 'free-ap-practice',
-			project: 'javascript-sveltekit',
-			authToken: process.env.SENTRY_AUTH_TOKEN
-		}),
-		tailwindcss(),
+		...(isVitest
+			? []
+			: [
+					sentrySvelteKit({
+						org: 'free-ap-practice',
+						project: 'javascript-sveltekit',
+						authToken: process.env.SENTRY_AUTH_TOKEN
+					}),
+					tailwindcss()
+				]),
 		sveltekit(),
-		vercelToolbar()
+		...(isVitest ? [] : [vercelToolbar()])
 	],
 	resolve: {
 		// shadcn-svelte only exports ./tailwind.css under the "style" condition,

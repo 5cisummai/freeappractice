@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>Super – Personalized AP Tutoring | Free AP Practice</title>
+	<title>Super | Personalized AP Tutoring | Free AP Practice</title>
 	<meta
 		name="description"
 		content="Super adds a personalized tutor, AI Coach, actionable insights, and weekly study plans built around your AP practice history."
@@ -21,7 +21,7 @@
 	<link rel="canonical" href="https://freeappractice.org/super" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/super" />
-	<meta property="og:title" content="Super – Personalized AP Tutoring" />
+	<meta property="og:title" content="Super | Personalized AP Tutoring" />
 	<meta
 		property="og:description"
 		content="Personalized MCQ and FRQ tutoring, AI Coach, insights, and weekly study plans for AP students."

@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { FrqAttemptInProgressError, gradeFrqAttempt } from '$lib/frq/attempts.server';
-import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
-import { FrqGradeRequestSchema } from '$lib/frq/types';
+import { FrqAttemptInProgressError, gradeFrqAttempt } from '$lib/grading/frq/attempts.server';
+import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
+import { FrqGradeRequestSchema } from '$lib/question-bank/frq/types';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 
 export const config = { maxDuration: 60 };

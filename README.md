@@ -153,7 +153,7 @@ use Redis. For local Redis testing, run an
 Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server and point the same
 `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables at that proxy.
 
-Pool fill targets, leases, and daily LLM budget are coded in `src/lib/questions/pool-constants.ts` (not env). See `docs/question-pool-runbook.md`.
+Pool fill targets, leases, and daily LLM budget are coded in `src/lib/question-bank/pool-constants.ts` (not env). See `docs/question-pool-runbook.md`.
 
 ### Local AI with LM Studio
 

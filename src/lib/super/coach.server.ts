@@ -12,7 +12,7 @@ import {
 	releaseIdempotencyKey,
 	type CoachWriteCategory
 } from '$lib/super/ai-controls.server';
-import { getSuperFeatureAccess } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { getCurrentStoredInsightReport } from '$lib/super/insights.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { coachAudits } from '$lib/server/neon/schema';
@@ -139,11 +139,13 @@ async function writeAudit(
 }
 
 async function authorized(
+	locals: App.Locals,
 	userId: string,
 	sessionId: string,
 	category: CoachWriteCategory
 ): Promise<boolean> {
-	if (!(await getSuperFeatureAccess(userId, 'coach')).allowed) return false;
+	const access = await authorizeFeatureRequest({ locals }, userId, 'coach');
+	if (!access.allowed) return false;
 	return hasCoachWriteAuthorization(userId, sessionId, category);
 }
 
@@ -167,6 +169,7 @@ function coachOperationId(sessionId: string, toolName: string, input: unknown): 
 }
 
 export function createSuperAgent(input: {
+	locals: App.Locals;
 	userId: string;
 	sessionId: string;
 	selectedApClasses: string[];
@@ -176,6 +179,7 @@ export function createSuperAgent(input: {
 	conversationId?: string;
 }) {
 	const {
+		locals,
 		userId,
 		sessionId,
 		selectedApClasses,
@@ -335,7 +339,7 @@ export function createSuperAgent(input: {
 					studyAvailability: z.string().trim().max(500).optional()
 				}),
 				execute: async (patch) => {
-					if (!(await authorized(userId, sessionId, 'goals'))) {
+					if (!(await authorized(locals, userId, sessionId, 'goals'))) {
 						return { updated: false, approvalRequired: true, category: 'goals', proposed: patch };
 					}
 					const operationId = coachOperationId(sessionId, 'update_goals', patch);
@@ -369,7 +373,7 @@ export function createSuperAgent(input: {
 					tasks: z.array(studyTaskSchema).max(28)
 				}),
 				execute: async ({ startsOn, behavior, tasks }) => {
-					if (!(await authorized(userId, sessionId, 'study_plans'))) {
+					if (!(await authorized(locals, userId, sessionId, 'study_plans'))) {
 						return {
 							updated: false,
 							approvalRequired: true,

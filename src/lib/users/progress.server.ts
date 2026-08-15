@@ -1,8 +1,8 @@
 import type { IProgress } from '$lib/users/records.server';
 import type { IUserProfile } from '$lib/users/model.server';
 import type { MasteryTopic, ProgressEntry } from '$lib/users/types';
-import type { FrqProgressSummary } from '$lib/frq/types';
-import { getQuestionsLookupMap } from '$lib/questions/storage.server';
+import type { FrqProgressSummary } from '$lib/question-bank/frq/types';
+import { getQuestionsLookupMap } from '$lib/question-bank/mcq/repository.server';
 
 export function findOrCreateProgressEntry(
 	progress: IProgress[],

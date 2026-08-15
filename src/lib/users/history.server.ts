@@ -1,6 +1,6 @@
 import type { IQuestionAttempt } from '$lib/users/records.server';
 import type { FrqHistoryItem, HistorySummary, QuizHistoryItem } from '$lib/users/types';
-import type { StoredQuestion } from '$lib/questions/storage.server';
+import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
 import { inArray, sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {

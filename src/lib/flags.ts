@@ -180,7 +180,7 @@ function superKillSwitch(key: string, description: string) {
 	return vercelFlag(key, description, true);
 }
 
-/** Kill switches only. Entitlements always come from durable billing/grant records. */
+/** Kill switches only. Plan access always comes from durable billing/grant records. */
 export const superCheckoutEnabled = superKillSwitch('super-checkout', 'Allow new Super checkouts');
 export const superCoachEnabled = superKillSwitch('super-coach', 'Allow the Super AI Coach');
 export const superMemoryEnabled = superKillSwitch(

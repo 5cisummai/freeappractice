@@ -50,7 +50,7 @@
 </script>
 
 <svelte:head>
-	<title>{title} · Free AP Practice</title>
+	<title>{title} | Free AP Practice</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 

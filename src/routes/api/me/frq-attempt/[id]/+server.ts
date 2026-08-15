@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
-import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
+import { getFrqAttemptForUser } from '$lib/grading/frq/attempts.server';
+import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (event, userId) => {

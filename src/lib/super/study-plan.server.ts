@@ -3,18 +3,18 @@ import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { studyPlans, studyTasks } from '$lib/server/neon/schema';
 import { isSuperInsightsEnabled } from '$lib/flags';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getPlanAccess } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import {
 	getCurrentEligibleInsightReport,
 	type InsightClaim,
 	type InsightReportData
 } from '$lib/super/insights.server';
-import type { StudyPlanView, StudyTask } from '$lib/super/types';
-import type { Entitlements } from '$lib/super/types';
-import { isDuplicateKeyError } from '$lib/questions/util.server';
+import { hasPaidCapability, type StudyPlanView, type StudyTask } from '$lib/super/types';
+import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 
 export const STUDY_PLAN_DAYS = 7;
+export const STUDY_PLAN_RETENTION_DAYS = 90;
 export const STUDY_PLAN_MAX_TASK_MINUTES = 30;
 export const STUDY_PLAN_DEFAULT_TASK_MINUTES = 25;
 
@@ -119,14 +119,10 @@ export function buildStudyPlanDraft(
 	return { startsOn: startsOn.toISOString(), tasks };
 }
 
-export function hasStudyPlanAccess(entitlements: Pick<Entitlements, 'studyPlans'>): boolean {
-	return entitlements.studyPlans;
-}
-
 async function requireStudyPlanAccess(userId: string, now = new Date()): Promise<void> {
 	if (!(await isSuperInsightsEnabled())) throw new StudyPlansLockedError();
-	const entitlements = await getEntitlements(userId, now);
-	if (!hasStudyPlanAccess(entitlements)) throw new StudyPlansLockedError();
+	const planAccess = await getPlanAccess(userId, now);
+	if (!hasPaidCapability(planAccess, 'studyPlans')) throw new StudyPlansLockedError();
 	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new StudyPlansLockedError();
 }
 

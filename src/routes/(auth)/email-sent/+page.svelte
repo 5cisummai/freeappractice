@@ -32,7 +32,7 @@
 </script>
 
 <AuthSeoHead
-	title="Email Sent – Free AP Practice"
+	title="Email Sent | Free AP Practice"
 	description="Check your inbox for the next step in Free AP Practice account setup."
 	path="/email-sent"
 />

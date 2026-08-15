@@ -2,11 +2,19 @@ import { generateText, streamText } from 'ai';
 import { TUTOR_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import { logger } from '$lib/server/logger';
-import type { FrqAttemptView, FrqQuestion } from '$lib/frq/types';
+import type { FrqAttemptView, FrqQuestion } from '$lib/question-bank/frq/types';
+import { getQuestionById, type StoredQuestion } from '$lib/question-bank/mcq/repository.server';
+import { DEMO_TUTOR_QUESTION, isDemoTutorQuestionId } from '$lib/tutor/demo-question';
 
 export interface TutorMessage {
 	role: 'user' | 'assistant';
 	content: string;
+}
+
+/** Resolve a practice question for Tutor, including the landing-page demo row. */
+export async function resolveTutorQuestion(questionId: string): Promise<StoredQuestion | null> {
+	if (isDemoTutorQuestionId(questionId)) return DEMO_TUTOR_QUESTION satisfies StoredQuestion;
+	return getQuestionById(questionId).catch(() => null);
 }
 
 async function* streamTutorResponse(

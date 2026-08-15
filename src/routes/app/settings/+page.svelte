@@ -11,7 +11,6 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { authClient } from '$lib/auth/client.js';
-	import { APP_VERSION } from '$lib/app-meta';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { accountActions } from '$lib/client/settings.svelte.js';
@@ -20,6 +19,7 @@
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
+	const APP_VERSION = '1.6.9';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { userPrefersMode } from 'mode-watcher';
@@ -198,7 +198,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings – Free AP Practice</title>
+	<title>Settings | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title="Settings" description="Manage your account and preferences.">
@@ -379,15 +379,15 @@
 					<div class="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
 						<div class="min-w-0 space-y-0.5">
 							<p class="text-sm font-medium text-foreground">
-								{data.entitlements.plan === 'super' ? 'Super plan' : 'Free plan'}
+								{data.planAccess.plan === 'super' ? 'Super plan' : 'Free plan'}
 							</p>
 							<p class="text-sm text-muted-foreground">
 								{#if data.billing?.billingIssue}
 									Payment needs attention. Open billing to update your payment method.
-								{:else if data.entitlements.plan === 'super'}
+								{:else if data.planAccess.plan === 'super'}
 									{#if data.freeBetaEnabled}
 										Super access is free during the beta after you claim the offer.
-									{:else if data.entitlements.accessReason === 'admin_grant'}
+									{:else if data.planAccess.accessReason === 'admin_grant'}
 										Super access granted by the team.
 									{:else if data.billing?.status === 'past_due'}
 										Payment is past due; Super access remains available during the grace period.
@@ -411,7 +411,7 @@
 							>
 								{billingBusy ? 'Opening…' : 'Manage billing'}
 							</Button>
-						{:else if data.entitlements.plan !== 'super' && data.freeBetaEnabled}
+						{:else if data.planAccess.plan !== 'super' && data.freeBetaEnabled}
 							<Button
 								type="button"
 								size="sm"
@@ -422,14 +422,14 @@
 								<SparklesIcon class="size-3.5" />
 								{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
 							</Button>
-						{:else if data.entitlements.plan !== 'super' && !data.billing?.billingIssue}
+						{:else if data.planAccess.plan !== 'super' && !data.billing?.billingIssue}
 							<Button type="button" variant="outline" size="sm" href={resolve('/pricing')}
 								>Upgrade</Button
 							>
 						{/if}
 					</div>
 
-					{#if data.entitlements.plan === 'super'}
+					{#if data.planAccess.plan === 'super'}
 						<div class="space-y-3 border-t border-border/60 px-4 py-4">
 							<div class="grid gap-3 sm:grid-cols-2">
 								<div>

@@ -31,9 +31,14 @@ vi.mock('$lib/flags', () => ({
 	isSuperInsightsEnabled: vi.fn().mockResolvedValue(true)
 }));
 
-vi.mock('$lib/super/entitlements.server', () => ({
-	getEntitlements: vi.fn().mockResolvedValue({ studyPlans: true })
+vi.mock('$lib/super/billing.server', () => ({
+	getPlanAccess: vi.fn().mockResolvedValue({ plan: 'super', accessReason: 'subscription' })
 }));
+
+vi.mock('$lib/super/types', async () => {
+	const actual = await vi.importActual<typeof import('$lib/super/types')>('$lib/super/types');
+	return { ...actual, hasPaidCapability: vi.fn().mockReturnValue(true) };
+});
 
 vi.mock('$lib/super/profile.server', () => ({
 	getTutorProfileView: vi.fn().mockResolvedValue({ ageConfirmedAt: new Date() })
@@ -43,7 +48,7 @@ vi.mock('$lib/super/insights.server', () => ({
 	getCurrentEligibleInsightReport: vi.fn()
 }));
 
-vi.mock('$lib/questions/util.server', () => ({
+vi.mock('$lib/question-bank/util.server', () => ({
 	isDuplicateKeyError: vi.fn().mockReturnValue(false)
 }));
 

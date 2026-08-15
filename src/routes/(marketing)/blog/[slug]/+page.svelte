@@ -4,22 +4,14 @@
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { formatBlogDate } from '$lib/blog-display';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 
 	let { data }: { data: PageData } = $props();
-
-	function formatDate(iso: string | null): string {
-		if (!iso) return '';
-		return new Date(iso).toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
-		});
-	}
 </script>
 
 <svelte:head>
-	<title>{data.post.title} – Free AP Practice Blog</title>
+	<title>{data.post.title} | Free AP Practice Blog</title>
 	<meta name="description" content={data.post.excerpt} />
 	<link rel="canonical" href={`https://freeappractice.org/blog/${data.post.slug}`} />
 	<meta property="og:url" content={`https://freeappractice.org/blog/${data.post.slug}`} />
@@ -64,7 +56,7 @@
 					class="mb-8"
 					title={data.post.title}
 					description={data.post.excerpt}
-					meta={formatDate(data.post.publishedAt ?? data.post.createdAt)}
+					meta={formatBlogDate(data.post.publishedAt ?? data.post.createdAt)}
 				/>
 
 				<!-- Text is pre sanitized from the server and only the article is in the serif font because it look better I guess -->

@@ -1,39 +1,48 @@
 import type { PageServerLoad } from './$types';
+import { error } from '@sveltejs/kit';
 import { isSuperInsightsEnabled } from '$lib/flags';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
+import { hasPaidCapability } from '$lib/super/types';
 import { getInsightEligibilityForUser } from '$lib/super/insights.server';
 import { buildStudyPlanDraft, getCurrentStudyPlan } from '$lib/super/study-plan.server';
 import { getRecentStudyPlanAudits } from '$lib/super/study-plan-audit.server';
 import { getOrBuildWeeklyInsightReport } from '$lib/super/insight-lifecycle.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;
-	const [entitlements, profile] = await Promise.all([
-		getEntitlements(userId),
+	if (!(await getAssistantFeaturesEnabledForRequest(locals, userId))) {
+		error(403, 'Assistant features are disabled for this account.');
+	}
+	const [planAccess, profile] = await Promise.all([
+		getPlanAccessForRequest(locals, userId),
 		getTutorProfileViewForRequest(locals, userId)
 	]);
 	const insightsEnabled = await isSuperInsightsEnabled();
+	const hasInsightsAccess = hasPaidCapability(planAccess, 'aiInsights');
+	const hasStudyPlanAccess = hasPaidCapability(planAccess, 'studyPlans');
 	const report =
-		insightsEnabled && entitlements.aiInsights && profile.ageConfirmedAt
+		insightsEnabled && hasInsightsAccess && profile.ageConfirmedAt
 			? await getOrBuildWeeklyInsightReport(userId)
 			: null;
 	return {
-		entitlements,
+		planAccess,
+		hasInsightsAccess,
 		profile,
 		insightsEnabled,
 		eligibility:
-			insightsEnabled && entitlements.aiInsights && profile.ageConfirmedAt
+			insightsEnabled && hasInsightsAccess && profile.ageConfirmedAt
 				? await getInsightEligibilityForUser(userId)
 				: null,
 		report,
 		proposal: report?.report.eligibility.eligible ? buildStudyPlanDraft(report.report) : null,
 		plan:
-			insightsEnabled && entitlements.studyPlans && profile.ageConfirmedAt
+			insightsEnabled && hasStudyPlanAccess && profile.ageConfirmedAt
 				? await getCurrentStudyPlan(userId)
 				: null,
 		planAudits:
-			insightsEnabled && entitlements.studyPlans && profile.ageConfirmedAt
+			insightsEnabled && hasStudyPlanAccess && profile.ageConfirmedAt
 				? await getRecentStudyPlanAudits(userId)
 				: []
 	};

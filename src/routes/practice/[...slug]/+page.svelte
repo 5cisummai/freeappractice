@@ -71,4 +71,8 @@
 	{@html breadcrumbJsonLdMarkup}
 </svelte:head>
 
-<PracticeLanding page={data.page} showPricing={!data.superFreeBetaEnabled} />
+<PracticeLanding
+	page={data.page}
+	showPricing={!data.superFreeBetaEnabled}
+	assistantFeaturesEnabled={data.assistantFeaturesEnabled}
+/>

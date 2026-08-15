@@ -2,8 +2,8 @@ import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isAuthorizedCronRequest } from '$lib/auth/cron-auth';
-import { runQuestionPoolRefillWorker } from '$lib/questions/pool-refill.server';
-import { QUESTION_POOL_CONFIG } from '$lib/questions/pool-constants';
+import { refill } from '$lib/question-bank/ops.server';
+import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
 import { logger } from '$lib/server/logger';
 
 export const config = { maxDuration: 60 };
@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		const pool = await runQuestionPoolRefillWorker(QUESTION_POOL_CONFIG);
+		const pool = await refill({ mode: 'run', config: QUESTION_POOL_CONFIG });
 		logger.info('[cron/question-pool] refill run complete', pool);
 		return json({ questionPool: pool });
 	} catch (error) {

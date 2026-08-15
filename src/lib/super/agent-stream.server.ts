@@ -16,7 +16,7 @@ import {
 	type SuperAgentUIMessage
 } from '$lib/super/coach.server';
 import { buildSuperAgentContext } from '$lib/super/context.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
 import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
 import {
@@ -27,6 +27,7 @@ import {
 import {
 	appendConversationMessage,
 	ensureConversation,
+	generateConversationTitle,
 	ConversationAccessError,
 	finalizeConversationMessage,
 	getConversationMessages,
@@ -147,7 +148,10 @@ export async function createSuperAgentStreamResponse(
 		conversationId = await ensureConversation(userId, {
 			conversationId: requestedConversationId,
 			surface,
-			context
+			context,
+			...(!requestedConversationId
+				? { title: await generateConversationTitle(lastUserMessage, surface) }
+				: {})
 		});
 		const incomingUser = [...messages].reverse().find((message) => message.role === 'user');
 		await appendConversationMessage(userId, {
@@ -172,6 +176,7 @@ export async function createSuperAgentStreamResponse(
 		const personalization = await buildSuperAgentContext(userId, lastUserMessage, context);
 		const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
 		const agent = createSuperAgent({
+			locals: event.locals,
 			userId,
 			sessionId,
 			selectedApClasses: profile.selectedApClasses,

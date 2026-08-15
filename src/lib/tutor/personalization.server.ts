@@ -1,5 +1,5 @@
 import { searchTutorMemories } from '$lib/mem0/service.server';
-import { findRecentGradedFrqAttempts } from '$lib/frq/model.server';
+import { findRecentGradedFrqAttempts } from '$lib/grading/frq/storage.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import { getUserProgress } from '$lib/users/model.server';
 

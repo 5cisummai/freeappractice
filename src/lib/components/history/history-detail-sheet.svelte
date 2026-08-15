@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import type { HistoryItem } from '$lib/users/types.js';
-	import type { FrqAttemptView } from '$lib/frq/types.js';
+	import type { FrqAttemptView } from '$lib/question-bank/frq/types.js';
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';

@@ -531,9 +531,9 @@
 	}
 </script>
 
-<svelte:head><title>Coach – Free AP Practice</title></svelte:head>
+<svelte:head><title>Coach | Free AP Practice</title></svelte:head>
 
-{#if !data.entitlements.coach}
+{#if !data.hasCoachAccess}
 	<div class="mx-auto max-w-2xl p-4 sm:p-8">
 		<Card.Root>
 			<Card.Header>

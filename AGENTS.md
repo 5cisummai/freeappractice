@@ -14,15 +14,16 @@ Treat this as a focused product surface, not a playground for framework experime
 
 ## Repository map
 
-| Area                                                 | Primary ownership                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------------ |
-| `src/routes`                                         | SvelteKit pages, layouts, and thin HTTP boundaries                       |
-| `src/lib/questions`, `src/lib/frq`                   | Canonical question serving, generation, grading, and pool refill         |
-| `src/lib/users`, `src/lib/referrals`, `src/lib/auth` | Accounts, attempts, progress, history, bookmarks, and referrals          |
-| `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, Insights, billing, and memory |
-| `src/lib/question-quality`, `src/lib/admin`          | Review jobs and operational dashboards                                   |
-| `src/lib/server/neon`                                | Drizzle schema and the Neon database client                              |
-| `scripts`                                            | Operations and database maintenance tooling                              |
+| Area                                                 | Primary ownership                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| `src/routes`                                         | SvelteKit pages, layouts, and thin HTTP boundaries                         |
+| `src/lib/question-bank`                              | Canonical question serving, generation, bank metadata, quality, and refill |
+| `src/lib/grading/frq`                                | FRQ attempt persistence and grading workflows                              |
+| `src/lib/users`, `src/lib/referrals`, `src/lib/auth` | Accounts, attempts, progress, history, bookmarks, and referrals            |
+| `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, Insights, billing, and memory   |
+| `src/lib/question-bank/quality`, `src/lib/admin`     | Review jobs and operational dashboards                                     |
+| `src/lib/server/neon`                                | Drizzle schema and the Neon database client                                |
+| `scripts`                                            | Operations and database maintenance tooling                                |
 
 Neon PostgreSQL is the only application database. Domain functions call Drizzle directly; there is no compatibility model or MongoDB runtime dependency.
 

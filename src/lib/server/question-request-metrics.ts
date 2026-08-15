@@ -1,4 +1,4 @@
-import type { QuestionPathMetrics } from '$lib/questions/pool.server';
+import type { QuestionPathMetrics } from '$lib/question-bank/runtime.server';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 
 /** Outcome segments for question request reliability dashboards. */

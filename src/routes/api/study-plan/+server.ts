@@ -2,9 +2,8 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isSuperInsightsEnabled } from '$lib/flags';
 import { claimIdempotencyKey, RedisRequiredError } from '$lib/super/ai-controls.server';
-import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { writeStudyPlanAudit } from '$lib/super/study-plan-audit.server';
 import {
 	completeStudyTask,
@@ -31,15 +30,9 @@ const requestSchema = z.discriminatedUnion('action', [
 ]);
 
 export const GET: RequestHandler = withAuthedHandler(
-	async (_event, userId) => {
-		if (!(await isSuperInsightsEnabled()))
-			return json({ error: 'Study plans are temporarily unavailable.' }, { status: 503 });
-		const access = await getSuperFeatureAccess(userId, 'studyPlans');
-		if (!access.allowed)
-			return json(
-				{ error: superFeatureAccessMessage(access, 'Super study plans') },
-				{ status: 403 }
-			);
+	async (event, userId) => {
+		const access = await authorizeFeatureRequest(event, userId, 'studyPlans');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 		return json({ plan: await getCurrentStudyPlan(userId) });
 	},
 	{ logLabel: 'Get study plan error', errorMessage: 'Failed to fetch study plan' }
@@ -47,14 +40,8 @@ export const GET: RequestHandler = withAuthedHandler(
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isSuperInsightsEnabled()))
-			return json({ error: 'Study plans are temporarily unavailable.' }, { status: 503 });
-		const access = await getSuperFeatureAccess(userId, 'studyPlans');
-		if (!access.allowed)
-			return json(
-				{ error: superFeatureAccessMessage(access, 'Super study plans') },
-				{ status: 403 }
-			);
+		const access = await authorizeFeatureRequest(event, userId, 'studyPlans');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 		const parsed = requestSchema.safeParse(await event.request.json().catch(() => null));
 		if (!parsed.success) return json({ error: 'Invalid study plan request' }, { status: 400 });
 		const operationId = event.request.headers.get('idempotency-key')?.trim();

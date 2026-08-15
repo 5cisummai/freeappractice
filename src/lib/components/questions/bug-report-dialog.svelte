@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import type { BugReportContext } from '$lib/questions/types.js';
+	import type { BugReportContext } from '$lib/question-bank/mcq/types.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';

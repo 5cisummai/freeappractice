@@ -38,7 +38,7 @@
 </script>
 
 <AuthSeoHead
-	title="Forgot Password – Free AP Practice"
+	title="Forgot Password | Free AP Practice"
 	description="Request a password reset for your Free AP Practice account."
 	path="/forgot-password"
 />

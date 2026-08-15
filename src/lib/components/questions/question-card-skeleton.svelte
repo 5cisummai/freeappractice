@@ -1,80 +1,57 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { cn } from '$lib/utils.js';
 
-	type QuestionCardSkeletonProps = {
-		class?: string;
-		isTwoColumn?: boolean;
-	};
-
 	const optionRows = [0, 1, 2, 3];
 
-	let { class: className, isTwoColumn = false }: QuestionCardSkeletonProps = $props();
+	let { class: className }: { class?: string } = $props();
+	const isLandingPage = $derived(page.route.id === '/');
 </script>
 
-<Card.Root class={cn('overflow-hidden border-border/70 shadow-sm', className)}>
-	<Card.Header class="gap-3">
-		<Skeleton class="h-6 w-40" />
-		<Skeleton class="h-4 w-52" />
-	</Card.Header>
+<Card.Root
+	class={cn(
+		'relative overflow-visible pt-6',
+		isLandingPage
+			? 'border-0 bg-transparent shadow-none ring-0'
+			: 'bg-card shadow-xs ring-1 ring-foreground/10',
+		className
+	)}
+	aria-busy="true"
+	aria-label="Loading question"
+>
+	<Card.Content class="flex flex-col gap-6 pt-0 pb-0">
+		<div class="flex items-start justify-between gap-4">
+			<Skeleton class="mt-0.5 h-7 w-36" />
+			<Skeleton class="size-8 shrink-0 rounded-md" />
+		</div>
 
-	<Card.Content class="space-y-6">
-		{#if isTwoColumn}
-			<div class="h-80 overflow-hidden rounded-lg border border-border/70 bg-muted/15">
-				<Resizable.PaneGroup direction="horizontal" class="h-full">
-					<Resizable.Pane defaultSize={54} minSize={30} class="min-w-0">
-						<div class="space-y-3 p-4 sm:p-5">
-							<Skeleton class="h-4 w-24" />
-							<Skeleton class="h-4 w-full" />
-							<Skeleton class="h-4 w-[94%]" />
-							<Skeleton class="h-4 w-[88%]" />
-							<Skeleton class="h-4 w-[92%]" />
-							<Skeleton class="h-4 w-[83%]" />
-						</div>
-					</Resizable.Pane>
+		<div class="space-y-2">
+			<Skeleton class="h-4 w-full" />
+			<Skeleton class="h-4 w-[94%]" />
+			<Skeleton class="h-4 w-[72%]" />
+		</div>
 
-					<Resizable.Handle withHandle />
-
-					<Resizable.Pane defaultSize={46} minSize={30} class="min-w-0">
-						<div class="space-y-3 p-4 sm:p-5">
-							<Skeleton class="h-4 w-24" />
-							<Skeleton class="h-4 w-full" />
-							<Skeleton class="h-4 w-[95%]" />
-							<Skeleton class="h-4 w-[90%]" />
-						</div>
-					</Resizable.Pane>
-				</Resizable.PaneGroup>
-			</div>
-		{:else}
-			<div class="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4 sm:p-5">
-				<Skeleton class="h-4 w-full" />
-				<Skeleton class="h-4 w-[96%]" />
-				<Skeleton class="h-4 w-[90%]" />
-			</div>
-		{/if}
-
-		<Separator />
-
-		<div class="space-y-3">
+		<div class="space-y-2">
 			{#each optionRows as row (row)}
-				<div class="flex items-center gap-3 rounded-lg border border-border/70 p-4">
-					<Skeleton class="size-6 rounded-full" />
-					<Skeleton class="h-4 w-full" />
+				<div class="flex gap-3 rounded-lg border border-border/70 px-4 py-3">
+					<Skeleton class="mt-0.5 size-6 shrink-0 rounded-full" />
+					<Skeleton class="h-4 w-full self-center" />
 				</div>
 			{/each}
 		</div>
 	</Card.Content>
 
-	<Card.Footer
-		class="flex flex-col gap-4 border-t border-border/70 bg-muted/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
-	>
-		<Skeleton class="h-4 w-full sm:w-72" />
-		<div class="flex w-full gap-2 sm:w-auto">
-			<Skeleton class="h-9 flex-1 sm:w-28" />
-			<Skeleton class="h-9 flex-1 sm:w-32" />
+	<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<div class="flex flex-wrap gap-2">
+			<Skeleton class="h-8 w-12 rounded-md" />
+			<Skeleton class="h-8 w-44 rounded-md" />
+			<Skeleton class="h-8 w-28 rounded-md" />
+		</div>
+		<div class="flex gap-2">
+			<Skeleton class="h-9 w-32 rounded-md" />
+			<Skeleton class="h-9 w-28 rounded-md" />
 		</div>
 	</Card.Footer>
 </Card.Root>

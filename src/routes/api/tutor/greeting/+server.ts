@@ -1,12 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { auth } from '$lib/auth/server';
-import { getQuestionById } from '$lib/questions/storage.server';
+import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { getGreeting } from '$lib/tutor/service.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const POST: RequestHandler = async (event) => {
 	try {
@@ -16,10 +17,13 @@ export const POST: RequestHandler = async (event) => {
 		const userId =
 			event.locals.userId ??
 			(await auth.api.getSession({ headers: event.request.headers }))?.user?.id;
+		if (userId && !(await getAssistantFeaturesEnabledForRequest(event.locals, userId))) {
+			return json({ error: 'Assistant features are disabled for this account.' }, { status: 403 });
+		}
 		const rate = await limitGenericTutor(event.request, userId);
 		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
 
-		const question = await getQuestionById(parsed.data.questionId).catch(() => null);
+		const question = await resolveTutorQuestion(parsed.data.questionId);
 		if (!question) return json({ error: 'Question not found' }, { status: 404 });
 
 		const message = await getGreeting(question.question);

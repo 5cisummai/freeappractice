@@ -68,7 +68,7 @@
 </script>
 
 <svelte:head>
-	<title>Stats – Free AP Practice</title>
+	<title>Stats | Free AP Practice</title>
 </svelte:head>
 
 <main id="main-content" class="flex-1 py-12">

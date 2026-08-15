@@ -14,7 +14,7 @@ import {
 	sql,
 	sum
 } from 'drizzle-orm';
-import { isDuplicateKeyError } from '$lib/questions/util.server';
+import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	superBillingAccess,
@@ -23,7 +23,7 @@ import {
 	superUsageRollups,
 	tutorProfiles
 } from '$lib/server/neon/schema';
-import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
+import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
 import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
 	INDEFINITE_SUPER_GRANT_EXPIRES_AT,
@@ -179,7 +179,7 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 	const accessByUser = new Map(
 		await Promise.all(
 			[...new Set(subscriptions.map((subscription) => subscription.userId))].map(
-				async (userId) => [userId, (await getEntitlements(userId, now)).accessReason] as const
+				async (userId) => [userId, (await getPlanAccess(userId, now)).accessReason] as const
 			)
 		)
 	);

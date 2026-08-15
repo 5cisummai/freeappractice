@@ -4,7 +4,9 @@ import { isSuperInsightsEnabled } from '$lib/flags';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { insightReports } from '$lib/server/neon/schema';
 import { insightReportDataSchema } from '$lib/super/insight-schema';
-import type { Entitlements } from '$lib/super/types';
+import { getPlanAccess } from '$lib/super/billing.server';
+import { getTutorProfileView } from '$lib/super/profile.server';
+import { hasPaidCapability } from '$lib/super/types';
 
 export const INSIGHT_MIN_TOTAL_SCORED_ATTEMPTS = 20;
 export const INSIGHT_MIN_CLAIM_ATTEMPTS = 5;
@@ -545,30 +547,11 @@ export async function getScoredAttemptsForUser(userId: string): Promise<InsightS
 	return readEvidence(userId);
 }
 
-async function getInsightDatabase() {
-	return getNeonDatabase();
-}
-
-async function getInsightEntitlements(userId: string, now?: Date) {
-	const { getEntitlements } = await import('$lib/super/entitlements.server');
-	return getEntitlements(userId, now);
-}
-
-async function getInsightTutorProfileView(userId: string) {
-	const { getTutorProfileView } = await import('$lib/super/profile.server');
-	return getTutorProfileView(userId);
-}
-
-export function hasInsightAccess(entitlements: Pick<Entitlements, 'aiInsights'>): boolean {
-	return entitlements.aiInsights;
-}
-
 async function requireInsightAccess(userId: string, now = new Date()): Promise<void> {
 	if (!(await isSuperInsightsEnabled())) throw new SuperInsightsLockedError();
-	const entitlements = await getInsightEntitlements(userId, now);
-	if (!hasInsightAccess(entitlements)) throw new SuperInsightsLockedError();
-	if (!(await getInsightTutorProfileView(userId)).ageConfirmedAt)
-		throw new SuperInsightsLockedError();
+	const planAccess = await getPlanAccess(userId, now);
+	if (!hasPaidCapability(planAccess, 'aiInsights')) throw new SuperInsightsLockedError();
+	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new SuperInsightsLockedError();
 }
 
 function reportFromStored(value: Record<string, unknown>): InsightReportData {
@@ -624,7 +607,7 @@ export async function attachInsightReportPdf(
 	pdfData: Uint8Array,
 	narrative?: string | null
 ): Promise<InsightReportView | null> {
-	const db = await getInsightDatabase();
+	const db = getNeonDatabase();
 	const now = new Date();
 	const [updated] = await db
 		.update(insightReports)
@@ -662,7 +645,7 @@ export async function attachInsightReportPdf(
 }
 
 export async function getStoredInsightReportPdf(userId: string): Promise<Buffer | null> {
-	const db = await getInsightDatabase();
+	const db = getNeonDatabase();
 	const [report] = await db
 		.select({ pdfData: insightReports.pdfData })
 		.from(insightReports)
@@ -680,7 +663,7 @@ async function getReadableStoredReport(
 	const pdfAvailable = sql<boolean>`coalesce(octet_length(${insightReports.pdfData}), 0) > 0`.as(
 		'pdfAvailable'
 	);
-	const db = await getInsightDatabase();
+	const db = getNeonDatabase();
 	const [report] = await db
 		.select({
 			id: insightReports.id,
@@ -709,8 +692,8 @@ export async function getCurrentStoredInsightReport(
 	now = new Date()
 ): Promise<InsightReportView | null> {
 	try {
-		const entitlements = await getInsightEntitlements(userId, now);
-		if (!hasInsightAccess(entitlements)) return null;
+		const planAccess = await getPlanAccess(userId, now);
+		if (!hasPaidCapability(planAccess, 'aiInsights')) return null;
 		return await getReadableStoredReport(userId, now);
 	} catch (error) {
 		if (error instanceof SuperInsightsLockedError) return null;
@@ -756,7 +739,7 @@ export async function buildAndStoreInsightReport(
 	});
 	if (!reportData.eligibility.eligible) return null;
 
-	const db = await getInsightDatabase();
+	const db = getNeonDatabase();
 	const [created] = await db
 		.insert(insightReports)
 		.values({

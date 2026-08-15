@@ -17,8 +17,8 @@
 	let mobileOpen = $state(false);
 </script>
 
-<header class="topbar bg relative z-50 border-b border-border/70 backdrop-blur-sm">
-	<div class="relative mx-auto flex h-18 w-full max-w-7xl items-center px-5 sm:px-8 lg:px-10">
+<header class="topbar relative z-50 border-b border-border/40 bg-transparent">
+	<div class="relative mx-auto flex h-14 w-full max-w-7xl items-center px-5 sm:px-8 lg:px-10">
 		<div class="topbar-logo flex min-w-0 flex-1 items-center">
 			<a
 				href={resolve('/')}
@@ -56,7 +56,14 @@
 											href={resolve(item.href)}
 											class="flex-col items-start gap-1.5 p-3"
 										>
-											<span class="text-sm font-medium text-foreground">{item.label}</span>
+											<span
+												class={[
+													'text-sm font-medium',
+													item.href === '/super' ? 'super-text-gradient' : 'text-foreground'
+												]}
+											>
+												{item.label}
+											</span>
 											<span class="text-xs leading-5 text-muted-foreground">
 												{item.description}
 											</span>
@@ -133,7 +140,12 @@
 					{#each topbarResourceItems as item (item.href)}
 						<a
 							href={resolve(item.href)}
-							class="block rounded-md px-2 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+							class={[
+								'block rounded-md px-2 py-2 transition-colors hover:bg-muted',
+								item.href === '/super'
+									? 'super-text-gradient font-medium'
+									: 'text-muted-foreground hover:text-foreground'
+							]}
 						>
 							{item.label}
 						</a>

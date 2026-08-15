@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isSuperInsightsEnabled } from '$lib/flags';
 import {
 	acquireInsightLock,
 	claimIdempotencyKey,
@@ -15,19 +14,16 @@ import {
 	getInsightEligibilityForUser,
 	getScoredAttemptsForUser
 } from '$lib/super/insights.server';
-import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import {
 	createInsightPdfArtifact,
 	getOrBuildWeeklyInsightReport
 } from '$lib/super/insight-lifecycle.server';
 
 export const GET: RequestHandler = withAuthedHandler(
-	async (_event, userId) => {
-		if (!(await isSuperInsightsEnabled()))
-			return json({ error: 'Insights are temporarily unavailable.' }, { status: 503 });
-		const access = await getSuperFeatureAccess(userId, 'aiInsights');
-		if (!access.allowed)
-			return json({ error: superFeatureAccessMessage(access, 'Super insights') }, { status: 403 });
+	async (event, userId) => {
+		const access = await authorizeFeatureRequest(event, userId, 'aiInsights');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 		return json({
 			insightsEnabled: true,
 			eligibility: await getInsightEligibilityForUser(userId),
@@ -39,11 +35,8 @@ export const GET: RequestHandler = withAuthedHandler(
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isSuperInsightsEnabled()))
-			return json({ error: 'Insights are temporarily unavailable.' }, { status: 503 });
-		const access = await getSuperFeatureAccess(userId, 'aiInsights');
-		if (!access.allowed)
-			return json({ error: superFeatureAccessMessage(access, 'Super insights') }, { status: 403 });
+		const access = await authorizeFeatureRequest(event, userId, 'aiInsights');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 		const operationId = event.request.headers.get('idempotency-key')?.trim();
 		if (!operationId || operationId.length > 200) {
 			return json({ error: 'An idempotency key is required.' }, { status: 400 });

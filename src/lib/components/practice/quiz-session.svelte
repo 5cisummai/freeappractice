@@ -7,14 +7,15 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
-	import { requestMcqQuestion } from '$lib/questions/request-mcq.client.js';
-	import type { AnswerResult, GeneratedQuestion } from '$lib/questions/types.js';
+	import { requestMcqQuestion } from '$lib/question-bank/request.client.js';
+	import type { AnswerResult, GeneratedQuestion } from '$lib/question-bank/mcq/types.js';
 	import { savePendingSharedQuizRun } from '$lib/shared-practice/pending-runs.js';
 	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
-	import Share2Icon from '@lucide/svelte/icons/share-2';
+	import ShareIcon from '@lucide/svelte/icons/share';
 	import type { Snippet } from 'svelte';
+	import { quizQuestionCardModel } from '$lib/question-bank/question-card-model';
 
 	type QuizStatus = 'idle' | 'loading' | 'active' | 'review' | 'complete' | 'error';
 
@@ -28,6 +29,7 @@
 		isGenerating?: boolean;
 		expanded?: boolean;
 		persistHistory?: boolean;
+		showCoachReview?: boolean;
 		initialQuestions?: GeneratedQuestion[] | null;
 		sharedSlug?: string;
 		onExpand?: () => void;
@@ -48,6 +50,7 @@
 		isGenerating = $bindable(false),
 		expanded = false,
 		persistHistory = true,
+		showCoachReview = true,
 		initialQuestions = null,
 		sharedSlug = '',
 		onExpand,
@@ -595,7 +598,7 @@
 						disabled={shareCreating}
 						onclick={() => void createShareLink()}
 					>
-						<Share2Icon class="size-4" />
+						<ShareIcon class="size-4" />
 						{shareUrl ? 'Share quiz again' : 'Share this quiz'}
 					</Button>
 					{#if shareStatus}
@@ -622,7 +625,7 @@
 			</div>
 
 			<div class="flex flex-wrap justify-center gap-2">
-				{#if persistHistory}
+				{#if persistHistory && showCoachReview}
 					<Button href={coachReviewHref} variant="outline">Review with Coach</Button>
 				{/if}
 				<Button onclick={() => void startQuiz()}>Try another quiz</Button>
@@ -678,7 +681,7 @@
 					onclick={() => void createShareLink()}
 					aria-label="Share quiz"
 				>
-					<Share2Icon class="size-4" />
+					<ShareIcon class="size-4" />
 				</Button>
 				{#if shareStatus}
 					<span class="max-w-32 text-xs text-muted-foreground" role="status">{shareStatus}</span>
@@ -762,18 +765,19 @@
 
 		{#key `${currentIndex}:${currentQuestion.questionId ?? currentQuestion.prompt}`}
 			<QuestionCard
-				quizMode
-				quizQuestion={currentQuestion}
-				quizAnswer={currentAnswer}
-				questionNumber={String(currentIndex + 1)}
+				model={quizQuestionCardModel({
+					selectedClass,
+					selectedUnit,
+					question: currentQuestion,
+					answer: currentAnswer,
+					questionNumber: String(currentIndex + 1)
+				})}
 				{expanded}
 				{onExpand}
 				bind:controlsOpen
 				{practiceControls}
 				headerActions={questionHeaderActions}
 				quizNavigation={questionNavigation}
-				{selectedClass}
-				{selectedUnit}
 				checkLabel="Submit answer"
 				{nextLabel}
 				nextDisabled={isLastQuestion ? !canFinish : !nextQuestionReady}

@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>AP Subjects – Free AP Practice</title>
+	<title>AP Subjects | Free AP Practice</title>
 	<meta
 		name="description"
 		content="Browse all supported AP subjects and jump straight to free practice questions for each course—20+ classes, unlimited MCQs, instant feedback, no signup."
@@ -18,7 +18,7 @@
 	<link rel="canonical" href="https://freeappractice.org/subjects" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/subjects" />
-	<meta property="og:title" content="AP Subjects – Free AP Practice" />
+	<meta property="og:title" content="AP Subjects | Free AP Practice" />
 	<meta
 		property="og:description"
 		content="Browse all supported AP subjects and jump straight to free practice questions for each course."
@@ -26,7 +26,7 @@
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="AP Subjects – Free AP Practice" />
+	<meta name="twitter:title" content="AP Subjects | Free AP Practice" />
 	<meta
 		name="twitter:description"
 		content="Browse all supported AP subjects and jump straight to free practice questions for each course."

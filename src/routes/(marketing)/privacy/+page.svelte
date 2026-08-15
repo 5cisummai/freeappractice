@@ -5,21 +5,21 @@
 </script>
 
 <svelte:head>
-	<title>Privacy Policy – Free AP Practice</title>
+	<title>Privacy Policy | Free AP Practice</title>
 	<meta name="description" content="Privacy Policy for Free AP Practice" />
 	<meta name="author" content="FreeAPPractice.org" />
 	<meta name="robots" content="index, follow" />
 	<link rel="canonical" href="https://freeappractice.org/privacy" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/privacy" />
-	<meta property="og:title" content="Privacy Policy – Free AP Practice" />
+	<meta property="og:title" content="Privacy Policy | Free AP Practice" />
 	<meta property="og:description" content="Privacy Policy for Free AP Practice" />
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/privacy" />
-	<meta name="twitter:title" content="Privacy Policy – Free AP Practice" />
+	<meta name="twitter:title" content="Privacy Policy | Free AP Practice" />
 	<meta name="twitter:description" content="Privacy Policy for Free AP Practice" />
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>
@@ -252,10 +252,9 @@
 						and used
 					</li>
 					<li>
-						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, and feature
-						data
+						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, feature
+						data, and private bug reports
 					</li>
-					<li><strong>GitHub:</strong> bug reports submitted as GitHub Issues</li>
 					<li><strong>Resend:</strong> verification and password-reset email delivery</li>
 					<li>
 						<strong>PostHog:</strong> optional product analytics, error tracking, and session replay
@@ -275,11 +274,10 @@
 				</ul>
 				<p class="mt-2">
 					Bug reports may include the optional email address and technical question metadata you
-					provide. They may be visible to repository visitors and may remain under GitHub’s
-					retention and deletion practices. Do not submit sensitive information in a bug report; use
-					support email for private requests. Each third party has its own terms and privacy
-					practices. We do not sell your personal information or use it for cross-context behavioral
-					advertising.
+					provide. They are stored in our private application database for review and support. Do
+					not submit sensitive information in a bug report; use support email for private requests.
+					Each third party has its own terms and privacy practices. We do not sell your personal
+					information or use it for cross-context behavioral advertising.
 				</p>
 			</section>
 
@@ -309,7 +307,7 @@
 						short-lived and expire automatically.
 					</li>
 					<li>
-						Server logs, monitoring records, emails, billing records, backups, and GitHub reports
+						Server logs, monitoring records, emails, billing records, backups, and bug reports
 						follow the retention practices of the relevant operator or provider; we do not currently
 						publish one fixed period for all of them.
 					</li>
@@ -321,7 +319,7 @@
 					removal of app-owned account, profile, practice, personalization, referral,
 					billing-mirror, Insight, study-plan, feedback, and audit records; authentication records
 					are handled by Better Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued
-					and retried. Information held by third parties, backups, logs, or public GitHub issues may
+					and retried. Information held by third parties, backups, logs, or support records may
 					persist under their own practices or legal obligations.
 				</p>
 			</section>

@@ -18,7 +18,7 @@
 
 ### P0 — College Board copyrighted material in AI workflow and public copy
 
-**Evidence.** The catalogue records that its unit descriptions are sourced from College Board pages (`src/lib/data/unit-descriptionsrevised.json:3`). Generated public practice-page data repeatedly states `College Board topic statements ...` (`src/lib/data/practice-pages.json`, e.g. lines 48, 85, 122). The generation prompt instructs the model to have `deep knowledge of College Board standards` and create questions that `closely mirror real AP exam questions` (`src/lib/questions/generation.server.ts:271-277`).
+**Evidence.** The catalogue records that its unit descriptions are sourced from College Board pages (`src/lib/data/unit-descriptionsrevised.json:3`). Generated public practice-page data repeatedly states `College Board topic statements ...` (`src/lib/data/practice-pages.json`, e.g. lines 48, 85, 122). The generation prompt instructs the model to have `deep knowledge of College Board standards` and create questions that `closely mirror real AP exam questions` (`src/lib/question-bank/mcq/generation.server.ts:271-277`).
 
 **Why this is high risk.** College Board says it does not grant permission to use its copyrighted content, including practice-test questions, with generative AI or to train an AI system/application using its content. Its permission instructions separately require a request to use AP test materials and say test-prep use is commercial if intended for commercial advantage/private monetary compensation. See [College Board guidelines](https://privacy.collegeboard.org/copyright-trademark/guidelines) and [permission instructions](https://privacy.collegeboard.org/copyright-trademark/request-instructions).
 

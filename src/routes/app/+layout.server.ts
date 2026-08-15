@@ -3,13 +3,14 @@ import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
-import { getEntitlements } from '$lib/super/entitlements.server';
+import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
 import {
 	ONBOARDING_COOKIE_MAX_AGE,
 	ONBOARDING_COOKIE_NAME,
 	readOnboardingState
 } from '$lib/onboarding.js';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) => {
 	if (!locals.session) {
@@ -33,22 +34,24 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 
 	const userId = locals.userId!;
 	await claimReferralFromCookie(cookies, userId, request);
+	const assistantFeaturesEnabled = await getAssistantFeaturesEnabledForRequest(locals, userId);
 
 	const freeBetaEnabled = await isSuperFreeBetaEnabled();
 	let showFreeBetaClaimDialog = false;
 	const isConfirmingAge = url.pathname === '/app/confirm-age';
 	if (freeBetaEnabled && !url.pathname.endsWith('/onboarding') && !isConfirmingAge) {
-		const [claimed, entitlements] = await Promise.all([
+		const [claimed, planAccess] = await Promise.all([
 			hasClaimedSuperFreeBeta(userId),
-			getEntitlements(userId)
+			getPlanAccessForRequest(locals, userId)
 		]);
-		showFreeBetaClaimDialog = !claimed && entitlements.plan !== 'super';
+		showFreeBetaClaimDialog = !claimed && planAccess.plan !== 'super';
 	}
 
 	return {
 		user: locals.user!,
 		isAdmin: isAdminUser(locals.user),
 		freeBetaEnabled,
+		assistantFeaturesEnabled,
 		showFreeBetaClaimDialog
 	};
 };

@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
 	select: vi.fn(),
 	update: vi.fn(),
 	insert: vi.fn(),
-	getEntitlements: vi.fn(),
+	getPlanAccess: vi.fn(),
 	unlockInsightReports: vi.fn(),
 	selectResults: [] as unknown[][]
 }));
@@ -17,7 +17,7 @@ vi.mock('$lib/server/neon/db', () => ({
 		insert: mocks.insert
 	})
 }));
-vi.mock('$lib/super/entitlements.server', () => ({ getEntitlements: mocks.getEntitlements }));
+vi.mock('$lib/super/billing.server', () => ({ getPlanAccess: mocks.getPlanAccess }));
 vi.mock('$lib/super/insight-locks.server', () => ({
 	unlockInsightReports: mocks.unlockInsightReports
 }));
@@ -79,7 +79,7 @@ beforeEach(() => {
 		]
 	];
 	mocks.select.mockImplementation(() => selectBuilder(mocks.selectResults.shift() ?? []));
-	mocks.getEntitlements.mockResolvedValue({ accessReason: 'subscription' });
+	mocks.getPlanAccess.mockResolvedValue({ accessReason: 'subscription', plan: 'super' });
 	mocks.unlockInsightReports.mockResolvedValue(undefined);
 	mocks.insert.mockImplementation(() => {
 		const builder: any = {

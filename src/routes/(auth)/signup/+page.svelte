@@ -14,7 +14,7 @@
 </script>
 
 <AuthSeoHead
-	title="Sign Up – Free AP Practice"
+	title="Sign Up | Free AP Practice"
 	description="Create your Free AP Practice account."
 	path="/signup"
 />

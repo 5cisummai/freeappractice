@@ -1,5 +1,5 @@
 import { and, count, eq, isNotNull, max, sql } from 'drizzle-orm';
-import { getFrqProgressForUser } from '$lib/frq/attempts.server';
+import { getFrqProgressForUser } from '$lib/grading/frq/attempts.server';
 import { frqAttemptGrades, frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { MAX_ATTEMPT_TIME_MS } from '$lib/users/attempt-time';

@@ -34,7 +34,7 @@ import {
 	isAgeGateExempt,
 	shouldSkipSessionLookup
 } from '$lib/auth/account-surface.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -187,6 +187,9 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
+	event.locals.planAccess = undefined;
+	event.locals.tutorProfileView = undefined;
+	event.locals.assistantFeaturesEnabled = undefined;
 
 	// Public MCQ serve path: skip Better Auth session I/O to keep pool-hit latency low.
 	// Logging, CORS, and security headers still run. FRQ and /api/me/* keep full auth.
@@ -277,12 +280,17 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	const response = postProcessResponse(await maybeServeMarkdown(resolved, event), event, origin);
 
 	const requestTimeMs = Date.now() - requestStart;
-	logger.info('http request', {
+	const requestMeta = {
 		method: event.request.method,
 		url: event.url.pathname,
 		status: response.status,
 		requestTimeMs
-	});
+	};
+	if (response.status >= 500) {
+		logger.error('http request failed', requestMeta);
+	} else {
+		logger.info('http request', requestMeta);
+	}
 
 	return response;
 };
@@ -312,6 +320,14 @@ export const handle = sequence(
 
 export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
 	async ({ error, event, status, message }) => {
+		logger.error('Unhandled server error', {
+			error,
+			status,
+			message,
+			method: event.request.method,
+			path: event.url.pathname
+		});
+
 		capturePostHogServerEvent(event.request, {
 			distinctId: 'server',
 			event: 'server_error',

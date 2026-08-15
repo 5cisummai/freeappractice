@@ -6,7 +6,7 @@ import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import type { TutorProfileUpdate, TutorProfileView, TutorTeachingStyle } from '$lib/super/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
-import { isDuplicateKeyError } from '$lib/questions/util.server';
+import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;

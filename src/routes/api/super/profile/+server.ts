@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { isTutorMemoryConfigured } from '$lib/mem0/service.server';
 import { updateTutorProfile } from '$lib/super/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;

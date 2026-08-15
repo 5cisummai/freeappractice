@@ -5,6 +5,84 @@
 
 	const changelog = [
 		{
+			version: '1.6.9',
+			date: 'August 14, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Redesigned the homepage with a full-bleed hero, inline practice, and dedicated Unlimited and Super sections',
+						'Added a scripted Coach chat demo and live tutor preview on the landing page',
+						'Added a student stories carousel with real AP score highlights',
+						'Coach conversations now get short auto-generated titles after the first exchange'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Unified homepage FAQ content and JSON-LD, with school-year guidance instead of summer-only copy',
+						'Reorganized the question bank into MCQ and FRQ modules with clearer serving boundaries',
+						'Consolidated Super feature access through request-scoped authorization',
+						'Polished question cards, practice shell state, fonts, and marketing section styling'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Improved server logging and hook error handling',
+						'Refined question pool refill and inventory orchestration'
+					]
+				}
+			]
+		},
+		{
+			version: '1.6.8',
+			date: 'August 12, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added a Super admin dashboard for reviewing subscriptions, grants, AI usage, and failed cleanup jobs',
+						'Added admin controls for managing user roles, Super access, and free-beta grants'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved admin data tables, action menus, and feedback when admin data cannot be loaded',
+						'Added clearer error handling and retry actions for failed Super maintenance jobs'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Prevented duplicate indefinite Super grants with a database uniqueness constraint'
+					]
+				}
+			]
+		},
+		{
+			version: '1.6.7',
+			date: 'August 12, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added shareable practice sets with public links and a dedicated shared-quiz experience',
+						'Students can take shared quizzes without an account, then sign up to save their score and progress'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved quiz session state, validation, persistence, and result handling',
+						'Added rate limiting and integrity checks for shared practice set creation',
+						'Polished practice question actions and navigation for shared sessions'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.6',
 			date: 'August 11, 2026',
 			sections: [
@@ -951,21 +1029,21 @@
 </script>
 
 <svelte:head>
-	<title>Changelog – Free AP Practice</title>
+	<title>Changelog | Free AP Practice</title>
 	<meta name="description" content="Changelog and release notes for Free AP Practice" />
 	<meta name="author" content="FreeAPPractice.org" />
 	<meta name="robots" content="index, follow" />
 	<link rel="canonical" href="https://freeappractice.org/changelog" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/changelog" />
-	<meta property="og:title" content="Changelog – Free AP Practice" />
+	<meta property="og:title" content="Changelog | Free AP Practice" />
 	<meta property="og:description" content="Changelog and release notes for Free AP Practice" />
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/changelog" />
-	<meta name="twitter:title" content="Changelog – Free AP Practice" />
+	<meta name="twitter:title" content="Changelog | Free AP Practice" />
 	<meta name="twitter:description" content="Changelog and release notes for Free AP Practice" />
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 </svelte:head>

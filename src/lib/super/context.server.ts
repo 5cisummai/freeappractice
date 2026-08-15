@@ -1,12 +1,12 @@
 import { and, desc, eq } from 'drizzle-orm';
-import { getFrqAttemptForUser } from '$lib/frq/attempts.server';
-import { getFrqQuestionById } from '$lib/frq/question.server';
-import type { FrqAttemptView, FrqQuestion } from '$lib/frq/types';
+import { getFrqAttemptForUser } from '$lib/grading/frq/attempts.server';
+import { getFrqQuestionById } from '$lib/question-bank/frq/model.server';
+import type { FrqAttemptView, FrqQuestion } from '$lib/question-bank/frq/types';
 import {
 	getQuestionById,
 	getQuestionsByIds,
 	type StoredQuestion
-} from '$lib/questions/storage.server';
+} from '$lib/question-bank/mcq/repository.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqAttempts } from '$lib/server/neon/schema';
 import { buildTutorPersonalization } from '$lib/tutor/personalization.server';

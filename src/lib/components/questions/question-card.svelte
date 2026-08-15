@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -17,7 +18,7 @@
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { measureLongQuestion } from '$lib/components/questions/question-card-dom';
 	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
-	import type { BugReportContext, QuestionCardProps } from '$lib/questions/types';
+	import type { BugReportContext, QuestionCardProps } from '$lib/question-bank/mcq/types';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
 	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
@@ -27,6 +28,7 @@
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 
 	let {
+		model,
 		class: className,
 		expanded = false,
 		onExpand,
@@ -34,16 +36,8 @@
 		practiceControls,
 		headerActions,
 		quizNavigation,
-		questionNumber = '',
-		quizMode = false,
-		quizQuestion = null,
-		quizAnswer = null,
 		nextDisabled = false,
 		onQuizNext,
-		selectedClass = '',
-		selectedUnit = '',
-		unitRange,
-		requestVersion = 0,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
 		longQuestionThresholdChars = 450,
@@ -54,7 +48,7 @@
 		showUtilityActions = true,
 		showFirstUseHint = false,
 		isPersonalizedTutor = false,
-		practiceExperiment,
+		tutorMode = isPersonalizedTutor ? 'personalized' : 'free',
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -65,6 +59,22 @@
 		onReportBug,
 		onAnswered
 	}: QuestionCardProps = $props();
+
+	const selectedClass = $derived(model.selectedClass);
+	const selectedUnit = $derived(model.selectedUnit);
+	const quizMode = $derived(model.delivery.kind === 'quiz');
+	const questionNumber = $derived(
+		model.delivery.kind === 'quiz' ? model.delivery.questionNumber : ''
+	);
+	const quizQuestion = $derived(model.delivery.kind === 'quiz' ? model.delivery.question : null);
+	const quizAnswer = $derived(model.delivery.kind === 'quiz' ? model.delivery.answer : null);
+	const unitRange = $derived(
+		model.delivery.kind === 'unlimited' ? model.delivery.unitRange : undefined
+	);
+	const requestVersion = $derived(
+		model.delivery.kind === 'unlimited' ? model.delivery.requestVersion : 0
+	);
+	const isLandingPage = $derived(page.route.id === '/');
 
 	let promptElement: HTMLDivElement | null = null;
 	let isLongQuestion = $state(false);
@@ -95,7 +105,9 @@
 		onNotLearned: () => onNotLearned?.(),
 		onAnswered: (result) => onAnswered?.(result),
 		onQuizNext: () => onQuizNext?.(),
-		practiceExperiment: untrack(() => practiceExperiment)
+		practiceExperiment: untrack(() =>
+			model.delivery.kind === 'unlimited' ? model.delivery.experiment : undefined
+		)
 	});
 
 	const tutorUnitLabel = $derived(selectedUnit);
@@ -155,6 +167,13 @@
 		bugReportOpen = true;
 	}
 
+	const showQuestionSkeleton = $derived(
+		!session.currentQuestion &&
+			(session.isLoading ||
+				!mounted ||
+				(requestVersion > 0 && !session.showWarmingState && !session.showErrorState))
+	);
+
 	onMount(() => {
 		mounted = true;
 
@@ -183,12 +202,7 @@
 	});
 </script>
 
-{#if !mounted}
-	<QuestionCardSkeleton
-		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
-		class={className}
-	/>
-{:else if session.showWarmingState}
+{#if session.showWarmingState}
 	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
 		<Card.Content
 			class="relative flex min-h-40 flex-col items-center justify-center gap-3 px-6 pb-12 text-center"
@@ -206,11 +220,8 @@
 			</Button>
 		</Card.Content>
 	</Card.Root>
-{:else if session.isLoading}
-	<QuestionCardSkeleton
-		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
-		class={className}
-	/>
+{:else if showQuestionSkeleton}
+	<QuestionCardSkeleton class={className} />
 {:else if session.showEmptyState}
 	<EmptyState
 		title="No question yet"
@@ -235,7 +246,7 @@
 	</Card.Root>
 {:else}
 	<Popover.Root bind:open={controlsOpen}>
-		<div class="contents">
+		<div class={expanded ? 'flex min-h-0 flex-1 flex-col' : 'contents'}>
 			{#snippet cardInner(expanded: boolean)}
 				{#snippet mcqChoices(compact = false)}
 					<McqAnswerChoices
@@ -251,8 +262,8 @@
 					/>
 				{/snippet}
 
-				<Card.Content class={cn('flex flex-col gap-6 pt-4', expanded && 'min-h-0 flex-1')}>
-					<div class="flex items-start justify-between gap-4">
+				<Card.Content class={cn('flex flex-col gap-6 pt-0 pb-0', expanded && 'min-h-0 flex-1')}>
+					<div class="flex shrink-0 items-start justify-between gap-4">
 						<div>
 							<h2 class="mt-0.5 text-xl font-semibold">
 								Question {session.effectiveQuestionNumber}
@@ -322,7 +333,7 @@
 										<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 											{session.currentQuestion.leftPanel?.title ?? 'Stimulus'}
 										</p>
-										<div class="space-y-4 text-sm leading-6 text-foreground/90">
+										<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
 											{#each session.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 												<RichText text={paragraph} />
 											{/each}
@@ -338,7 +349,7 @@
 										<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 											{session.currentQuestion.rightPanel?.title ?? 'Prompt'}
 										</p>
-										<div class="space-y-4 text-sm leading-7 text-foreground/90">
+										<div class="space-y-4 font-serif text-sm leading-7 text-foreground/90">
 											{#each session.currentQuestion.rightPanel?.content ?? [session.currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
 												<RichText text={paragraph} />
 											{/each}
@@ -368,7 +379,7 @@
 										</p>
 										<RichText
 											text={session.currentQuestion?.prompt ?? ''}
-											class="text-sm leading-7 text-foreground/90"
+											class="font-serif text-sm leading-7 text-foreground/90"
 										/>
 									</div>
 								</Resizable.Pane>
@@ -384,14 +395,19 @@
 						<div use:observePromptLayout={session.currentQuestion?.prompt ?? ''}>
 							<RichText
 								text={session.currentQuestion?.prompt ?? ''}
-								class="text-base leading-7 text-foreground/90"
+								class="font-serif text-base leading-7 text-foreground/90"
 							/>
 						</div>
 						{@render mcqChoices()}
 					{/if}
 				</Card.Content>
 
-				<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<Card.Footer
+					class={cn(
+						'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+						expanded && 'shrink-0 border-t'
+					)}
+				>
 					<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 						{#if showUtilityActions && !session.hasCheckedAnswer}
 							<div class="flex flex-wrap gap-2">
@@ -473,16 +489,15 @@
 			{/snippet}
 			<div
 				in:fade={{ duration: 280, easing: quintOut }}
-				class={cn(expanded && 'flex h-full min-h-0 flex-1')}
+				class={cn(expanded && 'flex min-h-0 flex-1 flex-col')}
 			>
 				<Card.Root
 					class={cn(
 						expanded
-							? 'relative flex h-full min-h-0 flex-col overflow-visible rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm'
-							: cn(
-									'relative border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
-									quizNavigation ? 'overflow-visible' : 'overflow-hidden'
-								),
+							? 'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card py-6 shadow-lg ring-1 ring-foreground/10'
+							: isLandingPage
+								? 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0'
+								: 'relative overflow-visible bg-card pt-6 shadow-xs ring-1 ring-foreground/10',
 						className
 					)}
 				>
@@ -503,9 +518,9 @@
 				</Popover.Content>
 			{/if}
 
-			{#if session.currentQuestion && !quizMode}
+			{#if session.currentQuestion && !quizMode && tutorMode !== 'hidden'}
 				{#key session.currentQuestion.questionId ?? session.currentQuestion.prompt}
-					{#if isPersonalizedTutor}
+					{#if tutorMode === 'personalized'}
 						<SuperTutorWidget
 							apClass={selectedClass}
 							unit={tutorUnitLabel}

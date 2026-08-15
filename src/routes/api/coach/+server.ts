@@ -2,8 +2,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isSuperCoachEnabled } from '$lib/flags';
-import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
 import { RedisRequiredError } from '$lib/super/ai-controls.server';
@@ -38,12 +37,9 @@ export const config = { maxDuration: 60 };
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
-		if (!(await isSuperCoachEnabled())) {
-			return json({ error: 'Coach is temporarily unavailable.' }, { status: 503 });
-		}
-		const access = await getSuperFeatureAccess(userId, 'coach');
+		const access = await authorizeFeatureRequest(event, userId, 'coach');
 		if (!access.allowed) {
-			return json({ error: superFeatureAccessMessage(access, 'Coach') }, { status: 403 });
+			return json({ error: access.message }, { status: access.status });
 		}
 
 		let body: unknown;

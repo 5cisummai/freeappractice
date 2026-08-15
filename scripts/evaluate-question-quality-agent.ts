@@ -9,9 +9,9 @@ import 'dotenv/config';
 import { readFile, writeFile } from 'node:fs/promises';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
 import { questionQuality } from '../src/lib/server/neon/schema';
-import { buildBatchLine } from '../src/lib/question-quality/batch-line';
-import { getQuestionById } from '../src/lib/questions/storage.server';
-import { extractResponseOutputText } from '../src/lib/question-quality/rubric.server';
+import { buildBatchLine } from '../src/lib/question-bank/quality/batch-line';
+import { getQuestionById } from '../src/lib/question-bank/mcq/repository.server';
+import { extractResponseOutputText } from '../src/lib/question-bank/quality/rubric.server';
 
 type GoldItem = { questionId: string; verdict: 'good' | 'bad'; apClass: string };
 type Candidate = {

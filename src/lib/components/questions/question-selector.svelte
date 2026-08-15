@@ -8,7 +8,7 @@
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
-	import Share2Icon from '@lucide/svelte/icons/share-2';
+	import ShareIcon from '@lucide/svelte/icons/share';
 	import SlidersHorizontalIcon from '@lucide/svelte/icons/sliders-horizontal';
 	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
@@ -367,7 +367,7 @@
 						onclick={sharePracticePage}
 						disabled={!shareHref}
 					>
-						<Share2Icon class="size-4" />
+						<ShareIcon class="size-4" />
 						Share with your AP class
 					</Button>
 					<Button

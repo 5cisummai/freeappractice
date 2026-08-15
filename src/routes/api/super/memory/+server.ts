@@ -6,19 +6,17 @@ import {
 	isTutorMemoryConfigured,
 	listTutorMemories
 } from '$lib/mem0/service.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { isSuperMemoryEnabled } from '$lib/flags';
-import { getSuperFeatureAccess, superFeatureAccessMessage } from '$lib/super/feature-access.server';
 import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/super/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
-async function requireMemoryAccess(userId: string): Promise<Response | null> {
-	if (!(await isSuperMemoryEnabled())) {
-		return json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
-	}
-	const access = await getSuperFeatureAccess(userId, 'memory');
-	return access.allowed
-		? null
-		: json({ error: superFeatureAccessMessage(access, 'Super tutor memory') }, { status: 403 });
+async function requireMemoryAccess(
+	event: Parameters<typeof GET>[0],
+	userId: string
+): Promise<Response | null> {
+	const access = await authorizeFeatureRequest(event, userId, 'memory');
+	return access.allowed ? null : json({ error: access.message }, { status: access.status });
 }
 
 async function requireMemoryDisclosureAccess(userId: string): Promise<Response | null> {
@@ -48,7 +46,7 @@ async function publicMemory(
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
-		const denial = await requireMemoryAccess(userId);
+		const denial = await requireMemoryAccess(event, userId);
 		if (denial) return denial;
 		const profile = await getTutorProfileViewForRequest(event.locals, userId);
 		const memories = await listTutorMemories(userId);
@@ -84,8 +82,8 @@ export const POST = withAuthedHandler(
 );
 
 export const DELETE = withAuthedHandler(
-	async (_event, userId) => {
-		const denial = await requireMemoryAccess(userId);
+	async (event, userId) => {
+		const denial = await requireMemoryAccess(event, userId);
 		if (denial) return denial;
 		if (!isTutorMemoryConfigured()) {
 			return json({ error: 'Tutor memory is not configured' }, { status: 503 });

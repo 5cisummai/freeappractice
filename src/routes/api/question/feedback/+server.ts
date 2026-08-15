@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { submitQuestionFeedback } from '$lib/question-quality/dashboard.server';
-import { feedbackRequestSchema } from '$lib/question-quality/payloads';
+import { submitQuestionFeedback } from '$lib/question-bank/quality/dashboard.server';
+import { feedbackRequestSchema } from '$lib/question-bank/quality/payloads';
 
 export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!locals.userId) return json({ message: 'Authentication required' }, { status: 401 });

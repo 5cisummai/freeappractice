@@ -8,7 +8,7 @@ vi.mock('$lib/super/profile.server', () => ({
 	getTutorProfileView: mocks.getTutorProfileView
 }));
 
-import { getTutorProfileViewForRequest } from '$lib/super/profile-cache.server';
+import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 
 describe('request-local tutor profile cache', () => {
 	beforeEach(() => {
@@ -31,8 +31,8 @@ describe('request-local tutor profile cache', () => {
 		const second = getTutorProfileViewForRequest(locals, 'user-1');
 
 		expect(second).toBe(first);
-		expect(mocks.getTutorProfileView).toHaveBeenCalledTimes(1);
 		expect(await first).toMatchObject({ ageConfirmedAt: null });
+		expect(mocks.getTutorProfileView).toHaveBeenCalledTimes(1);
 		expect(locals.tutorProfileView).toBe(first);
 	});
 

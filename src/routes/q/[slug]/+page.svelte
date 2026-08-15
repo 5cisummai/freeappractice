@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import QuestionShell from '$lib/components/questions/question-shell.svelte';
+	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 
@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.sharedQuiz?.title ?? 'Shared quiz'} – Free AP Practice</title>
+	<title>{data.sharedQuiz?.title ?? 'Shared quiz'} | Free AP Practice</title>
 	<meta name="robots" content="noindex, nofollow" />
 	<meta name="googlebot" content="noindex, nofollow" />
 </svelte:head>
@@ -53,12 +53,15 @@
 							{data.sharedQuiz.title}
 						</h1>
 					</div>
-					<QuestionShell
-						bind:selectedClass
-						bind:selectedUnit
-						bind:requestVersion
-						sharedQuiz={data.sharedQuiz}
-						persistQuizHistory={false}
+					<PracticeRunner
+						initial={{ selectedClass, selectedUnit, requestVersion }}
+						quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}
+						onEvent={(event) => {
+							if (event.type === 'selection-change') {
+								selectedClass = event.selectedClass;
+								selectedUnit = event.selectedUnit;
+							}
+						}}
 					/>
 				</div>
 			{:else if data.sharedQuiz}

@@ -15,12 +15,15 @@ import {
 	extractPoolBatchOutputText,
 	retrieveOpenAiBatch,
 	type PoolBatchManifest
-} from '../src/lib/questions/pool-batch.server';
-import { parseGeneratedApQuestion } from '../src/lib/questions/generation.server';
-import { persistParsedQuestionToPool } from '../src/lib/questions/pool-write.server';
-import { parseGeneratedFrq, persistGeneratedFrqToPool } from '../src/lib/frq/generation.server';
-import { writePoolBucketBelowTarget } from '../src/lib/questions/pool-capacity.server';
-import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/questions/pool-constants';
+} from '../src/lib/question-bank/pool-batch.server';
+import { parseGeneratedApQuestion } from '../src/lib/question-bank/mcq/generation.server';
+import { persistParsedQuestionToPool } from '../src/lib/question-bank/mcq/write.server';
+import {
+	parseGeneratedFrq,
+	persistGeneratedFrqToPool
+} from '../src/lib/question-bank/frq/generation.server';
+import { writePoolBucketBelowTarget } from '../src/lib/question-bank/pool-capacity.server';
+import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/question-bank/pool-constants';
 
 function argValue(flag: string): string | undefined {
 	const eq = process.argv.find((a) => a.startsWith(`${flag}=`));

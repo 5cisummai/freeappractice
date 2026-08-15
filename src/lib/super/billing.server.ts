@@ -1,19 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
+import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { logger } from '$lib/server/logger';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	authSubscriptions,
 	authUsers,
 	superBillingAccess,
+	superGrants,
 	tutorProfiles
 } from '$lib/server/neon/schema';
-import { and, eq, isNull, lte, or } from 'drizzle-orm';
-import { getEntitlements, markSuperAccessEndedIfNoAccess } from '$lib/super/entitlements.server';
-import { unlockInsightReports } from '$lib/super/insight-locks.server';
+import { and, desc, eq, gt, inArray, isNotNull, isNull, lte, or } from 'drizzle-orm';
+import { lockInsightReports, unlockInsightReports } from '$lib/super/insight-locks.server';
+import { markSuperAccessStarted } from '$lib/super/profile.server';
 import {
+	FREE_PLAN_ACCESS,
+	SUPER_PAST_DUE_GRACE_MS,
 	isSuperBillingStatus,
+	type PlanAccess,
+	type SuperAccessReason,
 	type SuperBillingIssue,
 	type SuperBillingStatus
 } from '$lib/super/types';
@@ -49,6 +55,226 @@ export function isSuperStripeConfigured(): boolean {
 		env.STRIPE_SUPER_MONTHLY_PRICE_ID?.trim() &&
 		env.STRIPE_SUPER_ANNUAL_PRICE_ID?.trim()
 	);
+}
+
+export type SuperBillingView = {
+	status: string;
+	billingIssue: string | null;
+	subscriptionId: string | null;
+	periodStart: string | null;
+	periodEnd: string | null;
+	cancelAt: string | null;
+	cancelAtPeriodEnd: boolean;
+	hasCustomer: boolean;
+};
+
+function superPlanAccess(reason: Exclude<SuperAccessReason, null>): PlanAccess {
+	return { plan: 'super', accessReason: reason };
+}
+
+/** Resolve the user's plan from the billing mirror, grants, and free-beta claim. */
+export async function getPlanAccess(userId: string, now = new Date()): Promise<PlanAccess> {
+	if (await isSuperFreeBetaEnabled()) {
+		const [claimed] = await getNeonDatabase()
+			.select({ userId: tutorProfiles.userId })
+			.from(tutorProfiles)
+			.where(and(eq(tutorProfiles.userId, userId), isNotNull(tutorProfiles.superFreeBetaClaimedAt)))
+			.limit(1);
+		if (claimed) {
+			await markSuperAccessStarted(userId, now);
+			return superPlanAccess('free_beta');
+		}
+	}
+
+	const db = getNeonDatabase();
+	const [billing, grants] = await Promise.all([
+		db
+			.select()
+			.from(superBillingAccess)
+			.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
+			.orderBy(desc(superBillingAccess.updatedAt)),
+		db
+			.select()
+			.from(superGrants)
+			.where(
+				and(
+					eq(superGrants.userId, userId),
+					lte(superGrants.startsAt, now),
+					gt(superGrants.expiresAt, now),
+					isNull(superGrants.revokedAt)
+				)
+			)
+			.limit(1)
+	]);
+	const grant = grants[0];
+
+	if (grant) {
+		await markSuperAccessStarted(userId, now);
+		return superPlanAccess('admin_grant');
+	}
+	if (
+		billing.some(
+			(subscription) =>
+				subscription.status === 'active' &&
+				!subscription.superEndedAt &&
+				!subscription.billingIssue &&
+				subscription.periodEnd &&
+				new Date(subscription.periodEnd) > now
+		)
+	) {
+		await markSuperAccessStarted(userId, now);
+		return superPlanAccess('subscription');
+	}
+	if (
+		billing.some(
+			(subscription) =>
+				subscription.status === 'past_due' &&
+				!subscription.superEndedAt &&
+				subscription.pastDueSince &&
+				now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
+		)
+	) {
+		await markSuperAccessStarted(userId, now);
+		return superPlanAccess('past_due_grace');
+	}
+	return FREE_PLAN_ACCESS;
+}
+
+export type AdminUserSuperAccess = {
+	plan: 'free' | 'super';
+	accessReason: SuperAccessReason;
+	hasAdminGrant: boolean;
+};
+
+/** Resolve plans for an admin table without issuing one query per user. */
+export async function getAdminUserSuperAccess(
+	userIds: string[],
+	now = new Date()
+): Promise<Map<string, AdminUserSuperAccess>> {
+	const access = new Map<string, AdminUserSuperAccess>();
+	for (const userId of userIds) {
+		access.set(userId, { plan: 'free', accessReason: null, hasAdminGrant: false });
+	}
+	if (userIds.length === 0) return access;
+
+	const db = getNeonDatabase();
+	const freeBetaEnabled = await isSuperFreeBetaEnabled();
+	const [claimed, grants, billing] = await Promise.all([
+		freeBetaEnabled
+			? db
+					.select({ userId: tutorProfiles.userId })
+					.from(tutorProfiles)
+					.where(
+						and(
+							inArray(tutorProfiles.userId, userIds),
+							isNotNull(tutorProfiles.superFreeBetaClaimedAt)
+						)
+					)
+			: Promise.resolve([] as { userId: string }[]),
+		db
+			.select({ userId: superGrants.userId })
+			.from(superGrants)
+			.where(
+				and(
+					inArray(superGrants.userId, userIds),
+					lte(superGrants.startsAt, now),
+					gt(superGrants.expiresAt, now),
+					isNull(superGrants.revokedAt)
+				)
+			),
+		db
+			.select()
+			.from(superBillingAccess)
+			.where(and(inArray(superBillingAccess.userId, userIds), eq(superBillingAccess.plan, 'super')))
+	]);
+
+	const claimedUsers = new Set(claimed.map((row) => row.userId));
+	const grantedUsers = new Set(grants.map((row) => row.userId));
+	const billingByUser = new Map<string, typeof billing>();
+	for (const subscription of billing) {
+		const rows = billingByUser.get(subscription.userId) ?? [];
+		rows.push(subscription);
+		billingByUser.set(subscription.userId, rows);
+	}
+
+	for (const userId of userIds) {
+		const hasAdminGrant = grantedUsers.has(userId);
+		let accessReason: SuperAccessReason = null;
+		if (claimedUsers.has(userId)) accessReason = 'free_beta';
+		else if (hasAdminGrant) accessReason = 'admin_grant';
+		else {
+			const subscriptions = billingByUser.get(userId) ?? [];
+			if (
+				subscriptions.some(
+					(subscription) =>
+						subscription.status === 'active' &&
+						!subscription.superEndedAt &&
+						!subscription.billingIssue &&
+						subscription.periodEnd &&
+						new Date(subscription.periodEnd) > now
+				)
+			) {
+				accessReason = 'subscription';
+			} else if (
+				subscriptions.some(
+					(subscription) =>
+						subscription.status === 'past_due' &&
+						!subscription.superEndedAt &&
+						subscription.pastDueSince &&
+						now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
+				)
+			) {
+				accessReason = 'past_due_grace';
+			}
+		}
+		access.set(userId, {
+			plan: accessReason ? 'super' : 'free',
+			accessReason,
+			hasAdminGrant
+		});
+	}
+
+	return access;
+}
+
+/** End Super retention only after every current access source has ended. */
+export async function markSuperAccessEndedIfNoAccess(
+	userId: string,
+	endedAt: Date,
+	now = endedAt
+): Promise<boolean> {
+	const access = await getPlanAccess(userId, now);
+	if (access.plan === 'super') return false;
+	await Promise.all([
+		getNeonDatabase()
+			.update(tutorProfiles)
+			.set({ superEndedAt: endedAt, updatedAt: endedAt })
+			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superEndedAt))),
+		lockInsightReports(userId, endedAt)
+	]);
+	return true;
+}
+
+/** Keep the durable Stripe mirror and its page-facing shape inside billing. */
+export async function getSuperBillingView(userId: string): Promise<SuperBillingView | null> {
+	const [billing] = await getNeonDatabase()
+		.select()
+		.from(superBillingAccess)
+		.where(and(eq(superBillingAccess.userId, userId), eq(superBillingAccess.plan, 'super')))
+		.orderBy(desc(superBillingAccess.updatedAt))
+		.limit(1);
+	return billing
+		? {
+				status: billing.status,
+				billingIssue: billing.billingIssue ?? null,
+				subscriptionId: billing.stripeSubscriptionId ?? null,
+				periodStart: billing.periodStart?.toISOString() ?? null,
+				periodEnd: billing.periodEnd?.toISOString() ?? null,
+				cancelAt: billing.cancelAt?.toISOString() ?? null,
+				cancelAtPeriodEnd: billing.cancelAtPeriodEnd,
+				hasCustomer: Boolean(billing.stripeCustomerId)
+			}
+		: null;
 }
 
 export function shouldApplySubscriptionEvent(
@@ -173,7 +399,7 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 	if (isEnded) {
 		await markSuperAccessEndedIfNoAccess(current.userId, current.endedAt ?? now, now);
 	} else if (status === 'active' || status === 'past_due') {
-		const access = await getEntitlements(current.userId, now);
+		const access = await getPlanAccess(current.userId, now);
 		if (access.plan !== 'super') return;
 		await Promise.all([
 			db

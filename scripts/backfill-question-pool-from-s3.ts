@@ -15,21 +15,21 @@ import 'dotenv/config';
 import { createHash, randomUUID } from 'node:crypto';
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { createLimiter, getArg, loadCombos } from './shared';
-import { getFrqCourseNames } from '../src/lib/frq/profiles.server';
-import { FrqQuestionSchema } from '../src/lib/frq/types';
+import { getFrqCourseNames } from '../src/lib/question-bank/frq/profiles.server';
+import { FrqQuestionSchema } from '../src/lib/question-bank/frq/types';
 import {
 	QUESTION_POOL_CONFIG,
 	poolTargetForBucket,
 	type QuestionPoolConfig
-} from '../src/lib/questions/pool-constants';
-import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
-import { countActivePoolRows } from '../src/lib/questions/pool-counts.server';
-import { createCanonicalMcqQuestion } from '../src/lib/questions/cache-model.server';
-import { createFrqQuestion, findFrqQuestionById } from '../src/lib/frq/model.server';
+} from '../src/lib/question-bank/pool-constants';
+import { getMcqGenerationCountsByClass } from '../src/lib/question-bank/gen-stats.server';
+import { countActivePoolRows } from '../src/lib/question-bank/pool-counts.server';
+import { createCanonicalMcqQuestion } from '../src/lib/question-bank/mcq/repository.server';
+import { createFrqQuestion, findFrqQuestionById } from '../src/lib/question-bank/frq/model.server';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
 import { mcqQuestions, poolRefillStates } from '../src/lib/server/neon/schema';
 import { eq } from 'drizzle-orm';
-import { isDuplicateKeyError } from '../src/lib/questions/util.server';
+import { isDuplicateKeyError } from '../src/lib/question-bank/util.server';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;

@@ -1,5 +1,5 @@
 import { asc, eq, sql } from 'drizzle-orm';
-import { getQuestionsByIds, type StoredQuestion } from '$lib/questions/storage.server';
+import { getQuestionsByIds, type StoredQuestion } from '$lib/question-bank/mcq/repository.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { bookmarks } from '$lib/server/neon/schema';
 

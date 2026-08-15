@@ -27,6 +27,7 @@
 		topic?: string;
 		showFirstUseHint?: boolean;
 		isPersonalizedTutor?: boolean;
+		embedded?: boolean;
 	};
 
 	let {
@@ -37,15 +38,20 @@
 		frqAttemptId = '',
 		topic = '',
 		showFirstUseHint = false,
-		isPersonalizedTutor = false
+		isPersonalizedTutor = false,
+		embedded = false
 	}: TutorWidgetProps = $props();
 
+	const uid = $props.id();
+
+	const GREETING =
+		"Hi! I'm here to help you understand this question. What would you like to know?";
+
 	let isOpen = $state(false);
-	let messages = $state<ChatMessage[]>([]);
+	let messages = $state<ChatMessage[]>([{ role: 'assistant', content: GREETING }]);
 	let inputText = $state('');
 	let isStreaming = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
-	let hasGreeted = $state(false);
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
 	let activeStreamController: AbortController | null = null;
@@ -66,8 +72,6 @@
 	const VIEWPORT_MARGIN = 12;
 	const PANEL_GAP = 8;
 	const STREAM_TIMEOUT_MS = 30000;
-	const GREETING_FALLBACK =
-		"Hi! I'm here to help you understand this question. What would you like to know?";
 	const scrollTrigger = $derived.by(() => {
 		const lastMessage = messages[messages.length - 1];
 		return `${messages.length}:${lastMessage?.content.length ?? 0}`;
@@ -146,38 +150,8 @@
 		};
 	}
 
-	async function fetchGreeting() {
-		if (hasGreeted || !questionId) return;
-		hasGreeted = true;
-		if (frqQuestionId) {
-			messages.push({ role: 'assistant', content: GREETING_FALLBACK });
-			return;
-		}
-		try {
-			const res = await apiFetch('/api/tutor/greeting', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ questionId })
-			});
-			const data = await readJsonOrNull<{ error?: string; message?: string }>(res);
-			if (!res.ok) {
-				throw new Error(getResponseMessage(data, GREETING_FALLBACK));
-			}
-			messages.push({
-				role: 'assistant',
-				content: data?.message ?? GREETING_FALLBACK
-			});
-		} catch {
-			messages.push({
-				role: 'assistant',
-				content: GREETING_FALLBACK
-			});
-		}
-	}
-
 	function handleOpen() {
 		isOpen = true;
-		fetchGreeting();
 	}
 
 	function handleClose() {
@@ -403,6 +377,11 @@
 	}
 
 	onMount(() => {
+		if (embedded) {
+			handleOpen();
+			return;
+		}
+
 		const updateViewport = () => {
 			viewportWidth = window.innerWidth;
 			viewportHeight = window.innerHeight;
@@ -429,164 +408,177 @@
 
 <svelte:window
 	onkeydown={(event) => {
-		if (isOpen && event.key === 'Escape') {
+		if (!embedded && isOpen && event.key === 'Escape') {
 			event.preventDefault();
 			handleClose();
 		}
 	}}
 />
 
-<div {@attach portalToBody}>
-	<!-- Chat panel: clamped to viewport, opens above or below the button -->
-	{#if isOpen}
+{#snippet chatBody()}
+	<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
+		<div class="flex items-center gap-2">
+			{#if isPersonalizedTutor}
+				<Badge
+					variant="outline"
+					class="gap-1 border-violet-300/50 super-tier-gradient px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
+				>
+					Personalized
+				</Badge>
+			{/if}
+			<SparklesIcon class="h-4 w-4" />
+			<span id="{uid}-title" class="text-sm font-semibold">AI Tutor</span>
+		</div>
+		{#if !embedded}
+			<button
+				onclick={handleClose}
+				class="rounded-md p-0.5 transition-colors hover:bg-primary-foreground/10"
+				aria-label="Close AI Tutor"
+			>
+				<XIcon class="h-4 w-4" />
+			</button>
+		{/if}
+	</div>
+
+	<div
+		{@attach autoScrollMessages(scrollTrigger)}
+		class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+	>
+		{#if messages.length === 0}
+			<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
+				<span>Loading...</span>
+			</div>
+		{/if}
+		{#each messages as message, i (i)}
+			<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+				{#if message.role === 'user'}
+					<div
+						class="ph-mask-pii max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
+					>
+						{message.content}
+					</div>
+				{:else}
+					<div class="ph-mask-pii max-w-[90%] text-sm text-foreground/90">
+						{#if message.content}
+							<RichText text={message.content} blocks />
+						{:else if isStreaming && i === messages.length - 1}
+							<span class="inline-flex gap-1 text-muted-foreground">
+								<span class="animate-bounce" style="animation-delay: 0ms">·</span>
+								<span class="animate-bounce" style="animation-delay: 100ms">·</span>
+								<span class="animate-bounce" style="animation-delay: 200ms">·</span>
+							</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/each}
+	</div>
+
+	<div class={['shrink-0 p-3', embedded && 'relative z-10 overflow-visible pb-5']}>
 		<div
-			id="ai-tutor-panel"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="ai-tutor-title"
-			tabindex="-1"
-			{@attach trapPanelFocus}
-			class="fixed z-60 flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
-			style="
+			class={[
+				'relative flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2',
+				embedded ? 'origin-bottom shadow-lg ring-1 ring-foreground/10' : 'shadow-sm'
+			]}
+		>
+			<textarea
+				{@attach !embedded && autofocusInput}
+				bind:value={inputText}
+				onkeydown={handleKeydown}
+				oninput={(e) => autoResize(e.currentTarget)}
+				rows={1}
+				placeholder="Ask a question…"
+				disabled={isStreaming}
+				class="flex-1 resize-none bg-transparent px-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+				style="max-height: 80px; overflow-y: auto;"
+			></textarea>
+			<button
+				onclick={sendMessage}
+				disabled={!inputText.trim() || isStreaming}
+				class="shrink-0 rounded-lg p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+				aria-label="Send message"
+			>
+				<SendHorizontalIcon class="h-4 w-4" />
+			</button>
+		</div>
+	</div>
+{/snippet}
+
+{#if embedded}
+	<div
+		id="landing-ai-tutor-panel"
+		class="flex h-full min-h-0 flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-card shadow-2xl"
+	>
+		{@render chatBody()}
+	</div>
+{:else}
+	<div {@attach portalToBody}>
+		{#if isOpen}
+			<div
+				id="ai-tutor-panel"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="{uid}-title"
+				tabindex="-1"
+				{@attach trapPanelFocus}
+				class="fixed z-60 flex flex-col rounded-2xl border border-border bg-card shadow-2xl outline-none"
+				style="
 					left: {panelLeft}px;
 					top: {panelTop}px;
 					width: {panelWidth}px;
 					height: {panelHeight}px;
 					overflow: hidden;
 				"
-			transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
-		>
-			<!-- Header -->
-			<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
-				<div class="flex items-center gap-2">
-					{#if isPersonalizedTutor}
-						<Badge
-							variant="outline"
-							class="gap-1 border-violet-300/50 super-tier-gradient px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
-						>
-							Personalized
-						</Badge>
-					{/if}
-					<SparklesIcon class="h-4 w-4" />
-					<span id="ai-tutor-title" class="text-sm font-semibold">AI Tutor</span>
-				</div>
-				<button
-					onclick={handleClose}
-					class="rounded-md p-0.5 transition-colors hover:bg-primary-foreground/10"
-					aria-label="Close AI Tutor"
-				>
-					<XIcon class="h-4 w-4" />
-				</button>
-			</div>
-
-			<!-- Messages -->
-			<div
-				{@attach autoScrollMessages(scrollTrigger)}
-				class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
+				transition:fly={{ y: chatAbove ? 16 : -16, duration: 220, easing: quintOut }}
 			>
-				{#if messages.length === 0}
-					<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
-						<span>Loading...</span>
-					</div>
-				{/if}
-				{#each messages as message, i (i)}
-					<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-						{#if message.role === 'user'}
-							<div
-								class="ph-mask-pii max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
-							>
-								{message.content}
-							</div>
-						{:else}
-							<div class="ph-mask-pii max-w-[90%] text-sm text-foreground/90">
-								{#if message.content}
-									<RichText text={message.content} blocks />
-								{:else if isStreaming && i === messages.length - 1}
-									<span class="inline-flex gap-1 text-muted-foreground">
-										<span class="animate-bounce" style="animation-delay: 0ms">·</span>
-										<span class="animate-bounce" style="animation-delay: 100ms">·</span>
-										<span class="animate-bounce" style="animation-delay: 200ms">·</span>
-									</span>
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{/each}
+				{@render chatBody()}
 			</div>
-
-			<!-- Input -->
-			<div class="shrink-0 p-3">
-				<div
-					class="flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2 shadow-sm"
-				>
-					<textarea
-						{@attach autofocusInput}
-						bind:value={inputText}
-						onkeydown={handleKeydown}
-						oninput={(e) => autoResize(e.currentTarget)}
-						rows={1}
-						placeholder="Ask a question…"
-						disabled={isStreaming}
-						class="flex-1 resize-none bg-transparent px-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
-						style="max-height: 80px; overflow-y: auto;"
-					></textarea>
-					<button
-						onclick={sendMessage}
-						disabled={!inputText.trim() || isStreaming}
-						class="shrink-0 rounded-lg p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
-						aria-label="Send message"
-					>
-						<SendHorizontalIcon class="h-4 w-4" />
-					</button>
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	<!-- Floating toggle button -->
-	<button
-		{@attach rememberTrigger}
-		id="ai-tutor-trigger"
-		type="button"
-		aria-expanded={isOpen}
-		aria-controls="ai-tutor-panel"
-		aria-haspopup="dialog"
-		onpointerdown={onBtnPointerDown}
-		onpointermove={onBtnPointerMove}
-		onpointerup={onBtnPointerUp}
-		onclick={() => {
-			if (hasDragged) {
-				hasDragged = false;
-				return;
-			}
-			if (isOpen) {
-				handleClose();
-			} else {
-				handleOpen();
-			}
-		}}
-		class={[
-			'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full select-none',
-			isPersonalizedTutor
-				? 'super-tier-gradient-fab'
-				: 'bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl'
-		]}
-		style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
-		aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
-	>
-		{#if isOpen}
-			<XIcon class="h-5 w-5" />
-		{:else}
-			<MessageSquareIcon class="h-5 w-5" />
 		{/if}
-	</button>
-	{#if showFirstUseHint}
-		<FirstUseHint
-			id="tutor-widget"
-			anchorId="ai-tutor-trigger"
-			text="Ask the Tutor about this question."
-			side="top"
-			align="end"
-		/>
-	{/if}
-</div>
+
+		<button
+			{@attach rememberTrigger}
+			id="ai-tutor-trigger"
+			type="button"
+			aria-expanded={isOpen}
+			aria-controls="ai-tutor-panel"
+			aria-haspopup="dialog"
+			onpointerdown={onBtnPointerDown}
+			onpointermove={onBtnPointerMove}
+			onpointerup={onBtnPointerUp}
+			onclick={() => {
+				if (hasDragged) {
+					hasDragged = false;
+					return;
+				}
+				if (isOpen) {
+					handleClose();
+				} else {
+					handleOpen();
+				}
+			}}
+			class={[
+				'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full select-none',
+				isPersonalizedTutor
+					? 'super-tier-gradient-fab'
+					: 'bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl'
+			]}
+			style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
+			aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}
+		>
+			{#if isOpen}
+				<XIcon class="h-5 w-5" />
+			{:else}
+				<MessageSquareIcon class="h-5 w-5" />
+			{/if}
+		</button>
+		{#if showFirstUseHint}
+			<FirstUseHint
+				id="tutor-widget"
+				anchorId="ai-tutor-trigger"
+				text="Ask the Tutor about this question."
+				side="top"
+				align="end"
+			/>
+		{/if}
+	</div>
+{/if}

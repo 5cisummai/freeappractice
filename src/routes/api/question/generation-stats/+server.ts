@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getGenerationStatsForApi } from '$lib/questions/gen-stats.server';
+import { getGenerationStatsForApi } from '$lib/question-bank/gen-stats.server';
 import { logger } from '$lib/server/logger';
 
 /** Public read-only stats for MCQs generated and stored in the Neon registry. */

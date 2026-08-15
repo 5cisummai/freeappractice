@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { getQuestionsLookupMap } from '$lib/questions/storage.server';
+import { getQuestionsLookupMap } from '$lib/question-bank/mcq/repository.server';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
 import { getSharedQuizForCompletion } from '$lib/shared-practice/shared-sets.server';

@@ -10,9 +10,9 @@ import {
 import { getOrAssignMultiAttemptVariant } from '$lib/practice/assign-variant.server';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
-import { normalizeUnit } from '$lib/questions/util.server';
+import { normalizeUnit } from '$lib/question-bank/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { getQuestionById } from '$lib/questions/storage.server';
+import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
 export type RecordAttemptResult =

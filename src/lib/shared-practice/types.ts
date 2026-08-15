@@ -1,4 +1,4 @@
-import type { GeneratedQuestion } from '$lib/questions/types';
+import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
 
 export type SharedQuizView = {
 	id: string;

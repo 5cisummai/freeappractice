@@ -42,6 +42,20 @@ const SAFE_OPERATIONAL_KEYS = new Set([
 	'totalTokens'
 ]);
 
+/** Error-shaped fields allowed under an `error` key (dev debugging). */
+const ERROR_DETAIL_KEYS = new Set([
+	'message',
+	'name',
+	'stack',
+	'cause',
+	'code',
+	'status',
+	'statusCode',
+	'errno',
+	'syscall',
+	'type'
+]);
+
 const SENSITIVE_VALUE_PATTERNS = [
 	/^bearer\s+/i,
 	/^basic\s+/i,
@@ -64,10 +78,24 @@ function isSensitiveValue(value: string): boolean {
 	);
 }
 
+function isSensitiveKey(key: string, parentKey?: string): boolean {
+	if (parentKey === 'error' && ERROR_DETAIL_KEYS.has(key)) {
+		return false;
+	}
+	return SENSITIVE_KEY_PATTERN.test(key) && !SAFE_OPERATIONAL_KEYS.has(key);
+}
+
+function extractError(meta: unknown): Error | undefined {
+	if (!meta || typeof meta !== 'object') return undefined;
+	const candidate = (meta as Record<string, unknown>).error;
+	return candidate instanceof Error ? candidate : undefined;
+}
+
 function normalize(
 	value: unknown,
 	depth = 0,
-	state: NormalizeState = { seen: new WeakSet() }
+	state: NormalizeState = { seen: new WeakSet() },
+	parentKey?: string
 ): unknown {
 	if (typeof value === 'string') {
 		return isSensitiveValue(value) ? REDACTED : boundString(value);
@@ -85,8 +113,11 @@ function normalize(
 	if (value instanceof Error) {
 		return {
 			name: boundString(value.name, 100),
-			message: normalize(value.message, depth + 1, state),
-			stack: value.stack ? boundString(value.stack, MAX_ERROR_STACK_LENGTH) : undefined
+			message: normalize(value.message, depth + 1, state, 'message'),
+			stack: value.stack ? boundString(value.stack, MAX_ERROR_STACK_LENGTH) : undefined,
+			...(value.cause !== undefined
+				? { cause: normalize(value.cause, depth + 1, state, 'cause') }
+				: {})
 		};
 	}
 
@@ -95,7 +126,7 @@ function normalize(
 	if (Array.isArray(value)) {
 		const entries = value
 			.slice(0, MAX_ARRAY_LENGTH)
-			.map((entry) => normalize(entry, depth + 1, state));
+			.map((entry) => normalize(entry, depth + 1, state, parentKey));
 		if (value.length > MAX_ARRAY_LENGTH)
 			entries.push(`${TRUNCATED} ${value.length - MAX_ARRAY_LENGTH} more`);
 		return entries;
@@ -104,10 +135,9 @@ function normalize(
 	const entries = Object.entries(value as Record<string, unknown>);
 	const normalized: Record<string, unknown> = {};
 	for (const [key, entry] of entries.slice(0, MAX_OBJECT_KEYS)) {
-		normalized[boundString(key, 100)] =
-			SENSITIVE_KEY_PATTERN.test(key) && !SAFE_OPERATIONAL_KEYS.has(key)
-				? REDACTED
-				: normalize(entry, depth + 1, state);
+		normalized[boundString(key, 100)] = isSensitiveKey(key, parentKey)
+			? REDACTED
+			: normalize(entry, depth + 1, state, key);
 	}
 	if (entries.length > MAX_OBJECT_KEYS)
 		normalized._truncatedKeys = entries.length - MAX_OBJECT_KEYS;
@@ -161,6 +191,12 @@ function write(level: LogLevel, message: string, meta?: unknown): void {
 		consoleFn(
 			`${color}${ts}${RESET} ${BOLD}[${level.toUpperCase()}]${RESET} ${safeMessage}${metaStr}`
 		);
+		if (level === 'error') {
+			const err = extractError(meta);
+			if (err?.stack) {
+				console.error(err.stack);
+			}
+		}
 	} else {
 		const record = { ts, level, message: safeMessage, meta: boundedMeta(meta) };
 		const serialized = JSON.stringify(record);

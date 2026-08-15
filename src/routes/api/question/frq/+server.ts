@@ -2,9 +2,9 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
-import { requireFrqPracticeEnabled } from '$lib/frq/gate.server';
-import { getFrqCourseProfile } from '$lib/frq/profiles.server';
-import { getFrqQuestion } from '$lib/frq/service.server';
+import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
+import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
+import { frqBank } from '$lib/question-bank/frq/bank.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import {
 	capturePathQuestionRequestMetric,
@@ -47,7 +47,7 @@ export const POST: RequestHandler = withAuthedHandler(
 					{ status: 400 }
 				);
 			}
-			const outcome = await getFrqQuestion(apClass, unit, {
+			const outcome = await frqBank.get(apClass, unit, {
 				excludeQuestionIds: validated.value.excludeQuestionIds,
 				metrics: path
 			});

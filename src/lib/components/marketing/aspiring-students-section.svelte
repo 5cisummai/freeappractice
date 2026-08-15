@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { twAnimateInView } from '$lib/tw-animate';
+	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -12,6 +12,7 @@
 		initials: string;
 		cardClass: string;
 		avatarClass: string;
+		score: 4 | 5;
 	};
 
 	const stories: StudentStory[] = [
@@ -21,6 +22,7 @@
 			quote:
 				'I used this all year to ACE my AP World class with Sensei H. The explanations helped me walk into class knowing the best.',
 			initials: 'JB',
+			score: 4,
 			cardClass: 'bg-sky-100 dark:bg-sky-950/50',
 			avatarClass: 'bg-sky-200 text-sky-900 dark:bg-sky-900 dark:text-sky-100'
 		},
@@ -30,6 +32,7 @@
 			quote:
 				'Generating questions by unit made it easy to drill weak topics before tests. Way better than flipping through random PDFs. One day or day one.',
 			initials: 'KK',
+			score: 5,
 			cardClass: 'bg-amber-50 dark:bg-amber-950/40',
 			avatarClass: 'bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-100'
 		},
@@ -37,8 +40,9 @@
 			name: 'Sai Tej C.',
 			detail: 'Freshman · AP Human Geography',
 			quote:
-				'AP Practice is the reason a got a 5 in my AP P.E. class. Hardest AP class OAT (and Human Geo).',
+				'AP Practice is the reason I got a 5 in my AP P.E. class. Hardest AP class OAT (and Human Geo).',
 			initials: 'STC',
+			score: 5,
 			cardClass: 'bg-emerald-100 dark:bg-emerald-950/50',
 			avatarClass: 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
 		},
@@ -47,6 +51,7 @@
 			detail: 'Freshman · AP Bio',
 			quote: 'Finally answered all of my questions.',
 			initials: 'RK',
+			score: 5,
 			cardClass: 'bg-cyan-100 dark:bg-cyan-950/50',
 			avatarClass: 'bg-cyan-200 text-cyan-900 dark:bg-cyan-900 dark:text-cyan-100'
 		},
@@ -56,6 +61,7 @@
 			quote:
 				'I was deciding between two APs and used this to sample both subjects. It made choosing my schedule way less stressful.',
 			initials: 'MS',
+			score: 5,
 			cardClass: 'bg-rose-100 dark:bg-rose-950/50',
 			avatarClass: 'bg-rose-200 text-rose-900 dark:bg-rose-900 dark:text-rose-100'
 		},
@@ -65,6 +71,7 @@
 			quote:
 				'No signup, no paywall—just open the site and practice. That low friction is exactly what I needed during a busy semester of AP Physics C.',
 			initials: 'ZR',
+			score: 5,
 			cardClass: 'bg-violet-100 dark:bg-violet-950/50',
 			avatarClass: 'bg-violet-200 text-violet-900 dark:bg-violet-900 dark:text-violet-100'
 		}
@@ -194,47 +201,39 @@
 	});
 </script>
 
-<section
-	class="mx-auto w-full max-w-6xl space-y-8 {twAnimateInView}"
-	aria-labelledby="aspiring-students-heading"
->
-	<div class="relative">
-		<div class="space-y-2 px-0 text-center sm:px-14">
-			<h2
-				id="aspiring-students-heading"
-				class="font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl"
+<section class="mx-auto w-full max-w-7xl space-y-6" aria-labelledby="aspiring-students-heading">
+	<SectionIntro id="aspiring-students-heading">
+		{#snippet title()}
+			Used by students <span class="underline decoration-primary/70 decoration-2 underline-offset-4"
+				>aiming for 5s</span
 			>
-				Used by many <span class="underline decoration-primary/70 decoration-2 underline-offset-4"
-					>aspiring students</span
-				>
-			</h2>
-			<p class="mx-auto max-w-xl text-base leading-7 text-muted-foreground">
+		{/snippet}
+		{#snippet description()}
+			<p>
 				See how students plan their AP year, preview courses, and build confidence before exam day.
 			</p>
-		</div>
+		{/snippet}
+	</SectionIntro>
 
-		<div
-			class="mt-4 flex items-center justify-center gap-2 sm:absolute sm:top-0 sm:right-0 sm:mt-0"
+	<div class="flex justify-end gap-2">
+		<Button
+			variant="ghost"
+			size="icon"
+			aria-label="Previous student stories"
+			disabled={!canScrollPrev}
+			onclick={() => scrollByPage(-1)}
 		>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Previous student stories"
-				disabled={!canScrollPrev}
-				onclick={() => scrollByPage(-1)}
-			>
-				<ChevronLeftIcon />
-			</Button>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Next student stories"
-				disabled={!canScrollNext}
-				onclick={() => scrollByPage(1)}
-			>
-				<ChevronRightIcon />
-			</Button>
-		</div>
+			<ChevronLeftIcon />
+		</Button>
+		<Button
+			variant="ghost"
+			size="icon"
+			aria-label="Next student stories"
+			disabled={!canScrollNext}
+			onclick={() => scrollByPage(1)}
+		>
+			<ChevronRightIcon />
+		</Button>
 	</div>
 
 	<div
@@ -252,7 +251,7 @@
 		{#each stories as story (story.name)}
 			<article
 				data-story-card
-				class="flex w-[min(100%,20rem)] shrink-0 snap-start flex-col gap-5 rounded-3xl p-6 sm:w-80 {story.cardClass}"
+				class="flex w-[min(100%,20rem)] shrink-0 snap-start flex-col gap-5 rounded-3xl p-6 marketing-card-shadow sm:w-80 {story.cardClass}"
 			>
 				<div class="flex items-center gap-3">
 					<div
@@ -261,9 +260,20 @@
 					>
 						{story.initials}
 					</div>
-					<div class="min-w-0">
+					<div class="min-w-0 flex-1">
 						<p class="truncate font-semibold text-foreground">{story.name}</p>
 						<p class="truncate text-sm text-muted-foreground">{story.detail}</p>
+					</div>
+					<div
+						class="flex size-12 shrink-0 rotate-12 items-center justify-center rounded-full border-2 border-rose-700/75 p-0.5 text-rose-700/80 dark:border-rose-400/70 dark:text-rose-400/80"
+						role="img"
+						aria-label="Score {story.score}"
+					>
+						<span
+							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg leading-none font-semibold"
+						>
+							{story.score}
+						</span>
 					</div>
 				</div>
 				<blockquote class="text-base leading-7 text-foreground/90">

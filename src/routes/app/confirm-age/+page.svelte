@@ -3,11 +3,14 @@
 	import { resolve } from '$app/paths';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { authClient } from '$lib/auth/client.js';
+	import { getSiteUrl } from '$lib/site-url.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { toast } from 'svelte-sonner';
 
 	let saving = $state(false);
+	let deleting = $state(false);
 
 	async function confirmAge() {
 		if (saving) return;
@@ -25,9 +28,29 @@
 			saving = false;
 		}
 	}
+
+	async function deleteUnder13Account() {
+		if (deleting) return;
+		deleting = true;
+		try {
+			const { data, error } = await authClient.deleteUser({
+				callbackURL: `${getSiteUrl()}/`
+			});
+			if (error) throw new Error(error.message ?? 'Could not start account deletion.');
+			if (data?.message === 'Verification email sent') {
+				toast.success('Check your email to confirm account deletion.');
+				return;
+			}
+			window.location.href = '/';
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not start account deletion.');
+		} finally {
+			deleting = false;
+		}
+	}
 </script>
 
-<svelte:head><title>Confirm your age – Free AP Practice</title></svelte:head>
+<svelte:head><title>Confirm your age | Free AP Practice</title></svelte:head>
 
 <PageShell
 	title="Confirm your age"
@@ -44,8 +67,15 @@
 			<Card.Content class="flex flex-wrap gap-3"
 				><Button onclick={confirmAge} disabled={saving}
 					>{saving ? 'Saving…' : 'I am at least 13'}</Button
-				><Button href={resolve('/app')} variant="outline">Go back</Button></Card.Content
+				><Button href={resolve('/app')} variant="outline">Go back</Button>
+				<Button variant="ghost" onclick={deleteUnder13Account} disabled={deleting}
+					>{deleting ? 'Starting deletion…' : 'I am under 13'}</Button
+				></Card.Content
 			>
+			<p class="mt-4 text-sm text-muted-foreground">
+				If you are under 13, do not continue using the account. Start deletion and follow the email
+				instructions to remove it.
+			</p>
 		</Card.Root>
 	</div>
 </PageShell>

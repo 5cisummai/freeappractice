@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
 		(handler: (event: unknown, userId: string) => Promise<Response>) => (event: unknown) =>
 			handler(event, 'user-1'),
 	getTutorProfileView: vi.fn(),
+	getTutorProfileViewForRequest: vi.fn(),
 	updateTutorProfile: vi.fn(),
 	confirmAge: vi.fn(),
 	markMemoryDisclosureSeen: vi.fn(),
@@ -15,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 	deleteAllTutorMemories: vi.fn(),
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
-	getSuperFeatureAccess: vi.fn(),
+	authorizeFeatureRequest: vi.fn(),
 	insightsGet: vi.fn(),
 	insightsPost: vi.fn(),
 	studyPlanGet: vi.fn(),
@@ -45,8 +46,8 @@ vi.mock('$lib/flags', () => ({
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
 vi.mock('$lib/super/feature-access.server', () => ({
-	getSuperFeatureAccess: mocks.getSuperFeatureAccess,
-	superFeatureAccessMessage: vi.fn(() => 'Super subscription required')
+	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
+	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
 }));
 vi.mock('../../../src/routes/api/insights/+server', () => ({
 	GET: mocks.insightsGet,
@@ -122,6 +123,7 @@ describe('Super API routes', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.getTutorProfileView.mockResolvedValue(profile);
+		mocks.getTutorProfileViewForRequest.mockResolvedValue(profile);
 		mocks.updateTutorProfile.mockResolvedValue(profile);
 		mocks.confirmAge.mockResolvedValue({ ...profile, ageConfirmedAt: '2026-08-04T00:00:00.000Z' });
 		mocks.isTutorMemoryConfigured.mockReturnValue(true);
@@ -131,7 +133,7 @@ describe('Super API routes', () => {
 		mocks.getTutorMemoryPublicId.mockResolvedValue('memory-token');
 		mocks.resolveTutorMemoryId.mockResolvedValue('mem0-secret-id');
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
-		mocks.getSuperFeatureAccess.mockResolvedValue({ allowed: true });
+		mocks.authorizeFeatureRequest.mockResolvedValue({ allowed: true });
 		mocks.coachUndoPost.mockResolvedValue(new Response(null, { status: 204 }));
 	});
 
@@ -207,11 +209,6 @@ describe('Super API routes', () => {
 			...profile,
 			ageConfirmedAt: '2026-08-04T00:00:00.000Z'
 		});
-		mocks.getSuperFeatureAccess.mockResolvedValue({
-			allowed: false,
-			reason: 'subscription'
-		});
-
 		const acknowledged = await memoryPost(event());
 		expect(acknowledged.status).toBe(200);
 		expect(mocks.markMemoryDisclosureSeen).toHaveBeenCalledWith('user-1');

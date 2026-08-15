@@ -27,22 +27,31 @@ export type SuperBillingIssue =
 export type SuperAccessReason =
 	'subscription' | 'past_due_grace' | 'admin_grant' | 'free_beta' | null;
 
-export type Entitlements = {
+export const PAID_PLAN_PERMISSIONS = {
+	super: {
+		personalizedTutor: true,
+		coach: true,
+		aiInsights: true,
+		studyPlans: true,
+		memory: true
+	}
+} as const;
+
+export type PaidCapability = keyof (typeof PAID_PLAN_PERMISSIONS)['super'];
+
+export type PlanAccess = {
 	plan: Plan;
 	accessReason: SuperAccessReason;
-	personalizedTutor: boolean;
-	coach: boolean;
-	aiInsights: boolean;
-	studyPlans: boolean;
 };
 
-export const FREE_ENTITLEMENTS: Entitlements = {
+/** Return whether a paid capability is available under the resolved plan. */
+export function hasPaidCapability(access: PlanAccess, capability: PaidCapability): boolean {
+	return access.plan === 'super' && PAID_PLAN_PERMISSIONS.super[capability];
+}
+
+export const FREE_PLAN_ACCESS: PlanAccess = {
 	plan: 'free',
-	accessReason: null,
-	personalizedTutor: false,
-	coach: false,
-	aiInsights: false,
-	studyPlans: false
+	accessReason: null
 };
 
 export type TutorTeachingStyle = 'socratic' | 'concise' | 'step_by_step';

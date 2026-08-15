@@ -6,7 +6,12 @@
 	import { QuestionRequestError } from '$lib/client/activation-analytics';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-	import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/frq/types.js';
+	import type {
+		FrqAttemptView,
+		FrqGrade,
+		PublicFrqQuestion
+	} from '$lib/question-bank/frq/types.js';
+	import type { TutorMode } from '$lib/question-bank/mcq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
@@ -15,9 +20,9 @@
 		parseFrqQuestionDraft,
 		serializeFrqLatestDraft,
 		serializeFrqQuestionDraft
-	} from '$lib/questions/frq-draft.client.js';
-	import { PoolWarmingError } from '$lib/questions/request.client.js';
-	import { requestFrqQuestion } from '$lib/questions/request-frq.client';
+	} from '$lib/question-bank/frq/draft.client.js';
+	import { PoolWarmingError } from '$lib/question-bank/request.client.js';
+	import { requestFrqQuestion } from '$lib/question-bank/request.client';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;
@@ -29,6 +34,7 @@
 		unitRange?: readonly number[];
 		requestVersion?: number;
 		showFirstUseHint?: boolean;
+		tutorMode?: TutorMode;
 		isPersonalizedTutor?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
 	};
@@ -40,6 +46,7 @@
 		requestVersion = 0,
 		showFirstUseHint = false,
 		isPersonalizedTutor = false,
+		tutorMode = isPersonalizedTutor ? 'personalized' : 'free',
 		onGraded
 	}: Props = $props();
 
@@ -418,27 +425,29 @@
 		{/if}
 
 		{#key question.questionId}
-			{#if isPersonalizedTutor}
-				<SuperTutorWidget
-					apClass={question.apClass}
-					unit={question.unit}
-					questionId={question.questionId}
-					frqQuestionId={question.questionId}
-					frqAttemptId={attemptId}
-					topic={question.formatId}
-					{showFirstUseHint}
-				/>
-			{:else}
-				<TutorWidget
-					apClass={question.apClass}
-					unit={question.unit}
-					questionId={question.questionId}
-					frqQuestionId={question.questionId}
-					frqAttemptId={attemptId}
-					topic={question.formatId}
-					{isPersonalizedTutor}
-					{showFirstUseHint}
-				/>
+			{#if tutorMode !== 'hidden'}
+				{#if tutorMode === 'personalized'}
+					<SuperTutorWidget
+						apClass={question.apClass}
+						unit={question.unit}
+						questionId={question.questionId}
+						frqQuestionId={question.questionId}
+						frqAttemptId={attemptId}
+						topic={question.formatId}
+						{showFirstUseHint}
+					/>
+				{:else}
+					<TutorWidget
+						apClass={question.apClass}
+						unit={question.unit}
+						questionId={question.questionId}
+						frqQuestionId={question.questionId}
+						frqAttemptId={attemptId}
+						topic={question.formatId}
+						{isPersonalizedTutor}
+						{showFirstUseHint}
+					/>
+				{/if}
 			{/if}
 		{/key}
 	</div>

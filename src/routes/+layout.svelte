@@ -4,7 +4,6 @@
 	/* hljs light theme (default); dark overrides are in layout.css under .dark */
 	import 'highlight.js/styles/github.min.css';
 	import logo from '$lib/assets/logo.png';
-	import SkipToMain from '$lib/components/layout/skip-to-main.svelte';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { afterNavigate, invalidateAll } from '$app/navigation';
@@ -51,7 +50,12 @@
 <svelte:head>
 	<link rel="icon" href={logo} />
 </svelte:head>
-<SkipToMain />
+<a
+	href="#main-content"
+	class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-100 focus:rounded-md focus:border focus:border-border focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-ring focus:outline-none"
+>
+	Skip to main content
+</a>
 <ModeWatcher />
 <GoogleOneTapPrompt />
 {@render children()}
@@ -65,6 +69,8 @@
 				<div class="space-y-1">
 					<p class="font-semibold text-foreground">Optional product analytics</p>
 					<p class="text-sm leading-6 text-muted-foreground">
+						Free AP Practice is intended for students age 13 and older. If you are under 13, choose
+						Reject optional analytics, then do not create an account or submit personal information.
 						This personal project uses cookieless Vercel Analytics for traffic and performance. You
 						can also opt in to detailed product analytics, including feature usage and optional
 						session replay. You can change this later in Settings. See our
@@ -77,14 +83,14 @@
 						class="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
 						onclick={() => privacy.setAnalyticsConsent('denied')}
 					>
-						Reject
+						Reject optional analytics
 					</button>
 					<button
 						type="button"
 						class="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
 						onclick={() => privacy.setAnalyticsConsent('granted')}
 					>
-						Accept
+						Accept optional analytics
 					</button>
 				</div>
 			</div>

@@ -19,6 +19,30 @@ import { createdAt, updatedAt, bytea } from './common';
 
 export const appSchema = pgSchema('app');
 
+export const bugReports = appSchema.table(
+	'bug_reports',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id').references(() => authUsers.id, { onDelete: 'cascade' }),
+		title: text('title').notNull(),
+		description: text('description').notNull(),
+		steps: text('steps'),
+		expected: text('expected'),
+		severity: text('severity').notNull(),
+		email: text('email'),
+		metadata: jsonb('metadata')
+			.$type<Record<string, unknown>>()
+			.notNull()
+			.default(sql`'{}'::jsonb`),
+		createdAt: createdAt()
+	},
+	(table) => [
+		check('bug_reports_severity_check', sql`${table.severity} IN ('low', 'medium', 'high')`),
+		index('bug_reports_created_idx').on(table.createdAt),
+		index('bug_reports_user_idx').on(table.userId)
+	]
+);
+
 // User-owned application data. Arrays and JSONB are limited to values that
 // are genuinely document-shaped; facts that are queried or joined are rows.
 export const userProfiles = appSchema.table(
@@ -28,6 +52,7 @@ export const userProfiles = appSchema.table(
 			.primaryKey()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		referralCode: text('referral_code'),
+		assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
 		subjects: text('subjects')
 			.array()
 			.notNull()

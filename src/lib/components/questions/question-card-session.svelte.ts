@@ -8,8 +8,8 @@ import {
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-import { PoolWarmingError } from '$lib/questions/request.client';
-import { requestMcqQuestion } from '$lib/questions/request-mcq.client';
+import { PoolWarmingError } from '$lib/question-bank/request.client';
+import { requestMcqQuestion } from '$lib/question-bank/request.client';
 import {
 	hasValidHints,
 	MULTI_ATTEMPT_EXPERIMENT_KEY,
@@ -23,7 +23,12 @@ import {
 	reduceMultiAttempt,
 	type MultiAttemptMachineState
 } from '$lib/practice/multi-attempt-machine';
-import type { AnswerResult, GeneratedQuestion, QuestionCardProps } from '$lib/questions/types';
+import type {
+	AnswerResult,
+	GeneratedQuestion,
+	QuestionCardProps
+} from '$lib/question-bank/mcq/types';
+import type { QuestionCardModel } from '$lib/question-bank/question-card-model';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -47,7 +52,7 @@ export type QuestionCardSessionOpts = {
 	onAnswered?: QuestionCardProps['onAnswered'];
 	onQuizNext?: QuestionCardProps['onQuizNext'];
 	onOptionSelected?: QuestionCardProps['onOptionSelected'];
-	practiceExperiment?: QuestionCardProps['practiceExperiment'];
+	practiceExperiment?: Extract<QuestionCardModel['delivery'], { kind: 'unlimited' }>['experiment'];
 };
 
 export function createQuestionCardSession(opts: QuestionCardSessionOpts) {

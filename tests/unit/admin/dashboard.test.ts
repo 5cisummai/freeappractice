@@ -10,24 +10,24 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('$lib/auth/server', () => ({ auth: { api: { listUsers: mocks.listUsers } } }));
 vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
-vi.mock('$lib/questions/gen-stats.server', () => ({
+vi.mock('$lib/question-bank/gen-stats.server', () => ({
 	getMcqGenerationCountsByClass: vi.fn(async () => ({}))
 }));
-vi.mock('$lib/question-quality/dashboard.server', () => ({
+vi.mock('$lib/question-bank/quality/dashboard.server', () => ({
 	getQualityDashboardSnapshot: mocks.getQualityDashboardSnapshot
 }));
 vi.mock('$lib/super/admin.server', () => ({
 	getSuperAdminOverview: mocks.getSuperAdminOverview
 }));
-vi.mock('$lib/super/entitlements.server', () => ({
+vi.mock('$lib/super/billing.server', () => ({
 	getAdminUserSuperAccess: mocks.getAdminUserSuperAccess
 }));
-vi.mock('$lib/questions/pool-refill-queue.server', () => ({
+vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
 	listCatalogBuckets: vi.fn(() => []),
 	requestPoolRefill: vi.fn(),
 	enqueueAllCatalogDeficits: vi.fn()
 }));
-vi.mock('$lib/questions/pool-constants', () => ({
+vi.mock('$lib/question-bank/pool-constants', () => ({
 	QUESTION_POOL_CONFIG: { mcqTarget: 10, frqTarget: 2 },
 	poolTargetForBucket: vi.fn(() => 10)
 }));

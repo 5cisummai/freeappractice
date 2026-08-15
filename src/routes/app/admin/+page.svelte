@@ -31,7 +31,7 @@
 </script>
 
 <svelte:head>
-	<title>Admin - Free AP Practice</title>
+	<title>Admin | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title="Admin">

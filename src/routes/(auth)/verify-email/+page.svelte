@@ -41,7 +41,7 @@
 </script>
 
 <AuthSeoHead
-	title="Verify Email – Free AP Practice"
+	title="Verify Email | Free AP Practice"
 	description="Verify your Free AP Practice account email address."
 	path="/verify-email"
 />

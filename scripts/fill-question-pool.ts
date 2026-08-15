@@ -16,10 +16,14 @@ import {
 	countActivePoolRows,
 	countOpenPoolRefillJobs,
 	requestPoolRefill
-} from '../src/lib/questions/pool-refill-queue.server';
-import { runQuestionPoolRefillWorker } from '../src/lib/questions/pool-refill.server';
-import { getMcqGenerationCountsByClass } from '../src/lib/questions/gen-stats.server';
-import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '../src/lib/questions/pool-constants';
+} from '../src/lib/question-bank/pool-refill-queue.server';
+import { runQuestionPoolRefillWorker } from '../src/lib/question-bank/pool-refill.server';
+import { getMcqGenerationCountsByClass } from '../src/lib/question-bank/gen-stats.server';
+import { QUESTION_POOL_CONFIG } from '../src/lib/question-bank/pool-constants';
+import {
+	getPoolKindAdapter,
+	POOL_QUESTION_TYPES
+} from '../src/lib/question-bank/pool-kinds.server';
 
 const typeFilter = (
 	process.argv.find((arg) => arg.startsWith('--type='))?.slice('--type='.length) ??
@@ -43,14 +47,12 @@ async function printDeficitSummary(
 	const env = QUESTION_POOL_CONFIG;
 	let deficit = 0;
 	const types =
-		typeFilter === 'mcq' || typeFilter === 'frq'
-			? ([typeFilter] as const)
-			: (['mcq', 'frq'] as const);
+		typeFilter === 'mcq' || typeFilter === 'frq' ? ([typeFilter] as const) : POOL_QUESTION_TYPES;
 
 	for (const questionType of types) {
+		const adapter = getPoolKindAdapter(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
-			const target = poolTargetForBucket({
-				questionType,
+			const target = adapter.targetFor({
 				apClass: bucket.apClass,
 				generationCountsByClass,
 				config: env
@@ -90,9 +92,9 @@ async function main() {
 
 	let enqueued = 0;
 	if (typeFilter === 'mcq' || typeFilter === 'frq') {
+		const adapter = getPoolKindAdapter(typeFilter);
 		for (const bucket of listCatalogBuckets(typeFilter)) {
-			const target = poolTargetForBucket({
-				questionType: typeFilter,
+			const target = adapter.targetFor({
 				apClass: bucket.apClass,
 				generationCountsByClass,
 				config: env

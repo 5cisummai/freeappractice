@@ -1,8 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isSuperInsightsEnabled } from '$lib/flags';
-import { getSuperFeatureAccess } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import {
 	getCurrentStoredInsightReport,
 	getStoredInsightReportPdf
@@ -10,11 +9,9 @@ import {
 import { ensureInsightPdf } from '$lib/super/insight-lifecycle.server';
 
 export const GET: RequestHandler = withAuthedHandler(
-	async (_event, userId) => {
-		if (!(await isSuperInsightsEnabled()))
-			return json({ error: 'Insights are temporarily unavailable.' }, { status: 503 });
-		const access = await getSuperFeatureAccess(userId, 'aiInsights');
-		if (!access.allowed) return json({ error: 'Insights are unavailable.' }, { status: 403 });
+	async (event, userId) => {
+		const access = await authorizeFeatureRequest(event, userId, 'aiInsights');
+		if (!access.allowed) return json({ error: access.message }, { status: access.status });
 
 		let report = await getCurrentStoredInsightReport(userId);
 		if (!report) return json({ error: 'No insight report is available yet.' }, { status: 404 });
