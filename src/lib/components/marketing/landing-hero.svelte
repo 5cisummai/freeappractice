@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 
 	let { freeBeta = false, children }: { freeBeta?: boolean; children?: Snippet } = $props();
 
@@ -43,10 +44,14 @@
 			{#if freeBeta}
 				<a
 					href={superSignupHref}
-					class="{badgeClass} transition-colors hover:border-violet-400/70 super-tier-gradient-hover"
+					class="{badgeClass} super-tier-gradient-hover transition-colors hover:border-violet-400/70"
 				>
 					<SparklesIcon class="size-3.5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-					Claim free Super beta
+					Claim Free Super Beta
+					<ArrowRightIcon
+						class="size-3.5 text-violet-500 dark:text-violet-400"
+						aria-hidden="true"
+					/>
 				</a>
 			{:else}
 				<span class={badgeClass}>

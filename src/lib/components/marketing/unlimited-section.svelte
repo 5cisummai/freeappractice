@@ -53,6 +53,8 @@
 	];
 
 	const cardClass = `rounded-3xl border border-border bg-background p-6 ${twAnimateInViewSubtle}`;
+	const largeCardClass = `${cardClass} bg-linear-to-br from-primary/[0.07] via-background to-accent dark:from-primary/15 dark:via-background dark:to-accent/40`;
+	const masteryCardClass = `${cardClass} bg-linear-to-b from-sky-500/[0.09] via-background to-background dark:from-sky-400/18 dark:via-background dark:to-background`;
 	const titleClass = 'text-xl font-semibold tracking-tight';
 	const descClass = 'mt-2 text-sm leading-6 text-muted-foreground';
 	const mockCardClass = 'rounded-2xl border border-border bg-background';
@@ -114,7 +116,7 @@
 		</article>
 
 		<article
-			class="{cardClass} flex flex-col overflow-hidden lg:col-span-3 lg:flex-row lg:items-stretch lg:gap-8"
+			class="{largeCardClass} flex flex-col overflow-hidden lg:col-span-3 lg:flex-row lg:items-stretch lg:gap-8"
 		>
 			<div class={fadeWellClass} aria-hidden="true">
 				<div class="space-y-2.5">
@@ -168,7 +170,7 @@
 		</article>
 
 		<article
-			class="{cardClass} flex flex-col overflow-hidden {showTutor
+			class="{masteryCardClass} flex flex-col overflow-hidden {showTutor
 				? 'lg:col-span-3'
 				: 'lg:col-span-5'} lg:flex-row lg:items-stretch lg:gap-8"
 		>

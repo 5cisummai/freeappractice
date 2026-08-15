@@ -149,14 +149,14 @@
 	use:portalToBody={isExpanded}
 	class={cn(
 		isExpanded
-			? 'fixed inset-0 z-40 flex min-h-0 flex-col overflow-hidden bg-background/75 shadow-2xl backdrop-blur-md'
+			? 'fixed inset-0 z-40 flex h-dvh min-h-0 flex-col overflow-hidden bg-background/75 shadow-2xl backdrop-blur-md'
 			: 'relative'
 	)}
 >
 	<div
 		class={cn(
 			isExpanded
-				? 'relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-card/90 backdrop-blur-sm'
+				? 'relative flex min-h-0 w-full flex-1 flex-col overflow-hidden p-4 sm:p-6'
 				: 'contents'
 		)}
 	>
@@ -233,7 +233,14 @@
 			)}
 		>
 			{#if showUnlimitedFrq}
-				<div class={activeQuizMode ? 'hidden' : undefined} aria-hidden={activeQuizMode}>
+				<div
+					class={activeQuizMode
+						? 'hidden'
+						: isExpanded
+							? 'flex h-full min-h-0 flex-1 flex-col'
+							: undefined}
+					aria-hidden={activeQuizMode}
+				>
 					<FrqCard
 						{selectedClass}
 						{selectedUnit}
@@ -265,7 +272,14 @@
 				/>
 			</div>
 			{#if showUnlimitedMcq}
-				<div class={activeQuizMode ? 'hidden' : undefined} aria-hidden={activeQuizMode}>
+				<div
+					class={activeQuizMode
+						? 'hidden'
+						: isExpanded
+							? 'flex h-full min-h-0 flex-1 flex-col'
+							: undefined}
+					aria-hidden={activeQuizMode}
+				>
 					{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
 						<QuestionCard
 							model={unlimitedQuestionCardModel({

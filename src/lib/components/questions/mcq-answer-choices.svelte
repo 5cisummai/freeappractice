@@ -105,7 +105,7 @@
 				>
 					{option.label}
 				</span>
-				<RichText text={option.text} inline class="text-sm leading-6" />
+				<RichText text={option.text} inline class="font-serif text-sm leading-6" />
 			</div>
 		</button>
 	{/each}

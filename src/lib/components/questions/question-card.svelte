@@ -244,7 +244,7 @@
 	</Card.Root>
 {:else}
 	<Popover.Root bind:open={controlsOpen}>
-		<div class="contents">
+		<div class={expanded ? 'flex min-h-0 flex-1 flex-col' : 'contents'}>
 			{#snippet cardInner(expanded: boolean)}
 				{#snippet mcqChoices(compact = false)}
 					<McqAnswerChoices
@@ -261,7 +261,7 @@
 				{/snippet}
 
 				<Card.Content class={cn('flex flex-col gap-6 pt-0 pb-0', expanded && 'min-h-0 flex-1')}>
-					<div class="flex items-start justify-between gap-4">
+					<div class="flex shrink-0 items-start justify-between gap-4">
 						<div>
 							<h2 class="mt-0.5 text-xl font-semibold">
 								Question {session.effectiveQuestionNumber}
@@ -331,7 +331,7 @@
 										<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 											{session.currentQuestion.leftPanel?.title ?? 'Stimulus'}
 										</p>
-										<div class="space-y-4 text-sm leading-6 text-foreground/90">
+										<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
 											{#each session.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 												<RichText text={paragraph} />
 											{/each}
@@ -347,7 +347,7 @@
 										<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 											{session.currentQuestion.rightPanel?.title ?? 'Prompt'}
 										</p>
-										<div class="space-y-4 text-sm leading-7 text-foreground/90">
+										<div class="space-y-4 font-serif text-sm leading-7 text-foreground/90">
 											{#each session.currentQuestion.rightPanel?.content ?? [session.currentQuestion?.prompt] as paragraph, i (`r-${i}`)}
 												<RichText text={paragraph} />
 											{/each}
@@ -377,7 +377,7 @@
 										</p>
 										<RichText
 											text={session.currentQuestion?.prompt ?? ''}
-											class="text-sm leading-7 text-foreground/90"
+											class="font-serif text-sm leading-7 text-foreground/90"
 										/>
 									</div>
 								</Resizable.Pane>
@@ -393,14 +393,19 @@
 						<div use:observePromptLayout={session.currentQuestion?.prompt ?? ''}>
 							<RichText
 								text={session.currentQuestion?.prompt ?? ''}
-								class="text-base leading-7 text-foreground/90"
+								class="font-serif text-base leading-7 text-foreground/90"
 							/>
 						</div>
 						{@render mcqChoices()}
 					{/if}
 				</Card.Content>
 
-				<Card.Footer class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<Card.Footer
+					class={cn(
+						'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+						expanded && 'shrink-0 border-t'
+					)}
+				>
 					<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 						{#if showUtilityActions && !session.hasCheckedAnswer}
 							<div class="flex flex-wrap gap-2">
@@ -482,12 +487,12 @@
 			{/snippet}
 			<div
 				in:fade={{ duration: 280, easing: quintOut }}
-				class={cn(expanded && 'flex h-full min-h-0 flex-1')}
+				class={cn(expanded && 'flex min-h-0 flex-1 flex-col')}
 			>
 				<Card.Root
 					class={cn(
 						expanded
-							? 'relative flex h-full min-h-0 flex-col overflow-visible rounded-none border-0 bg-transparent pt-6 pb-0 shadow-2xl'
+							? 'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card py-6 shadow-lg ring-1 ring-foreground/10'
 							: 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0',
 						className
 					)}
