@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import { Button } from '$lib/components/ui/button/index.js';
 
 	let { freeBeta = false, children }: { freeBeta?: boolean; children?: Snippet } = $props();
 
@@ -45,8 +46,9 @@
 	<div class="relative flex w-full max-w-5xl flex-col items-center">
 		<div class="flex max-w-3xl flex-col items-center space-y-5 text-center">
 			{#if freeBeta}
-				<a
+				<Button
 					href={superSignupHref}
+					variant="ghost"
 					class="{badgeClass} super-tier-gradient-hover transition-colors hover:border-violet-400/70"
 				>
 					<SparklesIcon class="size-3.5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
@@ -55,7 +57,7 @@
 						class="size-3.5 text-violet-500 dark:text-violet-400"
 						aria-hidden="true"
 					/>
-				</a>
+				</Button>
 			{:else}
 				<span class={badgeClass}>
 					<SparklesIcon class="size-3.5 text-violet-500 dark:text-violet-400" aria-hidden="true" />

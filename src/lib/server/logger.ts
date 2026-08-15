@@ -115,7 +115,9 @@ function normalize(
 			name: boundString(value.name, 100),
 			message: normalize(value.message, depth + 1, state, 'message'),
 			stack: value.stack ? boundString(value.stack, MAX_ERROR_STACK_LENGTH) : undefined,
-			...(value.cause !== undefined ? { cause: normalize(value.cause, depth + 1, state, 'cause') } : {})
+			...(value.cause !== undefined
+				? { cause: normalize(value.cause, depth + 1, state, 'cause') }
+				: {})
 		};
 	}
 

@@ -28,7 +28,7 @@ import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 
 const profile = {
 	ageConfirmedAt: '2026-08-04T00:00:00.000Z'
-} as any;
+};
 
 describe('authorizeFeatureRequest', () => {
 	beforeEach(() => {

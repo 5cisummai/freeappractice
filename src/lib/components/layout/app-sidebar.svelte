@@ -37,7 +37,8 @@
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
 	const navItems = $derived([
 		...baseNavItems.filter(
-			(item) => assistantFeaturesEnabled || (item.href !== '/app/coach' && item.href !== '/app/insights')
+			(item) =>
+				assistantFeaturesEnabled || (item.href !== '/app/coach' && item.href !== '/app/insights')
 		),
 		...(isAdmin ? [adminNavItem] : [])
 	]);

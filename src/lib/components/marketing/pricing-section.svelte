@@ -22,7 +22,8 @@
 		{/snippet}
 		{#snippet description()}
 			<p>
-				A personalized tutor for your learning style and a coach that guides you to your best scores.
+				A personalized tutor for your learning style and a coach that guides you to your best
+				scores.
 			</p>
 		{/snippet}
 	</SectionIntro>

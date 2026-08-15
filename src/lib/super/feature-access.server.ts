@@ -118,4 +118,3 @@ function featureUnavailableMessage(feature: SuperFeature): string {
 	if (feature === 'aiInsights') return 'Insights are temporarily unavailable.';
 	return 'Super Tutor is temporarily unavailable.';
 }
-

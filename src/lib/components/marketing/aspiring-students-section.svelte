@@ -210,8 +210,7 @@
 		{/snippet}
 		{#snippet description()}
 			<p>
-				See how students plan their AP year, preview courses, and build confidence before exam
-				day.
+				See how students plan their AP year, preview courses, and build confidence before exam day.
 			</p>
 		{/snippet}
 	</SectionIntro>
@@ -271,7 +270,7 @@
 						aria-label="Score {story.score}"
 					>
 						<span
-							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg font-semibold leading-none"
+							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg leading-none font-semibold"
 						>
 							{story.score}
 						</span>
