@@ -77,7 +77,7 @@
 			<div class="relative min-h-44 flex-1 overflow-hidden" aria-hidden="true">
 				<div class="{mockCardClass} p-4">
 					<p class="text-sm font-semibold">Question 1</p>
-					<p class="mt-2 text-sm leading-6 text-foreground/90">
+					<p class="mt-2 font-serif text-sm leading-6 text-foreground/90">
 						Which process occurs in the thylakoid membrane during photosynthesis?
 					</p>
 					<div class="mt-3 space-y-1.5">
@@ -95,14 +95,14 @@
 									>
 										{choice.letter}
 									</span>
-									<span class="text-xs leading-5">{choice.text}</span>
+									<span class="font-serif text-xs leading-5">{choice.text}</span>
 								</div>
 							</div>
 						{/each}
 					</div>
 					<div class="mt-3 space-y-1 border-t border-border pt-3">
 						<p class="text-xs font-medium text-emerald-700 dark:text-emerald-400">Correct</p>
-						<p class="text-xs leading-5 text-foreground/85">
+						<p class="font-serif text-xs leading-5 text-foreground/85">
 							Light reactions happen in the thylakoid membrane, where chlorophyll absorbs photons
 							and splits water.
 						</p>
@@ -136,12 +136,12 @@
 									</span>
 								{/if}
 							</div>
-							<p class="mt-1 text-sm leading-6 text-foreground/90">{card.prompt}</p>
+							<p class="mt-1 font-serif text-sm leading-6 text-foreground/90">{card.prompt}</p>
 							{#if card.choices}
 								<div class="mt-2.5 grid grid-cols-2 gap-1.5">
 									{#each card.choices as choice, index (choice)}
 										<div
-											class="rounded-lg border border-border px-2.5 py-1.5 text-xs leading-5 {card.current &&
+											class="rounded-lg border border-border px-2.5 py-1.5 font-serif text-xs leading-5 {card.current &&
 											index === 1
 												? 'border-primary/40 bg-primary/5'
 												: 'opacity-70'}"

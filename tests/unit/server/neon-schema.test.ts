@@ -12,6 +12,7 @@ import {
 	authUsersRelations,
 	authVerifications,
 	betterAuthSchema,
+	bugReports,
 	contentSchema,
 	opsSchema,
 	poolRefillStates,
@@ -39,6 +40,7 @@ describe('Neon Drizzle schema', () => {
 
 	it('exports domain tables directly from the barrel', () => {
 		expect(questionRegistry).toBeDefined();
+		expect(bugReports).toBeDefined();
 		expect(poolRefillStates).toBeDefined();
 		expect(authUsers).toBeDefined();
 	});

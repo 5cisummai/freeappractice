@@ -119,9 +119,10 @@
 				<p class="mt-2">
 					Do not submit passwords, payment-card information, government identifiers, health
 					information, private information about another person, or other sensitive information to
-					the AI tools or bug-report form. Bug reports may be forwarded to GitHub Issues and may be
-					publicly visible, including the optional email address and technical question context you
-					provide. Use support@freeappractice.org for a private support request.
+					the AI tools or bug-report form. Bug reports are stored in our private application
+					database for review and support, including the optional email address and technical
+					question context you provide. Use support@freeappractice.org for a private support
+					request.
 				</p>
 			</section>
 
@@ -158,10 +159,9 @@
 					for sign-in and Google One Tap, Neon-hosted PostgreSQL for database storage, Resend for
 					transactional emails, PostHog for optional product analytics, Vercel for hosting and
 					infrastructure, Sentry for error and performance monitoring, Stripe for payments and
-					taxes, Mem0 for optional tutor memory, Upstash for short-lived service controls, and
-					GitHub for bug-report handling. Those providers may process data according to their own
-					terms and privacy policies. We are not responsible for third-party services that we do not
-					control.
+					taxes, Mem0 for optional tutor memory, and Upstash for short-lived service controls. Those
+					providers may process data according to their own terms and privacy policies. We are not
+					responsible for third-party services that we do not control.
 				</p>
 			</section>
 
@@ -205,7 +205,8 @@
 					and initiates removal of app-owned profile, practice, personalization, referral,
 					billing-mirror, Insight, study-plan, feedback, audit, and tutor-memory data. Some
 					information may remain in backups, logs, billing records, or third-party systems for a
-					limited time, and public GitHub issues may not be removable by us.
+					limited time, and provider backups or support records may not be immediately removable by
+					us.
 				</p>
 			</section>
 
