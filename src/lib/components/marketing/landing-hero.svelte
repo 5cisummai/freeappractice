@@ -13,9 +13,12 @@
 
 <section
 	id="hero"
-	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-visible bg-[#ece7f4] px-5 pt-24 pb-12 sm:px-8 sm:pt-28 sm:pb-16 lg:px-10 lg:pt-32 dark:bg-background"
+	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-visible bg-background px-5 pt-24 pb-12 sm:px-8 sm:pt-28 sm:pb-16 lg:px-10 lg:pt-32"
 >
-	<div class="pointer-events-none absolute inset-0 -z-20 overflow-hidden" aria-hidden="true">
+	<div
+		class="pointer-events-none absolute inset-x-0 top-0 -z-20 h-svh overflow-hidden mask-[linear-gradient(to_bottom,black_55%,transparent)]"
+		aria-hidden="true"
+	>
 		<img
 			src="/illustrations/hero-landscape.webp"
 			alt=""
@@ -35,7 +38,7 @@
 			class="hidden size-full object-cover object-[center_72%] dark:block"
 		/>
 		<div
-			class="absolute inset-0 bg-linear-to-b from-[#f7f3ec]/50 via-transparent to-background dark:from-background/70 dark:via-transparent dark:to-background"
+			class="absolute inset-0 bg-linear-to-b from-[#f7f3ec]/50 via-transparent to-transparent dark:from-background/70"
 		></div>
 	</div>
 
