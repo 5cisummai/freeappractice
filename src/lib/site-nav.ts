@@ -2,6 +2,7 @@ type SiteNavItem = {
 	href:
 		| '/'
 		| '/subjects'
+		| '/practice-tests'
 		| '/blog'
 		| '/summer'
 		| '/stats'
@@ -60,6 +61,7 @@ export const footerNavGroups: SiteNavGroup[] = [
 		label: 'Practice',
 		items: [
 			{ href: '/subjects', label: 'Subjects' },
+			{ href: '/practice-tests', label: 'Practice Tests' },
 			{ href: '/stats', label: 'Stats' }
 		]
 	},
