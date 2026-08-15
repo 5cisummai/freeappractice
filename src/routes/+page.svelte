@@ -17,8 +17,8 @@
 
 	let { data } = $props();
 
-	let selectedClass = $state('AP Chemistry');
-	let selectedUnit = $state('Unit 1: Atomic Structure and Properties');
+	let selectedClass = $state('AP World History');
+	let selectedUnit = $state('Unit 1: The Global Tapestry');
 	let unitRange = $state<number[] | undefined>(undefined);
 	let requestVersion = $state(0);
 
@@ -305,29 +305,31 @@
 	<main id="main-content" class="flex-1">
 		<LandingHero freeBeta={data.superFreeBetaEnabled}>
 			<section id="practice" class="relative z-10 w-full">
-				<div
-					class="relative rounded-3xl border border-border/60 bg-background/70 p-4 shadow-lg backdrop-blur-sm sm:p-6 dark:bg-background/50"
-				>
+				<div class="rounded-3xl shadow-lg">
 					<div
-						class="absolute top-3 left-4 hidden items-center gap-2 sm:flex sm:top-4 sm:left-5"
-						aria-hidden="true"
+						class="relative overflow-hidden rounded-3xl border border-border/60 bg-background/70 p-4 backdrop-blur-sm sm:p-6 dark:bg-background/50"
 					>
-						<span class="size-3 rounded-full bg-[#ff5f57]"></span>
-						<span class="size-3 rounded-full bg-[#febc2e]"></span>
-						<span class="size-3 rounded-full bg-[#28c840]"></span>
+						<div
+							class="absolute top-3 left-4 hidden items-center gap-2 sm:top-4 sm:left-5 sm:flex"
+							aria-hidden="true"
+						>
+							<span class="size-3 rounded-full bg-[#ff5f57]"></span>
+							<span class="size-3 rounded-full bg-[#febc2e]"></span>
+							<span class="size-3 rounded-full bg-[#28c840]"></span>
+						</div>
+						<PracticeRunner
+							initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
+							capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
+							quiz={{ persistHistory: false }}
+							presentation="hero"
+							onEvent={(event) => {
+								if (event.type === 'selection-change') {
+									selectedClass = event.selectedClass;
+									selectedUnit = event.selectedUnit;
+								}
+							}}
+						/>
 					</div>
-					<PracticeRunner
-						initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
-						capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
-						quiz={{ persistHistory: false }}
-						presentation="hero"
-						onEvent={(event) => {
-							if (event.type === 'selection-change') {
-								selectedClass = event.selectedClass;
-								selectedUnit = event.selectedUnit;
-							}
-						}}
-					/>
 				</div>
 			</section>
 		</LandingHero>

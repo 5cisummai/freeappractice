@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
 	import QuizSession from '$lib/components/practice/quiz-session.svelte';
@@ -63,18 +63,18 @@
 		onEvent
 	}: PracticeRunnerProps = $props();
 
-	let selectedClass = $state('');
-	let selectedUnit = $state('');
-	let unitRange = $state<number[] | undefined>();
-	let requestVersion = $state(0);
-	let mode = $state<'mcq' | 'frq'>('mcq');
+	let selectedClass = $state(untrack(() => initial.selectedClass ?? ''));
+	let selectedUnit = $state(untrack(() => initial.selectedUnit ?? ''));
+	let unitRange = $state<number[] | undefined>(untrack(() => initial.unitRange));
+	let requestVersion = $state(untrack(() => initial.requestVersion ?? 0));
+	let mode = $state<'mcq' | 'frq'>(untrack(() => initial.mode ?? 'mcq'));
 	let count = $state(10);
 	let quizGenerating = $state(false);
 	let practiceMode = $state<PracticeMode>('unlimited');
 	let quizRequestVersion = $state(0);
 	let expandedSelectorOpen = $state(false);
 	let isExpanded = $state(false);
-	let lastInitialRequestVersion = $state(0);
+	let lastInitialRequestVersion = $state(untrack(() => initial.requestVersion ?? 0));
 
 	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);
 	const persistQuizHistory = $derived(quiz.persistHistory ?? true);
@@ -84,9 +84,8 @@
 	const modeSwitcherAlignment = $derived(presentation === 'hero' ? 'center' : 'left');
 
 	const activeQuizMode = $derived(Boolean(sharedQuiz) || practiceMode === 'graded');
-	const activeRequestVersion = $derived(
-		!sharedQuiz && activeQuizMode ? quizRequestVersion : requestVersion
-	);
+	const showUnlimitedFrq = $derived(mode === 'frq' && allowFrq);
+	const showUnlimitedMcq = $derived(!showUnlimitedFrq);
 
 	function changeMode(nextMode: 'mcq' | 'frq'): void {
 		mode = nextMode;
@@ -233,44 +232,47 @@
 				isExpanded ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : 'mx-auto min-h-40 max-w-6xl'
 			)}
 		>
-			{#if mode === 'frq' && allowFrq && !activeQuizMode}
-				<FrqCard
-					{selectedClass}
-					{selectedUnit}
-					{unitRange}
-					requestVersion={activeRequestVersion}
-					showFirstUseHint={showFirstUseHints}
-					{tutorMode}
-					onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
-				/>
-			{:else}
-				<div class={activeQuizMode ? 'contents' : 'hidden'} aria-hidden={!activeQuizMode}>
-					<QuizSession
+			{#if showUnlimitedFrq}
+				<div class={activeQuizMode ? 'hidden' : undefined} aria-hidden={activeQuizMode}>
+					<FrqCard
 						{selectedClass}
 						{selectedUnit}
 						{unitRange}
-						{count}
-						requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
-						enabled={activeQuizMode}
-						expanded={isExpanded}
-						onExpand={toggleExpanded}
-						bind:controlsOpen={expandedSelectorOpen}
-						{practiceControls}
-						persistHistory={persistQuizHistory}
-						showCoachReview={tutorMode !== 'hidden'}
-						initialQuestions={sharedQuiz?.questions}
-						sharedSlug={sharedQuiz?.slug}
-						bind:isGenerating={quizGenerating}
+						{requestVersion}
+						showFirstUseHint={showFirstUseHints}
+						{tutorMode}
+						onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
 					/>
 				</div>
-				{#if !activeQuizMode}
+			{/if}
+			<div class={activeQuizMode ? 'contents' : 'hidden'} aria-hidden={!activeQuizMode}>
+				<QuizSession
+					{selectedClass}
+					{selectedUnit}
+					{unitRange}
+					{count}
+					requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
+					enabled={activeQuizMode}
+					expanded={isExpanded}
+					onExpand={toggleExpanded}
+					bind:controlsOpen={expandedSelectorOpen}
+					{practiceControls}
+					persistHistory={persistQuizHistory}
+					showCoachReview={tutorMode !== 'hidden'}
+					initialQuestions={sharedQuiz?.questions}
+					sharedSlug={sharedQuiz?.slug}
+					bind:isGenerating={quizGenerating}
+				/>
+			</div>
+			{#if showUnlimitedMcq}
+				<div class={activeQuizMode ? 'hidden' : undefined} aria-hidden={activeQuizMode}>
 					{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
 						<QuestionCard
 							model={unlimitedQuestionCardModel({
 								selectedClass,
 								selectedUnit,
 								unitRange,
-								requestVersion: activeRequestVersion,
+								requestVersion,
 								experiment
 							})}
 							expanded={isExpanded}
@@ -282,7 +284,7 @@
 							onAnswered={(result) => onEvent?.({ type: 'answered', result })}
 						/>
 					{/key}
-				{/if}
+				</div>
 			{/if}
 		</div>
 	</div>

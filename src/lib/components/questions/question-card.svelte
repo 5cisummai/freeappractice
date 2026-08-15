@@ -165,6 +165,13 @@
 		bugReportOpen = true;
 	}
 
+	const showQuestionSkeleton = $derived(
+		!session.currentQuestion &&
+			(session.isLoading ||
+				!mounted ||
+				(requestVersion > 0 && !session.showWarmingState && !session.showErrorState))
+	);
+
 	onMount(() => {
 		mounted = true;
 
@@ -193,12 +200,7 @@
 	});
 </script>
 
-{#if !mounted}
-	<QuestionCardSkeleton
-		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
-		class={className}
-	/>
-{:else if session.showWarmingState}
+{#if session.showWarmingState}
 	<Card.Root class={cn('relative overflow-visible bg-transparent shadow-none ring-0', className)}>
 		<Card.Content
 			class="relative flex min-h-40 flex-col items-center justify-center gap-3 px-6 pb-12 text-center"
@@ -216,11 +218,8 @@
 			</Button>
 		</Card.Content>
 	</Card.Root>
-{:else if session.isLoading}
-	<QuestionCardSkeleton
-		isTwoColumn={Boolean(session.currentQuestion?.hasStimulus && !isMobileViewport)}
-		class={className}
-	/>
+{:else if showQuestionSkeleton}
+	<QuestionCardSkeleton class={className} />
 {:else if session.showEmptyState}
 	<EmptyState
 		title="No question yet"
@@ -261,7 +260,7 @@
 					/>
 				{/snippet}
 
-				<Card.Content class={cn('flex flex-col gap-6 pt-4', expanded && 'min-h-0 flex-1')}>
+				<Card.Content class={cn('flex flex-col gap-6 pt-0 pb-0', expanded && 'min-h-0 flex-1')}>
 					<div class="flex items-start justify-between gap-4">
 						<div>
 							<h2 class="mt-0.5 text-xl font-semibold">
@@ -488,11 +487,8 @@
 				<Card.Root
 					class={cn(
 						expanded
-							? 'relative flex h-full min-h-0 flex-col overflow-visible rounded-none border-0 bg-card/98 shadow-2xl backdrop-blur-sm'
-							: cn(
-									'relative border-border/70 bg-card/95 shadow-sm backdrop-blur-sm',
-									quizNavigation ? 'overflow-visible' : 'overflow-hidden'
-								),
+							? 'relative flex h-full min-h-0 flex-col overflow-visible rounded-none border-0 bg-transparent pt-6 pb-0 shadow-2xl'
+							: 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0',
 						className
 					)}
 				>

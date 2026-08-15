@@ -125,7 +125,6 @@
 	--animate-meteor: meteor 5s linear infinite;
 	--animate-shine: shine var(--duration) infinite linear;
 	--animate-shimmer: shimmer var(--shimmer-duration, 2s) linear infinite;
-	--animate-tutor-input-invite: tutor-input-invite 1.7s ease-in-out infinite;
 	--animate-tutor-caret-blink: tutor-caret-blink 1s steps(1, end) infinite;
 	@keyframes aurora {
 		0% {
@@ -210,21 +209,6 @@
 			background-position: 0% center;
 		}
 	}
-	@keyframes tutor-input-invite {
-		0%,
-		100% {
-			transform: translateY(0) scale(1);
-			box-shadow:
-				0 10px 15px -3px rgb(0 0 0 / 0.12),
-				0 4px 6px -4px rgb(0 0 0 / 0.1);
-		}
-		50% {
-			transform: translateY(-7px) scale(1.045);
-			box-shadow:
-				0 22px 40px -12px rgb(0 0 0 / 0.22),
-				0 8px 12px -6px rgb(0 0 0 / 0.12);
-		}
-	}
 	@keyframes tutor-caret-blink {
 		0%,
 		100% {
@@ -249,7 +233,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.animate-tutor-input-invite,
 	.animate-tutor-caret-blink {
 		animation: none;
 	}

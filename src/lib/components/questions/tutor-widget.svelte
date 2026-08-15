@@ -50,7 +50,6 @@
 	let isOpen = $state(false);
 	let messages = $state<ChatMessage[]>([{ role: 'assistant', content: GREETING }]);
 	let inputText = $state('');
-	let inputFocused = $state(false);
 	let isStreaming = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
 	let viewportWidth = $state(0);
@@ -73,9 +72,6 @@
 	const VIEWPORT_MARGIN = 12;
 	const PANEL_GAP = 8;
 	const STREAM_TIMEOUT_MS = 30000;
-	const inviteInput = $derived(
-		embedded && !inputFocused && !isStreaming && inputText.trim().length === 0
-	);
 	const scrollTrigger = $derived.by(() => {
 		const lastMessage = messages[messages.length - 1];
 		return `${messages.length}:${lastMessage?.content.length ?? 0}`;
@@ -482,8 +478,7 @@
 		<div
 			class={[
 				'relative flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2',
-				embedded ? 'origin-bottom shadow-lg ring-1 ring-foreground/10' : 'shadow-sm',
-				inviteInput && 'animate-tutor-input-invite'
+				embedded ? 'origin-bottom shadow-lg ring-1 ring-foreground/10' : 'shadow-sm'
 			]}
 		>
 			<textarea
@@ -491,25 +486,12 @@
 				bind:value={inputText}
 				onkeydown={handleKeydown}
 				oninput={(e) => autoResize(e.currentTarget)}
-				onfocus={() => (inputFocused = true)}
-				onblur={() => (inputFocused = false)}
 				rows={1}
-				placeholder={inviteInput ? '' : 'Ask a question…'}
+				placeholder="Ask a question…"
 				disabled={isStreaming}
 				class="flex-1 resize-none bg-transparent px-2 text-sm leading-5 text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
 				style="max-height: 80px; overflow-y: auto;"
 			></textarea>
-			{#if inviteInput}
-				<span
-					class="pointer-events-none absolute top-1/2 left-5 flex -translate-y-1/2 items-center text-sm leading-5 text-muted-foreground"
-				>
-					Ask a question…
-					<span
-						class="ml-0.5 inline-block h-4 w-px bg-primary animate-tutor-caret-blink"
-						aria-hidden="true"
-					></span>
-				</span>
-			{/if}
 			<button
 				onclick={sendMessage}
 				disabled={!inputText.trim() || isStreaming}
