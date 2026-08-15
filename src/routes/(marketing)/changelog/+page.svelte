@@ -5,6 +5,37 @@
 
 	const changelog = [
 		{
+			version: '1.6.9',
+			date: 'August 14, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Redesigned the homepage with a full-bleed hero, inline practice, and dedicated Unlimited and Super sections',
+						'Added a scripted Coach chat demo and live tutor preview on the landing page',
+						'Added a student stories carousel with real AP score highlights',
+						'Coach conversations now get short auto-generated titles after the first exchange'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Unified homepage FAQ content and JSON-LD, with school-year guidance instead of summer-only copy',
+						'Reorganized the question bank into MCQ and FRQ modules with clearer serving boundaries',
+						'Consolidated Super feature access through request-scoped authorization',
+						'Polished question cards, practice shell state, fonts, and marketing section styling'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Improved server logging and hook error handling',
+						'Refined question pool refill and inventory orchestration'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.6',
 			date: 'August 11, 2026',
 			sections: [
