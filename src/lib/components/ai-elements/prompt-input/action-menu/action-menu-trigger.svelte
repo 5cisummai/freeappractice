@@ -5,6 +5,8 @@
 
 	interface Props {
 		class?: string;
+		disabled?: boolean;
+		'aria-label'?: string;
 		children?: import('svelte').Snippet;
 	}
 

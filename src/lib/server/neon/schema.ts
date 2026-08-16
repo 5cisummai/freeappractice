@@ -6,6 +6,12 @@ export * from './schema/ops';
 import {
 	authAccounts,
 	authAccountsRelations,
+	authInvitations,
+	authInvitationsRelations,
+	authMembers,
+	authMembersRelations,
+	authOrganizations,
+	authOrganizationsRelations,
 	authRateLimits,
 	authSessions,
 	authSessionsRelations,
@@ -21,8 +27,14 @@ export const betterAuthSchema = {
 	authAccounts,
 	authVerifications,
 	authSubscriptions,
+	authOrganizations,
+	authMembers,
+	authInvitations,
 	rateLimit: authRateLimits,
 	authUsersRelations,
 	authSessionsRelations,
-	authAccountsRelations
+	authAccountsRelations,
+	authOrganizationsRelations,
+	authMembersRelations,
+	authInvitationsRelations
 };

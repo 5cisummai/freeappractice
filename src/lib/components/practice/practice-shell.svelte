@@ -10,7 +10,6 @@
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import { portalToBody } from '$lib/components/questions/question-card-dom';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
 
@@ -20,6 +19,7 @@
 		selectedUnit?: string;
 		unitRange?: number[];
 		requestVersion?: number;
+		presetQuestionId?: string;
 		mode?: 'mcq' | 'frq';
 	};
 	export type PracticeCapabilities = {
@@ -67,6 +67,7 @@
 	let selectedUnit = $state(untrack(() => initial.selectedUnit ?? ''));
 	let unitRange = $state<number[] | undefined>(untrack(() => initial.unitRange));
 	let requestVersion = $state(untrack(() => initial.requestVersion ?? 0));
+	let presetQuestionId = $state(untrack(() => initial.presetQuestionId ?? ''));
 	let mode = $state<'mcq' | 'frq'>(untrack(() => initial.mode ?? 'mcq'));
 	let count = $state(10);
 	let quizGenerating = $state(false);
@@ -120,6 +121,9 @@
 			unitRange = initial.unitRange;
 		}
 		if (initial.mode !== undefined && initial.mode !== mode) mode = initial.mode;
+		if (initial.presetQuestionId !== undefined && initial.presetQuestionId !== presetQuestionId) {
+			presetQuestionId = initial.presetQuestionId;
+		}
 		const nextVersion = initial.requestVersion ?? 0;
 		if (nextVersion !== lastInitialRequestVersion) {
 			lastInitialRequestVersion = nextVersion;
@@ -173,13 +177,7 @@
 								)}
 							>
 								<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
-								<Tabs.Trigger value="graded">
-									<Badge
-										variant="outline"
-										class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
-									>
-									Graded quizzes
-								</Tabs.Trigger>
+								<Tabs.Trigger value="graded">Graded quizzes</Tabs.Trigger>
 							</Tabs.List>
 						</Tabs.Root>
 
@@ -249,6 +247,7 @@
 						{selectedUnit}
 						{unitRange}
 						{requestVersion}
+						{presetQuestionId}
 						showFirstUseHint={showFirstUseHints}
 						{tutorMode}
 						onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
@@ -290,6 +289,7 @@
 								selectedUnit,
 								unitRange,
 								requestVersion,
+								presetQuestionId: presetQuestionId || undefined,
 								experiment
 							})}
 							expanded={isExpanded}

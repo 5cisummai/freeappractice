@@ -24,12 +24,13 @@ export type ConversationMessage = {
 	parts: unknown[];
 	position: number;
 	status: string;
+	clientMessageId?: string | null;
 };
 
 export class ConversationAccessError extends Error {
 	constructor(
 		message: string,
-		readonly status: 404 | 409
+		readonly status: 400 | 404 | 409
 	) {
 		super(message);
 		this.name = 'ConversationAccessError';
@@ -81,7 +82,7 @@ export async function generateConversationTitle(
 			maxOutputTokens: 40,
 			providerOptions: {
 				openai: {
-					reasoningEffort: 'minimal'
+					reasoningEffort: 'none'
 				}
 			}
 		});
@@ -151,6 +152,36 @@ export async function listOwnedConversations(
 		.limit(50);
 }
 
+export async function renameOwnedConversation(
+	userId: string,
+	conversationId: string,
+	title: string
+): Promise<string> {
+	const sanitized = sanitizeConversationTitle(title);
+	if (!sanitized) throw new ConversationAccessError('Conversation title is required', 400);
+
+	const [updated] = await getNeonDatabase()
+		.update(conversations)
+		.set({ title: sanitized, updatedAt: new Date() })
+		.where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+		.returning({ title: conversations.title });
+
+	if (!updated) throw new ConversationAccessError('Conversation not found', 404);
+	return updated.title;
+}
+
+export async function deleteOwnedConversation(
+	userId: string,
+	conversationId: string
+): Promise<void> {
+	const [deleted] = await getNeonDatabase()
+		.delete(conversations)
+		.where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+		.returning({ id: conversations.id });
+
+	if (!deleted) throw new ConversationAccessError('Conversation not found', 404);
+}
+
 export async function ensureConversation(
 	userId: string,
 	input: {
@@ -184,7 +215,8 @@ export async function getConversationMessages(
 			content: conversationMessages.content,
 			parts: conversationMessages.parts,
 			position: conversationMessages.position,
-			status: conversationMessages.status
+			status: conversationMessages.status,
+			clientMessageId: conversationMessages.clientMessageId
 		})
 		.from(conversationMessages)
 		.where(eq(conversationMessages.conversationId, conversationId));
@@ -278,6 +310,24 @@ export async function appendConversationMessage(
 	}
 
 	throw new Error('Conversation message could not be stored');
+}
+
+export async function markConversationMessageStreaming(
+	userId: string,
+	messageId: string
+): Promise<void> {
+	const [message] = await getNeonDatabase()
+		.select({ conversationId: conversationMessages.conversationId })
+		.from(conversationMessages)
+		.innerJoin(conversations, eq(conversations.id, conversationMessages.conversationId))
+		.where(and(eq(conversationMessages.id, messageId), eq(conversations.userId, userId)))
+		.limit(1);
+	if (!message) throw new Error('Conversation message not found');
+
+	await getNeonDatabase()
+		.update(conversationMessages)
+		.set({ status: 'streaming', updatedAt: new Date() })
+		.where(eq(conversationMessages.id, messageId));
 }
 
 export async function finalizeConversationMessage(

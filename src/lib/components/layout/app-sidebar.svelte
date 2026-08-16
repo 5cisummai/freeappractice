@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import NavUser from '$lib/components/layout/nav-user.svelte';
+	import OrgSwitcher from '$lib/components/layout/org-switcher.svelte';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
@@ -14,15 +15,23 @@
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
+	import UsersIcon from '@lucide/svelte/icons/users';
+	import type { UserOrganization } from '$lib/auth/organization-types';
 
 	let {
 		isAdmin,
 		user,
-		assistantFeaturesEnabled = true
+		assistantFeaturesEnabled = true,
+		organizations = [],
+		activeOrganization = null,
+		ownedGroupCount = 0
 	}: {
 		isAdmin: boolean;
 		user: { name: string; email: string; image?: string | null };
 		assistantFeaturesEnabled?: boolean;
+		organizations?: UserOrganization[];
+		activeOrganization?: UserOrganization | null;
+		ownedGroupCount?: number;
 	} = $props();
 
 	const baseNavItems = [
@@ -35,15 +44,20 @@
 	] as const;
 
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
+	const membersNavItem = { href: '/app/members', label: 'Members', icon: UsersIcon } as const;
+	const showMembers = $derived(activeOrganization?.orgType === 'group');
 	const navItems = $derived([
 		...baseNavItems.filter(
 			(item) =>
 				assistantFeaturesEnabled || (item.href !== '/app/coach' && item.href !== '/app/insights')
 		),
+		...(showMembers ? [membersNavItem] : []),
 		...(isAdmin ? [adminNavItem] : [])
 	]);
 
-	function isActive(href: (typeof navItems)[number]['href'] | '/app/settings'): boolean {
+	function isActive(
+		href: (typeof navItems)[number]['href'] | '/app/settings' | '/app/members'
+	): boolean {
 		const resolved = resolve(href);
 		if (href === '/app') return page.url.pathname === resolved;
 		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');
@@ -51,7 +65,7 @@
 </script>
 
 <Sidebar.Root collapsible="offcanvas" variant="inset">
-	<Sidebar.Header class="h-14 justify-center">
+	<Sidebar.Header class="justify-center gap-1">
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton size="lg" tooltipContent="Free AP Practice">
@@ -64,6 +78,7 @@
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
+		<OrgSwitcher {organizations} {activeOrganization} {ownedGroupCount} />
 	</Sidebar.Header>
 
 	<Sidebar.Content>

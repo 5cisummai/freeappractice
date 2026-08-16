@@ -165,7 +165,7 @@ async function submit() {
 	for (const item of gold) {
 		questions.set(
 			item.questionId,
-			(await getQuestionById(item.questionId)) as Record<string, unknown>
+			(await getQuestionById(item.questionId)) as unknown as Record<string, unknown>
 		);
 	}
 	const runs: EvalRun[] = [];

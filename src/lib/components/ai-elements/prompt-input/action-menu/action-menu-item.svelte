@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import type { ComponentProps, Snippet } from 'svelte';
 
-	interface Props {
-		class?: string;
-		children?: import('svelte').Snippet;
-		onSelect?: (event: Event) => void;
-	}
+	type Props = Omit<ComponentProps<typeof DropdownMenu.Item>, 'children'> & {
+		children?: Snippet;
+		variant?: 'default' | 'destructive';
+	};
 
 	let { class: className, children, onSelect, ...props }: Props = $props();
 </script>

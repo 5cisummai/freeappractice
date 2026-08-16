@@ -9,6 +9,7 @@ export type QuestionCardModel = {
 				kind: 'unlimited';
 				unitRange?: readonly number[];
 				requestVersion: number;
+				presetQuestionId?: string;
 				experiment?: {
 					assignedVariant: PracticeVariant;
 					experimentEnabled: boolean;
@@ -27,6 +28,7 @@ export function unlimitedQuestionCardModel(input: {
 	selectedUnit: string;
 	unitRange?: readonly number[];
 	requestVersion: number;
+	presetQuestionId?: string;
 	experiment?: Extract<QuestionCardModel['delivery'], { kind: 'unlimited' }>['experiment'];
 }): QuestionCardModel {
 	return {
@@ -36,6 +38,7 @@ export function unlimitedQuestionCardModel(input: {
 			kind: 'unlimited',
 			unitRange: input.unitRange,
 			requestVersion: input.requestVersion,
+			presetQuestionId: input.presetQuestionId,
 			experiment: input.experiment
 		}
 	};

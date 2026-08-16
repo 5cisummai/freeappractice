@@ -5,11 +5,16 @@ import { getSiteUrl } from '$lib/site-url';
 import { assertResendSent } from '$lib/auth/resend-result';
 import { escapeHtml } from '$lib/escape-html';
 
-const resend = new Resend(RESEND_API_KEY);
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
+let resend: Resend | undefined;
+
+function getResend(): Resend {
+	return (resend ??= new Resend(RESEND_API_KEY));
+}
+
 async function sendEmail(payload: { to: string; subject: string; html: string }): Promise<void> {
-	const result = await resend.emails.send({
+	const result = await getResend().emails.send({
 		from: FROM,
 		to: payload.to,
 		subject: payload.subject,
@@ -103,6 +108,28 @@ export async function sendExistingUserSignupEmail(email: string): Promise<void> 
       <p>Someone tried to create an account using your email address.</p>
       <p>If this was you, try <a href="${safeLogin}">signing in</a> instead.</p>
       <p>If not, you can safely ignore this email.</p>
+    `
+	});
+}
+
+/** Invite someone to a group organization. */
+export async function sendOrganizationInvitationEmail(payload: {
+	to: string;
+	organizationName: string;
+	inviterName: string;
+	inviteLink: string;
+}): Promise<void> {
+	const safeOrg = escapeHtml(payload.organizationName);
+	const safeInviter = escapeHtml(payload.inviterName);
+	const safeLink = escapeHtml(payload.inviteLink);
+	await sendEmail({
+		to: payload.to,
+		subject: `Join ${payload.organizationName} on Free AP Practice`,
+		html: `
+      <h2>You're invited</h2>
+      <p>${safeInviter} invited you to join <strong>${safeOrg}</strong> on Free AP Practice.</p>
+      <a href="${safeLink}">Accept invitation</a>
+      <p>This invitation expires in 48 hours.</p>
     `
 	});
 }

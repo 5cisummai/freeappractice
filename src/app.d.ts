@@ -1,5 +1,6 @@
 import type { Session, User } from 'better-auth/db';
 import type { PlanAccess, TutorProfileView } from '$lib/super/types';
+import type { OrgType } from '$lib/auth/organization-types';
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
@@ -18,10 +19,11 @@ declare global {
 		interface Locals {
 			userId?: string;
 			user?: User;
-			session?: Session;
+			session?: Session & { activeOrganizationId?: string | null };
 			tutorProfileView?: Promise<TutorProfileView>;
 			planAccess?: Promise<PlanAccess>;
 			assistantFeaturesEnabled?: Promise<boolean>;
+			activeOrganizationType?: OrgType;
 		}
 		// interface PageData {}
 		// interface PageState {}

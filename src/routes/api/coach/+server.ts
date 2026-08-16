@@ -9,13 +9,16 @@ import { RedisRequiredError } from '$lib/super/ai-controls.server';
 import {
 	MAX_SUPER_AGENT_MESSAGES,
 	MAX_SUPER_AGENT_REQUEST_BYTES,
+	isSuperAgentToolContinuation,
 	superAgentMessageSchema
 } from '$lib/super/agent-request';
+import { coachComposerActionIds } from '$lib/super/coach-composer-actions';
 
 const coachRequestSchema = z
 	.object({
 		sessionId: z.string().uuid(),
 		conversationId: z.string().uuid().optional(),
+		coachActions: z.array(z.enum(coachComposerActionIds)).max(4).optional(),
 		context: z
 			.object({
 				page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
@@ -60,7 +63,8 @@ export const POST: RequestHandler = withAuthedHandler(
 		const parsed = coachRequestSchema.safeParse(body);
 		if (!parsed.success) return json({ error: 'Invalid Coach request' }, { status: 400 });
 		const messages = parsed.data.messages;
-		if (!messages.some((message) => message.role === 'user')) {
+		const isContinuation = isSuperAgentToolContinuation(messages);
+		if (!isContinuation && !messages.some((message) => message.role === 'user')) {
 			return json({ error: 'Coach needs a student message.' }, { status: 400 });
 		}
 
@@ -70,6 +74,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				userId,
 				sessionId: parsed.data.sessionId,
 				conversationId: parsed.data.conversationId,
+				coachActions: parsed.data.coachActions,
 				context: {
 					mode: 'coach',
 					page: 'coach',

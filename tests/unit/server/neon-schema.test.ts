@@ -3,6 +3,12 @@ import {
 	appSchema,
 	authAccounts,
 	authAccountsRelations,
+	authInvitations,
+	authInvitationsRelations,
+	authMembers,
+	authMembersRelations,
+	authOrganizations,
+	authOrganizationsRelations,
 	authRateLimits,
 	authSchema,
 	authSessions,
@@ -31,10 +37,16 @@ describe('Neon Drizzle schema', () => {
 			authAccounts,
 			authVerifications,
 			authSubscriptions,
+			authOrganizations,
+			authMembers,
+			authInvitations,
 			rateLimit: authRateLimits,
 			authUsersRelations,
 			authSessionsRelations,
-			authAccountsRelations
+			authAccountsRelations,
+			authOrganizationsRelations,
+			authMembersRelations,
+			authInvitationsRelations
 		});
 	});
 

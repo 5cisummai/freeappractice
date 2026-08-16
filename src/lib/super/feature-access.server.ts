@@ -7,6 +7,7 @@ import {
 	type PlanAccess,
 	type TutorProfileView
 } from '$lib/super/types';
+import { activeOrgUsesUserSuper } from '$lib/auth/organizations.server';
 
 export type SuperFeature = 'personalizedTutor' | 'coach' | 'aiInsights' | 'studyPlans' | 'memory';
 
@@ -89,6 +90,16 @@ export async function authorizeFeatureRequest(
 	}
 
 	const planAccess = await getPlanAccessForRequest(event.locals, userId);
+	// Super stays user-billed in personal/group orgs. School/enterprise orgs
+	// will not inherit that entitlement (and later get isolated data).
+	if (!(await activeOrgUsesUserSuper(event.locals))) {
+		return {
+			allowed: false,
+			status: 403,
+			code: 'subscription_required',
+			message: 'Super is not available in this organization.'
+		};
+	}
 	if (!hasPaidCapability(planAccess, FEATURE_CAPABILITIES[feature])) {
 		return {
 			allowed: false,

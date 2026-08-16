@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
 	isSuperInsightsEnabled: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	getPlanAccess: vi.fn(),
+	getStripeClient: vi.fn(() => null),
 	getTutorProfileView: vi.fn(),
 	getAssistantFeaturesEnabledForRequest: vi.fn()
 }));
@@ -15,7 +16,8 @@ vi.mock('$lib/flags', () => ({
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
 vi.mock('$lib/super/billing.server', () => ({
-	getPlanAccess: mocks.getPlanAccess
+	getPlanAccess: mocks.getPlanAccess,
+	getStripeClient: mocks.getStripeClient
 }));
 vi.mock('$lib/super/profile.server', () => ({
 	getTutorProfileView: mocks.getTutorProfileView

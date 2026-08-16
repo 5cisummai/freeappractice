@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const getPlanAccess = vi.hoisted(() => vi.fn());
-vi.mock('$lib/super/billing.server', () => ({ getPlanAccess }));
+const getStripeClient = vi.hoisted(() => vi.fn(() => null));
+vi.mock('$lib/super/billing.server', () => ({ getPlanAccess, getStripeClient }));
 
 import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 

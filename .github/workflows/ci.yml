@@ -76,6 +76,11 @@ jobs:
         env:
           DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
 
+      - name: Backfill personal orgs
+        run: bun run auth:backfill-personal-orgs
+        env:
+          DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
+
   build:
     name: Build
     runs-on: ubuntu-latest

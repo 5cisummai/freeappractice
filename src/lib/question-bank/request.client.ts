@@ -105,6 +105,33 @@ export function requestMcqQuestion(
 	});
 }
 
+/** Load one MCQ by canonical question id. */
+export async function requestMcqQuestionById(questionId: string): Promise<QuestionFetchResult> {
+	const startedAt = Date.now();
+	try {
+		const response = await apiFetch(`/api/question/by-id/${encodeURIComponent(questionId)}`);
+		const payload = await readJsonOrNull<QuestionApiResponse>(response);
+		if (!response.ok || !payload) {
+			throw new QuestionRequestError(
+				getResponseMessage(payload, 'Failed to load question.'),
+				response.ok ? null : response.status
+			);
+		}
+		return {
+			question: parseQuestionPayloadFromResponse(payload),
+			source: questionSourceFromCachedFlag(payload.cached),
+			latencyMs: Date.now() - startedAt,
+			exclusionsReset: false
+		};
+	} catch (error) {
+		if (error instanceof QuestionRequestError) throw error;
+		throw new QuestionRequestError(
+			error instanceof Error ? error.message : 'Failed to load question.',
+			null
+		);
+	}
+}
+
 export type FrqFetchResult = QuestionRequestResult<PublicFrqQuestion>;
 
 type FrqQuestionApiResponse = QuestionApiResponse & {
@@ -130,4 +157,31 @@ export function requestFrqQuestion(
 			return question;
 		}
 	});
+}
+
+/** Load one FRQ by canonical question id. */
+export async function requestFrqQuestionById(questionId: string): Promise<FrqFetchResult> {
+	const startedAt = Date.now();
+	try {
+		const response = await apiFetch(`/api/question/frq/by-id/${encodeURIComponent(questionId)}`);
+		const payload = await readJsonOrNull<FrqQuestionApiResponse>(response);
+		if (!response.ok || !payload?.question) {
+			throw new QuestionRequestError(
+				getResponseMessage(payload, 'Could not load written-response practice.'),
+				response.ok ? null : response.status
+			);
+		}
+		return {
+			question: payload.question,
+			source: questionSourceFromCachedFlag(payload.cached),
+			latencyMs: Date.now() - startedAt,
+			exclusionsReset: false
+		};
+	} catch (error) {
+		if (error instanceof QuestionRequestError) throw error;
+		throw new QuestionRequestError(
+			error instanceof Error ? error.message : 'Could not load written-response practice.',
+			null
+		);
+	}
 }

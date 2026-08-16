@@ -10,7 +10,7 @@ import {
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqAttempts } from '$lib/server/neon/schema';
 import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
-import type { SuperAgentContext } from '$lib/super/coach.server';
+import type { SuperAgentContext } from '$lib/super/coach-agent.types';
 
 export type CurrentSuperQuestion =
 	| { kind: 'mcq'; question: StoredQuestion }
@@ -129,16 +129,19 @@ export async function buildSuperAgentContext(
 	context?: SuperAgentContext
 ): Promise<SuperAgentContextResult> {
 	const currentQuestion = await resolveCurrentQuestion(userId, context);
+	const includeMistakes = Boolean(context?.questionId);
 	const [personalization, mistakes] = await Promise.all([
 		buildTutorPersonalization(userId, query),
-		getRecentSuperMistakes(userId, {
-			...(typeof currentQuestion?.question.apClass === 'string'
-				? { apClass: currentQuestion.question.apClass }
-				: {}),
-			...(typeof currentQuestion?.question.unit === 'string'
-				? { unit: currentQuestion.question.unit }
-				: {})
-		})
+		includeMistakes
+			? getRecentSuperMistakes(userId, {
+					...(typeof currentQuestion?.question.apClass === 'string'
+						? { apClass: currentQuestion.question.apClass }
+						: {}),
+					...(typeof currentQuestion?.question.unit === 'string'
+						? { unit: currentQuestion.question.unit }
+						: {})
+				})
+			: Promise.resolve([])
 	]);
 
 	const parts = [

@@ -35,8 +35,16 @@ import {
 import { classifyAccountCreationMethod } from '$lib/auth/analytics';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 import { hasAgeAttestationCookie } from '$lib/auth/age-attestation';
+import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
+import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
 
-const db = getNeonDatabase();
+const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
+	get: (_target, property) => {
+		const database = getNeonDatabase();
+		const value = Reflect.get(database, property, database);
+		return typeof value === 'function' ? value.bind(database) : value;
+	}
+});
 
 const authSecret =
 	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
@@ -79,6 +87,7 @@ export const auth = betterAuth({
 				},
 				after: async (user, context) => {
 					await createUserProfile(user.id);
+					await ensurePersonalOrganization(user.id);
 					captureAnonymousServerMetric('account_created', {
 						method: classifyAccountCreationMethod(context?.path),
 						email_verified_at_creation: user.emailVerified,
@@ -197,6 +206,7 @@ export const auth = betterAuth({
 		admin({
 			adminUserIds: getAdminUserIds()
 		}),
+		createOrganizationPlugin(),
 		...(superStripePlugin ? [superStripePlugin] : []),
 		sveltekitCookies(getRequestEvent)
 	]

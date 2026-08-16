@@ -15,13 +15,16 @@
 	import { goto } from '$app/navigation';
 	import { authClient } from '$lib/auth/client.js';
 	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
-	import { authCallbackUrl } from '$lib/auth/urls.js';
+	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '$lib/auth/urls.js';
+	import { page } from '$app/state';
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
 	const id = $props.id();
+	const redirectPath = $derived(safeAppPath(page.url.searchParams.get('redirect')));
+	const callbackURL = $derived(authCallbackUrlForAppPath(redirectPath));
 
 	let email = $state('');
 	let password = $state('');
@@ -42,7 +45,7 @@
 			const { data, error } = await authClient.signIn.email({
 				email,
 				password,
-				callbackURL: authCallbackUrl('/app')
+				callbackURL
 			});
 			if (error) {
 				if (error.status === 403) {
@@ -58,7 +61,9 @@
 				identifyPostHogUser(data.user.id);
 			}
 			capturePostHogEvent('user_logged_in', { method: 'email' });
-			goto(resolve('/app'));
+			// Dynamic /app/... return path from the invite (and other) login redirects.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto(redirectPath);
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -90,7 +95,7 @@
 		try {
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
-				callbackURL: authCallbackUrl('/app'),
+				callbackURL,
 				errorCallbackURL: authCallbackUrl('/login')
 			});
 			if (error) {

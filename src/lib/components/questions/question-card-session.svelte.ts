@@ -8,8 +8,11 @@ import {
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-import { PoolWarmingError } from '$lib/question-bank/request.client';
-import { requestMcqQuestion } from '$lib/question-bank/request.client';
+import {
+	PoolWarmingError,
+	requestMcqQuestion,
+	requestMcqQuestionById
+} from '$lib/question-bank/request.client';
 import {
 	hasValidHints,
 	MULTI_ATTEMPT_EXPERIMENT_KEY,
@@ -38,6 +41,7 @@ export type QuestionCardSessionOpts = {
 	getSelectedUnit: () => string;
 	getUnitRange: () => readonly number[] | undefined;
 	getRequestVersion: () => number;
+	getPresetQuestionId: () => string | undefined;
 	getQuestionNumber: () => string;
 	getQuizMode: () => boolean;
 	getQuizQuestion: () => GeneratedQuestion | null | undefined;
@@ -78,6 +82,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
 	let questionFeedbackReason = $state<string | null>(null);
 	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
+	let consumedPresetQuestionId = $state(false);
 
 	const effectiveQuestionNumber = $derived(opts.getQuestionNumber() || `${questionCount}`);
 	const isTreatmentActive = $derived(displayedVariant === 'multi_attempt_hints');
@@ -192,7 +197,10 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		if (isLoading) return;
 		const selectedClass = opts.getSelectedClass();
 		const selectedUnit = opts.getSelectedUnit();
-		if (!selectedClass) {
+		const presetQuestionId = consumedPresetQuestionId
+			? ''
+			: (opts.getPresetQuestionId()?.trim() ?? '');
+		if (!selectedClass && !presetQuestionId) {
 			statusMessage = 'Please choose a class before requesting a question.';
 			return;
 		}
@@ -214,7 +222,10 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		const loadStartedAt = Date.now();
 		try {
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, opts.getUnitRange());
-			const result = await requestMcqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			const result = presetQuestionId
+				? await requestMcqQuestionById(presetQuestionId)
+				: await requestMcqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			if (presetQuestionId) consumedPresetQuestionId = true;
 			const analytics = {
 				apClass: selectedClass,
 				unit: selectedUnit,

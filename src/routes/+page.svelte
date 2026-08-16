@@ -301,7 +301,7 @@
 			>
 				<div class="rounded-3xl shadow-lg">
 					<div
-						class="relative overflow-hidden rounded-3xl border border-border/60 bg-background/70 py-4 backdrop-blur-sm max-sm:px-0 sm:p-6 dark:bg-background/50"
+						class="relative overflow-hidden rounded-3xl border border-border/60 bg-background/70 py-4 backdrop-blur-sm max-sm:px-0 sm:p-6 dark:bg-background/75 dark:shadow-primary/10 dark:backdrop-blur-lg"
 					>
 						<div
 							class="absolute top-3 left-4 hidden items-center gap-2 sm:top-4 sm:left-5 sm:flex"
