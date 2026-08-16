@@ -268,7 +268,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 			if (event.url.pathname.startsWith('/app')) {
 				return new Response(null, {
 					status: 303,
-					headers: { Location: '/app/confirm-age', 'Cache-Control': 'no-store' }
+					headers: { Location: '/app/onboarding', 'Cache-Control': 'no-store' }
 				});
 			}
 		}

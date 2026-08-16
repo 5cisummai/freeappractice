@@ -1,5 +1,9 @@
 export const ONBOARDING_COOKIE_NAME = 'onboarding-hints';
 export const ONBOARDING_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+export const ONBOARDING_INTENT_COOKIE_NAME = 'onboarding-intent';
+export const ONBOARDING_INTENT_COOKIE_MAX_AGE = 60 * 60 * 24;
+
+export type OnboardingIntent = 'free' | 'super';
 
 export type OnboardingState =
 	| { status: 'unset'; subjects: string[] }
@@ -28,6 +32,17 @@ export function readOnboardingState(value: string | undefined): OnboardingState 
 
 export function serializeCompletedOnboarding(): string {
 	return 'complete';
+}
+
+export function readOnboardingIntent(value: string | undefined): OnboardingIntent {
+	return value === 'super' ? 'super' : 'free';
+}
+
+/** Used to carry the user's Super entry point through email and OAuth redirects. */
+export function markOnboardingIntentInBrowser(intent: OnboardingIntent): void {
+	if (typeof document === 'undefined') return;
+
+	document.cookie = `${ONBOARDING_INTENT_COOKIE_NAME}=${intent}; path=/; max-age=${ONBOARDING_INTENT_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 /** Used before an email verification or OAuth redirect completes. */

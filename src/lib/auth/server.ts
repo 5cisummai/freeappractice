@@ -34,7 +34,6 @@ import {
 } from '$lib/auth/password-policy';
 import { classifyAccountCreationMethod } from '$lib/auth/analytics';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
-import { hasAgeAttestationCookie } from '$lib/auth/age-attestation';
 import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
 import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
 
@@ -77,14 +76,6 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
-				before: async (_user, context) => {
-					// New accounts must come through the 13+ self-attestation in the signup UI.
-					// The short-lived cookie is only an input gate; ageConfirmedAt remains the
-					// durable post-auth account control.
-					if (!hasAgeAttestationCookie(context?.request?.headers.get('cookie') ?? null)) {
-						return false;
-					}
-				},
 				after: async (user, context) => {
 					await createUserProfile(user.id);
 					await ensurePersonalOrganization(user.id);
@@ -186,7 +177,8 @@ export const auth = betterAuth({
 			? {
 					google: {
 						clientId: env.GOOGLE_CLIENT_ID,
-						clientSecret: env.GOOGLE_CLIENT_SECRET
+						clientSecret: env.GOOGLE_CLIENT_SECRET,
+						disableImplicitSignUp: true
 					}
 				}
 			: undefined,
@@ -202,7 +194,7 @@ export const auth = betterAuth({
 		}
 	},
 	plugins: [
-		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
+		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap({ disableSignup: true })] : []),
 		admin({
 			adminUserIds: getAdminUserIds()
 		}),

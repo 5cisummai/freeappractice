@@ -2,6 +2,7 @@
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import LaptopIcon from '@lucide/svelte/icons/laptop';
+	import { onMount } from 'svelte';
 	import { userPrefersMode } from 'mode-watcher';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
@@ -19,7 +20,13 @@
 		class?: ClassValue;
 	} = $props();
 
-	const theme = $derived(userPrefersMode.current);
+	let hydrated = $state(false);
+
+	onMount(() => {
+		hydrated = true;
+	});
+
+	const theme = $derived(hydrated ? userPrefersMode.current : 'system');
 
 	function onThemeChange(value: string) {
 		if (value === 'light' || value === 'dark' || value === 'system') {

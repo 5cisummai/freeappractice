@@ -20,6 +20,90 @@ export type OnboardingSubject = {
 	icon: SubjectIcon;
 	description: string;
 	iconClass: string;
+	checkedClass: string;
+};
+
+type SubjectColor =
+	| 'sky'
+	| 'emerald'
+	| 'violet'
+	| 'indigo'
+	| 'cyan'
+	| 'purple'
+	| 'amber'
+	| 'teal'
+	| 'rose'
+	| 'orange'
+	| 'blue'
+	| 'primary';
+
+const SUBJECT_COLOR_THEMES: Record<
+	SubjectColor,
+	{
+		iconClass: string;
+		checkedClass: string;
+	}
+> = {
+	sky: {
+		iconClass: 'bg-sky-100 text-sky-600 dark:bg-sky-950/80 dark:text-sky-400',
+		checkedClass:
+			'has-[:checked]:border-sky-400/70 has-[:checked]:bg-sky-500/15 has-[:checked]:[&_.subject-icon]:bg-sky-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-sky-500 has-[:checked]:[&_.selection-check]:text-sky-600 dark:has-[:checked]:[&_.selection-check]:text-sky-400'
+	},
+	emerald: {
+		iconClass: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400',
+		checkedClass:
+			'has-[:checked]:border-emerald-400/70 has-[:checked]:bg-emerald-500/15 has-[:checked]:[&_.subject-icon]:bg-emerald-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-emerald-500 has-[:checked]:[&_.selection-check]:text-emerald-600 dark:has-[:checked]:[&_.selection-check]:text-emerald-400'
+	},
+	violet: {
+		iconClass: 'bg-violet-100 text-violet-600 dark:bg-violet-950/80 dark:text-violet-400',
+		checkedClass:
+			'has-[:checked]:border-violet-400/70 has-[:checked]:bg-violet-500/15 has-[:checked]:[&_.subject-icon]:bg-violet-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-violet-500 has-[:checked]:[&_.selection-check]:text-violet-600 dark:has-[:checked]:[&_.selection-check]:text-violet-400'
+	},
+	indigo: {
+		iconClass: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/80 dark:text-indigo-400',
+		checkedClass:
+			'has-[:checked]:border-indigo-400/70 has-[:checked]:bg-indigo-500/15 has-[:checked]:[&_.subject-icon]:bg-indigo-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-indigo-500 has-[:checked]:[&_.selection-check]:text-indigo-600 dark:has-[:checked]:[&_.selection-check]:text-indigo-400'
+	},
+	cyan: {
+		iconClass: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950/80 dark:text-cyan-400',
+		checkedClass:
+			'has-[:checked]:border-cyan-400/70 has-[:checked]:bg-cyan-500/15 has-[:checked]:[&_.subject-icon]:bg-cyan-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-cyan-500 has-[:checked]:[&_.selection-check]:text-cyan-600 dark:has-[:checked]:[&_.selection-check]:text-cyan-400'
+	},
+	purple: {
+		iconClass: 'bg-purple-100 text-purple-600 dark:bg-purple-950/80 dark:text-purple-400',
+		checkedClass:
+			'has-[:checked]:border-purple-400/70 has-[:checked]:bg-purple-500/15 has-[:checked]:[&_.subject-icon]:bg-purple-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-purple-500 has-[:checked]:[&_.selection-check]:text-purple-600 dark:has-[:checked]:[&_.selection-check]:text-purple-400'
+	},
+	amber: {
+		iconClass: 'bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-400',
+		checkedClass:
+			'has-[:checked]:border-amber-400/70 has-[:checked]:bg-amber-500/15 has-[:checked]:[&_.subject-icon]:bg-amber-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-amber-500 has-[:checked]:[&_.selection-check]:text-amber-600 dark:has-[:checked]:[&_.selection-check]:text-amber-400'
+	},
+	teal: {
+		iconClass: 'bg-teal-100 text-teal-600 dark:bg-teal-950/80 dark:text-teal-400',
+		checkedClass:
+			'has-[:checked]:border-teal-400/70 has-[:checked]:bg-teal-500/15 has-[:checked]:[&_.subject-icon]:bg-teal-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-teal-500 has-[:checked]:[&_.selection-check]:text-teal-600 dark:has-[:checked]:[&_.selection-check]:text-teal-400'
+	},
+	rose: {
+		iconClass: 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400',
+		checkedClass:
+			'has-[:checked]:border-rose-400/70 has-[:checked]:bg-rose-500/15 has-[:checked]:[&_.subject-icon]:bg-rose-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-rose-500 has-[:checked]:[&_.selection-check]:text-rose-600 dark:has-[:checked]:[&_.selection-check]:text-rose-400'
+	},
+	orange: {
+		iconClass: 'bg-orange-100 text-orange-600 dark:bg-orange-950/80 dark:text-orange-400',
+		checkedClass:
+			'has-[:checked]:border-orange-400/70 has-[:checked]:bg-orange-500/15 has-[:checked]:[&_.subject-icon]:bg-orange-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-orange-500 has-[:checked]:[&_.selection-check]:text-orange-600 dark:has-[:checked]:[&_.selection-check]:text-orange-400'
+	},
+	blue: {
+		iconClass: 'bg-blue-100 text-blue-600 dark:bg-blue-950/80 dark:text-blue-400',
+		checkedClass:
+			'has-[:checked]:border-blue-400/70 has-[:checked]:bg-blue-500/15 has-[:checked]:[&_.subject-icon]:bg-blue-500 has-[:checked]:[&_.subject-icon]:text-white has-[:checked]:[&_.selection-check]:border-blue-500 has-[:checked]:[&_.selection-check]:text-blue-600 dark:has-[:checked]:[&_.selection-check]:text-blue-400'
+	},
+	primary: {
+		iconClass: 'bg-primary/10 text-primary',
+		checkedClass:
+			'has-[:checked]:border-primary/40 has-[:checked]:bg-primary/8 has-[:checked]:[&_.subject-icon]:bg-primary has-[:checked]:[&_.subject-icon]:text-primary-foreground has-[:checked]:[&_.selection-check]:border-primary has-[:checked]:[&_.selection-check]:text-primary'
+	}
 };
 
 export type OnboardingSubjectGroup = {
@@ -99,45 +183,44 @@ function descriptionForSubject(name: string): string {
 	return 'Practice questions tailored to your AP course.';
 }
 
-function iconClassForSubject(name: string): string {
+function colorForSubject(name: string): SubjectColor {
 	const subject = name.toLowerCase();
 
-	if (subject.includes('physics'))
-		return 'bg-sky-100 text-sky-600 dark:bg-sky-950/80 dark:text-sky-400';
-	if (subject.includes('biology') || subject.includes('environmental'))
-		return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400';
-	if (subject.includes('chemistry'))
-		return 'bg-violet-100 text-violet-600 dark:bg-violet-950/80 dark:text-violet-400';
+	if (subject.includes('physics')) return 'sky';
+	if (subject.includes('biology') || subject.includes('environmental')) return 'emerald';
+	if (subject.includes('chemistry')) return 'violet';
 	if (
 		subject.includes('calculus') ||
 		subject.includes('precalculus') ||
 		subject.includes('statistics')
 	)
-		return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950/80 dark:text-indigo-400';
-	if (subject.includes('computer science'))
-		return 'bg-cyan-100 text-cyan-600 dark:bg-cyan-950/80 dark:text-cyan-400';
-	if (subject.includes('english'))
-		return 'bg-purple-100 text-purple-600 dark:bg-purple-950/80 dark:text-purple-400';
-	if (subject.includes('history'))
-		return 'bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-400';
-	if (subject.includes('government'))
-		return 'bg-teal-100 text-teal-600 dark:bg-teal-950/80 dark:text-teal-400';
-	if (subject.includes('psychology') || subject.includes('human geography'))
-		return 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400';
-	if (subject.includes('economics'))
-		return 'bg-orange-100 text-orange-600 dark:bg-orange-950/80 dark:text-orange-400';
-	if (subject.includes('spanish'))
-		return 'bg-blue-100 text-blue-600 dark:bg-blue-950/80 dark:text-blue-400';
+		return 'indigo';
+	if (subject.includes('computer science')) return 'cyan';
+	if (subject.includes('english')) return 'purple';
+	if (subject.includes('history')) return 'amber';
+	if (subject.includes('government')) return 'teal';
+	if (subject.includes('psychology') || subject.includes('human geography')) return 'rose';
+	if (subject.includes('economics')) return 'orange';
+	if (subject.includes('spanish')) return 'blue';
 
-	return 'bg-primary/10 text-primary';
+	return 'primary';
 }
 
-export const onboardingSubjects: OnboardingSubject[] = getCourses().map((course) => ({
-	name: course.name,
-	icon: iconForSubject(course.name),
-	description: descriptionForSubject(course.name),
-	iconClass: iconClassForSubject(course.name)
-}));
+function themeForSubject(name: string) {
+	return SUBJECT_COLOR_THEMES[colorForSubject(name)];
+}
+
+export const onboardingSubjects: OnboardingSubject[] = getCourses().map((course) => {
+	const theme = themeForSubject(course.name);
+
+	return {
+		name: course.name,
+		icon: iconForSubject(course.name),
+		description: descriptionForSubject(course.name),
+		iconClass: theme.iconClass,
+		checkedClass: theme.checkedClass
+	};
+});
 
 const SUBJECT_GROUPS = [
 	{ label: 'Math', matches: (name: string) => /calculus|precalculus|statistics/i.test(name) },

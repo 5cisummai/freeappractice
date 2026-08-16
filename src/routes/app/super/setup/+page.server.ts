@@ -1,26 +1,19 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
-import { getSuperBillingView, isSuperStripeConfigured } from '$lib/super/billing.server';
-import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
-import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import {
+	ONBOARDING_INTENT_COOKIE_MAX_AGE,
+	ONBOARDING_INTENT_COOKIE_NAME
+} from '$lib/onboarding.js';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	const userId = locals.userId!;
-	const [profile, planAccess, billing, checkoutEnabled, freeBetaEnabled, stripeConfigured] =
-		await Promise.all([
-			getTutorProfileViewForRequest(locals, userId),
-			getPlanAccessForRequest(locals, userId),
-			getSuperBillingView(userId),
-			isSuperCheckoutEnabled(),
-			isSuperFreeBetaEnabled(),
-			isSuperStripeConfigured()
-		]);
+export const load: PageServerLoad = async ({ cookies, url }) => {
+	cookies.set(ONBOARDING_INTENT_COOKIE_NAME, 'super', {
+		path: '/',
+		maxAge: ONBOARDING_INTENT_COOKIE_MAX_AGE,
+		httpOnly: true,
+		sameSite: 'lax'
+	});
 
-	return {
-		profile,
-		planAccess,
-		checkoutEnabled: checkoutEnabled && !freeBetaEnabled && stripeConfigured,
-		freeBetaEnabled,
-		billing
-	};
+	const query = new URLSearchParams(url.searchParams);
+	query.set('super', '1');
+	throw redirect(303, `/app/onboarding?${query.toString()}`);
 };

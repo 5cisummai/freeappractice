@@ -270,7 +270,7 @@
 						aria-label="Score {story.score}"
 					>
 						<span
-							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg leading-none font-semibold"
+							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg leading-none font-medium"
 						>
 							{story.score}
 						</span>
