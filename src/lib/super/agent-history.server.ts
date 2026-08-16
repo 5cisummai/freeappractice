@@ -16,17 +16,13 @@ import {
 	getOwnedConversation,
 	type ConversationMessage
 } from '$lib/super/conversations.server';
+import {
+	shouldIncludeConversationRowForUi,
+	toSuperAgentUiMessageFromConversationRow
+} from '$lib/super/agent-ui-messages';
 
 const MAX_HISTORY_SUMMARY_CHARS = 4_000;
 const MAX_SUMMARY_SOURCE_CHARS = 2_000;
-
-function conversationRowToUiMessage(row: ConversationMessage): SuperAgentUIMessage {
-	return {
-		id: row.clientMessageId ?? row.id,
-		role: row.role,
-		parts: row.parts as SuperAgentUIMessage['parts']
-	};
-}
 
 function messageTranscript(row: ConversationMessage): string {
 	const fromParts = textFromSuperAgentParts(
@@ -147,13 +143,9 @@ export async function buildSuperAgentUiMessages(input: {
 }): Promise<{ messages: SuperAgentUIMessage[]; historySummary?: string }> {
 	const stored = await getConversationMessages(input.userId, input.conversationId);
 	const uiMessages = stored
-		.filter((row) => {
-			if (row.status === 'streaming') {
-				return row.id === input.streamingAssistantMessageId;
-			}
-			return row.parts.length > 0 || row.content.trim().length > 0;
-		})
-		.map(conversationRowToUiMessage);
+		.filter((row) => shouldIncludeConversationRowForUi(row, input))
+		.map(toSuperAgentUiMessageFromConversationRow)
+		.filter((message): message is SuperAgentUIMessage => message !== null);
 
 	if (input.isContinuation) {
 		const clientAssistant = [...input.clientMessages].reverse().find(

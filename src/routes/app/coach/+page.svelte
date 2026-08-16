@@ -31,6 +31,7 @@
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
 	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
+	import CoachConversationMenu from '$lib/components/super/coach-conversation-menu.svelte';
 	import {
 		getCoachPracticeQuestionToolOutput,
 		isCoachPracticeQuestionPending,
@@ -620,6 +621,18 @@
 		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
 		sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
 	}
+
+	function handleConversationRenamed(updated: CoachConversation) {
+		conversations = conversations.map((conversation) =>
+			conversation.id === updated.id ? { ...conversation, title: updated.title } : conversation
+		);
+	}
+
+	async function handleConversationDeleted(id: string) {
+		conversations = conversations.filter((conversation) => conversation.id !== id);
+		if (conversationId !== id) return;
+		await startNewConversation();
+	}
 </script>
 
 <svelte:head><title>Coach | Free AP Practice</title></svelte:head>
@@ -725,25 +738,36 @@
 						{:else}
 							<div class="max-h-72 overflow-y-auto">
 								{#each conversations as conversation (conversation.id)}
-									<button
-										type="button"
+									<div
 										class={cn(
-											'flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none',
+											'group flex w-full items-start gap-1 rounded-lg transition-colors hover:bg-muted focus-within:bg-muted',
 											conversation.id === conversationId && 'bg-muted'
 										)}
-										aria-current={conversation.id === conversationId ? 'page' : undefined}
-										disabled={loadingConversationId !== null}
-										onclick={() => void selectConversation(conversation.id)}
 									>
-										<span
-											class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+										<button
+											type="button"
+											class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
+											aria-current={conversation.id === conversationId ? 'page' : undefined}
+											disabled={loadingConversationId !== null}
+											onclick={() => void selectConversation(conversation.id)}
 										>
-											{conversation.title}
-										</span>
-										<span class="shrink-0 text-xs text-muted-foreground">
-											{formatConversationDate(conversation)}
-										</span>
-									</button>
+											<span
+												class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+											>
+												{conversation.title}
+											</span>
+											<span class="shrink-0 text-xs text-muted-foreground">
+												{formatConversationDate(conversation)}
+											</span>
+										</button>
+										<CoachConversationMenu
+											{conversation}
+											disabled={loadingConversationId !== null}
+											class="mr-1 self-center"
+											onRenamed={handleConversationRenamed}
+											onDeleted={(id) => void handleConversationDeleted(id)}
+										/>
+									</div>
 								{/each}
 							</div>
 						{/if}

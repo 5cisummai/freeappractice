@@ -152,6 +152,33 @@ export async function listOwnedConversations(
 		.limit(50);
 }
 
+export async function renameOwnedConversation(
+	userId: string,
+	conversationId: string,
+	title: string
+): Promise<string> {
+	const sanitized = sanitizeConversationTitle(title);
+	if (!sanitized) throw new ConversationAccessError('Conversation title is required', 409);
+
+	const [updated] = await getNeonDatabase()
+		.update(conversations)
+		.set({ title: sanitized, updatedAt: new Date() })
+		.where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+		.returning({ title: conversations.title });
+
+	if (!updated) throw new ConversationAccessError('Conversation not found', 404);
+	return updated.title;
+}
+
+export async function deleteOwnedConversation(userId: string, conversationId: string): Promise<void> {
+	const [deleted] = await getNeonDatabase()
+		.delete(conversations)
+		.where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+		.returning({ id: conversations.id });
+
+	if (!deleted) throw new ConversationAccessError('Conversation not found', 404);
+}
+
 export async function ensureConversation(
 	userId: string,
 	input: {
