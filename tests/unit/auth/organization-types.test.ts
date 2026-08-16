@@ -4,8 +4,8 @@ import {
 	orgSharesUserProgress,
 	orgUsesUserSuper,
 	parseOrgType,
-	personalOrgName,
 	personalOrgSlug,
+	PERSONAL_ORG_NAME,
 	slugifyOrgName
 } from '$lib/auth/organization-types';
 import { safeAppPath } from '$lib/auth/app-path';
@@ -29,7 +29,7 @@ describe('organization types', () => {
 
 	it('builds personal org slugs and names', () => {
 		expect(personalOrgSlug('User_123')).toBe('u-user123');
-		expect(personalOrgName('Ada Lovelace')).toBe("Ada's Space");
+		expect(PERSONAL_ORG_NAME).toBe('My Space');
 	});
 
 	it('slugifies group names with a suffix', () => {

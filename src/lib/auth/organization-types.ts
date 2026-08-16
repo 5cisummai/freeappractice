@@ -51,14 +51,11 @@ export function isShareToken(value: string): boolean {
 	return value.startsWith(SHARE_TOKEN_PREFIX) && value.length > SHARE_TOKEN_PREFIX.length;
 }
 
+export const PERSONAL_ORG_NAME = 'My Space';
+
 export function personalOrgSlug(userId: string): string {
 	const compact = userId.toLowerCase().replace(/[^a-z0-9-]/g, '');
 	return `u-${compact || 'user'}`;
-}
-
-export function personalOrgName(userName: string): string {
-	const first = userName.trim().split(/\s+/).find(Boolean) ?? 'My';
-	return `${first}'s Space`;
 }
 
 export function slugifyOrgName(name: string, suffix: string): string {

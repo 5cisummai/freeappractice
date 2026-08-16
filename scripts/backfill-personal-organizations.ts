@@ -1,18 +1,29 @@
 /**
- * Create a personal organization for every auth user who does not have one.
+ * Create a personal organization for every auth user who does not have one,
+ * and rename existing personal orgs to "My Space".
  *
- *   bun scripts/backfill-personal-organizations.ts
+ *   bun run auth:backfill-personal-orgs
  */
 import 'dotenv/config';
+import { and, eq, ne } from 'drizzle-orm';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
-import { authUsers } from '../src/lib/server/neon/schema';
+import { authOrganizations, authUsers } from '../src/lib/server/neon/schema';
 import {
 	ensurePersonalOrganization,
 	findPersonalOrganization
 } from '../src/lib/auth/organization-queries.server.ts';
+import { PERSONAL_ORG_NAME } from '../src/lib/auth/organization-types';
 
 async function main(): Promise<void> {
 	const db = getNeonDatabase();
+	const renamed = await db
+		.update(authOrganizations)
+		.set({ name: PERSONAL_ORG_NAME, updatedAt: new Date() })
+		.where(
+			and(eq(authOrganizations.orgType, 'personal'), ne(authOrganizations.name, PERSONAL_ORG_NAME))
+		)
+		.returning({ id: authOrganizations.id });
+
 	const users = await db.select({ id: authUsers.id }).from(authUsers);
 	let created = 0;
 	let existing = 0;
@@ -28,7 +39,7 @@ async function main(): Promise<void> {
 	}
 
 	console.log(
-		`Personal orgs ready. created=${created} already_present=${existing} users=${users.length}`
+		`Personal orgs ready. created=${created} already_present=${existing} renamed=${renamed.length} users=${users.length}`
 	);
 }
 

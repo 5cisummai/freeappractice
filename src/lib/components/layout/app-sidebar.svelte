@@ -15,6 +15,7 @@
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
+	import UsersIcon from '@lucide/svelte/icons/users';
 	import type { UserOrganization } from '$lib/auth/organization-types';
 
 	let {
@@ -43,15 +44,20 @@
 	] as const;
 
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
+	const membersNavItem = { href: '/app/members', label: 'Members', icon: UsersIcon } as const;
+	const showMembers = $derived(activeOrganization?.orgType !== 'personal');
 	const navItems = $derived([
 		...baseNavItems.filter(
 			(item) =>
 				assistantFeaturesEnabled || (item.href !== '/app/coach' && item.href !== '/app/insights')
 		),
+		...(showMembers ? [membersNavItem] : []),
 		...(isAdmin ? [adminNavItem] : [])
 	]);
 
-	function isActive(href: (typeof navItems)[number]['href'] | '/app/settings'): boolean {
+	function isActive(
+		href: (typeof navItems)[number]['href'] | '/app/settings' | '/app/members'
+	): boolean {
 		const resolved = resolve(href);
 		if (href === '/app') return page.url.pathname === resolved;
 		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');

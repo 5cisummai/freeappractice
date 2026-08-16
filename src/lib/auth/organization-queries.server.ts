@@ -7,12 +7,21 @@ import {
 	SHARE_TOKEN_PREFIX,
 	isOrgType,
 	parseOrgType,
-	personalOrgName,
 	personalOrgSlug,
+	PERSONAL_ORG_NAME,
 	type OrganizationRole,
 	type OrgType,
 	type UserOrganization
 } from '$lib/auth/organization-types';
+
+export type OrganizationMember = {
+	memberId: string;
+	userId: string;
+	name: string;
+	email: string;
+	image: string | null;
+	role: OrganizationRole;
+};
 
 function createShareToken(): string {
 	return `${SHARE_TOKEN_PREFIX}${randomBytes(18).toString('base64url')}`;
@@ -98,6 +107,40 @@ export async function listUserOrganizations(userId: string): Promise<UserOrganiz
 	return orgs;
 }
 
+export async function listOrganizationMembers(
+	organizationId: string
+): Promise<OrganizationMember[]> {
+	const rows = await getNeonDatabase()
+		.select({
+			memberId: authMembers.id,
+			userId: authUsers.id,
+			name: authUsers.name,
+			email: authUsers.email,
+			image: authUsers.image,
+			role: authMembers.role
+		})
+		.from(authMembers)
+		.innerJoin(authUsers, eq(authMembers.userId, authUsers.id))
+		.where(eq(authMembers.organizationId, organizationId));
+
+	const members: OrganizationMember[] = rows.map((row) => ({
+		...row,
+		role: asRole(row.role)
+	}));
+
+	const roleRank: Record<OrganizationRole, number> = {
+		owner: 0,
+		admin: 1,
+		member: 2
+	};
+	members.sort((a, b) => {
+		const rank = roleRank[a.role] - roleRank[b.role];
+		if (rank !== 0) return rank;
+		return a.name.localeCompare(b.name);
+	});
+	return members;
+}
+
 export async function getOrganizationType(organizationId: string): Promise<OrgType | null> {
 	const [row] = await getNeonDatabase()
 		.select({ orgType: authOrganizations.orgType })
@@ -153,17 +196,11 @@ export async function ensurePersonalOrganization(userId: string): Promise<UserOr
 	if (existing) return existing;
 
 	const db = getNeonDatabase();
-	const [user] = await db
-		.select({ name: authUsers.name })
-		.from(authUsers)
-		.where(eq(authUsers.id, userId))
-		.limit(1);
-
 	const orgId = crypto.randomUUID();
 	const now = new Date();
 	const organization = {
 		id: orgId,
-		name: personalOrgName(user?.name ?? 'My'),
+		name: PERSONAL_ORG_NAME,
 		slug: personalOrgSlug(userId),
 		orgType: 'personal' as const,
 		shareToken: null,
