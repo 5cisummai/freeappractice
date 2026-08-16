@@ -106,3 +106,25 @@ export async function sendExistingUserSignupEmail(email: string): Promise<void> 
     `
 	});
 }
+
+/** Invite someone to a group organization. */
+export async function sendOrganizationInvitationEmail(payload: {
+	to: string;
+	organizationName: string;
+	inviterName: string;
+	inviteLink: string;
+}): Promise<void> {
+	const safeOrg = escapeHtml(payload.organizationName);
+	const safeInviter = escapeHtml(payload.inviterName);
+	const safeLink = escapeHtml(payload.inviteLink);
+	await sendEmail({
+		to: payload.to,
+		subject: `Join ${payload.organizationName} on Free AP Practice`,
+		html: `
+      <h2>You're invited</h2>
+      <p>${safeInviter} invited you to join <strong>${safeOrg}</strong> on Free AP Practice.</p>
+      <a href="${safeLink}">Accept invitation</a>
+      <p>This invitation expires in 48 hours.</p>
+    `
+	});
+}

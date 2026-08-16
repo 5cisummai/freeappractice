@@ -92,6 +92,13 @@
       "when": 1786773898175,
       "tag": "0012_windy_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786813260000,
+      "tag": "0014_auth_organizations",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import NavUser from '$lib/components/layout/nav-user.svelte';
+	import OrgSwitcher from '$lib/components/layout/org-switcher.svelte';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
@@ -14,15 +15,22 @@
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
+	import type { UserOrganization } from '$lib/auth/organization-types';
 
 	let {
 		isAdmin,
 		user,
-		assistantFeaturesEnabled = true
+		assistantFeaturesEnabled = true,
+		organizations = [],
+		activeOrganization = null,
+		ownedGroupCount = 0
 	}: {
 		isAdmin: boolean;
 		user: { name: string; email: string; image?: string | null };
 		assistantFeaturesEnabled?: boolean;
+		organizations?: UserOrganization[];
+		activeOrganization?: UserOrganization | null;
+		ownedGroupCount?: number;
 	} = $props();
 
 	const baseNavItems = [
@@ -51,7 +59,7 @@
 </script>
 
 <Sidebar.Root collapsible="offcanvas" variant="inset">
-	<Sidebar.Header class="h-14 justify-center">
+	<Sidebar.Header class="justify-center gap-1">
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton size="lg" tooltipContent="Free AP Practice">
@@ -64,6 +72,7 @@
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
+		<OrgSwitcher {organizations} {activeOrganization} {ownedGroupCount} />
 	</Sidebar.Header>
 
 	<Sidebar.Content>

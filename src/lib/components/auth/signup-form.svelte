@@ -9,7 +9,9 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth/client.js';
-	import { authCallbackUrl } from '$lib/auth/urls.js';
+	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '$lib/auth/urls.js';
+	import { page } from '$app/state';
+	import { getSiteUrl } from '$lib/site-url';
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
@@ -32,6 +34,13 @@
 	let loading = $state(false);
 	let googleLoading = $state(false);
 	let ageAttested = $state(false);
+	const redirectPath = $derived(safeAppPath(page.url.searchParams.get('redirect')));
+	const googleCallbackURL = $derived(authCallbackUrlForAppPath(redirectPath));
+	const googleNewUserCallbackURL = $derived(
+		redirectPath.startsWith('/app/invite/')
+			? `${getSiteUrl()}${redirectPath}${redirectPath.includes('?') ? '&' : '?'}signup=google`
+			: `${authCallbackUrl('/app')}?signup=google`
+	);
 
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
@@ -96,9 +105,9 @@
 		try {
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
-				callbackURL: authCallbackUrl('/app'),
+				callbackURL: googleCallbackURL,
 				errorCallbackURL: authCallbackUrl('/signup'),
-				newUserCallbackURL: `${authCallbackUrl('/app')}?signup=google`
+				newUserCallbackURL: googleNewUserCallbackURL
 			});
 			if (error) {
 				const message = error.message ?? '';

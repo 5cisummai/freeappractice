@@ -48,7 +48,8 @@ export const authSessions = authSchema.table(
 		impersonatedBy: text('impersonated_by'),
 		userId: text('user_id')
 			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' })
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		activeOrganizationId: text('active_organization_id')
 	},
 	(table) => [
 		uniqueIndex('auth_sessions_token_uq').on(table.token),
@@ -131,6 +132,67 @@ export const authSubscriptions = authSchema.table(
 	]
 );
 
+export const authOrganizations = authSchema.table(
+	'organizations',
+	{
+		id: text('id').primaryKey(),
+		name: text('name').notNull(),
+		slug: text('slug').notNull(),
+		logo: text('logo'),
+		metadata: text('metadata'),
+		orgType: text('org_type').notNull(),
+		shareToken: text('share_token'),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		uniqueIndex('auth_organizations_slug_uq').on(table.slug),
+		uniqueIndex('auth_organizations_share_token_uq').on(table.shareToken),
+		index('auth_organizations_org_type_idx').on(table.orgType)
+	]
+);
+
+export const authMembers = authSchema.table(
+	'members',
+	{
+		id: text('id').primaryKey(),
+		organizationId: text('organization_id')
+			.notNull()
+			.references(() => authOrganizations.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		role: text('role').notNull().default('member'),
+		createdAt: createdAt()
+	},
+	(table) => [
+		uniqueIndex('auth_members_org_user_uq').on(table.organizationId, table.userId),
+		index('auth_members_user_id_idx').on(table.userId)
+	]
+);
+
+export const authInvitations = authSchema.table(
+	'invitations',
+	{
+		id: text('id').primaryKey(),
+		organizationId: text('organization_id')
+			.notNull()
+			.references(() => authOrganizations.id, { onDelete: 'cascade' }),
+		email: text('email').notNull(),
+		role: text('role').notNull(),
+		status: text('status').notNull().default('pending'),
+		expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }),
+		createdAt: createdAt(),
+		inviterId: text('inviter_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('auth_invitations_org_id_idx').on(table.organizationId),
+		index('auth_invitations_email_idx').on(table.email)
+	]
+);
+
 export const authRateLimits = authSchema.table(
 	'rate_limits',
 	{
@@ -146,7 +208,9 @@ export const authRateLimits = authSchema.table(
 // Required when experimental.joins is enabled so session lookups can join user.
 export const authUsersRelations = relations(authUsers, ({ many }) => ({
 	authSessions: many(authSessions),
-	authAccounts: many(authAccounts)
+	authAccounts: many(authAccounts),
+	authMembers: many(authMembers),
+	authInvitations: many(authInvitations)
 }));
 
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({

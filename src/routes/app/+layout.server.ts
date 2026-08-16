@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
+import { loadAppOrganizations } from '$lib/auth/organizations.server';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
 import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
@@ -14,7 +15,7 @@ import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.serv
 
 export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) => {
 	if (!locals.session) {
-		throw redirect(302, '/login');
+		throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname + url.search)}`);
 	}
 
 	if (url.searchParams.get('signup') === 'google') {
@@ -24,17 +25,28 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 			httpOnly: true,
 			sameSite: 'lax'
 		});
-		throw redirect(303, '/app/onboarding');
+		if (!url.pathname.startsWith('/app/invite/')) {
+			throw redirect(303, '/app/onboarding');
+		}
 	}
 
 	const onboardingState = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME));
-	if (onboardingState.status === 'pending' && !url.pathname.endsWith('/onboarding')) {
+	const isInvite = url.pathname.startsWith('/app/invite/');
+	if (onboardingState.status === 'pending' && !url.pathname.endsWith('/onboarding') && !isInvite) {
 		throw redirect(303, '/app/onboarding');
 	}
 
 	const userId = locals.userId!;
 	await claimReferralFromCookie(cookies, userId, request);
 	const assistantFeaturesEnabled = await getAssistantFeaturesEnabledForRequest(locals, userId);
+	const organizations = await loadAppOrganizations(
+		userId,
+		locals.session.activeOrganizationId,
+		request.headers
+	);
+	if (organizations.activeOrganization) {
+		locals.activeOrganizationType = organizations.activeOrganization.orgType;
+	}
 
 	const freeBetaEnabled = await isSuperFreeBetaEnabled();
 	let showFreeBetaClaimDialog = false;
@@ -52,6 +64,9 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 		isAdmin: isAdminUser(locals.user),
 		freeBetaEnabled,
 		assistantFeaturesEnabled,
-		showFreeBetaClaimDialog
+		showFreeBetaClaimDialog,
+		organizations: organizations.organizations,
+		activeOrganization: organizations.activeOrganization,
+		ownedGroupCount: organizations.ownedGroupCount
 	};
 };
