@@ -51,6 +51,11 @@
 		event.stopPropagation();
 	}
 
+	function stopTriggerPropagation(event: MouseEvent, onclick: unknown) {
+		event.stopPropagation();
+		if (typeof onclick === 'function') onclick(event);
+	}
+
 	async function confirmRename() {
 		const title = renameValue.trim();
 		if (!title || busy) return;
@@ -107,7 +112,7 @@
 				class={cn('shrink-0 text-muted-foreground', className)}
 				disabled={disabled || busy}
 				aria-label="Conversation actions"
-				onclick={stopRowActivation}
+				onclick={(event) => stopTriggerPropagation(event, props.onclick)}
 			>
 				<EllipsisVerticalIcon class="size-4" aria-hidden="true" />
 			</Button>

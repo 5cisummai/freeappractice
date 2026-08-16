@@ -52,6 +52,10 @@ const FRQ_KEY_RE = /^frqs\/([^/]+)\.json$/;
 
 type BucketKey = string;
 
+function isCorrectAnswer(value: string): value is 'A' | 'B' | 'C' | 'D' {
+	return value === 'A' || value === 'B' || value === 'C' || value === 'D';
+}
+
 function bucketKey(apClass: string, unit: string): BucketKey {
 	return `${apClass}::${unit}`;
 }
@@ -197,7 +201,7 @@ async function backfillMcq(
 						!optionC ||
 						!optionD ||
 						!explanation ||
-						!['A', 'B', 'C', 'D'].includes(correctAnswer) ||
+						!isCorrectAnswer(correctAnswer) ||
 						!allowed.has(bucketKey(apClass, unit))
 					) {
 						counters.invalid += 1;

@@ -197,7 +197,10 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		if (isLoading) return;
 		const selectedClass = opts.getSelectedClass();
 		const selectedUnit = opts.getSelectedUnit();
-		if (!selectedClass) {
+		const presetQuestionId = consumedPresetQuestionId
+			? ''
+			: (opts.getPresetQuestionId()?.trim() ?? '');
+		if (!selectedClass && !presetQuestionId) {
 			statusMessage = 'Please choose a class before requesting a question.';
 			return;
 		}
@@ -218,9 +221,6 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 
 		const loadStartedAt = Date.now();
 		try {
-			const presetQuestionId = consumedPresetQuestionId
-				? ''
-				: (opts.getPresetQuestionId()?.trim() ?? '');
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, opts.getUnitRange());
 			const result = presetQuestionId
 				? await requestMcqQuestionById(presetQuestionId)

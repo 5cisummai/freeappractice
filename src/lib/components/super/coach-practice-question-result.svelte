@@ -26,7 +26,7 @@
 			Your answer: {result.selectedAnswer}
 		</p>
 	{/if}
-	{#if result.status === 'answered' && result.mode === 'frq' && result.frqPointsEarned != null}
+	{#if result.status === 'answered' && result.mode === 'frq' && result.frqPointsEarned != null && result.frqPointsAvailable != null}
 		<p class="mt-2 text-sm text-muted-foreground">
 			Score: {result.frqPointsEarned}/{result.frqPointsAvailable}
 		</p>

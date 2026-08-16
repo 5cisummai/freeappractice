@@ -1,6 +1,6 @@
 {
-  "id": "1682eb35-c07d-4812-92d9-f52c5506f058",
-  "prevId": "124ca6fe-c462-4a22-97ee-56a076ee0951",
+  "id": "df7bc931-ec19-408c-84f2-57f0a318cb01",
+  "prevId": "1682eb35-c07d-4812-92d9-f52c5506f058",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -678,6 +678,20 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "sessions_active_organization_id_organizations_id_fk": {
+          "name": "sessions_active_organization_id_organizations_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "organizations",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "active_organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

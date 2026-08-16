@@ -49,7 +49,9 @@ export const authSessions = authSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		activeOrganizationId: text('active_organization_id')
+		activeOrganizationId: text('active_organization_id').references(() => authOrganizations.id, {
+			onDelete: 'set null'
+		})
 	},
 	(table) => [
 		uniqueIndex('auth_sessions_token_uq').on(table.token),
@@ -209,8 +211,8 @@ export const authRateLimits = authSchema.table(
 export const authUsersRelations = relations(authUsers, ({ many }) => ({
 	authSessions: many(authSessions),
 	authAccounts: many(authAccounts),
-	authMembers: many(authMembers),
-	authInvitations: many(authInvitations)
+	authMemberss: many(authMembers),
+	authInvitationss: many(authInvitations)
 }));
 
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({

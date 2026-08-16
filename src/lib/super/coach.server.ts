@@ -127,7 +127,7 @@ export function createSuperAgent(input: {
 				? `Earlier conversation summary (the student cannot see this):\n${historySummary}`
 				: '',
 			composerActionInstructions,
-			`The current date is ${new Date().toLocaleString()}.`
+			`The current date is ${new Date().toISOString()}.`
 		]
 			.filter(Boolean)
 			.join('\n'),

@@ -156,7 +156,7 @@ async function main() {
 			);
 			const valid = rows.filter((row): row is NonNullable<typeof row> => row !== null);
 			if (valid.length) {
-				await db.batch(
+				await Promise.all(
 					valid.map((row) =>
 						db
 							.update(questionRegistry)

@@ -7,11 +7,8 @@
 import 'dotenv/config';
 import { and, eq, ne } from 'drizzle-orm';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
-import { authOrganizations, authUsers } from '../src/lib/server/neon/schema';
-import {
-	ensurePersonalOrganization,
-	findPersonalOrganization
-} from '../src/lib/auth/organization-queries.server.ts';
+import { authMembers, authOrganizations, authUsers } from '../src/lib/server/neon/schema';
+import { ensurePersonalOrganization } from '../src/lib/auth/organization-queries.server.ts';
 import { PERSONAL_ORG_NAME } from '../src/lib/auth/organization-types';
 
 async function main(): Promise<void> {
@@ -25,12 +22,20 @@ async function main(): Promise<void> {
 		.returning({ id: authOrganizations.id });
 
 	const users = await db.select({ id: authUsers.id }).from(authUsers);
+	const existingPersonalOwners = new Set(
+		(
+			await db
+				.select({ userId: authMembers.userId })
+				.from(authMembers)
+				.innerJoin(authOrganizations, eq(authMembers.organizationId, authOrganizations.id))
+				.where(and(eq(authOrganizations.orgType, 'personal'), eq(authMembers.role, 'owner')))
+		).map((row) => row.userId)
+	);
 	let created = 0;
 	let existing = 0;
 
 	for (const user of users) {
-		const already = await findPersonalOrganization(user.id);
-		if (already) {
+		if (existingPersonalOwners.has(user.id)) {
 			existing += 1;
 			continue;
 		}

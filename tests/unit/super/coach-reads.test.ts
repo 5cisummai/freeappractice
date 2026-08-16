@@ -193,4 +193,22 @@ describe('coach read tools', () => {
 			unit: 'Unit 2'
 		});
 	});
+
+	it('clamps FRQ performance limits before querying', async () => {
+		mocks.findRecentGradedFrqAttempts.mockResolvedValue([]);
+
+		await getCoachFrqPerformance('user-1', { limit: 50 });
+		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenLastCalledWith('user-1', {
+			limit: 6,
+			apClass: undefined,
+			unit: undefined
+		});
+
+		await getCoachFrqPerformance('user-1');
+		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenLastCalledWith('user-1', {
+			limit: 5,
+			apClass: undefined,
+			unit: undefined
+		});
+	});
 });

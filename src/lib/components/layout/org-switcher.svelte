@@ -158,18 +158,21 @@
 	}
 
 	async function copyInviteLink(org: UserOrganization) {
-		const response = await apiFetch('/api/orgs/invite-link', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ organizationId: org.id })
-		});
-		const payload = await readJsonOrNull<{ url?: string; error?: string }>(response);
-		if (!response.ok || !payload?.url) {
-			toast.error(getResponseMessage(payload, 'Could not copy invite link.'));
-			return;
+		try {
+			const response = await apiFetch('/api/orgs/invite-link', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ organizationId: org.id })
+			});
+			const payload = await readJsonOrNull<{ url?: string; error?: string }>(response);
+			if (!response.ok || !payload?.url) {
+				throw new Error(getResponseMessage(payload, 'Could not copy invite link.'));
+			}
+			await navigator.clipboard.writeText(payload.url);
+			toast.success('Invite link copied.');
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not copy invite link.');
 		}
-		await navigator.clipboard.writeText(payload.url);
-		toast.success('Invite link copied.');
 	}
 
 	async function sendInviteEmail() {
@@ -239,7 +242,7 @@
 									{#if org.role === 'owner' || org.role === 'admin'}
 										<DropdownMenu.Item onclick={() => openInvite(org)}>
 											<CopyIcon />
-											Copy invite link
+											Open invite dialog
 										</DropdownMenu.Item>
 									{/if}
 									{#if org.role === 'owner'}

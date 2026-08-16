@@ -73,7 +73,7 @@
 	let attemptId = $state('');
 	let disagreementReported = $state(false);
 	let seenQuestionIds = $state<string[]>([]);
-	let consumedPresetQuestionId = $state(false);
+	let consumedPresetQuestionId = $state('');
 	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
 	let loadGeneration = 0;
 
@@ -172,11 +172,15 @@
 			: 'Loading a written-response task…';
 		try {
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const presetId = consumedPresetQuestionId ? '' : presetQuestionId.trim();
+			const requestedPresetId = presetQuestionId.trim();
+			const presetId =
+				requestedPresetId && consumedPresetQuestionId !== requestedPresetId
+					? requestedPresetId
+					: '';
 			const result = presetId
 				? await requestFrqQuestionById(presetId)
 				: await requestFrqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
-			if (presetId) consumedPresetQuestionId = true;
+			if (presetId) consumedPresetQuestionId = presetId;
 			if (result.exclusionsReset) {
 				seenQuestionIds = [];
 			}

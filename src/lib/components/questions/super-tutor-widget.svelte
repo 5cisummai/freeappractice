@@ -468,18 +468,20 @@
 	async function submitPracticeQuestionResult(
 		toolCallId: string,
 		output: CoachPracticeQuestionToolOutput
-	): Promise<void> {
-		if (!toolCallId || streaming) return;
+	): Promise<boolean> {
+		if (!toolCallId || streaming) return false;
 		try {
 			await chat.addToolOutput({
 				tool: 'give_practice_question',
 				toolCallId,
 				output
 			});
+			return true;
 		} catch (error) {
 			toast.error(
 				error instanceof Error ? error.message : 'Could not submit your practice answer.'
 			);
+			return false;
 		}
 	}
 
@@ -616,8 +618,7 @@
 									{#if isCoachPracticeQuestionPending(part) && part.toolCallId}
 										<CoachPracticeQuestionCard
 											input={part.input}
-											onResolve={(output) =>
-												void submitPracticeQuestionResult(part.toolCallId!, output)}
+											onResolve={(output) => submitPracticeQuestionResult(part.toolCallId!, output)}
 										/>
 									{:else if practiceQuestionResult}
 										<CoachPracticeQuestionResult result={practiceQuestionResult} />

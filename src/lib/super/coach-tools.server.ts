@@ -38,7 +38,7 @@ const studyTaskSchema = z.object({
 	apClass: z.string().trim().min(1).max(100),
 	unit: z.string().trim().min(1).max(200),
 	mode: z.enum(['mcq', 'frq', 'review']),
-	date: z.string().datetime(),
+	date: z.iso.datetime(),
 	durationMinutes: z.number().int().min(5).max(30),
 	status: z.enum(['todo', 'done']).default('todo'),
 	practiceHref: z.string().startsWith('/app/practice').max(500).optional()
@@ -109,8 +109,22 @@ async function authorized(
 	return hasCoachWriteAuthorization(userId, sessionId, category);
 }
 
+function canonicalize(input: unknown): unknown {
+	if (Array.isArray(input)) return input.map(canonicalize);
+	if (input && typeof input === 'object') {
+		return Object.fromEntries(
+			Object.entries(input)
+				.sort(([left], [right]) => left.localeCompare(right))
+				.map(([key, value]) => [key, canonicalize(value)])
+		);
+	}
+	return input;
+}
+
 function coachOperationId(sessionId: string, toolName: string, input: unknown): string {
-	const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('base64url');
+	const fingerprint = createHash('sha256')
+		.update(JSON.stringify(canonicalize(input)))
+		.digest('base64url');
 	return `coach:${sessionId}:${toolName}:${fingerprint}`;
 }
 
@@ -167,7 +181,7 @@ export function createSuperTools(input: SuperToolsInput) {
 			description:
 				'One completed graded quiz by Quiz ID. Use only for explicit quiz review requests.',
 			inputSchema: z.object({
-				quizId: z.string().uuid(),
+				quizId: z.uuid(),
 				questionPositions: z.array(z.number().int().min(1).max(50)).max(20).optional()
 			}),
 			execute: async ({ quizId, questionPositions }) =>
@@ -282,7 +296,7 @@ export function createSuperTools(input: SuperToolsInput) {
 			description:
 				'After explicit student approval, replace or merge the active study plan with tasks of at most 30 minutes. State the proposed change before calling.',
 			inputSchema: z.object({
-				startsOn: z.string().datetime(),
+				startsOn: z.iso.datetime(),
 				behavior: z.enum(['replace', 'merge']).default('replace'),
 				tasks: z.array(studyTaskSchema).max(28)
 			}),

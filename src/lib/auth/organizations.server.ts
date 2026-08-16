@@ -2,7 +2,7 @@ import { auth } from '$lib/auth/server';
 import {
 	ensurePersonalOrganization,
 	ensureOrganizationShareToken,
-	getOrganizationType,
+	getOrganizationTypeForUser,
 	listUserOrganizations
 } from '$lib/auth/organization-queries.server';
 import {
@@ -58,7 +58,9 @@ export async function getActiveOrgTypeForRequest(
 	if (locals.activeOrganizationType) return locals.activeOrganizationType;
 	const organizationId = locals.session?.activeOrganizationId;
 	if (!organizationId) return 'personal';
-	const orgType = await getOrganizationType(organizationId);
+	const userId = locals.session?.userId;
+	if (!userId) return null;
+	const orgType = await getOrganizationTypeForUser(organizationId, userId);
 	if (orgType) locals.activeOrganizationType = orgType;
 	return orgType;
 }

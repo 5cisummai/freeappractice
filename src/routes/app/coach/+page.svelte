@@ -559,18 +559,20 @@
 	async function submitPracticeQuestionResult(
 		toolCallId: string,
 		output: CoachPracticeQuestionToolOutput
-	): Promise<void> {
-		if (!toolCallId || streaming) return;
+	): Promise<boolean> {
+		if (!toolCallId || streaming) return false;
 		try {
 			await coach.addToolOutput({
 				tool: 'give_practice_question',
 				toolCallId,
 				output
 			});
+			return true;
 		} catch (error) {
 			toast.error(
 				error instanceof Error ? error.message : 'Could not submit your practice answer.'
 			);
+			return false;
 		}
 	}
 
@@ -851,7 +853,7 @@
 														<CoachPracticeQuestionCard
 															input={toolPart.input}
 															onResolve={(output) =>
-																void submitPracticeQuestionResult(toolPart.toolCallId!, output)}
+																submitPracticeQuestionResult(toolPart.toolCallId!, output)}
 														/>
 													{:else if practiceQuestionResult}
 														<CoachPracticeQuestionResult result={practiceQuestionResult} />

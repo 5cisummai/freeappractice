@@ -46,7 +46,7 @@
 			return;
 		}
 		sharedQuizSlug = null;
-		if (initialized || !presetClass) return;
+		if (initialized) return;
 		initialized = true;
 		selectedClass = presetClass;
 		selectedUnit = presetUnit;

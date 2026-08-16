@@ -100,7 +100,7 @@
 	const shellDescription = $derived(
 		hasActivity ? "Let's keep your momentum going." : "You're all set. Your subjects are ready."
 	);
-	const showOrgActivity = $derived(data.activeOrganization?.orgType !== 'personal');
+	const showOrgActivity = $derived(data.activeOrganization?.orgType === 'group');
 	const orgActivity = $derived((data.orgActivity ?? []) as OrganizationActivityItem[]);
 
 	function activityTarget(item: OrganizationActivityItem): string {

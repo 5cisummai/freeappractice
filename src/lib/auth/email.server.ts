@@ -5,11 +5,16 @@ import { getSiteUrl } from '$lib/site-url';
 import { assertResendSent } from '$lib/auth/resend-result';
 import { escapeHtml } from '$lib/escape-html';
 
-const resend = new Resend(RESEND_API_KEY);
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
+let resend: Resend | undefined;
+
+function getResend(): Resend {
+	return (resend ??= new Resend(RESEND_API_KEY));
+}
+
 async function sendEmail(payload: { to: string; subject: string; html: string }): Promise<void> {
-	const result = await resend.emails.send({
+	const result = await getResend().emails.send({
 		from: FROM,
 		to: payload.to,
 		subject: payload.subject,

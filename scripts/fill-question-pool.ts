@@ -14,9 +14,9 @@ import {
 	enqueueAllCatalogDeficits,
 	listCatalogBuckets,
 	countActivePoolRows,
-	countOpenPoolRefillJobs,
 	requestPoolRefill
 } from '../src/lib/question-bank/pool-refill-queue.server';
+import { countOpenPoolRefillJobs } from '../src/lib/question-bank/pool-counts.server';
 import { runQuestionPoolRefillWorker } from '../src/lib/question-bank/pool-refill.server';
 import { getMcqGenerationCountsByClass } from '../src/lib/question-bank/gen-stats.server';
 import { QUESTION_POOL_CONFIG } from '../src/lib/question-bank/pool-constants';

@@ -41,6 +41,32 @@ import { coachComposerActionInstructions } from '$lib/super/coach-composer-actio
 
 const SUPER_AGENT_STREAM_TIMEOUT_MS = 55_000;
 
+type ContinuationToolPart = {
+	type?: unknown;
+	state?: unknown;
+	toolCallId?: unknown;
+};
+
+function findContinuationToolPart(
+	parts: unknown[],
+	states: readonly string[]
+): ContinuationToolPart | null {
+	for (let index = parts.length - 1; index >= 0; index -= 1) {
+		const part = parts[index];
+		if (!part || typeof part !== 'object') continue;
+		const candidate = part as ContinuationToolPart;
+		if (
+			typeof candidate.type === 'string' &&
+			candidate.type.startsWith('tool-') &&
+			typeof candidate.toolCallId === 'string' &&
+			states.includes(typeof candidate.state === 'string' ? candidate.state : '')
+		) {
+			return candidate;
+		}
+	}
+	return null;
+}
+
 export type SuperAgentStreamOptions = {
 	event: RequestEvent;
 	userId: string;
@@ -83,33 +109,34 @@ export async function createSuperAgentStreamResponse(
 	} = options;
 	const clientMessages = messages;
 	const isContinuation = isSuperAgentToolContinuation(clientMessages);
-	type PersonalizedTurnHandle =
-		Awaited<ReturnType<typeof startPersonalizedTurn>> | { kind: 'continuation' };
-	let personalizedTurn: PersonalizedTurnHandle;
-	if (isContinuation) {
-		personalizedTurn = { kind: 'continuation' };
-	} else {
-		try {
-			personalizedTurn = await startPersonalizedTurn(userId);
-		} catch (error) {
-			if (error instanceof RedisRequiredError) {
-				return json(
-					{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
-					{ status: 503 }
-				);
-			}
-			throw error;
-		}
-		if (personalizedTurn.kind === 'rate-limited')
-			return rateLimitedResponse(personalizedTurn.retryAt);
-		if (personalizedTurn.kind === 'exhausted') {
+	if (isContinuation && !requestedConversationId) {
+		return json(
+			{ error: 'A conversation is required to continue that practice question.' },
+			{ status: 400 }
+		);
+	}
+
+	let personalizedTurn: Awaited<ReturnType<typeof startPersonalizedTurn>>;
+	try {
+		personalizedTurn = await startPersonalizedTurn(userId);
+	} catch (error) {
+		if (error instanceof RedisRequiredError) {
 			return json(
-				{
-					error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
-				},
-				{ status: 429 }
+				{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
+				{ status: 503 }
 			);
 		}
+		throw error;
+	}
+	if (personalizedTurn.kind === 'rate-limited')
+		return rateLimitedResponse(personalizedTurn.retryAt);
+	if (personalizedTurn.kind === 'exhausted') {
+		return json(
+			{
+				error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
+			},
+			{ status: 429 }
+		);
 	}
 
 	let lock: Awaited<ReturnType<typeof acquireCoachLock>>;
@@ -185,6 +212,10 @@ export async function createSuperAgentStreamResponse(
 		}
 
 		if (isContinuation) {
+			const clientAssistant = clientMessages.at(-1);
+			const clientToolPart = clientAssistant
+				? findContinuationToolPart(clientAssistant.parts, ['output-available', 'output-error'])
+				: null;
 			const storedMessages = await getConversationMessages(
 				userId,
 				conversationId,
@@ -196,6 +227,19 @@ export async function createSuperAgentStreamResponse(
 			if (!lastAssistant) {
 				await cleanup();
 				return json({ error: 'Coach could not continue that practice question.' }, { status: 409 });
+			}
+			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
+				'input-available',
+				'input-streaming'
+			]);
+			if (
+				!clientToolPart ||
+				!storedToolPart ||
+				clientToolPart.type !== storedToolPart.type ||
+				clientToolPart.toolCallId !== storedToolPart.toolCallId
+			) {
+				await cleanup();
+				return json({ error: 'That practice question is no longer pending.' }, { status: 409 });
 			}
 			assistantMessageId = lastAssistant.id;
 			await markConversationMessageStreaming(userId, assistantMessageId);
@@ -341,8 +385,10 @@ export async function createSuperAgentStreamResponse(
 			);
 		}
 		if (cleanup) await cleanup();
-		else if (personalizedTurn.kind === 'reserved') {
-			await personalizedTurn.releaseIfUnused().catch(() => undefined);
+		else {
+			if (personalizedTurn.kind === 'reserved') {
+				await personalizedTurn.releaseIfUnused().catch(() => undefined);
+			}
 			await releaseLock(lock);
 		}
 		if (error instanceof RedisRequiredError) {

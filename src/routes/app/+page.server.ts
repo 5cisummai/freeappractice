@@ -6,7 +6,7 @@ import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 export const load: PageServerLoad = async ({ cookies, locals, parent }) => {
 	const { activeOrganization } = await parent();
 	const userId = locals.userId!;
-	const showOrgActivity = activeOrganization?.orgType !== 'personal';
+	const showOrgActivity = activeOrganization?.orgType === 'group';
 	const [dashboard, planAccess, orgActivity] = await Promise.all([
 		loadUserDashboardData(userId, cookies),
 		getPlanAccessForRequest(locals, userId),

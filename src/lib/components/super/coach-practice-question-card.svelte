@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import Loader2Icon from '@lucide/svelte/icons/loader-2';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -21,7 +20,7 @@
 		onResolve
 	}: {
 		input: unknown;
-		onResolve: (output: CoachPracticeQuestionToolOutput) => void;
+		onResolve: (output: CoachPracticeQuestionToolOutput) => Promise<boolean>;
 	} = $props();
 
 	const toolInput = $derived(getCoachPracticeQuestionToolInput(input));
@@ -29,21 +28,29 @@
 	let loadError = $state('');
 	let resolved = $state(false);
 	let requestVersion = $state(0);
+	let loadGeneration = 0;
 
 	const modeLabel = $derived(question?.mode === 'frq' ? 'Written response' : 'Multiple choice');
 
-	onMount(() => {
-		void loadQuestion();
-	});
-
-	async function loadQuestion(): Promise<void> {
-		if (!toolInput) {
+	$effect(() => {
+		const inputSnapshot = toolInput;
+		const generation = ++loadGeneration;
+		resolved = false;
+		loadError = '';
+		question = null;
+		if (!inputSnapshot) {
 			loadError = 'Coach could not start this practice question.';
 			return;
 		}
-		loadError = '';
-		question = null;
-		const result = await fetchCoachPracticeQuestion(toolInput);
+		void loadQuestion(inputSnapshot, generation);
+	});
+
+	async function loadQuestion(
+		inputSnapshot: NonNullable<typeof toolInput>,
+		generation: number
+	): Promise<void> {
+		const result = await fetchCoachPracticeQuestion(inputSnapshot);
+		if (generation !== loadGeneration) return;
 		if ('error' in result) {
 			loadError = result.error;
 			return;
@@ -52,10 +59,9 @@
 		requestVersion += 1;
 	}
 
-	function finish(output: CoachPracticeQuestionToolOutput): void {
+	async function finish(output: CoachPracticeQuestionToolOutput): Promise<void> {
 		if (resolved) return;
-		resolved = true;
-		onResolve(output);
+		if (await onResolve(output)) resolved = true;
 	}
 
 	function handleAnswered(result: AnswerResult): void {
@@ -104,14 +110,30 @@
 
 	<div class="px-2 py-2 sm:px-4 sm:py-4">
 		{#if loadError}
-			<div class="space-y-3 px-2 py-4">
+			<div class="space-y-3 px-2 py-4" role="alert" aria-live="assertive">
 				<p class="text-sm text-muted-foreground">{loadError}</p>
-				<Button size="sm" variant="outline" onclick={() => void loadQuestion()} disabled={resolved}>
+				<Button
+					size="sm"
+					variant="outline"
+					onclick={() => {
+						const inputSnapshot = toolInput;
+						if (!inputSnapshot) return;
+						const generation = ++loadGeneration;
+						loadError = '';
+						question = null;
+						void loadQuestion(inputSnapshot, generation);
+					}}
+					disabled={resolved}
+				>
 					Try again
 				</Button>
 			</div>
 		{:else if !question}
-			<div class="flex items-center gap-2 px-2 py-8 text-sm text-muted-foreground">
+			<div
+				class="flex items-center gap-2 px-2 py-8 text-sm text-muted-foreground"
+				role="status"
+				aria-live="polite"
+			>
 				<Loader2Icon class="size-4 animate-spin" aria-hidden="true" />
 				<span>Loading practice question…</span>
 			</div>

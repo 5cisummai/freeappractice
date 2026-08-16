@@ -45,7 +45,7 @@
 
 	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
 	const membersNavItem = { href: '/app/members', label: 'Members', icon: UsersIcon } as const;
-	const showMembers = $derived(activeOrganization?.orgType !== 'personal');
+	const showMembers = $derived(activeOrganization?.orgType === 'group');
 	const navItems = $derived([
 		...baseNavItems.filter(
 			(item) =>

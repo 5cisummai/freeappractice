@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNull } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	authMembers,
@@ -25,7 +25,7 @@ export type OrganizationMember = {
 	memberId: string;
 	userId: string;
 	name: string;
-	email: string;
+	email: string | null;
 	image: string | null;
 	role: OrganizationRole;
 };
@@ -154,8 +154,11 @@ export async function listOrganizationMembers(
 export async function listOrganizationActivity(
 	organizationId: string
 ): Promise<OrganizationActivityItem[]> {
-	const members = await listOrganizationMembers(organizationId);
-	const userIds = members.map((member) => member.userId);
+	const memberRows = await getNeonDatabase()
+		.select({ userId: authMembers.userId })
+		.from(authMembers)
+		.where(eq(authMembers.organizationId, organizationId));
+	const userIds = memberRows.map((member) => member.userId);
 	if (userIds.length === 0) return [];
 
 	const cutoff = new Date(Date.now() - ORG_ACTIVITY_WINDOW_MS);
@@ -198,6 +201,19 @@ export async function getOrganizationType(organizationId: string): Promise<OrgTy
 	return parseOrgType(row?.orgType);
 }
 
+export async function getOrganizationTypeForUser(
+	organizationId: string,
+	userId: string
+): Promise<OrgType | null> {
+	const [row] = await getNeonDatabase()
+		.select({ orgType: authOrganizations.orgType })
+		.from(authMembers)
+		.innerJoin(authOrganizations, eq(authMembers.organizationId, authOrganizations.id))
+		.where(and(eq(authMembers.organizationId, organizationId), eq(authMembers.userId, userId)))
+		.limit(1);
+	return parseOrgType(row?.orgType);
+}
+
 export async function findOrganizationByShareToken(
 	shareToken: string
 ): Promise<{ id: string; name: string; orgType: OrgType } | null> {
@@ -230,8 +246,14 @@ export async function ensureOrganizationShareToken(organizationId: string): Prom
 	await getNeonDatabase()
 		.update(authOrganizations)
 		.set({ shareToken, updatedAt: new Date() })
-		.where(eq(authOrganizations.id, organizationId));
-	return shareToken;
+		.where(and(eq(authOrganizations.id, organizationId), isNull(authOrganizations.shareToken)));
+	const [persisted] = await getNeonDatabase()
+		.select({ shareToken: authOrganizations.shareToken })
+		.from(authOrganizations)
+		.where(eq(authOrganizations.id, organizationId))
+		.limit(1);
+	if (!persisted?.shareToken) throw new Error('Could not create an invite link.');
+	return persisted.shareToken;
 }
 
 export function nextShareToken(): string {

@@ -150,7 +150,9 @@ async function main() {
 		if (!recentTopics) {
 			recentTopics =
 				questionType === 'mcq'
-					? await getRecentTopics(slot.apClass, slot.unit).catch(() => [])
+					? await getRecentTopics({ kind: 'mcq', apClass: slot.apClass, unit: slot.unit }).catch(
+							() => []
+						)
 					: await getRecentFrqTopics(slot.apClass, slot.unit).catch(() => []);
 			topicCache.set(cacheKey, recentTopics);
 		}

@@ -44,18 +44,21 @@
 
 	async function copyInviteLink() {
 		if (!organization) return;
-		const response = await apiFetch('/api/orgs/invite-link', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ organizationId: organization.id })
-		});
-		const payload = await readJsonOrNull<{ url?: string; error?: string }>(response);
-		if (!response.ok || !payload?.url) {
-			toast.error(getResponseMessage(payload, 'Could not copy invite link.'));
-			return;
+		try {
+			const response = await apiFetch('/api/orgs/invite-link', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ organizationId: organization.id })
+			});
+			const payload = await readJsonOrNull<{ url?: string; error?: string }>(response);
+			if (!response.ok || !payload?.url) {
+				throw new Error(getResponseMessage(payload, 'Could not copy invite link.'));
+			}
+			await navigator.clipboard.writeText(payload.url);
+			toast.success('Invite link copied.');
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not copy invite link.');
 		}
-		await navigator.clipboard.writeText(payload.url);
-		toast.success('Invite link copied.');
 	}
 
 	async function sendInviteEmail() {

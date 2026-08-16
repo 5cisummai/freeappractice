@@ -30,7 +30,7 @@ export type ConversationMessage = {
 export class ConversationAccessError extends Error {
 	constructor(
 		message: string,
-		readonly status: 404 | 409
+		readonly status: 400 | 404 | 409
 	) {
 		super(message);
 		this.name = 'ConversationAccessError';
@@ -158,7 +158,7 @@ export async function renameOwnedConversation(
 	title: string
 ): Promise<string> {
 	const sanitized = sanitizeConversationTitle(title);
-	if (!sanitized) throw new ConversationAccessError('Conversation title is required', 409);
+	if (!sanitized) throw new ConversationAccessError('Conversation title is required', 400);
 
 	const [updated] = await getNeonDatabase()
 		.update(conversations)
