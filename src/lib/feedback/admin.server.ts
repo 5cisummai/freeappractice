@@ -29,10 +29,7 @@ function toBugSeverity(value: string): BugReportSeverity {
 	return 'medium';
 }
 
-function displayEmail(
-	userEmail?: string | null,
-	reporterEmail?: string | null
-): string | null {
+function displayEmail(userEmail?: string | null, reporterEmail?: string | null): string | null {
 	return userEmail ?? reporterEmail ?? null;
 }
 
@@ -131,9 +128,7 @@ export async function listFeedbackTabForAdmin(limit = 50): Promise<{
 	]);
 
 	const items = [...sidebar.items, ...bugReportsSnapshot.items]
-		.sort(
-			(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-		)
+		.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 		.slice(0, limit);
 
 	return {

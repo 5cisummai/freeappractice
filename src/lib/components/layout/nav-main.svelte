@@ -38,7 +38,9 @@
 		isAdmin?: boolean;
 	} = $props();
 
-	const overviewItems: NavItem[] = [{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon }];
+	const overviewItems: NavItem[] = [
+		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon }
+	];
 
 	const practiceItems: NavItem[] = [
 		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Tabs as TabsPrimitive } from "bits-ui";
-	import { cn } from "$lib/utils.js";
+	import { Tabs as TabsPrimitive } from 'bits-ui';
+	import { cn } from '$lib/utils.js';
 
 	let {
 		ref = $bindable(null),
@@ -13,7 +13,7 @@
 	bind:ref
 	data-slot="tabs-content"
 	class={cn(
-		"text-sm flex-1 outline-none data-[state=active]:animate-in data-[state=active]:fade-in data-[state=active]:duration-200 motion-reduce:animate-none",
+		'flex-1 text-sm outline-none data-[state=active]:animate-in data-[state=active]:duration-200 data-[state=active]:fade-in motion-reduce:animate-none',
 		className
 	)}
 	{...restProps}

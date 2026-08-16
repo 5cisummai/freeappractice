@@ -139,7 +139,7 @@
 					<Dialog.Header>
 						<Dialog.Title>Send feedback</Dialog.Title>
 						<Dialog.Description>
-						Tell us what's working, what's confusing, or what you'd like to see next.
+							Tell us what's working, what's confusing, or what you'd like to see next.
 						</Dialog.Description>
 					</Dialog.Header>
 
@@ -152,7 +152,7 @@
 							aria-invalid={Boolean(fieldErrors.category)}
 						>
 							{#each APP_FEEDBACK_CATEGORIES as value (value)}
-								<option value={value}>{APP_FEEDBACK_CATEGORY_LABELS[value]}</option>
+								<option {value}>{APP_FEEDBACK_CATEGORY_LABELS[value]}</option>
 							{/each}
 						</NativeSelect>
 						{#if fieldErrors.category}

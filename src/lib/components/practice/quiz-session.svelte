@@ -472,9 +472,7 @@
 				return;
 			}
 			await navigator.clipboard.writeText(url);
-			shareStatus = attachedToGroup
-				? 'Shared with your group. Link copied.'
-				: 'Share link copied.';
+			shareStatus = attachedToGroup ? 'Shared with your group. Link copied.' : 'Share link copied.';
 		} catch (error) {
 			if (error instanceof DOMException && error.name === 'AbortError') return;
 			shareStatus = 'Could not share the quiz link.';

@@ -39,6 +39,7 @@ Schema lives in `src/lib/server/neon/schema/`. **Never hand-write migration SQL 
    - Runs `scripts/apply-neon-migrations.ts` (HTTP transactions; records checksums in `public._neon_schema_migrations`).
 
 **Do not:**
+
 - Write `.sql` files by hand and add journal entries manually.
 - Run `drizzle-kit push` or other schema-sync shortcuts unless the user explicitly asks.
 - Edit an already-applied migration file (the apply script rejects checksum mismatches).

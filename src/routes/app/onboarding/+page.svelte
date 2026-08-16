@@ -117,12 +117,12 @@
 	const todayDate = localDateInputValue();
 	const minBirthDate = earliestBirthDateForInput(todayDate);
 	const birthDateIsValid = $derived(!birthDate || isValidBirthDate(birthDate, todayDate));
-	const isOldEnough = $derived(ageConfirmed || isAtLeastAge(birthDate, MINIMUM_ACCOUNT_AGE, todayDate));
+	const isOldEnough = $derived(
+		ageConfirmed || isAtLeastAge(birthDate, MINIMUM_ACCOUNT_AGE, todayDate)
+	);
 	const isUnderAge = $derived(Boolean(birthDate) && birthDateIsValid && !isOldEnough);
 	const needsAgeVerification = $derived(!ageConfirmed);
-	const canContinueWelcome = $derived(
-		selectedGoals.length > 0 && (ageConfirmed || isOldEnough)
-	);
+	const canContinueWelcome = $derived(selectedGoals.length > 0 && (ageConfirmed || isOldEnough));
 	const filteredSubjects = $derived.by(() => {
 		const query = subjectSearch.trim().toLowerCase();
 		if (!query) return onboardingSubjects;
@@ -148,8 +148,7 @@
 			detail: 'Push for a better result on exam day.',
 			checkedClass:
 				'has-[:checked]:border-emerald-400/70 has-[:checked]:bg-emerald-500/15 has-[:checked]:[&_.goal-icon]:bg-emerald-500 has-[:checked]:[&_.goal-icon]:text-white has-[:checked]:[&_.selection-check]:border-emerald-500 has-[:checked]:[&_.selection-check]:text-emerald-600 dark:has-[:checked]:[&_.selection-check]:text-emerald-400',
-			iconClass:
-				'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
+			iconClass: 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100'
 		},
 		{
 			value: 'exam_prep',
@@ -424,7 +423,9 @@
 	<title>Set up your study space | Free AP Practice</title>
 </svelte:head>
 
-<div class="flex min-h-svh items-center justify-center bg-background px-5 py-8 text-foreground sm:px-8">
+<div
+	class="flex min-h-svh items-center justify-center bg-background px-5 py-8 text-foreground sm:px-8"
+>
 	<div class="w-full max-w-3xl">
 		<form
 			id="onboarding-form"
@@ -460,9 +461,13 @@
 
 			{#key stepKey}
 				<section
-					class="animate-in flex flex-1 flex-col gap-8 duration-500 fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:gap-10"
+					class="flex flex-1 animate-in flex-col gap-8 duration-500 fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:gap-10"
 				>
-					<div class="mx-auto flex w-full flex-1 flex-col {currentStep === 'subjects' ? 'max-w-none' : 'max-w-3xl'}">
+					<div
+						class="mx-auto flex w-full flex-1 flex-col {currentStep === 'subjects'
+							? 'max-w-none'
+							: 'max-w-3xl'}"
+					>
 						<div class="text-center">
 							<h1
 								class="font-display text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl"
@@ -475,28 +480,28 @@
 						</div>
 
 						<div class="mt-8">
-								{#if currentStep === 'subjects'}
-									<div class="space-y-6">
-										<div class="relative">
-											<SearchIcon
-												class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-												aria-hidden="true"
-											/>
-											<Input
-												type="search"
-												placeholder="Search AP subjects"
-												bind:value={subjectSearch}
-												class="pl-9"
-												aria-label="Search AP subjects"
-											/>
-										</div>
-										{#if filteredSubjects.length === 0}
-											<p class="py-8 text-center text-sm text-muted-foreground">
-												No subjects match "{subjectSearch.trim()}".
-											</p>
-										{:else}
-											<div class="grid grid-cols-2 gap-2 lg:grid-cols-3">
-												{#each filteredSubjects as subject (subject.name)}
+							{#if currentStep === 'subjects'}
+								<div class="space-y-6">
+									<div class="relative">
+										<SearchIcon
+											class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+											aria-hidden="true"
+										/>
+										<Input
+											type="search"
+											placeholder="Search AP subjects"
+											bind:value={subjectSearch}
+											class="pl-9"
+											aria-label="Search AP subjects"
+										/>
+									</div>
+									{#if filteredSubjects.length === 0}
+										<p class="py-8 text-center text-sm text-muted-foreground">
+											No subjects match "{subjectSearch.trim()}".
+										</p>
+									{:else}
+										<div class="grid grid-cols-2 gap-2 lg:grid-cols-3">
+											{#each filteredSubjects as subject (subject.name)}
 												{@const SubjectIcon = subject.icon}
 												<label
 													class="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-transparent bg-muted/50 px-4 py-3 text-sm transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {subject.checkedClass}"
@@ -524,225 +529,222 @@
 												</label>
 											{/each}
 										</div>
-										{/if}
-										<p class="text-center text-sm text-muted-foreground">
-											{selectedSubjects.length}
-											{selectedSubjects.length === 1 ? 'subject' : 'subjects'} selected
-										</p>
-									</div>
-								{:else if currentStep === 'welcome'}
-									<div class="mx-auto w-full">
-										<div class="grid gap-3 sm:grid-cols-2">
-											{#each studyGoalOptions as option (option.value)}
-												{@const GoalIcon = option.icon}
-												<label
-													class="flex min-h-28 cursor-pointer flex-col justify-between rounded-2xl border border-transparent bg-muted/50 p-4 text-left transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {option.checkedClass}"
-												>
-													<input
-														type="checkbox"
-														value={option.value}
-														checked={selectedGoals.includes(option.value)}
-														onchange={(event) =>
-															toggleGoal(
-																option.value,
-																(event.currentTarget as HTMLInputElement).checked
-															)}
-														class="sr-only"
-													/>
-													<span class="flex items-start justify-between gap-3">
-														<span
-															class="goal-icon flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors {option.iconClass}"
-														>
-															<GoalIcon class="size-4" />
-														</span>
-														<span
-															class="selection-check flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
-															aria-hidden="true"
-														>
-															<CheckIcon class="size-3" />
-														</span>
-													</span>
-													<span class="mt-4">
-														<span class="block text-sm font-medium">{option.title}</span>
-														<span class="mt-1 block text-xs leading-5 text-muted-foreground">
-															{option.detail}
-														</span>
-													</span>
-												</label>
-											{/each}
-										</div>
-										{#if needsAgeVerification}
-											<FieldGroup class="mt-8">
-												<Field
-													data-invalid={isUnderAge || (!birthDateIsValid && birthDate)
-														? true
-														: undefined}
-												>
-													<FieldLabel for="onboarding-birth-date">Birth date</FieldLabel>
-													<Input
-														id="onboarding-birth-date"
-														type="date"
-														bind:value={birthDate}
-														min={minBirthDate}
-														max={todayDate}
-														aria-invalid={isUnderAge || (!birthDateIsValid && Boolean(birthDate))}
-													/>
-													{#if isUnderAge}
-														<FieldError
-															>You must be at least {MINIMUM_ACCOUNT_AGE} to use Free AP Practice.</FieldError
-														>
-													{:else if birthDate && !birthDateIsValid}
-														<FieldError>Enter a valid birth date.</FieldError>
-													{:else}
-														<FieldDescription>
-															We use this to confirm you are {MINIMUM_ACCOUNT_AGE} or older. We save
-															the confirmation, not your birth date.
-														</FieldDescription>
-													{/if}
-												</Field>
-											</FieldGroup>
-											{#if isUnderAge}
-												<p class="mt-4 text-center text-sm text-muted-foreground">
-													If you are under {MINIMUM_ACCOUNT_AGE}, do not continue. Start deletion and
-													follow the email instructions to remove this account.
-												</p>
-												<div class="mt-3 flex justify-center">
-													<Button
-														type="button"
-														variant="ghost"
-														onclick={deleteUnder13Account}
-														disabled={deletingAccount}
-														>{deletingAccount
-															? 'Starting deletion…'
-															: `I am under ${MINIMUM_ACCOUNT_AGE}`}</Button
+									{/if}
+									<p class="text-center text-sm text-muted-foreground">
+										{selectedSubjects.length}
+										{selectedSubjects.length === 1 ? 'subject' : 'subjects'} selected
+									</p>
+								</div>
+							{:else if currentStep === 'welcome'}
+								<div class="mx-auto w-full">
+									<div class="grid gap-3 sm:grid-cols-2">
+										{#each studyGoalOptions as option (option.value)}
+											{@const GoalIcon = option.icon}
+											<label
+												class="flex min-h-28 cursor-pointer flex-col justify-between rounded-2xl border border-transparent bg-muted/50 p-4 text-left transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {option.checkedClass}"
+											>
+												<input
+													type="checkbox"
+													value={option.value}
+													checked={selectedGoals.includes(option.value)}
+													onchange={(event) =>
+														toggleGoal(
+															option.value,
+															(event.currentTarget as HTMLInputElement).checked
+														)}
+													class="sr-only"
+												/>
+												<span class="flex items-start justify-between gap-3">
+													<span
+														class="goal-icon flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors {option.iconClass}"
 													>
-												</div>
-											{/if}
-										{/if}
-									</div>
-								{:else if currentStep === 'plan'}
-									<div class="mx-auto grid max-w-3xl gap-4 md:grid-cols-2">
-										<button
-											type="button"
-											onclick={() => (planChoice = 'free')}
-											class="rounded-3xl border p-6 text-left transition-all {planChoice === 'free'
-												? 'border-primary bg-primary/5 shadow-sm'
-												: 'border-border/70 bg-background/60 hover:border-primary/40'}"
-										>
-											<div class="flex items-start justify-between gap-4">
-												<div>
-													<BookOpenIcon class="size-5 text-primary" />
-													<h2 class="mt-5 font-display text-2xl font-medium">Keep it free</h2>
-													<p class="mt-2 text-sm leading-6 text-muted-foreground">
-														Unlimited AP practice, feedback, progress, and the standard tutor.
-													</p>
-												</div>
-												{#if planChoice === 'free'}<CheckIcon class="size-5 text-primary" />{/if}
-											</div>
-										</button>
-										<button
-											type="button"
-											onclick={() => (planChoice = 'super')}
-											disabled={!canChooseSuper}
-											class="rounded-3xl border p-6 text-left transition-all {planChoice === 'super'
-												? 'border-violet-400 bg-violet-500/10 shadow-sm'
-												: 'border-violet-300/50 bg-violet-500/5 hover:border-violet-400'} disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											<div class="flex items-start justify-between gap-4">
-												<div>
-													<SparklesIcon class="size-5 text-violet-500" />
-													<h2 class="mt-5 font-display text-2xl font-medium">Super</h2>
-													<p class="mt-2 text-sm leading-6 text-muted-foreground">
-														{superSetup?.freeBetaEnabled
-															? 'Personalized tutoring, Coach, insights, and study plans during the beta.'
-															: '$9/month or $79/year for the full personalized study toolkit.'}
-													</p>
-												</div>
-												{#if planChoice === 'super'}<CheckIcon
-														class="size-5 text-violet-500"
-													/>{/if}
-											</div>
-										</button>
-									</div>
-									{#if !superSetup?.freeBetaEnabled && superSetup?.checkoutEnabled}<div
-											class="mt-4 flex justify-center gap-2"
-										>
-											<Button
-												type="button"
-												size="sm"
-												variant={annual ? 'outline' : 'default'}
-												onclick={() => (annual = false)}>Monthly</Button
-											><Button
-												type="button"
-												size="sm"
-												variant={annual ? 'default' : 'outline'}
-												onclick={() => (annual = true)}>Yearly</Button
-											>
-										</div>{/if}
-								{:else if currentStep === 'style'}
-									<div class="mx-auto grid max-w-3xl gap-3">
-										{#each [{ value: 'socratic' as const, title: 'Socratic hints', detail: 'Guiding questions that help you reason it out.' }, { value: 'concise' as const, title: 'Concise explanations', detail: 'Short, direct answers when you want clarity fast.' }, { value: 'step_by_step' as const, title: 'Step by step', detail: 'Walk through problems in ordered stages.' }] as option (option.value)}
-											{@const selected = teachingStyle === option.value}
-											<button
-												type="button"
-												onclick={() => (teachingStyle = option.value)}
-												class="flex items-start gap-4 rounded-2xl border p-5 text-left transition-all {selected
-													? 'border-primary bg-primary/5 shadow-sm'
-													: 'border-border/70 bg-background/60 hover:border-primary/40'}"
-												><BrainIcon class="mt-0.5 size-5 shrink-0 text-primary" /><span
-													class="flex-1"
-													><span class="block font-medium">{option.title}</span><span
-														class="mt-1 block text-sm leading-6 text-muted-foreground"
-														>{option.detail}</span
-													></span
-												>{#if selected}<CheckIcon class="size-5 text-primary" />{/if}</button
-											>
+														<GoalIcon class="size-4" />
+													</span>
+													<span
+														class="selection-check flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
+														aria-hidden="true"
+													>
+														<CheckIcon class="size-3" />
+													</span>
+												</span>
+												<span class="mt-4">
+													<span class="block text-sm font-medium">{option.title}</span>
+													<span class="mt-1 block text-xs leading-5 text-muted-foreground">
+														{option.detail}
+													</span>
+												</span>
+											</label>
 										{/each}
 									</div>
-								{:else if currentStep === 'memory'}
-									<div class="mx-auto max-w-3xl space-y-4">
+									{#if needsAgeVerification}
+										<FieldGroup class="mt-8">
+											<Field
+												data-invalid={isUnderAge || (!birthDateIsValid && birthDate)
+													? true
+													: undefined}
+											>
+												<FieldLabel for="onboarding-birth-date">Birth date</FieldLabel>
+												<Input
+													id="onboarding-birth-date"
+													type="date"
+													bind:value={birthDate}
+													min={minBirthDate}
+													max={todayDate}
+													aria-invalid={isUnderAge || (!birthDateIsValid && Boolean(birthDate))}
+												/>
+												{#if isUnderAge}
+													<FieldError
+														>You must be at least {MINIMUM_ACCOUNT_AGE} to use Free AP Practice.</FieldError
+													>
+												{:else if birthDate && !birthDateIsValid}
+													<FieldError>Enter a valid birth date.</FieldError>
+												{:else}
+													<FieldDescription>
+														We use this to confirm you are {MINIMUM_ACCOUNT_AGE} or older. We save the
+														confirmation, not your birth date.
+													</FieldDescription>
+												{/if}
+											</Field>
+										</FieldGroup>
+										{#if isUnderAge}
+											<p class="mt-4 text-center text-sm text-muted-foreground">
+												If you are under {MINIMUM_ACCOUNT_AGE}, do not continue. Start deletion and
+												follow the email instructions to remove this account.
+											</p>
+											<div class="mt-3 flex justify-center">
+												<Button
+													type="button"
+													variant="ghost"
+													onclick={deleteUnder13Account}
+													disabled={deletingAccount}
+													>{deletingAccount
+														? 'Starting deletion…'
+														: `I am under ${MINIMUM_ACCOUNT_AGE}`}</Button
+												>
+											</div>
+										{/if}
+									{/if}
+								</div>
+							{:else if currentStep === 'plan'}
+								<div class="mx-auto grid max-w-3xl gap-4 md:grid-cols-2">
+									<button
+										type="button"
+										onclick={() => (planChoice = 'free')}
+										class="rounded-3xl border p-6 text-left transition-all {planChoice === 'free'
+											? 'border-primary bg-primary/5 shadow-sm'
+											: 'border-border/70 bg-background/60 hover:border-primary/40'}"
+									>
+										<div class="flex items-start justify-between gap-4">
+											<div>
+												<BookOpenIcon class="size-5 text-primary" />
+												<h2 class="mt-5 font-display text-2xl font-medium">Keep it free</h2>
+												<p class="mt-2 text-sm leading-6 text-muted-foreground">
+													Unlimited AP practice, feedback, progress, and the standard tutor.
+												</p>
+											</div>
+											{#if planChoice === 'free'}<CheckIcon class="size-5 text-primary" />{/if}
+										</div>
+									</button>
+									<button
+										type="button"
+										onclick={() => (planChoice = 'super')}
+										disabled={!canChooseSuper}
+										class="rounded-3xl border p-6 text-left transition-all {planChoice === 'super'
+											? 'border-violet-400 bg-violet-500/10 shadow-sm'
+											: 'border-violet-300/50 bg-violet-500/5 hover:border-violet-400'} disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										<div class="flex items-start justify-between gap-4">
+											<div>
+												<SparklesIcon class="size-5 text-violet-500" />
+												<h2 class="mt-5 font-display text-2xl font-medium">Super</h2>
+												<p class="mt-2 text-sm leading-6 text-muted-foreground">
+													{superSetup?.freeBetaEnabled
+														? 'Personalized tutoring, Coach, insights, and study plans during the beta.'
+														: '$9/month or $79/year for the full personalized study toolkit.'}
+												</p>
+											</div>
+											{#if planChoice === 'super'}<CheckIcon class="size-5 text-violet-500" />{/if}
+										</div>
+									</button>
+								</div>
+								{#if !superSetup?.freeBetaEnabled && superSetup?.checkoutEnabled}<div
+										class="mt-4 flex justify-center gap-2"
+									>
+										<Button
+											type="button"
+											size="sm"
+											variant={annual ? 'outline' : 'default'}
+											onclick={() => (annual = false)}>Monthly</Button
+										><Button
+											type="button"
+											size="sm"
+											variant={annual ? 'default' : 'outline'}
+											onclick={() => (annual = true)}>Yearly</Button
+										>
+									</div>{/if}
+							{:else if currentStep === 'style'}
+								<div class="mx-auto grid max-w-3xl gap-3">
+									{#each [{ value: 'socratic' as const, title: 'Socratic hints', detail: 'Guiding questions that help you reason it out.' }, { value: 'concise' as const, title: 'Concise explanations', detail: 'Short, direct answers when you want clarity fast.' }, { value: 'step_by_step' as const, title: 'Step by step', detail: 'Walk through problems in ordered stages.' }] as option (option.value)}
+										{@const selected = teachingStyle === option.value}
 										<button
 											type="button"
-											onclick={() => (memoryEnabled = !memoryEnabled)}
-											class="flex w-full items-center justify-between gap-4 rounded-2xl border p-5 text-left transition-all {memoryEnabled
-												? 'border-primary bg-primary/5'
+											onclick={() => (teachingStyle = option.value)}
+											class="flex items-start gap-4 rounded-2xl border p-5 text-left transition-all {selected
+												? 'border-primary bg-primary/5 shadow-sm'
 												: 'border-border/70 bg-background/60 hover:border-primary/40'}"
-											><span
-												><span class="block font-medium">Personalized memory</span><span
+											><BrainIcon class="mt-0.5 size-5 shrink-0 text-primary" /><span class="flex-1"
+												><span class="block font-medium">{option.title}</span><span
 													class="mt-1 block text-sm leading-6 text-muted-foreground"
-													>Remember learning preferences and recurring misconceptions, never full
-													chats.</span
+													>{option.detail}</span
 												></span
-											><span
-												class="flex size-6 shrink-0 items-center justify-center rounded-full border {memoryEnabled
-													? 'border-primary bg-primary text-primary-foreground'
-													: 'border-border'}"
-												>{#if memoryEnabled}<CheckIcon class="size-4" />{/if}</span
-											></button
+											>{#if selected}<CheckIcon class="size-5 text-primary" />{/if}</button
 										>
-										{#if !memoryDisclosureSeen}<p
-												class="rounded-2xl border border-border/70 bg-muted/40 px-5 py-4 text-sm leading-6 text-muted-foreground"
-											>
-												You can pause memory, review every saved fact, or delete everything from
-												Settings at any time.
-											</p>{/if}
-										{#if memoryLoading}<p class="text-sm text-muted-foreground">
-												Loading saved memories…
-											</p>{:else if memories.length}<p class="text-sm text-muted-foreground">
-												{memories.length} saved {memories.length === 1
-													? 'learning fact'
-													: 'learning facts'}.
-											</p>{/if}
-									</div>
-								{/if}
-							</div>
+									{/each}
+								</div>
+							{:else if currentStep === 'memory'}
+								<div class="mx-auto max-w-3xl space-y-4">
+									<button
+										type="button"
+										onclick={() => (memoryEnabled = !memoryEnabled)}
+										class="flex w-full items-center justify-between gap-4 rounded-2xl border p-5 text-left transition-all {memoryEnabled
+											? 'border-primary bg-primary/5'
+											: 'border-border/70 bg-background/60 hover:border-primary/40'}"
+										><span
+											><span class="block font-medium">Personalized memory</span><span
+												class="mt-1 block text-sm leading-6 text-muted-foreground"
+												>Remember learning preferences and recurring misconceptions, never full
+												chats.</span
+											></span
+										><span
+											class="flex size-6 shrink-0 items-center justify-center rounded-full border {memoryEnabled
+												? 'border-primary bg-primary text-primary-foreground'
+												: 'border-border'}"
+											>{#if memoryEnabled}<CheckIcon class="size-4" />{/if}</span
+										></button
+									>
+									{#if !memoryDisclosureSeen}<p
+											class="rounded-2xl border border-border/70 bg-muted/40 px-5 py-4 text-sm leading-6 text-muted-foreground"
+										>
+											You can pause memory, review every saved fact, or delete everything from
+											Settings at any time.
+										</p>{/if}
+									{#if memoryLoading}<p class="text-sm text-muted-foreground">
+											Loading saved memories…
+										</p>{:else if memories.length}<p class="text-sm text-muted-foreground">
+											{memories.length} saved {memories.length === 1
+												? 'learning fact'
+												: 'learning facts'}.
+										</p>{/if}
+								</div>
+							{/if}
+						</div>
 
-							{#if errorMessage || form?.error}<p
-									class="mt-6 text-center text-sm text-destructive"
-									role="alert"
-								>
-									{errorMessage || form?.error}
-								</p>{/if}
+						{#if errorMessage || form?.error}<p
+								class="mt-6 text-center text-sm text-destructive"
+								role="alert"
+							>
+								{errorMessage || form?.error}
+							</p>{/if}
 					</div>
 
 					<div class="flex items-center justify-between gap-3">

@@ -88,29 +88,30 @@
 											{item.severity}
 										</Badge>
 									{/if}
-									<span class="text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</span>
+									<span class="text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</span
+									>
 								</div>
 								<p class="text-sm text-muted-foreground">{reporterLabel(item)}</p>
 							</div>
 
 							{#if item.source === 'sidebar'}
-								<p class="text-sm whitespace-pre-wrap break-words">{item.message}</p>
+								<p class="text-sm break-words whitespace-pre-wrap">{item.message}</p>
 							{:else}
 								<p class="font-medium">{item.title}</p>
 								{#if questionContext(item)}
 									<p class="text-xs text-muted-foreground">{questionContext(item)}</p>
 								{/if}
-								<p class="text-sm whitespace-pre-wrap break-words">{item.description}</p>
+								<p class="text-sm break-words whitespace-pre-wrap">{item.description}</p>
 								{#if item.steps}
 									<div class="rounded-md border border-border/70 bg-muted/30 p-3 text-sm">
 										<p class="font-medium text-muted-foreground">Steps to reproduce</p>
-										<p class="mt-1 whitespace-pre-wrap break-words">{item.steps}</p>
+										<p class="mt-1 break-words whitespace-pre-wrap">{item.steps}</p>
 									</div>
 								{/if}
 								{#if item.expected}
 									<div class="rounded-md border border-border/70 bg-muted/30 p-3 text-sm">
 										<p class="font-medium text-muted-foreground">Expected result</p>
-										<p class="mt-1 whitespace-pre-wrap break-words">{item.expected}</p>
+										<p class="mt-1 break-words whitespace-pre-wrap">{item.expected}</p>
 									</div>
 								{/if}
 							{/if}
