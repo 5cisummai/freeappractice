@@ -10,7 +10,6 @@
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import { portalToBody } from '$lib/components/questions/question-card-dom';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
 
@@ -178,13 +177,7 @@
 								)}
 							>
 								<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
-								<Tabs.Trigger value="graded">
-									<Badge
-										variant="outline"
-										class="border-indigo-500 bg-indigo-500/10 text-indigo-500">New</Badge
-									>
-									Graded quizzes
-								</Tabs.Trigger>
+								<Tabs.Trigger value="graded">Graded quizzes</Tabs.Trigger>
 							</Tabs.List>
 						</Tabs.Root>
 

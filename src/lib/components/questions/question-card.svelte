@@ -228,7 +228,7 @@
 	<QuestionCardSkeleton class={className} />
 {:else if session.showEmptyState}
 	<EmptyState
-		title="No question yet"
+		title="Ready When You Are"
 		description="Select a course and unit, then generate a question."
 		imageUrl={lightbulbImage}
 	/>
