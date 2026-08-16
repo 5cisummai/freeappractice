@@ -1,4 +1,4 @@
-import { consumeStream, createUIMessageStreamResponse } from 'ai';
+import { consumeStream, createAgentUIStreamResponse } from 'ai';
 import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
@@ -21,9 +21,12 @@ import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
 import { scheduleTutorMemoryWrite } from '$lib/tutor/response-utils.server';
 import {
 	MAX_SUPER_AGENT_MESSAGES,
+	isSuperAgentToolContinuation,
+	lastSuperAgentUserText,
 	textFromSuperAgentParts,
-	toSuperAgentModelMessages
+	type SuperAgentRequest
 } from '$lib/super/agent-request';
+import { buildSuperAgentUiMessages } from '$lib/super/agent-history.server';
 import {
 	appendConversationMessage,
 	ensureConversation,
@@ -31,8 +34,10 @@ import {
 	ConversationAccessError,
 	finalizeConversationMessage,
 	getConversationMessages,
-	linkCoachAuditsToAssistantMessage
+	linkCoachAuditsToAssistantMessage,
+	markConversationMessageStreaming
 } from '$lib/super/conversations.server';
+import { coachComposerActionInstructions } from '$lib/super/coach-composer-actions';
 
 const SUPER_AGENT_STREAM_TIMEOUT_MS = 55_000;
 
@@ -41,8 +46,9 @@ export type SuperAgentStreamOptions = {
 	userId: string;
 	sessionId: string;
 	context: SuperAgentContext;
-	messages: Parameters<typeof toSuperAgentModelMessages>[0];
+	messages: SuperAgentRequest['messages'];
 	conversationId?: string;
+	coachActions?: SuperAgentRequest['coachActions'];
 	surface: 'coach' | 'question';
 	errorLabel: string;
 };
@@ -71,37 +77,49 @@ export async function createSuperAgentStreamResponse(
 		context,
 		messages,
 		conversationId: requestedConversationId,
+		coachActions,
 		surface,
 		errorLabel
 	} = options;
-	let personalizedTurn: Awaited<ReturnType<typeof startPersonalizedTurn>>;
-	try {
-		personalizedTurn = await startPersonalizedTurn(userId);
-	} catch (error) {
-		if (error instanceof RedisRequiredError) {
+	const clientMessages = messages;
+	const isContinuation = isSuperAgentToolContinuation(clientMessages);
+	type PersonalizedTurnHandle =
+		| Awaited<ReturnType<typeof startPersonalizedTurn>>
+		| { kind: 'continuation' };
+	let personalizedTurn: PersonalizedTurnHandle;
+	if (isContinuation) {
+		personalizedTurn = { kind: 'continuation' };
+	} else {
+		try {
+			personalizedTurn = await startPersonalizedTurn(userId);
+		} catch (error) {
+			if (error instanceof RedisRequiredError) {
+				return json(
+					{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
+					{ status: 503 }
+				);
+			}
+			throw error;
+		}
+		if (personalizedTurn.kind === 'rate-limited')
+			return rateLimitedResponse(personalizedTurn.retryAt);
+		if (personalizedTurn.kind === 'exhausted') {
 			return json(
-				{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
-				{ status: 503 }
+				{
+					error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
+				},
+				{ status: 429 }
 			);
 		}
-		throw error;
-	}
-	if (personalizedTurn.kind === 'rate-limited')
-		return rateLimitedResponse(personalizedTurn.retryAt);
-	if (personalizedTurn.kind === 'exhausted') {
-		return json(
-			{
-				error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
-			},
-			{ status: 429 }
-		);
 	}
 
 	let lock: Awaited<ReturnType<typeof acquireCoachLock>>;
 	try {
 		lock = await acquireCoachLock(userId);
 	} catch (error) {
-		await personalizedTurn.releaseIfUnused().catch(() => undefined);
+		if (personalizedTurn.kind === 'reserved') {
+			await personalizedTurn.releaseIfUnused().catch(() => undefined);
+		}
 		if (error instanceof RedisRequiredError) {
 			return json(
 				{ error: 'Personalized tutoring is temporarily unavailable. Please try again.' },
@@ -111,7 +129,9 @@ export async function createSuperAgentStreamResponse(
 		throw error;
 	}
 	if (!lock) {
-		await personalizedTurn.releaseIfUnused().catch(() => undefined);
+		if (personalizedTurn.kind === 'reserved') {
+			await personalizedTurn.releaseIfUnused().catch(() => undefined);
+		}
 		return json({ error: 'Another personalized AI request is still running.' }, { status: 409 });
 	}
 
@@ -131,48 +151,79 @@ export async function createSuperAgentStreamResponse(
 			cleanedUp = true;
 			clearTimeout(streamTimeoutId);
 			clearInterval(refreshTimer);
-			if (!emittedOutput) await personalizedTurn.releaseIfUnused().catch(() => undefined);
+			if (!emittedOutput && personalizedTurn.kind === 'reserved') {
+				await personalizedTurn.releaseIfUnused().catch(() => undefined);
+			}
 			await releaseLock(lock);
 		};
 
-		const profile = await getTutorProfileViewForRequest(event.locals, userId);
-		const incomingModelMessages = toSuperAgentModelMessages(messages);
-		const lastUserMessage =
-			incomingModelMessages.at(-1)?.role === 'user'
-				? (incomingModelMessages.at(-1)?.content ?? '')
-				: '';
-		if (!lastUserMessage) {
+		const incomingUserText = lastSuperAgentUserText(clientMessages);
+		if (!incomingUserText && !isContinuation) {
 			await cleanup();
 			return json({ error: 'The Super Agent needs a student message.' }, { status: 400 });
 		}
+
+		const profile = await getTutorProfileViewForRequest(event.locals, userId);
 		conversationId = await ensureConversation(userId, {
 			conversationId: requestedConversationId,
 			surface,
 			context,
-			...(!requestedConversationId
-				? { title: await generateConversationTitle(lastUserMessage, surface) }
+			...(!requestedConversationId && !isContinuation
+				? { title: await generateConversationTitle(incomingUserText, surface) }
 				: {})
 		});
-		const incomingUser = [...messages].reverse().find((message) => message.role === 'user');
-		await appendConversationMessage(userId, {
+
+		if (!isContinuation) {
+			const incomingUser = [...clientMessages].reverse().find((message) => message.role === 'user');
+			await appendConversationMessage(userId, {
+				conversationId,
+				role: 'user',
+				content: incomingUserText,
+				parts: incomingUser?.parts ?? [{ type: 'text', text: incomingUserText }],
+				clientMessageId: incomingUser?.id,
+				status: 'complete'
+			});
+		}
+
+		if (isContinuation) {
+			const storedMessages = await getConversationMessages(
+				userId,
+				conversationId,
+				MAX_SUPER_AGENT_MESSAGES
+			);
+			const lastAssistant = [...storedMessages]
+				.reverse()
+				.find((message) => message.role === 'assistant');
+			if (!lastAssistant) {
+				await cleanup();
+				return json({ error: 'Coach could not continue that practice question.' }, { status: 409 });
+			}
+			assistantMessageId = lastAssistant.id;
+			await markConversationMessageStreaming(userId, assistantMessageId);
+		} else {
+			assistantMessageId = await appendConversationMessage(userId, {
+				conversationId,
+				role: 'assistant',
+				status: 'streaming'
+			});
+		}
+
+		const { messages: uiMessages, historySummary } = await buildSuperAgentUiMessages({
+			userId,
 			conversationId,
-			role: 'user',
-			content: lastUserMessage,
-			parts: incomingUser?.parts ?? [{ type: 'text', text: lastUserMessage }],
-			clientMessageId: incomingUser?.id,
-			status: 'complete'
+			clientMessages,
+			isContinuation,
+			streamingAssistantMessageId: assistantMessageId
 		});
-		const serverMessages = (
-			await getConversationMessages(userId, conversationId, MAX_SUPER_AGENT_MESSAGES)
-		)
-			.filter((message) => message.content.trim())
-			.slice(-MAX_SUPER_AGENT_MESSAGES)
-			.map((message) => ({ role: message.role, content: message.content }) as const);
-		assistantMessageId = await appendConversationMessage(userId, {
-			conversationId,
-			role: 'assistant',
-			status: 'streaming'
-		});
+		const lastUserMessage = lastSuperAgentUserText(
+			uiMessages
+				.filter((message) => message.role === 'user' || message.role === 'assistant')
+				.map((message) => ({
+					role: message.role as 'user' | 'assistant',
+					parts: message.parts as SuperAgentRequest['messages'][number]['parts']
+				}))
+		);
+
 		const personalization = await buildSuperAgentContext(userId, lastUserMessage, context);
 		const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
 		const agent = createSuperAgent({
@@ -181,80 +232,101 @@ export async function createSuperAgentStreamResponse(
 			sessionId,
 			selectedApClasses: profile.selectedApClasses,
 			personalizationContext: personalization.text,
+			historySummary,
 			mode: context.mode,
 			currentContext: context,
-			conversationId
+			conversationId,
+			composerActionInstructions: coachComposerActionInstructions(coachActions ?? [])
 		});
-		const result = await agent.stream({
-			messages: serverMessages,
-			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal])
-		});
-		const uiStream = result
-			.toUIMessageStream<SuperAgentUIMessage>({
-				originalMessages: messages as unknown as SuperAgentUIMessage[],
-				onFinish: async ({ responseMessage, isAborted }) => {
-					try {
-						const assistantResponse = textFromSuperAgentParts(
-							responseMessage.parts as Array<{ type?: string; text?: string }>
-						);
-						if (assistantMessageId && conversationId) {
-							await finalizeConversationMessage(userId, assistantMessageId, {
-								content: assistantResponse,
-								parts: responseMessage.parts as unknown[],
-								status: isAborted ? 'aborted' : 'complete'
-							});
-							if (surface === 'coach' && conversationId) {
-								await linkCoachAuditsToAssistantMessage(
-									userId,
-									conversationId,
-									assistantMessageId,
-									responseMessage.parts as unknown[]
-								);
-							}
-						}
-						if (!isAborted && memoryConsentGiven && (await isTutorMemoryAvailable())) {
-							if (lastUserMessage.trim() && assistantResponse.trim()) {
-								scheduleTutorMemoryWrite(
-									addTutorMemoryExchange(
-										userId,
-										{ user: lastUserMessage, assistant: assistantResponse },
-										{ surface: surface === 'coach' ? 'coach' : 'tutor' }
-									),
-									surface === 'coach' ? 'Coach' : context.questionType === 'frq' ? 'FRQ' : 'MCQ'
-								);
-							}
-						}
-					} finally {
-						await cleanup?.();
-					}
-				},
-				onError: (error) => {
-					logger.error(`${errorLabel} stream error`, { error });
-					return 'The personalized AI could not complete that request. Please try again.';
+
+		const markUsageIfNeeded = async (responseMessage: SuperAgentUIMessage) => {
+			if (emittedOutput || personalizedTurn.kind !== 'reserved') return;
+			const hasBillableOutput = responseMessage.parts.some((part) => {
+				if (part.type === 'text' && 'text' in part && typeof part.text === 'string') {
+					return part.text.trim().length > 0;
 				}
-			})
-			.pipeThrough(
-				new TransformStream({
-					transform(chunk, controller) {
-						if (chunk.type === 'text-delta' && chunk.delta.trim() && !emittedOutput) {
-							emittedOutput = true;
-							void personalizedTurn
-								.markOutput()
-								.catch((error) => logger.warn('Failed to roll up Super Agent usage', { error }));
-						}
-						controller.enqueue(chunk);
-					}
-				})
-			);
-		return createUIMessageStreamResponse({
-			stream: uiStream,
+				return typeof part.type === 'string' && part.type.startsWith('tool-');
+			});
+			if (!hasBillableOutput) return;
+			emittedOutput = true;
+			await personalizedTurn
+				.markOutput()
+				.catch((error) => logger.warn('Failed to roll up Super Agent usage', { error }));
+		};
+
+		return createAgentUIStreamResponse({
+			agent,
+			uiMessages,
+			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal]),
 			consumeSseStream: consumeStream,
+			originalMessages: uiMessages,
+			onStepFinish: (step) => {
+				logger.info('Super Agent step finish', {
+					surface,
+					conversationId,
+					stepNumber: step.stepNumber,
+					inputTokens: step.usage.inputTokens,
+					outputTokens: step.usage.outputTokens,
+					totalTokens: step.usage.totalTokens,
+					uiMessageCount: uiMessages.length,
+					modelId: step.model.modelId
+				});
+			},
+			onFinish: async ({ responseMessage, isAborted }) => {
+				try {
+					await markUsageIfNeeded(responseMessage);
+					const assistantResponse = textFromSuperAgentParts(
+						responseMessage.parts as Array<{ type?: string; text?: string }>
+					);
+					if (assistantMessageId && conversationId) {
+						await finalizeConversationMessage(userId, assistantMessageId, {
+							content: assistantResponse,
+							parts: responseMessage.parts as unknown[],
+							status: isAborted ? 'aborted' : 'complete'
+						});
+						if (surface === 'coach' && conversationId) {
+							await linkCoachAuditsToAssistantMessage(
+								userId,
+								conversationId,
+								assistantMessageId,
+								responseMessage.parts as unknown[]
+							);
+						}
+					}
+					if (
+						!isAborted &&
+						!isContinuation &&
+						memoryConsentGiven &&
+						(await isTutorMemoryAvailable())
+					) {
+						if (lastUserMessage.trim() && assistantResponse.trim()) {
+							scheduleTutorMemoryWrite(
+								addTutorMemoryExchange(
+									userId,
+									{ user: lastUserMessage, assistant: assistantResponse },
+									{ surface: surface === 'coach' ? 'coach' : 'tutor' }
+								),
+								surface === 'coach' ? 'Coach' : context.questionType === 'frq' ? 'FRQ' : 'MCQ'
+							);
+						}
+					}
+				} finally {
+					await cleanup?.();
+				}
+			},
+			onError: (error) => {
+				logger.error(`${errorLabel} stream error`, { error });
+				return 'The personalized AI could not complete that request. Please try again.';
+			},
 			headers: {
 				'Cache-Control': 'no-cache',
-				'X-Super-Conversation-Id': conversationId!,
+				'X-Super-Conversation-Id': conversationId,
 				'X-Tutor-Personalization-Degraded': personalization.memoryDegraded ? '1' : '0',
-				'X-Super-Usage-Remaining': String(personalizedTurn.reservation.remaining),
-				...(personalizedTurn.usageWarning
+				'X-Super-Usage-Remaining':
+					personalizedTurn.kind === 'reserved'
+						? String(personalizedTurn.reservation.remaining)
+						: '0',
+				...(personalizedTurn.kind === 'reserved' && personalizedTurn.usageWarning
 					? { 'X-Super-Usage-Warning': String(personalizedTurn.usageWarning) }
 					: {})
 			}
@@ -270,7 +342,7 @@ export async function createSuperAgentStreamResponse(
 			);
 		}
 		if (cleanup) await cleanup();
-		else {
+		else if (personalizedTurn.kind === 'reserved') {
 			await personalizedTurn.releaseIfUnused().catch(() => undefined);
 			await releaseLock(lock);
 		}

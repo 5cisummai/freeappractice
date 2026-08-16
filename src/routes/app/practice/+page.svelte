@@ -16,10 +16,12 @@
 	let selectedUnit = $state('');
 	let unitRange = $state<number[] | undefined>(undefined);
 	let requestVersion = $state(0);
+	let presetQuestionId = $state('');
 	let mode = $state<'mcq' | 'frq'>('mcq');
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
 	const presetMode = $derived(page.url.searchParams.get('mode') ?? '');
+	const presetQuestion = $derived(page.url.searchParams.get('questionId') ?? '');
 
 	type ApiErrorPayload = { error?: string };
 
@@ -30,6 +32,7 @@
 		selectedUnit,
 		unitRange,
 		requestVersion,
+		presetQuestionId,
 		mode
 	});
 
@@ -47,7 +50,9 @@
 		initialized = true;
 		selectedClass = presetClass;
 		selectedUnit = presetUnit;
+		presetQuestionId = presetQuestion;
 		if (data.frqEnabled && presetMode === 'frq') mode = 'frq';
+		if (presetQuestion) requestVersion = 1;
 	});
 
 	async function syncAttempt(

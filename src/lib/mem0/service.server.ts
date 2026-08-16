@@ -3,6 +3,7 @@ import { Memory as Mem0Memory } from 'mem0ai/oss';
 import { createHmac } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 import { isSuperMemoryEnabled } from '$lib/flags';
+import { MAX_TUTOR_MEMORY_EXCHANGE_CHARS } from '$lib/super/agent-request';
 import { getMem0UserId, getTutorProfileView } from '$lib/super/profile.server';
 
 let memoryClient: Mem0Memory | null | undefined;
@@ -175,8 +176,11 @@ export async function addTutorMemoryExchange(
 	const mem0UserId = await getMem0UserId(userId);
 	await client.add(
 		[
-			{ role: 'user', content: exchange.user.slice(0, 2_000) },
-			{ role: 'assistant', content: exchange.assistant.slice(0, 2_000) }
+			{ role: 'user', content: exchange.user.slice(0, MAX_TUTOR_MEMORY_EXCHANGE_CHARS) },
+			{
+				role: 'assistant',
+				content: exchange.assistant.slice(0, MAX_TUTOR_MEMORY_EXCHANGE_CHARS)
+			}
 		],
 		{
 			userId: mem0UserId,

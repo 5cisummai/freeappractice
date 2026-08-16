@@ -3,7 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
-	import { DefaultChatTransport } from 'ai';
+	import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
 	import XIcon from '@lucide/svelte/icons/x';
 	import SquareIcon from '@lucide/svelte/icons/square';
@@ -17,6 +17,14 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
+	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
+	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
+	import {
+		getCoachPracticeQuestionToolOutput,
+		isCoachPracticeQuestionPending,
+		type CoachPracticeQuestionToolOutput
+	} from '$lib/super/coach-practice-question';
+	import { MAX_SUPER_AGENT_MESSAGES, minimalSuperAgentClientMessages } from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import type { SuperAgentUIMessage } from '$lib/super/coach.server';
 	import { toast } from 'svelte-sonner';
@@ -121,6 +129,7 @@
 
 	const chat = new Chat<SuperAgentUIMessage>({
 		messages: [],
+		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 		transport: new DefaultChatTransport<SuperAgentUIMessage>({
 			api: '/api/tutor/chat',
 			fetch: async (url, init) => {
@@ -145,7 +154,9 @@
 						...(frqAttemptId ? { frqAttemptId } : {})
 					},
 					...(conversationId ? { conversationId } : {}),
-					messages: messages.slice(-12)
+					messages: conversationId
+						? minimalSuperAgentClientMessages(messages)
+						: messages.slice(-MAX_SUPER_AGENT_MESSAGES)
 				}
 			})
 		})
@@ -160,7 +171,9 @@
 
 	type ToolPart = {
 		type: string;
+		toolCallId?: string;
 		state?: string;
+		input?: unknown;
 		output?: unknown;
 		errorText?: string;
 	};
@@ -185,6 +198,15 @@
 	}
 
 	function toolLabel(part: ToolPart): string {
+		if (part.type === 'tool-give_practice_question') {
+			if (part.errorText || part.state === 'output-error') {
+				return 'Could not finish practice question';
+			}
+			if (part.state === 'input-streaming' || part.state === 'input-available') {
+				return 'Waiting for question answer…';
+			}
+			return 'Finished practice question';
+		}
 		const name = part.type
 			.replace(/^tool-/, '')
 			.replaceAll('_', ' ')
@@ -440,6 +462,24 @@
 		requestAnimationFrame(() => triggerEl?.focus());
 	}
 
+	async function submitPracticeQuestionResult(
+		toolCallId: string,
+		output: CoachPracticeQuestionToolOutput
+	): Promise<void> {
+		if (!toolCallId || streaming) return;
+		try {
+			await chat.addToolOutput({
+				tool: 'give_practice_question',
+				toolCallId,
+				output
+			});
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'Could not submit your practice answer.'
+			);
+		}
+	}
+
 	async function send(): Promise<void> {
 		const text = inputText.trim();
 		if (!text || streaming || !sessionId) return;
@@ -568,6 +608,16 @@
 												</figcaption>
 											{/if}
 										</figure>
+									{/if}
+									{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(part.output)}
+									{#if isCoachPracticeQuestionPending(part) && part.toolCallId}
+										<CoachPracticeQuestionCard
+											input={part.input}
+											onResolve={(output) =>
+												void submitPracticeQuestionResult(part.toolCallId!, output)}
+										/>
+									{:else if practiceQuestionResult}
+										<CoachPracticeQuestionResult result={practiceQuestionResult} />
 									{/if}
 									<div
 										class="flex items-center gap-2 rounded-lg bg-muted/50 px-2 py-1 text-xs text-muted-foreground"

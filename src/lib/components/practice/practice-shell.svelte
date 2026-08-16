@@ -20,6 +20,7 @@
 		selectedUnit?: string;
 		unitRange?: number[];
 		requestVersion?: number;
+		presetQuestionId?: string;
 		mode?: 'mcq' | 'frq';
 	};
 	export type PracticeCapabilities = {
@@ -67,6 +68,7 @@
 	let selectedUnit = $state(untrack(() => initial.selectedUnit ?? ''));
 	let unitRange = $state<number[] | undefined>(untrack(() => initial.unitRange));
 	let requestVersion = $state(untrack(() => initial.requestVersion ?? 0));
+	let presetQuestionId = $state(untrack(() => initial.presetQuestionId ?? ''));
 	let mode = $state<'mcq' | 'frq'>(untrack(() => initial.mode ?? 'mcq'));
 	let count = $state(10);
 	let quizGenerating = $state(false);
@@ -120,6 +122,9 @@
 			unitRange = initial.unitRange;
 		}
 		if (initial.mode !== undefined && initial.mode !== mode) mode = initial.mode;
+		if (initial.presetQuestionId !== undefined && initial.presetQuestionId !== presetQuestionId) {
+			presetQuestionId = initial.presetQuestionId;
+		}
 		const nextVersion = initial.requestVersion ?? 0;
 		if (nextVersion !== lastInitialRequestVersion) {
 			lastInitialRequestVersion = nextVersion;
@@ -249,6 +254,7 @@
 						{selectedUnit}
 						{unitRange}
 						{requestVersion}
+						presetQuestionId={presetQuestionId}
 						showFirstUseHint={showFirstUseHints}
 						{tutorMode}
 						onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
@@ -290,6 +296,7 @@
 								selectedUnit,
 								unitRange,
 								requestVersion,
+								presetQuestionId: presetQuestionId || undefined,
 								experiment
 							})}
 							expanded={isExpanded}

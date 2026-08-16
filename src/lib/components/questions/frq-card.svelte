@@ -21,8 +21,7 @@
 		serializeFrqLatestDraft,
 		serializeFrqQuestionDraft
 	} from '$lib/question-bank/frq/draft.client.js';
-	import { PoolWarmingError } from '$lib/question-bank/request.client.js';
-	import { requestFrqQuestion } from '$lib/question-bank/request.client';
+	import { PoolWarmingError, requestFrqQuestion, requestFrqQuestionById } from '$lib/question-bank/request.client';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;
@@ -33,10 +32,13 @@
 		selectedUnit?: string;
 		unitRange?: readonly number[];
 		requestVersion?: number;
+		presetQuestionId?: string;
 		showFirstUseHint?: boolean;
 		tutorMode?: TutorMode;
 		isPersonalizedTutor?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
+		onSkip?: () => void;
+		skipAfterGrade?: boolean;
 	};
 
 	let {
@@ -44,10 +46,13 @@
 		selectedUnit = '',
 		unitRange,
 		requestVersion = 0,
+		presetQuestionId = '',
 		showFirstUseHint = false,
 		isPersonalizedTutor = false,
 		tutorMode = isPersonalizedTutor ? 'personalized' : 'free',
-		onGraded
+		onGraded,
+		onSkip,
+		skipAfterGrade = true
 	}: Props = $props();
 
 	let question = $state<PublicFrqQuestion | null>(null);
@@ -64,6 +69,7 @@
 	let attemptId = $state('');
 	let disagreementReported = $state(false);
 	let seenQuestionIds = $state<string[]>([]);
+	let consumedPresetQuestionId = $state(false);
 	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
 	let loadGeneration = 0;
 
@@ -162,7 +168,11 @@
 			: 'Loading a written-response task…';
 		try {
 			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const result = await requestFrqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			const presetId = consumedPresetQuestionId ? '' : presetQuestionId.trim();
+			const result = presetId
+				? await requestFrqQuestionById(presetId)
+				: await requestFrqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+			if (presetId) consumedPresetQuestionId = true;
 			if (result.exclusionsReset) {
 				seenQuestionIds = [];
 			}
@@ -257,6 +267,14 @@
 		attemptId = '';
 		disagreementReported = false;
 		await loadQuestion();
+	}
+
+	function handleSkip(): void {
+		if (onSkip) {
+			onSkip();
+			return;
+		}
+		void nextQuestion();
 	}
 
 	function reportDisagreement(): void {
@@ -377,11 +395,13 @@
 				</div>
 
 				<div class="flex flex-wrap justify-end gap-2 border-t border-border/70 pt-5">
-					<Button variant="outline" onclick={() => void nextQuestion()} disabled={isGrading}>
+					<Button variant="outline" onclick={handleSkip} disabled={isGrading}>
 						Skip
 					</Button>
 					{#if grade}
-						<Button onclick={() => void nextQuestion()}>Next question</Button>
+						{#if skipAfterGrade}
+							<Button onclick={() => void nextQuestion()}>Next question</Button>
+						{/if}
 					{:else}
 						<Button onclick={() => void submit()} disabled={!hasResponse || isGrading}>
 							{isGrading ? 'Grading…' : 'Submit for feedback'}

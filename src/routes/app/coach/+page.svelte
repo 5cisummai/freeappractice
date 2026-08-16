@@ -4,7 +4,8 @@
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
-	import { DefaultChatTransport } from 'ai';
+	import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
+	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
@@ -17,6 +18,7 @@
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import TargetIcon from '@lucide/svelte/icons/target';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
@@ -27,7 +29,20 @@
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
+	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
+	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
+	import {
+		getCoachPracticeQuestionToolOutput,
+		isCoachPracticeQuestionPending,
+		type CoachPracticeQuestionToolOutput
+	} from '$lib/super/coach-practice-question';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
+	import {
+		coachComposerActions,
+		formatCoachComposerMessage,
+		type CoachComposerActionId
+	} from '$lib/super/coach-composer-actions';
+	import { MAX_SUPER_AGENT_MESSAGES, minimalSuperAgentClientMessages } from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
@@ -44,8 +59,19 @@
 	let conversationsLoading = $state(false);
 	let conversationsError = $state('');
 	let conversationsOpen = $state(false);
+	let coachActionsOpen = $state(false);
+	let selectedCoachActionIds = $state<CoachComposerActionId[]>([]);
+	let composerInputRef = $state<HTMLTextAreaElement | null>(null);
 	let loadingConversationId = $state<string | null>(null);
 	let conversationLoadRequest = 0;
+	let pendingCoachActions: CoachComposerActionId[] = [];
+
+	const coachActionIcons: Record<CoachComposerActionId, Component> = {
+		'practice-question': TargetIcon,
+		'study-next': BookOpenIcon,
+		'study-plan': CalendarDaysIcon,
+		'review-progress': BarChart3Icon
+	};
 
 	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
 	const COACH_CONVERSATION_STORAGE_KEY = 'super-coach-conversation-id';
@@ -58,12 +84,6 @@
 		updatedAt: string;
 	};
 
-	const suggestions: Array<{ text: string; icon: Component }> = [
-		{ text: 'What should I study next?', icon: BookOpenIcon },
-		{ text: 'Build me a plan for this week', icon: CalendarDaysIcon },
-		{ text: 'Help me focus on my weakest unit', icon: TargetIcon }
-	];
-
 	const toolActivityLabels: Record<string, { running: string; complete: string }> = {
 		'tool-read_course_catalog': {
 			running: 'Checking the course catalog…',
@@ -73,9 +93,9 @@
 			running: 'Reviewing your goals…',
 			complete: 'Reviewed your goals'
 		},
-		'tool-read_progress': {
-			running: 'Checking your recent practice…',
-			complete: 'Checked your recent practice'
+		'tool-read_progress_summary': {
+			running: 'Checking your weakest units…',
+			complete: 'Checked your weakest units'
 		},
 		'tool-read_quiz_attempt': {
 			running: 'Reviewing your quiz…',
@@ -100,11 +120,28 @@
 		'tool-generate_diagram': {
 			running: 'Drawing a diagram…',
 			complete: 'Drew a diagram'
+		},
+		'tool-read_activity_summary': {
+			running: 'Checking your activity…',
+			complete: 'Checked your activity'
+		},
+		'tool-read_unit_detail': {
+			running: 'Reviewing this unit…',
+			complete: 'Reviewed this unit'
+		},
+		'tool-read_frq_performance': {
+			running: 'Reviewing your FRQ results…',
+			complete: 'Reviewed your FRQ results'
+		},
+		'tool-give_practice_question': {
+			running: 'Waiting for question answer…',
+			complete: 'Picked a practice question'
 		}
 	};
 
 	const coach = new Chat<CoachUIMessage>({
 		messages: [],
+		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 		transport: new DefaultChatTransport<CoachUIMessage>({
 			api: '/api/coach',
 			fetch: async (url, init) => {
@@ -122,7 +159,10 @@
 				body: {
 					sessionId,
 					...(conversationId ? { conversationId } : {}),
-					messages: messages.slice(-12)
+					...(pendingCoachActions.length ? { coachActions: pendingCoachActions } : {}),
+					messages: conversationId
+						? minimalSuperAgentClientMessages(messages)
+						: messages.slice(-MAX_SUPER_AGENT_MESSAGES)
 				}
 			})
 		})
@@ -131,9 +171,15 @@
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
 	let hasMessages = $derived(coach.messages.length > 0);
 	let emptyChat = $derived(!hasMessages);
+	let canSendComposer = $derived(
+		Boolean(sessionId) &&
+			!streaming &&
+			(input.trim().length > 0 || selectedCoachActionIds.length > 0)
+	);
 
 	type CoachToolPart = {
 		type: `tool-${string}`;
+		toolCallId?: string;
 		state?: string;
 		input?: unknown;
 		output?: unknown;
@@ -506,15 +552,59 @@
 		void approve([category]);
 	}
 
+	async function submitPracticeQuestionResult(
+		toolCallId: string,
+		output: CoachPracticeQuestionToolOutput
+	): Promise<void> {
+		if (!toolCallId || streaming) return;
+		try {
+			await coach.addToolOutput({
+				tool: 'give_practice_question',
+				toolCallId,
+				output
+			});
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'Could not submit your practice answer.'
+			);
+		}
+	}
+
 	async function send(text: string) {
-		const message = text.trim();
-		if (!message || streaming || !sessionId) return;
+		const trimmed = text.trim();
+		const actionIds = [...selectedCoachActionIds];
+		if ((!trimmed && actionIds.length === 0) || streaming || !sessionId) return;
+
+		const message = formatCoachComposerMessage(trimmed, actionIds);
+		pendingCoachActions = actionIds;
 		input = '';
+		selectedCoachActionIds = [];
 		try {
 			await coach.sendMessage({ text: message });
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Coach is unavailable right now.');
+		} finally {
+			pendingCoachActions = [];
 		}
+	}
+
+	function addCoachAction(actionId: CoachComposerActionId) {
+		if (selectedCoachActionIds.includes(actionId)) return;
+		selectedCoachActionIds = [...selectedCoachActionIds, actionId];
+		coachActionsOpen = false;
+		void tick().then(() => composerInputRef?.focus());
+	}
+
+	function removeCoachAction(actionId: CoachComposerActionId) {
+		selectedCoachActionIds = selectedCoachActionIds.filter((id) => id !== actionId);
+	}
+
+	function toggleCoachAction(actionId: CoachComposerActionId) {
+		if (selectedCoachActionIds.includes(actionId)) {
+			removeCoachAction(actionId);
+			return;
+		}
+		addCoachAction(actionId);
 	}
 
 	async function startNewConversation(): Promise<void> {
@@ -524,6 +614,7 @@
 		conversationId = '';
 		sessionId = crypto.randomUUID();
 		activityOpen = {};
+		selectedCoachActionIds = [];
 		conversationsOpen = false;
 		loadingConversationId = null;
 		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
@@ -726,6 +817,18 @@
 															{/if}
 														</figure>
 													{/if}
+													{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(
+														toolPart.output
+													)}
+													{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId}
+														<CoachPracticeQuestionCard
+															input={toolPart.input}
+															onResolve={(output) =>
+																void submitPracticeQuestionResult(toolPart.toolCallId!, output)}
+														/>
+													{:else if practiceQuestionResult}
+														<CoachPracticeQuestionResult result={practiceQuestionResult} />
+													{/if}
 													{@const approval = getApprovalProposal(toolPart)}
 													{#if approval}
 														{@const summary = getApprovalSummary(approval)}
@@ -918,9 +1021,65 @@
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>
-					<div class="flex items-end gap-2 py-1.5 pr-1.5 pl-5 sm:pl-6">
+					{#if selectedCoachActionIds.length}
+						<PromptInput.Header class="px-2.5 pt-2">
+							{#each selectedCoachActionIds as actionId (actionId)}
+								{@const action = coachComposerActions.find((item) => item.id === actionId)}
+								{@const Icon = coachActionIcons[actionId]}
+								{#if action}
+									<span
+										class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
+									>
+										<Icon class="size-3.5 text-muted-foreground" aria-hidden="true" />
+										{action.title}
+										<button
+											type="button"
+											class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+											aria-label={`Remove ${action.title}`}
+											onclick={() => removeCoachAction(actionId)}
+										>
+											<XIcon class="size-3" aria-hidden="true" />
+										</button>
+									</span>
+								{/if}
+							{/each}
+						</PromptInput.Header>
+					{/if}
+					<div class="flex items-end gap-1 p-1.5">
+						<PromptInput.ActionMenu bind:open={coachActionsOpen}>
+							<PromptInput.ActionMenuTrigger
+								class="size-9 shrink-0 self-end rounded-full text-muted-foreground hover:text-foreground"
+								disabled={!sessionId || streaming}
+								aria-label="Coach actions"
+							/>
+							<PromptInput.ActionMenuContent
+								align="start"
+								sideOffset={8}
+								class="w-[min(18rem,calc(100vw-2rem))] p-1"
+							>
+								{#each coachComposerActions as action (action.id)}
+									{@const Icon = coachActionIcons[action.id]}
+									{@const selected = selectedCoachActionIds.includes(action.id)}
+									<PromptInput.ActionMenuItem
+										class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
+										disabled={!sessionId || streaming}
+										onSelect={() => toggleCoachAction(action.id)}
+										variant="secondary"
+									>
+										<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+										<div class="min-w-0 flex-1 text-left">
+											<div class="text-sm leading-5 font-medium">{action.title}</div>
+											<div class="text-xs leading-4 text-muted-foreground">
+												{action.description}
+											</div>
+										</div>
+									</PromptInput.ActionMenuItem>
+								{/each}
+							</PromptInput.ActionMenuContent>
+						</PromptInput.ActionMenu>
 						<PromptInput.Body class="min-w-0 flex-1">
 							<PromptInput.Textarea
+								bind:ref={composerInputRef}
 								bind:value={input}
 								placeholder="Ask Coach anything…"
 								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
@@ -928,7 +1087,7 @@
 						</PromptInput.Body>
 						<PromptInput.Submit
 							status={coach.status as ChatStatus}
-							disabled={!sessionId || (!streaming && !input.trim())}
+							disabled={!canSendComposer && !streaming}
 							onStop={() => coach.stop()}
 							class="size-9 shrink-0 self-end rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
 						>
@@ -946,18 +1105,18 @@
 						class="mt-5 w-full space-y-0.5 px-1 sm:mt-6 sm:px-2"
 						out:fade={{ duration: motionMs * 0.65, easing: cubicOut }}
 					>
-						{#each suggestions as suggestion (suggestion.text)}
-							{@const Icon = suggestion.icon}
+						{#each coachComposerActions as action (action.id)}
+							{@const Icon = coachActionIcons[action.id]}
 							<li>
 								<button
 									type="button"
 									class="group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted/80 focus-visible:bg-muted/80 focus-visible:outline-none"
 									disabled={!sessionId || streaming}
-									onclick={() => void send(suggestion.text)}
+									onclick={() => addCoachAction(action.id)}
 								>
 									<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
 									<span class="min-w-0 flex-1 text-sm leading-5 text-foreground/85">
-										{suggestion.text}
+										{action.title}
 									</span>
 								</button>
 							</li>

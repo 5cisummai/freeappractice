@@ -112,14 +112,29 @@ export async function findGradedFrqAttempt(
 	return rows[0] ? (await hydrateAttempts([rows[0] as IFrqAttempt]))[0] : null;
 }
 
+export type RecentGradedFrqAttemptQuery = {
+	limit?: number;
+	apClass?: string;
+	unit?: string;
+};
+
 export async function findRecentGradedFrqAttempts(
 	userId: string,
-	limit: number
+	options: number | RecentGradedFrqAttemptQuery = 8
 ): Promise<IFrqAttempt[]> {
+	const normalized = typeof options === 'number' ? { limit: options } : options;
+	const limit = Math.min(Math.max(normalized.limit ?? 8, 1), 20);
 	const rows = await getNeonDatabase()
 		.select()
 		.from(frqAttempts)
-		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
+		.where(
+			and(
+				eq(frqAttempts.userId, userId),
+				eq(frqAttempts.status, 'graded'),
+				normalized.apClass ? eq(frqAttempts.apClass, normalized.apClass) : undefined,
+				normalized.unit ? eq(frqAttempts.unit, normalized.unit) : undefined
+			)
+		)
 		.orderBy(desc(frqAttempts.createdAt))
 		.limit(limit);
 	return hydrateAttempts(rows as IFrqAttempt[]);

@@ -74,6 +74,9 @@
 	const requestVersion = $derived(
 		model.delivery.kind === 'unlimited' ? model.delivery.requestVersion : 0
 	);
+	const presetQuestionId = $derived(
+		model.delivery.kind === 'unlimited' ? model.delivery.presetQuestionId : undefined
+	);
 	const isLandingPage = $derived(page.route.id === '/');
 
 	let promptElement: HTMLDivElement | null = null;
@@ -89,6 +92,7 @@
 		getSelectedUnit: () => selectedUnit,
 		getUnitRange: () => unitRange,
 		getRequestVersion: () => requestVersion,
+		getPresetQuestionId: () => presetQuestionId,
 		getQuestionNumber: () => questionNumber,
 		getQuizMode: () => quizMode,
 		getQuizQuestion: () => quizQuestion,
