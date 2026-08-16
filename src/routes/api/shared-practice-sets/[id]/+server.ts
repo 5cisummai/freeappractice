@@ -36,7 +36,10 @@ export const PATCH: RequestHandler = withAuthedHandler(
 			throw error;
 		}
 	},
-	{ logLabel: 'Attach shared quiz to organization', errorMessage: 'Could not share with your group.' }
+	{
+		logLabel: 'Attach shared quiz to organization',
+		errorMessage: 'Could not share with your group.'
+	}
 );
 
 export const DELETE: RequestHandler = withAuthedHandler(

@@ -69,7 +69,7 @@
 								<SubjectIcon class="size-5" />
 							</div>
 							<div class="min-w-0 flex-1 space-y-1">
-								<p class="line-clamp-2 font-medium leading-snug">{material.title}</p>
+								<p class="line-clamp-2 leading-snug font-medium">{material.title}</p>
 								<p class="text-sm text-muted-foreground">
 									{material.apClass}
 									{#if material.unit && material.unit !== 'All Units'}
@@ -121,7 +121,9 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="rounded-2xl border border-dashed border-border/70 bg-card/50 px-6 py-12 text-center">
+		<div
+			class="rounded-2xl border border-dashed border-border/70 bg-card/50 px-6 py-12 text-center"
+		>
 			<div
 				class="mx-auto flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"
 			>

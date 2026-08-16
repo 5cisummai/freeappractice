@@ -249,7 +249,9 @@ export const onboardingSubjectGroups: OnboardingSubjectGroup[] = SUBJECT_GROUPS.
 
 const subjectByName = new Map(onboardingSubjects.map((subject) => [subject.name, subject]));
 
-export function getSubjectPresentation(name: string): Pick<OnboardingSubject, 'icon' | 'iconClass'> {
+export function getSubjectPresentation(
+	name: string
+): Pick<OnboardingSubject, 'icon' | 'iconClass'> {
 	const subject = subjectByName.get(name);
 	if (subject) return { icon: subject.icon, iconClass: subject.iconClass };
 	return { icon: BookOpenIcon, iconClass: SUBJECT_COLOR_THEMES.primary.iconClass };

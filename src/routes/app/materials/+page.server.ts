@@ -12,7 +12,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	return {
 		materials,
-		canManageMaterials:
-			activeOrganization.role === 'owner' || activeOrganization.role === 'admin'
+		canManageMaterials: activeOrganization.role === 'owner' || activeOrganization.role === 'admin'
 	};
 };
