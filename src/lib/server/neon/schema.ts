@@ -7,8 +7,11 @@ import {
 	authAccounts,
 	authAccountsRelations,
 	authInvitations,
+	authInvitationsRelations,
 	authMembers,
+	authMembersRelations,
 	authOrganizations,
+	authOrganizationsRelations,
 	authRateLimits,
 	authSessions,
 	authSessionsRelations,
@@ -30,5 +33,8 @@ export const betterAuthSchema = {
 	rateLimit: authRateLimits,
 	authUsersRelations,
 	authSessionsRelations,
-	authAccountsRelations
+	authAccountsRelations,
+	authOrganizationsRelations,
+	authMembersRelations,
+	authInvitationsRelations
 };
