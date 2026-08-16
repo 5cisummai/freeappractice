@@ -66,11 +66,11 @@ export const coachPracticeQuestionToolOutputSchema = z.object({
 	frqFeedback: z.string().optional().describe('FRQ only: short overall grading feedback.')
 });
 
-export type CoachPracticeQuestionToolOutput = z.infer<
-	typeof coachPracticeQuestionToolOutputSchema
->;
+export type CoachPracticeQuestionToolOutput = z.infer<typeof coachPracticeQuestionToolOutputSchema>;
 
-export function getCoachPracticeQuestionToolInput(value: unknown): CoachPracticeQuestionToolInput | null {
+export function getCoachPracticeQuestionToolInput(
+	value: unknown
+): CoachPracticeQuestionToolInput | null {
 	const parsed = coachPracticeQuestionToolInputSchema.safeParse(value);
 	return parsed.success ? parsed.data : null;
 }
@@ -146,10 +146,7 @@ export function buildCoachPracticeQuestionToolOutput(input: {
 	};
 }
 
-export function isCoachPracticeQuestionPending(part: {
-	type?: string;
-	state?: string;
-}): boolean {
+export function isCoachPracticeQuestionPending(part: { type?: string; state?: string }): boolean {
 	return (
 		part.type === 'tool-give_practice_question' &&
 		(part.state === 'input-available' || part.state === 'input-streaming')

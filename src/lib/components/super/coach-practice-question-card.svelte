@@ -30,9 +30,7 @@
 	let resolved = $state(false);
 	let requestVersion = $state(0);
 
-	const modeLabel = $derived(
-		question?.mode === 'frq' ? 'Written response' : 'Multiple choice'
-	);
+	const modeLabel = $derived(question?.mode === 'frq' ? 'Written response' : 'Multiple choice');
 
 	onMount(() => {
 		void loadQuestion();
@@ -139,7 +137,7 @@
 				selectedClass={question.apClass}
 				selectedUnit={question.unit}
 				presetQuestionId={question.questionId}
-				requestVersion={requestVersion}
+				{requestVersion}
 				tutorMode="hidden"
 				onGraded={handleFrqGraded}
 				onSkip={handleSkipped}

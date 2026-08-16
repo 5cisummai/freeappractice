@@ -24,7 +24,10 @@
 		isCoachPracticeQuestionPending,
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
-	import { MAX_SUPER_AGENT_MESSAGES, minimalSuperAgentClientMessages } from '$lib/super/agent-request';
+	import {
+		MAX_SUPER_AGENT_MESSAGES,
+		minimalSuperAgentClientMessages
+	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import type { SuperAgentUIMessage } from '$lib/super/coach.server';
 	import { toast } from 'svelte-sonner';

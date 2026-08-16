@@ -61,6 +61,11 @@ function isToolPart(part: { type?: string; state?: string }): boolean {
 	return typeof part.type === 'string' && part.type.startsWith('tool-');
 }
 
+type SuperAgentClientMessage = {
+	role: 'user' | 'assistant' | 'system';
+	parts: unknown[];
+};
+
 export function lastSuperAgentUserText(messages: SuperAgentRequest['messages']): string {
 	for (let index = messages.length - 1; index >= 0; index -= 1) {
 		const message = messages[index];
@@ -77,20 +82,23 @@ export function lastSuperAgentUserText(messages: SuperAgentRequest['messages']):
 	return '';
 }
 
-export function isSuperAgentToolContinuation(messages: SuperAgentRequest['messages']): boolean {
+export function isSuperAgentToolContinuation(messages: SuperAgentClientMessage[]): boolean {
 	const lastMessage = messages.at(-1);
 	if (!lastMessage || lastMessage.role !== 'assistant') return false;
 	return lastMessage.parts.some(
 		(part) =>
-			isToolPart(part) &&
-			(part.state === 'output-available' || part.state === 'output-error')
+			typeof part === 'object' &&
+			part !== null &&
+			isToolPart(part as { type?: string; state?: string }) &&
+			((part as { state?: string }).state === 'output-available' ||
+				(part as { state?: string }).state === 'output-error')
 	);
 }
 
 /** Send only the latest user turn or tool continuation; server loads the rest from storage. */
 export function minimalSuperAgentClientMessages(
-	messages: SuperAgentRequest['messages']
-): SuperAgentRequest['messages'] {
+	messages: SuperAgentClientMessage[]
+): SuperAgentClientMessage[] {
 	if (messages.length === 0) return [];
 	if (isSuperAgentToolContinuation(messages)) {
 		const last = messages.at(-1);
@@ -100,7 +108,7 @@ export function minimalSuperAgentClientMessages(
 		if (messages[index].role === 'user') return [messages[index]];
 	}
 	const last = messages.at(-1);
-	return last ? [last] : [];
+	return last && last.role !== 'system' ? [last] : [];
 }
 
 export function toSuperAgentContext(input: SuperAgentRequest['context']): SuperAgentContext {

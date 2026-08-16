@@ -131,7 +131,9 @@
 	<AlertDialog.Content onclick={stopRowActivation}>
 		<AlertDialog.Header>
 			<AlertDialog.Title>Rename conversation</AlertDialog.Title>
-			<AlertDialog.Description>Choose a short title you will recognize later.</AlertDialog.Description>
+			<AlertDialog.Description
+				>Choose a short title you will recognize later.</AlertDialog.Description
+			>
 		</AlertDialog.Header>
 		<Input
 			bind:value={renameValue}
@@ -147,7 +149,10 @@
 		/>
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel disabled={busy}>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action disabled={busy || !renameValue.trim()} onclick={() => void confirmRename()}>
+			<AlertDialog.Action
+				disabled={busy || !renameValue.trim()}
+				onclick={() => void confirmRename()}
+			>
 				Save
 			</AlertDialog.Action>
 		</AlertDialog.Footer>
@@ -159,7 +164,9 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete conversation?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This removes <span class="ph-mask-pii font-medium text-foreground">{conversation.title}</span>
+				This removes <span class="ph-mask-pii font-medium text-foreground"
+					>{conversation.title}</span
+				>
 				and its messages. This cannot be undone.
 			</AlertDialog.Description>
 		</AlertDialog.Header>

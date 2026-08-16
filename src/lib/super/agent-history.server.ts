@@ -110,9 +110,7 @@ export async function ensureConversationHistorySummary(
 	const existingSummary =
 		typeof context.historySummary === 'string' ? context.historySummary : undefined;
 	const existingThrough =
-		typeof context.summarizedThroughPosition === 'number'
-			? context.summarizedThroughPosition
-			: -1;
+		typeof context.summarizedThroughPosition === 'number' ? context.summarizedThroughPosition : -1;
 
 	if (summarizedThroughPosition <= existingThrough) {
 		return existingSummary;
@@ -125,12 +123,7 @@ export async function ensureConversationHistorySummary(
 	});
 	if (!summary) return existingSummary;
 
-	await saveConversationHistorySummary(
-		userId,
-		conversationId,
-		summary,
-		summarizedThroughPosition
-	);
+	await saveConversationHistorySummary(userId, conversationId, summary, summarizedThroughPosition);
 	return summary;
 }
 
@@ -148,11 +141,13 @@ export async function buildSuperAgentUiMessages(input: {
 		.filter((message): message is SuperAgentUIMessage => message !== null);
 
 	if (input.isContinuation) {
-		const clientAssistant = [...input.clientMessages].reverse().find(
-			(message) => message.role === 'assistant'
-		);
+		const clientAssistant = [...input.clientMessages]
+			.reverse()
+			.find((message) => message.role === 'assistant');
 		if (clientAssistant) {
-			const lastAssistantIndex = uiMessages.findLastIndex((message) => message.role === 'assistant');
+			const lastAssistantIndex = uiMessages.findLastIndex(
+				(message) => message.role === 'assistant'
+			);
 			if (lastAssistantIndex >= 0) {
 				uiMessages[lastAssistantIndex] = {
 					...uiMessages[lastAssistantIndex],

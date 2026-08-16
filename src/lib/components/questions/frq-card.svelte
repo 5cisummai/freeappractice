@@ -21,7 +21,11 @@
 		serializeFrqLatestDraft,
 		serializeFrqQuestionDraft
 	} from '$lib/question-bank/frq/draft.client.js';
-	import { PoolWarmingError, requestFrqQuestion, requestFrqQuestionById } from '$lib/question-bank/request.client';
+	import {
+		PoolWarmingError,
+		requestFrqQuestion,
+		requestFrqQuestionById
+	} from '$lib/question-bank/request.client';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const MAX_SEEN_QUESTION_IDS = 100;
@@ -395,9 +399,7 @@
 				</div>
 
 				<div class="flex flex-wrap justify-end gap-2 border-t border-border/70 pt-5">
-					<Button variant="outline" onclick={handleSkip} disabled={isGrading}>
-						Skip
-					</Button>
+					<Button variant="outline" onclick={handleSkip} disabled={isGrading}>Skip</Button>
 					{#if grade}
 						{#if skipAfterGrade}
 							<Button onclick={() => void nextQuestion()}>Next question</Button>

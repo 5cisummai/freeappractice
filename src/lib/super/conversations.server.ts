@@ -170,7 +170,10 @@ export async function renameOwnedConversation(
 	return updated.title;
 }
 
-export async function deleteOwnedConversation(userId: string, conversationId: string): Promise<void> {
+export async function deleteOwnedConversation(
+	userId: string,
+	conversationId: string
+): Promise<void> {
 	const [deleted] = await getNeonDatabase()
 		.delete(conversations)
 		.where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))

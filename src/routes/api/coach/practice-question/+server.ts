@@ -23,7 +23,7 @@ export const POST: RequestHandler = withAuthedHandler(
 
 		let body: unknown;
 		try {
-			body = await readJsonBody(event.request);
+			body = await readJsonBody(event.request, 16 * 1024);
 		} catch {
 			return json({ error: 'Invalid practice question request' }, { status: 400 });
 		}

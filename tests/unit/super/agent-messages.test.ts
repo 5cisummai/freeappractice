@@ -62,8 +62,12 @@ describe('pruneSuperAgentModelMessages', () => {
 			message.role === 'tool' ? message.content : []
 		);
 
-		expect(toolResults.some((part) => part.toolCallId === 'old-call')).toBe(false);
-		expect(toolResults.some((part) => part.toolCallId === 'new-call')).toBe(true);
+		expect(toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'old-call')).toBe(
+			false
+		);
+		expect(toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'new-call')).toBe(
+			true
+		);
 	});
 
 	it('keeps give_practice_question results longer than bulky read tools', () => {
@@ -146,8 +150,14 @@ describe('pruneSuperAgentModelMessages', () => {
 			message.role === 'tool' ? message.content : []
 		);
 
-		expect(toolResults.some((part) => part.toolCallId === 'insights-call')).toBe(false);
-		expect(toolResults.some((part) => part.toolCallId === 'old-question')).toBe(true);
-		expect(toolResults.some((part) => part.toolCallId === 'new-question')).toBe(true);
+		expect(
+			toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'insights-call')
+		).toBe(false);
+		expect(
+			toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'old-question')
+		).toBe(true);
+		expect(
+			toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'new-question')
+		).toBe(true);
 	});
 });

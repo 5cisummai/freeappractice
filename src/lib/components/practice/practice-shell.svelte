@@ -247,7 +247,7 @@
 						{selectedUnit}
 						{unitRange}
 						{requestVersion}
-						presetQuestionId={presetQuestionId}
+						{presetQuestionId}
 						showFirstUseHint={showFirstUseHints}
 						{tutorMode}
 						onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}

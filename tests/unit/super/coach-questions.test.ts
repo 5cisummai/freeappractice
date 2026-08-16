@@ -78,11 +78,8 @@ describe('giveCoachPracticeQuestion', () => {
 			apClass: 'AP Physics 1',
 			unit: 'Unit 1',
 			prompt: 'What is velocity?',
-			practiceHref:
-				'/app/practice?apClass=AP+Physics+1&unit=Unit+1&questionId=mcq-1',
-			options: expect.arrayContaining([
-				{ id: 'A', label: 'A', text: 'Speed with direction' }
-			])
+			practiceHref: '/app/practice?apClass=AP+Physics+1&unit=Unit+1&questionId=mcq-1',
+			options: expect.arrayContaining([{ id: 'A', label: 'A', text: 'Speed with direction' }])
 		});
 	});
 
@@ -97,7 +94,15 @@ describe('giveCoachPracticeQuestion', () => {
 					unit: 'Unit 2',
 					topicsCovered: 'Cells',
 					prompt: 'Describe osmosis.',
-					sections: [{ id: 'a', label: 'Part A', prompt: 'Explain the process.', responseKind: 'text', maxPoints: 4 }],
+					sections: [
+						{
+							id: 'a',
+							label: 'Part A',
+							prompt: 'Explain the process.',
+							responseKind: 'text',
+							maxPoints: 4
+						}
+					],
 					materials: []
 				}
 			}
@@ -114,8 +119,7 @@ describe('giveCoachPracticeQuestion', () => {
 			mode: 'frq',
 			questionId: 'frq-1',
 			prompt: 'Describe osmosis.',
-			practiceHref:
-				'/app/practice?apClass=AP+Biology&unit=Unit+2&questionId=frq-1&mode=frq'
+			practiceHref: '/app/practice?apClass=AP+Biology&unit=Unit+2&questionId=frq-1&mode=frq'
 		});
 	});
 });

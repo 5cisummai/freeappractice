@@ -84,8 +84,7 @@ export async function createSuperAgentStreamResponse(
 	const clientMessages = messages;
 	const isContinuation = isSuperAgentToolContinuation(clientMessages);
 	type PersonalizedTurnHandle =
-		| Awaited<ReturnType<typeof startPersonalizedTurn>>
-		| { kind: 'continuation' };
+		Awaited<ReturnType<typeof startPersonalizedTurn>> | { kind: 'continuation' };
 	let personalizedTurn: PersonalizedTurnHandle;
 	if (isContinuation) {
 		personalizedTurn = { kind: 'continuation' };

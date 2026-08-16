@@ -43,7 +43,10 @@
 		formatCoachComposerMessage,
 		type CoachComposerActionId
 	} from '$lib/super/coach-composer-actions';
-	import { MAX_SUPER_AGENT_MESSAGES, minimalSuperAgentClientMessages } from '$lib/super/agent-request';
+	import {
+		MAX_SUPER_AGENT_MESSAGES,
+		minimalSuperAgentClientMessages
+	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
 	import { toast } from 'svelte-sonner';
@@ -622,7 +625,7 @@
 		sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
 	}
 
-	function handleConversationRenamed(updated: CoachConversation) {
+	function handleConversationRenamed(updated: Pick<CoachConversation, 'id' | 'title'>) {
 		conversations = conversations.map((conversation) =>
 			conversation.id === updated.id ? { ...conversation, title: updated.title } : conversation
 		);
@@ -740,7 +743,7 @@
 								{#each conversations as conversation (conversation.id)}
 									<div
 										class={cn(
-											'group flex w-full items-start gap-1 rounded-lg transition-colors hover:bg-muted focus-within:bg-muted',
+											'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
 											conversation.id === conversationId && 'bg-muted'
 										)}
 									>
@@ -1088,8 +1091,8 @@
 										class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
 										disabled={!sessionId || streaming}
 										onSelect={() => toggleCoachAction(action.id)}
-										variant="secondary"
 									>
+										>
 										<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
 										<div class="min-w-0 flex-1 text-left">
 											<div class="text-sm leading-5 font-medium">{action.title}</div>

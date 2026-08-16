@@ -25,9 +25,7 @@ export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQu
 	};
 }
 
-export function storedQuestionToMcqAnswerBody(
-	question: StoredQuestion
-): Record<string, unknown> {
+export function storedQuestionToMcqAnswerBody(question: StoredQuestion): Record<string, unknown> {
 	return {
 		question: question.question,
 		optionA: question.optionA,
