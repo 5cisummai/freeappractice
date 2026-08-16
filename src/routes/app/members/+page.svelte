@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth/client.js';
 	import {
 		orgAvatarClass,
@@ -14,6 +15,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import CopyIcon from '@lucide/svelte/icons/copy';
+	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
@@ -128,6 +130,41 @@
 			</div>
 		</section>
 	{/if}
+
+	<section class="rounded-xl border bg-card p-5">
+		<h2 class="font-medium">Group quizzes</h2>
+		<p class="mt-1 text-sm text-muted-foreground">
+			{#if canInvite}
+				Finish a practice quiz and use Share to add it here for the whole group.
+			{:else}
+				Shared quizzes your group can practice together.
+			{/if}
+		</p>
+		{#if data.orgSharedSets.length > 0}
+			<ul class="mt-4 flex flex-col gap-2">
+				{#each data.orgSharedSets as quiz (quiz.id)}
+					<li class="flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center">
+						<div class="min-w-0 flex-1">
+							<p class="font-medium">{quiz.title}</p>
+							<p class="text-sm text-muted-foreground">
+								{quiz.itemCount} questions · {quiz.completionCount} completed
+							</p>
+						</div>
+						<Button
+							href={`${resolve('/app/practice')}?shared=${encodeURIComponent(quiz.slug)}`}
+							variant="outline"
+							class="shrink-0"
+						>
+							Practice
+							<ArrowRightIcon class="size-4" />
+						</Button>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="mt-4 text-sm text-muted-foreground">No group quizzes yet.</p>
+		{/if}
+	</section>
 
 	<ul class="flex flex-col gap-2">
 		{#each data.members as member (member.memberId)}

@@ -44,7 +44,7 @@ function localDayKey(date: Date, timeZone: string): string {
 	}).format(date);
 }
 
-async function getCurrentStreak(
+export async function getCurrentStreak(
 	userId: string,
 	timeZone: string,
 	includeFrq: boolean

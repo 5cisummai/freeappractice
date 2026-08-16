@@ -27,6 +27,24 @@ Treat this as a focused product surface, not a playground for framework experime
 
 Neon PostgreSQL is the only application database. Domain functions call Drizzle directly; there is no compatibility model or MongoDB runtime dependency.
 
+## Drizzle migrations
+
+Schema lives in `src/lib/server/neon/schema/`. **Never hand-write migration SQL or edit `drizzle/meta/_journal.json` directly.**
+
+1. **Change the schema** in `src/lib/server/neon/schema/` (Drizzle table/column definitions).
+2. **Generate** the migration: `bun run db:generate`
+   - Creates `drizzle/NNNN_*.sql`, `drizzle/meta/NNNN_snapshot.json`, and a journal entry.
+   - Review the generated SQL before applying.
+3. **Apply** to Neon: `bun run db:apply`
+   - Runs `scripts/apply-neon-migrations.ts` (HTTP transactions; records checksums in `public._neon_schema_migrations`).
+
+**Do not:**
+- Write `.sql` files by hand and add journal entries manually.
+- Run `drizzle-kit push` or other schema-sync shortcuts unless the user explicitly asks.
+- Edit an already-applied migration file (the apply script rejects checksum mismatches).
+
+If `db:generate` picks a conflicting migration number (e.g. two `0015_*` files), rename the new SQL file and journal tag to the next free number, move the new snapshot to the matching `drizzle/meta/NNNN_snapshot.json`, and restore the previous snapshot file from git if it was overwritten.
+
 ---
 
 ## Hard constraints

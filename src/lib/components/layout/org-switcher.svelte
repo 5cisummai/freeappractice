@@ -23,6 +23,7 @@
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import PlusIcon from '@lucide/svelte/icons/plus';
+	import SendIcon from '@lucide/svelte/icons/send';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import { toast } from 'svelte-sonner';
 
@@ -241,8 +242,8 @@
 								<DropdownMenu.SubContent>
 									{#if org.role === 'owner' || org.role === 'admin'}
 										<DropdownMenu.Item onclick={() => openInvite(org)}>
-											<CopyIcon />
-											Open invite dialog
+											<SendIcon />
+											Invite
 										</DropdownMenu.Item>
 									{/if}
 									{#if org.role === 'owner'}

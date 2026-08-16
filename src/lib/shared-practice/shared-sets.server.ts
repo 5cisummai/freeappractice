@@ -101,6 +101,7 @@ export async function createSharedQuiz(input: {
 	questionIds: string[];
 	unit?: string;
 	creatorUserId?: string;
+	organizationId?: string;
 }): Promise<{ id: string; slug: string; title: string; expiresAt: string }> {
 	const questionIds = input.questionIds.map((id) => id.trim()).filter(Boolean);
 	if (
@@ -136,11 +137,11 @@ export async function createSharedQuiz(input: {
 		const result = await db.execute<{ id: string; slug: string }>(sql`
 			WITH inserted_set AS (
 				INSERT INTO "app"."shared_practice_sets" (
-					"id", "slug", "kind", "creator_user_id", "title", "ap_class", "unit",
+					"id", "slug", "kind", "creator_user_id", "organization_id", "title", "ap_class", "unit",
 					"item_count", "status", "expires_at"
 				)
 				VALUES (
-					${id}, ${slug}, 'quiz', ${input.creatorUserId ?? null}, ${title}, ${apClass}, ${unit},
+					${id}, ${slug}, 'quiz', ${input.creatorUserId ?? null}, ${input.organizationId ?? null}, ${title}, ${apClass}, ${unit},
 					${questionIds.length}::integer, 'active', ${expiresAt}::timestamptz
 				)
 				ON CONFLICT ("slug") DO NOTHING

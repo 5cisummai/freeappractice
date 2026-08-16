@@ -205,7 +205,7 @@
 	<SectionIntro id="aspiring-students-heading">
 		{#snippet title()}
 			Used by students <span class="underline decoration-primary/70 decoration-2 underline-offset-4"
-				>aiming for 5s</span
+				>earning 5s</span
 			>
 		{/snippet}
 		{#snippet description()}

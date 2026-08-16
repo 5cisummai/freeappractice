@@ -1,0 +1,3 @@
+ALTER TABLE "app"."shared_practice_sets" ADD COLUMN "organization_id" text;--> statement-breakpoint
+ALTER TABLE "app"."shared_practice_sets" ADD CONSTRAINT "shared_practice_sets_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "auth"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "shared_practice_sets_org_idx" ON "app"."shared_practice_sets" USING btree ("organization_id","created_at");

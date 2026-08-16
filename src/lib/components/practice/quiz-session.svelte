@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
@@ -103,6 +104,12 @@
 	const canShareQuiz = $derived(
 		!isSharedQuiz && requestedCount > 0 && loadedCount === requestedCount
 	);
+	const groupOrganizationId = $derived.by(() => {
+		const organization = page.data.activeOrganization;
+		if (!organization || organization.orgType !== 'group') return null;
+		if (organization.role !== 'owner' && organization.role !== 'admin') return null;
+		return organization.id;
+	});
 	const claimSignupHref = $derived(
 		`${resolve('/signup')}?returnTo=${encodeURIComponent(resolve('/app'))}`
 	);
@@ -438,7 +445,8 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					questionIds,
-					unit: selectedUnit || 'All Units'
+					unit: selectedUnit || 'All Units',
+					...(groupOrganizationId ? { organizationId: groupOrganizationId } : {})
 				})
 			});
 			const payload = await readJsonOrNull<{ sharedQuiz?: { url?: string }; error?: string }>(
@@ -448,7 +456,7 @@
 				throw new Error(getResponseMessage(payload, 'Could not create a share link.'));
 			}
 			shareUrl = payload.sharedQuiz.url;
-			await deliverShareUrl(shareUrl);
+			await deliverShareUrl(shareUrl, Boolean(groupOrganizationId));
 		} catch (error) {
 			shareStatus = error instanceof Error ? error.message : 'Could not create a share link.';
 		} finally {
@@ -456,15 +464,17 @@
 		}
 	}
 
-	async function deliverShareUrl(url: string): Promise<void> {
+	async function deliverShareUrl(url: string, attachedToGroup = false): Promise<void> {
 		try {
 			if (navigator.share) {
 				await navigator.share({ title: `${selectedClass} quiz`, url });
-				shareStatus = 'Share link ready.';
+				shareStatus = attachedToGroup ? 'Shared with your group.' : 'Share link ready.';
 				return;
 			}
 			await navigator.clipboard.writeText(url);
-			shareStatus = 'Share link copied.';
+			shareStatus = attachedToGroup
+				? 'Shared with your group. Link copied.'
+				: 'Share link copied.';
 		} catch (error) {
 			if (error instanceof DOMException && error.name === 'AbortError') return;
 			shareStatus = 'Could not share the quiz link.';

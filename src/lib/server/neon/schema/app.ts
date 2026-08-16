@@ -14,7 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { authUsers } from './auth';
+import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt, bytea } from './common';
 
 export const appSchema = pgSchema('app');
@@ -40,6 +40,25 @@ export const bugReports = appSchema.table(
 		check('bug_reports_severity_check', sql`${table.severity} IN ('low', 'medium', 'high')`),
 		index('bug_reports_created_idx').on(table.createdAt),
 		index('bug_reports_user_idx').on(table.userId)
+	]
+);
+
+export const appFeedback = appSchema.table(
+	'app_feedback',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id').references(() => authUsers.id, { onDelete: 'cascade' }),
+		category: text('category').notNull(),
+		message: text('message').notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		check(
+			'app_feedback_category_check',
+			sql`${table.category} IN ('general', 'bug', 'feature_request', 'content', 'other')`
+		),
+		index('app_feedback_created_idx').on(table.createdAt),
+		index('app_feedback_user_idx').on(table.userId)
 	]
 );
 
@@ -144,6 +163,9 @@ export const sharedPracticeSets = appSchema.table(
 		creatorUserId: text('creator_user_id').references(() => authUsers.id, {
 			onDelete: 'set null'
 		}),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'set null'
+		}),
 		title: text('title').notNull(),
 		apClass: text('ap_class').notNull(),
 		unit: text('unit').notNull(),
@@ -158,7 +180,8 @@ export const sharedPracticeSets = appSchema.table(
 		check('shared_practice_sets_status_check', sql`${table.status} IN ('active', 'revoked')`),
 		uniqueIndex('shared_practice_sets_slug_uq').on(table.slug),
 		index('shared_practice_sets_status_expiry_idx').on(table.status, table.expiresAt),
-		index('shared_practice_sets_creator_idx').on(table.creatorUserId, table.createdAt)
+		index('shared_practice_sets_creator_idx').on(table.creatorUserId, table.createdAt),
+		index('shared_practice_sets_org_idx').on(table.organizationId, table.createdAt)
 	]
 );
 
