@@ -8,6 +8,17 @@ export const SHARE_TOKEN_PREFIX = 'join_';
 
 export type OrganizationRole = 'owner' | 'admin' | 'member';
 
+export type OrganizationActivityItem = {
+	id: string;
+	userId: string;
+	userName: string;
+	apClass: string;
+	unit: string;
+	scorePercent: number;
+	quizTitle: string | null;
+	completedAt: string;
+};
+
 export type UserOrganization = {
 	id: string;
 	name: string;

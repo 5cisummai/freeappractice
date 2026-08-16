@@ -1,7 +1,13 @@
 import { randomBytes } from 'node:crypto';
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { authMembers, authOrganizations, authUsers } from '$lib/server/neon/schema';
+import {
+	authMembers,
+	authOrganizations,
+	authUsers,
+	quizAttempts,
+	sharedPracticeSets
+} from '$lib/server/neon/schema';
 import {
 	MAX_FREE_GROUP_ORGS,
 	SHARE_TOKEN_PREFIX,
@@ -9,6 +15,7 @@ import {
 	parseOrgType,
 	personalOrgSlug,
 	PERSONAL_ORG_NAME,
+	type OrganizationActivityItem,
 	type OrganizationRole,
 	type OrgType,
 	type UserOrganization
@@ -22,6 +29,9 @@ export type OrganizationMember = {
 	image: string | null;
 	role: OrganizationRole;
 };
+
+const ORG_ACTIVITY_LIMIT = 3;
+const ORG_ACTIVITY_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 function createShareToken(): string {
 	return `${SHARE_TOKEN_PREFIX}${randomBytes(18).toString('base64url')}`;
@@ -139,6 +149,44 @@ export async function listOrganizationMembers(
 		return a.name.localeCompare(b.name);
 	});
 	return members;
+}
+
+export async function listOrganizationActivity(
+	organizationId: string
+): Promise<OrganizationActivityItem[]> {
+	const members = await listOrganizationMembers(organizationId);
+	const userIds = members.map((member) => member.userId);
+	if (userIds.length === 0) return [];
+
+	const cutoff = new Date(Date.now() - ORG_ACTIVITY_WINDOW_MS);
+	const rows = await getNeonDatabase()
+		.select({
+			id: quizAttempts.id,
+			userId: quizAttempts.userId,
+			userName: authUsers.name,
+			apClass: quizAttempts.apClass,
+			unit: quizAttempts.unit,
+			scorePercent: quizAttempts.scorePercent,
+			quizTitle: sharedPracticeSets.title,
+			completedAt: quizAttempts.completedAt
+		})
+		.from(quizAttempts)
+		.innerJoin(authUsers, eq(quizAttempts.userId, authUsers.id))
+		.leftJoin(sharedPracticeSets, eq(quizAttempts.sharedPracticeSetId, sharedPracticeSets.id))
+		.where(and(inArray(quizAttempts.userId, userIds), gte(quizAttempts.completedAt, cutoff)))
+		.orderBy(desc(quizAttempts.completedAt))
+		.limit(ORG_ACTIVITY_LIMIT);
+
+	return rows.map((row) => ({
+		id: row.id,
+		userId: row.userId,
+		userName: row.userName,
+		apClass: row.apClass,
+		unit: row.unit,
+		scorePercent: row.scorePercent,
+		quizTitle: row.quizTitle,
+		completedAt: row.completedAt.toISOString()
+	}));
 }
 
 export async function getOrganizationType(organizationId: string): Promise<OrgType | null> {
