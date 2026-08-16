@@ -1,8 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import {
-	listOrganizationMembers,
-	listOrganizationSharedSets
+	listOrganizationMembers
 } from '$lib/auth/organization-queries.server';
 
 export const load: PageServerLoad = async ({ parent }) => {
@@ -11,10 +10,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		throw redirect(302, '/app');
 	}
 
-	const [members, orgSharedSets] = await Promise.all([
-		listOrganizationMembers(activeOrganization.id),
-		listOrganizationSharedSets(activeOrganization.id)
-	]);
+	const members = await listOrganizationMembers(activeOrganization.id);
 
 	return {
 		members: members.map((member) => ({
@@ -23,7 +19,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 				activeOrganization.role === 'owner' || activeOrganization.role === 'admin'
 					? member.email
 					: null
-		})),
-		orgSharedSets
+		}))
 	};
 };

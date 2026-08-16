@@ -6,6 +6,7 @@
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
 	import { requestMcqQuestion } from '$lib/question-bank/request.client.js';
@@ -14,7 +15,9 @@
 	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+	import CopyIcon from '@lucide/svelte/icons/copy';
 	import ShareIcon from '@lucide/svelte/icons/share';
+	import UsersIcon from '@lucide/svelte/icons/users';
 	import type { Snippet } from 'svelte';
 	import { quizQuestionCardModel } from '$lib/question-bank/question-card-model';
 
@@ -75,7 +78,10 @@
 	let historyError = $state('');
 	let shareStatus = $state('');
 	let shareUrl = $state('');
+	let shareSetId = $state('');
+	let shareAttachedToGroup = $state(false);
 	let shareCreating = $state(false);
+	let shareOpen = $state(false);
 	let pendingClaimSaved = $state(false);
 	let questionNavOpen = $state(false);
 	let lastRequestVersion = 0;
@@ -166,7 +172,10 @@
 				historyError = '';
 				shareStatus = '';
 				shareUrl = '';
+				shareSetId = '';
+				shareAttachedToGroup = false;
 				shareCreating = false;
+				shareOpen = false;
 				pendingClaimSaved = false;
 			}
 		}
@@ -283,7 +292,10 @@
 		historyError = '';
 		shareStatus = '';
 		shareUrl = '';
+		shareSetId = '';
+		shareAttachedToGroup = false;
 		shareCreating = false;
+		shareOpen = false;
 		pendingClaimSaved = false;
 		setGenerating(true);
 
@@ -422,20 +434,29 @@
 		else historyError = 'This quiz could not be saved. Please try again after signing up.';
 	}
 
-	async function createShareLink(): Promise<void> {
-		if (!canShareQuiz || shareCreating) return;
-		shareCreating = true;
-		if (shareUrl) {
-			try {
-				await deliverShareUrl(shareUrl);
-			} finally {
-				shareCreating = false;
-			}
-			return;
+	async function ensureShareUrl(attachToGroup: boolean): Promise<string> {
+		if (!canShareQuiz) {
+			throw new Error('This quiz is not ready to share yet.');
 		}
+		if (shareUrl && (!attachToGroup || shareAttachedToGroup)) return shareUrl;
 
-		shareStatus = 'Creating share link…';
+		shareCreating = true;
+		shareStatus = attachToGroup ? 'Sharing with your group…' : 'Creating share link…';
 		try {
+			if (shareUrl && attachToGroup && shareSetId && groupOrganizationId) {
+				const response = await apiFetch(`/api/shared-practice-sets/${shareSetId}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ organizationId: groupOrganizationId })
+				});
+				const payload = await readJsonOrNull<{ error?: string }>(response);
+				if (!response.ok) {
+					throw new Error(getResponseMessage(payload, 'Could not share with your group.'));
+				}
+				shareAttachedToGroup = true;
+				return shareUrl;
+			}
+
 			const questionIds = questions.map((question) => question?.questionId?.trim() ?? '');
 			if (questionIds.some((questionId) => !questionId)) {
 				throw new Error('A question is missing its ID.');
@@ -446,36 +467,44 @@
 				body: JSON.stringify({
 					questionIds,
 					unit: selectedUnit || 'All Units',
-					...(groupOrganizationId ? { organizationId: groupOrganizationId } : {})
+					...(attachToGroup && groupOrganizationId ? { organizationId: groupOrganizationId } : {})
 				})
 			});
-			const payload = await readJsonOrNull<{ sharedQuiz?: { url?: string }; error?: string }>(
-				response
-			);
+			const payload = await readJsonOrNull<{
+				sharedQuiz?: { id?: string; url?: string };
+				error?: string;
+			}>(response);
 			if (!response.ok || !payload?.sharedQuiz?.url) {
 				throw new Error(getResponseMessage(payload, 'Could not create a share link.'));
 			}
 			shareUrl = payload.sharedQuiz.url;
-			await deliverShareUrl(shareUrl, Boolean(groupOrganizationId));
-		} catch (error) {
-			shareStatus = error instanceof Error ? error.message : 'Could not create a share link.';
+			shareSetId = payload.sharedQuiz.id ?? '';
+			shareAttachedToGroup = Boolean(attachToGroup && groupOrganizationId);
+			return shareUrl;
 		} finally {
 			shareCreating = false;
 		}
 	}
 
-	async function deliverShareUrl(url: string, attachedToGroup = false): Promise<void> {
+	async function copyShareLink(): Promise<void> {
 		try {
-			if (navigator.share) {
-				await navigator.share({ title: `${selectedClass} quiz`, url });
-				shareStatus = attachedToGroup ? 'Shared with your group.' : 'Share link ready.';
-				return;
-			}
+			const url = await ensureShareUrl(false);
 			await navigator.clipboard.writeText(url);
-			shareStatus = attachedToGroup ? 'Shared with your group. Link copied.' : 'Share link copied.';
+			shareStatus = 'Share link copied.';
+			shareOpen = false;
 		} catch (error) {
-			if (error instanceof DOMException && error.name === 'AbortError') return;
-			shareStatus = 'Could not share the quiz link.';
+			shareStatus = error instanceof Error ? error.message : 'Could not copy the quiz link.';
+		}
+	}
+
+	async function shareToGroup(): Promise<void> {
+		if (!groupOrganizationId) return;
+		try {
+			await ensureShareUrl(true);
+			shareStatus = 'Shared with your group.';
+			shareOpen = false;
+		} catch (error) {
+			shareStatus = error instanceof Error ? error.message : 'Could not share with your group.';
 		}
 	}
 
@@ -600,15 +629,50 @@
 
 			{#if canShareQuiz || shareUrl}
 				<div class="space-y-2">
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={shareCreating}
-						onclick={() => void createShareLink()}
-					>
-						<ShareIcon class="size-4" />
-						{shareUrl ? 'Share quiz again' : 'Share this quiz'}
-					</Button>
+					{#snippet shareMenu(buttonClass = '')}
+						<Popover.Root bind:open={shareOpen}>
+							<Popover.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										type="button"
+										variant="outline"
+										size="sm"
+										class={buttonClass}
+										disabled={shareCreating}
+										aria-label="Share quiz"
+									>
+										<ShareIcon class="size-4" />
+										Share quiz
+										<ChevronDownIcon class="size-4 opacity-60" />
+									</Button>
+								{/snippet}
+							</Popover.Trigger>
+							<Popover.Content align="end" class="w-52 gap-0 p-1">
+								<button
+									type="button"
+									class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted"
+									disabled={shareCreating}
+									onclick={() => void copyShareLink()}
+								>
+									<CopyIcon class="size-4 text-muted-foreground" />
+									Copy link
+								</button>
+								{#if groupOrganizationId}
+									<button
+										type="button"
+										class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+										disabled={shareCreating || shareAttachedToGroup}
+										onclick={() => void shareToGroup()}
+									>
+										<UsersIcon class="size-4 text-muted-foreground" />
+										{shareAttachedToGroup ? 'Shared with group' : 'Share to group'}
+									</button>
+								{/if}
+							</Popover.Content>
+						</Popover.Root>
+					{/snippet}
+					{@render shareMenu()}
 					{#if shareStatus}
 						<p class="text-xs text-muted-foreground" role="status">{shareStatus}</p>
 					{/if}
@@ -680,17 +744,45 @@
 	<div class={expanded ? 'flex min-h-0 flex-1 flex-col gap-4' : 'space-y-4'}>
 		{#snippet questionHeaderActions()}
 			{#if canShareQuiz}
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					class="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-					disabled={shareCreating}
-					onclick={() => void createShareLink()}
-					aria-label="Share quiz"
-				>
-					<ShareIcon class="size-4" />
-				</Button>
+				<Popover.Root bind:open={shareOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								type="button"
+								variant="ghost"
+								size="icon"
+								class="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+								disabled={shareCreating}
+								aria-label="Share quiz"
+							>
+								<ShareIcon class="size-4" />
+							</Button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-52 gap-0 p-1">
+						<button
+							type="button"
+							class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted"
+							disabled={shareCreating}
+							onclick={() => void copyShareLink()}
+						>
+							<CopyIcon class="size-4 text-muted-foreground" />
+							Copy link
+						</button>
+						{#if groupOrganizationId}
+							<button
+								type="button"
+								class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+								disabled={shareCreating || shareAttachedToGroup}
+								onclick={() => void shareToGroup()}
+							>
+								<UsersIcon class="size-4 text-muted-foreground" />
+								{shareAttachedToGroup ? 'Shared with group' : 'Share to group'}
+							</button>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 				{#if shareStatus}
 					<span class="max-w-32 text-xs text-muted-foreground" role="status">{shareStatus}</span>
 				{/if}

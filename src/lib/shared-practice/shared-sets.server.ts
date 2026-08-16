@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { assertCanAttachSharedSetToOrganization } from '$lib/auth/organization-queries.server';
+import { OrganizationPermissionError } from '$lib/auth/organization-types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { authUsers, sharedPracticeSetItems, sharedPracticeSets } from '$lib/server/neon/schema';
 import {
@@ -202,6 +204,71 @@ export async function resolveSharedQuiz(slug: string): Promise<SharedQuizResolve
 	const questionMap = await getQuestionsLookupMap(items.map((item) => item.questionId));
 	const quiz = toQuizView(set, creator[0]?.name ?? null, items, questionMap);
 	return quiz ? { status: 'ready', quiz } : { status: 'unavailable' };
+}
+
+async function getSharedSetById(setId: string): Promise<SharedSetRow | null> {
+	const [set] = await getNeonDatabase()
+		.select()
+		.from(sharedPracticeSets)
+		.where(eq(sharedPracticeSets.id, setId))
+		.limit(1);
+	return set ?? null;
+}
+
+async function assertCanManageOrganizationSharedSet(
+	userId: string,
+	organizationId: string
+): Promise<void> {
+	await assertCanAttachSharedSetToOrganization(userId, organizationId);
+}
+
+export async function attachSharedQuizToOrganization(input: {
+	setId: string;
+	organizationId: string;
+	userId: string;
+}): Promise<void> {
+	await assertCanManageOrganizationSharedSet(input.userId, input.organizationId);
+	const set = await getSharedSetById(input.setId);
+	if (!set || set.status !== 'active' || set.expiresAt.getTime() <= Date.now()) {
+		throw new SharedQuizValidationError('This shared quiz is no longer available.');
+	}
+	if (set.organizationId && set.organizationId !== input.organizationId) {
+		throw new OrganizationPermissionError('This quiz is already shared with another group.');
+	}
+	if (set.organizationId === input.organizationId) return;
+
+	await getNeonDatabase()
+		.update(sharedPracticeSets)
+		.set({ organizationId: input.organizationId, updatedAt: new Date() })
+		.where(
+			and(
+				eq(sharedPracticeSets.id, input.setId),
+				eq(sharedPracticeSets.status, 'active'),
+				isNull(sharedPracticeSets.organizationId)
+			)
+		);
+}
+
+export async function detachSharedQuizFromOrganization(input: {
+	setId: string;
+	organizationId: string;
+	userId: string;
+}): Promise<void> {
+	await assertCanManageOrganizationSharedSet(input.userId, input.organizationId);
+	const set = await getSharedSetById(input.setId);
+	if (!set || set.organizationId !== input.organizationId) {
+		throw new SharedQuizValidationError('This quiz is not shared with your group.');
+	}
+
+	await getNeonDatabase()
+		.update(sharedPracticeSets)
+		.set({ organizationId: null, updatedAt: new Date() })
+		.where(
+			and(
+				eq(sharedPracticeSets.id, input.setId),
+				eq(sharedPracticeSets.organizationId, input.organizationId)
+			)
+		);
 }
 
 export async function getSharedQuizForCompletion(slug: string): Promise<

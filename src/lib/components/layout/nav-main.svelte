@@ -10,6 +10,7 @@
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
 	import UsersIcon from '@lucide/svelte/icons/users';
+	import LayersIcon from '@lucide/svelte/icons/layers';
 	import type { Component } from 'svelte';
 
 	type NavHref =
@@ -20,6 +21,7 @@
 		| '/app/coach'
 		| '/app/insights'
 		| '/app/members'
+		| '/app/materials'
 		| '/app/admin';
 
 	type NavItem = {
@@ -61,6 +63,7 @@
 		const items: NavItem[] = [];
 
 		if (showMembers) {
+			items.push({ href: '/app/materials', label: 'Materials', icon: LayersIcon });
 			items.push({ href: '/app/members', label: 'Members', icon: UsersIcon });
 		}
 
