@@ -38,7 +38,13 @@ import { hasAgeAttestationCookie } from '$lib/auth/age-attestation';
 import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
 import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
 
-const db = getNeonDatabase();
+const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
+	get: (_target, property) => {
+		const database = getNeonDatabase();
+		const value = Reflect.get(database, property, database);
+		return typeof value === 'function' ? value.bind(database) : value;
+	}
+});
 
 const authSecret =
 	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
