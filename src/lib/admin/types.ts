@@ -1,4 +1,7 @@
-export type AdminTab = 'users' | 'cache' | 'quality' | 'super';
+import type { AppFeedbackCategory } from '$lib/schemas/app-feedback';
+import type { BugReportSeverity } from '$lib/schemas/bug-report';
+
+export type AdminTab = 'users' | 'cache' | 'quality' | 'super' | 'feedback';
 
 export type PoolQuestionType = 'mcq' | 'frq';
 
@@ -16,6 +19,24 @@ export interface AdminUserRow {
 	updatedAt?: Date | string | null;
 	plan: 'free' | 'super';
 	hasAdminGrant: boolean;
+}
+
+export interface AdminFeedbackItem {
+	id: string;
+	source: 'sidebar' | 'bug_report';
+	createdAt: Date | string;
+	userId?: string | null;
+	userName?: string | null;
+	userEmail?: string | null;
+	category?: AppFeedbackCategory;
+	message?: string;
+	title?: string;
+	description?: string;
+	steps?: string | null;
+	expected?: string | null;
+	severity?: BugReportSeverity;
+	reporterEmail?: string | null;
+	metadata?: Record<string, unknown>;
 }
 
 export interface CacheOverview {

@@ -201,7 +201,7 @@ describe('Super API routes', () => {
 	it('records age confirmation from the authenticated POST action', async () => {
 		const valid = await confirmAgePost(event());
 		expect(valid.status).toBe(200);
-		expect(mocks.confirmAge).toHaveBeenCalledWith('user-1');
+		expect(mocks.confirmAge).toHaveBeenCalledWith('user-1', undefined);
 	});
 
 	it('acknowledges memory disclosure without requiring Super subscription', async () => {

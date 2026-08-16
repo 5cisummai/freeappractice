@@ -35,6 +35,7 @@ import {
 	shouldSkipSessionLookup
 } from '$lib/auth/account-surface.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { limitApiRequests } from '$lib/server/api-rate-limit.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -205,6 +206,33 @@ const appHandle: Handle = async ({ event, resolve }) => {
 			}
 		} catch (err) {
 			logger.error('Session lookup failed', { error: err, path: event.url.pathname });
+		}
+	}
+
+	if (event.url.pathname.startsWith('/api/')) {
+		const rateLimit = await limitApiRequests(event.request, event.locals.userId);
+		if (!rateLimit.allowed) {
+			const now = Date.now();
+			const retryAfterSeconds = Math.max(
+				1,
+				Math.ceil(Math.max(0, (rateLimit.retryAt ?? now) - now) / 1000)
+			);
+			return postProcessResponse(
+				new Response(JSON.stringify({ error: 'Too many requests', retryAfterSeconds }), {
+					status: 429,
+					headers: {
+						'Content-Type': 'application/json',
+						'RateLimit-Limit': String(rateLimit.limit),
+						'RateLimit-Remaining': '0',
+						'RateLimit-Reset': String(
+							Math.ceil((rateLimit.retryAt ?? now + retryAfterSeconds * 1000) / 1000)
+						),
+						'Retry-After': String(retryAfterSeconds)
+					}
+				}),
+				event,
+				origin
+			);
 		}
 	}
 

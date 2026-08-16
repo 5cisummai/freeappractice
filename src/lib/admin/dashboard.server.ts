@@ -21,8 +21,10 @@ import type { QualityDashboardSnapshot } from '$lib/question-bank/quality/types'
 import { getSuperAdminOverview } from '$lib/super/admin.server';
 import { getAdminUserSuperAccess } from '$lib/super/billing.server';
 import type { SuperAdminOverview } from '$lib/super/types';
+import { listFeedbackTabForAdmin } from '$lib/feedback/admin.server';
 import type {
 	AdminTab,
+	AdminFeedbackItem,
 	AdminUserRow,
 	CacheBucketSummary,
 	CacheOverview,
@@ -46,6 +48,10 @@ interface AdminDashboardData {
 	cacheBuckets: CacheBucketSummary[];
 	quality: QualityDashboardSnapshot;
 	superOverview: SuperAdminOverview;
+	feedback: AdminFeedbackItem[];
+	totalFeedback: number;
+	totalSidebarFeedback: number;
+	totalBugReports: number;
 }
 
 type BucketAggRow = {
@@ -56,7 +62,11 @@ type BucketAggRow = {
 };
 
 function normalizeAdminTab(value: string | null): AdminTab {
-	return value === 'users' || value === 'cache' || value === 'quality' || value === 'super'
+	return value === 'users' ||
+		value === 'cache' ||
+		value === 'quality' ||
+		value === 'super' ||
+		value === 'feedback'
 		? value
 		: 'users';
 }
@@ -404,6 +414,10 @@ export async function getAdminDashboardData(opts: {
 	let poolSnapshot = emptyPool;
 	let quality = emptyQuality;
 	let superOverview = emptySuper;
+	let feedback: AdminFeedbackItem[] = [];
+	let totalFeedback = 0;
+	let totalSidebarFeedback = 0;
+	let totalBugReports = 0;
 
 	switch (activeTab) {
 		case 'users':
@@ -441,6 +455,17 @@ export async function getAdminDashboardData(opts: {
 				errorMessage = 'Unable to load Super data right now.';
 			}
 			break;
+		case 'feedback':
+			try {
+				const feedbackSnapshot = await listFeedbackTabForAdmin(50);
+				feedback = feedbackSnapshot.items;
+				totalSidebarFeedback = feedbackSnapshot.totalSidebar;
+				totalBugReports = feedbackSnapshot.totalBugReports;
+				totalFeedback = totalSidebarFeedback + totalBugReports;
+			} catch {
+				errorMessage = 'Unable to load feedback right now.';
+			}
+			break;
 		default: {
 			const _exhaustive: never = activeTab;
 			void _exhaustive;
@@ -458,6 +483,10 @@ export async function getAdminDashboardData(opts: {
 		cacheOverview: poolSnapshot.overview,
 		cacheBuckets: poolSnapshot.buckets,
 		quality,
-		superOverview
+		superOverview,
+		feedback,
+		totalFeedback,
+		totalSidebarFeedback,
+		totalBugReports
 	};
 }
