@@ -122,52 +122,46 @@
 		{#if mobileOpen}
 			<nav
 				id="mobile-navigation"
-				class="absolute top-full right-0 left-0 z-50 rounded-b-xl border border-border/70 bg-background px-5 py-3 shadow-lg sm:hidden"
+				class="absolute top-full right-0 left-0 z-50 rounded-b-xl border border-border/70 bg-background px-5 py-4 shadow-lg sm:hidden"
 				aria-label="Mobile navigation"
 			>
-				{#each topbarNavItems as item (item.href)}
-					<a
-						href={resolve(item.href)}
-						class="block py-2 font-medium text-foreground transition-colors hover:text-primary"
-					>
-						{item.label}
-					</a>
-				{/each}
-				<div class="mt-2 border-t border-border/70 pt-2">
-					<p class="px-2 py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-						Resources
-					</p>
-					{#each topbarResourceItems as item (item.href)}
+				<div class="grid gap-1">
+					{#each topbarNavItems as item (item.href)}
 						<a
 							href={resolve(item.href)}
-							class={[
-								'block rounded-md px-2 py-2 transition-colors hover:bg-muted',
-								item.href === '/super'
-									? 'super-text-gradient font-medium'
-									: 'text-muted-foreground hover:text-foreground'
-							]}
+							class="rounded-md px-2 py-2.5 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
 						>
 							{item.label}
 						</a>
 					{/each}
+					<a
+						href={resolve('/super')}
+						class="rounded-md super-text-gradient px-2 py-2.5 font-medium transition-colors hover:bg-muted"
+					>
+						Super
+					</a>
+					{#if showPricing}
+						<a
+							href={resolve(topbarPricingItem.href)}
+							class="rounded-md px-2 py-2.5 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+						>
+							{topbarPricingItem.label}
+						</a>
+					{/if}
 				</div>
-				{#if showPricing}
-					<a
-						href={resolve(topbarPricingItem.href)}
-						class="block rounded-md px-2 py-2 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
-					>
-						{topbarPricingItem.label}
-					</a>
-				{/if}
-				{#each topbarAuthItems as item (item.href)}
-					<a
-						href={resolve(item.href)}
-						class="block py-2 font-medium text-foreground transition-colors hover:text-primary"
-					>
-						{item.label}
-					</a>
-				{/each}
-				<div class="mt-2">
+
+				<div class="mt-3 grid grid-cols-2 gap-2 border-t border-border/70 pt-3">
+					{#each topbarAuthItems as item, index (item.href)}
+						<Button
+							href={resolve(item.href)}
+							variant={index === topbarAuthItems.length - 1 ? 'default' : 'outline'}
+							class="w-full rounded-full"
+						>
+							{item.label}
+						</Button>
+					{/each}
+				</div>
+				<div class="mt-3 border-t border-border/70 pt-3">
 					<ThemeToggle variant="full" />
 				</div>
 			</nav>
