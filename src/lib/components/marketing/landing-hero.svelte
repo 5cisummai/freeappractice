@@ -1,52 +1,59 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { userPrefersMode } from 'mode-watcher';
+	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
 
-	let { freeBeta = false, children }: { freeBeta?: boolean; children?: Snippet } = $props();
+	let { children }: { children?: Snippet } = $props();
+	let hydrated = $state(false);
 
-	const superSignupHref = `${resolve('/signup')}?super=1`;
-	const badgeClass =
-		'inline-flex items-center gap-1.5 rounded-full border border-violet-300/50 super-tier-gradient px-3 py-1.5 text-xs font-semibold text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300';
+	onMount(() => {
+		hydrated = true;
+	});
+
+	const isDark = $derived(hydrated && userPrefersMode.current === 'dark');
+	const heroImage = $derived(isDark ? '/hero-bg-dark.webp' : '/hero-bg.webp');
 </script>
 
 <section
 	id="hero"
-	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-visible bg-background px-5 pt-24 pb-12 sm:px-8 sm:pt-28 sm:pb-16 lg:px-10 lg:pt-32"
+	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-hidden bg-background px-5 pt-32 pb-20 sm:px-8 sm:pt-40 sm:pb-28 lg:px-10 lg:pt-44 lg:pb-32"
 >
-	<div
-		class="pointer-events-none absolute inset-x-0 top-0 -z-20 h-svh overflow-hidden mask-[linear-gradient(to_bottom,black_55%,transparent)]"
-		aria-hidden="true"
-	>
-		<img
-			src="/illustrations/hero-landscape.webp"
-			alt=""
-			width="1536"
-			height="1024"
-			fetchpriority="high"
-			decoding="async"
-			class="size-full object-cover object-[center_72%] dark:hidden"
+	<div class="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+		<HalftoneCMYK
+			width="100%"
+			height="100%"
+			image={heroImage}
+			class="size-full"
+			colorBack={isDark ? '#080b14' : '#fbfaf4'}
+			colorC="#2563eb"
+			colorM="#8b5cf6"
+			colorY="#f4b740"
+			colorK="#1e3a8a"
+			type="ink"
+			size={0.12}
+			gridNoise={0.08}
+			softness={0.65}
+			contrast={1.05}
+			gainC={0.18}
+			gainM={0.08}
+			gainY={0.1}
+			gainK={0.04}
+			grainMixer={0.02}
+			grainOverlay={0.03}
+			grainSize={0.5}
+			fit="cover"
 		/>
-		<img
-			src="/illustrations/hero-landscape-dark.webp"
-			alt=""
-			width="1536"
-			height="1024"
-			fetchpriority="high"
-			decoding="async"
-			class="hidden size-full object-cover object-[center_72%] dark:block"
-		/>
-		<div
-			class="absolute inset-0 bg-linear-to-b from-[#f7f3ec]/50 via-transparent to-transparent dark:from-background/70"
-		></div>
 	</div>
+	<div
+		class="pointer-events-none absolute inset-0 z-[1] bg-linear-to-b from-background/65 via-background/25 to-background/15"
+		aria-hidden="true"
+	></div>
 
-	<div class="relative flex w-full max-w-5xl flex-col items-center">
-		<div class="flex max-w-3xl flex-col items-center space-y-5 text-center">
+	<div class="relative z-10 flex w-full max-w-5xl flex-col items-center">
+		<div class="flex max-w-3xl flex-col items-center space-y-6 text-center">
 			<h1
-				class="font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl"
+				class="font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance text-foreground sm:text-5xl lg:text-[3.5rem]"
 			>
 				Practice AP Exams
 				<span class="relative inline-block px-1">
@@ -57,7 +64,7 @@
 						aria-hidden="true"
 					>
 						<path
-							d="M2 7.2c12.5-3.8 26.4 1.6 39.2-.4C54.2 5 66.8 2.1 86 6.4"
+							d="M2 7.4C20 3.8 37 2.1 50 4.2C63 6.3 74 6.9 86 5.8"
 							stroke="currentColor"
 							stroke-width="2.6"
 							stroke-linecap="round"
@@ -75,9 +82,14 @@
 		</div>
 
 		{#if children}
-			<div class="mt-8 w-full sm:mt-10">
+			<div class="mt-16 w-full sm:mt-20">
 				{@render children()}
 			</div>
 		{/if}
 	</div>
+
+	<div
+		class="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-32 bg-linear-to-b from-transparent via-background/60 to-background sm:h-40"
+		aria-hidden="true"
+	></div>
 </section>

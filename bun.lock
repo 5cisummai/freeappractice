@@ -10,11 +10,14 @@
         "@aws-sdk/client-s3": "^3.1108.0",
         "@better-auth/drizzle-adapter": "1.6.26",
         "@better-auth/stripe": "1.6.26",
+        "@devmischief/shaders-svelte": "^0.0.9",
         "@examfig/charts": "^0.2.0",
         "@examfig/core": "^0.2.0",
         "@examfig/science": "^0.2.0",
         "@flags-sdk/vercel": "^1.4.6",
+        "@fontsource-variable/dm-sans": "^5.3.0",
         "@fontsource/noto-serif": "^5.3.0",
+        "@fontsource/open-runde": "^5.3.0",
         "@neondatabase/serverless": "^1.1.0",
         "@sentry/sveltekit": "^10",
         "@shikijs/themes": "^4.4.3",
@@ -52,8 +55,6 @@
       "devDependencies": {
         "@eslint/compat": "latest",
         "@eslint/js": "latest",
-        "@fontsource-variable/dm-sans": "^5.3.0",
-        "@fontsource-variable/fraunces": "^5.3.0",
         "@internationalized/date": "^3.12.0",
         "@lucide/svelte": "^1.31.0",
         "@sveltejs/adapter-vercel": "^6.3.4",
@@ -230,6 +231,8 @@
 
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
 
+    "@devmischief/shaders-svelte": ["@devmischief/shaders-svelte@0.0.9", "", { "dependencies": { "@paper-design/shaders": "^0.0.76" }, "peerDependencies": { "svelte": "^5.0.0" } }, "sha512-l/8JU60fVk7CCP1jr99Qh4Ze/fc2Vh90PT3mCMFotwR+2S3ZM0HeNlasNjHcCI34XS4asORJtESxZmeprGz/TQ=="],
+
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
 
     "@edge-runtime/cookies": ["@edge-runtime/cookies@5.0.2", "", {}, "sha512-Sd8LcWpZk/SWEeKGE8LT6gMm5MGfX/wm+GPnh1eBEtCpya3vYqn37wYknwAHw92ONoyyREl1hJwxV/Qx2DWNOg=="],
@@ -332,9 +335,9 @@
 
     "@fontsource-variable/dm-sans": ["@fontsource-variable/dm-sans@5.3.0", "", {}, "sha512-BpUG5bqePiDFMBM4ZtLSlPdAIOM990uB1dlXzIf4aw21yQR7BmykedLXXXMqGWsR18aMLOsbWccwJNh3ztTQaA=="],
 
-    "@fontsource-variable/fraunces": ["@fontsource-variable/fraunces@5.3.0", "", {}, "sha512-9BYGySn4AHEJdgp9Z28tQ3X+laJMEOITXkQarZXeloWQZDq5oOvXJ3kDA8c7MGIfpogIaZfjrQBqmda8POOCKA=="],
-
     "@fontsource/noto-serif": ["@fontsource/noto-serif@5.3.0", "", {}, "sha512-ZrMzjuQlBIcw+qma1slZQdU3YDJvrjLG+9CWU1bxSf3YTkucwqd3EYa/Kfo4Ts19w8IMTGAmtOE3d6wWlgnBtA=="],
+
+    "@fontsource/open-runde": ["@fontsource/open-runde@5.3.0", "", {}, "sha512-htjSGuJ/cq2DARGqEvXhkghhRXxIz3gzw+tbB0xt6zidL0mvDrR/VQCfDeCCw7wp0x5ar6dTLWD5iOF0EDqaGA=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 
@@ -411,6 +414,8 @@
     "@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.43.0", "", {}, "sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.144.0", "", {}, "sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg=="],
+
+    "@paper-design/shaders": ["@paper-design/shaders@0.0.76", "", {}, "sha512-AcNDY4J66YQHUfQYFInkCP7M9VOje0od7wLpOR7LtCmc532opJy6ll+h1W9zBovz8tt9U7OADUmJ/qKEXyOX/A=="],
 
     "@pdf-lib/standard-fonts": ["@pdf-lib/standard-fonts@1.0.0", "", { "dependencies": { "pako": "^1.0.6" } }, "sha512-hU30BK9IUN/su0Mn9VdlVKsWBS6GyhVfqjwl1FjZN4TxP6cCw0jP2w7V3Hf5uX7M0AZJ16vey9yE0ny7Sa59ZA=="],
 
