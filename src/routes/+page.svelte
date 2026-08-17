@@ -184,9 +184,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.6.9",
+			"softwareVersion": "1.7.4",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-08-14",
+			"dateModified": "2026-08-17",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
