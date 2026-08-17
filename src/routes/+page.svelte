@@ -295,7 +295,7 @@
 
 <PublicShell showPricing={!data.superFreeBetaEnabled}>
 	<main id="main-content" class="flex-1">
-		<LandingHero freeBeta={data.superFreeBetaEnabled}>
+		<LandingHero>
 			<section
 				id="practice"
 				class="relative z-10 w-full max-sm:mr-[calc(50%-50vw)] max-sm:ml-[calc(50%-50vw)] max-sm:w-screen"
