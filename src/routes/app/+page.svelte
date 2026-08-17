@@ -145,14 +145,6 @@
 		</div>
 	{/snippet}
 
-	{#if showOrgFeatures}
-		<OrgGroupDashboard
-			orgActivity={data.orgActivity ?? []}
-			orgSharedSets={data.orgSharedSets ?? []}
-			orgLeaderboard={data.orgLeaderboard ?? []}
-		/>
-	{/if}
-
 	{#if subjectCards.length > 0 && recommendation}
 		{@const RecIcon = recommendation.icon}
 		{@const hasPracticedRecommendation = Boolean(recommendation.lastPracticedAt)}
@@ -218,7 +210,17 @@
 				</div>
 			</div>
 		</section>
+	{/if}
 
+	{#if showOrgFeatures}
+		<OrgGroupDashboard
+			orgActivity={data.orgActivity ?? []}
+			orgSharedSets={data.orgSharedSets ?? []}
+			orgLeaderboard={data.orgLeaderboard ?? []}
+		/>
+	{/if}
+
+	{#if subjectCards.length > 0 && recommendation}
 		{#if planAccess?.plan !== 'super'}
 			<a
 				href={resolve('/pricing')}

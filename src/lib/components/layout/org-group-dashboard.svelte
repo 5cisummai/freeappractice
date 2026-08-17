@@ -82,7 +82,7 @@
 									· {quiz.completionCount} completed
 								</p>
 							</div>
-							<Button href={sharedSetHref(quiz.slug)} class="shrink-0 rounded-full">
+							<Button href={sharedSetHref(quiz.slug)}>
 								Practice
 								<ArrowRightIcon class="size-4" />
 							</Button>

@@ -45,26 +45,6 @@
 
 	<div class="relative flex w-full max-w-5xl flex-col items-center">
 		<div class="flex max-w-3xl flex-col items-center space-y-5 text-center">
-			{#if freeBeta}
-				<Button
-					href={superSignupHref}
-					variant="ghost"
-					class="{badgeClass} super-tier-gradient-hover transition-colors hover:border-violet-400/70"
-				>
-					<SparklesIcon class="size-3.5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-					Claim Free Super Beta
-					<ArrowRightIcon
-						class="size-3.5 text-violet-500 dark:text-violet-400"
-						aria-hidden="true"
-					/>
-				</Button>
-			{:else}
-				<span class={badgeClass}>
-					<SparklesIcon class="size-3.5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-					Super
-				</span>
-			{/if}
-
 			<h1
 				class="font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl"
 			>
