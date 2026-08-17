@@ -25,7 +25,6 @@ import {
 	type OrgType,
 	type UserOrganization
 } from '$lib/auth/organization-types';
-import { getCurrentStreak } from '$lib/users/dashboard-queries.server';
 
 export type OrganizationMember = {
 	memberId: string;
@@ -370,35 +369,23 @@ export async function listOrganizationSharedSets(
 		.from(authMembers)
 		.where(eq(authMembers.organizationId, organizationId));
 	const memberUserIds = memberRows.map((member) => member.userId);
-	if (memberUserIds.length === 0) {
-		return rows.map((row) => ({
-			id: row.id,
-			slug: row.slug,
-			title: row.title,
-			apClass: row.apClass,
-			unit: row.unit,
-			itemCount: row.itemCount,
-			expiresAt: row.expiresAt.toISOString(),
-			createdAt: row.createdAt.toISOString(),
-			creatorName: row.creatorName,
-			completionCount: 0
-		}));
-	}
 
 	const setIds = rows.map((row) => row.id);
-	const completionRows = await getNeonDatabase()
-		.select({
-			sharedPracticeSetId: quizAttempts.sharedPracticeSetId,
-			completionCount: sql<number>`count(distinct ${quizAttempts.userId})::int`
-		})
-		.from(quizAttempts)
-		.where(
-			and(
-				inArray(quizAttempts.sharedPracticeSetId, setIds),
-				inArray(quizAttempts.userId, memberUserIds)
-			)
-		)
-		.groupBy(quizAttempts.sharedPracticeSetId);
+	const completionRows = memberUserIds.length
+		? await getNeonDatabase()
+				.select({
+					sharedPracticeSetId: quizAttempts.sharedPracticeSetId,
+					completionCount: sql<number>`count(distinct ${quizAttempts.userId})::int`
+				})
+				.from(quizAttempts)
+				.where(
+					and(
+						inArray(quizAttempts.sharedPracticeSetId, setIds),
+						inArray(quizAttempts.userId, memberUserIds)
+					)
+				)
+				.groupBy(quizAttempts.sharedPracticeSetId)
+		: [];
 
 	const completionMap = new Map(
 		completionRows
@@ -430,7 +417,14 @@ export async function listOrganizationLeaderboard(
 	const userIds = members.map((member) => member.userId);
 	const recentCutoff = new Date(Date.now() - 7 * 86_400_000);
 
-	const [statsRows, unitsRows, streakRows] = await Promise.all([
+	const today = new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(new Date());
+
+	const [statsRows, unitsRows, streakResult] = await Promise.all([
 		getNeonDatabase()
 			.select({
 				userId: mcqAttempts.userId,
@@ -452,17 +446,58 @@ export async function listOrganizationLeaderboard(
 			.from(userProgress)
 			.where(and(inArray(userProgress.userId, userIds), gt(userProgress.totalAttempts, 0)))
 			.groupBy(userProgress.userId),
-		Promise.all(
-			userIds.map(async (userId) => ({
-				userId,
-				currentStreak: await getCurrentStreak(userId, timeZone, false)
-			}))
-		)
+		getNeonDatabase().execute<{ userId: string; currentStreak: number }>(sql`
+			WITH activity_days AS (
+				SELECT DISTINCT
+					${mcqAttempts.userId} AS user_id,
+					(${mcqAttempts.attemptedAt} AT TIME ZONE ${timeZone})::date AS day
+				FROM ${mcqAttempts}
+				WHERE ${inArray(mcqAttempts.userId, userIds)}
+			),
+			anchor AS (
+				SELECT DISTINCT
+					activity_days.user_id,
+					CASE
+						WHEN EXISTS (
+							SELECT 1 FROM activity_days candidate
+							WHERE candidate.user_id = activity_days.user_id
+								AND candidate.day = ${today}::date
+						) THEN ${today}::date
+						WHEN EXISTS (
+							SELECT 1 FROM activity_days candidate
+							WHERE candidate.user_id = activity_days.user_id
+								AND candidate.day = ${today}::date - 1
+						) THEN ${today}::date - 1
+						ELSE NULL::date
+					END AS anchor_day
+				FROM activity_days
+			),
+			ordered AS (
+				SELECT
+					activity_days.user_id,
+					activity_days.day,
+					anchor.anchor_day,
+					row_number() OVER (
+						PARTITION BY activity_days.user_id ORDER BY activity_days.day DESC
+					)::int AS position
+				FROM activity_days
+				INNER JOIN anchor ON anchor.user_id = activity_days.user_id
+				WHERE anchor.anchor_day IS NOT NULL
+					AND activity_days.day <= anchor.anchor_day
+			)
+			SELECT
+				user_id AS "userId",
+				count(*) FILTER (
+					WHERE day = anchor_day - (position - 1)
+				)::int AS "currentStreak"
+			FROM ordered
+			GROUP BY user_id, anchor_day
+		`)
 	]);
 
 	const statsMap = new Map(statsRows.map((row) => [row.userId, row]));
 	const unitsMap = new Map(unitsRows.map((row) => [row.userId, Number(row.unitsPracticed)]));
-	const streakMap = new Map(streakRows.map((row) => [row.userId, row.currentStreak]));
+	const streakMap = new Map(streakResult.rows.map((row) => [row.userId, row.currentStreak]));
 
 	const entries: OrganizationLeaderboardEntry[] = members.map((member) => {
 		const stats = statsMap.get(member.userId);

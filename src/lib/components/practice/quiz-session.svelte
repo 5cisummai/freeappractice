@@ -438,7 +438,12 @@
 		if (!canShareQuiz) {
 			throw new Error('This quiz is not ready to share yet.');
 		}
-		if (shareUrl && (!attachToGroup || shareAttachedToGroup)) return shareUrl;
+		if (shareUrl) {
+			if (!attachToGroup || shareAttachedToGroup) return shareUrl;
+			if (!shareSetId || !groupOrganizationId) {
+				throw new Error('This quiz cannot be shared with your group right now.');
+			}
+		}
 
 		shareCreating = true;
 		shareStatus = attachToGroup ? 'Sharing with your group…' : 'Creating share link…';

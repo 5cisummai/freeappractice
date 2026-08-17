@@ -7,10 +7,15 @@ import {
 	SharedQuizValidationError
 } from '$lib/shared-practice/shared-sets.server';
 
-function parseOrganizationId(body: unknown): string | null {
+function parseOrganizationIdFromBody(body: unknown): string | null {
 	if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
 	const organizationId = (body as Record<string, unknown>).organizationId;
 	return typeof organizationId === 'string' && organizationId.trim() ? organizationId.trim() : null;
+}
+
+function parseOrganizationIdFromQuery(event: Parameters<RequestHandler>[0]): string | null {
+	const organizationId = event.url.searchParams.get('organizationId');
+	return organizationId?.trim() || null;
 }
 
 export const PATCH: RequestHandler = withAuthedHandler(
@@ -18,7 +23,9 @@ export const PATCH: RequestHandler = withAuthedHandler(
 		const setId = event.params.id?.trim() ?? '';
 		if (!setId) return json({ error: 'Shared quiz is required.' }, { status: 400 });
 
-		const organizationId = parseOrganizationId(await event.request.json().catch(() => null));
+		const organizationId = parseOrganizationIdFromBody(
+			await event.request.json().catch(() => null)
+		);
 		if (!organizationId) {
 			return json({ error: 'Organization is required.' }, { status: 400 });
 		}
@@ -47,7 +54,7 @@ export const DELETE: RequestHandler = withAuthedHandler(
 		const setId = event.params.id?.trim() ?? '';
 		if (!setId) return json({ error: 'Shared quiz is required.' }, { status: 400 });
 
-		const organizationId = parseOrganizationId(await event.request.json().catch(() => null));
+		const organizationId = parseOrganizationIdFromQuery(event);
 		if (!organizationId) {
 			return json({ error: 'Organization is required.' }, { status: 400 });
 		}

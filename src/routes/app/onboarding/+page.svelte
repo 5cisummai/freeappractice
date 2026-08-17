@@ -23,6 +23,7 @@
 		isValidBirthDate,
 		localDateInputValue
 	} from '$lib/auth/age.js';
+	import type { OnboardingGoal } from '$lib/onboarding.js';
 	import { authClient } from '$lib/auth/client.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -40,7 +41,7 @@
 
 	type SetupStep = 'welcome' | 'subjects' | 'plan' | 'style' | 'memory';
 	type TeachingStyle = 'socratic' | 'concise' | 'step_by_step';
-	type StudyGoal = 'score_higher' | 'exam_prep' | 'weak_topics' | 'stay_consistent';
+	type StudyGoal = OnboardingGoal;
 
 	const initialData = untrack(() => data);
 	const superSetup = initialData.superSetup;
@@ -53,7 +54,7 @@
 	let superActivated = $state(initialSuperAccess);
 	let ageConfirmed = $state(initialAgeConfirmed);
 	let birthDate = $state('');
-	let selectedGoals = $state<StudyGoal[]>([]);
+	let selectedGoals = $state<StudyGoal[]>([...initialData.selectedGoals]);
 	let subjectSearch = $state('');
 	let deletingAccount = $state(false);
 	let teachingStyle = $state<TeachingStyle>(superSetup?.profile.teachingStyle ?? 'concise');
@@ -205,7 +206,11 @@
 		if (!steps.includes(next)) return;
 		currentStep = next;
 		stepKey += 1;
-		if (next === 'memory' && hasSuperAccess) void loadMemories();
+		if (next === 'memory' && hasSuperAccess) {
+			void loadMemories().catch((error) => {
+				errorMessage = error instanceof Error ? error.message : 'Could not load saved memories.';
+			});
+		}
 	}
 
 	function goBack() {
@@ -457,6 +462,9 @@
 
 			{#each selectedSubjects as subject (subject)}
 				<input type="hidden" name="subjects" value={subject} />
+			{/each}
+			{#each selectedGoals as goal (goal)}
+				<input type="hidden" name="goals" value={goal} />
 			{/each}
 
 			{#key stepKey}

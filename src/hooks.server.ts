@@ -224,9 +224,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 						'Content-Type': 'application/json',
 						'RateLimit-Limit': String(rateLimit.limit),
 						'RateLimit-Remaining': '0',
-						'RateLimit-Reset': String(
-							Math.ceil((rateLimit.retryAt ?? now + retryAfterSeconds * 1000) / 1000)
-						),
+						'RateLimit-Reset': String(retryAfterSeconds),
 						'Retry-After': String(retryAfterSeconds)
 					}
 				}),

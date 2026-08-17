@@ -15,7 +15,7 @@ export async function submitAppFeedback(
 	try {
 		let body: unknown;
 		try {
-			body = await readJsonBody(request, 16 * 1024);
+			body = await readJsonBody(request, 32 * 1024);
 		} catch {
 			return json({ error: 'Invalid request body' }, { status: 400 });
 		}

@@ -6,7 +6,9 @@ const ACCOUNT_API_PREFIXES = [
 	'/api/insights',
 	'/api/study-plan',
 	'/api/question/frq',
-	'/api/question/feedback'
+	'/api/question/feedback',
+	'/api/orgs',
+	'/api/shared-practice-sets'
 ] as const;
 
 function matchesPath(pathname: string, prefix: string): boolean {

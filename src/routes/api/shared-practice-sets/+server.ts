@@ -30,7 +30,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 				headers: {
 					'RateLimit-Limit': String(locals.userId ? 30 : 12),
 					'RateLimit-Remaining': '0',
-					'RateLimit-Reset': String(Math.ceil((rateLimit.retryAt ?? now) / 1000)),
+					'RateLimit-Reset': String(retryAfterSeconds),
 					'Retry-After': String(retryAfterSeconds)
 				}
 			}

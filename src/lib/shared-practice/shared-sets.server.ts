@@ -215,19 +215,12 @@ async function getSharedSetById(setId: string): Promise<SharedSetRow | null> {
 	return set ?? null;
 }
 
-async function assertCanManageOrganizationSharedSet(
-	userId: string,
-	organizationId: string
-): Promise<void> {
-	await assertCanAttachSharedSetToOrganization(userId, organizationId);
-}
-
 export async function attachSharedQuizToOrganization(input: {
 	setId: string;
 	organizationId: string;
 	userId: string;
 }): Promise<void> {
-	await assertCanManageOrganizationSharedSet(input.userId, input.organizationId);
+	await assertCanAttachSharedSetToOrganization(input.userId, input.organizationId);
 	const set = await getSharedSetById(input.setId);
 	if (!set || set.status !== 'active' || set.expiresAt.getTime() <= Date.now()) {
 		throw new SharedQuizValidationError('This shared quiz is no longer available.');
@@ -236,8 +229,11 @@ export async function attachSharedQuizToOrganization(input: {
 		throw new OrganizationPermissionError('This quiz is already shared with another group.');
 	}
 	if (set.organizationId === input.organizationId) return;
+	if (set.creatorUserId !== input.userId) {
+		throw new OrganizationPermissionError('Only the quiz creator can share this quiz.');
+	}
 
-	await getNeonDatabase()
+	const updated = await getNeonDatabase()
 		.update(sharedPracticeSets)
 		.set({ organizationId: input.organizationId, updatedAt: new Date() })
 		.where(
@@ -246,7 +242,11 @@ export async function attachSharedQuizToOrganization(input: {
 				eq(sharedPracticeSets.status, 'active'),
 				isNull(sharedPracticeSets.organizationId)
 			)
-		);
+		)
+		.returning({ id: sharedPracticeSets.id });
+	if (updated.length === 0) {
+		throw new OrganizationPermissionError('This quiz was already shared with another group.');
+	}
 }
 
 export async function detachSharedQuizFromOrganization(input: {
@@ -254,7 +254,7 @@ export async function detachSharedQuizFromOrganization(input: {
 	organizationId: string;
 	userId: string;
 }): Promise<void> {
-	await assertCanManageOrganizationSharedSet(input.userId, input.organizationId);
+	await assertCanAttachSharedSetToOrganization(input.userId, input.organizationId);
 	const set = await getSharedSetById(input.setId);
 	if (!set || set.organizationId !== input.organizationId) {
 		throw new SharedQuizValidationError('This quiz is not shared with your group.');

@@ -39,6 +39,18 @@ export function utcDateInputValue(date = new Date()): string {
 	return date.toISOString().slice(0, 10);
 }
 
+function addDaysToDateInput(value: string, days: number): string | null {
+	const parts = parseYmd(value);
+	if (!parts) return null;
+	const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+	date.setUTCDate(date.getUTCDate() + days);
+	return formatDateInput(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+}
+
+function defaultBirthDateToday(): string {
+	return addDaysToDateInput(utcDateInputValue(), 1) ?? utcDateInputValue();
+}
+
 export function addYearsToDateInput(value: string, years: number): string | null {
 	const parts = parseYmd(value);
 	if (!parts) return null;
@@ -48,7 +60,7 @@ export function addYearsToDateInput(value: string, years: number): string | null
 	return formatDateInput(nextYear, month, nextDay);
 }
 
-export function isValidBirthDate(value: string, today = utcDateInputValue()): boolean {
+export function isValidBirthDate(value: string, today = defaultBirthDateToday()): boolean {
 	if (!parseYmd(value)) return false;
 	return value >= EARLIEST_BIRTH_DATE && value <= today;
 }
@@ -56,7 +68,7 @@ export function isValidBirthDate(value: string, today = utcDateInputValue()): bo
 export function isAtLeastAge(
 	value: string,
 	age = MINIMUM_ACCOUNT_AGE,
-	today = utcDateInputValue()
+	today = defaultBirthDateToday()
 ): boolean {
 	if (!isValidBirthDate(value, today)) return false;
 	const birthday = addYearsToDateInput(value, age);

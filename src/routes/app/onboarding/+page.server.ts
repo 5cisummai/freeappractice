@@ -3,8 +3,10 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	ONBOARDING_COOKIE_MAX_AGE,
 	ONBOARDING_COOKIE_NAME,
+	ONBOARDING_GOALS,
 	ONBOARDING_INTENT_COOKIE_MAX_AGE,
 	ONBOARDING_INTENT_COOKIE_NAME,
+	type OnboardingGoal,
 	readOnboardingState,
 	readOnboardingIntent,
 	serializeCompletedOnboarding
@@ -19,15 +21,18 @@ import {
 import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 
 const validSubjects = new Set(getCourses().map((course) => course.name));
+const validGoals = new Set<string>(ONBOARDING_GOALS);
 
 export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 	const currentState = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME));
 	const isReset = url.searchParams.get('reset') === '1';
+	const isSuperQuery = url.searchParams.get('super') === '1';
 	const isSuperIntent =
-		url.searchParams.get('super') === '1' ||
-		readOnboardingIntent(cookies.get(ONBOARDING_INTENT_COOKIE_NAME)) === 'super';
-	const selectedSubjects = await getUserSubjects(locals.userId!);
-	const profile = await getTutorProfileViewForRequest(locals, locals.userId!);
+		isSuperQuery || readOnboardingIntent(cookies.get(ONBOARDING_INTENT_COOKIE_NAME)) === 'super';
+	const [selectedSubjects, profile] = await Promise.all([
+		getUserSubjects(locals.userId!),
+		getTutorProfileViewForRequest(locals, locals.userId!)
+	]);
 
 	if (isReset) {
 		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', {
@@ -44,7 +49,7 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 				sameSite: 'lax'
 			});
 		}
-	} else if (url.searchParams.get('super') === '1') {
+	} else if (isSuperQuery) {
 		cookies.set(ONBOARDING_INTENT_COOKIE_NAME, 'super', {
 			path: '/',
 			maxAge: ONBOARDING_INTENT_COOKIE_MAX_AGE,
@@ -53,13 +58,15 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 		});
 	}
 
-	if (currentState.status !== 'pending' && !isSuperIntent && !isReset && profile.ageConfirmedAt) {
+	if (currentState.status !== 'pending' && !isSuperQuery && !isReset && profile.ageConfirmedAt) {
+		cookies.delete(ONBOARDING_INTENT_COOKIE_NAME, { path: '/' });
 		throw redirect(303, '/app');
 	}
 
 	if (!isSuperIntent) {
 		return {
 			selectedSubjects,
+			selectedGoals: currentState.goals,
 			superIntent: false,
 			ageConfirmedAt: profile.ageConfirmedAt,
 			userName: locals.user?.name ?? '',
@@ -79,6 +86,7 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 
 	return {
 		selectedSubjects,
+		selectedGoals: currentState.goals,
 		superIntent: true,
 		ageConfirmedAt: profile.ageConfirmedAt,
 		userName: locals.user?.name ?? '',
@@ -101,14 +109,20 @@ export const actions: Actions = {
 			.filter(
 				(subject): subject is string => typeof subject === 'string' && validSubjects.has(subject)
 			);
+		const goals = formData
+			.getAll('goals')
+			.filter((goal): goal is OnboardingGoal => typeof goal === 'string' && validGoals.has(goal));
 
 		if (subjects.length === 0) {
 			return fail(400, { error: 'Choose at least one subject to continue.' });
 		}
+		if (goals.length === 0) {
+			return fail(400, { error: 'Choose at least one goal to continue.' });
+		}
 
 		await updateUserSubjects(locals.userId!, subjects);
 
-		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(), {
+		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(subjects, goals), {
 			path: '/',
 			maxAge: ONBOARDING_COOKIE_MAX_AGE,
 			httpOnly: true,

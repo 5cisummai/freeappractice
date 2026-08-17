@@ -26,11 +26,12 @@
 		if (!organization || removingId) return;
 		removingId = materialId;
 		try {
-			const response = await apiFetch(`/api/shared-practice-sets/${materialId}`, {
-				method: 'DELETE',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ organizationId: organization.id })
-			});
+			const response = await apiFetch(
+				`/api/shared-practice-sets/${materialId}?organizationId=${encodeURIComponent(organization.id)}`,
+				{
+					method: 'DELETE'
+				}
+			);
 			const payload = await readJsonOrNull<{ error?: string }>(response);
 			if (!response.ok) {
 				throw new Error(getResponseMessage(payload, 'Could not remove this quiz.'));

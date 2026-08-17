@@ -65,6 +65,7 @@ vi.mock('../../../src/routes/api/coach/undo/+server', () => ({
 }));
 
 import { POST as confirmAgePost } from '../../../src/routes/api/super/confirm-age/+server';
+import { InvalidBirthDateError, UnderAgeError } from '$lib/auth/age';
 import {
 	POST as memoryPost,
 	GET as memoryGet,
@@ -202,6 +203,25 @@ describe('Super API routes', () => {
 		const valid = await confirmAgePost(event());
 		expect(valid.status).toBe(200);
 		expect(mocks.confirmAge).toHaveBeenCalledWith('user-1', undefined);
+	});
+
+	it('forwards a valid birth date to the authenticated POST action', async () => {
+		const valid = await confirmAgePost(event({ birthDate: '2010-08-04' }));
+		expect(valid.status).toBe(200);
+		expect(mocks.confirmAge).toHaveBeenCalledWith('user-1', '2010-08-04');
+	});
+
+	it('returns 400 for an invalid birth date', async () => {
+		mocks.confirmAge.mockRejectedValueOnce(new InvalidBirthDateError());
+		const rejected = await confirmAgePost(event({ birthDate: 'not-a-date' }));
+		expect(rejected.status).toBe(400);
+	});
+
+	it('returns 403 for an underage birth date', async () => {
+		mocks.confirmAge.mockRejectedValueOnce(new UnderAgeError());
+		const rejected = await confirmAgePost(event({ birthDate: '2018-08-04' }));
+		expect(rejected.status).toBe(403);
+		expect(await rejected.json()).toMatchObject({ underAge: true });
 	});
 
 	it('acknowledges memory disclosure without requiring Super subscription', async () => {
