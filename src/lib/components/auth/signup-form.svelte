@@ -151,6 +151,7 @@
 							type="text"
 							placeholder="John Doe"
 							required
+							maxlength={64}
 							bind:value={name}
 							autocomplete="name"
 						/>

@@ -23,6 +23,7 @@
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
 		"db:apply": "bun scripts/apply-neon-migrations.ts",
 		"auth:cleanup-unverified": "bun scripts/cleanup-unverified-users.ts",
+		"auth:trim-user-names": "bun scripts/trim-user-names.ts",
 		"auth:backfill-personal-orgs": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/backfill-personal-organizations.ts",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

@@ -1,17 +1,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import { userPrefersMode } from 'mode-watcher';
 	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
 
 	let { children }: { children?: Snippet } = $props();
-	let hydrated = $state(false);
+	let isDark = $state(false);
 
 	onMount(() => {
-		hydrated = true;
+		const root = document.documentElement;
+		const syncTheme = () => {
+			isDark = root.classList.contains('dark');
+		};
+
+		syncTheme();
+		const observer = new MutationObserver(syncTheme);
+		observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+
+		return () => observer.disconnect();
 	});
 
-	const isDark = $derived(hydrated && userPrefersMode.current === 'dark');
 	const heroImage = $derived(isDark ? '/hero-bg-dark.webp' : '/hero-bg.webp');
 </script>
 
