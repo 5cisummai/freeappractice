@@ -5,6 +5,54 @@
 
 	const changelog = [
 		{
+			version: '1.7.1',
+			date: 'August 16, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added a Materials area for browsing shared practice sets and group study resources',
+						'Added clearer quiz sharing controls for copying links and attaching practice sets to a group'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved shared-set permissions, group member progress, streaks, and leaderboard loading',
+						'Improved onboarding and age-confirmation handling for new and returning students'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Hardened API validation, feedback limits, subject updates, and rate-limit responses'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.0',
+			date: 'August 16, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added group workspaces with invitations, member management, group switching, and a shared dashboard',
+						'Added organization leaderboards and member progress views',
+						'Added in-app feedback submission and an admin feedback management dashboard',
+						'Refreshed onboarding with AP subject selection and study goals'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved practice navigation, tabs, and group-oriented app navigation',
+						'Improved account age confirmation and shared practice set access checks'
+					]
+				}
+			]
+		},
+		{
 			version: '1.6.9',
 			date: 'August 14, 2026',
 			sections: [
