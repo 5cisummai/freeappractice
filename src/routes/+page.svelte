@@ -321,6 +321,38 @@
 			</section>
 		</LandingHero>
 
+		<section class="bg-card/35" aria-labelledby="platform-overview-heading">
+			<div class="mx-auto w-full max-w-7xl px-5 py-5 sm:px-8 lg:px-10 lg:py-6">
+				<h2 id="platform-overview-heading" class="sr-only">More than practice questions</h2>
+				<div class="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+					<div class="rounded-xl border border-border/70 bg-background/70 p-3 shadow-xs">
+						<p class="text-sm font-medium">Practice</p>
+						<p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+							MCQs and FRQs across 20+ AP subjects.
+						</p>
+					</div>
+					<div class="rounded-xl border border-border/70 bg-background/70 p-3 shadow-xs">
+						<p class="text-sm font-medium">Super Coach</p>
+						<p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+							Personalized help, feedback, and next steps.
+						</p>
+					</div>
+					<div class="rounded-xl border border-border/70 bg-background/70 p-3 shadow-xs">
+						<p class="text-sm font-medium">Study groups</p>
+						<p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+							Practice with friends and see shared progress.
+						</p>
+					</div>
+					<div class="rounded-xl border border-border/70 bg-background/70 p-3 shadow-xs">
+						<p class="text-sm font-medium">Track progress</p>
+						<p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+							Know what to review and what to do next.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<div
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 pt-24 pb-12 sm:px-8 lg:space-y-24 lg:px-10 lg:pt-32 lg:pb-16"
 		>

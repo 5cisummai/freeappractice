@@ -5,24 +5,9 @@
 
 	let { children }: { children?: Snippet } = $props();
 	let isDark = $state(false);
-	let webglSupported = $state<boolean | null>(null);
-
-	function supportsWebGL2(): boolean {
-		try {
-			const canvas = document.createElement('canvas');
-			const context = canvas.getContext('webgl2');
-			if (!context) return false;
-
-			context.getExtension('WEBGL_lose_context')?.loseContext();
-			return true;
-		} catch {
-			return false;
-		}
-	}
 
 	onMount(() => {
 		const root = document.documentElement;
-		webglSupported = supportsWebGL2();
 		const syncTheme = () => {
 			isDark = root.classList.contains('dark');
 		};
@@ -42,12 +27,12 @@
 	class="relative isolate z-0 -mt-14 flex min-h-svh flex-col items-center overflow-hidden bg-background px-5 pt-32 pb-20 sm:px-8 sm:pt-40 sm:pb-28 lg:px-10 lg:pt-44 lg:pb-32"
 >
 	<div class="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
-		{#if webglSupported}
+		<svelte:boundary>
 			<HalftoneCMYK
 				width="100%"
 				height="100%"
 				image={heroImage}
-				class="size-full"
+				class="absolute inset-0 size-full"
 				colorBack={isDark ? '#080b14' : '#fbfaf4'}
 				colorC="#2563eb"
 				colorM="#8b5cf6"
@@ -67,9 +52,11 @@
 				grainSize={0.5}
 				fit="cover"
 			/>
-		{:else}
-			<img src={heroImage} alt="" class="size-full object-cover" />
-		{/if}
+
+			{#snippet failed()}
+				<img src={heroImage} alt="" class="size-full object-cover" />
+			{/snippet}
+		</svelte:boundary>
 	</div>
 	<div
 		class="pointer-events-none absolute inset-0 z-[1] bg-linear-to-b from-background/65 via-background/25 to-background/15"
