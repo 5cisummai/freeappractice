@@ -295,23 +295,15 @@
 
 <PublicShell showPricing={!data.superFreeBetaEnabled}>
 	<main id="main-content" class="flex-1">
-		<LandingHero freeBeta={data.superFreeBetaEnabled}>
+		<LandingHero>
 			<section
 				id="practice"
 				class="relative z-10 w-full max-sm:mr-[calc(50%-50vw)] max-sm:ml-[calc(50%-50vw)] max-sm:w-screen"
 			>
-				<div class="rounded-3xl shadow-lg">
+				<div class="rounded-xl">
 					<div
-						class="relative overflow-hidden rounded-3xl border border-border/60 bg-background/70 py-4 backdrop-blur-sm max-sm:px-0 sm:p-6 dark:bg-background/75 dark:shadow-primary/10 dark:backdrop-blur-lg"
+						class="relative overflow-hidden rounded-xl border border-border/70 bg-card/45 py-4 shadow-md shadow-black/5 backdrop-blur-md max-sm:px-0 sm:p-6"
 					>
-						<div
-							class="absolute top-3 left-4 hidden items-center gap-2 sm:top-4 sm:left-5 sm:flex"
-							aria-hidden="true"
-						>
-							<span class="size-3 rounded-full bg-[#ff5f57]"></span>
-							<span class="size-3 rounded-full bg-[#febc2e]"></span>
-							<span class="size-3 rounded-full bg-[#28c840]"></span>
-						</div>
 						<PracticeRunner
 							initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
 							capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
