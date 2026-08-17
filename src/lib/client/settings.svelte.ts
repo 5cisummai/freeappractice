@@ -5,6 +5,7 @@ import { authCallbackUrl } from '$lib/auth/urls.js';
 import { getSiteUrl } from '$lib/site-url.js';
 import { resetPostHogUser } from '$lib/client/posthog-analytics';
 import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+import { MAX_NAME_LENGTH } from '$lib/auth/name-policy';
 
 type AccountUser = {
 	name: string;
@@ -25,6 +26,10 @@ class AccountActions {
 
 			if (!name) {
 				toast.error('Name is required');
+				return false;
+			}
+			if (Array.from(name).length > MAX_NAME_LENGTH) {
+				toast.error(`Name must be ${MAX_NAME_LENGTH} characters or fewer`);
 				return false;
 			}
 			if (!email) {

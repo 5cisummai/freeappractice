@@ -5,6 +5,7 @@ import {
 	integer,
 	pgSchema,
 	text,
+	varchar,
 	timestamp,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
@@ -20,7 +21,7 @@ export const authUsers = authSchema.table(
 	'users',
 	{
 		id: text('id').primaryKey(),
-		name: text('name').notNull(),
+		name: varchar('name', { length: 64 }).notNull(),
 		email: text('email').notNull(),
 		emailVerified: boolean('email_verified').notNull().default(false),
 		role: text('role'),

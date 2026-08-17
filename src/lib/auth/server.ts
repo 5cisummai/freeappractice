@@ -36,6 +36,7 @@ import { classifyAccountCreationMethod } from '$lib/auth/analytics';
 import { captureAnonymousServerMetric } from '$lib/server/posthog';
 import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
 import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
+import { limitNameLength } from '$lib/auth/name-policy';
 
 const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
 	get: (_target, property) => {
@@ -76,6 +77,7 @@ export const auth = betterAuth({
 	databaseHooks: {
 		user: {
 			create: {
+				before: async (user) => ({ data: { ...user, name: limitNameLength(user.name) } }),
 				after: async (user, context) => {
 					await createUserProfile(user.id);
 					await ensurePersonalOrganization(user.id);
@@ -85,6 +87,14 @@ export const auth = betterAuth({
 						source: 'better_auth'
 					});
 				}
+			},
+			update: {
+				before: async (user) => ({
+					data:
+						'name' in user && typeof user.name === 'string'
+							? { name: limitNameLength(user.name) }
+							: {}
+				})
 			}
 		}
 	},

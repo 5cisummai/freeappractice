@@ -3,14 +3,16 @@
 	import { resolve } from '$app/paths';
 	import { getSubjectPresentation } from '$lib/onboarding-subjects.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
-	import LayersIcon from '@lucide/svelte/icons/layers';
 	import { toast } from 'svelte-sonner';
+
+	const materialsImage = '/illustrations/books.png';
 
 	let { data } = $props();
 
@@ -122,25 +124,16 @@
 			{/each}
 		</div>
 	{:else}
-		<div
-			class="rounded-2xl border border-dashed border-border/70 bg-card/50 px-6 py-12 text-center"
+		<EmptyState
+			title="No materials yet"
+			description={canManage
+				? 'Finish a practice quiz and use Share → Share to group to add it here for everyone.'
+				: 'When owners share quizzes with the group, they will show up here.'}
+			imageUrl={materialsImage}
 		>
-			<div
-				class="mx-auto flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"
-			>
-				<LayersIcon class="size-5" />
-			</div>
-			<h2 class="mt-4 font-medium">No materials yet</h2>
-			<p class="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-				{#if canManage}
-					Finish a practice quiz and use Share → Share to group to add it here for everyone.
-				{:else}
-					When owners share quizzes with the group, they will show up here.
-				{/if}
-			</p>
-			<Button href={resolve('/app/practice')} variant="outline" class="mt-5 rounded-full">
+			<Button href={resolve('/app/practice')} variant="outline" class="rounded-full">
 				Go to practice
 			</Button>
-		</div>
+		</EmptyState>
 	{/if}
 </PageShell>

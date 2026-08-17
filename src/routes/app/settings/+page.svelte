@@ -533,7 +533,7 @@
 					<form onsubmit={handleUpdateAccount} class="flex flex-col gap-4 px-4 py-4">
 						<div class="flex flex-col gap-2">
 							<Label for="name">Name</Label>
-							<Input id="name" class="ph-mask-pii" bind:value={accountForm.name} />
+							<Input id="name" class="ph-mask-pii" maxlength={64} bind:value={accountForm.name} />
 						</div>
 						<div class="flex flex-col gap-2">
 							<Label for="email">Email</Label>

@@ -71,13 +71,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Apply migrations
-        run: bun run db:apply
+      - name: Trim overlength user names
+        run: bun run auth:trim-user-names
         env:
           DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
 
-      - name: Backfill personal orgs
-        run: bun run auth:backfill-personal-orgs
+      - name: Apply migrations
+        run: bun run db:apply
         env:
           DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
 
