@@ -61,38 +61,31 @@
 {@render children()}
 
 {#if privacy.initialized && privacy.analyticsConsent === null}
-	<div class="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+	<div
+		class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-4 py-3 shadow-lg backdrop-blur sm:inset-x-4 sm:bottom-4 sm:rounded-xl sm:border"
+	>
 		<div
-			class="w-full max-w-2xl rounded-2xl border border-border bg-background/95 p-4 shadow-lg backdrop-blur"
+			class="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
 		>
-			<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<div class="space-y-1">
-					<p class="font-semibold text-foreground">Optional product analytics</p>
-					<p class="text-sm leading-6 text-muted-foreground">
-						Free AP Practice is intended for students age 13 and older. If you are under 13, choose
-						Reject optional analytics, then do not create an account or submit personal information.
-						This personal project uses cookieless Vercel Analytics for traffic and performance. You
-						can also opt in to detailed product analytics, including feature usage and optional
-						session replay. You can change this later in Settings. See our
-						<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
-					</p>
-				</div>
-				<div class="flex flex-wrap gap-2 sm:shrink-0">
-					<button
-						type="button"
-						class="rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-						onclick={() => privacy.setAnalyticsConsent('denied')}
-					>
-						Reject optional analytics
-					</button>
-					<button
-						type="button"
-						class="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-						onclick={() => privacy.setAnalyticsConsent('granted')}
-					>
-						Accept optional analytics
-					</button>
-				</div>
+			<p class="text-sm text-muted-foreground">
+				Optional analytics help improve the product. Change anytime in Settings.
+				<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
+			</p>
+			<div class="flex shrink-0 gap-2">
+				<button
+					type="button"
+					class="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+					onclick={() => privacy.setAnalyticsConsent('denied')}
+				>
+					Reject
+				</button>
+				<button
+					type="button"
+					class="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+					onclick={() => privacy.setAnalyticsConsent('granted')}
+				>
+					Accept
+				</button>
 			</div>
 		</div>
 	</div>
