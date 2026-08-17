@@ -3,12 +3,14 @@
 	import DatabaseZapIcon from '@lucide/svelte/icons/database-zap';
 	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import AdminUsersDataTable from '$lib/components/admin/admin-users-data-table.svelte';
 	import AdminCacheDashboard from '$lib/components/admin/admin-cache-dashboard.svelte';
 	import AdminQualityDashboard from '$lib/components/admin/admin-quality-dashboard.svelte';
 	import AdminSuperDashboard from '$lib/components/admin/admin-super-dashboard.svelte';
+	import AdminFeedbackDashboard from '$lib/components/admin/admin-feedback-dashboard.svelte';
 	import type { AdminTab } from '$lib/admin/types.js';
 	import { resolve } from '$app/paths';
 
@@ -18,7 +20,8 @@
 		{ value: 'users', label: 'Users', icon: UsersIcon },
 		{ value: 'cache', label: 'Pool', icon: DatabaseZapIcon },
 		{ value: 'quality', label: 'Quality', icon: BadgeCheckIcon },
-		{ value: 'super', label: 'Super', icon: SparklesIcon }
+		{ value: 'super', label: 'Super', icon: SparklesIcon },
+		{ value: 'feedback', label: 'Feedback', icon: MessageSquareIcon }
 	];
 
 	function tabHref(tab: AdminTab): string {
@@ -65,6 +68,14 @@
 			<AdminQualityDashboard snapshot={data.quality} />
 		{:else if data.activeTab === 'super'}
 			<AdminSuperDashboard overview={data.superOverview} errorMessage={data.errorMessage} />
+		{:else if data.activeTab === 'feedback'}
+			<AdminFeedbackDashboard
+				items={data.feedback}
+				total={data.totalFeedback}
+				totalSidebar={data.totalSidebarFeedback}
+				totalBugReports={data.totalBugReports}
+				errorMessage={data.errorMessage}
+			/>
 		{/if}
 	</div>
 </PageShell>

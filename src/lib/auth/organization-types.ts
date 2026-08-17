@@ -19,6 +19,36 @@ export type OrganizationActivityItem = {
 	completedAt: string;
 };
 
+export type OrganizationSharedSet = {
+	id: string;
+	slug: string;
+	title: string;
+	apClass: string;
+	unit: string;
+	itemCount: number;
+	expiresAt: string;
+	createdAt: string;
+	creatorName: string | null;
+	completionCount: number;
+};
+
+export type OrganizationLeaderboardEntry = {
+	userId: string;
+	name: string;
+	image: string | null;
+	questionsLast7Days: number;
+	accuracyPercent: number | null;
+	unitsPracticed: number;
+	currentStreak: number;
+};
+
+export class OrganizationPermissionError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'OrganizationPermissionError';
+	}
+}
+
 export type UserOrganization = {
 	id: string;
 	name: string;

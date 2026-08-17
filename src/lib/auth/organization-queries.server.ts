@@ -1,22 +1,27 @@
 import { randomBytes } from 'node:crypto';
-import { and, count, desc, eq, gte, inArray, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, gt, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	authMembers,
 	authOrganizations,
 	authUsers,
+	mcqAttempts,
 	quizAttempts,
-	sharedPracticeSets
+	sharedPracticeSets,
+	userProgress
 } from '$lib/server/neon/schema';
 import {
 	MAX_FREE_GROUP_ORGS,
+	OrganizationPermissionError,
 	SHARE_TOKEN_PREFIX,
 	isOrgType,
 	parseOrgType,
 	personalOrgSlug,
 	PERSONAL_ORG_NAME,
 	type OrganizationActivityItem,
+	type OrganizationLeaderboardEntry,
 	type OrganizationRole,
+	type OrganizationSharedSet,
 	type OrgType,
 	type UserOrganization
 } from '$lib/auth/organization-types';
@@ -304,4 +309,224 @@ export async function ensurePersonalOrganization(userId: string): Promise<UserOr
 		role: 'owner',
 		createdAt: now
 	};
+}
+
+const ORG_SHARED_SET_LIMIT = 10;
+const LEADERBOARD_MIN_ACCURACY_ATTEMPTS = 20;
+
+export async function assertCanAttachSharedSetToOrganization(
+	userId: string,
+	organizationId: string
+): Promise<void> {
+	const orgType = await getOrganizationTypeForUser(organizationId, userId);
+	if (orgType !== 'group') {
+		throw new OrganizationPermissionError(
+			'Organization quizzes are only available for group organizations.'
+		);
+	}
+
+	const memberships = await listUserOrganizations(userId);
+	const membership = memberships.find((org) => org.id === organizationId);
+	if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
+		throw new OrganizationPermissionError(
+			'You do not have permission to share quizzes with this organization.'
+		);
+	}
+}
+
+export async function listOrganizationSharedSets(
+	organizationId: string
+): Promise<OrganizationSharedSet[]> {
+	const now = new Date();
+	const rows = await getNeonDatabase()
+		.select({
+			id: sharedPracticeSets.id,
+			slug: sharedPracticeSets.slug,
+			title: sharedPracticeSets.title,
+			apClass: sharedPracticeSets.apClass,
+			unit: sharedPracticeSets.unit,
+			itemCount: sharedPracticeSets.itemCount,
+			expiresAt: sharedPracticeSets.expiresAt,
+			createdAt: sharedPracticeSets.createdAt,
+			creatorName: authUsers.name
+		})
+		.from(sharedPracticeSets)
+		.leftJoin(authUsers, eq(sharedPracticeSets.creatorUserId, authUsers.id))
+		.where(
+			and(
+				eq(sharedPracticeSets.organizationId, organizationId),
+				eq(sharedPracticeSets.status, 'active'),
+				gt(sharedPracticeSets.expiresAt, now)
+			)
+		)
+		.orderBy(desc(sharedPracticeSets.createdAt))
+		.limit(ORG_SHARED_SET_LIMIT);
+
+	if (rows.length === 0) return [];
+
+	const memberRows = await getNeonDatabase()
+		.select({ userId: authMembers.userId })
+		.from(authMembers)
+		.where(eq(authMembers.organizationId, organizationId));
+	const memberUserIds = memberRows.map((member) => member.userId);
+
+	const setIds = rows.map((row) => row.id);
+	const completionRows = memberUserIds.length
+		? await getNeonDatabase()
+				.select({
+					sharedPracticeSetId: quizAttempts.sharedPracticeSetId,
+					completionCount: sql<number>`count(distinct ${quizAttempts.userId})::int`
+				})
+				.from(quizAttempts)
+				.where(
+					and(
+						inArray(quizAttempts.sharedPracticeSetId, setIds),
+						inArray(quizAttempts.userId, memberUserIds)
+					)
+				)
+				.groupBy(quizAttempts.sharedPracticeSetId)
+		: [];
+
+	const completionMap = new Map(
+		completionRows
+			.filter((row) => row.sharedPracticeSetId)
+			.map((row) => [row.sharedPracticeSetId!, row.completionCount])
+	);
+
+	return rows.map((row) => ({
+		id: row.id,
+		slug: row.slug,
+		title: row.title,
+		apClass: row.apClass,
+		unit: row.unit,
+		itemCount: row.itemCount,
+		expiresAt: row.expiresAt.toISOString(),
+		createdAt: row.createdAt.toISOString(),
+		creatorName: row.creatorName,
+		completionCount: completionMap.get(row.id) ?? 0
+	}));
+}
+
+export async function listOrganizationLeaderboard(
+	organizationId: string,
+	timeZone = 'UTC'
+): Promise<OrganizationLeaderboardEntry[]> {
+	const members = await listOrganizationMembers(organizationId);
+	if (members.length === 0) return [];
+
+	const userIds = members.map((member) => member.userId);
+	const recentCutoff = new Date(Date.now() - 7 * 86_400_000);
+
+	const today = new Intl.DateTimeFormat('en-CA', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(new Date());
+
+	const [statsRows, unitsRows, streakResult] = await Promise.all([
+		getNeonDatabase()
+			.select({
+				userId: mcqAttempts.userId,
+				questionsLast7Days: sql<number>`count(*) FILTER (
+					WHERE ${mcqAttempts.wasCorrect} IS NOT NULL
+						AND ${mcqAttempts.attemptedAt} >= ${recentCutoff}
+				)::int`,
+				totalAttempts: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} IS NOT NULL)::int`,
+				correctAttempts: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} = true)::int`
+			})
+			.from(mcqAttempts)
+			.where(inArray(mcqAttempts.userId, userIds))
+			.groupBy(mcqAttempts.userId),
+		getNeonDatabase()
+			.select({
+				userId: userProgress.userId,
+				unitsPracticed: count()
+			})
+			.from(userProgress)
+			.where(and(inArray(userProgress.userId, userIds), gt(userProgress.totalAttempts, 0)))
+			.groupBy(userProgress.userId),
+		getNeonDatabase().execute<{ userId: string; currentStreak: number }>(sql`
+			WITH activity_days AS (
+				SELECT DISTINCT
+					${mcqAttempts.userId} AS user_id,
+					(${mcqAttempts.attemptedAt} AT TIME ZONE ${timeZone})::date AS day
+				FROM ${mcqAttempts}
+				WHERE ${inArray(mcqAttempts.userId, userIds)}
+			),
+			anchor AS (
+				SELECT DISTINCT
+					activity_days.user_id,
+					CASE
+						WHEN EXISTS (
+							SELECT 1 FROM activity_days candidate
+							WHERE candidate.user_id = activity_days.user_id
+								AND candidate.day = ${today}::date
+						) THEN ${today}::date
+						WHEN EXISTS (
+							SELECT 1 FROM activity_days candidate
+							WHERE candidate.user_id = activity_days.user_id
+								AND candidate.day = ${today}::date - 1
+						) THEN ${today}::date - 1
+						ELSE NULL::date
+					END AS anchor_day
+				FROM activity_days
+			),
+			ordered AS (
+				SELECT
+					activity_days.user_id,
+					activity_days.day,
+					anchor.anchor_day,
+					row_number() OVER (
+						PARTITION BY activity_days.user_id ORDER BY activity_days.day DESC
+					)::int AS position
+				FROM activity_days
+				INNER JOIN anchor ON anchor.user_id = activity_days.user_id
+				WHERE anchor.anchor_day IS NOT NULL
+					AND activity_days.day <= anchor.anchor_day
+			)
+			SELECT
+				user_id AS "userId",
+				count(*) FILTER (
+					WHERE day = anchor_day - (position - 1)
+				)::int AS "currentStreak"
+			FROM ordered
+			GROUP BY user_id, anchor_day
+		`)
+	]);
+
+	const statsMap = new Map(statsRows.map((row) => [row.userId, row]));
+	const unitsMap = new Map(unitsRows.map((row) => [row.userId, Number(row.unitsPracticed)]));
+	const streakMap = new Map(streakResult.rows.map((row) => [row.userId, row.currentStreak]));
+
+	const entries: OrganizationLeaderboardEntry[] = members.map((member) => {
+		const stats = statsMap.get(member.userId);
+		const totalAttempts = stats?.totalAttempts ?? 0;
+		const accuracyPercent =
+			totalAttempts >= LEADERBOARD_MIN_ACCURACY_ATTEMPTS && stats
+				? Math.round((stats.correctAttempts / totalAttempts) * 100)
+				: null;
+
+		return {
+			userId: member.userId,
+			name: member.name,
+			image: member.image,
+			questionsLast7Days: stats?.questionsLast7Days ?? 0,
+			accuracyPercent,
+			unitsPracticed: unitsMap.get(member.userId) ?? 0,
+			currentStreak: streakMap.get(member.userId) ?? 0
+		};
+	});
+
+	entries.sort((left, right) => {
+		if (right.questionsLast7Days !== left.questionsLast7Days) {
+			return right.questionsLast7Days - left.questionsLast7Days;
+		}
+		if ((right.accuracyPercent ?? 0) !== (left.accuracyPercent ?? 0)) {
+			return (right.accuracyPercent ?? 0) - (left.accuracyPercent ?? 0);
+		}
+		return left.name.localeCompare(right.name);
+	});
+
+	return entries;
 }

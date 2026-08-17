@@ -8,8 +8,10 @@ export const load: PageServerLoad = async ({ parent }) => {
 		throw redirect(302, '/app');
 	}
 
+	const members = await listOrganizationMembers(activeOrganization.id);
+
 	return {
-		members: (await listOrganizationMembers(activeOrganization.id)).map((member) => ({
+		members: members.map((member) => ({
 			...member,
 			email:
 				activeOrganization.role === 'owner' || activeOrganization.role === 'admin'

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth/client.js';
 	import {
 		orgAvatarClass,
@@ -128,6 +129,16 @@
 			</div>
 		</section>
 	{/if}
+
+	<section class="rounded-xl border bg-card p-5">
+		<h2 class="font-medium">Group materials</h2>
+		<p class="mt-1 text-sm text-muted-foreground">
+			Shared quizzes live on the Materials page for everyone in the group.
+		</p>
+		<Button href={resolve('/app/materials')} variant="outline" class="mt-4 w-fit">
+			View materials
+		</Button>
+	</section>
 
 	<ul class="flex flex-col gap-2">
 		{#each data.members as member (member.memberId)}

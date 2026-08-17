@@ -2,20 +2,14 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
+	import NavMain from '$lib/components/layout/nav-main.svelte';
 	import NavUser from '$lib/components/layout/nav-user.svelte';
 	import OrgSwitcher from '$lib/components/layout/org-switcher.svelte';
+	import FeedbackDialog from '$lib/components/layout/feedback-dialog.svelte';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
-	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import CompassIcon from '@lucide/svelte/icons/compass';
-	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
 	import SettingsIcon from '@lucide/svelte/icons/settings';
-	import ShieldIcon from '@lucide/svelte/icons/shield';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
-	import UsersIcon from '@lucide/svelte/icons/users';
 	import type { UserOrganization } from '$lib/auth/organization-types';
 
 	let {
@@ -34,32 +28,10 @@
 		ownedGroupCount?: number;
 	} = $props();
 
-	const baseNavItems = [
-		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon },
-		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
-		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
-		{ href: '/app/resources', label: 'Resources', icon: CompassIcon },
-		{ href: '/app/coach', label: 'Coach', icon: BrainCircuitIcon },
-		{ href: '/app/insights', label: 'Insights', icon: SparklesIcon }
-	] as const;
-
-	const adminNavItem = { href: '/app/admin', label: 'Admin', icon: ShieldIcon } as const;
-	const membersNavItem = { href: '/app/members', label: 'Members', icon: UsersIcon } as const;
 	const showMembers = $derived(activeOrganization?.orgType === 'group');
-	const navItems = $derived([
-		...baseNavItems.filter(
-			(item) =>
-				assistantFeaturesEnabled || (item.href !== '/app/coach' && item.href !== '/app/insights')
-		),
-		...(showMembers ? [membersNavItem] : []),
-		...(isAdmin ? [adminNavItem] : [])
-	]);
 
-	function isActive(
-		href: (typeof navItems)[number]['href'] | '/app/settings' | '/app/members'
-	): boolean {
+	function isActive(href: '/app/settings'): boolean {
 		const resolved = resolve(href);
-		if (href === '/app') return page.url.pathname === resolved;
 		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');
 	}
 </script>
@@ -82,33 +54,7 @@
 	</Sidebar.Header>
 
 	<Sidebar.Content>
-		<Sidebar.Group>
-			<Sidebar.GroupLabel>Navigation</Sidebar.GroupLabel>
-			<Sidebar.GroupContent>
-				<Sidebar.Menu>
-					{#each navItems as item (item.href)}
-						<Sidebar.MenuItem>
-							<Sidebar.MenuButton
-								isActive={isActive(item.href)}
-								tooltipContent={item.label}
-								class="data-active:bg-primary/10 data-active:font-medium data-active:text-primary"
-							>
-								{#snippet child({ props })}
-									<a
-										href={resolve(item.href)}
-										aria-current={isActive(item.href) ? 'page' : undefined}
-										{...props}
-									>
-										<item.icon />
-										<span>{item.label}</span>
-									</a>
-								{/snippet}
-							</Sidebar.MenuButton>
-						</Sidebar.MenuItem>
-					{/each}
-				</Sidebar.Menu>
-			</Sidebar.GroupContent>
-		</Sidebar.Group>
+		<NavMain {assistantFeaturesEnabled} {showMembers} {isAdmin} />
 	</Sidebar.Content>
 
 	<Sidebar.Footer class="border-t border-sidebar-border">
@@ -131,6 +77,7 @@
 					{/snippet}
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
+			<FeedbackDialog />
 			<Sidebar.MenuItem>
 				<ThemeToggle variant="sidebar" />
 			</Sidebar.MenuItem>

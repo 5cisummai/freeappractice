@@ -12,6 +12,7 @@
 	import LandingHero from '$lib/components/marketing/landing-hero.svelte';
 	import UnlimitedSection from '$lib/components/marketing/unlimited-section.svelte';
 	import SuperSection from '$lib/components/marketing/super-section.svelte';
+	import StudyTeamSection from '$lib/components/marketing/study-team-section.svelte';
 	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
 
@@ -334,6 +335,8 @@
 			<UnlimitedSection showTutor={data.assistantFeaturesEnabled} />
 
 			<SuperSection />
+
+			<StudyTeamSection />
 
 			<AspiringStudentsSection />
 

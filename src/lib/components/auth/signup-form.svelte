@@ -3,7 +3,6 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Field from '$lib/components/ui/field/index.js';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
@@ -15,8 +14,10 @@
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
-	import { markOnboardingPendingInBrowser } from '$lib/onboarding.js';
-	import { persistAgeAttestation } from '$lib/auth/age-attestation.js';
+	import {
+		markOnboardingIntentInBrowser,
+		markOnboardingPendingInBrowser
+	} from '$lib/onboarding.js';
 	import {
 		isPasswordWithinLimit,
 		MIN_PASSWORD_LENGTH,
@@ -24,7 +25,11 @@
 		PASSWORD_LENGTH_HINT
 	} from '$lib/auth/password-policy.js';
 
-	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
+	let {
+		class: className,
+		superSignup = false,
+		...restProps
+	}: HTMLAttributes<HTMLDivElement> & { superSignup?: boolean } = $props();
 
 	let name = $state('');
 	let email = $state('');
@@ -33,7 +38,6 @@
 	let errorMessage = $state('');
 	let loading = $state(false);
 	let googleLoading = $state(false);
-	let ageAttested = $state(false);
 	const redirectPath = $derived(safeAppPath(page.url.searchParams.get('redirect')));
 	const googleCallbackURL = $derived(authCallbackUrlForAppPath(redirectPath));
 	const googleNewUserCallbackURL = $derived(
@@ -45,11 +49,7 @@
 	async function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		errorMessage = '';
-		if (!ageAttested) {
-			errorMessage = 'You must confirm that you are at least 13 to create an account.';
-			return;
-		}
-		persistAgeAttestation(true);
+		markOnboardingIntentInBrowser(superSignup ? 'super' : 'free');
 
 		if (password !== confirmPassword) {
 			errorMessage = 'Passwords do not match';
@@ -92,19 +92,15 @@
 	}
 
 	async function handleGoogleSignIn() {
-		if (googleLoading || !ageAttested) {
-			if (!ageAttested) {
-				errorMessage = 'You must confirm that you are at least 13 to create an account.';
-			}
-			return;
-		}
+		if (googleLoading) return;
 		errorMessage = '';
-		persistAgeAttestation(true);
+		markOnboardingIntentInBrowser(superSignup ? 'super' : 'free');
 		googleLoading = true;
 		captureSignupStarted('google');
 		try {
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
+				requestSignUp: true,
 				callbackURL: googleCallbackURL,
 				errorCallbackURL: authCallbackUrl('/signup'),
 				newUserCallbackURL: googleNewUserCallbackURL
@@ -131,23 +127,12 @@
 		<Card.Content>
 			<form onsubmit={handleSubmit}>
 				<Field.Group>
-					<Field.Field orientation="horizontal" class="items-start">
-						<Checkbox
-							id="age-attestation"
-							required
-							bind:checked={ageAttested}
-							onCheckedChange={(checked) => persistAgeAttestation(checked === true)}
-						/>
-						<Field.Label for="age-attestation" class="text-sm font-normal">
-							I confirm that I am at least 13 years old.
-						</Field.Label>
-					</Field.Field>
 					<Field.Field>
 						<Button
 							type="button"
 							variant="outline"
 							onclick={handleGoogleSignIn}
-							disabled={googleLoading || !ageAttested}
+							disabled={googleLoading}
 						>
 							<GoogleLogo />
 							{googleLoading ? 'Redirecting...' : 'Continue with Google'}
@@ -209,7 +194,7 @@
 						</Field.Description>
 					</Field.Field>
 					<Field.Field>
-						<Button type="submit" disabled={loading || !ageAttested}>
+						<Button type="submit" disabled={loading}>
 							{loading ? 'Creating account...' : 'Create Account'}
 						</Button>
 						<Field.Description class="text-center">

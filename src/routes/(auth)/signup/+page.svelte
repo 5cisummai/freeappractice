@@ -30,4 +30,4 @@
 	</div>
 {/if}
 
-<SignupForm />
+<SignupForm {superSignup} />

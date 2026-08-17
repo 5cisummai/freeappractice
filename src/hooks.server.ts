@@ -35,6 +35,7 @@ import {
 	shouldSkipSessionLookup
 } from '$lib/auth/account-surface.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { limitApiRequests } from '$lib/server/api-rate-limit.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -208,6 +209,31 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
+	if (event.url.pathname.startsWith('/api/')) {
+		const rateLimit = await limitApiRequests(event.request, event.locals.userId);
+		if (!rateLimit.allowed) {
+			const now = Date.now();
+			const retryAfterSeconds = Math.max(
+				1,
+				Math.ceil(Math.max(0, (rateLimit.retryAt ?? now) - now) / 1000)
+			);
+			return postProcessResponse(
+				new Response(JSON.stringify({ error: 'Too many requests', retryAfterSeconds }), {
+					status: 429,
+					headers: {
+						'Content-Type': 'application/json',
+						'RateLimit-Limit': String(rateLimit.limit),
+						'RateLimit-Remaining': '0',
+						'RateLimit-Reset': String(retryAfterSeconds),
+						'Retry-After': String(retryAfterSeconds)
+					}
+				}),
+				event,
+				origin
+			);
+		}
+	}
+
 	if (event.request.method === 'POST' && event.url.pathname === '/api/auth/subscription/upgrade') {
 		if (await isSuperFreeBetaEnabled()) {
 			return new Response(
@@ -268,7 +294,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 			if (event.url.pathname.startsWith('/app')) {
 				return new Response(null, {
 					status: 303,
-					headers: { Location: '/app/confirm-age', 'Cache-Control': 'no-store' }
+					headers: { Location: '/app/onboarding', 'Cache-Control': 'no-store' }
 				});
 			}
 		}

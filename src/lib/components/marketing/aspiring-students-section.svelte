@@ -205,7 +205,7 @@
 	<SectionIntro id="aspiring-students-heading">
 		{#snippet title()}
 			Used by students <span class="underline decoration-primary/70 decoration-2 underline-offset-4"
-				>aiming for 5s</span
+				>earning 5s</span
 			>
 		{/snippet}
 		{#snippet description()}
@@ -270,7 +270,7 @@
 						aria-label="Score {story.score}"
 					>
 						<span
-							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg leading-none font-semibold"
+							class="flex size-full items-center justify-center rounded-full border-2 border-current font-display text-lg leading-none font-medium"
 						>
 							{story.score}
 						</span>

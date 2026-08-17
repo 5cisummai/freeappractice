@@ -66,7 +66,7 @@
 			{/if}
 
 			<h1
-				class="font-display text-[2.15rem] leading-[1.15] font-semibold tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl"
+				class="font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl"
 			>
 				Practice AP Exams
 				<span class="relative inline-block px-1">

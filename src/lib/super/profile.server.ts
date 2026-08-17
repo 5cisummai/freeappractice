@@ -7,6 +7,12 @@ import type { TutorProfileUpdate, TutorProfileView, TutorTeachingStyle } from '$
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
 import { isDuplicateKeyError } from '$lib/question-bank/util.server';
+import {
+	InvalidBirthDateError,
+	UnderAgeError,
+	isAtLeastAge,
+	isValidBirthDate
+} from '$lib/auth/age';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;
@@ -137,16 +143,17 @@ export async function markSuperAccessStarted(
 	}
 }
 
-export async function confirmAge(userId: string): Promise<TutorProfileView> {
+export async function confirmAge(userId: string, birthDate?: string): Promise<TutorProfileView> {
 	const profile = await ensureTutorProfile(userId);
-	if (!profile.ageConfirmedAt) {
-		profile.ageConfirmedAt = new Date();
-		profile.updatedAt = profile.ageConfirmedAt;
-		await getNeonDatabase()
-			.update(tutorProfiles)
-			.set({ ageConfirmedAt: profile.ageConfirmedAt, updatedAt: profile.updatedAt })
-			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.ageConfirmedAt)));
-	}
+	if (profile.ageConfirmedAt) return toTutorProfileView(profile);
+	if (!birthDate || !isValidBirthDate(birthDate)) throw new InvalidBirthDateError();
+	if (!isAtLeastAge(birthDate)) throw new UnderAgeError();
+	profile.ageConfirmedAt = new Date();
+	profile.updatedAt = profile.ageConfirmedAt;
+	await getNeonDatabase()
+		.update(tutorProfiles)
+		.set({ ageConfirmedAt: profile.ageConfirmedAt, updatedAt: profile.updatedAt })
+		.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.ageConfirmedAt)));
 	return toTutorProfileView(profile);
 }
 

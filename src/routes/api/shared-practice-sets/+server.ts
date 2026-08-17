@@ -1,4 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
+import { assertCanAttachSharedSetToOrganization } from '$lib/auth/organization-queries.server';
+import { OrganizationPermissionError } from '$lib/auth/organization-types';
 import {
 	createSharedQuiz,
 	SharedQuizValidationError
@@ -28,7 +30,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 				headers: {
 					'RateLimit-Limit': String(locals.userId ? 30 : 12),
 					'RateLimit-Remaining': '0',
-					'RateLimit-Reset': String(Math.ceil((rateLimit.retryAt ?? now) / 1000)),
+					'RateLimit-Reset': String(retryAfterSeconds),
 					'Retry-After': String(retryAfterSeconds)
 				}
 			}
@@ -36,10 +38,20 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	}
 
 	try {
+		const organizationId =
+			typeof raw.organizationId === 'string' ? raw.organizationId.trim() : undefined;
+		if (organizationId && !locals.userId) {
+			return json({ error: 'Sign in to share with an organization.' }, { status: 401 });
+		}
+		if (organizationId && locals.userId) {
+			await assertCanAttachSharedSetToOrganization(locals.userId, organizationId);
+		}
+
 		const sharedQuiz = await createSharedQuiz({
 			questionIds: raw.questionIds,
 			unit: typeof raw.unit === 'string' ? raw.unit : undefined,
-			creatorUserId: locals.userId
+			creatorUserId: locals.userId,
+			organizationId: organizationId || undefined
 		});
 		return json({
 			sharedQuiz: {
@@ -50,6 +62,9 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 	} catch (error) {
 		if (error instanceof SharedQuizValidationError) {
 			return json({ error: error.message }, { status: 400 });
+		}
+		if (error instanceof OrganizationPermissionError) {
+			return json({ error: error.message }, { status: 403 });
 		}
 		logger.error('Shared practice set creation failed', { error });
 		return json({ error: 'Could not create a share link.' }, { status: 500 });

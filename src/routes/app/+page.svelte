@@ -4,17 +4,12 @@
 	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import FlameIcon from '@lucide/svelte/icons/flame';
-	import UsersIcon from '@lucide/svelte/icons/users';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
+	import OrgGroupDashboard from '$lib/components/layout/org-group-dashboard.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import {
-		orgAvatarClass,
-		orgAvatarLetter,
-		type OrganizationActivityItem
-	} from '$lib/auth/organization-types';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';
@@ -100,33 +95,7 @@
 	const shellDescription = $derived(
 		hasActivity ? "Let's keep your momentum going." : "You're all set. Your subjects are ready."
 	);
-	const showOrgActivity = $derived(data.activeOrganization?.orgType === 'group');
-	const orgActivity = $derived((data.orgActivity ?? []) as OrganizationActivityItem[]);
-
-	function activityTarget(item: OrganizationActivityItem): string {
-		if (item.quizTitle) return item.quizTitle;
-		if (item.unit && item.unit !== 'All Units') return `${item.apClass} — ${item.unit}`;
-		return item.apClass;
-	}
-
-	function formatRelativeTime(iso: string): string {
-		const date = new Date(iso);
-		if (Number.isNaN(date.getTime())) return '';
-
-		const diffMs = Date.now() - date.getTime();
-		const diffMinutes = Math.floor(diffMs / 60_000);
-		if (diffMinutes < 1) return 'Just now';
-		if (diffMinutes < 60) return `${diffMinutes}m ago`;
-
-		const diffHours = Math.floor(diffMinutes / 60);
-		if (diffHours < 24) return `${diffHours}h ago`;
-
-		const diffDays = Math.floor(diffHours / 24);
-		if (diffDays === 1) return 'Yesterday';
-		if (diffDays < 7) return `${diffDays}d ago`;
-
-		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
-	}
+	const showOrgFeatures = $derived(data.activeOrganization?.orgType === 'group');
 
 	function formatLastPracticed(iso: string | null): string {
 		if (!iso) return 'Never';
@@ -176,52 +145,12 @@
 		</div>
 	{/snippet}
 
-	{#if showOrgActivity}
-		<section class="space-y-4" aria-labelledby="group-activity-heading">
-			<div class="flex items-center gap-2">
-				<UsersIcon class="size-5 text-muted-foreground" aria-hidden="true" />
-				<h2
-					id="group-activity-heading"
-					class="font-display text-xl font-medium tracking-tight sm:text-2xl"
-				>
-					Group activity
-				</h2>
-			</div>
-
-			<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
-				{#if orgActivity.length > 0}
-					<ul class="divide-y divide-border/70">
-						{#each orgActivity as item (item.id)}
-							<li class="flex items-center gap-3 px-5 py-4">
-								<span
-									class="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold {orgAvatarClass(
-										item.userId
-									)}"
-								>
-									{orgAvatarLetter(item.userName)}
-								</span>
-								<div class="min-w-0 flex-1">
-									<p class="text-sm">
-										<span class="ph-mask-pii font-medium">{item.userName}</span>
-										scored
-										<span class="font-medium tabular-nums">{item.scorePercent}%</span>
-										on
-										<span class="font-medium">{activityTarget(item)}</span>
-									</p>
-									<p class="text-xs text-muted-foreground">
-										<time datetime={item.completedAt}>{formatRelativeTime(item.completedAt)}</time>
-									</p>
-								</div>
-							</li>
-						{/each}
-					</ul>
-				{:else}
-					<div class="px-5 py-6 text-sm text-muted-foreground">
-						No quiz activity in the last two weeks. Finish a practice quiz to show up here.
-					</div>
-				{/if}
-			</Card.Root>
-		</section>
+	{#if showOrgFeatures}
+		<OrgGroupDashboard
+			orgActivity={data.orgActivity ?? []}
+			orgSharedSets={data.orgSharedSets ?? []}
+			orgLeaderboard={data.orgLeaderboard ?? []}
+		/>
 	{/if}
 
 	{#if subjectCards.length > 0 && recommendation}
