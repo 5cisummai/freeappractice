@@ -5,6 +5,46 @@
 
 	const changelog = [
 		{
+			version: '1.7.4',
+			date: 'August 17, 2026',
+			sections: [
+				{
+					title: 'Reliability',
+					items: [
+						'Added a static hero background for browsers without WebGL2 support',
+						'Fixed the automated user-name cleanup step used during database migrations'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.3',
+			date: 'August 17, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Unified theme preferences so System mode follows your device color scheme everywhere',
+						'Improved the Materials empty state with clearer guidance for owners and group members',
+						'Limited account names to 64 characters and cleaned up existing overlength names'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.2',
+			date: 'August 17, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Refreshed the homepage hero with new light and dark visual treatments',
+						'Improved the landing page layout, typography, and responsive presentation'
+					]
+				}
+			]
+		},
+		{
 			version: '1.7.1',
 			date: 'August 16, 2026',
 			sections: [
