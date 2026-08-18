@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import CopyIcon from '@lucide/svelte/icons/copy';
-	import PlusIcon from '@lucide/svelte/icons/plus';
-	import UsersIcon from '@lucide/svelte/icons/users';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
+	import PlusIcon from '@tabler/icons-svelte/icons/plus-filled';
+	import UsersIcon from '@tabler/icons-svelte/icons/users';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';

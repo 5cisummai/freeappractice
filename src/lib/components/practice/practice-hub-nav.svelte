@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import ChevronLeftIcon from '@tabler/icons-svelte/icons/chevron-left';
+	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import {
 		formatUnitLabel,

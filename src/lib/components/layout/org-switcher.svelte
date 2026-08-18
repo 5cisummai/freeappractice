@@ -16,15 +16,15 @@
 	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import CopyIcon from '@lucide/svelte/icons/copy';
-	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
-	import LogOutIcon from '@lucide/svelte/icons/log-out';
-	import PencilIcon from '@lucide/svelte/icons/pencil';
-	import PlusIcon from '@lucide/svelte/icons/plus';
-	import SendIcon from '@lucide/svelte/icons/send';
-	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
+	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
+	import LogOutIcon from '@tabler/icons-svelte/icons/logout';
+	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
+	import PlusIcon from '@tabler/icons-svelte/icons/plus-filled';
+	import SendIcon from '@tabler/icons-svelte/icons/send-filled';
+	import Trash2Icon from '@tabler/icons-svelte/icons/trash-filled';
 	import { toast } from 'svelte-sonner';
 
 	let {
@@ -237,7 +237,7 @@
 									class="size-8 shrink-0 justify-center p-0 [&>svg:last-child]:hidden"
 									aria-label="Organization actions"
 								>
-									<EllipsisIcon class="size-4" />
+									<EllipsisIcon class="size-4 text-muted-foreground" />
 								</DropdownMenu.SubTrigger>
 								<DropdownMenu.SubContent>
 									{#if org.role === 'owner' || org.role === 'admin'}

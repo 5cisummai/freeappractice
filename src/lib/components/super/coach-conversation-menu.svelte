@@ -1,7 +1,7 @@
 <script lang="ts">
-	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
-	import PencilIcon from '@lucide/svelte/icons/pencil';
-	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
+	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
+	import Trash2Icon from '@tabler/icons-svelte/icons/trash-filled';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';

@@ -2,10 +2,10 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
-	import XIcon from '@lucide/svelte/icons/x';
-	import SendHorizontalIcon from '@lucide/svelte/icons/send-horizontal';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import MessageSquareIcon from '@tabler/icons-svelte/icons/message-filled';
+	import XIcon from '@tabler/icons-svelte/icons/x-filled';
+	import SendHorizontalIcon from '@tabler/icons-svelte/icons/send-filled';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';

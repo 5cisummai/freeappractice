@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types.js';
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';

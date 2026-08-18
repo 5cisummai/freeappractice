@@ -4,8 +4,8 @@
 	import SuperLandingSection from '$lib/components/marketing/super-landing-section.svelte';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { twAnimateIn, twAnimateInView } from '$lib/tw-animate';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 
 	let { data } = $props();
 

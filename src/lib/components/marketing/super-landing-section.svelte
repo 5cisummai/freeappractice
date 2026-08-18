@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { twAnimateInView, twAnimateInViewSubtle } from '$lib/tw-animate';
-	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import FileTextIcon from '@lucide/svelte/icons/file-text';
-	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
-	import PenLineIcon from '@lucide/svelte/icons/pen-line';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import BrainIcon from '@lucide/svelte/icons/brain';
-	import LineChartIcon from '@lucide/svelte/icons/line-chart';
-	import MessageCircleIcon from '@lucide/svelte/icons/message-circle';
+	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import FileTextIcon from '@tabler/icons-svelte/icons/file-text-filled';
+	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
+	import PenLineIcon from '@tabler/icons-svelte/icons/pencil-filled';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import BrainIcon from '@tabler/icons-svelte/icons/brain';
+	import LineChartIcon from '@tabler/icons-svelte/icons/chart-line';
+	import MessageCircleIcon from '@tabler/icons-svelte/icons/message-circle-filled';
 
 	let { freeBeta = false }: { freeBeta?: boolean } = $props();
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
+	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
 	import { invalidateAll } from '$app/navigation';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import type { AdminUserRow } from '$lib/admin/types.js';

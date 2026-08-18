@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
@@ -20,6 +21,11 @@
 	} = $props();
 
 	const sidebar = useSidebar();
+	let mounted = $state(false);
+
+	onMount(() => {
+		mounted = true;
+	});
 </script>
 
 {#if collapsible === 'none'}
@@ -33,7 +39,7 @@
 	>
 		{@render children?.()}
 	</div>
-{:else if sidebar.isMobile}
+{:else if mounted && sidebar.isMobile}
 	<Sheet.Root bind:open={() => sidebar.openMobile, (v) => sidebar.setOpenMobile(v)} {...restProps}>
 		<Sheet.Content
 			bind:ref

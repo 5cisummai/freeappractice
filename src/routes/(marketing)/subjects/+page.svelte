@@ -2,7 +2,7 @@
 	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
 	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import InviteBanner from '$lib/components/marketing/invite-banner.svelte';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
 

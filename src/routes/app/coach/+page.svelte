@@ -5,20 +5,20 @@
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
 	import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
-	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import CopyIcon from '@lucide/svelte/icons/copy';
-	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
-	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
-	import Loader2Icon from '@lucide/svelte/icons/loader-2';
-	import PencilIcon from '@lucide/svelte/icons/pencil';
-	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
-	import SearchIcon from '@lucide/svelte/icons/search';
-	import SquareIcon from '@lucide/svelte/icons/square';
-	import TargetIcon from '@lucide/svelte/icons/target';
-	import XIcon from '@lucide/svelte/icons/x';
+	import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
+	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
+	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
+	import CircleAlertIcon from '@tabler/icons-svelte/icons/alert-circle';
+	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
+	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
+	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
+	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
+	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
+	import TargetIcon from '@tabler/icons-svelte/icons/target';
+	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
@@ -26,6 +26,7 @@
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Select from '$lib/components/ui/select/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
@@ -45,7 +46,8 @@
 	} from '$lib/super/coach-composer-actions';
 	import {
 		MAX_SUPER_AGENT_MESSAGES,
-		minimalSuperAgentClientMessages
+		minimalSuperAgentClientMessages,
+		type CoachThinkingMode
 	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
@@ -65,16 +67,18 @@
 	let conversationsOpen = $state(false);
 	let coachActionsOpen = $state(false);
 	let selectedCoachActionIds = $state<CoachComposerActionId[]>([]);
+	let thinkingMode = $state<CoachThinkingMode>('thinking');
 	let composerInputRef = $state<HTMLTextAreaElement | null>(null);
 	let loadingConversationId = $state<string | null>(null);
 	let conversationLoadRequest = 0;
 	let pendingCoachActions: CoachComposerActionId[] = [];
+	const asIcon = (icon: unknown) => icon as Component;
 
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
-		'practice-question': TargetIcon,
-		'study-next': BookOpenIcon,
-		'study-plan': CalendarDaysIcon,
-		'review-progress': BarChart3Icon
+		'practice-question': asIcon(TargetIcon),
+		'study-next': asIcon(BookOpenIcon),
+		'study-plan': asIcon(CalendarDaysIcon),
+		'review-progress': asIcon(BarChart3Icon)
 	};
 
 	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
@@ -164,6 +168,7 @@
 					sessionId,
 					...(conversationId ? { conversationId } : {}),
 					...(pendingCoachActions.length ? { coachActions: pendingCoachActions } : {}),
+					thinkingMode,
 					messages: conversationId
 						? minimalSuperAgentClientMessages(messages)
 						: messages.slice(-MAX_SUPER_AGENT_MESSAGES)
@@ -173,7 +178,7 @@
 	});
 
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
-	let hasMessages = $derived(coach.messages.length > 0);
+	let hasMessages = $derived((coach.messages ?? []).length > 0);
 	let emptyChat = $derived(!hasMessages);
 	let canSendComposer = $derived(
 		Boolean(sessionId) &&
@@ -256,7 +261,7 @@
 	}
 
 	function getToolActivityIcon(type: string): Component {
-		return type.startsWith('tool-update_') ? PencilIcon : SearchIcon;
+		return type.startsWith('tool-update_') ? asIcon(PencilIcon) : asIcon(SearchIcon);
 	}
 
 	function getToolActivities(message: CoachUIMessage): ToolActivity[] {
@@ -685,7 +690,7 @@
 	<div
 		class="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden bg-background md:h-[calc(100svh-5rem)]"
 	>
-		<main class="flex min-h-0 min-w-0 flex-1 flex-col">
+		<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 			<div class="mx-auto flex w-full max-w-3xl justify-end gap-2 px-4 pt-3 sm:px-8">
 				<Button
 					variant="ghost"
@@ -694,7 +699,7 @@
 					aria-label="Start a new chat"
 					title="New chat"
 				>
-					<PencilIcon class="size-4" strokeWidth={1.5} aria-hidden="true" />
+					<PencilIcon class="size-4" aria-hidden="true" />
 					<span>New Chat</span>
 				</Button>
 				<Popover.Root bind:open={conversationsOpen}>
@@ -909,7 +914,7 @@
 													>
 														<SummaryIcon
 															class={cn(
-																'size-4 shrink-0',
+																'size-4 shrink-0 text-muted-foreground',
 																activities.some((activity) => activity.state === 'running') &&
 																	'animate-pulse motion-reduce:animate-none',
 																activities.some((activity) => activity.state === 'error') &&
@@ -945,7 +950,7 @@
 																	>
 																		{#if activity.state === 'running'}
 																			<Loader2Icon
-																				class="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
+																				class="size-3.5 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none"
 																				aria-hidden="true"
 																			/>
 																		{:else if activity.state === 'error'}
@@ -955,7 +960,7 @@
 																			/>
 																		{/if}
 																		<ActivityIcon
-																			class="size-3.5 shrink-0 opacity-70"
+																			class="size-3.5 shrink-0 text-muted-foreground"
 																			aria-hidden="true"
 																		/>
 																		<span
@@ -1094,7 +1099,6 @@
 										disabled={!sessionId || streaming}
 										onSelect={() => toggleCoachAction(action.id)}
 									>
-										>
 										<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
 										<div class="min-w-0 flex-1 text-left">
 											<div class="text-sm leading-5 font-medium">{action.title}</div>
@@ -1114,6 +1118,26 @@
 								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
 							/>
 						</PromptInput.Body>
+						<Select.Root
+							type="single"
+							value={thinkingMode}
+							onValueChange={(value) => {
+								if (value) thinkingMode = value as CoachThinkingMode;
+							}}
+						>
+							<Select.Trigger
+								class="h-9 min-w-0 border-transparent bg-transparent px-2.5 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50"
+								disabled={!sessionId || streaming}
+								aria-label="Coach response depth"
+							>
+								{thinkingMode === 'quick' ? 'Quick' : thinkingMode === 'deep' ? 'Deep' : 'Thinking'}
+							</Select.Trigger>
+							<Select.Content align="end">
+								<Select.Item value="quick">Quick</Select.Item>
+								<Select.Item value="thinking">Thinking</Select.Item>
+								<Select.Item value="deep">Deep</Select.Item>
+							</Select.Content>
+						</Select.Root>
 						<PromptInput.Submit
 							status={coach.status as ChatStatus}
 							disabled={!canSendComposer && !streaming}
@@ -1160,6 +1184,6 @@
 					</p>
 				{/if}
 			</div>
-		</main>
+		</div>
 	</div>
 {/if}

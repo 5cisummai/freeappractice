@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import SearchIcon from '@lucide/svelte/icons/search';
+	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
 	import {
 		type SortingState,
 		type VisibilityState,

@@ -14,7 +14,7 @@
 	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
-	import CopyIcon from '@lucide/svelte/icons/copy';
+	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
 	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();

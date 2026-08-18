@@ -1,19 +1,21 @@
-import AtomIcon from '@lucide/svelte/icons/atom';
-import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
-import BookOpenIcon from '@lucide/svelte/icons/book-open';
-import BrainIcon from '@lucide/svelte/icons/brain';
-import CalculatorIcon from '@lucide/svelte/icons/calculator';
-import Code2Icon from '@lucide/svelte/icons/code-2';
-import DumbbellIcon from '@lucide/svelte/icons/dumbbell';
-import FlaskConicalIcon from '@lucide/svelte/icons/flask-conical';
-import Globe2Icon from '@lucide/svelte/icons/globe-2';
-import LandmarkIcon from '@lucide/svelte/icons/landmark';
-import LanguagesIcon from '@lucide/svelte/icons/languages';
-import LeafIcon from '@lucide/svelte/icons/leaf';
+import AtomIcon from '@tabler/icons-svelte/icons/atom';
+import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
+import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+import BrainIcon from '@tabler/icons-svelte/icons/brain';
+import CalculatorIcon from '@tabler/icons-svelte/icons/calculator-filled';
+import Code2Icon from '@tabler/icons-svelte/icons/code';
+import DumbbellIcon from '@tabler/icons-svelte/icons/dumbbell';
+import FlaskConicalIcon from '@tabler/icons-svelte/icons/flask-filled';
+import Globe2Icon from '@tabler/icons-svelte/icons/world-filled';
+import LandmarkIcon from '@tabler/icons-svelte/icons/building-bank';
+import LanguagesIcon from '@tabler/icons-svelte/icons/language';
+import LeafIcon from '@tabler/icons-svelte/icons/leaf-filled';
 import type { Component } from 'svelte';
 import { getCourses } from '$lib/catalog/ap-classes.js';
 
 type SubjectIcon = Component<{ class?: string }>;
+
+const asSubjectIcon = (icon: unknown) => icon as SubjectIcon;
 
 export type OnboardingSubject = {
 	name: string;
@@ -114,21 +116,23 @@ export type OnboardingSubjectGroup = {
 function iconForSubject(name: string): SubjectIcon {
 	const subject = name.toLowerCase();
 
-	if (subject.includes('biology')) return LeafIcon;
-	if (subject.includes('chemistry')) return FlaskConicalIcon;
-	if (subject.includes('physics')) return AtomIcon;
-	if (subject.includes('environmental')) return Globe2Icon;
-	if (subject.includes('calculus') || subject.includes('precalculus')) return CalculatorIcon;
-	if (subject.includes('statistics')) return BarChart3Icon;
-	if (subject.includes('computer science')) return Code2Icon;
-	if (subject.includes('english')) return BookOpenIcon;
-	if (subject.includes('history') || subject.includes('government')) return LandmarkIcon;
-	if (subject.includes('psychology')) return BrainIcon;
-	if (subject.includes('human geography')) return Globe2Icon;
-	if (subject.includes('economics')) return BarChart3Icon;
-	if (subject.includes('spanish')) return LanguagesIcon;
-	if (subject.includes('pe')) return DumbbellIcon;
-	return BookOpenIcon;
+	if (subject.includes('biology')) return asSubjectIcon(LeafIcon);
+	if (subject.includes('chemistry')) return asSubjectIcon(FlaskConicalIcon);
+	if (subject.includes('physics')) return asSubjectIcon(AtomIcon);
+	if (subject.includes('environmental')) return asSubjectIcon(Globe2Icon);
+	if (subject.includes('calculus') || subject.includes('precalculus'))
+		return asSubjectIcon(CalculatorIcon);
+	if (subject.includes('statistics')) return asSubjectIcon(BarChart3Icon);
+	if (subject.includes('computer science')) return asSubjectIcon(Code2Icon);
+	if (subject.includes('english')) return asSubjectIcon(BookOpenIcon);
+	if (subject.includes('history') || subject.includes('government'))
+		return asSubjectIcon(LandmarkIcon);
+	if (subject.includes('psychology')) return asSubjectIcon(BrainIcon);
+	if (subject.includes('human geography')) return asSubjectIcon(Globe2Icon);
+	if (subject.includes('economics')) return asSubjectIcon(BarChart3Icon);
+	if (subject.includes('spanish')) return asSubjectIcon(LanguagesIcon);
+	if (subject.includes('pe')) return asSubjectIcon(DumbbellIcon);
+	return asSubjectIcon(BookOpenIcon);
 }
 
 const SUBJECT_DESCRIPTIONS: Record<string, string> = {
@@ -254,5 +258,5 @@ export function getSubjectPresentation(
 ): Pick<OnboardingSubject, 'icon' | 'iconClass'> {
 	const subject = subjectByName.get(name);
 	if (subject) return { icon: subject.icon, iconClass: subject.iconClass };
-	return { icon: BookOpenIcon, iconClass: SUBJECT_COLOR_THEMES.primary.iconClass };
+	return { icon: asSubjectIcon(BookOpenIcon), iconClass: SUBJECT_COLOR_THEMES.primary.iconClass };
 }

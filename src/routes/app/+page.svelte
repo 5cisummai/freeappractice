@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
-	import FlameIcon from '@lucide/svelte/icons/flame';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
+	import FlameIcon from '@tabler/icons-svelte/icons/flame-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
@@ -25,7 +25,7 @@
 	});
 
 	const statsData = $derived(data.stats as StatsData);
-	const progressData = $derived(data.progress as ProgressEntry[]);
+	const progressData = $derived((data.progress as ProgressEntry[] | undefined) ?? []);
 	const planAccess = $derived(data.planAccess);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
@@ -33,7 +33,7 @@
 	);
 
 	const answeredBySubject = $derived(
-		new Map(statsData.subjectBreakdown.map((entry) => [entry.subject, entry.total]))
+		new Map((statsData?.subjectBreakdown ?? []).map((entry) => [entry.subject, entry.total]))
 	);
 
 	const lastMcqAtBySubject = $derived.by(() => {
@@ -51,7 +51,7 @@
 	const subjectMeta = new Map(onboardingSubjects.map((subject) => [subject.name, subject]));
 
 	const subjectCards = $derived.by(() =>
-		(data.selectedSubjects as string[])
+		((data.selectedSubjects as string[] | undefined) ?? [])
 			.map((name) => {
 				const subject = subjectMeta.get(name);
 				if (!subject) return null;
@@ -130,7 +130,7 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard | Free AP Practice</title>
+	<title>Home | Free AP Practice</title>
 </svelte:head>
 
 <PageShell title={shellTitle} description={shellDescription} maskTitle>

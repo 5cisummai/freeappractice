@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import BookOpenCheckIcon from '@lucide/svelte/icons/book-open-check';
-	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import BookOpenCheckIcon from '@tabler/icons-svelte/icons/book-filled';
+	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';

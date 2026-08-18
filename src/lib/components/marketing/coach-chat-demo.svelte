@@ -5,12 +5,12 @@
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
-	import BrainIcon from '@lucide/svelte/icons/brain';
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import Loader2Icon from '@lucide/svelte/icons/loader-2';
-	import SearchIcon from '@lucide/svelte/icons/search';
-	import SquareIcon from '@lucide/svelte/icons/square';
+	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
+	import BrainIcon from '@tabler/icons-svelte/icons/brain';
+	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
+	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 
 	type CoachDemoTool = {
 		running: string;

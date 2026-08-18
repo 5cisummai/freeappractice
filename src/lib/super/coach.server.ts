@@ -8,6 +8,7 @@ import { logger } from '$lib/server/logger';
 import { coachAudits } from '$lib/server/neon/schema';
 import { pruneSuperAgentModelMessages } from '$lib/super/agent-messages.server';
 import type { SuperAgentContext, SuperAgentMode } from '$lib/super/coach-agent.types';
+import type { CoachThinkingMode } from '$lib/super/agent-request';
 import { createSuperTools } from '$lib/super/coach-tools.server';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
@@ -72,6 +73,7 @@ export function createSuperAgent(input: {
 	composerActionInstructions?: string;
 	historySummary?: string;
 	mode?: SuperAgentMode;
+	thinkingMode?: CoachThinkingMode;
 	currentContext?: SuperAgentContext;
 	conversationId?: string;
 }) {
@@ -84,6 +86,7 @@ export function createSuperAgent(input: {
 		composerActionInstructions,
 		historySummary,
 		mode = 'coach',
+		thinkingMode = 'thinking',
 		currentContext,
 		conversationId
 	} = input;
@@ -105,6 +108,13 @@ export function createSuperAgent(input: {
 	return new ToolLoopAgent({
 		id: 'super-coach',
 		model: openaiModel(COACH_MODEL),
+		providerOptions: {
+			openai: {
+				forceReasoning: true,
+				reasoningEffort:
+					thinkingMode === 'quick' ? 'low' : thinkingMode === 'deep' ? 'high' : 'medium'
+			}
+		},
 		maxOutputTokens: 700,
 		stopWhen: stepCountIs(20),
 		instructions: [

@@ -6,10 +6,9 @@
 	import NavUser from '$lib/components/layout/nav-user.svelte';
 	import OrgSwitcher from '$lib/components/layout/org-switcher.svelte';
 	import FeedbackDialog from '$lib/components/layout/feedback-dialog.svelte';
-	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
-	import SettingsIcon from '@lucide/svelte/icons/settings';
+	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
 	import type { UserOrganization } from '$lib/auth/organization-types';
 
 	let {
@@ -78,9 +77,6 @@
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
 			<FeedbackDialog />
-			<Sidebar.MenuItem>
-				<ThemeToggle variant="sidebar" />
-			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 		<NavUser {user} />
 	</Sidebar.Footer>

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import { Button } from '$lib/components/ui/button/index.js';
 
 	let {

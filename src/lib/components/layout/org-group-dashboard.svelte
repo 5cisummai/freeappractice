@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import FlameIcon from '@lucide/svelte/icons/flame';
-	import TrophyIcon from '@lucide/svelte/icons/trophy';
-	import UsersIcon from '@lucide/svelte/icons/users';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+	import FlameIcon from '@tabler/icons-svelte/icons/flame-filled';
+	import TrophyIcon from '@tabler/icons-svelte/icons/trophy-filled';
+	import UsersIcon from '@tabler/icons-svelte/icons/users';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import {

@@ -20,9 +20,9 @@
 	import { createQuestionCardSession } from '$lib/components/questions/question-card-session.svelte.js';
 	import type { BugReportContext, QuestionCardProps } from '$lib/question-bank/mcq/types';
 	const lightbulbImage = '/illustrations/lightbulb.png';
-	import Maximize2Icon from '@lucide/svelte/icons/maximize-2';
-	import Minimize2Icon from '@lucide/svelte/icons/minimize-2';
-	import SlidersHorizontalIcon from '@lucide/svelte/icons/sliders-horizontal';
+	import Maximize2Icon from '@tabler/icons-svelte/icons/maximize';
+	import Minimize2Icon from '@tabler/icons-svelte/icons/minimize';
+	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import type { ChatStatus } from '../context/types.js';
-	import SendIcon from '@lucide/svelte/icons/send';
-	import SquareIcon from '@lucide/svelte/icons/square';
-	import XIcon from '@lucide/svelte/icons/x';
+	import SendIcon from '@tabler/icons-svelte/icons/send-filled';
+	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
+	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 
 	import {
 		buttonVariants,

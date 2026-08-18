@@ -1,5 +1,5 @@
 <script lang="ts">
-	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
+	import MessageSquareIcon from '@tabler/icons-svelte/icons/message-filled';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';

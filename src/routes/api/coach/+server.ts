@@ -9,6 +9,7 @@ import { RedisRequiredError } from '$lib/super/ai-controls.server';
 import {
 	MAX_SUPER_AGENT_MESSAGES,
 	MAX_SUPER_AGENT_REQUEST_BYTES,
+	coachThinkingModeSchema,
 	isSuperAgentToolContinuation,
 	superAgentMessageSchema
 } from '$lib/super/agent-request';
@@ -19,6 +20,7 @@ const coachRequestSchema = z
 		sessionId: z.string().uuid(),
 		conversationId: z.string().uuid().optional(),
 		coachActions: z.array(z.enum(coachComposerActionIds)).max(4).optional(),
+		thinkingMode: coachThinkingModeSchema.default('thinking'),
 		context: z
 			.object({
 				page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
@@ -75,6 +77,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				sessionId: parsed.data.sessionId,
 				conversationId: parsed.data.conversationId,
 				coachActions: parsed.data.coachActions,
+				thinkingMode: parsed.data.thinkingMode,
 				context: {
 					mode: 'coach',
 					page: 'coach',

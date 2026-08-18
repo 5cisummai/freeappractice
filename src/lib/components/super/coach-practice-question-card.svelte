@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Loader2Icon from '@lucide/svelte/icons/loader-2';
+	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';

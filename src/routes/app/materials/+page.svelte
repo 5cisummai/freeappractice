@@ -8,8 +8,8 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
 	import { toast } from 'svelte-sonner';
 
 	const materialsImage = '/illustrations/books.png';

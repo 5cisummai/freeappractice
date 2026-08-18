@@ -2,16 +2,16 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import type { SubmitFunction } from './$types';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import BrainIcon from '@lucide/svelte/icons/brain';
-	import CalendarCheckIcon from '@lucide/svelte/icons/calendar-check';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
-	import SearchIcon from '@lucide/svelte/icons/search';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import TargetIcon from '@lucide/svelte/icons/target';
-	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import ArrowLeftIcon from '@tabler/icons-svelte/icons/arrow-left';
+	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+	import BrainIcon from '@tabler/icons-svelte/icons/brain';
+	import CalendarCheckIcon from '@tabler/icons-svelte/icons/calendar-check';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
+	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
+	import TargetIcon from '@tabler/icons-svelte/icons/target';
+	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 	import type { Component } from 'svelte';
 	import logo from '$lib/assets/logo.png';
 	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
@@ -124,6 +124,7 @@
 	const isUnderAge = $derived(Boolean(birthDate) && birthDateIsValid && !isOldEnough);
 	const needsAgeVerification = $derived(!ageConfirmed);
 	const canContinueWelcome = $derived(selectedGoals.length > 0 && (ageConfirmed || isOldEnough));
+	const asIcon = (icon: unknown) => icon as Component<{ class?: string }>;
 	const filteredSubjects = $derived.by(() => {
 		const query = subjectSearch.trim().toLowerCase();
 		if (!query) return onboardingSubjects;
@@ -144,7 +145,7 @@
 	}> = [
 		{
 			value: 'score_higher',
-			icon: TrendingUpIcon,
+			icon: asIcon(TrendingUpIcon),
 			title: 'Score higher',
 			detail: 'Push for a better result on exam day.',
 			checkedClass:
@@ -153,7 +154,7 @@
 		},
 		{
 			value: 'exam_prep',
-			icon: TargetIcon,
+			icon: asIcon(TargetIcon),
 			title: 'Prepare for exam day',
 			detail: 'Build confidence with realistic practice.',
 			checkedClass:
@@ -162,7 +163,7 @@
 		},
 		{
 			value: 'weak_topics',
-			icon: BrainIcon,
+			icon: asIcon(BrainIcon),
 			title: 'Strengthen weak topics',
 			detail: 'Focus on the units that need the most work.',
 			checkedClass:
@@ -171,7 +172,7 @@
 		},
 		{
 			value: 'stay_consistent',
-			icon: CalendarCheckIcon,
+			icon: asIcon(CalendarCheckIcon),
 			title: 'Stay consistent',
 			detail: 'Keep a steady study rhythm through the year.',
 			checkedClass:

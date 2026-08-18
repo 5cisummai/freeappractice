@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SearchIcon from '@lucide/svelte/icons/search';
+	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
 	import type {
 		CacheBucketSummary,
 		PoolQuestionType,
