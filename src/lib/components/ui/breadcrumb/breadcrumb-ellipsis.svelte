@@ -15,7 +15,10 @@
 	data-slot="breadcrumb-ellipsis"
 	role="presentation"
 	aria-hidden="true"
-	class={cn('flex size-5 items-center justify-center [&>svg]:size-4 [&>svg]:text-muted-foreground', className)}
+	class={cn(
+		'flex size-5 items-center justify-center [&>svg]:size-4 [&>svg]:text-muted-foreground',
+		className
+	)}
 	{...restProps}
 >
 	<MoreHorizontalIcon />
