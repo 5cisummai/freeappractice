@@ -25,6 +25,7 @@
 	} from '$lib/auth/age.js';
 	import type { OnboardingGoal } from '$lib/onboarding.js';
 	import { authClient } from '$lib/auth/client.js';
+	import BirthDatePicker from '$lib/components/auth/birth-date-picker.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import {
@@ -593,9 +594,8 @@
 													: undefined}
 											>
 												<FieldLabel for="onboarding-birth-date">Birth date</FieldLabel>
-												<Input
+												<BirthDatePicker
 													id="onboarding-birth-date"
-													type="date"
 													bind:value={birthDate}
 													min={minBirthDate}
 													max={todayDate}

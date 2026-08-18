@@ -5,6 +5,7 @@
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
@@ -19,17 +20,26 @@
 	const organization = $derived(data.activeOrganization);
 	const canManage = $derived(data.canManageMaterials);
 	let removingId = $state<string | null>(null);
+	let removeOpen = $state(false);
+	let targetMaterial = $state<(typeof data.materials)[number] | null>(null);
 
 	function practiceHref(slug: string): string {
 		return `${resolve('/app/practice')}?shared=${encodeURIComponent(slug)}`;
 	}
 
-	async function removeMaterial(materialId: string) {
-		if (!organization || removingId) return;
-		removingId = materialId;
+	function openRemove(material: (typeof data.materials)[number]) {
+		targetMaterial = material;
+		removeOpen = true;
+	}
+
+	async function confirmRemove() {
+		const material = targetMaterial;
+		if (!organization || !material || removingId) return;
+		removingId = material.id;
+		removeOpen = false;
 		try {
 			const response = await apiFetch(
-				`/api/shared-practice-sets/${materialId}?organizationId=${encodeURIComponent(organization.id)}`,
+				`/api/shared-practice-sets/${material.id}?organizationId=${encodeURIComponent(organization.id)}`,
 				{
 					method: 'DELETE'
 				}
@@ -39,6 +49,7 @@
 				throw new Error(getResponseMessage(payload, 'Could not remove this quiz.'));
 			}
 			toast.success('Quiz removed from group materials.');
+			targetMaterial = null;
 			await invalidateAll();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not remove this quiz.');
@@ -97,10 +108,7 @@
 										{/snippet}
 									</DropdownMenu.Trigger>
 									<DropdownMenu.Content align="end">
-										<DropdownMenu.Item
-											variant="destructive"
-											onclick={() => void removeMaterial(material.id)}
-										>
+										<DropdownMenu.Item variant="destructive" onclick={() => openRemove(material)}>
 											Remove from group
 										</DropdownMenu.Item>
 									</DropdownMenu.Content>
@@ -137,3 +145,25 @@
 		</EmptyState>
 	{/if}
 </PageShell>
+
+<AlertDialog.Root bind:open={removeOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Remove {targetMaterial?.title ?? 'this quiz'}?</AlertDialog.Title>
+			<AlertDialog.Description>
+				This removes the quiz from group materials. Members will no longer see it on the Materials
+				page. This cannot be undone.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel disabled={removingId !== null}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+				onclick={() => void confirmRemove()}
+				disabled={removingId !== null}
+			>
+				Remove
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>

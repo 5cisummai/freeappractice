@@ -377,8 +377,15 @@
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action onclick={deleteGroup} disabled={busy}>Delete</AlertDialog.Action>
+			<AlertDialog.Cancel disabled={busy}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+				onclick={deleteGroup}
+				disabled={busy}
+			>
+				{#if busy}<Spinner data-icon="inline-start" />{/if}
+				Delete
+			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
