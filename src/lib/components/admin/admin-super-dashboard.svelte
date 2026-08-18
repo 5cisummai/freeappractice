@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import type { SuperAdminOverview } from '$lib/super/types';
@@ -13,6 +14,7 @@
 	let subscriptions = $derived(overview.subscriptions);
 	let failedCleanupJobs = $derived(overview.failedCleanupJobs);
 	let convertingFreeBeta = $state(false);
+	let grantConfirmOpen = $state(false);
 
 	async function retryCleanup(jobId: string) {
 		const response = await apiFetch('/api/admin/super/cleanup', {
@@ -31,10 +33,6 @@
 
 	async function grantIndefiniteToFreeBetaUsers() {
 		if (convertingFreeBeta) return;
-		const confirmed = window.confirm(
-			'Grant indefinite Super access to every user who claimed the free beta? Users who already have an indefinite grant will be skipped.'
-		);
-		if (!confirmed) return;
 		convertingFreeBeta = true;
 		try {
 			const response = await apiFetch('/api/admin/super/grants/free-beta', { method: 'POST' });
@@ -165,9 +163,33 @@
 			</Card.Description>
 		</Card.Header>
 		<Card.Content>
-			<Button onclick={grantIndefiniteToFreeBetaUsers} disabled={convertingFreeBeta}>
+			<Button onclick={() => (grantConfirmOpen = true)} disabled={convertingFreeBeta}>
 				{convertingFreeBeta ? 'Granting…' : 'Grant indefinite Super to all free beta users'}
 			</Button>
 		</Card.Content>
 	</Card.Root>
 </div>
+
+<AlertDialog.Root bind:open={grantConfirmOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Grant indefinite Super to all free beta users?</AlertDialog.Title>
+			<AlertDialog.Description>
+				This grants indefinite Super access to every user who claimed the free beta. Users who
+				already have an indefinite grant will be skipped.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel disabled={convertingFreeBeta}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				disabled={convertingFreeBeta}
+				onclick={() => {
+					grantConfirmOpen = false;
+					void grantIndefiniteToFreeBetaUsers();
+				}}
+			>
+				Grant Super
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
