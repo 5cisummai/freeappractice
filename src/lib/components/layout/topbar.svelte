@@ -134,12 +134,14 @@
 							{item.label}
 						</a>
 					{/each}
-					<a
-						href={resolve('/super')}
-						class="rounded-md super-text-gradient px-2 py-2.5 font-medium transition-colors hover:bg-muted"
-					>
-						Super
-					</a>
+					{#each topbarResourceItems.filter((item) => item.href !== '/super') as item (item.href)}
+						<a
+							href={resolve(item.href)}
+							class="rounded-md px-2 py-2.5 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"
+						>
+							{item.label}
+						</a>
+					{/each}
 					{#if showPricing}
 						<a
 							href={resolve(topbarPricingItem.href)}
@@ -150,7 +152,7 @@
 					{/if}
 				</div>
 
-				<div class="mt-3 grid grid-cols-2 gap-2 border-t border-border/70 pt-3">
+				<div class="mt-3 grid grid-cols-2 gap-2 pt-3">
 					{#each topbarAuthItems as item, index (item.href)}
 						<Button
 							href={resolve(item.href)}
@@ -161,7 +163,7 @@
 						</Button>
 					{/each}
 				</div>
-				<div class="mt-3 border-t border-border/70 pt-3">
+				<div class="mt-3 pt-3">
 					<ThemeToggle variant="full" />
 				</div>
 			</nav>
