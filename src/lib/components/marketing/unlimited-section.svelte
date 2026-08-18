@@ -4,10 +4,10 @@
 	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';
 	import { DEMO_TUTOR_QUESTION } from '$lib/tutor/demo-question';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import TargetIcon from '@lucide/svelte/icons/target';
-	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import TargetIcon from '@tabler/icons-svelte/icons/target';
+	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 
 	let { showTutor = true }: { showTutor?: boolean } = $props();
 

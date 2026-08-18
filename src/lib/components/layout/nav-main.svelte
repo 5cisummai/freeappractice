@@ -2,15 +2,15 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import CompassIcon from '@lucide/svelte/icons/compass';
-	import BarChart3Icon from '@lucide/svelte/icons/bar-chart-3';
-	import ShieldIcon from '@lucide/svelte/icons/shield';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import BrainCircuitIcon from '@lucide/svelte/icons/brain-circuit';
-	import UsersIcon from '@lucide/svelte/icons/users';
-	import LayersIcon from '@lucide/svelte/icons/layers';
+	import HomeIconComponent from '@tabler/icons-svelte/icons/home-filled';
+	import BookOpenIconComponent from '@tabler/icons-svelte/icons/book-filled';
+	import CompassIconComponent from '@tabler/icons-svelte/icons/compass-filled';
+	import BarChart3IconComponent from '@tabler/icons-svelte/icons/chart-pie-filled';
+	import ShieldIconComponent from '@tabler/icons-svelte/icons/shield-filled';
+	import SparklesIconComponent from '@tabler/icons-svelte/icons/sparkles-filled';
+	import BrainCircuitIconComponent from '@tabler/icons-svelte/icons/message-chatbot-filled';
+	import UsersIconComponent from '@tabler/icons-svelte/icons/user-filled';
+	import LayersIconComponent from '@tabler/icons-svelte/icons/stack-filled';
 	import type { Component } from 'svelte';
 
 	type NavHref =
@@ -30,6 +30,16 @@
 		icon: Component;
 	};
 
+	const HomeIcon = HomeIconComponent as unknown as Component;
+	const BookOpenIcon = BookOpenIconComponent as unknown as Component;
+	const CompassIcon = CompassIconComponent as unknown as Component;
+	const BarChart3Icon = BarChart3IconComponent as unknown as Component;
+	const ShieldIcon = ShieldIconComponent as unknown as Component;
+	const SparklesIcon = SparklesIconComponent as unknown as Component;
+	const BrainCircuitIcon = BrainCircuitIconComponent as unknown as Component;
+	const UsersIcon = UsersIconComponent as unknown as Component;
+	const LayersIcon = LayersIconComponent as unknown as Component;
+
 	let {
 		assistantFeaturesEnabled = true,
 		showMembers = false,
@@ -40,23 +50,24 @@
 		isAdmin?: boolean;
 	} = $props();
 
-	const overviewItems: NavItem[] = [
-		{ href: '/app', label: 'Dashboard', icon: LayoutDashboardIcon }
-	];
+	const overviewItems = $derived.by((): NavItem[] => {
+		const items: NavItem[] = [{ href: '/app', label: 'Home', icon: HomeIcon }];
+		if (assistantFeaturesEnabled) {
+			items.push({ href: '/app/coach', label: 'Ask Coach', icon: BrainCircuitIcon });
+		}
+		return items;
+	});
 
-	const practiceItems: NavItem[] = [
-		{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
-		{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
-		{ href: '/app/resources', label: 'Resources', icon: CompassIcon }
-	];
-
-	const superItems = $derived.by((): NavItem[] => {
-		if (!assistantFeaturesEnabled) return [];
-
-		return [
-			{ href: '/app/coach', label: 'Coach', icon: BrainCircuitIcon },
-			{ href: '/app/insights', label: 'Insights', icon: SparklesIcon }
+	const practiceItems = $derived.by((): NavItem[] => {
+		const items: NavItem[] = [
+			{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
+			{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon },
+			{ href: '/app/resources', label: 'Resources', icon: CompassIcon }
 		];
+		if (assistantFeaturesEnabled) {
+			items.push({ href: '/app/insights', label: 'Insights', icon: SparklesIcon });
+		}
+		return items;
 	});
 
 	const organizationItems = $derived.by((): NavItem[] => {
@@ -78,7 +89,6 @@
 		[
 			{ label: 'Overview', items: overviewItems },
 			{ label: 'Practice', items: practiceItems },
-			superItems.length > 0 ? { label: 'Super AI', items: superItems } : null,
 			organizationItems.length > 0 ? { label: 'Organization', items: organizationItems } : null
 		].filter((group): group is { label: string; items: NavItem[] } => group !== null)
 	);

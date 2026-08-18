@@ -1,5 +1,5 @@
 <script lang="ts">
-	import GraduationCapIcon from '@lucide/svelte/icons/graduation-cap';
+	import GraduationCapIcon from '@tabler/icons-svelte/icons/school-filled';
 	import Signature from '$lib/components/marketing/signature.svelte';
 
 	const socialLinks = [
@@ -75,7 +75,7 @@
 			<div class="relative mx-auto max-w-md lg:mx-0 lg:max-w-none">
 				<div class="absolute -top-4 -left-4 z-10 size-24 sm:size-28" aria-hidden="true">
 					<div class="absolute inset-0 flex items-center justify-center text-background">
-						<GraduationCapIcon class="size-5" strokeWidth={2.25} />
+						<GraduationCapIcon class="size-5" />
 					</div>
 				</div>
 
@@ -84,7 +84,7 @@
 					role="img"
 					aria-label="Free AP Practice community"
 				>
-					<GraduationCapIcon class="size-20 text-muted-foreground/60" strokeWidth={1.5} />
+					<GraduationCapIcon class="size-20 text-muted-foreground/60" />
 				</div>
 			</div>
 

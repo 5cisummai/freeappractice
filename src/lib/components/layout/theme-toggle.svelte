@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SunIcon from '@lucide/svelte/icons/sun';
-	import MoonIcon from '@lucide/svelte/icons/moon';
-	import LaptopIcon from '@lucide/svelte/icons/laptop';
+	import SunIcon from '@tabler/icons-svelte/icons/sun-filled';
+	import MoonIcon from '@tabler/icons-svelte/icons/moon-filled';
+	import LaptopIcon from '@tabler/icons-svelte/icons/device-laptop';
 	import { onMount } from 'svelte';
 	import { userPrefersMode } from 'mode-watcher';
 	import { Button } from '$lib/components/ui/button/index.js';

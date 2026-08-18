@@ -3,7 +3,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import XIcon from '@lucide/svelte/icons/x';
+	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 
 	let dismissed = $state(false);
 

@@ -26,6 +26,7 @@ import {
 	textFromSuperAgentParts,
 	type SuperAgentRequest
 } from '$lib/super/agent-request';
+import type { CoachThinkingMode } from '$lib/super/agent-request';
 import { buildSuperAgentUiMessages } from '$lib/super/agent-history.server';
 import {
 	appendConversationMessage,
@@ -75,6 +76,7 @@ export type SuperAgentStreamOptions = {
 	messages: SuperAgentRequest['messages'];
 	conversationId?: string;
 	coachActions?: SuperAgentRequest['coachActions'];
+	thinkingMode?: CoachThinkingMode;
 	surface: 'coach' | 'question';
 	errorLabel: string;
 };
@@ -104,6 +106,7 @@ export async function createSuperAgentStreamResponse(
 		messages,
 		conversationId: requestedConversationId,
 		coachActions,
+		thinkingMode = 'thinking',
 		surface,
 		errorLabel
 	} = options;
@@ -279,7 +282,8 @@ export async function createSuperAgentStreamResponse(
 			mode: context.mode,
 			currentContext: context,
 			conversationId,
-			composerActionInstructions: coachComposerActionInstructions(coachActions ?? [])
+			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
+			thinkingMode
 		});
 
 		const markUsageIfNeeded = async (responseMessage: SuperAgentUIMessage) => {

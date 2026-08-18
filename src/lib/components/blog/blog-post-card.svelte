@@ -5,8 +5,8 @@
 	import { cn } from '$lib/utils';
 
 	import { formatBlogDate, getBlogCategory } from '$lib/blog-display';
-	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
-	import CalendarIcon from '@lucide/svelte/icons/calendar';
+	import ArrowUpRightIcon from '@tabler/icons-svelte/icons/arrow-up-right';
+	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-filled';
 
 	let {
 		slug,

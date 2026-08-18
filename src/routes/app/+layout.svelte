@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
 	import FreeBetaClaimDialog from '$lib/components/super/free-beta-claim-dialog.svelte';
+	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
@@ -23,6 +24,7 @@
 	let { data, children } = $props();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
 	let freeBetaClaimOpen = $state(false);
+	let layoutMounted = $state(false);
 
 	$effect(() => {
 		if (data.showFreeBetaClaimDialog && !isOnboarding) {
@@ -33,6 +35,7 @@
 	});
 
 	onMount(() => {
+		layoutMounted = true;
 		if (data.user) {
 			identifyPostHogUser(data.user.id);
 			captureAuthenticatedStudentReturnedIfNeeded();
@@ -94,11 +97,14 @@
 		<Sidebar.Inset>
 			<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 				<SidebarTrigger />
+				{#if layoutMounted}
+					<ThemeToggle class="ml-auto" />
+				{/if}
 			</header>
 
-			<main id="main-content" class="flex-1">
+			<div class="flex-1">
 				{@render children()}
-			</main>
+			</div>
 		</Sidebar.Inset>
 	</Sidebar.Provider>
 {/if}

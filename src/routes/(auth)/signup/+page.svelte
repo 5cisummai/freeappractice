@@ -4,8 +4,8 @@
 	import SignupForm from '$lib/components/auth/signup-form.svelte';
 	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
 	import { captureSignupStarted } from '$lib/client/activation-analytics';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import UsersRoundIcon from '@lucide/svelte/icons/users-round';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
+	import UsersRoundIcon from '@tabler/icons-svelte/icons/users';
 
 	const superSignup = $derived(page.url.searchParams.get('super') === '1');
 	const groupSignup = $derived(page.url.searchParams.get('group') === '1');

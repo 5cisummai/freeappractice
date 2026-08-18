@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
-	import CompassIcon from '@lucide/svelte/icons/compass';
-	import HomeIcon from '@lucide/svelte/icons/house';
-	import KeyRoundIcon from '@lucide/svelte/icons/key-round';
-	import LockKeyholeIcon from '@lucide/svelte/icons/lock-keyhole';
-	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
-	import SearchXIcon from '@lucide/svelte/icons/search-x';
+	import ArrowLeftIcon from '@tabler/icons-svelte/icons/arrow-left';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+	import CircleAlertIcon from '@tabler/icons-svelte/icons/alert-circle';
+	import CompassIcon from '@tabler/icons-svelte/icons/compass-filled';
+	import HomeIcon from '@tabler/icons-svelte/icons/home-filled';
+	import KeyRoundIcon from '@tabler/icons-svelte/icons/key-filled';
+	import LockKeyholeIcon from '@tabler/icons-svelte/icons/lock-filled';
+	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
+	import SearchXIcon from '@tabler/icons-svelte/icons/search-off';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import logo from '$lib/assets/logo.png';
 

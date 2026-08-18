@@ -7,6 +7,9 @@ export const MAX_SUPER_AGENT_REQUEST_BYTES = 8 * 1024 * 1024;
 export const MAX_SUPER_AGENT_TEXT_CHARS = 16_000;
 export const MAX_TUTOR_MEMORY_EXCHANGE_CHARS = 8_000;
 
+export const coachThinkingModeSchema = z.enum(['quick', 'thinking', 'deep']);
+export type CoachThinkingMode = z.infer<typeof coachThinkingModeSchema>;
+
 const messagePartSchema = z.looseObject({
 	type: z.string().min(1).max(100),
 	text: z.string().max(MAX_SUPER_AGENT_TEXT_CHARS).optional()
@@ -31,6 +34,7 @@ export const superAgentRequestSchema = z.strictObject({
 	sessionId: z.uuid(),
 	conversationId: z.uuid().optional(),
 	coachActions: z.array(z.enum(coachComposerActionIds)).max(4).optional(),
+	thinkingMode: coachThinkingModeSchema.default('thinking'),
 	context: superAgentContextSchema,
 	messages: z
 		.array(superAgentMessageSchema)

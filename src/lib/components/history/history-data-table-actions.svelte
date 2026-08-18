@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HistoryItem } from '$lib/users/types.js';
-	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
-	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
+	import EyeIcon from '@tabler/icons-svelte/icons/eye-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { toast } from 'svelte-sonner';

@@ -20,14 +20,14 @@
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	const APP_VERSION = '1.7.4';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
-	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import LaptopIcon from '@lucide/svelte/icons/laptop';
-	import MoonIcon from '@lucide/svelte/icons/moon';
-	import SunIcon from '@lucide/svelte/icons/sun';
+	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import LaptopIcon from '@tabler/icons-svelte/icons/device-laptop';
+	import MoonIcon from '@tabler/icons-svelte/icons/moon-filled';
+	import SunIcon from '@tabler/icons-svelte/icons/sun-filled';
 
 	let { data, form } = $props();
 

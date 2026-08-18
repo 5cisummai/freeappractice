@@ -13,11 +13,11 @@
 	import type { AnswerResult, GeneratedQuestion } from '$lib/question-bank/mcq/types.js';
 	import { savePendingSharedQuizRun } from '$lib/shared-practice/pending-runs.js';
 	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
-	import CopyIcon from '@lucide/svelte/icons/copy';
-	import ShareIcon from '@lucide/svelte/icons/share';
-	import UsersIcon from '@lucide/svelte/icons/users';
+	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import ChevronUpIcon from '@tabler/icons-svelte/icons/chevron-up';
+	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
+	import ShareIcon from '@tabler/icons-svelte/icons/share';
+	import UsersIcon from '@tabler/icons-svelte/icons/users';
 	import type { Snippet } from 'svelte';
 	import { quizQuestionCardModel } from '$lib/question-bank/question-card-model';
 

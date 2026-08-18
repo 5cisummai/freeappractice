@@ -3,7 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
 
 	let { children }: { children?: Snippet } = $props();
 	let isDark = $state(false);

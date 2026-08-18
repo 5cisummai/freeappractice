@@ -7,7 +7,7 @@
 
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import ArrowDown from '@lucide/svelte/icons/arrow-down';
+	import ArrowDown from '@tabler/icons-svelte/icons/arrow-down';
 	import { getStickToBottomContext } from './stick-to-bottom-context.svelte.js';
 	import { fly } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';

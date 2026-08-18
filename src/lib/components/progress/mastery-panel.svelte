@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
-	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
-	import Clock3Icon from '@lucide/svelte/icons/clock-3';
-	import TargetIcon from '@lucide/svelte/icons/target';
-	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import Clock3Icon from '@tabler/icons-svelte/icons/clock-hour-3';
+	import TargetIcon from '@tabler/icons-svelte/icons/target';
+	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';

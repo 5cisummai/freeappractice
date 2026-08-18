@@ -1,9 +1,9 @@
 <script lang="ts">
-	import UsersIcon from '@lucide/svelte/icons/users';
-	import DatabaseZapIcon from '@lucide/svelte/icons/database-zap';
-	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
+	import UsersIcon from '@tabler/icons-svelte/icons/users';
+	import DatabaseZapIcon from '@tabler/icons-svelte/icons/database-cog';
+	import BadgeCheckIcon from '@tabler/icons-svelte/icons/badge';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
+	import MessageSquareIcon from '@tabler/icons-svelte/icons/message-filled';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import AdminUsersDataTable from '$lib/components/admin/admin-users-data-table.svelte';

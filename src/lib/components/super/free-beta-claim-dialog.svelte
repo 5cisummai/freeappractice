@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { toast } from 'svelte-sonner';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { Button } from '$lib/components/ui/button/index.js';

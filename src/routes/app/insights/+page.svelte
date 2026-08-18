@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import DownloadIcon from '@lucide/svelte/icons/download';
-	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-	import FileTextIcon from '@lucide/svelte/icons/file-text';
-	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
-	import Undo2Icon from '@lucide/svelte/icons/undo-2';
+	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	import DownloadIcon from '@tabler/icons-svelte/icons/download-filled';
+	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
+	import FileTextIcon from '@tabler/icons-svelte/icons/file-text-filled';
+	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
+	import Undo2Icon from '@tabler/icons-svelte/icons/arrow-back-up';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import MenuIcon from '@lucide/svelte/icons/menu';
-	import XIcon from '@lucide/svelte/icons/x';
+	import MenuIcon from '@tabler/icons-svelte/icons/menu-2';
+	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { resolve } from '$app/paths';
 	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';

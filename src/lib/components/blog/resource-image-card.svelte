@@ -3,7 +3,7 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
-	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
+	import ArrowUpRightIcon from '@tabler/icons-svelte/icons/arrow-up-right';
 
 	let {
 		href,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { footerNavGroups } from '$lib/site-nav.js';
-	import MailIcon from '@lucide/svelte/icons/mail';
+	import MailIcon from '@tabler/icons-svelte/icons/mail-filled';
 
 	const contactLinks = [
 		{

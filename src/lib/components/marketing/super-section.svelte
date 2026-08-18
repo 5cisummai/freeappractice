@@ -2,10 +2,10 @@
 	import CoachChatDemo from '$lib/components/marketing/coach-chat-demo.svelte';
 	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';
-	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import DownloadIcon from '@lucide/svelte/icons/download';
-	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-	import FileTextIcon from '@lucide/svelte/icons/file-text';
+	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
+	import DownloadIcon from '@tabler/icons-svelte/icons/download-filled';
+	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
+	import FileTextIcon from '@tabler/icons-svelte/icons/file-text-filled';
 
 	const planTasks = [
 		{
