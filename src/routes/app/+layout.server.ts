@@ -2,9 +2,13 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { loadAppOrganizations } from '$lib/auth/organizations.server';
-import { isSuperFreeBetaEnabled } from '$lib/flags';
+import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
-import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
+import {
+	getPlanAccessForRequest,
+	getTutorProfileViewForRequest
+} from '$lib/super/feature-access.server';
+import { hasPaidCapability } from '$lib/super/types';
 import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
 import {
 	ONBOARDING_COOKIE_MAX_AGE,
@@ -39,6 +43,18 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 	const userId = locals.userId!;
 	await claimReferralFromCookie(cookies, userId, request);
 	const assistantFeaturesEnabled = await getAssistantFeaturesEnabledForRequest(locals, userId);
+	const coachSidebarEnabled = assistantFeaturesEnabled
+		? await (async () => {
+				const [planAccess, profile, coachEnabled] = await Promise.all([
+					getPlanAccessForRequest(locals, userId),
+					getTutorProfileViewForRequest(locals, userId),
+					isSuperCoachEnabled()
+				]);
+				return (
+					coachEnabled && hasPaidCapability(planAccess, 'coach') && Boolean(profile.ageConfirmedAt)
+				);
+			})()
+		: false;
 	const organizations = await loadAppOrganizations(
 		userId,
 		locals.session.activeOrganizationId,
@@ -64,6 +80,7 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 		isAdmin: isAdminUser(locals.user),
 		freeBetaEnabled,
 		assistantFeaturesEnabled,
+		coachSidebarEnabled,
 		showFreeBetaClaimDialog,
 		organizations: organizations.organizations,
 		activeOrganization: organizations.activeOrganization,

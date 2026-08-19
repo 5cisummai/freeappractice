@@ -4,6 +4,10 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
+	import CoachShell from '$lib/components/super/coach-shell.svelte';
+	import CoachSidebarProvider from '$lib/components/ui/sidebar/coach-sidebar-provider.svelte';
+	import CoachSidebarRoot from '$lib/components/ui/sidebar/coach-sidebar.svelte';
+	import CoachSidebarTrigger from '$lib/components/ui/sidebar/coach-sidebar-trigger.svelte';
 	import FreeBetaClaimDialog from '$lib/components/super/free-beta-claim-dialog.svelte';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
@@ -23,6 +27,8 @@
 
 	let { data, children } = $props();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
+	const isCoachPage = $derived(page.url.pathname === resolve('/app/coach'));
+	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
 	let freeBetaClaimOpen = $state(false);
 	let layoutMounted = $state(false);
 
@@ -85,26 +91,41 @@
 		{@render children()}
 	</main>
 {:else}
-	<Sidebar.Provider class="bg-sidebar">
-		<AppSidebar
-			isAdmin={data.isAdmin}
-			user={data.user}
-			assistantFeaturesEnabled={data.assistantFeaturesEnabled}
-			organizations={data.organizations}
-			activeOrganization={data.activeOrganization}
-			ownedGroupCount={data.ownedGroupCount}
-		/>
-		<Sidebar.Inset>
-			<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
-				<SidebarTrigger />
-				{#if layoutMounted}
-					<ThemeToggle class="ml-auto" />
-				{/if}
-			</header>
+	<CoachSidebarProvider>
+		<Sidebar.Provider class="bg-sidebar">
+			<AppSidebar
+				isAdmin={data.isAdmin}
+				user={data.user}
+				assistantFeaturesEnabled={data.assistantFeaturesEnabled}
+				organizations={data.organizations}
+				activeOrganization={data.activeOrganization}
+				ownedGroupCount={data.ownedGroupCount}
+			/>
+			<Sidebar.Inset>
+				<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
+					<SidebarTrigger />
+					<div class="ml-auto flex items-center gap-1">
+						{#if showCoachSidebar}
+							<CoachSidebarTrigger />
+						{/if}
+						{#if layoutMounted}
+							<ThemeToggle />
+						{/if}
+					</div>
+				</header>
 
-			<div class="flex-1">
-				{@render children()}
-			</div>
-		</Sidebar.Inset>
-	</Sidebar.Provider>
+				<div class="flex-1">
+					{@render children()}
+				</div>
+			</Sidebar.Inset>
+
+			{#if showCoachSidebar}
+				<CoachSidebarRoot>
+					<Sidebar.Content class="min-h-0 overflow-hidden p-0">
+						<CoachShell surface="sidebar" />
+					</Sidebar.Content>
+				</CoachSidebarRoot>
+			{/if}
+		</Sidebar.Provider>
+	</CoachSidebarProvider>
 {/if}

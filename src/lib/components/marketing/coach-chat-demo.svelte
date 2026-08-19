@@ -410,7 +410,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 						? 'text-foreground'
 						: 'text-muted-foreground/80'}"
 				>
-					{composerText || 'Ask Coach anything…'}
+					{composerText || 'Ask Coach'}
 					{#if composerText && !promptVisible}
 						<span
 							class="ml-px inline-block h-[1.05em] w-px translate-y-0.5 animate-tutor-caret-blink bg-foreground"
