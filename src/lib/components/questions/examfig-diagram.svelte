@@ -10,6 +10,11 @@
 	} = $props();
 
 	const renderResult = $derived(renderExamfigDiagram(spec));
+	const imageSrc = $derived(
+		renderResult.valid
+			? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderResult.svg)}`
+			: ''
+	);
 </script>
 
 {#if renderResult.valid}
@@ -17,8 +22,13 @@
 		class={['overflow-x-auto rounded-lg border border-border/70 bg-background/70 p-3', className]}
 		aria-label={spec.accessibleDescription as string}
 	>
-		<!-- examfig owns the SVG markup; it is validated before being serialized. -->
-		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-		{@html renderResult.svg}
+		<img
+			src={imageSrc}
+			alt={typeof spec.accessibleDescription === 'string' ? spec.accessibleDescription : ''}
+			width={renderResult.width}
+			height={renderResult.height}
+			class="mx-auto h-auto max-w-full"
+			decoding="async"
+		/>
 	</figure>
 {/if}

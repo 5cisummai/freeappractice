@@ -28,6 +28,8 @@ export type ExamfigDiagramSpec = Record<string, unknown>;
 type ExamfigRenderSuccess = {
 	valid: true;
 	svg: string;
+	width: number;
+	height: number;
 	warnings: string[];
 	renderedBytes: number;
 };
@@ -98,6 +100,8 @@ export function renderExamfigDiagram(input: unknown): ExamfigRenderResult {
 		return {
 			valid: true,
 			svg: validated.svg,
+			width: validated.width,
+			height: validated.height,
 			warnings: plan.warnings.map((warning) => warning.message),
 			renderedBytes: validated.byteLength
 		};

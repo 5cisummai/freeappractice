@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -81,7 +80,7 @@
 
 	let promptElement: HTMLDivElement | null = null;
 	let isLongQuestion = $state(false);
-	let mounted = $state(!browser);
+	let mounted = $state(false);
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let isMobileViewport = $state(false);
@@ -174,7 +173,7 @@
 	const showQuestionSkeleton = $derived(
 		!session.currentQuestion &&
 			(session.isLoading ||
-				!mounted ||
+				quizMode ||
 				(requestVersion > 0 && !session.showWarmingState && !session.showErrorState))
 	);
 
@@ -318,10 +317,7 @@
 					</div>
 
 					{#if session.currentQuestion?.diagramSpec}
-						<ExamfigDiagram
-							spec={session.currentQuestion.diagramSpec}
-							class="[&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
-						/>
+						<ExamfigDiagram spec={session.currentQuestion.diagramSpec} />
 					{/if}
 
 					{#if session.currentQuestion?.hasStimulus && !isMobileViewport}

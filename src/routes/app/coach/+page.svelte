@@ -9,7 +9,11 @@
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
-	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
+	import CopyIcon from '@tabler/icons-svelte/icons/copy';
+	import ThumbDownFilledIcon from '@tabler/icons-svelte/icons/thumb-down-filled';
+	import ThumbDownIcon from '@tabler/icons-svelte/icons/thumb-down';
+	import ThumbUpFilledIcon from '@tabler/icons-svelte/icons/thumb-up-filled';
+	import ThumbUpIcon from '@tabler/icons-svelte/icons/thumb-up';
 	import CircleAlertIcon from '@tabler/icons-svelte/icons/alert-circle';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
@@ -18,6 +22,9 @@
 	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
+	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
+	import Sparkles2FilledIcon from '@tabler/icons-svelte/icons/sparkles-2-filled';
+	import BrainIcon from '@tabler/icons-svelte/icons/brain';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
@@ -72,6 +79,7 @@
 	let loadingConversationId = $state<string | null>(null);
 	let conversationLoadRequest = 0;
 	let pendingCoachActions: CoachComposerActionId[] = [];
+	let messageFeedbackById = $state<Record<string, CoachMessageFeedback>>({});
 	const asIcon = (icon: unknown) => icon as Component;
 
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
@@ -80,6 +88,20 @@
 		'study-plan': asIcon(CalendarDaysIcon),
 		'review-progress': asIcon(BarChart3Icon)
 	};
+
+	const thinkingModeOptions: Array<{
+		value: CoachThinkingMode;
+		label: string;
+		icon: Component;
+	}> = [
+		{ value: 'quick', label: 'Flash', icon: asIcon(BoltFilledIcon) },
+		{ value: 'thinking', label: 'Balanced', icon: asIcon(Sparkles2FilledIcon) },
+		{ value: 'deep', label: 'Deep', icon: asIcon(BrainIcon) }
+	];
+
+	const selectedThinkingMode = $derived(
+		thinkingModeOptions.find((option) => option.value === thinkingMode) ?? thinkingModeOptions[1]
+	);
 
 	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
 	const COACH_CONVERSATION_STORAGE_KEY = 'super-coach-conversation-id';
@@ -91,6 +113,8 @@
 		createdAt: string;
 		updatedAt: string;
 	};
+
+	type CoachMessageFeedback = 'helpful' | 'not_helpful';
 
 	const toolActivityLabels: Record<string, { running: string; complete: string }> = {
 		'tool-read_course_catalog': {
@@ -508,6 +532,19 @@
 
 	async function copyPrompt(message: CoachUIMessage): Promise<void> {
 		await copyText(messageText(message), 'Prompt copied.');
+	}
+
+	function messageFeedback(messageId: string): CoachMessageFeedback | undefined {
+		return messageFeedbackById[messageId];
+	}
+
+	function toggleMessageFeedback(messageId: string, feedback: CoachMessageFeedback): void {
+		if (messageFeedbackById[messageId] === feedback) {
+			const { [messageId]: _removed, ...rest } = messageFeedbackById;
+			messageFeedbackById = rest;
+			return;
+		}
+		messageFeedbackById = { ...messageFeedbackById, [messageId]: feedback };
 	}
 
 	async function regenerateMessage(messageId: string): Promise<void> {
@@ -1006,6 +1043,38 @@
 													>
 														<CopyIcon />
 													</Message.Action>
+													<Message.Action
+														tooltip="Helpful response"
+														label="Helpful response"
+														aria-pressed={messageFeedback(message.id) === 'helpful'}
+														class={cn(
+															messageFeedback(message.id) === 'helpful' &&
+																'bg-muted text-foreground'
+														)}
+														onclick={() => toggleMessageFeedback(message.id, 'helpful')}
+													>
+														{#if messageFeedback(message.id) === 'helpful'}
+															<ThumbUpFilledIcon />
+														{:else}
+															<ThumbUpIcon />
+														{/if}
+													</Message.Action>
+													<Message.Action
+														tooltip="Not helpful response"
+														label="Not helpful response"
+														aria-pressed={messageFeedback(message.id) === 'not_helpful'}
+														class={cn(
+															messageFeedback(message.id) === 'not_helpful' &&
+																'bg-muted text-foreground'
+														)}
+														onclick={() => toggleMessageFeedback(message.id, 'not_helpful')}
+													>
+														{#if messageFeedback(message.id) === 'not_helpful'}
+															<ThumbDownFilledIcon />
+														{:else}
+															<ThumbDownIcon />
+														{/if}
+													</Message.Action>
 												</Message.Actions>
 											{/if}
 										{/if}
@@ -1045,7 +1114,7 @@
 						<h1
 							class="font-display text-3xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-4xl"
 						>
-							Ask me about your progress
+							Where should we start?
 						</h1>
 					</div>
 				{/if}
@@ -1126,16 +1195,22 @@
 							}}
 						>
 							<Select.Trigger
-								class="h-9 min-w-0 border-transparent bg-transparent px-2.5 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50"
+								class="h-9 shrink-0 self-end gap-1 border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
 								disabled={!sessionId || streaming}
 								aria-label="Coach response depth"
 							>
-								{thinkingMode === 'quick' ? 'Quick' : thinkingMode === 'deep' ? 'Deep' : 'Thinking'}
+								{@const Icon = selectedThinkingMode.icon}
+								<Icon class="size-3.5 shrink-0" aria-hidden="true" />
+								<span>{selectedThinkingMode.label}</span>
 							</Select.Trigger>
-							<Select.Content align="end">
-								<Select.Item value="quick">Quick</Select.Item>
-								<Select.Item value="thinking">Thinking</Select.Item>
-								<Select.Item value="deep">Deep</Select.Item>
+							<Select.Content align="end" class="min-w-[10.5rem]">
+								{#each thinkingModeOptions as option (option.value)}
+									{@const Icon = option.icon}
+									<Select.Item value={option.value}>
+										<Icon class="size-4 text-muted-foreground" aria-hidden="true" />
+										{option.label}
+									</Select.Item>
+								{/each}
 							</Select.Content>
 						</Select.Root>
 						<PromptInput.Submit

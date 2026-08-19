@@ -112,17 +112,15 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
 	const showEmptyState = $derived(
-		opts.getMounted() &&
-			!isLoading &&
+		!isLoading &&
 			!questionLoadFailed &&
 			!isPoolWarming &&
 			opts.getRequestVersion() === 0 &&
-			!currentQuestion
+			!currentQuestion &&
+			!opts.getQuizMode()
 	);
-	const showWarmingState = $derived(opts.getMounted() && isPoolWarming);
-	const showErrorState = $derived(
-		opts.getMounted() && !isLoading && questionLoadFailed && !isPoolWarming
-	);
+	const showWarmingState = $derived(isPoolWarming);
+	const showErrorState = $derived(!isLoading && questionLoadFailed && !isPoolWarming);
 
 	function clearWarmingRetryTimer(): void {
 		if (!warmingRetryTimer) return;
