@@ -37,6 +37,26 @@ describe('minimalSuperAgentClientMessages', () => {
 		expect(isSuperAgentToolContinuation(messages)).toBe(true);
 		expect(minimalSuperAgentClientMessages(messages)).toEqual([messages[1]]);
 	});
+
+	it('sends only an approval response as a tool continuation', () => {
+		const messages = [
+			{ role: 'user' as const, parts: [{ type: 'text', text: 'Update my goals' }] },
+			{
+				role: 'assistant' as const,
+				parts: [
+					{
+						type: 'tool-update_goals',
+						state: 'approval-responded',
+						approval: { id: 'approval-1', approved: true },
+						input: { selectedApClasses: ['AP Biology'] }
+					}
+				]
+			}
+		];
+
+		expect(isSuperAgentToolContinuation(messages)).toBe(true);
+		expect(minimalSuperAgentClientMessages(messages)).toEqual([messages[1]]);
+	});
 });
 
 describe('shouldIncludeConversationRowForUi', () => {

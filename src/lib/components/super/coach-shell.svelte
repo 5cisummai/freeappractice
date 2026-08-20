@@ -4,7 +4,11 @@
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
-	import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
+	import {
+		DefaultChatTransport,
+		lastAssistantMessageIsCompleteWithApprovalResponses,
+		lastAssistantMessageIsCompleteWithToolCalls
+	} from 'ai';
 	import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
@@ -19,21 +23,23 @@
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
 	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
-	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import Sparkles2FilledIcon from '@tabler/icons-svelte/icons/sparkles-2-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
+	import SidebarCloseIcon from '@tabler/icons-svelte/icons/x';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
+	import * as Confirmation from '$lib/components/ai-elements/confirmation/index.js';
 	import * as Message from '$lib/components/ai-elements/message/index.js';
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
@@ -45,6 +51,7 @@
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
+	import { useCoachSidebar } from '$lib/components/ui/sidebar/coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
@@ -57,6 +64,10 @@
 	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
+	import type {
+		ToolUIPartApproval,
+		ToolUIPartState
+	} from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { toast } from 'svelte-sonner';
 
 	type CoachShellProps = {
@@ -64,6 +75,7 @@
 	};
 
 	let { surface = 'page' }: CoachShellProps = $props();
+	const coachSidebar = useCoachSidebar();
 
 	let sessionId = $state('');
 	let conversationId = $state('');
@@ -77,7 +89,7 @@
 	let conversationsOpen = $state(false);
 	let coachActionsOpen = $state(false);
 	let selectedCoachActionIds = $state<CoachComposerActionId[]>([]);
-	let thinkingMode = $state<CoachThinkingMode>('thinking');
+	let thinkingMode = $state<CoachThinkingMode>('quick');
 	let composerInputRef = $state<HTMLTextAreaElement | null>(null);
 	let loadingConversationId = $state<string | null>(null);
 	let conversationLoadRequest = 0;
@@ -103,7 +115,7 @@
 	];
 
 	const selectedThinkingMode = $derived(
-		thinkingModeOptions.find((option) => option.value === thinkingMode) ?? thinkingModeOptions[1]
+		thinkingModeOptions.find((option) => option.value === thinkingMode) ?? thinkingModeOptions[0]
 	);
 
 	const COACH_SESSION_STORAGE_KEY = 'super-coach-session-id';
@@ -176,7 +188,9 @@
 
 	const coach = new Chat<CoachUIMessage>({
 		messages: [],
-		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+		sendAutomaticallyWhen: ({ messages }) =>
+			lastAssistantMessageIsCompleteWithToolCalls({ messages }) ||
+			lastAssistantMessageIsCompleteWithApprovalResponses({ messages }),
 		transport: new DefaultChatTransport<CoachUIMessage>({
 			api: '/api/coach',
 			fetch: async (url, init) => {
@@ -220,9 +234,13 @@
 		input?: unknown;
 		output?: unknown;
 		errorText?: string;
+		approval?: ToolUIPartApproval;
 	};
 
 	type ApprovalProposal = {
+		approvalId: string;
+		approval: ToolUIPartApproval;
+		state: ToolUIPartState;
 		category: 'goals' | 'study_plans';
 		proposed: unknown;
 	};
@@ -503,19 +521,33 @@
 	}
 
 	function getApprovalProposal(part: CoachToolPart): ApprovalProposal | null {
-		if (!part.output || typeof part.output !== 'object') return null;
-		const output = part.output as {
-			approvalRequired?: unknown;
-			category?: unknown;
-			proposed?: unknown;
-		};
-		if (
-			output.approvalRequired !== true ||
-			(output.category !== 'goals' && output.category !== 'study_plans')
-		) {
+		if (!part.approval?.id || !isConfirmationState(part.state)) return null;
+		const category =
+			part.type === 'tool-update_goals'
+				? 'goals'
+				: part.type === 'tool-update_study_plan'
+					? 'study_plans'
+					: null;
+		if (!category) return null;
+		if (!part.input || typeof part.input !== 'object') {
 			return null;
 		}
-		return { category: output.category, proposed: output.proposed };
+		return {
+			approvalId: part.approval.id,
+			approval: part.approval,
+			state: part.state,
+			category,
+			proposed: part.input
+		};
+	}
+
+	function isConfirmationState(state: string | undefined): state is ToolUIPartState {
+		return (
+			state === 'approval-requested' ||
+			state === 'approval-responded' ||
+			state === 'output-denied' ||
+			state === 'output-available'
+		);
 	}
 
 	async function copyText(text: string, successMessage: string): Promise<void> {
@@ -577,28 +609,19 @@
 		await send(text);
 	}
 
-	async function approve(categories: Array<'goals' | 'study_plans'>) {
-		if (!sessionId || approving) return;
+	async function respondToApproval(approvalId: string, approved: boolean) {
+		if (!approvalId || approving) return;
 		approving = true;
 		try {
-			const response = await apiFetch('/api/coach/approval', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sessionId, categories })
+			await coach.addToolApprovalResponse({
+				id: approvalId,
+				approved
 			});
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok)
-				throw new Error(getResponseMessage(result, 'Could not approve Coach changes.'));
-			toast.success('Coach can make that change for the next 30 minutes.');
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not approve Coach changes.');
+			toast.error(error instanceof Error ? error.message : 'Could not respond to Coach.');
 		} finally {
 			approving = false;
 		}
-	}
-
-	function approveProposedCategory(category: ApprovalProposal['category']) {
-		void approve([category]);
 	}
 
 	async function submitPracticeQuestionResult(
@@ -695,7 +718,7 @@
 		<div
 			class={cn(
 				'mx-auto flex w-full max-w-3xl justify-end gap-2 pt-3',
-				surface === 'page' ? 'px-4 sm:px-8' : 'px-0'
+				surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
 			)}
 		>
 			<Button
@@ -786,6 +809,18 @@
 					{/if}
 				</Popover.Content>
 			</Popover.Root>
+			{#if surface === 'sidebar'}
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					class="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+					aria-label="Close Coach sidebar"
+					title="Close Coach sidebar"
+					onclick={() => coachSidebar.toggle()}
+				>
+					<SidebarCloseIcon aria-hidden="true" />
+				</Button>
+			{/if}
 		</div>
 		<div
 			class={cn(
@@ -802,7 +837,7 @@
 						<Conversation.Content
 							class={cn(
 								'mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain pt-8 pb-6 sm:pt-10',
-								surface === 'page' ? 'px-4 sm:px-8' : 'px-0'
+								surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
 							)}
 							aria-live="polite"
 						>
@@ -873,34 +908,53 @@
 												{#if approval}
 													{@const summary = getApprovalSummary(approval)}
 													<div
-														class="mt-2 max-w-3xl rounded-2xl border border-border/70 bg-muted/30 p-4"
+														class="mt-2 max-w-3xl"
 														in:fly={{ y: 6, duration: motionMs * 0.55, easing: cubicOut }}
 													>
-														<p class="text-sm font-medium">Approval needed</p>
-														<p class="mt-1 text-sm leading-6 text-muted-foreground">
-															Coach is ready to make this change.
-														</p>
-														<div class="mt-3 rounded-xl bg-muted/60 p-3">
-															<p class="text-sm font-medium">{summary.title}</p>
-															<ul class="mt-2 space-y-1 text-sm leading-5 text-muted-foreground">
-																{#each summary.lines as line, index (`${line}-${index}`)}
-																	<li class="flex gap-2">
-																		<span
-																			class="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60"
-																		></span>
-																		<span>{line}</span>
-																	</li>
-																{/each}
-															</ul>
-														</div>
-														<Button
-															size="sm"
-															class="mt-3"
-															disabled={approving}
-															onclick={() => approveProposedCategory(approval.category)}
-														>
-															{approving ? 'Approving…' : 'Approve update'}
-														</Button>
+														<Confirmation.Root state={approval.state} approval={approval.approval}>
+															<Confirmation.Request>
+																<Confirmation.Title>Approval needed</Confirmation.Title>
+																<p class="text-sm leading-6 text-muted-foreground">
+																	Coach is ready to make this change.
+																</p>
+																<div class="rounded-xl bg-muted/60 p-3">
+																	<p class="text-sm font-medium">{summary.title}</p>
+																	<ul
+																		class="mt-2 space-y-1 text-sm leading-5 text-muted-foreground"
+																	>
+																		{#each summary.lines as line, index (`${line}-${index}`)}
+																			<li class="flex gap-2">
+																				<span
+																					class="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60"
+																				></span>
+																				<span>{line}</span>
+																			</li>
+																		{/each}
+																	</ul>
+																</div>
+																<Confirmation.Actions class="justify-start">
+																	<Confirmation.Action
+																		disabled={approving}
+																		onclick={() => respondToApproval(approval.approvalId, true)}
+																	>
+																		{approving ? 'Responding…' : 'Approve update'}
+																	</Confirmation.Action>
+																	<Confirmation.Action
+																		variant="outline"
+																		disabled={approving}
+																		onclick={() => respondToApproval(approval.approvalId, false)}
+																	>
+																		Decline
+																	</Confirmation.Action>
+																</Confirmation.Actions>
+															</Confirmation.Request>
+															<Confirmation.Accepted>
+																<Confirmation.Title>Update approved</Confirmation.Title>
+															</Confirmation.Accepted>
+															<Confirmation.Rejected>
+																<Confirmation.Title>Update declined</Confirmation.Title>
+															</Confirmation.Rejected>
+														</Confirmation.Root>
 													</div>
 												{/if}
 											{/if}
@@ -1071,7 +1125,7 @@
 		<div
 			class={cn(
 				'mx-auto flex w-full max-w-3xl flex-col transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
-				surface === 'page' ? 'px-4 sm:px-8' : 'px-0',
+				surface === 'page' ? 'px-4 sm:px-8' : 'px-2',
 				emptyChat ? 'min-h-0 flex-1 justify-center pb-10 sm:pb-16' : 'shrink-0 pb-4 sm:pb-6'
 			)}
 		>

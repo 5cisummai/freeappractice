@@ -19,7 +19,6 @@ const RATE_WINDOW = '10 m' as const;
 const GENERIC_ANONYMOUS_LIMIT = 12;
 const GENERIC_SIGNED_IN_LIMIT = 30;
 const SUPER_AI_LIMIT = 60;
-const COACH_AUTH_TTL_SECONDS = 30 * 60;
 const COACH_LOCK_TTL_SECONDS = 75;
 const INSIGHT_LOCK_TTL_SECONDS = 5 * 60;
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
@@ -253,54 +252,6 @@ export async function rollupPersonalizedUsage(
 				updatedAt: now
 			}
 		});
-}
-
-export type CoachWriteCategory = 'goals' | 'study_plans';
-type CoachAuthorization = { categories: CoachWriteCategory[] };
-
-function coachAuthKey(userId: string, sessionId: string): string {
-	return `${redisNamespace()}:coach-auth:${userId}:${sessionId}`;
-}
-
-export async function authorizeCoachWrites(
-	userId: string,
-	sessionId: string,
-	categories: CoachWriteCategory[]
-): Promise<void> {
-	const redis = getRedisClient();
-	if (!redis) throw new RedisRequiredError();
-	const normalized = [...new Set(categories)];
-	if (normalized.length === 0) return;
-	try {
-		await withRedisTimeout(
-			redis.set(
-				coachAuthKey(userId, sessionId),
-				{ categories: normalized },
-				{ ex: COACH_AUTH_TTL_SECONDS }
-			),
-			750
-		);
-	} catch {
-		throw new RedisRequiredError();
-	}
-}
-
-export async function hasCoachWriteAuthorization(
-	userId: string,
-	sessionId: string,
-	category: CoachWriteCategory
-): Promise<boolean> {
-	const redis = getRedisClient();
-	if (!redis) throw new RedisRequiredError();
-	try {
-		const authorization = await withRedisTimeout(
-			redis.get<CoachAuthorization>(coachAuthKey(userId, sessionId)),
-			750
-		);
-		return Boolean(authorization?.categories.includes(category));
-	} catch {
-		throw new RedisRequiredError();
-	}
 }
 
 const COMPARE_AND_DELETE_SCRIPT = `

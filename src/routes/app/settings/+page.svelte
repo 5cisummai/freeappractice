@@ -24,7 +24,7 @@
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
-	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import SelectorIcon from '@tabler/icons-svelte/icons/selector';
 	import LaptopIcon from '@tabler/icons-svelte/icons/device-laptop';
 	import MoonIcon from '@tabler/icons-svelte/icons/moon-filled';
 	import SunIcon from '@tabler/icons-svelte/icons/sun-filled';
@@ -323,7 +323,7 @@
 										{/if}
 										{themeLabel}
 									</span>
-									<ChevronsUpDownIcon class="size-3.5 opacity-60" />
+									<SelectorIcon class="size-3.5 opacity-60" />
 								</Button>
 							{/snippet}
 						</DropdownMenu.Trigger>

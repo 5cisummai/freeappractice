@@ -3,12 +3,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { getApCurriculumKnowledge } from '$lib/ap-knowledge/catalog';
-import {
-	claimIdempotencyKey,
-	hasCoachWriteAuthorization,
-	releaseIdempotencyKey,
-	type CoachWriteCategory
-} from '$lib/super/ai-controls.server';
+import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/super/ai-controls.server';
 import type { SuperToolsInput } from '$lib/super/coach-agent.types';
 import {
 	getCoachActivitySummary,
@@ -18,7 +13,6 @@ import {
 import { coachPracticeQuestionToolOutputSchema } from '$lib/super/coach-practice-question';
 import { getCurrentSuperQuestion } from '$lib/super/context.server';
 import { renderDiagram } from '$lib/super/diagram-renderer.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { getCurrentStoredInsightReport } from '$lib/super/insights.server';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
@@ -98,17 +92,6 @@ async function writeAudit(
 		});
 }
 
-async function authorized(
-	locals: App.Locals,
-	userId: string,
-	sessionId: string,
-	category: CoachWriteCategory
-): Promise<boolean> {
-	const access = await authorizeFeatureRequest({ locals }, userId, 'coach');
-	if (!access.allowed) return false;
-	return hasCoachWriteAuthorization(userId, sessionId, category);
-}
-
 function canonicalize(input: unknown): unknown {
 	if (Array.isArray(input)) return input.map(canonicalize);
 	if (input && typeof input === 'object') {
@@ -129,7 +112,7 @@ function coachOperationId(sessionId: string, toolName: string, input: unknown): 
 }
 
 export function createSuperTools(input: SuperToolsInput) {
-	const { locals, userId, sessionId, currentContext, conversationId } = input;
+	const { userId, sessionId, currentContext, conversationId } = input;
 
 	return {
 		read_current_question: tool({
@@ -266,17 +249,14 @@ export function createSuperTools(input: SuperToolsInput) {
 			}
 		}),
 		update_goals: tool({
-			description:
-				'After explicit student approval, update selected AP classes, target dates, and study availability only. State the proposed change before calling.',
+			description: 'Update selected AP classes, target dates, and study availability only.',
 			inputSchema: z.object({
 				selectedApClasses: z.array(z.string().trim().min(1).max(100)).max(20).optional(),
 				targetDates: z.array(targetDateSchema).max(20).optional(),
 				studyAvailability: z.string().trim().max(500).optional()
 			}),
+			needsApproval: true,
 			execute: async (patch) => {
-				if (!(await authorized(locals, userId, sessionId, 'goals'))) {
-					return { updated: false, approvalRequired: true, category: 'goals', proposed: patch };
-				}
 				const operationId = coachOperationId(sessionId, 'update_goals', patch);
 				if (!(await claimIdempotencyKey(userId, operationId))) {
 					return { updated: true, alreadyApplied: true };
@@ -293,22 +273,14 @@ export function createSuperTools(input: SuperToolsInput) {
 			}
 		}),
 		update_study_plan: tool({
-			description:
-				'After explicit student approval, replace or merge the active study plan with tasks of at most 30 minutes. State the proposed change before calling.',
+			description: 'Replace or merge the active study plan with tasks of at most 30 minutes.',
 			inputSchema: z.object({
 				startsOn: z.iso.datetime(),
 				behavior: z.enum(['replace', 'merge']).default('replace'),
 				tasks: z.array(studyTaskSchema).max(28)
 			}),
+			needsApproval: true,
 			execute: async ({ startsOn, behavior, tasks }) => {
-				if (!(await authorized(locals, userId, sessionId, 'study_plans'))) {
-					return {
-						updated: false,
-						approvalRequired: true,
-						category: 'study_plans',
-						proposed: { startsOn, behavior, tasks }
-					};
-				}
 				const operationInput = { startsOn, behavior, tasks };
 				const operationId = coachOperationId(sessionId, 'update_study_plan', operationInput);
 				if (!(await claimIdempotencyKey(userId, operationId))) {

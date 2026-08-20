@@ -3,19 +3,24 @@
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
-	import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
+	import {
+		DefaultChatTransport,
+		lastAssistantMessageIsCompleteWithApprovalResponses,
+		lastAssistantMessageIsCompleteWithToolCalls
+	} from 'ai';
 	import MessageSquareIcon from '@tabler/icons-svelte/icons/message-filled';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
-	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import * as Confirmation from '$lib/components/ai-elements/confirmation/index.js';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
 	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
@@ -30,6 +35,10 @@
 	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import type { SuperAgentUIMessage } from '$lib/super/coach.server';
+	import type {
+		ToolUIPartApproval,
+		ToolUIPartState
+	} from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { toast } from 'svelte-sonner';
 
 	type Props = {
@@ -132,7 +141,9 @@
 
 	const chat = new Chat<SuperAgentUIMessage>({
 		messages: [],
-		sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+		sendAutomaticallyWhen: ({ messages }) =>
+			lastAssistantMessageIsCompleteWithToolCalls({ messages }) ||
+			lastAssistantMessageIsCompleteWithApprovalResponses({ messages }),
 		transport: new DefaultChatTransport<SuperAgentUIMessage>({
 			api: '/api/tutor/chat',
 			fetch: async (url, init) => {
@@ -179,9 +190,13 @@
 		input?: unknown;
 		output?: unknown;
 		errorText?: string;
+		approval?: ToolUIPartApproval;
 	};
 
 	type ApprovalProposal = {
+		approvalId: string;
+		approval: ToolUIPartApproval;
+		state: ToolUIPartState;
 		category: 'goals' | 'study_plans';
 		proposed: unknown;
 	};
@@ -229,14 +244,30 @@
 	}
 
 	function getApprovalProposal(part: ToolPart): ApprovalProposal | null {
-		const output = asRecord(part.output);
-		if (
-			output.approvalRequired !== true ||
-			(output.category !== 'goals' && output.category !== 'study_plans')
-		) {
-			return null;
-		}
-		return { category: output.category, proposed: output.proposed };
+		if (!part.approval?.id || !isConfirmationState(part.state)) return null;
+		const category =
+			part.type === 'tool-update_goals'
+				? 'goals'
+				: part.type === 'tool-update_study_plan'
+					? 'study_plans'
+					: null;
+		if (!category || !part.input || typeof part.input !== 'object') return null;
+		return {
+			approvalId: part.approval.id,
+			approval: part.approval,
+			state: part.state,
+			category,
+			proposed: part.input
+		};
+	}
+
+	function isConfirmationState(state: string | undefined): state is ToolUIPartState {
+		return (
+			state === 'approval-requested' ||
+			state === 'approval-responded' ||
+			state === 'output-denied' ||
+			state === 'output-available'
+		);
 	}
 
 	function proposalLabel(proposal: ApprovalProposal): string {
@@ -248,19 +279,14 @@
 			: 'Approve study-plan changes';
 	}
 
-	async function approve(proposal: ApprovalProposal): Promise<void> {
+	async function respondToApproval(approvalId: string, approved: boolean): Promise<void> {
 		try {
-			const response = await apiFetch('/api/coach/approval', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sessionId, categories: [proposal.category] })
+			await chat.addToolApprovalResponse({
+				id: approvalId,
+				approved
 			});
-			const payload = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok)
-				throw new Error(getResponseMessage(payload, 'Could not approve this change.'));
-			toast.success('The Super Agent can make that change for the next 30 minutes.');
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not approve this change.');
+			toast.error(error instanceof Error ? error.message : 'Could not respond to the Super Agent.');
 		}
 	}
 
@@ -635,13 +661,34 @@
 									</div>
 									{@const proposal = getApprovalProposal(part)}
 									{#if proposal}
-										<button
-											type="button"
-											class="rounded-lg border border-violet-300/50 px-2.5 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-950/30"
-											onclick={() => void approve(proposal)}
+										<Confirmation.Root
+											state={proposal.state}
+											approval={proposal.approval}
+											class="max-w-full"
 										>
-											{proposalLabel(proposal)}
-										</button>
+											<Confirmation.Request>
+												<Confirmation.Title>{proposalLabel(proposal)}</Confirmation.Title>
+												<Confirmation.Actions class="justify-start">
+													<Confirmation.Action
+														onclick={() => void respondToApproval(proposal.approvalId, true)}
+													>
+														Approve
+													</Confirmation.Action>
+													<Confirmation.Action
+														variant="outline"
+														onclick={() => void respondToApproval(proposal.approvalId, false)}
+													>
+														Decline
+													</Confirmation.Action>
+												</Confirmation.Actions>
+											</Confirmation.Request>
+											<Confirmation.Accepted>
+												<Confirmation.Title>Update approved</Confirmation.Title>
+											</Confirmation.Accepted>
+											<Confirmation.Rejected>
+												<Confirmation.Title>Update declined</Confirmation.Title>
+											</Confirmation.Rejected>
+										</Confirmation.Root>
 									{/if}
 								{/each}
 								{#if !messageText(message) && streaming && message === chat.messages.at(-1)}

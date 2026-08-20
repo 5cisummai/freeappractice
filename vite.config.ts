@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { sentrySvelteKit } from '@sentry/sveltekit';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

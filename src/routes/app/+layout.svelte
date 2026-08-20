@@ -105,11 +105,11 @@
 				<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 					<SidebarTrigger />
 					<div class="ml-auto flex items-center gap-1">
-						{#if showCoachSidebar}
-							<CoachSidebarTrigger />
-						{/if}
 						{#if layoutMounted}
 							<ThemeToggle />
+						{/if}
+						{#if showCoachSidebar}
+							<CoachSidebarTrigger />
 						{/if}
 					</div>
 				</header>

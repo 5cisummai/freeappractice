@@ -21,7 +21,9 @@ const STANDARD_READ_TOOLS = [
 export function pruneSuperAgentModelMessages(messages: ModelMessage[]): ModelMessage[] {
 	return pruneMessages({
 		messages,
-		reasoning: 'before-last-message',
+		// OpenAI Responses message items can require their paired reasoning item.
+		// Keep the complete reasoning history instead of pruning prior assistant parts.
+		reasoning: 'none',
 		toolCalls: [
 			{ type: 'before-last-message', tools: [...BULKY_READ_TOOLS] },
 			{ type: 'before-last-5-messages', tools: [...STANDARD_READ_TOOLS] },

@@ -20,7 +20,7 @@ const coachRequestSchema = z
 		sessionId: z.string().uuid(),
 		conversationId: z.string().uuid().optional(),
 		coachActions: z.array(z.enum(coachComposerActionIds)).max(4).optional(),
-		thinkingMode: coachThinkingModeSchema.default('thinking'),
+		thinkingMode: coachThinkingModeSchema.default('quick'),
 		context: z
 			.object({
 				page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),

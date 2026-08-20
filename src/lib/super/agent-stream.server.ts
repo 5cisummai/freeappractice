@@ -106,7 +106,7 @@ export async function createSuperAgentStreamResponse(
 		messages,
 		conversationId: requestedConversationId,
 		coachActions,
-		thinkingMode = 'thinking',
+		thinkingMode = 'quick',
 		surface,
 		errorLabel
 	} = options;
@@ -217,7 +217,11 @@ export async function createSuperAgentStreamResponse(
 		if (isContinuation) {
 			const clientAssistant = clientMessages.at(-1);
 			const clientToolPart = clientAssistant
-				? findContinuationToolPart(clientAssistant.parts, ['output-available', 'output-error'])
+				? findContinuationToolPart(clientAssistant.parts, [
+						'output-available',
+						'output-error',
+						'approval-responded'
+					])
 				: null;
 			const storedMessages = await getConversationMessages(
 				userId,
@@ -233,7 +237,8 @@ export async function createSuperAgentStreamResponse(
 			}
 			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
 				'input-available',
-				'input-streaming'
+				'input-streaming',
+				'approval-requested'
 			]);
 			if (
 				!clientToolPart ||

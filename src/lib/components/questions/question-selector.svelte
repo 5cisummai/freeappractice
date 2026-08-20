@@ -4,7 +4,7 @@
 	import { tick } from 'svelte';
 	import BugIcon from '@tabler/icons-svelte/icons/bug-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
-	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import SelectorIcon from '@tabler/icons-svelte/icons/selector';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
 	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
 	import RotateCcwIcon from '@tabler/icons-svelte/icons/rotate-2';
@@ -202,7 +202,7 @@
 							class="w-full justify-between font-normal"
 						>
 							<span class="truncate">{selectedClass || 'Select a course'}</span>
-							<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+							<SelectorIcon class="ml-2 size-4 shrink-0 opacity-50" />
 						</Button>
 					{/snippet}
 				</Popover.Trigger>
@@ -267,7 +267,7 @@
 									{selectedUnit}
 								{/if}
 							</span>
-							<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+							<SelectorIcon class="ml-2 size-4 shrink-0 opacity-50" />
 						</Button>
 					{/snippet}
 				</Popover.Trigger>

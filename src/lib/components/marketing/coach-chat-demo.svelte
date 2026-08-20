@@ -9,7 +9,7 @@
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
-	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 
 	type CoachDemoTool = {
