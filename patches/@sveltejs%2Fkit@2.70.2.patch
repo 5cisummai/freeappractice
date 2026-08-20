@@ -1,0 +1,15 @@
+diff --git a/src/core/sync/create_manifest_data/index.js b/src/core/sync/create_manifest_data/index.js
+index 6e97903682f448a9c95a01527530bd0bdb545174..653a5bea9e98f9d7760a337cd2f88c86f621f51e 100644
+--- a/src/core/sync/create_manifest_data/index.js
++++ b/src/core/sync/create_manifest_data/index.js
+@@ -222,7 +222,9 @@ function create_routes_and_nodes(cwd, config, fallback) {
+ 
+ 			// We can't use withFileTypes because of a NodeJs bug which returns wrong results
+ 			// with isDirectory() in case of symlinks: https://github.com/nodejs/node/issues/30646
+-			const files = fs.readdirSync(dir).map((name) => ({
++			// Sort entries so numeric route-node IDs stay deterministic across runtimes.
++			// Node and Bun return directory entries in different orders.
++			const files = fs.readdirSync(dir).sort().map((name) => ({
+ 				is_dir: fs.statSync(path.join(dir, name)).isDirectory(),
+ 				name
+ 			}));

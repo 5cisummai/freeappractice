@@ -24,6 +24,92 @@ import {
 const MAX_HISTORY_SUMMARY_CHARS = 4_000;
 const MAX_SUMMARY_SOURCE_CHARS = 2_000;
 
+type ToolPartRecord = {
+	[key: string]: unknown;
+	type?: unknown;
+	state?: unknown;
+	toolCallId?: unknown;
+	input?: unknown;
+	approval?: unknown;
+};
+
+function asToolPart(value: unknown): ToolPartRecord | null {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	const part = value as ToolPartRecord;
+	return typeof part.type === 'string' && part.type.startsWith('tool-') ? part : null;
+}
+
+function findToolPart(parts: unknown[], state: string): ToolPartRecord | null {
+	for (let index = parts.length - 1; index >= 0; index -= 1) {
+		const part = asToolPart(parts[index]);
+		if (part?.state === state) return part;
+	}
+	return null;
+}
+
+function asApproval(value: unknown): { id?: unknown; signature?: unknown } | null {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	return value as { id?: unknown; signature?: unknown };
+}
+
+/** Rebuild an approval response with the pending tool input and metadata from storage. */
+export function reconstructApprovalContinuationMessage(
+	storedAssistant: ConversationMessage,
+	clientAssistant: SuperAgentRequest['messages'][number]
+): SuperAgentUIMessage | null {
+	const storedPart = findToolPart(storedAssistant.parts, 'approval-requested');
+	const clientPart = findToolPart(clientAssistant.parts, 'approval-responded');
+	if (
+		!storedPart ||
+		!clientPart ||
+		storedPart.type !== clientPart.type ||
+		storedPart.toolCallId !== clientPart.toolCallId
+	)
+		return null;
+
+	const storedApproval = asApproval(storedPart.approval);
+	const clientApproval = asApproval(clientPart.approval);
+	if (
+		!storedApproval ||
+		typeof storedApproval.id !== 'string' ||
+		!clientApproval ||
+		clientApproval.id !== storedApproval.id ||
+		typeof (clientApproval as { approved?: unknown }).approved !== 'boolean'
+	)
+		return null;
+
+	const storedMessage = toSuperAgentUiMessageFromConversationRow(storedAssistant);
+	if (!storedMessage) return null;
+
+	let replaced = false;
+	const parts = storedMessage.parts.map((part) => {
+		const candidate = asToolPart(part);
+		if (
+			replaced ||
+			!candidate ||
+			candidate.type !== storedPart.type ||
+			candidate.toolCallId !== storedPart.toolCallId ||
+			candidate.state !== 'approval-requested'
+		)
+			return part;
+
+		replaced = true;
+		return {
+			...candidate,
+			state: 'approval-responded',
+			approval: {
+				id: storedApproval.id,
+				approved: (clientApproval as { approved: boolean }).approved,
+				...(typeof storedApproval.signature === 'string'
+					? { signature: storedApproval.signature }
+					: {})
+			}
+		};
+	}) as SuperAgentUIMessage['parts'];
+
+	return replaced ? { ...storedMessage, parts } : null;
+}
+
 function messageTranscript(row: ConversationMessage): string {
 	const fromParts = textFromSuperAgentParts(
 		row.parts as Array<{ type?: string; text?: string }> | undefined
@@ -132,6 +218,7 @@ export async function buildSuperAgentUiMessages(input: {
 	conversationId: string;
 	clientMessages: SuperAgentRequest['messages'];
 	isContinuation: boolean;
+	continuationMessage?: SuperAgentUIMessage;
 	streamingAssistantMessageId?: string;
 }): Promise<{ messages: SuperAgentUIMessage[]; historySummary?: string }> {
 	const stored = await getConversationMessages(input.userId, input.conversationId);
@@ -141,20 +228,20 @@ export async function buildSuperAgentUiMessages(input: {
 		.filter((message): message is SuperAgentUIMessage => message !== null);
 
 	if (input.isContinuation) {
-		const clientAssistant = [...input.clientMessages]
-			.reverse()
-			.find((message) => message.role === 'assistant');
-		if (clientAssistant) {
+		const continuationAssistant =
+			input.continuationMessage ??
+			[...input.clientMessages].reverse().find((message) => message.role === 'assistant');
+		if (continuationAssistant) {
 			const lastAssistantIndex = uiMessages.findLastIndex(
 				(message) => message.role === 'assistant'
 			);
 			if (lastAssistantIndex >= 0) {
 				uiMessages[lastAssistantIndex] = {
 					...uiMessages[lastAssistantIndex],
-					parts: clientAssistant.parts as SuperAgentUIMessage['parts']
+					parts: continuationAssistant.parts as SuperAgentUIMessage['parts']
 				};
 			} else {
-				uiMessages.push(clientAssistant as SuperAgentUIMessage);
+				uiMessages.push(continuationAssistant as SuperAgentUIMessage);
 			}
 		}
 	}

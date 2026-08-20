@@ -92,6 +92,7 @@
     },
   },
   "patchedDependencies": {
+    "@sveltejs/kit@2.70.2": "patches/@sveltejs%2Fkit@2.70.2.patch",
     "bits-ui@2.18.1": "patches/bits-ui@2.18.1.patch",
   },
   "overrides": {

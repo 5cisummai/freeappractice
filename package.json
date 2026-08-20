@@ -119,6 +119,7 @@
 		"motion-dom": "12.40.0"
 	},
 	"patchedDependencies": {
-		"bits-ui@2.18.1": "patches/bits-ui@2.18.1.patch"
+		"bits-ui@2.18.1": "patches/bits-ui@2.18.1.patch",
+		"@sveltejs/kit@2.70.2": "patches/@sveltejs%2Fkit@2.70.2.patch"
 	}
 }

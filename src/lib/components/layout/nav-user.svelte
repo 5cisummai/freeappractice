@@ -4,7 +4,7 @@
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
 	import LogOutIcon from '@tabler/icons-svelte/icons/logout';
 	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
@@ -67,7 +67,7 @@
 							<span class="truncate font-medium">{user.name}</span>
 							<span class="truncate text-xs">{user.email}</span>
 						</div>
-						<ChevronsUpDownIcon class="ms-auto size-4 text-muted-foreground" />
+						<EllipsisVerticalIcon class="ms-auto size-4 text-muted-foreground" />
 					</Sidebar.MenuButton>
 				{/snippet}
 			</DropdownMenu.Trigger>

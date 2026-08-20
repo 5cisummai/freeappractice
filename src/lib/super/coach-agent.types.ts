@@ -10,7 +10,6 @@ export type SuperAgentContext = {
 };
 
 export type SuperToolsInput = {
-	locals: App.Locals;
 	userId: string;
 	sessionId: string;
 	currentContext?: SuperAgentContext;

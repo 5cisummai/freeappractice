@@ -27,7 +27,10 @@ import {
 	type SuperAgentRequest
 } from '$lib/super/agent-request';
 import type { CoachThinkingMode } from '$lib/super/agent-request';
-import { buildSuperAgentUiMessages } from '$lib/super/agent-history.server';
+import {
+	buildSuperAgentUiMessages,
+	reconstructApprovalContinuationMessage
+} from '$lib/super/agent-history.server';
 import {
 	appendConversationMessage,
 	ensureConversation,
@@ -106,7 +109,7 @@ export async function createSuperAgentStreamResponse(
 		messages,
 		conversationId: requestedConversationId,
 		coachActions,
-		thinkingMode = 'thinking',
+		thinkingMode = 'quick',
 		surface,
 		errorLabel
 	} = options;
@@ -214,10 +217,15 @@ export async function createSuperAgentStreamResponse(
 			});
 		}
 
+		let continuationMessage: SuperAgentUIMessage | undefined;
 		if (isContinuation) {
 			const clientAssistant = clientMessages.at(-1);
 			const clientToolPart = clientAssistant
-				? findContinuationToolPart(clientAssistant.parts, ['output-available', 'output-error'])
+				? findContinuationToolPart(clientAssistant.parts, [
+						'output-available',
+						'output-error',
+						'approval-responded'
+					])
 				: null;
 			const storedMessages = await getConversationMessages(
 				userId,
@@ -233,7 +241,8 @@ export async function createSuperAgentStreamResponse(
 			}
 			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
 				'input-available',
-				'input-streaming'
+				'input-streaming',
+				'approval-requested'
 			]);
 			if (
 				!clientToolPart ||
@@ -243,6 +252,18 @@ export async function createSuperAgentStreamResponse(
 			) {
 				await cleanup();
 				return json({ error: 'That practice question is no longer pending.' }, { status: 409 });
+			}
+			if (
+				storedToolPart.state === 'approval-requested' ||
+				clientToolPart.state === 'approval-responded'
+			) {
+				continuationMessage = clientAssistant
+					? (reconstructApprovalContinuationMessage(lastAssistant, clientAssistant) ?? undefined)
+					: undefined;
+				if (!continuationMessage) {
+					await cleanup();
+					return json({ error: 'That approval is no longer pending.' }, { status: 409 });
+				}
 			}
 			assistantMessageId = lastAssistant.id;
 			await markConversationMessageStreaming(userId, assistantMessageId);
@@ -259,6 +280,7 @@ export async function createSuperAgentStreamResponse(
 			conversationId,
 			clientMessages,
 			isContinuation,
+			continuationMessage,
 			streamingAssistantMessageId: assistantMessageId
 		});
 		const lastUserMessage = lastSuperAgentUserText(
@@ -273,7 +295,6 @@ export async function createSuperAgentStreamResponse(
 		const personalization = await buildSuperAgentContext(userId, lastUserMessage, context);
 		const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
 		const agent = createSuperAgent({
-			locals: event.locals,
 			userId,
 			sessionId,
 			selectedApClasses: profile.selectedApClasses,

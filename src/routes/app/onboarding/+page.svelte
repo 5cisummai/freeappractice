@@ -8,7 +8,7 @@
 	import CalendarCheckIcon from '@tabler/icons-svelte/icons/calendar-check';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
-	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';

@@ -34,7 +34,7 @@ export const superAgentRequestSchema = z.strictObject({
 	sessionId: z.uuid(),
 	conversationId: z.uuid().optional(),
 	coachActions: z.array(z.enum(coachComposerActionIds)).max(4).optional(),
-	thinkingMode: coachThinkingModeSchema.default('thinking'),
+	thinkingMode: coachThinkingModeSchema.default('quick'),
 	context: superAgentContextSchema,
 	messages: z
 		.array(superAgentMessageSchema)
@@ -95,7 +95,8 @@ export function isSuperAgentToolContinuation(messages: SuperAgentClientMessage[]
 			part !== null &&
 			isToolPart(part as { type?: string; state?: string }) &&
 			((part as { state?: string }).state === 'output-available' ||
-				(part as { state?: string }).state === 'output-error')
+				(part as { state?: string }).state === 'output-error' ||
+				(part as { state?: string }).state === 'approval-responded')
 	);
 }
 

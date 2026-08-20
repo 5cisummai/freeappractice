@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
 	import FilterIcon from '@tabler/icons-svelte/icons/filter-filled';
-	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import type { Snippet } from 'svelte';
 	import { type SortingState, type VisibilityState, getCoreRowModel } from '@tanstack/table-core';
 	import type { HistoryItem } from '$lib/users/types.js';

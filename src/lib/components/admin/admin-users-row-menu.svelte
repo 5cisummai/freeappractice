@@ -157,7 +157,8 @@
 			{#if pendingAction === 'revoke_super'}
 				<AlertDialog.Title>Revoke Super grants?</AlertDialog.Title>
 				<AlertDialog.Description>
-					This revokes all active Super grants for this user. They will lose Super access immediately.
+					This revokes all active Super grants for this user. They will lose Super access
+					immediately.
 				</AlertDialog.Description>
 			{:else if pendingAction === 'ban'}
 				<AlertDialog.Title>Ban this user?</AlertDialog.Title>

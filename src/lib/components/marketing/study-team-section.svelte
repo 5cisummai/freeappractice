@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
-	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import SelectorIcon from '@tabler/icons-svelte/icons/selector';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
 	import PlusIcon from '@tabler/icons-svelte/icons/plus-filled';
 	import UsersIcon from '@tabler/icons-svelte/icons/users';
@@ -160,7 +160,7 @@
 							A
 						</span>
 						<span class="min-w-0 flex-1 truncate text-xs font-medium">AP Biology study group</span>
-						<ChevronsUpDownIcon class="size-3.5 shrink-0 text-muted-foreground" />
+						<SelectorIcon class="size-3.5 shrink-0 text-muted-foreground" />
 					</div>
 					<div class="space-y-1 p-2">
 						<div class="flex items-center gap-2 rounded-md px-2 py-2">
