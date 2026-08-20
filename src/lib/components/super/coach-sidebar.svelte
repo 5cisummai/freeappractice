@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { cn } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { useCoachSidebar } from './coach-context.svelte.js';
@@ -17,9 +18,16 @@
 	} = $props();
 
 	const sidebar = useCoachSidebar();
+	let mounted = $state(false);
+
+	onMount(() => {
+		mounted = true;
+	});
 </script>
 
-{#if collapsible === 'none'}
+{#if !mounted}
+	<!-- Coach sidebar reads persisted open state after mount; skip SSR to avoid hydration mismatch. -->
+{:else if collapsible === 'none'}
 	<div
 		class={cn(
 			'flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground',

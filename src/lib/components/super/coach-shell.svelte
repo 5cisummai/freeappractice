@@ -90,6 +90,7 @@
 	let thinkingMode = $state<CoachThinkingMode>('quick');
 	let composerInputRef = $state<HTMLTextAreaElement | null>(null);
 	let loadingConversationId = $state<string | null>(null);
+	let clientReady = $state(false);
 	let conversationLoadRequest = 0;
 	let pendingCoachActions: CoachComposerActionId[] = [];
 	let messageFeedbackById = $state<Record<string, CoachMessageFeedback>>({});
@@ -414,6 +415,7 @@
 	});
 
 	onMount(() => {
+		clientReady = true;
 		const prompt = new URLSearchParams(window.location.search).get('prompt')?.trim() ?? '';
 		sessionId = prompt
 			? crypto.randomUUID()
@@ -692,7 +694,8 @@
 				<PencilIcon class="size-4" aria-hidden="true" />
 				<span>New Chat</span>
 			</Button>
-			<Popover.Root bind:open={conversationsOpen}>
+			{#if clientReady}
+				<Popover.Root bind:open={conversationsOpen}>
 				<Popover.Trigger>
 					{#snippet child({ props })}
 						<Button
@@ -770,6 +773,7 @@
 					{/if}
 				</Popover.Content>
 			</Popover.Root>
+			{/if}
 			{#if surface === 'sidebar'}
 				<Button
 					variant="ghost"
@@ -1103,7 +1107,8 @@
 				</div>
 			{/if}
 
-			<PromptInput.Root
+			{#if clientReady}
+				<PromptInput.Root
 				class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
 				onSubmit={({ text }) => send(text)}
 				clearOnSubmit={false}
@@ -1241,6 +1246,7 @@
 				>
 					Coach is powered by AI and can make mistakes.
 				</p>
+			{/if}
 			{/if}
 		</div>
 	</div>
