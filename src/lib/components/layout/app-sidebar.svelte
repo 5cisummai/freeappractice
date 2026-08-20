@@ -8,6 +8,7 @@
 	import FeedbackDialog from '$lib/components/layout/feedback-dialog.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
+	import CompassIcon from '@tabler/icons-svelte/icons/compass-filled';
 	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
 	import type { UserOrganization } from '$lib/auth/organization-types';
 
@@ -29,7 +30,7 @@
 
 	const showMembers = $derived(activeOrganization?.orgType === 'group');
 
-	function isActive(href: '/app/settings'): boolean {
+	function isActive(href: '/app/settings' | '/app/resources'): boolean {
 		const resolved = resolve(href);
 		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');
 	}
@@ -77,6 +78,24 @@
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
 			<FeedbackDialog />
+			<Sidebar.MenuItem>
+				<Sidebar.MenuButton
+					isActive={isActive('/app/resources')}
+					tooltipContent="Resources"
+					class="data-active:bg-primary/10 data-active:font-medium data-active:text-primary"
+				>
+					{#snippet child({ props })}
+						<a
+							href={resolve('/app/resources')}
+							aria-current={isActive('/app/resources') ? 'page' : undefined}
+							{...props}
+						>
+							<CompassIcon />
+							<span>Resources</span>
+						</a>
+					{/snippet}
+				</Sidebar.MenuButton>
+			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 		<NavUser {user} />
 	</Sidebar.Footer>

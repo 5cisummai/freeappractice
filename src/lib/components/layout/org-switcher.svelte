@@ -17,7 +17,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
-	import ChevronsUpDownIcon from '@tabler/icons-svelte/icons/caret-up-down-filled';
+	import SelectorIcon from '@tabler/icons-svelte/icons/selector';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
 	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
 	import LogOutIcon from '@tabler/icons-svelte/icons/logout';
@@ -212,7 +212,7 @@
 				{orgAvatarLetter(active.name)}
 			</span>
 			<span class="min-w-0 flex-1 truncate font-medium">{active.name}</span>
-			<ChevronsUpDownIcon class="size-4 shrink-0 text-muted-foreground" />
+			<SelectorIcon class="size-4 shrink-0 text-muted-foreground" />
 		</DropdownMenu.Trigger>
 		<DropdownMenu.Content class="w-64 min-w-56" align="start" side="bottom">
 			<DropdownMenu.Group>

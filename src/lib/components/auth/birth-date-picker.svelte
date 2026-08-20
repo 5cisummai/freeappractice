@@ -27,7 +27,6 @@
 	}: Props = $props();
 
 	let open = $state(false);
-	let selectedDate = $state<CalendarDate | undefined>(undefined);
 
 	function toCalendarDate(input: string | undefined): CalendarDate | undefined {
 		if (!input) return undefined;
@@ -40,10 +39,6 @@
 
 	const minValue = $derived(min ? toCalendarDate(min) : undefined);
 	const maxValue = $derived(max ? toCalendarDate(max) : undefined);
-
-	$effect(() => {
-		selectedDate = toCalendarDate(value);
-	});
 
 	function formatDisplay(input: string): string {
 		const date = toCalendarDate(input);
@@ -75,12 +70,12 @@
 	<Popover.Content class="w-auto overflow-hidden p-0" align="start">
 		<Calendar
 			type="single"
-			bind:value={selectedDate}
+			value={toCalendarDate(value)}
 			captionLayout="dropdown"
-			minValue={minValue}
-			maxValue={maxValue}
-			onValueChange={() => {
-				value = selectedDate ? selectedDate.toString() : '';
+			{minValue}
+			{maxValue}
+			onValueChange={(date) => {
+				value = date?.toString() ?? '';
 				open = false;
 			}}
 		/>

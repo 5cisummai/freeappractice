@@ -2,7 +2,7 @@
 	import { Command as CommandPrimitive } from 'bits-ui';
 	import { cn } from '$lib/utils.js';
 	import * as InputGroup from '$lib/components/ui/input-group/index.js';
-	import SearchIcon from '@tabler/icons-svelte/icons/search-filled';
+	import SearchIcon from '@tabler/icons-svelte/icons/search';
 
 	let {
 		ref = $bindable(null),

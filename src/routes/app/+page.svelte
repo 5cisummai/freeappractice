@@ -152,7 +152,7 @@
 			class="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
 			aria-labelledby="recommendation-heading"
 		>
-			<div class="flex items-start justify-between gap-4">
+			<div class="flex flex-col gap-4 sm:flex-row sm:items-start">
 				<div class="min-w-0 flex-1 space-y-4">
 					<div class="space-y-1">
 						<h2
@@ -168,32 +168,26 @@
 						</p>
 					</div>
 
-					<div class="flex items-end gap-4 max-sm:flex-col max-sm:items-stretch">
-						<div class="min-w-0 flex-1 space-y-2">
-							<p class="text-sm text-muted-foreground">
-								{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
-								questions
-							</p>
+					<div class="space-y-2">
+						<p class="text-sm text-muted-foreground">
+							{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
+							questions
+						</p>
+						<div
+							class="h-2 w-full overflow-hidden rounded-full bg-muted"
+							role="progressbar"
+							aria-valuenow={recommendation.percent}
+							aria-valuemin={0}
+							aria-valuemax={100}
+							aria-label={`${recommendation.name} progress`}
+						>
 							<div
-								class="h-2 w-full overflow-hidden rounded-full bg-muted"
-								role="progressbar"
-								aria-valuenow={recommendation.percent}
-								aria-valuemin={0}
-								aria-valuemax={100}
-								aria-label={`${recommendation.name} progress`}
-							>
-								<div
-									class="h-full rounded-full bg-primary transition-all"
-									style:width="{recommendation.percent}%"
-								></div>
-							</div>
+								class="h-full rounded-full bg-primary transition-all"
+								style:width="{recommendation.percent}%"
+							></div>
 						</div>
-
-						<Button id="dashboard-practice-hint-target" href={recommendation.href} class="shrink-0">
-							{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
-							<ArrowRightIcon class="size-4" aria-hidden="true" />
-						</Button>
 					</div>
+
 					<FirstUseHint
 						id="dashboard-practice"
 						anchorId="dashboard-practice-hint-target"
@@ -202,11 +196,24 @@
 					/>
 				</div>
 
-				<div
-					class="hidden size-12 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-background sm:flex"
-					aria-hidden="true"
-				>
-					<RecIcon class="size-6 text-primary" />
+				<div class="flex shrink-0 flex-col items-end gap-4 self-stretch max-sm:w-full">
+					<div
+						class="hidden size-12 items-center justify-center rounded-xl border border-primary/20 bg-background sm:flex"
+						aria-hidden="true"
+					>
+						<RecIcon class="size-6 text-primary" />
+					</div>
+
+					<div class="mt-auto w-full sm:w-auto">
+						<Button
+							id="dashboard-practice-hint-target"
+							href={recommendation.href}
+							class="w-full sm:w-auto"
+						>
+							{hasPracticedRecommendation ? 'Continue practicing' : 'Start practicing'}
+							<ArrowRightIcon class="size-4" aria-hidden="true" />
+						</Button>
+					</div>
 				</div>
 			</div>
 		</section>
