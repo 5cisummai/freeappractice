@@ -77,8 +77,8 @@
 			type="single"
 			bind:value={selectedDate}
 			captionLayout="dropdown"
-			minValue={minValue}
-			maxValue={maxValue}
+			{minValue}
+			{maxValue}
 			onValueChange={() => {
 				value = selectedDate ? selectedDate.toString() : '';
 				open = false;

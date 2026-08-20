@@ -19,9 +19,7 @@
 	let confirmOpen = $state(false);
 	let quantity = $state(1);
 
-	const retireCount = $derived(
-		Math.min(Math.trunc(Number(quantity)), bucket.activeCount)
-	);
+	const retireCount = $derived(Math.min(Math.trunc(Number(quantity)), bucket.activeCount));
 
 	async function retireQuestions(): Promise<void> {
 		if (!Number.isInteger(retireCount) || retireCount < 1) return;
