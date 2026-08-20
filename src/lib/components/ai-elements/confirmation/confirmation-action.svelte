@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import type { ButtonProps } from '$lib/components/ui/button/button.svelte';
 
-	export interface ConfirmationActionProps extends ButtonProps {}
+	export type ConfirmationActionProps = ButtonProps;
 </script>
 
 <script lang="ts">
