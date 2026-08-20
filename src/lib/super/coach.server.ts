@@ -65,7 +65,6 @@ function hasSameValue(left: unknown, right: unknown): boolean {
 }
 
 export function createSuperAgent(input: {
-	locals: App.Locals;
 	userId: string;
 	sessionId: string;
 	selectedApClasses: string[];
@@ -78,7 +77,6 @@ export function createSuperAgent(input: {
 	conversationId?: string;
 }) {
 	const {
-		locals,
 		userId,
 		sessionId,
 		selectedApClasses,
@@ -140,7 +138,7 @@ export function createSuperAgent(input: {
 		]
 			.filter(Boolean)
 			.join('\n'),
-		tools: createSuperTools({ locals, userId, sessionId, currentContext, conversationId }),
+		tools: createSuperTools({ userId, sessionId, currentContext, conversationId }),
 		prepareStep: async ({ messages, stepNumber }) => {
 			const pruned = pruneSuperAgentModelMessages(messages);
 			if (stepNumber === 0) {

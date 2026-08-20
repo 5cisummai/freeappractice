@@ -5,9 +5,9 @@
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
 	import CoachShell from '$lib/components/super/coach-shell.svelte';
-	import CoachSidebarProvider from '$lib/components/ui/sidebar/coach-sidebar-provider.svelte';
-	import CoachSidebarRoot from '$lib/components/ui/sidebar/coach-sidebar.svelte';
-	import CoachSidebarTrigger from '$lib/components/ui/sidebar/coach-sidebar-trigger.svelte';
+	import CoachSidebarProvider from '$lib/components/super/coach-sidebar-provider.svelte';
+	import CoachSidebarRoot from '$lib/components/super/coach-sidebar.svelte';
+	import CoachSidebarTrigger from '$lib/components/super/coach-sidebar-trigger.svelte';
 	import FreeBetaClaimDialog from '$lib/components/super/free-beta-claim-dialog.svelte';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';

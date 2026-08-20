@@ -51,7 +51,7 @@
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
-	import { useCoachSidebar } from '$lib/components/ui/sidebar/coach-context.svelte.js';
+	import { useCoachSidebar } from './coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
@@ -64,10 +64,8 @@
 	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
-	import type {
-		ToolUIPartApproval,
-		ToolUIPartState
-	} from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
+	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
+	import { getApprovalProposal, type ApprovalProposal } from '$lib/super/approval-ui';
 	import { toast } from 'svelte-sonner';
 
 	type CoachShellProps = {
@@ -235,14 +233,6 @@
 		output?: unknown;
 		errorText?: string;
 		approval?: ToolUIPartApproval;
-	};
-
-	type ApprovalProposal = {
-		approvalId: string;
-		approval: ToolUIPartApproval;
-		state: ToolUIPartState;
-		category: 'goals' | 'study_plans';
-		proposed: unknown;
 	};
 
 	type ToolActivity = {
@@ -520,36 +510,6 @@
 		);
 	}
 
-	function getApprovalProposal(part: CoachToolPart): ApprovalProposal | null {
-		if (!part.approval?.id || !isConfirmationState(part.state)) return null;
-		const category =
-			part.type === 'tool-update_goals'
-				? 'goals'
-				: part.type === 'tool-update_study_plan'
-					? 'study_plans'
-					: null;
-		if (!category) return null;
-		if (!part.input || typeof part.input !== 'object') {
-			return null;
-		}
-		return {
-			approvalId: part.approval.id,
-			approval: part.approval,
-			state: part.state,
-			category,
-			proposed: part.input
-		};
-	}
-
-	function isConfirmationState(state: string | undefined): state is ToolUIPartState {
-		return (
-			state === 'approval-requested' ||
-			state === 'approval-responded' ||
-			state === 'output-denied' ||
-			state === 'output-available'
-		);
-	}
-
 	async function copyText(text: string, successMessage: string): Promise<void> {
 		if (!text) return;
 		try {
@@ -575,7 +535,8 @@
 
 	function toggleMessageFeedback(messageId: string, feedback: CoachMessageFeedback): void {
 		if (messageFeedbackById[messageId] === feedback) {
-			const { [messageId]: _removed, ...rest } = messageFeedbackById;
+			const rest = { ...messageFeedbackById };
+			delete rest[messageId];
 			messageFeedbackById = rest;
 			return;
 		}
