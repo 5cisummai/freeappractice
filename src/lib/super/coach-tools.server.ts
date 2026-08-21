@@ -5,6 +5,7 @@ import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { getApCurriculumKnowledge } from '$lib/ap-knowledge/catalog';
 import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/super/ai-controls.server';
 import type { SuperToolsInput } from '$lib/super/coach-agent.types';
+import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import {
 	getCoachActivitySummary,
 	getCoachFrqPerformance,
@@ -111,8 +112,13 @@ function coachOperationId(sessionId: string, toolName: string, input: unknown): 
 	return `coach:${sessionId}:${toolName}:${fingerprint}`;
 }
 
+async function coachWriteDenied(locals: App.Locals, userId: string): Promise<string | null> {
+	const access = await authorizeFeatureRequest({ locals }, userId, 'coach');
+	return access.allowed ? null : access.message;
+}
+
 export function createSuperTools(input: SuperToolsInput) {
-	const { userId, sessionId, currentContext, conversationId } = input;
+	const { locals, userId, sessionId, currentContext, conversationId } = input;
 
 	return {
 		read_current_question: tool({
@@ -257,6 +263,8 @@ export function createSuperTools(input: SuperToolsInput) {
 			}),
 			needsApproval: true,
 			execute: async (patch) => {
+				const denied = await coachWriteDenied(locals, userId);
+				if (denied) return { updated: false, error: denied };
 				const operationId = coachOperationId(sessionId, 'update_goals', patch);
 				if (!(await claimIdempotencyKey(userId, operationId))) {
 					return { updated: true, alreadyApplied: true };
@@ -281,6 +289,8 @@ export function createSuperTools(input: SuperToolsInput) {
 			}),
 			needsApproval: true,
 			execute: async ({ startsOn, behavior, tasks }) => {
+				const denied = await coachWriteDenied(locals, userId);
+				if (denied) return { updated: false, error: denied };
 				const operationInput = { startsOn, behavior, tasks };
 				const operationId = coachOperationId(sessionId, 'update_study_plan', operationInput);
 				if (!(await claimIdempotencyKey(userId, operationId))) {

@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
-import { loadAppOrganizations } from '$lib/auth/organizations.server';
+import { activeOrgUsesUserSuper, loadAppOrganizations } from '$lib/auth/organizations.server';
 import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
 import {
@@ -43,18 +43,6 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 	const userId = locals.userId!;
 	await claimReferralFromCookie(cookies, userId, request);
 	const assistantFeaturesEnabled = await getAssistantFeaturesEnabledForRequest(locals, userId);
-	const coachSidebarEnabled = assistantFeaturesEnabled
-		? await (async () => {
-				const [planAccess, profile, coachEnabled] = await Promise.all([
-					getPlanAccessForRequest(locals, userId),
-					getTutorProfileViewForRequest(locals, userId),
-					isSuperCoachEnabled()
-				]);
-				return (
-					coachEnabled && hasPaidCapability(planAccess, 'coach') && Boolean(profile.ageConfirmedAt)
-				);
-			})()
-		: false;
 	const organizations = await loadAppOrganizations(
 		userId,
 		locals.session.activeOrganizationId,
@@ -63,6 +51,21 @@ export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) 
 	if (organizations.activeOrganization) {
 		locals.activeOrganizationType = organizations.activeOrganization.orgType;
 	}
+	const coachSidebarEnabled = assistantFeaturesEnabled
+		? await (async () => {
+				const [planAccess, profile, coachEnabled] = await Promise.all([
+					getPlanAccessForRequest(locals, userId),
+					getTutorProfileViewForRequest(locals, userId),
+					isSuperCoachEnabled()
+				]);
+				return (
+					coachEnabled &&
+					(await activeOrgUsesUserSuper(locals)) &&
+					hasPaidCapability(planAccess, 'coach') &&
+					Boolean(profile.ageConfirmedAt)
+				);
+			})()
+		: false;
 
 	const freeBetaEnabled = await isSuperFreeBetaEnabled();
 	let showFreeBetaClaimDialog = false;
