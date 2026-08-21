@@ -696,83 +696,86 @@
 			</Button>
 			{#if clientReady}
 				<Popover.Root bind:open={conversationsOpen}>
-				<Popover.Trigger>
-					{#snippet child({ props })}
-						<Button
-							{...props}
-							variant="ghost"
-							class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-							aria-expanded={conversationsOpen}
-							aria-label="Show conversations"
-						>
-							<span>Conversations</span>
-							<ChevronDownIcon
-								class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
-								aria-hidden="true"
-							/>
-						</Button>
-					{/snippet}
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
-					<div class="flex items-center justify-between px-3 py-2">
-						<span class="text-sm font-medium">Conversations</span>
-						{#if conversationsLoading}
-							<Loader2Icon class="size-4 animate-spin text-muted-foreground" aria-label="Loading" />
-						{/if}
-					</div>
-					{#if conversationsError}
-						<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
-							<p>{conversationsError}</p>
-							<button
-								type="button"
-								class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
-								onclick={() => void loadConversations()}
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<Button
+								{...props}
+								variant="ghost"
+								class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+								aria-expanded={conversationsOpen}
+								aria-label="Show conversations"
 							>
-								Try again
-							</button>
+								<span>Conversations</span>
+								<ChevronDownIcon
+									class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
+									aria-hidden="true"
+								/>
+							</Button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
+						<div class="flex items-center justify-between px-3 py-2">
+							<span class="text-sm font-medium">Conversations</span>
+							{#if conversationsLoading}
+								<Loader2Icon
+									class="size-4 animate-spin text-muted-foreground"
+									aria-label="Loading"
+								/>
+							{/if}
 						</div>
-					{:else if conversationsLoading && !conversations.length}
-						<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
-					{:else if !conversations.length}
-						<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
-					{:else}
-						<div class="max-h-72 overflow-y-auto">
-							{#each conversations as conversation (conversation.id)}
-								<div
-									class={cn(
-										'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
-										conversation.id === conversationId && 'bg-muted'
-									)}
+						{#if conversationsError}
+							<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
+								<p>{conversationsError}</p>
+								<button
+									type="button"
+									class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+									onclick={() => void loadConversations()}
 								>
-									<button
-										type="button"
-										class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
-										aria-current={conversation.id === conversationId ? 'page' : undefined}
-										disabled={loadingConversationId !== null}
-										onclick={() => void selectConversation(conversation.id)}
+									Try again
+								</button>
+							</div>
+						{:else if conversationsLoading && !conversations.length}
+							<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
+						{:else if !conversations.length}
+							<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
+						{:else}
+							<div class="max-h-72 overflow-y-auto">
+								{#each conversations as conversation (conversation.id)}
+									<div
+										class={cn(
+											'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
+											conversation.id === conversationId && 'bg-muted'
+										)}
 									>
-										<span
-											class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+										<button
+											type="button"
+											class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
+											aria-current={conversation.id === conversationId ? 'page' : undefined}
+											disabled={loadingConversationId !== null}
+											onclick={() => void selectConversation(conversation.id)}
 										>
-											{conversation.title}
-										</span>
-										<span class="shrink-0 text-xs text-muted-foreground">
-											{formatConversationDate(conversation)}
-										</span>
-									</button>
-									<CoachConversationMenu
-										{conversation}
-										disabled={loadingConversationId !== null}
-										class="mr-1 self-center"
-										onRenamed={handleConversationRenamed}
-										onDeleted={(id) => void handleConversationDeleted(id)}
-									/>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
+											<span
+												class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+											>
+												{conversation.title}
+											</span>
+											<span class="shrink-0 text-xs text-muted-foreground">
+												{formatConversationDate(conversation)}
+											</span>
+										</button>
+										<CoachConversationMenu
+											{conversation}
+											disabled={loadingConversationId !== null}
+											class="mr-1 self-center"
+											onRenamed={handleConversationRenamed}
+											onDeleted={(id) => void handleConversationDeleted(id)}
+										/>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</Popover.Content>
+				</Popover.Root>
 			{/if}
 			{#if surface === 'sidebar'}
 				<Button
@@ -1109,144 +1112,144 @@
 
 			{#if clientReady}
 				<PromptInput.Root
-				class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
-				onSubmit={({ text }) => send(text)}
-				clearOnSubmit={false}
-			>
-				{#if selectedCoachActionIds.length}
-					<PromptInput.Header class="px-2.5 pt-2">
-						{#each selectedCoachActionIds as actionId (actionId)}
-							{@const action = coachComposerActions.find((item) => item.id === actionId)}
-							{@const Icon = coachActionIcons[actionId]}
-							{#if action}
-								<span
-									class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
-								>
-									<Icon class="size-3.5 text-muted-foreground" aria-hidden="true" />
-									{action.title}
-									<button
-										type="button"
-										class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-										aria-label={`Remove ${action.title}`}
-										onclick={() => removeCoachAction(actionId)}
+					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
+					onSubmit={({ text }) => send(text)}
+					clearOnSubmit={false}
+				>
+					{#if selectedCoachActionIds.length}
+						<PromptInput.Header class="px-2.5 pt-2">
+							{#each selectedCoachActionIds as actionId (actionId)}
+								{@const action = coachComposerActions.find((item) => item.id === actionId)}
+								{@const Icon = coachActionIcons[actionId]}
+								{#if action}
+									<span
+										class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
 									>
-										<XIcon class="size-3" aria-hidden="true" />
-									</button>
-								</span>
-							{/if}
-						{/each}
-					</PromptInput.Header>
-				{/if}
-				<div class="flex items-end gap-1 p-1.5">
-					<PromptInput.ActionMenu bind:open={coachActionsOpen}>
-						<PromptInput.ActionMenuTrigger
-							class="size-9 shrink-0 self-end rounded-full text-muted-foreground hover:text-foreground"
-							disabled={!sessionId || streaming}
-							aria-label="Coach actions"
-						/>
-						<PromptInput.ActionMenuContent
-							align="start"
-							sideOffset={8}
-							class="w-[min(18rem,calc(100vw-2rem))] p-1"
-						>
-							{#each coachComposerActions as action (action.id)}
-								{@const Icon = coachActionIcons[action.id]}
-								{@const selected = selectedCoachActionIds.includes(action.id)}
-								<PromptInput.ActionMenuItem
-									class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
-									disabled={!sessionId || streaming}
-									onSelect={() => toggleCoachAction(action.id)}
-								>
-									<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-									<div class="min-w-0 flex-1 text-left">
-										<div class="text-sm leading-5 font-medium">{action.title}</div>
-										<div class="text-xs leading-4 text-muted-foreground">
-											{action.description}
-										</div>
-									</div>
-								</PromptInput.ActionMenuItem>
+										<Icon class="size-3.5 text-muted-foreground" aria-hidden="true" />
+										{action.title}
+										<button
+											type="button"
+											class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+											aria-label={`Remove ${action.title}`}
+											onclick={() => removeCoachAction(actionId)}
+										>
+											<XIcon class="size-3" aria-hidden="true" />
+										</button>
+									</span>
+								{/if}
 							{/each}
-						</PromptInput.ActionMenuContent>
-					</PromptInput.ActionMenu>
-					<PromptInput.Body class="min-w-0 flex-1">
-						<PromptInput.Textarea
-							bind:ref={composerInputRef}
-							bind:value={input}
-							placeholder="Ask Coach"
-							class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
-						/>
-					</PromptInput.Body>
-					<Select.Root
-						type="single"
-						value={thinkingMode}
-						onValueChange={(value) => {
-							if (value) thinkingMode = value as CoachThinkingMode;
-						}}
-					>
-						<Select.Trigger
-							class="h-9 shrink-0 gap-1 self-end border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
-							disabled={!sessionId || streaming}
-							aria-label="Coach response depth"
-						>
-							{@const Icon = selectedThinkingMode.icon}
-							<Icon class="size-3.5 shrink-0" aria-hidden="true" />
-							<span>{selectedThinkingMode.label}</span>
-						</Select.Trigger>
-						<Select.Content align="end" class="min-w-[10.5rem]">
-							{#each thinkingModeOptions as option (option.value)}
-								{@const Icon = option.icon}
-								<Select.Item value={option.value}>
-									<Icon class="size-4 text-muted-foreground" aria-hidden="true" />
-									{option.label}
-								</Select.Item>
-							{/each}
-						</Select.Content>
-					</Select.Root>
-					<PromptInput.Submit
-						status={coach.status as ChatStatus}
-						disabled={!canSendComposer && !streaming}
-						onStop={() => coach.stop()}
-						class="size-9 shrink-0 self-end rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
-					>
-						{#if streaming}
-							<SquareIcon class="size-4" />
-						{:else}
-							<ArrowUpIcon class="size-4" />
-						{/if}
-					</PromptInput.Submit>
-				</div>
-			</PromptInput.Root>
-
-			{#if emptyChat}
-				<ul
-					class="mt-5 w-full space-y-0.5 px-1 sm:mt-6 sm:px-2"
-					out:fade={{ duration: motionMs * 0.65, easing: cubicOut }}
-				>
-					{#each coachComposerActions as action (action.id)}
-						{@const Icon = coachActionIcons[action.id]}
-						<li>
-							<button
-								type="button"
-								class="group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted/80 focus-visible:bg-muted/80 focus-visible:outline-none"
+						</PromptInput.Header>
+					{/if}
+					<div class="flex items-end gap-1 p-1.5">
+						<PromptInput.ActionMenu bind:open={coachActionsOpen}>
+							<PromptInput.ActionMenuTrigger
+								class="size-9 shrink-0 self-end rounded-full text-muted-foreground hover:text-foreground"
 								disabled={!sessionId || streaming}
-								onclick={() => addCoachAction(action.id)}
+								aria-label="Coach actions"
+							/>
+							<PromptInput.ActionMenuContent
+								align="start"
+								sideOffset={8}
+								class="w-[min(18rem,calc(100vw-2rem))] p-1"
 							>
-								<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-								<span class="min-w-0 flex-1 text-sm leading-5 text-foreground/85">
-									{action.title}
-								</span>
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{:else}
-				<p
-					class="mt-2 text-center text-[11px] text-muted-foreground"
-					in:fade={{ duration: motionMs * 0.5, delay: motionMs * 0.25, easing: cubicOut }}
-				>
-					Coach is powered by AI and can make mistakes.
-				</p>
-			{/if}
+								{#each coachComposerActions as action (action.id)}
+									{@const Icon = coachActionIcons[action.id]}
+									{@const selected = selectedCoachActionIds.includes(action.id)}
+									<PromptInput.ActionMenuItem
+										class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
+										disabled={!sessionId || streaming}
+										onSelect={() => toggleCoachAction(action.id)}
+									>
+										<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+										<div class="min-w-0 flex-1 text-left">
+											<div class="text-sm leading-5 font-medium">{action.title}</div>
+											<div class="text-xs leading-4 text-muted-foreground">
+												{action.description}
+											</div>
+										</div>
+									</PromptInput.ActionMenuItem>
+								{/each}
+							</PromptInput.ActionMenuContent>
+						</PromptInput.ActionMenu>
+						<PromptInput.Body class="min-w-0 flex-1">
+							<PromptInput.Textarea
+								bind:ref={composerInputRef}
+								bind:value={input}
+								placeholder="Ask Coach"
+								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
+							/>
+						</PromptInput.Body>
+						<Select.Root
+							type="single"
+							value={thinkingMode}
+							onValueChange={(value) => {
+								if (value) thinkingMode = value as CoachThinkingMode;
+							}}
+						>
+							<Select.Trigger
+								class="h-9 shrink-0 gap-1 self-end border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
+								disabled={!sessionId || streaming}
+								aria-label="Coach response depth"
+							>
+								{@const Icon = selectedThinkingMode.icon}
+								<Icon class="size-3.5 shrink-0" aria-hidden="true" />
+								<span>{selectedThinkingMode.label}</span>
+							</Select.Trigger>
+							<Select.Content align="end" class="min-w-[10.5rem]">
+								{#each thinkingModeOptions as option (option.value)}
+									{@const Icon = option.icon}
+									<Select.Item value={option.value}>
+										<Icon class="size-4 text-muted-foreground" aria-hidden="true" />
+										{option.label}
+									</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+						<PromptInput.Submit
+							status={coach.status as ChatStatus}
+							disabled={!canSendComposer && !streaming}
+							onStop={() => coach.stop()}
+							class="size-9 shrink-0 self-end rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
+						>
+							{#if streaming}
+								<SquareIcon class="size-4" />
+							{:else}
+								<ArrowUpIcon class="size-4" />
+							{/if}
+						</PromptInput.Submit>
+					</div>
+				</PromptInput.Root>
+
+				{#if emptyChat}
+					<ul
+						class="mt-5 w-full space-y-0.5 px-1 sm:mt-6 sm:px-2"
+						out:fade={{ duration: motionMs * 0.65, easing: cubicOut }}
+					>
+						{#each coachComposerActions as action (action.id)}
+							{@const Icon = coachActionIcons[action.id]}
+							<li>
+								<button
+									type="button"
+									class="group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted/80 focus-visible:bg-muted/80 focus-visible:outline-none"
+									disabled={!sessionId || streaming}
+									onclick={() => addCoachAction(action.id)}
+								>
+									<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<span class="min-w-0 flex-1 text-sm leading-5 text-foreground/85">
+										{action.title}
+									</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p
+						class="mt-2 text-center text-[11px] text-muted-foreground"
+						in:fade={{ duration: motionMs * 0.5, delay: motionMs * 0.25, easing: cubicOut }}
+					>
+						Coach is powered by AI and can make mistakes.
+					</p>
+				{/if}
 			{/if}
 		</div>
 	</div>

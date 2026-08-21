@@ -29,9 +29,7 @@
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
 	const isCoachPage = $derived.by(() => {
 		const coachHref = resolve('/app/coach');
-		return (
-			page.url.pathname === coachHref || page.url.pathname.startsWith(`${coachHref}/`)
-		);
+		return page.url.pathname === coachHref || page.url.pathname.startsWith(`${coachHref}/`);
 	});
 	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
 	let freeBetaClaimOpen = $state(false);

@@ -13,9 +13,9 @@ const TUTOR_MEMORY_NAMESPACE = 'tutor-memory';
 const TUTOR_MEMORY_DIMENSION = 1536;
 
 const MEMORY_INSTRUCTIONS = [
-	'Retain only learning-style preferences, stable study constraints, recurring misconceptions tied to learning, and explanation strategies that repeatedly helped, as well as facts that provide useful context about the student\'s abilities..',
-	'Never retain identity, contact details, school or location, age, health or disability, family or financial information, credentials, unrelated conversation, active-question answers, or full transcripts.', 'Be a bit more broad and accepting for what counts as something to be retained, because often, seemingly unrelated or vague information may still be useful.'
-	
+	"Retain only learning-style preferences, stable study constraints, recurring misconceptions tied to learning, and explanation strategies that repeatedly helped, as well as facts that provide useful context about the student's abilities..",
+	'Never retain identity, contact details, school or location, age, health or disability, family or financial information, credentials, unrelated conversation, active-question answers, or full transcripts.',
+	'Be a bit more broad and accepting for what counts as something to be retained, because often, seemingly unrelated or vague information may still be useful.'
 ].join(' ');
 
 export type TutorMemory = {
