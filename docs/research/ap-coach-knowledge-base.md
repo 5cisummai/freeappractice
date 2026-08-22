@@ -54,7 +54,7 @@ The unified AP dataset ([`ap-classes-data-08212026.json`](../../src/lib/data/ap-
 
 It is not safe as an authoritative assessment database yet. It has no effective school year, CED version, retrieval date per source, source section/page, learning-objective IDs, skill/practice IDs, or provenance for individual fields. Some fields visibly drift: in AP Calculus AB, Unit 3 keywords emphasize extrema/related rates while the title is composite/implicit/inverse differentiation; Unit 4 keywords are integration-heavy while its description is derivative applications; Unit 5 keywords are integration applications while its description is derivative analysis. Exam-weight strings also need validation against the current exam pages/CEDs. Treat “topics may include” as paraphrased discovery text, not a guarantee of tested scope.
 
-The unified dataset's `courses[].app.catalog` is the product's course/unit navigation list. Its Physics 2 and Physics C numbering should be checked against the current 2025–26/2026–27 CED versions before using unit numbers in user-facing claims.
+The unified dataset's `courses[].units[]` records are the product's course/unit navigation list; semester placement is stored on each unit. Its Physics 2 and Physics C numbering should be checked against the current 2025–26/2026–27 CED versions before using unit numbers in user-facing claims.
 
 ## Recommended MVP schema, retrieval, and tools
 

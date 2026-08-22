@@ -62,7 +62,9 @@ function normalize(value: string): string {
 }
 
 function unitsFor(course: UnifiedCourse): string[] {
-	return [...course.official.framework.unitLabels];
+	return course.official.framework.unitLabels
+		? [...course.official.framework.unitLabels]
+		: course.units.map((unit) => unit.label);
 }
 
 function unitTitle(value: string): string {

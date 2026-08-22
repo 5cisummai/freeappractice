@@ -6,13 +6,12 @@ const fail = (message: string) => failures.push(message);
 const sourceIds = new Set(dataset.sources.map((source) => source.id));
 const courseIds = new Set<string>();
 const unitIds = new Set<string>();
-const practicePages = dataset.courses
-	.flatMap((course) => [
-		course.app.practice.classPage,
-		...course.units.map((unit) => unit.app.pageContent)
-	])
-	.filter((page): page is NonNullable<typeof page> => Boolean(page));
-const practicePageSlugs = new Set(practicePages.map((page) => page.slug));
+const pageIds = new Set<string>();
+const courseById = new Map(dataset.courses.map((course) => [course.id, course] as const));
+const unitById = new Map(
+	dataset.courses.flatMap((course) => course.units.map((unit) => [unit.id, unit] as const))
+);
+const pageById = new Map(dataset.pages.map((page) => [page.id, page] as const));
 
 if (dataset.scope.appCourseCount !== 25)
 	fail(`Expected 25 courses, found ${dataset.scope.appCourseCount}.`);
@@ -20,12 +19,9 @@ if (dataset.scope.appUnitCount !== 179)
 	fail(`Expected 179 units, found ${dataset.scope.appUnitCount}.`);
 if (dataset.courses.length !== 25)
 	fail(`Dataset contains ${dataset.courses.length} course records.`);
-if (dataset.scope.practicePageCount !== practicePages.length)
-	fail(
-		`Expected ${dataset.scope.practicePageCount} embedded practice pages, found ${practicePages.length}.`
-	);
-if (practicePageSlugs.size !== practicePages.length)
-	fail('Embedded practice page slugs must be unique.');
+if (dataset.scope.practicePageCount !== dataset.pages.length)
+	fail(`Expected ${dataset.scope.practicePageCount} pages, found ${dataset.pages.length}.`);
+if (pageById.size !== dataset.pages.length) fail('Practice page IDs must be unique.');
 
 function collectSourceReferences(value: unknown, key = ''): string[] {
 	if (Array.isArray(value)) {
@@ -45,6 +41,27 @@ function collectSourceReferences(value: unknown, key = ''): string[] {
 	return [];
 }
 
+for (const page of dataset.pages) {
+	if (pageIds.has(page.id)) fail(`Duplicate practice page ID: ${page.id}.`);
+	pageIds.add(page.id);
+
+	const course = courseById.get(page.courseId);
+	if (!course) {
+		fail(`Missing course for practice page ${page.id}.`);
+		continue;
+	}
+	if (page.type === 'class' && page.unitId)
+		fail(`Class page ${page.id} should not reference a unit.`);
+	if (page.type === 'unit' && !page.unitId)
+		fail(`Unit page ${page.id} is missing a unit reference.`);
+	if (page.unitId && !unitById.has(page.unitId))
+		fail(`Missing unit for practice page ${page.id}: ${page.unitId}.`);
+	if (page.unitId && unitById.get(page.unitId)?.app.practicePageId !== page.id)
+		fail(`Practice page ${page.id} does not match its unit reference.`);
+	if (page.type === 'class' && course.app.practice.classPageId !== page.id)
+		fail(`Class page ${page.id} does not match ${course.name}.`);
+}
+
 for (const course of dataset.courses) {
 	if (courseIds.has(course.id)) fail(`Duplicate course ID: ${course.id}.`);
 	courseIds.add(course.id);
@@ -55,54 +72,47 @@ for (const course of dataset.courses) {
 			fail(`Missing source registry entry: ${sourceId} (${course.name}).`);
 	}
 
-	const expectedLabels = [
-		...course.app.catalog.semester1UnitLabels,
-		...course.app.catalog.semester2UnitLabels
+	const appLabels = course.units.map((unit) => unit.label);
+	const semesterLabels = [
+		...course.units.filter((unit) => unit.app.semester === 1).map((unit) => unit.label),
+		...course.units.filter((unit) => unit.app.semester === 2).map((unit) => unit.label)
 	];
-	const actualLabels = course.units.map((unit) => unit.label);
-	if (JSON.stringify(expectedLabels) !== JSON.stringify(actualLabels)) {
-		fail(`Unified app catalog labels/order differ from unit records for ${course.name}.`);
-	}
-	if (course.app.catalog.unitCount !== course.units.length)
-		fail(`App unit count differs from unit records for ${course.name}.`);
+	if (semesterLabels.length !== appLabels.length)
+		fail(`Every unit must belong to semester 1 or 2 for ${course.name}.`);
 
-	const classPage = course.app.practice.classPage;
-	if (!classPage) {
-		fail(`Missing class practice page for ${course.name}.`);
-	} else if (
-		classPage.slug !== course.app.practice.practicePageSlugs[0] ||
-		classPage.type !== 'class' ||
-		classPage.className !== course.name
-	) {
-		fail(`Class practice page mismatch for ${course.name}.`);
-	}
+	const officialLabels = course.official.framework.unitLabels ?? appLabels;
+	if (
+		course.official.framework.unitLabelsSource === 'appUnits' &&
+		course.official.framework.unitLabels
+	)
+		fail(`App-derived framework labels should not be duplicated for ${course.name}.`);
+	if (course.official.framework.unitCount !== officialLabels.length)
+		fail(`Official framework unit count differs from labels for ${course.name}.`);
 
 	for (const unit of course.units) {
 		if (unitIds.has(unit.id)) fail(`Duplicate unit ID: ${unit.id}.`);
 		unitIds.add(unit.id);
-		if (unit.app.practicePageSlug && !practicePageSlugs.has(unit.app.practicePageSlug)) {
-			fail(`Missing practice page ${unit.app.practicePageSlug} (${course.name}).`);
-		}
-		if (unit.app.practicePageSlug !== unit.app.pageContent?.slug) {
-			fail(`Practice page content mismatch for ${unit.id}.`);
-		}
+		if (!unit.app.practicePageId) fail(`Missing practice page ID for ${unit.id}.`);
+		if (!pageById.has(unit.app.practicePageId))
+			fail(`Missing practice page ${unit.app.practicePageId} (${course.name}).`);
 	}
 
-	const embeddedCourseSlugs = new Set(
-		[classPage?.slug, ...course.units.map((unit) => unit.app.pageContent?.slug)].filter(
-			(slug): slug is string => Boolean(slug)
-		)
-	);
-	for (const slug of course.app.practice.practicePageSlugs) {
-		if (!practicePageSlugs.has(slug))
-			fail(`Missing course practice page ${slug} (${course.name}).`);
-		if (!embeddedCourseSlugs.has(slug))
-			fail(`Course practice page ${slug} is not embedded under ${course.name}.`);
+	const coursePageIds = dataset.pages
+		.filter((page) => page.courseId === course.id)
+		.map((page) => page.id);
+	const expectedPageIds = [
+		course.app.practice.classPageId,
+		...course.units.map((unit) => unit.app.practicePageId)
+	];
+	if (
+		coursePageIds.length !== expectedPageIds.length ||
+		coursePageIds.some((pageId, index) => pageId !== expectedPageIds[index])
+	) {
+		fail(`Practice page references differ from page index for ${course.name}.`);
 	}
-	if (course.app.practice.practicePageSlugs.length !== embeddedCourseSlugs.size)
-		fail(`Practice page references differ from embedded pages for ${course.name}.`);
 }
 
+if (courseIds.size !== 25) fail(`Expected 25 unique course IDs, found ${courseIds.size}.`);
 if (unitIds.size !== 179) fail(`Expected 179 unique unit IDs, found ${unitIds.size}.`);
 
 const supportedFrqCourses = new Set(dataset.questionBank.frq.appSupportedCourses);
@@ -148,7 +158,7 @@ console.log(
 			status: 'ok',
 			courseCount: dataset.courses.length,
 			unitCount: unitIds.size,
-			practicePageCount: practicePageSlugs.size,
+			practicePageCount: pageIds.size,
 			sourceCount: dataset.sources.length,
 			appFrqCourseCount: supportedFrqCourses.size,
 			questionInstancesIncluded: dataset.scope.questionInstancesIncluded

@@ -77,6 +77,14 @@ function appFrqStatus(course: Course): string {
 	return 'disabled in the current app';
 }
 
+function appUnitLabels(course: Course): string[] {
+	return course.units.map((unit) => unit.label);
+}
+
+function officialFrameworkUnitLabels(course: Course): string[] {
+	return course.official.framework.unitLabels ?? appUnitLabels(course);
+}
+
 function currentAppTopicCount(): number {
 	return dataset.courses.reduce(
 		(total, course) =>
@@ -101,9 +109,9 @@ function push(value = ''): void {
 
 push('# AP exam, course, unit, and question-bank research');
 push('');
-push(`Snapshot date: **${dataset.asOf}**  `);
-push('Artifact: `src/lib/data/ap-classes-data-08212026.json`  ');
-push('Schema: `1.0.0`  ');
+push(`Snapshot date: **${dataset.asOf}**<br>`);
+push('Artifact: `src/lib/data/ap-classes-data-08212026.json`<br>');
+push(`Schema: \`${dataset.schemaVersion}\`<br>`);
 push(
 	'Research boundary: current AP courses supported by Free AP Practice, with official College Board sources accessed on 2026-08-21.'
 );
@@ -137,13 +145,13 @@ push('');
 push('| Unified dataset section | What the unified artifact provides |');
 push('| --- | --- |');
 push(
-	'| `courses[].app.catalog` | Exact current course names, semester 1/2 unit labels, order, and app unit count. |'
+	'| `courses[].units[].app.semester` | Exact current course names, semester placement, unit labels, order, and app unit count. |'
 );
 push(
 	'| `courses[].generation` and `courses[].units[].generation.mcq` | App-authored course and unit generation controls. |'
 );
 push(
-	'| `courses[].app.practice` and `courses[].units[].app.pageContent` | Class/unit SEO records, article paragraphs, links, and page slugs under each course/unit. |'
+	'| `pages[]` plus page IDs under `courses[].app.practice` and `courses[].units[].app` | Class/unit SEO records, article paragraphs, links, and page slugs under each course/unit. |'
 );
 push('| `questionBank.mcq.poolRules` | MCQ target configuration and FRQ pool target. |');
 push(
@@ -191,7 +199,7 @@ for (const course of dataset.courses) {
 	const first = sections[0];
 	const rest = sections.slice(1);
 	push(
-		`| ${inline(course.name)} | ${course.app.catalog.unitCount} | ${course.official.framework.unitCount} | ${inline(course.official.exam.deliveryMode)} | ${inline(sectionShort(first))} | ${rest.map(sectionShort).join('<br>')} | ${inline(appFrqStatus(course))} |`
+		`| ${inline(course.name)} | ${course.units.length} | ${course.official.framework.unitCount} | ${inline(course.official.exam.deliveryMode)} | ${inline(sectionShort(first))} | ${rest.map(sectionShort).join('<br>')} | ${inline(appFrqStatus(course))} |`
 	);
 }
 push('');
@@ -207,16 +215,14 @@ for (const course of dataset.courses) {
 	const appSourceIds = course.sources.filter((id) => id.startsWith('app-'));
 	push(`### ${course.name}`);
 	push('');
-	push(`**Official name:** ${inline(course.official.name)}  `);
-	push(`**Category:** ${inline(course.official.category)}  `);
-	push(`**Current app units:** ${course.app.catalog.unitCount}  `);
-	push(`**Official framework units in this snapshot:** ${course.official.framework.unitCount}  `);
-	push(`**Delivery:** ${inline(course.official.exam.deliveryMode)}  `);
+	push(`**Official name:** ${inline(course.official.name)}<br>`);
+	push(`**Category:** ${inline(course.official.category)}<br>`);
+	push(`**Current app units:** ${course.units.length}<br>`);
+	push(`**Official framework units in this snapshot:** ${course.official.framework.unitCount}<br>`);
+	push(`**Delivery:** ${inline(course.official.exam.deliveryMode)}<br>`);
 	push(`**App FRQ:** ${inline(appFrqStatus(course))}`);
 	push('');
-	push(
-		`Official framework labels: ${course.official.framework.unitLabels.map(inline).join('; ')}.`
-	);
+	push(`Official framework labels: ${officialFrameworkUnitLabels(course).map(inline).join('; ')}.`);
 	push(`Official framework alignment: ${inline(course.official.framework.alignment)}.`);
 	push(`Skills: ${course.official.skills.map(inline).join('; ')}.`);
 	push(`Official sources: ${sourceLinks(officialSourceIds)}.`);
@@ -254,7 +260,7 @@ for (const course of dataset.courses) {
 			`- **Official canonical label:** ${unit.official.canonicalLabel ? inline(unit.official.canonicalLabel) : 'none in the current official framework; retained as an app-only/legacy label'}`
 		);
 		push(`- **Canonical-label status:** ${inline(unit.official.canonicalLabelStatus)}`);
-		push(`- **Practice page:** \`${unit.app.practicePageSlug ?? 'not present'}\``);
+		push(`- **Practice page:** \`${unit.app.practicePageId ?? 'not present'}\``);
 		if (unit.official.weightRangePercent)
 			push(
 				`- **App page’s published multiple-choice weight range:** ${unit.official.weightRangePercent.min}%–${unit.official.weightRangePercent.max}%.`

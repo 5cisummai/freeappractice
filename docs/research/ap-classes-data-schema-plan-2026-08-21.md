@@ -1,7 +1,7 @@
 # AP Classes Super-Data JSON: Schema Plan
 
 Date: 2026-08-21  
-Proposed artifact: `src/lib/data/ap-classes-data-08212026.json`
+Canonical artifact: `src/lib/data/ap-classes-data-08212026.json`
 
 ## Purpose
 
@@ -29,7 +29,7 @@ The file is a curated configuration and knowledge artifact. It is not a dump of 
 
 ```json
 {
-	"schemaVersion": "1.0.0",
+	"schemaVersion": "2.0.0",
 	"datasetId": "freeappractice.ap-classes",
 	"datasetVersion": "2026-08-21",
 	"generatedAt": "2026-08-21T00:00:00Z",
@@ -44,7 +44,8 @@ The file is a curated configuration and knowledge artifact. It is not a dump of 
 	"globalRules": {},
 	"examFramework": {},
 	"questionBank": {},
-	"courses": []
+	"courses": [],
+	"pages": []
 }
 ```
 
@@ -180,16 +181,10 @@ One record per currently supported app course. The course record should contain:
 	"name": "AP Biology",
 	"app": {
 		"supported": true,
-		"apCentralSlug": "ap-biology",
-		"catalog": {
-			"semester1UnitLabels": [],
-			"semester2UnitLabels": [],
-			"unitCount": 8
-		},
 		"practice": {
 			"mcq": { "enabled": true },
 			"frq": { "enabled": true },
-			"practicePageSlugs": []
+			"classPageId": "ap-biology"
 		}
 	},
 	"official": {
@@ -262,15 +257,9 @@ Each unit should preserve the app label and hold structured curriculum, practice
 	"id": "ap-biology-unit-1",
 	"number": 1,
 	"label": "Unit 1: Chemistry of Life",
-	"title": "Chemistry of Life",
 	"app": {
 		"semester": 1,
-		"practicePageSlug": "ap-biology/unit-1",
-		"pageContent": {
-			"seo": {},
-			"article": {},
-			"navigation": {}
-		}
+		"practicePageId": "ap-biology/unit-1"
 	},
 	"official": {
 		"description": "Paraphrased unit scope.",
@@ -308,6 +297,22 @@ Each unit should preserve the app label and hold structured curriculum, practice
 }
 ```
 
+### `pages`
+
+Practice-page content is stored once in the top-level page index. Courses reference their class page with `app.practice.classPageId`, and units reference unit pages with `app.practicePageId`. A page uses `courseId` and, for unit pages, `unitId` instead of repeating display names.
+
+```json
+{
+	"id": "ap-biology/unit-1",
+	"type": "unit",
+	"courseId": "ap-biology",
+	"unitId": "ap-biology-unit-1",
+	"seo": {},
+	"article": {},
+	"links": []
+}
+```
+
 ## FRQ representation
 
 There are two separate FRQ layers:
@@ -333,7 +338,7 @@ The completed artifact must validate that:
 1. There are exactly 25 courses and every course name in the unified app catalog is present.
 2. Every current app unit label appears exactly once under its course, for 179 total units.
 3. Every unit ID and course ID is unique.
-4. Every `practicePageSlug` resolves to one page in the current practice-page catalog where a page exists.
+4. Every `practicePageId` and `classPageId` resolves to one page in the normalized top-level `pages` index.
 5. Every referenced source ID exists in the top-level source registry.
 6. Every supported app FRQ profile is represented exactly once, and unsupported courses are explicit rather than omitted.
 7. MCQ and FRQ schema declarations match the current TypeScript validation/storage contracts.
