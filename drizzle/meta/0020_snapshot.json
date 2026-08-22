@@ -1,6 +1,6 @@
 {
-  "id": "f81ca939-f69e-4158-8f80-c3d56b513758",
-  "prevId": "c4ca1338-5fb2-404e-b805-1e118f54d4dd",
+  "id": "4c900cf2-a8f5-4b1f-b78e-26f8cfd636b3",
+  "prevId": "d036bd87-b7df-41df-9db2-f6d6a917e28f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -890,7 +890,7 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true
         },
@@ -4412,73 +4412,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "content.frq_materials": {
-      "name": "frq_materials",
-      "schema": "content",
-      "columns": {
-        "question_id": {
-          "name": "question_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "material_id": {
-          "name": "material_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "frq_materials_question_id_frq_questions_question_id_fk": {
-          "name": "frq_materials_question_id_frq_questions_question_id_fk",
-          "tableFrom": "frq_materials",
-          "tableTo": "frq_questions",
-          "schemaTo": "content",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "question_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "frq_materials_question_id_material_id_pk": {
-          "name": "frq_materials_question_id_material_id_pk",
-          "columns": [
-            "question_id",
-            "material_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "content.frq_questions": {
       "name": "frq_questions",
       "schema": "content",
@@ -4489,63 +4422,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "ap_class": {
-          "name": "ap_class",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "unit": {
-          "name": "unit",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "format_id": {
-          "name": "format_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "profile_version": {
-          "name": "profile_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prompt_version": {
-          "name": "prompt_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "rubric_version": {
-          "name": "rubric_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "schema_version": {
-          "name": "schema_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prompt": {
-          "name": "prompt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "total_points": {
-          "name": "total_points",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "topics_covered": {
-          "name": "topics_covered",
-          "type": "text",
+        "data": {
+          "name": "data",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
@@ -4588,15 +4467,15 @@
           "name": "frq_questions_bucket_created_idx",
           "columns": [
             {
-              "expression": "ap_class",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'apClass')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "unit",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'unit')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
@@ -4615,15 +4494,15 @@
           "name": "frq_questions_bucket_random_idx",
           "columns": [
             {
-              "expression": "ap_class",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'apClass')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "unit",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'unit')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
@@ -4682,217 +4561,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "content.frq_rubric_criteria": {
-      "name": "frq_rubric_criteria",
-      "schema": "content",
-      "columns": {
-        "question_id": {
-          "name": "question_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "criterion_id": {
-          "name": "criterion_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "section_id": {
-          "name": "section_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "label": {
-          "name": "label",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "max_points": {
-          "name": "max_points",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reference_answer": {
-          "name": "reference_answer",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "frq_rubric_criteria_question_id_frq_questions_question_id_fk": {
-          "name": "frq_rubric_criteria_question_id_frq_questions_question_id_fk",
-          "tableFrom": "frq_rubric_criteria",
-          "tableTo": "frq_questions",
-          "schemaTo": "content",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "question_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "frq_rubric_criteria_question_id_criterion_id_pk": {
-          "name": "frq_rubric_criteria_question_id_criterion_id_pk",
-          "columns": [
-            "question_id",
-            "criterion_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "content.frq_rubric_levels": {
-      "name": "frq_rubric_levels",
-      "schema": "content",
-      "columns": {
-        "question_id": {
-          "name": "question_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "criterion_id": {
-          "name": "criterion_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "points": {
-          "name": "points",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "frq_rubric_levels_question_id_criterion_id_points_pk": {
-          "name": "frq_rubric_levels_question_id_criterion_id_points_pk",
-          "columns": [
-            "question_id",
-            "criterion_id",
-            "points"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "content.frq_sections": {
-      "name": "frq_sections",
-      "schema": "content",
-      "columns": {
-        "question_id": {
-          "name": "question_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "section_id": {
-          "name": "section_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "label": {
-          "name": "label",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prompt": {
-          "name": "prompt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "response_kind": {
-          "name": "response_kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "max_points": {
-          "name": "max_points",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "frq_sections_question_id_frq_questions_question_id_fk": {
-          "name": "frq_sections_question_id_frq_questions_question_id_fk",
-          "tableFrom": "frq_sections",
-          "tableTo": "frq_questions",
-          "schemaTo": "content",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "question_id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "frq_sections_question_id_section_id_pk": {
-          "name": "frq_sections_question_id_section_id_pk",
-          "columns": [
-            "question_id",
-            "section_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "content.mcq_questions": {
       "name": "mcq_questions",
       "schema": "content",
@@ -4903,97 +4571,17 @@
           "primaryKey": true,
           "notNull": true
         },
-        "ap_class": {
-          "name": "ap_class",
-          "type": "text",
+        "data": {
+          "name": "data",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
-        },
-        "unit": {
-          "name": "unit",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'all-units'"
         },
         "content_hash": {
           "name": "content_hash",
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "topics_covered": {
-          "name": "topics_covered",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "question": {
-          "name": "question",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "diagram_spec": {
-          "name": "diagram_spec",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "has_diagram": {
-          "name": "has_diagram",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "option_a": {
-          "name": "option_a",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "option_b": {
-          "name": "option_b",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "option_c": {
-          "name": "option_c",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "option_d": {
-          "name": "option_d",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "correct_answer": {
-          "name": "correct_answer",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "explanation": {
-          "name": "explanation",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "hint_1": {
-          "name": "hint_1",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "hint_2": {
-          "name": "hint_2",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "random_key": {
           "name": "random_key",
@@ -5028,15 +4616,15 @@
           "name": "mcq_questions_bucket_created_idx",
           "columns": [
             {
-              "expression": "ap_class",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'apClass')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "unit",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'unit')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
@@ -5055,15 +4643,15 @@
           "name": "mcq_questions_bucket_random_idx",
           "columns": [
             {
-              "expression": "ap_class",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'apClass')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {
-              "expression": "unit",
-              "isExpression": false,
+              "expression": "(\"data\" ->> 'unit')",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             },
             {

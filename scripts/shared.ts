@@ -2,7 +2,7 @@
  * Shared utilities for cache management scripts.
  */
 
-import apClassesData from '../src/lib/data/ap-classes.json';
+import { APP_COURSES, type ApCourse } from '../src/lib/data/ap-data';
 
 // ── Arg parsing ─────────────────────────────────────────────
 
@@ -44,11 +44,7 @@ export function createLimiter(max: number) {
 
 // ── Course loading ──────────────────────────────────────────
 
-export interface Course {
-	name: string;
-	semester1: string[];
-	semester2: string[];
-}
+export type Course = ApCourse;
 
 export interface ClassUnitCombo {
 	className: string;
@@ -56,7 +52,7 @@ export interface ClassUnitCombo {
 }
 
 /**
- * Load courses from ap-classes.json and build class+unit combos.
+ * Load courses from the unified AP dataset and build class+unit combos.
  * Optionally filter by a single class name (case-insensitive).
  * Exits with error if filterClass doesn't match any course.
  */
@@ -64,7 +60,7 @@ export function loadCombos(filterClass?: string | null): {
 	courses: Course[];
 	combos: ClassUnitCombo[];
 } {
-	let courses = (apClassesData as { courses: Course[] }).courses;
+	let courses = APP_COURSES;
 
 	if (filterClass) {
 		courses = courses.filter((c) => c.name.toLowerCase() === filterClass.toLowerCase());

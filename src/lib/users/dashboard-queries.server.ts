@@ -2,6 +2,7 @@ import { and, count, eq, isNotNull, max, sql } from 'drizzle-orm';
 import { getFrqProgressForUser } from '$lib/grading/frq/attempts.server';
 import { frqAttemptGrades, frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
 import { getNeonDatabase } from '$lib/server/neon/db';
+import { questionPayloadTextField } from '$lib/server/neon/jsonb';
 import { MAX_ATTEMPT_TIME_MS } from '$lib/users/attempt-time';
 import { buildProgressDataFromAttempts, mergeFrqProgress } from '$lib/users/progress.server';
 import type { IProgress } from '$lib/users/records.server';
@@ -269,11 +270,12 @@ export async function getDashboardProgress(
 		WHERE position <= 20
 		ORDER BY "apClass", unit, "attemptedAt" DESC
 	`);
+	const topicsCovered = questionPayloadTextField(mcqQuestions.data, 'topicsCovered');
 	const topicsPromise = db
 		.select({
 			apClass: mcqAttempts.apClass,
 			unit: mcqAttempts.unit,
-			name: sql<string>`trim(${mcqQuestions.topicsCovered})`,
+			name: sql<string>`trim(${topicsCovered})`,
 			attempts: count(),
 			correctAttempts: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} = true)::int`,
 			gradedAttempts: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} IS NOT NULL)::int`,
@@ -284,11 +286,11 @@ export async function getDashboardProgress(
 		.where(
 			and(
 				eq(mcqAttempts.userId, userId),
-				isNotNull(mcqQuestions.topicsCovered),
-				sql`trim(${mcqQuestions.topicsCovered}) <> ''`
+				isNotNull(topicsCovered),
+				sql`trim(${topicsCovered}) <> ''`
 			)
 		)
-		.groupBy(mcqAttempts.apClass, mcqAttempts.unit, sql`trim(${mcqQuestions.topicsCovered})`);
+		.groupBy(mcqAttempts.apClass, mcqAttempts.unit, sql`trim(${topicsCovered})`);
 	const [recentResult, topicRows, frqProgress] = await Promise.all([
 		recentAttemptsPromise,
 		topicsPromise,

@@ -1,6 +1,6 @@
 {
-  "id": "f81ca939-f69e-4158-8f80-c3d56b513758",
-  "prevId": "b9ac9a1e-7e7c-41c2-92c0-4b74bb976a79",
+  "id": "14d46011-8ba8-427a-9684-bc1e9d950724",
+  "prevId": "f81ca939-f69e-4158-8f80-c3d56b513758",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -890,7 +890,7 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true
         },

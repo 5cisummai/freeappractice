@@ -1,36 +1,52 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, gte, inArray, lt, ne, notInArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { mcqQuestions, questionRecentTopics, questionRegistry } from '$lib/server/neon/schema';
+import {
+	mcqQuestions,
+	questionRecentTopics,
+	questionRegistry,
+	type McqQuestionPayload
+} from '$lib/server/neon/schema';
+import { questionPayloadTextField } from '$lib/server/neon/jsonb';
 
-export interface IQuestion {
+export interface IQuestion extends McqQuestionPayload {
 	questionId: string;
-	apClass: string;
-	unit: string;
-	topicsCovered?: string | null;
 	randomKey: number;
 	active: boolean;
 	contentHash: string;
-	question: string;
-	diagramSpec?: Record<string, unknown> | null;
-	hasDiagram: boolean;
-	optionA: string;
-	optionB: string;
-	optionC: string;
-	optionD: string;
-	correctAnswer: 'A' | 'B' | 'C' | 'D';
-	explanation: string;
-	hint1?: string | null;
-	hint2?: string | null;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
+const apClassField = questionPayloadTextField(mcqQuestions.data, 'apClass');
+const unitField = questionPayloadTextField(mcqQuestions.data, 'unit');
+
 export type CanonicalMcqInput = Omit<
 	IQuestion,
-	'unit' | 'randomKey' | 'active' | 'hasDiagram' | 'createdAt' | 'updatedAt'
+	| 'unit'
+	| 'randomKey'
+	| 'active'
+	| 'hasDiagram'
+	| 'diagramSpec'
+	| 'hint1'
+	| 'hint2'
+	| 'topicsCovered'
+	| 'createdAt'
+	| 'updatedAt'
 > &
-	Partial<Pick<IQuestion, 'unit' | 'randomKey' | 'active' | 'hasDiagram'>>;
+	Partial<
+		Pick<
+			IQuestion,
+			| 'unit'
+			| 'randomKey'
+			| 'active'
+			| 'hasDiagram'
+			| 'diagramSpec'
+			| 'hint1'
+			| 'hint2'
+			| 'topicsCovered'
+		>
+	>;
 
 export function newPoolRandomKey(): number {
 	return Math.random();
@@ -40,18 +56,13 @@ export async function countActiveMcqQuestions(apClass: string, unit: string): Pr
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(mcqQuestions)
-		.where(
-			and(
-				eq(mcqQuestions.apClass, apClass),
-				eq(mcqQuestions.unit, unit),
-				eq(mcqQuestions.active, true)
-			)
-		);
+		.where(and(eq(apClassField, apClass), eq(unitField, unit), eq(mcqQuestions.active, true)));
 	return Number(row?.count ?? 0);
 }
 
 function fromRow(row: typeof mcqQuestions.$inferSelect): IQuestion {
-	return { ...row, correctAnswer: row.correctAnswer as IQuestion['correctAnswer'] };
+	const { data, ...metadata } = row;
+	return { ...data, ...metadata };
 }
 
 /** Insert a generated MCQ and its serving metadata in one Neon batch. */
@@ -61,6 +72,22 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 
 	const unit = input.unit ?? 'all-units';
 	const topicsCovered = input.topicsCovered?.trim() ?? '';
+	const data: McqQuestionPayload = {
+		apClass: input.apClass,
+		unit,
+		topicsCovered,
+		question: input.question,
+		diagramSpec: input.diagramSpec ?? null,
+		hasDiagram: input.hasDiagram ?? Boolean(input.diagramSpec),
+		optionA: input.optionA,
+		optionB: input.optionB,
+		optionC: input.optionC,
+		optionD: input.optionD,
+		correctAnswer: input.correctAnswer,
+		explanation: input.explanation,
+		hint1: input.hint1 ?? null,
+		hint2: input.hint2 ?? null
+	};
 	const db = getNeonDatabase();
 	const registryInsert = db
 		.insert(questionRegistry)
@@ -86,21 +113,8 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		.insert(mcqQuestions)
 		.values({
 			questionId,
-			apClass: input.apClass,
-			unit,
+			data,
 			contentHash: input.contentHash,
-			topicsCovered,
-			question: input.question,
-			diagramSpec: input.diagramSpec ?? null,
-			hasDiagram: input.hasDiagram ?? Boolean(input.diagramSpec),
-			optionA: input.optionA,
-			optionB: input.optionB,
-			optionC: input.optionC,
-			optionD: input.optionD,
-			correctAnswer: input.correctAnswer,
-			explanation: input.explanation,
-			hint1: input.hint1,
-			hint2: input.hint2,
 			randomKey: input.randomKey ?? newPoolRandomKey(),
 			active: input.active ?? true
 		})
@@ -119,9 +133,9 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 	const results = recentTopicInsert
 		? await db.batch([registryInsert, mcqInsert, recentTopicInsert])
 		: await db.batch([registryInsert, mcqInsert]);
-	const row = (results[1] as IQuestion[])[0];
+	const row = (results[1] as Array<typeof mcqQuestions.$inferSelect>)[0];
 	if (!row) throw new Error('PostgreSQL MCQ insert returned no row');
-	return row;
+	return fromRow(row);
 }
 
 export async function findCachedQuestionByPool(input: {
@@ -134,8 +148,8 @@ export async function findCachedQuestionByPool(input: {
 }): Promise<IQuestion | null> {
 	const db = getNeonDatabase(input.onDatabaseInit);
 	const predicates = [
-		eq(mcqQuestions.apClass, input.apClass),
-		eq(mcqQuestions.unit, input.unit),
+		eq(apClassField, input.apClass),
+		eq(unitField, input.unit),
 		ne(mcqQuestions.active, false),
 		input.fromPivot === 'after'
 			? gte(mcqQuestions.randomKey, input.pivot)
@@ -196,26 +210,41 @@ export interface StoredQuestion {
 	createdAt: string;
 }
 
-function toStoredQuestion(question: IQuestion): StoredQuestion {
+export function storedQuestionFromPayload(input: {
+	questionId: string;
+	data: McqQuestionPayload;
+	contentHash?: string | null;
+	createdAt: Date;
+}): StoredQuestion {
+	const { data } = input;
 	return {
-		id: question.questionId,
-		question: question.question,
-		optionA: question.optionA,
-		optionB: question.optionB,
-		optionC: question.optionC,
-		optionD: question.optionD,
-		correctAnswer: question.correctAnswer,
-		explanation: question.explanation,
-		...(question.hint1 != null ? { hint1: question.hint1 } : {}),
-		...(question.hint2 != null ? { hint2: question.hint2 } : {}),
-		apClass: question.apClass,
-		unit: question.unit,
-		contentHash: question.contentHash,
-		topicsCovered: question.topicsCovered ?? undefined,
-		diagramSpec: question.diagramSpec ?? undefined,
-		hasDiagram: question.hasDiagram,
-		createdAt: new Date(question.createdAt).toISOString()
+		id: input.questionId,
+		question: data.question,
+		optionA: data.optionA,
+		optionB: data.optionB,
+		optionC: data.optionC,
+		optionD: data.optionD,
+		correctAnswer: data.correctAnswer,
+		explanation: data.explanation,
+		...(data.hint1 != null ? { hint1: data.hint1 } : {}),
+		...(data.hint2 != null ? { hint2: data.hint2 } : {}),
+		apClass: data.apClass,
+		unit: data.unit,
+		...(input.contentHash ? { contentHash: input.contentHash } : {}),
+		...(data.topicsCovered?.trim() ? { topicsCovered: data.topicsCovered } : {}),
+		...(data.diagramSpec ? { diagramSpec: data.diagramSpec } : {}),
+		hasDiagram: data.hasDiagram ?? Boolean(data.diagramSpec),
+		createdAt: input.createdAt.toISOString()
 	};
+}
+
+function toStoredQuestion(question: IQuestion): StoredQuestion {
+	return storedQuestionFromPayload({
+		questionId: question.questionId,
+		data: question,
+		contentHash: question.contentHash,
+		createdAt: question.createdAt
+	});
 }
 
 /** Resolve an MCQ body from its canonical Neon row. */

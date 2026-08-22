@@ -41,7 +41,7 @@ flowchart TB
     subgraph Data["Persistence"]
         NeonDB[("Neon PostgreSQL<br/>Drizzle + Neon HTTPS")]
         LegacyS3[("Legacy AWS S3<br/>import source")]
-        StaticJSON["Static data<br/>unit-descriptionsrevised.json<br/>practice-pages.json"]
+        StaticJSON["Static data<br/>ap-classes-data-08212026.json"]
         BlogMD["Markdown<br/>src/content/blog/*.md"]
     end
 
@@ -172,14 +172,14 @@ Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShe
 
 **Roles**
 
-| Store / path                              | Role                                                                                                 |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Legacy S3** (`questions/`, `frqs/`)     | Optional one-time import source for older question objects; normal app paths never read or write it. |
-| **Neon active library**                   | Serving library: full question bodies in relational tables, indexed random selection per class/unit. |
-| **User request path**                     | Selection only — never calls the LLM, never writes S3, never waits on a generation lock.             |
-| **Refill workers** (cron + admin enqueue) | Only place that generates and inserts/upserts an active Neon PostgreSQL row.                         |
+| Store / path                              | Role                                                                                                                       |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Legacy S3** (`questions/`, `frqs/`)     | Optional one-time import source for older question objects; normal app paths never read or write it.                       |
+| **Neon active library**                   | Serving library: relational question rows with typed JSONB payloads and metadata, indexed random selection per class/unit. |
+| **User request path**                     | Selection only — never calls the LLM, never writes S3, never waits on a generation lock.                                   |
+| **Refill workers** (cron + admin enqueue) | Only place that generates and inserts/upserts an active Neon PostgreSQL row.                                               |
 
-Targets default to demand-scaled MCQ floors (JSON in `src/lib/data/question-pool-targets.json`: Biology preferred **35**, default preferred **20**, min **10** from generation-stats share) and **8 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
+Targets default to demand-scaled MCQ floors (the unified dataset's `questionBank.mcq.poolRules`: Biology preferred **35**, default preferred **20**, min **10** from generation-stats share) and **8 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
 
 The serving and generation paths are deliberately separate. A question request performs validation, one database connection, and an indexed pool query. It does not acquire generation locks, call an LLM, or persist question content. Consequently, request telemetry records only validation, database-connect, pool-query, and total latency; generation and persistence timings belong to worker results and pool-health telemetry.
 
@@ -190,7 +190,7 @@ flowchart TD
     Validate -->|ok| Pool["getQuestion / getFrqQuestion<br/>selection-only pool"]
 
     Pool --> Select{"Indexed random Neon select<br/>active rows · session excludes"}
-    Select -->|hit| LoadInline["Read body from Neon<br/>relational library fields"]
+    Select -->|hit| LoadInline["Read body from Neon<br/>typed JSONB payload + metadata"]
     Select -->|empty| Warming["503 POOL_WARMING<br/>enqueue refill request"]
     Select -->|db error| Unavailable["503 POOL_UNAVAILABLE<br/>no LLM fallback"]
 
@@ -399,12 +399,10 @@ erDiagram
 
     QUESTION_POOL {
         string questionId UK
-        string apClass
-        string unit
+        jsonb data
         string contentHash UK
         boolean active
         number randomKey
-        string question
     }
 
     POOL_REFILL_STATE {
@@ -456,10 +454,10 @@ erDiagram
 
 Question pool hits use Neon PostgreSQL over HTTPS. Choose a Neon region close to the primary Vercel deployment; cross-region RTT shows up as elevated `db_connect_ms` / `pool_query_ms` on `question_request` metrics and cannot be papered over in code.
 
-Operational checks and alert thresholds live in [`docs/question-request-metrics.md`](question-request-metrics.md). Public MCQ `POST /api/question` skips Better Auth session lookup in `hooks.server.ts` to avoid auth round-trips on the hot path; FRQ and `/api/me/*` retain full session resolution.
+Operational checks and alert thresholds live in `[docs/question-request-metrics.md](question-request-metrics.md)`. Public MCQ `POST /api/question` skips Better Auth session lookup in `hooks.server.ts` to avoid auth round-trips on the hot path; FRQ and `/api/me/*` retain full session resolution.
 
 # Database migration status
 
-The relational target is defined under `src/lib/server/neon/` and accessed through `db.ts` with Drizzle's Neon HTTP adapter. All application and operational runtime paths use Neon PostgreSQL.
+The relational target is defined under `src/lib/server/neon/` and accessed through `db.ts` with Drizzle's Neon HTTP adapter. Question bodies live in typed JSONB payloads on the canonical MCQ/FRQ rows; serving metadata and registry fields remain relational and indexed. All application and operational runtime paths use Neon PostgreSQL.
 
 The application uses Neon PostgreSQL and Drizzle directly. Domain functions issue focused Drizzle reads and writes; there is no Mongo-shaped compatibility layer.

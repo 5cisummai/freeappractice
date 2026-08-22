@@ -4,7 +4,9 @@
  * Targets are refill floors (generate until ≥ target), not caps — surplus stays active.
  */
 
-import poolTargets from '$lib/data/question-pool-targets.json';
+import { AP_DATA } from '$lib/data/ap-data';
+
+const poolTargets = AP_DATA.questionBank.mcq.poolRules;
 
 export const QUESTION_POOL_DEFAULT_MCQ_TARGET = poolTargets.defaultMcqTarget;
 export const QUESTION_POOL_MIN_MCQ_TARGET = poolTargets.minMcqTarget;

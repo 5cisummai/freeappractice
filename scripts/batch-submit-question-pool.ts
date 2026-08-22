@@ -2,7 +2,7 @@
  * scripts/batch-submit-question-pool.ts
  *
  * Build + submit an OpenAI Batch (~50% cheaper) for MCQ or FRQ pool deficits
- * vs `question-pool-targets.json` preferred ceilings (not demand-scaled).
+ * vs the unified dataset's `questionBank.mcq.poolRules` preferred ceilings (not demand-scaled).
  * Caps at remaining daily generation budget (default ~500/day).
  *
  *   bun run pool:batch-submit
@@ -85,7 +85,7 @@ async function main() {
 		questionType,
 		diagramsEnabled,
 		dryRun,
-		targetSource: 'question-pool-targets.json preferred ceilings'
+		targetSource: 'unified dataset questionBank.mcq.poolRules preferred ceilings'
 	});
 
 	if (!dryRun && maxRequests <= 0) {
@@ -136,7 +136,7 @@ async function main() {
 
 	if (slots.length === 0) {
 		console.log(
-			`No ${questionType.toUpperCase()} deficits vs question-pool-targets.json preferred ceilings for the given filters.`
+			`No ${questionType.toUpperCase()} deficits vs unified dataset preferred ceilings for the given filters.`
 		);
 		process.exit(0);
 	}

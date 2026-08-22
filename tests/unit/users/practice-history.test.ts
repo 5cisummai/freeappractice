@@ -140,19 +140,20 @@ describe('hydratePracticeHistoryItems', () => {
 		queueRows([
 			{
 				id: 'shared-question',
-				question: 'Shared question',
-				optionA: 'A',
-				optionB: 'B',
-				optionC: 'C',
-				optionD: 'D',
-				correctAnswer: 'A',
-				explanation: 'Because.',
-				hint1: null,
-				hint2: null,
-				apClass: 'AP Biology',
-				unit: 'Unit 1',
+				data: {
+					question: 'Shared question',
+					optionA: 'A',
+					optionB: 'B',
+					optionC: 'C',
+					optionD: 'D',
+					correctAnswer: 'A',
+					explanation: 'Because.',
+					hint1: null,
+					hint2: null,
+					apClass: 'AP Biology',
+					unit: 'Unit 1'
+				},
 				contentHash: 'hash',
-				topicsCovered: null,
 				createdAt: new Date('2026-07-01T00:00:00.000Z')
 			}
 		]);

@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { neon } from '@neondatabase/serverless';
+import { backfillQuestionJsonb } from './backfill-question-jsonb';
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!databaseUrl) throw new Error('DATABASE_URL is required');
@@ -19,6 +20,7 @@ if (!/^postgres(?:ql)?:\/\//i.test(databaseUrl))
 const sql = neon(databaseUrl);
 const migrationsDirectory = resolve(process.env.DRIZZLE_MIGRATIONS_DIR ?? 'drizzle');
 const statementBreakpoint = /--> statement-breakpoint/g;
+const QUESTION_JSONB_CLEANUP_MIGRATION = '0020_nice_exiles.sql';
 
 function checksum(contents: string): string {
 	return createHash('sha256').update(contents).digest('hex');
@@ -33,7 +35,17 @@ async function main(): Promise<void> {
 		)
 	`);
 
-	const files = (await readdir(migrationsDirectory)).filter((file) => file.endsWith('.sql')).sort();
+	const allFiles = (await readdir(migrationsDirectory))
+		.filter((file) => file.endsWith('.sql'))
+		.sort();
+	const through = process.env.DRIZZLE_MIGRATIONS_THROUGH?.trim();
+	let files = allFiles;
+	if (through) {
+		const throughFile = through.endsWith('.sql') ? through : `${through}.sql`;
+		const throughIndex = allFiles.indexOf(throughFile);
+		if (throughIndex === -1) throw new Error(`Migration cap does not match a SQL file: ${through}`);
+		files = allFiles.slice(0, throughIndex + 1);
+	}
 
 	for (const file of files) {
 		const id = file.replace(/\.sql$/, '');
@@ -48,6 +60,11 @@ async function main(): Promise<void> {
 				throw new Error(`Applied migration was modified: ${file}`);
 			continue;
 		}
+
+		// The cleanup migration drops the legacy columns/tables after the JSONB
+		// payload is populated. Keep the normal `db:apply` path safe for callers
+		// that do not use the CI-specific migration cap and backfill step.
+		if (file === QUESTION_JSONB_CLEANUP_MIGRATION) await backfillQuestionJsonb();
 
 		const transaction = contents
 			.split(statementBreakpoint)

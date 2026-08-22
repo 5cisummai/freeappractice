@@ -10,6 +10,7 @@ import {
 	mcqQuestions,
 	quizAttempts
 } from '$lib/server/neon/schema';
+import { storedQuestionFromPayload } from '$lib/question-bank/mcq/repository.server';
 import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
 type McqHistoryItem = {
@@ -136,21 +137,8 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 	const rows = await db
 		.select({
 			id: mcqQuestions.questionId,
-			question: mcqQuestions.question,
-			diagramSpec: mcqQuestions.diagramSpec,
-			hasDiagram: mcqQuestions.hasDiagram,
-			optionA: mcqQuestions.optionA,
-			optionB: mcqQuestions.optionB,
-			optionC: mcqQuestions.optionC,
-			optionD: mcqQuestions.optionD,
-			correctAnswer: mcqQuestions.correctAnswer,
-			explanation: mcqQuestions.explanation,
-			hint1: mcqQuestions.hint1,
-			hint2: mcqQuestions.hint2,
-			apClass: mcqQuestions.apClass,
-			unit: mcqQuestions.unit,
+			data: mcqQuestions.data,
 			contentHash: mcqQuestions.contentHash,
-			topicsCovered: mcqQuestions.topicsCovered,
 			createdAt: mcqQuestions.createdAt
 		})
 		.from(mcqQuestions)
@@ -158,25 +146,12 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 	const lookup = new Map<string, StoredQuestion>(
 		rows.map((row) => [
 			row.id,
-			{
-				id: row.id,
-				question: row.question,
-				diagramSpec: row.diagramSpec ?? undefined,
-				hasDiagram: row.hasDiagram,
-				optionA: row.optionA,
-				optionB: row.optionB,
-				optionC: row.optionC,
-				optionD: row.optionD,
-				explanation: row.explanation,
-				correctAnswer: row.correctAnswer as StoredQuestion['correctAnswer'],
-				createdAt: row.createdAt.toISOString(),
-				...(row.hint1 !== null ? { hint1: row.hint1 } : {}),
-				...(row.hint2 !== null ? { hint2: row.hint2 } : {}),
-				...(row.apClass !== null ? { apClass: row.apClass } : {}),
-				...(row.unit !== null ? { unit: row.unit } : {}),
-				...(row.contentHash !== null ? { contentHash: row.contentHash } : {}),
-				...(row.topicsCovered !== null ? { topicsCovered: row.topicsCovered } : {})
-			}
+			storedQuestionFromPayload({
+				questionId: row.id,
+				data: row.data,
+				contentHash: row.contentHash,
+				createdAt: row.createdAt
+			})
 		])
 	);
 

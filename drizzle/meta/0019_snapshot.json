@@ -1,6 +1,6 @@
 {
-  "id": "f81ca939-f69e-4158-8f80-c3d56b513758",
-  "prevId": "c4ca1338-5fb2-404e-b805-1e118f54d4dd",
+  "id": "d036bd87-b7df-41df-9db2-f6d6a917e28f",
+  "prevId": "14d46011-8ba8-427a-9684-bc1e9d950724",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -890,7 +890,7 @@
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true
         },
@@ -4489,6 +4489,12 @@
           "primaryKey": true,
           "notNull": true
         },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "ap_class": {
           "name": "ap_class",
           "type": "text",
@@ -4902,6 +4908,12 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "ap_class": {
           "name": "ap_class",

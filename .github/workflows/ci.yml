@@ -76,7 +76,18 @@ jobs:
         env:
           DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
 
-      - name: Apply migrations
+      - name: Apply additive migrations
+        run: bun run db:apply
+        env:
+          DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
+          DRIZZLE_MIGRATIONS_THROUGH: 0019_giant_wolverine
+
+      - name: Backfill question JSONB payloads
+        run: bun run db:backfill-question-jsonb
+        env:
+          DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
+
+      - name: Apply remaining migrations
         run: bun run db:apply
         env:
           DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}

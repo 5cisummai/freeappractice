@@ -4,11 +4,7 @@ import {
 	frqAttemptCriterionGrades,
 	frqAttemptGrades,
 	frqAttempts,
-	frqMaterials,
 	frqQuestions,
-	frqRubricCriteria,
-	frqRubricLevels,
-	frqSections,
 	questionRecentTopics,
 	questionRegistry
 } from '$lib/server/neon/schema';
@@ -24,16 +20,30 @@ const mocks = vi.hoisted(() => ({
 	queries: [] as Array<Record<string, unknown>>,
 	questionRow: {
 		questionId: 'frq-1',
-		apClass: 'AP Biology',
-		unit: 'Unit 4',
-		formatId: 'scientific-analysis',
-		profileVersion: 'biology-v1',
-		promptVersion: 'frq-v1',
-		rubricVersion: 'rubric-v1',
-		schemaVersion: 1,
-		prompt: 'Analyze the scenario.',
-		totalPoints: 2,
-		topicsCovered: 'Cell signaling',
+		data: {
+			apClass: 'AP Biology',
+			unit: 'Unit 4',
+			formatId: 'scientific-analysis',
+			profileVersion: 'biology-v1',
+			promptVersion: 'frq-v1',
+			rubricVersion: 'rubric-v1',
+			schemaVersion: 1,
+			prompt: 'Analyze the scenario.',
+			materials: [{ id: 'material-1', title: 'Results', content: 'A: 2' }],
+			sections: [{ id: 'a', label: 'A', prompt: 'Explain.', responseKind: 'text', maxPoints: 2 }],
+			rubric: [
+				{
+					id: 'criterion-1',
+					sectionId: 'a',
+					label: 'Reasoning',
+					maxPoints: 2,
+					referenceAnswer: 'A correct explanation.',
+					levels: [{ points: 2, description: 'Complete answer.' }]
+				}
+			],
+			totalPoints: 2,
+			topicsCovered: 'Cell signaling'
+		},
 		contentHash: 'hash-1',
 		randomKey: 0.5,
 		active: true,
@@ -67,54 +77,6 @@ function builder(kind: string, table: unknown) {
 	return query;
 }
 
-function childRows(table: unknown) {
-	if (table === frqMaterials)
-		return [
-			{
-				questionId: 'frq-1',
-				materialId: 'material-1',
-				title: 'Results',
-				content: 'A: 2',
-				position: 0
-			}
-		];
-	if (table === frqSections)
-		return [
-			{
-				questionId: 'frq-1',
-				sectionId: 'a',
-				label: 'A',
-				prompt: 'Explain.',
-				responseKind: 'text',
-				maxPoints: 2,
-				position: 0
-			}
-		];
-	if (table === frqRubricCriteria)
-		return [
-			{
-				questionId: 'frq-1',
-				criterionId: 'criterion-1',
-				sectionId: 'a',
-				label: 'Reasoning',
-				maxPoints: 2,
-				referenceAnswer: 'A correct explanation.',
-				position: 0
-			}
-		];
-	if (table === frqRubricLevels)
-		return [
-			{
-				questionId: 'frq-1',
-				criterionId: 'criterion-1',
-				points: 2,
-				description: 'Complete answer.',
-				position: 0
-			}
-		];
-	return [];
-}
-
 function configureDatabase() {
 	mocks.queries.length = 0;
 	mocks.db.batch.mockResolvedValue(undefined);
@@ -124,8 +86,7 @@ function configureDatabase() {
 	mocks.db.select.mockImplementation(() => ({
 		from: (table: unknown) => ({
 			where: () => ({
-				limit: async () => (table === frqQuestions ? [mocks.questionRow] : []),
-				orderBy: async () => childRows(table)
+				limit: async () => (table === frqQuestions ? [mocks.questionRow] : [])
 			})
 		})
 	}));
@@ -177,28 +138,16 @@ describe('direct FRQ persistence', () => {
 		configureDatabase();
 	});
 
-	it('writes the registry, parent, and child rows in one Drizzle batch', async () => {
+	it('writes the registry and complete JSONB question in one Drizzle batch', async () => {
 		const result = await createFrqQuestion(input);
 		const [writes] = mocks.db.batch.mock.calls[0] as [Array<Record<string, unknown>>];
 
-		expect(writes).toHaveLength(11);
+		expect(writes).toHaveLength(3);
 		expect(writes.slice(0, 2).map((query) => query.table)).toEqual([
 			questionRegistry,
 			frqQuestions
 		]);
-		expect(writes.slice(2, 6).map((query) => query.kind)).toEqual([
-			'delete',
-			'delete',
-			'delete',
-			'delete'
-		]);
-		expect(writes.slice(6).map((query) => query.table)).toEqual([
-			frqMaterials,
-			frqSections,
-			frqRubricCriteria,
-			frqRubricLevels,
-			questionRecentTopics
-		]);
+		expect(writes[2]?.table).toBe(questionRecentTopics);
 		expect(result.materials[0]).toEqual({ id: 'material-1', title: 'Results', content: 'A: 2' });
 		expect(result.rubric[0]?.levels).toEqual([{ points: 2, description: 'Complete answer.' }]);
 	});

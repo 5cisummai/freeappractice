@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { getCourses } from '$lib/catalog/ap-classes';
-import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
+import { UNIT_DESCRIPTIONS } from '$lib/data/ap-data';
 import {
 	buildMcqGenerationPrompt,
 	getUnitContextData
 } from '$lib/question-bank/mcq/generation.server';
 
 describe('MCQ unit context (exact catalog keys)', () => {
-	it('covers every ap-classes.json course and unit exactly once', () => {
-		const data = unitDescriptions as {
-			courses: Array<{ apClass: string; units: Array<{ unit: string }> }>;
-		};
-
-		const descCourses = new Map(data.courses.map((course) => [course.apClass, course]));
+	it('covers every unified AP course and unit exactly once', () => {
+		const descCourses = new Map(
+			UNIT_DESCRIPTIONS.courses.map((course) => [course.apClass, course])
+		);
 		expect(descCourses.size).toBe(getCourses().length);
 
 		for (const course of getCourses()) {
@@ -44,8 +42,8 @@ describe('MCQ unit context (exact catalog keys)', () => {
 			className: 'AP Calculus AB',
 			unit: 'Unit 1: Limits and Continuity'
 		});
-		expect(system).toContain('UNIT CONTEXT: Unit 1: Limits and Continuity');
-		expect(system).toContain('COURSE-GUIDANCE:');
+		expect(system).toContain('UNIT FOCUS: Unit 1: Limits and Continuity');
+		expect(system).not.toContain('COURSE-GUIDANCE:');
 		expect(system).toMatch(/REQUIRED KEYWORDS\/CONSTRAINTS:|Key Topics:/);
 	});
 });

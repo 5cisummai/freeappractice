@@ -2,7 +2,8 @@ import { auth } from '$lib/auth/server';
 import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/question-bank/pool-constants';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
-import { and, asc, count, eq, inArray, max, min } from 'drizzle-orm';
+import { questionPayloadTextField } from '$lib/server/neon/jsonb';
+import { and, asc, count, eq, inArray, max, min, sql } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
@@ -105,30 +106,34 @@ async function aggregateActiveBuckets(
 ): Promise<Map<string, BucketAggRow>> {
 	const map = new Map<string, BucketAggRow>();
 	const db = getNeonDatabase();
+	const mcqApClass = questionPayloadTextField(mcqQuestions.data, 'apClass');
+	const mcqUnit = questionPayloadTextField(mcqQuestions.data, 'unit');
+	const frqApClass = questionPayloadTextField(frqQuestions.data, 'apClass');
+	const frqUnit = questionPayloadTextField(frqQuestions.data, 'unit');
 	const rows =
 		questionType === 'mcq'
 			? await db
 					.select({
-						apClass: mcqQuestions.apClass,
-						unit: mcqQuestions.unit,
+						apClass: mcqApClass,
+						unit: mcqUnit,
 						total: count(),
 						oldestCreatedAt: min(mcqQuestions.createdAt),
 						newestCreatedAt: max(mcqQuestions.createdAt)
 					})
 					.from(mcqQuestions)
 					.where(eq(mcqQuestions.active, true))
-					.groupBy(mcqQuestions.apClass, mcqQuestions.unit)
+					.groupBy(mcqApClass, mcqUnit)
 			: await db
 					.select({
-						apClass: frqQuestions.apClass,
-						unit: frqQuestions.unit,
+						apClass: frqApClass,
+						unit: frqUnit,
 						total: count(),
 						oldestCreatedAt: min(frqQuestions.createdAt),
 						newestCreatedAt: max(frqQuestions.createdAt)
 					})
 					.from(frqQuestions)
 					.where(eq(frqQuestions.active, true))
-					.groupBy(frqQuestions.apClass, frqQuestions.unit);
+					.groupBy(frqApClass, frqUnit);
 	for (const row of rows) {
 		const key = `${row.apClass}::${row.unit}`;
 		map.set(key, {
@@ -330,12 +335,12 @@ export async function retirePoolBucketQuestions(
 ): Promise<{ retired: number; enqueued: true }> {
 	const table = bucket.questionType === 'mcq' ? mcqQuestions : frqQuestions;
 	const db = getNeonDatabase();
+	const apClass = questionPayloadTextField(table.data, 'apClass');
+	const unit = questionPayloadTextField(table.data, 'unit');
 	const rows = await db
 		.select({ questionId: table.questionId })
 		.from(table)
-		.where(
-			and(eq(table.apClass, bucket.apClass), eq(table.unit, bucket.unit), eq(table.active, true))
-		)
+		.where(and(eq(apClass, bucket.apClass), eq(unit, bucket.unit), eq(table.active, true)))
 		.orderBy(asc(table.createdAt))
 		.limit(quantity);
 	const questionIds = rows.map((row) => row.questionId);

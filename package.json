@@ -22,6 +22,7 @@
 		"pool:retire": "bun scripts/retire-question-pool.ts",
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
 		"db:apply": "bun scripts/apply-neon-migrations.ts",
+		"db:backfill-question-jsonb": "bun scripts/backfill-question-jsonb.ts",
 		"auth:cleanup-unverified": "bun scripts/cleanup-unverified-users.ts",
 		"auth:trim-user-names": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/trim-user-names.ts",
 		"auth:backfill-personal-orgs": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/backfill-personal-organizations.ts",
