@@ -48,6 +48,7 @@ export type BugReportContext = {
 export type GeneratedQuestion = {
 	questionId?: string;
 	topic?: string;
+	mainTopic?: string;
 	source?: 'cached' | 'generated';
 	prompt: string;
 	options: QuestionOption[];

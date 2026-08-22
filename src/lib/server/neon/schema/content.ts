@@ -21,6 +21,8 @@ export const contentSchema = pgSchema('content');
 export type McqQuestionPayload = {
 	apClass: string;
 	unit: string;
+	/** Primary app-authored topic selected for the question. Absent on legacy rows. */
+	mainTopic?: string;
 	topicsCovered: string;
 	question: string;
 	diagramSpec: Record<string, unknown> | null;

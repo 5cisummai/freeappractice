@@ -116,3 +116,14 @@ export function isBelowLowWater(
 	if (target <= 0) return false;
 	return activeCount < Math.ceil(target * lowWaterRatio);
 }
+
+/** Admin bulk action: retire this share of the oldest active questions per bucket. */
+export const POOL_RETIRE_OLDEST_PERCENT = 30;
+
+export function poolRetireQuantityForBucket(
+	activeCount: number,
+	percent: number = POOL_RETIRE_OLDEST_PERCENT
+): number {
+	if (activeCount <= 0 || percent <= 0) return 0;
+	return Math.floor(activeCount * (percent / 100));
+}

@@ -52,6 +52,7 @@ export function toFrqQuestion(doc: IFrqQuestion): FrqQuestion {
 		sections: doc.sections,
 		rubric: doc.rubric,
 		totalPoints: doc.totalPoints,
+		mainTopic: doc.mainTopic ?? '',
 		topicsCovered: doc.topicsCovered,
 		apClass: doc.apClass,
 		unit: doc.unit
@@ -128,6 +129,7 @@ export async function createFrqQuestion(input: {
 	sections?: FrqSection[];
 	rubric?: FrqRubricCriterion[];
 	totalPoints: number;
+	mainTopic?: string;
 	topicsCovered: string;
 	contentHash: string;
 	randomKey?: number;
@@ -153,6 +155,7 @@ export async function createFrqQuestion(input: {
 		sections: input.sections ?? [],
 		rubric: input.rubric ?? [],
 		totalPoints: input.totalPoints,
+		mainTopic: input.mainTopic?.trim() ?? '',
 		topicsCovered: input.topicsCovered
 	};
 

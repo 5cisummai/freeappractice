@@ -30,6 +30,7 @@ export type CanonicalMcqInput = Omit<
 	| 'diagramSpec'
 	| 'hint1'
 	| 'hint2'
+	| 'mainTopic'
 	| 'topicsCovered'
 	| 'createdAt'
 	| 'updatedAt'
@@ -44,6 +45,7 @@ export type CanonicalMcqInput = Omit<
 			| 'diagramSpec'
 			| 'hint1'
 			| 'hint2'
+			| 'mainTopic'
 			| 'topicsCovered'
 		>
 	>;
@@ -71,10 +73,12 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 	if (!questionId) throw new Error('MCQ question requires questionId');
 
 	const unit = input.unit ?? 'all-units';
+	const mainTopic = input.mainTopic?.trim() ?? '';
 	const topicsCovered = input.topicsCovered?.trim() ?? '';
 	const data: McqQuestionPayload = {
 		apClass: input.apClass,
 		unit,
+		mainTopic,
 		topicsCovered,
 		question: input.question,
 		diagramSpec: input.diagramSpec ?? null,
@@ -203,6 +207,7 @@ export interface StoredQuestion {
 	hint2?: string;
 	apClass?: string;
 	unit?: string;
+	mainTopic?: string;
 	contentHash?: string;
 	topicsCovered?: string;
 	diagramSpec?: Record<string, unknown>;
@@ -230,6 +235,7 @@ export function storedQuestionFromPayload(input: {
 		...(data.hint2 != null ? { hint2: data.hint2 } : {}),
 		apClass: data.apClass,
 		unit: data.unit,
+		...(data.mainTopic?.trim() ? { mainTopic: data.mainTopic } : {}),
 		...(input.contentHash ? { contentHash: input.contentHash } : {}),
 		...(data.topicsCovered?.trim() ? { topicsCovered: data.topicsCovered } : {}),
 		...(data.diagramSpec ? { diagramSpec: data.diagramSpec } : {}),

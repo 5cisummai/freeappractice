@@ -59,6 +59,7 @@ const FrqQuestionBaseSchema = z
 		sections: z.array(FrqSectionSchema).min(1).max(12),
 		rubric: z.array(FrqRubricCriterionSchema).min(1).max(30),
 		totalPoints: z.number().int().min(1).max(100),
+		mainTopic: z.string().trim().max(240).default(''),
 		topicsCovered: z.string().trim().min(1).max(1_000),
 		apClass: z.string().trim().min(1).max(120),
 		unit: z.string().trim().min(1).max(200)
@@ -130,7 +131,10 @@ export const PublicFrqQuestionSchema = FrqQuestionBaseSchema.omit({ rubric: true
 	questionId: stableId
 });
 
-export type PublicFrqQuestion = Omit<FrqQuestion, 'rubric'> & { questionId: string };
+export type PublicFrqQuestion = Omit<FrqQuestion, 'rubric' | 'mainTopic'> & {
+	questionId: string;
+	mainTopic?: string;
+};
 
 export const FrqGradeModelOutputSchema = z
 	.object({

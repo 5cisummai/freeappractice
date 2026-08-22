@@ -58,7 +58,7 @@ function buildUnitSections(
 	const ctx = getUnitContextData(className, unit);
 	if (!ctx) return { unitContext: '', keywordsContext: '' };
 	return {
-		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.description ? `${ctx.description}\n` : ''}${ctx.topics.length ? `App-authored focus: ${ctx.topics.join(', ')}\n` : ''}`,
+		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.description ? `${ctx.description}\n` : ''}${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
 		keywordsContext:
 			ctx.keywords.length > 0
 				? `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your ${questionLabel} MUST focus ONLY on these specific keywords and topics. ***\n`
@@ -105,6 +105,14 @@ const APQuestionFields = {
 		.string()
 		.describe(
 			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
+		),
+	mainTopic: z
+		.string()
+		.trim()
+		.min(1)
+		.max(240)
+		.describe(
+			'The single primary topic this question tests. When a unit provides MAIN TOPIC OPTIONS, choose exactly one of those options.'
 		),
 	topicsCovered: z
 		.string()

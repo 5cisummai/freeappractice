@@ -47,6 +47,7 @@ const validGeneratedQuestion = {
 	explanation: 'Intensive subsistence farming often centers on wet-rice cultivation.',
 	hint1: 'Think about high labor input on small parcels of land.',
 	hint2: 'Consider East and South Asian rice paddies rather than cattle ranching.',
+	mainTopic: 'Intensive subsistence agriculture',
 	topicsCovered: 'Intensive subsistence agriculture and wet-rice farming patterns',
 	diagram: null
 };

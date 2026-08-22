@@ -136,7 +136,8 @@ function normalizeQuestionPayload(
 
 	return {
 		questionId: resolveQuestionId(obj, questionIdFromApi),
-		topic: String(obj.topicsCovered ?? '').trim() || undefined,
+		mainTopic: String(obj.mainTopic ?? '').trim() || undefined,
+		topic: String(obj.mainTopic ?? obj.topicsCovered ?? '').trim() || undefined,
 		prompt,
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),

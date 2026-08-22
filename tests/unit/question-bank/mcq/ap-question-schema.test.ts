@@ -27,6 +27,7 @@ describe('apQuestionSchema OpenAI structured-output compatibility', () => {
 			explanation: 'The diagram shows 60°.',
 			hint1: 'Read the marked angle.',
 			hint2: 'Use the angle label.',
+			mainTopic: 'Angle measurement',
 			topicsCovered: 'Angles',
 			diagram: JSON.stringify({
 				type: 'unit-circle',

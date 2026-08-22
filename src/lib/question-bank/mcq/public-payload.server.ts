@@ -11,7 +11,8 @@ export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQu
 
 	return {
 		questionId: question.id,
-		topic: question.topicsCovered,
+		topic: question.mainTopic || question.topicsCovered,
+		mainTopic: question.mainTopic,
 		source: 'cached',
 		prompt: question.question,
 		options,
@@ -34,6 +35,7 @@ export function storedQuestionToMcqAnswerBody(question: StoredQuestion): Record<
 		optionD: question.optionD,
 		correctAnswer: question.correctAnswer,
 		explanation: question.explanation,
+		mainTopic: question.mainTopic ?? '',
 		topicsCovered: question.topicsCovered ?? '',
 		hint1: question.hint1 ?? '',
 		hint2: question.hint2 ?? '',

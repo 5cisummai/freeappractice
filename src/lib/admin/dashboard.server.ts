@@ -1,5 +1,10 @@
 import { auth } from '$lib/auth/server';
-import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/question-bank/pool-constants';
+import {
+	POOL_RETIRE_OLDEST_PERCENT,
+	QUESTION_POOL_CONFIG,
+	poolRetireQuantityForBucket,
+	poolTargetForBucket
+} from '$lib/question-bank/pool-constants';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
 import { questionPayloadTextField } from '$lib/server/neon/jsonb';
@@ -354,6 +359,35 @@ export async function retirePoolBucketQuestions(
 
 	await requestPoolRefill(bucket);
 	return { retired: questionIds.length, enqueued: true };
+}
+
+/** Retire the oldest active questions in every bucket, then queue refills. */
+export async function retireOldestPoolPercent(
+	percent: number = POOL_RETIRE_OLDEST_PERCENT
+): Promise<{ retired: number; bucketsAffected: number; enqueued: number }> {
+	if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+		throw new Error('percent must be between 1 and 100');
+	}
+
+	const snapshot = await getPoolReadinessSnapshot();
+	let retired = 0;
+	let bucketsAffected = 0;
+	let enqueued = 0;
+
+	for (const bucket of snapshot.buckets) {
+		const quantity = poolRetireQuantityForBucket(bucket.activeCount, percent);
+		if (quantity < 1) continue;
+
+		const result = await retirePoolBucketQuestions(
+			{ questionType: bucket.questionType, apClass: bucket.apClass, unit: bucket.unit },
+			quantity
+		);
+		retired += result.retired;
+		if (result.retired > 0) bucketsAffected += 1;
+		enqueued += 1;
+	}
+
+	return { retired, bucketsAffected, enqueued };
 }
 
 /** Enqueue every catalog deficit for async refill. Never runs LLM generation. */

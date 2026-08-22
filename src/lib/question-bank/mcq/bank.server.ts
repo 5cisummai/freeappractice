@@ -14,6 +14,7 @@ type McqAnswerBody = {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
+	mainTopic: string;
 	topicsCovered: string;
 	hint1: string;
 	hint2: string;
@@ -40,6 +41,7 @@ function hotPoolBodyFromDoc(
 		| 'optionD'
 		| 'correctAnswer'
 		| 'explanation'
+		| 'mainTopic'
 		| 'topicsCovered'
 		| 'hint1'
 		| 'hint2'
@@ -55,6 +57,7 @@ function hotPoolBodyFromDoc(
 		optionD: doc.optionD,
 		correctAnswer: doc.correctAnswer,
 		explanation: doc.explanation,
+		mainTopic: doc.mainTopic ?? '',
 		topicsCovered: doc.topicsCovered ?? '',
 		hint1: doc.hint1 ?? '',
 		hint2: doc.hint2 ?? '',

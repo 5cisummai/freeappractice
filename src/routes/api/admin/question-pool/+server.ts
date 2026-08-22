@@ -5,8 +5,10 @@ import {
 	enqueueAllPoolDeficits,
 	enqueuePoolBucketRefill,
 	getPoolReadinessSnapshot,
+	retireOldestPoolPercent,
 	retirePoolBucketQuestions
 } from '$lib/admin/dashboard.server';
+import { POOL_RETIRE_OLDEST_PERCENT } from '$lib/question-bank/pool-constants';
 import type { PoolQuestionType } from '$lib/admin/types';
 
 function requireAdmin(event: Parameters<RequestHandler>[0]): string {
@@ -81,6 +83,20 @@ export const POST: RequestHandler = async (event) => {
 				{ questionType: body.questionType, apClass, unit },
 				quantity
 			);
+			return json({ ok: true, ...result }, { status: 202 });
+		}
+		case 'retireOldestPercent': {
+			const percent =
+				typeof body.percent === 'number' && Number.isFinite(body.percent)
+					? body.percent
+					: POOL_RETIRE_OLDEST_PERCENT;
+			if (!Number.isInteger(percent) || percent < 1 || percent > 100) {
+				return json(
+					{ message: 'percent must be a whole number between 1 and 100' },
+					{ status: 400 }
+				);
+			}
+			const result = await retireOldestPoolPercent(percent);
 			return json({ ok: true, ...result }, { status: 202 });
 		}
 		case 'refresh':

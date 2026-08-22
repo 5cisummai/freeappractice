@@ -39,6 +39,7 @@ function buildHotPoolDoc(opts: {
 	| 'questionId'
 	| 'apClass'
 	| 'unit'
+	| 'mainTopic'
 	| 'contentHash'
 	| 'topicsCovered'
 	| 'question'
@@ -61,6 +62,7 @@ function buildHotPoolDoc(opts: {
 		apClass: opts.apClass,
 		unit: opts.unit,
 		contentHash: opts.contentHash,
+		mainTopic: answer.mainTopic,
 		topicsCovered: answer.topicsCovered ?? '',
 		question: answer.question,
 		diagramSpec: answer.diagram ?? null,
