@@ -35,6 +35,7 @@ export const POST: RequestHandler = async (event) => {
 		apClass?: string;
 		unit?: string;
 		quantity?: number;
+		percent?: number;
 	};
 
 	switch (body.action) {

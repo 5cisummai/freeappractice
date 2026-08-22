@@ -42,10 +42,7 @@
 		})
 	);
 	const retireOldestPreviewCount = $derived(
-		liveBuckets.reduce(
-			(sum, bucket) => sum + poolRetireQuantityForBucket(bucket.activeCount),
-			0
-		)
+		liveBuckets.reduce((sum, bucket) => sum + poolRetireQuantityForBucket(bucket.activeCount), 0)
 	);
 	const retireOldestPreviewBuckets = $derived(
 		liveBuckets.filter((bucket) => poolRetireQuantityForBucket(bucket.activeCount) >= 1).length
@@ -298,8 +295,8 @@
 					1
 						? ''
 						: 's'}, starting with the oldest in each class/unit. Retired questions stop appearing in
-					practice, but history and bookmarks still resolve. Refill jobs are queued for every affected
-					bucket.
+					practice, but history and bookmarks still resolve. Refill jobs are queued for every
+					affected bucket.
 				</AlertDialog.Description>
 			</AlertDialog.Header>
 			<AlertDialog.Footer>

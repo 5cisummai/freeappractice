@@ -8,7 +8,7 @@ import {
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
 import { questionPayloadTextField } from '$lib/server/neon/jsonb';
-import { and, asc, count, eq, inArray, max, min, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, max, min } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
