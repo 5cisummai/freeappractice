@@ -2,21 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { studyPlans, studyTasks } from '$lib/server/neon/schema';
-import { isSuperInsightsEnabled } from '$lib/flags';
 import { getPlanAccess } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
-import {
-	getCurrentEligibleInsightReport,
-	type InsightClaim,
-	type InsightReportData
-} from '$lib/super/insights.server';
 import { hasPaidCapability, type StudyPlanView, type StudyTask } from '$lib/super/types';
 import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 
-export const STUDY_PLAN_DAYS = 7;
 export const STUDY_PLAN_RETENTION_DAYS = 90;
 export const STUDY_PLAN_MAX_TASK_MINUTES = 30;
-export const STUDY_PLAN_DEFAULT_TASK_MINUTES = 25;
 
 export type StudyPlanDraft = {
 	startsOn: string | Date;
@@ -48,79 +40,7 @@ function startOfUtcDay(value: Date | string): Date {
 	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
-function dateForDay(startsOn: Date, offset: number): string {
-	const date = new Date(startsOn.getTime());
-	date.setUTCDate(date.getUTCDate() + offset);
-	return date.toISOString();
-}
-
-function taskHref(claim: InsightClaim): string {
-	const params = new URLSearchParams({ apClass: claim.apClass, unit: claim.unit });
-	if (claim.source === 'frq') params.set('mode', 'frq');
-	return `/app/practice?${params.toString()}`;
-}
-
-function comparePlanClaim(a: InsightClaim, b: InsightClaim): number {
-	return (
-		a.metric.weightedAveragePercentage - b.metric.weightedAveragePercentage ||
-		b.metric.count - a.metric.count ||
-		a.apClass.localeCompare(b.apClass) ||
-		a.unit.localeCompare(b.unit) ||
-		a.source.localeCompare(b.source)
-	);
-}
-
-function reportClaims(report: InsightReportData): InsightClaim[] {
-	const claims = [...report.weaknesses];
-	if (!claims.length) {
-		for (const course of report.courses) {
-			for (const unit of course.units) claims.push(...unit.weaknesses, ...unit.strengths);
-		}
-	}
-	return [
-		...new Map(
-			claims.map((claim) => [`${claim.source}:${claim.apClass}:${claim.unit}`, claim])
-		).values()
-	].sort(comparePlanClaim);
-}
-
-/** Build a deterministic seven-day draft from eligible insight claims. */
-export function buildStudyPlanDraft(
-	report: InsightReportData,
-	options: { startsOn?: Date | string; taskMinutes?: number } = {}
-): StudyPlanDraft {
-	if (!report.eligibility.eligible) {
-		throw new Error('An eligible insight report is required to build a study plan');
-	}
-	const startsOn = startOfUtcDay(options.startsOn ?? report.calculation.asOf);
-	const durationMinutes = Math.max(
-		5,
-		Math.min(
-			STUDY_PLAN_MAX_TASK_MINUTES,
-			Math.round(options.taskMinutes ?? STUDY_PLAN_DEFAULT_TASK_MINUTES)
-		)
-	);
-	const claims = reportClaims(report);
-	if (!claims.length) return { startsOn: startsOn.toISOString(), tasks: [] };
-
-	const tasks: StudyTask[] = Array.from({ length: STUDY_PLAN_DAYS }, (_, day) => {
-		const claim = claims[day % claims.length];
-		return {
-			id: `super-study-${dateForDay(startsOn, day).slice(0, 10)}-${day + 1}`,
-			apClass: claim.apClass,
-			unit: claim.unit,
-			mode: claim.source,
-			date: dateForDay(startsOn, day),
-			durationMinutes,
-			status: 'todo',
-			practiceHref: taskHref(claim)
-		};
-	});
-	return { startsOn: startsOn.toISOString(), tasks };
-}
-
 async function requireStudyPlanAccess(userId: string, now = new Date()): Promise<void> {
-	if (!(await isSuperInsightsEnabled())) throw new StudyPlansLockedError();
 	const planAccess = await getPlanAccess(userId, now);
 	if (!hasPaidCapability(planAccess, 'studyPlans')) throw new StudyPlansLockedError();
 	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new StudyPlansLockedError();
@@ -393,18 +313,6 @@ export async function getCurrentStudyPlan(
 	}
 	const plan = await readStoredPlan(userId);
 	return plan ? toStudyPlanView(plan) : null;
-}
-
-/** Build and save a one-week plan from the latest still-eligible report. */
-export async function generateStudyPlan(
-	userId: string,
-	options: { startsOn?: Date | string; behavior?: 'replace' | 'merge'; taskMinutes?: number } = {}
-): Promise<StudyPlanView | null> {
-	await requireStudyPlanAccess(userId);
-	const report = await getCurrentEligibleInsightReport(userId);
-	if (!report) return null;
-	const draft = buildStudyPlanDraft(report.report, options);
-	return saveStudyPlan(userId, draft, { behavior: options.behavior ?? 'replace' });
 }
 
 export async function deleteStudyPlan(userId: string): Promise<void> {

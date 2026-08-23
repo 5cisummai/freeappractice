@@ -480,29 +480,6 @@ export const superUsageRollups = appSchema.table(
 	(table) => [primaryKey({ columns: [table.userId, table.month] })]
 );
 
-export const insightReports = appSchema.table(
-	'insight_reports',
-	{
-		id: text('id').primaryKey(),
-		userId: text('user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		report: jsonb('report').$type<Record<string, unknown>>().notNull(),
-		evidenceAttemptCount: integer('evidence_attempt_count').notNull(),
-		generatedAt: timestamp('generated_at', { withTimezone: true, mode: 'date' }).notNull(),
-		manual: boolean('manual').notNull(),
-		pdfData: bytea('pdf_data'),
-		pdfGeneratedAt: timestamp('pdf_generated_at', { withTimezone: true, mode: 'date' }),
-		pdfGenerationVersion: integer('pdf_generation_version'),
-		feedback: text('feedback'),
-		feedbackReason: text('feedback_reason'),
-		lockedAt: timestamp('locked_at', { withTimezone: true, mode: 'date' }),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [index('insight_reports_user_generated_idx').on(table.userId, table.generatedAt)]
-);
-
 export const studyPlans = appSchema.table(
 	'study_plans',
 	{

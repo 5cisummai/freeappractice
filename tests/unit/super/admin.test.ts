@@ -6,7 +6,6 @@ const mocks = vi.hoisted(() => ({
 	update: vi.fn(),
 	insert: vi.fn(),
 	getPlanAccess: vi.fn(),
-	unlockInsightReports: vi.fn(),
 	selectResults: [] as unknown[][]
 }));
 
@@ -18,9 +17,6 @@ vi.mock('$lib/server/neon/db', () => ({
 	})
 }));
 vi.mock('$lib/super/billing.server', () => ({ getPlanAccess: mocks.getPlanAccess }));
-vi.mock('$lib/super/insight-locks.server', () => ({
-	unlockInsightReports: mocks.unlockInsightReports
-}));
 
 import {
 	getSuperAdminOverview,
@@ -80,7 +76,6 @@ beforeEach(() => {
 	];
 	mocks.select.mockImplementation(() => selectBuilder(mocks.selectResults.shift() ?? []));
 	mocks.getPlanAccess.mockResolvedValue({ accessReason: 'subscription', plan: 'super' });
-	mocks.unlockInsightReports.mockResolvedValue(undefined);
 	mocks.insert.mockImplementation(() => {
 		const builder: any = {
 			values: vi.fn(async () => undefined)
@@ -141,6 +136,5 @@ describe('direct Drizzle Super admin operations', () => {
 				reason: 'Converted free Super beta claim to an indefinite grant'
 			})
 		]);
-		expect(mocks.unlockInsightReports).toHaveBeenCalledWith('beta-1');
 	});
 });

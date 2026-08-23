@@ -27,10 +27,6 @@ vi.mock('$lib/server/neon/db', () => ({
 	})
 }));
 
-vi.mock('$lib/flags', () => ({
-	isSuperInsightsEnabled: vi.fn().mockResolvedValue(true)
-}));
-
 vi.mock('$lib/super/billing.server', () => ({
 	getPlanAccess: vi.fn().mockResolvedValue({ plan: 'super', accessReason: 'subscription' })
 }));
@@ -42,10 +38,6 @@ vi.mock('$lib/super/types', async () => {
 
 vi.mock('$lib/super/profile.server', () => ({
 	getTutorProfileView: vi.fn().mockResolvedValue({ ageConfirmedAt: new Date() })
-}));
-
-vi.mock('$lib/super/insights.server', () => ({
-	getCurrentEligibleInsightReport: vi.fn()
 }));
 
 vi.mock('$lib/question-bank/util.server', () => ({

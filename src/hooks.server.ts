@@ -24,7 +24,6 @@ import {
 	multiAttemptExperimentEnabled,
 	superCheckoutEnabled,
 	superCoachEnabled,
-	superInsightsEnabled,
 	superMemoryEnabled,
 	superFreeBetaEnabled
 } from '$lib/flags';
@@ -71,11 +70,6 @@ function postProcessResponse(
 ): Response {
 	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
 		response.headers.set(key, value);
-	}
-
-	if (event.url.pathname === '/api/insights/pdf') {
-		response.headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'self'");
-		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
 	}
 
 	if (event.url.pathname === '/' || event.url.pathname === '') {
@@ -334,8 +328,7 @@ export const handle = sequence(
 						superFreeBetaEnabled,
 						superCheckoutEnabled,
 						superCoachEnabled,
-						superMemoryEnabled,
-						superInsightsEnabled
+						superMemoryEnabled
 					}
 				}) as Handle
 			]

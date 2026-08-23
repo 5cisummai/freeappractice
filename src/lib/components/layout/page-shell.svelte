@@ -13,7 +13,7 @@
 		/** When true, the title is hashed in PostHog session recordings. */
 		maskTitle?: boolean;
 		actions?: Snippet;
-		children: Snippet;
+		children?: Snippet;
 	} = $props();
 </script>
 
@@ -38,6 +38,8 @@
 	</header>
 
 	<div class="space-y-8">
-		{@render children()}
+		{#if children}
+			{@render children()}
+		{/if}
 	</div>
 </div>

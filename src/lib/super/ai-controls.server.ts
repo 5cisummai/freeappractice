@@ -20,7 +20,6 @@ const GENERIC_ANONYMOUS_LIMIT = 12;
 const GENERIC_SIGNED_IN_LIMIT = 30;
 const SUPER_AI_LIMIT = 60;
 const COACH_LOCK_TTL_SECONDS = 75;
-const INSIGHT_LOCK_TTL_SECONDS = 5 * 60;
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
 
 export class RedisRequiredError extends Error {
@@ -319,10 +318,6 @@ export function acquireCoachLock(userId: string): Promise<LockHandle | null> {
 	return acquireLock(`${redisNamespace()}:lock:coach:${userId}`, COACH_LOCK_TTL_SECONDS);
 }
 
-export function acquireInsightLock(userId: string): Promise<LockHandle | null> {
-	return acquireLock(`${redisNamespace()}:lock:insights:${userId}`, INSIGHT_LOCK_TTL_SECONDS);
-}
-
 function idempotencyKey(userId: string, operationId: string): string {
 	return `${redisNamespace()}:idempotency:${userId}:${operationId}`;
 }
@@ -370,7 +365,6 @@ export async function purgeKnownRedisControlsForUser(
 		usageKey(userId, currentUtcMonth(now)),
 		usageKey(userId, previousUtcMonth(now)),
 		`${namespace}:lock:coach:${userId}`,
-		`${namespace}:lock:insights:${userId}`,
 		`${namespace}:rate:super-ai:user:${userId}`
 	];
 	try {

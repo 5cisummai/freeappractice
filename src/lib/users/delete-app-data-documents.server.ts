@@ -3,7 +3,6 @@ import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	coachAudits,
 	frqAttempts,
-	insightReports,
 	questionFeedback,
 	referrals,
 	studyPlanAudits,
@@ -28,7 +27,6 @@ export async function deleteAppDataDocuments(userIds: string[]): Promise<void> {
 		db.delete(superBillingAccess).where(inArray(superBillingAccess.userId, userIds)),
 		db.delete(superGrants).where(inArray(superGrants.userId, userIds)),
 		db.delete(superUsageRollups).where(inArray(superUsageRollups.userId, userIds)),
-		db.delete(insightReports).where(inArray(insightReports.userId, userIds)),
 		db.delete(studyPlans).where(inArray(studyPlans.userId, userIds)),
 		db.delete(studyPlanAudits).where(inArray(studyPlanAudits.userId, userIds)),
 		db.delete(coachAudits).where(inArray(coachAudits.userId, userIds)),

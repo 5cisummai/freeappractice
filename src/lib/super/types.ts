@@ -31,7 +31,6 @@ export const PAID_PLAN_PERMISSIONS = {
 	super: {
 		personalizedTutor: true,
 		coach: true,
-		aiInsights: true,
 		studyPlans: true,
 		memory: true
 	}
@@ -97,8 +96,6 @@ export type StudyPlanView = {
 	tasks: StudyTask[];
 	updatedAt: string;
 };
-
-export type InsightFeedback = 'helpful' | 'not_helpful';
 
 export const INDEFINITE_SUPER_GRANT_EXPIRES_AT = '9999-12-31T23:59:59.000Z';
 

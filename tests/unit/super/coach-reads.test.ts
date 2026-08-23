@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => ({
 	getDashboardStats: vi.fn(),
 	getUserProgress: vi.fn(),
 	getRecentSuperMistakes: vi.fn(),
-	getCurrentStoredInsightReport: vi.fn(),
 	findRecentGradedFrqAttempts: vi.fn()
 }));
 
@@ -21,9 +20,6 @@ vi.mock('$lib/users/dashboard-queries.server', () => ({
 }));
 vi.mock('$lib/super/context.server', () => ({
 	getRecentSuperMistakes: mocks.getRecentSuperMistakes
-}));
-vi.mock('$lib/super/insights.server', () => ({
-	getCurrentStoredInsightReport: mocks.getCurrentStoredInsightReport
 }));
 vi.mock('$lib/grading/frq/storage.server', () => ({
 	findRecentGradedFrqAttempts: mocks.findRecentGradedFrqAttempts
@@ -79,7 +75,7 @@ describe('coach read tools', () => {
 		});
 	});
 
-	it('combines unit progress, mistakes, and insights', async () => {
+	it('combines unit progress and mistakes', async () => {
 		mocks.getUserProgress.mockResolvedValue([
 			{
 				apClass: 'AP Biology',
@@ -94,27 +90,6 @@ describe('coach read tools', () => {
 		mocks.getRecentSuperMistakes.mockResolvedValue([
 			{ questionId: 'q-1', apClass: 'AP Biology', unit: 'Unit 3' }
 		]);
-		mocks.getCurrentStoredInsightReport.mockResolvedValue({
-			generatedAt: '2026-08-12T00:00:00.000Z',
-			report: {
-				courses: [
-					{
-						apClass: 'AP Biology',
-						units: [
-							{
-								unit: 'Unit 3',
-								totalScoredAttempts: 10,
-								metrics: {},
-								strengths: [{ apClass: 'AP Biology', unit: 'Unit 3' }],
-								weaknesses: [],
-								actionableInsights: ['Review cell signaling']
-							}
-						]
-					}
-				]
-			}
-		});
-
 		await expect(getCoachUnitDetail('user-1', 'AP Biology', 'Unit 3')).resolves.toEqual({
 			apClass: 'AP Biology',
 			unit: 'Unit 3',
@@ -125,15 +100,7 @@ describe('coach read tools', () => {
 				lastAttemptAt: '2026-08-10T12:00:00.000Z',
 				lastReviewedAt: null
 			},
-			recentMistakes: [{ questionId: 'q-1', apClass: 'AP Biology', unit: 'Unit 3' }],
-			insights: {
-				totalScoredAttempts: 10,
-				metrics: {},
-				strengths: [{ apClass: 'AP Biology', unit: 'Unit 3' }],
-				weaknesses: [],
-				actionableInsights: ['Review cell signaling']
-			},
-			insightsGeneratedAt: '2026-08-12T00:00:00.000Z'
+			recentMistakes: [{ questionId: 'q-1', apClass: 'AP Biology', unit: 'Unit 3' }]
 		});
 	});
 

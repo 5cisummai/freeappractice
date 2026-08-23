@@ -3,7 +3,6 @@ const ACCOUNT_API_PREFIXES = [
 	'/api/super',
 	'/api/coach',
 	'/api/tutor',
-	'/api/insights',
 	'/api/study-plan',
 	'/api/question/frq',
 	'/api/question/feedback',

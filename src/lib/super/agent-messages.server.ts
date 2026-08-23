@@ -1,7 +1,6 @@
 import { pruneMessages, type ModelMessage } from 'ai';
 
 const BULKY_READ_TOOLS = [
-	'read_insights',
 	'generate_diagram',
 	'read_course_catalog',
 	'read_activity_summary',

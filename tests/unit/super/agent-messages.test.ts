@@ -12,7 +12,7 @@ describe('pruneSuperAgentModelMessages', () => {
 					{
 						type: 'tool-call',
 						toolCallId: 'old-call',
-						toolName: 'read_insights',
+						toolName: 'read_course_catalog',
 						input: {}
 					}
 				]
@@ -23,7 +23,7 @@ describe('pruneSuperAgentModelMessages', () => {
 					{
 						type: 'tool-result',
 						toolCallId: 'old-call',
-						toolName: 'read_insights',
+						toolName: 'read_course_catalog',
 						output: { type: 'json', value: { units: ['Unit 1'] } }
 					}
 				]
@@ -78,8 +78,8 @@ describe('pruneSuperAgentModelMessages', () => {
 				content: [
 					{
 						type: 'tool-call',
-						toolCallId: 'insights-call',
-						toolName: 'read_insights',
+						toolCallId: 'catalog-call',
+						toolName: 'read_course_catalog',
 						input: {}
 					}
 				]
@@ -89,8 +89,8 @@ describe('pruneSuperAgentModelMessages', () => {
 				content: [
 					{
 						type: 'tool-result',
-						toolCallId: 'insights-call',
-						toolName: 'read_insights',
+						toolCallId: 'catalog-call',
+						toolName: 'read_course_catalog',
 						output: { type: 'json', value: { topics: ['Unit 1'] } }
 					}
 				]
@@ -151,7 +151,7 @@ describe('pruneSuperAgentModelMessages', () => {
 		);
 
 		expect(
-			toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'insights-call')
+			toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'catalog-call')
 		).toBe(false);
 		expect(
 			toolResults.some((part) => 'toolCallId' in part && part.toolCallId === 'old-question')

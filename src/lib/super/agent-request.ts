@@ -23,7 +23,7 @@ export const superAgentMessageSchema = z.looseObject({
 
 export const superAgentContextSchema = z.strictObject({
 	mode: z.enum(['coach', 'question']),
-	page: z.enum(['coach', 'practice', 'progress', 'history', 'insights']).optional(),
+	page: z.enum(['coach', 'practice', 'progress', 'history']).optional(),
 	questionId: z.uuid().optional(),
 	questionType: z.enum(['mcq', 'frq']).optional(),
 	frqAttemptId: z.string().trim().max(100).optional(),

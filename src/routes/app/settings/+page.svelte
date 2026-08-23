@@ -387,7 +387,7 @@
 								{:else if data.billing?.status === 'past_due'}
 									Payment is past due; Super access remains available during the grace period.
 								{:else}
-									Personalized tutoring, Coach, insights, and study plans are active.
+									Personalized tutoring, Coach, and study plans are active.
 								{/if}
 							{:else if data.freeBetaEnabled}
 								Claim your free Super offer for personalized tutoring and study planning.

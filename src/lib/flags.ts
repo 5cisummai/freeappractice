@@ -187,11 +187,6 @@ export const superMemoryEnabled = superKillSwitch(
 	'super-memory',
 	'Allow Mem0-backed Super tutor memory'
 );
-export const superInsightsEnabled = superKillSwitch(
-	'super-insights',
-	'Allow Super insights and study plans'
-);
-
 async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>): Promise<boolean> {
 	try {
 		return Boolean(await feature());
@@ -203,4 +198,3 @@ async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>):
 export const isSuperCheckoutEnabled = () => readSuperKillSwitch(superCheckoutEnabled);
 export const isSuperCoachEnabled = () => readSuperKillSwitch(superCoachEnabled);
 export const isSuperMemoryEnabled = () => readSuperKillSwitch(superMemoryEnabled);
-export const isSuperInsightsEnabled = () => readSuperKillSwitch(superInsightsEnabled);

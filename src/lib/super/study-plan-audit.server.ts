@@ -5,7 +5,7 @@ import { studyPlanAudits } from '$lib/server/neon/schema';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView } from '$lib/super/types';
 
-export type StudyPlanAuditAction = 'generate' | 'complete' | 'reschedule';
+export type StudyPlanAuditAction = 'complete' | 'reschedule';
 
 export type StudyPlanAuditView = {
 	id: string;

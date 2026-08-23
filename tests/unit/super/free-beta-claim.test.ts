@@ -13,7 +13,6 @@ vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ select: mocks.select, update: mocks.update })
 }));
 vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
-vi.mock('$lib/super/insight-locks.server', () => ({ unlockInsightReports: vi.fn() }));
 
 import {
 	claimSuperFreeBeta,

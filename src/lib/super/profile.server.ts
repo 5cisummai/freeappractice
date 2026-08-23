@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import type { TutorProfileUpdate, TutorProfileView, TutorTeachingStyle } from '$lib/super/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
@@ -137,9 +136,6 @@ export async function markSuperAccessStarted(
 				updatedAt: profile.updatedAt
 			})
 			.where(eq(tutorProfiles.userId, userId));
-	}
-	if (shouldRestore) {
-		await unlockInsightReports(userId);
 	}
 }
 

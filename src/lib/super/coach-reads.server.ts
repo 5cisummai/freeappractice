@@ -1,18 +1,7 @@
 import { findRecentGradedFrqAttempts } from '$lib/grading/frq/storage.server';
-import { getCurrentStoredInsightReport, type InsightUnit } from '$lib/super/insights.server';
 import { getRecentSuperMistakes } from '$lib/super/context.server';
 import { getUserDashboardProfile, getUserProgress } from '$lib/users/model.server';
 import { getDashboardStats } from '$lib/users/dashboard-queries.server';
-
-function summarizeInsightUnit(unit: InsightUnit) {
-	return {
-		totalScoredAttempts: unit.totalScoredAttempts,
-		metrics: unit.metrics,
-		strengths: unit.strengths.slice(0, 3),
-		weaknesses: unit.weaknesses.slice(0, 3),
-		actionableInsights: unit.actionableInsights.slice(0, 5)
-	};
-}
 
 export async function getCoachActivitySummary(userId: string) {
 	const profile = await getUserDashboardProfile(userId);
@@ -38,15 +27,12 @@ export async function getCoachActivitySummary(userId: string) {
 }
 
 export async function getCoachUnitDetail(userId: string, apClass: string, unit: string) {
-	const [progressRows, recentMistakes, insightReport] = await Promise.all([
+	const [progressRows, recentMistakes] = await Promise.all([
 		getUserProgress(userId),
-		getRecentSuperMistakes(userId, { apClass, unit }),
-		getCurrentStoredInsightReport(userId)
+		getRecentSuperMistakes(userId, { apClass, unit })
 	]);
 
 	const progress = progressRows.find((row) => row.apClass === apClass && row.unit === unit);
-	const course = insightReport?.report.courses.find((item) => item.apClass === apClass);
-	const unitInsights = course?.units.find((item) => item.unit === unit);
 
 	return {
 		apClass,
@@ -60,9 +46,7 @@ export async function getCoachUnitDetail(userId: string, apClass: string, unit: 
 					lastReviewedAt: progress.lastReviewedAt?.toISOString() ?? null
 				}
 			: null,
-		recentMistakes: recentMistakes.slice(0, 5),
-		insights: unitInsights ? summarizeInsightUnit(unitInsights) : null,
-		insightsGeneratedAt: insightReport?.generatedAt ?? null
+		recentMistakes: recentMistakes.slice(0, 5)
 	};
 }
 

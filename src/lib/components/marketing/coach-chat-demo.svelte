@@ -30,12 +30,11 @@
 				"I keep missing photosynthesis even after reviewing Unit 3. Exam's in three weeks. What should I actually do this week?",
 			tools: [
 				{ running: 'Checking your recent practice…', complete: 'Checked your recent practice' },
-				{ running: 'Reviewing your insights…', complete: 'Reviewed your insights' },
 				{ running: 'Checking your study plan…', complete: 'Checked your study plan' }
 			],
 			reply: `Don't restudy all of Bio. Unit 3 is the leak.
 
-You've missed **4 of your last 6** cellular energetics MCQs, and the last FRQ stalled on the light reactions — that's the same gap Insights already flagged. Unit 2 cell structure is solid. Leave it.
+You've missed **4 of your last 6** cellular energetics MCQs, and the last FRQ stalled on the light reactions. Unit 2 cell structure is solid. Leave it.
 
 This week:
 

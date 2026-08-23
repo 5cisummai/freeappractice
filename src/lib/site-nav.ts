@@ -29,7 +29,7 @@ export const topbarResourceItems = [
 	{
 		href: '/super',
 		label: 'Super',
-		description: 'Personalized tutoring, Coach, insights, and study plans.'
+		description: 'Personalized tutoring, Coach, and study plans.'
 	},
 	{
 		href: '/about',
