@@ -83,9 +83,7 @@
 <main id="main-content" class="flex-1">
 	<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
 		<section class="mx-auto max-w-3xl text-center">
-			<Badge variant="outline" class="mb-4 {HERO_BADGE_CLASS}">
-				Full-length ones coming soon
-			</Badge>
+			<Badge variant="outline" class="mb-4 {HERO_BADGE_CLASS}">Full-length ones coming soon</Badge>
 			<h1
 				class="font-display text-4xl leading-[1.1] font-medium tracking-tight text-balance sm:text-5xl lg:text-6xl"
 			>

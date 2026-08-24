@@ -92,9 +92,7 @@
 					<BackToHome label="Back to practice" class="mb-8" />
 
 					<header class="mb-10 space-y-4">
-						<Badge variant="outline" class={HERO_BADGE_CLASS}>
-							Study guide
-						</Badge>
+						<Badge variant="outline" class={HERO_BADGE_CLASS}>Study guide</Badge>
 
 						<h1
 							class="font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-5xl"
