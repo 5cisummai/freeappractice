@@ -21,7 +21,7 @@
 	import type { StudyPlanInsights, StudyPlanView, StudyTask } from '$lib/super/types';
 	import { cn } from '$lib/utils.js';
 
-	let { data, form } = $props();
+	let { data } = $props();
 	let planOverride = $state<StudyPlanView | null | undefined>(undefined);
 	let completingTaskId = $state<string | null>(null);
 	let errorMessage = $state('');
@@ -152,15 +152,9 @@
 	{:else if !plan}
 		<EmptyState
 			title="Your first weekly readout is on the way."
-			description={form?.error ?? 'Generate a readout now or wait for the next Saturday refresh.'}
+			description="Your weekly readout will appear after the next Saturday refresh."
 			imageUrl="/illustrations/lightbulb.png"
-		>
-			{#snippet button()}
-				<form method="POST" action="?/generate">
-					<Button type="submit">Generate now</Button>
-				</form>
-			{/snippet}
-		</EmptyState>
+		/>
 	{:else}
 		{#if insights}
 			<section class="flex flex-col gap-6" aria-labelledby="weekly-readout-heading">
