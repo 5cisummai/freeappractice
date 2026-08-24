@@ -51,6 +51,8 @@ describe('giveCoachPracticeQuestion', () => {
 			status: 'found',
 			result: {
 				questionId: 'mcq-1',
+				apClass: 'AP Physics 1',
+				unit: 'Unit 1',
 				answer: {
 					question: 'What is velocity?',
 					optionA: 'Speed with direction',
@@ -62,11 +64,6 @@ describe('giveCoachPracticeQuestion', () => {
 					diagramSpec: null
 				}
 			}
-		});
-		mocks.getQuestionById.mockResolvedValue({
-			id: 'mcq-1',
-			apClass: 'AP Physics 1',
-			unit: 'Unit 1'
 		});
 
 		await expect(
@@ -81,6 +78,7 @@ describe('giveCoachPracticeQuestion', () => {
 			practiceHref: '/app/practice?apClass=AP+Physics+1&unit=Unit+1&questionId=mcq-1',
 			options: expect.arrayContaining([{ id: 'A', label: 'A', text: 'Speed with direction' }])
 		});
+		expect(mocks.getQuestionById).not.toHaveBeenCalled();
 	});
 
 	it('returns an inline FRQ card payload', async () => {

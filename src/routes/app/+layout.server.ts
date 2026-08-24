@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
+import { APP_LAYOUT_DEPENDENCY } from '$lib/layout-dependencies';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { activeOrgUsesUserSuper, loadAppOrganizations } from '$lib/auth/organizations.server';
 import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
@@ -17,7 +18,9 @@ import {
 } from '$lib/onboarding.js';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
-export const load: LayoutServerLoad = async ({ cookies, locals, request, url }) => {
+export const load: LayoutServerLoad = async ({ cookies, depends, locals, request, url }) => {
+	depends(APP_LAYOUT_DEPENDENCY);
+
 	if (!locals.session) {
 		throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname + url.search)}`);
 	}

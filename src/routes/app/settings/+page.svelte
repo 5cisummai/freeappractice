@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
 	import { onMount } from 'svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -188,7 +188,7 @@
 				throw new Error(getResponseMessage(result, 'Could not claim the free Super offer.'));
 			}
 			toast.success('Super unlocked. Enjoy the free beta!');
-			await invalidateAll();
+			await invalidateAuthenticatedShell();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
 		} finally {

@@ -5,6 +5,7 @@ import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 import { dev } from '$app/environment';
 import { logger } from '$lib/server/logger';
+import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import {
 	createQuestionPathMetrics,
 	capturePathQuestionRequestMetric,
@@ -16,6 +17,8 @@ import {
 export const config = {
 	maxDuration: 15
 };
+
+const MAX_QUESTION_REQUEST_BYTES = 16 * 1024;
 
 export const POST: RequestHandler = async ({ request }) => {
 	const startedAt = Date.now();
@@ -45,7 +48,18 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	try {
 		const validationStarted = Date.now();
-		const validated = validateQuestionRequest(await request.json());
+		let body: unknown;
+		try {
+			body = await readJsonBody(request, MAX_QUESTION_REQUEST_BYTES);
+		} catch (error) {
+			if (error instanceof RequestBodyTooLargeError) {
+				recordMetric(413, 'error', false, 'validation');
+				return json({ error: 'Request body is too large' }, { status: 413 });
+			}
+			throw error;
+		}
+
+		const validated = validateQuestionRequest(body);
 		validationMs = Date.now() - validationStarted;
 		if (!validated.ok) {
 			recordMetric(validated.response.status, 'error', false, 'validation');
@@ -64,10 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			case 'found':
 				recordMetric(200, path.segment ?? 'pool_hit', outcome.result.cached ?? true);
 				return json({
-					answer:
-						typeof outcome.result.answer === 'object'
-							? JSON.stringify(outcome.result.answer)
-							: outcome.result.answer,
+					answer: outcome.result.answer,
 					provider: outcome.result.provider,
 					model: outcome.result.model,
 					cached: outcome.result.cached ?? true,

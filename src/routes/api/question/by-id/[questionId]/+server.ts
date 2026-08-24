@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const question = await getQuestionById(questionId);
 		return json({
-			answer: JSON.stringify(storedQuestionToMcqAnswerBody(question)),
+			answer: storedQuestionToMcqAnswerBody(question),
 			provider: 'cache',
 			model: 'cached',
 			cached: true,

@@ -6,7 +6,8 @@
 	import logo from '$lib/assets/logo.png';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { afterNavigate, invalidateAll } from '$app/navigation';
+	import { afterNavigate } from '$app/navigation';
+	import { invalidateAppSubtree } from '$lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
@@ -40,7 +41,9 @@
 		if (timeZone && existing !== timeZone) {
 			const secure = window.location.protocol === 'https:' ? '; Secure' : '';
 			document.cookie = `${TIMEZONE_COOKIE_NAME}=${encodeURIComponent(timeZone)}; path=/; max-age=${TIMEZONE_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
-			void invalidateAll();
+			if (window.location.pathname.startsWith('/app')) {
+				void invalidateAppSubtree();
+			}
 		}
 
 		if (import.meta.env.DEV) mountVercelToolbar();

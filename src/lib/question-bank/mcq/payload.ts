@@ -168,6 +168,8 @@ export function parseQuestionPayloadFromResponse(response: QuestionApiResponse):
 		} catch {
 			throw new Error('Question service returned an invalid question payload.');
 		}
+	} else if (response.answer && typeof response.answer === 'object') {
+		payload = response.answer;
 	}
 
 	const normalized = normalizeQuestionPayload(payload, String(response.questionId ?? ''));

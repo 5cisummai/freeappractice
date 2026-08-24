@@ -30,11 +30,14 @@ import {
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
 import {
 	isAccountSurface,
-	isAgeGateExempt,
-	shouldSkipSessionLookup
+	isAgeGateExempt
 } from '$lib/auth/account-surface.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { limitApiRequests } from '$lib/server/api-rate-limit.server';
+import {
+	shouldSkipGlobalApiRateLimit,
+	shouldSkipSessionLookup
+} from '$lib/server/request-policy.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -203,7 +206,10 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	if (event.url.pathname.startsWith('/api/')) {
+	if (
+		event.url.pathname.startsWith('/api/') &&
+		!shouldSkipGlobalApiRateLimit(event.request.method, event.url.pathname)
+	) {
 		const rateLimit = await limitApiRequests(event.request, event.locals.userId);
 		if (!rateLimit.allowed) {
 			const now = Date.now();

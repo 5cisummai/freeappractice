@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
 	import { getSubjectPresentation } from '$lib/onboarding-subjects.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
@@ -50,7 +50,7 @@
 			}
 			toast.success('Quiz removed from group materials.');
 			targetMaterial = null;
-			await invalidateAll();
+			await invalidateAppRoute('/app/materials');
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not remove this quiz.');
 		} finally {
@@ -139,9 +139,11 @@
 				: 'When owners share quizzes with the group, they will show up here.'}
 			imageUrl={materialsImage}
 		>
-			<Button href={resolve('/app/practice')} variant="outline" class="rounded-full">
-				Go to practice
-			</Button>
+			{#snippet button()}
+				<Button href={resolve('/app/practice')} variant="outline" class="rounded-full">
+					Go to practice
+				</Button>
+			{/snippet}
 		</EmptyState>
 	{/if}
 </PageShell>

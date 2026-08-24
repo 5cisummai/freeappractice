@@ -28,6 +28,8 @@ type CachedResult = {
 	model: string;
 	cached: boolean;
 	questionId: string;
+	apClass: string;
+	unit: string;
 };
 
 /** Read full MCQ body directly from an active-library Neon row. */
@@ -78,7 +80,9 @@ export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
 		provider: 'cache',
 		model: 'cached',
 		cached: true,
-		questionId: doc.questionId
+		questionId: doc.questionId,
+		apClass: doc.apClass,
+		unit: doc.unit
 	}),
 	requestRefill: async (className, unit) => {
 		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');

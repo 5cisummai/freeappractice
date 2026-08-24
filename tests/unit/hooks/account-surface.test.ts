@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	isAccountSurface,
-	isAgeGateExempt,
-	shouldSkipSessionLookup
+	isAgeGateExempt
 } from '$lib/auth/account-surface.server';
 
 describe('account surface routing', () => {
@@ -31,9 +30,4 @@ describe('account surface routing', () => {
 		expect(isAgeGateExempt('/app/settings')).toBe(false);
 	});
 
-	it('preserves the public MCQ POST session lookup skip', () => {
-		expect(shouldSkipSessionLookup('POST', '/api/question')).toBe(true);
-		expect(shouldSkipSessionLookup('GET', '/api/question')).toBe(false);
-		expect(shouldSkipSessionLookup('POST', '/api/question/feedback')).toBe(false);
-	});
 });

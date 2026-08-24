@@ -1,26 +1,13 @@
 import { browser } from '$app/environment';
-import { goto, invalidateAll } from '$app/navigation';
+import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
+import { isGoogleOneTapRoute } from '$lib/routes/public-marketing.server.js';
 import { authClient, googleClientId } from '$lib/auth/client.js';
 
 type OneTapContext = 'signin' | 'signup' | 'use';
 
 const PROMPT_SETTLE_TIMEOUT_MS = 60_000;
-
-const ONE_TAP_ROUTE_PATTERNS = [
-	/^\/$/,
-	/^\/about$/,
-	/^\/summer$/,
-	/^\/changelog$/,
-	/^\/stats$/,
-	/^\/blog(\/.*)?$/,
-	/^\/practice(\/.*)?$/,
-	/^\/login$/
-] as const;
-
-function isGoogleOneTapRoute(pathname: string): boolean {
-	return ONE_TAP_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname));
-}
 
 function getOneTapContext(pathname: string): OneTapContext {
 	if (pathname === '/signup') return 'signup';
@@ -34,7 +21,7 @@ function handleOneTapSuccess(pathname: string): void {
 		return;
 	}
 
-	void invalidateAll();
+	void invalidateAuthenticatedShell();
 }
 
 function loadGoogleScript(): Promise<void> {
