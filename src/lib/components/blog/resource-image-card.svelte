@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { HERO_BADGE_COMPACT_CLASS } from '$lib/components/marketing/hero-badge.js';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
 	import ArrowUpRightIcon from '@tabler/icons-svelte/icons/arrow-up-right';
@@ -38,7 +39,7 @@
 	<div class="flex flex-1 flex-col p-5 pt-4 sm:p-6">
 		{#if badge}
 			<div class="flex items-center justify-end gap-3 text-sm text-muted-foreground">
-				<Badge variant="outline" class="rounded-full px-2.5 py-0.5 text-xs font-normal">
+				<Badge variant="outline" class={HERO_BADGE_COMPACT_CLASS}>
 					{badge}
 				</Badge>
 			</div>

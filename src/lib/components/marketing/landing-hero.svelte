@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { HERO_BADGE_LINK_CLASS } from '$lib/components/marketing/hero-badge.js';
 	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
 
 	let { children }: { children?: Snippet } = $props();
@@ -67,11 +68,7 @@
 
 	<div class="relative z-10 flex w-full max-w-5xl flex-col items-center">
 		<div class="flex max-w-3xl flex-col items-center space-y-6 text-center">
-			<Badge
-				href="/signup?group=1"
-				variant="outline"
-				class="h-auto rounded-full border-transparent bg-primary/10 px-2 py-1.5 text-xs leading-none font-medium tracking-tight text-primary/80 backdrop-blur-md hover:bg-primary/20 hover:text-primary sm:px-5 sm:py-2 sm:text-sm dark:bg-primary/15"
-			>
+			<Badge href="/signup?group=1" variant="outline" class={HERO_BADGE_LINK_CLASS}>
 				Create your study group
 				<ChevronRightIcon class="size-4" />
 			</Badge>

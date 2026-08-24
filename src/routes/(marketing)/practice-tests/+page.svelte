@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
 
 	const subjects = getClassPracticePages();
 
@@ -82,7 +83,7 @@
 <main id="main-content" class="flex-1">
 	<div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
 		<section class="mx-auto max-w-3xl text-center">
-			<Badge variant="outline" class="mb-4 rounded-full px-4 py-1 text-sm font-normal">
+			<Badge variant="outline" class="mb-4 {HERO_BADGE_CLASS}">
 				Full-length ones coming soon
 			</Badge>
 			<h1

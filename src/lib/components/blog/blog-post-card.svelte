@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { HERO_BADGE_COMPACT_CLASS } from '$lib/components/marketing/hero-badge.js';
 	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import { cn } from '$lib/utils';
 
@@ -59,7 +60,7 @@
 					<CalendarIcon class="size-3.5 shrink-0" />
 					{formatBlogDate(dateIso)}
 				</time>
-				<Badge variant="outline" class="rounded-full px-2.5 py-0.5 text-xs font-normal">
+				<Badge variant="outline" class={HERO_BADGE_COMPACT_CLASS}>
 					{category}
 				</Badge>
 			</div>

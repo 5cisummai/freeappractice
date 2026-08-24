@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
 	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
@@ -91,7 +92,7 @@
 					<BackToHome label="Back to practice" class="mb-8" />
 
 					<header class="mb-10 space-y-4">
-						<Badge variant="outline" class="rounded-full px-4 py-1 text-sm font-normal">
+						<Badge variant="outline" class={HERO_BADGE_CLASS}>
 							Study guide
 						</Badge>
 
