@@ -59,7 +59,7 @@ function hotPoolBodyFromDoc(
 		optionD: doc.optionD,
 		correctAnswer: doc.correctAnswer,
 		explanation: doc.explanation,
-		mainTopic: doc.mainTopic ?? '',
+		mainTopic: doc.mainTopic,
 		topicsCovered: doc.topicsCovered ?? '',
 		hint1: doc.hint1 ?? '',
 		hint2: doc.hint2 ?? '',

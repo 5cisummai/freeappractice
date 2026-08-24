@@ -86,6 +86,7 @@ async function processCleanupJob(
 		if (job.kind === 'account_delete') await deletePostHogUser(job.userId);
 		await deleteAllTutorMemoriesById(job.mem0UserId);
 		if (job.kind === 'downgrade_purge') {
+			await db.delete(studyPlans).where(eq(studyPlans.userId, job.userId));
 			await db
 				.update(tutorProfiles)
 				.set({ memoryPurgedAt: now, updatedAt: now })
@@ -237,10 +238,7 @@ export async function runSuperMaintenance(
 	);
 
 	const [expiredGrants, expiredStudyPlans, expiredStudyPlanAudits] = await Promise.all([
-		db
-			.delete(superGrants)
-			.where(lte(superGrants.expiresAt, now))
-			.returning({ id: superGrants.id }),
+		db.delete(superGrants).where(lte(superGrants.expiresAt, now)).returning({ id: superGrants.id }),
 		db
 			.delete(studyPlans)
 			.where(lte(studyPlans.updatedAt, studyPlanCutoff))

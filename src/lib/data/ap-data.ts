@@ -26,38 +26,6 @@ export const APP_COURSES: ApCourse[] = AP_DATA.courses.map((course) => ({
 /** Pool controls projected from the unified question-bank configuration. */
 export const QUESTION_POOL_TARGETS = AP_DATA.questionBank.mcq.poolRules;
 
-export type UnitDescriptionsFile = {
-	note: string;
-	courses: Array<{
-		apClass: string;
-		units: Array<{
-			unit: string;
-			description?: string;
-			topics?: string[];
-			keywords?: string[];
-		}>;
-	}>;
-};
-
-function textList(value: unknown): string[] {
-	if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
-	return typeof value === 'string' && value.trim() ? [value] : [];
-}
-
-/** MCQ generation controls projected from app-authored fields only. */
-export const UNIT_DESCRIPTIONS: UnitDescriptionsFile = {
-	note: 'App-authored generation controls are stored in ap-classes-data-08212026.json.',
-	courses: AP_DATA.courses.map((course) => ({
-		apClass: course.name,
-		units: course.units.map((unit) => ({
-			unit: unit.label,
-			description: 'Use the app-authored generation controls for this unit.',
-			topics: textList(unit.generation.mcq.constraints),
-			keywords: textList(unit.generation.mcq.keywords)
-		}))
-	}))
-};
-
 const courseById = new Map(AP_DATA.courses.map((course) => [course.id, course] as const));
 const unitById = new Map(
 	AP_DATA.courses.flatMap((course) => course.units.map((unit) => [unit.id, unit] as const))

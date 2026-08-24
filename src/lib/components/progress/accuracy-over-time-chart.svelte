@@ -9,8 +9,8 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { resolve } from '$app/paths';
 	import ChartHoverTooltip from './chart-hover-tooltip.svelte';
-	import type { AccuracyDay } from './progress-insights.js';
-	import { accuracyDayCount } from './progress-insights.js';
+	import type { AccuracyDay } from './progress-metrics.js';
+	import { accuracyDayCount } from './progress-metrics.js';
 
 	type AccuracyBarDay = AccuracyDay & { wrong: number };
 

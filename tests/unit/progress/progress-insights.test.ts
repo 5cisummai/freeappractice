@@ -3,10 +3,9 @@ import type { HistoryItem, ProgressEntry } from '$lib/users/types.js';
 import {
 	accuracyByScope,
 	buildAccuracyDays,
-	buildPracticeMix,
 	selectNextFocus,
 	stackedActivityByScope
-} from '$lib/components/progress/progress-insights.js';
+} from '$lib/components/progress/progress-metrics.js';
 
 function topicEntry(
 	overrides: Partial<ProgressEntry> & Pick<ProgressEntry, 'topics'>
@@ -113,38 +112,6 @@ describe('history chart derivations', () => {
 		const today = days.at(-1);
 		expect(today?.accuracy).toBe(100);
 		expect(days.filter((day) => day.accuracy === null).length).toBe(2);
-	});
-
-	it('builds practice mix from history kinds', () => {
-		const mix = buildPracticeMix([
-			{
-				kind: 'mcq',
-				attempt: {
-					questionId: 'q1',
-					apClass: 'AP Biology',
-					unit: 'Unit 1',
-					attemptedAt: new Date().toISOString()
-				},
-				question: null
-			},
-			{
-				kind: 'frq',
-				attempt: {
-					id: 'f1',
-					questionId: 'fq1',
-					apClass: 'AP Biology',
-					unit: 'Unit 1',
-					pointsEarned: 4,
-					pointsAvailable: 6,
-					percentage: 67,
-					timeTakenMs: 1000,
-					attemptedAt: new Date().toISOString()
-				},
-				question: null
-			}
-		]);
-
-		expect(mix.map((slice) => slice.type)).toEqual(['mcq', 'frq']);
 	});
 });
 

@@ -13,6 +13,7 @@ export type SuperFeature = 'personalizedTutor' | 'coach' | 'studyPlans' | 'memor
 
 const FEATURE_FLAGS: Partial<Record<SuperFeature, () => Promise<boolean>>> = {
 	coach: isSuperCoachEnabled,
+	studyPlans: isSuperCoachEnabled,
 	memory: isSuperMemoryEnabled
 };
 
@@ -120,7 +121,7 @@ export async function authorizeFeatureRequest(
 }
 
 function featureUnavailableMessage(feature: SuperFeature): string {
-	if (feature === 'coach') return 'Coach is temporarily unavailable.';
+	if (feature === 'coach' || feature === 'studyPlans') return 'Coach is temporarily unavailable.';
 	if (feature === 'memory') return 'Tutor memory is temporarily unavailable.';
 	return 'Super Tutor is temporarily unavailable.';
 }

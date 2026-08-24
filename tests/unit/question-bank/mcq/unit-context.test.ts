@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { getCourses } from '$lib/catalog/ap-classes';
-import { UNIT_DESCRIPTIONS } from '$lib/data/ap-data';
 import {
 	buildMcqGenerationPrompt,
 	getUnitContextData
@@ -8,24 +7,15 @@ import {
 
 describe('MCQ unit context (exact catalog keys)', () => {
 	it('covers every unified AP course and unit exactly once', () => {
-		const descCourses = new Map(
-			UNIT_DESCRIPTIONS.courses.map((course) => [course.apClass, course])
-		);
-		expect(descCourses.size).toBe(getCourses().length);
-
 		for (const course of getCourses()) {
-			const desc = descCourses.get(course.name);
-			expect(desc, `missing descriptions course: ${course.name}`).toBeTruthy();
-			if (!desc) continue;
-
 			const catalogUnits = [...course.semester1, ...course.semester2];
-			const descUnits = desc.units.map((unit) => unit.unit);
-			expect(descUnits, course.name).toEqual(catalogUnits);
-
 			for (const unit of catalogUnits) {
 				const ctx = getUnitContextData(course.name, unit);
 				expect(ctx, `${course.name} — ${unit}`).not.toBeNull();
-				expect(ctx?.description.length, `${course.name} — ${unit}`).toBeGreaterThan(0);
+				expect(
+					(ctx?.topics.length ?? 0) + (ctx?.keywords.length ?? 0),
+					`${course.name} — ${unit}`
+				).toBeGreaterThan(0);
 			}
 		}
 	});
@@ -44,6 +34,6 @@ describe('MCQ unit context (exact catalog keys)', () => {
 		});
 		expect(system).toContain('UNIT FOCUS: Unit 1: Limits and Continuity');
 		expect(system).not.toContain('COURSE-GUIDANCE:');
-		expect(system).toMatch(/REQUIRED KEYWORDS\/CONSTRAINTS:|Key Topics:/);
+		expect(system).toMatch(/REQUIRED KEYWORDS\/CONSTRAINTS:|MAIN TOPIC OPTIONS:/);
 	});
 });

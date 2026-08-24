@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { UNIT_DESCRIPTIONS } from '$lib/data/ap-data';
+import { AP_DATA } from '$lib/data/ap-data';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
 import { isExamfigDiagramsEnabled } from '$lib/flags';
@@ -13,7 +13,6 @@ import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-sc
  * MCQ generation: prompts, structured AI calls, and generation metrics.
  */
 interface UnitContext {
-	description: string;
 	topics: string[];
 	keywords: string[];
 }
@@ -27,16 +26,14 @@ function unitContextKey(apClass: string, unit: string): string {
 	return `${apClass}\0${unit}`;
 }
 
-/** Exact apClass + unit label → CED context. Built once from catalog-aligned JSON. */
+/** Exact apClass + unit label → generation controls from the unified catalog. */
 const unitContextByKey: ReadonlyMap<string, UnitContext> = (() => {
-	const data = UNIT_DESCRIPTIONS;
 	const map = new Map<string, UnitContext>();
-	for (const course of data.courses ?? []) {
-		for (const unit of course.units ?? []) {
-			map.set(unitContextKey(course.apClass, unit.unit), {
-				description: unit.description ?? '',
-				topics: unit.topics ?? [],
-				keywords: unit.keywords ?? []
+	for (const course of AP_DATA.courses) {
+		for (const unit of course.units) {
+			map.set(unitContextKey(course.name, unit.label), {
+				topics: [...unit.generation.mcq.keywords],
+				keywords: [...unit.generation.mcq.constraints]
 			});
 		}
 	}
@@ -58,7 +55,7 @@ function buildUnitSections(
 	const ctx = getUnitContextData(className, unit);
 	if (!ctx) return { unitContext: '', keywordsContext: '' };
 	return {
-		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.description ? `${ctx.description}\n` : ''}${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
+		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
 		keywordsContext:
 			ctx.keywords.length > 0
 				? `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your ${questionLabel} MUST focus ONLY on these specific keywords and topics. ***\n`

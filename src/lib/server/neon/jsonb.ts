@@ -20,3 +20,14 @@ export function questionPayloadTextField(
 		}
 	}
 }
+
+/** Indexed course/unit expressions used by pool queries. */
+export function questionBucketFields(data: SQLWrapper): {
+	apClass: SQL<string>;
+	unit: SQL<string>;
+} {
+	return {
+		apClass: questionPayloadTextField(data, 'apClass'),
+		unit: questionPayloadTextField(data, 'unit')
+	};
+}

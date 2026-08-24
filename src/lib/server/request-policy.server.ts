@@ -1,4 +1,4 @@
-import { matchesPublicMarketingPath } from '$lib/routes/public-marketing.server';
+import { matchesPublicMarketingPath } from '$lib/routes/public-marketing';
 
 /** Hot anonymous MCQ pool fetch — skips session lookup and global Redis rate limiting. */
 export function isAnonymousMcqFetch(method: string, pathname: string): boolean {

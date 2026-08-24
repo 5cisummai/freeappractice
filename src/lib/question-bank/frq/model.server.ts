@@ -15,7 +15,9 @@ import {
 	questionRegistry,
 	type FrqQuestionPayload
 } from '$lib/server/neon/schema';
-import { questionPayloadTextField } from '$lib/server/neon/jsonb';
+import { questionBucketFields } from '$lib/server/neon/jsonb';
+import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
+
 export interface IFrqQuestion extends FrqQuestionPayload {
 	contentHash: string;
 	questionId: string;
@@ -25,8 +27,7 @@ export interface IFrqQuestion extends FrqQuestionPayload {
 	updatedAt: Date;
 }
 
-const apClassField = questionPayloadTextField(frqQuestions.data, 'apClass');
-const unitField = questionPayloadTextField(frqQuestions.data, 'unit');
+const { apClass: apClassField, unit: unitField } = questionBucketFields(frqQuestions.data);
 
 export function newFrqPoolRandomKey(): number {
 	return Math.random();
@@ -52,7 +53,7 @@ export function toFrqQuestion(doc: IFrqQuestion): FrqQuestion {
 		sections: doc.sections,
 		rubric: doc.rubric,
 		totalPoints: doc.totalPoints,
-		mainTopic: doc.mainTopic ?? '',
+		mainTopic: resolveQuestionMainTopic(doc.mainTopic, doc.topicsCovered),
 		topicsCovered: doc.topicsCovered,
 		apClass: doc.apClass,
 		unit: doc.unit
@@ -61,7 +62,9 @@ export function toFrqQuestion(doc: IFrqQuestion): FrqQuestion {
 
 function frqQuestionRow(row: typeof frqQuestions.$inferSelect): IFrqQuestion {
 	const { data, ...metadata } = row;
-	return { ...data, ...metadata };
+	const topicsCovered = data.topicsCovered;
+	const mainTopic = resolveQuestionMainTopic(data.mainTopic, topicsCovered) || 'Legacy topic';
+	return { ...data, mainTopic, topicsCovered, ...metadata };
 }
 
 export async function findFrqQuestionByPool(input: {
@@ -155,7 +158,7 @@ export async function createFrqQuestion(input: {
 		sections: input.sections ?? [],
 		rubric: input.rubric ?? [],
 		totalPoints: input.totalPoints,
-		mainTopic: input.mainTopic?.trim() ?? '',
+		mainTopic: resolveQuestionMainTopic(input.mainTopic, input.topicsCovered) || 'Legacy topic',
 		topicsCovered: input.topicsCovered
 	};
 

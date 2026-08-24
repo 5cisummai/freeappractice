@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
-import { isGoogleOneTapRoute } from '$lib/routes/public-marketing.server.js';
+import { isGoogleOneTapRoute } from '$lib/routes/public-marketing.js';
 import { authClient, googleClientId } from '$lib/auth/client.js';
 
 type OneTapContext = 'signin' | 'signup' | 'use';

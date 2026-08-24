@@ -15,28 +15,11 @@ import { sql } from 'drizzle-orm';
 import { authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
 import type { FrqQuestion } from '$lib/question-bank/frq/types';
+import type { McqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
 
 export const contentSchema = pgSchema('content');
 
-export type McqQuestionPayload = {
-	apClass: string;
-	unit: string;
-	/** Primary app-authored topic selected for the question. Absent on legacy rows. */
-	mainTopic?: string;
-	topicsCovered: string;
-	question: string;
-	diagramSpec: Record<string, unknown> | null;
-	hasDiagram: boolean;
-	optionA: string;
-	optionB: string;
-	optionC: string;
-	optionD: string;
-	correctAnswer: 'A' | 'B' | 'C' | 'D';
-	explanation: string;
-	hint1: string | null;
-	hint2: string | null;
-};
-
+export type { McqQuestionPayload };
 export type FrqQuestionPayload = FrqQuestion;
 
 // Canonical content registry and serving library.

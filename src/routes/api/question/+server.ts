@@ -12,6 +12,7 @@ import {
 	type QuestionRequestErrorType,
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
+import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
 
 /** Selection-only path — no synchronous LLM generation. */
 export const config = {
@@ -47,6 +48,28 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
+		const rateLimit = await limitQuestionPoolRequests(request);
+		if (!rateLimit.allowed) {
+			const now = Date.now();
+			const retryAfterSeconds = Math.max(
+				1,
+				Math.ceil(Math.max(0, (rateLimit.retryAt ?? now) - now) / 1000)
+			);
+			recordMetric(429, 'error', false, 'validation');
+			return json(
+				{ error: 'Too many requests', retryAfterSeconds },
+				{
+					status: 429,
+					headers: {
+						'RateLimit-Limit': String(rateLimit.limit),
+						'RateLimit-Remaining': '0',
+						'RateLimit-Reset': String(retryAfterSeconds),
+						'Retry-After': String(retryAfterSeconds)
+					}
+				}
+			);
+		}
+
 		const validationStarted = Date.now();
 		let body: unknown;
 		try {

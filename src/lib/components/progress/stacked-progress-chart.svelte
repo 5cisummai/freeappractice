@@ -13,18 +13,16 @@
 		filterHistory,
 		stackedActivityByScope,
 		type CourseFilter
-	} from './progress-insights.js';
+	} from './progress-metrics.js';
 
 	let {
 		items,
 		course,
-		priorityLabels = [],
-		loading = false
+		priorityLabels = []
 	}: {
 		items: HistoryItem[];
 		course: CourseFilter;
 		priorityLabels?: string[];
-		loading?: boolean;
 	} = $props();
 
 	const ranges = [
@@ -51,7 +49,9 @@
 	const rangeLabel = $derived(
 		ranges.find((range) => range.value === selectedRange)?.label ?? 'Last 30 days'
 	);
-	const activity = $derived(stackedActivityByScope(items, course, rangeDays, priorityLabels));
+	const activity = $derived(
+		stackedActivityByScope(filterHistory(items, course), course, rangeDays, priorityLabels)
+	);
 	const accuracyDays = $derived(buildAccuracyDays(filterHistory(items, course), rangeDays));
 	const series = $derived(
 		activity.series.map((item) => ({
@@ -119,9 +119,7 @@
 				<Card.Description>{description} {rangeLabel}.</Card.Description>
 			</Card.Header>
 			<Card.Content>
-				{#if loading}
-					<div class="h-80 w-full animate-pulse rounded-lg bg-muted" aria-hidden="true"></div>
-				{:else if series.length === 0 || !hasActivity}
+				{#if series.length === 0 || !hasActivity}
 					<div class="flex min-h-48 items-center justify-center rounded-lg border border-dashed">
 						<p class="text-sm text-muted-foreground">
 							No practice activity in {rangeLabel.toLowerCase()}.

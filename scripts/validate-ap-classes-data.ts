@@ -13,12 +13,15 @@ const unitById = new Map(
 );
 const pageById = new Map(dataset.pages.map((page) => [page.id, page] as const));
 
-if (dataset.scope.appCourseCount !== 25)
-	fail(`Expected 25 courses, found ${dataset.scope.appCourseCount}.`);
-if (dataset.scope.appUnitCount !== 179)
-	fail(`Expected 179 units, found ${dataset.scope.appUnitCount}.`);
-if (dataset.courses.length !== 25)
-	fail(`Dataset contains ${dataset.courses.length} course records.`);
+if (dataset.scope.appCourseCount !== dataset.courses.length)
+	fail(`Expected ${dataset.scope.appCourseCount} courses, found ${dataset.courses.length}.`);
+if (
+	dataset.scope.appUnitCount !==
+	dataset.courses.reduce((sum, course) => sum + course.units.length, 0)
+)
+	fail(
+		`Expected ${dataset.scope.appUnitCount} units, found ${dataset.courses.reduce((sum, course) => sum + course.units.length, 0)}.`
+	);
 if (dataset.scope.practicePageCount !== dataset.pages.length)
 	fail(`Expected ${dataset.scope.practicePageCount} pages, found ${dataset.pages.length}.`);
 if (pageById.size !== dataset.pages.length) fail('Practice page IDs must be unique.');
@@ -112,8 +115,10 @@ for (const course of dataset.courses) {
 	}
 }
 
-if (courseIds.size !== 25) fail(`Expected 25 unique course IDs, found ${courseIds.size}.`);
-if (unitIds.size !== 179) fail(`Expected 179 unique unit IDs, found ${unitIds.size}.`);
+if (courseIds.size !== dataset.scope.appCourseCount)
+	fail(`Expected ${dataset.scope.appCourseCount} unique course IDs, found ${courseIds.size}.`);
+if (unitIds.size !== dataset.scope.appUnitCount)
+	fail(`Expected ${dataset.scope.appUnitCount} unique unit IDs, found ${unitIds.size}.`);
 
 const supportedFrqCourses = new Set(dataset.questionBank.frq.appSupportedCourses);
 const profileCourses = new Set(
@@ -136,6 +141,7 @@ for (const field of [
 	'explanation',
 	'hint1',
 	'hint2',
+	'mainTopic',
 	'topicsCovered'
 ]) {
 	if (!requiredMcqFields.has(field)) fail(`MCQ schema is missing required field ${field}.`);

@@ -29,6 +29,7 @@ const question: PublicFrqQuestion = {
 		}
 	],
 	totalPoints: 1,
+	mainTopic: 'Cells',
 	topicsCovered: 'Cells',
 	apClass: 'AP Biology',
 	unit: 'Unit 1'

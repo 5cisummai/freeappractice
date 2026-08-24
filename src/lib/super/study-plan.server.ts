@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { studyPlans, studyTasks } from '$lib/server/neon/schema';
+import { parseStudyPlanInsights } from '$lib/super/study-plan-insights';
 import { getPlanAccess } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
 import {
@@ -159,7 +160,7 @@ async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
 		userId: plan.userId,
 		startsOn: plan.startsOn,
 		updatedAt: plan.updatedAt,
-		insights: (plan.insights as StudyPlanInsights | null | undefined) ?? null,
+		insights: parseStudyPlanInsights(plan.insights),
 		tasks: (tasks as Array<Record<string, any>>).map((task) => ({
 			id: task.id,
 			apClass: task.apClass,

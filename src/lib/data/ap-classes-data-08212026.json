@@ -1242,6 +1242,7 @@
 					"explanation",
 					"hint1",
 					"hint2",
+					"mainTopic",
 					"topicsCovered"
 				],
 				"optionalFields": ["diagram"],
@@ -1295,6 +1296,7 @@
 					"rubric",
 					"totalPoints",
 					"topicsCovered",
+					"mainTopic",
 					"apClass",
 					"unit"
 				],

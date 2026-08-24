@@ -59,7 +59,7 @@ const FrqQuestionBaseSchema = z
 		sections: z.array(FrqSectionSchema).min(1).max(12),
 		rubric: z.array(FrqRubricCriterionSchema).min(1).max(30),
 		totalPoints: z.number().int().min(1).max(100),
-		mainTopic: z.string().trim().max(240).default(''),
+		mainTopic: z.string().trim().min(1).max(240),
 		topicsCovered: z.string().trim().min(1).max(1_000),
 		apClass: z.string().trim().min(1).max(120),
 		unit: z.string().trim().min(1).max(200)

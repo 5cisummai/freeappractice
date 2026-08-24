@@ -12,6 +12,34 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required');
 
 const sql = neon(databaseUrl);
 
+export async function assertQuestionJsonbReady(): Promise<void> {
+	const [counts] = await sql.query(`
+		SELECT
+			(SELECT COUNT(*)::int FROM content.mcq_questions WHERE data IS NULL) AS missing_mcq,
+			(SELECT COUNT(*)::int FROM content.frq_questions WHERE data IS NULL) AS missing_frq,
+			(SELECT COUNT(*)::int FROM content.mcq_questions
+				WHERE COALESCE(data ->> 'apClass', '') = ''
+					OR COALESCE(data ->> 'unit', '') = ''
+					OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
+			) AS invalid_mcq,
+			(SELECT COUNT(*)::int FROM content.frq_questions
+				WHERE COALESCE(data ->> 'apClass', '') = ''
+					OR COALESCE(data ->> 'unit', '') = ''
+					OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
+			) AS invalid_frq
+	`);
+	if (
+		counts.missing_mcq !== 0 ||
+		counts.missing_frq !== 0 ||
+		counts.invalid_mcq !== 0 ||
+		counts.invalid_frq !== 0
+	) {
+		throw new Error(
+			`Question JSONB is not ready for cleanup: missing MCQ=${counts.missing_mcq} FRQ=${counts.missing_frq}; invalid MCQ=${counts.invalid_mcq} FRQ=${counts.invalid_frq}`
+		);
+	}
+}
+
 export async function backfillQuestionJsonb(): Promise<void> {
 	const [legacySchema] = await sql.query(`
 		SELECT
@@ -56,7 +84,9 @@ export async function backfillQuestionJsonb(): Promise<void> {
 				'correctAnswer', correct_answer,
 				'explanation', explanation,
 				'hint1', hint_1,
-				'hint2', hint_2
+				'hint2', hint_2,
+				'mainTopic', COALESCE(NULLIF(BTRIM(topics_covered), ''), 'Legacy topic'),
+				'topicsCovered', COALESCE(topics_covered, '')
 			)
 			WHERE data IS NULL
 		`),
@@ -112,23 +142,39 @@ export async function backfillQuestionJsonb(): Promise<void> {
 					WHERE criterion.question_id = question.question_id
 				), '[]'::jsonb),
 				'totalPoints', question.total_points,
+				'mainTopic', COALESCE(NULLIF(BTRIM(question.topics_covered), ''), 'Legacy topic'),
 				'topicsCovered', question.topics_covered
 			)
 			WHERE data IS NULL
 		`)
 	]);
 
-	const [counts] = await sql.query(`
-		SELECT
-			(SELECT COUNT(*)::int FROM content.mcq_questions WHERE data IS NULL) AS missing_mcq,
-			(SELECT COUNT(*)::int FROM content.frq_questions WHERE data IS NULL) AS missing_frq
-	`);
-	if (counts.missing_mcq !== 0 || counts.missing_frq !== 0) {
-		throw new Error(
-			`Backfill incomplete: ${counts.missing_mcq} MCQ and ${counts.missing_frq} FRQ payloads missing`
-		);
-	}
+	await sql.transaction([
+		sql.query(`
+			UPDATE content.mcq_questions
+			SET data = data || jsonb_build_object(
+				'mainTopic', COALESCE(
+					NULLIF(data ->> 'mainTopic', ''),
+					NULLIF(data ->> 'topicsCovered', ''),
+					'Legacy topic'
+				)
+			)
+			WHERE COALESCE(data ->> 'mainTopic', '') = ''
+		`),
+		sql.query(`
+			UPDATE content.frq_questions
+			SET data = data || jsonb_build_object(
+				'mainTopic', COALESCE(
+					NULLIF(data ->> 'mainTopic', ''),
+					NULLIF(data ->> 'topicsCovered', ''),
+					'Legacy topic'
+				)
+			)
+			WHERE COALESCE(data ->> 'mainTopic', '') = ''
+		`)
+	]);
 
+	await assertQuestionJsonbReady();
 	console.log('Question JSONB backfill complete.');
 }
 

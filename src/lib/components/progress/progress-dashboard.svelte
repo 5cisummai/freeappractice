@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import TargetIcon from '@lucide/svelte/icons/target';
@@ -10,8 +9,7 @@
 	import * as Progress from '$lib/components/ui/progress/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
-	import type { HistoryItem, HistoryResponse, ProgressEntry, StatsData } from '$lib/users/types.js';
+	import type { HistoryItem, ProgressEntry, StatsData } from '$lib/users/types.js';
 	import PracticeActivityDataTable from './practice-activity-data-table.svelte';
 	import StackedProgressChart from './stacked-progress-chart.svelte';
 	import {
@@ -21,29 +19,27 @@
 		filterHistory,
 		filterProgress,
 		hasPracticeActivity,
-		MAX_HISTORY_DAYS,
-		historyFromParam,
 		nextFocusCopy,
 		practiceHref,
 		selectNextFocus,
 		type CourseFilter
-	} from './progress-insights.js';
+	} from './progress-metrics.js';
 
 	let {
 		stats,
 		progress,
+		historyItems,
+		historyError = false,
 		selectedSubjects = []
 	}: {
 		stats: StatsData;
 		progress: ProgressEntry[];
+		historyItems: HistoryItem[];
+		historyError?: boolean;
 		selectedSubjects?: string[];
 	} = $props();
 
 	let selectedCourse = $state<CourseFilter>(ALL_COURSES);
-	let historyItems = $state<HistoryItem[]>([]);
-	let historyLoading = $state(true);
-	let historyError = $state(false);
-	let loadSequence = 0;
 
 	const courses = $derived(availableCourses(progress, stats, selectedSubjects));
 	const showCourseSelect = $derived(courses.length > 1);
@@ -55,47 +51,6 @@
 	const selectedCourseLabel = $derived(
 		selectedCourse === ALL_COURSES ? 'All courses' : selectedCourse
 	);
-
-	async function loadHistory() {
-		const sequence = ++loadSequence;
-		historyLoading = true;
-		historyError = false;
-		try {
-			const items: HistoryItem[] = [];
-			let page = 1;
-			let total = Number.POSITIVE_INFINITY;
-			const from = historyFromParam(MAX_HISTORY_DAYS);
-			while (items.length < total && page <= 10) {
-				const params = new URLSearchParams({
-					page: String(page),
-					limit: '200',
-					from,
-					sortBy: 'attemptedAt',
-					sortDir: 'desc'
-				});
-				const response = await apiFetch(`/api/me/history?${params.toString()}`);
-				const payload = await readJsonOrNull<HistoryResponse>(response);
-				if (!response.ok || !payload) throw new Error('history');
-				if (sequence !== loadSequence) return;
-				items.push(...(payload.items ?? []));
-				total = payload.total ?? items.length;
-				if ((payload.items?.length ?? 0) < 200) break;
-				page += 1;
-			}
-			if (sequence !== loadSequence) return;
-			historyItems = items;
-		} catch {
-			if (sequence !== loadSequence) return;
-			historyError = true;
-			historyItems = [];
-		} finally {
-			if (sequence === loadSequence) historyLoading = false;
-		}
-	}
-
-	onMount(() => {
-		void loadHistory();
-	});
 
 	function handleCourseChange(value: string | undefined) {
 		selectedCourse = value && value !== ALL_COURSES ? value : ALL_COURSES;
@@ -164,7 +119,6 @@
 			items={historyItems}
 			course={selectedCourse}
 			priorityLabels={selectedSubjects}
-			loading={historyLoading}
 		/>
 
 		<div class="grid gap-4 lg:grid-cols-2">
@@ -180,16 +134,7 @@
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					{#if historyLoading}
-						<div class="flex flex-col gap-5" aria-hidden="true">
-							{#each [1, 2, 3] as row (row)}
-								<div class="space-y-2">
-									<div class="h-4 w-2/3 animate-pulse rounded bg-muted"></div>
-									<div class="h-1.5 w-full animate-pulse rounded-full bg-muted"></div>
-								</div>
-							{/each}
-						</div>
-					{:else if accuracyRows.length === 0}
+					{#if accuracyRows.length === 0}
 						<p class="text-sm text-muted-foreground">No accuracy data yet.</p>
 					{:else}
 						<div class="space-y-5">
@@ -259,13 +204,7 @@
 					Question history
 				</h2>
 			</div>
-			{#if historyLoading}
-				<div class="flex flex-col gap-3">
-					{#each [1, 2, 3, 4] as row (row)}
-						<div class="h-16 w-full animate-pulse rounded-md bg-muted" aria-hidden="true"></div>
-					{/each}
-				</div>
-			{:else if courseHistory.length === 0}
+			{#if courseHistory.length === 0}
 				<Empty.Root class="border border-dashed">
 					<Empty.Header>
 						<Empty.Title>No practice activity</Empty.Title>

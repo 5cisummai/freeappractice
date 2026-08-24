@@ -1,5 +1,4 @@
-import type { IQuestionAttempt } from '$lib/users/records.server';
-import type { FrqHistoryItem, HistorySummary, QuizHistoryItem } from '$lib/users/types';
+import type { HistoryItem, HistorySummary, QuestionAttempt } from '$lib/users/types';
 import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
 import { inArray, sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
@@ -13,13 +12,8 @@ import {
 import { storedQuestionFromPayload } from '$lib/question-bank/mcq/repository.server';
 import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
-type McqHistoryItem = {
-	kind: 'mcq';
-	attempt: IQuestionAttempt;
-	question: StoredQuestion | null;
-};
-
-type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem | QuizHistoryItem;
+type McqHistoryItem = Extract<HistoryItem, { kind: 'mcq' }>;
+type PracticeHistoryItem = HistoryItem;
 
 type PracticeHistoryPageResult = {
 	items: PracticeHistoryItem[];
@@ -50,6 +44,8 @@ type HistoryQueryOptions = {
 	/** Feature/configuration gate for the FRQ source. Defaults to enabled. */
 	includeFrq?: boolean;
 };
+
+export const PROGRESS_HISTORY_LIMIT = 2000;
 
 type McqHistoryRow = {
 	questionId: string | null;
@@ -376,19 +372,18 @@ export async function getPracticeHistoryPage(
 					questionId: row.questionId,
 					apClass: row.apClass,
 					unit: row.unit,
-					selectedAnswer: (row.selectedAnswer as IQuestionAttempt['selectedAnswer']) ?? undefined,
+					selectedAnswer: (row.selectedAnswer as QuestionAttempt['selectedAnswer']) ?? undefined,
 					wasCorrect: row.wasCorrect ?? undefined,
 					timeTakenMs: row.timeTakenMs ?? undefined,
-					attemptedAt: new Date(row.attemptedAt),
-					finalAnswer: (row.finalAnswer as IQuestionAttempt['finalAnswer']) ?? undefined,
+					attemptedAt: new Date(row.attemptedAt).toISOString(),
+					finalAnswer: (row.finalAnswer as QuestionAttempt['finalAnswer']) ?? undefined,
 					answerCount: row.answerCount ?? undefined,
 					hintsShown: row.hintsShown ?? undefined,
-					terminalOutcome:
-						(row.terminalOutcome as IQuestionAttempt['terminalOutcome']) ?? undefined,
+					terminalOutcome: (row.terminalOutcome as QuestionAttempt['terminalOutcome']) ?? undefined,
 					experimentKey: row.experimentKey ?? undefined,
 					experimentVersion: row.experimentVersion ?? undefined,
 					displayedVariant:
-						(row.displayedVariant as IQuestionAttempt['displayedVariant']) ?? undefined
+						(row.displayedVariant as QuestionAttempt['displayedVariant']) ?? undefined
 				},
 				question: null
 			};
@@ -454,6 +449,20 @@ export async function getPracticeHistoryPage(
 			avgTimeMs: summaryRow.avgTimeMs === null ? null : Number(summaryRow.avgTimeMs)
 		}
 	};
+}
+
+export async function getProgressHistory(
+	userId: string,
+	options: { from: string; includeFrq: boolean }
+): Promise<HistoryItem[]> {
+	const page = await getPracticeHistoryPage(userId, {
+		page: 1,
+		limit: PROGRESS_HISTORY_LIMIT,
+		sort: { field: 'attemptedAt', direction: 'desc' },
+		filters: { from: options.from },
+		includeFrq: options.includeFrq
+	});
+	return hydratePracticeHistoryItems(page.items);
 }
 
 export async function hydratePracticeHistoryItems(

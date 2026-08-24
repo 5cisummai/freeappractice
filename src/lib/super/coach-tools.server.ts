@@ -178,7 +178,7 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		read_study_plan: tool({
 			description:
-				'Active weekly study plan and task statuses. Use for planning or schedule questions.',
+				'Active weekly study plan, task statuses, and the latest insights narrative. Use for planning, schedule, or "what should I work on" questions.',
 			inputSchema: z.object({}),
 			execute: () => getCurrentStudyPlan(userId)
 		}),

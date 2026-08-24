@@ -11,10 +11,16 @@ import {
 	tutorProfiles,
 	userProfiles
 } from '$lib/server/neon/schema';
+import { logger } from '$lib/server/logger';
 import { isSuperCoachEnabled } from '$lib/flags';
 import { getPlanAccess } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
-import { getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
+import {
+	getCurrentStudyPlan,
+	saveStudyPlan,
+	StudyPlanConflictError,
+	StudyPlansLockedError
+} from '$lib/super/study-plan.server';
 import { getCoachActivitySummary } from '$lib/super/coach-reads.server';
 import { getRecentSuperMistakes } from '$lib/super/context.server';
 import { getUserProgress } from '$lib/users/model.server';
@@ -24,7 +30,6 @@ import {
 	type StudyPlanView,
 	type StudyTask
 } from '$lib/super/types';
-import type { InsightsMetrics, InsightsResponse } from '$lib/super/insights.types';
 
 const INSIGHTS_WINDOW_DAYS = 7;
 const COMPARISON_WINDOW_DAYS = 35;
@@ -61,6 +66,29 @@ const insightOutputSchema = z.object({
 });
 
 type InsightOutput = z.infer<typeof insightOutputSchema>;
+
+export type InsightsResponse = StudyPlanInsights & {
+	plan: StudyPlanView | null;
+	skipped?: boolean;
+};
+
+export function isInsightsRefreshDue(generatedAt: string | undefined, now: Date): boolean {
+	if (!generatedAt) return true;
+	const generated = new Date(generatedAt).getTime();
+	if (!Number.isFinite(generated)) return true;
+	return now.getTime() - generated >= INSIGHTS_WINDOW_DAYS * DAY_MS;
+}
+
+async function requireInsightsGenerationAccess(userId: string, now: Date): Promise<void> {
+	if (!(await isSuperCoachEnabled())) {
+		throw new StudyPlansLockedError('Coach is temporarily unavailable.');
+	}
+	const access = await getPlanAccess(userId, now);
+	if (!hasPaidCapability(access, 'studyPlans') || !hasPaidCapability(access, 'coach')) {
+		throw new StudyPlansLockedError();
+	}
+	if (!(await getTutorProfileView(userId)).ageConfirmedAt) throw new StudyPlansLockedError();
+}
 
 type McqRow = {
 	apClass: string;
@@ -270,7 +298,7 @@ async function readInsightsContext(userId: string, now: Date) {
 			activeDays,
 			previousMcqAttempts: previousMcq.length,
 			previousMcqAccuracy: percentage(previousCorrect, previousMcq.length)
-		} satisfies InsightsMetrics,
+		} satisfies StudyPlanInsights['metrics'],
 		activity: {
 			currentStreak: activity.currentStreak,
 			lifetime: activity.lifetime,
@@ -308,8 +336,23 @@ async function readInsightsContext(userId: string, now: Date) {
 
 export async function generateInsights(
 	userId: string,
-	now = new Date()
+	now = new Date(),
+	options: { force?: boolean } = {}
 ): Promise<InsightsResponse> {
+	await requireInsightsGenerationAccess(userId, now);
+	const existingPlan = await getCurrentStudyPlan(userId, now);
+	if (
+		!options.force &&
+		existingPlan?.insights &&
+		!isInsightsRefreshDue(existingPlan.insights.generatedAt, now)
+	) {
+		return {
+			...existingPlan.insights,
+			plan: existingPlan,
+			skipped: true
+		};
+	}
+
 	const context = await readInsightsContext(userId, now);
 	const { parsed } = await structuredObject<InsightOutput>({
 		callName: 'super_insights',
@@ -333,12 +376,6 @@ export async function generateInsights(
 	});
 
 	const startsOn = startOfUtcDay(now);
-	const tasks = buildPlanTasks(
-		parsed,
-		context.currentPlan,
-		startsOn,
-		new Set(context.allowedUnits)
-	);
 	const insights = {
 		generatedAt: now.toISOString(),
 		window: context.window,
@@ -348,20 +385,27 @@ export async function generateInsights(
 		focusAreas: sanitizeFocusAreas(parsed.focusAreas, new Set(context.allowedUnits)),
 		planRationale: parsed.planRationale
 	} satisfies StudyPlanInsights;
-	const plan = await saveStudyPlan(
-		userId,
-		{
-			startsOn: startsOn.toISOString(),
-			tasks: tasks.length ? tasks : (context.currentPlan?.tasks ?? []),
-			insights
-		},
-		{ behavior: 'replace' }
-	);
 
-	return {
-		...insights,
-		plan
-	};
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const currentPlan = await getCurrentStudyPlan(userId, now);
+		const tasks = buildPlanTasks(parsed, currentPlan, startsOn, new Set(context.allowedUnits));
+		try {
+			const plan = await saveStudyPlan(
+				userId,
+				{
+					startsOn: startsOn.toISOString(),
+					tasks: tasks.length ? tasks : (currentPlan?.tasks ?? []),
+					insights
+				},
+				{ behavior: 'replace' }
+			);
+			return { ...insights, plan };
+		} catch (error) {
+			if (error instanceof StudyPlanConflictError) continue;
+			throw error;
+		}
+	}
+	throw new StudyPlanConflictError('Study plan changed while saving insights; please retry.');
 }
 
 export type WeeklyInsightsSummary = {
@@ -397,7 +441,7 @@ export async function runWeeklyInsights(now = new Date()): Promise<WeeklyInsight
 			continue;
 		}
 		const access = await getPlanAccess(profile.userId, now);
-		if (!hasPaidCapability(access, 'coach')) {
+		if (!hasPaidCapability(access, 'coach') || !hasPaidCapability(access, 'studyPlans')) {
 			skipped += 1;
 			continue;
 		}
@@ -409,14 +453,16 @@ export async function runWeeklyInsights(now = new Date()): Promise<WeeklyInsight
 		const results = await Promise.all(
 			batch.map(async (userId) => {
 				try {
-					await generateInsights(userId, now);
-					return 'generated' as const;
-				} catch {
+					const result = await generateInsights(userId, now);
+					return result.skipped ? ('skipped' as const) : ('generated' as const);
+				} catch (error) {
+					logger.error('Weekly insights generation failed', { userId, error });
 					return 'failed' as const;
 				}
 			})
 		);
 		generated += results.filter((result) => result === 'generated').length;
+		skipped += results.filter((result) => result === 'skipped').length;
 		failed += results.filter((result) => result === 'failed').length;
 	}
 

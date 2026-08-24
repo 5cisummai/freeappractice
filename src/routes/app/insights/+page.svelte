@@ -17,6 +17,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Empty from '$lib/components/ui/empty/index.js';
 	import * as Progress from '$lib/components/ui/progress/index.js';
+	import { utcDateKey } from '$lib/dates/calendar-day.js';
 	import type { StudyPlanInsights, StudyPlanView, StudyTask } from '$lib/super/types';
 	import { cn } from '$lib/utils.js';
 
@@ -35,8 +36,7 @@
 	);
 
 	function dateKey(value: Date | string): string {
-		const date = value instanceof Date ? value : new Date(value);
-		return date.toISOString().slice(0, 10);
+		return utcDateKey(value);
 	}
 
 	function buildWeekDays(startsOn: string): Array<{ date: string; key: string }> {

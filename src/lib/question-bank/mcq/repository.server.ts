@@ -7,7 +7,9 @@ import {
 	questionRegistry,
 	type McqQuestionPayload
 } from '$lib/server/neon/schema';
-import { questionPayloadTextField } from '$lib/server/neon/jsonb';
+import { questionBucketFields } from '$lib/server/neon/jsonb';
+import { parseMcqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
+import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
 
 export interface IQuestion extends McqQuestionPayload {
 	questionId: string;
@@ -18,8 +20,7 @@ export interface IQuestion extends McqQuestionPayload {
 	updatedAt: Date;
 }
 
-const apClassField = questionPayloadTextField(mcqQuestions.data, 'apClass');
-const unitField = questionPayloadTextField(mcqQuestions.data, 'unit');
+const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuestions.data);
 
 export type CanonicalMcqInput = Omit<
 	IQuestion,
@@ -64,7 +65,7 @@ export async function countActiveMcqQuestions(apClass: string, unit: string): Pr
 
 function fromRow(row: typeof mcqQuestions.$inferSelect): IQuestion {
 	const { data, ...metadata } = row;
-	return { ...data, ...metadata };
+	return { ...parseMcqQuestionPayload(data), ...metadata };
 }
 
 /** Insert a generated MCQ and its serving metadata in one Neon batch. */
@@ -73,8 +74,8 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 	if (!questionId) throw new Error('MCQ question requires questionId');
 
 	const unit = input.unit ?? 'all-units';
-	const mainTopic = input.mainTopic?.trim() ?? '';
 	const topicsCovered = input.topicsCovered?.trim() ?? '';
+	const mainTopic = resolveQuestionMainTopic(input.mainTopic, topicsCovered) || 'Legacy topic';
 	const data: McqQuestionPayload = {
 		apClass: input.apClass,
 		unit,
@@ -235,7 +236,7 @@ export function storedQuestionFromPayload(input: {
 		...(data.hint2 != null ? { hint2: data.hint2 } : {}),
 		apClass: data.apClass,
 		unit: data.unit,
-		...(data.mainTopic?.trim() ? { mainTopic: data.mainTopic } : {}),
+		mainTopic: data.mainTopic,
 		...(input.contentHash ? { contentHash: input.contentHash } : {}),
 		...(data.topicsCovered?.trim() ? { topicsCovered: data.topicsCovered } : {}),
 		...(data.diagramSpec ? { diagramSpec: data.diagramSpec } : {}),

@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { neon } from '@neondatabase/serverless';
-import { backfillQuestionJsonb } from './backfill-question-jsonb';
+import { assertQuestionJsonbReady, backfillQuestionJsonb } from './backfill-question-jsonb';
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!databaseUrl) throw new Error('DATABASE_URL is required');
@@ -64,7 +64,10 @@ async function main(): Promise<void> {
 		// The cleanup migration drops the legacy columns/tables after the JSONB
 		// payload is populated. Keep the normal `db:apply` path safe for callers
 		// that do not use the CI-specific migration cap and backfill step.
-		if (file === QUESTION_JSONB_CLEANUP_MIGRATION) await backfillQuestionJsonb();
+		if (file === QUESTION_JSONB_CLEANUP_MIGRATION) {
+			await backfillQuestionJsonb();
+			await assertQuestionJsonbReady();
+		}
 
 		const transaction = contents
 			.split(statementBreakpoint)

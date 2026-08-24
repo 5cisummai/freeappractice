@@ -11,7 +11,7 @@ export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQu
 
 	return {
 		questionId: question.id,
-		topic: question.mainTopic || question.topicsCovered,
+		topic: question.mainTopic,
 		mainTopic: question.mainTopic,
 		source: 'cached',
 		prompt: question.question,

@@ -37,7 +37,7 @@ export const actions = {
 			return fail(studyPlanAccess.status, { error: studyPlanAccess.message });
 
 		try {
-			await generateInsights(userId);
+			await generateInsights(userId, new Date(), { force: true });
 			return { success: true };
 		} catch {
 			return fail(500, { error: 'Could not generate your weekly readout. Please try again.' });

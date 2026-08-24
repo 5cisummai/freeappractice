@@ -3,7 +3,7 @@ import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
 import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqQuestions } from '$lib/server/neon/schema';
-import { questionPayloadTextField } from '$lib/server/neon/jsonb';
+import { questionBucketFields } from '$lib/server/neon/jsonb';
 import { poolTargetForBucket, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
 import type { PoolKindAdapter, PoolKindBucket } from '$lib/question-bank/pool-kinds.server';
 
@@ -22,8 +22,7 @@ function listBuckets(): PoolKindBucket[] {
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
-	const apClass = questionPayloadTextField(mcqQuestions.data, 'apClass');
-	const unit = questionPayloadTextField(mcqQuestions.data, 'unit');
+	const { apClass, unit } = questionBucketFields(mcqQuestions.data);
 	const rows = await getNeonDatabase()
 		.select({
 			apClass,
