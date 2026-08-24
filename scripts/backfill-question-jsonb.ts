@@ -147,28 +147,58 @@ export async function backfillQuestionJsonb(): Promise<void> {
 		`)
 	]);
 
+	// Rows written during the dual-write window can already have `data` while
+	// still missing apClass/unit/mainTopic. The copy above only fills NULLs.
 	await sql.transaction([
 		sql.query(`
 			UPDATE content.mcq_questions
 			SET data = data || jsonb_build_object(
+				'apClass', COALESCE(
+					NULLIF(BTRIM(data ->> 'apClass'), ''),
+					NULLIF(BTRIM(data ->> 'ap_class'), ''),
+					NULLIF(BTRIM(ap_class), ''),
+					'Unknown'
+				),
+				'unit', COALESCE(
+					NULLIF(BTRIM(data ->> 'unit'), ''),
+					NULLIF(BTRIM(unit), ''),
+					'all-units'
+				),
 				'mainTopic', COALESCE(
-					NULLIF(data ->> 'mainTopic', ''),
-					NULLIF(data ->> 'topicsCovered', ''),
+					NULLIF(BTRIM(data ->> 'mainTopic'), ''),
+					NULLIF(BTRIM(data ->> 'topicsCovered'), ''),
+					NULLIF(BTRIM(topics_covered), ''),
 					'Legacy topic'
 				)
 			)
-			WHERE COALESCE(data ->> 'mainTopic', '') = ''
+			WHERE COALESCE(data ->> 'apClass', '') = ''
+				OR COALESCE(data ->> 'unit', '') = ''
+				OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
 		`),
 		sql.query(`
 			UPDATE content.frq_questions
 			SET data = data || jsonb_build_object(
+				'apClass', COALESCE(
+					NULLIF(BTRIM(data ->> 'apClass'), ''),
+					NULLIF(BTRIM(data ->> 'ap_class'), ''),
+					NULLIF(BTRIM(ap_class), ''),
+					'Unknown'
+				),
+				'unit', COALESCE(
+					NULLIF(BTRIM(data ->> 'unit'), ''),
+					NULLIF(BTRIM(unit), ''),
+					'all-units'
+				),
 				'mainTopic', COALESCE(
-					NULLIF(data ->> 'mainTopic', ''),
-					NULLIF(data ->> 'topicsCovered', ''),
+					NULLIF(BTRIM(data ->> 'mainTopic'), ''),
+					NULLIF(BTRIM(data ->> 'topicsCovered'), ''),
+					NULLIF(BTRIM(topics_covered), ''),
 					'Legacy topic'
 				)
 			)
-			WHERE COALESCE(data ->> 'mainTopic', '') = ''
+			WHERE COALESCE(data ->> 'apClass', '') = ''
+				OR COALESCE(data ->> 'unit', '') = ''
+				OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
 		`)
 	]);
 

@@ -81,9 +81,6 @@ jobs:
       - name: Backfill question JSONB payloads
         run: bun run db:backfill-question-jsonb
 
-      - name: Backfill personal organizations
-        run: bun run auth:backfill-personal-orgs
-
       - name: Apply remaining migrations
         run: bun run db:apply
 
