@@ -87,11 +87,6 @@ function cachedVercelAdapter(): BooleanVercelAdapter {
 	};
 }
 
-/**
- * Sticky multi-attempt-with-hints practice experiment.
- * Managed in the Vercel Flags dashboard (`multi-attempt-experiment`).
- * Default off in all environments until you flip it there — no env var.
- */
 function vercelFlag(key: string, description: string, defaultValue: boolean) {
 	return flag<boolean>({
 		key,
@@ -103,20 +98,6 @@ function vercelFlag(key: string, description: string, defaultValue: boolean) {
 			{ value: false, label: 'Off' }
 		]
 	});
-}
-
-export const multiAttemptExperimentEnabled = vercelFlag(
-	'multi-attempt-experiment',
-	'Enable sticky multi-attempt-with-hints practice experiment',
-	false
-);
-
-export async function isMultiAttemptExperimentEnabled(): Promise<boolean> {
-	try {
-		return Boolean(await multiAttemptExperimentEnabled());
-	} catch {
-		return false;
-	}
 }
 
 /**

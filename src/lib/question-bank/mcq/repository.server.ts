@@ -29,8 +29,6 @@ export type CanonicalMcqInput = Omit<
 	| 'active'
 	| 'hasDiagram'
 	| 'diagramSpec'
-	| 'hint1'
-	| 'hint2'
 	| 'mainTopic'
 	| 'topicsCovered'
 	| 'createdAt'
@@ -44,8 +42,6 @@ export type CanonicalMcqInput = Omit<
 			| 'active'
 			| 'hasDiagram'
 			| 'diagramSpec'
-			| 'hint1'
-			| 'hint2'
 			| 'mainTopic'
 			| 'topicsCovered'
 		>
@@ -89,9 +85,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		optionC: input.optionC,
 		optionD: input.optionD,
 		correctAnswer: input.correctAnswer,
-		explanation: input.explanation,
-		hint1: input.hint1 ?? null,
-		hint2: input.hint2 ?? null
+		explanation: input.explanation
 	};
 	const db = getNeonDatabase();
 	const registryInsert = db
@@ -204,8 +198,6 @@ export interface StoredQuestion {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
-	hint1?: string;
-	hint2?: string;
 	apClass?: string;
 	unit?: string;
 	mainTopic?: string;
@@ -232,8 +224,6 @@ export function storedQuestionFromPayload(input: {
 		optionD: data.optionD,
 		correctAnswer: data.correctAnswer,
 		explanation: data.explanation,
-		...(data.hint1 != null ? { hint1: data.hint1 } : {}),
-		...(data.hint2 != null ? { hint2: data.hint2 } : {}),
 		apClass: data.apClass,
 		unit: data.unit,
 		mainTopic: data.mainTopic,

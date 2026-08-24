@@ -28,7 +28,7 @@ flowchart TB
         AuthLib["auth/* — Better Auth + API helpers"]
         QGen["questions/* — pool select, refill worker, Neon content"]
         FrqLib["frq/* — FRQ select, grade, worker generation"]
-        PracticeExp["practice/* — multi-attempt experiment"]
+        PracticeUI["components/practice — practice runner UI"]
         AI["ai/service.server.ts — Vercel AI SDK"]
         TutorLib["tutor/*"]
         UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
@@ -69,7 +69,6 @@ flowchart TB
     QGen --> AI
     FrqLib --> NeonDB
     FrqLib --> AI
-    PracticeExp --> UsersLib
     AI --> OpenAI
     TutorLib --> AI
     Catalog --> StaticJSON
@@ -295,7 +294,7 @@ sequenceDiagram
             Sess-->>U: Warming UI · bounded auto-retry
         end
         opt After answer
-            U->>Sess: Check answer / multi-attempt hints
+            U->>Sess: Check answer
             Sess->>API: POST /api/me/record-attempt
             API->>DB: Atomic MCQ attempt + progress update
         end
@@ -331,7 +330,7 @@ Practice serve paths never call the LLM or read S3 for the question body — onl
 
 `QuestionShell` is a thin public MCQ-only wrapper around `PracticeShell`. MCQ answer/load/experiment state lives in `createQuestionCardSession` (`question-card-session.svelte.ts`); markup stays in `question-card.svelte`.
 
-`$lib/practice/*` is the **multi-attempt A/B experiment**, not practice routing. Practice page catalog + SEO live in `$lib/catalog` and `$lib/components/practice`.
+Practice page catalog + SEO live in `$lib/catalog` and `$lib/components/practice`.
 
 ---
 

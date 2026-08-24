@@ -20,8 +20,6 @@ import {
 	examfigDiagramsEnabled,
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,
-	isSuperCheckoutEnabled,
-	multiAttemptExperimentEnabled,
 	superCheckoutEnabled,
 	superCoachEnabled,
 	superMemoryEnabled,
@@ -328,7 +326,6 @@ export const handle = sequence(
 				createHandle({
 					secret: env.FLAGS_SECRET,
 					flags: {
-						multiAttemptExperimentEnabled,
 						frqPracticeEnabled,
 						examfigDiagramsEnabled,
 						superFreeBetaEnabled,

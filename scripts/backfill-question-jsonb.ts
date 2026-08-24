@@ -83,8 +83,6 @@ export async function backfillQuestionJsonb(): Promise<void> {
 				'optionD', option_d,
 				'correctAnswer', correct_answer,
 				'explanation', explanation,
-				'hint1', hint_1,
-				'hint2', hint_2,
 				'mainTopic', COALESCE(NULLIF(BTRIM(topics_covered), ''), 'Legacy topic'),
 				'topicsCovered', COALESCE(topics_covered, '')
 			)

@@ -33,9 +33,7 @@ const sampleAnswer = {
 	optionD: 'D',
 	correctAnswer: 'A' as const,
 	explanation: 'Because light.',
-	topicsCovered: 'energy',
-	hint1: 'h1',
-	hint2: 'h2'
+	topicsCovered: 'energy'
 };
 
 describe('generateQuestionForPool duplicate insertion', () => {

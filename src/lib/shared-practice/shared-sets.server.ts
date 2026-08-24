@@ -57,8 +57,6 @@ function toGeneratedQuestion(question: StoredQuestion): GeneratedQuestion {
 		],
 		correctAnswer: question.correctAnswer,
 		explanation: question.explanation,
-		hint1: question.hint1,
-		hint2: question.hint2,
 		diagramSpec: question.diagramSpec,
 		hasDiagram: question.hasDiagram,
 		hasStimulus: false

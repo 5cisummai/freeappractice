@@ -32,8 +32,6 @@ const sampleQuestion = {
 	optionD: 'D',
 	correctAnswer: 'A' as const,
 	explanation: 'Because.',
-	hint1: 'Hint 1',
-	hint2: 'Hint 2',
 	randomKey: 0.42,
 	active: true
 };
@@ -72,9 +70,7 @@ describe('canonical MCQ persistence', () => {
 						optionC: sampleQuestion.optionC,
 						optionD: sampleQuestion.optionD,
 						correctAnswer: sampleQuestion.correctAnswer,
-						explanation: sampleQuestion.explanation,
-						hint1: sampleQuestion.hint1,
-						hint2: sampleQuestion.hint2
+						explanation: sampleQuestion.explanation
 					},
 					contentHash: sampleQuestion.contentHash,
 					randomKey: sampleQuestion.randomKey,

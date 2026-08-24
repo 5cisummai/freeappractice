@@ -55,13 +55,6 @@ type McqHistoryRow = {
 	wasCorrect: boolean | null;
 	timeTakenMs: number | null;
 	attemptedAt: Date;
-	finalAnswer: string | null;
-	answerCount: number | null;
-	hintsShown: number | null;
-	terminalOutcome: string | null;
-	experimentKey: string | null;
-	experimentVersion: number | null;
-	displayedVariant: string | null;
 };
 
 type HistorySqlRow = McqHistoryRow & {
@@ -220,13 +213,6 @@ export async function getPracticeHistoryPage(
 				${mcqAttempts.wasCorrect} AS "wasCorrect",
 				${mcqAttempts.timeTakenMs} AS "timeTakenMs",
 				${mcqAttempts.attemptedAt} AS "attemptedAt",
-				${mcqAttempts.finalAnswer} AS "finalAnswer",
-				${mcqAttempts.answerCount} AS "answerCount",
-				${mcqAttempts.hintsShown} AS "hintsShown",
-				${mcqAttempts.terminalOutcome} AS "terminalOutcome",
-				${mcqAttempts.experimentKey} AS "experimentKey",
-				${mcqAttempts.experimentVersion} AS "experimentVersion",
-				${mcqAttempts.displayedVariant} AS "displayedVariant",
 				NULL::integer AS "pointsEarned",
 				NULL::integer AS "pointsAvailable",
 				NULL::integer AS percentage,
@@ -268,13 +254,6 @@ export async function getPracticeHistoryPage(
 				NULL::boolean AS "wasCorrect",
 				${frqAttempts.timeTakenMs} AS "timeTakenMs",
 				${frqAttempts.createdAt} AS "attemptedAt",
-				NULL::text AS "finalAnswer",
-				NULL::integer AS "answerCount",
-				NULL::integer AS "hintsShown",
-				NULL::text AS "terminalOutcome",
-				NULL::text AS "experimentKey",
-				NULL::integer AS "experimentVersion",
-				NULL::text AS "displayedVariant",
 				${frqAttemptGrades.pointsEarned} AS "pointsEarned",
 				${frqAttemptGrades.pointsAvailable} AS "pointsAvailable",
 				${frqAttemptGrades.percentage} AS percentage,
@@ -316,13 +295,6 @@ export async function getPracticeHistoryPage(
 				NULL::boolean AS "wasCorrect",
 				${quizAttempts.timeTakenMs} AS "timeTakenMs",
 				${quizAttempts.completedAt} AS "attemptedAt",
-				NULL::text AS "finalAnswer",
-				NULL::integer AS "answerCount",
-				NULL::integer AS "hintsShown",
-				NULL::text AS "terminalOutcome",
-				NULL::text AS "experimentKey",
-				NULL::integer AS "experimentVersion",
-				NULL::text AS "displayedVariant",
 				NULL::integer AS "pointsEarned",
 				NULL::integer AS "pointsAvailable",
 				NULL::integer AS percentage,
@@ -372,18 +344,10 @@ export async function getPracticeHistoryPage(
 					questionId: row.questionId,
 					apClass: row.apClass,
 					unit: row.unit,
-					selectedAnswer: (row.selectedAnswer as QuestionAttempt['selectedAnswer']) ?? undefined,
-					wasCorrect: row.wasCorrect ?? undefined,
+					selectedAnswer: row.selectedAnswer as QuestionAttempt['selectedAnswer'],
+					wasCorrect: row.wasCorrect ?? false,
 					timeTakenMs: row.timeTakenMs ?? undefined,
-					attemptedAt: new Date(row.attemptedAt).toISOString(),
-					finalAnswer: (row.finalAnswer as QuestionAttempt['finalAnswer']) ?? undefined,
-					answerCount: row.answerCount ?? undefined,
-					hintsShown: row.hintsShown ?? undefined,
-					terminalOutcome: (row.terminalOutcome as QuestionAttempt['terminalOutcome']) ?? undefined,
-					experimentKey: row.experimentKey ?? undefined,
-					experimentVersion: row.experimentVersion ?? undefined,
-					displayedVariant:
-						(row.displayedVariant as QuestionAttempt['displayedVariant']) ?? undefined
+					attemptedAt: new Date(row.attemptedAt).toISOString()
 				},
 				question: null
 			};

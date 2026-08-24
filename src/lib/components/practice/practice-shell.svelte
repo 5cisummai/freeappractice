@@ -32,10 +32,6 @@
 		persistHistory?: boolean;
 		sharedQuiz?: SharedQuizView | null;
 	};
-	export type PracticeExperiment = {
-		assignedVariant: 'control' | 'multi_attempt_hints';
-		experimentEnabled: boolean;
-	};
 	export type PracticeEvent =
 		| { type: 'selection-change'; selectedClass: string; selectedUnit: string }
 		| { type: 'mode-change'; mode: 'mcq' | 'frq' }
@@ -48,7 +44,6 @@
 		capabilities?: PracticeCapabilities;
 		quiz?: PracticeQuizConfig;
 		presentation?: 'standard' | 'hero';
-		experiment?: PracticeExperiment;
 		onEvent?: (event: PracticeEvent) => void;
 	};
 
@@ -59,7 +54,6 @@
 		capabilities = {},
 		quiz = {},
 		presentation = 'standard',
-		experiment,
 		onEvent
 	}: PracticeRunnerProps = $props();
 
@@ -289,8 +283,7 @@
 								selectedUnit,
 								unitRange,
 								requestVersion,
-								presetQuestionId: presetQuestionId || undefined,
-								experiment
+								presetQuestionId: presetQuestionId || undefined
 							})}
 							expanded={isExpanded}
 							onExpand={toggleExpanded}

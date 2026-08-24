@@ -16,8 +16,6 @@ type McqAnswerBody = {
 	explanation: string;
 	mainTopic: string;
 	topicsCovered: string;
-	hint1: string;
-	hint2: string;
 	diagramSpec: Record<string, unknown> | null;
 	hasDiagram: boolean;
 };
@@ -45,8 +43,6 @@ function hotPoolBodyFromDoc(
 		| 'explanation'
 		| 'mainTopic'
 		| 'topicsCovered'
-		| 'hint1'
-		| 'hint2'
 		| 'diagramSpec'
 		| 'hasDiagram'
 	>
@@ -61,8 +57,6 @@ function hotPoolBodyFromDoc(
 		explanation: doc.explanation,
 		mainTopic: doc.mainTopic,
 		topicsCovered: doc.topicsCovered ?? '',
-		hint1: doc.hint1 ?? '',
-		hint2: doc.hint2 ?? '',
 		diagramSpec: doc.diagramSpec ?? null,
 		hasDiagram: doc.hasDiagram
 	};

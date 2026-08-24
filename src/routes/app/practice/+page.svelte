@@ -86,36 +86,13 @@
 
 		if (!questionId) return;
 
-		if (result.displayedVariant === 'multi_attempt_hints') {
-			void syncAttempt(
-				'/api/me/record-attempt',
-				{
-					attemptId: crypto.randomUUID(),
-					questionId,
-					answers: result.answers ?? [],
-					terminalOutcome: result.terminalOutcome,
-					hintsShown: result.hintsShown,
-					displayedVariant: result.displayedVariant,
-					experimentKey: result.experimentKey,
-					experimentVersion: result.experimentVersion,
-					timeTakenMs: result.timeTakenMs,
-					selectedAnswer: result.selectedAnswer
-				},
-				'Could not save this attempt to your progress history.'
-			);
-			return;
-		}
-
 		void syncAttempt(
 			'/api/me/record-attempt',
 			{
 				attemptId: crypto.randomUUID(),
 				questionId,
 				selectedAnswer: result.selectedAnswer,
-				timeTakenMs: result.timeTakenMs,
-				displayedVariant: result.displayedVariant,
-				experimentKey: result.experimentKey,
-				experimentVersion: result.experimentVersion
+				timeTakenMs: result.timeTakenMs
 			},
 			'Could not save this attempt to your progress history.'
 		);
@@ -167,7 +144,6 @@
 					showFirstUseHints: true
 				}}
 				quiz={{ persistHistory: true, sharedQuiz: data.sharedQuiz }}
-				experiment={data.practiceExperiment}
 				onEvent={handlePracticeEvent}
 			/>
 		{/if}

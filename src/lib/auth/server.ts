@@ -130,7 +130,7 @@ export const auth = betterAuth({
 		accountLinking: {
 			enabled: true,
 			trustedProviders: ['google'],
-			requireLocalEmailVerified: true
+			requireLocalEmailVerified: false
 		}
 	},
 	session: {
@@ -187,8 +187,7 @@ export const auth = betterAuth({
 			? {
 					google: {
 						clientId: env.GOOGLE_CLIENT_ID,
-						clientSecret: env.GOOGLE_CLIENT_SECRET,
-						disableImplicitSignUp: true
+						clientSecret: env.GOOGLE_CLIENT_SECRET
 					}
 				}
 			: undefined,
@@ -204,7 +203,7 @@ export const auth = betterAuth({
 		}
 	},
 	plugins: [
-		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap({ disableSignup: true })] : []),
+		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
 		admin({
 			adminUserIds: getAdminUserIds()
 		}),

@@ -11,8 +11,7 @@
 		correctAnswer,
 		onSelect,
 		showFeedback = true,
-		compact = false,
-		lockedChoices = []
+		compact = false
 	}: {
 		options: QuestionOption[];
 		selectedOption?: string | null;
@@ -22,22 +21,13 @@
 		onSelect: (optionId: string | null) => void;
 		showFeedback?: boolean;
 		compact?: boolean;
-		/** Multi-attempt: previously incorrect choices stay unavailable. Empty by default (control). */
-		lockedChoices?: string[];
 	} = $props();
-
-	function isLocked(optionId: string): boolean {
-		return lockedChoices.includes(optionId);
-	}
 
 	function optionButtonClasses(optionId: string): string {
 		if (!showFeedback && hasCheckedAnswer) {
 			return selectedOption === optionId
 				? 'border-primary/70 bg-primary/8'
 				: 'border-border/70 bg-background';
-		}
-		if (isLocked(optionId) && !hasCheckedAnswer) {
-			return 'border-red-500/40 bg-red-500/5 opacity-70';
 		}
 		if (!hasCheckedAnswer) {
 			return selectedOption === optionId
@@ -50,9 +40,6 @@
 		if (checkedSelection === optionId && checkedSelection !== correctAnswer) {
 			return 'border-red-500/70 bg-red-500/10';
 		}
-		if (isLocked(optionId)) {
-			return 'border-red-500/40 bg-red-500/5 opacity-70';
-		}
 		return 'border-border/60 bg-background/60 opacity-80';
 	}
 
@@ -61,9 +48,6 @@
 			return selectedOption === optionId
 				? 'border-primary bg-primary text-primary-foreground'
 				: 'border-border bg-muted/50 text-muted-foreground';
-		}
-		if (isLocked(optionId) && !hasCheckedAnswer) {
-			return 'border-red-500/70 bg-red-500/20 text-red-700';
 		}
 		if (!hasCheckedAnswer) {
 			return selectedOption === optionId
@@ -86,7 +70,7 @@
 			type="button"
 			role="radio"
 			aria-checked={selectedOption === option.id}
-			disabled={hasCheckedAnswer || isLocked(option.id)}
+			disabled={hasCheckedAnswer}
 			onclick={() => onSelect(selectedOption === option.id ? null : option.id)}
 			class={cn(
 				'w-full rounded-lg border text-left transition-colors',

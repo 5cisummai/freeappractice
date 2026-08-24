@@ -51,8 +51,6 @@ function buildHotPoolDoc(opts: {
 	| 'optionD'
 	| 'correctAnswer'
 	| 'explanation'
-	| 'hint1'
-	| 'hint2'
 	| 'randomKey'
 	| 'active'
 > {
@@ -73,8 +71,6 @@ function buildHotPoolDoc(opts: {
 		optionD: answer.optionD,
 		correctAnswer: answer.correctAnswer,
 		explanation: answer.explanation,
-		hint1: answer.hint1,
-		hint2: answer.hint2,
 		randomKey: opts.randomKey ?? newPoolRandomKey(),
 		active: opts.active ?? true
 	};

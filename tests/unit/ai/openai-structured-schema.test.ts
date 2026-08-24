@@ -9,23 +9,23 @@ describe('openai structured schema compatibility', () => {
 	it('flags Zod .optional() fields that OpenAI rejects', () => {
 		const schema = z.object({
 			question: z.string(),
-			hint1: z.string().optional(),
-			hint2: z.string().optional()
+			diagram: z.string().optional(),
+			note: z.string().optional()
 		});
 
 		expect(findOpenAiOptionalPropertyPaths(schema)).toEqual(
-			expect.arrayContaining(['hint1', 'hint2'])
+			expect.arrayContaining(['diagram', 'note'])
 		);
 		expect(() => assertOpenAiCompatibleObjectSchema(schema, { schemaName: 'ap_question' })).toThrow(
-			/Missing 'hint1'|hint1|required/i
+			/Missing 'diagram'|diagram|required/i
 		);
 	});
 
 	it('accepts required and nullable fields', () => {
 		const schema = z.object({
 			question: z.string(),
-			hint1: z.string(),
-			hint2: z.string().nullable()
+			diagram: z.string(),
+			note: z.string().nullable()
 		});
 
 		expect(findOpenAiOptionalPropertyPaths(schema)).toEqual([]);

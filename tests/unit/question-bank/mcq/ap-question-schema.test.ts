@@ -9,7 +9,7 @@ import {
 } from '$lib/question-bank/mcq/generation.server';
 
 describe('apQuestionSchema OpenAI structured-output compatibility', () => {
-	it('keeps every property required so OpenAI does not reject hint1/hint2 as optional', () => {
+	it('keeps every property required for OpenAI structured outputs', () => {
 		expect(findOpenAiOptionalPropertyPaths(apQuestionSchema)).toEqual([]);
 		expect(() =>
 			assertOpenAiCompatibleObjectSchema(apQuestionSchema, { schemaName: 'ap_question' })
@@ -25,8 +25,6 @@ describe('apQuestionSchema OpenAI structured-output compatibility', () => {
 			optionD: '90°',
 			correctAnswer: 'C',
 			explanation: 'The diagram shows 60°.',
-			hint1: 'Read the marked angle.',
-			hint2: 'Use the angle label.',
 			mainTopic: 'Angle measurement',
 			topicsCovered: 'Angles',
 			diagram: JSON.stringify({

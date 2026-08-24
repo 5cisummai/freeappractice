@@ -110,13 +110,6 @@ export const mcqAttempts = appSchema.table(
 		wasCorrect: boolean('was_correct'),
 		timeTakenMs: integer('time_taken_ms'),
 		attemptedAt: timestamp('attempted_at', { withTimezone: true, mode: 'date' }).notNull(),
-		finalAnswer: text('final_answer'),
-		answerCount: integer('answer_count'),
-		hintsShown: integer('hints_shown'),
-		terminalOutcome: text('terminal_outcome'),
-		experimentKey: text('experiment_key'),
-		experimentVersion: integer('experiment_version'),
-		displayedVariant: text('displayed_variant'),
 		createdAt: createdAt()
 	},
 	(table) => [
@@ -257,21 +250,6 @@ export const bookmarks = appSchema.table(
 		createdAt: createdAt()
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.questionId] })]
-);
-
-export const experimentAssignments = appSchema.table(
-	'experiment_assignments',
-	{
-		userId: text('user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		key: text('key').notNull(),
-		version: integer('version').notNull(),
-		variant: text('variant').notNull(),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [primaryKey({ columns: [table.userId, table.key] })]
 );
 
 export const referrals = appSchema.table(

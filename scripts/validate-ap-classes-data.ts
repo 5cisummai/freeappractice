@@ -139,8 +139,6 @@ for (const field of [
 	'optionD',
 	'correctAnswer',
 	'explanation',
-	'hint1',
-	'hint2',
 	'mainTopic',
 	'topicsCovered'
 ]) {

@@ -100,9 +100,7 @@ describe('POST /api/question selection-only boundary', () => {
 					optionD: 'D',
 					correctAnswer: 'A',
 					explanation: 'E',
-					topicsCovered: 't',
-					hint1: '',
-					hint2: ''
+					topicsCovered: 't'
 				},
 				provider: 'cache',
 				model: 'cached',

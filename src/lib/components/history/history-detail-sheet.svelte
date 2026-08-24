@@ -117,11 +117,6 @@
 					{:else}
 						{#if item.attempt.selectedAnswer}
 							· You chose {item.attempt.selectedAnswer}
-						{:else}
-							· No answer submitted
-						{/if}
-						{#if item.attempt.finalAnswer && item.attempt.finalAnswer !== item.attempt.selectedAnswer}
-							· Later resolved to {item.attempt.finalAnswer} after hints
 						{/if}
 					{/if}
 				</Sheet.Description>

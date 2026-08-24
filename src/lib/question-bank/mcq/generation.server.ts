@@ -91,18 +91,6 @@ const APQuestionFields = {
 	explanation: z
 		.string()
 		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
-	// Must be required (not .optional): OpenAI structured outputs require every
-	// property key to appear in JSON Schema `required`.
-	hint1: z
-		.string()
-		.describe(
-			'Brief progressive hint after a first incorrect answer; do not reveal the correct letter'
-		),
-	hint2: z
-		.string()
-		.describe(
-			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
-		),
 	mainTopic: z
 		.string()
 		.trim()

@@ -42,7 +42,7 @@ describe('Vercel flag declarations', () => {
 	});
 
 	it('attaches the provider adapter through the Flags SDK adapter option', () => {
-		expect(mocks.flag).toHaveBeenCalledTimes(8);
+		expect(mocks.flag).toHaveBeenCalledTimes(6);
 		for (const [options] of mocks.flag.mock.calls) {
 			expect(options).toMatchObject({
 				adapter: { provider: 'vercel' },
@@ -62,11 +62,11 @@ describe('Vercel flag declarations', () => {
 		mocks.redis.get.mockResolvedValueOnce(null);
 		mocks.baseDecide.mockResolvedValueOnce(true);
 
-		const value = await adapter.decide({ key: 'multi-attempt-experiment' });
+		const value = await adapter.decide({ key: 'frq-practice' });
 
 		expect(value).toBe(true);
 		expect(mocks.baseDecide).toHaveBeenCalledTimes(1);
-		expect(mocks.redis.set).toHaveBeenCalledWith('fap:test:flags:multi-attempt-experiment', true, {
+		expect(mocks.redis.set).toHaveBeenCalledWith('fap:test:flags:frq-practice', true, {
 			ex: 60 * 60
 		});
 	});
@@ -77,7 +77,7 @@ describe('Vercel flag declarations', () => {
 		};
 		mocks.redis.get.mockResolvedValueOnce(false);
 
-		const value = await adapter.decide({ key: 'multi-attempt-experiment' });
+		const value = await adapter.decide({ key: 'frq-practice' });
 
 		expect(value).toBe(false);
 		expect(mocks.baseDecide).not.toHaveBeenCalled();
