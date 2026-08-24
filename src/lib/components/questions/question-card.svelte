@@ -505,7 +505,7 @@
 					align="end"
 					side="bottom"
 					sideOffset={8}
-					class="z-[100] max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto bg-popover/95 p-4 backdrop-blur-xl"
+					class="z-100 max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto bg-popover/95 p-4 backdrop-blur-xl"
 				>
 					{@render practiceControls()}
 				</Popover.Content>

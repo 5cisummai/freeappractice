@@ -158,7 +158,7 @@
 	{:else}
 		{#if insights}
 			<section class="flex flex-col gap-6" aria-labelledby="weekly-readout-heading">
-				<Card.Root class="overflow-hidden border-primary/20 bg-primary/[0.03] shadow-sm">
+				<Card.Root class="overflow-hidden border-primary/20 bg-primary/3 shadow-sm">
 					<Card.Content class="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_20rem] lg:items-center">
 						<div class="flex flex-col gap-5">
 							<div class="flex flex-wrap items-center gap-2">
@@ -310,14 +310,14 @@
 			{#if taskCount}
 				<Card.Root class="overflow-hidden shadow-none">
 					<Card.Content class="overflow-x-auto p-0">
-						<div class="grid min-w-[980px] grid-cols-7 divide-x divide-border/70">
+						<div class="grid min-w-245 grid-cols-7 divide-x divide-border/70">
 							{#each weekDays as day (day.key)}
 								{@const dayTasks = tasksForDay(day.key)}
-								<div class="min-h-72 bg-muted/[0.12]">
+								<div class="min-h-72 bg-muted/12">
 									<div
 										class={cn(
 											'border-b border-border/70 px-3 py-4',
-											day.key === dateKey(new Date()) && 'bg-primary/[0.06]'
+											day.key === dateKey(new Date()) && 'bg-primary/6'
 										)}
 									>
 										<div class="flex items-center justify-between gap-2">
