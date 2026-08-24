@@ -110,11 +110,11 @@
 			</h2>
 			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
 				{#if data.superFreeBetaEnabled}
-					Get personalized tutoring, Coach, and weekly study plans with 300 messages per
-					month—free during the Super beta.
+					Get personalized tutoring, Coach, and weekly study plans with 300 messages per month—free
+					during the Super beta.
 				{:else}
-					Add personalized tutoring, Coach, and weekly study plans on top of unlimited
-					free practice.
+					Add personalized tutoring, Coach, and weekly study plans on top of unlimited free
+					practice.
 				{/if}
 			</p>
 			<div class="mt-7 flex flex-wrap items-center justify-center gap-3">

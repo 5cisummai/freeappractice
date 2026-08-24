@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { type SortingState, getCoreRowModel, getPaginationRowModel, getSortedRowModel } from '@tanstack/table-core';
+	import {
+		type SortingState,
+		getCoreRowModel,
+		getPaginationRowModel,
+		getSortedRowModel
+	} from '@tanstack/table-core';
 	import type { HistoryItem } from '$lib/users/types.js';
 	import { createHistoryColumns } from '$lib/components/history/history-columns.js';
 	import HistoryDetailSheet from '$lib/components/history/history-detail-sheet.svelte';
@@ -70,7 +75,10 @@
 					{#each headerGroup.headers as header (header.id)}
 						<Table.Head class={header.column.id === 'subject' ? 'ps-4' : undefined}>
 							{#if !header.isPlaceholder}
-								<FlexRender content={header.column.columnDef.header} context={header.getContext()} />
+								<FlexRender
+									content={header.column.columnDef.header}
+									context={header.getContext()}
+								/>
 							{/if}
 						</Table.Head>
 					{/each}

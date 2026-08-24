@@ -101,6 +101,7 @@ describe('history chart derivations', () => {
 				questionId: 'q1',
 				apClass: 'AP Biology',
 				unit: 'Unit 1',
+				selectedAnswer: 'A' as const,
 				wasCorrect: true,
 				attemptedAt: now.toISOString()
 			},
@@ -124,6 +125,8 @@ describe('stacked activity derivation', () => {
 				questionId: 'q1',
 				apClass: 'AP Biology',
 				unit: 'Unit 1',
+				selectedAnswer: 'A' as const,
+				wasCorrect: true,
 				attemptedAt: today.toISOString()
 			},
 			question: null
@@ -134,6 +137,8 @@ describe('stacked activity derivation', () => {
 				questionId: 'q2',
 				apClass: 'AP Chemistry',
 				unit: 'Unit 1',
+				selectedAnswer: 'A',
+				wasCorrect: true,
 				attemptedAt: today.toISOString()
 			},
 			question: null
@@ -161,6 +166,8 @@ describe('stacked activity derivation', () => {
 						questionId: 'q3',
 						apClass: 'AP Biology',
 						unit: 'Unit 2',
+						selectedAnswer: 'A' as const,
+						wasCorrect: true,
 						attemptedAt: today.toISOString()
 					},
 					question: null
@@ -185,6 +192,8 @@ describe('stacked activity derivation', () => {
 				questionId: `q-${index}`,
 				apClass: `AP Class ${index}`,
 				unit: 'Unit 1',
+				selectedAnswer: 'A' as const,
+				wasCorrect: true,
 				attemptedAt: today.toISOString()
 			},
 			question: null
@@ -205,6 +214,8 @@ describe('stacked activity derivation', () => {
 				questionId: `priority-q-${index}`,
 				apClass: `AP Priority Class ${index}`,
 				unit: 'Unit 1',
+				selectedAnswer: 'A' as const,
+				wasCorrect: true,
 				attemptedAt: today.toISOString()
 			},
 			question: null
@@ -226,6 +237,8 @@ describe('stacked activity derivation', () => {
 					questionId: 'recent-biology',
 					apClass: 'AP Biology',
 					unit: 'Unit 1',
+					selectedAnswer: 'A',
+					wasCorrect: true,
 					attemptedAt: today.toISOString()
 				},
 				question: null
@@ -236,6 +249,8 @@ describe('stacked activity derivation', () => {
 					questionId: `older-chemistry-${index}`,
 					apClass: 'AP Chemistry',
 					unit: 'Unit 1',
+					selectedAnswer: 'A' as const,
+					wasCorrect: true,
 					attemptedAt: olderDate.toISOString()
 				},
 				question: null
@@ -260,6 +275,7 @@ describe('accuracy scope derivation', () => {
 						questionId: 'accuracy-1',
 						apClass: 'AP Biology',
 						unit: 'Unit 1',
+						selectedAnswer: 'A',
 						wasCorrect: true,
 						attemptedAt: today.toISOString()
 					},
@@ -271,6 +287,7 @@ describe('accuracy scope derivation', () => {
 						questionId: 'accuracy-2',
 						apClass: 'AP Biology',
 						unit: 'Unit 1',
+						selectedAnswer: 'A',
 						wasCorrect: false,
 						attemptedAt: today.toISOString()
 					},
@@ -292,6 +309,7 @@ describe('accuracy scope derivation', () => {
 						questionId: 'unit-1',
 						apClass: 'AP Biology',
 						unit: 'Unit 1',
+						selectedAnswer: 'A',
 						wasCorrect: true,
 						attemptedAt: today.toISOString()
 					},
@@ -303,6 +321,7 @@ describe('accuracy scope derivation', () => {
 						questionId: 'unit-2',
 						apClass: 'AP Biology',
 						unit: 'Unit 2',
+						selectedAnswer: 'A',
 						wasCorrect: false,
 						attemptedAt: today.toISOString()
 					},

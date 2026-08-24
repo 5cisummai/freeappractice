@@ -20,16 +20,14 @@ import {
 	examfigDiagramsEnabled,
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,
+	isSuperCheckoutEnabled,
 	superCheckoutEnabled,
 	superCoachEnabled,
 	superMemoryEnabled,
 	superFreeBetaEnabled
 } from '$lib/flags';
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
-import {
-	isAccountSurface,
-	isAgeGateExempt
-} from '$lib/auth/account-surface.server';
+import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { limitApiRequests } from '$lib/server/api-rate-limit.server';
 import {

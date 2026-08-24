@@ -83,17 +83,17 @@
 				{#if data.superFreeBetaEnabled}
 					<p>
 						During the Super free beta, authenticated students aged 13 or older can claim free
-						access to personalized multiple-choice and written-response tutoring, Coach,
-						weekly study plans, and up to 300 personalized messages per month.
+						access to personalized multiple-choice and written-response tutoring, Coach, weekly
+						study plans, and up to 300 personalized messages per month.
 					</p>
 				{:else}
 					<p>
 						Super is an optional subscription for students aged 13 or older. It is offered at $9 per
 						month or $79 per year, plus applicable tax, and renews automatically until you cancel.
-						Super includes personalized multiple-choice and written-response tutoring, Coach,
-						weekly study plans, and up to 600 personalized messages per month. We do not
-						offer a free trial, promotional pricing, discounts, or extra usage charges for Super for
-						Super unless the checkout page expressly says otherwise.
+						Super includes personalized multiple-choice and written-response tutoring, Coach, weekly
+						study plans, and up to 600 personalized messages per month. We do not offer a free
+						trial, promotional pricing, discounts, or extra usage charges for Super for Super unless
+						the checkout page expressly says otherwise.
 					</p>
 					<p class="mt-2">
 						You can cancel or restore a cancellation before the current subscription period ends in
@@ -130,12 +130,11 @@
 				<h2 class="text-xl font-semibold">7. AI-Generated Content and Personalization</h2>
 				<p>
 					The Service uses OpenAI or an OpenAI-compatible provider to generate practice questions,
-					explanations, written-response grades, tutoring content, Coach suggestions, and study plans.
-					AI-generated content can be incomplete, incorrect, biased, or misleading. AI
-					grades are practice feedback, not official AP scores or professional advice. Review
-					important information and use your own judgment. Coach suggestions and study-plan changes are
-					provided for study organization, not as a guarantee
-					of performance.
+					explanations, written-response grades, tutoring content, Coach suggestions, and study
+					plans. AI-generated content can be incomplete, incorrect, biased, or misleading. AI grades
+					are practice feedback, not official AP scores or professional advice. Review important
+					information and use your own judgment. Coach suggestions and study-plan changes are
+					provided for study organization, not as a guarantee of performance.
 				</p>
 			</section>
 
@@ -202,10 +201,9 @@
 					Terms, security concerns, or operational reasons. You may delete your account through the
 					Service or by contacting us. Deletion removes the account record from our primary database
 					and initiates removal of app-owned profile, practice, personalization, referral,
-					billing-mirror, study-plan, feedback, audit, and tutor-memory data. Some
-					information may remain in backups, logs, billing records, or third-party systems for a
-					limited time, and provider backups or support records may not be immediately removable by
-					us.
+					billing-mirror, study-plan, feedback, audit, and tutor-memory data. Some information may
+					remain in backups, logs, billing records, or third-party systems for a limited time, and
+					provider backups or support records may not be immediately removable by us.
 				</p>
 			</section>
 

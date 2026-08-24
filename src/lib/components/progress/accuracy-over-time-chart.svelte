@@ -33,10 +33,6 @@
 		return d.accuracy !== null;
 	}
 
-	function formatTick(value: Date): string {
-		return value.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-	}
-
 	function formatDayKey(value: string): string {
 		const [year, month, day] = value.split('-').map(Number);
 		return new Date(year ?? 0, (month ?? 1) - 1, day ?? 1).toLocaleDateString(undefined, {

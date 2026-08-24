@@ -114,10 +114,8 @@
 						· {item.attempt.pointsEarned}/{item.attempt.pointsAvailable} points
 					{:else if item.kind === 'quiz'}
 						· {item.attempt.correctCount}/{item.attempt.requestedCount} correct
-					{:else}
-						{#if item.attempt.selectedAnswer}
-							· You chose {item.attempt.selectedAnswer}
-						{/if}
+					{:else if item.attempt.selectedAnswer}
+						· You chose {item.attempt.selectedAnswer}
 					{/if}
 				</Sheet.Description>
 			</Sheet.Header>

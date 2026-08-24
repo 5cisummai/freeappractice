@@ -37,13 +37,7 @@ export type CanonicalMcqInput = Omit<
 	Partial<
 		Pick<
 			IQuestion,
-			| 'unit'
-			| 'randomKey'
-			| 'active'
-			| 'hasDiagram'
-			| 'diagramSpec'
-			| 'mainTopic'
-			| 'topicsCovered'
+			'unit' | 'randomKey' | 'active' | 'hasDiagram' | 'diagramSpec' | 'mainTopic' | 'topicsCovered'
 		>
 	>;
 

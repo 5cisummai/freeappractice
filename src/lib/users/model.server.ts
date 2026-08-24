@@ -1,9 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
-import type {
-	IProgress,
-	IQuestionAttempt
-} from '$lib/users/records.server';
+import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	bookmarks,

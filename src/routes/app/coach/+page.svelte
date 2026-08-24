@@ -27,8 +27,7 @@
 	<div class="mx-auto max-w-2xl p-4 sm:p-8">
 		<Card.Root>
 			<Card.Content class="p-6 text-sm text-muted-foreground">
-				Coach is temporarily unavailable. Your saved profile and study plan are
-				unaffected.
+				Coach is temporarily unavailable. Your saved profile and study plan are unaffected.
 			</Card.Content>
 		</Card.Root>
 	</div>

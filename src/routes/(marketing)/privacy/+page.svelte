@@ -67,8 +67,8 @@
 					</li>
 					<li>
 						<strong>AI interactions:</strong> prompts, written responses, conversation context, and feedback
-											you send to the standard tutor, personalized tutor, Coach, or other AI features. Coach may
-											also process your practice data to generate recommendations and study plans.
+						you send to the standard tutor, personalized tutor, Coach, or other AI features. Coach may
+						also process your practice data to generate recommendations and study plans.
 					</li>
 					<li>
 						<strong>Super conversations:</strong> Super Coach and question-focused Super Tutor conversations,
@@ -168,10 +168,10 @@
 			<section>
 				<h2 class="text-xl font-semibold">5. Super AI and Tutor Memory</h2>
 				<p>
-					Super’s personalized tutor, Coach, and study plans use your selected AP classes, target dates,
-					study availability, teaching-style preference, and scored practice patterns. We do not use
-					these features to predict AP exam scores or make decisions about admission, employment,
-					credit, insurance, or other high-impact opportunities.
+					Super’s personalized tutor, Coach, and study plans use your selected AP classes, target
+					dates, study availability, teaching-style preference, and scored practice patterns. We do
+					not use these features to predict AP exam scores or make decisions about admission,
+					employment, credit, insurance, or other high-impact opportunities.
 				</p>
 				<p class="mt-2">
 					Tutor memory is optional and is limited to learning preferences, stable study constraints,
@@ -291,7 +291,9 @@
 						Durable Super conversation messages and Coach audit records are retained while needed
 						for Super continuity and are removed with the account.
 					</li>
-					<li>Tutor memory is scheduled for deletion after up to 90 days when Super access ends.</li>
+					<li>
+						Tutor memory is scheduled for deletion after up to 90 days when Super access ends.
+					</li>
 					<li>
 						Rate limits, usage counters, locks, idempotency keys, and other Redis controls are
 						short-lived and expire automatically.
@@ -307,10 +309,10 @@
 					progress, bookmarks, and written-response submissions while keeping your account. You can
 					request account deletion in Settings or by contacting us. Account deletion initiates
 					removal of app-owned account, profile, practice, personalization, referral,
-					billing-mirror, study-plan, feedback, and audit records; authentication records
-					are handled by Better Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued
-					and retried. Information held by third parties, backups, logs, or support records may
-					persist under their own practices or legal obligations.
+					billing-mirror, study-plan, feedback, and audit records; authentication records are
+					handled by Better Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued and
+					retried. Information held by third parties, backups, logs, or support records may persist
+					under their own practices or legal obligations.
 				</p>
 			</section>
 

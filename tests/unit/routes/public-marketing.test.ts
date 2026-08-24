@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	isGoogleOneTapRoute,
-	matchesPublicMarketingPath
-} from '$lib/routes/public-marketing';
+import { isGoogleOneTapRoute, matchesPublicMarketingPath } from '$lib/routes/public-marketing';
 
 describe('public marketing routes', () => {
 	it('matches blog index and posts for session skip', () => {

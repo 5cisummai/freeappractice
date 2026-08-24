@@ -24,14 +24,7 @@ export function matchesPublicMarketingPath(pathname: string): boolean {
 	return PUBLIC_READ_PREFIXES.some((prefix) => matchesPathPrefix(pathname, prefix));
 }
 
-const GOOGLE_ONE_TAP_EXACT = new Set([
-	'/',
-	'/about',
-	'/summer',
-	'/changelog',
-	'/stats',
-	'/login'
-]);
+const GOOGLE_ONE_TAP_EXACT = new Set(['/', '/about', '/summer', '/changelog', '/stats', '/login']);
 
 /** Public surfaces where Google One Tap may prompt. */
 export function isGoogleOneTapRoute(pathname: string): boolean {

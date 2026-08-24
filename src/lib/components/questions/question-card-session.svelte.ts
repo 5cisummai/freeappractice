@@ -3,8 +3,7 @@ import {
 	captureFirstAnswerSubmitted,
 	captureQuestionRequestFailed,
 	captureQuestionRequestSucceeded,
-	QuestionRequestError,
-	type QuestionSource
+	QuestionRequestError
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';

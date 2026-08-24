@@ -73,9 +73,10 @@ function optionsFromLegacy(record: Record<string, unknown>): {
 
 /** Parse a stored MCQ JSONB payload, filling fields older rows omit. */
 export function parseMcqQuestionPayload(data: unknown): McqQuestionPayload {
-	const record = data && typeof data === 'object' && !Array.isArray(data)
-		? (data as Record<string, unknown>)
-		: {};
+	const record =
+		data && typeof data === 'object' && !Array.isArray(data)
+			? (data as Record<string, unknown>)
+			: {};
 	const topicsCovered = asText(record.topicsCovered);
 	const diagramSpec = asDiagramSpec(record.diagramSpec ?? record.diagram);
 	const hasDiagram =

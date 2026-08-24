@@ -15,7 +15,7 @@ import {
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { authOrganizations, authUsers } from './auth';
-import { createdAt, updatedAt, bytea } from './common';
+import { createdAt, updatedAt } from './common';
 import type { StudyPlanInsights } from '$lib/super/types';
 
 export const appSchema = pgSchema('app');

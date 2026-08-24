@@ -2,9 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import dataset from '../src/lib/data/ap-classes-data-08212026.json';
 
-type Source = (typeof dataset.sources)[number];
 type Course = (typeof dataset.courses)[number];
-type Unit = Course['units'][number];
 type ExamSection = {
 	id: string;
 	label: string;
