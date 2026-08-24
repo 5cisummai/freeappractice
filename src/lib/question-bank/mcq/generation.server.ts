@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import unitDescriptions from '$lib/data/unit-descriptionsrevised.json';
+import { AP_DATA } from '$lib/data/ap-data';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
 import { isExamfigDiagramsEnabled } from '$lib/flags';
@@ -13,54 +13,34 @@ import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-sc
  * MCQ generation: prompts, structured AI calls, and generation metrics.
  */
 interface UnitContext {
-	description: string;
 	topics: string[];
 	keywords: string[];
-	importantNotes: string;
 }
 
 interface UnitPromptSections {
 	unitContext: string;
 	keywordsContext: string;
-	courseNotesContext: string;
 }
-
-type UnitDescriptionsFile = {
-	courses: Array<{
-		apClass: string;
-		importantNotes?: string;
-		units: Array<{
-			unit: string;
-			description?: string;
-			topics?: string[];
-			keywords?: string[];
-		}>;
-	}>;
-};
 
 function unitContextKey(apClass: string, unit: string): string {
 	return `${apClass}\0${unit}`;
 }
 
-/** Exact apClass + unit label → CED context. Built once from catalog-aligned JSON. */
+/** Exact apClass + unit label → generation controls from the unified catalog. */
 const unitContextByKey: ReadonlyMap<string, UnitContext> = (() => {
-	const data = unitDescriptions as UnitDescriptionsFile;
 	const map = new Map<string, UnitContext>();
-	for (const course of data.courses ?? []) {
-		const importantNotes = course.importantNotes ?? '';
-		for (const unit of course.units ?? []) {
-			map.set(unitContextKey(course.apClass, unit.unit), {
-				description: unit.description ?? '',
-				topics: unit.topics ?? [],
-				keywords: unit.keywords ?? [],
-				importantNotes
+	for (const course of AP_DATA.courses) {
+		for (const unit of course.units) {
+			map.set(unitContextKey(course.name, unit.label), {
+				topics: [...unit.generation.mcq.keywords],
+				keywords: [...unit.generation.mcq.constraints]
 			});
 		}
 	}
 	return map;
 })();
 
-/** Exact lookup only — keys must match `ap-classes.json` class names and unit labels. */
+/** Exact lookup only - keys must match the unified app catalog class names and unit labels. */
 export function getUnitContextData(className: string, unitIdentifier: string): UnitContext | null {
 	if (!className || !unitIdentifier) return null;
 	return unitContextByKey.get(unitContextKey(className, unitIdentifier.trim())) ?? null;
@@ -71,16 +51,15 @@ function buildUnitSections(
 	unit: string | undefined,
 	questionLabel = 'question'
 ): UnitPromptSections {
-	if (!className || !unit) return { unitContext: '', keywordsContext: '', courseNotesContext: '' };
+	if (!className || !unit) return { unitContext: '', keywordsContext: '' };
 	const ctx = getUnitContextData(className, unit);
-	if (!ctx) return { unitContext: '', keywordsContext: '', courseNotesContext: '' };
+	if (!ctx) return { unitContext: '', keywordsContext: '' };
 	return {
-		unitContext: `\nUNIT CONTEXT: ${unit}\n${ctx.description}\nKey Topics: ${ctx.topics.join(', ')}\n`,
+		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
 		keywordsContext:
 			ctx.keywords.length > 0
 				? `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your ${questionLabel} MUST focus ONLY on these specific keywords and topics. ***\n`
-				: '',
-		courseNotesContext: ctx.importantNotes ? `\nCOURSE-GUIDANCE: ${ctx.importantNotes}\n` : ''
+				: ''
 	};
 }
 
@@ -112,17 +91,13 @@ const APQuestionFields = {
 	explanation: z
 		.string()
 		.describe('Detailed explanation of the correct answer and why distractors are wrong'),
-	// Must be required (not .optional): OpenAI structured outputs require every
-	// property key to appear in JSON Schema `required`.
-	hint1: z
+	mainTopic: z
 		.string()
+		.trim()
+		.min(1)
+		.max(240)
 		.describe(
-			'Brief progressive hint after a first incorrect answer; do not reveal the correct letter'
-		),
-	hint2: z
-		.string()
-		.describe(
-			'Stronger progressive hint after a second incorrect answer; still do not reveal the correct letter'
+			'The single primary topic this question tests. When a unit provides MAIN TOPIC OPTIONS, choose exactly one of those options.'
 		),
 	topicsCovered: z
 		.string()
@@ -212,11 +187,7 @@ export function buildMcqGenerationPrompt(opts: {
 	const { className, unit, recentTopics, diagramsEnabled = false } = opts;
 	if (!className) throw new Error('className is required');
 
-	const { unitContext, keywordsContext, courseNotesContext } = buildUnitSections(
-		className,
-		unit,
-		'question'
-	);
+	const { unitContext, keywordsContext } = buildUnitSections(className, unit, 'question');
 	const diversitySection = buildDiversitySection(recentTopics, {
 		label: 'TOPICS',
 		avoidLabel: 'subtopic, concept, or scenario',
@@ -226,11 +197,11 @@ export function buildMcqGenerationPrompt(opts: {
 
 	const isBiology = className.toLowerCase().includes('biology');
 	const difficultyGuidance = isBiology
-		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Match the difficulty of questions in the official AP Biology Course and Exam Description\n- Emphasize scientific practices over pure recall`
+		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Use a balanced medium difficulty appropriate for an introductory college-level biology course\n- Emphasize scientific practices over pure recall`
 		: '';
 
 	const scopeBlock = `CRITICAL UNIT SCOPE REQUIREMENT:
-- Your question MUST stay strictly within the unit's specified keywords and topics listed above
+- Your question MUST stay strictly within the app-authored keywords and focus controls listed above
 	- DO NOT incorporate concepts from other units, even if they seem related`;
 	const diagramSection = diagramsEnabled
 		? EXAMFIG_DIAGRAM_SKILL
@@ -239,13 +210,13 @@ EXAMFIG DIAGRAMS DISABLED:
 - Set the required 'diagram' field to null.
 - Do not call diagram tools or create diagram JSON.`;
 
-	const systemPrompt = `You are an expert AP exam question writer with deep knowledge of College Board standards. Create high-quality, authentic practice questions that closely mirror real AP exam questions.${unitContext}${keywordsContext}${courseNotesContext}${diversitySection}${difficultyGuidance}
+	const systemPrompt = `You are an independent AP-aligned practice question writer. Create high-quality, original practice questions that follow broad course skills and formats without reproducing or closely imitating any official question, passage, stimulus, rubric, or scoring guidance.${unitContext}${keywordsContext}${diversitySection}${difficultyGuidance}
 
 ${scopeBlock}
 ${diagramSection}
 
 QUESTION QUALITY:
-- Match actual AP exam difficulty and style, aim for the medium difficulty level, rather the very hard ones.
+- Aim for a medium difficulty level with clear, independent wording.
 - Test understanding, not just memorization
 - Include real-world scenarios or experimental contexts
 - Plausible distractors reflecting common misconceptions

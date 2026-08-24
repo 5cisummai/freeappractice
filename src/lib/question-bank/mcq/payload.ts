@@ -136,13 +136,12 @@ function normalizeQuestionPayload(
 
 	return {
 		questionId: resolveQuestionId(obj, questionIdFromApi),
-		topic: String(obj.topicsCovered ?? '').trim() || undefined,
+		mainTopic: String(obj.mainTopic ?? obj.topicsCovered ?? '').trim() || undefined,
+		topic: String(obj.mainTopic ?? obj.topicsCovered ?? '').trim() || undefined,
 		prompt,
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),
 		explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
-		hint1: String(obj.hint1 ?? '').trim() || undefined,
-		hint2: String(obj.hint2 ?? '').trim() || undefined,
 		diagramSpec,
 		hasDiagram: Boolean(diagramSpec) || obj.hasDiagram === true,
 		leftPanel: hasStimulus ? { title: 'Stimulus', content: parseParagraphs(stimulus) } : undefined,
@@ -167,6 +166,8 @@ export function parseQuestionPayloadFromResponse(response: QuestionApiResponse):
 		} catch {
 			throw new Error('Question service returned an invalid question payload.');
 		}
+	} else if (response.answer && typeof response.answer === 'object') {
+		payload = response.answer;
 	}
 
 	const normalized = normalizeQuestionPayload(payload, String(response.questionId ?? ''));

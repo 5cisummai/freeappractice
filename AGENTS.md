@@ -8,7 +8,7 @@ Read this before changing anything. These rules override vague defaults.
 
 - **Stack**: TypeScript, Bun, SvelteKit
 - **Tooling**: Prettier, ESLint, Tailwind CSS, Vercel adapter, MCP
-- **Product**: A free AP exam-practice app with MCQ/FRQ practice, progress and history, Coach, tutoring, Insights, and optional Super features
+- **Product**: A free AP exam-practice app with MCQ/FRQ practice, progress and history, Coach, tutoring, study plans, and optional Super features
 
 Treat this as a focused product surface, not a playground for framework experiments. Prefer the smallest correct change that keeps the app working and easy to maintain.
 
@@ -20,7 +20,7 @@ Treat this as a focused product surface, not a playground for framework experime
 | `src/lib/question-bank`                              | Canonical question serving, generation, bank metadata, quality, and refill |
 | `src/lib/grading/frq`                                | FRQ attempt persistence and grading workflows                              |
 | `src/lib/users`, `src/lib/referrals`, `src/lib/auth` | Accounts, attempts, progress, history, bookmarks, and referrals            |
-| `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, Insights, billing, and memory   |
+| `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, billing, and memory             |
 | `src/lib/question-bank/quality`, `src/lib/admin`     | Review jobs and operational dashboards                                     |
 | `src/lib/server/neon`                                | Drizzle schema and the Neon database client                                |
 | `scripts`                                            | Operations and database maintenance tooling                                |

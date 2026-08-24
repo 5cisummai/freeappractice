@@ -14,8 +14,13 @@ import {
 import { sql } from 'drizzle-orm';
 import { authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
+import type { FrqQuestion } from '$lib/question-bank/frq/types';
+import type { McqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
 
 export const contentSchema = pgSchema('content');
+
+export type { McqQuestionPayload };
+export type FrqQuestionPayload = FrqQuestion;
 
 // Canonical content registry and serving library.
 export const questionRegistry = contentSchema.table(
@@ -46,31 +51,22 @@ export const mcqQuestions = contentSchema.table(
 		questionId: text('question_id')
 			.primaryKey()
 			.references(() => questionRegistry.questionId, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
-		unit: text('unit').notNull().default('all-units'),
+		data: jsonb('data').$type<McqQuestionPayload>().notNull(),
 		contentHash: text('content_hash').notNull(),
-		topicsCovered: text('topics_covered'),
-		question: text('question').notNull(),
-		diagramSpec: jsonb('diagram_spec').$type<Record<string, unknown> | null>(),
-		hasDiagram: boolean('has_diagram').notNull().default(false),
-		optionA: text('option_a').notNull(),
-		optionB: text('option_b').notNull(),
-		optionC: text('option_c').notNull(),
-		optionD: text('option_d').notNull(),
-		correctAnswer: text('correct_answer').notNull(),
-		explanation: text('explanation').notNull(),
-		hint1: text('hint_1'),
-		hint2: text('hint_2'),
 		randomKey: real('random_key').notNull(),
 		active: boolean('active').notNull().default(true),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		index('mcq_questions_bucket_created_idx').on(table.apClass, table.unit, table.createdAt),
+		index('mcq_questions_bucket_created_idx').on(
+			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'unit')`,
+			table.createdAt
+		),
 		index('mcq_questions_bucket_random_idx').on(
-			table.apClass,
-			table.unit,
+			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'unit')`,
 			table.active,
 			table.randomKey
 		),
@@ -84,16 +80,7 @@ export const frqQuestions = contentSchema.table(
 		questionId: text('question_id')
 			.primaryKey()
 			.references(() => questionRegistry.questionId, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
-		unit: text('unit').notNull(),
-		formatId: text('format_id').notNull(),
-		profileVersion: text('profile_version').notNull(),
-		promptVersion: text('prompt_version').notNull(),
-		rubricVersion: text('rubric_version').notNull(),
-		schemaVersion: integer('schema_version').notNull(),
-		prompt: text('prompt').notNull(),
-		totalPoints: real('total_points').notNull(),
-		topicsCovered: text('topics_covered').notNull(),
+		data: jsonb('data').$type<FrqQuestionPayload>().notNull(),
 		contentHash: text('content_hash').notNull(),
 		randomKey: real('random_key').notNull(),
 		active: boolean('active').notNull().default(true),
@@ -101,73 +88,19 @@ export const frqQuestions = contentSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		index('frq_questions_bucket_created_idx').on(table.apClass, table.unit, table.createdAt),
+		index('frq_questions_bucket_created_idx').on(
+			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'unit')`,
+			table.createdAt
+		),
 		index('frq_questions_bucket_random_idx').on(
-			table.apClass,
-			table.unit,
+			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'unit')`,
 			table.active,
 			table.randomKey
 		),
 		uniqueIndex('frq_questions_content_hash_uq').on(table.contentHash)
 	]
-);
-
-export const frqMaterials = contentSchema.table(
-	'frq_materials',
-	{
-		questionId: text('question_id')
-			.notNull()
-			.references(() => frqQuestions.questionId, { onDelete: 'cascade' }),
-		materialId: text('material_id').notNull(),
-		title: text('title'),
-		content: text('content').notNull(),
-		position: integer('position').notNull().default(0)
-	},
-	(table) => [primaryKey({ columns: [table.questionId, table.materialId] })]
-);
-
-export const frqSections = contentSchema.table(
-	'frq_sections',
-	{
-		questionId: text('question_id')
-			.notNull()
-			.references(() => frqQuestions.questionId, { onDelete: 'cascade' }),
-		sectionId: text('section_id').notNull(),
-		label: text('label').notNull(),
-		prompt: text('prompt').notNull(),
-		responseKind: text('response_kind').notNull(),
-		maxPoints: real('max_points').notNull(),
-		position: integer('position').notNull().default(0)
-	},
-	(table) => [primaryKey({ columns: [table.questionId, table.sectionId] })]
-);
-
-export const frqRubricCriteria = contentSchema.table(
-	'frq_rubric_criteria',
-	{
-		questionId: text('question_id')
-			.notNull()
-			.references(() => frqQuestions.questionId, { onDelete: 'cascade' }),
-		criterionId: text('criterion_id').notNull(),
-		sectionId: text('section_id').notNull(),
-		label: text('label').notNull(),
-		maxPoints: real('max_points').notNull(),
-		referenceAnswer: text('reference_answer').notNull(),
-		position: integer('position').notNull().default(0)
-	},
-	(table) => [primaryKey({ columns: [table.questionId, table.criterionId] })]
-);
-
-export const frqRubricLevels = contentSchema.table(
-	'frq_rubric_levels',
-	{
-		questionId: text('question_id').notNull(),
-		criterionId: text('criterion_id').notNull(),
-		points: real('points').notNull(),
-		description: text('description').notNull(),
-		position: integer('position').notNull().default(0)
-	},
-	(table) => [primaryKey({ columns: [table.questionId, table.criterionId, table.points] })]
 );
 
 export const questionRecentTopics = contentSchema.table(

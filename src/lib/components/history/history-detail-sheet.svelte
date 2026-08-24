@@ -114,15 +114,8 @@
 						· {item.attempt.pointsEarned}/{item.attempt.pointsAvailable} points
 					{:else if item.kind === 'quiz'}
 						· {item.attempt.correctCount}/{item.attempt.requestedCount} correct
-					{:else}
-						{#if item.attempt.selectedAnswer}
-							· You chose {item.attempt.selectedAnswer}
-						{:else}
-							· No answer submitted
-						{/if}
-						{#if item.attempt.finalAnswer && item.attempt.finalAnswer !== item.attempt.selectedAnswer}
-							· Later resolved to {item.attempt.finalAnswer} after hints
-						{/if}
+					{:else if item.attempt.selectedAnswer}
+						· You chose {item.attempt.selectedAnswer}
 					{/if}
 				</Sheet.Description>
 			</Sheet.Header>

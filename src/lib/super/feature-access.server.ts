@@ -1,5 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { isSuperCoachEnabled, isSuperInsightsEnabled, isSuperMemoryEnabled } from '$lib/flags';
+import { isSuperCoachEnabled, isSuperMemoryEnabled } from '$lib/flags';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 import {
 	hasPaidCapability,
@@ -9,19 +9,17 @@ import {
 } from '$lib/super/types';
 import { activeOrgUsesUserSuper } from '$lib/auth/organizations.server';
 
-export type SuperFeature = 'personalizedTutor' | 'coach' | 'aiInsights' | 'studyPlans' | 'memory';
+export type SuperFeature = 'personalizedTutor' | 'coach' | 'studyPlans' | 'memory';
 
 const FEATURE_FLAGS: Partial<Record<SuperFeature, () => Promise<boolean>>> = {
 	coach: isSuperCoachEnabled,
-	aiInsights: isSuperInsightsEnabled,
-	studyPlans: isSuperInsightsEnabled,
+	studyPlans: isSuperCoachEnabled,
 	memory: isSuperMemoryEnabled
 };
 
 const FEATURE_CAPABILITIES: Record<SuperFeature, PaidCapability> = {
 	personalizedTutor: 'personalizedTutor',
 	coach: 'coach',
-	aiInsights: 'aiInsights',
 	studyPlans: 'studyPlans',
 	memory: 'memory'
 };
@@ -123,9 +121,7 @@ export async function authorizeFeatureRequest(
 }
 
 function featureUnavailableMessage(feature: SuperFeature): string {
-	if (feature === 'coach') return 'Coach is temporarily unavailable.';
+	if (feature === 'coach' || feature === 'studyPlans') return 'Coach is temporarily unavailable.';
 	if (feature === 'memory') return 'Tutor memory is temporarily unavailable.';
-	if (feature === 'studyPlans') return 'Study plans are temporarily unavailable.';
-	if (feature === 'aiInsights') return 'Insights are temporarily unavailable.';
 	return 'Super Tutor is temporarily unavailable.';
 }

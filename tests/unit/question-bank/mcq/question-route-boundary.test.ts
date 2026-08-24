@@ -100,14 +100,14 @@ describe('POST /api/question selection-only boundary', () => {
 					optionD: 'D',
 					correctAnswer: 'A',
 					explanation: 'E',
-					topicsCovered: 't',
-					hint1: '',
-					hint2: ''
+					topicsCovered: 't'
 				},
 				provider: 'cache',
 				model: 'cached',
 				cached: true,
-				questionId: 'q-hit-1'
+				questionId: 'q-hit-1',
+				apClass: 'AP Biology',
+				unit: 'Unit 1: Chemistry of Life'
 			}
 		});
 
@@ -126,6 +126,7 @@ describe('POST /api/question selection-only boundary', () => {
 		const body = await response.json();
 		expect(body.questionId).toBe('q-hit-1');
 		expect(body.cached).toBe(true);
+		expect(body.answer).toMatchObject({ question: 'Q?', correctAnswer: 'A' });
 	});
 });
 

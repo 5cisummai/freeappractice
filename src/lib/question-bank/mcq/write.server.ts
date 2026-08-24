@@ -39,6 +39,7 @@ function buildHotPoolDoc(opts: {
 	| 'questionId'
 	| 'apClass'
 	| 'unit'
+	| 'mainTopic'
 	| 'contentHash'
 	| 'topicsCovered'
 	| 'question'
@@ -50,8 +51,6 @@ function buildHotPoolDoc(opts: {
 	| 'optionD'
 	| 'correctAnswer'
 	| 'explanation'
-	| 'hint1'
-	| 'hint2'
 	| 'randomKey'
 	| 'active'
 > {
@@ -61,6 +60,7 @@ function buildHotPoolDoc(opts: {
 		apClass: opts.apClass,
 		unit: opts.unit,
 		contentHash: opts.contentHash,
+		mainTopic: answer.mainTopic,
 		topicsCovered: answer.topicsCovered ?? '',
 		question: answer.question,
 		diagramSpec: answer.diagram ?? null,
@@ -71,8 +71,6 @@ function buildHotPoolDoc(opts: {
 		optionD: answer.optionD,
 		correctAnswer: answer.correctAnswer,
 		explanation: answer.explanation,
-		hint1: answer.hint1,
-		hint2: answer.hint2,
 		randomKey: opts.randomKey ?? newPoolRandomKey(),
 		active: opts.active ?? true
 	};

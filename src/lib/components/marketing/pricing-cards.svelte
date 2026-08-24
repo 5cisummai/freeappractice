@@ -26,7 +26,7 @@
 		'Everything in Free',
 		'Personalized MCQ and FRQ tutoring',
 		'AI Coach with weekly study plans you approve',
-		'Actionable insights and weekly study plans',
+		'Weekly study plans you approve with Coach',
 		'600 personalized tutor messages per month'
 	];
 </script>

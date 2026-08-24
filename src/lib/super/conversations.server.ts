@@ -10,7 +10,7 @@ import { conversationMessages, conversations, coachAudits } from '$lib/server/ne
 export type ConversationSurface = 'coach' | 'question';
 
 export type ConversationContext = {
-	page?: 'coach' | 'practice' | 'progress' | 'history' | 'insights';
+	page?: 'coach' | 'practice' | 'progress' | 'history';
 	questionId?: string;
 	questionType?: 'mcq' | 'frq';
 	frqAttemptId?: string;

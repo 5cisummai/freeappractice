@@ -1,14 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
-import type {
-	IPracticeExperimentAssignment,
-	IProgress,
-	IQuestionAttempt
-} from '$lib/users/records.server';
+import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	bookmarks,
-	experimentAssignments,
 	mcqAttempts,
 	quizAttempts,
 	userProfiles,
@@ -65,7 +60,6 @@ export interface IUserProfile {
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	bookmarkedQuestions: string[];
-	practiceExperiments?: IPracticeExperimentAssignment[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -151,7 +145,6 @@ export async function deleteUserProfiles(userIds: string[]): Promise<void> {
 		db.delete(mcqAttempts).where(inArray(mcqAttempts.userId, userIds)),
 		db.delete(quizAttempts).where(inArray(quizAttempts.userId, userIds)),
 		db.delete(bookmarks).where(inArray(bookmarks.userId, userIds)),
-		db.delete(experimentAssignments).where(inArray(experimentAssignments.userId, userIds)),
 		db.delete(userProfiles).where(inArray(userProfiles.userId, userIds))
 	]);
 }

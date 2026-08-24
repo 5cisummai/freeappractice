@@ -1,12 +1,6 @@
-import apClassesData from '$lib/data/ap-classes.json';
+import { APP_COURSES, type ApCourse } from '$lib/data/ap-data';
 
-type ApCourse = {
-	name: string;
-	semester1: string[];
-	semester2: string[];
-};
-
-const courses = (apClassesData.courses ?? []) as ApCourse[];
+const courses: ApCourse[] = APP_COURSES;
 
 /** All supported AP courses from catalog data. */
 export function getCourses(): ApCourse[] {

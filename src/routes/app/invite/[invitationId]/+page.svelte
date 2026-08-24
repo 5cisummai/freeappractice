@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
+	import { invalidateAppLayout } from '$lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { authClient } from '$lib/auth/client.js';
@@ -40,7 +41,7 @@
 			}
 			status = 'success';
 			message = 'You joined the organization.';
-			await invalidateAll();
+			await invalidateAppLayout();
 			await goto(resolve('/app'));
 		} catch (error) {
 			status = 'error';

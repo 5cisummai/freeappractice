@@ -12,7 +12,6 @@ import {
 	tutorProfiles
 } from '$lib/server/neon/schema';
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lte, or } from 'drizzle-orm';
-import { lockInsightReports, unlockInsightReports } from '$lib/super/insight-locks.server';
 import { markSuperAccessStarted } from '$lib/super/profile.server';
 import {
 	FREE_PLAN_ACCESS,
@@ -245,13 +244,10 @@ export async function markSuperAccessEndedIfNoAccess(
 ): Promise<boolean> {
 	const access = await getPlanAccess(userId, now);
 	if (access.plan === 'super') return false;
-	await Promise.all([
-		getNeonDatabase()
-			.update(tutorProfiles)
-			.set({ superEndedAt: endedAt, updatedAt: endedAt })
-			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superEndedAt))),
-		lockInsightReports(userId, endedAt)
-	]);
+	await getNeonDatabase()
+		.update(tutorProfiles)
+		.set({ superEndedAt: endedAt, updatedAt: endedAt })
+		.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superEndedAt)));
 	return true;
 }
 
@@ -401,13 +397,10 @@ export async function mirrorSuperSubscription(input: SubscriptionMirror): Promis
 	} else if (status === 'active' || status === 'past_due') {
 		const access = await getPlanAccess(current.userId, now);
 		if (access.plan !== 'super') return;
-		await Promise.all([
-			db
-				.update(tutorProfiles)
-				.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: new Date() })
-				.where(eq(tutorProfiles.userId, current.userId)),
-			unlockInsightReports(current.userId)
-		]);
+		await db
+			.update(tutorProfiles)
+			.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: new Date() })
+			.where(eq(tutorProfiles.userId, current.userId));
 	}
 }
 

@@ -37,6 +37,12 @@ const GeneratedFrqSchema = z
 		sections: z.array(FrqSectionSchema).min(1).max(12),
 		rubric: z.array(FrqRubricCriterionSchema).min(1).max(30),
 		totalPoints: z.number().int().min(1).max(100),
+		mainTopic: z
+			.string()
+			.trim()
+			.min(1)
+			.max(240)
+			.describe('The single primary topic this written-response task tests.'),
 		topicsCovered: z.string().trim().min(1).max(1_000)
 	})
 	.strict();
@@ -84,7 +90,7 @@ Generation constraints: ${constraints.minSections}-${constraints.maxSections} se
 ${profile.generationGuidance}
 ${recent}
 
-Return one coherent question and its private scoring rubric. Materials and prompts may use Markdown and $...$ or $$...$$ LaTeX. Every section needs one or more rubric criteria. Criterion levels must use unique integer points, include zero, and reach maxPoints. Section point totals and the overall total must exactly match the rubric. Reference answers are private grading facts, not student-facing copy.`;
+Return one coherent question and its private scoring rubric. Include one concise mainTopic identifying the primary topic tested. Materials and prompts may use Markdown and $...$ or $$...$$ LaTeX. Every section needs one or more rubric criteria. Criterion levels must use unique integer points, include zero, and reach maxPoints. Section point totals and the overall total must exactly match the rubric. Reference answers are private grading facts, not student-facing copy.`;
 	return {
 		system,
 		user: `Create an original ${apClass} written-response task for ${unit}.`

@@ -1,5 +1,3 @@
-import type { PracticeVariant, TerminalOutcome } from '$lib/practice/multi-attempt';
-
 export interface ProgressEntry {
 	apClass: string;
 	unit: string;
@@ -56,17 +54,10 @@ export type QuestionAttempt = {
 	questionId: string;
 	apClass: string;
 	unit: string;
-	selectedAnswer?: 'A' | 'B' | 'C' | 'D';
-	wasCorrect?: boolean;
+	selectedAnswer: 'A' | 'B' | 'C' | 'D';
+	wasCorrect: boolean;
 	timeTakenMs?: number;
 	attemptedAt: string;
-	finalAnswer?: 'A' | 'B' | 'C' | 'D';
-	answerCount?: number;
-	hintsShown?: number;
-	terminalOutcome?: TerminalOutcome;
-	experimentKey?: string;
-	experimentVersion?: number;
-	displayedVariant?: PracticeVariant;
 };
 
 export type StoredMcqQuestion = {

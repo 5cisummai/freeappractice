@@ -1,19 +1,17 @@
-import {
-	buildAttemptFieldsFromMultiAttempt,
-	hasPracticeExperimentMetadata,
-	hasValidHints,
-	isMultiAttemptRequestBody,
-	normalizeAnswerLetter,
-	resolveDisplayedVariant,
-	validateMultiAttemptPayload
-} from '$lib/practice/multi-attempt';
-import { getOrAssignMultiAttemptVariant } from '$lib/practice/assign-variant.server';
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
+
+const ANSWER_CHOICES = new Set(['A', 'B', 'C', 'D']);
+
+function normalizeAnswerLetter(value: unknown): 'A' | 'B' | 'C' | 'D' | null {
+	if (typeof value !== 'string') return null;
+	const letter = value.trim().toUpperCase();
+	return ANSWER_CHOICES.has(letter) ? (letter as 'A' | 'B' | 'C' | 'D') : null;
+}
 
 export type RecordAttemptResult =
 	| {
@@ -30,7 +28,6 @@ export async function recordQuestionAttempt(
 	const { questionId, selectedAnswer, timeTakenMs } = body;
 	const attemptId = typeof body.attemptId === 'string' ? body.attemptId.trim() : '';
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
-	// Correctness is derived server-side from the canonical Neon question row.
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
 	if (!normalizedQuestionId) {
@@ -46,6 +43,14 @@ export async function recordQuestionAttempt(
 		return { status: 400, body: { error: 'Invalid attempt ID' } };
 	}
 
+	const letter = normalizeAnswerLetter(selectedAnswer);
+	if (!letter) {
+		return {
+			status: 400,
+			body: { error: 'Missing required fields: questionId and selectedAnswer' }
+		};
+	}
+
 	const question = await getQuestionById(normalizedQuestionId).catch(() => null);
 	if (!question) {
 		return { status: 404, body: { error: 'Question metadata was not found' } };
@@ -57,97 +62,16 @@ export async function recordQuestionAttempt(
 		return { status: 422, body: { error: 'Question metadata is missing class or unit' } };
 	}
 
-	const experimentRequest = hasPracticeExperimentMetadata(body);
-	const experimentContext = experimentRequest ? await getOrAssignMultiAttemptVariant(userId) : null;
-	const displayedExperiment = experimentContext
-		? resolveDisplayedVariant({
-				assigned: experimentContext.assigned,
-				experimentEnabled: experimentContext.enabled,
-				questionHasHints: hasValidHints({
-					hint1: typeof question.hint1 === 'string' ? question.hint1 : null,
-					hint2: typeof question.hint2 === 'string' ? question.hint2 : null
-				})
-			})
-		: null;
-	const clientVariant = body.displayedVariant;
-	if (
-		experimentContext &&
-		clientVariant !== undefined &&
-		clientVariant !== displayedExperiment?.displayed
-	) {
-		return {
-			status: 400,
-			body: { error: 'Displayed experiment variant does not match the server assignment' }
-		};
-	}
-	if (
-		experimentContext &&
-		isMultiAttemptRequestBody(body) !== (displayedExperiment?.displayed === 'multi_attempt_hints')
-	) {
-		return {
-			status: 400,
-			body: { error: 'Inconsistent experiment payload for the displayed variant' }
-		};
-	}
-	let attempt: IQuestionAttempt;
-
-	if (isMultiAttemptRequestBody(body)) {
-		const validated = validateMultiAttemptPayload(body, question.correctAnswer);
-		if (!validated.ok) {
-			return { status: 400, body: { error: validated.error } };
-		}
-		const fields = buildAttemptFieldsFromMultiAttempt(
-			{
-				...validated.data,
-				displayedVariant: displayedExperiment!.displayed,
-				experimentKey: experimentContext!.assignment.key,
-				experimentVersion: experimentContext!.assignment.version
-			},
-			question.correctAnswer
-		);
-		attempt = {
-			questionId: normalizedQuestionId,
-			apClass,
-			unit: normalizedUnit,
-			selectedAnswer: fields.selectedAnswer,
-			wasCorrect: fields.wasCorrect,
-			timeTakenMs: elapsedTimeMs,
-			attemptedAt: new Date(),
-			finalAnswer: fields.finalAnswer,
-			answerCount: fields.answerCount,
-			hintsShown: fields.hintsShown,
-			terminalOutcome: fields.terminalOutcome,
-			experimentKey: fields.experimentKey,
-			experimentVersion: fields.experimentVersion,
-			displayedVariant: fields.displayedVariant
-		};
-	} else {
-		// Classic control path — identical contract to pre-multi-attempt clients.
-		const letter = normalizeAnswerLetter(selectedAnswer);
-		if (!letter) {
-			return {
-				status: 400,
-				body: { error: 'Missing required fields: questionId and selectedAnswer' }
-			};
-		}
-		const wasCorrect = letter === question.correctAnswer;
-		attempt = {
-			questionId: normalizedQuestionId,
-			apClass,
-			unit: normalizedUnit,
-			selectedAnswer: letter,
-			wasCorrect,
-			timeTakenMs: elapsedTimeMs,
-			attemptedAt: new Date(),
-			...(experimentContext
-				? {
-						experimentKey: experimentContext.assignment.key,
-						experimentVersion: experimentContext.assignment.version,
-						displayedVariant: displayedExperiment!.displayed
-					}
-				: {})
-		};
-	}
+	const wasCorrect = letter === question.correctAnswer;
+	const attempt: IQuestionAttempt = {
+		questionId: normalizedQuestionId,
+		apClass,
+		unit: normalizedUnit,
+		selectedAnswer: letter,
+		wasCorrect,
+		timeTakenMs: elapsedTimeMs,
+		attemptedAt: new Date()
+	};
 
 	const progress = await persistQuestionAttempt(userId, attempt, attemptId || undefined);
 	if (progress.referralActivated) {
@@ -169,19 +93,10 @@ export async function recordQuestionAttempt(
 				was_correct: attempt.wasCorrect,
 				time_taken_ms: elapsedTimeMs,
 				mastery: progress.mastery,
-				total_attempts: progress.totalAttempts,
-				...(attempt.displayedVariant
-					? {
-							displayed_variant: attempt.displayedVariant,
-							terminal_outcome: attempt.terminalOutcome,
-							answer_count: attempt.answerCount,
-							hints_shown: attempt.hintsShown
-						}
-					: {})
+				total_attempts: progress.totalAttempts
 			}
 		});
 
-	// Response shape stays backwards compatible; extras are additive only.
 	return {
 		status: 200,
 		body: {

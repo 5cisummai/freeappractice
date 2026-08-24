@@ -1,5 +1,4 @@
-import type { IQuestionAttempt } from '$lib/users/records.server';
-import type { FrqHistoryItem, HistorySummary, QuizHistoryItem } from '$lib/users/types';
+import type { HistoryItem, HistorySummary, QuestionAttempt } from '$lib/users/types';
 import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
 import { inArray, sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
@@ -10,15 +9,11 @@ import {
 	mcqQuestions,
 	quizAttempts
 } from '$lib/server/neon/schema';
+import { storedQuestionFromPayload } from '$lib/question-bank/mcq/repository.server';
 import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
-type McqHistoryItem = {
-	kind: 'mcq';
-	attempt: IQuestionAttempt;
-	question: StoredQuestion | null;
-};
-
-type PracticeHistoryItem = McqHistoryItem | FrqHistoryItem | QuizHistoryItem;
+type McqHistoryItem = Extract<HistoryItem, { kind: 'mcq' }>;
+type PracticeHistoryItem = HistoryItem;
 
 type PracticeHistoryPageResult = {
 	items: PracticeHistoryItem[];
@@ -50,6 +45,8 @@ type HistoryQueryOptions = {
 	includeFrq?: boolean;
 };
 
+export const PROGRESS_HISTORY_LIMIT = 2000;
+
 type McqHistoryRow = {
 	questionId: string | null;
 	apClass: string;
@@ -58,13 +55,6 @@ type McqHistoryRow = {
 	wasCorrect: boolean | null;
 	timeTakenMs: number | null;
 	attemptedAt: Date;
-	finalAnswer: string | null;
-	answerCount: number | null;
-	hintsShown: number | null;
-	terminalOutcome: string | null;
-	experimentKey: string | null;
-	experimentVersion: number | null;
-	displayedVariant: string | null;
 };
 
 type HistorySqlRow = McqHistoryRow & {
@@ -136,21 +126,8 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 	const rows = await db
 		.select({
 			id: mcqQuestions.questionId,
-			question: mcqQuestions.question,
-			diagramSpec: mcqQuestions.diagramSpec,
-			hasDiagram: mcqQuestions.hasDiagram,
-			optionA: mcqQuestions.optionA,
-			optionB: mcqQuestions.optionB,
-			optionC: mcqQuestions.optionC,
-			optionD: mcqQuestions.optionD,
-			correctAnswer: mcqQuestions.correctAnswer,
-			explanation: mcqQuestions.explanation,
-			hint1: mcqQuestions.hint1,
-			hint2: mcqQuestions.hint2,
-			apClass: mcqQuestions.apClass,
-			unit: mcqQuestions.unit,
+			data: mcqQuestions.data,
 			contentHash: mcqQuestions.contentHash,
-			topicsCovered: mcqQuestions.topicsCovered,
 			createdAt: mcqQuestions.createdAt
 		})
 		.from(mcqQuestions)
@@ -158,25 +135,12 @@ export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<M
 	const lookup = new Map<string, StoredQuestion>(
 		rows.map((row) => [
 			row.id,
-			{
-				id: row.id,
-				question: row.question,
-				diagramSpec: row.diagramSpec ?? undefined,
-				hasDiagram: row.hasDiagram,
-				optionA: row.optionA,
-				optionB: row.optionB,
-				optionC: row.optionC,
-				optionD: row.optionD,
-				explanation: row.explanation,
-				correctAnswer: row.correctAnswer as StoredQuestion['correctAnswer'],
-				createdAt: row.createdAt.toISOString(),
-				...(row.hint1 !== null ? { hint1: row.hint1 } : {}),
-				...(row.hint2 !== null ? { hint2: row.hint2 } : {}),
-				...(row.apClass !== null ? { apClass: row.apClass } : {}),
-				...(row.unit !== null ? { unit: row.unit } : {}),
-				...(row.contentHash !== null ? { contentHash: row.contentHash } : {}),
-				...(row.topicsCovered !== null ? { topicsCovered: row.topicsCovered } : {})
-			}
+			storedQuestionFromPayload({
+				questionId: row.id,
+				data: row.data,
+				contentHash: row.contentHash,
+				createdAt: row.createdAt
+			})
 		])
 	);
 
@@ -249,13 +213,6 @@ export async function getPracticeHistoryPage(
 				${mcqAttempts.wasCorrect} AS "wasCorrect",
 				${mcqAttempts.timeTakenMs} AS "timeTakenMs",
 				${mcqAttempts.attemptedAt} AS "attemptedAt",
-				${mcqAttempts.finalAnswer} AS "finalAnswer",
-				${mcqAttempts.answerCount} AS "answerCount",
-				${mcqAttempts.hintsShown} AS "hintsShown",
-				${mcqAttempts.terminalOutcome} AS "terminalOutcome",
-				${mcqAttempts.experimentKey} AS "experimentKey",
-				${mcqAttempts.experimentVersion} AS "experimentVersion",
-				${mcqAttempts.displayedVariant} AS "displayedVariant",
 				NULL::integer AS "pointsEarned",
 				NULL::integer AS "pointsAvailable",
 				NULL::integer AS percentage,
@@ -297,13 +254,6 @@ export async function getPracticeHistoryPage(
 				NULL::boolean AS "wasCorrect",
 				${frqAttempts.timeTakenMs} AS "timeTakenMs",
 				${frqAttempts.createdAt} AS "attemptedAt",
-				NULL::text AS "finalAnswer",
-				NULL::integer AS "answerCount",
-				NULL::integer AS "hintsShown",
-				NULL::text AS "terminalOutcome",
-				NULL::text AS "experimentKey",
-				NULL::integer AS "experimentVersion",
-				NULL::text AS "displayedVariant",
 				${frqAttemptGrades.pointsEarned} AS "pointsEarned",
 				${frqAttemptGrades.pointsAvailable} AS "pointsAvailable",
 				${frqAttemptGrades.percentage} AS percentage,
@@ -345,13 +295,6 @@ export async function getPracticeHistoryPage(
 				NULL::boolean AS "wasCorrect",
 				${quizAttempts.timeTakenMs} AS "timeTakenMs",
 				${quizAttempts.completedAt} AS "attemptedAt",
-				NULL::text AS "finalAnswer",
-				NULL::integer AS "answerCount",
-				NULL::integer AS "hintsShown",
-				NULL::text AS "terminalOutcome",
-				NULL::text AS "experimentKey",
-				NULL::integer AS "experimentVersion",
-				NULL::text AS "displayedVariant",
 				NULL::integer AS "pointsEarned",
 				NULL::integer AS "pointsAvailable",
 				NULL::integer AS percentage,
@@ -401,19 +344,10 @@ export async function getPracticeHistoryPage(
 					questionId: row.questionId,
 					apClass: row.apClass,
 					unit: row.unit,
-					selectedAnswer: (row.selectedAnswer as IQuestionAttempt['selectedAnswer']) ?? undefined,
-					wasCorrect: row.wasCorrect ?? undefined,
+					selectedAnswer: row.selectedAnswer as QuestionAttempt['selectedAnswer'],
+					wasCorrect: row.wasCorrect ?? false,
 					timeTakenMs: row.timeTakenMs ?? undefined,
-					attemptedAt: new Date(row.attemptedAt),
-					finalAnswer: (row.finalAnswer as IQuestionAttempt['finalAnswer']) ?? undefined,
-					answerCount: row.answerCount ?? undefined,
-					hintsShown: row.hintsShown ?? undefined,
-					terminalOutcome:
-						(row.terminalOutcome as IQuestionAttempt['terminalOutcome']) ?? undefined,
-					experimentKey: row.experimentKey ?? undefined,
-					experimentVersion: row.experimentVersion ?? undefined,
-					displayedVariant:
-						(row.displayedVariant as IQuestionAttempt['displayedVariant']) ?? undefined
+					attemptedAt: new Date(row.attemptedAt).toISOString()
 				},
 				question: null
 			};
@@ -479,6 +413,20 @@ export async function getPracticeHistoryPage(
 			avgTimeMs: summaryRow.avgTimeMs === null ? null : Number(summaryRow.avgTimeMs)
 		}
 	};
+}
+
+export async function getProgressHistory(
+	userId: string,
+	options: { from: string; includeFrq: boolean }
+): Promise<HistoryItem[]> {
+	const page = await getPracticeHistoryPage(userId, {
+		page: 1,
+		limit: PROGRESS_HISTORY_LIMIT,
+		sort: { field: 'attemptedAt', direction: 'desc' },
+		filters: { from: options.from },
+		includeFrq: options.includeFrq
+	});
+	return hydratePracticeHistoryItems(page.items);
 }
 
 export async function hydratePracticeHistoryItems(

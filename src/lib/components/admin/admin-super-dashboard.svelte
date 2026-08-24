@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -27,7 +27,7 @@
 			toast.error(getResponseMessage(result, 'Could not retry cleanup job.'));
 			return;
 		}
-		await invalidateAll();
+		await invalidateAppRoute('/app/admin');
 		toast.success('Cleanup job queued for retry.');
 	}
 
@@ -41,7 +41,7 @@
 			);
 			if (!response.ok)
 				throw new Error(getResponseMessage(result, 'Could not grant indefinite Super.'));
-			await invalidateAll();
+			await invalidateAppRoute('/app/admin');
 			toast.success(
 				`Granted indefinite Super to ${result?.granted ?? 0} free beta user${
 					(result?.granted ?? 0) === 1 ? '' : 's'

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
 	isSuperCoachEnabled: vi.fn(),
-	isSuperInsightsEnabled: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	getPlanAccess: vi.fn(),
 	getStripeClient: vi.fn(() => null),
@@ -12,7 +11,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('$lib/flags', () => ({
 	isSuperCoachEnabled: mocks.isSuperCoachEnabled,
-	isSuperInsightsEnabled: mocks.isSuperInsightsEnabled,
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
 vi.mock('$lib/super/billing.server', () => ({
@@ -36,7 +34,6 @@ describe('authorizeFeatureRequest', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.isSuperCoachEnabled.mockResolvedValue(true);
-		mocks.isSuperInsightsEnabled.mockResolvedValue(true);
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
 		mocks.getPlanAccess.mockResolvedValue({
 			plan: 'super',
@@ -60,7 +57,7 @@ describe('authorizeFeatureRequest', () => {
 
 	it('denies unpaid access without reading the profile', async () => {
 		mocks.getPlanAccess.mockResolvedValue({ plan: 'free', accessReason: null });
-		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'aiInsights');
+		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'studyPlans');
 
 		expect(result).toMatchObject({
 			allowed: false,

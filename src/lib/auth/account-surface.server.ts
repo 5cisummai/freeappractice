@@ -1,9 +1,14 @@
+export {
+	isAnonymousMcqFetch,
+	shouldSkipGlobalApiRateLimit,
+	shouldSkipSessionLookup
+} from '$lib/server/request-policy.server';
+
 const ACCOUNT_API_PREFIXES = [
 	'/api/me',
 	'/api/super',
 	'/api/coach',
 	'/api/tutor',
-	'/api/insights',
 	'/api/study-plan',
 	'/api/question/frq',
 	'/api/question/feedback',
@@ -32,8 +37,4 @@ export function isAgeGateExempt(pathname: string): boolean {
 		matchesPath(pathname, '/app/onboarding') ||
 		matchesPath(pathname, '/app/confirm-age')
 	);
-}
-
-export function shouldSkipSessionLookup(method: string, pathname: string): boolean {
-	return method === 'POST' && pathname === '/api/question';
 }

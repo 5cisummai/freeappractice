@@ -6,8 +6,13 @@
 		PoolRefillStatusUi
 	} from '$lib/admin/types.js';
 	import AdminCacheBucketActions from '$lib/components/admin/admin-cache-bucket-actions.svelte';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
+	import {
+		POOL_RETIRE_OLDEST_PERCENT,
+		poolRetireQuantityForBucket
+	} from '$lib/question-bank/pool-constants';
 
 	type Props = {
 		buckets: CacheBucketSummary[];
@@ -23,6 +28,7 @@
 	let busyAction = $state<string | null>(null);
 	let statusMessage = $state<string | null>(null);
 	let errorMessage = $state<string | null>(null);
+	let retireOldestOpen = $state(false);
 	let typeFilter = $state<PoolQuestionType>('mcq');
 	let search = $state('');
 
@@ -34,6 +40,12 @@
 			if (!normalizedSearch) return true;
 			return `${bucket.apClass} ${bucket.unit}`.toLowerCase().includes(normalizedSearch);
 		})
+	);
+	const retireOldestPreviewCount = $derived(
+		liveBuckets.reduce((sum, bucket) => sum + poolRetireQuantityForBucket(bucket.activeCount), 0)
+	);
+	const retireOldestPreviewBuckets = $derived(
+		liveBuckets.filter((bucket) => poolRetireQuantityForBucket(bucket.activeCount) >= 1).length
 	);
 
 	function bucketKey(bucket: CacheBucketSummary): string {
@@ -155,6 +167,33 @@
 		}
 	}
 
+	async function retireOldestPercent(): Promise<void> {
+		busyAction = 'retire-oldest';
+		statusMessage = null;
+		errorMessage = null;
+		try {
+			const result = await request<{
+				retired: number;
+				bucketsAffected: number;
+				enqueued: number;
+			}>({
+				action: 'retireOldestPercent',
+				percent: POOL_RETIRE_OLDEST_PERCENT
+			});
+			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
+			localBuckets = snapshot.buckets;
+			statusMessage = result.retired
+				? `Retired ${result.retired.toLocaleString()} oldest question(s) across ${result.bucketsAffected.toLocaleString()} bucket(s); ${result.enqueued.toLocaleString()} refill job(s) queued.`
+				: 'No active questions met the 30% retirement threshold.';
+			retireOldestOpen = false;
+		} catch (error) {
+			errorMessage =
+				error instanceof Error ? error.message : 'Unable to retire oldest pool questions.';
+		} finally {
+			busyAction = null;
+		}
+	}
+
 	async function retireBucket(bucket: CacheBucketSummary, quantity: number): Promise<void> {
 		const key = `retire:${bucketKey(bucket)}`;
 		busyAction = key;
@@ -232,8 +271,46 @@
 			<Button onclick={() => void enqueueAllDeficits()} disabled={!!busyAction}>
 				{isBusy('enqueue-all') ? 'Enqueueing…' : 'Enqueue all deficits'}
 			</Button>
+			<Button
+				variant="destructive"
+				onclick={() => (retireOldestOpen = true)}
+				disabled={!!busyAction || retireOldestPreviewCount < 1}
+			>
+				Retire {POOL_RETIRE_OLDEST_PERCENT}% oldest
+			</Button>
 		</div>
 	</div>
+
+	<AlertDialog.Root bind:open={retireOldestOpen}>
+		<AlertDialog.Content>
+			<AlertDialog.Header>
+				<AlertDialog.Title>
+					Retire {POOL_RETIRE_OLDEST_PERCENT}% of the oldest pool questions?
+				</AlertDialog.Title>
+				<AlertDialog.Description>
+					This retires about {retireOldestPreviewCount.toLocaleString()} active question{retireOldestPreviewCount ===
+					1
+						? ''
+						: 's'} across {retireOldestPreviewBuckets.toLocaleString()} bucket{retireOldestPreviewBuckets ===
+					1
+						? ''
+						: 's'}, starting with the oldest in each class/unit. Retired questions stop appearing in
+					practice, but history and bookmarks still resolve. Refill jobs are queued for every
+					affected bucket.
+				</AlertDialog.Description>
+			</AlertDialog.Header>
+			<AlertDialog.Footer>
+				<AlertDialog.Cancel disabled={isBusy('retire-oldest')}>Cancel</AlertDialog.Cancel>
+				<AlertDialog.Action
+					class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+					disabled={isBusy('retire-oldest') || retireOldestPreviewCount < 1}
+					onclick={() => void retireOldestPercent()}
+				>
+					{isBusy('retire-oldest') ? 'Retiring…' : 'Retire and queue refills'}
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+	</AlertDialog.Root>
 
 	{#if statusMessage}
 		<p

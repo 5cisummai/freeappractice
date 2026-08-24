@@ -31,7 +31,6 @@ export const PAID_PLAN_PERMISSIONS = {
 	super: {
 		personalizedTutor: true,
 		coach: true,
-		aiInsights: true,
 		studyPlans: true,
 		memory: true
 	}
@@ -78,6 +77,35 @@ export type TutorProfileUpdate = Partial<
 	>
 >;
 
+export type StudyPlanInsights = {
+	generatedAt: string;
+	window: {
+		startsOn: string;
+		endsOn: string;
+		days: number;
+	};
+	metrics: {
+		mcqAttempts: number;
+		mcqAccuracy: number | null;
+		frqSubmissions: number;
+		frqAveragePercentage: number | null;
+		activeDays: number;
+		previousMcqAttempts: number;
+		previousMcqAccuracy: number | null;
+	};
+	headline: string;
+	summary: string;
+	focusAreas: Array<{
+		kind: 'focus' | 'momentum' | 'habit';
+		title: string;
+		detail: string;
+		why: string;
+		apClass: string | null;
+		unit: string | null;
+	}>;
+	planRationale: string;
+};
+
 export type StudyTaskStatus = 'todo' | 'done';
 
 export type StudyTask = {
@@ -95,10 +123,9 @@ export type StudyPlanView = {
 	id: string;
 	startsOn: string;
 	tasks: StudyTask[];
+	insights?: StudyPlanInsights;
 	updatedAt: string;
 };
-
-export type InsightFeedback = 'helpful' | 'not_helpful';
 
 export const INDEFINITE_SUPER_GRANT_EXPIRES_AT = '9999-12-31T23:59:59.000Z';
 

@@ -15,7 +15,8 @@ import {
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { authOrganizations, authUsers } from './auth';
-import { createdAt, updatedAt, bytea } from './common';
+import { createdAt, updatedAt } from './common';
+import type { StudyPlanInsights } from '$lib/super/types';
 
 export const appSchema = pgSchema('app');
 
@@ -109,13 +110,6 @@ export const mcqAttempts = appSchema.table(
 		wasCorrect: boolean('was_correct'),
 		timeTakenMs: integer('time_taken_ms'),
 		attemptedAt: timestamp('attempted_at', { withTimezone: true, mode: 'date' }).notNull(),
-		finalAnswer: text('final_answer'),
-		answerCount: integer('answer_count'),
-		hintsShown: integer('hints_shown'),
-		terminalOutcome: text('terminal_outcome'),
-		experimentKey: text('experiment_key'),
-		experimentVersion: integer('experiment_version'),
-		displayedVariant: text('displayed_variant'),
 		createdAt: createdAt()
 	},
 	(table) => [
@@ -256,21 +250,6 @@ export const bookmarks = appSchema.table(
 		createdAt: createdAt()
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.questionId] })]
-);
-
-export const experimentAssignments = appSchema.table(
-	'experiment_assignments',
-	{
-		userId: text('user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		key: text('key').notNull(),
-		version: integer('version').notNull(),
-		variant: text('variant').notNull(),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [primaryKey({ columns: [table.userId, table.key] })]
 );
 
 export const referrals = appSchema.table(
@@ -480,29 +459,6 @@ export const superUsageRollups = appSchema.table(
 	(table) => [primaryKey({ columns: [table.userId, table.month] })]
 );
 
-export const insightReports = appSchema.table(
-	'insight_reports',
-	{
-		id: text('id').primaryKey(),
-		userId: text('user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		report: jsonb('report').$type<Record<string, unknown>>().notNull(),
-		evidenceAttemptCount: integer('evidence_attempt_count').notNull(),
-		generatedAt: timestamp('generated_at', { withTimezone: true, mode: 'date' }).notNull(),
-		manual: boolean('manual').notNull(),
-		pdfData: bytea('pdf_data'),
-		pdfGeneratedAt: timestamp('pdf_generated_at', { withTimezone: true, mode: 'date' }),
-		pdfGenerationVersion: integer('pdf_generation_version'),
-		feedback: text('feedback'),
-		feedbackReason: text('feedback_reason'),
-		lockedAt: timestamp('locked_at', { withTimezone: true, mode: 'date' }),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [index('insight_reports_user_generated_idx').on(table.userId, table.generatedAt)]
-);
-
 export const studyPlans = appSchema.table(
 	'study_plans',
 	{
@@ -511,6 +467,7 @@ export const studyPlans = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		startsOn: date('starts_on', { mode: 'date' }).notNull(),
+		insights: jsonb('insights').$type<StudyPlanInsights | null>(),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},

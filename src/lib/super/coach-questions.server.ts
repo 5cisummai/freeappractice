@@ -1,7 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
 import { mcqBank } from '$lib/question-bank/mcq/bank.server';
-import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
 import { frqBank } from '$lib/question-bank/frq/bank.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqAttempts, mcqAttempts } from '$lib/server/neon/schema';
@@ -140,12 +139,11 @@ export async function giveCoachPracticeQuestion(
 		return { error: 'Could not load a practice question right now.' };
 	}
 
-	const { answer, questionId } = outcome.result;
-	const stored = await getQuestionById(questionId).catch(() => null);
+	const { answer, questionId, apClass: resolvedClass, unit: resolvedUnit } = outcome.result;
 	return mcqCoachOutput({
 		questionId,
-		apClass: stored?.apClass ?? apClass,
-		unit: stored?.unit ?? (unit || 'All Units'),
+		apClass: resolvedClass,
+		unit: resolvedUnit || unit || 'All Units',
 		prompt: answer.question,
 		optionA: answer.optionA,
 		optionB: answer.optionB,

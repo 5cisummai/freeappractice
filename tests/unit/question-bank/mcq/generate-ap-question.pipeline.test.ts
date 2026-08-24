@@ -45,8 +45,7 @@ const validGeneratedQuestion = {
 	optionD: 'Plantation monoculture for export',
 	correctAnswer: 'B' as const,
 	explanation: 'Intensive subsistence farming often centers on wet-rice cultivation.',
-	hint1: 'Think about high labor input on small parcels of land.',
-	hint2: 'Consider East and South Asian rice paddies rather than cattle ranching.',
+	mainTopic: 'Intensive subsistence agriculture',
 	topicsCovered: 'Intensive subsistence agriculture and wet-rice farming patterns',
 	diagram: null
 };
@@ -70,8 +69,7 @@ describe('MCQ live generation pipeline', () => {
 
 		expect(generateMock).toHaveBeenCalledTimes(1);
 		expect(result.questionId).toEqual(expect.any(String));
-		expect(result.answer.hint1).toBe(validGeneratedQuestion.hint1);
-		expect(result.answer.hint2).toBe(validGeneratedQuestion.hint2);
+		expect(result.answer.mainTopic).toBe(validGeneratedQuestion.mainTopic);
 		expect(result.provider).toBe('ai');
 		expect(result.model).toBe('gpt-5.6-luna');
 		expect(result.timing?.generationMs).toBeGreaterThanOrEqual(0);

@@ -1,9 +1,4 @@
-export const coachComposerActionIds = [
-	'practice-question',
-	'study-next',
-	'study-plan',
-	'review-progress'
-] as const;
+export const coachComposerActionIds = ['study-next', 'study-plan', 'review-progress'] as const;
 
 export type CoachComposerActionId = (typeof coachComposerActionIds)[number];
 
@@ -16,18 +11,11 @@ export type CoachComposerAction = {
 
 export const coachComposerActions: CoachComposerAction[] = [
 	{
-		id: 'practice-question',
-		title: 'Practice question',
-		description: 'Quiz me on a weak unit',
-		instruction:
-			'The student selected Practice question. Use give_practice_question to serve an inline practice question unless they asked for something else.'
-	},
-	{
 		id: 'study-next',
 		title: 'Study next',
 		description: 'Based on your progress',
 		instruction:
-			'The student selected Study next. Read their progress and insights, then recommend the best next study focus.'
+			'The student selected Study next. Read their progress, then recommend the best next study focus.'
 	},
 	{
 		id: 'study-plan',

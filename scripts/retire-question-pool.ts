@@ -17,6 +17,7 @@ import 'dotenv/config';
 import { and, eq, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '../src/lib/server/neon/db';
 import { frqQuestions, mcqQuestions } from '../src/lib/server/neon/schema';
+import { questionPayloadTextField } from '../src/lib/server/neon/jsonb';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
@@ -53,25 +54,29 @@ type BucketRow = {
 };
 
 function buildConditions(table: typeof mcqQuestions | typeof frqQuestions) {
+	const apClass = questionPayloadTextField(table.data, 'apClass');
+	const unit = questionPayloadTextField(table.data, 'unit');
 	return [
 		eq(table.active, true),
-		...(classFilter?.trim() ? [eq(table.apClass, classFilter.trim())] : []),
-		...(unitFilter?.trim() ? [eq(table.unit, unitFilter.trim())] : [])
+		...(classFilter?.trim() ? [eq(apClass, classFilter.trim())] : []),
+		...(unitFilter?.trim() ? [eq(unit, unitFilter.trim())] : [])
 	];
 }
 
 async function summarize(
 	table: typeof mcqQuestions | typeof frqQuestions
 ): Promise<{ total: number; buckets: BucketRow[] }> {
+	const apClass = questionPayloadTextField(table.data, 'apClass');
+	const unit = questionPayloadTextField(table.data, 'unit');
 	const rows = await getNeonDatabase()
 		.select({
-			apClass: table.apClass,
-			unit: table.unit,
+			apClass,
+			unit,
 			total: sql<number>`count(*)`
 		})
 		.from(table)
 		.where(and(...buildConditions(table)))
-		.groupBy(table.apClass, table.unit);
+		.groupBy(apClass, unit);
 	const buckets = rows.map((row) => ({
 		apClass: row.apClass,
 		unit: row.unit,

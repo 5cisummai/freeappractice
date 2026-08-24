@@ -2,12 +2,10 @@
 	import { twAnimateInView, twAnimateInViewSubtle } from '$lib/tw-animate';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
-	import FileTextIcon from '@tabler/icons-svelte/icons/file-text-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
 	import PenLineIcon from '@tabler/icons-svelte/icons/pencil-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
-	import LineChartIcon from '@tabler/icons-svelte/icons/chart-line';
 	import MessageCircleIcon from '@tabler/icons-svelte/icons/message-circle-filled';
 
 	let { freeBeta = false }: { freeBeta?: boolean } = $props();
@@ -27,7 +25,6 @@
 	const superIncludes = $derived([
 		'Personalized MCQ and FRQ tutoring',
 		'AI Coach with weekly study plans',
-		'Actionable insights from your history',
 		freeBeta
 			? '300 personalized messages per month during beta'
 			: '600 personalized messages per month'
@@ -47,7 +44,7 @@
 				Built around you
 			</h2>
 			<p class="text-base leading-7 text-muted-foreground">
-				Tutor, Coach, insights, and weekly plans—personalized from your practice.
+				Tutor, Coach, and weekly plans—personalized from your practice.
 			</p>
 		</div>
 
@@ -87,42 +84,6 @@
 					</div>
 					<p class="text-sm leading-6 text-muted-foreground">
 						Study plans you approve, updated from your practice.
-					</p>
-				</div>
-			</article>
-
-			<article class="{cardClass} lg:col-span-5 {twAnimateInViewSubtle}">
-				<div class="flex min-h-56 items-center justify-center p-6" aria-hidden="true">
-					<div
-						class="w-full max-w-xs space-y-3 rounded-2xl border border-border/70 bg-background p-4 shadow-md"
-					>
-						<div class="flex items-center gap-2 border-b border-border/70 pb-3">
-							<FileTextIcon class="size-4 text-violet-500" />
-							<p class="text-sm font-semibold">Insights brief</p>
-						</div>
-						<p class="text-xs leading-5 text-muted-foreground">
-							Strongest: Unit 2 cell structure. Focus next: Unit 3 energetics and FRQ evidence
-							phrasing.
-						</p>
-						<div class="grid grid-cols-2 gap-2">
-							<div class="rounded-xl bg-emerald-500/10 px-3 py-2 text-center">
-								<p class="text-[0.65rem] text-muted-foreground">MCQ accuracy</p>
-								<p class="text-lg font-semibold text-emerald-700 dark:text-emerald-300">82%</p>
-							</div>
-							<div class="rounded-xl bg-violet-500/10 px-3 py-2 text-center">
-								<p class="text-[0.65rem] text-muted-foreground">Units to review</p>
-								<p class="text-lg font-semibold text-violet-700 dark:text-violet-300">2</p>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="space-y-2 border-t border-border/70 px-6 py-5">
-					<div class="flex items-center gap-2">
-						<LineChartIcon class="size-4 text-violet-500" aria-hidden="true" />
-						<h3 class="text-lg font-semibold tracking-tight">Actionable Insights</h3>
-					</div>
-					<p class="text-sm leading-6 text-muted-foreground">
-						See what's working, what's not, and what to do next.
 					</p>
 				</div>
 			</article>

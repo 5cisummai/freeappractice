@@ -1,141 +1,132 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
-	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
-	import DownloadIcon from '@tabler/icons-svelte/icons/download-filled';
-	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
-	import FileTextIcon from '@tabler/icons-svelte/icons/file-text-filled';
-	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
-	import Undo2Icon from '@tabler/icons-svelte/icons/arrow-back-up';
+	import ArrowUpRightIcon from '@lucide/svelte/icons/arrow-up-right';
+	import BookOpenCheckIcon from '@lucide/svelte/icons/book-open-check';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
+	import Clock3Icon from '@lucide/svelte/icons/clock-3';
+	import Repeat2Icon from '@lucide/svelte/icons/repeat-2';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import TargetIcon from '@lucide/svelte/icons/target';
+	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
+	import PageShell from '$lib/components/layout/page-shell.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { formatDateOnly } from '$lib/date-only.js';
-	import { toast } from 'svelte-sonner';
-
-	type InsightFeedback = 'helpful' | 'not_helpful';
+	import * as Empty from '$lib/components/ui/empty/index.js';
+	import * as Progress from '$lib/components/ui/progress/index.js';
+	import { utcDateKey } from '$lib/dates/calendar-day.js';
+	import type { StudyPlanInsights, StudyPlanView, StudyTask } from '$lib/super/types';
+	import { cn } from '$lib/utils.js';
 
 	let { data } = $props();
-	let refreshing = $state(false);
-	let planning = $state(false);
-	let feedbackSaving = $state(false);
-	let submittedFeedback = $state<InsightFeedback | null>(null);
-	let feedbackReason = $state('');
-	let undoingAuditId = $state<string | null>(null);
+	let planOverride = $state<StudyPlanView | null | undefined>(undefined);
+	let completingTaskId = $state<string | null>(null);
+	let errorMessage = $state('');
 
-	const pdfUrl = resolve('/api/insights/pdf');
-	const evidenceProgress = $derived(
-		Math.min(
-			100,
-			((data.eligibility?.totalScoredAttempts ?? 0) /
-				(data.eligibility?.minimumTotalAttempts || 20)) *
-				100
-		)
+	const plan = $derived(planOverride !== undefined ? planOverride : data.plan);
+	const insights = $derived(plan?.insights ?? null);
+	const completedCount = $derived(plan?.tasks.filter((task) => task.status === 'done').length ?? 0);
+	const taskCount = $derived(plan?.tasks.length ?? 0);
+	const weekDays = $derived(buildWeekDays(plan?.startsOn ?? new Date().toISOString()));
+	const completionPercent = $derived(
+		taskCount ? Math.round((completedCount / taskCount) * 100) : 0
 	);
 
-	async function refreshInsights() {
-		if (refreshing) return;
-		refreshing = true;
-		try {
-			const response = await apiFetch('/api/insights', {
-				method: 'POST',
-				headers: { 'Idempotency-Key': crypto.randomUUID() }
-			});
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok) throw new Error(getResponseMessage(result, 'Could not refresh insights.'));
-			toast.success('AI report refreshed.');
-			await goto(resolve('/app/insights'), { invalidateAll: true });
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not refresh insights.');
-		} finally {
-			refreshing = false;
-		}
+	function dateKey(value: Date | string): string {
+		return utcDateKey(value);
 	}
 
-	async function submitFeedback(feedback: InsightFeedback) {
-		const report = data.report;
-		if (!report || feedbackSaving) return;
-		feedbackSaving = true;
-		try {
-			const response = await apiFetch('/api/insights/feedback', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					reportId: report.id,
-					feedback,
-					...(feedbackReason ? { reason: feedbackReason } : {})
-				})
-			});
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok)
-				throw new Error(getResponseMessage(result, 'Could not save your insight feedback.'));
-			submittedFeedback = feedback;
-			toast.success('Thanks for the feedback.');
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not save your insight feedback.');
-		} finally {
-			feedbackSaving = false;
-		}
+	function buildWeekDays(startsOn: string): Array<{ date: string; key: string }> {
+		const start = new Date(startsOn);
+		return Array.from({ length: 7 }, (_, index) => {
+			const date = new Date(start.getTime() + index * 24 * 60 * 60 * 1000);
+			return { date: date.toISOString(), key: dateKey(date) };
+		});
 	}
 
-	async function applyProposal(behavior: 'merge' | 'replace') {
-		if (planning) return;
-		planning = true;
+	function formatDate(value: string, options: Intl.DateTimeFormatOptions): string {
+		const date = new Date(value);
+		if (Number.isNaN(date.getTime())) return 'Unknown date';
+		return date.toLocaleDateString(undefined, options);
+	}
+
+	function formatWindow(window: StudyPlanInsights['window']): string {
+		return (
+			formatDate(window.startsOn, { month: 'short', day: 'numeric' }) +
+			' – ' +
+			formatDate(window.endsOn, { month: 'short', day: 'numeric' })
+		);
+	}
+
+	function formatDayName(value: string): string {
+		return formatDate(value, { weekday: 'short' });
+	}
+
+	function formatDayNumber(value: string): string {
+		return formatDate(value, { month: 'short', day: 'numeric' });
+	}
+
+	function formatGeneratedAt(value: string): string {
+		return formatDate(value, { month: 'short', day: 'numeric', year: 'numeric' });
+	}
+
+	function tasksForDay(day: string): StudyTask[] {
+		return plan?.tasks.filter((task) => dateKey(task.date) === day) ?? [];
+	}
+
+	function kindLabel(kind: StudyPlanInsights['focusAreas'][number]['kind']): string {
+		if (kind === 'momentum') return 'Momentum';
+		if (kind === 'habit') return 'Habit';
+		return 'Focus';
+	}
+
+	function taskModeLabel(mode: StudyTask['mode']): string {
+		if (mode === 'frq') return 'FRQ';
+		if (mode === 'review') return 'Review';
+		return 'MCQ';
+	}
+
+	function taskLabel(task: StudyTask): string {
+		if (task.mode === 'frq') return 'Write an FRQ for ' + task.apClass;
+		if (task.mode === 'review') return 'Review ' + task.apClass;
+		return 'Practice ' + task.apClass;
+	}
+
+	function taskDescription(task: StudyTask): string {
+		return task.unit + ' · ' + task.durationMinutes + ' min';
+	}
+
+	function focusIcon(kind: StudyPlanInsights['focusAreas'][number]['kind']) {
+		if (kind === 'momentum') return TrendingUpIcon;
+		if (kind === 'habit') return Repeat2Icon;
+		return TargetIcon;
+	}
+
+	async function completeTask(task: StudyTask): Promise<void> {
+		if (task.status === 'done' || completingTaskId) return;
+		completingTaskId = task.id;
+		errorMessage = '';
 		try {
 			const response = await apiFetch('/api/study-plan', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-				body: JSON.stringify({ action: 'generate', behavior })
+				headers: {
+					'Content-Type': 'application/json',
+					'Idempotency-Key': crypto.randomUUID()
+				},
+				body: JSON.stringify({ action: 'complete', taskId: task.id })
 			});
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok)
-				throw new Error(getResponseMessage(result, 'Could not apply the proposed study plan.'));
-			toast.success(
-				behavior === 'merge' ? 'Proposal merged into your study plan.' : 'Active plan replaced.'
-			);
-			await goto(resolve('/app/insights'), { invalidateAll: true });
+			const payload = await readJsonOrNull<{ plan?: StudyPlanView; error?: string }>(response);
+			if (!response.ok || !payload?.plan) {
+				throw new Error(getResponseMessage(payload, 'Could not update the study plan.'));
+			}
+			planOverride = payload.plan;
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : 'Could not apply the proposed study plan.'
-			);
+			errorMessage = error instanceof Error ? error.message : 'Could not update the study plan.';
 		} finally {
-			planning = false;
-		}
-	}
-
-	async function completeTask(taskId: string) {
-		const response = await apiFetch('/api/study-plan', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-			body: JSON.stringify({ action: 'complete', taskId })
-		});
-		if (!response.ok) {
-			toast.error('Could not complete that task.');
-			return;
-		}
-		await goto(resolve('/app/insights'), { invalidateAll: true });
-	}
-
-	async function undoPlanChange(auditId: string) {
-		if (undoingAuditId) return;
-		undoingAuditId = auditId;
-		try {
-			const response = await apiFetch('/api/study-plan/undo', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-				body: JSON.stringify({ auditId })
-			});
-			const result = await readJsonOrNull<{ error?: string }>(response);
-			if (!response.ok)
-				throw new Error(getResponseMessage(result, 'Could not undo that plan change.'));
-			toast.success('Study-plan change undone.');
-			await goto(resolve('/app/insights'), { invalidateAll: true });
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not undo that plan change.');
-		} finally {
-			undoingAuditId = null;
+			completingTaskId = null;
 		}
 	}
 </script>
@@ -144,294 +135,275 @@
 	<title>Insights | Free AP Practice</title>
 </svelte:head>
 
-<PageShell title="Insights" description="View a report of your practice for the last week">
-	{#snippet actions()}
-		{#if data.hasInsightsAccess && data.insightsEnabled && data.profile.ageConfirmedAt}
-			<Button
-				variant="outline"
-				disabled={refreshing || !data.eligibility?.eligible}
-				onclick={refreshInsights}
-			>
-				<RefreshCwIcon class={refreshing ? 'animate-spin' : ''} size={15} />
-				{refreshing ? 'Refreshing...' : 'Refresh report'}
-			</Button>
-		{/if}
-	{/snippet}
-
-	{#if !data.hasInsightsAccess}
-		<Card.Root class="mx-auto max-w-2xl">
-			<Card.Content class="space-y-3 p-6">
-				<h2 class="font-display text-2xl">Super feature</h2>
-				<p class="text-sm text-muted-foreground">
-					Unlock personal insights and one active weekly study plan with Super.
-				</p>
+<PageShell
+	title="Insights"
+	description="Your weekly practice readout and study plan, refreshed every Saturday."
+>
+	{#if !data.canView}
+		<Card.Root class="mx-auto w-full max-w-2xl">
+			<Card.Header>
+				<Card.Title>Insights requires Super</Card.Title>
+				<Card.Description>{data.accessMessage}</Card.Description>
+			</Card.Header>
+			<Card.Footer>
 				<Button href="/pricing">See Super</Button>
-			</Card.Content>
+			</Card.Footer>
 		</Card.Root>
-	{:else if !data.insightsEnabled}
-		<Card.Root class="mx-auto max-w-2xl">
-			<Card.Content class="p-6 text-sm text-muted-foreground">
-				Insights are temporarily unavailable. Existing study progress remains safe.
-			</Card.Content>
-		</Card.Root>
-	{:else if !data.profile.ageConfirmedAt}
-		<Card.Root class="mx-auto max-w-2xl">
-			<Card.Content class="space-y-3 p-6">
-				<h2 class="font-display text-2xl">Confirm your age</h2>
-				<p class="text-sm text-muted-foreground">
-					Insights use personalized study information and are available to students aged 13 or
-					older.
-				</p>
-				<Button href="/app/confirm-age">Confirm age</Button>
-			</Card.Content>
-		</Card.Root>
-	{:else if !data.report}
-		<section
-			class="mx-auto max-w-[52rem] rounded-2xl border border-border bg-card p-[clamp(2rem,6vw,4rem)] text-center shadow-lg"
-			aria-labelledby="empty-report-title"
-		>
-			<div
-				class="mx-auto mb-5 grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"
-			>
-				<FileTextIcon size={22} />
-			</div>
-			<h2
-				id="empty-report-title"
-				class="m-0 font-display text-[clamp(2rem,5vw,3.5rem)] font-medium tracking-[-0.05em]"
-			>
-				Your first report is almost ready.
-			</h2>
-			<p class="mx-auto mt-4 max-w-xl text-[0.95rem] leading-[1.7] text-muted-foreground">
-				Complete the evidence threshold below, then refresh to have the AI turn your practice
-				history into a PDF report.
-			</p>
-			<div class="mt-8 border-t border-border pt-5 text-left">
-				<div class="flex items-baseline gap-2">
-					<strong class="font-display text-5xl leading-none font-medium tracking-[-0.06em]"
-						>{data.eligibility?.totalScoredAttempts ?? 0}</strong
-					>
-					<span class="text-xs text-muted-foreground"
-						>/ {data.eligibility?.minimumTotalAttempts ?? 20} scored attempts</span
-					>
-				</div>
-				<div class="mt-3 h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
-					<span
-						class="block h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
-						style={`width: ${evidenceProgress}%`}
-					></span>
-				</div>
-				<p class="mt-3 mb-0 text-xs leading-[1.55] text-muted-foreground">
-					{data.eligibility?.eligibleClaimCount ?? 0} subjects have enough practice for insights. Multiple-choice
-					and written-response progress count separately.
-				</p>
-			</div>
-		</section>
+	{:else if !plan}
+		<EmptyState
+			title="Your first weekly readout is on the way."
+			description="Your weekly readout will appear after the next Saturday refresh."
+			imageUrl="/illustrations/lightbulb.png"
+		/>
 	{:else}
-		<section class="relative overflow-hidden" aria-labelledby="pdf-report-title">
-			<h2 id="pdf-report-title" class="sr-only">Personal assessment brief</h2>
-			<div class="relative">
-				<iframe
-					title="AI-generated Insights PDF"
-					src={pdfUrl}
-					class="block h-[min(78vh,980px)] min-h-[620px] w-full border-0 bg-white max-[560px]:h-[72vh] max-[560px]:min-h-[520px]"
-				></iframe>
-				<div class="absolute top-4 right-4 z-10 flex gap-1.5 max-[560px]:top-2 max-[560px]:right-2">
-					<Button
-						href={pdfUrl}
-						target="_blank"
-						rel="noreferrer"
-						variant="ghost"
-						size="sm"
-						class="bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background"
-					>
-						<ExternalLinkIcon size={14} /> Open PDF
-					</Button>
-					<Button
-						href={pdfUrl}
-						download
-						size="sm"
-						variant="ghost"
-						class="bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background"
-					>
-						<DownloadIcon size={14} /> Download
-					</Button>
-				</div>
-			</div>
-			<p class="m-0 pt-3 text-xs text-muted-foreground">
-				Generated {new Date(data.report.generatedAt).toLocaleDateString()} from {data.report
-					.evidenceAttemptCount}
-				scored attempts. Refreshing creates a new AI-authored PDF after 10 additional attempts.
-			</p>
-		</section>
-
-		<section
-			class="grid grid-cols-2 gap-5 max-[720px]:grid-cols-1"
-			aria-label="Study plan and report feedback"
-		>
-			{#if data.proposal?.tasks.length}
-				<Card.Root class="rounded-2xl border border-border bg-card shadow-none">
-					<Card.Header>
-						<Card.Title>Proposed seven-day plan</Card.Title>
-						<Card.Description>
-							The PDF explains the priorities; these controls apply them to your active plan.
-						</Card.Description>
-					</Card.Header>
-					<Card.Content class="space-y-3">
-						{#each data.proposal.tasks as task, index (task.id)}
-							<div
-								class="flex min-w-0 items-start justify-between gap-3 border-b border-border py-3 last:border-b-0 max-[560px]:flex-wrap"
-							>
-								<div class="min-w-0 flex-1">
-									<p class="font-medium">Day {index + 1} · {task.apClass} · {task.unit}</p>
-									<p class="text-xs text-muted-foreground">
-										{formatDateOnly(task.date)} · {task.durationMinutes} min · {task.mode.toUpperCase()}
-									</p>
-								</div>
-								{#if task.practiceHref}<Button
-										href={task.practiceHref}
-										size="sm"
-										variant="outline"
-										class="max-[560px]:ml-auto"><BookOpenIcon size={13} /> Practice</Button
-									>{/if}
+		{#if insights}
+			<section class="flex flex-col gap-6" aria-labelledby="weekly-readout-heading">
+				<Card.Root class="overflow-hidden border-primary/20 bg-primary/3 shadow-sm">
+					<Card.Content class="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_20rem] lg:items-center">
+						<div class="flex flex-col gap-5">
+							<div class="flex flex-wrap items-center gap-2">
+								<Badge variant="secondary">
+									<SparklesIcon data-icon="inline-start" />
+									Weekly readout
+								</Badge>
+								<span class="text-xs text-muted-foreground">
+									Based on {formatWindow(insights.window)}
+								</span>
 							</div>
-						{/each}
-						<div class="border-t border-border pt-4">
-							<p class="mt-0 mb-3 text-sm font-medium">
-								{data.plan
-									? 'Choose how to apply this proposal.'
-									: 'Ready to start this proposed plan?'}
+							<div class="max-w-2xl">
+								<h2
+									id="weekly-readout-heading"
+									class="font-display text-3xl leading-tight tracking-tight text-balance sm:text-4xl"
+								>
+									{insights.headline}
+								</h2>
+								<p class="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
+									{insights.summary}
+								</p>
+							</div>
+							<p class="text-xs text-muted-foreground">
+								Updated {formatGeneratedAt(insights.generatedAt)}
 							</p>
-							<div class="flex flex-wrap gap-2">
-								{#if data.plan}<Button
-										variant="outline"
-										onclick={() => applyProposal('merge')}
-										disabled={planning}>{planning ? 'Applying...' : 'Merge proposal'}</Button
-									><Button onclick={() => applyProposal('replace')} disabled={planning}
-										>{planning ? 'Applying...' : 'Replace active plan'}</Button
-									>{:else}<Button onclick={() => applyProposal('replace')} disabled={planning}
-										>{planning ? 'Applying...' : 'Apply proposed plan'}</Button
-									>{/if}
+						</div>
+
+						<div
+							class="grid grid-cols-2 overflow-hidden rounded-xl border border-border/70 bg-background/70"
+						>
+							<div class="border-r border-b border-border/70 p-4">
+								<p class="text-2xl font-semibold tabular-nums">{insights.metrics.mcqAttempts}</p>
+								<p class="mt-1 text-xs text-muted-foreground">MCQs answered</p>
+							</div>
+							<div class="border-b border-border/70 p-4">
+								<p class="text-2xl font-semibold tabular-nums">
+									{insights.metrics.mcqAccuracy === null ? '—' : insights.metrics.mcqAccuracy + '%'}
+								</p>
+								<p class="mt-1 text-xs text-muted-foreground">MCQ accuracy</p>
+							</div>
+							<div class="border-r border-border/70 p-4">
+								<p class="text-2xl font-semibold tabular-nums">{insights.metrics.frqSubmissions}</p>
+								<p class="mt-1 text-xs text-muted-foreground">FRQs submitted</p>
+							</div>
+							<div class="p-4">
+								<p class="text-2xl font-semibold tabular-nums">{insights.metrics.activeDays}</p>
+								<p class="mt-1 text-xs text-muted-foreground">Active days</p>
 							</div>
 						</div>
 					</Card.Content>
 				</Card.Root>
-			{/if}
 
-			<Card.Root class="rounded-2xl border border-border bg-card shadow-none">
-				<Card.Header>
-					<Card.Title>Active weekly study plan</Card.Title>
-					<Card.Description>One active plan. Every task is capped at 30 minutes.</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-3">
-					{#if data.plan}
-						{#each data.plan.tasks as task (task.id)}
-							<div
-								class="flex min-w-0 items-start justify-between gap-3 border-b border-border py-3 last:border-b-0 max-[560px]:flex-wrap"
-							>
-								<div class="min-w-0 flex-1">
-									<p class="font-medium" class:line-through={task.status === 'done'}>
-										{task.apClass} · {task.unit}
-									</p>
-									<p class="text-xs text-muted-foreground">
-										{formatDateOnly(task.date)} · {task.durationMinutes} min · {task.mode.toUpperCase()}
-									</p>
+				<div class="flex flex-col gap-1">
+					<p class="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+						Signals from your week
+					</p>
+					<h3 class="font-display text-2xl tracking-tight">What deserves your attention</h3>
+				</div>
+
+				<div class="grid gap-4 md:grid-cols-3">
+					{#each insights.focusAreas as area (area.title)}
+						{@const Icon = focusIcon(area.kind)}
+						<Card.Root class="h-full shadow-none">
+							<Card.Header class="gap-3">
+								<div class="flex items-center justify-between gap-3">
+									<Badge variant="outline">
+										<Icon data-icon="inline-start" />
+										{kindLabel(area.kind)}
+									</Badge>
+									{#if area.apClass && area.unit}
+										<span class="truncate text-right text-xs text-muted-foreground">
+											{area.apClass} · {area.unit}
+										</span>
+									{/if}
 								</div>
-								<div class="flex gap-2">
-									{#if task.practiceHref}<Button
-											href={task.practiceHref}
-											size="sm"
-											variant="outline"><BookOpenIcon size={13} /> Practice</Button
-										>{/if}<Button
-										size="sm"
-										disabled={task.status === 'done'}
-										onclick={() => completeTask(task.id)}
-										><CheckIcon size={13} />{task.status === 'done' ? 'Done' : 'Complete'}</Button
-									>
-								</div>
-							</div>
-						{/each}
-					{:else}<p class="text-sm text-muted-foreground">
-							An active plan will appear after you apply a proposal.
-						</p>{/if}
-				</Card.Content>
-			</Card.Root>
-
-			<Card.Root
-				class="col-span-2 rounded-2xl border border-border bg-card shadow-none max-[720px]:col-span-1"
-			>
-				<Card.Header>
-					<Card.Title>Report feedback</Card.Title>
-					<Card.Description>Was the AI-generated report useful?</Card.Description>
-				</Card.Header>
-				<Card.Content class="space-y-3">
-					<div class="flex gap-2">
-						<Button
-							variant={(submittedFeedback ?? data.report.feedback) === 'helpful'
-								? 'default'
-								: 'outline'}
-							disabled={feedbackSaving}
-							onclick={() => submitFeedback('helpful')}>Helpful</Button
-						>
-						<Button
-							variant={(submittedFeedback ?? data.report.feedback) === 'not_helpful'
-								? 'default'
-								: 'outline'}
-							disabled={feedbackSaving}
-							onclick={() => submitFeedback('not_helpful')}>Not helpful</Button
-						>
-					</div>
-					<label>
-						<span class="sr-only">Optional feedback reason</span>
-						<select
-							bind:value={feedbackReason}
-							class="w-full rounded-[0.4rem] border border-input bg-background px-3 py-2 text-sm text-foreground"
-						>
-							<option value="">Optional: tell us more</option>
-							<option value="not_actionable">Not actionable</option>
-							<option value="not_accurate">Evidence did not feel accurate</option>
-							<option value="too_generic">Too generic</option>
-							<option value="other">Other</option>
-						</select>
-					</label>
-				</Card.Content>
-			</Card.Root>
-		</section>
-
-		{#if data.planAudits.length}
-			<Card.Root class="rounded-2xl border border-border bg-card shadow-none">
-				<Card.Header>
-					<Card.Title>Recent plan changes</Card.Title>
-					<Card.Description
-						>Plan changes are retained for 90 days and can be undone.</Card.Description
-					>
-				</Card.Header>
-				<Card.Content class="space-y-2">
-					{#each data.planAudits as audit (audit.id)}
-						<div
-							class="flex min-w-0 items-start justify-between gap-3 border-b border-border py-3 last:border-b-0 max-[560px]:flex-wrap"
-						>
-							<p class="m-0 min-w-0 text-sm">
-								{audit.action === 'generate'
-									? 'Created or updated the weekly plan'
-									: audit.action === 'complete'
-										? 'Completed a study task'
-										: 'Rescheduled a study task'} · {new Date(audit.createdAt).toLocaleString()}
-							</p>
-							{#if audit.undoneAt}<span class="text-sm text-muted-foreground">Undone</span
-								>{:else}<Button
-									variant="outline"
-									size="sm"
-									disabled={undoingAuditId === audit.id}
-									onclick={() => undoPlanChange(audit.id)}
-									class="max-[560px]:ml-auto"
-									><Undo2Icon size={13} />{undoingAuditId === audit.id
-										? 'Undoing...'
-										: 'Undo'}</Button
-								>{/if}
-						</div>
+								<Card.Title class="text-base">{area.title}</Card.Title>
+								<Card.Description class="leading-6">{area.detail}</Card.Description>
+							</Card.Header>
+							<Card.Content class="pt-0">
+								<p
+									class="border-l-2 border-primary/30 pl-3 text-sm leading-6 text-muted-foreground"
+								>
+									{area.why}
+								</p>
+							</Card.Content>
+						</Card.Root>
+					{:else}
+						<Empty.Root class="border border-dashed md:col-span-3">
+							<Empty.Header>
+								<Empty.Title>No clear pattern yet.</Empty.Title>
+								<Empty.Description>
+									Keep practicing and your next weekly readout will have more signal to work with.
+								</Empty.Description>
+							</Empty.Header>
+						</Empty.Root>
 					{/each}
+				</div>
+			</section>
+		{:else}
+			<Card.Root class="border-dashed shadow-none">
+				<Card.Content class="flex items-start gap-3 p-5 text-sm text-muted-foreground">
+					<CircleAlertIcon class="mt-0.5 size-4 shrink-0" />
+					<p>Your weekly readout will appear after the next Saturday refresh.</p>
 				</Card.Content>
 			</Card.Root>
 		{/if}
+
+		<section class="flex flex-col gap-4" aria-labelledby="study-calendar-heading">
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+				<div class="flex flex-col gap-1">
+					<p class="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+						Your week
+					</p>
+					<h2 id="study-calendar-heading" class="font-display text-2xl tracking-tight">
+						Weekly study calendar
+					</h2>
+				</div>
+				<div class="flex items-center gap-3 text-sm text-muted-foreground">
+					{#if taskCount}
+						<span class="tabular-nums">{completedCount}/{taskCount} complete</span>
+						<div class="w-24">
+							<Progress.Root
+								value={completionPercent}
+								aria-label={completionPercent + '% complete'}
+							/>
+						</div>
+					{:else}
+						<span>Plan is still taking shape</span>
+					{/if}
+				</div>
+			</div>
+
+			{#if plan.insights?.planRationale}
+				<p class="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+					<BookOpenCheckIcon class="mt-1 size-4 shrink-0 text-primary" />
+					<span>{plan.insights.planRationale}</span>
+				</p>
+			{/if}
+
+			{#if errorMessage}
+				<Card.Root class="border-destructive/20 bg-destructive/5 shadow-none">
+					<Card.Content class="flex items-start gap-3 p-4 text-sm text-destructive">
+						<CircleAlertIcon class="mt-0.5 size-4 shrink-0" />
+						<p>{errorMessage}</p>
+					</Card.Content>
+				</Card.Root>
+			{/if}
+
+			{#if taskCount}
+				<Card.Root class="overflow-hidden shadow-none">
+					<Card.Content class="overflow-x-auto p-0">
+						<div class="grid min-w-245 grid-cols-7 divide-x divide-border/70">
+							{#each weekDays as day (day.key)}
+								{@const dayTasks = tasksForDay(day.key)}
+								<div class="min-h-72 bg-muted/12">
+									<div
+										class={cn(
+											'border-b border-border/70 px-3 py-4',
+											day.key === dateKey(new Date()) && 'bg-primary/6'
+										)}
+									>
+										<div class="flex items-center justify-between gap-2">
+											<p class="text-xs font-semibold tracking-wide uppercase">
+												{formatDayName(day.date)}
+											</p>
+											{#if day.key === dateKey(new Date())}
+												<Badge variant="secondary">Today</Badge>
+											{/if}
+										</div>
+										<p class="mt-1 text-xs text-muted-foreground">{formatDayNumber(day.date)}</p>
+									</div>
+									<div class="flex min-h-56 flex-col gap-3 p-3">
+										{#each dayTasks as task (task.id)}
+											<Card.Root
+												size="sm"
+												class={cn(
+													'bg-background/80 shadow-none',
+													task.status === 'done' && 'opacity-60'
+												)}
+											>
+												<Card.Content class="flex flex-col gap-3 p-3">
+													<div class="flex items-start justify-between gap-2">
+														<Badge variant="outline">{taskModeLabel(task.mode)}</Badge>
+														<Button
+															variant={task.status === 'done' ? 'secondary' : 'outline'}
+															size="icon-xs"
+															aria-label={task.status === 'done' ? 'Completed' : 'Mark complete'}
+															disabled={task.status === 'done' || completingTaskId !== null}
+															onclick={() => void completeTask(task)}
+														>
+															{#if task.status === 'done'}<CheckIcon
+																	data-icon="inline-start"
+																/>{:else}<span class="size-2 rounded-full bg-muted-foreground/50"
+																></span>{/if}
+														</Button>
+													</div>
+													<p class="text-sm leading-5 font-medium">{taskLabel(task)}</p>
+													<p class="text-xs leading-5 text-muted-foreground">
+														{taskDescription(task)}
+													</p>
+													<div class="flex items-center justify-between gap-2">
+														<span class="flex items-center gap-1 text-xs text-muted-foreground">
+															<Clock3Icon class="size-3" />
+															{task.durationMinutes} min
+														</span>
+														{#if task.practiceHref}
+															<Button
+																variant="ghost"
+																size="icon-xs"
+																href={task.practiceHref}
+																aria-label="Open practice"
+															>
+																<ArrowUpRightIcon data-icon="inline-start" />
+															</Button>
+														{/if}
+													</div>
+												</Card.Content>
+											</Card.Root>
+										{:else}
+											<p
+												class="flex flex-1 items-center justify-center px-2 text-center text-xs text-muted-foreground/70"
+											>
+												Open space
+											</p>
+										{/each}
+									</div>
+								</div>
+							{/each}
+						</div>
+					</Card.Content>
+				</Card.Root>
+			{:else}
+				<Empty.Root class="border border-dashed">
+					<Empty.Header>
+						<Empty.Media variant="icon">
+							<CalendarDaysIcon />
+						</Empty.Media>
+						<Empty.Title>Your weekly calendar is still taking shape.</Empty.Title>
+						<Empty.Description>
+							Once Super has enough course and unit context, your next seven study sessions will
+							appear here.
+						</Empty.Description>
+					</Empty.Header>
+				</Empty.Root>
+			{/if}
+		</section>
 	{/if}
 </PageShell>

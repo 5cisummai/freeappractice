@@ -1,4 +1,3 @@
-import type { PracticeVariant } from '$lib/practice/multi-attempt';
 import type { AnswerResult, GeneratedQuestion } from '$lib/question-bank/mcq/types';
 
 export type QuestionCardModel = {
@@ -10,10 +9,6 @@ export type QuestionCardModel = {
 				unitRange?: readonly number[];
 				requestVersion: number;
 				presetQuestionId?: string;
-				experiment?: {
-					assignedVariant: PracticeVariant;
-					experimentEnabled: boolean;
-				};
 		  }
 		| {
 				kind: 'quiz';
@@ -29,7 +24,6 @@ export function unlimitedQuestionCardModel(input: {
 	unitRange?: readonly number[];
 	requestVersion: number;
 	presetQuestionId?: string;
-	experiment?: Extract<QuestionCardModel['delivery'], { kind: 'unlimited' }>['experiment'];
 }): QuestionCardModel {
 	return {
 		selectedClass: input.selectedClass,
@@ -38,8 +32,7 @@ export function unlimitedQuestionCardModel(input: {
 			kind: 'unlimited',
 			unitRange: input.unitRange,
 			requestVersion: input.requestVersion,
-			presetQuestionId: input.presetQuestionId,
-			experiment: input.experiment
+			presetQuestionId: input.presetQuestionId
 		}
 	};
 }

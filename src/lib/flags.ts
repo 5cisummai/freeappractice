@@ -87,11 +87,6 @@ function cachedVercelAdapter(): BooleanVercelAdapter {
 	};
 }
 
-/**
- * Sticky multi-attempt-with-hints practice experiment.
- * Managed in the Vercel Flags dashboard (`multi-attempt-experiment`).
- * Default off in all environments until you flip it there — no env var.
- */
 function vercelFlag(key: string, description: string, defaultValue: boolean) {
 	return flag<boolean>({
 		key,
@@ -103,20 +98,6 @@ function vercelFlag(key: string, description: string, defaultValue: boolean) {
 			{ value: false, label: 'Off' }
 		]
 	});
-}
-
-export const multiAttemptExperimentEnabled = vercelFlag(
-	'multi-attempt-experiment',
-	'Enable sticky multi-attempt-with-hints practice experiment',
-	false
-);
-
-export async function isMultiAttemptExperimentEnabled(): Promise<boolean> {
-	try {
-		return Boolean(await multiAttemptExperimentEnabled());
-	} catch {
-		return false;
-	}
 }
 
 /**
@@ -187,11 +168,6 @@ export const superMemoryEnabled = superKillSwitch(
 	'super-memory',
 	'Allow Mem0-backed Super tutor memory'
 );
-export const superInsightsEnabled = superKillSwitch(
-	'super-insights',
-	'Allow Super insights and study plans'
-);
-
 async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>): Promise<boolean> {
 	try {
 		return Boolean(await feature());
@@ -203,4 +179,3 @@ async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>):
 export const isSuperCheckoutEnabled = () => readSuperKillSwitch(superCheckoutEnabled);
 export const isSuperCoachEnabled = () => readSuperKillSwitch(superCoachEnabled);
 export const isSuperMemoryEnabled = () => readSuperKillSwitch(superMemoryEnabled);
-export const isSuperInsightsEnabled = () => readSuperKillSwitch(superInsightsEnabled);

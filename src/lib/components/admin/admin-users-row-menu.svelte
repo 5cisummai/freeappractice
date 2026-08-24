@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import type { AdminUserRow } from '$lib/admin/types.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
@@ -35,7 +35,7 @@
 				response
 			);
 			if (!response.ok) throw new Error(getResponseMessage(result, 'Could not update user.'));
-			await invalidateAll();
+			await invalidateAppRoute('/app/admin');
 			if (action === 'grant_super' && result?.granted === false) {
 				toast.success(result.message ?? 'User already has an indefinite Super grant.');
 				return;

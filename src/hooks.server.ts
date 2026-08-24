@@ -21,21 +21,19 @@ import {
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,
 	isSuperCheckoutEnabled,
-	multiAttemptExperimentEnabled,
 	superCheckoutEnabled,
 	superCoachEnabled,
-	superInsightsEnabled,
 	superMemoryEnabled,
 	superFreeBetaEnabled
 } from '$lib/flags';
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
-import {
-	isAccountSurface,
-	isAgeGateExempt,
-	shouldSkipSessionLookup
-} from '$lib/auth/account-surface.server';
+import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { limitApiRequests } from '$lib/server/api-rate-limit.server';
+import {
+	shouldSkipGlobalApiRateLimit,
+	shouldSkipSessionLookup
+} from '$lib/server/request-policy.server';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -71,11 +69,6 @@ function postProcessResponse(
 ): Response {
 	for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
 		response.headers.set(key, value);
-	}
-
-	if (event.url.pathname === '/api/insights/pdf') {
-		response.headers.set('Content-Security-Policy', "default-src 'none'; frame-ancestors 'self'");
-		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
 	}
 
 	if (event.url.pathname === '/' || event.url.pathname === '') {
@@ -209,7 +202,10 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	if (event.url.pathname.startsWith('/api/')) {
+	if (
+		event.url.pathname.startsWith('/api/') &&
+		!shouldSkipGlobalApiRateLimit(event.request.method, event.url.pathname)
+	) {
 		const rateLimit = await limitApiRequests(event.request, event.locals.userId);
 		if (!rateLimit.allowed) {
 			const now = Date.now();
@@ -328,14 +324,12 @@ export const handle = sequence(
 				createHandle({
 					secret: env.FLAGS_SECRET,
 					flags: {
-						multiAttemptExperimentEnabled,
 						frqPracticeEnabled,
 						examfigDiagramsEnabled,
 						superFreeBetaEnabled,
 						superCheckoutEnabled,
 						superCoachEnabled,
-						superMemoryEnabled,
-						superInsightsEnabled
+						superMemoryEnabled
 					}
 				}) as Handle
 			]

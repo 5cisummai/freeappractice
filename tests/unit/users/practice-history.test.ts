@@ -47,13 +47,6 @@ describe('getPracticeHistoryPage', () => {
 						wasCorrect: null,
 						timeTakenMs: 3_000,
 						attemptedAt: new Date('2026-07-03T00:00:00.000Z'),
-						finalAnswer: null,
-						answerCount: null,
-						hintsShown: null,
-						terminalOutcome: null,
-						experimentKey: null,
-						experimentVersion: null,
-						displayedVariant: null,
 						pointsEarned: 8,
 						pointsAvailable: 10,
 						percentage: 80,
@@ -69,13 +62,6 @@ describe('getPracticeHistoryPage', () => {
 						wasCorrect: true,
 						timeTakenMs: 2_000,
 						attemptedAt: new Date('2026-07-03T00:00:00.000Z'),
-						finalAnswer: null,
-						answerCount: null,
-						hintsShown: null,
-						terminalOutcome: null,
-						experimentKey: null,
-						experimentVersion: null,
-						displayedVariant: null,
 						pointsEarned: null,
 						pointsAvailable: null,
 						percentage: null,
@@ -140,19 +126,18 @@ describe('hydratePracticeHistoryItems', () => {
 		queueRows([
 			{
 				id: 'shared-question',
-				question: 'Shared question',
-				optionA: 'A',
-				optionB: 'B',
-				optionC: 'C',
-				optionD: 'D',
-				correctAnswer: 'A',
-				explanation: 'Because.',
-				hint1: null,
-				hint2: null,
-				apClass: 'AP Biology',
-				unit: 'Unit 1',
+				data: {
+					question: 'Shared question',
+					optionA: 'A',
+					optionB: 'B',
+					optionC: 'C',
+					optionD: 'D',
+					correctAnswer: 'A',
+					explanation: 'Because.',
+					apClass: 'AP Biology',
+					unit: 'Unit 1'
+				},
 				contentHash: 'hash',
-				topicsCovered: null,
 				createdAt: new Date('2026-07-01T00:00:00.000Z')
 			}
 		]);
@@ -166,7 +151,7 @@ describe('hydratePracticeHistoryItems', () => {
 					unit: 'Unit 1',
 					wasCorrect: true,
 					selectedAnswer: 'A',
-					attemptedAt: new Date('2026-07-01T00:00:00.000Z')
+					attemptedAt: '2026-07-01T00:00:00.000Z'
 				},
 				question: null
 			},

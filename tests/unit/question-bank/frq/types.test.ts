@@ -41,6 +41,7 @@ function validQuestion() {
 			}
 		],
 		totalPoints: 2,
+		mainTopic: 'Cell signaling',
 		topicsCovered: 'Cell signaling evidence',
 		apClass: 'AP Biology',
 		unit: 'Unit 4'

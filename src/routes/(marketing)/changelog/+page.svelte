@@ -431,13 +431,6 @@
 			date: 'July 16, 2026',
 			sections: [
 				{
-					title: 'New Features',
-					items: [
-						'Some practice sessions now support multiple answer attempts with progressive hints before a question is finalized',
-						'Practice history records multi-attempt outcomes, including the final resolved answer and hints shown'
-					]
-				},
-				{
 					title: 'Improvements',
 					items: [
 						'Redesigned Settings page brings practice, appearance, privacy, account, and release details into one easier-to-scan view',

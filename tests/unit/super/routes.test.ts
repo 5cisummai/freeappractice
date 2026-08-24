@@ -17,8 +17,6 @@ const mocks = vi.hoisted(() => ({
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	authorizeFeatureRequest: vi.fn(),
-	insightsGet: vi.fn(),
-	insightsPost: vi.fn(),
 	studyPlanGet: vi.fn(),
 	studyPlanPost: vi.fn(),
 	coachApprovalPost: vi.fn(),
@@ -48,10 +46,6 @@ vi.mock('$lib/flags', () => ({
 vi.mock('$lib/super/feature-access.server', () => ({
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
-}));
-vi.mock('../../../src/routes/api/insights/+server', () => ({
-	GET: mocks.insightsGet,
-	POST: mocks.insightsPost
 }));
 vi.mock('../../../src/routes/api/study-plan/+server', () => ({
 	GET: mocks.studyPlanGet,
@@ -85,10 +79,6 @@ import {
 	DELETE as meMemoriesDelete
 } from '../../../src/routes/api/me/tutor-memories/+server';
 import { DELETE as meMemoryIdDelete } from '../../../src/routes/api/me/tutor-memories/[memoryId]/+server';
-import {
-	GET as meInsightsGet,
-	POST as meInsightsPost
-} from '../../../src/routes/api/me/insights/+server';
 import {
 	GET as meStudyPlanGet,
 	PATCH as meStudyPlanPatch
@@ -144,8 +134,6 @@ describe('Super API routes', () => {
 		expect(meMemoriesGet).toBe(memoryGet);
 		expect(meMemoriesDelete).toBe(memoryDelete);
 		expect(meMemoryIdDelete).toBe(memoryIdDelete);
-		expect(meInsightsGet).toBe(mocks.insightsGet);
-		expect(meInsightsPost).toBe(mocks.insightsPost);
 		expect(meStudyPlanGet).toBe(mocks.studyPlanGet);
 		expect(meStudyPlanPatch).toBe(mocks.studyPlanPost);
 		expect(coachAuthorizePost).toBe(mocks.coachApprovalPost);

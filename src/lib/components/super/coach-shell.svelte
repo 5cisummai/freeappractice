@@ -25,7 +25,6 @@
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
 	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
-	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import Sparkles2FilledIcon from '@tabler/icons-svelte/icons/sparkles-2-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
@@ -97,7 +96,6 @@
 	const asIcon = (icon: unknown) => icon as Component;
 
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
-		'practice-question': asIcon(TargetIcon),
 		'study-next': asIcon(BookOpenIcon),
 		'study-plan': asIcon(CalendarDaysIcon),
 		'review-progress': asIcon(BarChart3Icon)
@@ -146,10 +144,6 @@
 		'tool-read_quiz_attempt': {
 			running: 'Reviewing your quiz…',
 			complete: 'Reviewed your quiz'
-		},
-		'tool-read_insights': {
-			running: 'Reviewing your insights…',
-			complete: 'Reviewed your insights'
 		},
 		'tool-read_study_plan': {
 			running: 'Checking your study plan…',

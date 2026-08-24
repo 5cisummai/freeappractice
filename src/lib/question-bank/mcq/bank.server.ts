@@ -14,9 +14,8 @@ type McqAnswerBody = {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
+	mainTopic: string;
 	topicsCovered: string;
-	hint1: string;
-	hint2: string;
 	diagramSpec: Record<string, unknown> | null;
 	hasDiagram: boolean;
 };
@@ -27,6 +26,8 @@ type CachedResult = {
 	model: string;
 	cached: boolean;
 	questionId: string;
+	apClass: string;
+	unit: string;
 };
 
 /** Read full MCQ body directly from an active-library Neon row. */
@@ -40,9 +41,8 @@ function hotPoolBodyFromDoc(
 		| 'optionD'
 		| 'correctAnswer'
 		| 'explanation'
+		| 'mainTopic'
 		| 'topicsCovered'
-		| 'hint1'
-		| 'hint2'
 		| 'diagramSpec'
 		| 'hasDiagram'
 	>
@@ -55,9 +55,8 @@ function hotPoolBodyFromDoc(
 		optionD: doc.optionD,
 		correctAnswer: doc.correctAnswer,
 		explanation: doc.explanation,
+		mainTopic: doc.mainTopic,
 		topicsCovered: doc.topicsCovered ?? '',
-		hint1: doc.hint1 ?? '',
-		hint2: doc.hint2 ?? '',
 		diagramSpec: doc.diagramSpec ?? null,
 		hasDiagram: doc.hasDiagram
 	};
@@ -75,7 +74,9 @@ export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
 		provider: 'cache',
 		model: 'cached',
 		cached: true,
-		questionId: doc.questionId
+		questionId: doc.questionId,
+		apClass: doc.apClass,
+		unit: doc.unit
 	}),
 	requestRefill: async (className, unit) => {
 		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');

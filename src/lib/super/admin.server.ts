@@ -24,7 +24,6 @@ import {
 	tutorProfiles
 } from '$lib/server/neon/schema';
 import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
-import { unlockInsightReports } from '$lib/super/insight-locks.server';
 import {
 	INDEFINITE_SUPER_GRANT_EXPIRES_AT,
 	type SuperAccessReason,
@@ -215,13 +214,10 @@ export async function createSuperGrant(input: {
 		.returning();
 	if (!grant) throw new Error('Super grant insert returned no row');
 	if (input.startsAt <= new Date()) {
-		await Promise.all([
-			getNeonDatabase()
-				.update(tutorProfiles)
-				.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: new Date() })
-				.where(eq(tutorProfiles.userId, input.userId)),
-			unlockInsightReports(input.userId)
-		]);
+		await getNeonDatabase()
+			.update(tutorProfiles)
+			.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: new Date() })
+			.where(eq(tutorProfiles.userId, input.userId));
 	}
 	return toGrantView(grant);
 }
@@ -274,13 +270,10 @@ export async function grantIndefiniteSuperToClaimedFreeBetaUsers(
 	if (inserted.length === 0) return { granted: 0, skipped: claimed.length };
 
 	const userIds = inserted.map((row) => row.userId);
-	await Promise.all([
-		db
-			.update(tutorProfiles)
-			.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: now })
-			.where(inArray(tutorProfiles.userId, userIds)),
-		...userIds.map((userId) => unlockInsightReports(userId))
-	]);
+	await db
+		.update(tutorProfiles)
+		.set({ superEndedAt: null, memoryPurgedAt: null, updatedAt: now })
+		.where(inArray(tutorProfiles.userId, userIds));
 	return { granted: inserted.length, skipped: claimed.length - inserted.length };
 }
 

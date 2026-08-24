@@ -11,10 +11,8 @@ import {
 	getCoachFrqPerformance,
 	getCoachUnitDetail
 } from '$lib/super/coach-reads.server';
-import { coachPracticeQuestionToolOutputSchema } from '$lib/super/coach-practice-question';
 import { getCurrentSuperQuestion } from '$lib/super/context.server';
 import { renderDiagram } from '$lib/super/diagram-renderer.server';
-import { getCurrentStoredInsightReport } from '$lib/super/insights.server';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyTask } from '$lib/super/types';
@@ -178,27 +176,9 @@ export function createSuperTools(input: SuperToolsInput) {
 					error: 'Quiz not found or unavailable.'
 				}
 		}),
-		read_insights: tool({
-			description:
-				'Cross-course strengths, weaknesses, and actionable insights (top 5 each). Use for overall patterns. Skip if read_unit_detail already returned insights for that unit.',
-			inputSchema: z.object({}),
-			execute: async () => {
-				const report = await getCurrentStoredInsightReport(userId);
-				return report
-					? {
-							generatedAt: report.generatedAt,
-							evidenceAttemptCount: report.evidenceAttemptCount,
-							eligibility: report.report.eligibility,
-							strengths: report.report.strengths.slice(0, 5),
-							weaknesses: report.report.weaknesses.slice(0, 5),
-							actionableInsights: report.report.actionableInsights.slice(0, 5)
-						}
-					: null;
-			}
-		}),
 		read_study_plan: tool({
 			description:
-				'Active weekly study plan and task statuses. Use for planning or schedule questions.',
+				'Active weekly study plan, task statuses, and the latest insights narrative. Use for planning, schedule, or "what should I work on" questions.',
 			inputSchema: z.object({}),
 			execute: () => getCurrentStudyPlan(userId)
 		}),
@@ -210,7 +190,7 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		read_unit_detail: tool({
 			description:
-				'Single-unit snapshot: MCQ mastery, recent mistakes with explanations, and stored insights. Preferred read for any named unit. Do not also call read_progress_summary or read_insights for the same unit.',
+				'Single-unit snapshot: MCQ mastery and recent mistakes with explanations. Preferred read for any named unit. Do not also call read_progress_summary for the same unit.',
 			inputSchema: z.object({
 				apClass: z.string().trim().min(1).max(100),
 				unit: z.string().trim().min(1).max(200)
@@ -226,16 +206,6 @@ export function createSuperTools(input: SuperToolsInput) {
 				limit: z.number().int().min(1).max(6).optional()
 			}),
 			execute: (filter) => getCoachFrqPerformance(userId, filter)
-		}),
-		give_practice_question: tool({
-			description:
-				'Get one bank question and show it inline for the student to answer or skip. The tool pauses until they respond, then returns their result in the output: MCQ selected letter and correctness, or FRQ score and feedback. Use when the student wants a problem to try. Never reveal the correct answer in your reply.',
-			inputSchema: z.object({
-				apClass: z.string().trim().min(1).max(100),
-				unit: z.string().trim().min(1).max(200).optional(),
-				mode: z.enum(['mcq', 'frq']).default('mcq')
-			}),
-			outputSchema: coachPracticeQuestionToolOutputSchema
 		}),
 		generate_diagram: tool({
 			description:

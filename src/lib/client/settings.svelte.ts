@@ -1,4 +1,4 @@
-import { invalidateAll } from '$app/navigation';
+import { invalidateAppLayout, invalidateAppSubtree } from '$lib/client/invalidate-data.js';
 import { toast } from 'svelte-sonner';
 import { authClient } from '$lib/auth/client.js';
 import { authCallbackUrl } from '$lib/auth/urls.js';
@@ -52,7 +52,7 @@ class AccountActions {
 				return true;
 			}
 
-			await invalidateAll();
+			await invalidateAppLayout();
 			toast.success('Account updated successfully');
 			return true;
 		} catch (e) {
@@ -73,7 +73,7 @@ class AccountActions {
 				throw new Error(getResponseMessage(payload, 'Failed to clear practice data'));
 			}
 
-			await invalidateAll();
+			await invalidateAppSubtree();
 			toast.success('Practice data cleared');
 			return true;
 		} catch (e) {

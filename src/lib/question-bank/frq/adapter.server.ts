@@ -4,6 +4,7 @@ import { countActiveFrqQuestions } from '$lib/question-bank/frq/model.server';
 import { getFrqCourseNames } from '$lib/question-bank/frq/profiles.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions } from '$lib/server/neon/schema';
+import { questionBucketFields } from '$lib/server/neon/jsonb';
 import { poolTargetForBucket, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
 import type { PoolKindAdapter, PoolKindBucket } from '$lib/question-bank/pool-kinds.server';
 
@@ -18,15 +19,16 @@ function listBuckets(): PoolKindBucket[] {
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
+	const { apClass, unit } = questionBucketFields(frqQuestions.data);
 	const rows = await getNeonDatabase()
 		.select({
-			apClass: frqQuestions.apClass,
-			unit: frqQuestions.unit,
+			apClass,
+			unit,
 			count: sql<number>`count(*)`
 		})
 		.from(frqQuestions)
 		.where(eq(frqQuestions.active, true))
-		.groupBy(frqQuestions.apClass, frqQuestions.unit);
+		.groupBy(apClass, unit);
 	return new Map(rows.map((row) => [bucketKey(row.apClass, row.unit), Number(row.count)]));
 }
 

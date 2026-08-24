@@ -42,6 +42,17 @@ describe('parseQuestionPayloadFromResponse', () => {
 		expect(result.correctAnswer).toBe('B');
 	});
 
+	it('parses object answer payloads from the API', () => {
+		const result = parseQuestionPayloadFromResponse({
+			questionId: 'q-obj',
+			answer: validPayload()
+		});
+
+		expect(result.questionId).toBe('q-obj');
+		expect(result.prompt).toBe('What is 2+2?');
+		expect(result.correctAnswer).toBe('B');
+	});
+
 	it('builds stimulus panels and preserves fenced code in paragraphs', () => {
 		const stimulus = 'Intro\n\n```js\nconst x = 1;\n```\n\nOutro';
 		const result = parseQuestionPayloadFromResponse(

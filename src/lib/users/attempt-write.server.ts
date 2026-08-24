@@ -31,17 +31,12 @@ export async function persistQuestionAttempt(
 		WITH inserted AS (
 			INSERT INTO ${mcqAttempts} (
 				id, user_id, question_id, ap_class, unit, selected_answer, was_correct,
-				time_taken_ms, attempted_at, final_answer, answer_count, hints_shown,
-				terminal_outcome, experiment_key, experiment_version, displayed_variant, created_at
+				time_taken_ms, attempted_at, created_at
 			)
 			VALUES (
 				${attemptId}, ${userId}, ${attempt.questionId}, ${attempt.apClass}, ${attempt.unit},
-				${attempt.selectedAnswer ?? null}, ${attempt.wasCorrect ?? null},
-				${attempt.timeTakenMs ?? null}, ${attempt.attemptedAt}, ${attempt.finalAnswer ?? null},
-				${attempt.answerCount ?? null}, ${attempt.hintsShown ?? null},
-				${attempt.terminalOutcome ?? null}, ${attempt.experimentKey ?? null},
-				${attempt.experimentVersion ?? null}, ${attempt.displayedVariant ?? null},
-				${attempt.attemptedAt}
+				${attempt.selectedAnswer}, ${attempt.wasCorrect},
+				${attempt.timeTakenMs ?? null}, ${attempt.attemptedAt}, ${attempt.attemptedAt}
 			)
 			ON CONFLICT (id) DO NOTHING
 			RETURNING id

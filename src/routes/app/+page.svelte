@@ -234,7 +234,7 @@
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
 				<span
-					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study plans.</span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, and study plans.</span
 				>
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>
@@ -322,7 +322,7 @@
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
 				<span
-					><span class="font-medium">Super:</span> personalized tutoring, Coach, insights, and study plans.</span
+					><span class="font-medium">Super:</span> personalized tutoring, Coach, and study plans.</span
 				>
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>
@@ -332,7 +332,9 @@
 			description="Choose the subjects you want to see on your dashboard."
 			imageUrl={lightbulbImage}
 		>
-			<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose subjects</Button>
+			{#snippet button()}
+				<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose subjects</Button>
+			{/snippet}
 		</EmptyState>
 	{/if}
 </PageShell>

@@ -1,8 +1,13 @@
 import { auth } from '$lib/auth/server';
-import { QUESTION_POOL_CONFIG, poolTargetForBucket } from '$lib/question-bank/pool-constants';
+import {
+	POOL_RETIRE_OLDEST_PERCENT,
+	QUESTION_POOL_CONFIG,
+	poolTargetForBucket
+} from '$lib/question-bank/pool-constants';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
-import { and, asc, count, eq, inArray, max, min } from 'drizzle-orm';
+import { questionBucketFields } from '$lib/server/neon/jsonb';
+import { and, asc, count, eq, inArray, max, min, sql } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
@@ -105,30 +110,32 @@ async function aggregateActiveBuckets(
 ): Promise<Map<string, BucketAggRow>> {
 	const map = new Map<string, BucketAggRow>();
 	const db = getNeonDatabase();
+	const mcqBucket = questionBucketFields(mcqQuestions.data);
+	const frqBucket = questionBucketFields(frqQuestions.data);
 	const rows =
 		questionType === 'mcq'
 			? await db
 					.select({
-						apClass: mcqQuestions.apClass,
-						unit: mcqQuestions.unit,
+						apClass: mcqBucket.apClass,
+						unit: mcqBucket.unit,
 						total: count(),
 						oldestCreatedAt: min(mcqQuestions.createdAt),
 						newestCreatedAt: max(mcqQuestions.createdAt)
 					})
 					.from(mcqQuestions)
 					.where(eq(mcqQuestions.active, true))
-					.groupBy(mcqQuestions.apClass, mcqQuestions.unit)
+					.groupBy(mcqBucket.apClass, mcqBucket.unit)
 			: await db
 					.select({
-						apClass: frqQuestions.apClass,
-						unit: frqQuestions.unit,
+						apClass: frqBucket.apClass,
+						unit: frqBucket.unit,
 						total: count(),
 						oldestCreatedAt: min(frqQuestions.createdAt),
 						newestCreatedAt: max(frqQuestions.createdAt)
 					})
 					.from(frqQuestions)
 					.where(eq(frqQuestions.active, true))
-					.groupBy(frqQuestions.apClass, frqQuestions.unit);
+					.groupBy(frqBucket.apClass, frqBucket.unit);
 	for (const row of rows) {
 		const key = `${row.apClass}::${row.unit}`;
 		map.set(key, {
@@ -317,7 +324,13 @@ export async function getPoolReadinessSnapshot(): Promise<{
 	};
 }
 
-/** Enqueue one bucket for async refill. Never runs LLM generation. */
+function executeReturningRows(result: unknown): Array<{ ap_class: string; unit: string }> {
+	if (Array.isArray(result)) return result as Array<{ ap_class: string; unit: string }>;
+	if (result && typeof result === 'object' && 'rows' in result) {
+		return (result as { rows: Array<{ ap_class: string; unit: string }> }).rows ?? [];
+	}
+	return [];
+}
 export async function enqueuePoolBucketRefill(bucket: PoolBucketKey): Promise<{ enqueued: true }> {
 	await requestPoolRefill(bucket);
 	return { enqueued: true };
@@ -330,12 +343,11 @@ export async function retirePoolBucketQuestions(
 ): Promise<{ retired: number; enqueued: true }> {
 	const table = bucket.questionType === 'mcq' ? mcqQuestions : frqQuestions;
 	const db = getNeonDatabase();
+	const { apClass, unit } = questionBucketFields(table.data);
 	const rows = await db
 		.select({ questionId: table.questionId })
 		.from(table)
-		.where(
-			and(eq(table.apClass, bucket.apClass), eq(table.unit, bucket.unit), eq(table.active, true))
-		)
+		.where(and(eq(apClass, bucket.apClass), eq(unit, bucket.unit), eq(table.active, true)))
 		.orderBy(asc(table.createdAt))
 		.limit(quantity);
 	const questionIds = rows.map((row) => row.questionId);
@@ -349,6 +361,67 @@ export async function retirePoolBucketQuestions(
 
 	await requestPoolRefill(bucket);
 	return { retired: questionIds.length, enqueued: true };
+}
+
+/** Retire the oldest active questions in every bucket, then queue refills. */
+export async function retireOldestPoolPercent(
+	percent: number = POOL_RETIRE_OLDEST_PERCENT
+): Promise<{ retired: number; bucketsAffected: number; enqueued: number }> {
+	if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+		throw new Error('percent must be between 1 and 100');
+	}
+
+	const db = getNeonDatabase();
+	const now = new Date();
+	const retireSql = (table: 'mcq_questions' | 'frq_questions') => sql`
+		WITH ranked AS (
+			SELECT
+				question_id,
+				data ->> 'apClass' AS ap_class,
+				data ->> 'unit' AS unit,
+				ROW_NUMBER() OVER (
+					PARTITION BY data ->> 'apClass', data ->> 'unit'
+					ORDER BY created_at ASC
+				) AS rn,
+				COUNT(*) OVER (PARTITION BY data ->> 'apClass', data ->> 'unit') AS bucket_count
+			FROM ${sql.raw(`content.${table}`)}
+			WHERE active = true
+		)
+		UPDATE ${sql.raw(`content.${table}`)} AS question
+		SET active = false, updated_at = ${now}
+		FROM ranked
+		WHERE question.question_id = ranked.question_id
+			AND ranked.rn <= FLOOR(ranked.bucket_count * ${percent} / 100.0)
+		RETURNING ranked.ap_class AS ap_class, ranked.unit AS unit
+	`;
+	const [mcqRetired, frqRetired] = await Promise.all([
+		db.execute(retireSql('mcq_questions')),
+		db.execute(retireSql('frq_questions'))
+	]);
+	const mcqRows = executeReturningRows(mcqRetired);
+	const frqRows = executeReturningRows(frqRetired);
+	const buckets = new Map<string, PoolBucketKey>();
+	for (const row of mcqRows) {
+		buckets.set(`mcq:${row.ap_class}:${row.unit}`, {
+			questionType: 'mcq',
+			apClass: row.ap_class,
+			unit: row.unit
+		});
+	}
+	for (const row of frqRows) {
+		buckets.set(`frq:${row.ap_class}:${row.unit}`, {
+			questionType: 'frq',
+			apClass: row.ap_class,
+			unit: row.unit
+		});
+	}
+
+	await Promise.all([...buckets.values()].map((bucket) => requestPoolRefill(bucket)));
+	return {
+		retired: mcqRows.length + frqRows.length,
+		bucketsAffected: buckets.size,
+		enqueued: buckets.size
+	};
 }
 
 /** Enqueue every catalog deficit for async refill. Never runs LLM generation. */

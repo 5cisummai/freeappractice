@@ -1,4 +1,4 @@
-import practicePagesData from '$lib/data/practice-pages.json';
+import { PRACTICE_PAGES } from '$lib/data/ap-data';
 import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
 
 type PracticePageLinkKind =
@@ -78,7 +78,7 @@ function validatePages(pages: PracticePage[]): void {
 	}
 }
 
-const pages = (practicePagesData.pages ?? []) as PracticePage[];
+const pages = PRACTICE_PAGES as PracticePage[];
 validatePages(pages);
 
 const pageBySlug = new Map(pages.map((page) => [page.slug, page]));

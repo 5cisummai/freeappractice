@@ -1,8 +1,4 @@
-import apClassesData from '$lib/data/ap-classes.json';
-
-type ApClassesData = {
-	courses: Array<{ name: string; semester1: string[]; semester2: string[] }>;
-};
+import { AP_DATA, type UnifiedCourse } from '$lib/data/ap-data';
 
 type ApKnowledgeCourseSummary = {
 	apClass: string;
@@ -46,67 +42,12 @@ export type ApKnowledgeResult =
 			availableUnits?: string[];
 	  };
 
-const classData = apClassesData as ApClassesData;
-const supportedCourses = classData.courses;
+const supportedCourses = AP_DATA.courses;
 const courseByName = new Map(supportedCourses.map((course) => [normalize(course.name), course]));
+const sourceById = new Map(AP_DATA.sources.map((source) => [source.id, source] as const));
 
-const CURRENT_UNIT_OVERRIDES: Record<string, string[]> = {
-	'AP Physics 2': [
-		'Unit 9: Thermodynamics',
-		'Unit 10: Electric Force, Field, and Potential',
-		'Unit 11: Electric Circuits',
-		'Unit 12: Magnetism and Electromagnetism',
-		'Unit 13: Geometric Optics',
-		'Unit 14: Waves, Sound, and Physical Optics',
-		'Unit 15: Modern Physics'
-	],
-	'AP Statistics': [
-		'Unit 1: Exploring One-Variable Data and Collecting Data',
-		'Unit 2: Probability, Random Variables, and Probability Distributions',
-		'Unit 3: Inference for Categorical Data: Proportions',
-		'Unit 4: Inference for Quantitative Data: Means',
-		'Unit 5: Regression Analysis'
-	],
-	'AP Spanish Language': [
-		'Unit 1: Families and Communities',
-		'Unit 2: Language and Culture',
-		'Unit 3: Art and Creativity',
-		'Unit 4: Science and Technology',
-		'Unit 5: Contemporary Life',
-		'Unit 6: Global Contexts'
-	]
-};
-
-const AP_CENTRAL_SLUGS: Record<string, string> = {
-	'AP Biology': 'ap-biology',
-	'AP Chemistry': 'ap-chemistry',
-	'AP Physics 1': 'ap-physics-1',
-	'AP Physics 2': 'ap-physics-2',
-	'AP Physics C: Mechanics': 'ap-physics-c-mechanics',
-	'AP Physics C: E&M': 'ap-physics-c-electricity-and-magnetism',
-	'AP Environmental Science': 'ap-environmental-science',
-	'AP Calculus AB': 'ap-calculus-ab',
-	'AP Calculus BC': 'ap-calculus-bc',
-	'AP Statistics': 'ap-statistics',
-	'AP Precalculus': 'ap-precalculus',
-	'AP Computer Science A': 'ap-computer-science-a',
-	'AP Computer Science Principles': 'ap-computer-science-principles',
-	'AP English Language': 'ap-english-language-and-composition',
-	'AP English Literature': 'ap-english-literature-and-composition',
-	'AP US History': 'ap-united-states-history',
-	'AP World History': 'ap-world-history',
-	'AP European History': 'ap-european-history',
-	'AP US Government': 'ap-united-states-government-and-politics',
-	'AP Comparative Government': 'ap-comparative-government-and-politics',
-	'AP Psychology': 'ap-psychology',
-	'AP Human Geography': 'ap-human-geography',
-	'AP Macroeconomics': 'ap-macroeconomics',
-	'AP Microeconomics': 'ap-microeconomics',
-	'AP Spanish Language': 'ap-spanish-language-and-culture'
-};
-
-export const AP_KNOWLEDGE_CATALOG_VERSION = '2026-27';
-export const AP_KNOWLEDGE_REVIEWED_AT = '2026-08-09';
+export const AP_KNOWLEDGE_CATALOG_VERSION = AP_DATA.datasetVersion;
+export const AP_KNOWLEDGE_REVIEWED_AT = AP_DATA.asOf;
 export const AP_KNOWLEDGE_FRESHNESS_NOTE =
 	`Course and unit labels are an MVP ${AP_KNOWLEDGE_CATALOG_VERSION} catalog reviewed ${AP_KNOWLEDGE_REVIEWED_AT}. ` +
 	'Only unit titles and official links are source-backed. Check the linked official pages for live exam dates, policies, detailed topics, and later revisions.';
@@ -120,8 +61,10 @@ function normalize(value: string): string {
 		.trim();
 }
 
-function unitsFor(course: { name: string; semester1: string[]; semester2: string[] }): string[] {
-	return CURRENT_UNIT_OVERRIDES[course.name] ?? [...course.semester1, ...course.semester2];
+function unitsFor(course: UnifiedCourse): string[] {
+	return course.official.framework.unitLabels
+		? [...course.official.framework.unitLabels]
+		: course.units.map((unit) => unit.label);
 }
 
 function unitTitle(value: string): string {
@@ -133,10 +76,7 @@ function unitNumber(value: string): number | null {
 	return match ? Number(match[1]) : null;
 }
 
-function findUnit(
-	course: { name: string; semester1: string[]; semester2: string[] },
-	requested: string
-) {
+function findUnit(course: UnifiedCourse, requested: string) {
 	const query = normalize(requested);
 	const queryNumber = unitNumber(requested);
 	const requestedTitle = requested.match(/:\s*(.+)$/)?.[1]?.trim();
@@ -170,13 +110,17 @@ function courseSummary(apClass: string): ApKnowledgeCourseSummary {
 }
 
 function sourcesFor(apClass: string): ApKnowledgeSource[] {
-	const slug = AP_CENTRAL_SLUGS[apClass];
-	if (!slug) return [];
-	const courseUrl = `https://apcentral.collegeboard.org/courses/${slug}`;
-	return [
-		{ title: `${apClass} — official course page`, url: courseUrl },
-		{ title: `${apClass} — current exam page`, url: `${courseUrl}/exam` }
-	];
+	const course = supportedCourses.find((candidate) => candidate.name === apClass);
+	if (!course) return [];
+
+	const sourceIds = [...course.official.sourceIds, ...course.official.exam.sourceIds].filter(
+		(id, index, ids) =>
+			(id.startsWith('cb-course-') || id.startsWith('cb-exam-')) && ids.indexOf(id) === index
+	);
+	return sourceIds.flatMap((sourceId) => {
+		const source = sourceById.get(sourceId);
+		return source ? [{ title: source.title, url: source.url }] : [];
+	});
 }
 
 function metadata() {

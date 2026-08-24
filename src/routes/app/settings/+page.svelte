@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
 	import { onMount } from 'svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -188,7 +188,7 @@
 				throw new Error(getResponseMessage(result, 'Could not claim the free Super offer.'));
 			}
 			toast.success('Super unlocked. Enjoy the free beta!');
-			await invalidateAll();
+			await invalidateAuthenticatedShell();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
 		} finally {
@@ -387,7 +387,7 @@
 								{:else if data.billing?.status === 'past_due'}
 									Payment is past due; Super access remains available during the grace period.
 								{:else}
-									Personalized tutoring, Coach, insights, and study plans are active.
+									Personalized tutoring, Coach, and study plans are active.
 								{/if}
 							{:else if data.freeBetaEnabled}
 								Claim your free Super offer for personalized tutoring and study planning.

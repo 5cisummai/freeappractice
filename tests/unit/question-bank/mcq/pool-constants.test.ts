@@ -5,6 +5,7 @@ import {
 	QUESTION_POOL_FRQ_TARGET,
 	QUESTION_POOL_MIN_MCQ_TARGET,
 	isBelowLowWater,
+	poolRetireQuantityForBucket,
 	poolTargetForBucket,
 	preferredMcqTarget,
 	resolveMcqTarget,
@@ -65,5 +66,12 @@ describe('question pool constants', () => {
 		expect(isBelowLowWater(90, 100, 0.9)).toBe(false);
 		expect(isBelowLowWater(44, 50, 0.9)).toBe(true);
 		expect(isBelowLowWater(45, 50, 0.9)).toBe(false);
+	});
+
+	it('computes bulk retire quantities from active counts', () => {
+		expect(poolRetireQuantityForBucket(0)).toBe(0);
+		expect(poolRetireQuantityForBucket(3)).toBe(0);
+		expect(poolRetireQuantityForBucket(10)).toBe(3);
+		expect(poolRetireQuantityForBucket(100)).toBe(30);
 	});
 });

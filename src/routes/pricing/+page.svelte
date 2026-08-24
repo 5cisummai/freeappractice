@@ -9,7 +9,7 @@
 	<title>Super | Free AP Practice</title>
 	<meta
 		name="description"
-		content="Upgrade to Super for personalized AP tutoring, AI coaching, and actionable study insights."
+		content="Upgrade to Super for personalized AP tutoring, AI coaching, and weekly study plans."
 	/>
 </svelte:head>
 

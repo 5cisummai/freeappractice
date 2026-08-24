@@ -3,8 +3,7 @@ import {
 	captureFirstAnswerSubmitted,
 	captureQuestionRequestFailed,
 	captureQuestionRequestSucceeded,
-	QuestionRequestError,
-	type QuestionSource
+	QuestionRequestError
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
@@ -13,25 +12,11 @@ import {
 	requestMcqQuestion,
 	requestMcqQuestionById
 } from '$lib/question-bank/request.client';
-import {
-	hasValidHints,
-	MULTI_ATTEMPT_EXPERIMENT_KEY,
-	MULTI_ATTEMPT_EXPERIMENT_VERSION,
-	normalizeAnswerLetter,
-	resolveDisplayedVariant,
-	type PracticeVariant
-} from '$lib/practice/multi-attempt';
-import {
-	createMultiAttemptState,
-	reduceMultiAttempt,
-	type MultiAttemptMachineState
-} from '$lib/practice/multi-attempt-machine';
 import type {
 	AnswerResult,
 	GeneratedQuestion,
 	QuestionCardProps
 } from '$lib/question-bank/mcq/types';
-import type { QuestionCardModel } from '$lib/question-bank/question-card-model';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -56,7 +41,6 @@ export type QuestionCardSessionOpts = {
 	onAnswered?: QuestionCardProps['onAnswered'];
 	onQuizNext?: QuestionCardProps['onQuizNext'];
 	onOptionSelected?: QuestionCardProps['onOptionSelected'];
-	practiceExperiment?: Extract<QuestionCardModel['delivery'], { kind: 'unlimited' }>['experiment'];
 };
 
 export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
@@ -74,40 +58,17 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let poolWarmingAutoAttempts = $state(0);
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
-	const assignedVariant = $state<PracticeVariant>(
-		opts.practiceExperiment?.assignedVariant ?? 'control'
-	);
-	const experimentEnabled = $state(opts.practiceExperiment?.experimentEnabled ?? false);
-	let displayedVariant = $state<PracticeVariant>('control');
-	let multiAttemptState = $state<MultiAttemptMachineState>(createMultiAttemptState());
 	let questionFeedbackReason = $state<string | null>(null);
 	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
 	let consumedPresetQuestionId = $state(false);
 
 	const effectiveQuestionNumber = $derived(opts.getQuestionNumber() || `${questionCount}`);
-	const isTreatmentActive = $derived(displayedVariant === 'multi_attempt_hints');
-	const lockedChoices = $derived(isTreatmentActive ? multiAttemptState.lockedChoices : []);
-	const activeHintText = $derived.by(() => {
-		if (!isTreatmentActive || multiAttemptState.phase !== 'hinted') return null;
-		if (multiAttemptState.hintsShown === 1) return currentQuestion?.hint1?.trim() ?? null;
-		if (multiAttemptState.hintsShown === 2) return currentQuestion?.hint2?.trim() ?? null;
-		return null;
-	});
 	const feedbackMessage = $derived.by(() => {
-		if (activeHintText) return activeHintText;
 		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
 			return statusMessage;
 		}
-		if (answerResult.isCorrect === true) {
+		if (answerResult.isCorrect) {
 			return 'Correct! Nice work.';
-		}
-		if (answerResult.isCorrect === undefined) return 'Answer revealed.';
-		if (
-			answerResult.displayedVariant === 'multi_attempt_hints' &&
-			answerResult.finalAnswer === answerResult.correctAnswer &&
-			!answerResult.isCorrect
-		) {
-			return 'Solved after hints.';
 		}
 		return `Incorrect. Correct answer: ${answerResult.correctAnswer}.`;
 	});
@@ -140,36 +101,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		answerResult = null;
 		showExplanation = false;
 		questionFeedbackReason = null;
-		multiAttemptState = createMultiAttemptState();
 		startedAtMs = Date.now();
 		if (clearSelection) opts.setSelectedOption(null);
-	}
-
-	function applyQuestionExperimentExposure(
-		question: GeneratedQuestion,
-		source: QuestionSource
-	): void {
-		const resolved = resolveDisplayedVariant({
-			assigned: assignedVariant,
-			experimentEnabled,
-			questionHasHints: hasValidHints(question)
-		});
-		displayedVariant = resolved.displayed;
-		multiAttemptState = createMultiAttemptState();
-
-		if (!experimentEnabled) return;
-
-		capturePostHogEvent('practice_experiment_exposed', {
-			assigned_variant: assignedVariant,
-			displayed_variant: resolved.displayed,
-			experiment_key: MULTI_ATTEMPT_EXPERIMENT_KEY,
-			experiment_version: MULTI_ATTEMPT_EXPERIMENT_VERSION,
-			question_source: source,
-			fallback_reason: resolved.fallbackReason,
-			ap_class: opts.getSelectedClass(),
-			unit: opts.getSelectedUnit(),
-			topic: question.topic
-		});
 	}
 
 	function buildAnswerResult(selectedAnswer: string): AnswerResult | null {
@@ -181,10 +114,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 			selectedAnswer,
 			correctAnswer: currentQuestion.correctAnswer,
 			isCorrect: selectedAnswer === currentQuestion.correctAnswer,
-			timeTakenMs: Date.now() - startedAtMs,
-			displayedVariant,
-			experimentKey: MULTI_ATTEMPT_EXPERIMENT_KEY,
-			experimentVersion: MULTI_ATTEMPT_EXPERIMENT_VERSION
+			timeTakenMs: Date.now() - startedAtMs
 		};
 	}
 
@@ -242,7 +172,6 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 			poolWarmingAutoAttempts = 0;
 			statusMessage = 'Choose the best answer and then check your response.';
 			resetInteractionState(true);
-			applyQuestionExperimentExposure(result.question, result.source);
 		} catch (error) {
 			captureQuestionRequestFailed({
 				apClass: selectedClass,
@@ -315,18 +244,11 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 
 	function captureQuestionCompletedAnalytics(
 		result: AnswerResult,
-		terminalOutcome: 'correct' | 'incorrect' | 'revealed' | 'max_attempts',
-		resolvedCorrect: boolean,
-		answerCount: number,
-		hintsShown: number
+		terminalOutcome: 'correct' | 'incorrect'
 	): void {
 		capturePostHogEvent('practice_question_completed', {
-			displayed_variant: result.displayedVariant ?? 'control',
 			terminal_outcome: terminalOutcome,
-			first_answer_correct: result.isCorrect,
-			resolved_correct: resolvedCorrect,
-			answer_count: answerCount,
-			hints_shown: hintsShown,
+			is_correct: result.isCorrect,
 			elapsed_ms: result.timeTakenMs,
 			ap_class: opts.getSelectedClass(),
 			unit: opts.getSelectedUnit(),
@@ -335,122 +257,30 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		});
 	}
 
-	function finalizeTreatmentAttempt(): void {
-		if (!currentQuestion?.correctAnswer || multiAttemptState.phase !== 'terminal') return;
-
-		const firstAnswer = multiAttemptState.answers[0];
-
-		const result: AnswerResult = {
-			questionId: currentQuestion.questionId?.trim() || undefined,
-			questionNumber: effectiveQuestionNumber,
-			selectedAnswer: firstAnswer,
-			correctAnswer: currentQuestion.correctAnswer,
-			isCorrect: multiAttemptState.firstAnswerCorrect ?? undefined,
-			timeTakenMs: Date.now() - startedAtMs,
-			finalAnswer: multiAttemptState.answers[multiAttemptState.answers.length - 1],
-			answerCount: multiAttemptState.answers.length,
-			hintsShown: multiAttemptState.hintsShown,
-			terminalOutcome: multiAttemptState.terminalOutcome ?? undefined,
-			displayedVariant: 'multi_attempt_hints',
-			experimentKey: MULTI_ATTEMPT_EXPERIMENT_KEY,
-			experimentVersion: MULTI_ATTEMPT_EXPERIMENT_VERSION,
-			answers: [...multiAttemptState.answers]
-		};
-
-		hasCheckedAnswer = true;
-		checkedSelection = firstAnswer ?? null;
-		answerResult = result;
-		opts.onAnswered?.(result);
-
-		captureQuestionCompletedAnalytics(
-			result,
-			multiAttemptState.terminalOutcome ?? 'revealed',
-			multiAttemptState.resolvedCorrect ?? false,
-			multiAttemptState.answers.length,
-			multiAttemptState.hintsShown
-		);
-
-		if (opts.getAutoShowExplanation() && currentQuestion.explanation) {
-			showExplanation = true;
-		}
-	}
-
-	function handleRevealAnswer(): void {
-		if (!isTreatmentActive || hasCheckedAnswer) return;
-		multiAttemptState = reduceMultiAttempt(multiAttemptState, { type: 'reveal' });
-		finalizeTreatmentAttempt();
-	}
-
 	function handleCheckAnswer(): void {
 		const selectedOption = opts.getSelectedOption();
 		if (!selectedOption) return;
 		opts.onCheckAnswer?.(selectedOption);
 
-		if (!isTreatmentActive) {
-			const result = buildAnswerResult(selectedOption);
-			if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
-			const completeResult = result as AnswerResult & {
-				selectedAnswer: string;
-				isCorrect: boolean;
-			};
+		const result = buildAnswerResult(selectedOption);
+		if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
+		const completeResult = result as AnswerResult & {
+			selectedAnswer: string;
+			isCorrect: boolean;
+		};
 
-			hasCheckedAnswer = true;
-			checkedSelection = completeResult.selectedAnswer;
-			answerResult = completeResult;
-			opts.onAnswered?.(completeResult);
-			captureFirstAnswerAnalytics(completeResult);
-			captureQuestionCompletedAnalytics(
-				completeResult,
-				completeResult.isCorrect ? 'correct' : 'incorrect',
-				completeResult.isCorrect,
-				1,
-				0
-			);
+		hasCheckedAnswer = true;
+		checkedSelection = completeResult.selectedAnswer;
+		answerResult = completeResult;
+		opts.onAnswered?.(completeResult);
+		captureFirstAnswerAnalytics(completeResult);
+		captureQuestionCompletedAnalytics(
+			completeResult,
+			completeResult.isCorrect ? 'correct' : 'incorrect'
+		);
 
-			if (opts.getAutoShowExplanation() && currentQuestion?.explanation) {
-				showExplanation = true;
-			}
-			return;
-		}
-
-		const answer = normalizeAnswerLetter(selectedOption);
-		const correctAnswer = normalizeAnswerLetter(currentQuestion?.correctAnswer);
-		if (!answer || !correctAnswer) return;
-
-		const isFirstSubmit = multiAttemptState.answers.length === 0;
-		const prevHintsShown = multiAttemptState.hintsShown;
-
-		multiAttemptState = reduceMultiAttempt(multiAttemptState, {
-			type: 'submit',
-			answer,
-			correctAnswer
-		});
-
-		if (isFirstSubmit) {
-			const firstResult = buildAnswerResult(answer);
-			if (firstResult?.selectedAnswer !== undefined && firstResult.isCorrect !== undefined) {
-				captureFirstAnswerAnalytics(
-					firstResult as AnswerResult & { selectedAnswer: string; isCorrect: boolean }
-				);
-			}
-		}
-
-		if (multiAttemptState.hintsShown > prevHintsShown) {
-			capturePostHogEvent('practice_hint_shown', {
-				displayed_variant: 'multi_attempt_hints',
-				hint_number: multiAttemptState.hintsShown,
-				first_answer_correct: multiAttemptState.firstAnswerCorrect,
-				ap_class: opts.getSelectedClass(),
-				unit: opts.getSelectedUnit(),
-				topic: currentQuestion?.topic,
-				source: currentQuestion?.source
-			});
-		}
-
-		if (multiAttemptState.phase === 'terminal') {
-			finalizeTreatmentAttempt();
-		} else {
-			opts.setSelectedOption(null);
+		if (opts.getAutoShowExplanation() && currentQuestion?.explanation) {
+			showExplanation = true;
 		}
 	}
 
@@ -529,8 +359,6 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 
 		if (quizQuestion) {
 			questionCount = 1;
-			displayedVariant = 'control';
-			multiAttemptState = createMultiAttemptState();
 			statusMessage = 'Select an answer, then submit it when you are ready.';
 			if (quizAnswer) {
 				hasCheckedAnswer = true;
@@ -579,32 +407,11 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		get seenQuestionIds() {
 			return seenQuestionIds;
 		},
-		get assignedVariant() {
-			return assignedVariant;
-		},
-		get experimentEnabled() {
-			return experimentEnabled;
-		},
-		get displayedVariant() {
-			return displayedVariant;
-		},
-		get multiAttemptState() {
-			return multiAttemptState;
-		},
 		get questionFeedbackReason() {
 			return questionFeedbackReason;
 		},
 		get effectiveQuestionNumber() {
 			return effectiveQuestionNumber;
-		},
-		get isTreatmentActive() {
-			return isTreatmentActive;
-		},
-		get lockedChoices() {
-			return lockedChoices;
-		},
-		get activeHintText() {
-			return activeHintText;
 		},
 		get feedbackMessage() {
 			return feedbackMessage;
@@ -626,15 +433,12 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		},
 		rememberSeenQuestion,
 		resetInteractionState,
-		applyQuestionExperimentExposure,
 		buildAnswerResult,
 		loadQuestion,
 		retryWarmingLoad,
 		handleOptionSelect,
 		captureFirstAnswerAnalytics,
 		captureQuestionCompletedAnalytics,
-		finalizeTreatmentAttempt,
-		handleRevealAnswer,
 		handleCheckAnswer,
 		handleNextQuestion,
 		handleSkipQuestion,

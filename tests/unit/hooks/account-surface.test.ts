@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	isAccountSurface,
-	isAgeGateExempt,
-	shouldSkipSessionLookup
-} from '$lib/auth/account-surface.server';
+import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
 
 describe('account surface routing', () => {
 	it('limits the age gate to app pages and account APIs', () => {
@@ -29,11 +25,5 @@ describe('account surface routing', () => {
 		expect(isAgeGateExempt('/app/confirm-age')).toBe(true);
 		expect(isAgeGateExempt('/app/confirm-age/details')).toBe(true);
 		expect(isAgeGateExempt('/app/settings')).toBe(false);
-	});
-
-	it('preserves the public MCQ POST session lookup skip', () => {
-		expect(shouldSkipSessionLookup('POST', '/api/question')).toBe(true);
-		expect(shouldSkipSessionLookup('GET', '/api/question')).toBe(false);
-		expect(shouldSkipSessionLookup('POST', '/api/question/feedback')).toBe(false);
 	});
 });

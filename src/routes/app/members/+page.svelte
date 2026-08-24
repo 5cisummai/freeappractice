@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth/client.js';
 	import {
@@ -77,7 +77,7 @@
 			}
 			inviteEmail = '';
 			toast.success('Invite sent.');
-			await invalidateAll();
+			await invalidateAppRoute('/app/members');
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not send that invite.');
 		} finally {

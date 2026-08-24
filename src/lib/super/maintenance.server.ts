@@ -1,10 +1,9 @@
 import { deleteAllTutorMemoriesById } from '$lib/mem0/service.server';
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, exists, gt, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNotNull, isNull, lte, or } from 'drizzle-orm';
 import { logger } from '$lib/server/logger';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
-	insightReports,
 	studyPlanAudits,
 	studyPlans,
 	superBillingAccess,
@@ -13,8 +12,6 @@ import {
 	tutorProfiles
 } from '$lib/server/neon/schema';
 import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/super/billing.server';
-import { lockInsightReports } from '$lib/super/insight-locks.server';
-import { INSIGHT_SNAPSHOT_RETENTION_DAYS } from '$lib/super/insights.server';
 import { deletePostHogUser } from '$lib/server/posthog';
 import { STUDY_PLAN_RETENTION_DAYS } from '$lib/super/study-plan.server';
 import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
@@ -25,7 +22,6 @@ const DEFAULT_BATCH_SIZE = 50;
 
 export type SuperMaintenanceSummary = {
 	downgradesQueued: number;
-	reportsDeleted: number;
 	expiredGrantsRemoved: number;
 	cleanupCompleted: number;
 	cleanupRetried: number;
@@ -90,6 +86,7 @@ async function processCleanupJob(
 		if (job.kind === 'account_delete') await deletePostHogUser(job.userId);
 		await deleteAllTutorMemoriesById(job.mem0UserId);
 		if (job.kind === 'downgrade_purge') {
+			await db.delete(studyPlans).where(eq(studyPlans.userId, job.userId));
 			await db
 				.update(tutorProfiles)
 				.set({ memoryPurgedAt: now, updatedAt: now })
@@ -140,13 +137,10 @@ export async function runSuperMaintenance(
 	for (const [userId, accessEndedAt] of pastDueEndByUser) {
 		const access = await getPlanAccess(userId, now);
 		if (access.plan === 'super') continue;
-		await Promise.all([
-			db
-				.update(tutorProfiles)
-				.set({ superEndedAt: accessEndedAt, updatedAt: accessEndedAt })
-				.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superEndedAt))),
-			lockInsightReports(userId, accessEndedAt)
-		]);
+		await db
+			.update(tutorProfiles)
+			.set({ superEndedAt: accessEndedAt, updatedAt: accessEndedAt })
+			.where(and(eq(tutorProfiles.userId, userId), isNull(tutorProfiles.superEndedAt)));
 	}
 
 	const betaProfiles = await db
@@ -157,13 +151,7 @@ export async function runSuperMaintenance(
 				isNull(tutorProfiles.superEndedAt),
 				or(
 					isNotNull(tutorProfiles.superAccessStartedAt),
-					isNotNull(tutorProfiles.memoryDisclosureSeenAt),
-					exists(
-						db
-							.select({ one: sql<number>`1` })
-							.from(insightReports)
-							.where(eq(insightReports.userId, tutorProfiles.userId))
-					)
+					isNotNull(tutorProfiles.memoryDisclosureSeenAt)
 				)
 			)
 		)
@@ -198,9 +186,6 @@ export async function runSuperMaintenance(
 
 	const cutoff = memoryRetentionCutoff(now);
 	const studyPlanCutoff = new Date(now.getTime() - STUDY_PLAN_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-	const insightSnapshotCutoff = new Date(
-		now.getTime() - INSIGHT_SNAPSHOT_RETENTION_DAYS * 24 * 60 * 60 * 1000
-	);
 	const expiredProfiles = await db
 		.select({ userId: tutorProfiles.userId, mem0UserId: tutorProfiles.mem0UserId })
 		.from(tutorProfiles)
@@ -252,36 +237,17 @@ export async function runSuperMaintenance(
 		})
 	);
 
-	const [reportDeletion, expiredGrants, expiredStudyPlans, expiredStudyPlanAudits, expiredReports] =
-		await Promise.all([
-			profilesToPurge.length
-				? db
-						.delete(insightReports)
-						.where(
-							inArray(
-								insightReports.userId,
-								profilesToPurge.map((profile) => profile.userId)
-							)
-						)
-						.returning({ id: insightReports.id })
-				: Promise.resolve([]),
-			db
-				.delete(superGrants)
-				.where(lte(superGrants.expiresAt, now))
-				.returning({ id: superGrants.id }),
-			db
-				.delete(studyPlans)
-				.where(lte(studyPlans.updatedAt, studyPlanCutoff))
-				.returning({ id: studyPlans.id }),
-			db
-				.delete(studyPlanAudits)
-				.where(lte(studyPlanAudits.createdAt, studyPlanCutoff))
-				.returning({ id: studyPlanAudits.id }),
-			db
-				.delete(insightReports)
-				.where(lte(insightReports.generatedAt, insightSnapshotCutoff))
-				.returning({ id: insightReports.id })
-		]);
+	const [expiredGrants, expiredStudyPlans, expiredStudyPlanAudits] = await Promise.all([
+		db.delete(superGrants).where(lte(superGrants.expiresAt, now)).returning({ id: superGrants.id }),
+		db
+			.delete(studyPlans)
+			.where(lte(studyPlans.updatedAt, studyPlanCutoff))
+			.returning({ id: studyPlans.id }),
+		db
+			.delete(studyPlanAudits)
+			.where(lte(studyPlanAudits.createdAt, studyPlanCutoff))
+			.returning({ id: studyPlanAudits.id })
+	]);
 
 	const jobs = await db
 		.select()
@@ -293,7 +259,6 @@ export async function runSuperMaintenance(
 	const results = await Promise.all(jobs.map((job) => processCleanupJob(db, job, now)));
 	return {
 		downgradesQueued: profilesToPurge.length,
-		reportsDeleted: reportDeletion.length + expiredReports.length,
 		expiredGrantsRemoved: expiredGrants.length,
 		cleanupCompleted: results.filter((result) => result === 'completed').length,
 		cleanupRetried: results.filter((result) => result === 'retried').length,

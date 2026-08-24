@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -107,10 +107,7 @@
 		onSkip: () => onSkip?.(),
 		onNotLearned: () => onNotLearned?.(),
 		onAnswered: (result) => onAnswered?.(result),
-		onQuizNext: () => onQuizNext?.(),
-		practiceExperiment: untrack(() =>
-			model.delivery.kind === 'unlimited' ? model.delivery.experiment : undefined
-		)
+		onQuizNext: () => onQuizNext?.()
 	});
 
 	const tutorUnitLabel = $derived(selectedUnit);
@@ -261,7 +258,6 @@
 						onSelect={session.handleOptionSelect}
 						showFeedback={!quizMode}
 						{compact}
-						lockedChoices={session.lockedChoices}
 					/>
 				{/snippet}
 
@@ -437,7 +433,7 @@
 								</Button>
 							</div>
 						{/if}
-						{#if !quizMode && (session.hasCheckedAnswer || session.activeHintText)}
+						{#if !quizMode && session.hasCheckedAnswer}
 							<div class="min-w-0 space-y-1">
 								<p class="text-sm text-muted-foreground">{session.feedbackMessage}</p>
 							</div>
@@ -477,9 +473,6 @@
 							{nextLabel}
 						</Button>
 						{#if !session.hasCheckedAnswer && !quizMode}
-							{#if session.isTreatmentActive && session.multiAttemptState.phase !== 'terminal'}
-								<Button variant="outline" onclick={session.handleRevealAnswer}>Show answer</Button>
-							{/if}
 							<Button disabled={!selectedOption} onclick={session.handleCheckAnswer}
 								>{checkLabel}</Button
 							>
@@ -512,7 +505,7 @@
 					align="end"
 					side="bottom"
 					sideOffset={8}
-					class="z-[100] max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto bg-popover/95 p-4 backdrop-blur-xl"
+					class="z-100 max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto bg-popover/95 p-4 backdrop-blur-xl"
 				>
 					{@render practiceControls()}
 				</Popover.Content>

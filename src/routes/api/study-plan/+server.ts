@@ -7,18 +7,11 @@ import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { writeStudyPlanAudit } from '$lib/super/study-plan-audit.server';
 import {
 	completeStudyTask,
-	generateStudyPlan,
 	getCurrentStudyPlan,
 	rescheduleStudyTask
 } from '$lib/super/study-plan.server';
 
 const requestSchema = z.discriminatedUnion('action', [
-	z
-		.object({
-			action: z.literal('generate'),
-			behavior: z.enum(['replace', 'merge']).default('replace')
-		})
-		.strict(),
 	z.object({ action: z.literal('complete'), taskId: z.string().trim().min(1).max(200) }).strict(),
 	z
 		.object({
@@ -54,21 +47,6 @@ export const POST: RequestHandler = withAuthedHandler(
 				return json({ error: 'This study-plan change was already requested.' }, { status: 409 });
 			}
 			const before = await getCurrentStudyPlan(userId);
-			if (parsed.data.action === 'generate') {
-				const plan = await generateStudyPlan(userId, { behavior: parsed.data.behavior });
-				if (!plan)
-					return json(
-						{ error: 'Generate insights before creating a study plan.' },
-						{ status: 409 }
-					);
-				const audit = await writeStudyPlanAudit({
-					userId,
-					action: 'generate',
-					before,
-					after: plan
-				});
-				return json({ plan, audit });
-			}
 			const plan =
 				parsed.data.action === 'complete'
 					? await completeStudyTask(userId, parsed.data.taskId)

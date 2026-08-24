@@ -32,8 +32,6 @@ const sampleQuestion = {
 	optionD: 'D',
 	correctAnswer: 'A' as const,
 	explanation: 'Because.',
-	hint1: 'Hint 1',
-	hint2: 'Hint 2',
 	randomKey: 0.42,
 	active: true
 };
@@ -60,10 +58,25 @@ describe('canonical MCQ persistence', () => {
 			[
 				{
 					questionId: sampleQuestion.questionId,
-					apClass: sampleQuestion.apClass,
-					unit: sampleQuestion.unit,
+					data: {
+						apClass: sampleQuestion.apClass,
+						unit: sampleQuestion.unit,
+						topicsCovered: 'Cell signaling',
+						question: sampleQuestion.question,
+						diagramSpec: null,
+						hasDiagram: false,
+						optionA: sampleQuestion.optionA,
+						optionB: sampleQuestion.optionB,
+						optionC: sampleQuestion.optionC,
+						optionD: sampleQuestion.optionD,
+						correctAnswer: sampleQuestion.correctAnswer,
+						explanation: sampleQuestion.explanation
+					},
 					contentHash: sampleQuestion.contentHash,
-					question: sampleQuestion.question
+					randomKey: sampleQuestion.randomKey,
+					active: sampleQuestion.active,
+					createdAt: new Date('2026-01-01T00:00:00.000Z'),
+					updatedAt: new Date('2026-01-01T00:00:00.000Z')
 				}
 			],
 			[]
@@ -89,7 +102,14 @@ describe('canonical MCQ persistence', () => {
 			expect.objectContaining({ questionId: 'mcq-1', kind: 'mcq', contentLength: 20 })
 		);
 		expect(mcqReturning.source.values).toHaveBeenCalledWith(
-			expect.objectContaining({ questionId: 'mcq-1', topicsCovered: 'Cell signaling' })
+			expect.objectContaining({
+				questionId: 'mcq-1',
+				data: expect.objectContaining({
+					apClass: 'AP Biology',
+					unit: 'Unit 1',
+					topicsCovered: 'Cell signaling'
+				})
+			})
 		);
 		expect(recentTopic.values).toHaveBeenCalledWith(
 			expect.objectContaining({

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAppLayout } from '$lib/client/invalidate-data.js';
 	import { authClient } from '$lib/auth/client.js';
 	import {
 		MAX_FREE_GROUP_ORGS,
@@ -72,6 +72,10 @@
 		inviteOpen = true;
 	}
 
+	async function refreshAppShell() {
+		await invalidateAppLayout();
+	}
+
 	async function switchOrg(organizationId: string) {
 		if (organizationId === active?.id) return;
 		const { error } = await authClient.organization.setActive({ organizationId });
@@ -79,7 +83,7 @@
 			toast.error(error.message ?? 'Could not switch organizations.');
 			return;
 		}
-		await invalidateAll();
+		await refreshAppShell();
 	}
 
 	async function createGroup() {
@@ -98,7 +102,7 @@
 			}
 			createOpen = false;
 			toast.success('Organization created.');
-			await invalidateAll();
+			await refreshAppShell();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not create that organization.');
 		} finally {
@@ -120,7 +124,7 @@
 			}
 			renameOpen = false;
 			toast.success('Organization renamed.');
-			await invalidateAll();
+			await refreshAppShell();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not rename that organization.');
 		} finally {
@@ -140,7 +144,7 @@
 			}
 			deleteOpen = false;
 			toast.success('Organization deleted.');
-			await invalidateAll();
+			await refreshAppShell();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not delete that organization.');
 		} finally {
@@ -155,7 +159,7 @@
 			return;
 		}
 		toast.success('Left organization.');
-		await invalidateAll();
+		await refreshAppShell();
 	}
 
 	async function copyInviteLink(org: UserOrganization) {

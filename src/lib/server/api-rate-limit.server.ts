@@ -1,4 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit';
+import type { Redis } from '@upstash/redis';
 import {
 	getRedisClient,
 	hashRedisIdentifier,
@@ -17,12 +18,40 @@ export type ApiRateLimitDecision = {
 	degraded: boolean;
 };
 
+// Separate prefixes for anon vs authed limiters (required once limits diverged).
+// Deploying this resets prior `api-global` counters in Redis.
+let anonymousLimiter: Ratelimit | undefined;
+let authenticatedLimiter: Ratelimit | undefined;
+let questionPoolLimiter: Ratelimit | undefined;
+
 function clientIp(request: Request): string {
 	return (
 		request.headers.get('x-real-ip')?.trim() ||
 		request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
 		'unknown'
 	);
+}
+
+function limiterForUser(redis: Redis, userId?: string): Ratelimit {
+	if (userId) {
+		authenticatedLimiter ??= new Ratelimit({
+			redis,
+			limiter: Ratelimit.slidingWindow(AUTHENTICATED_LIMIT, WINDOW),
+			prefix: `${redisNamespace()}:rate:api-global:auth`,
+			analytics: false,
+			timeout: 500
+		});
+		return authenticatedLimiter;
+	}
+
+	anonymousLimiter ??= new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(ANONYMOUS_LIMIT, WINDOW),
+		prefix: `${redisNamespace()}:rate:api-global:anon`,
+		analytics: false,
+		timeout: 500
+	});
+	return anonymousLimiter;
 }
 
 /** Global API backstop. Endpoint-specific limits remain responsible for sensitive operations. */
@@ -36,13 +65,7 @@ export async function limitApiRequests(
 		const redis = getRedisClient();
 		if (!redis) return { allowed: true, retryAt: null, limit, degraded: true };
 
-		const limiter = new Ratelimit({
-			redis,
-			limiter: Ratelimit.slidingWindow(limit, WINDOW),
-			prefix: `${redisNamespace()}:rate:api-global`,
-			analytics: false,
-			timeout: 500
-		});
+		const limiter = limiterForUser(redis, userId);
 		const identifier = userId ? `user:${userId}` : `ip:${hashRedisIdentifier(clientIp(request))}`;
 		const result = await withRedisTimeout(limiter.limit(identifier), 750);
 		if (result.reason === 'timeout') {
@@ -57,5 +80,36 @@ export async function limitApiRequests(
 		};
 	} catch {
 		return { allowed: true, retryAt: null, limit, degraded: true };
+	}
+}
+
+const QUESTION_POOL_LIMIT = 20;
+
+/** IP limiter for the anonymous MCQ pool fetch that skips the global API limiter. */
+export async function limitQuestionPoolRequests(request: Request): Promise<ApiRateLimitDecision> {
+	try {
+		const redis = getRedisClient();
+		if (!redis) return { allowed: true, retryAt: null, limit: QUESTION_POOL_LIMIT, degraded: true };
+
+		questionPoolLimiter ??= new Ratelimit({
+			redis,
+			limiter: Ratelimit.slidingWindow(QUESTION_POOL_LIMIT, WINDOW),
+			prefix: `${redisNamespace()}:rate:api-question`,
+			analytics: false,
+			timeout: 500
+		});
+		const identifier = `ip:${hashRedisIdentifier(clientIp(request))}`;
+		const result = await withRedisTimeout(questionPoolLimiter.limit(identifier), 750);
+		if (result.reason === 'timeout') {
+			return { allowed: true, retryAt: null, limit: QUESTION_POOL_LIMIT, degraded: true };
+		}
+		return {
+			allowed: result.success,
+			retryAt: result.success ? null : result.reset,
+			limit: QUESTION_POOL_LIMIT,
+			degraded: false
+		};
+	} catch {
+		return { allowed: true, retryAt: null, limit: QUESTION_POOL_LIMIT, degraded: true };
 	}
 }

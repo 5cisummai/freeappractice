@@ -17,22 +17,10 @@ type QuestionPanel = {
 export type AnswerResult = {
 	questionId?: string;
 	questionNumber: string;
-	/** First-answer letter; omitted when the student reveals before answering. */
-	selectedAnswer?: string;
+	selectedAnswer: string;
 	correctAnswer: string;
-	/** First-answer correctness; omitted when the student reveals before answering. */
-	isCorrect?: boolean;
+	isCorrect: boolean;
 	timeTakenMs: number;
-	/** Present only for multi-attempt treatment completions. */
-	finalAnswer?: string;
-	answerCount?: number;
-	hintsShown?: number;
-	terminalOutcome?: 'correct' | 'revealed' | 'max_attempts';
-	displayedVariant?: 'control' | 'multi_attempt_hints';
-	experimentKey?: string;
-	experimentVersion?: number;
-	/** Full answer sequence for multi-attempt treatment (classic path omits). */
-	answers?: Array<'A' | 'B' | 'C' | 'D'>;
 };
 
 export type BugReportContext = {
@@ -48,13 +36,12 @@ export type BugReportContext = {
 export type GeneratedQuestion = {
 	questionId?: string;
 	topic?: string;
+	mainTopic?: string;
 	source?: 'cached' | 'generated';
 	prompt: string;
 	options: QuestionOption[];
 	correctAnswer?: string;
 	explanation?: string;
-	hint1?: string;
-	hint2?: string;
 	diagramSpec?: Record<string, unknown>;
 	hasDiagram?: boolean;
 	leftPanel?: QuestionPanel;

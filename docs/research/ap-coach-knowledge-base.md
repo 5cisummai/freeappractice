@@ -50,11 +50,11 @@ Each pair below is a direct, official AP Central URL. Local labels are mapped to
 
 ## Assessment of existing source data
 
-[`unit-descriptionsrevised.json`](../../src/lib/data/unit-descriptionsrevised.json) is a useful MVP seed: it is dated `2025-12-16`, covers the same 25 real courses, contains 178 units, has course codes/names, unit titles, keywords, descriptions, topic lists, and source links, and broadly mirrors College Board’s “commonly taught units.” It is well suited to initial browse/navigation and retrieval filters.
+The unified AP dataset ([`ap-classes-data-08212026.json`](../../src/lib/data/ap-classes-data-08212026.json)) is the current MVP catalog: it covers the 25 supported courses, app units, practice pages, source registry, and the paraphrased unit context used by generation. It is well suited to initial browse/navigation and retrieval filters.
 
 It is not safe as an authoritative assessment database yet. It has no effective school year, CED version, retrieval date per source, source section/page, learning-objective IDs, skill/practice IDs, or provenance for individual fields. Some fields visibly drift: in AP Calculus AB, Unit 3 keywords emphasize extrema/related rates while the title is composite/implicit/inverse differentiation; Unit 4 keywords are integration-heavy while its description is derivative applications; Unit 5 keywords are integration applications while its description is derivative analysis. Exam-weight strings also need validation against the current exam pages/CEDs. Treat “topics may include” as paraphrased discovery text, not a guarantee of tested scope.
 
-`ap-classes.json` is the product’s course/unit navigation list. Its Physics 2 and Physics C numbering should be checked against the current 2025–26/2026–27 CED versions before using unit numbers in user-facing claims.
+The unified dataset's `courses[].units[]` records are the product's course/unit navigation list; semester placement is stored on each unit. Its Physics 2 and Physics C numbering should be checked against the current 2025–26/2026–27 CED versions before using unit numbers in user-facing claims.
 
 ## Recommended MVP schema, retrieval, and tools
 
@@ -64,7 +64,7 @@ Use a small ingestion job that follows each course page’s current CED and clar
 
 ### Implemented MVP boundary
 
-The first implementation intentionally stores only current course/unit labels, direct official course and exam links, and a review date. It does **not** send the College Board-derived descriptions, topic lists, rubrics, weighting fields, or framework-like coaching summaries from `unit-descriptionsrevised.json` to the model. The 2026–27 catalog corrects the five-unit [AP Statistics revision](https://apcentral.collegeboard.org/courses/ap-statistics), the revised [AP Spanish Language and Culture units](https://apcentral.collegeboard.org/courses/ap-spanish-language-and-culture), and the current [AP Physics 2 unit sequence](https://apcentral.collegeboard.org/courses/ap-physics-2). Detailed source-backed topics remain future work pending field-level provenance and an approved copyright posture.
+The first implementation intentionally stores current course/unit labels, direct official course and exam links, and a review date in the unified dataset. It does **not** send the College Board-derived descriptions, topic lists, rubrics, weighting fields, or framework-like coaching summaries to the model through the bounded curriculum tool. The 2026–27 catalog corrects the five-unit [AP Statistics revision](https://apcentral.collegeboard.org/courses/ap-statistics), the revised [AP Spanish Language and Culture units](https://apcentral.collegeboard.org/courses/ap-spanish-language-and-culture), and the current [AP Physics 2 unit sequence](https://apcentral.collegeboard.org/courses/ap-physics-2). Detailed source-backed topics remain future work pending field-level provenance and an approved copyright posture.
 
 ## Copyright, quality checks, and limitations
 

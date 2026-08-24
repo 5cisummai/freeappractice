@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { toast } from 'svelte-sonner';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
@@ -26,7 +26,7 @@
 			}
 			toast.success('Super unlocked. Enjoy the free beta!');
 			open = false;
-			await invalidateAll();
+			await invalidateAuthenticatedShell();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not claim the free Super offer.');
 		} finally {
@@ -47,8 +47,8 @@
 				Claim your free Super offer
 			</Dialog.Title>
 			<Dialog.Description class="text-center text-sm leading-6">
-				Unlock personalized tutoring, AI Coach, insights, weekly study plans, and 300 personalized
-				messages a month.
+				Unlock personalized tutoring, AI Coach, weekly study plans, and 300 personalized messages a
+				month.
 			</Dialog.Description>
 		</Dialog.Header>
 
