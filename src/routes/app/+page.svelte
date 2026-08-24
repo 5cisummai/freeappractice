@@ -332,7 +332,9 @@
 			description="Choose the subjects you want to see on your dashboard."
 			imageUrl={lightbulbImage}
 		>
-			<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose subjects</Button>
+			{#snippet button()}
+				<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose subjects</Button>
+			{/snippet}
 		</EmptyState>
 	{/if}
 </PageShell>

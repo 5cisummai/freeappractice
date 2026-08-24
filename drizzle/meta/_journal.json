@@ -148,6 +148,13 @@
       "when": 1787438205445,
       "tag": "0021_remove_insight_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787522097856,
+      "tag": "0022_add_insights_to_study_plans",
+      "breakpoints": true
     }
   ]
 }

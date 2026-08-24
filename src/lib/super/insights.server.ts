@@ -18,7 +18,12 @@ import { getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server
 import { getCoachActivitySummary } from '$lib/super/coach-reads.server';
 import { getRecentSuperMistakes } from '$lib/super/context.server';
 import { getUserProgress } from '$lib/users/model.server';
-import { hasPaidCapability, type StudyPlanView, type StudyTask } from '$lib/super/types';
+import {
+	hasPaidCapability,
+	type StudyPlanInsights,
+	type StudyPlanView,
+	type StudyTask
+} from '$lib/super/types';
 import type { InsightsMetrics, InsightsResponse } from '$lib/super/insights.types';
 
 const INSIGHTS_WINDOW_DAYS = 7;
@@ -334,23 +339,27 @@ export async function generateInsights(
 		startsOn,
 		new Set(context.allowedUnits)
 	);
-	let plan = context.currentPlan;
-	if (tasks.length) {
-		plan = await saveStudyPlan(
-			userId,
-			{ startsOn: startsOn.toISOString(), tasks },
-			{ behavior: 'replace' }
-		);
-	}
-
-	return {
+	const insights = {
 		generatedAt: now.toISOString(),
 		window: context.window,
 		metrics: context.metrics,
 		headline: parsed.headline,
 		summary: parsed.summary,
 		focusAreas: sanitizeFocusAreas(parsed.focusAreas, new Set(context.allowedUnits)),
-		planRationale: parsed.planRationale,
+		planRationale: parsed.planRationale
+	} satisfies StudyPlanInsights;
+	const plan = await saveStudyPlan(
+		userId,
+		{
+			startsOn: startsOn.toISOString(),
+			tasks: tasks.length ? tasks : (context.currentPlan?.tasks ?? []),
+			insights
+		},
+		{ behavior: 'replace' }
+	);
+
+	return {
+		...insights,
 		plan
 	};
 }

@@ -207,7 +207,9 @@
 		description="Answer questions while signed in to build your history."
 		imageUrl={notebookImage}
 	>
-		<Button href={resolve('/app/practice')}>Start practice</Button>
+		{#snippet button()}
+			<Button href={resolve('/app/practice')}>Start practice</Button>
+		{/snippet}
 	</EmptyState>
 {:else}
 	<div class="space-y-6">

@@ -77,6 +77,35 @@ export type TutorProfileUpdate = Partial<
 	>
 >;
 
+export type StudyPlanInsights = {
+	generatedAt: string;
+	window: {
+		startsOn: string;
+		endsOn: string;
+		days: number;
+	};
+	metrics: {
+		mcqAttempts: number;
+		mcqAccuracy: number | null;
+		frqSubmissions: number;
+		frqAveragePercentage: number | null;
+		activeDays: number;
+		previousMcqAttempts: number;
+		previousMcqAccuracy: number | null;
+	};
+	headline: string;
+	summary: string;
+	focusAreas: Array<{
+		kind: 'focus' | 'momentum' | 'habit';
+		title: string;
+		detail: string;
+		why: string;
+		apClass: string | null;
+		unit: string | null;
+	}>;
+	planRationale: string;
+};
+
 export type StudyTaskStatus = 'todo' | 'done';
 
 export type StudyTask = {
@@ -94,6 +123,7 @@ export type StudyPlanView = {
 	id: string;
 	startsOn: string;
 	tasks: StudyTask[];
+	insights?: StudyPlanInsights;
 	updatedAt: string;
 };
 

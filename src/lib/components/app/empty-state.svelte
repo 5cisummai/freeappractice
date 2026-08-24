@@ -6,13 +6,13 @@
 		description,
 		imageUrl,
 		imageAlt = '',
-		children
+		button
 	}: {
 		title: string;
 		description: string;
 		imageUrl: string;
 		imageAlt?: string;
-		children?: Snippet;
+		button?: Snippet;
 	} = $props();
 </script>
 
@@ -26,9 +26,9 @@
 	/>
 	<h2 class="font-medium text-muted-foreground">{title}</h2>
 	<p class="mt-1 text-sm text-muted-foreground">{description}</p>
-	{#if children}
+	{#if button}
 		<div class="mt-4">
-			{@render children()}
+			{@render button()}
 		</div>
 	{/if}
 </div>

@@ -1,6 +1,6 @@
 {
-  "id": "7962bc6c-2e75-4b4f-a0b4-6fdf32653571",
-  "prevId": "4c900cf2-a8f5-4b1f-b78e-26f8cfd636b3",
+  "id": "7f24f3e8-e786-4d5f-a90a-0255d6a4b566",
+  "prevId": "7962bc6c-2e75-4b4f-a0b4-6fdf32653571",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3246,6 +3246,12 @@
           "type": "date",
           "primaryKey": false,
           "notNull": true
+        },
+        "insights": {
+          "name": "insights",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

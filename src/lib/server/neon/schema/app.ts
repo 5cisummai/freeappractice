@@ -16,6 +16,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt, bytea } from './common';
+import type { StudyPlanInsights } from '$lib/super/types';
 
 export const appSchema = pgSchema('app');
 
@@ -488,6 +489,7 @@ export const studyPlans = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		startsOn: date('starts_on', { mode: 'date' }).notNull(),
+		insights: jsonb('insights').$type<StudyPlanInsights | null>(),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
