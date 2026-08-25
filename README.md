@@ -89,6 +89,17 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
    bun test:unit
    ```
 
+8. Run the deployed question-generation smoke test:
+
+   ```sh
+   SMOKE_BASE_URL=https://staging.example.com bun run smoke:question
+   ```
+
+   This checks the public practice page and the same `POST /api/question` path used by the
+   browser. It retries temporary pool-warming responses and verifies that the returned question
+   has a prompt, four A–D choices, a correct answer, and a question ID. Set `SMOKE_CLASS` and
+   `SMOKE_UNIT` when checking another supported course or unit.
+
 ### Useful scripts
 
 | Command                   | Purpose                                    |

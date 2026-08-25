@@ -10,6 +10,7 @@
 		"preview": "vite preview",
 		"test": "bun run test:unit",
 		"test:unit": "vitest run",
+		"smoke:question": "bun scripts/smoke-question.ts",
 		"quality": "bun scripts/question-quality.ts",
 		"quality:eval": "bun scripts/evaluate-question-quality-agent.ts",
 		"questions:preview": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/preview-question-batch.ts",
