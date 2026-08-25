@@ -2,8 +2,8 @@
 	import { onMount, untrack } from 'svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
-	import QuizSession from '$lib/components/practice/quiz-session.svelte';
 	import FrqCard from '$lib/components/questions/frq-card.svelte';
+	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import type { AnswerResult, TutorMode } from '$lib/question-bank/mcq/types';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
@@ -64,15 +64,12 @@
 	let presetQuestionId = $state(untrack(() => initial.presetQuestionId ?? ''));
 	let mode = $state<'mcq' | 'frq'>(untrack(() => initial.mode ?? 'mcq'));
 	let count = $state(10);
-	let quizGenerating = $state(false);
 	let practiceMode = $state<PracticeMode>('unlimited');
-	let quizRequestVersion = $state(0);
 	let expandedSelectorOpen = $state(false);
 	let isExpanded = $state(false);
 	let lastInitialRequestVersion = $state(untrack(() => initial.requestVersion ?? 0));
 
 	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);
-	const persistQuizHistory = $derived(quiz.persistHistory ?? true);
 	const allowFrq = $derived(capabilities.frqCourses?.includes(selectedClass) ?? false);
 	const tutorMode = $derived(capabilities.tutorMode ?? 'free');
 	const showFirstUseHints = $derived(capabilities.showFirstUseHints ?? false);
@@ -89,8 +86,7 @@
 	}
 
 	function handleSelectionChange(className: string, unit: string): void {
-		if (activeQuizMode) quizRequestVersion = 0;
-		else requestVersion = 0;
+		if (!activeQuizMode) requestVersion = 0;
 		selectedClass = className;
 		selectedUnit = unit;
 		onEvent?.({ type: 'selection-change', selectedClass: className, selectedUnit: unit });
@@ -99,7 +95,6 @@
 	function handleGenerate(): void {
 		if (selectedClass) captureGenerateClicked(selectedClass, selectedUnit);
 		if (activeQuizMode) count = Math.min(50, Math.max(1, Math.floor(count || 10)));
-		if (activeQuizMode) quizRequestVersion += 1;
 		else requestVersion += 1;
 		onEvent?.({ type: 'generate', selectedClass, selectedUnit });
 	}
@@ -147,14 +142,14 @@
 	use:portalToBody={isExpanded}
 	class={cn(
 		isExpanded
-			? 'fixed inset-0 z-40 flex h-dvh min-h-0 flex-col overflow-hidden bg-background/75 shadow-2xl backdrop-blur-md'
+			? 'fixed inset-0 z-50 flex h-dvh min-h-0 flex-col overflow-hidden bg-background'
 			: 'relative'
 	)}
 >
 	<div
 		class={cn(
 			isExpanded
-				? 'relative flex min-h-0 w-full flex-1 flex-col overflow-hidden p-4 sm:p-6'
+				? 'relative flex min-h-0 w-full flex-1 flex-col overflow-hidden'
 				: 'contents'
 		)}
 	>
@@ -203,7 +198,6 @@
 							showFirstUseHint={showFirstUseHints}
 							quizMode={activeQuizMode}
 							bind:count
-							generateDisabled={activeQuizMode && quizGenerating}
 							generateLabel={activeQuizMode ? 'Generate Quiz' : undefined}
 							onSelectionChange={handleSelectionChange}
 							onGenerate={handleGenerate}
@@ -249,22 +243,10 @@
 				</div>
 			{/if}
 			<div class={activeQuizMode ? 'contents' : 'hidden'} aria-hidden={!activeQuizMode}>
-				<QuizSession
-					{selectedClass}
-					{selectedUnit}
-					{unitRange}
-					{count}
-					requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
-					enabled={activeQuizMode}
-					expanded={isExpanded}
-					onExpand={toggleExpanded}
-					bind:controlsOpen={expandedSelectorOpen}
-					{practiceControls}
-					persistHistory={persistQuizHistory}
-					showCoachReview={tutorMode !== 'hidden'}
-					initialQuestions={sharedQuiz?.questions}
-					sharedSlug={sharedQuiz?.slug}
-					bind:isGenerating={quizGenerating}
+				<EmptyState
+					title="Graded quizzes are being rebuilt"
+					description="Use unlimited practice for now. A new quiz flow is on the way."
+					imageUrl="/illustrations/books.png"
 				/>
 			</div>
 			{#if showUnlimitedMcq}

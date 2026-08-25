@@ -13,37 +13,31 @@ import {
 	requestMcqQuestionById
 } from '$lib/question-bank/request.client';
 import type {
+	AddTextAnnotationInput,
 	AnswerResult,
 	GeneratedQuestion,
-	QuestionCardProps
+	OptionMarks,
+	QuestionCoreOpts,
+	QuestionFeedbackReason,
+	QuestionLoadReason,
+	TextAnnotation
 } from '$lib/question-bank/mcq/types';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
 
-export type QuestionCardSessionOpts = {
-	getSelectedClass: () => string;
-	getSelectedUnit: () => string;
-	getUnitRange: () => readonly number[] | undefined;
-	getRequestVersion: () => number;
-	getPresetQuestionId: () => string | undefined;
-	getQuestionNumber: () => string;
-	getQuizMode: () => boolean;
-	getQuizQuestion: () => GeneratedQuestion | null | undefined;
-	getQuizAnswer: () => AnswerResult | null | undefined;
-	getAutoShowExplanation: () => boolean;
-	getSelectedOption: () => string | null;
-	getMounted: () => boolean;
-	setSelectedOption: (value: string | null) => void;
-	onCheckAnswer?: QuestionCardProps['onCheckAnswer'];
-	onSkip?: QuestionCardProps['onSkip'];
-	onNotLearned?: QuestionCardProps['onNotLearned'];
-	onAnswered?: QuestionCardProps['onAnswered'];
-	onQuizNext?: QuestionCardProps['onQuizNext'];
-	onOptionSelected?: QuestionCardProps['onOptionSelected'];
-};
+function createAnnotationId(): string {
+	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+		return crypto.randomUUID();
+	}
+	return `ann-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
-export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
+function toggleId(ids: string[], id: string): string[] {
+	return ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id];
+}
+
+export function createQuestionCore(opts: QuestionCoreOpts) {
 	let hasCheckedAnswer = $state(false);
 	let checkedSelection = $state<string | null>(null);
 	let answerResult = $state<AnswerResult | null>(null);
@@ -59,10 +53,14 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	let currentQuestion = $state<GeneratedQuestion | null>(null);
 	let seenQuestionIds = $state<string[]>([]);
 	let questionFeedbackReason = $state<string | null>(null);
+	let struckOptionIds = $state<string[]>([]);
+	let highlightedOptionIds = $state<string[]>([]);
+	let textAnnotations = $state<TextAnnotation[]>([]);
 	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
 	let consumedPresetQuestionId = $state(false);
 
 	const effectiveQuestionNumber = $derived(opts.getQuestionNumber() || `${questionCount}`);
+	const selectedOption = $derived(opts.getSelectedOption());
 	const feedbackMessage = $derived.by(() => {
 		if (!hasCheckedAnswer || !answerResult || !currentQuestion?.correctAnswer) {
 			return statusMessage;
@@ -82,6 +80,10 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	);
 	const showWarmingState = $derived(isPoolWarming);
 	const showErrorState = $derived(!isLoading && questionLoadFailed && !isPoolWarming);
+	const optionMarks = $derived<OptionMarks>({
+		struckOptionIds: new Set(struckOptionIds),
+		highlightedOptionIds: new Set(highlightedOptionIds)
+	});
 
 	function clearWarmingRetryTimer(): void {
 		if (!warmingRetryTimer) return;
@@ -95,6 +97,12 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		seenQuestionIds = [...seenQuestionIds, questionId].slice(-MAX_SEEN_QUESTION_IDS);
 	}
 
+	function clearAnnotations(): void {
+		struckOptionIds = [];
+		highlightedOptionIds = [];
+		textAnnotations = [];
+	}
+
 	function resetInteractionState(clearSelection = true): void {
 		hasCheckedAnswer = false;
 		checkedSelection = null;
@@ -102,6 +110,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		showExplanation = false;
 		questionFeedbackReason = null;
 		startedAtMs = Date.now();
+		clearAnnotations();
 		if (clearSelection) opts.setSelectedOption(null);
 	}
 
@@ -119,7 +128,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 	}
 
 	async function loadQuestion(
-		reason: 'skip' | 'not-learned' | 'next' | 'retry' | undefined = undefined,
+		reason: QuestionLoadReason | undefined = undefined,
 		options: { isAutoWarmingRetry?: boolean } = {}
 	): Promise<void> {
 		if (isLoading) return;
@@ -154,13 +163,12 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 				? await requestMcqQuestionById(presetQuestionId)
 				: await requestMcqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
 			if (presetQuestionId) consumedPresetQuestionId = true;
-			const analytics = {
+			captureQuestionRequestSucceeded({
 				apClass: selectedClass,
 				unit: selectedUnit,
 				source: result.source,
 				latencyMs: result.latencyMs
-			};
-			captureQuestionRequestSucceeded(analytics);
+			});
 
 			if (result.exclusionsReset) {
 				seenQuestionIds = [];
@@ -214,10 +222,42 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		await loadQuestion('retry');
 	}
 
-	function handleOptionSelect(optionId: string | null): void {
+	function selectOption(optionId: string | null): void {
 		if (hasCheckedAnswer) return;
+		if (optionId !== null && struckOptionIds.includes(optionId)) return;
 		opts.setSelectedOption(optionId);
 		opts.onOptionSelected?.(optionId);
+	}
+
+	function toggleOptionStrike(optionId: string): void {
+		const nextStruck = toggleId(struckOptionIds, optionId);
+		struckOptionIds = nextStruck;
+		if (nextStruck.includes(optionId) && opts.getSelectedOption() === optionId) {
+			opts.setSelectedOption(null);
+		}
+	}
+
+	function toggleOptionHighlight(optionId: string): void {
+		highlightedOptionIds = toggleId(highlightedOptionIds, optionId);
+	}
+
+	function addTextAnnotation(input: AddTextAnnotationInput): TextAnnotation | null {
+		if (input.start < 0 || input.end <= input.start) return null;
+
+		const annotation: TextAnnotation = {
+			id: createAnnotationId(),
+			target: input.target,
+			start: input.start,
+			end: input.end,
+			style: input.style,
+			color: input.color
+		};
+		textAnnotations = [...textAnnotations, annotation];
+		return annotation;
+	}
+
+	function removeAnnotation(annotationId: string): void {
+		textAnnotations = textAnnotations.filter((annotation) => annotation.id !== annotationId);
 	}
 
 	function captureFirstAnswerAnalytics(
@@ -257,12 +297,12 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		});
 	}
 
-	function handleCheckAnswer(): void {
-		const selectedOption = opts.getSelectedOption();
-		if (!selectedOption) return;
-		opts.onCheckAnswer?.(selectedOption);
+	function checkAnswer(): void {
+		const currentSelection = opts.getSelectedOption();
+		if (!currentSelection) return;
+		opts.onCheckAnswer?.(currentSelection);
 
-		const result = buildAnswerResult(selectedOption);
+		const result = buildAnswerResult(currentSelection);
 		if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
 		const completeResult = result as AnswerResult & {
 			selectedAnswer: string;
@@ -284,7 +324,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		}
 	}
 
-	async function handleNextQuestion(): Promise<void> {
+	async function next(): Promise<void> {
 		if (opts.getQuizMode()) {
 			opts.onQuizNext?.();
 			return;
@@ -292,7 +332,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		await loadQuestion('next');
 	}
 
-	async function handleSkipQuestion(): Promise<void> {
+	async function skip(): Promise<void> {
 		opts.onSkip?.();
 		capturePostHogEvent('question_skipped', {
 			ap_class: opts.getSelectedClass(),
@@ -304,7 +344,7 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		await loadQuestion('skip');
 	}
 
-	async function handleNotLearnedQuestion(): Promise<void> {
+	async function notLearned(): Promise<void> {
 		opts.onNotLearned?.();
 		capturePostHogEvent('question_marked_not_learned', {
 			ap_class: opts.getSelectedClass(),
@@ -316,9 +356,11 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		await loadQuestion('not-learned');
 	}
 
-	function submitQuestionFeedback(
-		reason: 'answer_incorrect' | 'question_unclear' | 'explanation_unclear'
-	): void {
+	function setShowExplanation(value: boolean): void {
+		showExplanation = value;
+	}
+
+	function submitQuestionFeedback(reason: QuestionFeedbackReason): void {
 		if (!currentQuestion?.questionId || questionFeedbackReason) return;
 
 		questionFeedbackReason = reason;
@@ -386,8 +428,8 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		get showExplanation() {
 			return showExplanation;
 		},
-		set showExplanation(value: boolean) {
-			showExplanation = value;
+		get selectedOption() {
+			return selectedOption;
 		},
 		get startedAtMs() {
 			return startedAtMs;
@@ -431,19 +473,29 @@ export function createQuestionCardSession(opts: QuestionCardSessionOpts) {
 		get poolWarmingRetryAfterSeconds() {
 			return poolWarmingRetryAfterSeconds;
 		},
+		get optionMarks() {
+			return optionMarks;
+		},
+		get textAnnotations() {
+			return textAnnotations;
+		},
 		rememberSeenQuestion,
 		resetInteractionState,
 		buildAnswerResult,
 		loadQuestion,
 		retryWarmingLoad,
-		handleOptionSelect,
-		captureFirstAnswerAnalytics,
-		captureQuestionCompletedAnalytics,
-		handleCheckAnswer,
-		handleNextQuestion,
-		handleSkipQuestion,
-		handleNotLearnedQuestion,
+		selectOption,
+		checkAnswer,
+		next,
+		skip,
+		notLearned,
+		setShowExplanation,
 		submitQuestionFeedback,
+		toggleOptionStrike,
+		toggleOptionHighlight,
+		addTextAnnotation,
+		removeAnnotation,
+		clearAnnotations,
 		init,
 		destroy
 	};
