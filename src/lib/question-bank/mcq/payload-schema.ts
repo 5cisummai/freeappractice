@@ -6,7 +6,7 @@ const LETTERS = ['A', 'B', 'C', 'D'] as const;
 export const McqQuestionPayloadSchema = z.object({
 	apClass: z.string().trim().min(1),
 	unit: z.string().trim().min(1).default('all-units'),
-	mainTopic: z.string().trim().min(1).max(240),
+	mainTopic: z.string().trim().min(1),
 	topicsCovered: z.string().default(''),
 	question: z.string().min(1),
 	diagramSpec: z.record(z.string(), z.unknown()).nullable().default(null),
