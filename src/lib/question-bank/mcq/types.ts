@@ -36,9 +36,7 @@ export type OptionMarks = {
 };
 
 export type QuestionFeedbackReason =
-	| 'answer_incorrect'
-	| 'question_unclear'
-	| 'explanation_unclear';
+	'answer_incorrect' | 'question_unclear' | 'explanation_unclear';
 
 export type QuestionLoadReason = 'skip' | 'not-learned' | 'next' | 'retry';
 

@@ -72,16 +72,7 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
-
-      - name: Apply additive migrations
-        run: bun run db:apply
-        env:
-          DRIZZLE_MIGRATIONS_THROUGH: 0019_giant_wolverine
-
-      - name: Backfill question JSONB payloads
-        run: bun run db:backfill-question-jsonb
-
-      - name: Apply remaining migrations
+      - name: Apply database migrations
         run: bun run db:apply
 
   build:

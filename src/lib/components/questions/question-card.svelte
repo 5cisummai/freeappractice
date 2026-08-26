@@ -119,9 +119,7 @@
 			(core.currentQuestion?.hasStimulus || (autoDetectLongQuestion && isLongQuestion))
 	);
 	/** Fullscreen unlimited always uses two columns on desktop; otherwise long/stimulus. */
-	const useTwoColumn = $derived(
-		!isMobile.current && (expanded || effectiveTwoColumn)
-	);
+	const useTwoColumn = $derived(!isMobile.current && (expanded || effectiveTwoColumn));
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		isLongQuestion = measureLongQuestion({
@@ -324,246 +322,244 @@
 					in:fade={{ duration: 280, easing: quintOut }}
 					class={cn(expanded && 'flex min-h-0 flex-1 flex-col')}
 				>
-				<Card.Root
-					class={cn(
-						expanded
-							? 'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card py-6 shadow-lg ring-1 ring-foreground/10'
-							: isLandingPage
-								? 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0'
-								: 'relative overflow-visible bg-card pt-6 shadow-xs ring-1 ring-foreground/10',
-						className
-					)}
-				>
-					<Card.Content
-						class={cn('flex flex-col gap-6 pt-0 pb-0', expanded && 'min-h-0 flex-1')}
-					>
-						<div class="flex shrink-0 items-start justify-between gap-4">
-							<div>
-								<h2 class="mt-0.5 text-xl font-semibold">
-									Question {core.effectiveQuestionNumber}
-								</h2>
-							</div>
-							<div class="flex items-center gap-1">
-								{#if headerActions}
-									{@render headerActions()}
-								{/if}
-								{#if !quizMode}
-									<Button
-										variant="ghost"
-										size="icon"
-										class="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-										aria-label={expanded ? 'Exit fullscreen' : 'Enter fullscreen'}
-										onclick={() => (expanded = !expanded)}
-									>
-										{#if expanded}
-											<ArrowsMinimizeIcon class="size-4" />
-										{:else}
-											<ArrowsMaximizeIcon class="size-4" />
-										{/if}
-									</Button>
-								{/if}
-								{#if expanded && practiceControls}
-									<Popover.Trigger bind:ref={controlsTriggerRef}>
-										{#snippet child({ props })}
-											<Button
-												{...props}
-												variant="ghost"
-												size="icon"
-												class={cn(
-													'h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground',
-													controlsOpen && 'bg-muted/60 text-foreground'
-												)}
-												aria-label={controlsOpen
-													? 'Hide practice controls'
-													: 'Open practice controls'}
-												aria-expanded={controlsOpen}
-												aria-controls="practice-shell-controls"
-											>
-												<SlidersHorizontalIcon class="h-4 w-4" />
-											</Button>
-										{/snippet}
-									</Popover.Trigger>
-								{/if}
-							</div>
-						</div>
-
-						{#if core.currentQuestion?.diagramSpec && !useTwoColumn}
-							<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
-						{/if}
-
-						{#if useTwoColumn && core.currentQuestion?.hasStimulus}
-							<div
-								class={cn(
-									'overflow-hidden rounded-lg border border-border/70',
-									expanded ? 'min-h-0 flex-1' : 'h-88'
-								)}
-							>
-								<Resizable.PaneGroup direction="horizontal" class="h-full">
-									<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
-										<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
-											<p
-												class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-											>
-												{core.currentQuestion.leftPanel?.title ?? 'Stimulus'}
-											</p>
-											<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
-												{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
-													<AnnotatableRichText
-														text={paragraph}
-														target={{ kind: 'stimulus', paragraphIndex: i }}
-														annotations={core.textAnnotations}
-														disabled={core.hasCheckedAnswer}
-														onAddAnnotation={core.addTextAnnotation}
-														onRemoveAnnotation={core.removeAnnotation}
-													/>
-												{/each}
-											</div>
-											{#if core.currentQuestion.diagramSpec}
-												<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
-											{/if}
-										</div>
-									</Resizable.Pane>
-									<Resizable.Handle withHandle />
-									<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
-										<div class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 sm:p-5">
-											<div {@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}>
-												{@render promptBody()}
-											</div>
-											{@render mcqChoices(true)}
-										</div>
-									</Resizable.Pane>
-								</Resizable.PaneGroup>
-							</div>
-						{:else if useTwoColumn}
-							<div
-								class={cn(
-									'overflow-hidden rounded-lg border border-border/70',
-									expanded ? 'min-h-0 flex-1' : 'h-100'
-								)}
-							>
-								<Resizable.PaneGroup direction="horizontal" class="h-full">
-									<Resizable.Pane defaultSize={56} minSize={35} class="min-w-0">
-										<div
-											{@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}
-											class="h-full overflow-y-auto p-4 sm:p-5"
-										>
-											{#if core.currentQuestion?.diagramSpec}
-												<div class="mb-4">
-													<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
-												</div>
-											{/if}
-											{@render promptBody()}
-										</div>
-									</Resizable.Pane>
-									<Resizable.Handle withHandle />
-									<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
-										<div class="h-full overflow-y-auto p-4 sm:p-5">
-											{@render mcqChoices(true)}
-										</div>
-									</Resizable.Pane>
-								</Resizable.PaneGroup>
-							</div>
-						{:else}
-							{#if core.currentQuestion?.diagramSpec}
-								<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
-							{/if}
-							<div {@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}>
-								<AnnotatableRichText
-									text={core.currentQuestion?.prompt ?? ''}
-									target={{ kind: 'prompt', paragraphIndex: 0 }}
-									annotations={core.textAnnotations}
-									disabled={core.hasCheckedAnswer}
-									onAddAnnotation={core.addTextAnnotation}
-									onRemoveAnnotation={core.removeAnnotation}
-									class="font-serif text-base leading-7 text-foreground/90"
-								/>
-							</div>
-							{@render mcqChoices()}
-						{/if}
-					</Card.Content>
-
-					<Card.Footer
+					<Card.Root
 						class={cn(
-							'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
-							expanded && 'shrink-0 border-t'
+							expanded
+								? 'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card py-6 shadow-lg ring-1 ring-foreground/10'
+								: isLandingPage
+									? 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0'
+									: 'relative overflow-visible bg-card pt-6 shadow-xs ring-1 ring-foreground/10',
+							className
 						)}
 					>
-						<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-							{#if showUtilityActions && !core.hasCheckedAnswer}
-								<div class="flex flex-wrap gap-2">
-									<Button
-										variant="ghost"
-										size="sm"
-										class="text-muted-foreground hover:text-foreground"
-										onclick={() => void core.skip()}
-										disabled={core.isLoading}>{skipLabel}</Button
-									>
-									<Button
-										variant="ghost"
-										size="sm"
-										class="text-muted-foreground hover:text-foreground"
-										onclick={() => void core.notLearned()}
-										disabled={core.isLoading}
-									>
-										{notLearnedLabel}
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										class="text-muted-foreground hover:text-foreground"
-										onclick={handleReportBugAction}
-									>
-										{reportBugLabel}
-									</Button>
+						<Card.Content class={cn('flex flex-col gap-6 pt-0 pb-0', expanded && 'min-h-0 flex-1')}>
+							<div class="flex shrink-0 items-start justify-between gap-4">
+								<div>
+									<h2 class="mt-0.5 text-xl font-semibold">
+										Question {core.effectiveQuestionNumber}
+									</h2>
 								</div>
-							{/if}
-							{#if !quizMode && core.hasCheckedAnswer}
-								<div class="min-w-0 space-y-1">
-									<p class="text-sm text-muted-foreground">{core.feedbackMessage}</p>
+								<div class="flex items-center gap-1">
+									{#if headerActions}
+										{@render headerActions()}
+									{/if}
+									{#if !quizMode}
+										<Button
+											variant="ghost"
+											size="icon"
+											class="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+											aria-label={expanded ? 'Exit fullscreen' : 'Enter fullscreen'}
+											onclick={() => (expanded = !expanded)}
+										>
+											{#if expanded}
+												<ArrowsMinimizeIcon class="size-4" />
+											{:else}
+												<ArrowsMaximizeIcon class="size-4" />
+											{/if}
+										</Button>
+									{/if}
+									{#if expanded && practiceControls}
+										<Popover.Trigger bind:ref={controlsTriggerRef}>
+											{#snippet child({ props })}
+												<Button
+													{...props}
+													variant="ghost"
+													size="icon"
+													class={cn(
+														'h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground',
+														controlsOpen && 'bg-muted/60 text-foreground'
+													)}
+													aria-label={controlsOpen
+														? 'Hide practice controls'
+														: 'Open practice controls'}
+													aria-expanded={controlsOpen}
+													aria-controls="practice-shell-controls"
+												>
+													<SlidersHorizontalIcon class="h-4 w-4" />
+												</Button>
+											{/snippet}
+										</Popover.Trigger>
+									{/if}
 								</div>
-							{/if}
-						</div>
-						{#if quizNavigation}
-							<div class="flex justify-center sm:flex-1">
-								{@render quizNavigation()}
 							</div>
-						{/if}
-						<div class="flex gap-2">
-							{#if !quizMode && core.hasCheckedAnswer && core.currentQuestion?.explanation}
-								<Button variant="outline" onclick={openExplanation}>
-									{showExplanationLabel}
-								</Button>
-							{/if}
-							<Button
-								variant="outline"
-								onclick={() => void core.next()}
-								disabled={core.isLoading || (!quizMode && !core.hasCheckedAnswer) || nextDisabled}
-							>
-								{nextLabel}
-							</Button>
-							{#if !core.hasCheckedAnswer && !quizMode}
-								<Button disabled={!selectedOption} onclick={() => core.checkAnswer()}
-									>{checkLabel}</Button
-								>
-							{/if}
-						</div>
-					</Card.Footer>
-				</Card.Root>
-			</div>
 
-			{#if expanded && practiceControls}
-				<Popover.Content
-					id="practice-shell-controls"
-					customAnchor={controlsTriggerRef}
-					align="end"
-					side="bottom"
-					sideOffset={8}
-					class="z-[100] max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto bg-popover/95 p-4 backdrop-blur-xl"
-				>
-					{@render practiceControls()}
-				</Popover.Content>
-			{/if}
-		</div>
+							{#if core.currentQuestion?.diagramSpec && !useTwoColumn}
+								<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
+							{/if}
+
+							{#if useTwoColumn && core.currentQuestion?.hasStimulus}
+								<div
+									class={cn(
+										'overflow-hidden rounded-lg border border-border/70',
+										expanded ? 'min-h-0 flex-1' : 'h-88'
+									)}
+								>
+									<Resizable.PaneGroup direction="horizontal" class="h-full">
+										<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
+											<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
+												<p
+													class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+												>
+													{core.currentQuestion.leftPanel?.title ?? 'Stimulus'}
+												</p>
+												<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
+													{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
+														<AnnotatableRichText
+															text={paragraph}
+															target={{ kind: 'stimulus', paragraphIndex: i }}
+															annotations={core.textAnnotations}
+															disabled={core.hasCheckedAnswer}
+															onAddAnnotation={core.addTextAnnotation}
+															onRemoveAnnotation={core.removeAnnotation}
+														/>
+													{/each}
+												</div>
+												{#if core.currentQuestion.diagramSpec}
+													<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
+												{/if}
+											</div>
+										</Resizable.Pane>
+										<Resizable.Handle withHandle />
+										<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
+											<div class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 sm:p-5">
+												<div {@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}>
+													{@render promptBody()}
+												</div>
+												{@render mcqChoices(true)}
+											</div>
+										</Resizable.Pane>
+									</Resizable.PaneGroup>
+								</div>
+							{:else if useTwoColumn}
+								<div
+									class={cn(
+										'overflow-hidden rounded-lg border border-border/70',
+										expanded ? 'min-h-0 flex-1' : 'h-100'
+									)}
+								>
+									<Resizable.PaneGroup direction="horizontal" class="h-full">
+										<Resizable.Pane defaultSize={56} minSize={35} class="min-w-0">
+											<div
+												{@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}
+												class="h-full overflow-y-auto p-4 sm:p-5"
+											>
+												{#if core.currentQuestion?.diagramSpec}
+													<div class="mb-4">
+														<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
+													</div>
+												{/if}
+												{@render promptBody()}
+											</div>
+										</Resizable.Pane>
+										<Resizable.Handle withHandle />
+										<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
+											<div class="h-full overflow-y-auto p-4 sm:p-5">
+												{@render mcqChoices(true)}
+											</div>
+										</Resizable.Pane>
+									</Resizable.PaneGroup>
+								</div>
+							{:else}
+								{#if core.currentQuestion?.diagramSpec}
+									<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
+								{/if}
+								<div {@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}>
+									<AnnotatableRichText
+										text={core.currentQuestion?.prompt ?? ''}
+										target={{ kind: 'prompt', paragraphIndex: 0 }}
+										annotations={core.textAnnotations}
+										disabled={core.hasCheckedAnswer}
+										onAddAnnotation={core.addTextAnnotation}
+										onRemoveAnnotation={core.removeAnnotation}
+										class="font-serif text-base leading-7 text-foreground/90"
+									/>
+								</div>
+								{@render mcqChoices()}
+							{/if}
+						</Card.Content>
+
+						<Card.Footer
+							class={cn(
+								'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+								expanded && 'shrink-0 border-t'
+							)}
+						>
+							<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+								{#if showUtilityActions && !core.hasCheckedAnswer}
+									<div class="flex flex-wrap gap-2">
+										<Button
+											variant="ghost"
+											size="sm"
+											class="text-muted-foreground hover:text-foreground"
+											onclick={() => void core.skip()}
+											disabled={core.isLoading}>{skipLabel}</Button
+										>
+										<Button
+											variant="ghost"
+											size="sm"
+											class="text-muted-foreground hover:text-foreground"
+											onclick={() => void core.notLearned()}
+											disabled={core.isLoading}
+										>
+											{notLearnedLabel}
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											class="text-muted-foreground hover:text-foreground"
+											onclick={handleReportBugAction}
+										>
+											{reportBugLabel}
+										</Button>
+									</div>
+								{/if}
+								{#if !quizMode && core.hasCheckedAnswer}
+									<div class="min-w-0 space-y-1">
+										<p class="text-sm text-muted-foreground">{core.feedbackMessage}</p>
+									</div>
+								{/if}
+							</div>
+							{#if quizNavigation}
+								<div class="flex justify-center sm:flex-1">
+									{@render quizNavigation()}
+								</div>
+							{/if}
+							<div class="flex gap-2">
+								{#if !quizMode && core.hasCheckedAnswer && core.currentQuestion?.explanation}
+									<Button variant="outline" onclick={openExplanation}>
+										{showExplanationLabel}
+									</Button>
+								{/if}
+								<Button
+									variant="outline"
+									onclick={() => void core.next()}
+									disabled={core.isLoading || (!quizMode && !core.hasCheckedAnswer) || nextDisabled}
+								>
+									{nextLabel}
+								</Button>
+								{#if !core.hasCheckedAnswer && !quizMode}
+									<Button disabled={!selectedOption} onclick={() => core.checkAnswer()}
+										>{checkLabel}</Button
+									>
+								{/if}
+							</div>
+						</Card.Footer>
+					</Card.Root>
+				</div>
+
+				{#if expanded && practiceControls}
+					<Popover.Content
+						id="practice-shell-controls"
+						customAnchor={controlsTriggerRef}
+						align="end"
+						side="bottom"
+						sideOffset={8}
+						class="z-[100] max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-y-auto bg-popover/95 p-4 backdrop-blur-xl"
+					>
+						{@render practiceControls()}
+					</Popover.Content>
+				{/if}
+			</div>
 		</div>
 	</Popover.Root>
 
@@ -598,10 +594,7 @@
 	/>
 
 	{#if !quizMode && core.currentQuestion?.explanation}
-		<Dialog.Root
-			open={core.showExplanation}
-			onOpenChange={(open) => core.setShowExplanation(open)}
-		>
+		<Dialog.Root open={core.showExplanation} onOpenChange={(open) => core.setShowExplanation(open)}>
 			<Dialog.Content
 				class="max-h-[min(85vh,40rem)] w-full max-w-2xl gap-0 overflow-y-auto sm:max-w-2xl"
 				showCloseButton={true}
@@ -612,13 +605,10 @@
 							? 'Correct!'
 							: 'Review Explanation'}
 					</Dialog.Title>
-					<Dialog.Description
-						class={core.currentQuestion.correctAnswer ? undefined : 'sr-only'}
-					>
+					<Dialog.Description class={core.currentQuestion.correctAnswer ? undefined : 'sr-only'}>
 						{#if core.currentQuestion.correctAnswer}
 							Correct answer:
-							<span class="font-semibold text-foreground"
-								>{core.currentQuestion.correctAnswer}</span
+							<span class="font-semibold text-foreground">{core.currentQuestion.correctAnswer}</span
 							>
 						{:else}
 							Detailed explanation for this question.

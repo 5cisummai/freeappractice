@@ -4,12 +4,12 @@ Feature-specific UI lives in named subfolders. Shared primitives live under `ui/
 
 ## App features
 
-| Folder       | Purpose                                          | Key files                                                                                                                                                         |
-| ------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Folder       | Purpose                                          | Key files                                                                                                                                                                                                |
+| ------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `questions/` | Question practice UI — card and selection        | `question-card.svelte`, `full-question.svelte`, `question-core.svelte.ts`, `exam-core.svelte.ts`, `question-selector.svelte`, `mcq-answer-choices.svelte`, `frq-card.svelte`, `bug-report-dialog.svelte` |
-| `practice/`  | Practice chrome + public landing pages           | `practice-shell.svelte` (MCQ/FRQ/quiz orchestrator), `quiz-session.svelte`, `practice-landing.svelte`, `practice-breadcrumbs.svelte`, `practice-hub-nav.svelte` |
-| `history/`   | Question attempt history tables and detail sheet | `history-data-table.svelte`, `history-detail-sheet.svelte`, `history-columns.ts`                                                                                  |
-| `admin/`     | Admin dashboard tables and cache UI              | `admin-users-data-table.svelte`, `admin-cache-dashboard.svelte`                                                                                                   |
+| `practice/`  | Practice chrome + public landing pages           | `practice-shell.svelte` (MCQ/FRQ/quiz orchestrator), `quiz-session.svelte`, `practice-landing.svelte`, `practice-breadcrumbs.svelte`, `practice-hub-nav.svelte`                                          |
+| `history/`   | Question attempt history tables and detail sheet | `history-data-table.svelte`, `history-detail-sheet.svelte`, `history-columns.ts`                                                                                                                         |
+| `admin/`     | Admin dashboard tables and cache UI              | `admin-users-data-table.svelte`, `admin-cache-dashboard.svelte`                                                                                                                                          |
 
 ## Shared components
 

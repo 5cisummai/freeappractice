@@ -93,9 +93,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			accumulatedPauseMs + (isPaused && pausedAtMs !== null ? timerNowMs - pausedAtMs : 0);
 		return Math.max(0, timerNowMs - startedAtMs - pauseMs);
 	});
-	const remainingMs = $derived(
-		timeLimitMs === null ? null : Math.max(0, timeLimitMs - elapsedMs)
-	);
+	const remainingMs = $derived(timeLimitMs === null ? null : Math.max(0, timeLimitMs - elapsedMs));
 	const isExpired = $derived(timeLimitMs !== null && remainingMs === 0);
 	const navItems = $derived.by((): ExamNavItem[] =>
 		Array.from({ length: requestedCount }, (_, index) => ({

@@ -174,6 +174,8 @@ export function applyAnnotationsToDom(
 export function findAnnotationIdFromNode(node: Node | null): string | null {
 	if (!node) return null;
 	const element =
-		node instanceof Element ? node.closest(`[${ANNOTATION_ID_ATTR}]`) : node.parentElement?.closest(`[${ANNOTATION_ID_ATTR}]`);
+		node instanceof Element
+			? node.closest(`[${ANNOTATION_ID_ATTR}]`)
+			: node.parentElement?.closest(`[${ANNOTATION_ID_ATTR}]`);
 	return element?.getAttribute(ANNOTATION_ID_ATTR) ?? null;
 }
