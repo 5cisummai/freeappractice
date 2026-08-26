@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pre-release Checks"
+  short_description: "Run release gates and open a PR"
+  default_prompt: "Use $pre-release-checks to prepare this release and open a PR to main."
