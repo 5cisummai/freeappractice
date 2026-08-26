@@ -48,10 +48,18 @@
 		return node?.querySelector<HTMLElement>('.rich-text') ?? node;
 	}
 
-	function syncAnnotations(): void {
-		const root = richTextRoot(contentRoot);
-		if (!root) return;
-		applyAnnotationsToDom(root, targetAnnotations);
+	function annotateContent(textValue: string, annotations: readonly TextAnnotation[]) {
+		void textValue;
+		return (node: HTMLElement) => {
+			contentRoot = node;
+			applyAnnotationsToDom(richTextRoot(node) ?? node, annotations);
+			return () => {
+				if (contentRoot === node) {
+					contentRoot = null;
+					clearSelectionUi();
+				}
+			};
+		};
 	}
 
 	function clearSelectionUi(): void {
@@ -59,14 +67,8 @@
 		pendingSelection = null;
 	}
 
-	function handleMouseUp(event: MouseEvent): void {
-		if (!canAnnotate || !contentRoot) return;
-
-		const annotationId = findAnnotationIdFromNode(event.target as Node);
-		if (annotationId && onRemoveAnnotation) {
-			event.stopPropagation();
-			onRemoveAnnotation(annotationId);
-			window.getSelection()?.removeAllRanges();
+	function showSelectionToolbar(): void {
+		if (!canAnnotate || !contentRoot) {
 			clearSelectionUi();
 			return;
 		}
@@ -92,8 +94,28 @@
 		};
 	}
 
-	function highlightSelection(): void {
-		if (!pendingSelection || !onAddAnnotation) return;
+	function handlePointerUp(event: PointerEvent): void {
+		if (!canAnnotate || !contentRoot) return;
+
+		const annotationId = findAnnotationIdFromNode(event.target as Node);
+		if (annotationId && onRemoveAnnotation) {
+			event.stopPropagation();
+			onRemoveAnnotation(annotationId);
+			window.getSelection()?.removeAllRanges();
+			clearSelectionUi();
+			return;
+		}
+
+		showSelectionToolbar();
+	}
+
+	function handleSelectionChange(): void {
+		showSelectionToolbar();
+	}
+
+	function highlightSelection(event: MouseEvent): void {
+		if (!canAnnotate || !pendingSelection || !onAddAnnotation) return;
+		event.stopPropagation();
 
 		onAddAnnotation({
 			target,
@@ -111,23 +133,17 @@
 			clearSelectionUi();
 		}
 	}
-
-	$effect(() => {
-		void text;
-		void targetAnnotations;
-		queueMicrotask(() => syncAnnotations());
-	});
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+<svelte:document onselectionchange={handleSelectionChange} />
 
 <div class="relative">
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
-		bind:this={contentRoot}
+		{@attach annotateContent(text, targetAnnotations)}
 		role="group"
 		class={cn(canAnnotate && 'cursor-text select-text', className)}
-		onmouseup={handleMouseUp}
+		onpointerup={handlePointerUp}
 	>
 		<RichText {text} {inline} {blocks} />
 	</div>
@@ -140,7 +156,14 @@
 			role="toolbar"
 			aria-label="Text highlight tools"
 		>
-			<Button type="button" variant="ghost" size="sm" class="h-8 gap-1.5 px-2.5" onclick={highlightSelection}>
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				class="h-8 gap-1.5 px-2.5"
+				data-text-annotation-control
+				onclick={highlightSelection}
+			>
 				<HighlighterIcon class="size-4 text-amber-600 dark:text-amber-400" />
 				Highlight
 			</Button>

@@ -155,9 +155,7 @@
 			missedSummary.length
 				? `Missed questions:\n${missedSummary.join('\n')}`
 				: 'I did not miss any questions.',
-			unansweredPositions.length
-				? `Unanswered positions: ${unansweredPositions.join(', ')}.`
-				: '',
+			unansweredPositions.length ? `Unanswered positions: ${unansweredPositions.join(', ')}.` : '',
 			'Use read_quiz_attempt with the Quiz ID and the missed or unanswered question positions to inspect the canonical questions. Help me identify the concepts I should review and give me a short next-step plan.'
 		]
 			.filter(Boolean)
@@ -281,7 +279,11 @@
 				timeTakenMs: item.timeTakenMs
 			}))
 		};
-		if (savePendingSharedQuizRun(run)) pendingClaimSaved = true;
+		if (savePendingSharedQuizRun(run)) {
+			pendingClaimSaved = true;
+		} else {
+			historyError = 'This quiz could not be saved. Please try again after signing up.';
+		}
 	}
 
 	async function ensureShareUrl(attachToGroup: boolean): Promise<string> {
@@ -320,9 +322,7 @@
 					apClass: selectedClass,
 					unit: selectedUnit || 'All Units',
 					questionIds,
-					...(attachToGroup && groupOrganizationId
-						? { organizationId: groupOrganizationId }
-						: {})
+					...(attachToGroup && groupOrganizationId ? { organizationId: groupOrganizationId } : {})
 				})
 			});
 			const payload = await readJsonOrNull<{
@@ -373,6 +373,9 @@
 			...struckByQuestionId,
 			[currentQuestionId]: next
 		};
+		if (next.includes(optionId) && exam.currentDraft === optionId) {
+			exam.setDraftCurrent(null);
+		}
 	}
 
 	function addTextAnnotation(input: AddTextAnnotationInput): void {
@@ -613,35 +616,33 @@
 		</div>
 	{/if}
 
-	{#key `${exam.currentIndex}:${exam.currentQuestion.questionId ?? exam.currentQuestion.prompt}`}
-		<FullQuestion
-			question={exam.currentQuestion}
-			questionNumber={exam.currentIndex + 1}
-			totalQuestions={exam.requestedCount}
-			title={quizTitle}
-			selectedOption={exam.currentDraft}
-			flagged={currentFlagged}
-			struckOptionIds={currentStruck}
-			textAnnotations={currentAnnotations}
-			onAddTextAnnotation={addTextAnnotation}
-			onRemoveTextAnnotation={removeTextAnnotation}
-			navItems={exam.navItems}
-			elapsedMs={exam.elapsedMs}
-			isLastQuestion={exam.isLastQuestion}
-			nextDisabled={exam.isLastQuestion ? !exam.canFinish : !exam.nextQuestionReady}
-			prevDisabled={exam.currentIndex === 0}
-			nextActionLabel={nextLabel}
-			onSelect={(id) => exam.setDraftCurrent(id)}
-			onToggleFlag={() => exam.toggleFlag()}
-			onToggleStrike={toggleStrike}
-			onPrev={() => exam.prev()}
-			onNext={() => exam.next()}
-			onGoTo={(index) => exam.goTo(index)}
-			onEnterReview={() => exam.enterReview()}
-			reviewPageDisabled={!exam.canFinish}
-			onClose={requestExit}
-		/>
-	{/key}
+	<FullQuestion
+		question={exam.currentQuestion}
+		questionNumber={exam.currentIndex + 1}
+		totalQuestions={exam.requestedCount}
+		title={quizTitle}
+		selectedOption={exam.currentDraft}
+		flagged={currentFlagged}
+		struckOptionIds={currentStruck}
+		textAnnotations={currentAnnotations}
+		onAddTextAnnotation={addTextAnnotation}
+		onRemoveTextAnnotation={removeTextAnnotation}
+		navItems={exam.navItems}
+		elapsedMs={exam.elapsedMs}
+		isLastQuestion={exam.isLastQuestion}
+		nextDisabled={exam.isLastQuestion ? !exam.canFinish : !exam.nextQuestionReady}
+		prevDisabled={exam.currentIndex === 0}
+		nextActionLabel={nextLabel}
+		onSelect={(id) => exam.setDraftCurrent(id)}
+		onToggleFlag={() => exam.toggleFlag()}
+		onToggleStrike={toggleStrike}
+		onPrev={() => exam.prev()}
+		onNext={() => exam.next()}
+		onGoTo={(index) => exam.goTo(index)}
+		onEnterReview={() => exam.enterReview()}
+		reviewPageDisabled={!exam.canFinish}
+		onClose={requestExit}
+	/>
 {/if}
 
 <AlertDialog.Root bind:open={exitConfirmOpen}>

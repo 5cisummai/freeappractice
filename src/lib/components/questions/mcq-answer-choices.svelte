@@ -1,5 +1,9 @@
 <script lang="ts">
-	import type { AddTextAnnotationInput, QuestionOption, TextAnnotation } from '$lib/question-bank/mcq/types';
+	import type {
+		AddTextAnnotationInput,
+		QuestionOption,
+		TextAnnotation
+	} from '$lib/question-bank/mcq/types';
 	import AnnotatableRichText from '$lib/components/questions/annotatable-rich-text.svelte';
 	import { ANNOTATION_ID_ATTR } from '$lib/components/questions/text-annotation-dom.js';
 	import { cn } from '$lib/utils.js';
@@ -47,6 +51,12 @@
 			? struckOptionIds
 			: new Set(Array.isArray(struckOptionIds) ? struckOptionIds : [])
 	);
+	const firstAvailableOptionId = $derived(
+		options.find((option) => !struckSet.has(option.id))?.id ?? options[0]?.id ?? null
+	);
+	const focusOptionId = $derived(
+		selectedOption && !struckSet.has(selectedOption) ? selectedOption : firstAvailableOptionId
+	);
 
 	function isStruck(optionId: string): boolean {
 		return struckSet.has(optionId);
@@ -63,14 +73,43 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent, optionId: string): void {
+		if (event.target instanceof Element && event.target.closest('[data-text-annotation-control]'))
+			return;
+
 		if (event.key === ' ' || event.key === 'Enter') {
 			event.preventDefault();
 			handleSelect(optionId);
+			return;
 		}
+
+		if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft'].includes(event.key)) return;
+		if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+		const currentIndex = options.findIndex((option) => option.id === optionId);
+		if (currentIndex < 0 || hasCheckedAnswer) return;
+		const direction = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1;
+		const availableIndexes = options
+			.map((option, index) => (eliminatorActive || !isStruck(option.id) ? index : -1))
+			.filter((index) => index >= 0);
+		if (availableIndexes.length === 0) return;
+		const currentAvailableIndex = availableIndexes.indexOf(currentIndex);
+		const nextAvailableIndex =
+			(currentAvailableIndex + direction + availableIndexes.length) % availableIndexes.length;
+		const nextOptionId = options[availableIndexes[nextAvailableIndex]]?.id;
+		if (!nextOptionId) return;
+		event.preventDefault();
+		const groupElement =
+			event.currentTarget instanceof HTMLElement
+				? event.currentTarget.closest<HTMLElement>('[role="radiogroup"]')
+				: null;
+		Array.from(groupElement?.querySelectorAll<HTMLElement>('[data-option-id]') ?? [])
+			.find((element) => element.dataset.optionId === nextOptionId)
+			?.focus();
+		if (!eliminatorActive) onSelect(nextOptionId);
 	}
 
 	function handleChoiceClick(optionId: string, event: MouseEvent): void {
 		const target = event.target;
+		if (target instanceof Element && target.closest('[data-text-annotation-control]')) return;
 		if (target instanceof Element && target.closest(`[${ANNOTATION_ID_ATTR}]`)) return;
 		const selection = window.getSelection();
 		if (selection?.type === 'Range' && selection.toString().length > 0) return;
@@ -104,10 +143,15 @@
 				role="radio"
 				aria-checked={selected}
 				aria-disabled={(!eliminatorActive && struck) || hasCheckedAnswer}
-				tabindex={(!eliminatorActive && struck) || (hasCheckedAnswer && !showFeedback) ? -1 : 0}
+				tabindex={(!eliminatorActive && struck) || hasCheckedAnswer
+					? -1
+					: option.id === focusOptionId
+						? 0
+						: -1}
+				data-option-id={option.id}
 				class={cn(
 					'flex min-w-0 flex-1 items-center gap-2.5 border text-left transition-colors',
-					'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 focus-visible:outline-none',
+					'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
 					isExam
 						? 'rounded-lg border px-3 py-2.5'
 						: cn('rounded-md border', compact ? 'px-2.5 py-2' : 'px-3 py-2.5'),
@@ -133,7 +177,7 @@
 			>
 				<span
 					class={cn(
-						'flex shrink-0 select-none items-center justify-center rounded-full border font-sans text-xs font-semibold tabular-nums',
+						'flex shrink-0 items-center justify-center rounded-full border font-sans text-xs font-semibold tabular-nums select-none',
 						isExam ? 'size-7' : compact ? 'size-6' : 'size-7',
 						struck && 'line-through opacity-70',
 						tone === 'selected' && 'border-primary bg-primary text-primary-foreground',
@@ -151,7 +195,11 @@
 				<span
 					class={cn(
 						'min-w-0 flex-1 font-serif text-foreground',
-						isExam ? 'text-sm leading-6' : compact ? 'text-sm leading-5' : 'text-[0.95rem] leading-6',
+						isExam
+							? 'text-sm leading-6'
+							: compact
+								? 'text-sm leading-5'
+								: 'text-[0.95rem] leading-6',
 						struck && 'text-muted-foreground line-through'
 					)}
 				>

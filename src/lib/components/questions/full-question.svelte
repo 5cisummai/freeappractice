@@ -1,5 +1,11 @@
 <script lang="ts">
-	import type { AddTextAnnotationInput, ExamNavItem, GeneratedQuestion, TextAnnotation } from '$lib/question-bank/mcq/types';
+	import type {
+		AddTextAnnotationInput,
+		ExamNavItem,
+		GeneratedQuestion,
+		TextAnnotation
+	} from '$lib/question-bank/mcq/types';
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte.js';
 	import AnnotatableRichText from '$lib/components/questions/annotatable-rich-text.svelte';
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
@@ -102,8 +108,11 @@
 
 	let menuOpen = $state(false);
 	let eliminatorActive = $state(false);
+	const isMobile = new IsMobile();
 	const isReviewStage = $derived(stage === 'review');
-	const showSplit = $derived(!isReviewStage && Boolean(question.hasStimulus && question.leftPanel));
+	const showSplit = $derived(
+		!isReviewStage && !isMobile.current && Boolean(question.hasStimulus && question.leftPanel)
+	);
 	const displayNumber = $derived(Number(questionNumber));
 	const currentIndex = $derived(
 		Number.isFinite(displayNumber) ? Math.max(0, displayNumber - 1) : 0
@@ -152,7 +161,6 @@
 	}
 
 	function goTo(index: number): void {
-		menuOpen = false;
 		onGoTo?.(index);
 	}
 
@@ -160,9 +168,63 @@
 		menuOpen = false;
 		onEnterReview?.();
 	}
+
+	function trapFocus(node: HTMLElement): () => void {
+		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		const getFocusable = () =>
+			Array.from(
+				node.querySelectorAll<HTMLElement>(
+					'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+				)
+			).filter((element) => !element.hasAttribute('disabled') && element.tabIndex !== -1);
+
+		function handleKeydown(event: KeyboardEvent): void {
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				onClose?.();
+				return;
+			}
+			if (event.key !== 'Tab') return;
+
+			const focusable = getFocusable();
+			if (focusable.length === 0) {
+				event.preventDefault();
+				node.focus();
+				return;
+			}
+
+			const first = focusable[0];
+			const last = focusable.at(-1);
+			const active = document.activeElement;
+			if (event.shiftKey && (active === first || active === node)) {
+				event.preventDefault();
+				last?.focus();
+			} else if (!event.shiftKey && active === last) {
+				event.preventDefault();
+				first.focus();
+			}
+		}
+
+		node.addEventListener('keydown', handleKeydown);
+		return () => {
+			node.removeEventListener('keydown', handleKeydown);
+			if (opener?.isConnected) {
+				requestAnimationFrame(() => opener.focus());
+			}
+		};
+	}
+
+	function focusQuestionOnChange(questionKey: string) {
+		void questionKey;
+		return (node: HTMLElement) => {
+			eliminatorActive = false;
+			const frame = requestAnimationFrame(() => node.focus());
+			return () => cancelAnimationFrame(frame);
+		};
+	}
 </script>
 
-{#snippet stimulusPane()}
+{#snippet stimulusContent()}
 	{#if question.leftPanel}
 		<p class="mb-3 text-sm font-semibold text-foreground">
 			{question.leftPanel.title ?? 'Passage'}
@@ -181,11 +243,15 @@
 				/>
 			{/each}
 		</div>
-		{#if question.diagramSpec}
-			<div class="mt-4">
-				<ExamfigDiagram spec={question.diagramSpec} />
-			</div>
-		{/if}
+	{/if}
+{/snippet}
+
+{#snippet stimulusPane()}
+	{@render stimulusContent()}
+	{#if question.diagramSpec}
+		<div class="mt-4">
+			<ExamfigDiagram spec={question.diagramSpec} />
+		</div>
 	{/if}
 {/snippet}
 
@@ -245,6 +311,11 @@
 	{@render questionChrome()}
 
 	<div class="mt-4 space-y-4">
+		{#if !showSplit && question.leftPanel}
+			<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
+				{@render stimulusContent()}
+			</div>
+		{/if}
 		{#if question.rightPanel}
 			{#if question.rightPanel.title}
 				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -292,8 +363,8 @@
 			{selectedOption}
 			{struckOptionIds}
 			{textAnnotations}
-			onAddTextAnnotation={onAddTextAnnotation}
-			onRemoveTextAnnotation={onRemoveTextAnnotation}
+			{onAddTextAnnotation}
+			{onRemoveTextAnnotation}
 			annotationsDisabled={!canAnnotate}
 			{hasCheckedAnswer}
 			{checkedSelection}
@@ -401,12 +472,15 @@
 <Tooltip.Provider>
 	<div
 		{@attach portalToBody()}
+		{@attach trapFocus}
+		{@attach focusQuestionOnChange(question.questionId ?? question.prompt)}
 		class={cn(
 			'fixed inset-0 z-40 flex h-dvh w-screen flex-col bg-background text-foreground',
 			className
 		)}
 		role="dialog"
 		aria-modal="true"
+		tabindex="-1"
 		aria-label={isReviewStage ? 'Review your answers' : (title ?? `Question ${questionNumber}`)}
 	>
 		<header
@@ -432,7 +506,12 @@
 
 			<div class="flex items-center justify-end">
 				{#if onClose}
-					<Button variant="ghost" size="icon-sm" aria-label="Leave quiz" onclick={() => onClose?.()}>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						aria-label="Leave quiz"
+						onclick={() => onClose?.()}
+					>
 						<XIcon class="size-4" />
 					</Button>
 				{/if}
@@ -489,9 +568,9 @@
 							align="center"
 							side="top"
 							sideOffset={10}
-							class="w-[min(42rem,calc(100vw-2rem))] max-h-[calc(100vh-2rem)] gap-0 overflow-y-auto p-0"
+							class="max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] gap-0 overflow-y-auto p-0"
 						>
-							<Popover.Header class="relative border-b border-border px-4 py-3 text-center">
+							<Popover.Header class="relative border-none px-4 py-3 text-center">
 								<Popover.Title class="text-base font-semibold">
 									{title ?? 'Quiz'}
 								</Popover.Title>
@@ -506,7 +585,7 @@
 								{@render questionMenuPopover()}
 							</div>
 							{#if onEnterReview && !isReviewStage}
-								<div class="flex justify-center border-t border-border px-4 py-4">
+								<div class="flex justify-center px-4 py-4">
 									<Button
 										variant="outline"
 										class="rounded-full border-blue-700 px-6 text-blue-700 hover:bg-blue-50 hover:text-blue-800 dark:hover:bg-blue-950/40"
