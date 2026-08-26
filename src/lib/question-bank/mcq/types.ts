@@ -15,8 +15,8 @@ export type QuestionPanel = {
 };
 
 export type AnnotationTarget =
-	| { kind: 'prompt' }
-	| { kind: 'stimulus' }
+	| { kind: 'prompt'; paragraphIndex: number }
+	| { kind: 'stimulus'; paragraphIndex: number }
 	| { kind: 'option'; optionId: string };
 
 export type TextAnnotationStyle = 'strike' | 'highlight';
