@@ -19,7 +19,7 @@
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	const APP_VERSION = '1.7.4';
+	const APP_VERSION = '1.7.10';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
