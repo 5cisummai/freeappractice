@@ -81,7 +81,7 @@ export function isInsightsRefreshDue(generatedAt: string | undefined, now: Date)
 
 async function requireInsightsGenerationAccess(userId: string, now: Date): Promise<void> {
 	if (!(await isSuperCoachEnabled())) {
-		throw new StudyPlansLockedError('Coach is temporarily unavailable.');
+		throw new StudyPlansLockedError('Pip is temporarily unavailable.');
 	}
 	const access = await getPlanAccess(userId, now);
 	if (!hasPaidCapability(access, 'studyPlans') || !hasPaidCapability(access, 'coach')) {

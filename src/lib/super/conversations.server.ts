@@ -48,7 +48,7 @@ function safeContext(value: ConversationContext | undefined): Record<string, unk
 }
 
 const DEFAULT_TITLES: Record<ConversationSurface, string> = {
-	coach: 'Coach',
+	coach: 'Pip',
 	question: 'Question help'
 };
 

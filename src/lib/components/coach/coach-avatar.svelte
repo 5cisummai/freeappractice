@@ -44,7 +44,7 @@
 		montage,
 		loopMontage = true,
 		interactive = false,
-		label = 'Pip, your study coach',
+		label = 'Pip',
 		class: className = ''
 	}: Props = $props();
 

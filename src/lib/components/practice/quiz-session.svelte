@@ -578,7 +578,7 @@
 
 			<div class="flex flex-wrap justify-center gap-2">
 				{#if persistHistory && showCoachReview}
-					<Button href={coachReviewHref} variant="outline">Review with Coach</Button>
+					<Button href={coachReviewHref} variant="outline">Review with Pip</Button>
 				{/if}
 				<Button onclick={() => void startQuiz()}>Try another quiz</Button>
 			</div>

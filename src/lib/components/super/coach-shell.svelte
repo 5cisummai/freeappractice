@@ -545,10 +545,6 @@
 		await copyText(text, 'Response copied.');
 	}
 
-	async function copyPrompt(message: CoachUIMessage): Promise<void> {
-		await copyText(messageText(message), 'Prompt copied.');
-	}
-
 	function messageFeedback(messageId: string): CoachMessageFeedback | undefined {
 		return messageFeedbackById[messageId];
 	}
@@ -572,24 +568,6 @@
 		}
 	}
 
-	async function retryPrompt(messageId: string): Promise<void> {
-		if (streaming) return;
-		const messageIndex = coach.messages.findIndex((message) => message.id === messageId);
-		const prompt = coach.messages[messageIndex];
-		if (!prompt) return;
-
-		const response = coach.messages
-			.slice(messageIndex + 1)
-			.find((message) => message.role === 'assistant');
-		if (response) {
-			await regenerateMessage(response.id);
-			return;
-		}
-		const text = messageText(prompt);
-		coach.messages = coach.messages.slice(0, messageIndex);
-		await send(text);
-	}
-
 	async function respondToApproval(approvalId: string, approved: boolean) {
 		if (!approvalId || approving) return;
 		approving = true;
@@ -599,7 +577,7 @@
 				approved
 			});
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not respond to Coach.');
+			toast.error(error instanceof Error ? error.message : 'Could not respond to Pip.');
 		} finally {
 			approving = false;
 		}
@@ -637,7 +615,7 @@
 		try {
 			await coach.sendMessage({ text: message });
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Coach is unavailable right now.');
+			toast.error(error instanceof Error ? error.message : 'Pip is unavailable right now.');
 		} finally {
 			pendingCoachActions = [];
 		}
@@ -802,8 +780,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-					aria-label="Close Coach sidebar"
-					title="Close Coach sidebar"
+					aria-label="Close Pip sidebar"
+					title="Close Pip sidebar"
 					onclick={() => coachSidebar.toggle()}
 				>
 					<SidebarCloseIcon aria-hidden="true" />
@@ -843,25 +821,6 @@
 										>
 											{messageText(message)}
 										</Message.Content>
-										{#if messageText(message)}
-											<Message.Actions class="mt-0 ml-auto">
-												<Message.Action
-													tooltip="Copy prompt"
-													label="Copy prompt"
-													onclick={() => void copyPrompt(message)}
-												>
-													<CopyIcon />
-												</Message.Action>
-												<Message.Action
-													tooltip="Retry prompt"
-													label="Retry prompt"
-													disabled={streaming}
-													onclick={() => void retryPrompt(message.id)}
-												>
-													<RefreshCwIcon />
-												</Message.Action>
-											</Message.Actions>
-										{/if}
 									{:else}
 										{@const activities = getToolActivities(message)}
 										{@const isCurrentAssistant = messageIndex === coach.messages.length - 1}
@@ -898,7 +857,7 @@
 											size={48}
 											paused={!isCurrentAssistant}
 											interactive={isCurrentAssistant}
-											label="Pip, your study coach"
+											label="Pip"
 											class="absolute top-0 left-0"
 										/>
 										{#each message.parts as part, index (`tool-${message.id}-${index}`)}
@@ -946,7 +905,7 @@
 															<Confirmation.Request>
 																<Confirmation.Title>Approval needed</Confirmation.Title>
 																<p class="text-sm leading-6 text-muted-foreground">
-																	Coach is ready to make this change.
+																	Pip is ready to make this change.
 																</p>
 																<div class="rounded-xl bg-muted/60 p-3">
 																	<p class="text-sm font-medium">{summary.title}</p>
@@ -1188,7 +1147,7 @@
 
 			{#if clientReady}
 				<PromptInput.Root
-					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
+					class="rounded-[24px] border border-border/70 bg-background shadow-sm transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-sm"
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>
@@ -1221,7 +1180,7 @@
 							<PromptInput.ActionMenuTrigger
 								class="size-9 shrink-0 self-end rounded-full text-muted-foreground hover:text-foreground"
 								disabled={!sessionId || streaming}
-								aria-label="Coach actions"
+								aria-label="Pip actions"
 							/>
 							<PromptInput.ActionMenuContent
 								align="start"
@@ -1251,7 +1210,7 @@
 							<PromptInput.Textarea
 								bind:ref={composerInputRef}
 								bind:value={input}
-								placeholder="Ask Coach"
+								placeholder="Ask Pip"
 								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
 							/>
 						</PromptInput.Body>
@@ -1265,7 +1224,7 @@
 							<Select.Trigger
 								class="h-9 shrink-0 gap-1 self-end border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
 								disabled={!sessionId || streaming}
-								aria-label="Coach response depth"
+								aria-label="Pip response depth"
 							>
 								{@const Icon = selectedThinkingMode.icon}
 								<Icon class="size-3.5 shrink-0" aria-hidden="true" />
@@ -1323,7 +1282,7 @@
 						class="mt-2 text-center text-[11px] text-muted-foreground"
 						in:fade={{ duration: motionMs * 0.5, delay: motionMs * 0.25, easing: cubicOut }}
 					>
-						Coach is powered by AI and can make mistakes.
+						Pip is powered by AI and can make mistakes.
 					</p>
 				{/if}
 			{/if}

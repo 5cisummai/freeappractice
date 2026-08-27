@@ -121,7 +121,7 @@ export async function authorizeFeatureRequest(
 }
 
 function featureUnavailableMessage(feature: SuperFeature): string {
-	if (feature === 'coach' || feature === 'studyPlans') return 'Coach is temporarily unavailable.';
+	if (feature === 'coach' || feature === 'studyPlans') return 'Pip is temporarily unavailable.';
 	if (feature === 'memory') return 'Tutor memory is temporarily unavailable.';
 	return 'Super Tutor is temporarily unavailable.';
 }
