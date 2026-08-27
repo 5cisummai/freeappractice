@@ -31,7 +31,6 @@
 	import SidebarCloseIcon from '@tabler/icons-svelte/icons/x';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
 	import * as Confirmation from '$lib/components/ai-elements/confirmation/index.js';
 	import * as Message from '$lib/components/ai-elements/message/index.js';
@@ -44,6 +43,8 @@
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
 	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
 	import CoachConversationMenu from '$lib/components/super/coach-conversation-menu.svelte';
+	import CoachAvatar from '$lib/components/coach/coach-avatar.svelte';
+	import { COACH_AVATAR_MONTAGES, COACH_AVATAR_STATES } from '$lib/coach/avatar-state';
 	import {
 		getCoachPracticeQuestionToolOutput,
 		isCoachPracticeQuestionPending,
@@ -213,6 +214,7 @@
 	});
 
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
+	let composerHasText = $derived(input.trim().length > 0);
 	let hasMessages = $derived((coach.messages ?? []).length > 0);
 	let emptyChat = $derived(!hasMessages);
 	let canSendComposer = $derived(
@@ -300,6 +302,21 @@
 			const toolPart = getToolPart(part);
 			return toolPart ? [getToolActivity(toolPart, index)] : [];
 		});
+	}
+
+	function hasCompletedPracticeQuestion(message: CoachUIMessage): boolean {
+		return message.parts.some((part) => {
+			const toolPart = getToolPart(part);
+			return Boolean(toolPart && getCoachPracticeQuestionToolOutput(toolPart.output));
+		});
+	}
+
+	function isStreamingAnswer(message: CoachUIMessage, messageIndex: number): boolean {
+		return (
+			streaming &&
+			messageIndex === coach.messages.length - 1 &&
+			messageText(message).trim().length > 0
+		);
 	}
 
 	function activitySummary(activities: ToolActivity[]): string {
@@ -395,18 +412,18 @@
 		};
 	}
 
-	let statusLabel = $derived.by(() => {
-		if (!streaming) return null;
+	let showThinkingIndicator = $derived.by(() => {
+		if (!streaming) return false;
 
 		const last = coach.messages.at(-1);
-		if (!last || last.role !== 'assistant') return 'Working on it…';
+		if (!last || last.role !== 'assistant') return true;
 
 		const tools = last.parts
 			.map(getToolPart)
 			.filter((part): part is CoachToolPart => part !== null);
-		if (tools.some((tool) => isToolInProgress(tool.state))) return null;
-		if (messageText(last).trim()) return null;
-		return tools.length ? null : 'Working on it…';
+		if (tools.some((tool) => isToolInProgress(tool.state))) return false;
+		if (messageText(last).trim()) return false;
+		return tools.length === 0;
 	});
 
 	onMount(() => {
@@ -706,10 +723,7 @@
 				<div class="flex items-center justify-between px-3 py-2">
 					<span class="text-sm font-medium">Conversations</span>
 					{#if conversationsLoading}
-						<Loader2Icon
-							class="size-4 animate-spin text-muted-foreground"
-							aria-label="Loading"
-						/>
+						<Loader2Icon class="size-4 animate-spin text-muted-foreground" aria-label="Loading" />
 					{/if}
 				</div>
 				{#if conversationsError}
@@ -816,7 +830,13 @@
 							aria-live="polite"
 						>
 							{#each coach.messages as message, messageIndex (message.id)}
-								<Message.Root from={message.role} class="ph-mask-pii max-w-3xl gap-1">
+								<Message.Root
+									from={message.role}
+									class={cn(
+										'ph-mask-pii max-w-3xl gap-1',
+										message.role === 'assistant' && 'relative pl-16'
+									)}
+								>
 									{#if message.role === 'user'}
 										<Message.Content
 											class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap"
@@ -844,6 +864,43 @@
 										{/if}
 									{:else}
 										{@const activities = getToolActivities(message)}
+										{@const isCurrentAssistant = messageIndex === coach.messages.length - 1}
+										<CoachAvatar
+											state={isCurrentAssistant
+												? isStreamingAnswer(message, messageIndex)
+													? COACH_AVATAR_STATES.waiting
+													: streaming
+														? COACH_AVATAR_STATES.thinking
+														: composerHasText
+															? COACH_AVATAR_STATES.waiting
+															: activities.some((activity) => activity.state === 'error')
+																? COACH_AVATAR_STATES.correction
+																: activities.some((activity) => activity.state === 'running')
+																	? COACH_AVATAR_STATES.progress
+																	: COACH_AVATAR_STATES.waiting
+												: COACH_AVATAR_STATES.waiting}
+											expression={isCurrentAssistant
+												? streaming || composerHasText
+													? 'attentive'
+													: activities.some((activity) => activity.state === 'error')
+														? 'confused'
+														: activities.some((activity) => activity.state === 'running')
+															? 'curious'
+															: 'neutral'
+												: 'neutral'}
+											montage={isCurrentAssistant
+												? activities.some((activity) => activity.state === 'error')
+													? COACH_AVATAR_MONTAGES.correction
+													: hasCompletedPracticeQuestion(message)
+														? COACH_AVATAR_MONTAGES.success
+														: undefined
+												: undefined}
+											size={48}
+											paused={!isCurrentAssistant}
+											interactive={isCurrentAssistant}
+											label="Pip, your study coach"
+											class="absolute top-0 left-0"
+										/>
 										{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 											{@const toolPart = getToolPart(part)}
 											{#if toolPart}
@@ -1076,16 +1133,22 @@
 									{/if}
 								</Message.Root>
 							{/each}
-							{#if statusLabel}
+							{#if showThinkingIndicator}
 								<Message.Root from="assistant" class="max-w-3xl">
-									<div role="status" aria-live="polite" aria-label={statusLabel}>
-										{#key statusLabel}
-											<span in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}>
-												<Shimmer as="span" content_length={statusLabel.length} class="text-md">
-													{statusLabel}
-												</Shimmer>
-											</span>
-										{/key}
+									<div
+										class="flex items-center"
+										role="status"
+										aria-live="polite"
+										aria-label="Pip is thinking"
+									>
+										<CoachAvatar
+											state="thinking"
+											expression="attentive"
+											size={44}
+											interactive
+											label="Pip is thinking"
+											class="shrink-0"
+										/>
 									</div>
 								</Message.Root>
 							{/if}
@@ -1105,9 +1168,16 @@
 		>
 			{#if emptyChat}
 				<div
-					class="mb-8 text-center sm:mb-10"
+					class="mb-8 flex flex-col items-center text-center sm:mb-10"
 					out:fade={{ duration: motionMs * 0.7, easing: cubicOut }}
 				>
+					<CoachAvatar
+						state={streaming ? 'thinking' : 'idle'}
+						expression={streaming || composerHasText ? 'attentive' : 'neutral'}
+						size={128}
+						interactive
+						class="mb-5"
+					/>
 					<h1
 						class="font-display text-3xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-4xl"
 					>
