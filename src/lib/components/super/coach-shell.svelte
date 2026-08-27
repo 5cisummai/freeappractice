@@ -802,7 +802,7 @@
 					<Conversation.Root class="min-h-0 min-w-0 flex-1">
 						<Conversation.Content
 							class={cn(
-								'mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain pt-8 pb-6 sm:pt-10',
+								'@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain pt-8 pb-6 sm:pt-10',
 								surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
 							)}
 							aria-live="polite"
@@ -812,7 +812,7 @@
 									from={message.role}
 									class={cn(
 										'ph-mask-pii max-w-3xl gap-1',
-										message.role === 'assistant' && 'relative pl-16'
+										message.role === 'assistant' && '@min-[32rem]:relative @min-[32rem]:pl-16'
 									)}
 								>
 									{#if message.role === 'user'}
@@ -858,7 +858,7 @@
 											paused={!isCurrentAssistant}
 											interactive={isCurrentAssistant}
 											label="Pip"
-											class="absolute top-0 left-0"
+											class="@min-[32rem]:absolute @min-[32rem]:top-0 @min-[32rem]:left-0"
 										/>
 										{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 											{@const toolPart = getToolPart(part)}

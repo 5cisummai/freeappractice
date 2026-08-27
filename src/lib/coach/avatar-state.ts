@@ -31,7 +31,7 @@ export type CoachAvatarBlock = {
 };
 
 export const COACH_AVATAR_SHAPE: ShapeId = 'nuage';
-export const COACH_AVATAR_COLOR = '#3b93f0';
+export const COACH_AVATAR_COLOR = 'var(--primary)';
 
 export const COACH_EXPRESSION_IDS: Record<CoachAvatarExpression, ExpressionId> = {
 	neutral: 'neutre',
