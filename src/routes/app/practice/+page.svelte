@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import PracticeRunner, {
@@ -113,6 +114,10 @@
 		if (event.type === 'mode-change') mode = event.mode;
 		if (event.type === 'answered') handleAnswered(event.result);
 		if (event.type === 'frq-graded') handleFrqGraded();
+		if (event.type === 'quiz-exit' && data.sharedQuiz) {
+			requestVersion = 0;
+			void goto(resolve('/app/practice'));
+		}
 	}
 </script>
 

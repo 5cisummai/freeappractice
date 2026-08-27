@@ -5,6 +5,104 @@
 
 	const changelog = [
 		{
+			version: '1.7.10',
+			date: 'August 26, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Reworked graded and shared quizzes into a focused full-screen experience with clear progress navigation, review, and score summaries',
+						'Added an answer eliminator for crossing out choices and text highlighting for passages and prompts'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved keyboard navigation, focus handling, and screen-reader support throughout quiz sessions',
+						'Improved quiz loading, retry, and leave-quiz flows'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.9',
+			date: 'August 25, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Improved the reliability of loading older practice questions',
+						'Polished public-page badges and study-group signup calls to action'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.8',
+			date: 'August 24, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added a Progress dashboard with course filters, mastery and accuracy views, practice trends, and activity history',
+						'Added weekly Insights with personalized focus areas and a study calendar for Super students'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Weekly Insights now refresh automatically on Saturdays instead of requiring a manual refresh'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.7',
+			date: 'August 21, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Improved Coach sidebar reliability while navigating between app pages',
+						'Improved Coach conversation loading and recovery when a conversation cannot be loaded'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.6',
+			date: 'August 19, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added a Coach sidebar so Super students can get help without leaving their current study page',
+						'Added quick Coach actions for practice questions, study plans, next steps, and progress reviews',
+						'Coach now asks for approval before applying changes to goals or study plans'
+					]
+				}
+			]
+		},
+		{
+			version: '1.7.5',
+			date: 'August 18, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added Flash, Balanced, and Deep response modes for Coach',
+						'Added helpful and not-helpful feedback controls for Coach responses'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Improved the accessibility and performance of diagrams shown in practice questions'
+					]
+				}
+			]
+		},
+		{
 			version: '1.7.4',
 			date: 'August 17, 2026',
 			sections: [
@@ -1136,7 +1234,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 9, 2026"
+			meta="Last Updated: August 26, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

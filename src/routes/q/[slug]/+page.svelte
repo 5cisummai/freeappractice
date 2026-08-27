@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
@@ -60,6 +61,12 @@
 							if (event.type === 'selection-change') {
 								selectedClass = event.selectedClass;
 								selectedUnit = event.selectedUnit;
+							}
+							if (event.type === 'quiz-exit') {
+								requestVersion = 0;
+								void goto(
+									resolve('/q/[slug]', { slug: page.params.slug ?? data.sharedQuiz?.slug ?? '' })
+								);
 							}
 						}}
 					/>
