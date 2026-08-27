@@ -18,7 +18,6 @@
 		TIMEZONE_COOKIE_NAME
 	} from '$lib/users/timezone';
 
-	import { registerWebMcpTools } from '$lib/client/webmcp.js';
 	import { capturePostHogPageview } from '$lib/client/posthog-analytics';
 
 	let { children } = $props();
@@ -29,7 +28,6 @@
 
 	onMount(() => {
 		privacy.init();
-		registerWebMcpTools();
 
 		const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 		const existing = parseTimezone(

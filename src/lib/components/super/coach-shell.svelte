@@ -50,7 +50,7 @@
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
-	import { useCoachSidebar } from './coach-context.svelte.js';
+	import { useCoachPageToolbar, useCoachSidebar } from './coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
@@ -73,6 +73,7 @@
 
 	let { surface = 'page' }: CoachShellProps = $props();
 	const coachSidebar = useCoachSidebar();
+	const coachPageToolbar = useCoachPageToolbar();
 
 	let sessionId = $state('');
 	let conversationId = $state('');
@@ -437,6 +438,12 @@
 		}
 	});
 
+	$effect(() => {
+		if (surface !== 'page') return;
+		coachPageToolbar.setSnippet(pageToolbar);
+		return () => coachPageToolbar.setSnippet(null);
+	});
+
 	async function loadConversations(): Promise<void> {
 		conversationsLoading = true;
 		conversationsError = '';
@@ -665,6 +672,108 @@
 	}
 </script>
 
+{#snippet conversationControls()}
+	<Button
+		variant="ghost"
+		class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+		onclick={startNewConversation}
+		aria-label="Start a new chat"
+		title="New chat"
+	>
+		<PencilIcon class="size-4" aria-hidden="true" />
+		<span>New Chat</span>
+	</Button>
+	{#if clientReady}
+		<Popover.Root bind:open={conversationsOpen}>
+			<Popover.Trigger>
+				{#snippet child({ props })}
+					<Button
+						{...props}
+						variant="ghost"
+						class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+						aria-expanded={conversationsOpen}
+						aria-label="Show conversations"
+					>
+						<span>Conversations</span>
+						<ChevronDownIcon
+							class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
+							aria-hidden="true"
+						/>
+					</Button>
+				{/snippet}
+			</Popover.Trigger>
+			<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
+				<div class="flex items-center justify-between px-3 py-2">
+					<span class="text-sm font-medium">Conversations</span>
+					{#if conversationsLoading}
+						<Loader2Icon
+							class="size-4 animate-spin text-muted-foreground"
+							aria-label="Loading"
+						/>
+					{/if}
+				</div>
+				{#if conversationsError}
+					<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
+						<p>{conversationsError}</p>
+						<button
+							type="button"
+							class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+							onclick={() => void loadConversations()}
+						>
+							Try again
+						</button>
+					</div>
+				{:else if conversationsLoading && !conversations.length}
+					<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
+				{:else if !conversations.length}
+					<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
+				{:else}
+					<div class="max-h-72 overflow-y-auto">
+						{#each conversations as conversation (conversation.id)}
+							<div
+								class={cn(
+									'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
+									conversation.id === conversationId && 'bg-muted'
+								)}
+							>
+								<button
+									type="button"
+									class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
+									aria-current={conversation.id === conversationId ? 'page' : undefined}
+									disabled={loadingConversationId !== null}
+									onclick={() => void selectConversation(conversation.id)}
+								>
+									<span
+										class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+									>
+										{conversation.title}
+									</span>
+									<span class="shrink-0 text-xs text-muted-foreground">
+										{formatConversationDate(conversation)}
+									</span>
+								</button>
+								<CoachConversationMenu
+									{conversation}
+									disabled={loadingConversationId !== null}
+									class="mr-1 self-center"
+									onRenamed={handleConversationRenamed}
+									onDeleted={(id) => void handleConversationDeleted(id)}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</Popover.Content>
+		</Popover.Root>
+	{/if}
+{/snippet}
+
+{#snippet pageToolbar()}
+	<div class="flex items-center gap-2">
+		{@render conversationControls()}
+	</div>
+{/snippet}
+
 <div
 	class={cn(
 		'flex min-h-0 flex-col overflow-hidden',
@@ -672,106 +781,9 @@
 	)}
 >
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-		<div
-			class={cn(
-				'mx-auto flex w-full max-w-3xl justify-end gap-2 pt-3',
-				surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
-			)}
-		>
-			<Button
-				variant="ghost"
-				class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-				onclick={startNewConversation}
-				aria-label="Start a new chat"
-				title="New chat"
-			>
-				<PencilIcon class="size-4" aria-hidden="true" />
-				<span>New Chat</span>
-			</Button>
-			{#if clientReady}
-				<Popover.Root bind:open={conversationsOpen}>
-					<Popover.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								variant="ghost"
-								class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-								aria-expanded={conversationsOpen}
-								aria-label="Show conversations"
-							>
-								<span>Conversations</span>
-								<ChevronDownIcon
-									class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
-									aria-hidden="true"
-								/>
-							</Button>
-						{/snippet}
-					</Popover.Trigger>
-					<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
-						<div class="flex items-center justify-between px-3 py-2">
-							<span class="text-sm font-medium">Conversations</span>
-							{#if conversationsLoading}
-								<Loader2Icon
-									class="size-4 animate-spin text-muted-foreground"
-									aria-label="Loading"
-								/>
-							{/if}
-						</div>
-						{#if conversationsError}
-							<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
-								<p>{conversationsError}</p>
-								<button
-									type="button"
-									class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
-									onclick={() => void loadConversations()}
-								>
-									Try again
-								</button>
-							</div>
-						{:else if conversationsLoading && !conversations.length}
-							<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
-						{:else if !conversations.length}
-							<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
-						{:else}
-							<div class="max-h-72 overflow-y-auto">
-								{#each conversations as conversation (conversation.id)}
-									<div
-										class={cn(
-											'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
-											conversation.id === conversationId && 'bg-muted'
-										)}
-									>
-										<button
-											type="button"
-											class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
-											aria-current={conversation.id === conversationId ? 'page' : undefined}
-											disabled={loadingConversationId !== null}
-											onclick={() => void selectConversation(conversation.id)}
-										>
-											<span
-												class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
-											>
-												{conversation.title}
-											</span>
-											<span class="shrink-0 text-xs text-muted-foreground">
-												{formatConversationDate(conversation)}
-											</span>
-										</button>
-										<CoachConversationMenu
-											{conversation}
-											disabled={loadingConversationId !== null}
-											class="mr-1 self-center"
-											onRenamed={handleConversationRenamed}
-											onDeleted={(id) => void handleConversationDeleted(id)}
-										/>
-									</div>
-								{/each}
-							</div>
-						{/if}
-					</Popover.Content>
-				</Popover.Root>
-			{/if}
-			{#if surface === 'sidebar'}
+		{#if surface === 'sidebar'}
+			<div class="mx-auto flex w-full max-w-3xl justify-end gap-2 px-2 pt-3">
+				{@render conversationControls()}
 				<Button
 					variant="ghost"
 					size="icon-sm"
@@ -782,8 +794,8 @@
 				>
 					<SidebarCloseIcon aria-hidden="true" />
 				</Button>
-			{/if}
-		</div>
+			</div>
+		{/if}
 		<div
 			class={cn(
 				'relative min-h-0 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
