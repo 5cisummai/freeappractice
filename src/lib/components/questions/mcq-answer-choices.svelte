@@ -138,83 +138,81 @@
 		{@const struck = isStruck(option.id)}
 		{@const tone = feedbackTone(option.id)}
 		{@const selected = selectedOption === option.id && !struck}
-		<div>
-			<div
-				role="radio"
-				aria-checked={selected}
-				aria-disabled={(!eliminatorActive && struck) || hasCheckedAnswer}
-				tabindex={(!eliminatorActive && struck) || hasCheckedAnswer
-					? -1
-					: option.id === focusOptionId
-						? 0
-						: -1}
-				data-option-id={option.id}
+		<div
+			role="radio"
+			aria-checked={selected}
+			aria-disabled={(!eliminatorActive && struck) || hasCheckedAnswer}
+			tabindex={(!eliminatorActive && struck) || hasCheckedAnswer
+				? -1
+				: option.id === focusOptionId
+					? 0
+					: -1}
+			data-option-id={option.id}
+			class={cn(
+				'flex min-w-0 flex-1 items-center gap-2.5 border text-left transition-colors',
+				'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+				isExam
+					? 'rounded-lg border px-3 py-2.5'
+					: cn('rounded-md border', compact ? 'px-2.5 py-2' : 'px-3 py-2.5'),
+				struck && 'opacity-55',
+				tone === 'none' &&
+					(isExam
+						? 'border-border bg-background hover:bg-muted/30'
+						: 'border-border bg-card hover:bg-muted/40 dark:hover:bg-muted/20'),
+				tone === 'selected' &&
+					(isExam
+						? 'border-primary ring-1 ring-primary'
+						: 'border-primary/50 bg-primary/5 ring-1 ring-primary/30'),
+				tone === 'correct' &&
+					'border-emerald-500/70 bg-emerald-500/10 ring-1 ring-emerald-500/25',
+				tone === 'incorrect' &&
+					'border-destructive/60 bg-destructive/10 ring-1 ring-destructive/20',
+				struck && 'hover:bg-background',
+				!hasCheckedAnswer && 'cursor-pointer',
+				hasCheckedAnswer && !showFeedback && 'pointer-events-none opacity-60'
+			)}
+			onclick={(event) => handleChoiceClick(option.id, event)}
+			onkeydown={(event) => handleKeydown(event, option.id)}
+		>
+			<span
 				class={cn(
-					'flex min-w-0 flex-1 items-center gap-2.5 border text-left transition-colors',
-					'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-					isExam
-						? 'rounded-lg border px-3 py-2.5'
-						: cn('rounded-md border', compact ? 'px-2.5 py-2' : 'px-3 py-2.5'),
-					struck && 'opacity-55',
+					'flex shrink-0 items-center justify-center rounded-full border font-sans text-xs font-semibold tabular-nums select-none',
+					isExam ? 'size-7' : compact ? 'size-6' : 'size-7',
+					struck && 'line-through opacity-70',
+					tone === 'selected' && 'border-primary bg-primary text-primary-foreground',
+					tone === 'correct' && 'border-emerald-500 bg-emerald-500 text-white',
+					tone === 'incorrect' && 'border-destructive bg-destructive text-white',
 					tone === 'none' &&
 						(isExam
-							? 'border-border bg-background hover:bg-muted/30'
-							: 'border-border bg-card hover:bg-muted/40 dark:hover:bg-muted/20'),
-					tone === 'selected' &&
-						(isExam
-							? 'border-primary ring-1 ring-primary'
-							: 'border-primary/50 bg-primary/5 ring-1 ring-primary/30'),
-					tone === 'correct' &&
-						'border-emerald-500/70 bg-emerald-500/10 ring-1 ring-emerald-500/25',
-					tone === 'incorrect' &&
-						'border-destructive/60 bg-destructive/10 ring-1 ring-destructive/20',
-					struck && 'hover:bg-background',
-					!hasCheckedAnswer && 'cursor-pointer',
-					hasCheckedAnswer && !showFeedback && 'pointer-events-none opacity-60'
+							? 'border-foreground/35 bg-transparent text-foreground'
+							: 'border-border bg-muted/40 text-muted-foreground')
 				)}
-				onclick={(event) => handleChoiceClick(option.id, event)}
-				onkeydown={(event) => handleKeydown(event, option.id)}
+				aria-hidden="true"
 			>
-				<span
-					class={cn(
-						'flex shrink-0 items-center justify-center rounded-full border font-sans text-xs font-semibold tabular-nums select-none',
-						isExam ? 'size-7' : compact ? 'size-6' : 'size-7',
-						struck && 'line-through opacity-70',
-						tone === 'selected' && 'border-primary bg-primary text-primary-foreground',
-						tone === 'correct' && 'border-emerald-500 bg-emerald-500 text-white',
-						tone === 'incorrect' && 'border-destructive bg-destructive text-white',
-						tone === 'none' &&
-							(isExam
-								? 'border-foreground/35 bg-transparent text-foreground'
-								: 'border-border bg-muted/40 text-muted-foreground')
-					)}
-					aria-hidden="true"
-				>
-					{option.label}
-				</span>
-				<span
-					class={cn(
-						'min-w-0 flex-1 font-serif text-foreground',
-						isExam
-							? 'text-sm leading-6'
-							: compact
-								? 'text-sm leading-5'
-								: 'text-[0.95rem] leading-6',
-						struck && 'text-muted-foreground line-through'
-					)}
-				>
-					<AnnotatableRichText
-						text={option.text}
-						inline
-						target={{ kind: 'option', optionId: option.id }}
-						annotations={textAnnotations}
-						disabled={annotationsDisabled}
-						onAddAnnotation={onAddTextAnnotation}
-						onRemoveAnnotation={onRemoveTextAnnotation}
-						class="[&_*]:font-inherit"
-					/>
-				</span>
-			</div>
+				{option.label}
+			</span>
+			<span
+				class={cn(
+					'min-w-0 flex-1 font-serif text-foreground',
+					isExam
+						? 'text-sm leading-6'
+						: compact
+							? 'text-sm leading-5'
+							: 'text-[0.95rem] leading-6',
+					struck && 'text-muted-foreground line-through'
+				)}
+			>
+				<AnnotatableRichText
+					text={option.text}
+					inline
+					target={{ kind: 'option', optionId: option.id }}
+					annotations={textAnnotations}
+					disabled={annotationsDisabled}
+					onAddAnnotation={onAddTextAnnotation}
+					onRemoveAnnotation={onRemoveTextAnnotation}
+					class="[&_*]:font-inherit"
+				/>
+			</span>
 		</div>
 	{/each}
 </div>

@@ -7,6 +7,8 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import { Toggle } from '$lib/components/ui/toggle/index.js';
 	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '$lib/components/questions/question-card-skeleton.svelte';
@@ -23,6 +25,7 @@
 	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
 	import ArrowsMaximizeIcon from '@tabler/icons-svelte/icons/arrows-maximize';
 	import ArrowsMinimizeIcon from '@tabler/icons-svelte/icons/arrows-minimize';
+	import StrikethroughIcon from '@tabler/icons-svelte/icons/strikethrough';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
@@ -88,6 +91,7 @@
 	let bugReportOpen = $state(false);
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let controlsTriggerRef = $state<HTMLElement | null>(null);
+	let eliminatorActive = $state(false);
 
 	const core = createQuestionCore({
 		getSelectedClass: () => selectedClass,
@@ -120,6 +124,8 @@
 	);
 	/** Fullscreen unlimited always uses two columns on desktop; otherwise long/stimulus. */
 	const useTwoColumn = $derived(!isMobile.current && (expanded || effectiveTwoColumn));
+	const canUseEliminator = $derived(!core.hasCheckedAnswer);
+	const effectiveEliminatorActive = $derived(canUseEliminator && eliminatorActive);
 
 	function detectLongQuestionLayout(node: HTMLDivElement | null = promptElement): void {
 		isLongQuestion = measureLongQuestion({
@@ -264,6 +270,7 @@
 			correctAnswer={core.currentQuestion?.correctAnswer}
 			onSelect={core.selectOption}
 			onToggleStrike={core.toggleOptionStrike}
+			eliminatorActive={effectiveEliminatorActive}
 			textAnnotations={core.textAnnotations}
 			onAddTextAnnotation={core.addTextAnnotation}
 			onRemoveTextAnnotation={core.removeAnnotation}
@@ -342,6 +349,29 @@
 								<div class="flex items-center gap-1">
 									{#if headerActions}
 										{@render headerActions()}
+									{/if}
+									{#if canUseEliminator}
+										<Tooltip.Root>
+											<Tooltip.Trigger>
+												{#snippet child({ props })}
+													<Toggle
+														{...props}
+														bind:pressed={eliminatorActive}
+														variant="outline"
+														size="sm"
+														class="h-8 shrink-0"
+														aria-label="Answer eliminator"
+													>
+														<StrikethroughIcon class="size-4" />
+													</Toggle>
+												{/snippet}
+											</Tooltip.Trigger>
+											<Tooltip.Content>
+												{eliminatorActive
+													? 'Eliminator on — click choices to cross out'
+													: 'Answer eliminator'}
+											</Tooltip.Content>
+										</Tooltip.Root>
 									{/if}
 									{#if !quizMode}
 										<Button
@@ -463,16 +493,29 @@
 								{#if core.currentQuestion?.diagramSpec}
 									<ExamfigDiagram spec={core.currentQuestion.diagramSpec} />
 								{/if}
+								{#if core.currentQuestion?.hasStimulus}
+									<div class="space-y-3">
+										<p
+											class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>
+											{core.currentQuestion.leftPanel?.title ?? 'Stimulus'}
+										</p>
+										<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
+											{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-m-${i}`)}
+												<AnnotatableRichText
+													text={paragraph}
+													target={{ kind: 'stimulus', paragraphIndex: i }}
+													annotations={core.textAnnotations}
+													disabled={core.hasCheckedAnswer}
+													onAddAnnotation={core.addTextAnnotation}
+													onRemoveAnnotation={core.removeAnnotation}
+												/>
+											{/each}
+										</div>
+									</div>
+								{/if}
 								<div {@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}>
-									<AnnotatableRichText
-										text={core.currentQuestion?.prompt ?? ''}
-										target={{ kind: 'prompt', paragraphIndex: 0 }}
-										annotations={core.textAnnotations}
-										disabled={core.hasCheckedAnswer}
-										onAddAnnotation={core.addTextAnnotation}
-										onRemoveAnnotation={core.removeAnnotation}
-										class="font-serif text-base leading-7 text-foreground/90"
-									/>
+									{@render promptBody()}
 								</div>
 								{@render mcqChoices()}
 							{/if}

@@ -53,7 +53,6 @@ export function portalToBody(enabled = true): Attachment<HTMLElement> {
 			setPortaled(enabled);
 			return () => {
 				detachPortal();
-				restoreBodyOverflow();
 			};
 		});
 	};

@@ -22,6 +22,7 @@ import type {
 	QuestionLoadReason,
 	TextAnnotation
 } from '$lib/question-bank/mcq/types';
+import { SvelteSet } from 'svelte/reactivity';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -81,8 +82,8 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 	const showWarmingState = $derived(isPoolWarming);
 	const showErrorState = $derived(!isLoading && questionLoadFailed && !isPoolWarming);
 	const optionMarks = $derived<OptionMarks>({
-		struckOptionIds: new Set(struckOptionIds),
-		highlightedOptionIds: new Set(highlightedOptionIds)
+		struckOptionIds: new SvelteSet(struckOptionIds),
+		highlightedOptionIds: new SvelteSet(highlightedOptionIds)
 	});
 
 	function clearWarmingRetryTimer(): void {

@@ -171,7 +171,6 @@ export type QuestionCardProps = {
 	model: QuestionCardModel;
 	class?: string;
 	expanded?: boolean;
-	onExpand?: () => void;
 	controlsOpen?: boolean;
 	practiceControls?: Snippet;
 	headerActions?: Snippet;

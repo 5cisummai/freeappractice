@@ -38,10 +38,14 @@ function getOptionLabels(payload: JsonRecord): string[] {
 	if (Array.isArray(payload.options)) {
 		return payload.options
 			.map((option, index) => {
-				if (typeof option === 'string') return String.fromCharCode(65 + index);
-				return isRecord(option)
-					? String(option.id ?? option.label ?? String.fromCharCode(65 + index)).toUpperCase()
-					: '';
+				if (typeof option === 'string') {
+					if (!option.trim()) return '';
+					return String.fromCharCode(65 + index);
+				}
+				if (!isRecord(option)) return '';
+				const text = typeof option.text === 'string' ? option.text : '';
+				if (!text.trim()) return '';
+				return String(option.id ?? option.label ?? String.fromCharCode(65 + index)).toUpperCase();
 			})
 			.filter(Boolean);
 	}

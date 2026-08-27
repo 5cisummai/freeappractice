@@ -37,6 +37,7 @@
 		"@lucide/svelte": "^1.32.0",
 		"@sveltejs/adapter-vercel": "^6.3.4",
 		"@sveltejs/kit": "^2.70.2",
+		"@sveltejs/mcp": "0.1.26",
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/d3-scale": "^4.0.9",

@@ -39,6 +39,11 @@ function toggleIndex(indexes: number[], index: number): number[] {
 		: [...indexes, index].sort((a, b) => a - b);
 }
 
+/** Non-reactive wall-clock ISO stamp; Date is only used to format. */
+function toIsoTimestamp(ms: number = Date.now()): string {
+	return new Date(ms).toISOString();
+}
+
 export function createExamCore(opts: ExamCoreOpts = {}) {
 	const maxQuestionCount = opts.maxQuestionCount ?? DEFAULT_MAX_QUESTION_COUNT;
 	const maxConcurrentFill = opts.maxConcurrentFill ?? DEFAULT_MAX_CONCURRENT_FILL;
@@ -178,7 +183,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 	function beginTiming(limitMs: number | null | undefined): void {
 		const now = Date.now();
 		startedAtMs = now;
-		startedAtIso = new Date(now).toISOString();
+		startedAtIso = toIsoTimestamp(now);
 		completedAtIso = '';
 		timeLimitMs = limitMs ?? null;
 		isPaused = false;
@@ -264,7 +269,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 	}
 
 	function buildSnapshot(finalAnswers: Array<AnswerResult | null>): ExamSnapshot {
-		const completedAt = completedAtIso || new Date().toISOString();
+		const completedAt = completedAtIso || toIsoTimestamp();
 		const items = questions.map((question, position) => ({
 			position,
 			questionId: question?.questionId?.trim() ?? '',
@@ -355,8 +360,14 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 	async function retryFailed(): Promise<void> {
 		if (!failedIndexes.length || status === 'loading' || !opts.loadQuestion) return;
 
-		const token = ++runToken;
+		const token = runToken;
 		const retryIndexes = [...failedIndexes];
+		for (let index = 0; index < questions.length; index += 1) {
+			if (!questions[index] && !retryIndexes.includes(index)) {
+				retryIndexes.push(index);
+			}
+		}
+		retryIndexes.sort((a, b) => a - b);
 		failedIndexes = [];
 		loadingCount = retryIndexes.length;
 		errorMessage = '';
@@ -447,7 +458,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 
 		const finalAnswers = buildFinalAnswers();
 		answers = finalAnswers;
-		completedAtIso = new Date().toISOString();
+		completedAtIso = toIsoTimestamp();
 		timerNowMs = Date.now();
 		status = 'complete';
 		stopTimer();

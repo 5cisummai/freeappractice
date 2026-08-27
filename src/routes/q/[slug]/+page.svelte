@@ -64,7 +64,9 @@
 							}
 							if (event.type === 'quiz-exit') {
 								requestVersion = 0;
-								void goto(page.url.pathname);
+								void goto(
+									resolve('/q/[slug]', { slug: page.params.slug ?? data.sharedQuiz?.slug ?? '' })
+								);
 							}
 						}}
 					/>

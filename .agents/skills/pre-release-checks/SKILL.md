@@ -30,7 +30,7 @@ If a search finds another live version display or metadata field, update it too.
    - `bun run check`
    - `bun run build`
 4. If any gate fails, inspect the actual error, make the smallest correct fix, and rerun the failed gate. After fixes, rerun all four gates in order. Continue until all four pass in the final run; do not suppress failures or weaken checks.
-5. Run `git diff --check`. Because the changelog and version metadata live in Svelte files, run `npx @sveltejs/mcp svelte-autofixer <changed-svelte-file> --svelte-version 5` and resolve any issues or suggestions. Do not add browser automation or Playwright.
+5. Run `git diff --check`. Because the changelog and version metadata live in Svelte files, use the repository-pinned `@sveltejs/mcp` from `package.json` / the lockfile (do not float to latest) and run `npx @sveltejs/mcp svelte-autofixer <changed-svelte-file> --svelte-version 5`, then resolve any issues or suggestions. Do not add browser automation or Playwright.
 
 ## Pull request
 
