@@ -163,8 +163,7 @@
 					(isExam
 						? 'border-primary ring-1 ring-primary'
 						: 'border-primary/50 bg-primary/5 ring-1 ring-primary/30'),
-				tone === 'correct' &&
-					'border-emerald-500/70 bg-emerald-500/10 ring-1 ring-emerald-500/25',
+				tone === 'correct' && 'border-emerald-500/70 bg-emerald-500/10 ring-1 ring-emerald-500/25',
 				tone === 'incorrect' &&
 					'border-destructive/60 bg-destructive/10 ring-1 ring-destructive/20',
 				struck && 'hover:bg-background',
@@ -194,11 +193,7 @@
 			<span
 				class={cn(
 					'min-w-0 flex-1 font-serif text-foreground',
-					isExam
-						? 'text-sm leading-6'
-						: compact
-							? 'text-sm leading-5'
-							: 'text-[0.95rem] leading-6',
+					isExam ? 'text-sm leading-6' : compact ? 'text-sm leading-5' : 'text-[0.95rem] leading-6',
 					struck && 'text-muted-foreground line-through'
 				)}
 			>

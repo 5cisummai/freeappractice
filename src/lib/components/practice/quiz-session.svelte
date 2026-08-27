@@ -164,6 +164,7 @@
 	});
 
 	function setGenerating(value: boolean): void {
+		if (isGenerating === value) return;
 		isGenerating = value;
 	}
 

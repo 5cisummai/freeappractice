@@ -495,9 +495,7 @@
 								{/if}
 								{#if core.currentQuestion?.hasStimulus}
 									<div class="space-y-3">
-										<p
-											class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-										>
+										<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 											{core.currentQuestion.leftPanel?.title ?? 'Stimulus'}
 										</p>
 										<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
