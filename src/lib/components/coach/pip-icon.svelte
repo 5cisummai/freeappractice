@@ -1,10 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils.js';
-	import {
-		PIP_ICON_BODY_PATH,
-		PIP_ICON_EYES,
-		PIP_ICON_VIEWBOX
-	} from './pip-icon-mark.js';
+	import { PIP_ICON_BODY_PATH, PIP_ICON_EYES, PIP_ICON_VIEWBOX } from './pip-icon-mark.js';
 
 	let { class: className = '' }: { class?: string } = $props();
 </script>

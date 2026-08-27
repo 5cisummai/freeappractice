@@ -39,9 +39,7 @@
 				<Card.Description>Pip uses personalized study information.</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4">
-				<p class="text-sm text-muted-foreground">
-					Pip is available to students aged 13 or older.
-				</p>
+				<p class="text-sm text-muted-foreground">Pip is available to students aged 13 or older.</p>
 				<Button href="/app/confirm-age">Confirm age</Button>
 			</Card.Content>
 		</Card.Root>
