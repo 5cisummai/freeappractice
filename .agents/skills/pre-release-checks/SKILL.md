@@ -37,5 +37,5 @@ If a search finds another live version display or metadata field, update it too.
 Only after the changelog, version updates, formatter, and all four quality gates pass:
 
 1. Review `git status` and the final diff. Do not stage or discard unrelated user work.
-2. Commit the release changes with a concise message, push the current branch, and create a pull request targeting `main` using the repository’s configured GitHub tooling (for example, `gh pr create --base main`).
+2. Commit the release changes with a concise message, push the current branch, and create a pull request targeting `main` using the repository’s configured GitHub tooling (for example, `gh pr create --base main`). If there is already a PR to this branch, then do not create a new PR.
 3. Include the target version, user-facing release-note summary, and the four passing gate commands in the PR description. Do not merge the PR. Report the PR URL and final verification results.
