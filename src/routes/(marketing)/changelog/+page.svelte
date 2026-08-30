@@ -5,6 +5,30 @@
 
 	const changelog = [
 		{
+			version: '1.7.11',
+			date: 'August 27, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Introduced Pip, an animated study coach with expressive states and a new icon throughout the app',
+						'Added page-toolbar controls for starting new Pip chats and switching between conversations'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Updated coach navigation, review actions, prompts, and approval messages to use the consistent Pip branding',
+						'Improved Pip chat layout and avatar sizing on smaller screens, with clearer thinking and activity feedback'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Improved quiz generation state handling to prevent stale loading feedback']
+				}
+			]
+		},
+		{
 			version: '1.7.10',
 			date: 'August 26, 2026',
 			sections: [
@@ -1234,7 +1258,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 26, 2026"
+			meta="Last Updated: August 27, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

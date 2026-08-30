@@ -237,7 +237,15 @@ export async function createSuperAgentStreamResponse(
 				.find((message) => message.role === 'assistant');
 			if (!lastAssistant) {
 				await cleanup();
-				return json({ error: 'Coach could not continue that practice question.' }, { status: 409 });
+				return json(
+					{
+						error:
+							surface === 'coach'
+								? 'Pip could not continue that practice question.'
+								: 'Could not continue that practice question.'
+					},
+					{ status: 409 }
+				);
 			}
 			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
 				'input-available',

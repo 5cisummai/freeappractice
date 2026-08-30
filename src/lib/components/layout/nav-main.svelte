@@ -7,9 +7,9 @@
 	import BarChart3IconComponent from '@tabler/icons-svelte/icons/chart-pie-filled';
 	import ShieldIconComponent from '@tabler/icons-svelte/icons/shield-filled';
 	import SparklesIconComponent from '@tabler/icons-svelte/icons/sparkles-filled';
-	import BrainCircuitIconComponent from '@tabler/icons-svelte/icons/message-chatbot-filled';
 	import UsersIconComponent from '@tabler/icons-svelte/icons/user-filled';
 	import LayersIconComponent from '@tabler/icons-svelte/icons/stack-filled';
+	import PipIcon from '$lib/components/coach/pip-icon.svelte';
 	import type { Component } from 'svelte';
 
 	type NavHref =
@@ -34,7 +34,7 @@
 	const BarChart3Icon = BarChart3IconComponent as unknown as Component;
 	const ShieldIcon = ShieldIconComponent as unknown as Component;
 	const SparklesIcon = SparklesIconComponent as unknown as Component;
-	const BrainCircuitIcon = BrainCircuitIconComponent as unknown as Component;
+	const PipNavIcon = PipIcon as unknown as Component;
 	const UsersIcon = UsersIconComponent as unknown as Component;
 	const LayersIcon = LayersIconComponent as unknown as Component;
 
@@ -51,7 +51,7 @@
 	const overviewItems = $derived.by((): NavItem[] => {
 		const items: NavItem[] = [{ href: '/app', label: 'Home', icon: HomeIcon }];
 		if (assistantFeaturesEnabled) {
-			items.push({ href: '/app/coach', label: 'Ask Coach', icon: BrainCircuitIcon });
+			items.push({ href: '/app/coach', label: 'Ask Pip', icon: PipNavIcon });
 		}
 		return items;
 	});

@@ -1,4 +1,4 @@
-import { getContext, setContext } from 'svelte';
+import { getContext, setContext, type Snippet } from 'svelte';
 
 type Getter<T> = () => T;
 
@@ -29,4 +29,23 @@ export function setCoachSidebar(props: CoachSidebarStateProps): CoachSidebarStat
 
 export function useCoachSidebar(): CoachSidebarState {
 	return getContext(COACH_SIDEBAR_CONTEXT);
+}
+
+/** Page-surface coach toolbar snippet registered by CoachShell for the app topbar. */
+class CoachPageToolbarState {
+	snippet = $state.raw<Snippet | null>(null);
+
+	setSnippet = (value: Snippet | null) => {
+		this.snippet = value;
+	};
+}
+
+const COACH_PAGE_TOOLBAR_CONTEXT = Symbol('freeappractice-coach-page-toolbar');
+
+export function setCoachPageToolbar(): CoachPageToolbarState {
+	return setContext(COACH_PAGE_TOOLBAR_CONTEXT, new CoachPageToolbarState());
+}
+
+export function useCoachPageToolbar(): CoachPageToolbarState {
+	return getContext(COACH_PAGE_TOOLBAR_CONTEXT);
 }

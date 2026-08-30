@@ -13,6 +13,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
+	import { setCoachPageToolbar } from '$lib/components/super/coach-context.svelte.js';
 	import {
 		captureAuthenticatedStudentReturnedIfNeeded,
 		captureSignupCompleted
@@ -26,6 +27,7 @@
 	} from '$lib/shared-practice/pending-runs.js';
 
 	let { data, children } = $props();
+	const coachPageToolbar = setCoachPageToolbar();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
 	const isCoachPage = $derived.by(() => {
 		const coachHref = resolve('/app/coach');
@@ -107,7 +109,10 @@
 			<Sidebar.Inset>
 				<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 					<SidebarTrigger />
-					<div class="ml-auto flex items-center gap-1">
+					<div class="ml-auto flex items-center gap-2">
+						{#if isCoachPage && coachPageToolbar.snippet}
+							{@render coachPageToolbar.snippet()}
+						{/if}
 						{#if layoutMounted}
 							<ThemeToggle />
 						{/if}

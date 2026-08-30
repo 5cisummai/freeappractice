@@ -55,19 +55,19 @@ export const POST: RequestHandler = withAuthedHandler(
 				{
 					error:
 						error instanceof RequestBodyTooLargeError
-							? 'Coach request is too large'
-							: 'Invalid Coach request'
+							? 'Pip request is too large'
+							: 'Invalid Pip request'
 				},
 				{ status: error instanceof RequestBodyTooLargeError ? 413 : 400 }
 			);
 		}
 
 		const parsed = coachRequestSchema.safeParse(body);
-		if (!parsed.success) return json({ error: 'Invalid Coach request' }, { status: 400 });
+		if (!parsed.success) return json({ error: 'Invalid Pip request' }, { status: 400 });
 		const messages = parsed.data.messages;
 		const isContinuation = isSuperAgentToolContinuation(messages);
 		if (!isContinuation && !messages.some((message) => message.role === 'user')) {
-			return json({ error: 'Coach needs a student message.' }, { status: 400 });
+			return json({ error: 'Pip needs a student message.' }, { status: 400 });
 		}
 
 		try {
@@ -90,7 +90,7 @@ export const POST: RequestHandler = withAuthedHandler(
 		} catch (error) {
 			if (error instanceof RedisRequiredError) {
 				return json(
-					{ error: 'Coach is temporarily unavailable. Please try again.' },
+					{ error: 'Pip is temporarily unavailable. Please try again.' },
 					{ status: 503 }
 				);
 			}

@@ -280,7 +280,7 @@ export function createSuperTools(input: SuperToolsInput) {
 							await releaseIdempotencyKey(userId, operationId);
 							return {
 								updated: false,
-								error: 'Completed study tasks cannot be changed or rescheduled by Coach.'
+								error: 'Completed study tasks cannot be changed or rescheduled by Pip.'
 							};
 						}
 					}

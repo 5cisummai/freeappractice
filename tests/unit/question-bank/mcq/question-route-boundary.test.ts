@@ -3,10 +3,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getQuestion, capturePathQuestionRequestMetric } = vi.hoisted(() => ({
-	getQuestion: vi.fn(),
-	capturePathQuestionRequestMetric: vi.fn()
-}));
+const { getQuestion, capturePathQuestionRequestMetric, limitQuestionPoolRequests } = vi.hoisted(
+	() => ({
+		getQuestion: vi.fn(),
+		capturePathQuestionRequestMetric: vi.fn(),
+		limitQuestionPoolRequests: vi.fn()
+	})
+);
 
 vi.mock('$lib/question-bank/mcq/bank.server', () => ({ mcqBank: { get: getQuestion } }));
 vi.mock('$lib/server/logger', () => ({
@@ -22,6 +25,7 @@ vi.mock('$lib/server/question-request-metrics', async () => {
 		capturePathQuestionRequestMetric
 	};
 });
+vi.mock('$lib/server/api-rate-limit.server', () => ({ limitQuestionPoolRequests }));
 
 import { POST } from '../../../../src/routes/api/question/+server';
 
@@ -35,6 +39,12 @@ describe('POST /api/question selection-only boundary', () => {
 	beforeEach(() => {
 		getQuestion.mockReset();
 		capturePathQuestionRequestMetric.mockClear();
+		limitQuestionPoolRequests.mockResolvedValue({
+			allowed: true,
+			retryAt: null,
+			limit: 20,
+			degraded: true
+		});
 	});
 
 	it('returns POOL_WARMING quickly when the pool is empty', async () => {

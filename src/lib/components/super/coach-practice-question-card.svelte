@@ -39,7 +39,7 @@
 		loadError = '';
 		question = null;
 		if (!inputSnapshot) {
-			loadError = 'Coach could not start this practice question.';
+			loadError = 'Pip could not start this practice question.';
 			return;
 		}
 		void loadQuestion(inputSnapshot, generation);

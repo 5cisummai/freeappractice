@@ -31,7 +31,6 @@
 	import SidebarCloseIcon from '@tabler/icons-svelte/icons/x';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
 	import * as Confirmation from '$lib/components/ai-elements/confirmation/index.js';
 	import * as Message from '$lib/components/ai-elements/message/index.js';
@@ -44,13 +43,15 @@
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
 	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
 	import CoachConversationMenu from '$lib/components/super/coach-conversation-menu.svelte';
+	import CoachAvatar from '$lib/components/coach/coach-avatar.svelte';
+	import { COACH_AVATAR_MONTAGES, COACH_AVATAR_STATES } from '$lib/coach/avatar-state';
 	import {
 		getCoachPracticeQuestionToolOutput,
 		isCoachPracticeQuestionPending,
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
 	import type { CoachUIMessage } from '$lib/super/coach.server';
-	import { useCoachSidebar } from './coach-context.svelte.js';
+	import { useCoachPageToolbar, useCoachSidebar } from './coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
@@ -73,6 +74,7 @@
 
 	let { surface = 'page' }: CoachShellProps = $props();
 	const coachSidebar = useCoachSidebar();
+	const coachPageToolbar = useCoachPageToolbar();
 
 	let sessionId = $state('');
 	let conversationId = $state('');
@@ -212,6 +214,7 @@
 	});
 
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
+	let composerHasText = $derived(input.trim().length > 0);
 	let hasMessages = $derived((coach.messages ?? []).length > 0);
 	let emptyChat = $derived(!hasMessages);
 	let canSendComposer = $derived(
@@ -299,6 +302,21 @@
 			const toolPart = getToolPart(part);
 			return toolPart ? [getToolActivity(toolPart, index)] : [];
 		});
+	}
+
+	function hasCompletedPracticeQuestion(message: CoachUIMessage): boolean {
+		return message.parts.some((part) => {
+			const toolPart = getToolPart(part);
+			return Boolean(toolPart && getCoachPracticeQuestionToolOutput(toolPart.output));
+		});
+	}
+
+	function isStreamingAnswer(message: CoachUIMessage, messageIndex: number): boolean {
+		return (
+			streaming &&
+			messageIndex === coach.messages.length - 1 &&
+			messageText(message).trim().length > 0
+		);
 	}
 
 	function activitySummary(activities: ToolActivity[]): string {
@@ -394,18 +412,18 @@
 		};
 	}
 
-	let statusLabel = $derived.by(() => {
-		if (!streaming) return null;
+	let showThinkingIndicator = $derived.by(() => {
+		if (!streaming) return false;
 
 		const last = coach.messages.at(-1);
-		if (!last || last.role !== 'assistant') return 'Working on it…';
+		if (!last || last.role !== 'assistant') return true;
 
 		const tools = last.parts
 			.map(getToolPart)
 			.filter((part): part is CoachToolPart => part !== null);
-		if (tools.some((tool) => isToolInProgress(tool.state))) return null;
-		if (messageText(last).trim()) return null;
-		return tools.length ? null : 'Working on it…';
+		if (tools.some((tool) => isToolInProgress(tool.state))) return false;
+		if (messageText(last).trim()) return false;
+		return tools.length === 0;
 	});
 
 	onMount(() => {
@@ -435,6 +453,12 @@
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			motionMs = 0;
 		}
+	});
+
+	$effect(() => {
+		if (surface !== 'page') return;
+		coachPageToolbar.setSnippet(pageToolbar);
+		return () => coachPageToolbar.setSnippet(null);
 	});
 
 	async function loadConversations(): Promise<void> {
@@ -521,10 +545,6 @@
 		await copyText(text, 'Response copied.');
 	}
 
-	async function copyPrompt(message: CoachUIMessage): Promise<void> {
-		await copyText(messageText(message), 'Prompt copied.');
-	}
-
 	function messageFeedback(messageId: string): CoachMessageFeedback | undefined {
 		return messageFeedbackById[messageId];
 	}
@@ -548,24 +568,6 @@
 		}
 	}
 
-	async function retryPrompt(messageId: string): Promise<void> {
-		if (streaming) return;
-		const messageIndex = coach.messages.findIndex((message) => message.id === messageId);
-		const prompt = coach.messages[messageIndex];
-		if (!prompt) return;
-
-		const response = coach.messages
-			.slice(messageIndex + 1)
-			.find((message) => message.role === 'assistant');
-		if (response) {
-			await regenerateMessage(response.id);
-			return;
-		}
-		const text = messageText(prompt);
-		coach.messages = coach.messages.slice(0, messageIndex);
-		await send(text);
-	}
-
 	async function respondToApproval(approvalId: string, approved: boolean) {
 		if (!approvalId || approving) return;
 		approving = true;
@@ -575,7 +577,7 @@
 				approved
 			});
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not respond to Coach.');
+			toast.error(error instanceof Error ? error.message : 'Could not respond to Pip.');
 		} finally {
 			approving = false;
 		}
@@ -613,7 +615,7 @@
 		try {
 			await coach.sendMessage({ text: message });
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Coach is unavailable right now.');
+			toast.error(error instanceof Error ? error.message : 'Pip is unavailable right now.');
 		} finally {
 			pendingCoachActions = [];
 		}
@@ -665,6 +667,105 @@
 	}
 </script>
 
+{#snippet conversationControls()}
+	<Button
+		variant="ghost"
+		class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+		onclick={startNewConversation}
+		aria-label="Start a new chat"
+		title="New chat"
+	>
+		<PencilIcon class="size-4" aria-hidden="true" />
+		<span>New Chat</span>
+	</Button>
+	{#if clientReady}
+		<Popover.Root bind:open={conversationsOpen}>
+			<Popover.Trigger>
+				{#snippet child({ props })}
+					<Button
+						{...props}
+						variant="ghost"
+						class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+						aria-expanded={conversationsOpen}
+						aria-label="Show conversations"
+					>
+						<span>Conversations</span>
+						<ChevronDownIcon
+							class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
+							aria-hidden="true"
+						/>
+					</Button>
+				{/snippet}
+			</Popover.Trigger>
+			<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
+				<div class="flex items-center justify-between px-3 py-2">
+					<span class="text-sm font-medium">Conversations</span>
+					{#if conversationsLoading}
+						<Loader2Icon class="size-4 animate-spin text-muted-foreground" aria-label="Loading" />
+					{/if}
+				</div>
+				{#if conversationsError}
+					<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
+						<p>{conversationsError}</p>
+						<button
+							type="button"
+							class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
+							onclick={() => void loadConversations()}
+						>
+							Try again
+						</button>
+					</div>
+				{:else if conversationsLoading && !conversations.length}
+					<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
+				{:else if !conversations.length}
+					<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
+				{:else}
+					<div class="max-h-72 overflow-y-auto">
+						{#each conversations as conversation (conversation.id)}
+							<div
+								class={cn(
+									'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
+									conversation.id === conversationId && 'bg-muted'
+								)}
+							>
+								<button
+									type="button"
+									class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
+									aria-current={conversation.id === conversationId ? 'page' : undefined}
+									disabled={loadingConversationId !== null}
+									onclick={() => void selectConversation(conversation.id)}
+								>
+									<span
+										class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
+									>
+										{conversation.title}
+									</span>
+									<span class="shrink-0 text-xs text-muted-foreground">
+										{formatConversationDate(conversation)}
+									</span>
+								</button>
+								<CoachConversationMenu
+									{conversation}
+									disabled={loadingConversationId !== null}
+									class="mr-1 self-center"
+									onRenamed={handleConversationRenamed}
+									onDeleted={(id) => void handleConversationDeleted(id)}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</Popover.Content>
+		</Popover.Root>
+	{/if}
+{/snippet}
+
+{#snippet pageToolbar()}
+	<div class="flex items-center gap-2">
+		{@render conversationControls()}
+	</div>
+{/snippet}
+
 <div
 	class={cn(
 		'flex min-h-0 flex-col overflow-hidden',
@@ -672,118 +773,21 @@
 	)}
 >
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-		<div
-			class={cn(
-				'mx-auto flex w-full max-w-3xl justify-end gap-2 pt-3',
-				surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
-			)}
-		>
-			<Button
-				variant="ghost"
-				class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-				onclick={startNewConversation}
-				aria-label="Start a new chat"
-				title="New chat"
-			>
-				<PencilIcon class="size-4" aria-hidden="true" />
-				<span>New Chat</span>
-			</Button>
-			{#if clientReady}
-				<Popover.Root bind:open={conversationsOpen}>
-					<Popover.Trigger>
-						{#snippet child({ props })}
-							<Button
-								{...props}
-								variant="ghost"
-								class="rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
-								aria-expanded={conversationsOpen}
-								aria-label="Show conversations"
-							>
-								<span>Conversations</span>
-								<ChevronDownIcon
-									class={cn('size-4 transition-transform', conversationsOpen && 'rotate-180')}
-									aria-hidden="true"
-								/>
-							</Button>
-						{/snippet}
-					</Popover.Trigger>
-					<Popover.Content align="end" class="w-[min(22rem,calc(100vw-2rem))] gap-0 p-1">
-						<div class="flex items-center justify-between px-3 py-2">
-							<span class="text-sm font-medium">Conversations</span>
-							{#if conversationsLoading}
-								<Loader2Icon
-									class="size-4 animate-spin text-muted-foreground"
-									aria-label="Loading"
-								/>
-							{/if}
-						</div>
-						{#if conversationsError}
-							<div class="space-y-2 px-3 py-3 text-sm text-muted-foreground">
-								<p>{conversationsError}</p>
-								<button
-									type="button"
-									class="font-medium text-foreground underline underline-offset-4 hover:no-underline"
-									onclick={() => void loadConversations()}
-								>
-									Try again
-								</button>
-							</div>
-						{:else if conversationsLoading && !conversations.length}
-							<p class="px-3 py-3 text-sm text-muted-foreground">Loading conversations…</p>
-						{:else if !conversations.length}
-							<p class="px-3 py-3 text-sm text-muted-foreground">No conversations yet.</p>
-						{:else}
-							<div class="max-h-72 overflow-y-auto">
-								{#each conversations as conversation (conversation.id)}
-									<div
-										class={cn(
-											'group flex w-full items-start gap-1 rounded-lg transition-colors focus-within:bg-muted hover:bg-muted',
-											conversation.id === conversationId && 'bg-muted'
-										)}
-									>
-										<button
-											type="button"
-											class="flex min-w-0 flex-1 items-start gap-3 px-3 py-2.5 text-left focus-visible:outline-none disabled:opacity-50"
-											aria-current={conversation.id === conversationId ? 'page' : undefined}
-											disabled={loadingConversationId !== null}
-											onclick={() => void selectConversation(conversation.id)}
-										>
-											<span
-												class="ph-mask-pii min-w-0 flex-1 truncate text-sm font-medium text-foreground"
-											>
-												{conversation.title}
-											</span>
-											<span class="shrink-0 text-xs text-muted-foreground">
-												{formatConversationDate(conversation)}
-											</span>
-										</button>
-										<CoachConversationMenu
-											{conversation}
-											disabled={loadingConversationId !== null}
-											class="mr-1 self-center"
-											onRenamed={handleConversationRenamed}
-											onDeleted={(id) => void handleConversationDeleted(id)}
-										/>
-									</div>
-								{/each}
-							</div>
-						{/if}
-					</Popover.Content>
-				</Popover.Root>
-			{/if}
-			{#if surface === 'sidebar'}
+		{#if surface === 'sidebar'}
+			<div class="mx-auto flex w-full max-w-3xl justify-end gap-2 px-2 pt-3">
+				{@render conversationControls()}
 				<Button
 					variant="ghost"
 					size="icon-sm"
 					class="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-					aria-label="Close Coach sidebar"
-					title="Close Coach sidebar"
+					aria-label="Close Pip sidebar"
+					title="Close Pip sidebar"
 					onclick={() => coachSidebar.toggle()}
 				>
 					<SidebarCloseIcon aria-hidden="true" />
 				</Button>
-			{/if}
-		</div>
+			</div>
+		{/if}
 		<div
 			class={cn(
 				'relative min-h-0 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
@@ -798,40 +802,64 @@
 					<Conversation.Root class="min-h-0 min-w-0 flex-1">
 						<Conversation.Content
 							class={cn(
-								'mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain pt-8 pb-6 sm:pt-10',
+								'@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain pt-8 pb-6 sm:pt-10',
 								surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
 							)}
 							aria-live="polite"
 						>
 							{#each coach.messages as message, messageIndex (message.id)}
-								<Message.Root from={message.role} class="ph-mask-pii max-w-3xl gap-1">
+								<Message.Root
+									from={message.role}
+									class={cn(
+										'ph-mask-pii max-w-3xl gap-1',
+										message.role === 'assistant' && '@min-[32rem]:relative @min-[32rem]:pl-16'
+									)}
+								>
 									{#if message.role === 'user'}
 										<Message.Content
 											class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap"
 										>
 											{messageText(message)}
 										</Message.Content>
-										{#if messageText(message)}
-											<Message.Actions class="mt-0 ml-auto">
-												<Message.Action
-													tooltip="Copy prompt"
-													label="Copy prompt"
-													onclick={() => void copyPrompt(message)}
-												>
-													<CopyIcon />
-												</Message.Action>
-												<Message.Action
-													tooltip="Retry prompt"
-													label="Retry prompt"
-													disabled={streaming}
-													onclick={() => void retryPrompt(message.id)}
-												>
-													<RefreshCwIcon />
-												</Message.Action>
-											</Message.Actions>
-										{/if}
 									{:else}
 										{@const activities = getToolActivities(message)}
+										{@const isCurrentAssistant = messageIndex === coach.messages.length - 1}
+										<CoachAvatar
+											state={isCurrentAssistant
+												? isStreamingAnswer(message, messageIndex)
+													? COACH_AVATAR_STATES.waiting
+													: streaming
+														? COACH_AVATAR_STATES.thinking
+														: composerHasText
+															? COACH_AVATAR_STATES.waiting
+															: activities.some((activity) => activity.state === 'error')
+																? COACH_AVATAR_STATES.correction
+																: activities.some((activity) => activity.state === 'running')
+																	? COACH_AVATAR_STATES.progress
+																	: COACH_AVATAR_STATES.waiting
+												: COACH_AVATAR_STATES.waiting}
+											expression={isCurrentAssistant
+												? streaming || composerHasText
+													? 'attentive'
+													: activities.some((activity) => activity.state === 'error')
+														? 'confused'
+														: activities.some((activity) => activity.state === 'running')
+															? 'curious'
+															: 'neutral'
+												: 'neutral'}
+											montage={isCurrentAssistant
+												? activities.some((activity) => activity.state === 'error')
+													? COACH_AVATAR_MONTAGES.correction
+													: hasCompletedPracticeQuestion(message)
+														? COACH_AVATAR_MONTAGES.success
+														: undefined
+												: undefined}
+											size={48}
+											paused={!isCurrentAssistant}
+											interactive={isCurrentAssistant}
+											label="Pip"
+											class="@min-[32rem]:absolute @min-[32rem]:top-0 @min-[32rem]:left-0"
+										/>
 										{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 											{@const toolPart = getToolPart(part)}
 											{#if toolPart}
@@ -877,7 +905,7 @@
 															<Confirmation.Request>
 																<Confirmation.Title>Approval needed</Confirmation.Title>
 																<p class="text-sm leading-6 text-muted-foreground">
-																	Coach is ready to make this change.
+																	Pip is ready to make this change.
 																</p>
 																<div class="rounded-xl bg-muted/60 p-3">
 																	<p class="text-sm font-medium">{summary.title}</p>
@@ -1064,16 +1092,22 @@
 									{/if}
 								</Message.Root>
 							{/each}
-							{#if statusLabel}
+							{#if showThinkingIndicator}
 								<Message.Root from="assistant" class="max-w-3xl">
-									<div role="status" aria-live="polite" aria-label={statusLabel}>
-										{#key statusLabel}
-											<span in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}>
-												<Shimmer as="span" content_length={statusLabel.length} class="text-md">
-													{statusLabel}
-												</Shimmer>
-											</span>
-										{/key}
+									<div
+										class="flex items-center"
+										role="status"
+										aria-live="polite"
+										aria-label="Pip is thinking"
+									>
+										<CoachAvatar
+											state="thinking"
+											expression="attentive"
+											size={44}
+											interactive
+											label="Pip is thinking"
+											class="shrink-0"
+										/>
 									</div>
 								</Message.Root>
 							{/if}
@@ -1093,9 +1127,16 @@
 		>
 			{#if emptyChat}
 				<div
-					class="mb-8 text-center sm:mb-10"
+					class="mb-8 flex flex-col items-center text-center sm:mb-10"
 					out:fade={{ duration: motionMs * 0.7, easing: cubicOut }}
 				>
+					<CoachAvatar
+						state={streaming ? 'thinking' : 'idle'}
+						expression={streaming || composerHasText ? 'attentive' : 'neutral'}
+						size={128}
+						interactive
+						class="mb-5"
+					/>
 					<h1
 						class="font-display text-3xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-4xl"
 					>
@@ -1106,7 +1147,7 @@
 
 			{#if clientReady}
 				<PromptInput.Root
-					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)] dark:focus-within:shadow-[0_6px_20px_rgba(0,0,0,0.36)]"
+					class="rounded-[24px] border border-border/70 bg-background shadow-sm transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-sm"
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>
@@ -1139,7 +1180,7 @@
 							<PromptInput.ActionMenuTrigger
 								class="size-9 shrink-0 self-end rounded-full text-muted-foreground hover:text-foreground"
 								disabled={!sessionId || streaming}
-								aria-label="Coach actions"
+								aria-label="Pip actions"
 							/>
 							<PromptInput.ActionMenuContent
 								align="start"
@@ -1169,7 +1210,7 @@
 							<PromptInput.Textarea
 								bind:ref={composerInputRef}
 								bind:value={input}
-								placeholder="Ask Coach"
+								placeholder="Ask Pip"
 								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
 							/>
 						</PromptInput.Body>
@@ -1183,7 +1224,7 @@
 							<Select.Trigger
 								class="h-9 shrink-0 gap-1 self-end border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
 								disabled={!sessionId || streaming}
-								aria-label="Coach response depth"
+								aria-label="Pip response depth"
 							>
 								{@const Icon = selectedThinkingMode.icon}
 								<Icon class="size-3.5 shrink-0" aria-hidden="true" />
@@ -1241,7 +1282,7 @@
 						class="mt-2 text-center text-[11px] text-muted-foreground"
 						in:fade={{ duration: motionMs * 0.5, delay: motionMs * 0.25, easing: cubicOut }}
 					>
-						Coach is powered by AI and can make mistakes.
+						Pip is powered by AI and can make mistakes.
 					</p>
 				{/if}
 			{/if}
