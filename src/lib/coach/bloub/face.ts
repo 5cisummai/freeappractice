@@ -111,11 +111,12 @@ export interface Liveliness {
 }
 
 const BLINK_RNG = createRng(0x5eed);
+const BLINK_PERIOD = 900;
 /** Calendrier de clignements pre-tire : deterministe et sans etat. */
 const BLINKS: number[] = (() => {
 	const out: number[] = [];
 	let t = 1.4;
-	while (t < 900) {
+	while (t < BLINK_PERIOD) {
 		out.push(t);
 		// 1.9 a 4.6 s entre deux clignements, plus un double clignement parfois
 		t += 1.9 + BLINK_RNG() * 2.7;
@@ -131,10 +132,11 @@ const BLINKS: number[] = (() => {
 const BLINK_DUR = 0.18;
 
 function blinkLid(t: number): number {
+	const sceneClock = ((t % BLINK_PERIOD) + BLINK_PERIOD) % BLINK_PERIOD;
 	for (let i = 0; i < BLINKS.length; i++) {
 		const start = BLINKS[i]!;
-		if (t < start) break;
-		const k = (t - start) / BLINK_DUR;
+		if (sceneClock < start) break;
+		const k = (sceneClock - start) / BLINK_DUR;
 		if (k >= 0 && k <= 1) {
 			// fermeture rapide, reouverture un peu plus lente
 			return k < 0.45 ? 1 - k / 0.45 : (k - 0.45) / 0.55;

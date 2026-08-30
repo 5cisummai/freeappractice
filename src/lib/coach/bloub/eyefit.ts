@@ -33,16 +33,17 @@
  * couvrir le pire cas de la derive du regard, ce qu'une version par image ne pouvait pas
  * se permettre.
  *
- * La table est une constante de module, batie a l'import a partir de donnees pures :
- * meme nature que le calendrier de clignements de `face.ts`, deterministe et sans etat,
- * donc sans effet sur la purete de `engine.sample(t)`.
+ * Le moteur garde un cache de module, alimente a la premiere lecture pour chaque forme
+ * etat et expression. Les tests peuvent demander explicitement la table complete avec
+ * `batir`. Dans les deux cas, les donnees restent pures, deterministes et sans effet sur
+ * la purete de `engine.sample(t)`.
  */
 
-import { EXPRESSIONS, type BotExpression } from './expressions';
+import { EXPRESSION_BY_ID, EXPRESSIONS, type BotExpression } from './expressions';
 import { eyePoses } from './face';
 import { radiusAtAngle, toPoints, type Point } from './shape';
 import { SHAPES } from './skins';
-import { STATES, type Pose, type StateDef, type StateId } from './states';
+import { STATE_BY_ID, STATES, type Pose, type StateDef, type StateId } from './states';
 
 /** Rayon de reference du solveur. Le decalage rendu est en unites de ce rayon. */
 const R = 100;
@@ -426,7 +427,10 @@ function batir(): Map<number[], Map<string, { x: number; y: number }>> {
 	);
 }
 
-const DECALAGES = batir();
+type Decalage = { x: number; y: number };
+type CacheDesDecalages = Map<number[], Map<StateId, Map<string, Decalage>>>;
+
+const DECALAGES: CacheDesDecalages = new Map();
 
 /**
  * Decalage a appliquer aux deux yeux pour cette forme sur cet etat, en unites de rayon
@@ -443,10 +447,30 @@ export function decalageDesYeux(
 	expr: string | null
 ): { x: number; y: number } {
 	if (!radii) return NUL;
-	const par = DECALAGES.get(radii);
-	if (!par) return NUL;
-	// un etat sans visage de repos n'a qu'une entree, quelle que soit l'expression
-	return par.get(clef(state, expr)) ?? par.get(clef(state, null)) ?? NUL;
+	const def = STATE_BY_ID.get(state);
+	if (!def?.baseBody) return NUL;
+
+	// Un etat sans visage de repos n'a qu'une entree, quelle que soit l'expression.
+	// Les expressions inconnues gardent aussi le fallback historique vers l'entree nulle.
+	const expression = def.baseFace && expr ? (EXPRESSION_BY_ID.get(expr) ?? null) : null;
+	let parEtat = DECALAGES.get(radii);
+	if (!parEtat) {
+		parEtat = new Map();
+		DECALAGES.set(radii, parEtat);
+	}
+	let parExpression = parEtat.get(state);
+	if (!parExpression) {
+		parExpression = new Map();
+		parEtat.set(state, parExpression);
+	}
+
+	const key = expression?.id ?? '';
+	const cached = parExpression.get(key);
+	if (cached) return cached;
+
+	const decalage = decalagePour(def, radii, expression);
+	parExpression.set(key, decalage);
+	return decalage;
 }
 
 /** Pour les tests : de quoi verifier la table sans refaire la geometrie. */

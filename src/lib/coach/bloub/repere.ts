@@ -2,12 +2,11 @@
  * Le repere de tout ce que le moteur rend.
  *
  * `engine.sample()` sort des coordonnees en unites de viewBox, et ces deux nombres en sont
- * la definition : sans eux, une sortie du moteur ne veut rien dire. Ils vivaient dans
- * `BloubBot.vue`, donc hors d'atteinte — un `<script setup>` n'exporte rien — et
- * `export.ts` en redisait un a la main avec le commentaire qui nommait le probleme.
+ * la definition : sans eux, une sortie du moteur ne veut rien dire. Ils etaient repartis
+ * entre `src/lib/components/coach/coach-avatar.svelte` et
+ * `src/lib/components/coach/pip-icon-mark.ts`, ce qui pouvait faire diverger les clients.
  *
- * Ils sont ici parce que `src/bot/` est ce qui se lit et se consomme du dehors : le
- * composant Vue est UN client du moteur, pas sa definition.
+ * Ils sont ici parce que ces composants sont des clients du moteur, pas sa definition.
  */
 
 /**
