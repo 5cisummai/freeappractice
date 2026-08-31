@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
@@ -16,7 +16,8 @@
 	import { setCoachPageToolbar } from '$lib/components/super/coach-context.svelte.js';
 	import {
 		captureAuthenticatedStudentReturnedIfNeeded,
-		captureSignupCompleted
+		captureSignupCompleted,
+		captureUserLoggedIn
 	} from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { apiFetch } from '$lib/client/api.js';
@@ -36,6 +37,15 @@
 	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
 	let freeBetaClaimOpen = $state(false);
 	let layoutMounted = $state(false);
+
+	function stripAuthQueryParam(param: 'signup' | 'login') {
+		const url = new URL(page.url);
+		if (!url.searchParams.has(param)) return;
+		url.searchParams.delete(param);
+		// Pathname is the current resolved app route; only the query string changes.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
+	}
 
 	$effect(() => {
 		if (data.showFreeBetaClaimDialog && !isOnboarding) {
@@ -68,15 +78,19 @@
 	});
 
 	afterNavigate(() => {
-		if (!data.user || page.url.searchParams.get('signup') !== 'google') return;
+		if (!data.user) return;
 
-		captureSignupCompleted('google');
-		const url = new URL(page.url);
-		url.searchParams.delete('signup');
-		const appHref = `${resolve('/app')}${url.search}`;
-		// appHref is resolved above; the query string is appended after resolution.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		void goto(appHref, { replaceState: true, keepFocus: true, noScroll: true });
+		if (page.url.searchParams.get('signup') === 'google') {
+			captureSignupCompleted('google');
+			captureUserLoggedIn('google');
+			stripAuthQueryParam('signup');
+			return;
+		}
+
+		if (page.url.searchParams.get('login') === 'google') {
+			captureUserLoggedIn('google');
+			stripAuthQueryParam('login');
+		}
 	});
 </script>
 

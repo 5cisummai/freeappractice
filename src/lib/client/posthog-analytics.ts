@@ -11,6 +11,7 @@ type PostHogOperation =
 	| { kind: 'capture'; event: string; properties?: Record<string, unknown> }
 	| { kind: 'identify'; distinctId: string; properties?: Record<string, unknown> }
 	| { kind: 'pageview'; url?: string }
+	| { kind: 'pageleave'; url?: string }
 	| { kind: 'exception'; error: unknown };
 
 type PendingOperation = Extract<PostHogOperation, { kind: 'capture' | 'identify' }>;
@@ -27,8 +28,12 @@ export function initPostHogAnalytics() {
 		ui_host: 'https://us.posthog.com',
 		defaults: '2026-05-30',
 		capture_exceptions: true,
+		// Pending + rejected visitors get cookieless page traffic; cookies only after opt_in.
 		cookieless_mode: 'on_reject',
+		opt_out_capturing_by_default: true,
+		// Manual $pageview + $pageleave so SvelteKit client navigations are counted.
 		capture_pageview: false,
+		capture_pageleave: false,
 		session_recording: {
 			maskAllInputs: true,
 			// Elements marked with .ph-mask-pii (including conversation messages) are hashed in replays.
@@ -65,8 +70,13 @@ export function applyPostHogConsent(consent: AnalyticsConsent) {
 
 	if (consent === 'denied') {
 		pendingOperations = [];
+		// Explicit reject: cookieless_mode on_reject still sends privacy-preserving page traffic.
 		posthog.opt_out_capturing();
+		return;
 	}
+
+	// Pending: leave PostHog in default cookieless capturing (opt_out_capturing_by_default).
+	// Do not call opt_out here — that would mark consent DENIED and hide the banner state.
 }
 
 export function capturePostHogEvent(event: string, properties?: Record<string, unknown>) {
@@ -79,6 +89,10 @@ export function identifyPostHogUser(distinctId: string, properties?: Record<stri
 
 export function capturePostHogPageview(url?: string) {
 	dispatchPostHogOperation({ kind: 'pageview', url });
+}
+
+export function capturePostHogPageleave(url?: string) {
+	dispatchPostHogOperation({ kind: 'pageleave', url });
 }
 
 export function resetPostHogUser(options: { clearPersistence?: boolean } = {}) {
@@ -133,6 +147,9 @@ function sendPostHogOperation(operation: PostHogOperation): void {
 			return;
 		case 'pageview':
 			posthog.capture('$pageview', operation.url ? { $current_url: operation.url } : undefined);
+			return;
+		case 'pageleave':
+			posthog.capture('$pageleave', operation.url ? { $current_url: operation.url } : undefined);
 			return;
 		case 'exception':
 			posthog.captureException(operation.error);

@@ -5,6 +5,22 @@
 
 	const changelog = [
 		{
+			version: '1.7.12',
+			date: 'August 30, 2026',
+			sections: [
+				{
+					title: 'Reliability',
+					items: [
+						'Fixed Google and One Tap login analytics so conversion tracking is no longer email-only',
+						'Fixed One Tap signups missing signup completion events',
+						'Queued first-answer and funnel events while analytics consent is pending, and kept journey keys aligned across Accept',
+						'Stopped double pageview counts when accepting or rejecting analytics, and when cleaning up Google signup URLs',
+						'Counted SEO practice page views across in-app navigations between practice pages'
+					]
+				}
+			]
+		},
+		{
 			version: '1.7.11',
 			date: 'August 27, 2026',
 			sections: [
@@ -1258,7 +1274,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 27, 2026"
+			meta="Last Updated: August 30, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

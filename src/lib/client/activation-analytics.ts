@@ -48,6 +48,9 @@ const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
 const FIRST_ANSWER_FLAG_KEY = 'ph_activation_first_answer_sent';
 const LAST_AUTH_VISIT_DAY_KEY = 'ph_last_auth_visit_day';
 let firstAnswerCapturedThisSession = false;
+let userLoggedInCapturedThisSession = false;
+/** In-memory journey key so pre-consent queued events can still join the funnel. */
+let memoryJourneyKey: string | undefined;
 
 const ACTIVATION_EVENTS = {
 	landingPageViewed: 'landing_page_viewed',
@@ -66,18 +69,32 @@ function canUseStorage(): boolean {
 }
 
 function getOrCreateJourneyKey(): string | undefined {
-	if (!canUseStorage()) return undefined;
+	if (typeof window === 'undefined') return memoryJourneyKey;
 
-	try {
-		const existing = localStorage.getItem(ACTIVATION_JOURNEY_KEY)?.trim();
-		if (existing) return existing;
-
-		const key = crypto.randomUUID();
-		localStorage.setItem(ACTIVATION_JOURNEY_KEY, key);
-		return key;
-	} catch {
-		return undefined;
+	if (canUseStorage()) {
+		try {
+			const existing = localStorage.getItem(ACTIVATION_JOURNEY_KEY)?.trim();
+			if (existing) {
+				memoryJourneyKey = existing;
+				return existing;
+			}
+			const key = memoryJourneyKey ?? crypto.randomUUID();
+			localStorage.setItem(ACTIVATION_JOURNEY_KEY, key);
+			memoryJourneyKey = key;
+			return key;
+		} catch {
+			// Fall through to in-memory key.
+		}
 	}
+
+	if (!memoryJourneyKey) {
+		try {
+			memoryJourneyKey = crypto.randomUUID();
+		} catch {
+			return undefined;
+		}
+	}
+	return memoryJourneyKey;
 }
 
 function withJourney(properties: Record<string, unknown> = {}): Record<string, unknown> {
@@ -150,13 +167,17 @@ export function captureFirstAnswerSubmitted(opts: {
 	isCorrect: boolean;
 	timeTakenMs: number;
 }): void {
-	if (firstAnswerCapturedThisSession || !hasAnalyticsConsent()) return;
+	if (firstAnswerCapturedThisSession) return;
 
-	try {
-		if (localStorage.getItem(FIRST_ANSWER_FLAG_KEY) === '1') return;
-		localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
-	} catch {
-		// Still attempt capture if storage is unavailable mid-session.
+	// Persist the once-ever flag only after consent (localStorage is consent-gated).
+	// Before consent, still queue the event so Accept can flush the activation funnel.
+	if (canUseStorage()) {
+		try {
+			if (localStorage.getItem(FIRST_ANSWER_FLAG_KEY) === '1') return;
+			localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
+		} catch {
+			// Still attempt capture if storage is unavailable mid-session.
+		}
 	}
 	firstAnswerCapturedThisSession = true;
 
@@ -175,8 +196,30 @@ export function captureSignupStarted(method?: 'email' | 'google' | 'page'): void
 	});
 }
 
-export function captureSignupCompleted(method: 'email' | 'google'): void {
+export function captureSignupCompleted(method: 'email' | 'google' | 'google_one_tap'): void {
 	captureActivation(ACTIVATION_EVENTS.signupCompleted, { method });
+}
+
+/** Once per JS session — Google OAuth/One Tap/email must not double-fire on remounts. */
+export function captureUserLoggedIn(method: 'email' | 'google' | 'google_one_tap'): void {
+	if (userLoggedInCapturedThisSession) return;
+	userLoggedInCapturedThisSession = true;
+	capturePostHogEvent('user_logged_in', { method });
+}
+
+/**
+ * After Accept: persist journey key + first-answer flag that were only held in memory
+ * while consent was pending.
+ */
+export function persistActivationAnalyticsAfterConsent(): void {
+	if (!canUseStorage()) return;
+	getOrCreateJourneyKey();
+	if (!firstAnswerCapturedThisSession) return;
+	try {
+		localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
+	} catch {
+		// ignore
+	}
 }
 
 /**
@@ -199,4 +242,11 @@ export function captureAuthenticatedStudentReturnedIfNeeded(): void {
 	} catch {
 		// ignore
 	}
+}
+
+/** Test-only: reset module session state between vitest cases. */
+export function resetActivationAnalyticsForTests(): void {
+	firstAnswerCapturedThisSession = false;
+	userLoggedInCapturedThisSession = false;
+	memoryJourneyKey = undefined;
 }

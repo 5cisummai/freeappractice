@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -35,6 +36,16 @@
 		requestVersion,
 		presetQuestionId,
 		mode
+	});
+
+	onMount(() => {
+		const apClass = page.url.searchParams.get('apClass') ?? '';
+		const unit = page.url.searchParams.get('unit') ?? '';
+		capturePostHogEvent('practice_page_viewed', {
+			ap_class: apClass || undefined,
+			page_type: 'app',
+			unit: unit || undefined
+		});
 	});
 
 	$effect(() => {
