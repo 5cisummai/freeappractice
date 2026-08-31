@@ -14,9 +14,14 @@
 	import { toast } from 'svelte-sonner';
 
 	type ChatMessage = {
+		id: string;
 		role: 'user' | 'assistant';
 		content: string;
 	};
+
+	function createMessage(role: ChatMessage['role'], content: string): ChatMessage {
+		return { id: crypto.randomUUID(), role, content };
+	}
 
 	type TutorWidgetProps = {
 		apClass?: string;
@@ -48,7 +53,7 @@
 		"Hi! I'm here to help you understand this question. What would you like to know?";
 
 	let isOpen = $state(false);
-	let messages = $state<ChatMessage[]>([{ role: 'assistant', content: GREETING }]);
+	let messages = $state<ChatMessage[]>([createMessage('assistant', GREETING)]);
 	let inputText = $state('');
 	let isStreaming = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
@@ -221,8 +226,8 @@
 
 		// Capture history before adding new messages
 		const conversationHistory = messages.map((m) => ({ role: m.role, content: m.content }));
-		messages.push({ role: 'user', content: text });
-		messages.push({ role: 'assistant', content: '' });
+		messages.push(createMessage('user', text));
+		messages.push(createMessage('assistant', ''));
 		const assistantIdx = messages.length - 1;
 		const streamId = activeStreamId + 1;
 		activeStreamId = streamId;
@@ -449,7 +454,7 @@
 				<span>Loading...</span>
 			</div>
 		{/if}
-		{#each messages as message, i (i)}
+		{#each messages as message, i (message.id)}
 			<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
 				{#if message.role === 'user'}
 					<div

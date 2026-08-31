@@ -65,8 +65,9 @@
 	let presetQuestionId = $state(untrack(() => initial.presetQuestionId ?? ''));
 	let mode = $state<'mcq' | 'frq'>(untrack(() => initial.mode ?? 'mcq'));
 	let count = $state(untrack(() => Math.min(50, Math.max(1, quiz.count ?? 10))));
-	let practiceMode = $state<PracticeMode>('unlimited');
-	let lastInitialRequestVersion = $state(untrack(() => initial.requestVersion ?? 0));
+	let practiceMode = $state<PracticeMode>(
+		untrack(() => (quiz.sharedQuiz ? 'graded' : 'unlimited'))
+	);
 	let expandedSelectorOpen = $state(false);
 	let cardExpanded = $state(false);
 
@@ -85,6 +86,20 @@
 		mode = nextMode;
 		requestVersion = 0;
 		onEvent?.({ type: 'mode-change', mode: nextMode });
+	}
+
+	function setPracticeMode(next: string | undefined): void {
+		const nextMode = next === 'graded' ? 'graded' : 'unlimited';
+		practiceMode = nextMode;
+		if (nextMode === 'graded') {
+			cardExpanded = false;
+			expandedSelectorOpen = false;
+		}
+	}
+
+	function setCardExpanded(next: boolean): void {
+		cardExpanded = next;
+		if (!next) expandedSelectorOpen = false;
 	}
 
 	function handleSelectionChange(className: string, unit: string): void {
@@ -110,46 +125,19 @@
 		}
 		onEvent?.({ type: 'generate', selectedClass, selectedUnit });
 	}
-
-	$effect(() => {
-		if (initial.selectedClass !== undefined && initial.selectedClass !== selectedClass) {
-			selectedClass = initial.selectedClass;
-		}
-		if (initial.selectedUnit !== undefined && initial.selectedUnit !== selectedUnit) {
-			selectedUnit = initial.selectedUnit;
-		}
-		if (initial.unitRange !== undefined && initial.unitRange !== unitRange) {
-			unitRange = initial.unitRange;
-		}
-		if (initial.mode !== undefined && initial.mode !== mode) mode = initial.mode;
-		if (initial.presetQuestionId !== undefined && initial.presetQuestionId !== presetQuestionId) {
-			presetQuestionId = initial.presetQuestionId;
-		}
-		const nextVersion = initial.requestVersion ?? 0;
-		if (nextVersion !== lastInitialRequestVersion) {
-			lastInitialRequestVersion = nextVersion;
-			requestVersion = nextVersion;
-		}
-	});
-
-	$effect(() => {
-		if (!cardExpanded) expandedSelectorOpen = false;
-	});
-
-	$effect(() => {
-		if (activeQuizMode) cardExpanded = false;
-	});
-
-	$effect(() => {
-		if (sharedQuiz) practiceMode = 'graded';
-	});
 </script>
 
 {#snippet practiceControls()}
 	{#if !sharedQuiz}
 		<div class="space-y-4">
 			<div class="mx-auto max-w-5xl">
-				<Tabs.Root bind:value={practiceMode} class="mb-4 w-full">
+				<Tabs.Root
+					bind:value={
+						() => practiceMode,
+						(value) => setPracticeMode(value)
+					}
+					class="mb-4 w-full"
+				>
 					<Tabs.List
 						aria-label="Practice modes"
 						class={cn(
@@ -253,7 +241,10 @@
 						requestVersion,
 						presetQuestionId: presetQuestionId || undefined
 					})}
-					bind:expanded={cardExpanded}
+					bind:expanded={
+						() => cardExpanded,
+						(value) => setCardExpanded(value)
+					}
 					bind:controlsOpen={expandedSelectorOpen}
 					{practiceControls}
 					showFirstUseHint={showFirstUseHints}

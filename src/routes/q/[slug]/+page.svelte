@@ -8,16 +8,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 
 	let { data } = $props();
-	let selectedClass = $state('');
-	let selectedUnit = $state('');
-	let requestVersion = $state(0);
 
-	$effect(() => {
-		selectedClass = data.sharedQuiz?.apClass ?? '';
-		selectedUnit =
-			data.sharedQuiz?.unit && data.sharedQuiz.unit !== 'All Units' ? data.sharedQuiz.unit : '';
-		requestVersion = data.start && !data.isAuthenticated ? 1 : 0;
-	});
 	const startHref = $derived(
 		data.isAuthenticated
 			? `${resolve('/app/practice')}?shared=${encodeURIComponent(data.sharedQuiz?.slug ?? '')}`
@@ -54,22 +45,26 @@
 							{data.sharedQuiz.title}
 						</h1>
 					</div>
-					<PracticeRunner
-						initial={{ selectedClass, selectedUnit, requestVersion }}
-						quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}
-						onEvent={(event) => {
-							if (event.type === 'selection-change') {
-								selectedClass = event.selectedClass;
-								selectedUnit = event.selectedUnit;
-							}
-							if (event.type === 'quiz-exit') {
-								requestVersion = 0;
-								void goto(
-									resolve('/q/[slug]', { slug: page.params.slug ?? data.sharedQuiz?.slug ?? '' })
-								);
-							}
-						}}
-					/>
+					{#key data.sharedQuiz.slug}
+						<PracticeRunner
+							initial={{
+								selectedClass: data.sharedQuiz.apClass,
+								selectedUnit:
+									data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit,
+								requestVersion: 1
+							}}
+							quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}
+							onEvent={(event) => {
+								if (event.type === 'quiz-exit') {
+									void goto(
+										resolve('/q/[slug]', {
+											slug: page.params.slug ?? data.sharedQuiz?.slug ?? ''
+										})
+									);
+								}
+							}}
+						/>
+					{/key}
 				</div>
 			{:else if data.sharedQuiz}
 				<Card.Root class="mx-auto max-w-xl">
