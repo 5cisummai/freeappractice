@@ -44,7 +44,7 @@
 		"@types/d3-shape": "^3.2.0",
 		"@types/node": "^24.13.3",
 		"@vercel/toolbar": "^0.2.7",
-		"bits-ui": "^2.18.1",
+		"bits-ui": "^2.19.0",
 		"clsx": "^2.1.1",
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^10.8.1",
@@ -119,7 +119,6 @@
 		"motion-dom": "12.40.0"
 	},
 	"patchedDependencies": {
-		"bits-ui@2.18.1": "patches/bits-ui@2.18.1.patch",
 		"@sveltejs/kit@2.70.2": "patches/@sveltejs%2Fkit@2.70.2.patch"
 	}
 }
