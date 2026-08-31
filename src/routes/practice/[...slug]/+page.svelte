@@ -27,11 +27,17 @@
 	const breadcrumbJsonLdMarkup = $derived(buildJsonLdMarkup(breadcrumbJsonLd));
 
 	// afterNavigate (not onMount) so SPA moves between /practice/... pages are counted.
+	// Key by page identity so remounts / same-page afterNavigate do not double-count.
+	let lastPracticeViewKey = '';
 	afterNavigate(() => {
+		const unit = 'unitName' in data.page ? data.page.unitName : '';
+		const key = `${data.page.type}:${data.page.className}:${unit}`;
+		if (key === lastPracticeViewKey) return;
+		lastPracticeViewKey = key;
 		capturePostHogEvent('practice_page_viewed', {
 			ap_class: data.page.className,
 			page_type: data.page.type,
-			unit: 'unitName' in data.page ? data.page.unitName : undefined
+			unit: unit || undefined
 		});
 	});
 </script>

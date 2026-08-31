@@ -18,10 +18,7 @@
 		TIMEZONE_COOKIE_NAME
 	} from '$lib/users/timezone';
 
-	import {
-		capturePostHogPageleave,
-		capturePostHogPageview
-	} from '$lib/client/posthog-analytics';
+	import { capturePostHogPageleave, capturePostHogPageview } from '$lib/client/posthog-analytics';
 
 	let { children } = $props();
 

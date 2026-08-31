@@ -18,7 +18,8 @@
 	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '$lib/auth/urls.js';
 	import { page } from '$app/state';
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
-	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import { captureUserLoggedIn } from '$lib/client/activation-analytics';
+	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -60,7 +61,7 @@
 			if (data?.user?.id) {
 				identifyPostHogUser(data.user.id);
 			}
-			capturePostHogEvent('user_logged_in', { method: 'email' });
+			captureUserLoggedIn('email');
 			// Dynamic /app/... return path from the invite (and other) login redirects.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			goto(redirectPath);

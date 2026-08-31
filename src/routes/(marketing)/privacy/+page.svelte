@@ -232,9 +232,8 @@
 					Until you accept PostHog (or if you reject it), it may still load in a cookieless mode for
 					limited anonymous page-view and page-leave measurement. It does not set PostHog cookies,
 					store PostHog identifiers in your browser, or send detailed product events or account
-					identification. Server-side
-					operational metrics and security logs may still be collected. You can change this
-					preference in Settings at any time.
+					identification. Server-side operational metrics and security logs may still be collected.
+					You can change this preference in Settings at any time.
 				</p>
 			</section>
 

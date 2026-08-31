@@ -16,9 +16,10 @@
 	import { setCoachPageToolbar } from '$lib/components/super/coach-context.svelte.js';
 	import {
 		captureAuthenticatedStudentReturnedIfNeeded,
-		captureSignupCompleted
+		captureSignupCompleted,
+		captureUserLoggedIn
 	} from '$lib/client/activation-analytics';
-	import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { apiFetch } from '$lib/client/api.js';
 	import {
 		recordPendingSharedQuizRunFailure,
@@ -41,6 +42,8 @@
 		const url = new URL(page.url);
 		if (!url.searchParams.has(param)) return;
 		url.searchParams.delete(param);
+		// Pathname is the current resolved app route; only the query string changes.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
 	}
 
@@ -79,13 +82,13 @@
 
 		if (page.url.searchParams.get('signup') === 'google') {
 			captureSignupCompleted('google');
-			capturePostHogEvent('user_logged_in', { method: 'google' });
+			captureUserLoggedIn('google');
 			stripAuthQueryParam('signup');
 			return;
 		}
 
 		if (page.url.searchParams.get('login') === 'google') {
-			capturePostHogEvent('user_logged_in', { method: 'google' });
+			captureUserLoggedIn('google');
 			stripAuthQueryParam('login');
 		}
 	});

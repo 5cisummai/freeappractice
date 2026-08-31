@@ -5,6 +5,7 @@ import {
 	readAnalyticsConsent,
 	syncAnalyticsConsentCookie
 } from '$lib/client/analytics-consent';
+import { persistActivationAnalyticsAfterConsent } from '$lib/client/activation-analytics';
 import {
 	applyPostHogConsent,
 	capturePostHogEvent,
@@ -38,6 +39,7 @@ function createPrivacyState() {
 		// Re-firing on Accept/Reject double-counts web analytics.
 
 		if (consent === 'granted') {
+			persistActivationAnalyticsAfterConsent();
 			capturePostHogEvent('analytics_consent_changed', { consent: 'granted' });
 		}
 	}

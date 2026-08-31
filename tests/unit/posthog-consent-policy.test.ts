@@ -16,12 +16,9 @@ describe('getPostHogOperationDisposition', () => {
 		expect(getPostHogOperationDisposition(null, 'exception')).toBe('drop');
 	});
 
-	it.each(pageTrafficOperations)(
-		'sends cookieless %s while consent is undecided',
-		(kind) => {
-			expect(getPostHogOperationDisposition(null, kind)).toBe('send');
-		}
-	);
+	it.each(pageTrafficOperations)('sends cookieless %s while consent is undecided', (kind) => {
+		expect(getPostHogOperationDisposition(null, kind)).toBe('send');
+	});
 
 	it('drops detailed operations after consent is denied', () => {
 		for (const kind of [...detailedOperations, 'exception'] as const) {

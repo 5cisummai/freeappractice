@@ -48,6 +48,7 @@ const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
 const FIRST_ANSWER_FLAG_KEY = 'ph_activation_first_answer_sent';
 const LAST_AUTH_VISIT_DAY_KEY = 'ph_last_auth_visit_day';
 let firstAnswerCapturedThisSession = false;
+let userLoggedInCapturedThisSession = false;
 /** In-memory journey key so pre-consent queued events can still join the funnel. */
 let memoryJourneyKey: string | undefined;
 
@@ -199,6 +200,28 @@ export function captureSignupCompleted(method: 'email' | 'google' | 'google_one_
 	captureActivation(ACTIVATION_EVENTS.signupCompleted, { method });
 }
 
+/** Once per JS session — Google OAuth/One Tap/email must not double-fire on remounts. */
+export function captureUserLoggedIn(method: 'email' | 'google' | 'google_one_tap'): void {
+	if (userLoggedInCapturedThisSession) return;
+	userLoggedInCapturedThisSession = true;
+	capturePostHogEvent('user_logged_in', { method });
+}
+
+/**
+ * After Accept: persist journey key + first-answer flag that were only held in memory
+ * while consent was pending.
+ */
+export function persistActivationAnalyticsAfterConsent(): void {
+	if (!canUseStorage()) return;
+	getOrCreateJourneyKey();
+	if (!firstAnswerCapturedThisSession) return;
+	try {
+		localStorage.setItem(FIRST_ANSWER_FLAG_KEY, '1');
+	} catch {
+		// ignore
+	}
+}
+
 /**
  * Fires when an authenticated student opens the app on a later calendar day
  * than their previous recorded visit (local timezone date).
@@ -224,5 +247,6 @@ export function captureAuthenticatedStudentReturnedIfNeeded(): void {
 /** Test-only: reset module session state between vitest cases. */
 export function resetActivationAnalyticsForTests(): void {
 	firstAnswerCapturedThisSession = false;
+	userLoggedInCapturedThisSession = false;
 	memoryJourneyKey = undefined;
 }

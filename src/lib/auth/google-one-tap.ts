@@ -4,8 +4,8 @@ import { resolve } from '$app/paths';
 import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
 import { isGoogleOneTapRoute } from '$lib/routes/public-marketing.js';
 import { authClient, googleClientId } from '$lib/auth/client.js';
-import { captureSignupCompleted } from '$lib/client/activation-analytics';
-import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
+import { captureSignupCompleted, captureUserLoggedIn } from '$lib/client/activation-analytics';
+import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 type OneTapContext = 'signin' | 'signup' | 'use';
 
@@ -41,7 +41,7 @@ function captureOneTapAnalytics(
 	const userId = user?.id?.trim();
 	if (userId) identifyPostHogUser(userId);
 
-	capturePostHogEvent('user_logged_in', { method: 'google_one_tap' });
+	captureUserLoggedIn('google_one_tap');
 
 	const context = getOneTapContext(pathname);
 	if (context === 'signup' || isLikelyNewAccount(user?.createdAt)) {
