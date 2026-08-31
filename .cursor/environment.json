@@ -1,0 +1,11 @@
+{
+	"name": "Free AP Practice",
+	"install": "bash .cursor/install.sh",
+	"terminals": [
+		{
+			"name": "dev",
+			"command": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run dev"
+		}
+	],
+	"ports": [{ "name": "web", "port": 5173 }]
+}
