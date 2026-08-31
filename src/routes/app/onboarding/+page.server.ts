@@ -1,11 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
-	ONBOARDING_COOKIE_MAX_AGE,
 	ONBOARDING_COOKIE_NAME,
 	ONBOARDING_GOALS,
 	ONBOARDING_INTENT_COOKIE_MAX_AGE,
 	ONBOARDING_INTENT_COOKIE_NAME,
+	ONBOARDING_PENDING_COOKIE_OPTIONS,
 	type OnboardingGoal,
 	readOnboardingState,
 	readOnboardingIntent,
@@ -35,12 +35,7 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 	]);
 
 	if (isReset) {
-		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', {
-			path: '/',
-			maxAge: ONBOARDING_COOKIE_MAX_AGE,
-			httpOnly: true,
-			sameSite: 'lax'
-		});
+		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', ONBOARDING_PENDING_COOKIE_OPTIONS);
 		if (isSuperIntent) {
 			cookies.set(ONBOARDING_INTENT_COOKIE_NAME, 'super', {
 				path: '/',
@@ -123,10 +118,7 @@ export const actions: Actions = {
 		await updateUserSubjects(locals.userId!, subjects);
 
 		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(subjects, goals), {
-			path: '/',
-			maxAge: ONBOARDING_COOKIE_MAX_AGE,
-			httpOnly: true,
-			sameSite: 'lax'
+			...ONBOARDING_PENDING_COOKIE_OPTIONS
 		});
 		cookies.delete(ONBOARDING_INTENT_COOKIE_NAME, { path: '/' });
 

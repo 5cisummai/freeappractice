@@ -139,11 +139,17 @@ export async function markSuperAccessStarted(
 	}
 }
 
+/**
+ * Record that the user is at least 13. Prefer a simple attestation (no birth date).
+ * If a birth date is provided (legacy clients), validate age from it.
+ */
 export async function confirmAge(userId: string, birthDate?: string): Promise<TutorProfileView> {
 	const profile = await ensureTutorProfile(userId);
 	if (profile.ageConfirmedAt) return toTutorProfileView(profile);
-	if (!birthDate || !isValidBirthDate(birthDate)) throw new InvalidBirthDateError();
-	if (!isAtLeastAge(birthDate)) throw new UnderAgeError();
+	if (birthDate !== undefined) {
+		if (!isValidBirthDate(birthDate)) throw new InvalidBirthDateError();
+		if (!isAtLeastAge(birthDate)) throw new UnderAgeError();
+	}
 	profile.ageConfirmedAt = new Date();
 	profile.updatedAt = profile.ageConfirmedAt;
 	await getNeonDatabase()

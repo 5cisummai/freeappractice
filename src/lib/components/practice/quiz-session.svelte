@@ -103,7 +103,7 @@
 		return organization.id as string;
 	});
 	const claimSignupHref = $derived(
-		`${resolve('/signup')}?returnTo=${encodeURIComponent(resolve('/app'))}`
+		`${resolve('/signup')}?redirect=${encodeURIComponent(resolve('/app'))}`
 	);
 	const quizTitle = $derived(
 		title ??

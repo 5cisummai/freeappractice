@@ -2,13 +2,16 @@
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { fly } from 'svelte/transition';
-	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
+	import CoachAvatar from '$lib/components/coach/coach-avatar.svelte';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import { COACH_AVATAR_STATES } from '$lib/coach/avatar-state';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
+	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
+	import PlusFilledIcon from '@tabler/icons-svelte/icons/plus-filled';
 	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 
@@ -101,6 +104,26 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 	const composerBusy = $derived(streaming || thinking || runningTool >= 0);
 	const canSend = $derived(composerText.trim().length > 0 && !composerBusy);
 	const visibleReply = $derived(closeOpenMarkdown(replyText));
+	const composerHasText = $derived(composerText.trim().length > 0);
+	const emptyChat = $derived(
+		!promptVisible && !thinking && !toolsVisible && !replyText && !memoryNoteVisible
+	);
+	const showThinkingOnly = $derived(
+		thinking && !toolsVisible && !replyText && !memoryNoteVisible
+	);
+	const showAssistantContent = $derived(
+		toolsVisible || Boolean(replyText) || memoryNoteVisible
+	);
+	const assistantAvatarState = $derived(
+		streaming
+			? COACH_AVATAR_STATES.waiting
+			: runningTool >= 0
+				? COACH_AVATAR_STATES.progress
+				: COACH_AVATAR_STATES.waiting
+	);
+	const assistantAvatarExpression = $derived(
+		streaming ? 'attentive' : runningTool >= 0 ? 'curious' : 'neutral'
+	);
 	const activitySummary = $derived.by(() => {
 		const tools = scene.tools;
 		const active = tools[runningTool];
@@ -142,7 +165,6 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 	}
 
 	const runDemo: Attachment<HTMLElement> = (node) => {
-		const messagesEl = node.querySelector<HTMLElement>('[data-coach-messages]');
 		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 		let visible = false;
 		let cancelled = false;
@@ -151,6 +173,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 
 		async function scrollToLatest(): Promise<void> {
 			await tick();
+			const messagesEl = node.querySelector<HTMLElement>('[data-coach-messages]');
 			if (!messagesEl) return;
 			messagesEl.scrollTop = messagesEl.scrollHeight;
 		}
@@ -307,115 +330,176 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 		? 'opacity-0'
 		: 'opacity-100'}"
 >
-	<div class="relative min-h-0 flex-1 overflow-hidden">
+	<div class="relative min-h-0 overflow-hidden {emptyChat ? 'flex-none' : 'flex-1'}">
 		<div data-coach-messages class="no-scrollbar h-full overflow-y-auto">
-			<div class="mx-auto flex w-full max-w-3xl flex-col gap-8 p-4 sm:px-8 sm:pt-8">
-				{#key scene.prompt}
-					{#if promptVisible}
-						<div
-							class="ml-auto flex w-full max-w-[95%] flex-col justify-end gap-2"
-							in:fly={{ y: 8, duration: 220 }}
-						>
+			{#if !emptyChat}
+				<div class="@container mx-auto flex w-full max-w-3xl flex-col gap-8 p-4 sm:px-8 sm:pt-8">
+					{#key scene.prompt}
+						{#if promptVisible}
 							<div
-								class="ml-auto w-fit max-w-[min(42rem,88%)] rounded-lg bg-secondary px-4 py-3 text-base leading-6 text-foreground"
+								class="ml-auto flex w-full max-w-[95%] flex-col justify-end gap-2"
+								in:fly={{ y: 8, duration: 220 }}
 							>
-								{scene.prompt}
-							</div>
-						</div>
-					{/if}
-
-					{#if thinking || toolsVisible || replyText || memoryNoteVisible}
-						<div class="flex w-full max-w-[95%] flex-col gap-2">
-							{#if thinking}
-								<div role="status">
-									<Shimmer as="span" content_length={15} class="text-base">Working on it…</Shimmer>
-								</div>
-							{/if}
-
-							{#if toolsVisible}
-								<div class="group max-w-3xl">
-									<div
-										class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-muted-foreground"
-									>
-										<SearchIcon
-											class="size-4 shrink-0 {runningTool >= 0
-												? 'animate-pulse motion-reduce:animate-none'
-												: ''}"
-										/>
-										<span class="min-w-0 flex-1 truncate font-medium text-foreground/85">
-											{activitySummary}
-										</span>
-										<ChevronDownIcon
-											class="size-3.5 shrink-0 opacity-60 transition-transform duration-200 {toolsExpanded
-												? 'rotate-180'
-												: ''}"
-										/>
-									</div>
-									{#if toolsExpanded}
-										<div
-											class="ml-2 border-l border-border/70 py-1 pl-4 text-sm leading-6 text-muted-foreground"
-										>
-											<ul class="space-y-1">
-												{#each scene.tools as tool, index (tool.complete)}
-													{#if index < completedTools || index === runningTool}
-														<li class="flex items-center gap-2" in:fly={{ y: 4, duration: 180 }}>
-															{#if index === runningTool}
-																<Loader2Icon
-																	class="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
-																/>
-															{/if}
-															<SearchIcon class="size-3.5 shrink-0 opacity-70" />
-															<span>
-																{index === runningTool ? tool.running : tool.complete}
-															</span>
-														</li>
-													{/if}
-												{/each}
-											</ul>
-										</div>
-									{/if}
-								</div>
-							{/if}
-
-							{#if visibleReply}
-								<div class="max-w-3xl text-base leading-7 text-foreground">
-									<RichText text={visibleReply} blocks />
-								</div>
-							{/if}
-
-							{#if memoryNoteVisible && scene.memoryNote}
-								<p
-									class="flex items-center gap-1.5 text-sm text-muted-foreground"
-									in:fly={{ y: 4, duration: 200 }}
+								<div
+									class="ml-auto w-fit max-w-[min(42rem,88%)] rounded-lg bg-secondary px-4 py-3 text-base leading-6 text-foreground"
 								>
-									<BrainIcon class="size-3.5 shrink-0 opacity-70" />
-									<span>Added "{scene.memoryNote}" to memory</span>
-								</p>
-							{/if}
-						</div>
-					{/if}
-				{/key}
-			</div>
+									{scene.prompt}
+								</div>
+							</div>
+						{/if}
+
+						{#if showThinkingOnly}
+							<div
+								class="flex items-center"
+								role="status"
+								aria-live="polite"
+								aria-label="Pip is thinking"
+							>
+								<CoachAvatar
+									state="thinking"
+									expression="attentive"
+									size={44}
+									interactive
+									label="Pip is thinking"
+									class="shrink-0"
+								/>
+							</div>
+						{:else if showAssistantContent}
+							<div
+								class="flex w-full max-w-[95%] flex-col gap-2 @min-[32rem]:relative @min-[32rem]:pl-16"
+							>
+								<CoachAvatar
+									state={assistantAvatarState}
+									expression={assistantAvatarExpression}
+									size={48}
+									interactive
+									label="Pip"
+									class="@min-[32rem]:absolute @min-[32rem]:top-0 @min-[32rem]:left-0"
+								/>
+
+								{#if toolsVisible}
+									<div class="group max-w-3xl">
+										<div
+											class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-muted-foreground"
+										>
+											<SearchIcon
+												class="size-4 shrink-0 {runningTool >= 0
+													? 'animate-pulse motion-reduce:animate-none'
+													: ''}"
+											/>
+											<span class="min-w-0 flex-1 truncate font-medium text-foreground/85">
+												{activitySummary}
+											</span>
+											<ChevronDownIcon
+												class="size-3.5 shrink-0 opacity-60 transition-transform duration-200 {toolsExpanded
+													? 'rotate-180'
+													: ''}"
+											/>
+										</div>
+										{#if toolsExpanded}
+											<div
+												class="ml-2 border-l border-border/70 py-1 pl-4 text-sm leading-6 text-muted-foreground"
+											>
+												<ul class="space-y-1">
+													{#each scene.tools as tool, index (tool.complete)}
+														{#if index < completedTools || index === runningTool}
+															<li
+																class="flex items-center gap-2"
+																in:fly={{ y: 4, duration: 180 }}
+															>
+																{#if index === runningTool}
+																	<Loader2Icon
+																		class="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
+																	/>
+																{/if}
+																<SearchIcon class="size-3.5 shrink-0 opacity-70" />
+																<span>
+																	{index === runningTool ? tool.running : tool.complete}
+																</span>
+															</li>
+														{/if}
+													{/each}
+												</ul>
+											</div>
+										{/if}
+									</div>
+								{/if}
+
+								{#if visibleReply}
+									<div class="max-w-3xl text-base leading-7 text-foreground">
+										<RichText text={visibleReply} blocks />
+									</div>
+								{/if}
+
+								{#if memoryNoteVisible && scene.memoryNote}
+									<p
+										class="flex items-center gap-1.5 text-sm text-muted-foreground"
+										in:fly={{ y: 4, duration: 200 }}
+									>
+										<BrainIcon class="size-3.5 shrink-0 opacity-70" />
+										<span>Added "{scene.memoryNote}" to memory</span>
+									</p>
+								{/if}
+							</div>
+						{/if}
+					{/key}
+				</div>
+			{/if}
 		</div>
 	</div>
 
-	<div class="mx-auto flex w-full max-w-3xl shrink-0 flex-col px-4 pb-4 sm:px-8 sm:pb-6">
+	<div
+		class="mx-auto flex w-full max-w-3xl flex-col px-4 sm:px-8 {emptyChat
+			? 'min-h-0 flex-1 justify-center pb-10 sm:pb-16'
+			: 'shrink-0 pb-4 sm:pb-6'}"
+	>
+		{#if emptyChat}
+			<div class="mb-8 flex flex-col items-center text-center sm:mb-10">
+				<CoachAvatar
+					state="idle"
+					expression={composerHasText ? 'attentive' : 'neutral'}
+					size={128}
+					interactive
+					class="mb-5"
+				/>
+				<h1
+					class="font-display text-3xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-4xl"
+				>
+					Where should we start?
+				</h1>
+			</div>
+		{/if}
+
 		<div
 			class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)]"
 		>
-			<div class="flex items-end gap-2 py-1.5 pr-1.5 pl-5 sm:pl-6">
+			<div class="flex items-end gap-1 p-1.5">
+				<span
+					class="flex size-9 shrink-0 items-center justify-center self-end rounded-full text-muted-foreground"
+					aria-hidden="true"
+				>
+					<PlusFilledIcon class="size-4" />
+				</span>
 				<p
 					class="relative min-h-9 min-w-0 flex-1 px-0 py-1.5 text-base leading-6 {composerText
 						? 'text-foreground'
 						: 'text-muted-foreground/80'}"
 				>
-					{composerText || 'Ask Coach'}
+					{composerText || 'Ask Pip'}
 					{#if composerText && !promptVisible}
 						<span
 							class="ml-px inline-block h-[1.05em] w-px translate-y-0.5 animate-tutor-caret-blink bg-foreground"
 						></span>
 					{/if}
 				</p>
+				<span
+					class="flex h-9 shrink-0 items-center gap-1 self-end px-2 text-sm text-muted-foreground"
+					aria-hidden="true"
+				>
+					<BoltFilledIcon class="size-3.5 shrink-0" />
+					<span>Quick</span>
+					<ChevronDownIcon class="size-3.5 shrink-0 opacity-60" />
+				</span>
 				<span
 					class="flex size-9 shrink-0 items-center justify-center self-end rounded-full transition-transform {SUPER_GRADIENT_BUTTON_CLASS} {canSend
 						? ''

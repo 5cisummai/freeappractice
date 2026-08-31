@@ -15,25 +15,13 @@
 	import type { Component } from 'svelte';
 	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import {
-		MINIMUM_ACCOUNT_AGE,
-		earliestBirthDateForInput,
-		isAtLeastAge,
-		isValidBirthDate,
-		localDateInputValue
-	} from '$lib/auth/age.js';
+	import { MINIMUM_ACCOUNT_AGE } from '$lib/auth/age.js';
 	import type { OnboardingGoal } from '$lib/onboarding.js';
 	import { authClient } from '$lib/auth/client.js';
-	import BirthDatePicker from '$lib/components/auth/birth-date-picker.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import {
-		Field,
-		FieldDescription,
-		FieldError,
-		FieldGroup,
-		FieldLabel
-	} from '$lib/components/ui/field/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 	import { getSiteUrl } from '$lib/site-url.js';
 	import { untrack } from 'svelte';
 
@@ -53,8 +41,11 @@
 	let superOptedIn = $state(initialData.superIntent);
 	let superActivated = $state(initialSuperAccess);
 	let ageConfirmed = $state(initialAgeConfirmed);
-	let birthDate = $state('');
-	let selectedGoals = $state<StudyGoal[]>([...initialData.selectedGoals]);
+	let ageAttested = $state(initialAgeConfirmed);
+	const DEFAULT_GOAL: StudyGoal = 'score_higher';
+	let selectedGoals = $state<StudyGoal[]>(
+		initialData.selectedGoals.length > 0 ? [...initialData.selectedGoals] : [DEFAULT_GOAL]
+	);
 	let subjectSearch = $state('');
 	let deletingAccount = $state(false);
 	let teachingStyle = $state<TeachingStyle>(superSetup?.profile.teachingStyle ?? 'concise');
@@ -115,15 +106,8 @@
 	const isFirst = $derived(stepIndex === 0);
 	const isLast = $derived(stepIndex === steps.length - 1);
 	const canChooseSuper = Boolean(superSetup?.freeBetaEnabled || superSetup?.checkoutEnabled);
-	const todayDate = localDateInputValue();
-	const minBirthDate = earliestBirthDateForInput(todayDate);
-	const birthDateIsValid = $derived(!birthDate || isValidBirthDate(birthDate, todayDate));
-	const isOldEnough = $derived(
-		ageConfirmed || isAtLeastAge(birthDate, MINIMUM_ACCOUNT_AGE, todayDate)
-	);
-	const isUnderAge = $derived(Boolean(birthDate) && birthDateIsValid && !isOldEnough);
 	const needsAgeVerification = $derived(!ageConfirmed);
-	const canContinueWelcome = $derived(selectedGoals.length > 0 && (ageConfirmed || isOldEnough));
+	const canContinueWelcome = $derived(selectedGoals.length > 0 && (ageConfirmed || ageAttested));
 	const asIcon = (icon: unknown) => icon as Component<{ class?: string }>;
 	const filteredSubjects = $derived.by(() => {
 		const query = subjectSearch.trim().toLowerCase();
@@ -231,12 +215,8 @@
 
 	async function confirmAge() {
 		if (ageConfirmed) return;
-		const response = await apiFetch('/api/super/confirm-age', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ birthDate })
-		});
-		const result = await readJsonOrNull<{ error?: string; underAge?: boolean }>(response);
+		const response = await apiFetch('/api/super/confirm-age', { method: 'POST' });
+		const result = await readJsonOrNull<{ error?: string }>(response);
 		if (!response.ok)
 			throw new Error(getResponseMessage(result, 'Could not record your confirmation.'));
 		ageConfirmed = true;
@@ -345,12 +325,8 @@
 					return;
 				}
 				if (needsAgeVerification) {
-					if (isUnderAge) {
-						errorMessage = `Free AP Practice is for students ${MINIMUM_ACCOUNT_AGE} and older.`;
-						return;
-					}
-					if (!isOldEnough) {
-						errorMessage = 'Enter your birth date to continue.';
+					if (!ageAttested) {
+						errorMessage = `Confirm that you are at least ${MINIMUM_ACCOUNT_AGE} to continue.`;
 						return;
 					}
 					await confirmAge();
@@ -586,51 +562,36 @@
 										{/each}
 									</div>
 									{#if needsAgeVerification}
-										<FieldGroup class="mt-8">
-											<Field
-												data-invalid={isUnderAge || (!birthDateIsValid && birthDate)
-													? true
-													: undefined}
+										<div class="mt-8 space-y-3">
+											<div
+												class="flex items-start gap-3 rounded-2xl border border-border/70 bg-muted/40 px-4 py-3"
 											>
-												<FieldLabel for="onboarding-birth-date">Birth date</FieldLabel>
-												<BirthDatePicker
-													id="onboarding-birth-date"
-													bind:value={birthDate}
-													min={minBirthDate}
-													max={todayDate}
-													aria-invalid={isUnderAge || (!birthDateIsValid && Boolean(birthDate))}
-												/>
-												{#if isUnderAge}
-													<FieldError
-														>You must be at least {MINIMUM_ACCOUNT_AGE} to use Free AP Practice.</FieldError
-													>
-												{:else if birthDate && !birthDateIsValid}
-													<FieldError>Enter a valid birth date.</FieldError>
-												{:else}
-													<FieldDescription>
-														We use this to confirm you are {MINIMUM_ACCOUNT_AGE} or older. We save the
-														confirmation, not your birth date.
-													</FieldDescription>
-												{/if}
-											</Field>
-										</FieldGroup>
-										{#if isUnderAge}
-											<p class="mt-4 text-center text-sm text-muted-foreground">
-												If you are under {MINIMUM_ACCOUNT_AGE}, do not continue. Start deletion and
-												follow the email instructions to remove this account.
+												<Checkbox id="age-attestation" bind:checked={ageAttested} class="mt-0.5" />
+												<Label
+													for="age-attestation"
+													class="cursor-pointer text-sm leading-5 font-normal text-foreground"
+												>
+													I am above {MINIMUM_ACCOUNT_AGE} years old
+												</Label>
+											</div>
+											<p class="text-xs leading-5 text-muted-foreground">
+												Free AP Practice is for students {MINIMUM_ACCOUNT_AGE} and older. We save
+												only this confirmation, not your birth date.
 											</p>
-											<div class="mt-3 flex justify-center">
+											<div class="flex justify-center">
 												<Button
 													type="button"
 													variant="ghost"
+													size="sm"
 													onclick={deleteUnder13Account}
 													disabled={deletingAccount}
-													>{deletingAccount
-														? 'Starting deletion…'
-														: `I am under ${MINIMUM_ACCOUNT_AGE}`}</Button
 												>
+													{deletingAccount
+														? 'Starting deletion…'
+														: `I am under ${MINIMUM_ACCOUNT_AGE}`}
+												</Button>
 											</div>
-										{/if}
+										</div>
 									{/if}
 								</div>
 							{:else if currentStep === 'plan'}

@@ -3,6 +3,7 @@ import { createAuthClient } from 'better-auth/client';
 import {
 	adminClient,
 	inferOrgAdditionalFields,
+	oneTapClient,
 	organizationClient
 } from 'better-auth/client/plugins';
 import { stripeClient } from '@better-auth/stripe/client';
@@ -22,6 +23,20 @@ export const authClient = createAuthClient({
 				}
 			})
 		}),
-		stripeClient({ subscription: true })
+		stripeClient({ subscription: true }),
+		...(googleClientId
+			? [
+					oneTapClient({
+						clientId: googleClientId,
+						autoSelect: false,
+						cancelOnTapOutside: true,
+						promptOptions: {
+							baseDelay: 1000,
+							maxAttempts: 5,
+							fedCM: true
+						}
+					})
+				]
+			: [])
 	]
 });

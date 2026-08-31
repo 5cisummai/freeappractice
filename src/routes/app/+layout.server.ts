@@ -12,8 +12,8 @@ import {
 import { hasPaidCapability } from '$lib/super/types';
 import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
 import {
-	ONBOARDING_COOKIE_MAX_AGE,
 	ONBOARDING_COOKIE_NAME,
+	ONBOARDING_PENDING_COOKIE_OPTIONS,
 	readOnboardingState
 } from '$lib/onboarding.js';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
@@ -26,12 +26,8 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 	}
 
 	if (url.searchParams.get('signup') === 'google') {
-		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', {
-			path: '/',
-			maxAge: ONBOARDING_COOKIE_MAX_AGE,
-			httpOnly: true,
-			sameSite: 'lax'
-		});
+		// Idempotent: user.create.after already set this; keep for older sessions / race safety.
+		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', ONBOARDING_PENDING_COOKIE_OPTIONS);
 		if (!url.pathname.startsWith('/app/invite/')) {
 			throw redirect(303, '/app/onboarding');
 		}

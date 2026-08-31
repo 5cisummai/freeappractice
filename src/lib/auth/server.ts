@@ -37,6 +37,10 @@ import { captureAnonymousServerMetric } from '$lib/server/posthog';
 import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
 import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
 import { limitNameLength } from '$lib/auth/name-policy';
+import {
+	ONBOARDING_COOKIE_NAME,
+	ONBOARDING_PENDING_COOKIE_OPTIONS
+} from '$lib/onboarding.js';
 
 const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
 	get: (_target, property) => {
@@ -81,6 +85,17 @@ export const auth = betterAuth({
 				after: async (user, context) => {
 					await createUserProfile(user.id);
 					await ensurePersonalOrganization(user.id);
+					// Mark every new account for onboarding via httpOnly cookie.
+					// Covers email signup, Google OAuth, and One Tap through one Better Auth hook.
+					try {
+						getRequestEvent().cookies.set(
+							ONBOARDING_COOKIE_NAME,
+							'pending',
+							ONBOARDING_PENDING_COOKIE_OPTIONS
+						);
+					} catch {
+						// No request event (e.g. background path) — age gate still covers these users.
+					}
 					captureAnonymousServerMetric('account_created', {
 						method: classifyAccountCreationMethod(context?.path),
 						email_verified_at_creation: user.emailVerified,

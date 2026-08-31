@@ -2,6 +2,14 @@ export const ONBOARDING_COOKIE_NAME = 'onboarding-hints';
 export const ONBOARDING_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export const ONBOARDING_INTENT_COOKIE_NAME = 'onboarding-intent';
 export const ONBOARDING_INTENT_COOKIE_MAX_AGE = 60 * 60 * 24;
+
+/** Shared options for the httpOnly onboarding-pending cookie set by Better Auth. */
+export const ONBOARDING_PENDING_COOKIE_OPTIONS = {
+	path: '/',
+	maxAge: ONBOARDING_COOKIE_MAX_AGE,
+	httpOnly: true,
+	sameSite: 'lax' as const
+};
 export const ONBOARDING_GOALS = [
 	'score_higher',
 	'exam_prep',
@@ -68,11 +76,4 @@ export function markOnboardingIntentInBrowser(intent: OnboardingIntent): void {
 	if (typeof document === 'undefined') return;
 
 	document.cookie = `${ONBOARDING_INTENT_COOKIE_NAME}=${intent}; path=/; max-age=${ONBOARDING_INTENT_COOKIE_MAX_AGE}; SameSite=Lax`;
-}
-
-/** Used before an email verification or OAuth redirect completes. */
-export function markOnboardingPendingInBrowser(): void {
-	if (typeof document === 'undefined') return;
-
-	document.cookie = `${ONBOARDING_COOKIE_NAME}=pending; path=/; max-age=${ONBOARDING_COOKIE_MAX_AGE}; SameSite=Lax`;
 }

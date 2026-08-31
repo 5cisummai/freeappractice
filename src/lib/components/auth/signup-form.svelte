@@ -15,8 +15,7 @@
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import {
-		markOnboardingIntentInBrowser,
-		markOnboardingPendingInBrowser
+		markOnboardingIntentInBrowser
 	} from '$lib/onboarding.js';
 	import {
 		isPasswordWithinLimit,
@@ -81,9 +80,9 @@
 			if (userId) {
 				identifyPostHogUser(userId);
 			}
-			markOnboardingPendingInBrowser();
 			captureSignupCompleted('email');
 			// Verification email is sent by Better Auth (sendOnSignUp + Vercel waitUntil).
+			// Onboarding pending cookie is set server-side in databaseHooks.user.create.after.
 			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;
 			// The base path is resolved above; only the encoded query string is appended.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve

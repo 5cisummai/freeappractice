@@ -33,38 +33,12 @@ declare global {
 	interface Window {
 		googleScriptInitialized?: boolean;
 		google?: {
-			accounts: {
-				id: {
-					initialize: (config: {
-						client_id: string;
-						callback: (response: { credential: string }) => void;
-						use_fedcm_for_prompt?: boolean;
-						itp_support?: boolean;
-						cancel_on_tap_outside?: boolean;
-						context?: 'signin' | 'signup' | 'use';
-						auto_select?: boolean;
-					}) => void;
-					prompt: (callback?: (notification: GoogleOneTapPromptNotification) => void) => void;
-					cancel: () => void;
-					renderButton: (
-						parent: HTMLElement,
-						options: {
-							type?: string;
-							theme?: string;
-							size?: string;
-							width?: string | number;
-							text?: string;
-						}
-					) => void;
+			accounts?: {
+				id?: {
+					cancel?: () => void;
 				};
 			};
 		};
-	}
-
-	interface GoogleOneTapPromptNotification {
-		isDismissedMoment?: () => boolean;
-		getDismissedReason?: () => string;
-		isSkippedMoment?: () => boolean;
 	}
 }
 
