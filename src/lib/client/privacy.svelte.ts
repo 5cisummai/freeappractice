@@ -8,7 +8,6 @@ import {
 import {
 	applyPostHogConsent,
 	capturePostHogEvent,
-	capturePostHogPageview,
 	initPostHogAnalytics,
 	resetPostHogConsent
 } from '$lib/client/posthog-analytics';
@@ -35,7 +34,8 @@ function createPrivacyState() {
 		persistAnalyticsConsent(consent);
 		initPostHogAnalytics();
 		applyPostHogConsent(consent);
-		capturePostHogPageview();
+		// Do not re-capture $pageview here — root layout already sent one for this URL.
+		// Re-firing on Accept/Reject double-counts web analytics.
 
 		if (consent === 'granted') {
 			capturePostHogEvent('analytics_consent_changed', { consent: 'granted' });

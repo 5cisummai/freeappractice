@@ -4,10 +4,13 @@ import { resolve } from '$app/paths';
 import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
 import { isGoogleOneTapRoute } from '$lib/routes/public-marketing.js';
 import { authClient, googleClientId } from '$lib/auth/client.js';
+import { captureSignupCompleted } from '$lib/client/activation-analytics';
+import { capturePostHogEvent, identifyPostHogUser } from '$lib/client/posthog-analytics';
 
 type OneTapContext = 'signin' | 'signup' | 'use';
 
 const PROMPT_SETTLE_TIMEOUT_MS = 60_000;
+const NEW_ACCOUNT_WINDOW_MS = 60_000;
 
 function getOneTapContext(pathname: string): OneTapContext {
 	if (pathname === '/signup') return 'signup';
@@ -22,6 +25,28 @@ function handleOneTapSuccess(pathname: string): void {
 	}
 
 	void invalidateAuthenticatedShell();
+}
+
+function isLikelyNewAccount(createdAt: unknown): boolean {
+	if (createdAt == null) return false;
+	const createdMs = createdAt instanceof Date ? createdAt.getTime() : Date.parse(String(createdAt));
+	if (!Number.isFinite(createdMs)) return false;
+	return Date.now() - createdMs < NEW_ACCOUNT_WINDOW_MS;
+}
+
+function captureOneTapAnalytics(
+	pathname: string,
+	user: { id?: string; createdAt?: unknown } | null | undefined
+): void {
+	const userId = user?.id?.trim();
+	if (userId) identifyPostHogUser(userId);
+
+	capturePostHogEvent('user_logged_in', { method: 'google_one_tap' });
+
+	const context = getOneTapContext(pathname);
+	if (context === 'signup' || isLikelyNewAccount(user?.createdAt)) {
+		captureSignupCompleted('google_one_tap');
+	}
 }
 
 function loadGoogleScript(): Promise<void> {
@@ -53,13 +78,17 @@ let activeCredentialHandler: ((credential: string) => void) | null = null;
 const promptedPaths = new Set<string>();
 
 async function submitOneTapCredential(idToken: string, pathname: string): Promise<boolean> {
-	const result = await authClient.$fetch('/one-tap/callback', {
+	const result = await authClient.$fetch<{
+		user?: { id?: string; createdAt?: unknown };
+		error?: unknown;
+	}>('/one-tap/callback', {
 		method: 'POST',
 		body: { idToken }
 	});
 
 	if (result?.error) return false;
 
+	captureOneTapAnalytics(pathname, result?.data?.user);
 	handleOneTapSuccess(pathname);
 	return true;
 }

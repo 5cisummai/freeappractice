@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	import PracticeLanding from '$lib/components/practice/practice-landing.svelte';
 	import {
 		buildPracticePageJsonLd,
@@ -26,7 +26,8 @@
 	const jsonLdMarkup = $derived(buildJsonLdMarkup(jsonLd));
 	const breadcrumbJsonLdMarkup = $derived(buildJsonLdMarkup(breadcrumbJsonLd));
 
-	onMount(() => {
+	// afterNavigate (not onMount) so SPA moves between /practice/... pages are counted.
+	afterNavigate(() => {
 		capturePostHogEvent('practice_page_viewed', {
 			ap_class: data.page.className,
 			page_type: data.page.type,

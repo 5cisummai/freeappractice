@@ -93,9 +93,11 @@
 		errorMessage = '';
 		googleLoading = true;
 		try {
+			const googleCallback = new URL(callbackURL);
+			googleCallback.searchParams.set('login', 'google');
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
-				callbackURL,
+				callbackURL: googleCallback.toString(),
 				errorCallbackURL: authCallbackUrl('/login')
 			});
 			if (error) {

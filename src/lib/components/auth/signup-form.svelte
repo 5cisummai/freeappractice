@@ -39,7 +39,11 @@
 	let loading = $state(false);
 	let googleLoading = $state(false);
 	const redirectPath = $derived(safeAppPath(page.url.searchParams.get('redirect')));
-	const googleCallbackURL = $derived(authCallbackUrlForAppPath(redirectPath));
+	const googleCallbackURL = $derived.by(() => {
+		const url = new URL(authCallbackUrlForAppPath(redirectPath));
+		url.searchParams.set('login', 'google');
+		return url.toString();
+	});
 	const googleNewUserCallbackURL = $derived(
 		redirectPath.startsWith('/app/invite/')
 			? `${getSiteUrl()}${redirectPath}${redirectPath.includes('?') ? '&' : '?'}signup=google`
