@@ -2,7 +2,6 @@
 	import MenuIcon from '@tabler/icons-svelte/icons/menu-2';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { resolve } from '$app/paths';
-	import logo from '$lib/assets/logo.png';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
@@ -24,7 +23,7 @@
 				href={resolve('/')}
 				class="logo-link flex items-center gap-3 text-base font-semibold tracking-tight"
 			>
-				<img src={logo} alt="Free AP Practice logo" class="size-7 rounded-sm" />
+				<img src="/logo.png" alt="Free AP Practice logo" class="size-7 rounded-sm" />
 				<span>Free AP Practice</span>
 			</a>
 		</div>

@@ -13,7 +13,6 @@
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 	import type { Component } from 'svelte';
-	import logo from '$lib/assets/logo.png';
 	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import {
@@ -442,7 +441,7 @@
 		>
 			<header class="flex items-center justify-between gap-4">
 				<div class="flex items-center gap-2 text-sm font-semibold tracking-tight">
-					<img src={logo} alt="" class="size-7 rounded-full" />
+					<img src="/logo.png" alt="" class="size-7 rounded-full" />
 					<span>Free AP Practice</span>
 				</div>
 				<div class="flex items-center gap-3 text-muted-foreground">

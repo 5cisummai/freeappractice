@@ -3,7 +3,6 @@
 	import 'katex/dist/katex.min.css';
 	/* hljs light theme (default); dark overrides are in layout.css under .dark */
 	import 'highlight.js/styles/github.min.css';
-	import logo from '$lib/assets/logo.png';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
@@ -53,7 +52,7 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={logo} />
+	<link rel="icon" href="/logo.png" />
 </svelte:head>
 <a
 	href="#main-content"

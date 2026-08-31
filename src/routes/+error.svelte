@@ -12,7 +12,6 @@
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
 	import SearchXIcon from '@tabler/icons-svelte/icons/search-off';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import logo from '$lib/assets/logo.png';
 
 	let status = $derived(typeof page.status === 'number' ? page.status : 500);
 	let isUnauthorized = $derived(status === 401);
@@ -74,7 +73,7 @@
 				href={resolve('/')}
 				class="mb-10 inline-flex items-center gap-3 self-center font-semibold tracking-tight lg:self-start"
 			>
-				<img src={logo} alt="Free AP Practice" class="size-8 rounded-md shadow-sm" />
+				<img src="/logo.png" alt="Free AP Practice" class="size-8 rounded-md shadow-sm" />
 				<span>Free AP Practice</span>
 			</a>
 
