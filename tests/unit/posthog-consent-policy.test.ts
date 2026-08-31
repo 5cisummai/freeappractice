@@ -6,15 +6,22 @@ import {
 
 describe('getPostHogOperationDisposition', () => {
 	const detailedOperations: PostHogOperationKind[] = ['capture', 'identify'];
+	const pageTrafficOperations: PostHogOperationKind[] = ['pageview', 'pageleave'];
 
 	it.each(detailedOperations)('queues %s while consent is undecided', (kind) => {
 		expect(getPostHogOperationDisposition(null, kind)).toBe('queue');
 	});
 
-	it('drops pageviews and exceptions while consent is undecided', () => {
-		expect(getPostHogOperationDisposition(null, 'pageview')).toBe('drop');
+	it('drops exceptions while consent is undecided', () => {
 		expect(getPostHogOperationDisposition(null, 'exception')).toBe('drop');
 	});
+
+	it.each(pageTrafficOperations)(
+		'sends cookieless %s while consent is undecided',
+		(kind) => {
+			expect(getPostHogOperationDisposition(null, kind)).toBe('send');
+		}
+	);
 
 	it('drops detailed operations after consent is denied', () => {
 		for (const kind of [...detailedOperations, 'exception'] as const) {
@@ -22,11 +29,11 @@ describe('getPostHogOperationDisposition', () => {
 		}
 	});
 
-	it('keeps rejected pageviews cookieless', () => {
-		expect(getPostHogOperationDisposition('denied', 'pageview')).toBe('send');
+	it.each(pageTrafficOperations)('keeps rejected %s cookieless', (kind) => {
+		expect(getPostHogOperationDisposition('denied', kind)).toBe('send');
 	});
 
-	it.each(['capture', 'identify', 'pageview', 'exception'] as const)(
+	it.each(['capture', 'identify', 'pageview', 'pageleave', 'exception'] as const)(
 		'sends %s after consent is granted',
 		(kind) => {
 			expect(getPostHogOperationDisposition('granted', kind)).toBe('send');

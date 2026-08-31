@@ -6,7 +6,7 @@
 	import logo from '$lib/assets/logo.png';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { invalidateAppSubtree } from '$lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
 	import { ModeWatcher } from 'mode-watcher';
@@ -18,9 +18,16 @@
 		TIMEZONE_COOKIE_NAME
 	} from '$lib/users/timezone';
 
-	import { capturePostHogPageview } from '$lib/client/posthog-analytics';
+	import {
+		capturePostHogPageleave,
+		capturePostHogPageview
+	} from '$lib/client/posthog-analytics';
 
 	let { children } = $props();
+
+	beforeNavigate(({ from }) => {
+		if (from?.url.href) capturePostHogPageleave(from.url.href);
+	});
 
 	afterNavigate(({ to }) => {
 		capturePostHogPageview(to?.url.href);
