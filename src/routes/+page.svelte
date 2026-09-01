@@ -179,9 +179,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.7.12",
+			"softwareVersion": "1.7.13",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-08-30",
+			"dateModified": "2026-08-31",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [

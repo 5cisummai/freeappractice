@@ -5,6 +5,20 @@
 
 	const changelog = [
 		{
+			version: '1.7.13',
+			date: 'August 31, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Practice pages now switch classes, units, questions, and quiz modes more reliably when navigating between routes',
+						'New accounts are routed into onboarding consistently across email signup and Google sign-in flows',
+						'Refreshed the Coach and Pip showcase, Super feature previews, and homepage study visuals with clearer layouts'
+					]
+				}
+			]
+		},
+		{
 			version: '1.7.12',
 			date: 'August 30, 2026',
 			sections: [
@@ -1274,7 +1288,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 30, 2026"
+			meta="Last Updated: August 31, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

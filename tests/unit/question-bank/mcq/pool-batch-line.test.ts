@@ -49,7 +49,7 @@ describe('buildMcqPoolBatchLine', () => {
 		expect(schema.$schema).toBeUndefined();
 		expect(Array.isArray(schema.required)).toBe(true);
 		expect(JSON.stringify(schema)).not.toContain('propertyNames');
-		expect(schema.properties).toMatchObject({ diagram: { anyOf: expect.any(Array) } });
+		expect(schema.properties).toMatchObject({ diagram: { type: ['string', 'null'] } });
 	});
 
 	it('requires nullable optional FRQ material fields for strict OpenAI output', () => {

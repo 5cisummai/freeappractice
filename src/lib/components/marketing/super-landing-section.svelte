@@ -95,9 +95,7 @@
 					<div
 						class="w-full max-w-xs overflow-hidden rounded-2xl border border-border/70 bg-background shadow-md"
 					>
-						<div
-							class="flex items-center gap-2 border-b border-border/70 px-4 py-2.5"
-						>
+						<div class="flex items-center gap-2 border-b border-border/70 px-4 py-2.5">
 							<CalendarDaysIcon class="size-4 text-violet-500" />
 							<p class="text-sm font-semibold">This week's plan</p>
 						</div>
