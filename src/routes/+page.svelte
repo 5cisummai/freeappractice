@@ -18,11 +18,6 @@
 
 	let { data } = $props();
 
-	let selectedClass = $state('AP World History');
-	let selectedUnit = $state('Unit 1: The Global Tapestry');
-	let unitRange = $state<number[] | undefined>(undefined);
-	let requestVersion = $state(0);
-
 	type HomeFaqItem = { id: string; question: string; answer: string };
 
 	const homeFaqItems = $derived.by((): HomeFaqItem[] => {
@@ -184,9 +179,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.7.12",
+			"softwareVersion": "1.7.13",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-08-30",
+			"dateModified": "2026-08-31",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
@@ -305,16 +300,13 @@
 						class="relative overflow-hidden rounded-xl border border-border/70 bg-card/45 py-4 shadow-md shadow-black/5 backdrop-blur-md max-sm:px-0 sm:p-6"
 					>
 						<PracticeRunner
-							initial={{ selectedClass, selectedUnit, unitRange, requestVersion }}
+							initial={{
+								selectedClass: 'AP World History',
+								selectedUnit: 'Unit 1: The Global Tapestry'
+							}}
 							capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}
 							quiz={{ persistHistory: false }}
 							presentation="hero"
-							onEvent={(event) => {
-								if (event.type === 'selection-change') {
-									selectedClass = event.selectedClass;
-									selectedUnit = event.selectedUnit;
-								}
-							}}
 						/>
 					</div>
 				</div>

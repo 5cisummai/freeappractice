@@ -8,7 +8,7 @@
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 
 	let {
-		open = $bindable(false)
+		open = $bindable(true)
 	}: {
 		open?: boolean;
 	} = $props();

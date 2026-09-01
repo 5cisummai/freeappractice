@@ -6,9 +6,13 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
-import svelteConfig from './svelte.config.js';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
+
+// Serializable subset for ESLint only — full svelte.config.js has functions that break --cache.
+const eslintSvelteConfig = {
+	compilerOptions: { runes: true }
+};
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
@@ -58,7 +62,7 @@ export default defineConfig(
 				projectService: true,
 				extraFileExtensions: ['.svelte'],
 				parser: ts.parser,
-				svelteConfig
+				svelteConfig: eslintSvelteConfig
 			}
 		}
 	}

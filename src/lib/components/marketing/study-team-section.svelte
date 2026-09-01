@@ -146,12 +146,9 @@
 		}
 	}
 
-	const cardClass = `flex min-h-0 flex-col overflow-hidden rounded-3xl border border-border bg-background ${twAnimateInViewSubtle}`;
+	const cardClass = `flex min-h-0 flex-col overflow-hidden rounded-3xl border border-border bg-muted/50 ${twAnimateInViewSubtle}`;
 	const captionClass = 'space-y-1 px-6 py-5 sm:px-8 sm:py-6';
-	const mockWellClass =
-		'relative min-h-0 flex-1 overflow-hidden bg-linear-to-br from-primary/[0.08] via-background to-amber-50/70 p-4 sm:p-5 dark:to-amber-950/20';
-	const leaderboardWellClass =
-		'relative min-h-0 flex-1 overflow-hidden bg-linear-to-br from-orange-500/10 via-background to-amber-50/70 p-4 sm:p-5 dark:from-orange-500/15 dark:to-amber-950/25';
+	const wellClass = 'relative min-h-0 flex-1 overflow-hidden p-4 sm:p-5';
 </script>
 
 <section id="study-as-a-team" class="w-full space-y-12" aria-labelledby="study-as-a-team-heading">
@@ -177,7 +174,7 @@
 		class="grid min-h-[52svh] items-stretch gap-4 sm:gap-5 lg:min-h-152 lg:grid-cols-12 lg:grid-rows-2"
 	>
 		<article class="{cardClass} min-h-72 lg:col-span-7">
-			<div class={mockWellClass} aria-hidden="true">
+			<div class={wellClass} aria-hidden="true">
 				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
 					<ul class="divide-y divide-border/70">
 						{#each mockActivity as item (item.id)}
@@ -291,7 +288,7 @@
 		</article>
 
 		<article class="{cardClass} min-h-72 lg:col-span-7">
-			<div class={leaderboardWellClass} aria-hidden="true">
+			<div class={wellClass} aria-hidden="true">
 				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
 					<div class="overflow-x-auto">
 						<table class="w-full min-w-xl text-sm">

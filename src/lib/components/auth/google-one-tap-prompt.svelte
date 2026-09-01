@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { cancelGoogleOneTap, maybePromptGoogleOneTap } from '$lib/auth/google-one-tap.js';
 	import { onDestroy } from 'svelte';
@@ -11,8 +10,6 @@
 	});
 
 	$effect(() => {
-		if (!browser) return;
-
 		const pathname = page.url.pathname;
 		const timer = setTimeout(() => {
 			void maybePromptGoogleOneTap(pathname);

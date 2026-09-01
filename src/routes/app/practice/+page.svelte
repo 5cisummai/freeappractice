@@ -14,29 +14,31 @@
 
 	let { data } = $props();
 
-	let selectedClass = $state('');
-	let selectedUnit = $state('');
-	let unitRange = $state<number[] | undefined>(undefined);
-	let requestVersion = $state(0);
-	let presetQuestionId = $state('');
-	let mode = $state<'mcq' | 'frq'>('mcq');
 	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
 	const presetMode = $derived(page.url.searchParams.get('mode') ?? '');
 	const presetQuestion = $derived(page.url.searchParams.get('questionId') ?? '');
 
-	type ApiErrorPayload = { error?: string };
+	const runnerKey = $derived(
+		data.sharedQuiz
+			? `shared:${data.sharedQuiz.slug}`
+			: `practice:${presetClass}:${presetUnit}:${presetMode}:${presetQuestion}`
+	);
 
-	let initialized = $state(false);
-	let sharedQuizSlug = $state<string | null>(null);
 	const runnerInitial = $derived({
-		selectedClass,
-		selectedUnit,
-		unitRange,
-		requestVersion,
-		presetQuestionId,
-		mode
+		selectedClass: data.sharedQuiz?.apClass ?? presetClass,
+		selectedUnit: data.sharedQuiz
+			? data.sharedQuiz.unit === 'All Units'
+				? ''
+				: data.sharedQuiz.unit
+			: presetUnit,
+		requestVersion: data.sharedQuiz || presetQuestion ? 1 : 0,
+		presetQuestionId: data.sharedQuiz ? '' : presetQuestion,
+		mode: (!data.sharedQuiz && data.frqEnabled && presetMode === 'frq' ? 'frq' : 'mcq') as
+			'mcq' | 'frq'
 	});
+
+	type ApiErrorPayload = { error?: string };
 
 	onMount(() => {
 		const apClass = page.url.searchParams.get('apClass') ?? '';
@@ -46,25 +48,6 @@
 			page_type: 'app',
 			unit: unit || undefined
 		});
-	});
-
-	$effect(() => {
-		if (data.sharedQuiz) {
-			if (data.sharedQuiz.slug === sharedQuizSlug) return;
-			sharedQuizSlug = data.sharedQuiz.slug;
-			selectedClass = data.sharedQuiz.apClass;
-			selectedUnit = data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit;
-			requestVersion += 1;
-			return;
-		}
-		sharedQuizSlug = null;
-		if (initialized) return;
-		initialized = true;
-		selectedClass = presetClass;
-		selectedUnit = presetUnit;
-		presetQuestionId = presetQuestion;
-		if (data.frqEnabled && presetMode === 'frq') mode = 'frq';
-		if (presetQuestion) requestVersion = 1;
 	});
 
 	async function syncAttempt(
@@ -110,23 +93,15 @@
 		);
 	}
 
-	function handleFrqGraded(): void {
-		capturePostHogEvent('frq_progress_saved', {
-			ap_class: selectedClass,
-			unit: selectedUnit
-		});
-	}
-
 	function handlePracticeEvent(event: PracticeEvent): void {
-		if (event.type === 'selection-change') {
-			selectedClass = event.selectedClass;
-			selectedUnit = event.selectedUnit;
-		}
-		if (event.type === 'mode-change') mode = event.mode;
 		if (event.type === 'answered') handleAnswered(event.result);
-		if (event.type === 'frq-graded') handleFrqGraded();
+		if (event.type === 'frq-graded') {
+			capturePostHogEvent('frq_progress_saved', {
+				ap_class: event.attempt.apClass,
+				unit: event.attempt.unit
+			});
+		}
 		if (event.type === 'quiz-exit' && data.sharedQuiz) {
-			requestVersion = 0;
 			void goto(resolve('/app/practice'));
 		}
 	}
@@ -148,20 +123,22 @@
 				>
 			</div>
 		{:else}
-			<PracticeRunner
-				initial={runnerInitial}
-				capabilities={{
-					frqCourses: data.frqEnabled ? data.frqCourses : [],
-					tutorMode: !data.assistantFeaturesEnabled
-						? 'hidden'
-						: data.isPersonalizedTutor
-							? 'personalized'
-							: 'free',
-					showFirstUseHints: true
-				}}
-				quiz={{ persistHistory: true, sharedQuiz: data.sharedQuiz }}
-				onEvent={handlePracticeEvent}
-			/>
+			{#key runnerKey}
+				<PracticeRunner
+					initial={runnerInitial}
+					capabilities={{
+						frqCourses: data.frqEnabled ? data.frqCourses : [],
+						tutorMode: !data.assistantFeaturesEnabled
+							? 'hidden'
+							: data.isPersonalizedTutor
+								? 'personalized'
+								: 'free',
+						showFirstUseHints: true
+					}}
+					quiz={{ persistHistory: true, sharedQuiz: data.sharedQuiz }}
+					onEvent={handlePracticeEvent}
+				/>
+			{/key}
 		{/if}
 	</div>
 </PageShell>

@@ -14,7 +14,10 @@ const config = {
 		}
 	},
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({
+			// Keep generated Vercel functions on the Bun runtime.
+			runtime: 'experimental_bun1.x'
+		}),
 
 		paths: {
 			relative: false

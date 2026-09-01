@@ -5,7 +5,6 @@
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';
 	import { DEMO_TUTOR_QUESTION } from '$lib/tutor/demo-question';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
-	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 
@@ -26,40 +25,28 @@
 	};
 
 	const nextQuestions: NextQuestion[] = [
-		{ n: 12, prompt: 'Which enzyme regenerates RuBP in the Calvin cycle?' },
 		{ n: 13, prompt: 'Where is ATP synthase located in the chloroplast?' },
 		{
 			n: 14,
 			prompt: 'What is the primary electron donor in photosynthesis?',
 			choices: ['NADPH', 'Water', 'CO₂', 'G3P'],
 			current: true
-		},
-		{ n: 15, prompt: 'Which photosystem splits water during the light reactions?' },
-		{ n: 16, prompt: 'What is produced during cyclic photophosphorylation?' },
-		{ n: 17, prompt: 'Which molecule carries electrons from PSII to PSI?' }
+		}
 	];
 
 	const masteryUnits = [
-		{ name: 'Unit 1: Chemistry of Life', mastery: 82, attempts: 24, expanded: false },
-		{
-			name: 'Unit 3: Cellular Energetics',
-			mastery: 38,
-			attempts: 18,
-			expanded: true,
-			weak: ['Light-dependent reactions', 'Calvin cycle'],
-			strong: ['ATP / ADP']
-		},
-		{ name: 'Unit 4: Cell Communication', mastery: 71, attempts: 12, expanded: false }
+		{ name: 'Unit 1: Chemistry of Life', mastery: 82, attempts: 24 },
+		{ name: 'Unit 3: Cellular Energetics', mastery: 38, attempts: 18 },
+		{ name: 'Unit 4: Cell Communication', mastery: 71, attempts: 12 }
 	];
 
-	const cardClass = `rounded-3xl border border-border bg-background p-6 ${twAnimateInViewSubtle}`;
-	const largeCardClass = `${cardClass} bg-linear-to-br from-primary/[0.07] via-background to-accent dark:from-primary/15 dark:via-background dark:to-accent/40`;
-	const masteryCardClass = `${cardClass} bg-linear-to-b from-sky-500/[0.09] via-background to-background dark:from-sky-400/18 dark:via-background dark:to-background`;
+	const cardClass = `rounded-3xl border border-border bg-muted/50 p-6 ${twAnimateInViewSubtle}`;
+	const largeCardClass = cardClass;
+	const masteryCardClass = cardClass;
 	const titleClass = 'text-xl font-semibold tracking-tight';
 	const descClass = 'mt-2 text-sm leading-6 text-muted-foreground';
 	const mockCardClass = 'rounded-2xl border border-border bg-background';
-	const fadeWellClass =
-		'relative min-h-44 flex-1 overflow-hidden -mb-6 mask-[linear-gradient(to_bottom,black_72%,transparent)]';
+	const fadeWellClass = 'relative min-h-44 flex-1 overflow-hidden -mb-6';
 </script>
 
 <section id="unlimited" class="w-full space-y-10" aria-labelledby="unlimited-section-heading">
@@ -220,9 +207,6 @@
 					{#each masteryUnits as unit (unit.name)}
 						<div class="border-b border-border last:border-b-0">
 							<div class="flex items-center gap-3 px-4 py-3">
-								<ChevronDownIcon
-									class="size-4 shrink-0 text-muted-foreground {unit.expanded ? 'rotate-180' : ''}"
-								/>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium">{unit.name}</p>
 									<div class="mt-1.5 flex items-center gap-3">
@@ -245,32 +229,6 @@
 									{unit.attempts} attempts
 								</p>
 							</div>
-							{#if unit.expanded && unit.weak && unit.strong}
-								<div
-									class="grid gap-4 border-t border-border bg-muted/20 px-4 py-3 sm:grid-cols-2 sm:px-11"
-								>
-									<div class="space-y-1">
-										<p
-											class="text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase"
-										>
-											Weak topics
-										</p>
-										{#each unit.weak as topic (topic)}
-											<p class="text-xs text-foreground/90">{topic}</p>
-										{/each}
-									</div>
-									<div class="space-y-1">
-										<p
-											class="text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase"
-										>
-											Strong topics
-										</p>
-										{#each unit.strong as topic (topic)}
-											<p class="text-xs text-foreground/90">{topic}</p>
-										{/each}
-									</div>
-								</div>
-							{/if}
 						</div>
 					{/each}
 				</div>

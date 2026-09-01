@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import logo from '$lib/assets/logo.png';
 	import NavMain from '$lib/components/layout/nav-main.svelte';
 	import NavUser from '$lib/components/layout/nav-user.svelte';
 	import OrgSwitcher from '$lib/components/layout/org-switcher.svelte';
@@ -43,7 +42,7 @@
 				<Sidebar.MenuButton size="lg" tooltipContent="Free AP Practice">
 					{#snippet child({ props })}
 						<a href={resolve('/app')} {...props}>
-							<img src={logo} alt="Logo" class="size-7 rounded-sm" />
+							<img src="/logo.png" alt="Logo" class="size-7 rounded-sm" />
 							<span class="font-semibold tracking-tight">Free AP Practice</span>
 						</a>
 					{/snippet}

@@ -35,7 +35,7 @@
 		return page.url.pathname === coachHref || page.url.pathname.startsWith(`${coachHref}/`);
 	});
 	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
-	let freeBetaClaimOpen = $state(false);
+	const showFreeBetaClaimDialog = $derived(data.showFreeBetaClaimDialog && !isOnboarding);
 	let layoutMounted = $state(false);
 
 	function stripAuthQueryParam(param: 'signup' | 'login') {
@@ -46,14 +46,6 @@
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
 	}
-
-	$effect(() => {
-		if (data.showFreeBetaClaimDialog && !isOnboarding) {
-			freeBetaClaimOpen = true;
-		} else if (!data.showFreeBetaClaimDialog) {
-			freeBetaClaimOpen = false;
-		}
-	});
 
 	onMount(() => {
 		layoutMounted = true;
@@ -101,8 +93,8 @@
 </svelte:head>
 
 <Toaster />
-{#if !isOnboarding}
-	<FreeBetaClaimDialog bind:open={freeBetaClaimOpen} />
+{#if showFreeBetaClaimDialog}
+	<FreeBetaClaimDialog />
 {/if}
 
 {#if isOnboarding}

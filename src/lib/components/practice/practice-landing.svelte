@@ -78,10 +78,12 @@
 			</section>
 
 			<section>
-				<PracticeRunner
-					{initial}
-					capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
-				/>
+				{#key `${practicePage.className}:${practicePage.type}:${practicePage.unitName ?? ''}`}
+					<PracticeRunner
+						{initial}
+						capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
+					/>
+				{/key}
 			</section>
 
 			<section class="mx-auto max-w-3xl">

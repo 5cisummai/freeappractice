@@ -33,5 +33,6 @@ export async function readJsonBody(request: Request, maxBytes: number): Promise<
 		bytes.set(chunk, offset);
 		offset += chunk.byteLength;
 	}
+	if (receivedBytes === 0) return null;
 	return JSON.parse(new TextDecoder().decode(bytes));
 }
