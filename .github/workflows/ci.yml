@@ -16,7 +16,7 @@ permissions:
 jobs:
   quality:
     name: Lint, typecheck, unit tests
-    runs-on: namespace-profile-5cisummai
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -64,7 +64,7 @@ jobs:
     name: Apply Neon migrations
     if: github.event_name == 'push'
     needs: quality
-    runs-on: namespace-profile-5cisummai
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
@@ -85,7 +85,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: namespace-profile-5cisummai
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: quality
 
