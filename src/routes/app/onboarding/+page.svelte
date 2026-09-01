@@ -575,8 +575,8 @@
 												</Label>
 											</div>
 											<p class="text-xs leading-5 text-muted-foreground">
-												Free AP Practice is for students {MINIMUM_ACCOUNT_AGE} and older. We save
-												only this confirmation, not your birth date.
+												Free AP Practice is for students {MINIMUM_ACCOUNT_AGE} and older. We save only
+												this confirmation, not your birth date.
 											</p>
 											<div class="flex justify-center">
 												<Button

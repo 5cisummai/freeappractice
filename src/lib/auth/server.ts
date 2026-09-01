@@ -37,10 +37,7 @@ import { captureAnonymousServerMetric } from '$lib/server/posthog';
 import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
 import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
 import { limitNameLength } from '$lib/auth/name-policy';
-import {
-	ONBOARDING_COOKIE_NAME,
-	ONBOARDING_PENDING_COOKIE_OPTIONS
-} from '$lib/onboarding.js';
+import { ONBOARDING_COOKIE_NAME, ONBOARDING_PENDING_COOKIE_OPTIONS } from '$lib/onboarding.js';
 
 const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
 	get: (_target, property) => {

@@ -87,8 +87,7 @@ export async function maybePromptGoogleOneTap(pathname: string): Promise<void> {
 			context: getOneTapContext(pathname),
 			fetchOptions: {
 				onSuccess(ctx) {
-					const user = (ctx.data as { user?: { id?: string; createdAt?: unknown } } | null)
-						?.user;
+					const user = (ctx.data as { user?: { id?: string; createdAt?: unknown } } | null)?.user;
 					const isNewUser = isLikelyNewAccount(user?.createdAt);
 					captureOneTapAnalytics(pathname, user);
 					handleOneTapSuccess(pathname, isNewUser);

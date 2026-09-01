@@ -27,7 +27,7 @@
 		"auth:backfill-personal-orgs": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/backfill-personal-organizations.ts",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"lint": "prettier --check . && eslint .",
+		"lint": "prettier --check . && eslint . --concurrency auto --cache --cache-location .eslintcache",
 		"format": "prettier --write ."
 	},
 	"devDependencies": {

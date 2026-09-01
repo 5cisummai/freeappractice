@@ -49,8 +49,7 @@
 						<PracticeRunner
 							initial={{
 								selectedClass: data.sharedQuiz.apClass,
-								selectedUnit:
-									data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit,
+								selectedUnit: data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit,
 								requestVersion: 1
 							}}
 							quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}

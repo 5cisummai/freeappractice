@@ -14,9 +14,7 @@
 	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
 	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
-	import {
-		markOnboardingIntentInBrowser
-	} from '$lib/onboarding.js';
+	import { markOnboardingIntentInBrowser } from '$lib/onboarding.js';
 	import {
 		isPasswordWithinLimit,
 		MIN_PASSWORD_LENGTH,

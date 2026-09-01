@@ -108,12 +108,8 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 	const emptyChat = $derived(
 		!promptVisible && !thinking && !toolsVisible && !replyText && !memoryNoteVisible
 	);
-	const showThinkingOnly = $derived(
-		thinking && !toolsVisible && !replyText && !memoryNoteVisible
-	);
-	const showAssistantContent = $derived(
-		toolsVisible || Boolean(replyText) || memoryNoteVisible
-	);
+	const showThinkingOnly = $derived(thinking && !toolsVisible && !replyText && !memoryNoteVisible);
+	const showAssistantContent = $derived(toolsVisible || Boolean(replyText) || memoryNoteVisible);
 	const assistantAvatarState = $derived(
 		streaming
 			? COACH_AVATAR_STATES.waiting
@@ -403,10 +399,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 												<ul class="space-y-1">
 													{#each scene.tools as tool, index (tool.complete)}
 														{#if index < completedTools || index === runningTool}
-															<li
-																class="flex items-center gap-2"
-																in:fly={{ y: 4, duration: 180 }}
-															>
+															<li class="flex items-center gap-2" in:fly={{ y: 4, duration: 180 }}>
 																{#if index === runningTool}
 																	<Loader2Icon
 																		class="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"

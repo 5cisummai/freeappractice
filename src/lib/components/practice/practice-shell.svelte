@@ -132,10 +132,7 @@
 		<div class="space-y-4">
 			<div class="mx-auto max-w-5xl">
 				<Tabs.Root
-					bind:value={
-						() => practiceMode,
-						(value) => setPracticeMode(value)
-					}
+					bind:value={() => practiceMode, (value) => setPracticeMode(value)}
 					class="mb-4 w-full"
 				>
 					<Tabs.List
@@ -241,10 +238,7 @@
 						requestVersion,
 						presetQuestionId: presetQuestionId || undefined
 					})}
-					bind:expanded={
-						() => cardExpanded,
-						(value) => setCardExpanded(value)
-					}
+					bind:expanded={() => cardExpanded, (value) => setCardExpanded(value)}
 					bind:controlsOpen={expandedSelectorOpen}
 					{practiceControls}
 					showFirstUseHint={showFirstUseHints}
