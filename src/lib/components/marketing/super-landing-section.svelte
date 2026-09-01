@@ -31,6 +31,8 @@
 	]);
 
 	const cardClass =
+		'overflow-hidden rounded-[1.5rem] border border-border/70 bg-muted/50 shadow-sm transition-all duration-300 hover:border-violet-300/40 hover:shadow-lg hover:shadow-violet-500/10';
+	const coachCardClass =
 		'overflow-hidden rounded-[1.5rem] border border-border/70 bg-card shadow-sm transition-all duration-300 hover:border-violet-300/40 hover:shadow-lg hover:shadow-violet-500/10';
 </script>
 
@@ -49,7 +51,7 @@
 		</div>
 
 		<div class="grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_auto]">
-			<article class="{cardClass} lg:col-span-7 {twAnimateInViewSubtle}">
+			<article class="{coachCardClass} lg:col-span-7 {twAnimateInViewSubtle}">
 				<div class="flex min-h-56 items-center justify-center p-6" aria-hidden="true">
 					<div class="w-full max-w-md space-y-4">
 						<div class="flex flex-wrap justify-center gap-2">
@@ -94,7 +96,7 @@
 						class="w-full max-w-xs overflow-hidden rounded-2xl border border-border/70 bg-background shadow-md"
 					>
 						<div
-							class="flex items-center gap-2 border-b border-border/70 super-tier-gradient px-4 py-2.5"
+							class="flex items-center gap-2 border-b border-border/70 px-4 py-2.5"
 						>
 							<CalendarDaysIcon class="size-4 text-violet-500" />
 							<p class="text-sm font-semibold">This week's plan</p>
@@ -143,7 +145,7 @@
 					</div>
 					<ArrowRightIcon class="size-5 shrink-0 text-muted-foreground" />
 					<div
-						class="w-full max-w-44 rounded-xl border border-violet-300/40 super-tier-gradient p-4 shadow-sm"
+						class="w-full max-w-44 rounded-xl border border-border/70 bg-background p-4 shadow-sm"
 					>
 						<PenLineIcon class="size-5 text-violet-600 dark:text-violet-300" />
 						<p class="mt-2 text-sm font-semibold">Written response</p>

@@ -27,9 +27,10 @@
 
 	const wellClass = 'relative min-h-0 flex-1 overflow-hidden';
 	const cardClass =
+		'flex min-h-0 flex-col overflow-hidden rounded-3xl border border-border bg-muted/50';
+	const coachCardClass =
 		'flex min-h-0 flex-col overflow-hidden rounded-3xl border border-border bg-background';
 	const captionClass = 'space-y-1 px-8 py-6';
-	const mockScaleClass = 'pointer-events-none w-[118%] [zoom:0.85]';
 </script>
 
 <section id="super" class="w-full space-y-12" aria-labelledby="super-section-heading">
@@ -63,7 +64,7 @@
 	<div
 		class="grid min-h-[52svh] items-stretch gap-4 sm:gap-5 lg:min-h-152 lg:grid-cols-12 lg:grid-rows-2"
 	>
-		<article class="{cardClass} min-h-112 lg:col-span-7 lg:row-span-2 {twAnimateInViewSubtle}">
+		<article class="{coachCardClass} min-h-112 lg:col-span-7 lg:row-span-2 {twAnimateInViewSubtle}">
 			<div class="{wellClass} bg-background" aria-hidden="true">
 				<CoachChatDemo />
 			</div>
@@ -71,45 +72,43 @@
 
 		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-5">
 			<div class="{wellClass} min-h-52 p-4 sm:p-5" aria-hidden="true">
-				<div class={mockScaleClass}>
-					<div
-						class="relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-foreground/10"
-					>
-						<div class="absolute top-2.5 right-2.5 z-10 flex gap-1">
-							<span
-								class="inline-flex h-7 items-center gap-1 rounded-md bg-background/85 px-2 text-[0.7rem] font-medium shadow-sm backdrop-blur-sm"
-							>
-								<ExternalLinkIcon class="size-3" />
-								Open PDF
-							</span>
-							<span
-								class="inline-flex h-7 items-center gap-1 rounded-md bg-background/85 px-2 text-[0.7rem] font-medium shadow-sm backdrop-blur-sm"
-							>
-								<DownloadIcon class="size-3" />
-								Download
-							</span>
-						</div>
-						<div class="space-y-3 px-4 pt-11 pb-4 text-neutral-900">
-							<div class="flex items-center gap-2 text-neutral-500">
-								<FileTextIcon class="size-3.5" />
-								<p class="text-[0.65rem] font-medium tracking-wide uppercase">
-									Personal assessment brief
-								</p>
-							</div>
-							<p class="font-display text-lg font-medium tracking-tight">AP Biology</p>
-							<p class="text-xs leading-5 text-neutral-600">
-								Strongest: Unit 2 cell structure. Focus next: Unit 3 energetics and FRQ evidence
-								phrasing.
+				<div
+					class="pointer-events-none relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-foreground/10"
+				>
+					<div class="absolute top-2.5 right-2.5 z-10 flex gap-1">
+						<span
+							class="inline-flex h-7 items-center gap-1 rounded-md bg-background/85 px-2 text-[0.7rem] font-medium shadow-sm backdrop-blur-sm"
+						>
+							<ExternalLinkIcon class="size-3" />
+							Open PDF
+						</span>
+						<span
+							class="inline-flex h-7 items-center gap-1 rounded-md bg-background/85 px-2 text-[0.7rem] font-medium shadow-sm backdrop-blur-sm"
+						>
+							<DownloadIcon class="size-3" />
+							Download
+						</span>
+					</div>
+					<div class="space-y-3 px-4 pt-11 pb-4 text-neutral-900">
+						<div class="flex items-center gap-2 text-neutral-500">
+							<FileTextIcon class="size-3.5" />
+							<p class="text-[0.65rem] font-medium tracking-wide uppercase">
+								Personal assessment brief
 							</p>
-							<div class="grid grid-cols-2 gap-2">
-								<div class="rounded-lg bg-neutral-100 px-2.5 py-1.5">
-									<p class="text-[0.65rem] text-neutral-500">MCQ accuracy</p>
-									<p class="text-base font-semibold">82%</p>
-								</div>
-								<div class="rounded-lg bg-neutral-100 px-2.5 py-1.5">
-									<p class="text-[0.65rem] text-neutral-500">Units to review</p>
-									<p class="text-base font-semibold">2</p>
-								</div>
+						</div>
+						<p class="font-display text-lg font-medium tracking-tight">AP Biology</p>
+						<p class="text-xs leading-5 text-neutral-600">
+							Strongest: Unit 2 cell structure. Focus next: Unit 3 energetics and FRQ evidence
+							phrasing.
+						</p>
+						<div class="grid grid-cols-2 gap-2">
+							<div class="rounded-lg bg-neutral-100 px-2.5 py-1.5">
+								<p class="text-[0.65rem] text-neutral-500">MCQ accuracy</p>
+								<p class="text-base font-semibold">82%</p>
+							</div>
+							<div class="rounded-lg bg-neutral-100 px-2.5 py-1.5">
+								<p class="text-[0.65rem] text-neutral-500">Units to review</p>
+								<p class="text-base font-semibold">2</p>
 							</div>
 						</div>
 					</div>
@@ -125,43 +124,41 @@
 
 		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-5">
 			<div class="{wellClass} min-h-52 p-4 sm:p-5" aria-hidden="true">
-				<div class={mockScaleClass}>
-					<div
-						class="overflow-hidden rounded-2xl border border-border bg-card py-4 text-sm shadow-none ring-1 ring-foreground/10"
-					>
-						<div class="space-y-0.5 px-4">
-							<p class="text-sm leading-normal font-medium">Active weekly study plan</p>
-							<p class="text-xs text-muted-foreground">Every task is capped at 30 minutes.</p>
-						</div>
-						<div class="mt-2 px-4">
-							{#each planTasks as task (task.label)}
-								<div
-									class="flex min-w-0 items-center justify-between gap-2 border-b border-border py-2.5 last:border-b-0"
-								>
-									<div class="min-w-0 flex-1">
-										<p class="truncate text-sm font-medium {task.done ? 'line-through' : ''}">
-											{task.label}
-										</p>
-										<p class="text-[0.65rem] text-muted-foreground">{task.meta}</p>
-									</div>
-									<div class="flex shrink-0 gap-1.5">
-										<span
-											class="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs font-medium shadow-xs"
-										>
-											<BookOpenIcon class="size-3" />
-											Practice
-										</span>
-										<span
-											class="inline-flex h-7 items-center rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground {task.done
-												? 'opacity-50'
-												: ''}"
-										>
-											Complete
-										</span>
-									</div>
+				<div
+					class="pointer-events-none overflow-hidden rounded-2xl border border-border bg-card py-4 text-sm shadow-none ring-1 ring-foreground/10"
+				>
+					<div class="space-y-0.5 px-4">
+						<p class="text-sm leading-normal font-medium">Active weekly study plan</p>
+						<p class="text-xs text-muted-foreground">Every task is capped at 30 minutes.</p>
+					</div>
+					<div class="mt-2 px-4">
+						{#each planTasks as task (task.label)}
+							<div
+								class="flex min-w-0 items-center justify-between gap-2 border-b border-border py-2.5 last:border-b-0"
+							>
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-medium {task.done ? 'line-through' : ''}">
+										{task.label}
+									</p>
+									<p class="text-[0.65rem] text-muted-foreground">{task.meta}</p>
 								</div>
-							{/each}
-						</div>
+								<div class="flex shrink-0 gap-1.5">
+									<span
+										class="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs font-medium shadow-xs"
+									>
+										<BookOpenIcon class="size-3" />
+										Practice
+									</span>
+									<span
+										class="inline-flex h-7 items-center rounded-md bg-primary px-2 text-xs font-medium text-primary-foreground {task.done
+											? 'opacity-50'
+											: ''}"
+									>
+										Complete
+									</span>
+								</div>
+							</div>
+						{/each}
 					</div>
 				</div>
 			</div>
