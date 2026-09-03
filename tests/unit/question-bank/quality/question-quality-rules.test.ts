@@ -31,24 +31,11 @@ describe('question quality rules', () => {
 		expect(feedbackSummaryFromCounts({ explanation_unclear: 3 }).priority).toBe('high');
 	});
 
-	it('keeps all results human-only before calibration', () => {
-		expect(
-			shouldRequireHumanReview({
-				assessment,
-				feedback: feedbackSummaryFromCounts({}),
-				calibrated: false,
-				confidenceThreshold: 0.85,
-				calibrationSample: false
-			})
-		).toEqual({ required: true, reason: 'agent_not_calibrated' });
-	});
-
 	it('requires review for feedback conflicts, low confidence, and calibration samples', () => {
 		expect(
 			shouldRequireHumanReview({
 				assessment,
 				feedback: feedbackSummaryFromCounts({ answer_incorrect: 2 }),
-				calibrated: true,
 				confidenceThreshold: 0.85,
 				calibrationSample: false
 			}).reason
@@ -57,7 +44,6 @@ describe('question quality rules', () => {
 			shouldRequireHumanReview({
 				assessment: { ...assessment, confidence: 0.8 },
 				feedback: feedbackSummaryFromCounts({}),
-				calibrated: true,
 				confidenceThreshold: 0.85,
 				calibrationSample: false
 			}).reason
@@ -66,7 +52,6 @@ describe('question quality rules', () => {
 			shouldRequireHumanReview({
 				assessment,
 				feedback: feedbackSummaryFromCounts({}),
-				calibrated: true,
 				confidenceThreshold: 0.85,
 				calibrationSample: true
 			}).reason
@@ -78,7 +63,6 @@ describe('question quality rules', () => {
 			shouldRequireHumanReview({
 				assessment,
 				feedback: feedbackSummaryFromCounts({}),
-				calibrated: true,
 				confidenceThreshold: 0.85,
 				calibrationSample: false,
 				webSearchRequired: true,
