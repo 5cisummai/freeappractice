@@ -8,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { authClient } from '$lib/auth/client.js';
+	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
 	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '$lib/auth/urls.js';
 	import { page } from '$app/state';
 	import { getSiteUrl } from '$lib/site-url';
@@ -79,9 +80,10 @@
 				identifyPostHogUser(userId);
 			}
 			captureSignupCompleted('email');
-			// Verification email is sent by Better Auth (sendOnSignUp + Vercel waitUntil).
+			// Use Better Auth's awaited, rate-limited endpoint so delivery failures are recoverable.
+			const verificationError = await requestVerificationEmail(email);
 			// Onboarding pending cookie is set server-side in databaseHooks.user.create.after.
-			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}`;
+			const emailSentHref = `${resolve('/email-sent')}?email=${encodeURIComponent(email)}${verificationError ? '&send=failed' : ''}`;
 			// The base path is resolved above; only the encoded query string is appended.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			goto(emailSentHref);

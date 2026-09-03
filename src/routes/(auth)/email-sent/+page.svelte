@@ -7,15 +7,24 @@
 	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
 
 	const email = $derived(page.url.searchParams.get('email'));
+	const initialSendFailed = $derived(page.url.searchParams.get('send') === 'failed');
 
 	let errorMessage = $state('');
 	let successMessage = $state('');
 	let resending = $state(false);
+	let initialSendErrorVisible = $state(true);
+	const displayedError = $derived(
+		errorMessage ||
+			(initialSendFailed && initialSendErrorVisible
+				? "We couldn't send the verification email. Please try again."
+				: '')
+	);
 
 	async function handleResend() {
 		if (!email || resending) return;
 		errorMessage = '';
 		successMessage = '';
+		initialSendErrorVisible = false;
 		resending = true;
 		try {
 			// Native Better Auth client API: awaits the send and surfaces provider failures.
@@ -41,25 +50,29 @@
 	<Card.Header class="text-center">
 		<Card.Title class="text-xl">Check your email</Card.Title>
 		<Card.Description>
-			We sent a verification link to
-			{#if email}
-				<span class="ph-mask-pii font-medium text-foreground">{email}</span>.
+			{#if initialSendFailed}
+				Your account was created, but the verification email could not be sent.
 			{:else}
-				your email address.
+				We sent a verification link to
+				{#if email}
+					<span class="ph-mask-pii font-medium text-foreground">{email}</span>.
+				{:else}
+					your email address.
+				{/if}
+				It expires in 15 minutes. Check spam if you don't see it.
 			{/if}
-			It expires in 15 minutes. Check spam if you don't see it.
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="flex flex-col gap-4">
-		{#if errorMessage}
-			<p class="text-center text-sm text-destructive" role="alert">{errorMessage}</p>
+		{#if displayedError}
+			<p class="text-center text-sm text-destructive" role="alert">{displayedError}</p>
 		{/if}
 		{#if successMessage}
 			<p class="text-center text-sm text-muted-foreground" role="status">{successMessage}</p>
 		{/if}
 		{#if email}
 			<Button type="button" variant="outline" onclick={handleResend} disabled={resending}>
-				{resending ? 'Sending...' : errorMessage ? 'Try sending again' : "Didn't get it? Resend"}
+				{resending ? 'Sending...' : displayedError ? 'Try sending again' : "Didn't get it? Resend"}
 			</Button>
 		{/if}
 		<div class="text-center">

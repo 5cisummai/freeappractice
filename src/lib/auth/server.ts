@@ -181,7 +181,9 @@ export const auth = betterAuth({
 		}
 	},
 	emailVerification: {
-		sendOnSignUp: true,
+		// Email/password signup explicitly calls sendVerificationEmail after account creation so
+		// delivery failures can be shown to the user. Google supplies a verified email claim.
+		sendOnSignUp: false,
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
 		expiresIn: 15 * 60,
