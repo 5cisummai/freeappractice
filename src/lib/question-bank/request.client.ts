@@ -39,6 +39,10 @@ type QuestionRequestOptions<TQuestion> = {
 	parseQuestion: (payload: QuestionApiResponse) => TQuestion;
 };
 
+type McqBatchResponse = QuestionApiResponse & {
+	questions?: unknown[];
+};
+
 /** Fetch one question while keeping MCQ and FRQ transport behavior identical. */
 export async function requestQuestion<TQuestion>(
 	options: QuestionRequestOptions<TQuestion>
@@ -103,6 +107,46 @@ export function requestMcqQuestion(
 		errorMessage: 'Failed to load question.',
 		parseQuestion: parseQuestionPayloadFromResponse
 	});
+}
+
+/** Load up to ten MCQs in one request for quiz startup and refill. */
+export async function requestMcqQuestions(
+	className: string,
+	unit: string,
+	count: number,
+	excludeQuestionIds: string[] = []
+): Promise<GeneratedQuestion[]> {
+	const response = await apiFetch('/api/questions/batch', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ className, unit, count, excludeQuestionIds })
+	});
+	const payload = await readJsonOrNull<McqBatchResponse>(response);
+
+	if (isPoolWarmingResponse(payload)) {
+		throw new PoolWarmingError(
+			payload.error || 'Question pool is warming up. Please retry shortly.',
+			Math.max(1, Math.floor(payload.retryAfterSeconds))
+		);
+	}
+	if (!response.ok || !payload || !Array.isArray(payload.questions)) {
+		throw new QuestionRequestError(
+			getResponseMessage(payload, 'Failed to load questions.'),
+			response.ok ? null : response.status
+		);
+	}
+
+	try {
+		return payload.questions.map((question) =>
+			parseQuestionPayloadFromResponse(question as QuestionApiResponse)
+		);
+	} catch (error) {
+		if (error instanceof QuestionRequestError) throw error;
+		throw new QuestionRequestError(
+			error instanceof Error ? error.message : 'Failed to load questions.',
+			null
+		);
+	}
 }
 
 /** Load one MCQ by canonical question id. */

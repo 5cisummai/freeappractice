@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, ne, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	mcqQuestions,
@@ -21,6 +21,74 @@ export interface IQuestion extends McqQuestionPayload {
 }
 
 const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuestions.data);
+
+/** The narrow row shape used by the anonymous pool-hit path. */
+export type McqPoolQuestion = McqQuestionPayload & {
+	questionId: string;
+	randomKey: number;
+	active: boolean;
+	apClass: string;
+	unit: string;
+};
+
+const jsonText = (field: string) => sql<string | null>`${mcqQuestions.data} ->> ${field}`;
+
+const poolQuestionSelection = {
+	questionId: mcqQuestions.questionId,
+	randomKey: mcqQuestions.randomKey,
+	active: mcqQuestions.active,
+	apClass: sql<string>`COALESCE(NULLIF(${jsonText('apClass')}, ''), 'Unknown')`,
+	unit: sql<string>`COALESCE(NULLIF(${jsonText('unit')}, ''), 'all-units')`,
+	mainTopic: sql<string>`COALESCE(NULLIF(${jsonText('mainTopic')}, ''), NULLIF(${jsonText('topicsCovered')}, ''), 'Legacy topic')`,
+	topicsCovered: sql<string>`COALESCE(${jsonText('topicsCovered')}, '')`,
+	question: sql<string>`COALESCE(${jsonText('question')}, ${jsonText('prompt')}, '')`,
+	optionA: sql<string>`COALESCE(${jsonText('optionA')}, ${mcqQuestions.data} -> 'options' -> 0 ->> 'text', ${mcqQuestions.data} -> 'options' -> 0 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 0, '')`,
+	optionB: sql<string>`COALESCE(${jsonText('optionB')}, ${mcqQuestions.data} -> 'options' -> 1 ->> 'text', ${mcqQuestions.data} -> 'options' -> 1 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 1, '')`,
+	optionC: sql<string>`COALESCE(${jsonText('optionC')}, ${mcqQuestions.data} -> 'options' -> 2 ->> 'text', ${mcqQuestions.data} -> 'options' -> 2 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 2, '')`,
+	optionD: sql<string>`COALESCE(${jsonText('optionD')}, ${mcqQuestions.data} -> 'options' -> 3 ->> 'text', ${mcqQuestions.data} -> 'options' -> 3 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 3, '')`,
+	correctAnswer: sql<string>`COALESCE(${jsonText('correctAnswer')}, ${jsonText('answer')}, '')`,
+	explanation: sql<string>`COALESCE(${jsonText('explanation')}, ${jsonText('rationale')}, '')`,
+	diagramSpec: sql<Record<
+		string,
+		unknown
+	> | null>`COALESCE(${mcqQuestions.data} -> 'diagramSpec', ${mcqQuestions.data} -> 'diagram')`,
+	hasDiagram: sql<boolean>`CASE WHEN ${jsonText('hasDiagram')} = 'true' THEN true WHEN ${jsonText('hasDiagram')} = 'false' THEN false ELSE ${mcqQuestions.data} -> 'diagramSpec' IS NOT NULL OR ${mcqQuestions.data} -> 'diagram' IS NOT NULL END`
+};
+
+function normalizePoolCorrectAnswer(value: string): 'A' | 'B' | 'C' | 'D' {
+	const upper = value.trim().toUpperCase();
+	if (upper === 'A' || upper === 'B' || upper === 'C' || upper === 'D') return upper;
+	const match = upper.match(/\b([A-D])\b/);
+	if (match?.[1] === 'A' || match?.[1] === 'B' || match?.[1] === 'C' || match?.[1] === 'D') {
+		return match[1];
+	}
+	throw new Error('Stored MCQ has an invalid answer key');
+}
+
+type McqPoolQuestionRow = Omit<McqPoolQuestion, 'correctAnswer' | 'diagramSpec'> & {
+	correctAnswer: string;
+	diagramSpec: unknown;
+};
+
+function poolQuestionFromRow(row: McqPoolQuestionRow): McqPoolQuestion {
+	return {
+		...row,
+		mainTopic: row.mainTopic.trim() || row.topicsCovered.trim() || 'Legacy topic',
+		topicsCovered: row.topicsCovered.trim(),
+		question: row.question.trim(),
+		optionA: row.optionA.trim(),
+		optionB: row.optionB.trim(),
+		optionC: row.optionC.trim(),
+		optionD: row.optionD.trim(),
+		correctAnswer: normalizePoolCorrectAnswer(row.correctAnswer),
+		explanation: row.explanation.trim(),
+		diagramSpec:
+			row.diagramSpec && typeof row.diagramSpec === 'object' && !Array.isArray(row.diagramSpec)
+				? (row.diagramSpec as Record<string, unknown>)
+				: null,
+		hasDiagram: row.hasDiagram || Boolean(row.diagramSpec)
+	};
+}
 
 export type CanonicalMcqInput = Omit<
 	IQuestion,
@@ -138,12 +206,12 @@ export async function findCachedQuestionByPool(input: {
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
-}): Promise<IQuestion | null> {
+}): Promise<McqPoolQuestion | null> {
 	const db = getNeonDatabase(input.onDatabaseInit);
 	const predicates = [
 		eq(apClassField, input.apClass),
 		eq(unitField, input.unit),
-		ne(mcqQuestions.active, false),
+		eq(mcqQuestions.active, true),
 		input.fromPivot === 'after'
 			? gte(mcqQuestions.randomKey, input.pivot)
 			: lt(mcqQuestions.randomKey, input.pivot)
@@ -152,12 +220,48 @@ export async function findCachedQuestionByPool(input: {
 		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
 	}
 	const rows = await db
-		.select()
+		.select(poolQuestionSelection)
 		.from(mcqQuestions)
 		.where(and(...predicates))
 		.orderBy(mcqQuestions.randomKey)
 		.limit(1);
-	return rows[0] ? fromRow(rows[0]) : null;
+	return rows[0] ? poolQuestionFromRow(rows[0]) : null;
+}
+
+/** Select a batch around one random pivot in a single Neon HTTP batch. */
+export async function findCachedQuestionsByPool(input: {
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	pivot: number;
+	limit: number;
+	onDatabaseInit?: (elapsedMs: number) => void;
+}): Promise<McqPoolQuestion[]> {
+	const db = getNeonDatabase(input.onDatabaseInit);
+	const createQuery = (fromPivot: 'after' | 'before') => {
+		const predicates = [
+			eq(apClassField, input.apClass),
+			eq(unitField, input.unit),
+			eq(mcqQuestions.active, true),
+			fromPivot === 'after'
+				? gte(mcqQuestions.randomKey, input.pivot)
+				: lt(mcqQuestions.randomKey, input.pivot)
+		];
+		if (input.excludeQuestionIds.length) {
+			predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
+		}
+		return db
+			.select(poolQuestionSelection)
+			.from(mcqQuestions)
+			.where(and(...predicates))
+			.orderBy(mcqQuestions.randomKey)
+			.limit(input.limit);
+	};
+
+	const [afterRows, beforeRows] = await db.batch([createQuery('after'), createQuery('before')]);
+	return [...afterRows, ...beforeRows]
+		.slice(0, input.limit)
+		.map((row) => poolQuestionFromRow(row as McqPoolQuestionRow));
 }
 
 export async function findCachedQuestion(questionId: string): Promise<IQuestion | null> {

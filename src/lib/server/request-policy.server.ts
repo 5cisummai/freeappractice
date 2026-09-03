@@ -1,8 +1,8 @@
 import { matchesPublicMarketingPath } from '$lib/routes/public-marketing';
 
-/** Hot anonymous MCQ pool fetch — skips session lookup and global Redis rate limiting. */
+/** Hot anonymous MCQ pool fetches — skip session lookup and global Redis rate limiting. */
 export function isAnonymousMcqFetch(method: string, pathname: string): boolean {
-	return method === 'POST' && pathname === '/api/question';
+	return method === 'POST' && (pathname === '/api/question' || pathname === '/api/questions/batch');
 }
 
 export function shouldSkipSessionLookup(method: string, pathname: string): boolean {

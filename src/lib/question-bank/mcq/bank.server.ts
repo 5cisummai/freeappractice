@@ -1,10 +1,12 @@
 import {
 	countActiveMcqQuestions,
 	findCachedQuestionByPool,
-	type IQuestion
+	findCachedQuestionsByPool,
+	type McqPoolQuestion
 } from '$lib/question-bank/mcq/repository.server';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
+import { scheduleBackgroundTask } from '$lib/server/background-task.server';
 
 type McqAnswerBody = {
 	question: string;
@@ -33,7 +35,7 @@ type CachedResult = {
 /** Read full MCQ body directly from an active-library Neon row. */
 function hotPoolBodyFromDoc(
 	doc: Pick<
-		IQuestion,
+		McqPoolQuestion,
 		| 'question'
 		| 'optionA'
 		| 'optionB'
@@ -62,11 +64,13 @@ function hotPoolBodyFromDoc(
 	};
 }
 
-export const mcqBank = new QuestionBank<IQuestion, CachedResult>({
+export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
 	logScope: 'pool',
 	normalizeUnit,
 	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
+	findRandomBatch: findCachedQuestionsByPool,
+	scheduleBackgroundTask,
 	// Diagram availability is decided during generation. Serving a cached row
 	// must remain a synchronous pool-hit path and never initialize Flags.
 	serveCached: (doc) => ({

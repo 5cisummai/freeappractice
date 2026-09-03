@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PoolWarmingError } from '$lib/question-bank/request.client';
-import { requestFrqQuestion, requestMcqQuestion } from '$lib/question-bank/request.client';
+import {
+	requestFrqQuestion,
+	requestMcqQuestion,
+	requestMcqQuestions
+} from '$lib/question-bank/request.client';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -95,6 +99,22 @@ describe('question request transport', () => {
 			2,
 			'/api/question/frq',
 			expect.objectContaining({ body: expect.stringContaining('old-frq') })
+		);
+	});
+
+	it('parses a batch of MCQs from one response', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response(JSON.stringify({ questions: [mcqPayload] }), { status: 200 }))
+		);
+
+		const questions = await requestMcqQuestions('AP Biology', 'Unit 1', 1, ['old-mcq']);
+
+		expect(questions).toHaveLength(1);
+		expect(questions[0]?.questionId).toBe('mcq-1');
+		expect(fetch).toHaveBeenCalledWith(
+			'/api/questions/batch',
+			expect.objectContaining({ body: expect.stringContaining('"count":1') })
 		);
 	});
 });

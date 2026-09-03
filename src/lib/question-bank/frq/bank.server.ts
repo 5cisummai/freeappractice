@@ -7,6 +7,7 @@ import {
 import { toPublicFrqQuestion, type PublicFrqQuestion } from '$lib/question-bank/frq/types';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
+import { scheduleBackgroundTask } from '$lib/server/background-task.server';
 
 type FrqServiceResult = {
 	publicQuestion: PublicFrqQuestion;
@@ -21,6 +22,7 @@ export const frqBank = new QuestionBank<IFrqQuestion, FrqServiceResult>({
 	normalizeUnit,
 	countActive: countActiveFrqQuestions,
 	findRandom: findFrqQuestionByPool,
+	scheduleBackgroundTask,
 	serveCached: (doc) => {
 		const question = toFrqQuestion(doc);
 		return {

@@ -11,7 +11,7 @@
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
-	import { requestMcqQuestion } from '$lib/question-bank/request.client.js';
+	import { requestMcqQuestion, requestMcqQuestions } from '$lib/question-bank/request.client.js';
 	import { createTextAnnotation } from '$lib/components/questions/text-annotation-dom.js';
 	import type {
 		AddTextAnnotationInput,
@@ -84,6 +84,10 @@
 				throw new Error('Question did not include an answer key.');
 			}
 			return result.question;
+		},
+		loadQuestions: async (questionCount, excludeIds) => {
+			const unit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
+			return requestMcqQuestions(selectedClass, unit, questionCount, excludeIds);
 		},
 		onComplete: (snapshot) => {
 			lastSnapshot = snapshot;
