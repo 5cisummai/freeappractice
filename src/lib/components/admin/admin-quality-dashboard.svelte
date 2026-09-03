@@ -12,6 +12,8 @@
 		ReviewPreview
 	} from '$lib/question-bank/quality/types.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import QuestionCard from '$lib/components/questions/question-card.svelte';
+	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -445,7 +447,7 @@
 		<Card.Content class="p-4 sm:p-6">
 			{#if activeReviewItem}
 				<div class="mx-auto max-w-3xl">
-					<div class="relative min-h-[34rem]">
+					<div class="relative min-h-136">
 						{#if nextReviewItem}
 							<div
 								class="absolute inset-x-3 top-3 h-full rounded-2xl border border-border/50 bg-muted/50 shadow-sm"
@@ -455,7 +457,7 @@
 
 						<article
 							{@attach swipeCard}
-							class={`relative min-h-[34rem] cursor-grab touch-pan-y rounded-2xl border border-border bg-background p-5 shadow-lg active:cursor-grabbing sm:p-7 ${cardSwipeClasses(activeReviewItem)}`}
+							class={`relative min-h-136 cursor-grab touch-pan-y rounded-2xl border border-border bg-background p-5 shadow-lg active:cursor-grabbing sm:p-7 ${cardSwipeClasses(activeReviewItem)}`}
 							style={cardTransform(activeReviewItem)}
 							role="group"
 							aria-label={`Review question ${activeReviewItem.questionId}`}
@@ -468,7 +470,9 @@
 								</div>
 							{/if}
 
-							<div class="flex flex-wrap items-start justify-between gap-3">
+							<div
+								class="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 sm:px-7 sm:pt-7"
+							>
 								<div class="flex flex-wrap items-center gap-2">
 									<span class="rounded-full bg-muted px-3 py-1 text-xs font-medium"
 										>{activeReviewItem.apClass ?? 'Unknown AP class'}</span
@@ -482,147 +486,130 @@
 								>
 							</div>
 
-							{#if activeReviewItem.stimulus}
-								<div class="mt-6 rounded-xl border border-border/70 bg-muted/30 p-4">
-									<p
-										class="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+							{#key activeReviewItem.questionId}
+								<QuestionCard
+									model={unlimitedQuestionCardModel({
+										selectedClass: activeReviewItem.apClass ?? '',
+										selectedUnit: activeReviewItem.unit ?? '',
+										requestVersion: 1,
+										presetQuestionId: activeReviewItem.questionId
+									})}
+									tutorMode="hidden"
+									showUtilityActions={false}
+									showFirstUseHint={false}
+									nextDisabled={true}
+									class="border-0 bg-transparent shadow-none ring-0"
+								/>
+							{/key}
+
+							<div class="px-5 pb-5 sm:px-7 sm:pb-7">
+								<details class="mt-6 rounded-xl border border-border/70 bg-muted/20">
+									<summary class="cursor-pointer px-4 py-3 text-sm font-medium"
+										>Show review context</summary
 									>
-										Stimulus
-									</p>
-									<RichText text={activeReviewItem.stimulus} class="text-sm leading-6" />
-								</div>
-							{/if}
+									<div class="space-y-4 border-t border-border/70 px-4 py-4">
+										{#if activeReviewItem.blind}
+											<p
+												class="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-violet-800 dark:text-violet-200"
+											>
+												Blind review is active. Make an independent decision before seeing the AI
+												assessment.
+											</p>
+										{:else if activeReviewItem.aiAssessment}
+											<div class="space-y-3">
+												<div class="flex flex-wrap items-center gap-2">
+													<p class="text-sm font-medium">AI assessment</p>
+													<span
+														class={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${verdictClasses(activeReviewItem.aiAssessment.verdict)}`}
+														>{activeReviewItem.aiAssessment.verdict}</span
+													>
+													<span class="text-xs text-muted-foreground"
+														>{formatConfidence(activeReviewItem.aiAssessment.confidence)} confidence ·
+														{activeReviewItem.aiAssessment.model}</span
+													>
+												</div>
+												{#if activeReviewItem.aiAssessment.issueCodes.length > 0}<p class="text-sm">
+														<span class="font-medium">Issues:</span>
+														{activeReviewItem.aiAssessment.issueCodes.join(', ')}
+													</p>{/if}
+												{#if activeReviewItem.aiAssessment.evidence.length > 0}
+													<ul class="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+														{#each activeReviewItem.aiAssessment.evidence as evidence (evidence)}<li
+															>
+																{evidence}
+															</li>{/each}
+													</ul>
+												{/if}
+											</div>
+										{/if}
 
-							<div class="mt-6">
-								<p class="text-lg leading-8 font-medium sm:text-xl">
-									{activeReviewItem.question ?? 'Question text unavailable.'}
-								</p>
-							</div>
+										{#if activeReviewItem.explanation}
+											<div class="border-t border-border/70 pt-3">
+												<p class="mb-2 text-sm font-medium">Explanation</p>
+												<RichText
+													text={activeReviewItem.explanation}
+													class="text-sm leading-6 text-muted-foreground"
+												/>
+											</div>
+										{/if}
 
-							{#if activeReviewItem.options && Object.keys(activeReviewItem.options).length > 0}
-								<div class="mt-6 grid gap-2">
-									{#each Object.entries(activeReviewItem.options) as [key, option] (key)}
 										<div
-											class={`rounded-xl border px-4 py-3 ${key === activeReviewItem.correctAnswer ? 'border-primary/40 bg-primary/5' : 'border-border/70'}`}
+											class="flex flex-wrap gap-x-4 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground"
 										>
-											<div class="flex gap-3">
-												<span
-													class="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-xs font-semibold"
-													>{key}</span
-												>
-												<RichText text={option} inline class="text-sm leading-6" />
-											</div>
-											{#if key === activeReviewItem.correctAnswer}<p
-													class="mt-2 pl-10 text-xs font-medium text-primary"
-												>
-													Correct answer
-												</p>{/if}
+											<span>Answer reports: {activeReviewItem.feedbackSummary.answerIncorrect}</span
+											>
+											<span
+												>Clarity reports: {activeReviewItem.feedbackSummary.questionUnclear}</span
+											>
+											<span
+												>Explanation reports: {activeReviewItem.feedbackSummary
+													.explanationUnclear}</span
+											>
+											<span
+												>Unique reporters: {activeReviewItem.feedbackSummary.uniqueReporters}</span
+											>
 										</div>
-									{/each}
-								</div>
-							{/if}
 
-							<details class="mt-6 rounded-xl border border-border/70 bg-muted/20">
-								<summary class="cursor-pointer px-4 py-3 text-sm font-medium"
-									>Show review context</summary
+										<div class="space-y-2">
+											<Label for={noteId(activeReviewItem.questionId)}>Reviewer notes</Label>
+											<textarea
+												id={noteId(activeReviewItem.questionId)}
+												class="min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+												placeholder="Optional context for the audit trail"
+												value={humanNotes[activeReviewItem.questionId] ?? ''}
+												oninput={(event) => updateNote(activeReviewItem.questionId, event)}
+											></textarea>
+										</div>
+									</div>
+								</details>
+
+								<div
+									class="mt-6 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between"
 								>
-								<div class="space-y-4 border-t border-border/70 px-4 py-4">
-									{#if activeReviewItem.blind}
-										<p
-											class="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-violet-800 dark:text-violet-200"
+									<p class="text-xs text-muted-foreground">Drag the card or choose a decision.</p>
+									<div class="flex gap-3">
+										<Button
+											variant="outline"
+											class="min-w-28 gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
+											onclick={() => void submitHumanDecision(activeReviewItem, 'bad')}
+											disabled={!!busyAction}
 										>
-											Blind review is active. Make an independent decision before seeing the AI
-											assessment.
-										</p>
-									{:else if activeReviewItem.aiAssessment}
-										<div class="space-y-3">
-											<div class="flex flex-wrap items-center gap-2">
-												<p class="text-sm font-medium">AI assessment</p>
-												<span
-													class={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${verdictClasses(activeReviewItem.aiAssessment.verdict)}`}
-													>{activeReviewItem.aiAssessment.verdict}</span
-												>
-												<span class="text-xs text-muted-foreground"
-													>{formatConfidence(activeReviewItem.aiAssessment.confidence)} confidence · {activeReviewItem
-														.aiAssessment.model}</span
-												>
-											</div>
-											{#if activeReviewItem.aiAssessment.issueCodes.length > 0}<p class="text-sm">
-													<span class="font-medium">Issues:</span>
-													{activeReviewItem.aiAssessment.issueCodes.join(', ')}
-												</p>{/if}
-											{#if activeReviewItem.aiAssessment.evidence.length > 0}
-												<ul class="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-													{#each activeReviewItem.aiAssessment.evidence as evidence (evidence)}<li>
-															{evidence}
-														</li>{/each}
-												</ul>
-											{/if}
-										</div>
-									{/if}
-
-									{#if activeReviewItem.explanation}
-										<div class="border-t border-border/70 pt-3">
-											<p class="mb-2 text-sm font-medium">Explanation</p>
-											<RichText
-												text={activeReviewItem.explanation}
-												class="text-sm leading-6 text-muted-foreground"
-											/>
-										</div>
-									{/if}
-
-									<div
-										class="flex flex-wrap gap-x-4 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground"
-									>
-										<span>Answer reports: {activeReviewItem.feedbackSummary.answerIncorrect}</span>
-										<span>Clarity reports: {activeReviewItem.feedbackSummary.questionUnclear}</span>
-										<span
-											>Explanation reports: {activeReviewItem.feedbackSummary
-												.explanationUnclear}</span
+											<ThumbDownIcon size={17} />
+											{isBusy(`decision:${activeReviewItem.questionId}`) && swipeDecision === 'bad'
+												? 'Saving…'
+												: 'Bad'}
+										</Button>
+										<Button
+											class="min-w-28 gap-2 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+											onclick={() => void submitHumanDecision(activeReviewItem, 'good')}
+											disabled={!!busyAction}
 										>
-										<span>Unique reporters: {activeReviewItem.feedbackSummary.uniqueReporters}</span
-										>
+											<ThumbUpIcon size={17} />
+											{isBusy(`decision:${activeReviewItem.questionId}`) && swipeDecision === 'good'
+												? 'Saving…'
+												: 'Good'}
+										</Button>
 									</div>
-
-									<div class="space-y-2">
-										<Label for={noteId(activeReviewItem.questionId)}>Reviewer notes</Label>
-										<textarea
-											id={noteId(activeReviewItem.questionId)}
-											class="min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-											placeholder="Optional context for the audit trail"
-											value={humanNotes[activeReviewItem.questionId] ?? ''}
-											oninput={(event) => updateNote(activeReviewItem.questionId, event)}
-										></textarea>
-									</div>
-								</div>
-							</details>
-
-							<div
-								class="mt-6 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between"
-							>
-								<p class="text-xs text-muted-foreground">Drag the card or choose a decision.</p>
-								<div class="flex gap-3">
-									<Button
-										variant="outline"
-										class="min-w-28 gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
-										onclick={() => void submitHumanDecision(activeReviewItem, 'bad')}
-										disabled={!!busyAction}
-									>
-										<ThumbDownIcon size={17} />
-										{isBusy(`decision:${activeReviewItem.questionId}`) && swipeDecision === 'bad'
-											? 'Saving…'
-											: 'Bad'}
-									</Button>
-									<Button
-										class="min-w-28 gap-2 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-										onclick={() => void submitHumanDecision(activeReviewItem, 'good')}
-										disabled={!!busyAction}
-									>
-										<ThumbUpIcon size={17} />
-										{isBusy(`decision:${activeReviewItem.questionId}`) && swipeDecision === 'good'
-											? 'Saving…'
-											: 'Good'}
-									</Button>
 								</div>
 							</div>
 						</article>
