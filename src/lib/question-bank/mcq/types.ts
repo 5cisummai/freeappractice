@@ -14,6 +14,14 @@ export type QuestionPanel = {
 	content: string[];
 };
 
+export type StimulusProvenance = 'ai-generated-original' | 'legacy-unknown';
+
+export type QuestionStimulus = {
+	text: string | null;
+	diagramSpec: Record<string, unknown> | null;
+	provenance: StimulusProvenance;
+};
+
 export type AnnotationTarget =
 	| { kind: 'prompt'; paragraphIndex: number }
 	| { kind: 'stimulus'; paragraphIndex: number }
@@ -89,6 +97,7 @@ export type StartExamInput = {
 
 export type ExamCoreOpts = {
 	loadQuestion?: (excludeIds: string[]) => Promise<GeneratedQuestion>;
+	loadQuestions?: (count: number) => Promise<GeneratedQuestion[]>;
 	onComplete?: (snapshot: ExamSnapshot) => void | Promise<void>;
 	getMounted?: () => boolean;
 	maxConcurrentFill?: number;
@@ -155,6 +164,7 @@ export type GeneratedQuestion = {
 	questionId?: string;
 	topic?: string;
 	mainTopic?: string;
+	topicsCovered?: string;
 	source?: 'cached' | 'generated';
 	prompt: string;
 	options: QuestionOption[];
@@ -162,6 +172,10 @@ export type GeneratedQuestion = {
 	explanation?: string;
 	diagramSpec?: Record<string, unknown>;
 	hasDiagram?: boolean;
+	stimulus?: QuestionStimulus;
+	stimulusId?: string;
+	stimulusPosition?: number;
+	stimulusQuestionCount?: number;
 	leftPanel?: QuestionPanel;
 	rightPanel?: QuestionPanel;
 	hasStimulus: boolean;

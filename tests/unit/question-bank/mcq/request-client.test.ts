@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PoolWarmingError } from '$lib/question-bank/request.client';
-import { requestFrqQuestion, requestMcqQuestion } from '$lib/question-bank/request.client';
+import {
+	requestFrqQuestion,
+	requestMcqQuestion,
+	requestMcqQuiz
+} from '$lib/question-bank/request.client';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -95,6 +99,28 @@ describe('question request transport', () => {
 			2,
 			'/api/question/frq',
 			expect.objectContaining({ body: expect.stringContaining('old-frq') })
+		);
+	});
+
+	it('parses the all-at-once quiz response', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					questions: [
+						{ questionId: 'q-1', answer: mcqPayload },
+						{ questionId: 'q-2', answer: { ...mcqPayload, questionId: 'q-2' } }
+					]
+				}),
+				{ status: 200 }
+			)
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		const questions = await requestMcqQuiz('AP Biology', '', 2, [0, 2]);
+		expect(questions.map((question) => question.questionId)).toEqual(['mcq-1', 'q-2']);
+		expect(fetchMock).toHaveBeenCalledWith(
+			'/api/question/quiz',
+			expect.objectContaining({ body: expect.stringContaining('"count":2') })
 		);
 	});
 });

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, ne, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, ne, not, notInArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	mcqQuestions,
@@ -22,6 +22,14 @@ export interface IQuestion extends McqQuestionPayload {
 
 const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuestions.data);
 
+export type McqSelectionContext = { allowEnhanced: boolean };
+
+const enhancedContentPredicate = sql`(
+	jsonb_typeof(${mcqQuestions.data}->'stimulus') = 'object'
+	OR jsonb_typeof(${mcqQuestions.data}->'diagramSpec') = 'object'
+	OR ${mcqQuestions.data}->>'hasDiagram' = 'true'
+)`;
+
 export type CanonicalMcqInput = Omit<
 	IQuestion,
 	| 'unit'
@@ -29,6 +37,10 @@ export type CanonicalMcqInput = Omit<
 	| 'active'
 	| 'hasDiagram'
 	| 'diagramSpec'
+	| 'stimulus'
+	| 'stimulusId'
+	| 'stimulusPosition'
+	| 'stimulusQuestionCount'
 	| 'mainTopic'
 	| 'topicsCovered'
 	| 'createdAt'
@@ -37,7 +49,17 @@ export type CanonicalMcqInput = Omit<
 	Partial<
 		Pick<
 			IQuestion,
-			'unit' | 'randomKey' | 'active' | 'hasDiagram' | 'diagramSpec' | 'mainTopic' | 'topicsCovered'
+			| 'unit'
+			| 'randomKey'
+			| 'active'
+			| 'hasDiagram'
+			| 'diagramSpec'
+			| 'mainTopic'
+			| 'topicsCovered'
+			| 'stimulus'
+			| 'stimulusId'
+			| 'stimulusPosition'
+			| 'stimulusQuestionCount'
 		>
 	>;
 
@@ -45,11 +67,21 @@ export function newPoolRandomKey(): number {
 	return Math.random();
 }
 
-export async function countActiveMcqQuestions(apClass: string, unit: string): Promise<number> {
+export async function countActiveMcqQuestions(
+	apClass: string,
+	unit: string,
+	context: McqSelectionContext = { allowEnhanced: true }
+): Promise<number> {
+	const predicates = [
+		eq(apClassField, apClass),
+		eq(unitField, unit),
+		eq(mcqQuestions.active, true)
+	];
+	if (!context.allowEnhanced) predicates.push(not(enhancedContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(mcqQuestions)
-		.where(and(eq(apClassField, apClass), eq(unitField, unit), eq(mcqQuestions.active, true)));
+		.where(and(...predicates));
 	return Number(row?.count ?? 0);
 }
 
@@ -79,7 +111,11 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		optionC: input.optionC,
 		optionD: input.optionD,
 		correctAnswer: input.correctAnswer,
-		explanation: input.explanation
+		explanation: input.explanation,
+		stimulus: input.stimulus ?? null,
+		stimulusId: input.stimulusId ?? null,
+		stimulusPosition: input.stimulusPosition ?? null,
+		stimulusQuestionCount: input.stimulusQuestionCount ?? null
 	};
 	const db = getNeonDatabase();
 	const registryInsert = db
@@ -138,6 +174,7 @@ export async function findCachedQuestionByPool(input: {
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: McqSelectionContext;
 }): Promise<IQuestion | null> {
 	const db = getNeonDatabase(input.onDatabaseInit);
 	const predicates = [
@@ -148,6 +185,7 @@ export async function findCachedQuestionByPool(input: {
 			? gte(mcqQuestions.randomKey, input.pivot)
 			: lt(mcqQuestions.randomKey, input.pivot)
 	];
+	if (input.context && !input.context.allowEnhanced) predicates.push(not(enhancedContentPredicate));
 	if (input.excludeQuestionIds.length) {
 		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
 	}
@@ -183,6 +221,49 @@ export async function findAllCachedQuestions(): Promise<IQuestion[]> {
 	return rows.map(fromRow);
 }
 
+/** Load active MCQs for quiz assembly across one or more real units. */
+export async function findActiveQuestionsForQuiz(input: {
+	apClass: string;
+	units: string[];
+}): Promise<IQuestion[]> {
+	const units = [...new Set(input.units.map((unit) => unit.trim()).filter(Boolean))];
+	if (!units.length) return [];
+	const rows = await getNeonDatabase()
+		.select()
+		.from(mcqQuestions)
+		.where(
+			and(
+				eq(mcqQuestions.active, true),
+				eq(apClassField, input.apClass),
+				inArray(unitField, units),
+				// A finalized bad child is excluded. A stimulus/set failure excludes
+				// every child that carries the same server-assigned stimulus ID.
+				sql`not exists (
+					select 1
+					from content.question_quality own_quality
+					where own_quality.question_id = ${mcqQuestions.questionId}
+					  and own_quality.final_verdict = 'bad'
+				)
+				and (
+					${mcqQuestions.data}->>'stimulusId' is null
+					or not exists (
+						select 1
+						from content.question_quality shared_quality
+						join content.mcq_questions shared_question
+						  on shared_question.question_id = shared_quality.question_id
+						where shared_quality.final_verdict = 'bad'
+						  and coalesce(
+							shared_quality.ai_assessment->>'failure_scope',
+							shared_quality.ai_assessment->>'failureScope'
+						  ) in ('stimulus', 'set')
+						  and shared_question.data->>'stimulusId' = ${mcqQuestions.data}->>'stimulusId'
+					)
+				)`
+			)
+		);
+	return rows.map(fromRow);
+}
+
 export interface StoredQuestion {
 	id: string;
 	question: string;
@@ -199,6 +280,10 @@ export interface StoredQuestion {
 	topicsCovered?: string;
 	diagramSpec?: Record<string, unknown>;
 	hasDiagram: boolean;
+	stimulus?: McqQuestionPayload['stimulus'];
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
 	createdAt: string;
 }
 
@@ -225,6 +310,14 @@ export function storedQuestionFromPayload(input: {
 		...(data.topicsCovered?.trim() ? { topicsCovered: data.topicsCovered } : {}),
 		...(data.diagramSpec ? { diagramSpec: data.diagramSpec } : {}),
 		hasDiagram: data.hasDiagram ?? Boolean(data.diagramSpec),
+		...(data.stimulus ? { stimulus: data.stimulus } : {}),
+		...(data.stimulusId ? { stimulusId: data.stimulusId } : {}),
+		...(data.stimulusPosition !== null && data.stimulusPosition !== undefined
+			? { stimulusPosition: data.stimulusPosition }
+			: {}),
+		...(data.stimulusQuestionCount !== null && data.stimulusQuestionCount !== undefined
+			? { stimulusQuestionCount: data.stimulusQuestionCount }
+			: {}),
 		createdAt: input.createdAt.toISOString()
 	};
 }

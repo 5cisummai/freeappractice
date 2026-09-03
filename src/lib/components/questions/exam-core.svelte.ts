@@ -200,6 +200,11 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		return opts.loadQuestion(seenIds);
 	}
 
+	async function loadQuestionsViaLoader(count: number): Promise<GeneratedQuestion[]> {
+		if (!opts.loadQuestions) throw new Error('No quiz question loader configured.');
+		return opts.loadQuestions(count);
+	}
+
 	async function fillIndexes(
 		token: number,
 		indexes: number[],
@@ -319,7 +324,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			return;
 		}
 
-		if (!opts.loadQuestion) {
+		if (!opts.loadQuestion && !opts.loadQuestions) {
 			status = 'error';
 			errorMessage = 'No question loader configured.';
 			return;
@@ -331,6 +336,18 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		loadingCount = targetCount;
 
 		try {
+			if (opts.loadQuestions) {
+				const loadedQuestions = await loadQuestionsViaLoader(targetCount);
+				if (!isCurrentRun(token) || !getMounted()) return;
+				if (loadedQuestions.length < targetCount) {
+					throw new Error('Quiz service returned fewer questions than requested.');
+				}
+				questions = loadedQuestions.slice(0, targetCount);
+				loadingCount = 0;
+				status = 'active';
+				beginTiming(input.timeLimitMs);
+				return;
+			}
 			const firstQuestion = await loadQuestionViaLoader([]);
 			if (!isCurrentRun(token) || !getMounted()) return;
 

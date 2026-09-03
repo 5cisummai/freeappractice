@@ -1,4 +1,8 @@
-import type { GeneratedQuestion, QuestionOption } from '$lib/question-bank/mcq/types';
+import type {
+	GeneratedQuestion,
+	QuestionOption,
+	QuestionStimulus
+} from '$lib/question-bank/mcq/types';
 
 export const POOL_WARMING_CODE = 'POOL_WARMING' as const;
 
@@ -14,6 +18,7 @@ export type QuestionApiResponse = Record<string, unknown> & {
 	retryAfterSeconds?: number;
 	questionId?: string;
 	answer?: unknown;
+	questions?: unknown[];
 	exclusionsReset?: boolean;
 	cached?: boolean;
 };
@@ -28,7 +33,7 @@ export function isPoolWarmingResponse(payload: unknown): payload is PoolWarmingR
 	);
 }
 
-function parseParagraphs(value: unknown): string[] {
+export function parseQuestionParagraphs(value: unknown): string[] {
 	if (typeof value !== 'string') return [];
 	const lines = value.split('\n');
 	const segments: string[] = [];
@@ -126,26 +131,65 @@ function normalizeQuestionPayload(
 	const options = optionsFromObject.length > 0 ? optionsFromObject : normalizeOptions(obj.options);
 	if (options.length < 2) return null;
 
-	const stimulus = String(obj.stimulus ?? obj.passage ?? obj.context ?? '').trim();
-	const hasStimulus = stimulus.length > 0;
+	const structuredStimulus =
+		obj.stimulus && typeof obj.stimulus === 'object' && !Array.isArray(obj.stimulus)
+			? (obj.stimulus as Record<string, unknown>)
+			: null;
+	const stimulusText = structuredStimulus
+		? typeof structuredStimulus.text === 'string'
+			? structuredStimulus.text.trim()
+			: ''
+		: String(obj.stimulus ?? obj.passage ?? obj.context ?? '').trim();
 	const diagramValue = obj.diagramSpec ?? obj.diagram;
-	const diagramSpec =
+	const directDiagramSpec =
 		diagramValue && typeof diagramValue === 'object' && !Array.isArray(diagramValue)
 			? (diagramValue as Record<string, unknown>)
 			: undefined;
+	const stimulusDiagramValue = structuredStimulus?.diagramSpec ?? structuredStimulus?.diagram;
+	const stimulusDiagramSpec =
+		stimulusDiagramValue &&
+		typeof stimulusDiagramValue === 'object' &&
+		!Array.isArray(stimulusDiagramValue)
+			? (stimulusDiagramValue as Record<string, unknown>)
+			: undefined;
+	const diagramSpec = directDiagramSpec ?? stimulusDiagramSpec;
+	const parsedStimulus: QuestionStimulus | undefined =
+		structuredStimulus && (stimulusText || stimulusDiagramSpec)
+			? {
+					text: stimulusText || null,
+					diagramSpec: stimulusDiagramSpec ?? null,
+					provenance:
+						structuredStimulus.provenance === 'ai-generated-original'
+							? 'ai-generated-original'
+							: 'legacy-unknown'
+				}
+			: stimulusText
+				? { text: stimulusText, diagramSpec: null, provenance: 'legacy-unknown' }
+				: undefined;
+	const hasStimulus = Boolean(parsedStimulus);
 
 	return {
 		questionId: resolveQuestionId(obj, questionIdFromApi),
 		mainTopic: String(obj.mainTopic ?? obj.topicsCovered ?? '').trim() || undefined,
 		topic: String(obj.mainTopic ?? obj.topicsCovered ?? '').trim() || undefined,
+		topicsCovered: String(obj.topicsCovered ?? '').trim() || undefined,
 		prompt,
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),
 		explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
 		diagramSpec,
 		hasDiagram: Boolean(diagramSpec) || obj.hasDiagram === true,
-		leftPanel: hasStimulus ? { title: 'Stimulus', content: parseParagraphs(stimulus) } : undefined,
-		rightPanel: hasStimulus ? { title: 'Prompt', content: parseParagraphs(prompt) } : undefined,
+		stimulus: parsedStimulus,
+		stimulusId: typeof obj.stimulusId === 'string' ? obj.stimulusId : undefined,
+		stimulusPosition: typeof obj.stimulusPosition === 'number' ? obj.stimulusPosition : undefined,
+		stimulusQuestionCount:
+			typeof obj.stimulusQuestionCount === 'number' ? obj.stimulusQuestionCount : undefined,
+		leftPanel: hasStimulus
+			? { title: 'Stimulus', content: parseQuestionParagraphs(stimulusText) }
+			: undefined,
+		rightPanel: hasStimulus
+			? { title: 'Prompt', content: parseQuestionParagraphs(prompt) }
+			: undefined,
 		hasStimulus
 	};
 }

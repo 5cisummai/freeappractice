@@ -11,7 +11,7 @@
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
-	import { requestMcqQuestion } from '$lib/question-bank/request.client.js';
+	import { requestMcqQuestion, requestMcqQuiz } from '$lib/question-bank/request.client.js';
 	import { createTextAnnotation } from '$lib/components/questions/text-annotation-dom.js';
 	import type {
 		AddTextAnnotationInput,
@@ -71,6 +71,8 @@
 	let pendingClaimSaved = $state(false);
 	let struckByQuestionId = $state<Record<string, string[]>>({});
 	let annotationsByQuestionId = $state<Record<string, TextAnnotation[]>>({});
+	let annotationsByStimulusId = $state<Record<string, TextAnnotation[]>>({});
+	let stimulusScrollTopById = $state<Record<string, number>>({});
 	let lastSnapshot = $state<ExamSnapshot | null>(null);
 	let lastRequestVersion = 0;
 	let lastSelectionKey = '';
@@ -84,6 +86,18 @@
 				throw new Error('Question did not include an answer key.');
 			}
 			return result.question;
+		},
+		loadQuestions: async (requestedCount) => {
+			const questions = await requestMcqQuiz(
+				selectedClass,
+				selectedUnit,
+				requestedCount,
+				unitRange
+			);
+			if (questions.some((question) => !question.correctAnswer)) {
+				throw new Error('Quiz service returned a question without an answer key.');
+			}
+			return questions;
 		},
 		onComplete: (snapshot) => {
 			lastSnapshot = snapshot;
@@ -114,12 +128,17 @@
 					: 'Graded Quiz')
 	);
 	const currentQuestionId = $derived(exam.currentQuestion?.questionId?.trim() ?? '');
+	const currentStimulusId = $derived(exam.currentQuestion?.stimulusId?.trim() ?? '');
+	const currentStimulusScrollTop = $derived(
+		currentStimulusId ? (stimulusScrollTopById[currentStimulusId] ?? 0) : 0
+	);
 	const currentStruck = $derived(
 		currentQuestionId ? (struckByQuestionId[currentQuestionId] ?? []) : []
 	);
-	const currentAnnotations = $derived(
-		currentQuestionId ? (annotationsByQuestionId[currentQuestionId] ?? []) : []
-	);
+	const currentAnnotations = $derived([
+		...(currentQuestionId ? (annotationsByQuestionId[currentQuestionId] ?? []) : []),
+		...(currentStimulusId ? (annotationsByStimulusId[currentStimulusId] ?? []) : [])
+	]);
 	const currentFlagged = $derived(exam.flaggedIndexes.includes(exam.currentIndex));
 	const nextLabel = $derived(
 		exam.isLastQuestion
@@ -180,6 +199,8 @@
 		pendingClaimSaved = false;
 		struckByQuestionId = {};
 		annotationsByQuestionId = {};
+		annotationsByStimulusId = {};
+		stimulusScrollTopById = {};
 		lastSnapshot = null;
 	}
 
@@ -380,22 +401,47 @@
 	}
 
 	function addTextAnnotation(input: AddTextAnnotationInput): void {
-		if (!currentQuestionId) return;
+		const targetId = input.target.kind === 'stimulus' ? currentStimulusId : currentQuestionId;
+		if (!targetId) return;
 		const annotation = createTextAnnotation(input);
 		if (!annotation) return;
-		annotationsByQuestionId = {
-			...annotationsByQuestionId,
-			[currentQuestionId]: [...(annotationsByQuestionId[currentQuestionId] ?? []), annotation]
-		};
+		if (input.target.kind === 'stimulus') {
+			annotationsByStimulusId = {
+				...annotationsByStimulusId,
+				[targetId]: [...(annotationsByStimulusId[targetId] ?? []), annotation]
+			};
+		} else {
+			annotationsByQuestionId = {
+				...annotationsByQuestionId,
+				[targetId]: [...(annotationsByQuestionId[targetId] ?? []), annotation]
+			};
+		}
 	}
 
 	function removeTextAnnotation(annotationId: string): void {
-		if (!currentQuestionId) return;
-		const existing = annotationsByQuestionId[currentQuestionId] ?? [];
-		const next = existing.filter((annotation) => annotation.id !== annotationId);
-		annotationsByQuestionId = {
-			...annotationsByQuestionId,
-			[currentQuestionId]: next
+		if (currentQuestionId) {
+			annotationsByQuestionId = {
+				...annotationsByQuestionId,
+				[currentQuestionId]: (annotationsByQuestionId[currentQuestionId] ?? []).filter(
+					(annotation) => annotation.id !== annotationId
+				)
+			};
+		}
+		if (currentStimulusId) {
+			annotationsByStimulusId = {
+				...annotationsByStimulusId,
+				[currentStimulusId]: (annotationsByStimulusId[currentStimulusId] ?? []).filter(
+					(annotation) => annotation.id !== annotationId
+				)
+			};
+		}
+	}
+
+	function updateStimulusScroll(scrollTop: number): void {
+		if (!currentStimulusId || !Number.isFinite(scrollTop)) return;
+		stimulusScrollTopById = {
+			...stimulusScrollTopById,
+			[currentStimulusId]: Math.max(0, scrollTop)
 		};
 	}
 
@@ -626,6 +672,8 @@
 		flagged={currentFlagged}
 		struckOptionIds={currentStruck}
 		textAnnotations={currentAnnotations}
+		stimulusScrollTop={currentStimulusScrollTop}
+		onStimulusScroll={updateStimulusScroll}
 		onAddTextAnnotation={addTextAnnotation}
 		onRemoveTextAnnotation={removeTextAnnotation}
 		navItems={exam.navItems}

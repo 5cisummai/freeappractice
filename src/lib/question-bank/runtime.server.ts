@@ -7,23 +7,25 @@ export interface PoolDocument {
 	active?: boolean;
 }
 
-type PoolQuery<TDoc extends PoolDocument> = (input: {
+type PoolQuery<TDoc extends PoolDocument, TContext = undefined> = (input: {
 	apClass: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: TContext;
 }) => Promise<TDoc | null>;
 
-export interface QuestionBankConfig<TDoc extends PoolDocument, TCached> {
+export interface QuestionBankConfig<TDoc extends PoolDocument, TCached, TContext = undefined> {
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
-	countActive: (className: string, unit: string) => Promise<number>;
-	findRandom: PoolQuery<TDoc>;
+	countActive: (className: string, unit: string, context: TContext) => Promise<number>;
+	findRandom: PoolQuery<TDoc, TContext>;
 	serveCached: (doc: TDoc) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
-	requestRefill?: (className: string, unit: string) => Promise<void>;
+	requestRefill?: (className: string, unit: string, context?: TContext) => Promise<void>;
+	resolveContext?: (className: string, unit: string) => Promise<TContext> | TContext;
 }
 
 export type QuestionPathMetrics = {
@@ -53,13 +55,14 @@ function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
  * Indexed random selection around a pivot: first `randomKey >= pivot`, then wrap to `< pivot`.
  * Pure helper exported for unit tests.
  */
-export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
-	findRandom: PoolQuery<TDoc>;
+export async function selectRandomActiveDoc<TDoc extends PoolDocument, TContext = undefined>(opts: {
+	findRandom: PoolQuery<TDoc, TContext>;
 	apClass: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot?: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: TContext;
 }): Promise<TDoc | null> {
 	const pivot = opts.pivot ?? Math.random();
 	const first = await opts.findRandom({
@@ -68,7 +71,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
 		fromPivot: 'after',
-		onDatabaseInit: opts.onDatabaseInit
+		onDatabaseInit: opts.onDatabaseInit,
+		context: opts.context as TContext
 	});
 	if (first) return first;
 
@@ -78,7 +82,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
 		fromPivot: 'before',
-		onDatabaseInit: opts.onDatabaseInit
+		onDatabaseInit: opts.onDatabaseInit,
+		context: opts.context as TContext
 	});
 }
 
@@ -87,8 +92,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
  * refill scheduling. Type-specific modules only provide storage and rendering
  * adapters, so adding a new bank does not require copying this lifecycle.
  */
-export class QuestionBank<TDoc extends PoolDocument, TCached> {
-	constructor(private readonly config: QuestionBankConfig<TDoc, TCached>) {}
+export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefined> {
+	constructor(private readonly config: QuestionBankConfig<TDoc, TCached, TContext>) {}
 
 	async get(
 		className: string,
@@ -99,6 +104,9 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
+		const context = this.config.resolveContext
+			? await this.config.resolveContext(className, cacheUnit)
+			: (undefined as TContext);
 
 		const onDatabaseInit = metrics
 			? (elapsedMs: number) => {
@@ -114,11 +122,12 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				apClass: className,
 				unit: cacheUnit,
 				excludeQuestionIds,
-				onDatabaseInit
+				onDatabaseInit,
+				context
 			});
 
 			if (!doc && excludeQuestionIds.length) {
-				const activeCount = await this.config.countActive(className, cacheUnit);
+				const activeCount = await this.config.countActive(className, cacheUnit, context);
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					doc = await selectRandomActiveDoc({
@@ -126,7 +135,8 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 						apClass: className,
 						unit: cacheUnit,
 						excludeQuestionIds: [],
-						onDatabaseInit
+						onDatabaseInit,
+						context
 					});
 				}
 			}
