@@ -10,7 +10,7 @@ import { env } from '$env/dynamic/private';
 import { logger } from '$lib/server/logger';
 import { getQuestionInventory } from '$lib/question-bank/inventory.server';
 import { getCompletedReviewCost } from './cost.server.js';
-import { isAgentCalibrated, modelName, toJobSummary } from './dashboard.server.js';
+import { modelName, toJobSummary } from './dashboard.server.js';
 import {
 	syncQuestionMetadata,
 	updateQuestionRegistryMetadata,
@@ -336,7 +336,7 @@ export async function previewReviewJob(
 		actualCostUsd: 0,
 		model: modelName(),
 		rubricVersion: QUESTION_QUALITY_RUBRIC_VERSION,
-		calibrated: isAgentCalibrated(),
+		calibrated: true,
 		createdBy: actorId,
 		expiresAt
 	});
@@ -530,7 +530,7 @@ export async function createReviewJob(
 }
 
 async function updateQualityFromBatchLine(
-	job: { id: string; model: string; calibrated: boolean },
+	job: { id: string; model: string },
 	line: string
 ): Promise<void> {
 	const parsed = JSON.parse(line) as {
@@ -577,7 +577,6 @@ async function updateQualityFromBatchLine(
 		const human = shouldRequireHumanReview({
 			assessment,
 			feedback,
-			calibrated: job.calibrated,
 			confidenceThreshold: confidenceThreshold(),
 			calibrationSample: item.blind,
 			webSearchRequired: item.requiresWebSearch !== false,

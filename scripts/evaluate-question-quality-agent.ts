@@ -286,12 +286,8 @@ async function refresh() {
 		console.log('After AP-specialist signoff, bind production to this exact configuration:');
 		console.log(`QUESTION_QUALITY_MODEL=${winner.model}`);
 		console.log(`QUESTION_QUALITY_REASONING_EFFORT=${winner.effort}`);
-		console.log(`QUESTION_QUALITY_CALIBRATED_MODEL=${winner.model}`);
-		console.log('QUESTION_QUALITY_CALIBRATED_RUBRIC=ap-quality-v2');
-		console.log(`QUESTION_QUALITY_CALIBRATED_REASONING_EFFORT=${winner.effort}`);
-		console.log('QUESTION_QUALITY_AGENT_CALIBRATED=true');
 	} else if (reports.length === state.runs.length) {
-		console.log('No candidate passed. Keep the production system in human-only mode.');
+		console.log('No candidate passed the bake-off thresholds.');
 	}
 }
 
