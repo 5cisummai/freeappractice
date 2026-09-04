@@ -17,15 +17,28 @@ type PoolQuery<TDoc extends PoolDocument, TContext = undefined> = (input: {
 	context?: TContext;
 }) => Promise<TDoc | null>;
 
+type PoolBatchQuery<TDoc extends PoolDocument, TContext = undefined> = (input: {
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	pivot: number;
+	limit: number;
+	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: TContext;
+}) => Promise<TDoc[]>;
+
 export interface QuestionBankConfig<TDoc extends PoolDocument, TCached, TContext = undefined> {
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
 	countActive: (className: string, unit: string, context: TContext) => Promise<number>;
 	findRandom: PoolQuery<TDoc, TContext>;
+	findRandomBatch?: PoolBatchQuery<TDoc, TContext>;
 	serveCached: (doc: TDoc) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
 	requestRefill?: (className: string, unit: string, context?: TContext) => Promise<void>;
 	resolveContext?: (className: string, unit: string) => Promise<TContext> | TContext;
+	/** Defer non-critical refill scheduling until after the response when available. */
+	scheduleBackgroundTask?: (task: Promise<unknown>) => void;
 }
 
 export type QuestionPathMetrics = {
@@ -95,6 +108,33 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument, TContext 
 export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefined> {
 	constructor(private readonly config: QuestionBankConfig<TDoc, TCached, TContext>) {}
 
+	private async resolveContext(className: string, unit: string): Promise<TContext> {
+		return this.config.resolveContext
+			? await this.config.resolveContext(className, unit)
+			: (undefined as TContext);
+	}
+
+	private async requestRefillAfterMiss(
+		className: string,
+		unit: string,
+		context: TContext
+	): Promise<void> {
+		if (!this.config.requestRefill) return;
+
+		const refill = this.config.requestRefill(className, unit, context).catch((error) => {
+			logger.warn(`[${this.config.logScope}] failed to enqueue refill`, {
+				className,
+				unit,
+				error
+			});
+		});
+		if (this.config.scheduleBackgroundTask) {
+			this.config.scheduleBackgroundTask(refill);
+			return;
+		}
+		await refill;
+	}
+
 	async get(
 		className: string,
 		unit?: string,
@@ -104,9 +144,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
-		const context = this.config.resolveContext
-			? await this.config.resolveContext(className, cacheUnit)
-			: (undefined as TContext);
+		const context = await this.resolveContext(className, cacheUnit);
 
 		const onDatabaseInit = metrics
 			? (elapsedMs: number) => {
@@ -156,15 +194,114 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 				className,
 				unit: cacheUnit
 			});
-			if (this.config.requestRefill) {
-				await this.config.requestRefill(className, cacheUnit).catch((error) => {
-					logger.warn(`[${this.config.logScope}] failed to enqueue refill`, {
-						className,
-						unit: cacheUnit,
-						error
-					});
-				});
+			await this.requestRefillAfterMiss(className, cacheUnit, context);
+			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
+		} catch (err) {
+			if (metrics) {
+				metrics.poolQueryMs = Date.now() - queryStarted;
+				metrics.segment = 'pool_error';
 			}
+			logger.error(`[${this.config.logScope}] pool selection failed`, {
+				className,
+				unit: cacheUnit,
+				error: err
+			});
+			return { status: 'failed', error: err };
+		}
+	}
+
+	async getMany(
+		className: string,
+		unit?: string,
+		count = 1,
+		options: GetQuestionOptions = {}
+	): Promise<
+		| { status: 'found'; results: TCached[]; exclusionsReset: boolean }
+		| Exclude<PoolSelectionResult<TCached>, { status: 'found' }>
+	> {
+		const cacheUnit = this.config.normalizeUnit(unit);
+		const requestedCount = Math.max(1, Math.floor(count));
+		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
+		const metrics = options.metrics;
+		const pool = QUESTION_POOL_CONFIG;
+		const context = await this.resolveContext(className, cacheUnit);
+
+		const onDatabaseInit = metrics
+			? (elapsedMs: number) => {
+					metrics.dbConnectMs = Math.max(metrics.dbConnectMs, elapsedMs);
+				}
+			: undefined;
+
+		const queryStarted = Date.now();
+		try {
+			let exclusionsReset = false;
+			let docs: TDoc[];
+			if (this.config.findRandomBatch) {
+				docs = await this.config.findRandomBatch({
+					apClass: className,
+					unit: cacheUnit,
+					excludeQuestionIds,
+					pivot: Math.random(),
+					limit: requestedCount,
+					onDatabaseInit,
+					context
+				});
+			} else {
+				docs = [];
+				const seenIds = [...excludeQuestionIds];
+				for (let index = 0; index < requestedCount; index += 1) {
+					const doc = await selectRandomActiveDoc({
+						findRandom: this.config.findRandom,
+						apClass: className,
+						unit: cacheUnit,
+						excludeQuestionIds: seenIds,
+						onDatabaseInit,
+						context
+					});
+					if (!doc) break;
+					docs.push(doc);
+					if (doc.questionId) seenIds.push(doc.questionId);
+				}
+			}
+
+			if (docs.length < requestedCount && excludeQuestionIds.length) {
+				const activeCount = await this.config.countActive(className, cacheUnit, context);
+				if (activeCount > 0) {
+					exclusionsReset = true;
+					const selectedIds = docs
+						.map((doc) => doc.questionId)
+						.filter((id): id is string => Boolean(id));
+					const moreDocs = this.config.findRandomBatch
+						? await this.config.findRandomBatch({
+								apClass: className,
+								unit: cacheUnit,
+								excludeQuestionIds: [...selectedIds],
+								pivot: Math.random(),
+								limit: requestedCount - docs.length,
+								onDatabaseInit,
+								context
+							})
+						: [];
+					docs = [...docs, ...moreDocs];
+				}
+			}
+
+			if (metrics) {
+				metrics.poolQueryMs = Date.now() - queryStarted;
+			}
+
+			if (docs.length) {
+				if (metrics) metrics.segment = 'pool_hit';
+				const results = await Promise.all(docs.map((doc) => this.config.serveCached(doc)));
+				return { status: 'found', results, exclusionsReset };
+			}
+
+			if (metrics) metrics.segment = 'pool_warming';
+			logger.info(`[${this.config.logScope}] pool empty, returning POOL_WARMING`, {
+				className,
+				unit: cacheUnit
+			});
+			await this.requestRefillAfterMiss(className, cacheUnit, context);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {

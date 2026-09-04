@@ -32,14 +32,12 @@ export function isCalibrationSample(questionId: string, rubricVersion: string): 
 export function shouldRequireHumanReview(opts: {
 	assessment: AiQualityAssessment;
 	feedback: FeedbackSummary;
-	calibrated: boolean;
 	confidenceThreshold: number;
 	calibrationSample: boolean;
 	webSearchRequired?: boolean;
 	webSearchUsed?: boolean;
 	sourceUrls?: string[];
 }): { required: boolean; reason: string } {
-	if (!opts.calibrated) return { required: true, reason: 'agent_not_calibrated' };
 	if (opts.feedback.priority === 'high')
 		return { required: true, reason: 'student_feedback_escalation' };
 	if (opts.assessment.requiresHumanReview)

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, ne, not, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, not, notInArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	mcqQuestions,
@@ -29,6 +29,151 @@ const enhancedContentPredicate = sql`(
 	OR jsonb_typeof(${mcqQuestions.data}->'diagramSpec') = 'object'
 	OR ${mcqQuestions.data}->>'hasDiagram' = 'true'
 )`;
+
+/** The narrow row shape used by the anonymous pool-hit path. */
+export type McqPoolQuestion = McqQuestionPayload & {
+	questionId: string;
+	randomKey: number;
+	active: boolean;
+	apClass: string;
+	unit: string;
+};
+
+const jsonText = (field: string) => sql<string | null>`${mcqQuestions.data} ->> ${field}`;
+
+const poolQuestionSelection = {
+	questionId: mcqQuestions.questionId,
+	randomKey: mcqQuestions.randomKey,
+	active: mcqQuestions.active,
+	apClass: sql<string>`COALESCE(NULLIF(${jsonText('apClass')}, ''), 'Unknown')`,
+	unit: sql<string>`COALESCE(NULLIF(${jsonText('unit')}, ''), 'all-units')`,
+	mainTopic: sql<string>`COALESCE(NULLIF(${jsonText('mainTopic')}, ''), NULLIF(${jsonText('topicsCovered')}, ''), 'Legacy topic')`,
+	topicsCovered: sql<string>`COALESCE(${jsonText('topicsCovered')}, '')`,
+	question: sql<string>`COALESCE(${jsonText('question')}, ${jsonText('prompt')}, '')`,
+	optionA: sql<string>`COALESCE(${jsonText('optionA')}, ${mcqQuestions.data} -> 'options' -> 0 ->> 'text', ${mcqQuestions.data} -> 'options' -> 0 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 0, '')`,
+	optionB: sql<string>`COALESCE(${jsonText('optionB')}, ${mcqQuestions.data} -> 'options' -> 1 ->> 'text', ${mcqQuestions.data} -> 'options' -> 1 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 1, '')`,
+	optionC: sql<string>`COALESCE(${jsonText('optionC')}, ${mcqQuestions.data} -> 'options' -> 2 ->> 'text', ${mcqQuestions.data} -> 'options' -> 2 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 2, '')`,
+	optionD: sql<string>`COALESCE(${jsonText('optionD')}, ${mcqQuestions.data} -> 'options' -> 3 ->> 'text', ${mcqQuestions.data} -> 'options' -> 3 ->> 'value', ${mcqQuestions.data} -> 'options' ->> 3, '')`,
+	correctAnswer: sql<string>`COALESCE(${jsonText('correctAnswer')}, ${jsonText('answer')}, '')`,
+	explanation: sql<string>`COALESCE(${jsonText('explanation')}, ${jsonText('rationale')}, '')`,
+	diagramSpec: sql<Record<
+		string,
+		unknown
+	> | null>`COALESCE(${mcqQuestions.data} -> 'diagramSpec', ${mcqQuestions.data} -> 'diagram')`,
+	hasDiagram: sql<boolean>`CASE WHEN ${jsonText('hasDiagram')} = 'true' THEN true WHEN ${jsonText('hasDiagram')} = 'false' THEN false ELSE ${mcqQuestions.data} -> 'diagramSpec' IS NOT NULL OR ${mcqQuestions.data} -> 'diagram' IS NOT NULL END`,
+	stimulus: sql<unknown>`${mcqQuestions.data} -> 'stimulus'`,
+	stimulusId: jsonText('stimulusId'),
+	stimulusPosition: jsonText('stimulusPosition'),
+	stimulusQuestionCount: jsonText('stimulusQuestionCount')
+};
+
+function normalizePoolCorrectAnswer(value: string): 'A' | 'B' | 'C' | 'D' {
+	const upper = value.trim().toUpperCase();
+	if (upper === 'A' || upper === 'B' || upper === 'C' || upper === 'D') return upper;
+	const match = upper.match(/\b([A-D])\b/);
+	if (match?.[1] === 'A' || match?.[1] === 'B' || match?.[1] === 'C' || match?.[1] === 'D') {
+		return match[1];
+	}
+	throw new Error('Stored MCQ has an invalid answer key');
+}
+
+function normalizePoolDiagramSpec(value: unknown): Record<string, unknown> | null {
+	return value && typeof value === 'object' && !Array.isArray(value)
+		? (value as Record<string, unknown>)
+		: null;
+}
+
+function normalizePoolStimulus(value: unknown): McqQuestionPayload['stimulus'] {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	const candidate = value as Record<string, unknown>;
+	const text = typeof candidate.text === 'string' ? candidate.text.trim() : '';
+	const diagramSpec = normalizePoolDiagramSpec(candidate.diagramSpec ?? candidate.diagram);
+	if (!text && !diagramSpec) return null;
+	return {
+		text: text || null,
+		diagramSpec,
+		provenance:
+			candidate.provenance === 'ai-generated-original' ? 'ai-generated-original' : 'legacy-unknown'
+	};
+}
+
+function normalizePoolUuid(value: unknown): string | null {
+	return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function normalizePoolInt(value: unknown, minimum = 0): number | null {
+	if (typeof value === 'number' && Number.isInteger(value) && value >= minimum) return value;
+	if (typeof value === 'string' && value.trim()) {
+		const parsed = Number(value);
+		if (Number.isInteger(parsed) && parsed >= minimum) return parsed;
+	}
+	return null;
+}
+
+type McqPoolQuestionRow = Omit<
+	McqPoolQuestion,
+	| 'correctAnswer'
+	| 'diagramSpec'
+	| 'stimulus'
+	| 'stimulusId'
+	| 'stimulusPosition'
+	| 'stimulusQuestionCount'
+> & {
+	correctAnswer: string;
+	diagramSpec: unknown;
+	stimulus: unknown;
+	stimulusId: string | null;
+	stimulusPosition: string | null;
+	stimulusQuestionCount: string | null;
+};
+
+function poolQuestionFromRow(row: McqPoolQuestionRow): McqPoolQuestion {
+	const diagramSpec = normalizePoolDiagramSpec(row.diagramSpec);
+	const stimulus = normalizePoolStimulus(row.stimulus);
+	return {
+		...row,
+		mainTopic: row.mainTopic.trim() || row.topicsCovered.trim() || 'Legacy topic',
+		topicsCovered: row.topicsCovered.trim(),
+		question: row.question.trim(),
+		optionA: row.optionA.trim(),
+		optionB: row.optionB.trim(),
+		optionC: row.optionC.trim(),
+		optionD: row.optionD.trim(),
+		correctAnswer: normalizePoolCorrectAnswer(row.correctAnswer),
+		explanation: row.explanation.trim(),
+		diagramSpec,
+		hasDiagram: row.hasDiagram || Boolean(diagramSpec) || Boolean(stimulus?.diagramSpec),
+		stimulus,
+		stimulusId: normalizePoolUuid(row.stimulusId),
+		stimulusPosition: normalizePoolInt(row.stimulusPosition),
+		stimulusQuestionCount: normalizePoolInt(row.stimulusQuestionCount, 1)
+	};
+}
+
+function poolLookupPredicates(input: {
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	pivot: number;
+	fromPivot: 'after' | 'before';
+	context?: McqSelectionContext;
+}) {
+	const predicates = [
+		eq(apClassField, input.apClass),
+		eq(unitField, input.unit),
+		eq(mcqQuestions.active, true),
+		input.fromPivot === 'after'
+			? gte(mcqQuestions.randomKey, input.pivot)
+			: lt(mcqQuestions.randomKey, input.pivot)
+	];
+	if (input.context && !input.context.allowEnhanced) {
+		predicates.push(not(enhancedContentPredicate));
+	}
+	if (input.excludeQuestionIds.length) {
+		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
+	}
+	return predicates;
+}
 
 export type CanonicalMcqInput = Omit<
 	IQuestion,
@@ -175,27 +320,51 @@ export async function findCachedQuestionByPool(input: {
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
 	context?: McqSelectionContext;
-}): Promise<IQuestion | null> {
+}): Promise<McqPoolQuestion | null> {
 	const db = getNeonDatabase(input.onDatabaseInit);
-	const predicates = [
-		eq(apClassField, input.apClass),
-		eq(unitField, input.unit),
-		ne(mcqQuestions.active, false),
-		input.fromPivot === 'after'
-			? gte(mcqQuestions.randomKey, input.pivot)
-			: lt(mcqQuestions.randomKey, input.pivot)
-	];
-	if (input.context && !input.context.allowEnhanced) predicates.push(not(enhancedContentPredicate));
-	if (input.excludeQuestionIds.length) {
-		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
-	}
 	const rows = await db
-		.select()
+		.select(poolQuestionSelection)
 		.from(mcqQuestions)
-		.where(and(...predicates))
+		.where(and(...poolLookupPredicates(input)))
 		.orderBy(mcqQuestions.randomKey)
 		.limit(1);
-	return rows[0] ? fromRow(rows[0]) : null;
+	return rows[0] ? poolQuestionFromRow(rows[0]) : null;
+}
+
+/** Select a batch around one random pivot in a single Neon HTTP batch. */
+export async function findCachedQuestionsByPool(input: {
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	pivot: number;
+	limit: number;
+	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: McqSelectionContext;
+}): Promise<McqPoolQuestion[]> {
+	const db = getNeonDatabase(input.onDatabaseInit);
+	const createQuery = (fromPivot: 'after' | 'before') =>
+		db
+			.select(poolQuestionSelection)
+			.from(mcqQuestions)
+			.where(
+				and(
+					...poolLookupPredicates({
+						apClass: input.apClass,
+						unit: input.unit,
+						excludeQuestionIds: input.excludeQuestionIds,
+						pivot: input.pivot,
+						fromPivot,
+						context: input.context
+					})
+				)
+			)
+			.orderBy(mcqQuestions.randomKey)
+			.limit(input.limit);
+
+	const [afterRows, beforeRows] = await db.batch([createQuery('after'), createQuery('before')]);
+	return [...afterRows, ...beforeRows]
+		.slice(0, input.limit)
+		.map((row) => poolQuestionFromRow(row as McqPoolQuestionRow));
 }
 
 export async function findCachedQuestion(questionId: string): Promise<IQuestion | null> {

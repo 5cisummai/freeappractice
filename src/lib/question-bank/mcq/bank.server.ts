@@ -1,11 +1,13 @@
 import {
 	countActiveMcqQuestions,
 	findCachedQuestionByPool,
+	findCachedQuestionsByPool,
 	type McqSelectionContext,
-	type IQuestion
+	type McqPoolQuestion
 } from '$lib/question-bank/mcq/repository.server';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
+import { scheduleBackgroundTask } from '$lib/server/background-task.server';
 
 type McqAnswerBody = {
 	question: string;
@@ -38,7 +40,7 @@ type CachedResult = {
 /** Read full MCQ body directly from an active-library Neon row. */
 function hotPoolBodyFromDoc(
 	doc: Pick<
-		IQuestion,
+		McqPoolQuestion,
 		| 'question'
 		| 'optionA'
 		| 'optionB'
@@ -79,16 +81,19 @@ function hotPoolBodyFromDoc(
 	};
 }
 
-export const mcqBank = new QuestionBank<IQuestion, CachedResult, McqSelectionContext>({
+export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult, McqSelectionContext>({
 	logScope: 'pool',
 	normalizeUnit,
 	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
+	findRandomBatch: findCachedQuestionsByPool,
 	resolveContext: async () => {
 		const { isStimulusQuestionsEnabled } = await import('$lib/flags');
 		return { allowEnhanced: await isStimulusQuestionsEnabled() };
 	},
+	scheduleBackgroundTask,
 	// Flag resolution happens once per request before the indexed pool lookup.
+	// Serving a cached row still uses the projection-only pool-hit path.
 	serveCached: (doc) => ({
 		answer: hotPoolBodyFromDoc(doc),
 		provider: 'cache',

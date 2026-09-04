@@ -3,6 +3,7 @@ import { PoolWarmingError } from '$lib/question-bank/request.client';
 import {
 	requestFrqQuestion,
 	requestMcqQuestion,
+	requestMcqQuestions,
 	requestMcqQuiz
 } from '$lib/question-bank/request.client';
 
@@ -121,6 +122,22 @@ describe('question request transport', () => {
 		expect(fetchMock).toHaveBeenCalledWith(
 			'/api/question/quiz',
 			expect.objectContaining({ body: expect.stringContaining('"count":2') })
+		);
+	});
+
+	it('parses a batch of MCQs from one response', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response(JSON.stringify({ questions: [mcqPayload] }), { status: 200 }))
+		);
+
+		const questions = await requestMcqQuestions('AP Biology', 'Unit 1', 1, ['old-mcq']);
+
+		expect(questions).toHaveLength(1);
+		expect(questions[0]?.questionId).toBe('mcq-1');
+		expect(fetch).toHaveBeenCalledWith(
+			'/api/questions/batch',
+			expect.objectContaining({ body: expect.stringContaining('"count":1') })
 		);
 	});
 });

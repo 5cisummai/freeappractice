@@ -200,9 +200,12 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		return opts.loadQuestion(seenIds);
 	}
 
-	async function loadQuestionsViaLoader(count: number): Promise<GeneratedQuestion[]> {
+	async function loadQuestionsViaLoader(
+		count: number,
+		seenIds: string[] = []
+	): Promise<GeneratedQuestion[]> {
 		if (!opts.loadQuestions) throw new Error('No quiz question loader configured.');
-		return opts.loadQuestions(count);
+		return opts.loadQuestions(count, seenIds);
 	}
 
 	async function fillIndexes(
@@ -210,6 +213,49 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		indexes: number[],
 		seenQuestionIds: string[]
 	): Promise<void> {
+		if (opts.loadQuestions && !opts.loadQuestion) {
+			let nextIndex = 0;
+			const seenIds = [...seenQuestionIds];
+
+			while (isCurrentRun(token) && nextIndex < indexes.length) {
+				const batchIndexes = indexes.slice(nextIndex, nextIndex + 10);
+				let loaded = 0;
+				let lastError: unknown = null;
+
+				try {
+					const candidates = await loadQuestionsViaLoader(batchIndexes.length, [...seenIds]);
+					for (const candidate of candidates) {
+						const candidateId = questionId(candidate);
+						if (candidateId && seenIds.includes(candidateId)) continue;
+
+						const index = batchIndexes[loaded];
+						if (index === undefined) break;
+						questions[index] = candidate;
+						loaded += 1;
+						if (candidateId) {
+							seenIds.push(candidateId);
+							seenQuestionIds.push(candidateId);
+						}
+					}
+				} catch (error) {
+					lastError = error;
+				}
+
+				if (!isCurrentRun(token)) return;
+				if (loaded === 0) {
+					failedIndexes = [...failedIndexes, ...batchIndexes];
+					if (lastError instanceof Error) errorMessage = lastError.message;
+					loadingCount = Math.max(0, loadingCount - batchIndexes.length);
+					nextIndex += batchIndexes.length;
+					continue;
+				}
+
+				loadingCount = Math.max(0, loadingCount - loaded);
+				nextIndex += loaded;
+			}
+			return;
+		}
+
 		let nextWorkerIndex = 0;
 		const seenIds = [...seenQuestionIds];
 
@@ -349,17 +395,19 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 				return;
 			}
 			const firstQuestion = await loadQuestionViaLoader([]);
+			if (!firstQuestion) throw new Error('Question service returned no questions.');
 			if (!isCurrentRun(token) || !getMounted()) return;
 
 			questions[0] = firstQuestion;
+			const seenQuestionIds: string[] = [];
+			const firstId = questionId(firstQuestion);
+			if (firstId) seenQuestionIds.push(firstId);
+
 			loadingCount = Math.max(0, targetCount - 1);
 			status = 'active';
 			beginTiming(input.timeLimitMs);
 
 			if (targetCount > 1) {
-				const seenQuestionIds: string[] = [];
-				const firstId = questionId(firstQuestion);
-				if (firstId) seenQuestionIds.push(firstId);
 				void fillIndexes(
 					token,
 					Array.from({ length: targetCount - 1 }, (_, index) => index + 1),
@@ -375,7 +423,12 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 	}
 
 	async function retryFailed(): Promise<void> {
-		if (!failedIndexes.length || status === 'loading' || !opts.loadQuestion) return;
+		if (
+			!failedIndexes.length ||
+			status === 'loading' ||
+			(!opts.loadQuestion && !opts.loadQuestions)
+		)
+			return;
 
 		const token = runToken;
 		const retryIndexes = [...failedIndexes];

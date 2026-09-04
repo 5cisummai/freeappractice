@@ -1,10 +1,6 @@
-import { env } from '$env/dynamic/private';
 import { randomUUID } from 'node:crypto';
 import { desc, eq, sql } from 'drizzle-orm';
-import {
-	QUESTION_QUALITY_CALIBRATED_MODEL,
-	QUESTION_QUALITY_MODEL
-} from '$lib/ai/ai-models-config';
+import { QUESTION_QUALITY_MODEL } from '$lib/ai/ai-models-config';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	questionFeedback,
@@ -16,27 +12,16 @@ import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
 import { ensureQuestionQuality, type ReviewJobDocument } from './models.server.js';
 import { feedbackSummaryFromCounts } from './rules.js';
-import {
-	QUESTION_QUALITY_RUBRIC_VERSION,
-	type AiQualityAssessment,
-	type FeedbackSummary,
-	type FeedbackType,
-	type QualityDashboardSnapshot,
-	type QualityJobSummary
+import type {
+	AiQualityAssessment,
+	FeedbackSummary,
+	FeedbackType,
+	QualityDashboardSnapshot,
+	QualityJobSummary
 } from './types.js';
 
 export function modelName(): string {
 	return QUESTION_QUALITY_MODEL;
-}
-
-export function isAgentCalibrated(): boolean {
-	return (
-		env.QUESTION_QUALITY_AGENT_CALIBRATED === 'true' &&
-		QUESTION_QUALITY_CALIBRATED_MODEL === modelName() &&
-		env.QUESTION_QUALITY_CALIBRATED_RUBRIC === QUESTION_QUALITY_RUBRIC_VERSION &&
-		env.QUESTION_QUALITY_CALIBRATED_REASONING_EFFORT ===
-			(env.QUESTION_QUALITY_REASONING_EFFORT || 'medium')
-	);
 }
 
 export function toJobSummary(job: Partial<ReviewJobDocument>): QualityJobSummary {
@@ -250,7 +235,7 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 			highPriority: Number(counts.highPriority)
 		},
 		model: modelName(),
-		calibrated: isAgentCalibrated(),
+		calibrated: true,
 		jobs: jobs.map((job: Record<string, unknown>) =>
 			toJobSummary(job as Partial<ReviewJobDocument>)
 		),

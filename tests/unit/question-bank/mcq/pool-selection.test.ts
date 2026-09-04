@@ -102,7 +102,32 @@ describe('QuestionBank selection boundary', () => {
 			status: 'warming',
 			retryAfterSeconds: QUESTION_POOL_CONFIG.warmingRetryAfterSeconds
 		});
-		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1');
+		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1', undefined);
+	});
+
+	it('schedules refill after the response when a background scheduler is configured', async () => {
+		let releaseRefill!: () => void;
+		const requestRefill = vi.fn(
+			() =>
+				new Promise<void>((resolve) => {
+					releaseRefill = resolve;
+				})
+		);
+		const scheduleBackgroundTask = vi.fn();
+		const bank = new QuestionBank({
+			logScope: 'test',
+			normalizeUnit: (u) => u ?? '',
+			countActive: async () => 0,
+			findRandom: async () => null,
+			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
+			requestRefill,
+			scheduleBackgroundTask
+		});
+
+		await expect(bank.get('AP Biology', 'Unit 1')).resolves.toMatchObject({ status: 'warming' });
+		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1', undefined);
+		expect(scheduleBackgroundTask).toHaveBeenCalledOnce();
+		releaseRefill();
 	});
 
 	it('resets exclusions when the bucket still has active rows', async () => {
@@ -163,5 +188,34 @@ describe('QuestionBank selection boundary', () => {
 		expect(outcome.status).toBe('found');
 		expect(metrics.dbConnectMs).toBe(7);
 		expect(metrics.poolQueryMs).toBeGreaterThanOrEqual(0);
+	});
+
+	it('serves a batch through the batch selector and preserves exclusions metadata', async () => {
+		const findRandomBatch = vi.fn(async () => [
+			{ questionId: 'q-1', randomKey: 0.2 },
+			{ questionId: 'q-2', randomKey: 0.8 }
+		]);
+		const bank = new QuestionBank({
+			logScope: 'test',
+			normalizeUnit: (u) => u ?? '',
+			countActive: async () => 2,
+			findRandom: async () => null,
+			findRandomBatch,
+			serveCached: (doc) => ({ cached: true, questionId: doc.questionId })
+		});
+
+		const outcome = await bank.getMany('AP Biology', 'Unit 1', 2, {
+			excludeQuestionIds: ['old']
+		});
+
+		expect(outcome).toEqual({
+			status: 'found',
+			results: [
+				{ cached: true, questionId: 'q-1' },
+				{ cached: true, questionId: 'q-2' }
+			],
+			exclusionsReset: false
+		});
+		expect(findRandomBatch).toHaveBeenCalledOnce();
 	});
 });

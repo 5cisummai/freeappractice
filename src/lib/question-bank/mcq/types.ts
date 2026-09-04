@@ -97,7 +97,7 @@ export type StartExamInput = {
 
 export type ExamCoreOpts = {
 	loadQuestion?: (excludeIds: string[]) => Promise<GeneratedQuestion>;
-	loadQuestions?: (count: number) => Promise<GeneratedQuestion[]>;
+	loadQuestions?: (count: number, excludeIds?: string[]) => Promise<GeneratedQuestion[]>;
 	onComplete?: (snapshot: ExamSnapshot) => void | Promise<void>;
 	getMounted?: () => boolean;
 	maxConcurrentFill?: number;

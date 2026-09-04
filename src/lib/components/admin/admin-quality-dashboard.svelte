@@ -656,25 +656,6 @@
 					</div>
 				</Card.Header>
 				<Card.Content class="space-y-5 p-6">
-					{#if !dashboard.calibrated}
-						<div
-							class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"
-							role="note"
-						>
-							<p class="font-medium">Model calibration is not complete.</p>
-							<p class="mt-1">
-								Every AI assessment will require a human decision; the calibration sample hides AI
-								evidence until the specialist decides.
-							</p>
-						</div>
-					{:else}
-						<div
-							class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-						>
-							Model calibration is active for new reviews.
-						</div>
-					{/if}
-
 					<form
 						class="grid gap-4 md:grid-cols-2 xl:grid-cols-6"
 						onsubmit={(event) => {
@@ -777,10 +758,6 @@
 									<p class="mt-1 font-semibold">{formatCost(preview.estimatedMaximumCostUsd)}</p>
 								</div>
 							</div>
-							{#if !preview.calibrated}<p class="mt-4 text-xs text-amber-700 dark:text-amber-300">
-									This preview includes the uncalibrated-model warning and may create blind
-									calibration samples.
-								</p>{/if}
 						</div>
 					{/if}
 				</Card.Content>

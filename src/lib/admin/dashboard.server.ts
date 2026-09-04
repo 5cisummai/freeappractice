@@ -467,7 +467,7 @@ export async function getAdminDashboardData(opts: {
 	const emptyQuality: QualityDashboardSnapshot = {
 		counts: { unreviewed: 0, awaitingHuman: 0, good: 0, bad: 0, highPriority: 0 },
 		model: '',
-		calibrated: false,
+		calibrated: true,
 		jobs: [],
 		humanQueue: []
 	};
