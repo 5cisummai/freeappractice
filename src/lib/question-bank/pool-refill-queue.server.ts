@@ -4,6 +4,7 @@ import { getMcqGenerationCountsByClass } from '$lib/question-bank/gen-stats.serv
 import {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
+	countActivePoolRowsForServing,
 	getPoolRefillHealthCounts
 } from '$lib/question-bank/pool-counts.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
@@ -26,7 +27,12 @@ export function listCatalogBuckets(questionType: PoolRefillQuestionType): PoolBu
 	return getPoolKindAdapter(questionType).listBuckets();
 }
 
-export { countActivePoolRows, countActivePoolRowsByBucket, getPoolRefillHealthCounts };
+export {
+	countActivePoolRows,
+	countActivePoolRowsByBucket,
+	countActivePoolRowsForServing,
+	getPoolRefillHealthCounts
+};
 
 /**
  * Upsert a refill request for a bucket. Safe to call from request paths (no LLM).
@@ -48,7 +54,7 @@ export async function requestPoolRefill(
 	});
 	const observedCount =
 		observedCountOverride ??
-		(await countActivePoolRows(bucket.questionType, bucket.apClass, bucket.unit));
+		(await countActivePoolRowsForServing(bucket.questionType, bucket.apClass, bucket.unit));
 	const now = new Date();
 	const key = {
 		questionType: bucket.questionType,

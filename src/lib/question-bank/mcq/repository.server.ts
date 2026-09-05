@@ -24,10 +24,13 @@ const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuest
 
 export type McqSelectionContext = { allowEnhanced: boolean };
 
+// Legacy rows may omit these JSON keys. Coalesce each comparison so the
+// feature-off filter treats missing metadata as non-enhanced instead of
+// propagating SQL NULL through NOT(...).
 const enhancedContentPredicate = sql`(
-	jsonb_typeof(${mcqQuestions.data}->'stimulus') = 'object'
-	OR jsonb_typeof(${mcqQuestions.data}->'diagramSpec') = 'object'
-	OR ${mcqQuestions.data}->>'hasDiagram' = 'true'
+	COALESCE(jsonb_typeof(${mcqQuestions.data}->'stimulus') = 'object', false)
+	OR COALESCE(jsonb_typeof(${mcqQuestions.data}->'diagramSpec') = 'object', false)
+	OR COALESCE(${mcqQuestions.data}->>'hasDiagram' = 'true', false)
 )`;
 
 /** The narrow row shape used by the anonymous pool-hit path. */

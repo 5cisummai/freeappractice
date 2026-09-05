@@ -1,6 +1,8 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolRefillStates } from '$lib/server/neon/schema';
+import { isStimulusQuestionsEnabled } from '$lib/flags';
+import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
 import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
 import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-types.server';
 
@@ -13,6 +15,20 @@ export async function countActivePoolRows(
 	unit: string
 ): Promise<number> {
 	return getPoolKindAdapter(questionType).countActive(apClass, unit);
+}
+
+/** Count rows that can actually be served under the current feature flags. */
+export async function countActivePoolRowsForServing(
+	questionType: PoolRefillQuestionType,
+	apClass: string,
+	unit: string
+): Promise<number> {
+	if (questionType === 'mcq') {
+		return countActiveMcqQuestions(apClass, unit, {
+			allowEnhanced: await isStimulusQuestionsEnabled()
+		});
+	}
+	return countActivePoolRows(questionType, apClass, unit);
 }
 
 /** Load active counts for every bucket in one grouped query for ops reconciliation. */

@@ -3,7 +3,7 @@ import { and, eq, isNull, lte, or } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolBucketWriteLocks } from '$lib/server/neon/schema';
 import {
-	countActivePoolRows,
+	countActivePoolRowsForServing,
 	type PoolBucketKey
 } from '$lib/question-bank/pool-refill-queue.server';
 import { isDuplicateKeyError } from '$lib/question-bank/util.server';
@@ -75,7 +75,11 @@ export async function writePoolBucketBelowTarget<T>(
 		throw new Error(`Timed out waiting for the ${bucket.questionType} pool write lock`);
 
 	try {
-		const activeCount = await countActivePoolRows(bucket.questionType, bucket.apClass, bucket.unit);
+		const activeCount = await countActivePoolRowsForServing(
+			bucket.questionType,
+			bucket.apClass,
+			bucket.unit
+		);
 		if (activeCount >= target) return { status: 'at_target', activeCount };
 		return { status: 'written', value: await write() };
 	} finally {

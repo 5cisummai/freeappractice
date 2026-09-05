@@ -9,7 +9,7 @@ import {
 } from '$lib/question-bank/pool-kind-worker.server';
 import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
 import {
-	countActivePoolRows,
+	countActivePoolRowsForServing,
 	getPoolRefillHealthCounts,
 	type PoolBucketKey
 } from '$lib/question-bank/pool-refill-queue.server';
@@ -326,7 +326,7 @@ export async function processRefillJob(
 			const remainingMs = opts.deadlineMs - Date.now();
 			if (remainingMs < getPoolKindAdapter(bucket.questionType).minimumGenerationHeadroomMs) break;
 
-			const observedCount = await countActivePoolRows(
+			const observedCount = await countActivePoolRowsForServing(
 				bucket.questionType,
 				bucket.apClass,
 				bucket.unit
@@ -375,7 +375,7 @@ export async function processRefillJob(
 			if (result.skippedAtTarget) {
 				await releaseDailyGenerationBudget(reservedSlots);
 				reservedSlotsForAttempt = 0;
-				const latestCount = await countActivePoolRows(
+				const latestCount = await countActivePoolRowsForServing(
 					bucket.questionType,
 					bucket.apClass,
 					bucket.unit
@@ -402,7 +402,7 @@ export async function processRefillJob(
 			}
 		}
 
-		const observedCount = await countActivePoolRows(
+		const observedCount = await countActivePoolRowsForServing(
 			bucket.questionType,
 			bucket.apClass,
 			bucket.unit
