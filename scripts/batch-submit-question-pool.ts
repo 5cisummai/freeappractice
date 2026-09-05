@@ -32,7 +32,11 @@ import {
 import { getRecentTopics } from '../src/lib/question-bank/recent-topic.server';
 import { getRecentFrqTopics } from '../src/lib/question-bank/frq/generation.server';
 import { QUESTION_POOL_CONFIG, preferredMcqTarget } from '../src/lib/question-bank/pool-constants';
-import { isExamfigDiagramsEnabled } from '../src/lib/flags';
+import { isStimulusQuestionsEnabled } from '../src/lib/flags';
+import {
+	isStimulusPolicyEnabledForUnit,
+	getStimulusPolicy
+} from '../src/lib/question-bank/mcq/stimulus-policy';
 
 function argValue(flag: string): string | undefined {
 	const eq = process.argv.find((a) => a.startsWith(`${flag}=`));
@@ -70,7 +74,7 @@ async function main() {
 	}
 
 	const env = QUESTION_POOL_CONFIG;
-	const diagramsEnabled = questionType === 'mcq' ? await isExamfigDiagramsEnabled() : false;
+	const stimulusEnabled = questionType === 'mcq' ? await isStimulusQuestionsEnabled() : false;
 
 	const budgetRemaining = await getDailyBudgetRemaining(env);
 	const maxRequests = dryRun ? limit : Math.min(limit, budgetRemaining);
@@ -83,7 +87,7 @@ async function main() {
 		classFilter: classFilter ?? null,
 		unitFilter: unitFilter ?? null,
 		questionType,
-		diagramsEnabled,
+		stimulusEnabled,
 		dryRun,
 		targetSource: 'unified dataset questionBank.mcq.poolRules preferred ceilings'
 	});
@@ -160,13 +164,21 @@ async function main() {
 			customId: `${questionType}-${String(i + 1).padStart(4, '0')}`,
 			apClass: slot.apClass,
 			unit: slot.unit,
-			recentTopics
+			recentTopics,
+			...(questionType === 'mcq'
+				? {
+						diagramsEnabled:
+							stimulusEnabled &&
+							getStimulusPolicy(slot.apClass).allowDiscreteDiagrams &&
+							isStimulusPolicyEnabledForUnit(getStimulusPolicy(slot.apClass), slot.unit)
+					}
+				: {})
 		});
 	}
 
 	const { jsonl, manifest } =
 		questionType === 'mcq'
-			? buildMcqPoolBatchJsonl({ requests, diagramsEnabled })
+			? buildMcqPoolBatchJsonl({ requests, diagramsEnabled: stimulusEnabled })
 			: buildFrqPoolBatchJsonl({ requests });
 	console.log(`Built ${requests.length} batch requests (${jsonl.length} bytes JSONL)`);
 

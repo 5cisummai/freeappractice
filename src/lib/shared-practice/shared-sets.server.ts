@@ -8,6 +8,7 @@ import {
 	getQuestionsLookupMap,
 	type StoredQuestion
 } from '$lib/question-bank/mcq/repository.server';
+import { storedQuestionToGenerated } from '$lib/question-bank/mcq/public-payload.server';
 import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
 import type { SharedQuizView } from '$lib/shared-practice/types';
 
@@ -45,22 +46,7 @@ function buildTitle(apClass: string, unit: string, itemCount: number): string {
 }
 
 function toGeneratedQuestion(question: StoredQuestion): GeneratedQuestion {
-	return {
-		questionId: question.id,
-		topic: question.topicsCovered || undefined,
-		prompt: question.question,
-		options: [
-			{ id: 'A', label: 'A', text: question.optionA },
-			{ id: 'B', label: 'B', text: question.optionB },
-			{ id: 'C', label: 'C', text: question.optionC },
-			{ id: 'D', label: 'D', text: question.optionD }
-		],
-		correctAnswer: question.correctAnswer,
-		explanation: question.explanation,
-		diagramSpec: question.diagramSpec,
-		hasDiagram: question.hasDiagram,
-		hasStimulus: false
-	};
+	return storedQuestionToGenerated(question);
 }
 
 function toQuizView(

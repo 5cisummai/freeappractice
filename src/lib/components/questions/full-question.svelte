@@ -33,6 +33,8 @@
 		flagged?: boolean;
 		struckOptionIds?: ReadonlySet<string> | string[];
 		textAnnotations?: TextAnnotation[];
+		stimulusScrollTop?: number;
+		onStimulusScroll?: (scrollTop: number) => void;
 		remainingMs?: number | null;
 		elapsedMs?: number;
 		navItems?: ExamNavItem[];
@@ -75,6 +77,8 @@
 		flagged = $bindable(false),
 		struckOptionIds,
 		textAnnotations = [],
+		stimulusScrollTop = 0,
+		onStimulusScroll,
 		remainingMs = null,
 		elapsedMs = 0,
 		navItems,
@@ -108,10 +112,13 @@
 
 	let menuOpen = $state(false);
 	let eliminatorActive = $state(false);
+	let stimulusScrollNode = $state<HTMLElement | null>(null);
 	const isMobile = new IsMobile();
 	const isReviewStage = $derived(stage === 'review');
 	const showSplit = $derived(
-		!isReviewStage && !isMobile.current && Boolean(question.hasStimulus && question.leftPanel)
+		!isReviewStage &&
+		!isMobile.current &&
+		Boolean(question.hasStimulus && (question.leftPanel || question.diagramSpec))
 	);
 	const displayNumber = $derived(Number(questionNumber));
 	const currentIndex = $derived(
@@ -133,6 +140,10 @@
 	const reviewHeading = $derived(reviewTitle ?? title ?? 'Review your answers');
 	const canUseEliminator = $derived(Boolean(onToggleStrike) && !hasCheckedAnswer);
 	const canAnnotate = $derived(Boolean(onAddTextAnnotation) && !hasCheckedAnswer);
+
+	$effect(() => {
+		if (stimulusScrollNode) stimulusScrollNode.scrollTop = stimulusScrollTop;
+	});
 
 	const menuItems = $derived.by((): ExamNavItem[] => {
 		if (navItems?.length) return navItems;
@@ -528,7 +539,11 @@
 			{:else if showSplit}
 				<Resizable.PaneGroup direction="horizontal" class="h-full">
 					<Resizable.Pane defaultSize={50} minSize={28} class="min-h-0">
-						<div class="h-full overflow-y-auto px-4 py-4 sm:px-5">
+						<div
+							bind:this={stimulusScrollNode}
+							onscroll={(event) => onStimulusScroll?.(event.currentTarget.scrollTop)}
+							class="h-full overflow-y-auto px-4 py-4 sm:px-5"
+						>
 							{@render stimulusPane()}
 						</div>
 					</Resizable.Pane>

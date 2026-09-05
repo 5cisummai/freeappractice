@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, not, notInArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	mcqQuestions,
@@ -21,6 +21,14 @@ export interface IQuestion extends McqQuestionPayload {
 }
 
 const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuestions.data);
+
+export type McqSelectionContext = { allowEnhanced: boolean };
+
+const enhancedContentPredicate = sql`(
+	jsonb_typeof(${mcqQuestions.data}->'stimulus') = 'object'
+	OR jsonb_typeof(${mcqQuestions.data}->'diagramSpec') = 'object'
+	OR ${mcqQuestions.data}->>'hasDiagram' = 'true'
+)`;
 
 /** The narrow row shape used by the anonymous pool-hit path. */
 export type McqPoolQuestion = McqQuestionPayload & {
@@ -52,7 +60,11 @@ const poolQuestionSelection = {
 		string,
 		unknown
 	> | null>`COALESCE(${mcqQuestions.data} -> 'diagramSpec', ${mcqQuestions.data} -> 'diagram')`,
-	hasDiagram: sql<boolean>`CASE WHEN ${jsonText('hasDiagram')} = 'true' THEN true WHEN ${jsonText('hasDiagram')} = 'false' THEN false ELSE ${mcqQuestions.data} -> 'diagramSpec' IS NOT NULL OR ${mcqQuestions.data} -> 'diagram' IS NOT NULL END`
+	hasDiagram: sql<boolean>`CASE WHEN ${jsonText('hasDiagram')} = 'true' THEN true WHEN ${jsonText('hasDiagram')} = 'false' THEN false ELSE ${mcqQuestions.data} -> 'diagramSpec' IS NOT NULL OR ${mcqQuestions.data} -> 'diagram' IS NOT NULL END`,
+	stimulus: sql<unknown>`${mcqQuestions.data} -> 'stimulus'`,
+	stimulusId: jsonText('stimulusId'),
+	stimulusPosition: jsonText('stimulusPosition'),
+	stimulusQuestionCount: jsonText('stimulusQuestionCount')
 };
 
 function normalizePoolCorrectAnswer(value: string): 'A' | 'B' | 'C' | 'D' {
@@ -65,12 +77,59 @@ function normalizePoolCorrectAnswer(value: string): 'A' | 'B' | 'C' | 'D' {
 	throw new Error('Stored MCQ has an invalid answer key');
 }
 
-type McqPoolQuestionRow = Omit<McqPoolQuestion, 'correctAnswer' | 'diagramSpec'> & {
+function normalizePoolDiagramSpec(value: unknown): Record<string, unknown> | null {
+	return value && typeof value === 'object' && !Array.isArray(value)
+		? (value as Record<string, unknown>)
+		: null;
+}
+
+function normalizePoolStimulus(value: unknown): McqQuestionPayload['stimulus'] {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	const candidate = value as Record<string, unknown>;
+	const text = typeof candidate.text === 'string' ? candidate.text.trim() : '';
+	const diagramSpec = normalizePoolDiagramSpec(candidate.diagramSpec ?? candidate.diagram);
+	if (!text && !diagramSpec) return null;
+	return {
+		text: text || null,
+		diagramSpec,
+		provenance:
+			candidate.provenance === 'ai-generated-original' ? 'ai-generated-original' : 'legacy-unknown'
+	};
+}
+
+function normalizePoolUuid(value: unknown): string | null {
+	return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function normalizePoolInt(value: unknown, minimum = 0): number | null {
+	if (typeof value === 'number' && Number.isInteger(value) && value >= minimum) return value;
+	if (typeof value === 'string' && value.trim()) {
+		const parsed = Number(value);
+		if (Number.isInteger(parsed) && parsed >= minimum) return parsed;
+	}
+	return null;
+}
+
+type McqPoolQuestionRow = Omit<
+	McqPoolQuestion,
+	| 'correctAnswer'
+	| 'diagramSpec'
+	| 'stimulus'
+	| 'stimulusId'
+	| 'stimulusPosition'
+	| 'stimulusQuestionCount'
+> & {
 	correctAnswer: string;
 	diagramSpec: unknown;
+	stimulus: unknown;
+	stimulusId: string | null;
+	stimulusPosition: string | null;
+	stimulusQuestionCount: string | null;
 };
 
 function poolQuestionFromRow(row: McqPoolQuestionRow): McqPoolQuestion {
+	const diagramSpec = normalizePoolDiagramSpec(row.diagramSpec);
+	const stimulus = normalizePoolStimulus(row.stimulus);
 	return {
 		...row,
 		mainTopic: row.mainTopic.trim() || row.topicsCovered.trim() || 'Legacy topic',
@@ -82,12 +141,38 @@ function poolQuestionFromRow(row: McqPoolQuestionRow): McqPoolQuestion {
 		optionD: row.optionD.trim(),
 		correctAnswer: normalizePoolCorrectAnswer(row.correctAnswer),
 		explanation: row.explanation.trim(),
-		diagramSpec:
-			row.diagramSpec && typeof row.diagramSpec === 'object' && !Array.isArray(row.diagramSpec)
-				? (row.diagramSpec as Record<string, unknown>)
-				: null,
-		hasDiagram: row.hasDiagram || Boolean(row.diagramSpec)
+		diagramSpec,
+		hasDiagram: row.hasDiagram || Boolean(diagramSpec) || Boolean(stimulus?.diagramSpec),
+		stimulus,
+		stimulusId: normalizePoolUuid(row.stimulusId),
+		stimulusPosition: normalizePoolInt(row.stimulusPosition),
+		stimulusQuestionCount: normalizePoolInt(row.stimulusQuestionCount, 1)
 	};
+}
+
+function poolLookupPredicates(input: {
+	apClass: string;
+	unit: string;
+	excludeQuestionIds: string[];
+	pivot: number;
+	fromPivot: 'after' | 'before';
+	context?: McqSelectionContext;
+}) {
+	const predicates = [
+		eq(apClassField, input.apClass),
+		eq(unitField, input.unit),
+		eq(mcqQuestions.active, true),
+		input.fromPivot === 'after'
+			? gte(mcqQuestions.randomKey, input.pivot)
+			: lt(mcqQuestions.randomKey, input.pivot)
+	];
+	if (input.context && !input.context.allowEnhanced) {
+		predicates.push(not(enhancedContentPredicate));
+	}
+	if (input.excludeQuestionIds.length) {
+		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
+	}
+	return predicates;
 }
 
 export type CanonicalMcqInput = Omit<
@@ -97,6 +182,10 @@ export type CanonicalMcqInput = Omit<
 	| 'active'
 	| 'hasDiagram'
 	| 'diagramSpec'
+	| 'stimulus'
+	| 'stimulusId'
+	| 'stimulusPosition'
+	| 'stimulusQuestionCount'
 	| 'mainTopic'
 	| 'topicsCovered'
 	| 'createdAt'
@@ -105,7 +194,17 @@ export type CanonicalMcqInput = Omit<
 	Partial<
 		Pick<
 			IQuestion,
-			'unit' | 'randomKey' | 'active' | 'hasDiagram' | 'diagramSpec' | 'mainTopic' | 'topicsCovered'
+			| 'unit'
+			| 'randomKey'
+			| 'active'
+			| 'hasDiagram'
+			| 'diagramSpec'
+			| 'mainTopic'
+			| 'topicsCovered'
+			| 'stimulus'
+			| 'stimulusId'
+			| 'stimulusPosition'
+			| 'stimulusQuestionCount'
 		>
 	>;
 
@@ -113,11 +212,21 @@ export function newPoolRandomKey(): number {
 	return Math.random();
 }
 
-export async function countActiveMcqQuestions(apClass: string, unit: string): Promise<number> {
+export async function countActiveMcqQuestions(
+	apClass: string,
+	unit: string,
+	context: McqSelectionContext = { allowEnhanced: true }
+): Promise<number> {
+	const predicates = [
+		eq(apClassField, apClass),
+		eq(unitField, unit),
+		eq(mcqQuestions.active, true)
+	];
+	if (!context.allowEnhanced) predicates.push(not(enhancedContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(mcqQuestions)
-		.where(and(eq(apClassField, apClass), eq(unitField, unit), eq(mcqQuestions.active, true)));
+		.where(and(...predicates));
 	return Number(row?.count ?? 0);
 }
 
@@ -147,7 +256,11 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		optionC: input.optionC,
 		optionD: input.optionD,
 		correctAnswer: input.correctAnswer,
-		explanation: input.explanation
+		explanation: input.explanation,
+		stimulus: input.stimulus ?? null,
+		stimulusId: input.stimulusId ?? null,
+		stimulusPosition: input.stimulusPosition ?? null,
+		stimulusQuestionCount: input.stimulusQuestionCount ?? null
 	};
 	const db = getNeonDatabase();
 	const registryInsert = db
@@ -206,23 +319,13 @@ export async function findCachedQuestionByPool(input: {
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: McqSelectionContext;
 }): Promise<McqPoolQuestion | null> {
 	const db = getNeonDatabase(input.onDatabaseInit);
-	const predicates = [
-		eq(apClassField, input.apClass),
-		eq(unitField, input.unit),
-		eq(mcqQuestions.active, true),
-		input.fromPivot === 'after'
-			? gte(mcqQuestions.randomKey, input.pivot)
-			: lt(mcqQuestions.randomKey, input.pivot)
-	];
-	if (input.excludeQuestionIds.length) {
-		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
-	}
 	const rows = await db
 		.select(poolQuestionSelection)
 		.from(mcqQuestions)
-		.where(and(...predicates))
+		.where(and(...poolLookupPredicates(input)))
 		.orderBy(mcqQuestions.randomKey)
 		.limit(1);
 	return rows[0] ? poolQuestionFromRow(rows[0]) : null;
@@ -236,27 +339,27 @@ export async function findCachedQuestionsByPool(input: {
 	pivot: number;
 	limit: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
+	context?: McqSelectionContext;
 }): Promise<McqPoolQuestion[]> {
 	const db = getNeonDatabase(input.onDatabaseInit);
-	const createQuery = (fromPivot: 'after' | 'before') => {
-		const predicates = [
-			eq(apClassField, input.apClass),
-			eq(unitField, input.unit),
-			eq(mcqQuestions.active, true),
-			fromPivot === 'after'
-				? gte(mcqQuestions.randomKey, input.pivot)
-				: lt(mcqQuestions.randomKey, input.pivot)
-		];
-		if (input.excludeQuestionIds.length) {
-			predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
-		}
-		return db
+	const createQuery = (fromPivot: 'after' | 'before') =>
+		db
 			.select(poolQuestionSelection)
 			.from(mcqQuestions)
-			.where(and(...predicates))
+			.where(
+				and(
+					...poolLookupPredicates({
+						apClass: input.apClass,
+						unit: input.unit,
+						excludeQuestionIds: input.excludeQuestionIds,
+						pivot: input.pivot,
+						fromPivot,
+						context: input.context
+					})
+				)
+			)
 			.orderBy(mcqQuestions.randomKey)
 			.limit(input.limit);
-	};
 
 	const [afterRows, beforeRows] = await db.batch([createQuery('after'), createQuery('before')]);
 	return [...afterRows, ...beforeRows]
@@ -287,6 +390,49 @@ export async function findAllCachedQuestions(): Promise<IQuestion[]> {
 	return rows.map(fromRow);
 }
 
+/** Load active MCQs for quiz assembly across one or more real units. */
+export async function findActiveQuestionsForQuiz(input: {
+	apClass: string;
+	units: string[];
+}): Promise<IQuestion[]> {
+	const units = [...new Set(input.units.map((unit) => unit.trim()).filter(Boolean))];
+	if (!units.length) return [];
+	const rows = await getNeonDatabase()
+		.select()
+		.from(mcqQuestions)
+		.where(
+			and(
+				eq(mcqQuestions.active, true),
+				eq(apClassField, input.apClass),
+				inArray(unitField, units),
+				// A finalized bad child is excluded. A stimulus/set failure excludes
+				// every child that carries the same server-assigned stimulus ID.
+				sql`not exists (
+					select 1
+					from content.question_quality own_quality
+					where own_quality.question_id = ${mcqQuestions.questionId}
+					  and own_quality.final_verdict = 'bad'
+				)
+				and (
+					${mcqQuestions.data}->>'stimulusId' is null
+					or not exists (
+						select 1
+						from content.question_quality shared_quality
+						join content.mcq_questions shared_question
+						  on shared_question.question_id = shared_quality.question_id
+						where shared_quality.final_verdict = 'bad'
+						  and coalesce(
+							shared_quality.ai_assessment->>'failure_scope',
+							shared_quality.ai_assessment->>'failureScope'
+						  ) in ('stimulus', 'set')
+						  and shared_question.data->>'stimulusId' = ${mcqQuestions.data}->>'stimulusId'
+					)
+				)`
+			)
+		);
+	return rows.map(fromRow);
+}
+
 export interface StoredQuestion {
 	id: string;
 	question: string;
@@ -303,6 +449,10 @@ export interface StoredQuestion {
 	topicsCovered?: string;
 	diagramSpec?: Record<string, unknown>;
 	hasDiagram: boolean;
+	stimulus?: McqQuestionPayload['stimulus'];
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
 	createdAt: string;
 }
 
@@ -329,6 +479,14 @@ export function storedQuestionFromPayload(input: {
 		...(data.topicsCovered?.trim() ? { topicsCovered: data.topicsCovered } : {}),
 		...(data.diagramSpec ? { diagramSpec: data.diagramSpec } : {}),
 		hasDiagram: data.hasDiagram ?? Boolean(data.diagramSpec),
+		...(data.stimulus ? { stimulus: data.stimulus } : {}),
+		...(data.stimulusId ? { stimulusId: data.stimulusId } : {}),
+		...(data.stimulusPosition !== null && data.stimulusPosition !== undefined
+			? { stimulusPosition: data.stimulusPosition }
+			: {}),
+		...(data.stimulusQuestionCount !== null && data.stimulusQuestionCount !== undefined
+			? { stimulusQuestionCount: data.stimulusQuestionCount }
+			: {}),
 		createdAt: input.createdAt.toISOString()
 	};
 }

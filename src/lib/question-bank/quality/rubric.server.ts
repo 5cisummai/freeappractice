@@ -1,9 +1,14 @@
 import { z } from 'zod';
-import { QUESTION_QUALITY_RUBRIC_VERSION, type AiQualityAssessment } from './types.js';
+import {
+	QUESTION_QUALITY_RUBRIC_VERSION,
+	type AiQualityAssessment,
+	type QualityFailureScope
+} from './types.js';
 
 const assessmentSchema = z.object({
 	verdict: z.enum(['good', 'bad']),
 	issue_codes: z.array(z.string().min(1)).max(12),
+	failure_scope: z.enum(['question', 'stimulus', 'set', 'unknown']).nullable().default(null),
 	evidence: z.array(z.string().min(1)).min(1).max(8),
 	confidence: z.number().min(0).max(1),
 	requires_human_review: z.boolean()
@@ -21,11 +26,22 @@ export const assessmentJsonSchema = {
 	properties: {
 		verdict: { type: 'string', enum: ['good', 'bad'] },
 		issue_codes: { type: 'array', items: { type: 'string' }, maxItems: 12 },
+		failure_scope: {
+			type: ['string', 'null'],
+			enum: ['question', 'stimulus', 'set', 'unknown', null]
+		},
 		evidence: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 8 },
 		confidence: { type: 'number', minimum: 0, maximum: 1 },
 		requires_human_review: { type: 'boolean' }
 	},
-	required: ['verdict', 'issue_codes', 'evidence', 'confidence', 'requires_human_review']
+	required: [
+		'verdict',
+		'issue_codes',
+		'failure_scope',
+		'evidence',
+		'confidence',
+		'requires_human_review'
+	]
 } as const;
 
 function courseGuidance(apClass?: string): string {
@@ -68,6 +84,7 @@ Evaluate all of the following:
 6. Correctness and completeness of the explanation.
 7. Authentic AP-style reasoning and appropriate difficulty.
 8. Formatting, accessibility, and safety.
+9. For questions with a shared stimulus, distinguish a child-only defect from a stimulus-wide or set-wide defect.
 
 ${courseGuidance(apClass)}
 
@@ -80,7 +97,7 @@ WEB-GROUNDED REVIEW:
 MARKDOWN AND FORMATTING GATE:
 - If any Markdown or other formatting is malformed, return BAD automatically. This includes unclosed code fences, broken Markdown links, malformed tables or lists, unmatched emphasis delimiters, broken inline formatting, or invalid or mismatched LaTeX delimiters when present.
 
-Return BAD if any material defect could teach the wrong idea, make the answer ambiguous, mis-key the answer, make the explanation misleading, or leave Markdown or formatting malformed. Return GOOD only when the item is ready to use. Set requires_human_review when evidence is incomplete, domain verification is uncertain, or confidence is below 0.85. Use concise issue codes such as WRONG_KEY, FACTUAL_ERROR, AMBIGUOUS, MULTIPLE_ANSWERS, WEAK_DISTRACTORS, BAD_EXPLANATION, COURSE_MISMATCH, UNIT_MISMATCH, MALFORMED_FORMATTING, FORMAT_OR_ACCESSIBILITY, or SAFETY.`,
+		Return BAD if any material defect could teach the wrong idea, make the answer ambiguous, mis-key the answer, make the explanation misleading, or leave Markdown or formatting malformed. Return GOOD only when the item is ready to use. Set requires_human_review when evidence is incomplete, domain verification is uncertain, or confidence is below 0.85. Set failure_scope to stimulus when the shared stimulus or diagram is defective for all siblings, set when the set structure is defective, question for a child-only issue, and null for a good item. Use concise issue codes such as WRONG_KEY, FACTUAL_ERROR, AMBIGUOUS, MULTIPLE_ANSWERS, WEAK_DISTRACTORS, BAD_EXPLANATION, COURSE_MISMATCH, UNIT_MISMATCH, MALFORMED_FORMATTING, FORMAT_OR_ACCESSIBILITY, or SAFETY.`,
 		user: `Review this canonical Neon question:\n${JSON.stringify(question)}`
 	};
 }
@@ -109,6 +126,7 @@ export function parseAssessmentText(
 	return {
 		verdict: parsed.verdict,
 		issueCodes: parsed.issue_codes,
+		failureScope: parsed.failure_scope as QualityFailureScope | null,
 		evidence: parsed.evidence,
 		sourceUrls: metadata.sourceUrls ?? [],
 		webSearchUsed: metadata.webSearchUsed ?? false,

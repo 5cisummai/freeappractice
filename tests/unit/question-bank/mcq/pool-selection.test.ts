@@ -102,7 +102,7 @@ describe('QuestionBank selection boundary', () => {
 			status: 'warming',
 			retryAfterSeconds: QUESTION_POOL_CONFIG.warmingRetryAfterSeconds
 		});
-		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1');
+		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1', undefined);
 	});
 
 	it('schedules refill after the response when a background scheduler is configured', async () => {
@@ -125,7 +125,7 @@ describe('QuestionBank selection boundary', () => {
 		});
 
 		await expect(bank.get('AP Biology', 'Unit 1')).resolves.toMatchObject({ status: 'warming' });
-		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1');
+		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1', undefined);
 		expect(scheduleBackgroundTask).toHaveBeenCalledOnce();
 		releaseRefill();
 	});

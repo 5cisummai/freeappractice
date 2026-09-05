@@ -17,7 +17,7 @@ import { env } from '$env/dynamic/private';
 import { building } from '$app/environment';
 import { createHandle } from 'flags/sveltekit';
 import {
-	examfigDiagramsEnabled,
+	stimulusQuestionsEnabled,
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,
 	isSuperCheckoutEnabled,
@@ -325,7 +325,7 @@ export const handle = sequence(
 					secret: env.FLAGS_SECRET,
 					flags: {
 						frqPracticeEnabled,
-						examfigDiagramsEnabled,
+						stimulusQuestionsEnabled,
 						superFreeBetaEnabled,
 						superCheckoutEnabled,
 						superCoachEnabled,

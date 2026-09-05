@@ -69,6 +69,18 @@ export type StoredMcqQuestion = {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
+	mainTopic?: string;
+	topicsCovered?: string;
+	diagramSpec?: Record<string, unknown>;
+	hasDiagram?: boolean;
+	stimulus?: {
+		text: string | null;
+		diagramSpec: Record<string, unknown> | null;
+		provenance: 'ai-generated-original' | 'legacy-unknown';
+	} | null;
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
 	apClass?: string;
 	unit?: string;
 	createdAt: string;

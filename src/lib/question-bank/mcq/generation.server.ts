@@ -3,11 +3,15 @@ import { z } from 'zod';
 import { AP_DATA } from '$lib/data/ap-data';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
-import { isExamfigDiagramsEnabled } from '$lib/flags';
+import { isStimulusQuestionsEnabled } from '$lib/flags';
 import { structuredObject } from '$lib/ai/service.server';
 import { examfigTools } from '$lib/ai/tools/examfig.server';
 import { validateExamfigDiagram } from '$lib/ai/examfig.server';
 import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
+import {
+	getStimulusPolicy,
+	isStimulusPolicyEnabledForUnit
+} from '$lib/question-bank/mcq/stimulus-policy';
 
 /**
  * MCQ generation: prompts, structured AI calls, and generation metrics.
@@ -132,8 +136,23 @@ assertOpenAiCompatibleObjectSchema(APQuestion, { schemaName: 'ap_question' });
 
 type APQuestionData = z.infer<typeof APQuestionDataSchema>;
 
+const APStimulusQuestion = z.object({ ...APQuestionFields });
+const APStimulusSet = z.object({
+	stimulus: z.object({
+		text: z.string().max(20_000).nullable(),
+		diagram: z.string().max(100_000).nullable()
+	}),
+	questions: z.array(APStimulusQuestion).min(1).max(14)
+});
+
+assertOpenAiCompatibleObjectSchema(APStimulusSet, { schemaName: 'ap_stimulus_set' });
+
+export type APStimulusQuestionData = z.infer<typeof APStimulusQuestion>;
+export type APStimulusSetData = z.infer<typeof APStimulusSet>;
+
 /** Exported for OpenAI schema compatibility tests. */
 export const apQuestionSchema = APQuestion;
+export const apStimulusSetSchema = APStimulusSet;
 
 /** Parse the model/batch representation and decode its JSON DiagramSpec. */
 export function parseGeneratedApQuestion(input: unknown): APQuestionData {
@@ -149,9 +168,45 @@ export function parseGeneratedApQuestion(input: unknown): APQuestionData {
 	return APQuestionDataSchema.parse({ ...parsed, diagram });
 }
 
+export function parseGeneratedApStimulusSet(
+	input: unknown,
+	expectedChildCount?: number
+): APStimulusSetData & { diagram: Record<string, unknown> | null } {
+	const parsed = APStimulusSet.parse(input);
+	if (expectedChildCount !== undefined && parsed.questions.length !== expectedChildCount) {
+		throw new Error(
+			`Generated stimulus set contained ${parsed.questions.length} questions; expected ${expectedChildCount}.`
+		);
+	}
+	if (!parsed.stimulus.text && !parsed.stimulus.diagram) {
+		throw new Error('Generated stimulus must contain text or a diagram.');
+	}
+
+	let diagram: Record<string, unknown> | null = null;
+	if (parsed.stimulus.diagram !== null) {
+		try {
+			diagram = z.record(z.string(), z.unknown()).parse(JSON.parse(parsed.stimulus.diagram));
+		} catch (error) {
+			throw new Error('Generated stimulus diagram was not valid JSON.', { cause: error });
+		}
+	}
+	return { ...parsed, diagram };
+}
+
 /** JSON Schema for OpenAI Batch `/v1/responses` structured output. */
 export function apQuestionJsonSchema(): Record<string, unknown> {
 	const schema = z.toJSONSchema(APQuestion) as Record<string, unknown>;
+	delete schema.$schema;
+	return {
+		...schema,
+		type: 'object',
+		additionalProperties: false
+	};
+}
+
+/** JSON Schema for batch generation of a shared-stimulus set. */
+export function apStimulusSetJsonSchema(): Record<string, unknown> {
+	const schema = z.toJSONSchema(APStimulusSet) as Record<string, unknown>;
 	delete schema.$schema;
 	return {
 		...schema,
@@ -172,6 +227,13 @@ export interface GenerateResult {
 	provider: string;
 	model: string;
 	questionId?: string;
+	timing?: GenerateTiming;
+}
+
+export interface GenerateStimulusSetResult {
+	answer: APStimulusSetData & { diagram: Record<string, unknown> | null };
+	provider: string;
+	model: string;
 	timing?: GenerateTiming;
 }
 
@@ -242,12 +304,50 @@ OUTPUT:
 	return { system: systemPrompt, user: userMessage };
 }
 
+export function buildStimulusSetGenerationPrompt(opts: {
+	className: string;
+	unit?: string;
+	childCount: number;
+	mode: 'text' | 'diagram' | 'mixed';
+	recentTopics?: string[];
+}): { system: string; user: string } {
+	const { className, unit, childCount, mode, recentTopics } = opts;
+	if (!className) throw new Error('className is required');
+	if (!Number.isInteger(childCount) || childCount < 1 || childCount > 14) {
+		throw new Error('childCount must be an integer between 1 and 14');
+	}
+	const { unitContext, keywordsContext } = buildUnitSections(className, unit, 'question');
+	const diversitySection = buildDiversitySection(recentTopics, {
+		label: 'TOPICS',
+		avoidLabel: 'subtopic, concept, or scenario',
+		pickLabel: 'Choose a fresh angle that is distinct from the listed topics.'
+	});
+	const modeInstruction =
+		mode === 'text'
+			? 'Set stimulus.diagram to null and provide a substantive original text stimulus.'
+			: mode === 'diagram'
+				? 'Set stimulus.text to null and provide a validated semantic Examfig DiagramSpec encoded as JSON in stimulus.diagram.'
+				: 'Provide both an original text stimulus and a validated semantic Examfig DiagramSpec.';
+	const system = `You write original AP-aligned multiple-choice stimulus sets for ${className}.${unitContext}${keywordsContext}${diversitySection}
+
+Create exactly ${childCount} independently answerable questions sharing one stimulus. ${modeInstruction}
+Every question must be answerable without seeing another question or its answer. Keep every child inside the selected unit.
+Do not reproduce or closely imitate official questions, passages, quotations, documents, authors, dates, or attributions. Label all material as original practice material in the application.
+Use only semantic Examfig diagrams. Every diagram must include an accessibleDescription. Never output SVG, arbitrary image URLs, photographs, artwork, or unsupported visual media.
+
+For all math and science notation use $...$ or $$...$$ LaTeX delimiters. Return only JSON matching the strict schema. The stimulus diagram field is a JSON string or null, never an object.
+`;
+	const user = `Create a ${childCount}-question original practice set for ${className}${unit ? ` covering ${unit}` : ''}. Return only the JSON object.`;
+	return { system, user };
+}
+
 async function generateAPQuestionBody(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
+	diagramsEnabled?: boolean;
 }): Promise<{ parsed: APQuestionData; model: string }> {
-	const diagramsEnabled = await isExamfigDiagramsEnabled();
+	const diagramsEnabled = opts.diagramsEnabled ?? (await isStimulusQuestionsEnabled());
 	const { system, user } = buildMcqGenerationPrompt({ ...opts, diagramsEnabled });
 
 	const result = await structuredObject({
@@ -278,17 +378,82 @@ async function generateAPQuestionBody(opts: {
 	return { ...result, parsed };
 }
 
+export async function generateAPStimulusSet(opts: {
+	className: string;
+	unit?: string;
+	childCount: number;
+	mode: 'text' | 'diagram' | 'mixed';
+	recentTopics?: string[];
+}): Promise<GenerateStimulusSetResult> {
+	if (!(await isStimulusQuestionsEnabled())) {
+		throw new Error('Stimulus question generation is disabled.');
+	}
+	const policy = getStimulusPolicy(opts.className);
+	const profile = policy.profiles[0];
+	if (
+		!policy.setsEnabled ||
+		!isStimulusPolicyEnabledForUnit(policy, opts.unit) ||
+		!profile ||
+		!profile.allowedModes.includes(opts.mode) ||
+		opts.childCount < profile.minChildren ||
+		opts.childCount > profile.maxChildren
+	) {
+		throw new Error('Stimulus set does not match the course/unit policy.');
+	}
+	const generationStarted = Date.now();
+	const { system, user } = buildStimulusSetGenerationPrompt(opts);
+	const result = await structuredObject({
+		callName: 'generateAPStimulusSet',
+		model: MCQ_GENERATION_MODEL,
+		system,
+		user,
+		schema: APStimulusSet,
+		schemaName: 'ap_stimulus_set',
+		reasoningEffort: 'medium',
+		tools: opts.mode === 'text' ? undefined : examfigTools,
+		logContext: { className: opts.className, unit: opts.unit, childCount: opts.childCount }
+	});
+	const parsed = parseGeneratedApStimulusSet(result.parsed, opts.childCount);
+	if (opts.mode === 'text' && parsed.diagram)
+		throw new Error('Text stimulus unexpectedly included a diagram.');
+	if (opts.mode === 'diagram' && parsed.stimulus.text) {
+		throw new Error('Diagram-only stimulus unexpectedly included text.');
+	}
+	if (opts.mode === 'mixed' && (!parsed.stimulus.text || !parsed.diagram)) {
+		throw new Error('Mixed stimulus must include both text and a diagram.');
+	}
+	if (parsed.diagram) {
+		if (!profile.diagramTypes.includes(String(parsed.diagram.type ?? ''))) {
+			throw new Error('Generated stimulus diagram is not allowed for this course/unit.');
+		}
+		const validation = validateExamfigDiagram(parsed.diagram);
+		if (!validation.valid) {
+			throw new Error(
+				`Generated stimulus diagram failed validation: ${validation.errors.join('; ')}`
+			);
+		}
+	}
+	return {
+		answer: parsed,
+		provider: 'ai',
+		model: result.model,
+		timing: { generationMs: Date.now() - generationStarted, persistenceMs: 0 }
+	};
+}
+
 export async function generateAPQuestion(opts: {
 	className: string;
 	unit?: string;
 	recentTopics?: string[];
+	diagramsEnabled?: boolean;
 }): Promise<GenerateResult> {
 	const { className, unit } = opts;
 	const generationStarted = Date.now();
 	const { parsed, model } = await generateAPQuestionBody({
 		className,
 		unit,
-		recentTopics: opts.recentTopics
+		recentTopics: opts.recentTopics,
+		diagramsEnabled: opts.diagramsEnabled
 	});
 	const generationMs = Date.now() - generationStarted;
 

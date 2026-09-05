@@ -2,6 +2,7 @@ import {
 	countActiveMcqQuestions,
 	findCachedQuestionByPool,
 	findCachedQuestionsByPool,
+	type McqSelectionContext,
 	type McqPoolQuestion
 } from '$lib/question-bank/mcq/repository.server';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
@@ -20,6 +21,10 @@ type McqAnswerBody = {
 	topicsCovered: string;
 	diagramSpec: Record<string, unknown> | null;
 	hasDiagram: boolean;
+	stimulus?: Record<string, unknown>;
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
 };
 
 type CachedResult = {
@@ -47,6 +52,10 @@ function hotPoolBodyFromDoc(
 		| 'topicsCovered'
 		| 'diagramSpec'
 		| 'hasDiagram'
+		| 'stimulus'
+		| 'stimulusId'
+		| 'stimulusPosition'
+		| 'stimulusQuestionCount'
 	>
 ): McqAnswerBody {
 	return {
@@ -60,19 +69,31 @@ function hotPoolBodyFromDoc(
 		mainTopic: doc.mainTopic,
 		topicsCovered: doc.topicsCovered ?? '',
 		diagramSpec: doc.diagramSpec ?? null,
-		hasDiagram: doc.hasDiagram
+		hasDiagram: doc.hasDiagram,
+		...(doc.stimulus ? { stimulus: doc.stimulus } : {}),
+		...(doc.stimulusId ? { stimulusId: doc.stimulusId } : {}),
+		...(doc.stimulusPosition !== null && doc.stimulusPosition !== undefined
+			? { stimulusPosition: doc.stimulusPosition }
+			: {}),
+		...(doc.stimulusQuestionCount !== null && doc.stimulusQuestionCount !== undefined
+			? { stimulusQuestionCount: doc.stimulusQuestionCount }
+			: {})
 	};
 }
 
-export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
+export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult, McqSelectionContext>({
 	logScope: 'pool',
 	normalizeUnit,
 	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
 	findRandomBatch: findCachedQuestionsByPool,
+	resolveContext: async () => {
+		const { isStimulusQuestionsEnabled } = await import('$lib/flags');
+		return { allowEnhanced: await isStimulusQuestionsEnabled() };
+	},
 	scheduleBackgroundTask,
-	// Diagram availability is decided during generation. Serving a cached row
-	// must remain a synchronous pool-hit path and never initialize Flags.
+	// Flag resolution happens once per request before the indexed pool lookup.
+	// Serving a cached row still uses the projection-only pool-hit path.
 	serveCached: (doc) => ({
 		answer: hotPoolBodyFromDoc(doc),
 		provider: 'cache',

@@ -120,19 +120,19 @@ export async function isFrqPracticeEnabled(): Promise<boolean> {
 }
 
 /**
- * Educational examfig diagrams.
- * Managed in the Vercel Flags dashboard (`examfig-diagrams`).
- * Controls diagram generation; cached diagram data is served as stored.
+ * Unified stimulus-question pilot, including semantic Examfig diagrams.
+ * Managed in the Vercel Flags dashboard (`stimulus-questions`).
+ * Cached history remains readable; the flag controls generation and random serving.
  */
-export const examfigDiagramsEnabled = vercelFlag(
-	'examfig-diagrams',
-	'Enable examfig diagrams during MCQ generation',
+export const stimulusQuestionsEnabled = vercelFlag(
+	'stimulus-questions',
+	'Enable original MCQ stimuli and Examfig diagrams during generation and random serving',
 	false
 );
 
-export async function isExamfigDiagramsEnabled(): Promise<boolean> {
+export async function isStimulusQuestionsEnabled(): Promise<boolean> {
 	try {
-		return Boolean(await examfigDiagramsEnabled());
+		return Boolean(await stimulusQuestionsEnabled());
 	} catch {
 		return false;
 	}

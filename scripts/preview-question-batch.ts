@@ -8,7 +8,7 @@
 import 'dotenv/config';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { isExamfigDiagramsEnabled } from '../src/lib/flags';
+import { isStimulusQuestionsEnabled } from '../src/lib/flags';
 import { renderExamfigDiagram } from '../src/lib/diagrams/examfig';
 import {
 	generateAPQuestion,
@@ -118,7 +118,7 @@ function buildHtml(
     <h1>Independent question preview</h1>
     <div class="meta">${escapeHtml(className)}${unit ? ` · ${escapeHtml(unit)}` : ''}</div>
     <div class="meta">Generated ${generated.length} question(s) without writing to the database.</div>
-    <div class="flag">examfig-diagrams flag: ${flagEnabled ? 'ON' : 'OFF'}</div>
+    <div class="flag">stimulus-questions flag: ${flagEnabled ? 'ON' : 'OFF'}</div>
   </header>
   ${failures}
   ${cards}
@@ -149,10 +149,10 @@ async function main() {
 		process.exit(1);
 	}
 
-	const flagEnabled = await isExamfigDiagramsEnabled();
+	const flagEnabled = await isStimulusQuestionsEnabled();
 	if (!flagEnabled) {
 		console.warn(
-			'examfig-diagrams is OFF. Questions will still generate, but their diagram field will be null.'
+			'stimulus-questions is OFF. Questions will still generate, but their diagram field will be null.'
 		);
 	}
 

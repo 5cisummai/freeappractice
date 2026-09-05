@@ -3,7 +3,10 @@ import { and, asc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolGenerationBudgets, poolRefillStates } from '$lib/server/neon/schema';
 import type { PoolRefillState as PoolRefillStateRow } from '$lib/question-bank/pool-refill-types.server';
-import { generatePoolQuestion } from '$lib/question-bank/pool-kind-worker.server';
+import {
+	estimatePoolGenerationSlots,
+	generatePoolQuestion
+} from '$lib/question-bank/pool-kind-worker.server';
 import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
 import {
 	countActivePoolRows,
@@ -282,16 +285,17 @@ async function releaseLeaseFailure(
 async function generateOne(
 	bucket: PoolBucketKey,
 	target: number
-): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean }> {
+): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean; generatedCount: number }> {
 	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
-		generatePoolQuestion(bucket.questionType, bucket.apClass, bucket.unit)
+		generatePoolQuestion(bucket.questionType, bucket.apClass, bucket.unit, target)
 	);
 	if (guarded.status === 'at_target') {
-		return { skippedDuplicate: false, skippedAtTarget: true };
+		return { skippedDuplicate: false, skippedAtTarget: true, generatedCount: 0 };
 	}
 	return {
 		skippedDuplicate: Boolean(guarded.value.skippedDuplicate),
-		skippedAtTarget: false
+		skippedAtTarget: false,
+		generatedCount: guarded.value.generatedCount ?? 1
 	};
 }
 
@@ -299,9 +303,16 @@ export async function processRefillJob(
 	doc: PoolRefillStateRow,
 	env: QuestionPoolConfig,
 	opts: { maxGenerations: number; deadlineMs: number }
-): Promise<{ generated: number; skippedDuplicates: number; failed: boolean; budgetHit: boolean }> {
+): Promise<{
+	generated: number;
+	skippedDuplicates: number;
+	budgetUsed: number;
+	failed: boolean;
+	budgetHit: boolean;
+}> {
 	let generated = 0;
 	let skippedDuplicates = 0;
+	let budgetUsed = 0;
 	const bucket: PoolBucketKey = {
 		questionType: doc.questionType,
 		apClass: doc.apClass,
@@ -309,8 +320,9 @@ export async function processRefillJob(
 	};
 
 	let lease = doc;
+	let reservedSlotsForAttempt = 0;
 	try {
-		while (generated + skippedDuplicates < opts.maxGenerations) {
+		while (budgetUsed < opts.maxGenerations) {
 			const remainingMs = opts.deadlineMs - Date.now();
 			if (remainingMs < getPoolKindAdapter(bucket.questionType).minimumGenerationHeadroomMs) break;
 
@@ -321,43 +333,72 @@ export async function processRefillJob(
 			);
 			if (observedCount >= lease.target) {
 				await releaseLeaseSuccess(lease, observedCount, generated);
-				return { generated, skippedDuplicates, failed: false, budgetHit: false };
+				return {
+					generated,
+					skippedDuplicates,
+					budgetUsed,
+					failed: false,
+					budgetHit: false
+				};
 			}
 
-			const reserved = await tryReserveDailyBudget(env);
-			if (!reserved) {
+			const requestedSlots = await estimatePoolGenerationSlots(
+				bucket.questionType,
+				bucket.apClass,
+				bucket.unit,
+				lease.target
+			);
+			if (budgetUsed + requestedSlots > opts.maxGenerations) break;
+			const reservedSlots = await reserveDailyGenerationBudget(env, requestedSlots);
+			if (reservedSlots < requestedSlots) {
+				if (reservedSlots > 0) await releaseDailyGenerationBudget(reservedSlots);
 				await releaseLeaseFailure(
 					lease,
 					new Error('Daily LLM generation budget exhausted'),
 					env,
 					'budget_exhausted'
 				);
-				return { generated, skippedDuplicates, failed: false, budgetHit: true };
+				return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: true };
 			}
+			reservedSlotsForAttempt = reservedSlots;
 
 			// Keep the lease alive across multi-gen FRQ work (high reasoning latency).
 			try {
 				lease = await renewRefillLease(lease, env.leaseTtlMs);
 			} catch (leaseError) {
-				await releaseDailyGenerationBudget(1);
+				await releaseDailyGenerationBudget(reservedSlots);
+				reservedSlotsForAttempt = 0;
 				throw leaseError;
 			}
 
 			const result = await generateOne(bucket, lease.target);
 			if (result.skippedAtTarget) {
-				await releaseDailyGenerationBudget(1);
+				await releaseDailyGenerationBudget(reservedSlots);
+				reservedSlotsForAttempt = 0;
 				const latestCount = await countActivePoolRows(
 					bucket.questionType,
 					bucket.apClass,
 					bucket.unit
 				);
 				await releaseLeaseSuccess(lease, latestCount, generated);
-				return { generated, skippedDuplicates, failed: false, budgetHit: false };
+				return {
+					generated,
+					skippedDuplicates,
+					budgetUsed,
+					failed: false,
+					budgetHit: false
+				};
 			}
+			const consumedSlots = result.skippedDuplicate ? 1 : Math.max(1, result.generatedCount);
+			budgetUsed += consumedSlots;
+			if (reservedSlots > consumedSlots) {
+				await releaseDailyGenerationBudget(reservedSlots - consumedSlots);
+			}
+			reservedSlotsForAttempt = 0;
 			if (result.skippedDuplicate) {
 				skippedDuplicates += 1;
 			} else {
-				generated += 1;
+				generated += result.generatedCount;
 			}
 		}
 
@@ -367,14 +408,15 @@ export async function processRefillJob(
 			bucket.unit
 		);
 		await releaseLeaseSuccess(lease, observedCount, generated);
-		return { generated, skippedDuplicates, failed: false, budgetHit: false };
+		return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: false };
 	} catch (error) {
+		if (reservedSlotsForAttempt > 0) await releaseDailyGenerationBudget(reservedSlotsForAttempt);
 		logger.error('[pool-refill] generation failed', {
 			...bucket,
 			error
 		});
 		await releaseLeaseFailure(lease, error, env);
-		return { generated, skippedDuplicates, failed: true, budgetHit: false };
+		return { generated, skippedDuplicates, budgetUsed, failed: true, budgetHit: false };
 	}
 }
 
@@ -463,7 +505,7 @@ export async function runQuestionPoolRefillWorker(
 		generated += result.generated;
 		skippedDuplicates += result.skippedDuplicates;
 		if (result.failed) failed += 1;
-		generationsLeft -= result.generated + result.skippedDuplicates;
+		generationsLeft -= result.budgetUsed;
 		budgetRemaining = await getDailyBudgetRemaining(env);
 
 		if (result.budgetHit || budgetRemaining <= 0) {

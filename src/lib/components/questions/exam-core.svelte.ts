@@ -202,11 +202,9 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 
 	async function loadQuestionsViaLoader(
 		count: number,
-		seenIds: string[]
+		seenIds: string[] = []
 	): Promise<GeneratedQuestion[]> {
-		if (!opts.loadQuestions) {
-			throw new Error('No batch question loader configured.');
-		}
+		if (!opts.loadQuestions) throw new Error('No quiz question loader configured.');
 		return opts.loadQuestions(count, seenIds);
 	}
 
@@ -215,7 +213,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		indexes: number[],
 		seenQuestionIds: string[]
 	): Promise<void> {
-		if (opts.loadQuestions) {
+		if (opts.loadQuestions && !opts.loadQuestion) {
 			let nextIndex = 0;
 			const seenIds = [...seenQuestionIds];
 
@@ -384,10 +382,19 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		loadingCount = targetCount;
 
 		try {
-			const initialQuestions = opts.loadQuestions
-				? await loadQuestionsViaLoader(Math.min(targetCount, 10), [])
-				: [await loadQuestionViaLoader([])];
-			const firstQuestion = initialQuestions[0];
+			if (opts.loadQuestions) {
+				const loadedQuestions = await loadQuestionsViaLoader(targetCount);
+				if (!isCurrentRun(token) || !getMounted()) return;
+				if (loadedQuestions.length < targetCount) {
+					throw new Error('Quiz service returned fewer questions than requested.');
+				}
+				questions = loadedQuestions.slice(0, targetCount);
+				loadingCount = 0;
+				status = 'active';
+				beginTiming(input.timeLimitMs);
+				return;
+			}
+			const firstQuestion = await loadQuestionViaLoader([]);
 			if (!firstQuestion) throw new Error('Question service returned no questions.');
 			if (!isCurrentRun(token) || !getMounted()) return;
 
@@ -396,25 +403,14 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			const firstId = questionId(firstQuestion);
 			if (firstId) seenQuestionIds.push(firstId);
 
-			let initialSlot = 1;
-			for (const question of initialQuestions.slice(1)) {
-				if (initialSlot >= targetCount) break;
-				const candidateId = questionId(question);
-				if (candidateId && seenQuestionIds.includes(candidateId)) continue;
-				questions[initialSlot] = question;
-				initialSlot += 1;
-				if (candidateId) seenQuestionIds.push(candidateId);
-			}
-
-			const initialLoadedCount = questions.filter(Boolean).length;
-			loadingCount = Math.max(0, targetCount - initialLoadedCount);
+			loadingCount = Math.max(0, targetCount - 1);
 			status = 'active';
 			beginTiming(input.timeLimitMs);
 
-			if (initialLoadedCount < targetCount) {
+			if (targetCount > 1) {
 				void fillIndexes(
 					token,
-					questions.flatMap((question, index) => (question ? [] : [index])),
+					Array.from({ length: targetCount - 1 }, (_, index) => index + 1),
 					seenQuestionIds
 				);
 			}
