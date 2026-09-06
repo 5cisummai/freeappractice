@@ -30,14 +30,18 @@ type StimulusFieldSource = {
 };
 
 /** Copy present stimulus grouping fields without inventing null placeholders. */
-export function copyStimulusFields<T extends StimulusFieldSource>(source: T): {
-	stimulus?: T['stimulus'];
+export function copyStimulusFields<T extends StimulusFieldSource>(
+	source: T
+): {
+	stimulus?: Exclude<T['stimulus'], null | undefined>;
 	stimulusId?: string;
 	stimulusPosition?: number;
 	stimulusQuestionCount?: number;
 } {
 	return {
-		...(source.stimulus ? { stimulus: source.stimulus } : {}),
+		...(source.stimulus
+			? { stimulus: source.stimulus as Exclude<T['stimulus'], null | undefined> }
+			: {}),
 		...(source.stimulusId ? { stimulusId: source.stimulusId } : {}),
 		...(source.stimulusPosition != null ? { stimulusPosition: source.stimulusPosition } : {}),
 		...(source.stimulusQuestionCount != null

@@ -127,9 +127,7 @@ describe('assembleMcqQuiz', () => {
 	});
 
 	it('serves existing stimulus questions from units outside the generation allowlist', async () => {
-		findActiveQuestionsForQuizMock.mockResolvedValue([
-			{ ...question('u4', 0), unit: 'Unit 4' }
-		]);
+		findActiveQuestionsForQuizMock.mockResolvedValue([{ ...question('u4', 0), unit: 'Unit 4' }]);
 		const result = await assembleMcqQuiz(
 			{ apClass: 'AP Biology', unit: 'Unit 4', count: 1 },
 			{ globalFlagEnabled: true }
