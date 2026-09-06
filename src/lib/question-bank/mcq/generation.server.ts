@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { AP_DATA } from '$lib/data/ap-data';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
-import { isStimulusQuestionsEnabled } from '$lib/flags';
 import { structuredObject } from '$lib/ai/service.server';
 import { examfigTools } from '$lib/ai/tools/examfig.server';
 import { validateExamfigDiagram } from '$lib/ai/examfig.server';
@@ -142,7 +141,7 @@ const APStimulusSet = z.object({
 		text: z.string().max(20_000).nullable(),
 		diagram: z.string().max(100_000).nullable()
 	}),
-	questions: z.array(APStimulusQuestion).min(1).max(14)
+	questions: z.array(APStimulusQuestion).min(1).max(5)
 });
 
 assertOpenAiCompatibleObjectSchema(APStimulusSet, { schemaName: 'ap_stimulus_set' });
@@ -301,8 +300,8 @@ export function buildStimulusSetGenerationPrompt(opts: {
 }): { system: string; user: string } {
 	const { className, unit, childCount, mode, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
-	if (!Number.isInteger(childCount) || childCount < 1 || childCount > 14) {
-		throw new Error('childCount must be an integer between 1 and 14');
+	if (!Number.isInteger(childCount) || childCount < 1 || childCount > 5) {
+		throw new Error('childCount must be an integer between 1 and 5');
 	}
 	const { unitContext, keywordsContext } = buildUnitSections(className, unit, 'question');
 	const diversitySection = buildDiversitySection(recentTopics, {
@@ -363,7 +362,7 @@ async function generateAPQuestionBody(opts: {
 	recentTopics?: string[];
 	diagramsEnabled?: boolean;
 }): Promise<{ parsed: APQuestionData; model: string }> {
-	const diagramsEnabled = opts.diagramsEnabled ?? (await isStimulusQuestionsEnabled());
+	const diagramsEnabled = opts.diagramsEnabled === true;
 	const { system, user } = buildMcqGenerationPrompt({ ...opts, diagramsEnabled });
 
 	const result = await structuredObject({
@@ -400,8 +399,9 @@ export async function generateAPStimulusSet(opts: {
 	childCount: number;
 	mode: 'text' | 'diagram' | 'mixed';
 	recentTopics?: string[];
+	stimulusQuestionsEnabled: boolean;
 }): Promise<GenerateStimulusSetResult> {
-	if (!(await isStimulusQuestionsEnabled())) {
+	if (!opts.stimulusQuestionsEnabled) {
 		throw new Error('Stimulus question generation is disabled.');
 	}
 	const policy = getStimulusPolicy(opts.className);

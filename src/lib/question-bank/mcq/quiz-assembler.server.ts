@@ -11,6 +11,7 @@ import {
 	type StimulusPolicy
 } from '$lib/question-bank/mcq/stimulus-policy';
 import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
+import { logger } from '$lib/server/logger';
 
 export type QuizAssemblyInput = {
 	apClass: string;
@@ -112,34 +113,32 @@ function buildBlocks(
 	const byStimulus = new Map<string, IQuestion[]>();
 
 	for (const question of questions) {
-		const policyEnabled =
-			globalFlagEnabled && isStimulusPolicyEnabledForUnit(policy, question.unit);
 		if (
-			policyEnabled &&
+			globalFlagEnabled &&
 			(question.diagramSpec || question.hasDiagram) &&
 			!hasAllowedDiagram(question, policy)
 		)
 			continue;
 		const stimulusId = question.stimulusId?.trim();
-		if (policyEnabled && stimulusId && hasStructuredStimulus(question)) {
+		if (globalFlagEnabled && stimulusId && hasStructuredStimulus(question)) {
 			const group = byStimulus.get(stimulusId) ?? [];
 			group.push(question);
 			byStimulus.set(stimulusId, group);
 			continue;
 		}
-		if (policyEnabled && hasStructuredStimulus(question)) {
+		if (globalFlagEnabled && hasStructuredStimulus(question)) {
 			blocks.push({ kind: 'discrete', question, unit: question.unit });
 			continue;
 		}
 		if (
-			!policyEnabled &&
+			!globalFlagEnabled &&
 			(hasStructuredStimulus(question) ||
 				question.hasDiagram ||
 				question.diagramSpec ||
 				question.stimulus?.diagramSpec)
 		)
 			continue;
-		if (policyEnabled || (!question.hasDiagram && !question.diagramSpec)) {
+		if (globalFlagEnabled || (!question.hasDiagram && !question.diagramSpec)) {
 			blocks.push({ kind: 'discrete', question, unit: question.unit });
 		} else if (hasAllowedDiagram(question, policy)) {
 			blocks.push({ kind: 'discrete', question, unit: question.unit });
@@ -235,11 +234,11 @@ export async function assembleMcqQuiz(
 	const count = Math.min(50, Math.max(1, Math.floor(input.count)));
 	const policy = getStimulusPolicy(input.apClass);
 	const units = resolveQuizUnits(input.apClass, input.unit, input.unitRange);
-	const enhancedEnabled =
+	const stimulusTargetEnabled =
 		options.globalFlagEnabled && units.some((unit) => isStimulusPolicyEnabledForUnit(policy, unit));
 	const rows = await findActiveQuestionsForQuiz({ apClass: input.apClass, units });
 	const blocks = buildBlocks(rows, options.globalFlagEnabled, policy);
-	const targetStimulusQuestions = enhancedEnabled
+	const targetStimulusQuestions = stimulusTargetEnabled
 		? Math.round((count * policy.quizTargetQuestionPercent) / 100)
 		: 0;
 	const remainingBlocks = [...blocks];
@@ -273,18 +272,28 @@ export async function assembleMcqQuiz(
 		);
 	}
 
+	const stimulusTargetDeviation = stimulusQuestionCount - targetStimulusQuestions;
+	logger.info('Quiz stimulus target deviation', {
+		apClass: input.apClass,
+		unit: input.unit,
+		requestedCount: count,
+		stimulusTargetQuestionCount: targetStimulusQuestions,
+		stimulusQuestionCount,
+		stimulusTargetDeviation
+	});
+
 	return {
 		questions: selected.map(toGenerated),
 		metrics: {
 			requestedCount: count,
 			selectedCount: selected.length,
 			stimulusTargetQuestionCount: targetStimulusQuestions,
-			stimulusTargetDeviation: stimulusQuestionCount - targetStimulusQuestions,
+			stimulusTargetDeviation,
 			stimulusQuestionCount,
 			stimulusSetCount,
 			discreteQuestionCount: selected.length - stimulusQuestionCount,
 			truncatedSetCount,
-			policyEnabled: enhancedEnabled,
+			policyEnabled: stimulusTargetEnabled,
 			globalFlagEnabled: options.globalFlagEnabled
 		}
 	};

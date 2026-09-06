@@ -24,9 +24,7 @@ export async function countActivePoolRowsForServing(
 	unit: string
 ): Promise<number> {
 	if (questionType === 'mcq') {
-		return countActiveMcqQuestions(apClass, unit, {
-			allowEnhanced: await isStimulusQuestionsEnabled()
-		});
+		return countActiveMcqQuestions(apClass, unit, await isStimulusQuestionsEnabled());
 	}
 	return countActivePoolRows(questionType, apClass, unit);
 }

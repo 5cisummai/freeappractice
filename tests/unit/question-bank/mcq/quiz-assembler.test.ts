@@ -4,16 +4,27 @@ const { findActiveQuestionsForQuizMock } = vi.hoisted(() => ({
 	findActiveQuestionsForQuizMock: vi.fn()
 }));
 
+vi.mock('$lib/server/logger', () => ({
+	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
 vi.mock('$lib/question-bank/mcq/repository.server', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/question-bank/mcq/repository.server')>();
 	return { ...actual, findActiveQuestionsForQuiz: findActiveQuestionsForQuizMock };
 });
 
 vi.mock('$lib/question-bank/mcq/stimulus-policy', () => ({
-	isStimulusPolicyEnabledForUnit: (policy: { setsEnabled: boolean }, _unit?: string) =>
-		policy.setsEnabled,
+	isStimulusPolicyEnabledForUnit: (
+		policy: { setsEnabled: boolean; enabledUnits?: string[] },
+		unit?: string
+	) => {
+		if (!policy.setsEnabled) return false;
+		if (policy.enabledUnits?.length) return policy.enabledUnits.includes(unit ?? '');
+		return true;
+	},
 	getStimulusPolicy: () => ({
 		version: 1,
+		enabledUnits: ['Unit 1'],
 		quizTargetQuestionPercent: 100,
 		targetBasis: 'product-calibrated',
 		setSizeBasis: 'product-calibrated',
@@ -36,6 +47,7 @@ vi.mock('$lib/question-bank/mcq/stimulus-policy', () => ({
 }));
 
 import { assembleMcqQuiz } from '$lib/question-bank/mcq/quiz-assembler.server';
+import { logger } from '$lib/server/logger';
 
 function question(id: string, position?: number) {
 	return {
@@ -112,5 +124,27 @@ describe('assembleMcqQuiz', () => {
 		);
 		expect(result.questions.map((item) => item.questionId)).toEqual(['q3', 'q0']);
 		vi.restoreAllMocks();
+	});
+
+	it('serves existing stimulus questions from units outside the generation allowlist', async () => {
+		findActiveQuestionsForQuizMock.mockResolvedValue([
+			{ ...question('u4', 0), unit: 'Unit 4' }
+		]);
+		const result = await assembleMcqQuiz(
+			{ apClass: 'AP Biology', unit: 'Unit 4', count: 1 },
+			{ globalFlagEnabled: true }
+		);
+		expect(result.questions[0]?.questionId).toBe('u4');
+		expect(result.metrics.stimulusTargetQuestionCount).toBe(0);
+		expect(logger.info).toHaveBeenCalledWith(
+			'Quiz stimulus target deviation',
+			expect.objectContaining({
+				apClass: 'AP Biology',
+				unit: 'Unit 4',
+				stimulusTargetQuestionCount: 0,
+				stimulusQuestionCount: 1,
+				stimulusTargetDeviation: 1
+			})
+		);
 	});
 });

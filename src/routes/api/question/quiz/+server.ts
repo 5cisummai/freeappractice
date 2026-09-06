@@ -29,16 +29,12 @@ function parseUnitRange(value: unknown): readonly number[] | undefined {
 	return range;
 }
 
-function unitsToRefill(className: string, unit: string, unitRange?: readonly number[]): string[] {
-	return resolveQuizUnits(className, unit, unitRange);
-}
-
 async function requestQuizRefill(
 	className: string,
 	unit: string,
 	unitRange?: readonly number[]
 ): Promise<boolean> {
-	const units = unitsToRefill(className, unit, unitRange);
+	const units = resolveQuizUnits(className, unit, unitRange);
 	if (!units.length) return false;
 	const results = await Promise.allSettled(
 		units.map((refillUnit) =>

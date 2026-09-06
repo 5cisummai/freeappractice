@@ -1,10 +1,11 @@
+import { isStimulusQuestionsEnabled } from '$lib/flags';
 import {
 	countActiveMcqQuestions,
 	findCachedQuestionByPool,
 	findCachedQuestionsByPool,
-	type McqSelectionContext,
 	type McqPoolQuestion
 } from '$lib/question-bank/mcq/repository.server';
+import { copyStimulusFields } from '$lib/question-bank/mcq/types';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 import { scheduleBackgroundTask } from '$lib/server/background-task.server';
@@ -70,27 +71,17 @@ function hotPoolBodyFromDoc(
 		topicsCovered: doc.topicsCovered ?? '',
 		diagramSpec: doc.diagramSpec ?? null,
 		hasDiagram: doc.hasDiagram,
-		...(doc.stimulus ? { stimulus: doc.stimulus } : {}),
-		...(doc.stimulusId ? { stimulusId: doc.stimulusId } : {}),
-		...(doc.stimulusPosition !== null && doc.stimulusPosition !== undefined
-			? { stimulusPosition: doc.stimulusPosition }
-			: {}),
-		...(doc.stimulusQuestionCount !== null && doc.stimulusQuestionCount !== undefined
-			? { stimulusQuestionCount: doc.stimulusQuestionCount }
-			: {})
+		...copyStimulusFields(doc)
 	};
 }
 
-export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult, McqSelectionContext>({
+export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
 	logScope: 'pool',
 	normalizeUnit,
 	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
 	findRandomBatch: findCachedQuestionsByPool,
-	resolveContext: async () => {
-		const { isStimulusQuestionsEnabled } = await import('$lib/flags');
-		return { allowEnhanced: await isStimulusQuestionsEnabled() };
-	},
+	resolveAllowStimulusQuestions: isStimulusQuestionsEnabled,
 	scheduleBackgroundTask,
 	// Flag resolution happens once per request before the indexed pool lookup.
 	// Serving a cached row still uses the projection-only pool-hit path.

@@ -9,6 +9,7 @@ import {
 } from '$lib/server/neon/schema';
 import { questionBucketFields } from '$lib/server/neon/jsonb';
 import { parseMcqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
+import { copyStimulusFields } from '$lib/question-bank/mcq/types';
 import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
 
 export interface IQuestion extends McqQuestionPayload {
@@ -22,12 +23,10 @@ export interface IQuestion extends McqQuestionPayload {
 
 const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuestions.data);
 
-export type McqSelectionContext = { allowEnhanced: boolean };
-
 // Legacy rows may omit these JSON keys. Coalesce each comparison so the
-// feature-off filter treats missing metadata as non-enhanced instead of
+// feature-off filter treats missing metadata as non-stimulus instead of
 // propagating SQL NULL through NOT(...).
-const enhancedContentPredicate = sql`(
+const stimulusContentPredicate = sql`(
 	COALESCE(jsonb_typeof(${mcqQuestions.data}->'stimulus') = 'object', false)
 	OR COALESCE(jsonb_typeof(${mcqQuestions.data}->'diagramSpec') = 'object', false)
 	OR COALESCE(${mcqQuestions.data}->>'hasDiagram' = 'true', false)
@@ -159,7 +158,7 @@ function poolLookupPredicates(input: {
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
-	context?: McqSelectionContext;
+	allowStimulusQuestions?: boolean;
 }) {
 	const predicates = [
 		eq(apClassField, input.apClass),
@@ -169,8 +168,8 @@ function poolLookupPredicates(input: {
 			? gte(mcqQuestions.randomKey, input.pivot)
 			: lt(mcqQuestions.randomKey, input.pivot)
 	];
-	if (input.context && !input.context.allowEnhanced) {
-		predicates.push(not(enhancedContentPredicate));
+	if (input.allowStimulusQuestions === false) {
+		predicates.push(not(stimulusContentPredicate));
 	}
 	if (input.excludeQuestionIds.length) {
 		predicates.push(notInArray(mcqQuestions.questionId, input.excludeQuestionIds));
@@ -218,14 +217,14 @@ export function newPoolRandomKey(): number {
 export async function countActiveMcqQuestions(
 	apClass: string,
 	unit: string,
-	context: McqSelectionContext = { allowEnhanced: true }
+	allowStimulusQuestions = true
 ): Promise<number> {
 	const predicates = [
 		eq(apClassField, apClass),
 		eq(unitField, unit),
 		eq(mcqQuestions.active, true)
 	];
-	if (!context.allowEnhanced) predicates.push(not(enhancedContentPredicate));
+	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(mcqQuestions)
@@ -322,7 +321,7 @@ export async function findCachedQuestionByPool(input: {
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
-	context?: McqSelectionContext;
+	allowStimulusQuestions?: boolean;
 }): Promise<McqPoolQuestion | null> {
 	const db = getNeonDatabase(input.onDatabaseInit);
 	const rows = await db
@@ -342,7 +341,7 @@ export async function findCachedQuestionsByPool(input: {
 	pivot: number;
 	limit: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
-	context?: McqSelectionContext;
+	allowStimulusQuestions?: boolean;
 }): Promise<McqPoolQuestion[]> {
 	const db = getNeonDatabase(input.onDatabaseInit);
 	const createQuery = (fromPivot: 'after' | 'before') =>
@@ -357,7 +356,7 @@ export async function findCachedQuestionsByPool(input: {
 						excludeQuestionIds: input.excludeQuestionIds,
 						pivot: input.pivot,
 						fromPivot,
-						context: input.context
+						allowStimulusQuestions: input.allowStimulusQuestions
 					})
 				)
 			)
@@ -482,14 +481,7 @@ export function storedQuestionFromPayload(input: {
 		...(data.topicsCovered?.trim() ? { topicsCovered: data.topicsCovered } : {}),
 		...(data.diagramSpec ? { diagramSpec: data.diagramSpec } : {}),
 		hasDiagram: data.hasDiagram ?? Boolean(data.diagramSpec),
-		...(data.stimulus ? { stimulus: data.stimulus } : {}),
-		...(data.stimulusId ? { stimulusId: data.stimulusId } : {}),
-		...(data.stimulusPosition !== null && data.stimulusPosition !== undefined
-			? { stimulusPosition: data.stimulusPosition }
-			: {}),
-		...(data.stimulusQuestionCount !== null && data.stimulusQuestionCount !== undefined
-			? { stimulusQuestionCount: data.stimulusQuestionCount }
-			: {}),
+		...copyStimulusFields(data),
 		createdAt: input.createdAt.toISOString()
 	};
 }

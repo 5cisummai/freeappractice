@@ -7,36 +7,40 @@ export interface PoolDocument {
 	active?: boolean;
 }
 
-type PoolQuery<TDoc extends PoolDocument, TContext = undefined> = (input: {
+type PoolQuery<TDoc extends PoolDocument> = (input: {
 	apClass: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
-	context?: TContext;
+	allowStimulusQuestions?: boolean;
 }) => Promise<TDoc | null>;
 
-type PoolBatchQuery<TDoc extends PoolDocument, TContext = undefined> = (input: {
+type PoolBatchQuery<TDoc extends PoolDocument> = (input: {
 	apClass: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
 	limit: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
-	context?: TContext;
+	allowStimulusQuestions?: boolean;
 }) => Promise<TDoc[]>;
 
-export interface QuestionBankConfig<TDoc extends PoolDocument, TCached, TContext = undefined> {
+export interface QuestionBankConfig<TDoc extends PoolDocument, TCached> {
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
-	countActive: (className: string, unit: string, context: TContext) => Promise<number>;
-	findRandom: PoolQuery<TDoc, TContext>;
-	findRandomBatch?: PoolBatchQuery<TDoc, TContext>;
+	countActive: (
+		className: string,
+		unit: string,
+		allowStimulusQuestions?: boolean
+	) => Promise<number>;
+	findRandom: PoolQuery<TDoc>;
+	findRandomBatch?: PoolBatchQuery<TDoc>;
 	serveCached: (doc: TDoc) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
-	requestRefill?: (className: string, unit: string, context?: TContext) => Promise<void>;
-	resolveContext?: (className: string, unit: string) => Promise<TContext> | TContext;
+	requestRefill?: (className: string, unit: string) => Promise<void>;
+	resolveAllowStimulusQuestions?: () => Promise<boolean> | boolean;
 	/** Defer non-critical refill scheduling until after the response when available. */
 	scheduleBackgroundTask?: (task: Promise<unknown>) => void;
 }
@@ -70,14 +74,14 @@ function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
  * Indexed random selection around a pivot: first `randomKey >= pivot`, then wrap to `< pivot`.
  * Pure helper exported for unit tests.
  */
-export async function selectRandomActiveDoc<TDoc extends PoolDocument, TContext = undefined>(opts: {
-	findRandom: PoolQuery<TDoc, TContext>;
+export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
+	findRandom: PoolQuery<TDoc>;
 	apClass: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot?: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
-	context?: TContext;
+	allowStimulusQuestions?: boolean;
 }): Promise<TDoc | null> {
 	const pivot = opts.pivot ?? Math.random();
 	const first = await opts.findRandom({
@@ -87,7 +91,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument, TContext 
 		pivot,
 		fromPivot: 'after',
 		onDatabaseInit: opts.onDatabaseInit,
-		context: opts.context as TContext
+		allowStimulusQuestions: opts.allowStimulusQuestions
 	});
 	if (first) return first;
 
@@ -98,7 +102,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument, TContext 
 		pivot,
 		fromPivot: 'before',
 		onDatabaseInit: opts.onDatabaseInit,
-		context: opts.context as TContext
+		allowStimulusQuestions: opts.allowStimulusQuestions
 	});
 }
 
@@ -107,24 +111,23 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument, TContext 
  * refill scheduling. Type-specific modules only provide storage and rendering
  * adapters, so adding a new bank does not require copying this lifecycle.
  */
-export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefined> {
-	constructor(private readonly config: QuestionBankConfig<TDoc, TCached, TContext>) {}
+export class QuestionBank<TDoc extends PoolDocument, TCached> {
+	constructor(private readonly config: QuestionBankConfig<TDoc, TCached>) {}
 
-	private async resolveContext(className: string, unit: string): Promise<TContext> {
-		return this.config.resolveContext
-			? await this.config.resolveContext(className, unit)
-			: (undefined as TContext);
+	private async resolveAllowStimulusQuestions(): Promise<boolean | undefined> {
+		return this.config.resolveAllowStimulusQuestions
+			? await this.config.resolveAllowStimulusQuestions()
+			: undefined;
 	}
 
 	private async requestRefillAfterMiss(
 		className: string,
 		unit: string,
-		context: TContext,
 		allowRefill: boolean
 	): Promise<void> {
 		if (!this.config.requestRefill || !allowRefill) return;
 
-		const refill = this.config.requestRefill(className, unit, context).catch((error) => {
+		const refill = this.config.requestRefill(className, unit).catch((error) => {
 			logger.warn(`[${this.config.logScope}] failed to enqueue refill`, {
 				className,
 				unit,
@@ -147,7 +150,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
-		const context = await this.resolveContext(className, cacheUnit);
+		const allowStimulusQuestions = await this.resolveAllowStimulusQuestions();
 
 		const onDatabaseInit = metrics
 			? (elapsedMs: number) => {
@@ -164,11 +167,15 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 				unit: cacheUnit,
 				excludeQuestionIds,
 				onDatabaseInit,
-				context
+				allowStimulusQuestions
 			});
 
 			if (!doc && excludeQuestionIds.length) {
-				const activeCount = await this.config.countActive(className, cacheUnit, context);
+				const activeCount = await this.config.countActive(
+					className,
+					cacheUnit,
+					allowStimulusQuestions
+				);
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					doc = await selectRandomActiveDoc({
@@ -177,7 +184,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 						unit: cacheUnit,
 						excludeQuestionIds: [],
 						onDatabaseInit,
-						context
+						allowStimulusQuestions
 					});
 				}
 			}
@@ -197,12 +204,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 				className,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(
-				className,
-				cacheUnit,
-				context,
-				options.allowRefill === true
-			);
+			await this.requestRefillAfterMiss(className, cacheUnit, options.allowRefill === true);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {
@@ -232,7 +234,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
-		const context = await this.resolveContext(className, cacheUnit);
+		const allowStimulusQuestions = await this.resolveAllowStimulusQuestions();
 
 		const onDatabaseInit = metrics
 			? (elapsedMs: number) => {
@@ -252,7 +254,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 					pivot: Math.random(),
 					limit: requestedCount,
 					onDatabaseInit,
-					context
+					allowStimulusQuestions
 				});
 			} else {
 				docs = [];
@@ -264,7 +266,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 						unit: cacheUnit,
 						excludeQuestionIds: seenIds,
 						onDatabaseInit,
-						context
+						allowStimulusQuestions
 					});
 					if (!doc) break;
 					docs.push(doc);
@@ -273,7 +275,11 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 			}
 
 			if (docs.length < requestedCount && excludeQuestionIds.length) {
-				const activeCount = await this.config.countActive(className, cacheUnit, context);
+				const activeCount = await this.config.countActive(
+					className,
+					cacheUnit,
+					allowStimulusQuestions
+				);
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					const selectedIds = docs
@@ -287,7 +293,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 								pivot: Math.random(),
 								limit: requestedCount - docs.length,
 								onDatabaseInit,
-								context
+								allowStimulusQuestions
 							})
 						: [];
 					docs = [...docs, ...moreDocs];
@@ -309,12 +315,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 				className,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(
-				className,
-				cacheUnit,
-				context,
-				options.allowRefill === true
-			);
+			await this.requestRefillAfterMiss(className, cacheUnit, options.allowRefill === true);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {

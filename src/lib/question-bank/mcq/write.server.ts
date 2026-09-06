@@ -197,8 +197,9 @@ export async function generateStimulusSetForPool(opts: {
 }): Promise<GenerateStimulusSetResult & { skippedDuplicate?: boolean; questionIds: string[] }> {
 	const cacheUnit = normalizeUnit(opts.unit);
 	const policy = getStimulusPolicy(opts.className);
+	const stimulusQuestionsEnabled = await isStimulusQuestionsEnabled();
 	if (
-		!(await isStimulusQuestionsEnabled()) ||
+		!stimulusQuestionsEnabled ||
 		!policy.setsEnabled ||
 		!isStimulusPolicyEnabledForUnit(policy, cacheUnit)
 	) {
@@ -220,7 +221,11 @@ export async function generateStimulusSetForPool(opts: {
 		: await getRecentTopics({ kind: 'mcq', apClass: opts.className, unit: cacheUnit }).catch(
 				() => []
 			);
-	const generated = await generateAPStimulusSet({ ...opts, recentTopics: topics });
+	const generated = await generateAPStimulusSet({
+		...opts,
+		recentTopics: topics,
+		stimulusQuestionsEnabled
+	});
 	if (generated.answer.diagram) {
 		const diagramType = String(generated.answer.diagram.type ?? '');
 		if (!profile.diagramTypes.includes(diagramType)) {

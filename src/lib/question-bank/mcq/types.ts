@@ -22,6 +22,30 @@ export type QuestionStimulus = {
 	provenance: StimulusProvenance;
 };
 
+type StimulusFieldSource = {
+	stimulus?: unknown;
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
+};
+
+/** Copy present stimulus grouping fields without inventing null placeholders. */
+export function copyStimulusFields<T extends StimulusFieldSource>(source: T): {
+	stimulus?: T['stimulus'];
+	stimulusId?: string;
+	stimulusPosition?: number;
+	stimulusQuestionCount?: number;
+} {
+	return {
+		...(source.stimulus ? { stimulus: source.stimulus } : {}),
+		...(source.stimulusId ? { stimulusId: source.stimulusId } : {}),
+		...(source.stimulusPosition != null ? { stimulusPosition: source.stimulusPosition } : {}),
+		...(source.stimulusQuestionCount != null
+			? { stimulusQuestionCount: source.stimulusQuestionCount }
+			: {})
+	};
+}
+
 export type AnnotationTarget =
 	| { kind: 'prompt'; paragraphIndex: number }
 	| { kind: 'stimulus'; paragraphIndex: number }

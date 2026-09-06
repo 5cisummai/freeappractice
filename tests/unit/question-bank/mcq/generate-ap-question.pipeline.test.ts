@@ -1,17 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { aiCallMock, generateMock, infoMock, stimulusFlagMock, ToolLoopAgentMock } = vi.hoisted(
-	() => {
-		const aiCallMock = vi.fn(() => () => {});
-		const generateMock = vi.fn();
-		const infoMock = vi.fn();
-		const stimulusFlagMock = vi.fn(async () => true);
-		const ToolLoopAgentMock = vi.fn(function (_settings: unknown) {
-			return { generate: generateMock };
-		});
-		return { aiCallMock, generateMock, infoMock, stimulusFlagMock, ToolLoopAgentMock };
-	}
-);
+const { aiCallMock, generateMock, infoMock, ToolLoopAgentMock } = vi.hoisted(() => {
+	const aiCallMock = vi.fn(() => () => {});
+	const generateMock = vi.fn();
+	const infoMock = vi.fn();
+	const ToolLoopAgentMock = vi.fn(function (_settings: unknown) {
+		return { generate: generateMock };
+	});
+	return { aiCallMock, generateMock, infoMock, ToolLoopAgentMock };
+});
 
 vi.mock('$env/static/private', () => ({
 	OPEN_AI_KEY: 'test-key'
@@ -21,10 +18,6 @@ vi.mock('$env/dynamic/private', () => ({
 	env: {
 		OPENAI_BASE_URL: 'https://api.openai.com/v1'
 	}
-}));
-
-vi.mock('$lib/flags', () => ({
-	isStimulusQuestionsEnabled: stimulusFlagMock
 }));
 
 vi.mock('ai', async (importOriginal) => {
@@ -67,7 +60,6 @@ describe('MCQ live generation pipeline', () => {
 		aiCallMock.mockClear();
 		generateMock.mockReset();
 		infoMock.mockClear();
-		stimulusFlagMock.mockResolvedValue(true);
 		ToolLoopAgentMock.mockClear();
 	});
 
@@ -142,7 +134,8 @@ describe('MCQ live generation pipeline', () => {
 			className: 'AP Chemistry',
 			unit: 'Unit 1: Atomic Structure and Properties',
 			childCount: 3,
-			mode: 'diagram'
+			mode: 'diagram',
+			stimulusQuestionsEnabled: true
 		});
 
 		const settings = ToolLoopAgentMock.mock.calls[0]?.[0] as
@@ -188,7 +181,8 @@ describe('MCQ live generation pipeline', () => {
 				className: 'AP Human Geography',
 				unit: 'Unit 1: Thinking Geographically',
 				childCount: 3,
-				mode: 'diagram'
+				mode: 'diagram',
+				stimulusQuestionsEnabled: true
 			})
 		).rejects.toThrow('Generated stimulus diagram failed validation');
 	});

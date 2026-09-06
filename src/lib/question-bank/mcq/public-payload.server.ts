@@ -1,5 +1,5 @@
 import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
-import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
+import { copyStimulusFields, type GeneratedQuestion } from '$lib/question-bank/mcq/types';
 import { parseQuestionParagraphs } from '$lib/question-bank/mcq/payload';
 
 export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQuestion {
@@ -23,14 +23,7 @@ export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQu
 		explanation: question.explanation,
 		...(diagramSpec ? { diagramSpec } : {}),
 		hasDiagram: question.hasDiagram || Boolean(question.stimulus?.diagramSpec),
-		...(question.stimulus ? { stimulus: question.stimulus } : {}),
-		...(question.stimulusId ? { stimulusId: question.stimulusId } : {}),
-		...(question.stimulusPosition !== null && question.stimulusPosition !== undefined
-			? { stimulusPosition: question.stimulusPosition }
-			: {}),
-		...(question.stimulusQuestionCount !== null && question.stimulusQuestionCount !== undefined
-			? { stimulusQuestionCount: question.stimulusQuestionCount }
-			: {}),
+		...copyStimulusFields(question),
 		leftPanel: question.stimulus?.text
 			? { title: 'Stimulus', content: parseQuestionParagraphs(question.stimulus.text) }
 			: undefined,
@@ -54,14 +47,7 @@ export function storedQuestionToMcqAnswerBody(question: StoredQuestion): Record<
 		topicsCovered: question.topicsCovered ?? '',
 		diagramSpec: question.diagramSpec ?? null,
 		hasDiagram: question.hasDiagram,
-		...(question.stimulus ? { stimulus: question.stimulus } : {}),
-		...(question.stimulusId ? { stimulusId: question.stimulusId } : {}),
-		...(question.stimulusPosition !== null && question.stimulusPosition !== undefined
-			? { stimulusPosition: question.stimulusPosition }
-			: {}),
-		...(question.stimulusQuestionCount !== null && question.stimulusQuestionCount !== undefined
-			? { stimulusQuestionCount: question.stimulusQuestionCount }
-			: {})
+		...copyStimulusFields(question)
 	};
 }
 
@@ -81,13 +67,6 @@ export function generatedQuestionToMcqAnswerBody(
 		topicsCovered: question.topicsCovered ?? '',
 		diagramSpec: question.diagramSpec ?? null,
 		hasDiagram: question.hasDiagram ?? false,
-		...(question.stimulus ? { stimulus: question.stimulus } : {}),
-		...(question.stimulusId ? { stimulusId: question.stimulusId } : {}),
-		...(question.stimulusPosition !== undefined
-			? { stimulusPosition: question.stimulusPosition }
-			: {}),
-		...(question.stimulusQuestionCount !== undefined
-			? { stimulusQuestionCount: question.stimulusQuestionCount }
-			: {})
+		...copyStimulusFields(question)
 	};
 }

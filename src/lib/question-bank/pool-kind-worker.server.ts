@@ -74,9 +74,7 @@ export async function estimatePoolGenerationSlots(
 	const profile = policy.profiles[0];
 	if (!profile) return 1;
 	const activeCount = await countActiveMcqQuestions(apClass, unit);
-	const activeDiscreteCount = await countActiveMcqQuestions(apClass, unit, {
-		allowEnhanced: false
-	});
+	const activeDiscreteCount = await countActiveMcqQuestions(apClass, unit, false);
 	const deficit = Math.max(0, target - activeCount);
 	const targetStimulusCount = Math.round((target * policy.quizTargetQuestionPercent) / 100);
 	if (activeCount - activeDiscreteCount >= targetStimulusCount || deficit < profile.minChildren)
