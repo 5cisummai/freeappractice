@@ -52,6 +52,8 @@ export type QuestionPathMetrics = {
 export interface GetQuestionOptions {
 	excludeQuestionIds?: string[];
 	metrics?: QuestionPathMetrics;
+	/** Only authenticated callers may schedule a refill after a pool miss. */
+	allowRefill?: boolean;
 }
 
 export type PoolSelectionResult<TCached> =
@@ -117,9 +119,10 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 	private async requestRefillAfterMiss(
 		className: string,
 		unit: string,
-		context: TContext
+		context: TContext,
+		allowRefill: boolean
 	): Promise<void> {
-		if (!this.config.requestRefill) return;
+		if (!this.config.requestRefill || !allowRefill) return;
 
 		const refill = this.config.requestRefill(className, unit, context).catch((error) => {
 			logger.warn(`[${this.config.logScope}] failed to enqueue refill`, {
@@ -194,7 +197,12 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 				className,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(className, cacheUnit, context);
+			await this.requestRefillAfterMiss(
+				className,
+				cacheUnit,
+				context,
+				options.allowRefill === true
+			);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {
@@ -301,7 +309,12 @@ export class QuestionBank<TDoc extends PoolDocument, TCached, TContext = undefin
 				className,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(className, cacheUnit, context);
+			await this.requestRefillAfterMiss(
+				className,
+				cacheUnit,
+				context,
+				options.allowRefill === true
+			);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
 import { getMcqGenerationCountsByClass } from '$lib/question-bank/gen-stats.server';
+import { getUnitsForClass } from '$lib/catalog/ap-classes';
 import {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
@@ -23,6 +24,17 @@ export type PoolBucketKey = {
 	unit: string;
 };
 
+export class InvalidPoolBucketError extends Error {
+	constructor(bucket: Pick<PoolBucketKey, 'apClass' | 'unit'>) {
+		super(`Invalid catalog pool bucket: ${bucket.apClass} / ${bucket.unit}`);
+		this.name = 'InvalidPoolBucketError';
+	}
+}
+
+export function isValidPoolBucket(bucket: Pick<PoolBucketKey, 'apClass' | 'unit'>): boolean {
+	return getUnitsForClass(bucket.apClass.trim()).includes(bucket.unit.trim());
+}
+
 export function listCatalogBuckets(questionType: PoolRefillQuestionType): PoolBucketKey[] {
 	return getPoolKindAdapter(questionType).listBuckets();
 }
@@ -44,6 +56,8 @@ export async function requestPoolRefill(
 	generationCountsByClass?: Record<string, number>,
 	observedCountOverride?: number
 ): Promise<void> {
+	if (!isValidPoolBucket(bucket)) throw new InvalidPoolBucketError(bucket);
+
 	const counts =
 		generationCountsByClass ??
 		(bucket.questionType === 'mcq' ? await getMcqGenerationCountsByClass() : {});

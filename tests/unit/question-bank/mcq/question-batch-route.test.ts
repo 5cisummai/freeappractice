@@ -91,7 +91,7 @@ describe('POST /api/questions/batch', () => {
 			'AP Biology',
 			'Unit 1',
 			1,
-			expect.objectContaining({ excludeQuestionIds: ['old'] })
+			expect.objectContaining({ excludeQuestionIds: ['old'], allowRefill: false })
 		);
 		expect(await response.json()).toEqual({
 			questions: [

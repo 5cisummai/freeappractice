@@ -9,6 +9,7 @@ import {
 	retireOldestPoolPercent,
 	retirePoolBucketQuestions
 } from '$lib/admin/dashboard.server';
+import { InvalidPoolBucketError } from '$lib/question-bank/pool-refill-queue.server';
 import { POOL_RETIRE_OLDEST_PERCENT } from '$lib/question-bank/pool-constants';
 import type { PoolQuestionType } from '$lib/admin/types';
 
@@ -49,11 +50,18 @@ export const POST: RequestHandler = async (event) => {
 			if (!apClass || !unit) {
 				return json({ message: 'apClass and unit are required' }, { status: 400 });
 			}
-			await enqueuePoolBucketRefill({
-				questionType: body.questionType,
-				apClass,
-				unit
-			});
+			try {
+				await enqueuePoolBucketRefill({
+					questionType: body.questionType,
+					apClass,
+					unit
+				});
+			} catch (error) {
+				if (error instanceof InvalidPoolBucketError) {
+					return json({ message: error.message }, { status: 400 });
+				}
+				throw error;
+			}
 			return json({ ok: true, enqueued: 1 }, { status: 202 });
 		}
 		case 'cancelRefill': {

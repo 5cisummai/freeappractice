@@ -11,6 +11,7 @@ import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
 import {
 	countActivePoolRowsForServing,
 	getPoolRefillHealthCounts,
+	isValidPoolBucket,
 	type PoolBucketKey
 } from '$lib/question-bank/pool-refill-queue.server';
 import { writePoolBucketBelowTarget } from '$lib/question-bank/pool-capacity.server';
@@ -487,6 +488,22 @@ export async function runQuestionPoolRefillWorker(
 		if (!candidate) {
 			stoppedReason = processed > 0 ? 'complete' : 'no_work';
 			break;
+		}
+
+		if (!isValidPoolBucket(candidate)) {
+			await getNeonDatabase()
+				.update(poolRefillStates)
+				.set({
+					status: 'idle',
+					leaseOwner: null,
+					leaseExpiresAt: null,
+					nextAttemptAt: null,
+					lastError: 'Cancelled invalid catalog pool bucket',
+					updatedAt: new Date()
+				})
+				.where(eq(poolRefillStates.id, candidate.id));
+			processed += 1;
+			continue;
 		}
 
 		const leased = await tryAcquireRefillLease(

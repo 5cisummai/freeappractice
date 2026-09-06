@@ -23,7 +23,7 @@ export const config = {
 	split: true
 };
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
 	const startedAt = Date.now();
 	const path = createQuestionPathMetrics();
 	let validationMs = 0;
@@ -110,7 +110,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		unit = normalizeUnit(requestedUnit);
 		const outcome = await mcqBank.getMany(className, requestedUnit, rawCount, {
 			excludeQuestionIds,
-			metrics: path
+			metrics: path,
+			allowRefill: Boolean(locals?.userId)
 		});
 
 		switch (outcome.status) {

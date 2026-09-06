@@ -91,7 +91,7 @@ export async function giveCoachPracticeQuestion(
 		if (!getFrqCourseProfile(apClass)) {
 			return { error: 'Written-response practice is not available for this course.' };
 		}
-		const outcome = await frqBank.get(apClass, unit, { excludeQuestionIds });
+		const outcome = await frqBank.get(apClass, unit, { excludeQuestionIds, allowRefill: true });
 		if (outcome.status === 'warming') {
 			return {
 				error: 'Written-response practice is warming up. Please try again shortly.',
@@ -128,7 +128,7 @@ export async function giveCoachPracticeQuestion(
 		};
 	}
 
-	const outcome = await mcqBank.get(apClass, unit, { excludeQuestionIds });
+	const outcome = await mcqBank.get(apClass, unit, { excludeQuestionIds, allowRefill: true });
 	if (outcome.status === 'warming') {
 		return {
 			error: 'Question pool is warming up. Please try again shortly.',

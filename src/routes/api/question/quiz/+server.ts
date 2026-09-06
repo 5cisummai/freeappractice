@@ -48,7 +48,8 @@ async function requestQuizRefill(
 	return results.some((result) => result.status === 'fulfilled');
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	let requestBody: unknown;
 	let requestedUnitRange: readonly number[] | undefined;
 	try {
@@ -129,7 +130,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			const className = typeof record.className === 'string' ? record.className.trim() : '';
 			const unit = typeof record.unit === 'string' ? record.unit.trim() : '';
 			let refillRequested = false;
-			if (className) {
+			if (event.locals.userId && className) {
 				try {
 					refillRequested = await requestQuizRefill(className, unit, requestedUnitRange);
 				} catch (refillError) {
