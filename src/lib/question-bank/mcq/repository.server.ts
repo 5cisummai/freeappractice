@@ -396,20 +396,12 @@ export async function findAllCachedQuestions(): Promise<IQuestion[]> {
 export async function findActiveQuestionsForQuiz(input: {
 	apClass: string;
 	units: string[];
+	limit?: number;
 }): Promise<IQuestion[]> {
 	const units = [...new Set(input.units.map((unit) => unit.trim()).filter(Boolean))];
 	if (!units.length) return [];
-	const rows = await getNeonDatabase()
-		.select()
-		.from(mcqQuestions)
-		.where(
-			and(
-				eq(mcqQuestions.active, true),
-				eq(apClassField, input.apClass),
-				inArray(unitField, units),
-				// A finalized bad child is excluded. A stimulus/set failure excludes
-				// every child that carries the same server-assigned stimulus ID.
-				sql`not exists (
+	const db = getNeonDatabase();
+	const qualityPredicate = sql`not exists (
 					select 1
 					from content.question_quality own_quality
 					where own_quality.question_id = ${mcqQuestions.questionId}
@@ -429,10 +421,53 @@ export async function findActiveQuestionsForQuiz(input: {
 						  ) in ('stimulus', 'set')
 						  and shared_question.data->>'stimulusId' = ${mcqQuestions.data}->>'stimulusId'
 					)
-				)`
-			)
+				)`;
+	const bucketPredicate = and(
+		eq(mcqQuestions.active, true),
+		eq(apClassField, input.apClass),
+		inArray(unitField, units),
+		qualityPredicate
+	);
+	const requested = Math.max(1, Math.floor(input.limit ?? 50));
+	const windowSize = Math.min(200, requested * 4);
+	const pivot = Math.random();
+	const afterRows = await db
+		.select()
+		.from(mcqQuestions)
+		.where(and(bucketPredicate, gte(mcqQuestions.randomKey, pivot)))
+		.orderBy(mcqQuestions.randomKey)
+		.limit(windowSize);
+	const remaining = windowSize - afterRows.length;
+	const beforeRows =
+		remaining > 0
+			? await db
+					.select()
+					.from(mcqQuestions)
+					.where(and(bucketPredicate, lt(mcqQuestions.randomKey, pivot)))
+					.orderBy(mcqQuestions.randomKey)
+					.limit(remaining)
+			: [];
+	const sampled = [...afterRows, ...beforeRows].map(fromRow);
+	const stimulusIds = [
+		...new Set(
+			sampled
+				.map((question) => question.stimulusId?.trim())
+				.filter((id): id is string => Boolean(id))
+		)
+	];
+	if (!stimulusIds.length) return sampled;
+
+	const siblingRows = await db
+		.select()
+		.from(mcqQuestions)
+		.where(
+			and(bucketPredicate, inArray(sql<string>`${mcqQuestions.data}->>'stimulusId'`, stimulusIds))
 		);
-	return rows.map(fromRow);
+	const byId = new Map(sampled.map((question) => [question.questionId, question]));
+	for (const sibling of siblingRows.map(fromRow)) {
+		byId.set(sibling.questionId, sibling);
+	}
+	return [...byId.values()];
 }
 
 export interface StoredQuestion {

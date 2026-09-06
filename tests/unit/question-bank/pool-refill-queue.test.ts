@@ -5,8 +5,8 @@ describe('pool refill bucket validation', () => {
 	it('accepts only catalog course and unit buckets', () => {
 		expect(
 			isValidPoolBucket({
-				apClass: 'AP Physics C: Mechanics',
-				unit: 'Unit 1: Kinematics'
+				apClass: ' AP Physics C: Mechanics ',
+				unit: ' Unit 1: Kinematics '
 			})
 		).toBe(true);
 		expect(

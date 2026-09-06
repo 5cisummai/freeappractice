@@ -220,11 +220,9 @@ function chooseBlock(
 function takeFromBlock(block: QuizBlock, capacity: number): IQuestion[] {
 	if (capacity <= 0) return [];
 	if (block.kind === 'discrete') return [block.question];
-	const start = Math.floor(Math.random() * block.children.length);
-	return Array.from(
-		{ length: Math.min(capacity, block.children.length) },
-		(_, offset) => block.children[(start + offset) % block.children.length]!
-	);
+	const take = Math.min(capacity, block.children.length);
+	const start = Math.floor(Math.random() * (block.children.length - take + 1));
+	return block.children.slice(start, start + take);
 }
 
 export async function assembleMcqQuiz(
@@ -236,7 +234,11 @@ export async function assembleMcqQuiz(
 	const units = resolveQuizUnits(input.apClass, input.unit, input.unitRange);
 	const stimulusTargetEnabled =
 		options.globalFlagEnabled && units.some((unit) => isStimulusPolicyEnabledForUnit(policy, unit));
-	const rows = await findActiveQuestionsForQuiz({ apClass: input.apClass, units });
+	const rows = await findActiveQuestionsForQuiz({
+		apClass: input.apClass,
+		units,
+		limit: count
+	});
 	const blocks = buildBlocks(rows, options.globalFlagEnabled, policy);
 	const targetStimulusQuestions = stimulusTargetEnabled
 		? Math.round((count * policy.quizTargetQuestionPercent) / 100)

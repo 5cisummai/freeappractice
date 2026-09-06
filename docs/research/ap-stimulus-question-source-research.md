@@ -75,34 +75,29 @@ This matches the relevant subjects on College Board's [AP Courses and Exams inde
 
 ## Minimum universal V1 data model
 
-For the already chosen first-release boundary of original AI-generated text and semantic diagrams, the smallest common model needs an **ordered source array**. This is not hypothetical flexibility: official patterns include article-plus-chart, passage-plus-flowcharts, and paired historical sources.
+V1 ships one shared stimulus shape: a nullable text value and a nullable semantic `DiagramSpec`, with at least one present. Labeled sections such as `Source A` and `Source B` live inside that single text value. An ordered `sources[]` array, multiple diagrams, and independently attributed attachments are out of scope until a later authoring/import pipeline.
 
 ```text
 stimulus
-  stimulusId          server-generated stable ID
-  sources[]           ordered, at least one item
-    label             string or null
-    text              string or null
-    diagram           DiagramSpec or null
+  text                string or null
+  diagramSpec         DiagramSpec or null
   provenance          fixed value: ai-generated-original
-  disclosure          fixed student-facing/or internal provenance text
 
 question relationship
-  stimulusId          null for an existing discrete question
-  setPosition         0-based integer when attached
-  setSize             positive integer when attached
+  stimulusId          server-generated; null for an existing discrete question
+  stimulusPosition    0-based integer when attached
+  stimulusQuestionCount  positive integer when attached
 ```
 
 Rules:
 
-- Every source item has all three fields required in the generation schema: `label`, `text`, and `diagram`. `label`, `text`, and `diagram` may be nullable, but at least one of `text` or `diagram` must be non-null. This fixed required shape is compatible with strict structured-output schemas while supporting text-only, diagram-only, and mixed items.
-- Array order is meaningful. Labels such as “Source A” and “Source B” remain explicit rather than being inferred from rendered text.
+- Text-only, diagram-only, and mixed stimuli use this same shape. At least one of `text` or `diagramSpec` must be non-null.
 - A set of one is valid and represents a standalone stimulus-backed question.
 - A set of two or more represents a shared stimulus set. Every child remains an independently answerable MCQ with its own question ID, choices, answer, explanation, attempts, history, bookmark state, and quality state.
 - The shared immutable stimulus payload may be duplicated into each child JSONB payload for V1, but the server-generated `stimulusId`, set order, and set size must be identical and validated across siblings.
-- The model intentionally does not claim full AP-source fidelity. Audio, video, arbitrary images, sourced/authentic documents, and independently editable stimulus records are later capabilities.
+- The model intentionally does not claim full AP-source fidelity. Audio, video, arbitrary images, sourced/authentic documents, ordered source arrays, and independently editable stimulus records are later capabilities.
 
-This ordered array is still intentionally narrow: its items support only text and an Examfig-style semantic `DiagramSpec`. It is not a generic attachment system. Examfig-style semantic diagrams do not automatically cover photographs, artwork, landscapes, political cartoons, or audio.
+Examfig-style semantic diagrams do not automatically cover photographs, artwork, landscapes, political cartoons, or audio.
 
 ## Configuration that cannot be universalized
 

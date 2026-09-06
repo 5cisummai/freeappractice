@@ -16,9 +16,11 @@ type GenerationResult = { skippedDuplicate?: boolean; generatedCount?: number };
 async function generateMcqPoolQuestion(
 	apClass: string,
 	unit: string,
-	target = 0
+	target = 0,
+	reservedSlots?: number
 ): Promise<GenerationResult> {
-	const childCount = await estimatePoolGenerationSlots('mcq', apClass, unit, target);
+	const childCount =
+		reservedSlots ?? (await estimatePoolGenerationSlots('mcq', apClass, unit, target));
 	if (childCount > 1) {
 		const profile = getStimulusPolicy(apClass).profiles[0]!;
 		const mode =
@@ -43,7 +45,7 @@ const generationAdapters = {
 	frq: (apClass: string, unit: string) => generateAndPersistFrq(apClass, unit)
 } satisfies Record<
 	PoolRefillQuestionType,
-	(apClass: string, unit: string, target?: number) => Promise<GenerationResult>
+	(apClass: string, unit: string, target?: number, reservedSlots?: number) => Promise<GenerationResult>
 >;
 
 /** Worker-only seam. Never import this module from request-path serving code. */
@@ -51,9 +53,10 @@ export function generatePoolQuestion(
 	questionType: PoolRefillQuestionType,
 	apClass: string,
 	unit: string,
-	target?: number
+	target?: number,
+	reservedSlots?: number
 ): Promise<GenerationResult> {
-	return generationAdapters[questionType](apClass, unit, target);
+	return generationAdapters[questionType](apClass, unit, target, reservedSlots);
 }
 
 /** Estimate child slots to reserve before a refill call. */
@@ -73,8 +76,10 @@ export async function estimatePoolGenerationSlots(
 		return 1;
 	const profile = policy.profiles[0];
 	if (!profile) return 1;
-	const activeCount = await countActiveMcqQuestions(apClass, unit);
-	const activeDiscreteCount = await countActiveMcqQuestions(apClass, unit, false);
+	const [activeCount, activeDiscreteCount] = await Promise.all([
+		countActiveMcqQuestions(apClass, unit),
+		countActiveMcqQuestions(apClass, unit, false)
+	]);
 	const deficit = Math.max(0, target - activeCount);
 	const targetStimulusCount = Math.round((target * policy.quizTargetQuestionPercent) / 100);
 	if (activeCount - activeDiscreteCount >= targetStimulusCount || deficit < profile.minChildren)

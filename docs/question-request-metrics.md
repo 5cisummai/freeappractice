@@ -55,7 +55,7 @@ Emitted once per refill worker invocation. The deployed cron processes work; adm
 | `skipped_duplicates`     | number | Duplicate content/ID skips                                                     |
 | `failed`                 | number | Jobs that failed in this run                                                   |
 | `budget_remaining`       | number | Remaining daily LLM generation budget                                          |
-| `stopped_reason`         | string | `complete` \| `time_budget` \| `generation_cap` \| `daily_budget` \| `no_work` |
+| `stopped_reason`         | string | `complete` \| `time_budget` \| `daily_budget` \| `no_work` |
 | `empty_observed_buckets` | number | Refill rows with `observedCount = 0`                                           |
 | `failed_jobs`            | number | Jobs currently in `failed` status                                              |
 | `budget_exhausted_jobs`  | number | Jobs in `budget_exhausted` status                                              |

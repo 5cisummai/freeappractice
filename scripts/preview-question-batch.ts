@@ -167,7 +167,7 @@ async function main() {
 	for (let index = 0; index < count; index += 1) {
 		console.log(`Generating question ${index + 1}/${count}...`);
 		try {
-			generated.push(await generateAPQuestion({ className, unit }));
+			generated.push(await generateAPQuestion({ className, unit, diagramsEnabled: flagEnabled }));
 		} catch (error) {
 			failed.push(error instanceof Error ? error.message : String(error));
 			console.error(`Question ${index + 1} failed:`, error);

@@ -103,7 +103,7 @@
 			lastSnapshot = snapshot;
 			if (persistHistory) void persistQuizHistory(snapshot);
 			else if (sharedSlug) saveAnonymousSharedRun(snapshot);
-			else showSignupPrompt = true;
+			else showSignupPrompt = !page.data.userId;
 		}
 	});
 
@@ -130,8 +130,9 @@
 	);
 	const currentQuestionId = $derived(exam.currentQuestion?.questionId?.trim() ?? '');
 	const currentStimulusId = $derived(exam.currentQuestion?.stimulusId?.trim() ?? '');
+	const stimulusStateId = $derived(currentStimulusId || currentQuestionId);
 	const currentStimulusScrollTop = $derived(
-		currentStimulusId ? (stimulusScrollTopById[currentStimulusId] ?? 0) : 0
+		stimulusStateId ? (stimulusScrollTopById[stimulusStateId] ?? 0) : 0
 	);
 	const currentStruck = $derived(
 		currentQuestionId ? (struckByQuestionId[currentQuestionId] ?? []) : []
@@ -402,11 +403,12 @@
 	}
 
 	function addTextAnnotation(input: AddTextAnnotationInput): void {
-		const targetId = input.target.kind === 'stimulus' ? currentStimulusId : currentQuestionId;
+		const useStimulusScope = input.target.kind === 'stimulus' && Boolean(currentStimulusId);
+		const targetId = useStimulusScope ? currentStimulusId : currentQuestionId;
 		if (!targetId) return;
 		const annotation = createTextAnnotation(input);
 		if (!annotation) return;
-		if (input.target.kind === 'stimulus') {
+		if (useStimulusScope) {
 			annotationsByStimulusId = {
 				...annotationsByStimulusId,
 				[targetId]: [...(annotationsByStimulusId[targetId] ?? []), annotation]
@@ -439,10 +441,10 @@
 	}
 
 	function updateStimulusScroll(scrollTop: number): void {
-		if (!currentStimulusId || !Number.isFinite(scrollTop)) return;
+		if (!stimulusStateId || !Number.isFinite(scrollTop)) return;
 		stimulusScrollTopById = {
 			...stimulusScrollTopById,
-			[currentStimulusId]: Math.max(0, scrollTop)
+			[stimulusStateId]: Math.max(0, scrollTop)
 		};
 	}
 

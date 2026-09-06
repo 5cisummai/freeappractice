@@ -29,6 +29,11 @@ describe('stimulus pilot policy', () => {
 			setsEnabled: false,
 			profiles: []
 		});
+		expect(getStimulusPolicy('constructor')).toMatchObject({
+			quizTargetQuestionPercent: 0,
+			setsEnabled: false,
+			profiles: []
+		});
 	});
 
 	it('supports explicit unit exclusions with precedence over an allowlist', () => {

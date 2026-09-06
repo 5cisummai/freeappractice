@@ -80,6 +80,7 @@ The first-release stimulus contains a nullable text value and a nullable semanti
 
 - Text-only, diagram-only, and mixed stimuli use the same shape.
 - A text value may contain labeled sections such as `Source A` and `Source B`; version one does not need a generic attachment or ordered-block system.
+- Multi-source `sources[]` records from the research note are deferred. V1 does not persist ordered source items or multiple diagrams.
 - All generated stimuli carry provenance identifying them as original AI-generated practice material.
 - Audio, video, arbitrary images, photographs, artwork, externally sourced documents, and independently attributed attachments are unsupported in version one.
 - Generated passages must not fabricate authentic quotations, authors, dates, publications, or historical-document attribution.

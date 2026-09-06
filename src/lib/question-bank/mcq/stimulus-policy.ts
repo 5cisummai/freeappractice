@@ -216,7 +216,7 @@ const disabledPolicy: StimulusPolicy = {
 };
 
 export function getStimulusPolicy(className: string): StimulusPolicy {
-	return policies[className] ?? disabledPolicy;
+	return Object.hasOwn(policies, className) ? policies[className]! : disabledPolicy;
 }
 
 export function getPolicyProfile(className: string, profileId: string): StimulusProfile | null {

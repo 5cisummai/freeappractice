@@ -110,7 +110,7 @@ describe('assembleMcqQuiz', () => {
 		expect(result.metrics.stimulusSetCount).toBe(0);
 	});
 
-	it('wraps around a stimulus set when capacity crosses its final child', async () => {
+	it('takes a contiguous ordered slice when a set is truncated', async () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([
 			question('q0', 0),
 			question('q1', 1),
@@ -122,7 +122,7 @@ describe('assembleMcqQuiz', () => {
 			{ apClass: 'AP Biology', unit: 'Unit 1', count: 2 },
 			{ globalFlagEnabled: true }
 		);
-		expect(result.questions.map((item) => item.questionId)).toEqual(['q3', 'q0']);
+		expect(result.questions.map((item) => item.questionId)).toEqual(['q2', 'q3']);
 		vi.restoreAllMocks();
 	});
 

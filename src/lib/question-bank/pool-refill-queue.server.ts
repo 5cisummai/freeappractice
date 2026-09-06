@@ -35,6 +35,14 @@ export function isValidPoolBucket(bucket: Pick<PoolBucketKey, 'apClass' | 'unit'
 	return getUnitsForClass(bucket.apClass.trim()).includes(bucket.unit.trim());
 }
 
+function normalizePoolBucket(bucket: PoolBucketKey): PoolBucketKey {
+	return {
+		questionType: bucket.questionType,
+		apClass: bucket.apClass.trim(),
+		unit: bucket.unit.trim()
+	};
+}
+
 export function listCatalogBuckets(questionType: PoolRefillQuestionType): PoolBucketKey[] {
 	return getPoolKindAdapter(questionType).listBuckets();
 }
@@ -57,6 +65,7 @@ export async function requestPoolRefill(
 	observedCountOverride?: number
 ): Promise<void> {
 	if (!isValidPoolBucket(bucket)) throw new InvalidPoolBucketError(bucket);
+	bucket = normalizePoolBucket(bucket);
 
 	const counts =
 		generationCountsByClass ??

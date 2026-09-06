@@ -32,6 +32,7 @@ export type RefillRunSummary = {
 
 const MAX_ATTEMPTS = 8;
 const MAX_CONCURRENT_REFILL_JOBS = 8;
+const MAX_CLAIM_ATTEMPTS = 32;
 
 async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {
 	const now = Date.now();
@@ -286,10 +287,11 @@ async function releaseLeaseFailure(
 
 async function generateOne(
 	bucket: PoolBucketKey,
-	target: number
+	target: number,
+	reservedSlots?: number
 ): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean; generatedCount: number }> {
 	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
-		generatePoolQuestion(bucket.questionType, bucket.apClass, bucket.unit, target)
+		generatePoolQuestion(bucket.questionType, bucket.apClass, bucket.unit, target, reservedSlots)
 	);
 	if (guarded.status === 'at_target') {
 		return { skippedDuplicate: false, skippedAtTarget: true, generatedCount: 0 };
@@ -306,7 +308,7 @@ async function claimNextRefillJob(
 	owner: string,
 	env: QuestionPoolConfig
 ): Promise<{ kind: 'none' | 'invalid' | 'claimed'; lease?: PoolRefillStateRow }> {
-	while (true) {
+	for (let attempt = 0; attempt < MAX_CLAIM_ATTEMPTS; attempt += 1) {
 		const now = new Date();
 		const candidateRows = await getNeonDatabase()
 			.select()
@@ -359,6 +361,7 @@ async function claimNextRefillJob(
 		);
 		if (leased) return { kind: 'claimed', lease: leased };
 	}
+	return { kind: 'none' };
 }
 
 export async function processRefillJob(
@@ -410,7 +413,18 @@ export async function processRefillJob(
 				bucket.unit,
 				lease.target
 			);
-			if (budgetUsed + requestedSlots > opts.maxGenerations) break;
+			if (budgetUsed + requestedSlots > opts.maxGenerations) {
+				if (budgetUsed === 0) {
+					await releaseLeaseFailure(
+						lease,
+						new Error('Daily LLM generation budget exhausted'),
+						env,
+						'budget_exhausted'
+					);
+					return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: true };
+				}
+				break;
+			}
 			const reservedSlots = await reserveDailyGenerationBudget(env, requestedSlots);
 			if (reservedSlots < requestedSlots) {
 				if (reservedSlots > 0) await releaseDailyGenerationBudget(reservedSlots);
@@ -433,7 +447,7 @@ export async function processRefillJob(
 				throw leaseError;
 			}
 
-			const result = await generateOne(bucket, lease.target);
+			const result = await generateOne(bucket, lease.target, reservedSlots);
 			if (result.skippedAtTarget) {
 				await releaseDailyGenerationBudget(reservedSlots);
 				reservedSlotsForAttempt = 0;

@@ -16,7 +16,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import {
-	countActivePoolRows,
+	countActivePoolRowsForServing,
 	listCatalogBuckets
 } from '../src/lib/question-bank/pool-refill-queue.server';
 import {
@@ -106,7 +106,7 @@ async function main() {
 	for (const bucket of listCatalogBuckets(questionType)) {
 		if (classFilter && bucket.apClass !== classFilter) continue;
 		if (unitFilter && bucket.unit !== unitFilter) continue;
-		const active = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+		const active = await countActivePoolRowsForServing(questionType, bucket.apClass, bucket.unit);
 		const target = questionType === 'mcq' ? preferredMcqTarget(bucket.apClass) : env.frqTarget;
 		const need = Math.max(0, target - active);
 		if (need > 0) {
