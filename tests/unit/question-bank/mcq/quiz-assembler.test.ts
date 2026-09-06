@@ -10,12 +10,14 @@ vi.mock('$lib/question-bank/mcq/repository.server', async (importOriginal) => {
 });
 
 vi.mock('$lib/question-bank/mcq/stimulus-policy', () => ({
-	isStimulusPolicyEnabledForUnit: (policy: { enabled: boolean }, _unit?: string) => policy.enabled,
+	isStimulusPolicyEnabledForUnit: (policy: { setsEnabled: boolean }, _unit?: string) =>
+		policy.setsEnabled,
 	getStimulusPolicy: () => ({
 		version: 1,
-		enabled: true,
 		quizTargetQuestionPercent: 100,
 		targetBasis: 'product-calibrated',
+		setSizeBasis: 'product-calibrated',
+		setsEnabled: true,
 		allowDiscreteDiagrams: true,
 		allowedDiscreteDiagramTypes: [],
 		defaultProfileIds: ['shared'],

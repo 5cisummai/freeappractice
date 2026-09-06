@@ -82,7 +82,6 @@ async function main() {
 		mcqDefaultTarget: env.mcqTarget,
 		frqTarget: env.frqTarget,
 		dailyBudget: env.dailyLlmGenerationBudget,
-		maxGenerationsPerRun: env.maxGenerationsPerRun,
 		typeFilter,
 		maxRounds
 	});

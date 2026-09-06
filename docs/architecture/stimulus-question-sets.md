@@ -49,13 +49,14 @@ The kinds and composition of stimuli vary by AP course and must be governed by t
 - Course and unit generation policy determines which forms may actually be generated.
 - The global feature flag enables the capability but does not define curriculum eligibility.
 - Course policy provides defaults, and units may override only the values that materially differ.
-- A missing unit override inherits the course policy. An explicit unit-level `enabled: false` disables new stimulus generation for that unit.
+- A missing unit override inherits the course policy. An explicit unit-level exclusion disables new stimulus generation for that unit.
+- The implementation expresses disabled unit overrides as an exact `excludedUnits` denylist; exclusions take precedence over any `enabledUnits` allowlist.
 - All children generated in one set belong to the same app course and unit in version one. Cross-unit sets are out of scope.
 - Catalog policy governs new generation, not resolution of existing questions.
 
 The minimum policy surface is:
 
-- `enabled`
+- policy presence for a supported course
 - allowed modes: text, diagram, and/or mixed
 - whether multi-question sets are enabled
 - minimum, target, and maximum children per set
@@ -67,10 +68,10 @@ The exact course and unit policy matrix is intentionally deferred to research. I
 
 The initial implementation scope is the five launch courses selected for this pilot: AP Biology, AP Chemistry, AP Physics 1, AP Human Geography, and AP World History. Each entry distinguishes official facts from app-authored conservative defaults and explicitly records unsupported forms. Additional catalog courses remain fail-closed until their own review is completed.
 
-- Policy coverage and rollout enablement are separate concerns.
-- All course policies default to disabled at launch-planning time.
-- Only a small initial group will be enabled, but that group is intentionally undecided until the completed policy matrix is reviewed.
-- Enabling the global feature flag does not override a disabled course or unit policy.
+- Policy coverage and global rollout are separate concerns.
+- The five pilot course policies are active for Units 1–3 through their explicit `enabledUnits` allowlists.
+- Courses without a policy remain fail-closed, and units outside a policy's allowlist are not eligible.
+- Enabling the global feature flag does not expand the course or unit scope defined by policy.
 - No course silently falls back to generic stimulus generation when its policy is missing or invalid.
 
 ### Version-one stimulus content is deliberately fixed

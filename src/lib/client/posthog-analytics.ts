@@ -1,4 +1,5 @@
 import posthog from 'posthog-js';
+import { building, dev } from '$app/environment';
 import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$env/static/public';
 import { readAnalyticsConsent } from '$lib/client/analytics-consent';
 import type { AnalyticsConsent } from '$lib/analytics-consent';
@@ -19,7 +20,7 @@ type PendingOperation = Extract<PostHogOperation, { kind: 'capture' | 'identify'
 let pendingOperations: PendingOperation[] = [];
 
 export function initPostHogAnalytics() {
-	if (!import.meta.env.PROD || initialized || typeof window === 'undefined') {
+	if (dev || building || initialized || typeof window === 'undefined') {
 		return;
 	}
 

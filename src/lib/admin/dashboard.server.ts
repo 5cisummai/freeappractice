@@ -7,7 +7,7 @@ import {
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
 import { questionBucketFields } from '$lib/server/neon/jsonb';
-import { and, asc, count, eq, inArray, max, min, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull, lte, max, min, or, sql } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
@@ -336,6 +336,40 @@ export async function enqueuePoolBucketRefill(bucket: PoolBucketKey): Promise<{ 
 	return { enqueued: true };
 }
 
+/** Cancel a queued refill without interrupting a live worker lease. */
+export async function cancelPoolBucketRefill(
+	bucket: PoolBucketKey
+): Promise<{ cancelled: boolean }> {
+	const now = new Date();
+	const rows = await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({
+			status: 'idle',
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			nextAttemptAt: null,
+			lastError: null,
+			updatedAt: now
+		})
+		.where(
+			and(
+				eq(poolRefillStates.questionType, bucket.questionType),
+				eq(poolRefillStates.apClass, bucket.apClass),
+				eq(poolRefillStates.unit, bucket.unit),
+				or(
+					inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
+					and(
+						eq(poolRefillStates.status, 'running'),
+						or(isNull(poolRefillStates.leaseExpiresAt), lte(poolRefillStates.leaseExpiresAt, now))
+					)
+				)
+			)
+		)
+		.returning({ id: poolRefillStates.id });
+
+	return { cancelled: rows.length > 0 };
+}
+
 /** Retire the oldest active questions in a bucket, then queue its refill. */
 export async function retirePoolBucketQuestions(
 	bucket: PoolBucketKey,
@@ -416,11 +450,14 @@ export async function retireOldestPoolPercent(
 		});
 	}
 
-	await Promise.all([...buckets.values()].map((bucket) => requestPoolRefill(bucket)));
+	// Reconcile catalog deficits sequentially instead of launching one refill request
+	// per affected bucket at once. This avoids a large Neon HTTP fan-out and skips
+	// legacy/non-catalog buckets returned by the bulk retirement query.
+	const enqueued = await enqueueAllCatalogDeficits();
 	return {
 		retired: mcqRows.length + frqRows.length,
 		bucketsAffected: buckets.size,
-		enqueued: buckets.size
+		enqueued
 	};
 }
 

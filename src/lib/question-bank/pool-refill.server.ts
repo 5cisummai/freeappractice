@@ -26,7 +26,7 @@ export type RefillRunSummary = {
 	skippedDuplicates: number;
 	failed: number;
 	budgetRemaining: number;
-	stoppedReason: 'complete' | 'time_budget' | 'generation_cap' | 'daily_budget' | 'no_work';
+	stoppedReason: 'complete' | 'time_budget' | 'daily_budget' | 'no_work';
 };
 
 const MAX_ATTEMPTS = 8;
@@ -454,7 +454,9 @@ export async function runQuestionPoolRefillWorker(
 		return summary;
 	}
 
-	let generationsLeft = Math.min(env.maxGenerationsPerRun, budgetRemaining);
+	// The daily budget is the generation limit. The worker's deadline below remains
+	// the serverless safety boundary for a single invocation.
+	let generationsLeft = budgetRemaining;
 
 	while (generationsLeft > 0 && Date.now() < deadlineMs) {
 		const now = new Date();
@@ -514,10 +516,6 @@ export async function runQuestionPoolRefillWorker(
 		}
 		if (Date.now() >= deadlineMs) {
 			stoppedReason = 'time_budget';
-			break;
-		}
-		if (generationsLeft <= 0) {
-			stoppedReason = 'generation_cap';
 			break;
 		}
 		stoppedReason = 'complete';

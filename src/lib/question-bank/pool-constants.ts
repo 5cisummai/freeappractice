@@ -14,8 +14,6 @@ export const QUESTION_POOL_FRQ_TARGET = poolTargets.frqTarget;
 
 /** Refill enqueue threshold as a fraction of target (e.g. 0.9 → refill below 90%). */
 export const QUESTION_POOL_LOW_WATER_RATIO = 0.9;
-/** Max LLM generations per cron/worker invocation. */
-export const QUESTION_POOL_MAX_GENERATIONS_PER_RUN = 5;
 export const QUESTION_POOL_LEASE_TTL_MS = 120_000;
 export const QUESTION_POOL_RETRY_DELAY_MS = 60_000;
 /**
@@ -33,7 +31,6 @@ export type QuestionPoolConfig = {
 	mcqTarget: number;
 	frqTarget: number;
 	lowWaterRatio: number;
-	maxGenerationsPerRun: number;
 	leaseTtlMs: number;
 	retryDelayMs: number;
 	dailyLlmGenerationBudget: number;
@@ -46,7 +43,6 @@ export const QUESTION_POOL_CONFIG: QuestionPoolConfig = {
 	mcqTarget: QUESTION_POOL_DEFAULT_MCQ_TARGET,
 	frqTarget: QUESTION_POOL_FRQ_TARGET,
 	lowWaterRatio: QUESTION_POOL_LOW_WATER_RATIO,
-	maxGenerationsPerRun: QUESTION_POOL_MAX_GENERATIONS_PER_RUN,
 	leaseTtlMs: QUESTION_POOL_LEASE_TTL_MS,
 	retryDelayMs: QUESTION_POOL_RETRY_DELAY_MS,
 	dailyLlmGenerationBudget: QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET,

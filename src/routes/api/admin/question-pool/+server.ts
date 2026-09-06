@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import {
+	cancelPoolBucketRefill,
 	enqueueAllPoolDeficits,
 	enqueuePoolBucketRefill,
 	getPoolReadinessSnapshot,
@@ -54,6 +55,22 @@ export const POST: RequestHandler = async (event) => {
 				unit
 			});
 			return json({ ok: true, enqueued: 1 }, { status: 202 });
+		}
+		case 'cancelRefill': {
+			if (!isPoolQuestionType(body.questionType)) {
+				return json({ message: 'questionType must be mcq or frq' }, { status: 400 });
+			}
+			const apClass = body.apClass?.trim() ?? '';
+			const unit = body.unit?.trim() ?? '';
+			if (!apClass || !unit) {
+				return json({ message: 'apClass and unit are required' }, { status: 400 });
+			}
+			const result = await cancelPoolBucketRefill({
+				questionType: body.questionType,
+				apClass,
+				unit
+			});
+			return json({ ok: true, ...result });
 		}
 		case 'enqueueAllDeficits': {
 			const result = await enqueueAllPoolDeficits();

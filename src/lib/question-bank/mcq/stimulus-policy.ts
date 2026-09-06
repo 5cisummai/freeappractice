@@ -13,9 +13,10 @@ export type StimulusProfile = {
 
 export type StimulusPolicy = {
 	version: 1;
-	enabled: boolean;
 	/** Optional exact unit allowlist for course-specific rollout. Omitted means all units. */
 	enabledUnits?: string[];
+	/** Optional exact unit denylist for course-specific exclusions. */
+	excludedUnits?: string[];
 	quizTargetQuestionPercent: number;
 	targetBasis: 'official' | 'official-derived' | 'product-calibrated';
 	setSizeBasis: 'official' | 'official-derived' | 'product-calibrated' | 'unknown';
@@ -38,7 +39,11 @@ const scienceDiagramTypes = [
 const policies: Record<string, StimulusPolicy> = {
 	'AP Biology': {
 		version: 1,
-		enabled: false,
+		enabledUnits: [
+			'Unit 1: Chemistry of Life',
+			'Unit 2: Cells',
+			'Unit 3: Cellular Energetics'
+		],
 		quizTargetQuestionPercent: 25,
 		targetBasis: 'product-calibrated',
 		setSizeBasis: 'official',
@@ -61,7 +66,11 @@ const policies: Record<string, StimulusPolicy> = {
 	},
 	'AP Chemistry': {
 		version: 1,
-		enabled: false,
+		enabledUnits: [
+			'Unit 1: Atomic Structure and Properties',
+			'Unit 2: Compound Structure and Properties',
+			'Unit 3: Properties of Substances and Mixtures'
+		],
 		quizTargetQuestionPercent: 25,
 		targetBasis: 'product-calibrated',
 		setSizeBasis: 'product-calibrated',
@@ -88,7 +97,11 @@ const policies: Record<string, StimulusPolicy> = {
 	},
 	'AP Physics 1': {
 		version: 1,
-		enabled: false,
+		enabledUnits: [
+			'Unit 1: Kinematics',
+			'Unit 2: Force and Translational Dynamics',
+			'Unit 3: Work, Energy, and Power'
+		],
 		quizTargetQuestionPercent: 25,
 		targetBasis: 'product-calibrated',
 		setSizeBasis: 'product-calibrated',
@@ -133,7 +146,11 @@ const policies: Record<string, StimulusPolicy> = {
 	},
 	'AP Human Geography': {
 		version: 1,
-		enabled: false,
+		enabledUnits: [
+			'Unit 1: Thinking Geographically',
+			'Unit 2: Population and Migration Patterns and Processes',
+			'Unit 3: Cultural Patterns and Processes'
+		],
 		quizTargetQuestionPercent: 35,
 		targetBasis: 'official-derived',
 		setSizeBasis: 'product-calibrated',
@@ -159,7 +176,11 @@ const policies: Record<string, StimulusPolicy> = {
 	},
 	'AP World History': {
 		version: 1,
-		enabled: false,
+		enabledUnits: [
+			'Unit 1: The Global Tapestry',
+			'Unit 2: Networks of Exchange',
+			'Unit 3: Land-Based Empires'
+		],
 		quizTargetQuestionPercent: 75,
 		targetBasis: 'product-calibrated',
 		setSizeBasis: 'official',
@@ -187,7 +208,6 @@ const policies: Record<string, StimulusPolicy> = {
 
 const disabledPolicy: StimulusPolicy = {
 	version: 1,
-	enabled: false,
 	quizTargetQuestionPercent: 0,
 	targetBasis: 'product-calibrated',
 	setSizeBasis: 'unknown',
@@ -208,9 +228,12 @@ export function getPolicyProfile(className: string, profileId: string): Stimulus
 }
 
 export function isStimulusPolicyEnabledForUnit(policy: StimulusPolicy, unit?: string): boolean {
-	if (!policy.enabled) return false;
+	if (!policy.setsEnabled) return false;
+
+	const normalizedUnit = unit?.trim() ?? '';
+	if (policy.excludedUnits?.includes(normalizedUnit)) return false;
 	if (!policy.enabledUnits?.length) return true;
-	return policy.enabledUnits.includes(unit?.trim() ?? '');
+	return policy.enabledUnits.includes(normalizedUnit);
 }
 
 export function getSupportedStimulusCourseNames(): string[] {

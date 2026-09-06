@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
 	getStimulusPolicy,
-	getSupportedStimulusCourseNames
+	getSupportedStimulusCourseNames,
+	isStimulusPolicyEnabledForUnit
 } from '$lib/question-bank/mcq/stimulus-policy';
 
 describe('stimulus pilot policy', () => {
@@ -15,7 +16,8 @@ describe('stimulus pilot policy', () => {
 		]);
 		for (const course of getSupportedStimulusCourseNames()) {
 			const policy = getStimulusPolicy(course);
-			expect(policy.enabled).toBe(false);
+			expect(policy).not.toHaveProperty('enabled');
+			expect(policy.enabledUnits).toHaveLength(3);
 			expect(policy.profiles.length).toBeGreaterThan(0);
 			expect(policy.profiles[0]!.minChildren).toBeGreaterThan(1);
 		}
@@ -23,9 +25,21 @@ describe('stimulus pilot policy', () => {
 
 	it('fails closed for courses outside the pilot', () => {
 		expect(getStimulusPolicy('AP Calculus AB')).toMatchObject({
-			enabled: false,
 			quizTargetQuestionPercent: 0,
+			setsEnabled: false,
 			profiles: []
 		});
+	});
+
+	it('supports explicit unit exclusions with precedence over an allowlist', () => {
+		const policy = {
+			...getStimulusPolicy('AP Biology'),
+			enabledUnits: ['Unit 1: Chemistry of Life', 'Unit 2: Cells'],
+			excludedUnits: ['Unit 2: Cells']
+		};
+
+		expect(isStimulusPolicyEnabledForUnit(policy, 'Unit 1: Chemistry of Life')).toBe(true);
+		expect(isStimulusPolicyEnabledForUnit(policy, 'Unit 2: Cells')).toBe(false);
+		expect(isStimulusPolicyEnabledForUnit(policy, 'Unit 3: Cellular Energetics')).toBe(false);
 	});
 });
