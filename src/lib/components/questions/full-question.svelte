@@ -117,8 +117,8 @@
 	const isReviewStage = $derived(stage === 'review');
 	const showSplit = $derived(
 		!isReviewStage &&
-		!isMobile.current &&
-		Boolean(question.hasStimulus && (question.leftPanel || question.diagramSpec))
+			!isMobile.current &&
+			Boolean(question.hasStimulus && (question.leftPanel || question.diagramSpec))
 	);
 	const displayNumber = $derived(Number(questionNumber));
 	const currentIndex = $derived(

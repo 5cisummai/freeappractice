@@ -68,7 +68,7 @@
 	let shareAttachedToGroup = $state(false);
 	let shareCreating = $state(false);
 	let shareOpen = $state(false);
-	let pendingClaimSaved = $state(false);
+	let showSignupPrompt = $state(false);
 	let struckByQuestionId = $state<Record<string, string[]>>({});
 	let annotationsByQuestionId = $state<Record<string, TextAnnotation[]>>({});
 	let annotationsByStimulusId = $state<Record<string, TextAnnotation[]>>({});
@@ -103,6 +103,7 @@
 			lastSnapshot = snapshot;
 			if (persistHistory) void persistQuizHistory(snapshot);
 			else if (sharedSlug) saveAnonymousSharedRun(snapshot);
+			else showSignupPrompt = true;
 		}
 	});
 
@@ -196,7 +197,7 @@
 		shareAttachedToGroup = false;
 		shareCreating = false;
 		shareOpen = false;
-		pendingClaimSaved = false;
+		showSignupPrompt = false;
 		struckByQuestionId = {};
 		annotationsByQuestionId = {};
 		annotationsByStimulusId = {};
@@ -302,7 +303,7 @@
 			}))
 		};
 		if (savePendingSharedQuizRun(run)) {
-			pendingClaimSaved = true;
+			showSignupPrompt = true;
 		} else {
 			historyError = 'This quiz could not be saved. Please try again after signing up.';
 		}
@@ -547,86 +548,90 @@
 {:else if exam.status === 'complete'}
 	<Card.Root class="border-border/70 bg-card/95 shadow-sm">
 		<Card.Content class="space-y-8 px-6 py-10 text-center sm:px-10">
-			<div class="space-y-2">
-				<p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-					Quiz complete
-				</p>
-				<p class="font-display text-6xl font-medium tracking-tight text-foreground">
-					{exam.correctCount}
-					<span class="text-3xl text-muted-foreground">/ {exam.requestedCount}</span>
-				</p>
-				<p class="text-sm text-muted-foreground">{exam.scorePercent}% correct</p>
-			</div>
-
-			{#if persistHistory}
-				{#if historyStatus === 'saving'}
-					<p class="text-sm text-muted-foreground" role="status">Saving to your history…</p>
-				{:else if historyStatus === 'saved'}
-					<p class="text-sm text-emerald-600 dark:text-emerald-400" role="status">
-						Saved to history
+			<div class="mx-auto w-full max-w-lg space-y-6">
+				<div class="space-y-2">
+					<p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+						Quiz complete
 					</p>
-				{:else if historyStatus === 'error'}
-					<div class="space-y-2" role="alert">
-						<p class="text-sm text-destructive">{historyError}</p>
-						<Button
-							variant="outline"
-							size="sm"
-							onclick={() => {
-								if (lastSnapshot) void persistQuizHistory(lastSnapshot);
-							}}
-						>
-							Retry save
-						</Button>
+					<p class="font-display text-6xl font-medium tracking-tight text-foreground">
+						{exam.correctCount}
+						<span class="text-3xl text-muted-foreground">/ {exam.requestedCount}</span>
+					</p>
+					<p class="text-sm text-muted-foreground">{exam.scorePercent}% correct</p>
+				</div>
+
+				<div class="grid grid-cols-3 divide-x divide-border border-y border-border py-4">
+					<div class="space-y-1 px-3">
+						<p class="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+							{exam.correctCount}
+						</p>
+						<p class="text-xs text-muted-foreground">Correct</p>
+					</div>
+					<div class="space-y-1 px-3">
+						<p class="text-xl font-semibold text-red-600 dark:text-red-400">
+							{exam.incorrectCount}
+						</p>
+						<p class="text-xs text-muted-foreground">Incorrect</p>
+					</div>
+					<div class="space-y-1 px-3">
+						<p class="text-xl font-semibold text-muted-foreground">{exam.unansweredCount}</p>
+						<p class="text-xs text-muted-foreground">Unanswered</p>
+					</div>
+				</div>
+
+				{#if persistHistory}
+					{#if historyStatus === 'saving'}
+						<p class="text-sm text-muted-foreground" role="status">Saving to your history…</p>
+					{:else if historyStatus === 'saved'}
+						<p class="text-sm text-emerald-600 dark:text-emerald-400" role="status">
+							Saved to history
+						</p>
+					{:else if historyStatus === 'error'}
+						<div class="space-y-2" role="alert">
+							<p class="text-sm text-destructive">{historyError}</p>
+							<Button
+								variant="outline"
+								size="sm"
+								onclick={() => {
+									if (lastSnapshot) void persistQuizHistory(lastSnapshot);
+								}}
+							>
+								Retry save
+							</Button>
+						</div>
+					{/if}
+				{/if}
+
+				{#if showSignupPrompt}
+					<div class="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3" role="status">
+						<p class="text-sm text-muted-foreground">Sign up to save your progress.</p>
 					</div>
 				{/if}
-			{/if}
 
-			{#if pendingClaimSaved}
-				<div class="space-y-2" role="status">
-					<p class="text-sm text-muted-foreground">Sign up to save this quiz and your progress.</p>
-					<Button href={claimSignupHref} variant="outline" size="sm">Sign up to save</Button>
-				</div>
-			{/if}
+				{#if !persistHistory && historyError}
+					<p class="text-sm text-destructive" role="alert">{historyError}</p>
+				{/if}
 
-			{#if !persistHistory && historyError}
-				<p class="text-sm text-destructive" role="alert">{historyError}</p>
-			{/if}
-
-			{#if canShareQuiz || shareUrl}
-				<div class="space-y-2">
-					{@render shareMenu()}
-					{#if shareStatus}
-						<p class="text-xs text-muted-foreground" role="status">{shareStatus}</p>
+				<div class="flex flex-wrap justify-center gap-2">
+					<Button class="w-full sm:w-auto" onclick={() => void startQuiz()}>Try another quiz</Button
+					>
+					{#if showSignupPrompt}
+						<Button href={claimSignupHref} variant="outline" class="w-full sm:w-auto"
+							>Sign up to save</Button
+						>
+					{/if}
+					{#if persistHistory && showCoachReview}
+						<Button href={coachReviewHref} variant="outline" class="w-full sm:w-auto"
+							>Review with Pip</Button
+						>
+					{/if}
+					{#if canShareQuiz || shareUrl}
+						{@render shareMenu('w-full sm:w-auto')}
+						{#if shareStatus}
+							<p class="basis-full text-xs text-muted-foreground" role="status">{shareStatus}</p>
+						{/if}
 					{/if}
 				</div>
-			{/if}
-
-			<div
-				class="mx-auto grid max-w-md grid-cols-3 divide-x divide-border border-y border-border py-4"
-			>
-				<div class="space-y-1 px-3">
-					<p class="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-						{exam.correctCount}
-					</p>
-					<p class="text-xs text-muted-foreground">Correct</p>
-				</div>
-				<div class="space-y-1 px-3">
-					<p class="text-xl font-semibold text-red-600 dark:text-red-400">
-						{exam.incorrectCount}
-					</p>
-					<p class="text-xs text-muted-foreground">Incorrect</p>
-				</div>
-				<div class="space-y-1 px-3">
-					<p class="text-xl font-semibold text-muted-foreground">{exam.unansweredCount}</p>
-					<p class="text-xs text-muted-foreground">Unanswered</p>
-				</div>
-			</div>
-
-			<div class="flex flex-wrap justify-center gap-2">
-				{#if persistHistory && showCoachReview}
-					<Button href={coachReviewHref} variant="outline">Review with Pip</Button>
-				{/if}
-				<Button onclick={() => void startQuiz()}>Try another quiz</Button>
 			</div>
 		</Card.Content>
 	</Card.Root>

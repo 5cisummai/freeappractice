@@ -124,9 +124,9 @@ describe('QuestionBank selection boundary', () => {
 			scheduleBackgroundTask
 		});
 
-		await expect(
-			bank.get('AP Biology', 'Unit 1', { allowRefill: true })
-		).resolves.toMatchObject({ status: 'warming' });
+		await expect(bank.get('AP Biology', 'Unit 1', { allowRefill: true })).resolves.toMatchObject({
+			status: 'warming'
+		});
 		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1', undefined);
 		expect(scheduleBackgroundTask).toHaveBeenCalledOnce();
 		releaseRefill();

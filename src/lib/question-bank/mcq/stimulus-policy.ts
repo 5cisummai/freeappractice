@@ -39,11 +39,7 @@ const scienceDiagramTypes = [
 const policies: Record<string, StimulusPolicy> = {
 	'AP Biology': {
 		version: 1,
-		enabledUnits: [
-			'Unit 1: Chemistry of Life',
-			'Unit 2: Cells',
-			'Unit 3: Cellular Energetics'
-		],
+		enabledUnits: ['Unit 1: Chemistry of Life', 'Unit 2: Cells', 'Unit 3: Cellular Energetics'],
 		quizTargetQuestionPercent: 25,
 		targetBasis: 'product-calibrated',
 		setSizeBasis: 'official',

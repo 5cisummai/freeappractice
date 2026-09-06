@@ -325,10 +325,7 @@
 				<DropdownMenu.Content align="end">
 					<DropdownMenu.Group>
 						<DropdownMenu.Label>Bulk actions</DropdownMenu.Label>
-						<DropdownMenu.Item
-							disabled={!!busyAction}
-							onclick={() => void enqueueAllDeficits()}
-						>
+						<DropdownMenu.Item disabled={!!busyAction} onclick={() => void enqueueAllDeficits()}>
 							{isBusy('enqueue-all') ? 'Enqueueing…' : 'Enqueue all deficits'}
 						</DropdownMenu.Item>
 						<DropdownMenu.Item

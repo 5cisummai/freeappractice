@@ -82,6 +82,7 @@
 					<PracticeRunner
 						{initial}
 						capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
+						quiz={{ persistHistory: false }}
 					/>
 				{/key}
 			</section>

@@ -31,6 +31,7 @@ export type RefillRunSummary = {
 };
 
 const MAX_ATTEMPTS = 8;
+const MAX_CONCURRENT_REFILL_JOBS = 8;
 
 async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {
 	const now = Date.now();
@@ -300,6 +301,66 @@ async function generateOne(
 	};
 }
 
+async function claimNextRefillJob(
+	questionType: PoolBucketKey['questionType'] | undefined,
+	owner: string,
+	env: QuestionPoolConfig
+): Promise<{ kind: 'none' | 'invalid' | 'claimed'; lease?: PoolRefillStateRow }> {
+	while (true) {
+		const now = new Date();
+		const candidateRows = await getNeonDatabase()
+			.select()
+			.from(poolRefillStates)
+			.where(
+				and(
+					questionType ? eq(poolRefillStates.questionType, questionType) : sql`true`,
+					or(
+						eq(poolRefillStates.status, 'pending'),
+						eq(poolRefillStates.status, 'failed'),
+						eq(poolRefillStates.status, 'budget_exhausted'),
+						eq(poolRefillStates.status, 'running')
+					),
+					or(isNull(poolRefillStates.nextAttemptAt), lte(poolRefillStates.nextAttemptAt, now)),
+					or(
+						ne(poolRefillStates.status, 'running'),
+						isNull(poolRefillStates.leaseExpiresAt),
+						lte(poolRefillStates.leaseExpiresAt, now)
+					)
+				)
+			)
+			.orderBy(asc(poolRefillStates.requestedAt))
+			.limit(1);
+		const candidate = candidateRows[0] as PoolRefillStateRow | undefined;
+
+		if (!candidate) return { kind: 'none' };
+
+		if (!isValidPoolBucket(candidate)) {
+			await getNeonDatabase()
+				.update(poolRefillStates)
+				.set({
+					status: 'idle',
+					leaseOwner: null,
+					leaseExpiresAt: null,
+					nextAttemptAt: null,
+					lastError: 'Cancelled invalid catalog pool bucket',
+					updatedAt: new Date()
+				})
+				.where(eq(poolRefillStates.id, candidate.id));
+			return { kind: 'invalid' };
+		}
+
+		const leased = await tryAcquireRefillLease(
+			{
+				questionType: candidate.questionType,
+				apClass: candidate.apClass,
+				unit: candidate.unit
+			},
+			{ owner, leaseTtlMs: env.leaseTtlMs }
+		);
+		if (leased) return { kind: 'claimed', lease: leased };
+	}
+}
+
 export async function processRefillJob(
 	doc: PoolRefillStateRow,
 	env: QuestionPoolConfig,
@@ -457,86 +518,53 @@ export async function runQuestionPoolRefillWorker(
 
 	// The daily budget is the generation limit. The worker's deadline below remains
 	// the serverless safety boundary for a single invocation.
-	let generationsLeft = budgetRemaining;
-
-	while (generationsLeft > 0 && Date.now() < deadlineMs) {
-		const now = new Date();
-		const candidateRows = await getNeonDatabase()
-			.select()
-			.from(poolRefillStates)
-			.where(
-				and(
-					opts?.questionType ? eq(poolRefillStates.questionType, opts.questionType) : sql`true`,
-					or(
-						eq(poolRefillStates.status, 'pending'),
-						eq(poolRefillStates.status, 'failed'),
-						eq(poolRefillStates.status, 'budget_exhausted'),
-						eq(poolRefillStates.status, 'running')
-					),
-					or(isNull(poolRefillStates.nextAttemptAt), lte(poolRefillStates.nextAttemptAt, now)),
-					or(
-						ne(poolRefillStates.status, 'running'),
-						isNull(poolRefillStates.leaseExpiresAt),
-						lte(poolRefillStates.leaseExpiresAt, now)
-					)
-				)
-			)
-			.orderBy(asc(poolRefillStates.requestedAt))
-			.limit(1);
-		const candidate = candidateRows[0] as PoolRefillStateRow | undefined;
-
-		if (!candidate) {
-			stoppedReason = processed > 0 ? 'complete' : 'no_work';
-			break;
-		}
-
-		if (!isValidPoolBucket(candidate)) {
-			await getNeonDatabase()
-				.update(poolRefillStates)
-				.set({
-					status: 'idle',
-					leaseOwner: null,
-					leaseExpiresAt: null,
-					nextAttemptAt: null,
-					lastError: 'Cancelled invalid catalog pool bucket',
-					updatedAt: new Date()
-				})
-				.where(eq(poolRefillStates.id, candidate.id));
+	while (budgetRemaining > 0 && Date.now() < deadlineMs) {
+		const jobs: PoolRefillStateRow[] = [];
+		let noWork = false;
+		while (jobs.length < MAX_CONCURRENT_REFILL_JOBS) {
+			const claimed = await claimNextRefillJob(opts?.questionType, owner, env);
+			if (claimed.kind === 'none') {
+				noWork = true;
+				break;
+			}
 			processed += 1;
-			continue;
+			if (claimed.kind === 'claimed' && claimed.lease) jobs.push(claimed.lease);
 		}
 
-		const leased = await tryAcquireRefillLease(
-			{
-				questionType: candidate.questionType,
-				apClass: candidate.apClass,
-				unit: candidate.unit
-			},
-			{ owner, leaseTtlMs: env.leaseTtlMs }
+		if (!jobs.length) {
+			if (noWork) stoppedReason = processed > 0 ? 'complete' : 'no_work';
+			break;
+		}
+
+		const results = await Promise.allSettled(
+			jobs.map((job) =>
+				processRefillJob(job, env, {
+					maxGenerations: budgetRemaining,
+					deadlineMs
+				})
+			)
 		);
-		if (!leased) continue;
+		for (const result of results) {
+			if (result.status === 'rejected') {
+				failed += 1;
+				logger.error('[pool-refill] parallel job failed outside worker boundary', {
+					error: result.reason
+				});
+				continue;
+			}
+			generated += result.value.generated;
+			skippedDuplicates += result.value.skippedDuplicates;
+			if (result.value.failed) failed += 1;
+		}
 
-		processed += 1;
-		const result = await processRefillJob(leased, env, {
-			maxGenerations: generationsLeft,
-			deadlineMs
-		});
-		generated += result.generated;
-		skippedDuplicates += result.skippedDuplicates;
-		if (result.failed) failed += 1;
-		generationsLeft -= result.budgetUsed;
 		budgetRemaining = await getDailyBudgetRemaining(env);
-
-		if (result.budgetHit || budgetRemaining <= 0) {
-			stoppedReason = 'daily_budget';
-			break;
-		}
-		if (Date.now() >= deadlineMs) {
-			stoppedReason = 'time_budget';
-			break;
-		}
-		stoppedReason = 'complete';
+		if (budgetRemaining <= 0) stoppedReason = 'daily_budget';
+		else if (Date.now() >= deadlineMs) stoppedReason = 'time_budget';
+		else stoppedReason = 'complete';
 	}
+
+	if (budgetRemaining <= 0) stoppedReason = 'daily_budget';
+	else if (Date.now() >= deadlineMs) stoppedReason = 'time_budget';
 
 	const summary: RefillRunSummary = {
 		processed,
