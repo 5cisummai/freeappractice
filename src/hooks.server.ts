@@ -321,7 +321,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(
 	Sentry.sentryHandle(),
-	...(env.FLAGS_SECRET && !building
+	...(!building && env.FLAGS_SECRET
 		? [
 				createHandle({
 					secret: env.FLAGS_SECRET,
