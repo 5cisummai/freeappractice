@@ -102,4 +102,33 @@ describe('parseQuestionPayloadFromResponse', () => {
 		const result = parseQuestionPayloadFromResponse(validPayload({ correctAnswer: undefined }));
 		expect(result.correctAnswer).toBeUndefined();
 	});
+
+	it('renders a diagram-only structured stimulus as an enhanced question', () => {
+		const result = parseQuestionPayloadFromResponse(
+			validPayload({
+				stimulus: {
+					text: null,
+					diagramSpec: {
+						type: 'function-graph',
+						accessibleDescription: 'A rising line graph.'
+					},
+					provenance: 'ai-generated-original'
+				},
+				stimulusId: '00000000-0000-4000-8000-000000000001',
+				stimulusPosition: 0,
+				stimulusQuestionCount: 1
+			})
+		);
+
+		expect(result.hasStimulus).toBe(true);
+		expect(result.hasDiagram).toBe(true);
+		expect(result.diagramSpec?.type).toBe('function-graph');
+		expect(result.stimulus?.provenance).toBe('ai-generated-original');
+	});
+
+	it('does not treat an empty structured stimulus as enhanced content', () => {
+		const result = parseQuestionPayloadFromResponse(validPayload({ stimulus: {} }));
+		expect(result.hasStimulus).toBe(false);
+		expect(result.stimulus).toBeUndefined();
+	});
 });

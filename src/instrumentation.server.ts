@@ -1,4 +1,6 @@
 import * as Sentry from '@sentry/sveltekit';
-import { sentryOptions } from '$lib/sentry-config';
+import { sentryEnabled, sentryOptions } from '$lib/sentry-config';
 
-Sentry.init(sentryOptions);
+if (sentryEnabled) {
+	Sentry.init(sentryOptions);
+}

@@ -5,6 +5,27 @@
 
 	const changelog = [
 		{
+			version: '1.8.0',
+			date: 'September 6, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added AP-style stimulus question sets that group related multiple-choice questions around shared passages, data, and diagrams',
+						'Added a split reading and question layout so shared stimuli stay visible while you move through a quiz'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Added text highlighting and annotations for shared stimuli, with notes and reading position preserved across related questions',
+						'Quiz history now shows the shared stimulus and its diagrams alongside saved questions',
+						'Improved guest quiz completion with a clearer correct, incorrect, and unanswered breakdown and a direct sign-up prompt to save progress'
+					]
+				}
+			]
+		},
+		{
 			version: '1.7.13',
 			date: 'August 31, 2026',
 			sections: [
@@ -1288,7 +1309,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: August 31, 2026"
+			meta="Last Updated: September 6, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

@@ -97,7 +97,7 @@ describe('QuestionBank selection boundary', () => {
 			requestRefill
 		});
 
-		const outcome = await bank.get('AP Biology', 'Unit 1');
+		const outcome = await bank.get('AP Biology', 'Unit 1', { allowRefill: true });
 		expect(outcome).toEqual({
 			status: 'warming',
 			retryAfterSeconds: QUESTION_POOL_CONFIG.warmingRetryAfterSeconds
@@ -124,10 +124,27 @@ describe('QuestionBank selection boundary', () => {
 			scheduleBackgroundTask
 		});
 
-		await expect(bank.get('AP Biology', 'Unit 1')).resolves.toMatchObject({ status: 'warming' });
+		await expect(bank.get('AP Biology', 'Unit 1', { allowRefill: true })).resolves.toMatchObject({
+			status: 'warming'
+		});
 		expect(requestRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1');
 		expect(scheduleBackgroundTask).toHaveBeenCalledOnce();
 		releaseRefill();
+	});
+
+	it('does not request refill unless the caller explicitly allows it', async () => {
+		const requestRefill = vi.fn(async () => {});
+		const bank = new QuestionBank({
+			logScope: 'test',
+			normalizeUnit: (u) => u ?? '',
+			countActive: async () => 0,
+			findRandom: async () => null,
+			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
+			requestRefill
+		});
+
+		await expect(bank.get('AP Biology', 'Unit 1')).resolves.toMatchObject({ status: 'warming' });
+		expect(requestRefill).not.toHaveBeenCalled();
 	});
 
 	it('resets exclusions when the bucket still has active rows', async () => {

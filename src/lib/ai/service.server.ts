@@ -1,5 +1,11 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { NoObjectGeneratedError, Output, stepCountIs, ToolLoopAgent } from 'ai';
+import {
+	NoObjectGeneratedError,
+	NoOutputGeneratedError,
+	Output,
+	stepCountIs,
+	ToolLoopAgent
+} from 'ai';
 import type { ToolSet } from 'ai';
 import type { z } from 'zod';
 import { OPEN_AI_KEY } from '$env/static/private';
@@ -7,6 +13,8 @@ import { env } from '$env/dynamic/private';
 import { logger } from '$lib/server/logger';
 
 const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
+const STRUCTURED_OUTPUT_STEP_LIMIT = 10;
+const STRUCTURED_OUTPUT_FINAL_STEP = STRUCTURED_OUTPUT_STEP_LIMIT - 1;
 
 let provider: ReturnType<typeof createOpenAI> | null = null;
 
@@ -39,18 +47,35 @@ export async function structuredObject<T, TOOLS extends ToolSet = ToolSet>(
 	const { callName, model, system, user, schema, schemaName, reasoningEffort, logContext, tools } =
 		opts;
 	const doneAiCall = logger.aiCall(callName, model, logContext);
+	let stepsCompleted = 0;
 	try {
 		const agent = new ToolLoopAgent({
 			model: openaiModel(model),
 			instructions: system,
 			tools,
-			stopWhen: stepCountIs(4),
+			stopWhen: stepCountIs(STRUCTURED_OUTPUT_STEP_LIMIT),
+			prepareStep: ({ stepNumber }) =>
+				stepNumber >= STRUCTURED_OUTPUT_FINAL_STEP
+					? { activeTools: [], toolChoice: 'none' }
+					: undefined,
 			output: Output.object({ name: schemaName, schema }),
 			providerOptions: {
 				openai: {
 					forceReasoning: true,
 					...(reasoningEffort != null && { reasoningEffort })
 				}
+			},
+			onStepFinish: ({ finishReason, rawFinishReason, toolCalls, usage }) => {
+				stepsCompleted += 1;
+				logger.info(`[ai] ${callName} step ${stepsCompleted} finished`, {
+					...logContext,
+					model,
+					finishReason,
+					rawFinishReason,
+					toolNames: toolCalls.map((call) => call.toolName),
+					inputTokens: usage.inputTokens,
+					outputTokens: usage.outputTokens
+				});
 			}
 		});
 		const result = await agent.generate({ prompt: user });
@@ -68,6 +93,15 @@ export async function structuredObject<T, TOOLS extends ToolSet = ToolSet>(
 				error: 'No structured object generated'
 			});
 			throw new Error('No parsed output from structured response', { cause: err });
+		}
+		if (NoOutputGeneratedError.isInstance(err)) {
+			logger.error(`[ai] ${callName} failed — no final output generated`, {
+				...logContext,
+				model,
+				stepsCompleted,
+				error: err
+			});
+			throw new Error('No final output from structured response', { cause: err });
 		}
 		logger.error(`[ai] ${callName} failed`, { ...logContext, model, error: err });
 		throw err;

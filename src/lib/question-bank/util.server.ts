@@ -8,6 +8,24 @@ export function isDuplicateKeyError(err: unknown): boolean {
 	return e.cause !== undefined ? isDuplicateKeyError(e.cause) : false;
 }
 
+/** Fail before PostgreSQL JSONB persistence when generated content contains U+0000. */
+export function assertNoNullCharacters(value: unknown, path = 'generated content'): void {
+	if (typeof value === 'string') {
+		if (value.includes('\u0000')) {
+			throw new Error(`${path} contains an unsupported null character`);
+		}
+		return;
+	}
+	if (Array.isArray(value)) {
+		value.forEach((entry, index) => assertNoNullCharacters(entry, `${path}[${index}]`));
+		return;
+	}
+	if (!value || typeof value !== 'object' || value instanceof Date) return;
+	for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+		assertNoNullCharacters(entry, `${path}.${key}`);
+	}
+}
+
 /** Normalize and hash text for deduplication (SHA-256). */
 export function computeContentHash(text: string): string {
 	return createHash('sha256').update(text.trim().toLowerCase().replace(/\s+/g, ' ')).digest('hex');

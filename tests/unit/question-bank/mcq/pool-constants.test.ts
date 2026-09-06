@@ -14,13 +14,13 @@ import {
 
 describe('question pool constants', () => {
 	it('loads JSON defaults', () => {
-		expect(QUESTION_POOL_DEFAULT_MCQ_TARGET).toBe(20);
-		expect(QUESTION_POOL_MIN_MCQ_TARGET).toBe(10);
-		expect(QUESTION_POOL_FRQ_TARGET).toBe(8);
-		expect(preferredMcqTarget('AP Biology')).toBe(35);
-		expect(preferredMcqTarget('AP Chemistry')).toBe(20);
-		expect(QUESTION_POOL_CONFIG.mcqTarget).toBe(20);
-		expect(QUESTION_POOL_CONFIG.frqTarget).toBe(8);
+		expect(QUESTION_POOL_DEFAULT_MCQ_TARGET).toBe(23);
+		expect(QUESTION_POOL_MIN_MCQ_TARGET).toBe(12);
+		expect(QUESTION_POOL_FRQ_TARGET).toBe(10);
+		expect(preferredMcqTarget('AP Biology')).toBe(41);
+		expect(preferredMcqTarget('AP Chemistry')).toBe(23);
+		expect(QUESTION_POOL_CONFIG.mcqTarget).toBe(23);
+		expect(QUESTION_POOL_CONFIG.frqTarget).toBe(10);
 	});
 
 	it('maps FRQ targets by type', () => {
@@ -36,20 +36,20 @@ describe('question pool constants', () => {
 			'AP Biology': 100,
 			'AP Chemistry': 50
 		};
-		expect(resolveMcqTarget('AP Biology', counts)).toBe(35);
-		expect(resolveMcqTarget('AP Chemistry', counts)).toBe(15);
+		expect(resolveMcqTarget('AP Biology', counts)).toBe(41);
+		expect(resolveMcqTarget('AP Chemistry', counts)).toBe(18);
 		expect(
 			poolTargetForBucket({
 				questionType: 'mcq',
 				apClass: 'AP Chemistry',
 				generationCountsByClass: counts
 			})
-		).toBe(15);
+		).toBe(18);
 	});
 
 	it('uses preferred ceiling when generation stats are empty', () => {
-		expect(resolveMcqTarget('AP Biology', {})).toBe(35);
-		expect(resolveMcqTarget('AP Chemistry', {})).toBe(20);
+		expect(resolveMcqTarget('AP Biology', {})).toBe(41);
+		expect(resolveMcqTarget('AP Chemistry', {})).toBe(23);
 	});
 
 	it('ignores non-finite generation counts when scaling', () => {
@@ -58,7 +58,7 @@ describe('question pool constants', () => {
 				'AP Biology': Number.NaN,
 				'AP Chemistry': 50
 			})
-		).toBe(20);
+		).toBe(23);
 	});
 
 	it('detects low-water deficits', () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError,
 	normalizeUnit
@@ -31,5 +32,19 @@ describe('isDuplicateKeyError', () => {
 		expect(isDuplicateKeyError({ code: '23503' })).toBe(false);
 		expect(isDuplicateKeyError(null)).toBe(false);
 		expect(isDuplicateKeyError('nope')).toBe(false);
+	});
+});
+
+describe('assertNoNullCharacters', () => {
+	it('rejects nested strings containing U+0000 before JSONB persistence', () => {
+		expect(() =>
+			assertNoNullCharacters({ explanation: 'charge and $\u0000pi$ bonding' }, 'stimulus')
+		).toThrow('stimulus.explanation contains an unsupported null character');
+	});
+
+	it('allows ordinary LaTeX backslashes', () => {
+		expect(() =>
+			assertNoNullCharacters({ explanation: String.raw`charge and $\pi$ bonding` })
+		).not.toThrow();
 	});
 });

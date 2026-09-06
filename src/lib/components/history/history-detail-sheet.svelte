@@ -7,6 +7,7 @@
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
@@ -193,6 +194,21 @@
 						This question is no longer available in storage. Your attempt was still recorded.
 					</p>
 				{:else}
+					{#if item.question.stimulus || item.question.diagramSpec}
+						<div class="space-y-3">
+							<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+								Stimulus
+							</p>
+							{#if item.question.stimulus?.text}
+								<RichText text={item.question.stimulus.text} class="text-sm" />
+							{/if}
+							{#if item.question.stimulus?.diagramSpec || item.question.diagramSpec}
+								<ExamfigDiagram
+									spec={item.question.stimulus?.diagramSpec ?? item.question.diagramSpec!}
+								/>
+							{/if}
+						</div>
+					{/if}
 					<div>
 						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 							Question

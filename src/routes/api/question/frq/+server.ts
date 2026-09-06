@@ -49,7 +49,8 @@ export const POST: RequestHandler = withAuthedHandler(
 			}
 			const outcome = await frqBank.get(apClass, unit, {
 				excludeQuestionIds: validated.value.excludeQuestionIds,
-				metrics: path
+				metrics: path,
+				allowRefill: true
 			});
 
 			switch (outcome.status) {

@@ -1,6 +1,8 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolRefillStates } from '$lib/server/neon/schema';
+import { isStimulusQuestionsEnabled } from '$lib/flags';
+import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
 import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
 import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-types.server';
 
@@ -13,6 +15,18 @@ export async function countActivePoolRows(
 	unit: string
 ): Promise<number> {
 	return getPoolKindAdapter(questionType).countActive(apClass, unit);
+}
+
+/** Count rows that can actually be served under the current feature flags. */
+export async function countActivePoolRowsForServing(
+	questionType: PoolRefillQuestionType,
+	apClass: string,
+	unit: string
+): Promise<number> {
+	if (questionType === 'mcq') {
+		return countActiveMcqQuestions(apClass, unit, await isStimulusQuestionsEnabled());
+	}
+	return countActivePoolRows(questionType, apClass, unit);
 }
 
 /** Load active counts for every bucket in one grouped query for ops reconciliation. */
@@ -45,6 +59,12 @@ export type PoolRefillHealthCounts = {
 	oldestRequestedAt: Date | null;
 };
 
+function databaseTimestamp(value: unknown): Date | null {
+	if (value == null) return null;
+	const timestamp = value instanceof Date ? value : new Date(String(value));
+	return Number.isNaN(timestamp.getTime()) ? null : timestamp;
+}
+
 /** Read refill health aggregates in one SQL query instead of loading state rows. */
 export async function getPoolRefillHealthCounts(): Promise<PoolRefillHealthCounts> {
 	const [row] = await getNeonDatabase()
@@ -62,6 +82,6 @@ export async function getPoolRefillHealthCounts(): Promise<PoolRefillHealthCount
 		failedJobs: Number(row?.failedJobs ?? 0),
 		budgetExhaustedJobs: Number(row?.budgetExhaustedJobs ?? 0),
 		pendingJobs: Number(row?.pendingJobs ?? 0),
-		oldestRequestedAt: row?.oldestRequestedAt ?? null
+		oldestRequestedAt: databaseTimestamp(row?.oldestRequestedAt)
 	};
 }

@@ -29,6 +29,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 		apClass: string;
 		unit: string;
 		recentTopics?: string[];
+		diagramsEnabled?: boolean;
 	}>;
 	model?: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
@@ -47,7 +48,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 				recentTopics: req.recentTopics,
 				model,
 				reasoningEffort: opts.reasoningEffort,
-				diagramsEnabled: opts.diagramsEnabled
+				diagramsEnabled: req.diagramsEnabled ?? opts.diagramsEnabled
 			})
 		);
 		entries[req.customId] = {

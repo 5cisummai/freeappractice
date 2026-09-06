@@ -1,9 +1,11 @@
+import { isStimulusQuestionsEnabled } from '$lib/flags';
 import {
 	countActiveMcqQuestions,
 	findCachedQuestionByPool,
 	findCachedQuestionsByPool,
 	type McqPoolQuestion
 } from '$lib/question-bank/mcq/repository.server';
+import { copyStimulusFields } from '$lib/question-bank/mcq/types';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 import { scheduleBackgroundTask } from '$lib/server/background-task.server';
@@ -20,6 +22,10 @@ type McqAnswerBody = {
 	topicsCovered: string;
 	diagramSpec: Record<string, unknown> | null;
 	hasDiagram: boolean;
+	stimulus?: Record<string, unknown>;
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
 };
 
 type CachedResult = {
@@ -47,6 +53,10 @@ function hotPoolBodyFromDoc(
 		| 'topicsCovered'
 		| 'diagramSpec'
 		| 'hasDiagram'
+		| 'stimulus'
+		| 'stimulusId'
+		| 'stimulusPosition'
+		| 'stimulusQuestionCount'
 	>
 ): McqAnswerBody {
 	return {
@@ -60,7 +70,8 @@ function hotPoolBodyFromDoc(
 		mainTopic: doc.mainTopic,
 		topicsCovered: doc.topicsCovered ?? '',
 		diagramSpec: doc.diagramSpec ?? null,
-		hasDiagram: doc.hasDiagram
+		hasDiagram: doc.hasDiagram,
+		...copyStimulusFields(doc)
 	};
 }
 
@@ -70,9 +81,10 @@ export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
 	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
 	findRandomBatch: findCachedQuestionsByPool,
+	resolveAllowStimulusQuestions: isStimulusQuestionsEnabled,
 	scheduleBackgroundTask,
-	// Diagram availability is decided during generation. Serving a cached row
-	// must remain a synchronous pool-hit path and never initialize Flags.
+	// Flag resolution happens once per request before the indexed pool lookup.
+	// Serving a cached row still uses the projection-only pool-hit path.
 	serveCached: (doc) => ({
 		answer: hotPoolBodyFromDoc(doc),
 		provider: 'cache',

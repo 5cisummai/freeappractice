@@ -18,7 +18,7 @@ describe('question pool kind adapters', () => {
 				apClass: 'AP Chemistry',
 				generationCountsByClass: { 'AP Biology': 100, 'AP Chemistry': 50 }
 			})
-		).toBe(15);
+		).toBe(18);
 		expect(
 			frq.targetFor({ apClass: 'AP Biology', config: { ...QUESTION_POOL_CONFIG, frqTarget: 4 } })
 		).toBe(4);

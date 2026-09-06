@@ -48,19 +48,19 @@ Server-side timing and reliability metrics for selection-only question serves (`
 
 Emitted once per refill worker invocation. The deployed cron processes work; admin actions only enqueue it.
 
-| Property                 | Type   | Notes                                                                          |
-| ------------------------ | ------ | ------------------------------------------------------------------------------ |
-| `processed`              | number | Leased jobs processed                                                          |
-| `generated`              | number | LLM generations completed                                                      |
-| `skipped_duplicates`     | number | Duplicate content/ID skips                                                     |
-| `failed`                 | number | Jobs that failed in this run                                                   |
-| `budget_remaining`       | number | Remaining daily LLM generation budget                                          |
-| `stopped_reason`         | string | `complete` \| `time_budget` \| `generation_cap` \| `daily_budget` \| `no_work` |
-| `empty_observed_buckets` | number | Refill rows with `observedCount = 0`                                           |
-| `failed_jobs`            | number | Jobs currently in `failed` status                                              |
-| `budget_exhausted_jobs`  | number | Jobs in `budget_exhausted` status                                              |
-| `pending_jobs`           | number | Jobs in `pending` status                                                       |
-| `oldest_job_age_ms`      | number | Age of oldest non-idle refill job                                              |
+| Property                 | Type   | Notes                                                      |
+| ------------------------ | ------ | ---------------------------------------------------------- |
+| `processed`              | number | Leased jobs processed                                      |
+| `generated`              | number | LLM generations completed                                  |
+| `skipped_duplicates`     | number | Duplicate content/ID skips                                 |
+| `failed`                 | number | Jobs that failed in this run                               |
+| `budget_remaining`       | number | Remaining daily LLM generation budget                      |
+| `stopped_reason`         | string | `complete` \| `time_budget` \| `daily_budget` \| `no_work` |
+| `empty_observed_buckets` | number | Refill rows with `observedCount = 0`                       |
+| `failed_jobs`            | number | Jobs currently in `failed` status                          |
+| `budget_exhausted_jobs`  | number | Jobs in `budget_exhausted` status                          |
+| `pending_jobs`           | number | Jobs in `pending` status                                   |
+| `oldest_job_age_ms`      | number | Age of oldest non-idle refill job                          |
 
 Full-catalog reconcile (`bun run pool:reconcile`) is a separate ops command and does not emit this event.
 

@@ -7,6 +7,7 @@ export const load: LayoutServerLoad = async ({ depends, request, locals }) => {
 	depends(ROOT_LAYOUT_DEPENDENCY);
 
 	return {
+		userId: locals.userId ?? null,
 		superFreeBetaEnabled: await isSuperFreeBetaEnabled(request),
 		assistantFeaturesEnabled: locals.userId
 			? await getAssistantFeaturesEnabledForRequest(locals, locals.userId)

@@ -1,9 +1,11 @@
 import { PostHog } from 'posthog-node';
 import { waitUntil } from '@vercel/functions';
+import { building, dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { PUBLIC_POSTHOG_PROJECT_TOKEN, PUBLIC_POSTHOG_HOST } from '$env/static/public';
 import { hasAnalyticsConsent } from '$lib/server/analytics-consent';
 
+const posthogEnabled = !dev && !building;
 let posthogClient: PostHog | null = null;
 
 type ServerCaptureEvent = {
@@ -36,7 +38,7 @@ function scheduleCapture(capture: Promise<void>) {
 }
 
 export function capturePostHogServerEvent(request: Request, event: ServerCaptureEvent) {
-	if (!hasAnalyticsConsent(request)) return;
+	if (!posthogEnabled || !hasAnalyticsConsent(request)) return;
 
 	scheduleCapture(getPostHogClient().captureImmediate(event));
 }
@@ -47,6 +49,8 @@ export function capturePostHogServerEvent(request: Request, event: ServerCapture
  * question bodies, or user IDs.
  */
 export function captureAnonymousServerMetric(event: string, properties?: Record<string, unknown>) {
+	if (!posthogEnabled) return;
+
 	scheduleCapture(
 		getPostHogClient().captureImmediate({
 			distinctId: ANONYMOUS_SERVER_DISTINCT_ID,
@@ -65,7 +69,7 @@ export function captureAnonymousServerMetric(event: string, properties?: Record<
  * provider's person-deletion endpoint.
  */
 export async function deletePostHogUser(distinctId: string): Promise<void> {
-	if (!PUBLIC_POSTHOG_PROJECT_TOKEN) return;
+	if (!posthogEnabled || !PUBLIC_POSTHOG_PROJECT_TOKEN) return;
 
 	const personalApiKey = env.POSTHOG_PERSONAL_API_KEY;
 	const projectId = env.POSTHOG_PROJECT_ID;

@@ -178,7 +178,7 @@ Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShe
 | **User request path**                     | Selection only — never calls the LLM, never writes S3, never waits on a generation lock.                                   |
 | **Refill workers** (cron + admin enqueue) | Only place that generates and inserts/upserts an active Neon PostgreSQL row.                                               |
 
-Targets default to demand-scaled MCQ floors (the unified dataset's `questionBank.mcq.poolRules`: Biology preferred **35**, default preferred **20**, min **10** from generation-stats share) and **8 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
+Targets default to demand-scaled MCQ floors (the unified dataset's `questionBank.mcq.poolRules`: Biology preferred **41**, default preferred **23**, min **12** from generation-stats share) and **10 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
 
 The serving and generation paths are deliberately separate. A question request performs validation, one database connection, and an indexed pool query. It does not acquire generation locks, call an LLM, or persist question content. Consequently, request telemetry records only validation, database-connect, pool-query, and total latency; generation and persistence timings belong to worker results and pool-health telemetry.
 

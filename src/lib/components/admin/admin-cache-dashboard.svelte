@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SearchIcon from '@tabler/icons-svelte/icons/search';
+	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
 	import type {
 		CacheBucketSummary,
 		PoolQuestionType,
@@ -8,7 +9,9 @@
 	import AdminCacheBucketActions from '$lib/components/admin/admin-cache-bucket-actions.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
+	import { toast } from 'svelte-sonner';
 	import {
 		POOL_RETIRE_OLDEST_PERCENT,
 		poolRetireQuantityForBucket
@@ -26,8 +29,6 @@
 
 	let localBuckets = $state<CacheBucketSummary[] | null>(null);
 	let busyAction = $state<string | null>(null);
-	let statusMessage = $state<string | null>(null);
-	let errorMessage = $state<string | null>(null);
 	let retireOldestOpen = $state(false);
 	let typeFilter = $state<PoolQuestionType>('mcq');
 	let search = $state('');
@@ -138,14 +139,12 @@
 
 	async function refreshSnapshot(): Promise<void> {
 		busyAction = 'refresh';
-		statusMessage = null;
-		errorMessage = null;
 		try {
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
-			statusMessage = 'Inventory refreshed.';
+			toast.success('Inventory refreshed.');
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Unable to refresh inventory.';
+			toast.error(error instanceof Error ? error.message : 'Unable to refresh inventory.');
 		} finally {
 			busyAction = null;
 		}
@@ -153,15 +152,56 @@
 
 	async function enqueueAllDeficits(): Promise<void> {
 		busyAction = 'enqueue-all';
-		statusMessage = null;
-		errorMessage = null;
 		try {
 			const result = await request<{ enqueued: number }>({ action: 'enqueueAllDeficits' });
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
-			statusMessage = `Enqueued ${result.enqueued} deficit bucket(s) for async refill.`;
+			toast.success(`Enqueued ${result.enqueued} deficit bucket(s) for async refill.`);
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Unable to enqueue deficits.';
+			toast.error(error instanceof Error ? error.message : 'Unable to enqueue deficits.');
+		} finally {
+			busyAction = null;
+		}
+	}
+
+	async function enqueueBucket(bucket: CacheBucketSummary): Promise<void> {
+		const key = `enqueue:${bucketKey(bucket)}`;
+		busyAction = key;
+		try {
+			await request({
+				action: 'enqueueBucket',
+				questionType: bucket.questionType,
+				apClass: bucket.apClass,
+				unit: bucket.unit
+			});
+			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
+			localBuckets = snapshot.buckets;
+			toast.success(`Refill queued for ${bucket.apClass} · ${bucket.unit}.`);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Unable to queue refill.');
+		} finally {
+			busyAction = null;
+		}
+	}
+
+	async function cancelBucketRefill(bucket: CacheBucketSummary): Promise<void> {
+		const key = `cancel:${bucketKey(bucket)}`;
+		busyAction = key;
+		try {
+			const result = await request<{ cancelled: boolean }>({
+				action: 'cancelRefill',
+				questionType: bucket.questionType,
+				apClass: bucket.apClass,
+				unit: bucket.unit
+			});
+			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
+			localBuckets = snapshot.buckets;
+			const message = result.cancelled
+				? `Refill cleared for ${bucket.apClass} · ${bucket.unit}.`
+				: 'No queued refill was found for that bucket.';
+			toast.success(message);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Unable to clear refill.');
 		} finally {
 			busyAction = null;
 		}
@@ -169,8 +209,6 @@
 
 	async function retireOldestPercent(): Promise<void> {
 		busyAction = 'retire-oldest';
-		statusMessage = null;
-		errorMessage = null;
 		try {
 			const result = await request<{
 				retired: number;
@@ -182,13 +220,15 @@
 			});
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
-			statusMessage = result.retired
+			const message = result.retired
 				? `Retired ${result.retired.toLocaleString()} oldest question(s) across ${result.bucketsAffected.toLocaleString()} bucket(s); ${result.enqueued.toLocaleString()} refill job(s) queued.`
 				: 'No active questions met the 30% retirement threshold.';
+			toast.success(message);
 			retireOldestOpen = false;
 		} catch (error) {
-			errorMessage =
-				error instanceof Error ? error.message : 'Unable to retire oldest pool questions.';
+			toast.error(
+				error instanceof Error ? error.message : 'Unable to retire oldest pool questions.'
+			);
 		} finally {
 			busyAction = null;
 		}
@@ -197,8 +237,6 @@
 	async function retireBucket(bucket: CacheBucketSummary, quantity: number): Promise<void> {
 		const key = `retire:${bucketKey(bucket)}`;
 		busyAction = key;
-		statusMessage = null;
-		errorMessage = null;
 		try {
 			const result = await request<{ retired: number }>({
 				action: 'retireBucket',
@@ -209,11 +247,12 @@
 			});
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
-			statusMessage = result.retired
+			const message = result.retired
 				? `Deleted ${result.retired} ${bucket.questionType.toUpperCase()} question(s) from ${bucket.apClass} · ${bucket.unit}; refill queued.`
 				: `No active ${bucket.questionType.toUpperCase()} questions were available in ${bucket.apClass} · ${bucket.unit}.`;
+			toast.success(message);
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Unable to delete questions.';
+			toast.error(error instanceof Error ? error.message : 'Unable to delete questions.');
 		} finally {
 			busyAction = null;
 		}
@@ -268,16 +307,37 @@
 			<Button variant="outline" onclick={() => void refreshSnapshot()} disabled={!!busyAction}>
 				{isBusy('refresh') ? 'Refreshing…' : 'Refresh'}
 			</Button>
-			<Button onclick={() => void enqueueAllDeficits()} disabled={!!busyAction}>
-				{isBusy('enqueue-all') ? 'Enqueueing…' : 'Enqueue all deficits'}
-			</Button>
-			<Button
-				variant="destructive"
-				onclick={() => (retireOldestOpen = true)}
-				disabled={!!busyAction || retireOldestPreviewCount < 1}
-			>
-				Retire {POOL_RETIRE_OLDEST_PERCENT}% oldest
-			</Button>
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							variant="ghost"
+							size="icon"
+							class="size-9 text-muted-foreground hover:text-foreground"
+							disabled={!!busyAction}
+							aria-label="More pool actions"
+						>
+							<EllipsisIcon class="size-4" />
+						</Button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="end">
+					<DropdownMenu.Group>
+						<DropdownMenu.Label>Bulk actions</DropdownMenu.Label>
+						<DropdownMenu.Item disabled={!!busyAction} onclick={() => void enqueueAllDeficits()}>
+							{isBusy('enqueue-all') ? 'Enqueueing…' : 'Enqueue all deficits'}
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							variant="destructive"
+							disabled={!!busyAction || retireOldestPreviewCount < 1}
+							onclick={() => (retireOldestOpen = true)}
+						>
+							Retire {POOL_RETIRE_OLDEST_PERCENT}% oldest
+						</DropdownMenu.Item>
+					</DropdownMenu.Group>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
 		</div>
 	</div>
 
@@ -311,23 +371,6 @@
 			</AlertDialog.Footer>
 		</AlertDialog.Content>
 	</AlertDialog.Root>
-
-	{#if statusMessage}
-		<p
-			class="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
-			role="status"
-		>
-			{statusMessage}
-		</p>
-	{/if}
-	{#if errorMessage}
-		<p
-			class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-			role="alert"
-		>
-			{errorMessage}
-		</p>
-	{/if}
 
 	<div class="rounded-xl border border-border/70 bg-background">
 		<Table.Root>
@@ -397,6 +440,8 @@
 								{bucket}
 								disabled={!!busyAction}
 								busy={isBusy(`retire:${bucketKey(bucket)}`)}
+								onEnqueue={() => enqueueBucket(bucket)}
+								onCancel={() => cancelBucketRefill(bucket)}
 								onRetire={(quantity) => retireBucket(bucket, quantity)}
 							/>
 						</Table.Cell>

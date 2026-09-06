@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || secrets.DATABASE_URL }}
+      DATABASE_URL: ${{ github.ref == 'refs/heads/staging' && secrets.STAGING_DATABASE_URL || github.ref == 'refs/heads/main' && secrets.DATABASE_URL || '' }}
 
     steps:
       - name: Checkout

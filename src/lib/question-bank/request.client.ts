@@ -109,6 +109,51 @@ export function requestMcqQuestion(
 	});
 }
 
+/** Load an entire MCQ quiz in one request so shared-stimulus sets remain intact. */
+export async function requestMcqQuiz(
+	className: string,
+	unit: string,
+	count: number,
+	unitRange?: readonly number[]
+): Promise<GeneratedQuestion[]> {
+	try {
+		const response = await apiFetch('/api/question/quiz', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ className, unit, count, unitRange })
+		});
+		const payload = await readJsonOrNull<QuestionApiResponse>(response);
+		if (isPoolWarmingResponse(payload)) {
+			throw new PoolWarmingError(
+				payload.error || 'Question pool is warming up. Please retry shortly.',
+				Math.max(1, Math.floor(payload.retryAfterSeconds))
+			);
+		}
+		if (!response.ok || !payload || !Array.isArray(payload.questions)) {
+			throw new QuestionRequestError(
+				getResponseMessage(payload, 'Failed to load quiz.'),
+				response.ok ? null : response.status
+			);
+		}
+		return payload.questions.map((entry) => {
+			if (!entry || typeof entry !== 'object')
+				throw new Error('Quiz response contained an invalid question.');
+			const item = entry as Record<string, unknown>;
+			return parseQuestionPayloadFromResponse({
+				...(item as QuestionApiResponse),
+				answer: item.answer,
+				questionId: typeof item.questionId === 'string' ? item.questionId : undefined
+			});
+		});
+	} catch (error) {
+		if (error instanceof QuestionRequestError) throw error;
+		throw new QuestionRequestError(
+			error instanceof Error ? error.message : 'Failed to load quiz.',
+			null
+		);
+	}
+}
+
 /** Load up to ten MCQs in one request for quiz startup and refill. */
 export async function requestMcqQuestions(
 	className: string,

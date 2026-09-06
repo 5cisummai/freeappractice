@@ -72,6 +72,33 @@ describe('POST /api/question selection-only boundary', () => {
 		});
 		expect(elapsed).toBeLessThan(500);
 		expect(getQuestion).toHaveBeenCalledOnce();
+		expect(getQuestion).toHaveBeenCalledWith(
+			'AP Biology',
+			'Unit 1: Chemistry of Life',
+			expect.objectContaining({ allowRefill: false })
+		);
+	});
+
+	it('allows an authenticated pool miss to schedule a refill', async () => {
+		getQuestion.mockResolvedValueOnce({ status: 'warming', retryAfterSeconds: 15 });
+
+		await POST({
+			request: new Request('http://localhost/api/question', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					className: 'AP Biology',
+					unit: 'Unit 1: Chemistry of Life'
+				})
+			}),
+			locals: { userId: 'user-1' }
+		} as Parameters<typeof POST>[0]);
+
+		expect(getQuestion).toHaveBeenCalledWith(
+			'AP Biology',
+			'Unit 1: Chemistry of Life',
+			expect.objectContaining({ allowRefill: true })
+		);
 	});
 
 	it('returns POOL_UNAVAILABLE on DB failure without invoking generation', async () => {

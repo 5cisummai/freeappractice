@@ -14,6 +14,7 @@ type PoolQuery<TDoc extends PoolDocument> = (input: {
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
+	allowStimulusQuestions?: boolean;
 }) => Promise<TDoc | null>;
 
 type PoolBatchQuery<TDoc extends PoolDocument> = (input: {
@@ -23,17 +24,23 @@ type PoolBatchQuery<TDoc extends PoolDocument> = (input: {
 	pivot: number;
 	limit: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
+	allowStimulusQuestions?: boolean;
 }) => Promise<TDoc[]>;
 
 export interface QuestionBankConfig<TDoc extends PoolDocument, TCached> {
 	logScope: string;
 	normalizeUnit: (unit?: string | null) => string;
-	countActive: (className: string, unit: string) => Promise<number>;
+	countActive: (
+		className: string,
+		unit: string,
+		allowStimulusQuestions?: boolean
+	) => Promise<number>;
 	findRandom: PoolQuery<TDoc>;
 	findRandomBatch?: PoolBatchQuery<TDoc>;
 	serveCached: (doc: TDoc) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
 	requestRefill?: (className: string, unit: string) => Promise<void>;
+	resolveAllowStimulusQuestions?: () => Promise<boolean> | boolean;
 	/** Defer non-critical refill scheduling until after the response when available. */
 	scheduleBackgroundTask?: (task: Promise<unknown>) => void;
 }
@@ -49,6 +56,8 @@ export type QuestionPathMetrics = {
 export interface GetQuestionOptions {
 	excludeQuestionIds?: string[];
 	metrics?: QuestionPathMetrics;
+	/** Only authenticated callers may schedule a refill after a pool miss. */
+	allowRefill?: boolean;
 }
 
 export type PoolSelectionResult<TCached> =
@@ -72,6 +81,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 	excludeQuestionIds: string[];
 	pivot?: number;
 	onDatabaseInit?: (elapsedMs: number) => void;
+	allowStimulusQuestions?: boolean;
 }): Promise<TDoc | null> {
 	const pivot = opts.pivot ?? Math.random();
 	const first = await opts.findRandom({
@@ -80,7 +90,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
 		fromPivot: 'after',
-		onDatabaseInit: opts.onDatabaseInit
+		onDatabaseInit: opts.onDatabaseInit,
+		allowStimulusQuestions: opts.allowStimulusQuestions
 	});
 	if (first) return first;
 
@@ -90,7 +101,8 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
 		fromPivot: 'before',
-		onDatabaseInit: opts.onDatabaseInit
+		onDatabaseInit: opts.onDatabaseInit,
+		allowStimulusQuestions: opts.allowStimulusQuestions
 	});
 }
 
@@ -102,8 +114,18 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 export class QuestionBank<TDoc extends PoolDocument, TCached> {
 	constructor(private readonly config: QuestionBankConfig<TDoc, TCached>) {}
 
-	private async requestRefillAfterMiss(className: string, unit: string): Promise<void> {
-		if (!this.config.requestRefill) return;
+	private async resolveAllowStimulusQuestions(): Promise<boolean | undefined> {
+		return this.config.resolveAllowStimulusQuestions
+			? await this.config.resolveAllowStimulusQuestions()
+			: undefined;
+	}
+
+	private async requestRefillAfterMiss(
+		className: string,
+		unit: string,
+		allowRefill: boolean
+	): Promise<void> {
+		if (!this.config.requestRefill || !allowRefill) return;
 
 		const refill = this.config.requestRefill(className, unit).catch((error) => {
 			logger.warn(`[${this.config.logScope}] failed to enqueue refill`, {
@@ -128,6 +150,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
+		const allowStimulusQuestions = await this.resolveAllowStimulusQuestions();
 
 		const onDatabaseInit = metrics
 			? (elapsedMs: number) => {
@@ -143,11 +166,16 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				apClass: className,
 				unit: cacheUnit,
 				excludeQuestionIds,
-				onDatabaseInit
+				onDatabaseInit,
+				allowStimulusQuestions
 			});
 
 			if (!doc && excludeQuestionIds.length) {
-				const activeCount = await this.config.countActive(className, cacheUnit);
+				const activeCount = await this.config.countActive(
+					className,
+					cacheUnit,
+					allowStimulusQuestions
+				);
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					doc = await selectRandomActiveDoc({
@@ -155,7 +183,8 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 						apClass: className,
 						unit: cacheUnit,
 						excludeQuestionIds: [],
-						onDatabaseInit
+						onDatabaseInit,
+						allowStimulusQuestions
 					});
 				}
 			}
@@ -175,7 +204,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				className,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(className, cacheUnit);
+			await this.requestRefillAfterMiss(className, cacheUnit, options.allowRefill === true);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {
@@ -205,6 +234,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
+		const allowStimulusQuestions = await this.resolveAllowStimulusQuestions();
 
 		const onDatabaseInit = metrics
 			? (elapsedMs: number) => {
@@ -223,7 +253,8 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 					excludeQuestionIds,
 					pivot: Math.random(),
 					limit: requestedCount,
-					onDatabaseInit
+					onDatabaseInit,
+					allowStimulusQuestions
 				});
 			} else {
 				docs = [];
@@ -234,7 +265,8 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 						apClass: className,
 						unit: cacheUnit,
 						excludeQuestionIds: seenIds,
-						onDatabaseInit
+						onDatabaseInit,
+						allowStimulusQuestions
 					});
 					if (!doc) break;
 					docs.push(doc);
@@ -243,7 +275,11 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 			}
 
 			if (docs.length < requestedCount && excludeQuestionIds.length) {
-				const activeCount = await this.config.countActive(className, cacheUnit);
+				const activeCount = await this.config.countActive(
+					className,
+					cacheUnit,
+					allowStimulusQuestions
+				);
 				if (activeCount > 0) {
 					exclusionsReset = true;
 					const selectedIds = docs
@@ -256,7 +292,8 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 								excludeQuestionIds: [...selectedIds],
 								pivot: Math.random(),
 								limit: requestedCount - docs.length,
-								onDatabaseInit
+								onDatabaseInit,
+								allowStimulusQuestions
 							})
 						: [];
 					docs = [...docs, ...moreDocs];
@@ -278,7 +315,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				className,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(className, cacheUnit);
+			await this.requestRefillAfterMiss(className, cacheUnit, options.allowRefill === true);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {

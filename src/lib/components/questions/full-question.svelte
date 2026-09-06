@@ -10,11 +10,11 @@
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 	import { portalToBody } from '$lib/components/questions/portal-to-body.svelte.js';
+	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import { Toggle } from '$lib/components/ui/toggle/index.js';
 	import { cn } from '$lib/utils.js';
 	import BookmarkIcon from '@tabler/icons-svelte/icons/bookmark';
 	import BookmarkFilledIcon from '@tabler/icons-svelte/icons/bookmark-filled';
@@ -33,6 +33,8 @@
 		flagged?: boolean;
 		struckOptionIds?: ReadonlySet<string> | string[];
 		textAnnotations?: TextAnnotation[];
+		stimulusScrollTop?: number;
+		onStimulusScroll?: (scrollTop: number) => void;
 		remainingMs?: number | null;
 		elapsedMs?: number;
 		navItems?: ExamNavItem[];
@@ -75,6 +77,8 @@
 		flagged = $bindable(false),
 		struckOptionIds,
 		textAnnotations = [],
+		stimulusScrollTop = 0,
+		onStimulusScroll,
 		remainingMs = null,
 		elapsedMs = 0,
 		navItems,
@@ -108,10 +112,13 @@
 
 	let menuOpen = $state(false);
 	let eliminatorActive = $state(false);
+	let stimulusScrollNode = $state<HTMLElement | null>(null);
 	const isMobile = new IsMobile();
 	const isReviewStage = $derived(stage === 'review');
 	const showSplit = $derived(
-		!isReviewStage && !isMobile.current && Boolean(question.hasStimulus && question.leftPanel)
+		!isReviewStage &&
+			!isMobile.current &&
+			Boolean(question.hasStimulus && (question.leftPanel || question.diagramSpec))
 	);
 	const displayNumber = $derived(Number(questionNumber));
 	const currentIndex = $derived(
@@ -133,6 +140,10 @@
 	const reviewHeading = $derived(reviewTitle ?? title ?? 'Review your answers');
 	const canUseEliminator = $derived(Boolean(onToggleStrike) && !hasCheckedAnswer);
 	const canAnnotate = $derived(Boolean(onAddTextAnnotation) && !hasCheckedAnswer);
+
+	$effect(() => {
+		if (stimulusScrollNode) stimulusScrollNode.scrollTop = stimulusScrollTop;
+	});
 
 	const menuItems = $derived.by((): ExamNavItem[] => {
 		if (navItems?.length) return navItems;
@@ -226,10 +237,7 @@
 
 {#snippet stimulusContent()}
 	{#if question.leftPanel}
-		<p class="mb-3 text-sm font-semibold text-foreground">
-			{question.leftPanel.title ?? 'Passage'}
-		</p>
-		<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
+		<div class="space-y-4 font-serif text-[0.925rem] leading-7 text-foreground/80">
 			{#each question.leftPanel.content as paragraph, i (i)}
 				<AnnotatableRichText
 					text={paragraph}
@@ -256,52 +264,41 @@
 {/snippet}
 
 {#snippet questionChrome()}
-	<div
-		class="mb-2 flex items-center gap-2 rounded-sm border-b border-dashed border-border bg-muted"
-	>
+	<div class="mb-2 flex items-center gap-2 rounded-sm bg-muted">
 		<span
-			class="flex size-7 shrink-0 items-center justify-center rounded-[3px] bg-foreground font-sans text-xs font-semibold text-background tabular-nums"
+			class="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-sm bg-foreground font-sans text-xs font-semibold text-background tabular-nums"
 			aria-hidden="true"
 		>
 			{questionNumber}
 		</span>
 
-		<div class="ms-auto flex items-center gap-2">
-			{#if onToggleFlag}
-				<Button
-					variant={flagged ? 'secondary' : 'ghost'}
-					size="sm"
-					aria-pressed={flagged}
-					onclick={toggleFlag}
-				>
-					{#if flagged}
-						<BookmarkFilledIcon class="text-amber-600 dark:text-amber-400" />
-					{:else}
-						<BookmarkIcon />
-					{/if}
-					Mark for Review
-				</Button>
-			{/if}
+		{#if onToggleFlag}
+			<Button
+				variant={flagged ? 'secondary' : 'ghost'}
+				size="sm"
+				aria-pressed={flagged}
+				onclick={toggleFlag}
+			>
+				{#if flagged}
+					<BookmarkFilledIcon class="text-amber-600 dark:text-amber-400" />
+				{:else}
+					<BookmarkIcon />
+				{/if}
+				Mark for Review
+			</Button>
+		{/if}
 
+		<div class="ms-auto flex items-center gap-2">
 			{#if canUseEliminator}
-				<Tooltip.Root>
-					<Tooltip.Trigger>
-						{#snippet child({ props })}
-							<Toggle
-								{...props}
-								bind:pressed={eliminatorActive}
-								variant="outline"
-								size="sm"
-								aria-label="Answer eliminator"
-							>
-								<StrikethroughIcon />
-							</Toggle>
-						{/snippet}
-					</Tooltip.Trigger>
-					<Tooltip.Content>
-						{eliminatorActive ? 'Eliminator on — click choices to cross out' : 'Answer eliminator'}
-					</Tooltip.Content>
-				</Tooltip.Root>
+				<Button
+					variant={eliminatorActive ? 'default' : 'ghost'}
+					size="sm"
+					aria-pressed={eliminatorActive}
+					aria-label="Answer eliminator"
+					onclick={() => (eliminatorActive = !eliminatorActive)}
+				>
+					<StrikethroughIcon />
+				</Button>
 			{/if}
 		</div>
 	</div>
@@ -312,17 +309,10 @@
 
 	<div class="mt-4 space-y-4">
 		{#if !showSplit && question.leftPanel}
-			<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
-				{@render stimulusContent()}
-			</div>
+			{@render stimulusContent()}
 		{/if}
 		{#if question.rightPanel}
-			{#if question.rightPanel.title}
-				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-					{question.rightPanel.title}
-				</p>
-			{/if}
-			<div class="space-y-3 font-serif text-sm leading-6 text-foreground">
+			<div class="space-y-3 font-serif text-[0.925rem] leading-7 text-foreground/80">
 				{#each question.rightPanel.content as paragraph, i (i)}
 					<AnnotatableRichText
 						text={paragraph}
@@ -337,7 +327,7 @@
 				{/each}
 			</div>
 		{:else if question.prompt}
-			<div class="font-serif text-sm leading-6 text-foreground">
+			<div class="font-serif text-[0.925rem] leading-7 text-foreground/80">
 				<AnnotatableRichText
 					text={question.prompt}
 					blocks
@@ -394,7 +384,7 @@
 
 {#snippet bluebookLegend()}
 	<div
-		class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-border pb-4 text-sm text-foreground"
+		class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-border pb-2 text-sm text-foreground"
 	>
 		<span class="inline-flex items-center gap-2">
 			<MapPinIcon class="size-4" aria-hidden="true" />
@@ -415,19 +405,19 @@
 {/snippet}
 
 {#snippet bluebookNavGrid()}
-	<div class="grid grid-cols-5 gap-3 sm:grid-cols-8 lg:grid-cols-10">
+	<div class="flex flex-wrap justify-center gap-4">
 		{#each menuItems as item (item.index)}
-			<div class="relative flex justify-center pt-5">
+			<div class="relative pt-4">
 				{#if item.index === currentIndex}
 					<MapPinIcon
-						class="absolute top-0 left-1/2 size-4 -translate-x-1/2 text-foreground"
+						class="absolute top-0 left-1/2 size-3.5 -translate-x-1/2 text-foreground"
 						aria-hidden="true"
 					/>
 				{/if}
 				<button
 					type="button"
 					class={cn(
-						'relative flex size-10 items-center justify-center rounded-sm text-sm font-semibold tabular-nums transition-colors',
+						'relative flex size-8 items-center justify-center rounded-sm text-sm font-semibold tabular-nums transition-colors',
 						item.answered
 							? 'bg-blue-700 text-white hover:bg-blue-800'
 							: 'border border-dashed border-foreground bg-background text-blue-700 hover:bg-muted/40',
@@ -463,7 +453,7 @@
 {/snippet}
 
 {#snippet questionMenuPopover()}
-	<div class="space-y-4">
+	<div class="space-y-2">
 		{@render bluebookLegend()}
 		{@render bluebookNavGrid()}
 	</div>
@@ -504,7 +494,8 @@
 				{/if}
 			</div>
 
-			<div class="flex items-center justify-end">
+			<div class="flex items-center justify-end gap-1">
+				<ThemeToggle class="size-8 shrink-0" />
 				{#if onClose}
 					<Button
 						variant="ghost"
@@ -528,20 +519,28 @@
 			{:else if showSplit}
 				<Resizable.PaneGroup direction="horizontal" class="h-full">
 					<Resizable.Pane defaultSize={50} minSize={28} class="min-h-0">
-						<div class="h-full overflow-y-auto px-4 py-4 sm:px-5">
-							{@render stimulusPane()}
+						<div
+							bind:this={stimulusScrollNode}
+							onscroll={(event) => onStimulusScroll?.(event.currentTarget.scrollTop)}
+							class="h-full overflow-y-auto px-4 pt-8 pb-4 sm:px-5"
+						>
+							<div class="mx-auto w-full max-w-3xl">
+								{@render stimulusPane()}
+							</div>
 						</div>
 					</Resizable.Pane>
 					<Resizable.Handle withHandle />
 					<Resizable.Pane defaultSize={50} minSize={28} class="min-h-0">
-						<div class="h-full overflow-y-auto border-l border-border px-4 py-4 sm:px-5">
-							{@render questionPane()}
+						<div class="h-full overflow-y-auto px-4 pt-8 pb-4 sm:px-5">
+							<div class="mx-auto w-full max-w-3xl">
+								{@render questionPane()}
+							</div>
 						</div>
 					</Resizable.Pane>
 				</Resizable.PaneGroup>
 			{:else}
 				<div class="h-full overflow-y-auto">
-					<div class="mx-auto w-full max-w-3xl px-4 py-5 sm:px-6">
+					<div class="mx-auto w-full max-w-3xl px-4 pt-8 pb-5 sm:px-6">
 						{@render questionPane()}
 					</div>
 				</div>

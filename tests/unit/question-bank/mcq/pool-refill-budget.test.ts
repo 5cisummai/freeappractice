@@ -61,7 +61,6 @@ const env: QuestionPoolConfig = {
 	mcqTarget: 10,
 	frqTarget: 5,
 	lowWaterRatio: 0.9,
-	maxGenerationsPerRun: 5,
 	leaseTtlMs: 120_000,
 	retryDelayMs: 60_000,
 	dailyLlmGenerationBudget: 2,

@@ -11,7 +11,7 @@
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
-	import { requestMcqQuestion, requestMcqQuestions } from '$lib/question-bank/request.client.js';
+	import { requestMcqQuestion, requestMcqQuiz } from '$lib/question-bank/request.client.js';
 	import { createTextAnnotation } from '$lib/components/questions/text-annotation-dom.js';
 	import type {
 		AddTextAnnotationInput,
@@ -68,9 +68,11 @@
 	let shareAttachedToGroup = $state(false);
 	let shareCreating = $state(false);
 	let shareOpen = $state(false);
-	let pendingClaimSaved = $state(false);
+	let showSignupPrompt = $state(false);
 	let struckByQuestionId = $state<Record<string, string[]>>({});
 	let annotationsByQuestionId = $state<Record<string, TextAnnotation[]>>({});
+	let annotationsByStimulusId = $state<Record<string, TextAnnotation[]>>({});
+	let stimulusScrollTopById = $state<Record<string, number>>({});
 	let lastSnapshot = $state<ExamSnapshot | null>(null);
 	let lastRequestVersion = 0;
 	let lastSelectionKey = '';
@@ -85,14 +87,23 @@
 			}
 			return result.question;
 		},
-		loadQuestions: async (questionCount, excludeIds) => {
-			const unit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			return requestMcqQuestions(selectedClass, unit, questionCount, excludeIds);
+		loadQuestions: async (requestedCount) => {
+			const questions = await requestMcqQuiz(
+				selectedClass,
+				selectedUnit,
+				requestedCount,
+				unitRange
+			);
+			if (questions.some((question) => !question.correctAnswer)) {
+				throw new Error('Quiz service returned a question without an answer key.');
+			}
+			return questions;
 		},
 		onComplete: (snapshot) => {
 			lastSnapshot = snapshot;
 			if (persistHistory) void persistQuizHistory(snapshot);
 			else if (sharedSlug) saveAnonymousSharedRun(snapshot);
+			else showSignupPrompt = !page.data.userId;
 		}
 	});
 
@@ -118,12 +129,18 @@
 					: 'Graded Quiz')
 	);
 	const currentQuestionId = $derived(exam.currentQuestion?.questionId?.trim() ?? '');
+	const currentStimulusId = $derived(exam.currentQuestion?.stimulusId?.trim() ?? '');
+	const stimulusStateId = $derived(currentStimulusId || currentQuestionId);
+	const currentStimulusScrollTop = $derived(
+		stimulusStateId ? (stimulusScrollTopById[stimulusStateId] ?? 0) : 0
+	);
 	const currentStruck = $derived(
 		currentQuestionId ? (struckByQuestionId[currentQuestionId] ?? []) : []
 	);
-	const currentAnnotations = $derived(
-		currentQuestionId ? (annotationsByQuestionId[currentQuestionId] ?? []) : []
-	);
+	const currentAnnotations = $derived([
+		...(currentQuestionId ? (annotationsByQuestionId[currentQuestionId] ?? []) : []),
+		...(currentStimulusId ? (annotationsByStimulusId[currentStimulusId] ?? []) : [])
+	]);
 	const currentFlagged = $derived(exam.flaggedIndexes.includes(exam.currentIndex));
 	const nextLabel = $derived(
 		exam.isLastQuestion
@@ -181,9 +198,11 @@
 		shareAttachedToGroup = false;
 		shareCreating = false;
 		shareOpen = false;
-		pendingClaimSaved = false;
+		showSignupPrompt = false;
 		struckByQuestionId = {};
 		annotationsByQuestionId = {};
+		annotationsByStimulusId = {};
+		stimulusScrollTopById = {};
 		lastSnapshot = null;
 	}
 
@@ -285,7 +304,7 @@
 			}))
 		};
 		if (savePendingSharedQuizRun(run)) {
-			pendingClaimSaved = true;
+			showSignupPrompt = true;
 		} else {
 			historyError = 'This quiz could not be saved. Please try again after signing up.';
 		}
@@ -384,22 +403,48 @@
 	}
 
 	function addTextAnnotation(input: AddTextAnnotationInput): void {
-		if (!currentQuestionId) return;
+		const useStimulusScope = input.target.kind === 'stimulus' && Boolean(currentStimulusId);
+		const targetId = useStimulusScope ? currentStimulusId : currentQuestionId;
+		if (!targetId) return;
 		const annotation = createTextAnnotation(input);
 		if (!annotation) return;
-		annotationsByQuestionId = {
-			...annotationsByQuestionId,
-			[currentQuestionId]: [...(annotationsByQuestionId[currentQuestionId] ?? []), annotation]
-		};
+		if (useStimulusScope) {
+			annotationsByStimulusId = {
+				...annotationsByStimulusId,
+				[targetId]: [...(annotationsByStimulusId[targetId] ?? []), annotation]
+			};
+		} else {
+			annotationsByQuestionId = {
+				...annotationsByQuestionId,
+				[targetId]: [...(annotationsByQuestionId[targetId] ?? []), annotation]
+			};
+		}
 	}
 
 	function removeTextAnnotation(annotationId: string): void {
-		if (!currentQuestionId) return;
-		const existing = annotationsByQuestionId[currentQuestionId] ?? [];
-		const next = existing.filter((annotation) => annotation.id !== annotationId);
-		annotationsByQuestionId = {
-			...annotationsByQuestionId,
-			[currentQuestionId]: next
+		if (currentQuestionId) {
+			annotationsByQuestionId = {
+				...annotationsByQuestionId,
+				[currentQuestionId]: (annotationsByQuestionId[currentQuestionId] ?? []).filter(
+					(annotation) => annotation.id !== annotationId
+				)
+			};
+		}
+		if (currentStimulusId) {
+			annotationsByStimulusId = {
+				...annotationsByStimulusId,
+				[currentStimulusId]: (annotationsByStimulusId[currentStimulusId] ?? []).filter(
+					(annotation) => annotation.id !== annotationId
+				)
+			};
+		}
+	}
+
+	function updateStimulusScroll(scrollTop: number): void {
+		if (!stimulusStateId || !Number.isFinite(scrollTop)) return;
+		stimulusScrollTopById = {
+			...stimulusScrollTopById,
+			[stimulusStateId]: Math.max(0, scrollTop)
 		};
 	}
 
@@ -505,86 +550,90 @@
 {:else if exam.status === 'complete'}
 	<Card.Root class="border-border/70 bg-card/95 shadow-sm">
 		<Card.Content class="space-y-8 px-6 py-10 text-center sm:px-10">
-			<div class="space-y-2">
-				<p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-					Quiz complete
-				</p>
-				<p class="font-display text-6xl font-medium tracking-tight text-foreground">
-					{exam.correctCount}
-					<span class="text-3xl text-muted-foreground">/ {exam.requestedCount}</span>
-				</p>
-				<p class="text-sm text-muted-foreground">{exam.scorePercent}% correct</p>
-			</div>
-
-			{#if persistHistory}
-				{#if historyStatus === 'saving'}
-					<p class="text-sm text-muted-foreground" role="status">Saving to your history…</p>
-				{:else if historyStatus === 'saved'}
-					<p class="text-sm text-emerald-600 dark:text-emerald-400" role="status">
-						Saved to history
+			<div class="mx-auto w-full max-w-lg space-y-6">
+				<div class="space-y-2">
+					<p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+						Quiz complete
 					</p>
-				{:else if historyStatus === 'error'}
-					<div class="space-y-2" role="alert">
-						<p class="text-sm text-destructive">{historyError}</p>
-						<Button
-							variant="outline"
-							size="sm"
-							onclick={() => {
-								if (lastSnapshot) void persistQuizHistory(lastSnapshot);
-							}}
-						>
-							Retry save
-						</Button>
+					<p class="font-display text-6xl font-medium tracking-tight text-foreground">
+						{exam.correctCount}
+						<span class="text-3xl text-muted-foreground">/ {exam.requestedCount}</span>
+					</p>
+					<p class="text-sm text-muted-foreground">{exam.scorePercent}% correct</p>
+				</div>
+
+				<div class="grid grid-cols-3 divide-x divide-border border-y border-border py-4">
+					<div class="space-y-1 px-3">
+						<p class="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+							{exam.correctCount}
+						</p>
+						<p class="text-xs text-muted-foreground">Correct</p>
+					</div>
+					<div class="space-y-1 px-3">
+						<p class="text-xl font-semibold text-red-600 dark:text-red-400">
+							{exam.incorrectCount}
+						</p>
+						<p class="text-xs text-muted-foreground">Incorrect</p>
+					</div>
+					<div class="space-y-1 px-3">
+						<p class="text-xl font-semibold text-muted-foreground">{exam.unansweredCount}</p>
+						<p class="text-xs text-muted-foreground">Unanswered</p>
+					</div>
+				</div>
+
+				{#if persistHistory}
+					{#if historyStatus === 'saving'}
+						<p class="text-sm text-muted-foreground" role="status">Saving to your history…</p>
+					{:else if historyStatus === 'saved'}
+						<p class="text-sm text-emerald-600 dark:text-emerald-400" role="status">
+							Saved to history
+						</p>
+					{:else if historyStatus === 'error'}
+						<div class="space-y-2" role="alert">
+							<p class="text-sm text-destructive">{historyError}</p>
+							<Button
+								variant="outline"
+								size="sm"
+								onclick={() => {
+									if (lastSnapshot) void persistQuizHistory(lastSnapshot);
+								}}
+							>
+								Retry save
+							</Button>
+						</div>
+					{/if}
+				{/if}
+
+				{#if showSignupPrompt}
+					<div class="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3" role="status">
+						<p class="text-sm text-muted-foreground">Sign up to save your progress.</p>
 					</div>
 				{/if}
-			{/if}
 
-			{#if pendingClaimSaved}
-				<div class="space-y-2" role="status">
-					<p class="text-sm text-muted-foreground">Sign up to save this quiz and your progress.</p>
-					<Button href={claimSignupHref} variant="outline" size="sm">Sign up to save</Button>
-				</div>
-			{/if}
+				{#if !persistHistory && historyError}
+					<p class="text-sm text-destructive" role="alert">{historyError}</p>
+				{/if}
 
-			{#if !persistHistory && historyError}
-				<p class="text-sm text-destructive" role="alert">{historyError}</p>
-			{/if}
-
-			{#if canShareQuiz || shareUrl}
-				<div class="space-y-2">
-					{@render shareMenu()}
-					{#if shareStatus}
-						<p class="text-xs text-muted-foreground" role="status">{shareStatus}</p>
+				<div class="flex flex-wrap justify-center gap-2">
+					<Button class="w-full sm:w-auto" onclick={() => void startQuiz()}>Try another quiz</Button
+					>
+					{#if showSignupPrompt}
+						<Button href={claimSignupHref} variant="outline" class="w-full sm:w-auto"
+							>Sign up to save</Button
+						>
+					{/if}
+					{#if persistHistory && showCoachReview}
+						<Button href={coachReviewHref} variant="outline" class="w-full sm:w-auto"
+							>Review with Pip</Button
+						>
+					{/if}
+					{#if canShareQuiz || shareUrl}
+						{@render shareMenu('w-full sm:w-auto')}
+						{#if shareStatus}
+							<p class="basis-full text-xs text-muted-foreground" role="status">{shareStatus}</p>
+						{/if}
 					{/if}
 				</div>
-			{/if}
-
-			<div
-				class="mx-auto grid max-w-md grid-cols-3 divide-x divide-border border-y border-border py-4"
-			>
-				<div class="space-y-1 px-3">
-					<p class="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-						{exam.correctCount}
-					</p>
-					<p class="text-xs text-muted-foreground">Correct</p>
-				</div>
-				<div class="space-y-1 px-3">
-					<p class="text-xl font-semibold text-red-600 dark:text-red-400">
-						{exam.incorrectCount}
-					</p>
-					<p class="text-xs text-muted-foreground">Incorrect</p>
-				</div>
-				<div class="space-y-1 px-3">
-					<p class="text-xl font-semibold text-muted-foreground">{exam.unansweredCount}</p>
-					<p class="text-xs text-muted-foreground">Unanswered</p>
-				</div>
-			</div>
-
-			<div class="flex flex-wrap justify-center gap-2">
-				{#if persistHistory && showCoachReview}
-					<Button href={coachReviewHref} variant="outline">Review with Pip</Button>
-				{/if}
-				<Button onclick={() => void startQuiz()}>Try another quiz</Button>
 			</div>
 		</Card.Content>
 	</Card.Root>
@@ -630,6 +679,8 @@
 		flagged={currentFlagged}
 		struckOptionIds={currentStruck}
 		textAnnotations={currentAnnotations}
+		stimulusScrollTop={currentStimulusScrollTop}
+		onStimulusScroll={updateStimulusScroll}
 		onAddTextAnnotation={addTextAnnotation}
 		onRemoveTextAnnotation={removeTextAnnotation}
 		navItems={exam.navItems}

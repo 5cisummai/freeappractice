@@ -1260,12 +1260,12 @@
 				"Return only the validated JSON object."
 			],
 			"poolRules": {
-				"defaultMcqTarget": 20,
-				"minMcqTarget": 10,
+				"defaultMcqTarget": 23,
+				"minMcqTarget": 12,
 				"mcqTargetsByClass": {
-					"AP Biology": 35
+					"AP Biology": 41
 				},
-				"frqTarget": 8,
+				"frqTarget": 10,
 				"lowWaterRatio": 0.9,
 				"maxGenerationsPerRun": 5,
 				"leaseTtlMs": 120000,

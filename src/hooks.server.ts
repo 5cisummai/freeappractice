@@ -14,10 +14,10 @@ import {
 	markdownResponse
 } from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
-import { building } from '$app/environment';
+import { building, dev } from '$app/environment';
 import { createHandle } from 'flags/sveltekit';
 import {
-	examfigDiagramsEnabled,
+	stimulusQuestionsEnabled,
 	frqPracticeEnabled,
 	isSuperFreeBetaEnabled,
 	isSuperCheckoutEnabled,
@@ -118,7 +118,7 @@ async function maybeServeMarkdown(
 const posthogProxyHandle: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
 
-	if (pathname.startsWith('/ingest')) {
+	if (!dev && !building && pathname.startsWith('/ingest')) {
 		const useAssetHost =
 			pathname.startsWith('/ingest/static/') || pathname.startsWith('/ingest/array/');
 		const hostname = useAssetHost ? 'us-assets.i.posthog.com' : 'us.i.posthog.com';
@@ -308,10 +308,12 @@ const appHandle: Handle = async ({ event, resolve }) => {
 		status: response.status,
 		requestTimeMs
 	};
-	if (response.status >= 500) {
-		logger.error('http request failed', requestMeta);
-	} else {
-		logger.info('http request', requestMeta);
+	if (event.url.pathname !== '/json/version') {
+		if (response.status >= 500) {
+			logger.error('http request failed', requestMeta);
+		} else {
+			logger.info('http request', requestMeta);
+		}
 	}
 
 	return response;
@@ -325,7 +327,7 @@ export const handle = sequence(
 					secret: env.FLAGS_SECRET,
 					flags: {
 						frqPracticeEnabled,
-						examfigDiagramsEnabled,
+						stimulusQuestionsEnabled,
 						superFreeBetaEnabled,
 						superCheckoutEnabled,
 						superCoachEnabled,
@@ -340,6 +342,8 @@ export const handle = sequence(
 
 export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
 	async ({ error, event, status, message }) => {
+		if (status === 404 && event.url.pathname === '/json/version') return;
+
 		logger.error('Unhandled server error', {
 			error,
 			status,

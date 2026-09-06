@@ -282,11 +282,6 @@
 
 	{#snippet promptBody()}
 		{#if core.currentQuestion?.hasStimulus && core.currentQuestion.rightPanel}
-			{#if core.currentQuestion.rightPanel.title}
-				<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-					{core.currentQuestion.rightPanel.title}
-				</p>
-			{/if}
 			<div class="space-y-4 font-serif text-sm leading-7 text-foreground/90">
 				{#each core.currentQuestion.rightPanel.content as paragraph, i (`r-${i}`)}
 					<AnnotatableRichText
@@ -300,9 +295,6 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-				Question
-			</p>
 			<AnnotatableRichText
 				text={core.currentQuestion?.prompt ?? ''}
 				target={{ kind: 'prompt', paragraphIndex: 0 }}
@@ -427,11 +419,6 @@
 									<Resizable.PaneGroup direction="horizontal" class="h-full">
 										<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
 											<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
-												<p
-													class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-												>
-													{core.currentQuestion.leftPanel?.title ?? 'Stimulus'}
-												</p>
 												<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
 													{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 														<AnnotatableRichText
@@ -495,9 +482,6 @@
 								{/if}
 								{#if core.currentQuestion?.hasStimulus}
 									<div class="space-y-3">
-										<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-											{core.currentQuestion.leftPanel?.title ?? 'Stimulus'}
-										</p>
 										<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
 											{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-m-${i}`)}
 												<AnnotatableRichText

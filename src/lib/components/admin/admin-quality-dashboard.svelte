@@ -141,10 +141,6 @@
 		return value.length > 12 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
 	}
 
-	function formatReason(value: string): string {
-		return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-	}
-
 	function statusClasses(status: ReviewJobStatus): string {
 		if (status === 'completed')
 			return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';

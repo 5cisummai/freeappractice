@@ -1,6 +1,7 @@
 export const QUESTION_QUALITY_RUBRIC_VERSION = 'ap-quality-v2';
 
 export type QualityVerdict = 'good' | 'bad';
+export type QualityFailureScope = 'question' | 'stimulus' | 'set' | 'unknown';
 export type QualityState = 'unreviewed' | 'awaiting_human' | 'final';
 export type FeedbackType = 'answer_incorrect' | 'question_unclear' | 'explanation_unclear';
 
@@ -34,6 +35,7 @@ export interface QualityUsage {
 export interface AiQualityAssessment {
 	verdict: QualityVerdict;
 	issueCodes: string[];
+	failureScope?: QualityFailureScope | null;
 	evidence: string[];
 	sourceUrls: string[];
 	webSearchUsed: boolean;

@@ -3,7 +3,7 @@
 	"crons": [
 		{
 			"path": "/api/cron/question-pool",
-			"schedule": "0 3 * * *"
+			"schedule": "0 */6 * * *"
 		},
 		{
 			"path": "/api/cron/super-maintenance",

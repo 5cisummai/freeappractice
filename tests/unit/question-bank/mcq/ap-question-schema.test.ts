@@ -5,6 +5,9 @@ import {
 } from '$lib/ai/openai-structured-schema';
 import {
 	apQuestionSchema,
+	apStimulusSetSchema,
+	apStimulusSetJsonSchema,
+	parseGeneratedApStimulusSet,
 	parseGeneratedApQuestion
 } from '$lib/question-bank/mcq/generation.server';
 
@@ -35,5 +38,35 @@ describe('apQuestionSchema OpenAI structured-output compatibility', () => {
 		});
 
 		expect(parsed.diagram).toMatchObject({ type: 'unit-circle', angleDegrees: 60 });
+	});
+
+	it('keeps stimulus-set structured output strict and enforces child count', () => {
+		expect(findOpenAiOptionalPropertyPaths(apStimulusSetSchema)).toEqual([]);
+		const schema = apStimulusSetJsonSchema();
+		expect(schema.additionalProperties).toBe(false);
+		expect(JSON.stringify(schema)).not.toContain('propertyNames');
+		const child = {
+			question: 'Which trend is shown?',
+			optionA: 'A',
+			optionB: 'B',
+			optionC: 'C',
+			optionD: 'D',
+			correctAnswer: 'A',
+			explanation: 'The first option matches the evidence.',
+			mainTopic: 'Evidence interpretation',
+			topicsCovered: 'Interpreting evidence'
+		};
+		const parsed = parseGeneratedApStimulusSet(
+			{ stimulus: { text: 'Original passage', diagram: null }, questions: [child] },
+			1
+		);
+		expect(parsed.stimulus.text).toBe('Original passage');
+		expect(parsed.diagram).toBeNull();
+		expect(() =>
+			parseGeneratedApStimulusSet(
+				{ stimulus: { text: 'Passage', diagram: null }, questions: [] },
+				1
+			)
+		).toThrow();
 	});
 });
