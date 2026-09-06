@@ -18,6 +18,7 @@ import { validateExamfigDiagram } from '$lib/ai/examfig.server';
 import { logger } from '$lib/server/logger';
 import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
 import {
+	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError,
 	normalizeUnit
@@ -121,6 +122,7 @@ async function insertHotPoolDoc(
 	answer: APQuestionData,
 	questionId: string
 ): Promise<IQuestion> {
+	assertNoNullCharacters(answer, 'generated MCQ');
 	if (answer.diagram) {
 		const validation = validateExamfigDiagram(answer.diagram);
 		if (!validation.valid) {
@@ -278,6 +280,7 @@ export async function persistStimulusSetToPool(
 	input: APStimulusSetData & { diagram: Record<string, unknown> | null }
 ): Promise<{ questionIds: string[]; skippedDuplicate?: boolean }> {
 	const parsed = parseGeneratedApStimulusSet(input, input.questions.length);
+	assertNoNullCharacters(parsed, 'generated stimulus set');
 	const stimulusId = randomUUID();
 	const stimulus = {
 		text: parsed.stimulus.text,

@@ -16,6 +16,7 @@ import {
 	type PublicFrqQuestion
 } from '$lib/question-bank/frq/types';
 import {
+	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError,
 	normalizeUnit
@@ -157,6 +158,7 @@ async function persistFrqQuestion(
 	generationMs: number,
 	model: string
 ): Promise<FrqGenerateResult> {
+	assertNoNullCharacters(question, 'generated FRQ');
 	const { apClass, unit } = question;
 	const persistenceStarted = Date.now();
 	const questionId = randomUUID();

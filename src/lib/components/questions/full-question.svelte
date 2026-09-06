@@ -237,9 +237,6 @@
 
 {#snippet stimulusContent()}
 	{#if question.leftPanel}
-		<p class="mb-3 text-sm font-semibold text-foreground">
-			{question.leftPanel.title ?? 'Passage'}
-		</p>
 		<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
 			{#each question.leftPanel.content as paragraph, i (i)}
 				<AnnotatableRichText
@@ -328,11 +325,6 @@
 			</div>
 		{/if}
 		{#if question.rightPanel}
-			{#if question.rightPanel.title}
-				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-					{question.rightPanel.title}
-				</p>
-			{/if}
 			<div class="space-y-3 font-serif text-sm leading-6 text-foreground">
 				{#each question.rightPanel.content as paragraph, i (i)}
 					<AnnotatableRichText

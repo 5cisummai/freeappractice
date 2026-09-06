@@ -22,7 +22,6 @@
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
-	import { getSiteUrl } from '$lib/site-url.js';
 	import { untrack } from 'svelte';
 
 	let { data, form } = $props();
@@ -47,7 +46,6 @@
 		initialData.selectedGoals.length > 0 ? [...initialData.selectedGoals] : [DEFAULT_GOAL]
 	);
 	let subjectSearch = $state('');
-	let deletingAccount = $state(false);
 	let teachingStyle = $state<TeachingStyle>(superSetup?.profile.teachingStyle ?? 'concise');
 	let memoryEnabled = $state(Boolean(superSetup?.profile.memoryEnabled));
 	let memoryDisclosureSeen = $state(Boolean(superSetup?.profile.memoryDisclosureSeenAt));
@@ -220,26 +218,6 @@
 		if (!response.ok)
 			throw new Error(getResponseMessage(result, 'Could not record your confirmation.'));
 		ageConfirmed = true;
-	}
-
-	async function deleteUnder13Account() {
-		if (deletingAccount) return;
-		deletingAccount = true;
-		try {
-			const { data: deletion, error } = await authClient.deleteUser({
-				callbackURL: `${getSiteUrl()}/`
-			});
-			if (error) throw new Error(error.message ?? 'Could not start account deletion.');
-			if (deletion?.message === 'Verification email sent') {
-				errorMessage = 'Check your email to confirm account deletion.';
-				return;
-			}
-			window.location.href = '/';
-		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Could not start account deletion.';
-		} finally {
-			deletingAccount = false;
-		}
 	}
 
 	async function claimFreeBeta() {
@@ -578,19 +556,6 @@
 												Free AP Practice is for students {MINIMUM_ACCOUNT_AGE} and older. We save only
 												this confirmation, not your birth date.
 											</p>
-											<div class="flex justify-center">
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													onclick={deleteUnder13Account}
-													disabled={deletingAccount}
-												>
-													{deletingAccount
-														? 'Starting deletion…'
-														: `I am under ${MINIMUM_ACCOUNT_AGE}`}
-												</Button>
-											</div>
 										</div>
 									{/if}
 								</div>

@@ -257,47 +257,34 @@ export function buildMcqGenerationPrompt(opts: {
 			'Pick a fresh angle, an under-tested concept, or a distinct real-world context that has NOT appeared in recent questions.'
 	});
 
-	const isBiology = className.toLowerCase().includes('biology');
-	const difficultyGuidance = isBiology
-		? `\nDIFFICULTY CALIBRATION FOR AP BIOLOGY:\n- Focus on conceptual understanding and application, not memorization of obscure details\n- Use a balanced medium difficulty appropriate for an introductory college-level biology course\n- Emphasize scientific practices over pure recall`
-		: '';
+	const diagramSection = diagramsEnabled ? `\n${EXAMFIG_DIAGRAM_SKILL}` : '';
 
-	const scopeBlock = `CRITICAL UNIT SCOPE REQUIREMENT:
-- Your question MUST stay strictly within the app-authored keywords and focus controls listed above
-	- DO NOT incorporate concepts from other units, even if they seem related`;
-	const diagramSection = diagramsEnabled
-		? EXAMFIG_DIAGRAM_SKILL
-		: `
-EXAMFIG DIAGRAMS DISABLED:
-- Set the required 'diagram' field to null.
-- Do not call diagram tools or create diagram JSON.`;
+	const systemPrompt = `You are an independent AP-aligned practice question writer. Create one original, high-quality practice question for the requested AP course and unit. Do not reproduce or closely imitate any official question, passage, stimulus, rubric, or scoring guidance.
 
-	const systemPrompt = `You are an independent AP-aligned practice question writer. Create high-quality, original practice questions that follow broad course skills and formats without reproducing or closely imitating any official question, passage, stimulus, rubric, or scoring guidance.${unitContext}${keywordsContext}${diversitySection}${difficultyGuidance}
+COURSE AND UNIT SCOPE:
+${unitContext}${keywordsContext}${diversitySection}
+- Stay strictly within the app-authored keywords and focus controls listed above.
+- Do not incorporate concepts from other units, even if they seem related.
 
-${scopeBlock}
 ${diagramSection}
 
 QUESTION QUALITY:
-- Aim for a medium difficulty level with clear, independent wording.
-- Test understanding, not just memorization
-- Include real-world scenarios or experimental contexts
-- Plausible distractors reflecting common misconceptions
-- Options should be roughly equal in length
-- Avoid "all of the above" or "none of the above"
-- Vary the cognitive level: alternate between recall, application, analysis, and evaluation questions
+- Test understanding through application, analysis, evaluation, or carefully chosen recall.
+- Use a medium AP-level difficulty and a clear, independent scenario.
+- Include plausible distractors based on common misconceptions.
+- Keep answer choices roughly equal in length.
+- Do not use "all of the above" or "none of the above".
 
-FORMATTING:
+WRITING AND FORMATTING:
 - For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.
 - For code blocks use the triple backtick syntax (\`\`\`) to enclose code.
-
-EXPLANATION:
-- Explain why the correct answer is right
-- Address why distractors are incorrect
+- Explain why the correct answer is right and why each distractor is incorrect.
 - Use a newline before each option letter (A, B, C, D) when discussing them
-- Be concise with your explanations and don't repeat information unnecessarily
+- Be concise and avoid unnecessary repetition.
 
-OUTPUT:
-- Return ONLY the JSON object matching the schema; no text before or after the JSON`;
+OUTPUT CONTRACT:
+- Return only the JSON object matching the supplied schema.
+- Do not include markdown, commentary, or text before or after the JSON.`;
 
 	const userMessage = `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
@@ -310,6 +297,7 @@ export function buildStimulusSetGenerationPrompt(opts: {
 	childCount: number;
 	mode: 'text' | 'diagram' | 'mixed';
 	recentTopics?: string[];
+	allowedDiagramTypes?: string[];
 }): { system: string; user: string } {
 	const { className, unit, childCount, mode, recentTopics } = opts;
 	if (!className) throw new Error('className is required');
@@ -324,20 +312,48 @@ export function buildStimulusSetGenerationPrompt(opts: {
 	});
 	const modeInstruction =
 		mode === 'text'
-			? 'Set stimulus.diagram to null and provide a substantive original text stimulus.'
+			? 'STIMULUS FORMAT: Provide a substantive text stimulus.'
 			: mode === 'diagram'
-				? 'Set stimulus.text to null and provide a validated semantic Examfig DiagramSpec encoded as JSON in stimulus.diagram.'
-				: 'Provide both an original text stimulus and a validated semantic Examfig DiagramSpec.';
-	const system = `You write original AP-aligned multiple-choice stimulus sets for ${className}.${unitContext}${keywordsContext}${diversitySection}
+				? 'STIMULUS FORMAT: Provide a semantic Examfig DiagramSpec encoded as JSON in stimulus.diagram. Supporting text in stimulus.text is allowed.'
+				: 'STIMULUS FORMAT: Provide both a text stimulus and a semantic Examfig DiagramSpec.';
+	const diagramSection = mode === 'text' ? '' : `\n${EXAMFIG_DIAGRAM_SKILL}`;
+	const allowedDiagramTypes =
+		opts.allowedDiagramTypes ?? getStimulusPolicy(className).profiles[0]?.diagramTypes ?? [];
+	const diagramPolicy =
+		mode === 'text'
+			? ''
+			: `\nCOURSE-SPECIFIC DIAGRAM POLICY:\n- Allowed diagram types for ${className}: ${allowedDiagramTypes.join(', ')}\n- Use only one of these allowed types. Do not select any other type from the general Examfig reference.`;
+	const system = `You write AP-aligned multiple-choice stimulus sets for ${className}. Create exactly ${childCount} independently answerable questions that share one stimulus. Do not reproduce or closely imitate official questions, passages, quotations, documents, authors, dates, or attributions.
 
-Create exactly ${childCount} independently answerable questions sharing one stimulus. ${modeInstruction}
-Every question must be answerable without seeing another question or its answer. Keep every child inside the selected unit.
-Do not reproduce or closely imitate official questions, passages, quotations, documents, authors, dates, or attributions. Label all material as original practice material in the application.
-Use only semantic Examfig diagrams. Every diagram must include an accessibleDescription. Never output SVG, arbitrary image URLs, photographs, artwork, or unsupported visual media.
+COURSE AND UNIT SCOPE:
+${unitContext}${keywordsContext}${diversitySection}
+- Keep every child strictly inside the selected unit and the app-authored keywords and focus controls above.
+- Every question must be answerable without seeing another question or its answer.
 
-For all math and science notation use $...$ or $$...$$ LaTeX delimiters. Return only JSON matching the strict schema. The stimulus diagram field is a JSON string or null, never an object.
+${modeInstruction}
+${diagramPolicy}
+${diagramSection}
+
+QUESTION QUALITY:
+- Use a medium AP-level difficulty and test application, analysis, evaluation, or carefully chosen recall.
+- Make distractors plausible and based on common misconceptions.
+- Keep child questions concise when a diagram carries the relevant relationships or values.
+
+WRITING AND FORMATTING:
+- For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display math. Do not use other LaTeX delimiters or environments.
+- Use factual real-world context when it materially improves the stimulus, but write it in your own wording.
+- Do not reproduce source wording, quotes, official questions, or distinctive narrative details.
+- Prefer public facts, anonymized subjects, or clearly labeled composite scenarios.
+- Do not invent allegations or damaging facts about identifiable living people.
+- Do not fabricate official attributions or imply endorsement by a source or organization.
+
+OUTPUT CONTRACT:
+- Return only JSON matching the supplied strict schema.
+- The stimulus diagram value is a JSON string or null, never a JSON object.
+- Begin directly with the stimulus content. Do not add labels, titles, source disclaimers, or phrases such as "Original practice material" to stimulus.text.
+- Do not include markdown, commentary, or text before or after the JSON.
 `;
-	const user = `Create a ${childCount}-question original practice set for ${className}${unit ? ` covering ${unit}` : ''}. Return only the JSON object.`;
+	const user = `Create a ${childCount}-question practice set for ${className}${unit ? ` covering ${unit}` : ''}. Return only the JSON object.`;
 	return { system, user };
 }
 
@@ -401,7 +417,10 @@ export async function generateAPStimulusSet(opts: {
 		throw new Error('Stimulus set does not match the course/unit policy.');
 	}
 	const generationStarted = Date.now();
-	const { system, user } = buildStimulusSetGenerationPrompt(opts);
+	const { system, user } = buildStimulusSetGenerationPrompt({
+		...opts,
+		allowedDiagramTypes: profile.diagramTypes
+	});
 	const result = await structuredObject({
 		callName: 'generateAPStimulusSet',
 		model: MCQ_GENERATION_MODEL,
@@ -411,14 +430,18 @@ export async function generateAPStimulusSet(opts: {
 		schemaName: 'ap_stimulus_set',
 		reasoningEffort: 'medium',
 		tools: opts.mode === 'text' ? undefined : examfigTools,
-		logContext: { className: opts.className, unit: opts.unit, childCount: opts.childCount }
+		logContext: {
+			className: opts.className,
+			unit: opts.unit,
+			childCount: opts.childCount,
+			mode: opts.mode
+		}
 	});
 	const parsed = parseGeneratedApStimulusSet(result.parsed, opts.childCount);
 	if (opts.mode === 'text' && parsed.diagram)
 		throw new Error('Text stimulus unexpectedly included a diagram.');
-	if (opts.mode === 'diagram' && parsed.stimulus.text) {
-		throw new Error('Diagram-only stimulus unexpectedly included text.');
-	}
+	if (opts.mode === 'diagram' && !parsed.diagram)
+		throw new Error('Diagram stimulus did not include a diagram.');
 	if (opts.mode === 'mixed' && (!parsed.stimulus.text || !parsed.diagram)) {
 		throw new Error('Mixed stimulus must include both text and a diagram.');
 	}

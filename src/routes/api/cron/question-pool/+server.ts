@@ -6,7 +6,7 @@ import { refill } from '$lib/question-bank/ops.server';
 import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
 import { logger } from '$lib/server/logger';
 
-export const config = { maxDuration: 60 };
+export const config = { maxDuration: 300 };
 
 export const GET: RequestHandler = async ({ request }) => {
 	if (!isAuthorizedCronRequest(request, env.CRON_SECRET)) {

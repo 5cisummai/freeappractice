@@ -24,7 +24,7 @@ export const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 500;
 /** Retry-After seconds on `503 POOL_WARMING`. */
 export const QUESTION_POOL_WARMING_RETRY_AFTER_SECONDS = 15;
 /** Soft wall-clock budget for one worker run (keep under Vercel maxDuration). */
-export const QUESTION_POOL_WORKER_TIME_BUDGET_MS = 50_000;
+export const QUESTION_POOL_WORKER_TIME_BUDGET_MS = 120_000;
 
 export type QuestionPoolConfig = {
 	/** Default MCQ ceiling when a class is not listed in the JSON map. */
