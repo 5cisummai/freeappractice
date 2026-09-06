@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
-import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
+import { createSuperAgentStreamResponse } from '$lib/super/agent-runtime.server';
 import { RedisRequiredError } from '$lib/super/ai-controls.server';
 import {
 	MAX_SUPER_AGENT_MESSAGES,

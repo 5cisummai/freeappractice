@@ -10,7 +10,7 @@ import { createTutorChatStream } from '$lib/tutor/chat-stream.server';
 import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { chat } from '$lib/tutor/service.server';
-import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
+import { createSuperAgentStreamResponse } from '$lib/super/agent-runtime.server';
 import {
 	MAX_SUPER_AGENT_REQUEST_BYTES,
 	superAgentRequestSchema,

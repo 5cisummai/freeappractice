@@ -1,4 +1,4 @@
-import type { SuperAgentUIMessage } from '$lib/super/coach.server';
+import type { SuperAgentUIMessage } from '$lib/super/agent.server';
 import type { ConversationMessage } from '$lib/super/conversations.server';
 
 export function shouldIncludeConversationRowForUi(

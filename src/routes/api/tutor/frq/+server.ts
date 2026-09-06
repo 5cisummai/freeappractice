@@ -17,7 +17,7 @@ import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
-import { createSuperAgentStreamResponse } from '$lib/super/agent-stream.server';
+import { createSuperAgentStreamResponse } from '$lib/super/agent-runtime.server';
 import {
 	MAX_SUPER_AGENT_REQUEST_BYTES,
 	superAgentRequestSchema,
