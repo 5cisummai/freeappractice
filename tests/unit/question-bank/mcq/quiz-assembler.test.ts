@@ -126,6 +126,21 @@ describe('assembleMcqQuiz', () => {
 		vi.restoreAllMocks();
 	});
 
+	it('reports the maximum available count when the pool is too small', async () => {
+		findActiveQuestionsForQuizMock.mockResolvedValue([question('only')]);
+		await expect(
+			assembleMcqQuiz(
+				{ apClass: 'AP Biology', unit: 'Unit 1', count: 10 },
+				{ globalFlagEnabled: true }
+			)
+		).rejects.toMatchObject({
+			name: 'QuizPoolWarmingError',
+			availableCount: 1,
+			message:
+				'Not enough active questions are available for a 10-question quiz. Maximum available: 1.'
+		});
+	});
+
 	it('serves existing stimulus questions from units outside the generation allowlist', async () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([{ ...question('u4', 0), unit: 'Unit 4' }]);
 		const result = await assembleMcqQuiz(

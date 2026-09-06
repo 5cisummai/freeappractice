@@ -40,10 +40,15 @@ export type QuizAssemblyResult = {
 
 export class QuizPoolWarmingError extends Error {
 	readonly code = 'POOL_WARMING';
+	readonly availableCount: number;
 
-	constructor(message = 'Question pool is warming up. Please retry shortly.') {
+	constructor(
+		message = 'Question pool is warming up. Please retry shortly.',
+		availableCount = 0
+	) {
 		super(message);
 		this.name = 'QuizPoolWarmingError';
+		this.availableCount = availableCount;
 	}
 }
 
@@ -240,6 +245,10 @@ export async function assembleMcqQuiz(
 		limit: count
 	});
 	const blocks = buildBlocks(rows, options.globalFlagEnabled, policy);
+	const availableCount = blocks.reduce(
+		(sum, block) => sum + (block.kind === 'set' ? block.children.length : 1),
+		0
+	);
 	const targetStimulusQuestions = stimulusTargetEnabled
 		? Math.round((count * policy.quizTargetQuestionPercent) / 100)
 		: 0;
@@ -270,7 +279,8 @@ export async function assembleMcqQuiz(
 
 	if (selected.length < count) {
 		throw new QuizPoolWarmingError(
-			`Not enough active questions are available for a ${count}-question quiz.`
+			`Not enough active questions are available for a ${count}-question quiz. Maximum available: ${availableCount}.`,
+			availableCount
 		);
 	}
 

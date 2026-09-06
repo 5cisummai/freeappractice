@@ -8,6 +8,7 @@
 	import { privacy } from '$lib/client/privacy.svelte.js';
 	import { afterNavigate, beforeNavigate } from '$app/navigation';
 	import { invalidateAppSubtree } from '$lib/client/invalidate-data.js';
+	import { DEFAULT_THEME } from '$lib/client/theme.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
@@ -60,7 +61,7 @@
 >
 	Skip to main content
 </a>
-<ModeWatcher />
+<ModeWatcher defaultMode={DEFAULT_THEME} />
 <GoogleOneTapPrompt />
 <AnalyticsConsentBanner />
 {@render children()}

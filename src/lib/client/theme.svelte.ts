@@ -2,6 +2,8 @@ import { modeStorageKey, setMode } from 'mode-watcher';
 
 export type Theme = 'light' | 'dark' | 'system';
 
+export const DEFAULT_THEME: Theme = 'light';
+
 const LEGACY_STORAGE_KEY = 'fap_settings';
 
 class ThemeController {

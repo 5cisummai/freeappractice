@@ -134,7 +134,13 @@ export const POST: RequestHandler = async (event) => {
 				}
 			}
 			return json(
-				{ code: 'POOL_WARMING', error: error.message, retryAfterSeconds: 20, refillRequested },
+				{
+					code: 'POOL_WARMING',
+					error: error.message,
+					retryAfterSeconds: 20,
+					refillRequested,
+					availableCount: error.availableCount
+				},
 				{ status: 503, headers: { 'Retry-After': '20' } }
 			);
 		}
