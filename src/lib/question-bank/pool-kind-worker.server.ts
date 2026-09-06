@@ -45,7 +45,12 @@ const generationAdapters = {
 	frq: (apClass: string, unit: string) => generateAndPersistFrq(apClass, unit)
 } satisfies Record<
 	PoolRefillQuestionType,
-	(apClass: string, unit: string, target?: number, reservedSlots?: number) => Promise<GenerationResult>
+	(
+		apClass: string,
+		unit: string,
+		target?: number,
+		reservedSlots?: number
+	) => Promise<GenerationResult>
 >;
 
 /** Worker-only seam. Never import this module from request-path serving code. */
