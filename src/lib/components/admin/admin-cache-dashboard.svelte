@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SearchIcon from '@tabler/icons-svelte/icons/search';
+	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
 	import type {
 		CacheBucketSummary,
 		PoolQuestionType,
@@ -8,6 +9,7 @@
 	import AdminCacheBucketActions from '$lib/components/admin/admin-cache-bucket-actions.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { toast } from 'svelte-sonner';
 	import {
@@ -305,16 +307,40 @@
 			<Button variant="outline" onclick={() => void refreshSnapshot()} disabled={!!busyAction}>
 				{isBusy('refresh') ? 'Refreshing…' : 'Refresh'}
 			</Button>
-			<Button onclick={() => void enqueueAllDeficits()} disabled={!!busyAction}>
-				{isBusy('enqueue-all') ? 'Enqueueing…' : 'Enqueue all deficits'}
-			</Button>
-			<Button
-				variant="destructive"
-				onclick={() => (retireOldestOpen = true)}
-				disabled={!!busyAction || retireOldestPreviewCount < 1}
-			>
-				Retire {POOL_RETIRE_OLDEST_PERCENT}% oldest
-			</Button>
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<Button
+							{...props}
+							variant="ghost"
+							size="icon"
+							class="size-9 text-muted-foreground hover:text-foreground"
+							disabled={!!busyAction}
+							aria-label="More pool actions"
+						>
+							<EllipsisIcon class="size-4" />
+						</Button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content align="end">
+					<DropdownMenu.Group>
+						<DropdownMenu.Label>Bulk actions</DropdownMenu.Label>
+						<DropdownMenu.Item
+							disabled={!!busyAction}
+							onclick={() => void enqueueAllDeficits()}
+						>
+							{isBusy('enqueue-all') ? 'Enqueueing…' : 'Enqueue all deficits'}
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							variant="destructive"
+							disabled={!!busyAction || retireOldestPreviewCount < 1}
+							onclick={() => (retireOldestOpen = true)}
+						>
+							Retire {POOL_RETIRE_OLDEST_PERCENT}% oldest
+						</DropdownMenu.Item>
+					</DropdownMenu.Group>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
 		</div>
 	</div>
 

@@ -300,9 +300,6 @@
 				{/each}
 			</div>
 		{:else}
-			<p class="mb-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-				Question
-			</p>
 			<AnnotatableRichText
 				text={core.currentQuestion?.prompt ?? ''}
 				target={{ kind: 'prompt', paragraphIndex: 0 }}
