@@ -95,7 +95,7 @@
 		captureLandingPageViewed();
 		void authClient.getSession().then(({ data }) => {
 			if (data?.session) {
-				void goto(resolve('/app'));
+				void goto(resolve('/app'), { replaceState: true });
 			}
 		});
 	});
