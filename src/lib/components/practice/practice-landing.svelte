@@ -77,17 +77,18 @@
 				</div>
 			</section>
 
-			<section>
+			<section class="mx-auto max-w-250">
 				{#key `${practicePage.className}:${practicePage.type}:${practicePage.unitName ?? ''}`}
 					<PracticeRunner
 						{initial}
+						presentation="hero"
 						capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
 						quiz={{ persistHistory: false }}
 					/>
 				{/key}
 			</section>
 
-			<section class="mx-auto max-w-3xl">
+			<section class="mx-auto max-w-3xl pt-20">
 				<PracticeHubNav page={practicePage} />
 
 				<article class="prose prose-neutral dark:prose-invert mt-10 max-w-none space-y-4">
