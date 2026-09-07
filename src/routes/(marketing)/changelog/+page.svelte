@@ -5,6 +5,22 @@
 
 	const changelog = [
 		{
+			version: '1.8.2',
+			date: 'September 7, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Refreshed public practice pages with a more focused hero layout and simpler unit navigation'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Fixed email sign-in and password reset failures when loading linked accounts']
+				}
+			]
+		},
+		{
 			version: '1.8.1',
 			date: 'September 6, 2026',
 			sections: [
@@ -1334,7 +1350,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 6, 2026"
+			meta="Last Updated: September 7, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
