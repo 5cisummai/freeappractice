@@ -10,7 +10,7 @@ import {
 	textFromSuperAgentParts,
 	type SuperAgentRequest
 } from '$lib/super/agent-request';
-import type { SuperAgentUIMessage } from '$lib/super/coach.server';
+import type { SuperAgentUIMessage } from '$lib/super/agent.server';
 import {
 	getConversationMessages,
 	getOwnedConversation,

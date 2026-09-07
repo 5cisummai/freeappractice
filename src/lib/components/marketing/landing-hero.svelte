@@ -53,6 +53,7 @@
 				grainMixer={0.02}
 				grainOverlay={0.03}
 				grainSize={0.5}
+				minPixelRatio={1}
 				fit="cover"
 			/>
 

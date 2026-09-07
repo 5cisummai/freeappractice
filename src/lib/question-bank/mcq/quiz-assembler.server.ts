@@ -42,10 +42,7 @@ export class QuizPoolWarmingError extends Error {
 	readonly code = 'POOL_WARMING';
 	readonly availableCount: number;
 
-	constructor(
-		message = 'Question pool is warming up. Please retry shortly.',
-		availableCount = 0
-	) {
+	constructor(message = 'Question pool is warming up. Please retry shortly.', availableCount = 0) {
 		super(message);
 		this.name = 'QuizPoolWarmingError';
 		this.availableCount = availableCount;

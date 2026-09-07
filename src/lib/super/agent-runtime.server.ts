@@ -1,3 +1,7 @@
+/**
+ * Super turn runtime: owns request lifecycle, context assembly, persistence,
+ * quota/lock cleanup, and UI streaming around the pure ToolLoopAgent.
+ */
 import { consumeStream, createAgentUIStreamResponse } from 'ai';
 import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
@@ -14,7 +18,7 @@ import {
 	createSuperAgent,
 	type SuperAgentContext,
 	type SuperAgentUIMessage
-} from '$lib/super/coach.server';
+} from '$lib/super/agent.server';
 import { buildSuperAgentContext } from '$lib/super/context.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
