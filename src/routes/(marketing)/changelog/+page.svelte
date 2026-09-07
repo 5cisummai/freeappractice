@@ -5,6 +5,31 @@
 
 	const changelog = [
 		{
+			version: '1.8.1',
+			date: 'September 6, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Added light, dark, and system theme controls directly to quiz sessions',
+						'Added dedicated controls for eliminating and restoring multiple-choice answers during practice'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Refreshed the quiz workspace with more readable question and stimulus text, clearer review controls, and a more compact question navigator',
+						'Signed-in students no longer see a signup prompt after completing a quiz',
+						'Quiz annotations and reading position now stay scoped correctly as you move between questions'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Feature flag changes now take effect without stale hourly cache values']
+				}
+			]
+		},
+		{
 			version: '1.8.0',
 			date: 'September 6, 2026',
 			sections: [

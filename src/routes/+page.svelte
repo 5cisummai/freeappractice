@@ -179,7 +179,7 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.8.0",
+			"softwareVersion": "1.8.1",
 			"datePublished": "2025-12-12",
 			"dateModified": "2026-09-06",
 			"inLanguage": "en-US",
