@@ -210,8 +210,8 @@ export const authRateLimits = authSchema.table(
 // Relation keys must match Better Auth drizzle-adapter join keys:
 // one-to-one uses the target modelName; one-to-many appends "s" (authMembers → authMemberss).
 export const authUsersRelations = relations(authUsers, ({ many }) => ({
-	authSessions: many(authSessions),
-	authAccounts: many(authAccounts),
+	authSessionss: many(authSessions),
+	authAccountss: many(authAccounts),
 	authMemberss: many(authMembers),
 	authInvitationss: many(authInvitations)
 }));
