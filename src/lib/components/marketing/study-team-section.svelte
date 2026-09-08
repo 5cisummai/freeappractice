@@ -230,7 +230,6 @@
 							<CopyIcon class="size-3.5" />
 							Copy invite link
 						</Button>
-						G
 						<div class="flex gap-2">
 							<div
 								class="flex h-9 min-w-0 flex-1 items-center rounded-md border border-border px-3 text-xs text-muted-foreground"

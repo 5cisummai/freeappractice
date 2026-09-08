@@ -3,6 +3,8 @@
 	import { page } from '$app/state';
 	import SignupForm from '$lib/components/auth/signup-form.svelte';
 	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
 	import { captureSignupStarted } from '$lib/client/activation-analytics';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import UsersRoundIcon from '@tabler/icons-svelte/icons/users';
@@ -32,12 +34,10 @@
 	</div>
 {:else if groupSignup}
 	<div class="flex justify-center">
-		<span
-			class="inline-flex items-center gap-1.5 rounded-full border border-sky-300/50 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-sm shadow-sky-500/10 dark:border-sky-400/30 dark:text-sky-300"
-		>
-			<UsersRoundIcon class="size-3.5 text-sky-500" aria-hidden="true" />
+		<Badge variant="outline" class={HERO_BADGE_CLASS}>
+			<UsersRoundIcon class="size-3.5 text-primary" aria-hidden="true" />
 			Sign up to create a study group
-		</span>
+		</Badge>
 	</div>
 {/if}
 
