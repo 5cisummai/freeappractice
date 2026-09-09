@@ -60,8 +60,7 @@ export type QuestionAttempt = {
 	attemptedAt: string;
 };
 
-export type StoredMcqQuestion = {
-	id: string;
+export type HistoryMcqQuestion = {
 	question: string;
 	optionA: string;
 	optionB: string;
@@ -83,13 +82,12 @@ export type StoredMcqQuestion = {
 	stimulusQuestionCount?: number | null;
 	apClass?: string;
 	unit?: string;
-	createdAt: string;
 };
 
 export type McqHistoryItem = {
 	kind: 'mcq';
 	attempt: QuestionAttempt;
-	question: StoredMcqQuestion | null;
+	question: HistoryMcqQuestion | null;
 };
 
 export type FrqHistoryItem = {

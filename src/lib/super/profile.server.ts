@@ -109,6 +109,15 @@ export async function getTutorProfileView(userId: string): Promise<TutorProfileV
 	return toTutorProfileView(await ensureTutorProfile(userId));
 }
 
+export async function getAgeConfirmedAt(userId: string): Promise<Date | null> {
+	const [profile] = await getNeonDatabase()
+		.select({ ageConfirmedAt: tutorProfiles.ageConfirmedAt })
+		.from(tutorProfiles)
+		.where(eq(tutorProfiles.userId, userId))
+		.limit(1);
+	return profile?.ageConfirmedAt ?? null;
+}
+
 export async function markSuperAccessStarted(
 	userId: string,
 	startedAt = new Date()

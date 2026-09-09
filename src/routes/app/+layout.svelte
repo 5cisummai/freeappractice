@@ -4,7 +4,6 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
-	import CoachShell from '$lib/components/super/coach-shell.svelte';
 	import CoachSidebarProvider from '$lib/components/super/coach-sidebar-provider.svelte';
 	import CoachSidebarRoot from '$lib/components/super/coach-sidebar.svelte';
 	import CoachSidebarTrigger from '$lib/components/super/coach-sidebar-trigger.svelte';
@@ -21,6 +20,7 @@
 	} from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { apiFetch } from '$lib/client/api.js';
+	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
 	import {
 		recordPendingSharedQuizRunFailure,
 		readPendingSharedQuizRuns,
@@ -37,6 +37,11 @@
 	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
 	const showFreeBetaClaimDialog = $derived(data.showFreeBetaClaimDialog && !isOnboarding);
 	let layoutMounted = $state(false);
+	let coachSidebarOpen = $state(false);
+	let coachLoadAttempt = $state(0);
+	const loadCoachShell = createLazyComponentLoader(
+		() => import('$lib/components/super/coach-shell.svelte')
+	);
 
 	function stripAuthQueryParam(param: 'signup' | 'login') {
 		const url = new URL(page.url);
@@ -102,7 +107,7 @@
 		{@render children()}
 	</main>
 {:else}
-	<CoachSidebarProvider>
+	<CoachSidebarProvider bind:open={coachSidebarOpen}>
 		<Sidebar.Provider class="bg-sidebar">
 			<AppSidebar
 				isAdmin={data.isAdmin}
@@ -136,7 +141,22 @@
 			{#if showCoachSidebar}
 				<CoachSidebarRoot>
 					<Sidebar.Content class="min-h-0 overflow-hidden p-0">
-						<CoachShell surface="sidebar" />
+						{#if coachSidebarOpen}
+							{#key coachLoadAttempt}
+								{#await loadCoachShell() then CoachShell}
+									<CoachShell surface="sidebar" />
+								{:catch}
+									<div class="space-y-3 p-6 text-sm text-muted-foreground">
+										<p>Coach could not be loaded.</p>
+										<button
+											type="button"
+											class="font-medium text-foreground underline underline-offset-4"
+											onclick={() => (coachLoadAttempt += 1)}>Retry</button
+										>
+									</div>
+								{/await}
+							{/key}
+						{/if}
 					</Sidebar.Content>
 				</CoachSidebarRoot>
 			{/if}

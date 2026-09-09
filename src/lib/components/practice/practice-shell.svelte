@@ -2,13 +2,12 @@
 	import { untrack } from 'svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
-	import FrqCard from '$lib/components/questions/frq-card.svelte';
-	import QuizSession from '$lib/components/practice/quiz-session.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import type { AnswerResult, TutorMode } from '$lib/question-bank/mcq/types';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
+	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
@@ -70,6 +69,14 @@
 	);
 	let expandedSelectorOpen = $state(false);
 	let cardExpanded = $state(false);
+	let frqLoadAttempt = $state(0);
+	let quizLoadAttempt = $state(0);
+	const loadFrqCard = createLazyComponentLoader(
+		() => import('$lib/components/questions/frq-card.svelte')
+	);
+	const loadQuizSession = createLazyComponentLoader(
+		() => import('$lib/components/practice/quiz-session.svelte')
+	);
 
 	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);
 	const persistQuizHistory = $derived(quiz.persistHistory ?? true);
@@ -198,35 +205,65 @@
 	<div class="mx-auto min-h-40 max-w-6xl">
 		{#if showUnlimitedFrq}
 			<div>
-				<FrqCard
-					{selectedClass}
-					{selectedUnit}
-					{unitRange}
-					{requestVersion}
-					{presetQuestionId}
-					showFirstUseHint={showFirstUseHints}
-					{tutorMode}
-					onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
-				/>
+				{#key frqLoadAttempt}
+					{#await loadFrqCard()}
+						<p class="py-8 text-center text-sm text-muted-foreground">Loading written response…</p>
+					{:then FrqCard}
+						<FrqCard
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							{requestVersion}
+							{presetQuestionId}
+							showFirstUseHint={showFirstUseHints}
+							{tutorMode}
+							onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
+						/>
+					{:catch}
+						<p class="py-8 text-center text-sm text-destructive">
+							Written-response practice could not be loaded.
+							<button
+								type="button"
+								class="ml-1 font-medium underline underline-offset-4"
+								onclick={() => (frqLoadAttempt += 1)}>Retry</button
+							>
+						</p>
+					{/await}
+				{/key}
 			</div>
 		{/if}
 
 		{#if activeQuizMode}
 			{#key `quiz:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}:${sharedQuiz?.slug ?? ''}`}
-				<QuizSession
-					{selectedClass}
-					{selectedUnit}
-					{unitRange}
-					{count}
-					requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
-					bind:isGenerating={quizGenerating}
-					persistHistory={persistQuizHistory}
-					showCoachReview={tutorMode !== 'hidden'}
-					initialQuestions={sharedQuiz?.questions ?? null}
-					sharedSlug={sharedQuiz?.slug ?? ''}
-					title={sharedQuiz?.title}
-					onExit={handleQuizExit}
-				/>
+				{#key quizLoadAttempt}
+					{#await loadQuizSession()}
+						<p class="py-8 text-center text-sm text-muted-foreground">Loading quiz…</p>
+					{:then QuizSession}
+						<QuizSession
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							{count}
+							requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
+							bind:isGenerating={quizGenerating}
+							persistHistory={persistQuizHistory}
+							showCoachReview={tutorMode !== 'hidden'}
+							initialQuestions={sharedQuiz?.questions ?? null}
+							sharedSlug={sharedQuiz?.slug ?? ''}
+							title={sharedQuiz?.title}
+							onExit={handleQuizExit}
+						/>
+					{:catch}
+						<p class="py-8 text-center text-sm text-destructive">
+							Quiz could not be loaded.
+							<button
+								type="button"
+								class="ml-1 font-medium underline underline-offset-4"
+								onclick={() => (quizLoadAttempt += 1)}>Retry</button
+							>
+						</p>
+					{/await}
+				{/key}
 			{/key}
 		{:else if showUnlimitedMcq}
 			{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}

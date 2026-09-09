@@ -4,22 +4,27 @@ import { logger } from '$lib/server/logger';
 
 type AuthedHandler = (event: RequestEvent, userId: string) => Promise<Response>;
 
+/** Reuse the hook's session result and retry only when the hook skipped or failed its lookup. */
+export async function getOptionalUserId(event: RequestEvent): Promise<string | undefined> {
+	if (event.locals.userId) return event.locals.userId;
+	if (event.locals.sessionLookupStatus === 'complete') return undefined;
+
+	const session = await auth.api.getSession({ headers: event.request.headers });
+	event.locals.sessionLookupStatus = 'complete';
+	if (!session?.user?.id) return undefined;
+	event.locals.session = session.session;
+	event.locals.user = session.user;
+	event.locals.userId = session.user.id;
+	return session.user.id;
+}
+
 /**
  * Full auth guard for use in +server.ts handlers.
  * Uses Better Auth session cookies; falls back to locals when already populated by hooks.
  */
 async function requireAuth(event: RequestEvent): Promise<string> {
-	if (event.locals.userId) {
-		return event.locals.userId;
-	}
-
-	const session = await auth.api.getSession({ headers: event.request.headers });
-	if (session?.user?.id) {
-		event.locals.session = session.session;
-		event.locals.user = session.user;
-		event.locals.userId = session.user.id;
-		return session.user.id;
-	}
+	const userId = await getOptionalUserId(event);
+	if (userId) return userId;
 
 	throw new Response(JSON.stringify({ error: 'Authentication required' }), {
 		status: 401,

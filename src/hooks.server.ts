@@ -28,7 +28,7 @@ import {
 } from '$lib/flags';
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
 import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
-import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { getAgeConfirmedAtForRequest } from '$lib/super/feature-access.server';
 import { limitApiRequests } from '$lib/server/api-rate-limit.server';
 import {
 	shouldSkipGlobalApiRateLimit,
@@ -181,13 +181,16 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
+	event.locals.sessionLookupStatus = undefined;
 	event.locals.planAccess = undefined;
+	event.locals.ageConfirmedAt = undefined;
 	event.locals.tutorProfileView = undefined;
 	event.locals.assistantFeaturesEnabled = undefined;
 
 	// Public MCQ serve path: skip Better Auth session I/O to keep pool-hit latency low.
 	// Logging, CORS, and security headers still run. FRQ and /api/me/* keep full auth.
 	const skipSessionLookup = shouldSkipSessionLookup(event.request.method, event.url.pathname);
+	event.locals.sessionLookupStatus = skipSessionLookup ? 'skipped' : 'complete';
 
 	if (!skipSessionLookup) {
 		try {
@@ -198,6 +201,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 				event.locals.userId = session.user.id;
 			}
 		} catch (err) {
+			event.locals.sessionLookupStatus = 'failed';
 			logger.error('Session lookup failed', { error: err, path: event.url.pathname });
 		}
 	}
@@ -263,7 +267,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 				headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 			});
 		}
-		if (!(await getTutorProfileViewForRequest(event.locals, event.locals.userId)).ageConfirmedAt) {
+		if (!(await getAgeConfirmedAtForRequest(event.locals, event.locals.userId))) {
 			return new Response(
 				JSON.stringify({ error: 'Confirm that you are at least 13 before choosing Super.' }),
 				{
@@ -276,8 +280,8 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 	const ageGateExempt = isAgeGateExempt(event.url.pathname);
 	if (event.locals.userId && isAccountSurface(event.url.pathname) && !ageGateExempt) {
-		const profile = await getTutorProfileViewForRequest(event.locals, event.locals.userId);
-		if (!profile.ageConfirmedAt) {
+		const ageConfirmedAt = await getAgeConfirmedAtForRequest(event.locals, event.locals.userId);
+		if (!ageConfirmedAt) {
 			if (event.url.pathname.startsWith('/api/')) {
 				return new Response(
 					JSON.stringify({ error: 'Confirm that you are at least 13 before using your account.' }),

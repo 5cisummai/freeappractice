@@ -3,9 +3,9 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
 
 	let { data } = $props();
 
@@ -13,6 +13,10 @@
 		data.isAuthenticated
 			? `${resolve('/app/practice')}?shared=${encodeURIComponent(data.sharedQuiz?.slug ?? '')}`
 			: `${page.url.pathname}?start=1`
+	);
+	let practiceLoadAttempt = $state(0);
+	const loadPracticeRunner = createLazyComponentLoader(
+		() => import('$lib/components/practice/practice-shell.svelte')
 	);
 </script>
 
@@ -46,23 +50,38 @@
 						</h1>
 					</div>
 					{#key data.sharedQuiz.slug}
-						<PracticeRunner
-							initial={{
-								selectedClass: data.sharedQuiz.apClass,
-								selectedUnit: data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit,
-								requestVersion: 1
-							}}
-							quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}
-							onEvent={(event) => {
-								if (event.type === 'quiz-exit') {
-									void goto(
-										resolve('/q/[slug]', {
-											slug: page.params.slug ?? data.sharedQuiz?.slug ?? ''
-										})
-									);
-								}
-							}}
-						/>
+						{#key practiceLoadAttempt}
+							{#await loadPracticeRunner()}
+								<p class="py-8 text-center text-sm text-muted-foreground">Loading quiz…</p>
+							{:then PracticeRunner}
+								<PracticeRunner
+									initial={{
+										selectedClass: data.sharedQuiz.apClass,
+										selectedUnit: data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit,
+										requestVersion: 1
+									}}
+									quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}
+									onEvent={(event) => {
+										if (event.type === 'quiz-exit') {
+											void goto(
+												resolve('/q/[slug]', {
+													slug: page.params.slug ?? data.sharedQuiz?.slug ?? ''
+												})
+											);
+										}
+									}}
+								/>
+							{:catch}
+								<p class="py-8 text-center text-sm text-destructive">
+									Quiz could not be loaded.
+									<button
+										type="button"
+										class="ml-1 font-medium underline underline-offset-4"
+										onclick={() => (practiceLoadAttempt += 1)}>Retry</button
+									>
+								</p>
+							{/await}
+						{/key}
 					{/key}
 				</div>
 			{:else if data.sharedQuiz}

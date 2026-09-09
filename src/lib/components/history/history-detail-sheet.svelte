@@ -2,10 +2,11 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
-	import type { HistoryItem } from '$lib/users/types.js';
+	import type { HistoryItem, HistoryMcqQuestion } from '$lib/users/types.js';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types.js';
 	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
+	import { getHistoryMcqQuestion } from '$lib/users/history-question.client.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -29,6 +30,10 @@
 	let frqDetail = $state<FrqAttemptView | null>(null);
 	let frqDetailLoading = $state(false);
 	let frqDetailError = $state('');
+	let loadedMcqQuestion = $state<HistoryMcqQuestion | null>(null);
+	let mcqDetailLoading = $state(false);
+	let mcqDetailError = $state('');
+	const mcqQuestion = $derived(item?.kind === 'mcq' ? (item.question ?? loadedMcqQuestion) : null);
 
 	async function loadFrqDetail(attemptId: string): Promise<void> {
 		frqDetailLoading = true;
@@ -48,12 +53,27 @@
 		}
 	}
 
+	async function loadMcqDetail(questionId: string): Promise<void> {
+		mcqDetailLoading = true;
+		mcqDetailError = '';
+		try {
+			loadedMcqQuestion = await getHistoryMcqQuestion(questionId);
+		} catch (error) {
+			mcqDetailError = error instanceof Error ? error.message : 'Could not load this question.';
+		} finally {
+			mcqDetailLoading = false;
+		}
+	}
+
 	onMount(() => {
 		if (open && item?.kind === 'frq') void loadFrqDetail(item.attempt.id);
+		if (open && item?.kind === 'mcq' && !item.question) {
+			void loadMcqDetail(item.attempt.questionId);
+		}
 	});
 
 	const options = $derived.by(() => {
-		const q = item?.question;
+		const q = mcqQuestion;
 		if (!q) return [];
 		return [
 			{ id: 'A' as const, text: q.optionA },
@@ -189,22 +209,26 @@
 							</div>
 						</div>
 					</div>
-				{:else if !item.question}
+				{:else if mcqDetailLoading}
+					<p class="text-sm text-muted-foreground">Loading question…</p>
+				{:else if mcqDetailError}
+					<p class="text-sm text-destructive">{mcqDetailError}</p>
+				{:else if !mcqQuestion}
 					<p class="text-sm text-muted-foreground">
 						This question is no longer available in storage. Your attempt was still recorded.
 					</p>
 				{:else}
-					{#if item.question.stimulus || item.question.diagramSpec}
+					{#if mcqQuestion.stimulus || mcqQuestion.diagramSpec}
 						<div class="space-y-3">
 							<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
 								Stimulus
 							</p>
-							{#if item.question.stimulus?.text}
-								<RichText text={item.question.stimulus.text} class="text-sm" />
+							{#if mcqQuestion.stimulus?.text}
+								<RichText text={mcqQuestion.stimulus.text} class="text-sm" />
 							{/if}
-							{#if item.question.stimulus?.diagramSpec || item.question.diagramSpec}
+							{#if mcqQuestion.stimulus?.diagramSpec || mcqQuestion.diagramSpec}
 								<ExamfigDiagram
-									spec={item.question.stimulus?.diagramSpec ?? item.question.diagramSpec!}
+									spec={mcqQuestion.stimulus?.diagramSpec ?? mcqQuestion.diagramSpec!}
 								/>
 							{/if}
 						</div>
@@ -213,7 +237,7 @@
 						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 							Question
 						</p>
-						<RichText text={item.question.question} class="text-sm" />
+						<RichText text={mcqQuestion.question} class="text-sm" />
 					</div>
 
 					<div class="space-y-2">
@@ -223,13 +247,13 @@
 								<li
 									class={cn(
 										'rounded-md border px-3 py-2 text-sm',
-										option.id === item.question?.correctAnswer &&
+										option.id === mcqQuestion.correctAnswer &&
 											'border-emerald-500/50 bg-emerald-500/5',
 										option.id === item.attempt.selectedAnswer &&
-											option.id !== item.question?.correctAnswer &&
+											option.id !== mcqQuestion.correctAnswer &&
 											'border-destructive/50 bg-destructive/5',
 										option.id === item.attempt.selectedAnswer &&
-											option.id === item.question?.correctAnswer &&
+											option.id === mcqQuestion.correctAnswer &&
 											'border-emerald-500/50 bg-emerald-500/10'
 									)}
 								>
@@ -240,12 +264,12 @@
 						</ul>
 					</div>
 
-					{#if item.question.explanation}
+					{#if mcqQuestion.explanation}
 						<div>
 							<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 								Explanation
 							</p>
-							<RichText text={item.question.explanation} class="text-sm text-muted-foreground" />
+							<RichText text={mcqQuestion.explanation} class="text-sm text-muted-foreground" />
 						</div>
 					{/if}
 				{/if}

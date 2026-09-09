@@ -20,6 +20,8 @@ declare global {
 			userId?: string;
 			user?: User;
 			session?: Session & { activeOrganizationId?: string | null };
+			sessionLookupStatus?: 'skipped' | 'complete' | 'failed';
+			ageConfirmedAt?: Promise<Date | null>;
 			tutorProfileView?: Promise<TutorProfileView>;
 			planAccess?: Promise<PlanAccess>;
 			assistantFeaturesEnabled?: Promise<boolean>;

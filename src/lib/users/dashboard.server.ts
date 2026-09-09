@@ -6,25 +6,32 @@ import { timezoneFromCookies } from '$lib/users/timezone';
 import { ONBOARDING_COOKIE_NAME, readOnboardingState } from '$lib/onboarding.js';
 import { updateUserSubjects } from '$lib/users/model.server';
 
-export async function loadUserDashboardData(userId: string, cookies: Cookies) {
-	const frqEnabled = await isFrqPracticeEnabled();
-	const user = await getUserDashboardProfileOrFail(userId);
+export async function loadUserDashboardData(
+	userId: string,
+	cookies: Cookies,
+	options: { beforeLegacySubjectWrite?: Promise<unknown> } = {}
+) {
+	const [frqEnabled, user] = await Promise.all([
+		isFrqPracticeEnabled(),
+		getUserDashboardProfileOrFail(userId)
+	]);
 	const profileSubjects = user.subjects ?? [];
 	const legacySubjects = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME)).subjects;
 	const selectedSubjects = profileSubjects.length > 0 ? profileSubjects : legacySubjects;
 
 	if (profileSubjects.length === 0 && legacySubjects.length > 0) {
+		await options.beforeLegacySubjectWrite;
 		await updateUserSubjects(userId, legacySubjects);
 	}
 
+	const [stats, progress] = await Promise.all([
+		getDashboardStats(userId, user.createdAt, timezoneFromCookies(cookies), frqEnabled),
+		getDashboardProgress(userId, user.progress, frqEnabled)
+	]);
+
 	return {
-		stats: await getDashboardStats(
-			userId,
-			user.createdAt,
-			timezoneFromCookies(cookies),
-			frqEnabled
-		),
-		progress: await getDashboardProgress(userId, user.progress, frqEnabled),
+		stats,
+		progress,
 		frqEnabled,
 		selectedSubjects
 	};
