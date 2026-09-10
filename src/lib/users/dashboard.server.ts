@@ -7,8 +7,10 @@ import { ONBOARDING_COOKIE_NAME, readOnboardingState } from '$lib/onboarding.js'
 import { updateUserSubjects } from '$lib/users/model.server';
 
 export async function loadUserDashboardData(userId: string, cookies: Cookies) {
-	const frqEnabled = await isFrqPracticeEnabled();
-	const user = await getUserDashboardProfileOrFail(userId);
+	const [frqEnabled, user] = await Promise.all([
+		isFrqPracticeEnabled(),
+		getUserDashboardProfileOrFail(userId)
+	]);
 	const profileSubjects = user.subjects ?? [];
 	const legacySubjects = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME)).subjects;
 	const selectedSubjects = profileSubjects.length > 0 ? profileSubjects : legacySubjects;
@@ -17,14 +19,14 @@ export async function loadUserDashboardData(userId: string, cookies: Cookies) {
 		await updateUserSubjects(userId, legacySubjects);
 	}
 
+	const [stats, progress] = await Promise.all([
+		getDashboardStats(userId, user.createdAt, timezoneFromCookies(cookies), frqEnabled),
+		getDashboardProgress(userId, user.progress, frqEnabled)
+	]);
+
 	return {
-		stats: await getDashboardStats(
-			userId,
-			user.createdAt,
-			timezoneFromCookies(cookies),
-			frqEnabled
-		),
-		progress: await getDashboardProgress(userId, user.progress, frqEnabled),
+		stats,
+		progress,
 		frqEnabled,
 		selectedSubjects
 	};

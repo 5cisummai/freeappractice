@@ -6,8 +6,8 @@ import { activeOrgUsesUserSuper, loadAppOrganizations } from '$lib/auth/organiza
 import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
 import {
-	getPlanAccessForRequest,
-	getTutorProfileViewForRequest
+	getAgeConfirmedAtForRequest,
+	getPlanAccessForRequest
 } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
 import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
@@ -52,16 +52,16 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 	}
 	const coachSidebarEnabled = assistantFeaturesEnabled
 		? await (async () => {
-				const [planAccess, profile, coachEnabled] = await Promise.all([
+				const [planAccess, ageConfirmedAt, coachEnabled] = await Promise.all([
 					getPlanAccessForRequest(locals, userId),
-					getTutorProfileViewForRequest(locals, userId),
+					getAgeConfirmedAtForRequest(locals, userId),
 					isSuperCoachEnabled()
 				]);
 				return (
 					coachEnabled &&
 					(await activeOrgUsesUserSuper(locals)) &&
 					hasPaidCapability(planAccess, 'coach') &&
-					Boolean(profile.ageConfirmedAt)
+					Boolean(ageConfirmedAt)
 				);
 			})()
 		: false;

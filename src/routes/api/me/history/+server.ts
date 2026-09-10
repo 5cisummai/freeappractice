@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import {
 	getPracticeHistoryPage,
-	hydratePracticeHistoryItems,
 	parseHistorySort,
 	parseHistoryKind,
 	parseHistoryResult
@@ -37,10 +36,8 @@ export const GET = withAuthedHandler(
 			filters,
 			includeFrq: frqEnabled
 		});
-		const items = await hydratePracticeHistoryItems(pageResult.items);
-
 		return json({
-			items,
+			items: pageResult.items,
 			total: pageResult.total,
 			page: pageResult.page,
 			limit: pageResult.limit,

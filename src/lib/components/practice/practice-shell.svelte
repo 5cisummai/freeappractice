@@ -2,13 +2,13 @@
 	import { untrack } from 'svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
-	import FrqCard from '$lib/components/questions/frq-card.svelte';
-	import QuizSession from '$lib/components/practice/quiz-session.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import type { AnswerResult, TutorMode } from '$lib/question-bank/mcq/types';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
+	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
+	import LazyComponent from '$lib/components/app/lazy-component.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
@@ -70,6 +70,12 @@
 	);
 	let expandedSelectorOpen = $state(false);
 	let cardExpanded = $state(false);
+	const loadFrqCard = createLazyComponentLoader(
+		() => import('$lib/components/questions/frq-card.svelte')
+	);
+	const loadQuizSession = createLazyComponentLoader(
+		() => import('$lib/components/practice/quiz-session.svelte')
+	);
 
 	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);
 	const persistQuizHistory = $derived(quiz.persistHistory ?? true);
@@ -198,35 +204,51 @@
 	<div class="mx-auto min-h-40 max-w-6xl">
 		{#if showUnlimitedFrq}
 			<div>
-				<FrqCard
-					{selectedClass}
-					{selectedUnit}
-					{unitRange}
-					{requestVersion}
-					{presetQuestionId}
-					showFirstUseHint={showFirstUseHints}
-					{tutorMode}
-					onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
-				/>
+				<LazyComponent
+					load={loadFrqCard}
+					pending="Loading written response…"
+					error="Written-response practice could not be loaded."
+				>
+					{#snippet children(FrqCard)}
+						<FrqCard
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							{requestVersion}
+							{presetQuestionId}
+							showFirstUseHint={showFirstUseHints}
+							{tutorMode}
+							onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
+						/>
+					{/snippet}
+				</LazyComponent>
 			</div>
 		{/if}
 
 		{#if activeQuizMode}
 			{#key `quiz:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}:${sharedQuiz?.slug ?? ''}`}
-				<QuizSession
-					{selectedClass}
-					{selectedUnit}
-					{unitRange}
-					{count}
-					requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
-					bind:isGenerating={quizGenerating}
-					persistHistory={persistQuizHistory}
-					showCoachReview={tutorMode !== 'hidden'}
-					initialQuestions={sharedQuiz?.questions ?? null}
-					sharedSlug={sharedQuiz?.slug ?? ''}
-					title={sharedQuiz?.title}
-					onExit={handleQuizExit}
-				/>
+				<LazyComponent
+					load={loadQuizSession}
+					pending="Loading quiz…"
+					error="Quiz could not be loaded."
+				>
+					{#snippet children(QuizSession)}
+						<QuizSession
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							{count}
+							requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
+							bind:isGenerating={quizGenerating}
+							persistHistory={persistQuizHistory}
+							showCoachReview={tutorMode !== 'hidden'}
+							initialQuestions={sharedQuiz?.questions ?? null}
+							sharedSlug={sharedQuiz?.slug ?? ''}
+							title={sharedQuiz?.title}
+							onExit={handleQuizExit}
+						/>
+					{/snippet}
+				</LazyComponent>
 			{/key}
 		{:else if showUnlimitedMcq}
 			{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}

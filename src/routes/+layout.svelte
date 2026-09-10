@@ -1,8 +1,5 @@
 <script lang="ts">
 	import './layout.css';
-	import 'katex/dist/katex.min.css';
-	/* hljs light theme (default); dark overrides are in layout.css under .dark */
-	import 'highlight.js/styles/github.min.css';
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import AnalyticsConsentBanner from '$lib/components/layout/analytics-consent-banner.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';

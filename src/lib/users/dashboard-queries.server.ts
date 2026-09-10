@@ -2,6 +2,7 @@ import { and, count, eq, isNotNull, max, sql } from 'drizzle-orm';
 import { getFrqProgressForUser } from '$lib/grading/frq/attempts.server';
 import { frqAttemptGrades, frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
 import { getNeonDatabase } from '$lib/server/neon/db';
+import { getCurrentStreak } from '$lib/users/streak.server';
 import { questionPayloadTextField } from '$lib/server/neon/jsonb';
 import { MAX_ATTEMPT_TIME_MS } from '$lib/users/attempt-time';
 import { buildProgressDataFromAttempts, mergeFrqProgress } from '$lib/users/progress.server';
@@ -35,63 +36,6 @@ type FrqSubjectRow = {
 	total: number;
 	totalPercentage: number;
 };
-
-function localDayKey(date: Date, timeZone: string): string {
-	return new Intl.DateTimeFormat('en-CA', {
-		timeZone,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).format(date);
-}
-
-export async function getCurrentStreak(
-	userId: string,
-	timeZone: string,
-	includeFrq: boolean
-): Promise<number> {
-	const db = getNeonDatabase();
-	const today = localDayKey(new Date(), timeZone);
-	const frqDays = includeFrq
-		? sql`
-			UNION
-			SELECT DISTINCT (${frqAttempts.createdAt} AT TIME ZONE ${timeZone})::date AS day
-			FROM ${frqAttempts}
-			WHERE ${frqAttempts.userId} = ${userId} AND ${frqAttempts.status} = 'graded'
-		`
-		: sql``;
-	const result = await db.execute<{ streak: number }>(sql`
-		WITH activity_days AS (
-			SELECT DISTINCT (${mcqAttempts.attemptedAt} AT TIME ZONE ${timeZone})::date AS day
-			FROM ${mcqAttempts}
-			WHERE ${mcqAttempts.userId} = ${userId}
-			${frqDays}
-		),
-		anchor AS (
-			SELECT CASE
-				WHEN EXISTS (SELECT 1 FROM activity_days WHERE day = ${today}::date)
-					THEN ${today}::date
-				WHEN EXISTS (SELECT 1 FROM activity_days WHERE day = ${today}::date - 1)
-					THEN ${today}::date - 1
-				ELSE NULL::date
-			END AS day
-		),
-		ordered AS (
-			SELECT activity_days.day,
-				row_number() OVER (ORDER BY activity_days.day DESC)::int AS position
-			FROM activity_days
-			CROSS JOIN anchor
-			WHERE anchor.day IS NOT NULL AND activity_days.day <= anchor.day
-		)
-		SELECT count(*) FILTER (
-			WHERE ordered.day = anchor.day - (ordered.position - 1)
-		)::int AS streak
-		FROM ordered
-		CROSS JOIN anchor
-		GROUP BY anchor.day
-	`);
-	return Number(result.rows[0]?.streak ?? 0);
-}
 
 export async function getDashboardStats(
 	userId: string,

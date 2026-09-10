@@ -28,7 +28,7 @@ import {
 } from '$lib/flags';
 import { isSuperStripeConfigured } from '$lib/super/billing.server';
 import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
-import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { getAgeConfirmedAtForRequest } from '$lib/super/feature-access.server';
 import { limitApiRequests } from '$lib/server/api-rate-limit.server';
 import {
 	shouldSkipGlobalApiRateLimit,
@@ -181,7 +181,9 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
+	event.locals.sessionResolved = undefined;
 	event.locals.planAccess = undefined;
+	event.locals.ageConfirmedAt = undefined;
 	event.locals.tutorProfileView = undefined;
 	event.locals.assistantFeaturesEnabled = undefined;
 
@@ -192,6 +194,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	if (!skipSessionLookup) {
 		try {
 			const session = await auth.api.getSession({ headers: event.request.headers });
+			event.locals.sessionResolved = true;
 			if (session) {
 				event.locals.session = session.session;
 				event.locals.user = session.user;
@@ -263,7 +266,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 				headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 			});
 		}
-		if (!(await getTutorProfileViewForRequest(event.locals, event.locals.userId)).ageConfirmedAt) {
+		if (!(await getAgeConfirmedAtForRequest(event.locals, event.locals.userId))) {
 			return new Response(
 				JSON.stringify({ error: 'Confirm that you are at least 13 before choosing Super.' }),
 				{
@@ -276,8 +279,8 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 	const ageGateExempt = isAgeGateExempt(event.url.pathname);
 	if (event.locals.userId && isAccountSurface(event.url.pathname) && !ageGateExempt) {
-		const profile = await getTutorProfileViewForRequest(event.locals, event.locals.userId);
-		if (!profile.ageConfirmedAt) {
+		const ageConfirmedAt = await getAgeConfirmedAtForRequest(event.locals, event.locals.userId);
+		if (!ageConfirmedAt) {
 			if (event.url.pathname.startsWith('/api/')) {
 				return new Response(
 					JSON.stringify({ error: 'Confirm that you are at least 13 before using your account.' }),

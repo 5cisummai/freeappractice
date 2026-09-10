@@ -3,9 +3,10 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
+	import LazyComponent from '$lib/components/app/lazy-component.svelte';
 
 	let { data } = $props();
 
@@ -13,6 +14,9 @@
 		data.isAuthenticated
 			? `${resolve('/app/practice')}?shared=${encodeURIComponent(data.sharedQuiz?.slug ?? '')}`
 			: `${page.url.pathname}?start=1`
+	);
+	const loadPracticeRunner = createLazyComponentLoader(
+		() => import('$lib/components/practice/practice-shell.svelte')
 	);
 </script>
 
@@ -36,33 +40,42 @@
 					</Card.Footer>
 				</Card.Root>
 			{:else if data.sharedQuiz && data.start && !data.isAuthenticated}
+				{@const sharedQuiz = data.sharedQuiz}
 				<div class="space-y-6">
 					<div class="text-center">
 						<p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
 							Shared quiz
 						</p>
 						<h1 class="mt-2 font-display text-3xl font-medium tracking-tight sm:text-4xl">
-							{data.sharedQuiz.title}
+							{sharedQuiz.title}
 						</h1>
 					</div>
-					{#key data.sharedQuiz.slug}
-						<PracticeRunner
-							initial={{
-								selectedClass: data.sharedQuiz.apClass,
-								selectedUnit: data.sharedQuiz.unit === 'All Units' ? '' : data.sharedQuiz.unit,
-								requestVersion: 1
-							}}
-							quiz={{ sharedQuiz: data.sharedQuiz, persistHistory: false }}
-							onEvent={(event) => {
-								if (event.type === 'quiz-exit') {
-									void goto(
-										resolve('/q/[slug]', {
-											slug: page.params.slug ?? data.sharedQuiz?.slug ?? ''
-										})
-									);
-								}
-							}}
-						/>
+					{#key sharedQuiz.slug}
+						<LazyComponent
+							load={loadPracticeRunner}
+							pending="Loading quiz…"
+							error="Quiz could not be loaded."
+						>
+							{#snippet children(PracticeRunner)}
+								<PracticeRunner
+									initial={{
+										selectedClass: sharedQuiz.apClass,
+										selectedUnit: sharedQuiz.unit === 'All Units' ? '' : sharedQuiz.unit,
+										requestVersion: 1
+									}}
+									quiz={{ sharedQuiz, persistHistory: false }}
+									onEvent={(event) => {
+										if (event.type === 'quiz-exit') {
+											void goto(
+												resolve('/q/[slug]', {
+													slug: page.params.slug ?? sharedQuiz.slug
+												})
+											);
+										}
+									}}
+								/>
+							{/snippet}
+						</LazyComponent>
 					{/key}
 				</div>
 			{:else if data.sharedQuiz}

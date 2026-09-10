@@ -104,8 +104,7 @@ describe('history chart derivations', () => {
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
 				attemptedAt: now.toISOString()
-			},
-			question: null
+			}
 		};
 
 		const days = buildAccuracyDays([item], 3);
@@ -128,8 +127,7 @@ describe('stacked activity derivation', () => {
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
 				attemptedAt: today.toISOString()
-			},
-			question: null
+			}
 		},
 		{
 			kind: 'mcq',
@@ -140,8 +138,7 @@ describe('stacked activity derivation', () => {
 				selectedAnswer: 'A',
 				wasCorrect: true,
 				attemptedAt: today.toISOString()
-			},
-			question: null
+			}
 		}
 	];
 
@@ -169,8 +166,7 @@ describe('stacked activity derivation', () => {
 						selectedAnswer: 'A' as const,
 						wasCorrect: true,
 						attemptedAt: today.toISOString()
-					},
-					question: null
+					}
 				}
 			],
 			'AP Biology',
@@ -195,8 +191,7 @@ describe('stacked activity derivation', () => {
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
 				attemptedAt: today.toISOString()
-			},
-			question: null
+			}
 		}));
 		const result = stackedActivityByScope(manyClasses, 'all', 3);
 		const todayRow = result.rows.at(-1);
@@ -217,8 +212,7 @@ describe('stacked activity derivation', () => {
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
 				attemptedAt: today.toISOString()
-			},
-			question: null
+			}
 		}));
 		const result = stackedActivityByScope(manyClasses, 'all', 3, ['AP Priority Class 8']);
 
@@ -240,8 +234,7 @@ describe('stacked activity derivation', () => {
 					selectedAnswer: 'A',
 					wasCorrect: true,
 					attemptedAt: today.toISOString()
-				},
-				question: null
+				}
 			},
 			...Array.from({ length: 3 }, (_, index) => ({
 				kind: 'mcq' as const,
@@ -252,8 +245,7 @@ describe('stacked activity derivation', () => {
 					selectedAnswer: 'A' as const,
 					wasCorrect: true,
 					attemptedAt: olderDate.toISOString()
-				},
-				question: null
+				}
 			}))
 		];
 
@@ -278,8 +270,7 @@ describe('accuracy scope derivation', () => {
 						selectedAnswer: 'A',
 						wasCorrect: true,
 						attemptedAt: today.toISOString()
-					},
-					question: null
+					}
 				},
 				{
 					kind: 'mcq',
@@ -290,8 +281,7 @@ describe('accuracy scope derivation', () => {
 						selectedAnswer: 'A',
 						wasCorrect: false,
 						attemptedAt: today.toISOString()
-					},
-					question: null
+					}
 				}
 			],
 			'all'
@@ -312,8 +302,7 @@ describe('accuracy scope derivation', () => {
 						selectedAnswer: 'A',
 						wasCorrect: true,
 						attemptedAt: today.toISOString()
-					},
-					question: null
+					}
 				},
 				{
 					kind: 'mcq',
@@ -324,8 +313,7 @@ describe('accuracy scope derivation', () => {
 						selectedAnswer: 'A',
 						wasCorrect: false,
 						attemptedAt: today.toISOString()
-					},
-					question: null
+					}
 				}
 			],
 			'AP Biology'

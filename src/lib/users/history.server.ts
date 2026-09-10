@@ -1,22 +1,11 @@
 import type { HistoryItem, HistorySummary, QuestionAttempt } from '$lib/users/types';
-import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
-import { inArray, sql, type SQL } from 'drizzle-orm';
+import { sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import {
-	frqAttemptGrades,
-	frqAttempts,
-	mcqAttempts,
-	mcqQuestions,
-	quizAttempts
-} from '$lib/server/neon/schema';
-import { storedQuestionFromPayload } from '$lib/question-bank/mcq/repository.server';
+import { frqAttemptGrades, frqAttempts, mcqAttempts, quizAttempts } from '$lib/server/neon/schema';
 import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
-type McqHistoryItem = Extract<HistoryItem, { kind: 'mcq' }>;
-type PracticeHistoryItem = HistoryItem;
-
 type PracticeHistoryPageResult = {
-	items: PracticeHistoryItem[];
+	items: HistoryItem[];
 	total: number;
 	page: number;
 	limit: number;
@@ -116,39 +105,6 @@ export function parseHistorySort(
 			: 'attemptedAt',
 		direction: sortDir === 'asc' ? 'asc' : 'desc'
 	};
-}
-
-export async function hydrateMcqHistoryItems(items: McqHistoryItem[]): Promise<McqHistoryItem[]> {
-	const uniqueIds = [...new Set(items.map((item) => item.attempt.questionId))];
-	if (uniqueIds.length === 0) return items;
-
-	const db = getNeonDatabase();
-	const rows = await db
-		.select({
-			id: mcqQuestions.questionId,
-			data: mcqQuestions.data,
-			contentHash: mcqQuestions.contentHash,
-			createdAt: mcqQuestions.createdAt
-		})
-		.from(mcqQuestions)
-		.where(inArray(mcqQuestions.questionId, uniqueIds));
-	const lookup = new Map<string, StoredQuestion>(
-		rows.map((row) => [
-			row.id,
-			storedQuestionFromPayload({
-				questionId: row.id,
-				data: row.data,
-				contentHash: row.contentHash,
-				createdAt: row.createdAt
-			})
-		])
-	);
-
-	return items.map((item) => ({
-		kind: 'mcq' as const,
-		attempt: item.attempt,
-		question: lookup.get(item.attempt.questionId) ?? null
-	}));
 }
 
 export async function getPracticeHistoryPage(
@@ -336,7 +292,7 @@ export async function getPracticeHistoryPage(
 			FROM history
 		`)
 	]);
-	const items: PracticeHistoryItem[] = pageResult.rows.map((row) => {
+	const items: HistoryItem[] = pageResult.rows.map((row) => {
 		if (row.kind === 'mcq' && row.questionId) {
 			return {
 				kind: 'mcq',
@@ -348,8 +304,7 @@ export async function getPracticeHistoryPage(
 					wasCorrect: row.wasCorrect ?? false,
 					timeTakenMs: row.timeTakenMs ?? undefined,
 					attemptedAt: new Date(row.attemptedAt).toISOString()
-				},
-				question: null
+				}
 			};
 		}
 		if (row.kind === 'quiz') {
@@ -367,8 +322,7 @@ export async function getPracticeHistoryPage(
 					scorePercent: Number(row.scorePercent ?? 0),
 					timeTakenMs: row.timeTakenMs ?? 0,
 					attemptedAt: new Date(row.attemptedAt).toISOString()
-				},
-				question: null
+				}
 			};
 		}
 		if (row.kind !== 'frq' || !row.questionId) {
@@ -386,8 +340,7 @@ export async function getPracticeHistoryPage(
 				percentage: Number(row.percentage),
 				timeTakenMs: row.timeTakenMs ?? 0,
 				attemptedAt: new Date(row.attemptedAt).toISOString()
-			},
-			question: null
+			}
 		};
 	});
 	const summaryRow = summaryResult.rows[0] ?? {
@@ -426,14 +379,5 @@ export async function getProgressHistory(
 		filters: { from: options.from },
 		includeFrq: options.includeFrq
 	});
-	return hydratePracticeHistoryItems(page.items);
-}
-
-export async function hydratePracticeHistoryItems(
-	items: PracticeHistoryItem[]
-): Promise<PracticeHistoryItem[]> {
-	const mcqItems = items.filter((item): item is McqHistoryItem => item.kind === 'mcq');
-	const hydratedMcq = await hydrateMcqHistoryItems(mcqItems);
-	let i = 0;
-	return items.map((item) => (item.kind === 'mcq' ? hydratedMcq[i++]! : item));
+	return page.items;
 }

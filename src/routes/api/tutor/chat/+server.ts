@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { auth } from '$lib/auth/server';
+import { getOptionalUserId } from '$lib/auth/route-helpers.server';
 import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { logger } from '$lib/server/logger';
@@ -18,14 +18,6 @@ import {
 } from '$lib/super/agent-request';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
-
-async function getOptionalUserId(
-	event: Parameters<RequestHandler>[0]
-): Promise<string | undefined> {
-	if (event.locals.userId) return event.locals.userId;
-	const session = await auth.api.getSession({ headers: event.request.headers });
-	return session?.user?.id;
-}
 
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;

@@ -1,36 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-	select: vi.fn(),
-	execute: vi.fn(),
-	rows: [] as unknown[][]
+	execute: vi.fn()
 }));
 
 vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({
-		select: mocks.select,
 		execute: mocks.execute
 	})
 }));
 
-import { getPracticeHistoryPage, hydratePracticeHistoryItems } from '$lib/users/history.server';
-
-function queueRows(...rows: unknown[][]): void {
-	mocks.rows = rows;
-	mocks.select.mockImplementation(() => {
-		const result = mocks.rows.shift() ?? [];
-		const where = vi.fn().mockResolvedValue(result);
-		const innerJoin = vi.fn().mockReturnValue({ where });
-		return {
-			from: vi.fn().mockReturnValue({ where, innerJoin })
-		};
-	});
-}
+import { getPracticeHistoryPage } from '$lib/users/history.server';
 
 describe('getPracticeHistoryPage', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.rows = [];
 	});
 
 	it('pages a SQL union and calculates the summary in SQL', async () => {
@@ -82,6 +66,7 @@ describe('getPracticeHistoryPage', () => {
 		expect(page.total).toBe(2);
 		expect(page.items.map((item) => item.kind)).toEqual(['frq', 'mcq']);
 		expect(page.items[0]?.attempt.questionId).toBe('frq-question-1');
+		expect(page.items[1]).toMatchObject({ kind: 'mcq', attempt: { questionId: 'mcq-question-1' } });
 		expect(page.summary).toEqual({
 			total: 2,
 			answered: 2,
@@ -114,69 +99,5 @@ describe('getPracticeHistoryPage', () => {
 			avgTimeMs: 1000
 		});
 		expect(mocks.execute).toHaveBeenCalledTimes(2);
-	});
-});
-
-describe('hydratePracticeHistoryItems', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
-	it('hydrates only page MCQs with one direct lookup while keeping distinct attempts', async () => {
-		queueRows([
-			{
-				id: 'shared-question',
-				data: {
-					question: 'Shared question',
-					optionA: 'A',
-					optionB: 'B',
-					optionC: 'C',
-					optionD: 'D',
-					correctAnswer: 'A',
-					explanation: 'Because.',
-					apClass: 'AP Biology',
-					unit: 'Unit 1'
-				},
-				contentHash: 'hash',
-				createdAt: new Date('2026-07-01T00:00:00.000Z')
-			}
-		]);
-
-		const hydrated = await hydratePracticeHistoryItems([
-			{
-				kind: 'mcq',
-				attempt: {
-					questionId: 'shared-question',
-					apClass: 'AP Biology',
-					unit: 'Unit 1',
-					wasCorrect: true,
-					selectedAnswer: 'A',
-					attemptedAt: '2026-07-01T00:00:00.000Z'
-				},
-				question: null
-			},
-			{
-				kind: 'frq',
-				attempt: {
-					id: 'frq-1',
-					questionId: 'frq-question-1',
-					apClass: 'AP Biology',
-					unit: 'Unit 1',
-					pointsEarned: 8,
-					pointsAvailable: 10,
-					percentage: 80,
-					timeTakenMs: 1000,
-					attemptedAt: '2026-07-02T00:00:00.000Z'
-				},
-				question: null
-			}
-		]);
-
-		expect(hydrated[0]).toMatchObject({
-			kind: 'mcq',
-			question: { id: 'shared-question', correctAnswer: 'A' }
-		});
-		expect(hydrated[1]?.kind).toBe('frq');
-		expect(mocks.select).toHaveBeenCalledOnce();
 	});
 });

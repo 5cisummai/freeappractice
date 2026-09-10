@@ -188,6 +188,24 @@ export type BugReportContext = {
 	hasStimulus: boolean;
 };
 
+export type McqAnswerBody = {
+	question: string;
+	optionA: string;
+	optionB: string;
+	optionC: string;
+	optionD: string;
+	correctAnswer: 'A' | 'B' | 'C' | 'D';
+	explanation: string;
+	mainTopic: string;
+	topicsCovered: string;
+	diagramSpec: Record<string, unknown> | null;
+	hasDiagram: boolean;
+	stimulus?: QuestionStimulus;
+	stimulusId?: string | null;
+	stimulusPosition?: number | null;
+	stimulusQuestionCount?: number | null;
+};
+
 export type GeneratedQuestion = {
 	questionId?: string;
 	topic?: string;

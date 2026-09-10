@@ -5,6 +5,24 @@
 
 	const changelog = [
 		{
+			version: '1.8.3',
+			date: 'September 9, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Written-response practice, quizzes, and Coach now load on demand, with a retry if the download fails',
+						'Practice history details load when you open a row instead of with the full list',
+						'Math and code highlighting styles load with the content that needs them instead of on every page'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Coach sidebar content is fetched only when you open the sidebar']
+				}
+			]
+		},
+		{
 			version: '1.8.2',
 			date: 'September 7, 2026',
 			sections: [
@@ -1350,7 +1368,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 7, 2026"
+			meta="Last Updated: September 9, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

@@ -4,7 +4,6 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
-	import CoachShell from '$lib/components/super/coach-shell.svelte';
 	import CoachSidebarProvider from '$lib/components/super/coach-sidebar-provider.svelte';
 	import CoachSidebarRoot from '$lib/components/super/coach-sidebar.svelte';
 	import CoachSidebarTrigger from '$lib/components/super/coach-sidebar-trigger.svelte';
@@ -21,6 +20,8 @@
 	} from '$lib/client/activation-analytics';
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { apiFetch } from '$lib/client/api.js';
+	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
+	import LazyComponent from '$lib/components/app/lazy-component.svelte';
 	import {
 		recordPendingSharedQuizRunFailure,
 		readPendingSharedQuizRuns,
@@ -37,6 +38,10 @@
 	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
 	const showFreeBetaClaimDialog = $derived(data.showFreeBetaClaimDialog && !isOnboarding);
 	let layoutMounted = $state(false);
+	let coachSidebarOpen = $state(false);
+	const loadCoachShell = createLazyComponentLoader(
+		() => import('$lib/components/super/coach-shell.svelte')
+	);
 
 	function stripAuthQueryParam(param: 'signup' | 'login') {
 		const url = new URL(page.url);
@@ -102,7 +107,7 @@
 		{@render children()}
 	</main>
 {:else}
-	<CoachSidebarProvider>
+	<CoachSidebarProvider bind:open={coachSidebarOpen}>
 		<Sidebar.Provider class="bg-sidebar">
 			<AppSidebar
 				isAdmin={data.isAdmin}
@@ -136,7 +141,17 @@
 			{#if showCoachSidebar}
 				<CoachSidebarRoot>
 					<Sidebar.Content class="min-h-0 overflow-hidden p-0">
-						<CoachShell surface="sidebar" />
+						{#if coachSidebarOpen}
+							<LazyComponent
+								load={loadCoachShell}
+								pending="Loading Coach…"
+								error="Coach could not be loaded."
+							>
+								{#snippet children(CoachShell)}
+									<CoachShell surface="sidebar" />
+								{/snippet}
+							</LazyComponent>
+						{/if}
 					</Sidebar.Content>
 				</CoachSidebarRoot>
 			{/if}

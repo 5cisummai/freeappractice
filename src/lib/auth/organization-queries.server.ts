@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { and, count, desc, eq, gt, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
+import { getCurrentMcqStreaksForUsers } from '$lib/users/streak.server';
 import {
 	authMembers,
 	authOrganizations,
@@ -417,13 +418,6 @@ export async function listOrganizationLeaderboard(
 	const userIds = members.map((member) => member.userId);
 	const recentCutoff = new Date(Date.now() - 7 * 86_400_000);
 
-	const today = new Intl.DateTimeFormat('en-CA', {
-		timeZone,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).format(new Date());
-
 	const [statsRows, unitsRows, streakResult] = await Promise.all([
 		getNeonDatabase()
 			.select({
@@ -446,58 +440,12 @@ export async function listOrganizationLeaderboard(
 			.from(userProgress)
 			.where(and(inArray(userProgress.userId, userIds), gt(userProgress.totalAttempts, 0)))
 			.groupBy(userProgress.userId),
-		getNeonDatabase().execute<{ userId: string; currentStreak: number }>(sql`
-			WITH activity_days AS (
-				SELECT DISTINCT
-					${mcqAttempts.userId} AS user_id,
-					(${mcqAttempts.attemptedAt} AT TIME ZONE ${timeZone})::date AS day
-				FROM ${mcqAttempts}
-				WHERE ${inArray(mcqAttempts.userId, userIds)}
-			),
-			anchor AS (
-				SELECT DISTINCT
-					activity_days.user_id,
-					CASE
-						WHEN EXISTS (
-							SELECT 1 FROM activity_days candidate
-							WHERE candidate.user_id = activity_days.user_id
-								AND candidate.day = ${today}::date
-						) THEN ${today}::date
-						WHEN EXISTS (
-							SELECT 1 FROM activity_days candidate
-							WHERE candidate.user_id = activity_days.user_id
-								AND candidate.day = ${today}::date - 1
-						) THEN ${today}::date - 1
-						ELSE NULL::date
-					END AS anchor_day
-				FROM activity_days
-			),
-			ordered AS (
-				SELECT
-					activity_days.user_id,
-					activity_days.day,
-					anchor.anchor_day,
-					row_number() OVER (
-						PARTITION BY activity_days.user_id ORDER BY activity_days.day DESC
-					)::int AS position
-				FROM activity_days
-				INNER JOIN anchor ON anchor.user_id = activity_days.user_id
-				WHERE anchor.anchor_day IS NOT NULL
-					AND activity_days.day <= anchor.anchor_day
-			)
-			SELECT
-				user_id AS "userId",
-				count(*) FILTER (
-					WHERE day = anchor_day - (position - 1)
-				)::int AS "currentStreak"
-			FROM ordered
-			GROUP BY user_id, anchor_day
-		`)
+		getCurrentMcqStreaksForUsers(userIds, timeZone)
 	]);
 
 	const statsMap = new Map(statsRows.map((row) => [row.userId, row]));
 	const unitsMap = new Map(unitsRows.map((row) => [row.userId, Number(row.unitsPracticed)]));
-	const streakMap = new Map(streakResult.rows.map((row) => [row.userId, row.currentStreak]));
+	const streakMap = new Map(streakResult.map((row) => [row.userId, row.currentStreak]));
 
 	const entries: OrganizationLeaderboardEntry[] = members.map((member) => {
 		const stats = statsMap.get(member.userId);

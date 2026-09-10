@@ -51,11 +51,33 @@ export function getPlanAccessForRequest(
 
 /** Request-local profile read shared by Super access and product pages. */
 export function getTutorProfileViewForRequest(
-	locals: Pick<App.Locals, 'tutorProfileView'>,
+	locals: Pick<App.Locals, 'ageConfirmedAt' | 'tutorProfileView'>,
 	userId: string
 ): Promise<TutorProfileView> {
-	return (locals.tutorProfileView ??= import('$lib/super/profile.server').then(
-		({ getTutorProfileView }) => getTutorProfileView(userId)
+	if (locals.tutorProfileView) return locals.tutorProfileView;
+	const profilePromise = import('$lib/super/profile.server').then(({ getTutorProfileView }) =>
+		getTutorProfileView(userId)
+	);
+	locals.tutorProfileView = profilePromise;
+	locals.ageConfirmedAt ??= profilePromise.then((profile) =>
+		profile.ageConfirmedAt ? new Date(profile.ageConfirmedAt) : null
+	);
+	return profilePromise;
+}
+
+/** Request-local age check that avoids loading tutor profile relations. */
+export function getAgeConfirmedAtForRequest(
+	locals: Pick<App.Locals, 'ageConfirmedAt' | 'tutorProfileView'>,
+	userId: string
+): Promise<Date | null> {
+	if (locals.ageConfirmedAt) return locals.ageConfirmedAt;
+	if (locals.tutorProfileView) {
+		return (locals.ageConfirmedAt = locals.tutorProfileView.then((profile) =>
+			profile.ageConfirmedAt ? new Date(profile.ageConfirmedAt) : null
+		));
+	}
+	return (locals.ageConfirmedAt = import('$lib/super/profile.server').then(
+		({ getAgeConfirmedAt }) => getAgeConfirmedAt(userId)
 	));
 }
 
@@ -107,8 +129,7 @@ export async function authorizeFeatureRequest(
 		};
 	}
 
-	const profile = await getTutorProfileViewForRequest(event.locals, userId);
-	if (!profile.ageConfirmedAt) {
+	if (!(await getAgeConfirmedAtForRequest(event.locals, userId))) {
 		return {
 			allowed: false,
 			status: 403,
@@ -117,7 +138,12 @@ export async function authorizeFeatureRequest(
 		};
 	}
 
-	return { allowed: true, userId, planAccess, profile };
+	return {
+		allowed: true,
+		userId,
+		planAccess,
+		profile: await getTutorProfileViewForRequest(event.locals, userId)
+	};
 }
 
 function featureUnavailableMessage(feature: SuperFeature): string {

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import 'katex/dist/katex.min.css';
+	import 'highlight.js/styles/github.min.css';
 	import { renderRichTextHtml } from '$lib/content/render-rich-text';
 	import { toast } from 'svelte-sonner';
 

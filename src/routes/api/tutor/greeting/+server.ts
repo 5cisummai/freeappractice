@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { auth } from '$lib/auth/server';
+import { getOptionalUserId } from '$lib/auth/route-helpers.server';
 import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
@@ -14,9 +14,7 @@ export const POST: RequestHandler = async (event) => {
 		const parsed = tutorGreetingRequestSchema.safeParse(await event.request.json());
 		if (!parsed.success) return json({ error: 'Invalid tutor greeting request' }, { status: 400 });
 
-		const userId =
-			event.locals.userId ??
-			(await auth.api.getSession({ headers: event.request.headers }))?.user?.id;
+		const userId = await getOptionalUserId(event);
 		if (userId && !(await getAssistantFeaturesEnabledForRequest(event.locals, userId))) {
 			return json({ error: 'Assistant features are disabled for this account.' }, { status: 403 });
 		}
