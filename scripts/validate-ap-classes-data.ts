@@ -1,4 +1,5 @@
 import dataset from '../src/lib/data/ap-classes-data-08212026.json';
+import practicePagesDataset from '../src/lib/data/practice-pages-data-09092026.json';
 
 const failures: string[] = [];
 const fail = (message: string) => failures.push(message);
@@ -11,7 +12,7 @@ const courseById = new Map(dataset.courses.map((course) => [course.id, course] a
 const unitById = new Map(
 	dataset.courses.flatMap((course) => course.units.map((unit) => [unit.id, unit] as const))
 );
-const pageById = new Map(dataset.pages.map((page) => [page.id, page] as const));
+const pageById = new Map(practicePagesDataset.pages.map((page) => [page.id, page] as const));
 
 if (dataset.scope.appCourseCount !== dataset.courses.length)
 	fail(`Expected ${dataset.scope.appCourseCount} courses, found ${dataset.courses.length}.`);
@@ -22,9 +23,11 @@ if (
 	fail(
 		`Expected ${dataset.scope.appUnitCount} units, found ${dataset.courses.reduce((sum, course) => sum + course.units.length, 0)}.`
 	);
-if (dataset.scope.practicePageCount !== dataset.pages.length)
-	fail(`Expected ${dataset.scope.practicePageCount} pages, found ${dataset.pages.length}.`);
-if (pageById.size !== dataset.pages.length) fail('Practice page IDs must be unique.');
+if (practicePagesDataset.scope.practicePageCount !== practicePagesDataset.pages.length)
+	fail(
+		`Expected ${practicePagesDataset.scope.practicePageCount} pages, found ${practicePagesDataset.pages.length}.`
+	);
+if (pageById.size !== practicePagesDataset.pages.length) fail('Practice page IDs must be unique.');
 
 function collectSourceReferences(value: unknown, key = ''): string[] {
 	if (Array.isArray(value)) {
@@ -44,7 +47,7 @@ function collectSourceReferences(value: unknown, key = ''): string[] {
 	return [];
 }
 
-for (const page of dataset.pages) {
+for (const page of practicePagesDataset.pages) {
 	if (pageIds.has(page.id)) fail(`Duplicate practice page ID: ${page.id}.`);
 	pageIds.add(page.id);
 
@@ -100,7 +103,7 @@ for (const course of dataset.courses) {
 			fail(`Missing practice page ${unit.app.practicePageId} (${course.name}).`);
 	}
 
-	const coursePageIds = dataset.pages
+	const coursePageIds = practicePagesDataset.pages
 		.filter((page) => page.courseId === course.id)
 		.map((page) => page.id);
 	const expectedPageIds = [
@@ -163,6 +166,7 @@ console.log(
 			courseCount: dataset.courses.length,
 			unitCount: unitIds.size,
 			practicePageCount: pageIds.size,
+			practicePageDataset: practicePagesDataset.datasetId,
 			sourceCount: dataset.sources.length,
 			appFrqCourseCount: supportedFrqCourses.size,
 			questionInstancesIncluded: dataset.scope.questionInstancesIncluded

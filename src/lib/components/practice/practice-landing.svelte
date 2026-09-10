@@ -2,6 +2,7 @@
 	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
 	import PracticeHubNav from '$lib/components/practice/practice-hub-nav.svelte';
 	import PublicShell from '$lib/components/layout/public-shell.svelte';
+	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
@@ -96,6 +97,28 @@
 						<p class="text-base leading-7 text-muted-foreground">{paragraph}</p>
 					{/each}
 				</article>
+
+				{#if practicePage.faq.length > 0}
+					<section class="mt-12 space-y-4" aria-labelledby="practice-faq-heading">
+						<h2 id="practice-faq-heading" class="text-2xl font-semibold tracking-tight">
+							Frequently asked questions
+						</h2>
+
+						<Accordion.Root
+							type="single"
+							class="rounded-xl border border-border/70 bg-card px-4 transition-shadow duration-300 hover:shadow-sm"
+						>
+							{#each practicePage.faq as item (item.id)}
+								<Accordion.Item value={item.id}>
+									<Accordion.Trigger level={3}>{item.question}</Accordion.Trigger>
+									<Accordion.Content>
+										<p>{item.answer}</p>
+									</Accordion.Content>
+								</Accordion.Item>
+							{/each}
+						</Accordion.Root>
+					</section>
+				{/if}
 
 				{#if practicePage.links.length > 0}
 					<div class="mt-8 border-t border-border/70 pt-6">

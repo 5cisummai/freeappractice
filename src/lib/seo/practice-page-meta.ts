@@ -90,3 +90,18 @@ export function buildPracticeBreadcrumbJsonLd(page: PracticePage): Record<string
 		}))
 	};
 }
+
+export function buildPracticeFaqJsonLd(page: PracticePage): Record<string, unknown> {
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'FAQPage',
+		mainEntity: page.faq.map((item) => ({
+			'@type': 'Question',
+			name: item.question,
+			acceptedAnswer: {
+				'@type': 'Answer',
+				text: item.answer
+			}
+		}))
+	};
+}
