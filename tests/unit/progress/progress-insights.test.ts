@@ -323,4 +323,3 @@ describe('accuracy scope derivation', () => {
 		expect(result.map((row) => row.accuracy)).toEqual([100, 0]);
 	});
 });
-
