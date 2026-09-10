@@ -31,7 +31,7 @@ describe('getOptionalUserId', () => {
 	});
 
 	it('reuses a completed anonymous hook result', async () => {
-		const userId = await getOptionalUserId(eventWith({ sessionLookupStatus: 'complete' }));
+		const userId = await getOptionalUserId(eventWith({ sessionResolved: true }));
 
 		expect(userId).toBeUndefined();
 		expect(mocks.getSession).not.toHaveBeenCalled();
@@ -42,12 +42,12 @@ describe('getOptionalUserId', () => {
 			session: { id: 'session-1' },
 			user: { id: 'user-1' }
 		});
-		const locals: App.Locals = { sessionLookupStatus: 'failed' };
+		const locals: App.Locals = {};
 
 		expect(await getOptionalUserId(eventWith(locals))).toBe('user-1');
 		expect(locals).toMatchObject({
 			userId: 'user-1',
-			sessionLookupStatus: 'complete'
+			sessionResolved: true
 		});
 		expect(mocks.getSession).toHaveBeenCalledTimes(1);
 	});

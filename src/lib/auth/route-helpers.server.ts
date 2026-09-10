@@ -7,10 +7,10 @@ type AuthedHandler = (event: RequestEvent, userId: string) => Promise<Response>;
 /** Reuse the hook's session result and retry only when the hook skipped or failed its lookup. */
 export async function getOptionalUserId(event: RequestEvent): Promise<string | undefined> {
 	if (event.locals.userId) return event.locals.userId;
-	if (event.locals.sessionLookupStatus === 'complete') return undefined;
+	if (event.locals.sessionResolved) return undefined;
 
 	const session = await auth.api.getSession({ headers: event.request.headers });
-	event.locals.sessionLookupStatus = 'complete';
+	event.locals.sessionResolved = true;
 	if (!session?.user?.id) return undefined;
 	event.locals.session = session.session;
 	event.locals.user = session.user;

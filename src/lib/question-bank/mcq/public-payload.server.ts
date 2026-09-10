@@ -1,5 +1,9 @@
 import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
-import { copyStimulusFields, type GeneratedQuestion } from '$lib/question-bank/mcq/types';
+import {
+	copyStimulusFields,
+	type GeneratedQuestion,
+	type McqAnswerBody
+} from '$lib/question-bank/mcq/types';
 import { parseQuestionParagraphs } from '$lib/question-bank/mcq/payload';
 
 export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQuestion {
@@ -34,7 +38,7 @@ export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQu
 	};
 }
 
-export function storedQuestionToMcqAnswerBody(question: StoredQuestion): Record<string, unknown> {
+export function storedQuestionToMcqAnswerBody(question: StoredQuestion): McqAnswerBody {
 	return {
 		question: question.question,
 		optionA: question.optionA,
@@ -52,16 +56,20 @@ export function storedQuestionToMcqAnswerBody(question: StoredQuestion): Record<
 }
 
 /** Build the stable answer envelope used by both single-question and quiz APIs. */
-export function generatedQuestionToMcqAnswerBody(
-	question: GeneratedQuestion
-): Record<string, unknown> {
+export function generatedQuestionToMcqAnswerBody(question: GeneratedQuestion): McqAnswerBody {
+	const correctAnswer =
+		question.correctAnswer === 'B' ||
+		question.correctAnswer === 'C' ||
+		question.correctAnswer === 'D'
+			? question.correctAnswer
+			: 'A';
 	return {
 		question: question.prompt,
 		optionA: question.options[0]?.text ?? '',
 		optionB: question.options[1]?.text ?? '',
 		optionC: question.options[2]?.text ?? '',
 		optionD: question.options[3]?.text ?? '',
-		correctAnswer: question.correctAnswer,
+		correctAnswer,
 		explanation: question.explanation ?? '',
 		mainTopic: question.mainTopic ?? question.topic ?? '',
 		topicsCovered: question.topicsCovered ?? '',

@@ -181,7 +181,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	event.locals.userId = undefined;
 	event.locals.user = undefined;
 	event.locals.session = undefined;
-	event.locals.sessionLookupStatus = undefined;
+	event.locals.sessionResolved = undefined;
 	event.locals.planAccess = undefined;
 	event.locals.ageConfirmedAt = undefined;
 	event.locals.tutorProfileView = undefined;
@@ -190,18 +190,17 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	// Public MCQ serve path: skip Better Auth session I/O to keep pool-hit latency low.
 	// Logging, CORS, and security headers still run. FRQ and /api/me/* keep full auth.
 	const skipSessionLookup = shouldSkipSessionLookup(event.request.method, event.url.pathname);
-	event.locals.sessionLookupStatus = skipSessionLookup ? 'skipped' : 'complete';
 
 	if (!skipSessionLookup) {
 		try {
 			const session = await auth.api.getSession({ headers: event.request.headers });
+			event.locals.sessionResolved = true;
 			if (session) {
 				event.locals.session = session.session;
 				event.locals.user = session.user;
 				event.locals.userId = session.user.id;
 			}
 		} catch (err) {
-			event.locals.sessionLookupStatus = 'failed';
 			logger.error('Session lookup failed', { error: err, path: event.url.pathname });
 		}
 	}

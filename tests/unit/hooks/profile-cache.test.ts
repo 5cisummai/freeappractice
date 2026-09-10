@@ -82,7 +82,7 @@ describe('request-local tutor profile cache', () => {
 		expect(mocks.getAgeConfirmedAt).not.toHaveBeenCalled();
 	});
 
-	it('keeps a later full-profile result consistent with an existing narrow age read', async () => {
+	it('does not overlay a narrow age read onto a later profile', async () => {
 		const locals = {} as App.Locals;
 		mocks.getAgeConfirmedAt.mockResolvedValueOnce(new Date('2026-03-01T00:00:00.000Z'));
 		mocks.getTutorProfileView.mockResolvedValueOnce({
@@ -97,7 +97,7 @@ describe('request-local tutor profile cache', () => {
 		await getAgeConfirmedAtForRequest(locals, 'user-1');
 
 		expect(await getTutorProfileViewForRequest(locals, 'user-1')).toMatchObject({
-			ageConfirmedAt: '2026-03-01T00:00:00.000Z'
+			ageConfirmedAt: null
 		});
 		expect(mocks.getAgeConfirmedAt).toHaveBeenCalledTimes(1);
 		expect(mocks.getTutorProfileView).toHaveBeenCalledTimes(1);

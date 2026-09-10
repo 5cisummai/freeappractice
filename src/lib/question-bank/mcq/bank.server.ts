@@ -5,28 +5,10 @@ import {
 	findCachedQuestionsByPool,
 	type McqPoolQuestion
 } from '$lib/question-bank/mcq/repository.server';
-import { copyStimulusFields } from '$lib/question-bank/mcq/types';
+import { copyStimulusFields, type McqAnswerBody } from '$lib/question-bank/mcq/types';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
 import { normalizeUnit } from '$lib/question-bank/util.server';
 import { scheduleBackgroundTask } from '$lib/server/background-task.server';
-
-type McqAnswerBody = {
-	question: string;
-	optionA: string;
-	optionB: string;
-	optionC: string;
-	optionD: string;
-	correctAnswer: 'A' | 'B' | 'C' | 'D';
-	explanation: string;
-	mainTopic: string;
-	topicsCovered: string;
-	diagramSpec: Record<string, unknown> | null;
-	hasDiagram: boolean;
-	stimulus?: Record<string, unknown>;
-	stimulusId?: string | null;
-	stimulusPosition?: number | null;
-	stimulusQuestionCount?: number | null;
-};
 
 type CachedResult = {
 	answer: McqAnswerBody;

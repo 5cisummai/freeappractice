@@ -60,34 +60,9 @@ export type QuestionAttempt = {
 	attemptedAt: string;
 };
 
-export type HistoryMcqQuestion = {
-	question: string;
-	optionA: string;
-	optionB: string;
-	optionC: string;
-	optionD: string;
-	correctAnswer: 'A' | 'B' | 'C' | 'D';
-	explanation: string;
-	mainTopic?: string;
-	topicsCovered?: string;
-	diagramSpec?: Record<string, unknown>;
-	hasDiagram?: boolean;
-	stimulus?: {
-		text: string | null;
-		diagramSpec: Record<string, unknown> | null;
-		provenance: 'ai-generated-original' | 'legacy-unknown';
-	} | null;
-	stimulusId?: string | null;
-	stimulusPosition?: number | null;
-	stimulusQuestionCount?: number | null;
-	apClass?: string;
-	unit?: string;
-};
-
 export type McqHistoryItem = {
 	kind: 'mcq';
 	attempt: QuestionAttempt;
-	question: HistoryMcqQuestion | null;
 };
 
 export type FrqHistoryItem = {
@@ -103,7 +78,6 @@ export type FrqHistoryItem = {
 		timeTakenMs: number;
 		attemptedAt: string;
 	};
-	question: null;
 };
 
 export type QuizHistoryItem = {
@@ -121,7 +95,6 @@ export type QuizHistoryItem = {
 		timeTakenMs: number;
 		attemptedAt: string;
 	};
-	question: null;
 };
 
 export type HistoryItem = McqHistoryItem | FrqHistoryItem | QuizHistoryItem;

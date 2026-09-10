@@ -8,6 +8,7 @@
 	import type { SharedQuizView } from '$lib/shared-practice/types';
 	import { captureGenerateClicked } from '$lib/client/activation-analytics';
 	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
+	import LazyComponent from '$lib/components/app/lazy-component.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
@@ -69,8 +70,6 @@
 	);
 	let expandedSelectorOpen = $state(false);
 	let cardExpanded = $state(false);
-	let frqLoadAttempt = $state(0);
-	let quizLoadAttempt = $state(0);
 	const loadFrqCard = createLazyComponentLoader(
 		() => import('$lib/components/questions/frq-card.svelte')
 	);
@@ -205,10 +204,12 @@
 	<div class="mx-auto min-h-40 max-w-6xl">
 		{#if showUnlimitedFrq}
 			<div>
-				{#key frqLoadAttempt}
-					{#await loadFrqCard()}
-						<p class="py-8 text-center text-sm text-muted-foreground">Loading written response…</p>
-					{:then FrqCard}
+				<LazyComponent
+					load={loadFrqCard}
+					pending="Loading written response…"
+					error="Written-response practice could not be loaded."
+				>
+					{#snippet children(FrqCard)}
 						<FrqCard
 							{selectedClass}
 							{selectedUnit}
@@ -219,26 +220,19 @@
 							{tutorMode}
 							onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
 						/>
-					{:catch}
-						<p class="py-8 text-center text-sm text-destructive">
-							Written-response practice could not be loaded.
-							<button
-								type="button"
-								class="ml-1 font-medium underline underline-offset-4"
-								onclick={() => (frqLoadAttempt += 1)}>Retry</button
-							>
-						</p>
-					{/await}
-				{/key}
+					{/snippet}
+				</LazyComponent>
 			</div>
 		{/if}
 
 		{#if activeQuizMode}
 			{#key `quiz:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}:${sharedQuiz?.slug ?? ''}`}
-				{#key quizLoadAttempt}
-					{#await loadQuizSession()}
-						<p class="py-8 text-center text-sm text-muted-foreground">Loading quiz…</p>
-					{:then QuizSession}
+				<LazyComponent
+					load={loadQuizSession}
+					pending="Loading quiz…"
+					error="Quiz could not be loaded."
+				>
+					{#snippet children(QuizSession)}
 						<QuizSession
 							{selectedClass}
 							{selectedUnit}
@@ -253,17 +247,8 @@
 							title={sharedQuiz?.title}
 							onExit={handleQuizExit}
 						/>
-					{:catch}
-						<p class="py-8 text-center text-sm text-destructive">
-							Quiz could not be loaded.
-							<button
-								type="button"
-								class="ml-1 font-medium underline underline-offset-4"
-								onclick={() => (quizLoadAttempt += 1)}>Retry</button
-							>
-						</p>
-					{/await}
-				{/key}
+					{/snippet}
+				</LazyComponent>
 			{/key}
 		{:else if showUnlimitedMcq}
 			{#key `${mode}:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}

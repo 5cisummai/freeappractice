@@ -66,7 +66,7 @@ describe('getPracticeHistoryPage', () => {
 		expect(page.total).toBe(2);
 		expect(page.items.map((item) => item.kind)).toEqual(['frq', 'mcq']);
 		expect(page.items[0]?.attempt.questionId).toBe('frq-question-1');
-		expect(page.items[1]).toMatchObject({ kind: 'mcq', question: null });
+		expect(page.items[1]).toMatchObject({ kind: 'mcq', attempt: { questionId: 'mcq-question-1' } });
 		expect(page.summary).toEqual({
 			total: 2,
 			answered: 2,

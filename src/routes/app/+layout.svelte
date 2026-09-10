@@ -21,6 +21,7 @@
 	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
 	import { apiFetch } from '$lib/client/api.js';
 	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
+	import LazyComponent from '$lib/components/app/lazy-component.svelte';
 	import {
 		recordPendingSharedQuizRunFailure,
 		readPendingSharedQuizRuns,
@@ -38,7 +39,6 @@
 	const showFreeBetaClaimDialog = $derived(data.showFreeBetaClaimDialog && !isOnboarding);
 	let layoutMounted = $state(false);
 	let coachSidebarOpen = $state(false);
-	let coachLoadAttempt = $state(0);
 	const loadCoachShell = createLazyComponentLoader(
 		() => import('$lib/components/super/coach-shell.svelte')
 	);
@@ -142,20 +142,15 @@
 				<CoachSidebarRoot>
 					<Sidebar.Content class="min-h-0 overflow-hidden p-0">
 						{#if coachSidebarOpen}
-							{#key coachLoadAttempt}
-								{#await loadCoachShell() then CoachShell}
+							<LazyComponent
+								load={loadCoachShell}
+								pending="Loading Coach…"
+								error="Coach could not be loaded."
+							>
+								{#snippet children(CoachShell)}
 									<CoachShell surface="sidebar" />
-								{:catch}
-									<div class="space-y-3 p-6 text-sm text-muted-foreground">
-										<p>Coach could not be loaded.</p>
-										<button
-											type="button"
-											class="font-medium text-foreground underline underline-offset-4"
-											onclick={() => (coachLoadAttempt += 1)}>Retry</button
-										>
-									</div>
-								{/await}
-							{/key}
+								{/snippet}
+							</LazyComponent>
 						{/if}
 					</Sidebar.Content>
 				</CoachSidebarRoot>

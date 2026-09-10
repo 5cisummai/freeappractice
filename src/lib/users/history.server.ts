@@ -4,10 +4,8 @@ import { getNeonDatabase } from '$lib/server/neon/db';
 import { frqAttemptGrades, frqAttempts, mcqAttempts, quizAttempts } from '$lib/server/neon/schema';
 import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
-type PracticeHistoryItem = HistoryItem;
-
 type PracticeHistoryPageResult = {
-	items: PracticeHistoryItem[];
+	items: HistoryItem[];
 	total: number;
 	page: number;
 	limit: number;
@@ -294,7 +292,7 @@ export async function getPracticeHistoryPage(
 			FROM history
 		`)
 	]);
-	const items: PracticeHistoryItem[] = pageResult.rows.map((row) => {
+	const items: HistoryItem[] = pageResult.rows.map((row) => {
 		if (row.kind === 'mcq' && row.questionId) {
 			return {
 				kind: 'mcq',
@@ -306,8 +304,7 @@ export async function getPracticeHistoryPage(
 					wasCorrect: row.wasCorrect ?? false,
 					timeTakenMs: row.timeTakenMs ?? undefined,
 					attemptedAt: new Date(row.attemptedAt).toISOString()
-				},
-				question: null
+				}
 			};
 		}
 		if (row.kind === 'quiz') {
@@ -325,8 +322,7 @@ export async function getPracticeHistoryPage(
 					scorePercent: Number(row.scorePercent ?? 0),
 					timeTakenMs: row.timeTakenMs ?? 0,
 					attemptedAt: new Date(row.attemptedAt).toISOString()
-				},
-				question: null
+				}
 			};
 		}
 		if (row.kind !== 'frq' || !row.questionId) {
@@ -344,8 +340,7 @@ export async function getPracticeHistoryPage(
 				percentage: Number(row.percentage),
 				timeTakenMs: row.timeTakenMs ?? 0,
 				attemptedAt: new Date(row.attemptedAt).toISOString()
-			},
-			question: null
+			}
 		};
 	});
 	const summaryRow = summaryResult.rows[0] ?? {

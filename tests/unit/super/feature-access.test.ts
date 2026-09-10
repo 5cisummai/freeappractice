@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
 	getPlanAccess: vi.fn(),
 	getStripeClient: vi.fn(() => null),
 	getTutorProfileView: vi.fn(),
+	getAgeConfirmedAt: vi.fn(),
 	getAssistantFeaturesEnabledForRequest: vi.fn()
 }));
 
@@ -18,7 +19,8 @@ vi.mock('$lib/super/billing.server', () => ({
 	getStripeClient: mocks.getStripeClient
 }));
 vi.mock('$lib/super/profile.server', () => ({
-	getTutorProfileView: mocks.getTutorProfileView
+	getTutorProfileView: mocks.getTutorProfileView,
+	getAgeConfirmedAt: mocks.getAgeConfirmedAt
 }));
 vi.mock('$lib/super/assistant.server', () => ({
 	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest
@@ -40,6 +42,7 @@ describe('authorizeFeatureRequest', () => {
 			accessReason: 'subscription'
 		});
 		mocks.getTutorProfileView.mockResolvedValue(profile);
+		mocks.getAgeConfirmedAt.mockResolvedValue(new Date(profile.ageConfirmedAt));
 		mocks.getAssistantFeaturesEnabledForRequest.mockResolvedValue(true);
 	});
 
@@ -66,6 +69,7 @@ describe('authorizeFeatureRequest', () => {
 			message: 'Super subscription required'
 		});
 		expect(mocks.getTutorProfileView).not.toHaveBeenCalled();
+		expect(mocks.getAgeConfirmedAt).not.toHaveBeenCalled();
 	});
 
 	it('denies disabled assistant features before billing, but leaves memory management available', async () => {
@@ -83,8 +87,8 @@ describe('authorizeFeatureRequest', () => {
 		expect(memory).toMatchObject({ allowed: true });
 	});
 
-	it('uses the exact common age denial', async () => {
-		mocks.getTutorProfileView.mockResolvedValue({ ageConfirmedAt: null });
+	it('uses the exact common age denial without loading the profile', async () => {
+		mocks.getAgeConfirmedAt.mockResolvedValue(null);
 		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'coach');
 
 		expect(result).toEqual({
@@ -93,6 +97,7 @@ describe('authorizeFeatureRequest', () => {
 			code: 'age_required',
 			message: 'You must be at least 13 to use Super features.'
 		});
+		expect(mocks.getTutorProfileView).not.toHaveBeenCalled();
 	});
 
 	it('returns resolved facts to the implementation', async () => {
@@ -106,6 +111,7 @@ describe('authorizeFeatureRequest', () => {
 			profile
 		});
 		expect(mocks.getPlanAccess).toHaveBeenCalledWith('user-1');
+		expect(mocks.getAgeConfirmedAt).toHaveBeenCalledWith('user-1');
 		expect(mocks.getTutorProfileView).toHaveBeenCalledWith('user-1');
 	});
 });

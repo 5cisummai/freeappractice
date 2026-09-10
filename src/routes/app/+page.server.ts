@@ -11,9 +11,7 @@ import { timezoneFromCookies } from '$lib/users/timezone';
 export const load: PageServerLoad = async ({ cookies, locals, parent }) => {
 	const userId = locals.userId!;
 	const parentPromise = parent();
-	const dashboardPromise = loadUserDashboardData(userId, cookies, {
-		beforeLegacySubjectWrite: parentPromise
-	});
+	const dashboardPromise = loadUserDashboardData(userId, cookies);
 	const planAccessPromise = getPlanAccessForRequest(locals, userId);
 	let activeOrganization: Awaited<ReturnType<typeof parent>>['activeOrganization'];
 	try {

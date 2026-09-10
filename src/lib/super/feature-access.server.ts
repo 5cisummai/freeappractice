@@ -58,16 +58,8 @@ export function getTutorProfileViewForRequest(
 	const profilePromise = import('$lib/super/profile.server').then(({ getTutorProfileView }) =>
 		getTutorProfileView(userId)
 	);
-	if (locals.ageConfirmedAt) {
-		return (locals.tutorProfileView = Promise.all([profilePromise, locals.ageConfirmedAt]).then(
-			([profile, ageConfirmedAt]) => ({
-				...profile,
-				ageConfirmedAt: ageConfirmedAt?.toISOString() ?? null
-			})
-		));
-	}
 	locals.tutorProfileView = profilePromise;
-	locals.ageConfirmedAt = profilePromise.then((profile) =>
+	locals.ageConfirmedAt ??= profilePromise.then((profile) =>
 		profile.ageConfirmedAt ? new Date(profile.ageConfirmedAt) : null
 	);
 	return profilePromise;
@@ -137,8 +129,7 @@ export async function authorizeFeatureRequest(
 		};
 	}
 
-	const profile = await getTutorProfileViewForRequest(event.locals, userId);
-	if (!profile.ageConfirmedAt) {
+	if (!(await getAgeConfirmedAtForRequest(event.locals, userId))) {
 		return {
 			allowed: false,
 			status: 403,
@@ -147,7 +138,12 @@ export async function authorizeFeatureRequest(
 		};
 	}
 
-	return { allowed: true, userId, planAccess, profile };
+	return {
+		allowed: true,
+		userId,
+		planAccess,
+		profile: await getTutorProfileViewForRequest(event.locals, userId)
+	};
 }
 
 function featureUnavailableMessage(feature: SuperFeature): string {
