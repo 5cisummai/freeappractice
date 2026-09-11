@@ -47,8 +47,7 @@
 				Claim your free Super offer
 			</Dialog.Title>
 			<Dialog.Description class="text-center text-sm leading-6">
-				Unlock personalized tutoring, Pip, weekly study plans, and 300 personalized messages a
-				month.
+				Unlock personalized tutoring, Pip, and weekly study plans.
 			</Dialog.Description>
 		</Dialog.Header>
 
