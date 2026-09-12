@@ -1,12 +1,12 @@
 # Free AP Practice
 
-> Free AP practice for high school students: plan which APs to take, preview Unit 1 over the summer, and generate unlimited practice questions with instant feedback. No signup required.
+> Free AP practice for high school students: plan which APs to take, preview Unit 1 over the summer, and practice unlimited questions with instant feedback. No signup required.
 
-Use this site to choose AP classes wisely, build a summer study habit (about 15–30 minutes a day), and prepare for AP exams. Select an AP subject and unit, then generate practice questions with explanations.
+Use this site to choose AP classes wisely, build a summer study habit (about 15–30 minutes a day), and prepare for AP exams. Select an AP subject and unit, then start practicing with explanations.
 
 ## Features
 
-- AI question generation across 20+ AP subjects
+- AP-style practice questions across 20+ AP subjects
 - AP course planning and summer study guides
 - Instant feedback with detailed explanations
 - Progress tracking and streak counting
@@ -26,7 +26,7 @@ Use this site to choose AP classes wisely, build a summer study habit (about 15�
 
 ## Pages
 
-- [Home](https://freeappractice.org/): Main question generator
+- [Home](https://freeappractice.org/): Main practice page
 - [Summer AP Study Guide](https://freeappractice.org/summer): Plan APs and preview Unit 1 over the summer
 - [About](https://freeappractice.org/about): Mission and approach
 - [Blog](https://freeappractice.org/blog): Course planning, summer study, and exam prep guides

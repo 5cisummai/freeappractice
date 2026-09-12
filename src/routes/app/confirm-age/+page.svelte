@@ -4,7 +4,7 @@
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { authClient } from '$lib/auth/client.js';
-	import { getSiteUrl } from '$lib/site-url.js';
+	import { accountDeletedHomeUrl } from '$lib/auth/urls.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { toast } from 'svelte-sonner';
@@ -34,14 +34,14 @@
 		deleting = true;
 		try {
 			const { data, error } = await authClient.deleteUser({
-				callbackURL: `${getSiteUrl()}/`
+				callbackURL: accountDeletedHomeUrl()
 			});
 			if (error) throw new Error(error.message ?? 'Could not start account deletion.');
 			if (data?.message === 'Verification email sent') {
 				toast.success('Check your email to confirm account deletion.');
 				return;
 			}
-			window.location.href = '/';
+			window.location.href = accountDeletedHomeUrl();
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Could not start account deletion.');
 		} finally {

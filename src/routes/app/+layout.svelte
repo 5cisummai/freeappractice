@@ -11,7 +11,6 @@
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
-	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import { setCoachPageToolbar } from '$lib/components/super/coach-context.svelte.js';
 	import {
 		captureAuthenticatedStudentReturnedIfNeeded,
@@ -97,7 +96,6 @@
 	<link rel="canonical" href="https://freeappractice.org/app" />
 </svelte:head>
 
-<Toaster />
 {#if showFreeBetaClaimDialog}
 	<FreeBetaClaimDialog />
 {/if}

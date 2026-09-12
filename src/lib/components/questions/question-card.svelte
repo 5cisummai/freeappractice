@@ -242,7 +242,7 @@
 {:else if core.showEmptyState}
 	<EmptyState
 		title="Ready When You Are"
-		description="Select a course and unit, then generate a question."
+		description="Select a course and unit, then start practicing."
 		imageUrl={lightbulbImage}
 	/>
 {:else if core.showErrorState}

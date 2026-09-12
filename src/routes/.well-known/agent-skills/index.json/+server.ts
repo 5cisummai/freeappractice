@@ -10,7 +10,7 @@ export const prerender = false;
 const SKILL_FILES = [
 	{
 		name: 'generate-ap-question',
-		description: 'Generate AP practice multiple-choice questions by subject and unit.'
+		description: 'Get AP practice multiple-choice questions by subject and unit.'
 	},
 	{
 		name: 'browse-ap-subjects',

@@ -181,7 +181,11 @@
 					showFirstUseHint={showFirstUseHints}
 					quizMode={activeQuizMode}
 					bind:count
-					generateLabel={activeQuizMode ? 'Generate Quiz' : undefined}
+					generateLabel={activeQuizMode
+						? 'Start quiz'
+						: requestVersion > 0
+							? 'Next question'
+							: 'Practice'}
 					generateDisabled={activeQuizMode && quizGenerating}
 					onSelectionChange={handleSelectionChange}
 					onGenerate={handleGenerate}
@@ -271,7 +275,7 @@
 		{:else}
 			<EmptyState
 				title="Ready When You Are"
-				description="Select a course and unit, then generate a question."
+				description="Select a course and unit, then start practicing."
 				imageUrl="/illustrations/lightbulb.png"
 			/>
 		{/if}

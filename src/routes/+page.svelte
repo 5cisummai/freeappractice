@@ -26,13 +26,13 @@
 				id: 'what-is-this-website',
 				question: 'What is this website?',
 				answer:
-					'Free AP Practice is the fastest way to practice AP online: pick a subject, click generate, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects.'
+					'Free AP Practice is the fastest way to practice AP online: pick a subject, click Practice, and start answering questions in 2 clicks—no signup, free, with instant AI feedback across 20+ subjects.'
 			},
 			{
 				id: 'how-does-it-work',
 				question: 'How does it work?',
 				answer:
-					'Select an AP class from the dropdown and click Generate Question. You get an exam-style multiple-choice question with four options (A–D). After you answer, you get immediate feedback and a detailed explanation.'
+					'Select an AP class from the dropdown and click Practice. You get an exam-style multiple-choice question with four options (A–D). After you answer, you get immediate feedback and a detailed explanation.'
 			},
 			{
 				id: 'which-subjects-supported',
@@ -42,15 +42,15 @@
 			},
 			{
 				id: 'how-accurate',
-				question: 'How accurate are the AI-generated questions?',
+				question: 'How accurate are the practice questions?',
 				answer:
-					'Questions are generated to match AP exam style and difficulty so you can practice the format you will see in class and on the exam. They are for practice and feedback, not a replacement for official College Board materials.'
+					'Questions are written to match AP exam style and difficulty so you can practice the format you will see in class and on the exam. They are for practice and feedback, not a replacement for official College Board materials.'
 			},
 			{
 				id: 'school-starting',
 				question: 'School just started. How should I use this with my AP classes?',
 				answer:
-					'Use it to keep up with class, not to cram the whole exam. After a lecture or unit, generate a few questions in that unit so the next class starts with the gaps already visible.'
+					'Use it to keep up with class, not to cram the whole exam. After a lecture or unit, practice a few questions in that unit so the next class starts with the gaps already visible.'
 			},
 			{
 				id: 'choosing-classes',
@@ -106,11 +106,11 @@
 	<meta name="title" content="Free AP Practice | The Fastest Way to Practice AP Online" />
 	<meta
 		name="description"
-		content="The fastest free AP practice on the internet: pick a subject, click generate, and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
+		content="The fastest free AP practice on the internet: pick a subject and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
 	/>
 	<meta
 		name="keywords"
-		content="fastest AP practice, AP practice no signup, instant AP questions, 2 click AP practice, free AP question generator, unlimited AP questions, AP exam prep, no account AP study, AP practice online, free AP questions"
+		content="fastest AP practice, AP practice no signup, instant AP questions, 2 click AP practice, free AP practice questions, unlimited AP questions, AP exam prep, no account AP study, AP practice online, free AP questions"
 	/>
 	<meta name="author" content="FreeAPPractice.org" />
 	<meta
@@ -132,7 +132,7 @@
 	<meta property="og:title" content="Free AP Practice | Start Practicing in 2 Clicks" />
 	<meta
 		property="og:description"
-		content="The fastest way to practice AP online: pick a subject, generate a question, get instant feedback. Free, unlimited, no signup across 20+ subjects."
+		content="The fastest way to practice AP online: pick a subject, start practicing, get instant feedback. Free, unlimited, no signup across 20+ subjects."
 	/>
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:image:width" content="1200" />
@@ -149,7 +149,7 @@
 	<meta name="twitter:title" content="Free AP Practice | 2 Clicks, No Signup" />
 	<meta
 		name="twitter:description"
-		content="Fastest free AP practice online: pick a subject, click generate, get instant feedback. Unlimited questions across 20+ subjects."
+		content="Fastest free AP practice online: pick a subject, start practicing, get instant feedback. Unlimited questions across 20+ subjects."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
 	<meta
@@ -167,7 +167,7 @@
 			"name": "Free AP Practice",
 			"alternateName": "Free AP Practice",
 			"url": "https://freeappractice.org",
-			"description": "The fastest free AP practice online—start in 2 clicks with no signup. Unlimited AI-generated questions and instant feedback across 20+ subjects.",
+			"description": "The fastest free AP practice online—start in 2 clicks with no signup. Unlimited AP-style practice questions and instant feedback across 20+ subjects.",
 			"logo": "https://freeappractice.org/icon.png",
 			"image": "https://freeappractice.org/icon.png",
 			"applicationCategory": "EducationalApplication",
@@ -179,9 +179,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.8.4",
+			"softwareVersion": "1.8.5",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-09-11",
+			"dateModified": "2026-09-12",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
@@ -213,7 +213,7 @@
 				"Practice in 2 Clicks",
 				"No Registration Required",
 				"Fastest Path to AP Questions",
-				"Unlimited Question Generation",
+				"Unlimited Practice Questions",
 				"Instant AI Feedback",
 				"20+ AP Subjects Coverage",
 				"Detailed Explanations",
@@ -246,7 +246,7 @@
 			"name": "Free AP Practice",
 			"url": "https://freeappractice.org",
 			"logo": "https://freeappractice.org/icon.png",
-			"description": "Free AI-powered AP practice question generator for students",
+			"description": "Free AP-style practice questions for students",
 			"founder": {
 				"@type": "Person",
 				"name": "Ajay Saravanan"

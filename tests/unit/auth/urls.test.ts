@@ -22,7 +22,7 @@ vi.mock('$app/paths', () => ({
 	resolve: (path: string) => path
 }));
 
-import { authCallbackUrl } from '$lib/auth/urls';
+import { ACCOUNT_DELETED_QUERY, accountDeletedHomeUrl, authCallbackUrl } from '$lib/auth/urls';
 import { PRODUCTION_SITE_URL, getSiteUrl } from '$lib/site-url';
 
 describe('getSiteUrl', () => {
@@ -56,5 +56,16 @@ describe('authCallbackUrl', () => {
 	it('builds absolute callback URLs', () => {
 		expect(authCallbackUrl('/app')).toBe('https://example.com/app');
 		expect(authCallbackUrl('/login')).toBe('https://example.com/login');
+	});
+});
+
+describe('accountDeletedHomeUrl', () => {
+	beforeEach(() => {
+		publicEnv.PUBLIC_BASE_URL = 'https://example.com';
+		appEnv.dev = false;
+	});
+
+	it('points at home with the account-deleted query flag', () => {
+		expect(accountDeletedHomeUrl()).toBe(`https://example.com/?${ACCOUNT_DELETED_QUERY}=1`);
 	});
 });

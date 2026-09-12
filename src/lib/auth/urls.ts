@@ -15,3 +15,10 @@ export function authCallbackUrl(path: AuthCallbackPath): string {
 export function authCallbackUrlForAppPath(path: string | null | undefined): string {
 	return `${getSiteUrl()}${safeAppPath(path)}`;
 }
+
+export const ACCOUNT_DELETED_QUERY = 'accountDeleted';
+
+/** Home URL used after account deletion so the landing page can show a success toast. */
+export function accountDeletedHomeUrl(): string {
+	return `${getSiteUrl()}/?${ACCOUNT_DELETED_QUERY}=1`;
+}

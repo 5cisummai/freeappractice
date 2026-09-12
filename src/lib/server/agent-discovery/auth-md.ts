@@ -9,7 +9,7 @@ export function buildAuthMd(requestUrl?: URL): string {
 
 	return `# auth.md — Free AP Practice
 
-Free AP Practice helps high school students generate unlimited AP exam practice questions with instant feedback.
+Free AP Practice helps high school students practice unlimited AP exam questions with instant feedback.
 
 ## Audience
 
