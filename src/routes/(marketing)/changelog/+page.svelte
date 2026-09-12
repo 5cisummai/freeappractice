@@ -5,6 +5,24 @@
 
 	const changelog = [
 		{
+			version: '1.8.4',
+			date: 'September 11, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Public class and unit practice pages now include a frequently asked questions section tailored to that course or unit'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Simplified the free Super claim dialog so it no longer mentions a monthly message allowance'
+					]
+				}
+			]
+		},
+		{
 			version: '1.8.3',
 			date: 'September 9, 2026',
 			sections: [
@@ -1368,7 +1386,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 9, 2026"
+			meta="Last Updated: September 11, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

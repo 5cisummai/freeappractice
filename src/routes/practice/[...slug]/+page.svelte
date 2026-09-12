@@ -4,7 +4,8 @@
 	import {
 		buildPracticePageJsonLd,
 		buildPracticeBreadcrumbJsonLd,
-		buildPracticePageMeta
+		buildPracticePageMeta,
+		buildPracticeFaqJsonLd
 	} from '$lib/seo/practice-page-meta.js';
 	import type { PageData } from './$types';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
@@ -23,8 +24,10 @@
 	const meta = $derived(buildPracticePageMeta(data.page));
 	const jsonLd = $derived(buildPracticePageJsonLd(data.page));
 	const breadcrumbJsonLd = $derived(buildPracticeBreadcrumbJsonLd(data.page));
+	const faqJsonLd = $derived(buildPracticeFaqJsonLd(data.page));
 	const jsonLdMarkup = $derived(buildJsonLdMarkup(jsonLd));
 	const breadcrumbJsonLdMarkup = $derived(buildJsonLdMarkup(breadcrumbJsonLd));
+	const faqJsonLdMarkup = $derived(buildJsonLdMarkup(faqJsonLd));
 
 	// afterNavigate (not onMount) so SPA moves between /practice/... pages are counted.
 	// Key by page identity so remounts / same-page afterNavigate do not double-count.
@@ -76,6 +79,8 @@
 	{@html jsonLdMarkup}
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html breadcrumbJsonLdMarkup}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html faqJsonLdMarkup}
 </svelte:head>
 
 <PracticeLanding

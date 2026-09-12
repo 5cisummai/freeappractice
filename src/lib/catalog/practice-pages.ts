@@ -10,6 +10,12 @@ type PracticePageLink = {
 	kind: PracticePageLinkKind;
 };
 
+type PracticePageFaqItem = {
+	id: string;
+	question: string;
+	answer: string;
+};
+
 export type PracticePage = {
 	slug: string;
 	type: 'class' | 'unit';
@@ -26,6 +32,7 @@ export type PracticePage = {
 		paragraphs: string[];
 	};
 	links: PracticePageLink[];
+	faq: PracticePageFaqItem[];
 };
 
 /**
