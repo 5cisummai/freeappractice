@@ -33,7 +33,7 @@ export function acceptsMarkdown(request: Request): boolean {
 
 export async function getHomepageMarkdown(): Promise<string> {
 	if (building) {
-		return '# Free AP Practice\n\n> AI-powered AP exam practice.\n';
+		return '# Free AP Practice\n\n> Free AP exam practice.\n';
 	}
 
 	return readFile(LLMS_TXT_PATH, 'utf8');

@@ -523,7 +523,7 @@
 {#if exam.status === 'idle'}
 	<EmptyState
 		title="No quiz yet"
-		description="Choose a course and unit, then generate a quiz."
+		description="Choose a course and unit, then start a quiz."
 		imageUrl="/illustrations/books.png"
 	/>
 {:else if exam.status === 'loading' || exam.status === 'error'}
@@ -532,11 +532,11 @@
 			class="flex min-h-40 flex-col items-center justify-center gap-3 px-6 py-12 text-center"
 		>
 			{#if exam.status === 'loading'}
-				<p class="text-lg font-medium text-muted-foreground">Generating your quiz…</p>
+				<p class="text-lg font-medium text-muted-foreground">Loading your quiz…</p>
 				<p class="text-sm text-muted-foreground/80">Loading {exam.requestedCount} questions.</p>
 				<Button variant="outline" size="sm" onclick={requestExit}>Leave quiz</Button>
 			{:else}
-				<p class="text-lg font-medium text-muted-foreground">We couldn’t generate this quiz</p>
+				<p class="text-lg font-medium text-muted-foreground">We couldn’t start this quiz</p>
 				<p class="max-w-sm text-sm text-muted-foreground/80">
 					{exam.errorMessage || 'Please try again in a moment.'}
 				</p>

@@ -69,11 +69,11 @@
 			Free AP Practice covers more than twenty College Board courses, from AP Biology and AP US
 			History to AP Calculus, AP Physics, economics, languages, and computer science. Each subject
 			page is a hub: you will see the full unit list your teacher likely follows, plus quick access
-			to generate unlimited multiple-choice questions with instant explanations.
+			to unlimited multiple-choice questions with instant explanations.
 		</p>
 		<p>
 			You do not need an account to start. Pick the class you are taking (or one you are considering
-			for next year), open its practice page, choose a unit, and hit Generate. Wrong answers are as
+			for next year), open its practice page, choose a unit, and click Practice. Wrong answers are as
 			useful as right ones when you read the feedback immediately; that is how the site is built to
 			work.
 		</p>

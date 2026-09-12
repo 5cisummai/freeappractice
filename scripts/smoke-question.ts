@@ -67,7 +67,7 @@ async function getPage(): Promise<void> {
 	if (!response.ok) throw new Error(`Practice page returned HTTP ${response.status}`);
 
 	const html = await response.text();
-	for (const marker of ['AP Biology', 'Generate Question']) {
+	for (const marker of ['AP Biology', 'Practice']) {
 		if (!html.includes(marker)) throw new Error(`Practice page is missing: ${marker}`);
 	}
 }

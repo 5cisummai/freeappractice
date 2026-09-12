@@ -128,7 +128,7 @@
 						</p>
 						<ol>
 							<li>Pick your AP subject and Unit 1 on the home page.</li>
-							<li>Generate a few questions—no timer required.</li>
+							<li>Practice a few questions—no timer required.</li>
 							<li>Read explanations and note one topic to revisit tomorrow.</li>
 						</ol>
 
@@ -147,7 +147,7 @@
 						<hr />
 
 						<p>
-							Ready to try a question? Select an AP class, choose Unit 1, and generate your first
+							Ready to try a question? Select an AP class, choose Unit 1, and practice your first
 							practice question—free, no signup.
 							<a href={resolve('/')}>Go to practice</a>.
 						</p>

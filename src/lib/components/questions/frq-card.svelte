@@ -340,7 +340,7 @@
 {:else if !question}
 	<EmptyState
 		title="No prompt yet"
-		description="Select a course and unit, then generate a written-response task."
+		description="Select a course and unit, then start a written-response task."
 		imageUrl={lightbulbImage}
 	/>
 {:else}

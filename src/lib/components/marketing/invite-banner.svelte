@@ -19,7 +19,7 @@
 		<div class="space-y-1 pr-2">
 			<p class="font-medium text-foreground">A classmate shared Free AP Practice with you</p>
 			<p class="text-sm text-muted-foreground">
-				Pick your subject, generate a question, and start practicing—no signup required to try it.
+				Pick your subject, click Practice, and start answering—no signup required to try it.
 			</p>
 		</div>
 		<div class="flex shrink-0 items-center gap-2">

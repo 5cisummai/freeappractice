@@ -137,7 +137,7 @@
 					My approach is about removing <strong class="font-semibold text-foreground">
 						every unnecessary step.
 					</strong>
-					Pick a subject, generate a question, get instant feedback. No signup wall, no paywall, no friction
+					Pick a subject, start practicing, get instant feedback. No signup wall, no paywall, no friction
 					between you and practice.
 				</p>
 

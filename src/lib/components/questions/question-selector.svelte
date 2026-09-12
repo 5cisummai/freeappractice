@@ -44,7 +44,7 @@
 		quizMode = false,
 		count = $bindable(10),
 		generateDisabled = false,
-		generateLabel = 'Generate Question',
+		generateLabel = 'Practice',
 		onGenerate,
 		onSelectionChange,
 		showFirstUseHint = false

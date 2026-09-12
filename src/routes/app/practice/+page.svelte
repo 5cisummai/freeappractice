@@ -111,7 +111,7 @@
 	<title>Practice | Free AP Practice</title>
 </svelte:head>
 
-<PageShell title="Practice" description="Select a course and unit, then generate a question.">
+<PageShell title="Practice" description="Select a course and unit, then start practicing.">
 	<div class="mx-auto max-w-250">
 		{#if data.sharedQuizError}
 			<div class="rounded-xl border border-border/70 bg-card p-8 text-center">

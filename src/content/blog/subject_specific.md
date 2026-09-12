@@ -115,4 +115,4 @@ Go use it.
 
 ---
 
-_[Browse all AP subjects](/subjects) for free, unlimited AI-generated multiple choice questions across 20+ courses. Use it to drill subject-specific content - and, more importantly, to analyze the explanations behind every question._
+_[Browse all AP subjects](/subjects) for free, unlimited AP-style multiple choice questions across 20+ courses. Use it to drill subject-specific content - and, more importantly, to analyze the explanations behind every question._

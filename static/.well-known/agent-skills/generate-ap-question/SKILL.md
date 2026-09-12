@@ -1,11 +1,11 @@
 ---
 name: generate-ap-question
-description: Generate AP practice multiple-choice questions by subject and unit via the Free AP Practice API.
+description: Get AP practice multiple-choice questions by subject and unit via the Free AP Practice API.
 ---
 
-# Generate AP Practice Questions
+# Get AP Practice Questions
 
-Use the Free AP Practice question API to generate multiple-choice questions for supported AP subjects.
+Use the Free AP Practice question API to load multiple-choice questions for supported AP subjects.
 
 ## API
 
@@ -24,7 +24,7 @@ Returns `answer`, `provider`, `model`, `cached`, and `questionId`. The full ques
 
 ## Authentication
 
-Anonymous use is supported for basic generation. Signed-in users get progress tracking via session cookies.
+Anonymous use is supported for basic practice. Signed-in users get progress tracking via session cookies.
 
 ## Health
 
