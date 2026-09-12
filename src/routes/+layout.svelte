@@ -36,6 +36,8 @@
 		toast.success('Account deleted successfully');
 		const url = new URL(page.url);
 		url.searchParams.delete(ACCOUNT_DELETED_QUERY);
+		// Pathname is the current resolved route; only the query string changes.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
 	}
 

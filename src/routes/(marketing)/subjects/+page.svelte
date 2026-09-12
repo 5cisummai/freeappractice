@@ -73,9 +73,9 @@
 		</p>
 		<p>
 			You do not need an account to start. Pick the class you are taking (or one you are considering
-			for next year), open its practice page, choose a unit, and click Practice. Wrong answers are as
-			useful as right ones when you read the feedback immediately; that is how the site is built to
-			work.
+			for next year), open its practice page, choose a unit, and click Practice. Wrong answers are
+			as useful as right ones when you read the feedback immediately; that is how the site is built
+			to work.
 		</p>
 		<p>
 			If you are planning a schedule, browsing subjects here is faster than guessing what is

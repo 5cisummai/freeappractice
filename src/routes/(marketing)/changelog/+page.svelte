@@ -5,6 +5,23 @@
 
 	const changelog = [
 		{
+			version: '1.8.5',
+			date: 'September 12, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Practice now starts with Practice, then Next question after the first item, and Start quiz for graded quizzes instead of Generate',
+						'Homepage, FAQs, and subject pages now describe serving practice questions instead of generating them on click'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Deleting your account now shows a success confirmation after you are signed out']
+				}
+			]
+		},
+		{
 			version: '1.8.4',
 			date: 'September 11, 2026',
 			sections: [
@@ -1386,7 +1403,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 11, 2026"
+			meta="Last Updated: September 12, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
