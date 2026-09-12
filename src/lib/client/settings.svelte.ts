@@ -1,8 +1,7 @@
 import { invalidateAppLayout, invalidateAppSubtree } from '$lib/client/invalidate-data.js';
 import { toast } from 'svelte-sonner';
 import { authClient } from '$lib/auth/client.js';
-import { authCallbackUrl } from '$lib/auth/urls.js';
-import { getSiteUrl } from '$lib/site-url.js';
+import { accountDeletedHomeUrl, authCallbackUrl } from '$lib/auth/urls.js';
 import { resetPostHogUser } from '$lib/client/posthog-analytics';
 import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 import { MAX_NAME_LENGTH } from '$lib/auth/name-policy';
@@ -90,7 +89,7 @@ class AccountActions {
 		try {
 			const { data, error } = await authClient.deleteUser({
 				...(password ? { password } : {}),
-				callbackURL: `${getSiteUrl()}/`
+				callbackURL: accountDeletedHomeUrl()
 			});
 			if (error) throw new Error(error.message ?? 'Failed to delete account');
 
@@ -99,9 +98,8 @@ class AccountActions {
 				return 'pending';
 			}
 
-			toast.success('Account deleted successfully');
 			resetPostHogUser();
-			window.location.href = '/';
+			window.location.href = accountDeletedHomeUrl();
 			return 'deleted';
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : 'Failed to delete account');

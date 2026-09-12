@@ -3,7 +3,8 @@
 	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
 	import AnalyticsConsentBanner from '$lib/components/layout/analytics-consent-banner.svelte';
 	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { afterNavigate, beforeNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, replaceState } from '$app/navigation';
+	import { page } from '$app/state';
 	import { invalidateAppSubtree } from '$lib/client/invalidate-data.js';
 	import { DEFAULT_THEME } from '$lib/client/theme.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
@@ -16,6 +17,9 @@
 	} from '$lib/users/timezone';
 
 	import { capturePostHogPageleave, capturePostHogPageview } from '$lib/client/posthog-analytics';
+	import { ACCOUNT_DELETED_QUERY } from '$lib/auth/urls.js';
+	import { Toaster } from '$lib/components/ui/sonner/index.js';
+	import { toast } from 'svelte-sonner';
 
 	let { children } = $props();
 
@@ -27,7 +31,16 @@
 		capturePostHogPageview(to?.url.href);
 	});
 
+	function notifyAccountDeletedIfNeeded() {
+		if (page.url.searchParams.get(ACCOUNT_DELETED_QUERY) !== '1') return;
+		toast.success('Account deleted successfully');
+		const url = new URL(page.url);
+		url.searchParams.delete(ACCOUNT_DELETED_QUERY);
+		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
+	}
+
 	onMount(() => {
+		notifyAccountDeletedIfNeeded();
 		privacy.init();
 
 		const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -59,6 +72,7 @@
 	Skip to main content
 </a>
 <ModeWatcher defaultMode={DEFAULT_THEME} />
+<Toaster />
 <GoogleOneTapPrompt />
 <AnalyticsConsentBanner />
 {@render children()}
