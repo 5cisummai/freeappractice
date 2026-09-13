@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import FullQuestion from '$lib/components/questions/full-question.svelte';
+	import { presentedStemFromMcq } from '$lib/components/questions/presented-question.js';
 	import { createExamCore } from '$lib/components/questions/exam-core.svelte.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
@@ -641,7 +642,7 @@
 	{@const reviewQuestion = exam.currentQuestion ?? exam.questions.find((question) => question)}
 	{#if reviewQuestion}
 		<FullQuestion
-			question={reviewQuestion}
+			stem={presentedStemFromMcq(reviewQuestion)}
 			questionNumber={exam.currentIndex + 1}
 			totalQuestions={exam.requestedCount}
 			title={quizTitle}
@@ -671,7 +672,7 @@
 	{/if}
 
 	<FullQuestion
-		question={exam.currentQuestion}
+		stem={presentedStemFromMcq(exam.currentQuestion)}
 		questionNumber={exam.currentIndex + 1}
 		totalQuestions={exam.requestedCount}
 		title={quizTitle}

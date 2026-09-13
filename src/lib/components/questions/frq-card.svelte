@@ -1,35 +1,16 @@
 <script lang="ts">
+	import { onDestroy, onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { QuestionRequestError } from '$lib/client/activation-analytics';
-	import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
-	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
-	import type {
-		FrqAttemptView,
-		FrqGrade,
-		PublicFrqQuestion
-	} from '$lib/question-bank/frq/types.js';
+	import type { FrqAttemptView } from '$lib/question-bank/frq/types.js';
 	import type { TutorMode } from '$lib/question-bank/mcq/types.js';
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
 	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import {
-		parseFrqLatestDraft,
-		parseFrqQuestionDraft,
-		serializeFrqLatestDraft,
-		serializeFrqQuestionDraft
-	} from '$lib/question-bank/frq/draft.client.js';
-	import {
-		PoolWarmingError,
-		requestFrqQuestion,
-		requestFrqQuestionById
-	} from '$lib/question-bank/request.client';
+	import FrqResponse from '$lib/components/questions/frq-response.svelte';
+	import FrqFeedback from '$lib/components/questions/frq-feedback.svelte';
+	import { createFrqCore } from '$lib/components/questions/frq-core.svelte.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';
-
-	const MAX_SEEN_QUESTION_IDS = 100;
-	const MAX_POOL_WARMING_AUTO_RETRIES = 3;
 
 	type Props = {
 		selectedClass?: string;
@@ -59,291 +40,64 @@
 		skipAfterGrade = true
 	}: Props = $props();
 
-	let question = $state<PublicFrqQuestion | null>(null);
-	let responses = $state<Record<string, string>>({});
-	let grade = $state<FrqGrade | null>(null);
-	let isLoading = $state(false);
-	let isGrading = $state(false);
-	let errorMessage = $state('');
-	let isPoolWarming = $state(false);
-	let poolWarmingRetryAfterSeconds = $state(15);
-	let poolWarmingAutoAttempts = $state(0);
-	let statusMessage = $state('Write your responses, then submit for rubric feedback.');
-	let startedAt = $state(0);
-	let attemptId = $state('');
-	let disagreementReported = $state(false);
-	let seenQuestionIds = $state<string[]>([]);
-	let consumedPresetQuestionId = $state('');
-	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
-	let loadGeneration = 0;
+	let mounted = $state(false);
 
-	const draftKey = $derived(question?.questionId ? `frq-draft:${question.questionId}` : '');
-	const draftScopeKey = $derived(
-		selectedClass ? `frq-latest-draft:${selectedClass}:${selectedUnit || 'all-units'}` : ''
-	);
-	const hasResponse = $derived(
-		Object.values(responses).some((response) => response.trim().length > 0)
-	);
-
-	type GradeResponse = { attempt?: FrqAttemptView; error?: string };
-
-	function clearWarmingRetryTimer(): void {
-		if (!warmingRetryTimer) return;
-		clearTimeout(warmingRetryTimer);
-		warmingRetryTimer = null;
-	}
-
-	function rememberQuestion(questionId: string | undefined): void {
-		if (!questionId || seenQuestionIds.includes(questionId)) return;
-		seenQuestionIds = [...seenQuestionIds, questionId].slice(-MAX_SEEN_QUESTION_IDS);
-	}
-
-	function restoreDraft(nextQuestion: PublicFrqQuestion): Record<string, string> {
-		const emptyResponses = () =>
-			Object.fromEntries(nextQuestion.sections.map((section) => [section.id, '']));
-		if (typeof sessionStorage === 'undefined') return emptyResponses();
-		return (
-			parseFrqQuestionDraft(
-				sessionStorage.getItem(`frq-draft:${nextQuestion.questionId}`),
-				nextQuestion
-			) ?? emptyResponses()
-		);
-	}
-
-	function restoreLatestDraft(): boolean {
-		if (!draftScopeKey || typeof sessionStorage === 'undefined') return false;
-		const saved = parseFrqLatestDraft(sessionStorage.getItem(draftScopeKey), {
-			apClass: selectedClass,
-			unit: selectedUnit || undefined
-		});
-		if (!saved) return false;
-		question = saved.question;
-		responses = saved.responses;
-		startedAt = Date.now();
-		statusMessage = 'Draft restored. Continue writing, then submit for rubric feedback.';
-		return true;
-	}
-
-	function saveDraft(): void {
-		if (!draftKey || typeof sessionStorage === 'undefined' || grade) return;
-		if (!question) return;
-		sessionStorage.setItem(draftKey, serializeFrqQuestionDraft(question, responses));
-		if (draftScopeKey && question) {
-			sessionStorage.setItem(draftScopeKey, serializeFrqLatestDraft(question, responses));
-		}
-	}
-
-	function clearDraft(): void {
-		if (typeof sessionStorage === 'undefined') return;
-		if (draftKey) sessionStorage.removeItem(draftKey);
-		if (draftScopeKey) {
-			const saved = sessionStorage.getItem(draftScopeKey);
-			const latest = parseFrqLatestDraft(saved, {
-				apClass: selectedClass,
-				unit: selectedUnit || undefined
-			});
-			if (!latest || latest.question.questionId === question?.questionId)
-				sessionStorage.removeItem(draftScopeKey);
-		}
-	}
-
-	function updateResponse(sectionId: string, value: string): void {
-		responses[sectionId] = value;
-		responses = { ...responses };
-		saveDraft();
-	}
-
-	async function loadQuestion(options: { isAutoWarmingRetry?: boolean } = {}): Promise<void> {
-		if (!selectedClass || isLoading) return;
-		clearWarmingRetryTimer();
-		loadGeneration += 1;
-		isLoading = true;
-		isGrading = false;
-		grade = null;
-		attemptId = '';
-		disagreementReported = false;
-		errorMessage = '';
-		if (!options.isAutoWarmingRetry) {
-			isPoolWarming = false;
-			poolWarmingAutoAttempts = 0;
-		}
-		statusMessage = options.isAutoWarmingRetry
-			? 'Checking whether written-response practice is ready…'
-			: 'Loading a written-response task…';
-		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const requestedPresetId = presetQuestionId.trim();
-			const presetId =
-				requestedPresetId && consumedPresetQuestionId !== requestedPresetId
-					? requestedPresetId
-					: '';
-			const result = presetId
-				? await requestFrqQuestionById(presetId)
-				: await requestFrqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
-			if (presetId) consumedPresetQuestionId = presetId;
-			if (result.exclusionsReset) {
-				seenQuestionIds = [];
-			}
-			question = result.question;
-			responses = restoreDraft(result.question);
-			startedAt = Date.now();
-			isPoolWarming = false;
-			poolWarmingAutoAttempts = 0;
-			statusMessage = 'Write your responses, then submit for rubric feedback.';
-			rememberQuestion(result.question.questionId);
-			capturePostHogEvent('frq_question_loaded', {
-				ap_class: selectedClass,
-				unit: selectedUnit,
-				question_id: result.question.questionId
-			});
-		} catch (error) {
-			if (error instanceof PoolWarmingError) {
-				question = null;
-				errorMessage = '';
-				isPoolWarming = true;
-				poolWarmingRetryAfterSeconds = error.retryAfterSeconds;
-				statusMessage =
-					error.message || 'This course unit is still warming up. Practice will be ready shortly.';
-				if (poolWarmingAutoAttempts < MAX_POOL_WARMING_AUTO_RETRIES) {
-					poolWarmingAutoAttempts += 1;
-					const delaySeconds = Math.max(1, error.retryAfterSeconds);
-					const generation = loadGeneration;
-					warmingRetryTimer = setTimeout(() => {
-						warmingRetryTimer = null;
-						if (generation !== loadGeneration) return;
-						void loadQuestion({ isAutoWarmingRetry: true });
-					}, delaySeconds * 1000);
-				}
-			} else {
-				isPoolWarming = false;
-				errorMessage =
-					error instanceof QuestionRequestError
-						? error.message
-						: error instanceof Error
-							? error.message
-							: 'Could not load written-response practice.';
-				statusMessage = '';
-			}
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	async function retryWarmingLoad(): Promise<void> {
-		poolWarmingAutoAttempts = 0;
-		await loadQuestion();
-	}
-
-	async function submit(): Promise<void> {
-		if (!question || !hasResponse || isGrading || grade) return;
-		isGrading = true;
-		errorMessage = '';
-		statusMessage = 'Grading your response against the course rubric…';
-		try {
-			const response = await apiFetch('/api/question/frq/grade', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					questionId: question.questionId,
-					submissionId: crypto.randomUUID(),
-					responses,
-					timeTakenMs: Date.now() - startedAt
-				})
-			});
-			const payload = await readJsonOrNull<GradeResponse>(response);
-			if (!response.ok || !payload?.attempt) {
-				throw new Error(getResponseMessage(payload, 'Could not grade your response.'));
-			}
-			grade = payload.attempt.grade;
-			attemptId = payload.attempt.id;
-			statusMessage = `Score: ${grade.pointsEarned}/${grade.pointsAvailable} points (${grade.percentage}%).`;
-			clearDraft();
-			onGraded?.(payload.attempt);
-		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Could not grade your response.';
-			statusMessage = '';
-		} finally {
-			isGrading = false;
-		}
-	}
-
-	async function nextQuestion(): Promise<void> {
-		if (!grade) clearDraft();
-		question = null;
-		responses = {};
-		grade = null;
-		attemptId = '';
-		disagreementReported = false;
-		await loadQuestion();
-	}
-
-	function handleSkip(): void {
-		if (onSkip) {
-			onSkip();
-			return;
-		}
-		void nextQuestion();
-	}
-
-	function reportDisagreement(): void {
-		if (disagreementReported || !question || !grade || !attemptId) return;
-		disagreementReported = true;
-		capturePostHogEvent('frq_grade_disagreement_reported', {
-			question_id: question.questionId,
-			attempt_id: attemptId,
-			ap_class: selectedClass,
-			unit: selectedUnit,
-			points_earned: grade.pointsEarned,
-			points_available: grade.pointsAvailable
-		});
-	}
-
-	let lastLoadedRequestVersion = 0;
-	$effect(() => {
-		const version = requestVersion;
-		if (version === 0 || version === lastLoadedRequestVersion) return;
-		lastLoadedRequestVersion = version;
-		if (!restoreLatestDraft()) void loadQuestion();
+	const core = createFrqCore({
+		getSelectedClass: () => selectedClass,
+		getSelectedUnit: () => selectedUnit,
+		getUnitRange: () => unitRange,
+		getRequestVersion: () => requestVersion,
+		getPresetQuestionId: () => presetQuestionId,
+		getMounted: () => mounted,
+		getOnGraded: () => onGraded,
+		getOnSkip: () => onSkip
 	});
 
 	$effect(() => {
-		return () => {
-			loadGeneration += 1;
-			clearWarmingRetryTimer();
-		};
+		core.syncRequestVersion();
+	});
+
+	onMount(() => {
+		mounted = true;
+	});
+
+	onDestroy(() => {
+		mounted = false;
+		core.destroy();
 	});
 </script>
 
-{#if isPoolWarming}
+{#if core.isPoolWarming}
 	<div class="space-y-4 rounded-2xl border border-border/70 bg-muted/20 p-6 text-center">
 		<p class="text-sm font-medium">Written-response practice is warming up</p>
 		<p class="text-sm text-muted-foreground">
-			{statusMessage ||
+			{core.statusMessage ||
 				'This course unit is still being prepared. Your class and unit selection are unchanged.'}
 		</p>
 		<p class="text-xs text-muted-foreground">
-			Typical wait about {poolWarmingRetryAfterSeconds}s
+			Typical wait about {core.poolWarmingRetryAfterSeconds}s
 		</p>
-		<Button onclick={() => void retryWarmingLoad()} disabled={isLoading}>
-			{isLoading ? 'Checking…' : 'Retry now'}
+		<Button onclick={() => void core.retryWarmingLoad()} disabled={core.isLoading}>
+			{core.isLoading ? 'Checking…' : 'Retry now'}
 		</Button>
 	</div>
-{:else if isLoading}
+{:else if core.isLoading}
 	<div class="rounded-2xl border border-border/70 p-8 text-center text-sm text-muted-foreground">
 		Loading written-response practice…
 	</div>
-{:else if errorMessage}
+{:else if core.errorMessage}
 	<div class="space-y-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-		<p class="text-sm text-destructive">{errorMessage}</p>
-		<Button onclick={() => void loadQuestion()}>Try again</Button>
+		<p class="text-sm text-destructive">{core.errorMessage}</p>
+		<Button onclick={() => void core.loadQuestion()}>Try again</Button>
 	</div>
-{:else if !question}
+{:else if core.showEmptyState}
 	<EmptyState
 		title="No prompt yet"
 		description="Select a course and unit, then start a written-response task."
 		imageUrl={lightbulbImage}
 	/>
-{:else}
+{:else if core.question}
+	{@const question = core.question}
 	<div class="space-y-5">
 		<div class="flex flex-wrap items-start justify-between gap-3">
 			<div>
@@ -352,7 +106,7 @@
 					{question.apClass} · {question.unit} · {question.totalPoints} points
 				</p>
 			</div>
-			<p class="text-sm text-muted-foreground">{statusMessage}</p>
+			<p class="text-sm text-muted-foreground">{core.statusMessage}</p>
 		</div>
 
 		<div class="rounded-2xl border border-border/70 bg-card p-5 shadow-sm sm:p-7">
@@ -376,78 +130,34 @@
 					</div>
 				{/if}
 
-				<div class="space-y-5">
-					{#each question.sections as section (section.id)}
-						<div class="space-y-2">
-							<div class="flex items-start justify-between gap-3">
-								<div class="flex min-w-0 items-start gap-2">
-									<span
-										class="flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold"
-									>
-										{section.label}
-									</span>
-									<RichText text={section.prompt} class="text-sm leading-6" />
-								</div>
-								<span class="shrink-0 text-xs text-muted-foreground">{section.maxPoints} pts</span>
-							</div>
-							<Textarea
-								value={responses[section.id] ?? ''}
-								disabled={Boolean(grade) || isGrading}
-								oninput={(event) =>
-									updateResponse(section.id, (event.currentTarget as HTMLTextAreaElement).value)}
-								placeholder="Write your response here…"
-								class="min-h-32 resize-y text-sm leading-6"
-							/>
-						</div>
-					{/each}
-				</div>
+				<FrqResponse
+					{question}
+					responses={core.responses}
+					disabled={Boolean(core.grade) || core.isGrading}
+					onUpdate={core.updateResponse}
+				/>
 
 				<div class="flex flex-wrap justify-end gap-2 border-t border-border/70 pt-5">
-					<Button variant="outline" onclick={handleSkip} disabled={isGrading}>Skip</Button>
-					{#if grade}
+					<Button variant="outline" onclick={core.skip} disabled={core.isGrading}>Skip</Button>
+					{#if core.grade}
 						{#if skipAfterGrade}
-							<Button onclick={() => void nextQuestion()}>Next question</Button>
+							<Button onclick={() => void core.nextQuestion()}>Next question</Button>
 						{/if}
 					{:else}
-						<Button onclick={() => void submit()} disabled={!hasResponse || isGrading}>
-							{isGrading ? 'Grading…' : 'Submit for feedback'}
+						<Button onclick={() => void core.submit()} disabled={!core.hasResponse || core.isGrading}>
+							{core.isGrading ? 'Grading…' : 'Submit for feedback'}
 						</Button>
 					{/if}
 				</div>
 			</div>
 		</div>
 
-		{#if grade}
-			<div class="space-y-4 rounded-2xl border border-border/70 bg-muted/20 p-5 sm:p-7">
-				<div>
-					<p class="text-2xl font-semibold tabular-nums">
-						{grade.pointsEarned}/{grade.pointsAvailable}
-					</p>
-					<p class="text-sm text-muted-foreground">{grade.overallFeedback}</p>
-					<Button
-						variant="ghost"
-						size="sm"
-						class="mt-2 px-0 text-muted-foreground hover:text-foreground"
-						onclick={reportDisagreement}
-						disabled={disagreementReported}
-					>
-						{disagreementReported ? 'Score feedback recorded' : 'This score seems off'}
-					</Button>
-				</div>
-				<div class="space-y-3">
-					{#each grade.criteria as criterion (criterion.criterionId)}
-						<div class="rounded-xl border border-border/70 bg-background p-4">
-							<div class="flex flex-wrap items-center justify-between gap-2">
-								<p class="text-sm font-medium">{criterion.label}</p>
-								<p class="text-sm font-semibold tabular-nums">
-									{criterion.points}/{criterion.pointsAvailable}
-								</p>
-							</div>
-							<p class="mt-1 text-sm leading-6 text-muted-foreground">{criterion.feedback}</p>
-						</div>
-					{/each}
-				</div>
-			</div>
+		{#if core.grade}
+			<FrqFeedback
+				grade={core.grade}
+				disagreementReported={core.disagreementReported}
+				onReportDisagreement={core.reportDisagreement}
+			/>
 		{/if}
 
 		{#key question.questionId}
@@ -458,7 +168,7 @@
 						unit={question.unit}
 						questionId={question.questionId}
 						frqQuestionId={question.questionId}
-						frqAttemptId={attemptId}
+						frqAttemptId={core.attemptId}
 						topic={question.formatId}
 						{showFirstUseHint}
 					/>
@@ -468,7 +178,7 @@
 						unit={question.unit}
 						questionId={question.questionId}
 						frqQuestionId={question.questionId}
-						frqAttemptId={attemptId}
+						frqAttemptId={core.attemptId}
 						topic={question.formatId}
 						{isPersonalizedTutor}
 						{showFirstUseHint}

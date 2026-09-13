@@ -1,14 +1,16 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type {
 		AddTextAnnotationInput,
 		ExamNavItem,
-		GeneratedQuestion,
 		TextAnnotation
 	} from '$lib/question-bank/mcq/types';
+	import type { PresentedStem } from '$lib/components/questions/presented-question.js';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte.js';
 	import AnnotatableRichText from '$lib/components/questions/annotatable-rich-text.svelte';
 	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
+	import RichText from '$lib/components/content/rich-text.svelte';
 	import { portalToBody } from '$lib/components/questions/portal-to-body.svelte.js';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -25,7 +27,7 @@
 	import XIcon from '@tabler/icons-svelte/icons/x';
 
 	interface FullQuestionProps {
-		question: GeneratedQuestion;
+		stem: PresentedStem;
 		questionNumber: string | number;
 		totalQuestions?: number;
 		title?: string;
@@ -51,6 +53,9 @@
 		reviewTitle?: string;
 		submitDisabled?: boolean;
 		class?: string;
+		response?: Snippet;
+		tools?: Snippet;
+		actions?: Snippet;
 		onSelect?: (optionId: string | null) => void;
 		onToggleFlag?: () => void;
 		onToggleStrike?: (optionId: string) => void;
@@ -69,7 +74,7 @@
 	const FIVE_MIN_MS = 5 * 60 * 1000;
 
 	let {
-		question,
+		stem,
 		questionNumber,
 		totalQuestions,
 		title,
@@ -80,7 +85,7 @@
 		stimulusScrollTop = 0,
 		onStimulusScroll,
 		remainingMs = null,
-		elapsedMs = 0,
+		elapsedMs,
 		navItems,
 		isLastQuestion = false,
 		nextDisabled = false,
@@ -95,6 +100,9 @@
 		reviewTitle,
 		submitDisabled = false,
 		class: className = '',
+		response,
+		tools,
+		actions,
 		onSelect,
 		onToggleFlag,
 		onToggleStrike,
@@ -115,10 +123,14 @@
 	let stimulusScrollNode = $state<HTMLElement | null>(null);
 	const isMobile = new IsMobile();
 	const isReviewStage = $derived(stage === 'review');
+	const usesCustomResponse = $derived(Boolean(response));
 	const showSplit = $derived(
 		!isReviewStage &&
 			!isMobile.current &&
-			Boolean(question.hasStimulus && (question.leftPanel || question.diagramSpec))
+			Boolean(
+				stem.hasStimulus &&
+					(stem.leftPanel || (stem.materials?.length ?? 0) > 0 || stem.diagramSpec)
+			)
 	);
 	const displayNumber = $derived(Number(questionNumber));
 	const currentIndex = $derived(
@@ -134,12 +146,14 @@
 	const timerMs = $derived(remainingMs != null ? remainingMs : (elapsedMs ?? 0));
 	const timerUrgent = $derived(remainingMs != null && remainingMs <= FIVE_MIN_MS);
 	const timerLabel = $derived(formatTimer(timerMs));
-	const hasTimer = $derived(remainingMs != null || Boolean(elapsedMs));
-	const showCheckAction = $derived(Boolean(onCheck) && !hasCheckedAnswer);
+	const hasTimer = $derived(remainingMs != null || elapsedMs != null);
+	const showCheckAction = $derived(Boolean(onCheck) && !hasCheckedAnswer && !usesCustomResponse);
+	const showFooterNav = $derived(Boolean(onNext || onPrev || (isReviewStage && onSubmit)));
 	const nextLabel = $derived(nextActionLabel ?? (isLastQuestion ? 'Review' : 'Next'));
 	const reviewHeading = $derived(reviewTitle ?? title ?? 'Review your answers');
-	const canUseEliminator = $derived(Boolean(onToggleStrike) && !hasCheckedAnswer);
+	const canUseEliminator = $derived(Boolean(onToggleStrike) && !hasCheckedAnswer && !usesCustomResponse);
 	const canAnnotate = $derived(Boolean(onAddTextAnnotation) && !hasCheckedAnswer);
+	const showQuestionChrome = $derived(Boolean(onToggleFlag) || canUseEliminator);
 
 	$effect(() => {
 		if (stimulusScrollNode) stimulusScrollNode.scrollTop = stimulusScrollTop;
@@ -236,9 +250,9 @@
 </script>
 
 {#snippet stimulusContent()}
-	{#if question.leftPanel}
+	{#if stem.leftPanel}
 		<div class="space-y-4 font-serif text-[0.925rem] leading-7 text-foreground/80">
-			{#each question.leftPanel.content as paragraph, i (i)}
+			{#each stem.leftPanel.content as paragraph, i (i)}
 				<AnnotatableRichText
 					text={paragraph}
 					blocks
@@ -252,13 +266,30 @@
 			{/each}
 		</div>
 	{/if}
+	{#if stem.materials?.length}
+		<div
+			class={cn(
+				'space-y-4 font-serif text-[0.925rem] leading-7 text-foreground/80',
+				stem.leftPanel && 'mt-4'
+			)}
+		>
+			{#each stem.materials as material (material.id)}
+				<div class="space-y-1">
+					{#if material.title}
+						<p class="font-medium text-foreground">{material.title}</p>
+					{/if}
+					<RichText text={material.content} blocks class="max-w-none" />
+				</div>
+			{/each}
+		</div>
+	{/if}
 {/snippet}
 
 {#snippet stimulusPane()}
 	{@render stimulusContent()}
-	{#if question.diagramSpec}
+	{#if stem.diagramSpec}
 		<div class="mt-4">
-			<ExamfigDiagram spec={question.diagramSpec} />
+			<ExamfigDiagram spec={stem.diagramSpec} />
 		</div>
 	{/if}
 {/snippet}
@@ -305,15 +336,26 @@
 {/snippet}
 
 {#snippet questionPane()}
-	{@render questionChrome()}
+	{#if showQuestionChrome}
+		{@render questionChrome()}
+	{:else}
+		<div class="mb-2">
+			<span
+				class="inline-flex h-8 min-w-8 items-center justify-center rounded-sm bg-foreground font-sans text-xs font-semibold text-background tabular-nums"
+				aria-hidden="true"
+			>
+				{questionNumber}
+			</span>
+		</div>
+	{/if}
 
 	<div class="mt-4 space-y-4">
-		{#if !showSplit && question.leftPanel}
+		{#if !showSplit && (stem.leftPanel || (stem.materials?.length ?? 0) > 0)}
 			{@render stimulusContent()}
 		{/if}
-		{#if question.rightPanel}
+		{#if stem.rightPanel}
 			<div class="space-y-3 font-serif text-[0.925rem] leading-7 text-foreground/80">
-				{#each question.rightPanel.content as paragraph, i (i)}
+				{#each stem.rightPanel.content as paragraph, i (i)}
 					<AnnotatableRichText
 						text={paragraph}
 						blocks
@@ -326,10 +368,10 @@
 					/>
 				{/each}
 			</div>
-		{:else if question.prompt}
+		{:else if stem.prompt}
 			<div class="font-serif text-[0.925rem] leading-7 text-foreground/80">
 				<AnnotatableRichText
-					text={question.prompt}
+					text={stem.prompt}
 					blocks
 					target={{ kind: 'prompt', paragraphIndex: 0 }}
 					annotations={textAnnotations}
@@ -341,32 +383,42 @@
 			</div>
 		{/if}
 
-		{#if question.diagramSpec && !showSplit}
-			<ExamfigDiagram spec={question.diagramSpec} />
+		{#if stem.diagramSpec && !showSplit}
+			<ExamfigDiagram spec={stem.diagramSpec} />
 		{/if}
 	</div>
 
-	<div class="mt-8">
-		<McqAnswerChoices
-			variant="exam"
-			options={question.options}
-			{selectedOption}
-			{struckOptionIds}
-			{textAnnotations}
-			{onAddTextAnnotation}
-			{onRemoveTextAnnotation}
-			annotationsDisabled={!canAnnotate}
-			{hasCheckedAnswer}
-			{checkedSelection}
-			{correctAnswer}
-			{showFeedback}
-			{eliminatorActive}
-			onSelect={(id) => onSelect?.(id)}
-			{onToggleStrike}
-		/>
-	</div>
+	{#if response}
+		<div class="mt-8">
+			{@render response()}
+		</div>
+	{:else if stem.options}
+		<div class="mt-8">
+			<McqAnswerChoices
+				variant="exam"
+				options={stem.options}
+				{selectedOption}
+				{struckOptionIds}
+				{textAnnotations}
+				{onAddTextAnnotation}
+				{onRemoveTextAnnotation}
+				annotationsDisabled={!canAnnotate}
+				{hasCheckedAnswer}
+				{checkedSelection}
+				{correctAnswer}
+				{showFeedback}
+				{eliminatorActive}
+				onSelect={(id) => onSelect?.(id)}
+				{onToggleStrike}
+			/>
+		</div>
+	{/if}
 
-	{#if showCheckAction}
+	{#if actions}
+		<div class="mt-4 flex justify-end">
+			{@render actions()}
+		</div>
+	{:else if showCheckAction}
 		<div class="mt-4 flex justify-end">
 			<Button
 				variant="secondary"
@@ -378,6 +430,12 @@
 				<CheckIcon class="size-3.5" />
 				{checkLabel}
 			</Button>
+		</div>
+	{/if}
+
+	{#if tools}
+		<div class="mt-6">
+			{@render tools()}
 		</div>
 	{/if}
 {/snippet}
@@ -463,7 +521,7 @@
 	<div
 		{@attach portalToBody()}
 		{@attach trapFocus}
-		{@attach focusQuestionOnChange(question.questionId ?? question.prompt)}
+		{@attach focusQuestionOnChange(stem.questionId ?? stem.prompt)}
 		class={cn(
 			'fixed inset-0 z-40 flex h-dvh w-screen flex-col bg-background text-foreground',
 			className
@@ -597,39 +655,43 @@
 							{/if}
 						</Popover.Content>
 					</Popover.Root>
-				{:else}
+				{:else if progressLabel}
 					<span class="text-sm text-muted-foreground tabular-nums">
 						{isReviewStage ? 'Review' : progressLabel}
 					</span>
 				{/if}
 			</div>
 
-			<div class="relative z-10 flex items-center gap-2">
-				{#if isReviewStage}
-					<Button
-						variant="default"
-						size="sm"
-						disabled={submitDisabled || !onSubmit}
-						onclick={() => onSubmit?.()}
-					>
-						Submit quiz
-					</Button>
-				{:else}
-					{#if onPrev}
-						<Button variant="default" size="sm" disabled={prevDisabled} onclick={() => onPrev?.()}>
-							Back
+			{#if showFooterNav}
+				<div class="relative z-10 flex items-center gap-2">
+					{#if isReviewStage}
+						<Button
+							variant="default"
+							size="sm"
+							disabled={submitDisabled || !onSubmit}
+							onclick={() => onSubmit?.()}
+						>
+							Submit quiz
 						</Button>
+					{:else}
+						{#if onPrev}
+							<Button variant="default" size="sm" disabled={prevDisabled} onclick={() => onPrev?.()}>
+								Back
+							</Button>
+						{/if}
+						{#if onNext}
+							<Button
+								variant="default"
+								size="sm"
+								disabled={nextDisabled}
+								onclick={() => onNext?.()}
+							>
+								{nextLabel}
+							</Button>
+						{/if}
 					{/if}
-					<Button
-						variant="default"
-						size="sm"
-						disabled={nextDisabled || !onNext}
-						onclick={() => onNext?.()}
-					>
-						{nextLabel}
-					</Button>
-				{/if}
-			</div>
+				</div>
+			{/if}
 		</footer>
 	</div>
 </Tooltip.Provider>

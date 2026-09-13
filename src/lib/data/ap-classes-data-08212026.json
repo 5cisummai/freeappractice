@@ -1335,7 +1335,7 @@
 				"Use recent-topic diversity when available.",
 				"Persist course and unit metadata with the question."
 			],
-			"appSupportedCourses": ["AP Biology", "AP Calculus AB", "AP English Language"]
+			"appSupportedCourses": ["AP English Language"]
 		}
 	},
 	"courses": [
@@ -1350,8 +1350,8 @@
 						"enabled": true
 					},
 					"frq": {
-						"enabled": true,
-						"profileId": "ap-biology-frq-profile"
+						"enabled": false,
+						"profileId": null
 					},
 					"classPageId": "ap-biology"
 				}
@@ -1454,20 +1454,8 @@
 					"biologySpecialCalibration": true
 				},
 				"frq": {
-					"enabled": true,
-					"formatId": "scientific-analysis",
-					"supportedFormats": ["materials", "multi-section", "text"],
-					"generationConstraints": {
-						"minSections": 1,
-						"maxSections": 12,
-						"maxMaterials": 12
-					},
-					"scoringMechanics": "criterion-level-rubric",
-					"allowedResponseTypes": ["text"],
-					"profileVersion": "biology-v1",
-					"rubricVersion": "biology-rubric-v1",
-					"generationGuidance": "Create an original data-rich scientific analysis task focused on causal reasoning, evidence interpretation, and experimental or quantitative justification. Use text, Markdown tables, and LaTeX only.",
-					"gradingGuidance": "Award points only for biologically correct claims connected to evidence or mechanisms; definitions alone do not earn application or reasoning points."
+					"enabled": false,
+					"unsupportedByAppReason": "No course profile is defined in src/lib/question-bank/frq/profiles.server.ts."
 				}
 			},
 			"units": [
@@ -1553,7 +1541,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -1642,7 +1630,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -1729,7 +1717,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -1816,7 +1804,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -1905,7 +1893,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -1992,7 +1980,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -2081,7 +2069,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -2168,7 +2156,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-biology"]
 						}
 					}
@@ -6565,8 +6553,8 @@
 						"enabled": true
 					},
 					"frq": {
-						"enabled": true,
-						"profileId": "ap-calculus-ab-frq-profile"
+						"enabled": false,
+						"profileId": null
 					},
 					"classPageId": "ap-calculus-ab"
 				}
@@ -6685,20 +6673,8 @@
 					"biologySpecialCalibration": false
 				},
 				"frq": {
-					"enabled": true,
-					"formatId": "calculus-worked-response",
-					"supportedFormats": ["materials", "multi-section", "text"],
-					"generationConstraints": {
-						"minSections": 1,
-						"maxSections": 12,
-						"maxMaterials": 12
-					},
-					"scoringMechanics": "criterion-level-rubric",
-					"allowedResponseTypes": ["text"],
-					"profileVersion": "calculus-ab-v1",
-					"rubricVersion": "calculus-ab-rubric-v1",
-					"generationGuidance": "Create an original multi-part calculus task that rewards setup, mathematical reasoning, and interpretation separately. Use LaTeX and text only; do not require a hand-drawn graph.",
-					"gradingGuidance": "Award method and setup credit independently from arithmetic accuracy when the rubric allows it; require mathematical justification when a conclusion depends on a theorem or sign analysis."
+					"enabled": false,
+					"unsupportedByAppReason": "No course profile is defined in src/lib/question-bank/frq/profiles.server.ts."
 				}
 			},
 			"units": [
@@ -6800,7 +6776,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -6903,7 +6879,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -7008,7 +6984,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -7111,7 +7087,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -7212,7 +7188,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -7301,7 +7277,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -7390,7 +7366,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}
@@ -7479,7 +7455,7 @@
 						},
 						"frq": {
 							"officiallyAssessed": true,
-							"appEnabled": true,
+							"appEnabled": false,
 							"sourceIds": ["app-frq-profiles", "cb-exam-ap-calculus-ab"]
 						}
 					}

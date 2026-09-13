@@ -2,7 +2,6 @@
 	import { untrack } from 'svelte';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
 	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
-	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import type { AnswerResult, TutorMode } from '$lib/question-bank/mcq/types';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
 	import type { SharedQuizView } from '$lib/shared-practice/types';
@@ -13,7 +12,7 @@
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
 
-	export type PracticeMode = 'unlimited' | 'graded';
+	export type PracticeMode = 'unlimited' | 'graded' | 'frq';
 	export type PracticeInitialState = {
 		selectedClass?: string;
 		selectedUnit?: string;
@@ -56,50 +55,111 @@
 		onEvent
 	}: PracticeRunnerProps = $props();
 
-	let selectedClass = $state(untrack(() => initial.selectedClass ?? ''));
-	let selectedUnit = $state(untrack(() => initial.selectedUnit ?? ''));
-	let unitRange = $state<number[] | undefined>(untrack(() => initial.unitRange));
+	const startingSelection = untrack(() => {
+		const initialFrqCourses = capabilities.frqCourses ?? [];
+		const startFrq = !quiz.sharedQuiz && initial.mode === 'frq' && initialFrqCourses.length > 0;
+		let nextClass = initial.selectedClass ?? '';
+		let nextUnit = initial.selectedUnit ?? '';
+		let nextRange = initial.unitRange;
+		if (startFrq && nextClass && !initialFrqCourses.includes(nextClass)) {
+			nextClass = '';
+			nextUnit = '';
+			nextRange = undefined;
+		}
+		const nextPracticeMode: PracticeMode = quiz.sharedQuiz
+			? 'graded'
+			: startFrq
+				? 'frq'
+				: 'unlimited';
+		return {
+			selectedClass: nextClass,
+			selectedUnit: nextUnit,
+			unitRange: nextRange,
+			practiceMode: nextPracticeMode
+		};
+	});
+
+	let selectedClass = $state(startingSelection.selectedClass);
+	let selectedUnit = $state(startingSelection.selectedUnit);
+	let unitRange = $state<number[] | undefined>(startingSelection.unitRange);
 	let requestVersion = $state(untrack(() => initial.requestVersion ?? 0));
 	let quizRequestVersion = $state(0);
 	let quizGenerating = $state(false);
 	let presetQuestionId = $state(untrack(() => initial.presetQuestionId ?? ''));
-	let mode = $state<'mcq' | 'frq'>(untrack(() => initial.mode ?? 'mcq'));
 	let count = $state(untrack(() => Math.min(50, Math.max(1, quiz.count ?? 10))));
-	let practiceMode = $state<PracticeMode>(
-		untrack(() => (quiz.sharedQuiz ? 'graded' : 'unlimited'))
-	);
+	let practiceMode = $state<PracticeMode>(startingSelection.practiceMode);
 	let expandedSelectorOpen = $state(false);
 	let cardExpanded = $state(false);
-	const loadFrqCard = createLazyComponentLoader(
-		() => import('$lib/components/questions/frq-card.svelte')
-	);
 	const loadQuizSession = createLazyComponentLoader(
 		() => import('$lib/components/practice/quiz-session.svelte')
+	);
+	const loadFrqSession = createLazyComponentLoader(
+		() => import('$lib/components/practice/frq-session.svelte')
 	);
 
 	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);
 	const persistQuizHistory = $derived(quiz.persistHistory ?? true);
-	const allowFrq = $derived(capabilities.frqCourses?.includes(selectedClass) ?? false);
+	const frqCourses = $derived(capabilities.frqCourses ?? []);
+	const frqTabEnabled = $derived(frqCourses.length > 0);
 	const tutorMode = $derived(capabilities.tutorMode ?? 'free');
 	const showFirstUseHints = $derived(capabilities.showFirstUseHints ?? false);
+	const mode = $derived<'mcq' | 'frq'>(practiceMode === 'frq' ? 'frq' : 'mcq');
 	const modeSwitcherAlignment = $derived(presentation === 'hero' ? 'center' : 'left');
+	const tabsListClass = $derived(
+		cn(
+			'h-auto w-full gap-1',
+			frqTabEnabled ? 'max-w-xl' : 'max-w-md',
+			modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
+		)
+	);
 
 	const activeQuizMode = $derived(Boolean(sharedQuiz) || practiceMode === 'graded');
-	const showUnlimitedFrq = $derived(!activeQuizMode && mode === 'frq' && allowFrq);
-	const showUnlimitedMcq = $derived(!activeQuizMode && !showUnlimitedFrq);
+	const showUnlimitedMcq = $derived(!activeQuizMode && practiceMode === 'unlimited');
 
-	function changeMode(nextMode: 'mcq' | 'frq'): void {
-		mode = nextMode;
-		requestVersion = 0;
-		onEvent?.({ type: 'mode-change', mode: nextMode });
+	function parsePracticeMode(next: string | undefined): PracticeMode {
+		switch (next) {
+			case 'graded':
+				return 'graded';
+			case 'frq':
+				return frqTabEnabled ? 'frq' : 'unlimited';
+			case 'unlimited':
+				return 'unlimited';
+			default:
+				return 'unlimited';
+		}
 	}
 
 	function setPracticeMode(next: string | undefined): void {
-		const nextMode = next === 'graded' ? 'graded' : 'unlimited';
+		const previous = practiceMode;
+		const nextMode = parsePracticeMode(next);
 		practiceMode = nextMode;
-		if (nextMode === 'graded') {
-			cardExpanded = false;
-			expandedSelectorOpen = false;
+
+		switch (nextMode) {
+			case 'unlimited':
+				break;
+			case 'graded':
+			case 'frq':
+				cardExpanded = false;
+				expandedSelectorOpen = false;
+				break;
+			default: {
+				const _exhaustive: never = nextMode;
+				return _exhaustive;
+			}
+		}
+
+		if (nextMode === 'frq' && selectedClass && !frqCourses.includes(selectedClass)) {
+			selectedClass = '';
+			selectedUnit = '';
+			unitRange = undefined;
+			onEvent?.({ type: 'selection-change', selectedClass: '', selectedUnit: '' });
+		}
+
+		const previousQuestionMode = previous === 'frq' ? 'frq' : 'mcq';
+		const nextQuestionMode = nextMode === 'frq' ? 'frq' : 'mcq';
+		if (nextQuestionMode !== previousQuestionMode) {
+			requestVersion = 0;
+			onEvent?.({ type: 'mode-change', mode: nextQuestionMode });
 		}
 	}
 
@@ -119,6 +179,14 @@
 	function handleQuizExit(): void {
 		if (!sharedQuiz) quizRequestVersion = 0;
 		onEvent?.({ type: 'quiz-exit' });
+	}
+
+	function handleFrqExit(): void {
+		requestVersion = 0;
+	}
+
+	function handleFrqGraded(attempt: FrqAttemptView): void {
+		onEvent?.({ type: 'frq-graded', attempt });
 	}
 
 	function handleGenerate(): void {
@@ -141,43 +209,20 @@
 					bind:value={() => practiceMode, (value) => setPracticeMode(value)}
 					class="mb-4 w-full"
 				>
-					<Tabs.List
-						aria-label="Practice modes"
-						class={cn(
-							'h-auto w-full max-w-md gap-1',
-							modeSwitcherAlignment === 'center' ? 'mx-auto justify-center' : 'justify-start'
-						)}
-					>
-						<Tabs.Trigger value="unlimited">Unlimited practice</Tabs.Trigger>
-						<Tabs.Trigger value="graded">Graded quizzes</Tabs.Trigger>
+					<Tabs.List aria-label="Practice modes" class={tabsListClass}>
+						<Tabs.Trigger value="unlimited">Unlimited MCQ</Tabs.Trigger>
+						<Tabs.Trigger value="graded">Graded Quizzes</Tabs.Trigger>
+						{#if frqTabEnabled}
+							<Tabs.Trigger value="frq">Free Response</Tabs.Trigger>
+						{/if}
 					</Tabs.List>
 				</Tabs.Root>
-
-				<div class="flex items-center justify-between gap-3">
-					{#if allowFrq && !activeQuizMode}
-						<div class="flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
-							<button
-								type="button"
-								class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'mcq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-								onclick={() => changeMode('mcq')}
-							>
-								Multiple choice
-							</button>
-							<button
-								type="button"
-								class={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${mode === 'frq' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-								onclick={() => changeMode('frq')}
-							>
-								Written response
-							</button>
-						</div>
-					{/if}
-				</div>
 
 				<QuestionSelector
 					bind:selectedClass
 					bind:selectedUnit
 					bind:unitRange
+					allowedClassNames={practiceMode === 'frq' ? frqCourses : undefined}
 					showFirstUseHint={showFirstUseHints}
 					quizMode={activeQuizMode}
 					bind:count
@@ -206,29 +251,6 @@
 	{/if}
 
 	<div class="mx-auto min-h-40 max-w-6xl">
-		{#if showUnlimitedFrq}
-			<div>
-				<LazyComponent
-					load={loadFrqCard}
-					pending="Loading written response…"
-					error="Written-response practice could not be loaded."
-				>
-					{#snippet children(FrqCard)}
-						<FrqCard
-							{selectedClass}
-							{selectedUnit}
-							{unitRange}
-							{requestVersion}
-							{presetQuestionId}
-							showFirstUseHint={showFirstUseHints}
-							{tutorMode}
-							onGraded={(attempt) => onEvent?.({ type: 'frq-graded', attempt })}
-						/>
-					{/snippet}
-				</LazyComponent>
-			</div>
-		{/if}
-
 		{#if activeQuizMode}
 			{#key `quiz:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}:${sharedQuiz?.slug ?? ''}`}
 				<LazyComponent
@@ -272,12 +294,28 @@
 					onAnswered={(result) => onEvent?.({ type: 'answered', result })}
 				/>
 			{/key}
-		{:else}
-			<EmptyState
-				title="Ready When You Are"
-				description="Select a course and unit, then start practicing."
-				imageUrl="/illustrations/lightbulb.png"
-			/>
+		{:else if practiceMode === 'frq'}
+			{#key `frq:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
+				<LazyComponent
+					load={loadFrqSession}
+					pending="Loading free response…"
+					error="Free response could not be loaded."
+				>
+					{#snippet children(FrqSession)}
+						<FrqSession
+							{selectedClass}
+							{selectedUnit}
+							{unitRange}
+							{requestVersion}
+							{presetQuestionId}
+							{tutorMode}
+							showFirstUseHint={showFirstUseHints}
+							onGraded={handleFrqGraded}
+							onExit={handleFrqExit}
+						/>
+					{/snippet}
+				</LazyComponent>
+			{/key}
 		{/if}
 	</div>
 </div>
