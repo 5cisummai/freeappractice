@@ -17,8 +17,6 @@ const mocks = vi.hoisted(() => ({
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	authorizeFeatureRequest: vi.fn(),
-	studyPlanGet: vi.fn(),
-	studyPlanPost: vi.fn(),
 	coachApprovalPost: vi.fn(),
 	coachUndoPost: vi.fn()
 }));
@@ -46,10 +44,6 @@ vi.mock('$lib/flags', () => ({
 vi.mock('$lib/super/feature-access.server', () => ({
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
-}));
-vi.mock('../../../src/routes/api/study-plan/+server', () => ({
-	GET: mocks.studyPlanGet,
-	POST: mocks.studyPlanPost
 }));
 vi.mock('../../../src/routes/api/coach/approval/+server', () => ({
 	POST: mocks.coachApprovalPost
@@ -79,10 +73,6 @@ import {
 	DELETE as meMemoriesDelete
 } from '../../../src/routes/api/me/tutor-memories/+server';
 import { DELETE as meMemoryIdDelete } from '../../../src/routes/api/me/tutor-memories/[memoryId]/+server';
-import {
-	GET as meStudyPlanGet,
-	PATCH as meStudyPlanPatch
-} from '../../../src/routes/api/me/study-plan/+server';
 import { POST as coachAuthorizePost } from '../../../src/routes/api/coach/session/authorize/+server';
 import { POST as coachActionUndoPost } from '../../../src/routes/api/coach/actions/[id]/undo/+server';
 
@@ -134,8 +124,6 @@ describe('Super API routes', () => {
 		expect(meMemoriesGet).toBe(memoryGet);
 		expect(meMemoriesDelete).toBe(memoryDelete);
 		expect(meMemoryIdDelete).toBe(memoryIdDelete);
-		expect(meStudyPlanGet).toBe(mocks.studyPlanGet);
-		expect(meStudyPlanPatch).toBe(mocks.studyPlanPost);
 		expect(coachAuthorizePost).toBe(mocks.coachApprovalPost);
 	});
 

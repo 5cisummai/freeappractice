@@ -8,7 +8,6 @@
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 	import { toast } from 'svelte-sonner';
@@ -31,7 +30,6 @@
 		frqAttemptId?: string;
 		topic?: string;
 		showFirstUseHint?: boolean;
-		isPersonalizedTutor?: boolean;
 		embedded?: boolean;
 	};
 
@@ -43,7 +41,6 @@
 		frqAttemptId = '',
 		topic = '',
 		showFirstUseHint = false,
-		isPersonalizedTutor = false,
 		embedded = false
 	}: TutorWidgetProps = $props();
 
@@ -423,14 +420,6 @@
 {#snippet chatBody()}
 	<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
 		<div class="flex items-center gap-2">
-			{#if isPersonalizedTutor}
-				<Badge
-					variant="outline"
-					class="gap-1 border-violet-300/50 super-tier-gradient px-2 py-0.5 text-[0.65rem] shadow-sm shadow-violet-500/10"
-				>
-					Personalized
-				</Badge>
-			{/if}
 			<SparklesIcon class="h-4 w-4" />
 			<span id="{uid}-title" class="text-sm font-semibold">AI Tutor</span>
 		</div>
@@ -562,10 +551,7 @@
 				}
 			}}
 			class={[
-				'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full select-none',
-				isPersonalizedTutor
-					? 'super-tier-gradient-fab'
-					: 'bg-primary text-primary-foreground shadow-lg transition-shadow hover:shadow-xl'
+				'fixed z-60 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-shadow select-none hover:shadow-xl'
 			]}
 			style="left: {btnX}px; top: {btnY}px; cursor: {isDragging ? 'grabbing' : 'grab'};"
 			aria-label={isOpen ? 'Close AI Tutor' : 'Open AI Tutor'}

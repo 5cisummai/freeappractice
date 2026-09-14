@@ -21,13 +21,12 @@
 	import { measureLongQuestion } from '$lib/components/questions/question-card-dom';
 	import { portalToBody } from '$lib/components/questions/portal-to-body.svelte.js';
 	import { createQuestionCore } from '$lib/components/questions/question-core.svelte.js';
+	import QuestionTutor from '$lib/components/questions/question-tutor.svelte';
 	import type { BugReportContext, QuestionCardProps } from '$lib/question-bank/mcq/types';
 	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
 	import ArrowsMaximizeIcon from '@tabler/icons-svelte/icons/arrows-maximize';
 	import ArrowsMinimizeIcon from '@tabler/icons-svelte/icons/arrows-minimize';
 	import StrikethroughIcon from '@tabler/icons-svelte/icons/strikethrough';
-	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
-	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte.js';
 
@@ -52,8 +51,7 @@
 		showExplanationLabel = 'Show Explanation',
 		showUtilityActions = true,
 		showFirstUseHint = false,
-		isPersonalizedTutor = false,
-		tutorMode = isPersonalizedTutor ? 'personalized' : 'free',
+		tutorMode = 'free',
 		skipLabel = 'Skip',
 		notLearnedLabel = "I haven't learned this yet",
 		reportBugLabel = 'Report a bug',
@@ -590,24 +588,14 @@
 
 	{#if core.currentQuestion && !quizMode && !expanded && tutorMode !== 'hidden'}
 		{#key core.currentQuestion.questionId ?? core.currentQuestion.prompt}
-			{#if tutorMode === 'personalized'}
-				<SuperTutorWidget
-					apClass={selectedClass}
-					unit={tutorUnitLabel}
-					questionId={core.currentQuestion.questionId}
-					topic={core.currentQuestion.topic}
-					{showFirstUseHint}
-				/>
-			{:else}
-				<TutorWidget
-					apClass={selectedClass}
-					unit={tutorUnitLabel}
-					questionId={core.currentQuestion.questionId}
-					topic={core.currentQuestion.topic}
-					{isPersonalizedTutor}
-					{showFirstUseHint}
-				/>
-			{/if}
+			<QuestionTutor
+				{tutorMode}
+				apClass={selectedClass}
+				unit={tutorUnitLabel}
+				questionId={core.currentQuestion.questionId}
+				topic={core.currentQuestion.topic}
+				{showFirstUseHint}
+			/>
 		{/key}
 	{/if}
 

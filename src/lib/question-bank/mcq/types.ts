@@ -248,7 +248,6 @@ export type QuestionCardProps = {
 	showUtilityActions?: boolean;
 	showFirstUseHint?: boolean;
 	tutorMode?: TutorMode;
-	isPersonalizedTutor?: boolean;
 	skipLabel?: string;
 	notLearnedLabel?: string;
 	reportBugLabel?: string;

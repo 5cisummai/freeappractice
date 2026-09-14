@@ -14,7 +14,7 @@ flowchart TB
         AuthUI["Auth pages<br/>/login, /signup, /verify-email,<br/>/forgot-password, /reset-password"]
         PracticeSEO["SEO practice landings<br/>/practice/[...slug]"]
         AppUI["Authenticated app /app/*<br/>dashboard · practice · progress<br/>history · resources · settings"]
-        Components["Feature UI under $lib/components<br/>PracticeShell · QuestionCard · FrqCard<br/>Tutor · Sidebar · Data tables"]
+        Components["Feature UI under $lib/components<br/>PracticeShell · QuestionCard · FrqSession<br/>Tutor · Sidebar · Data tables"]
     end
 
     subgraph Vercel["SvelteKit on Vercel"]
@@ -201,7 +201,7 @@ flowchart TD
     RefillReq --> Worker
     Worker --> NeonInsert["Generate or import<br/>then insert active Neon row"]
 
-    Return --> UI["QuestionCard or FrqCard"]
+    Return --> UI["QuestionCard or FrqSession"]
     UI --> Attempt["User answers"]
     Attempt --> Record["MCQ: POST /api/me/record-attempt<br/>FRQ: POST /api/question/frq/grade"]
     Record --> Profile["MCQ → relational attempt + progress rows<br/>FRQ → relational attempt + grade rows"]
@@ -272,7 +272,7 @@ sequenceDiagram
     participant U as Student
     participant App as /app/practice
     participant PS as PracticeShell
-    participant Card as QuestionCard / FrqCard
+    participant Card as QuestionCard / FrqSession
     participant Sess as question-card-session
     participant API as API
     participant AI as OpenAI / LM Studio
@@ -299,7 +299,7 @@ sequenceDiagram
             API->>DB: Atomic MCQ attempt + progress update
         end
     else FRQ
-        PS->>Card: FrqCard
+        PS->>Card: FrqSession
         Card->>API: POST /api/question/frq
         API->>DB: indexed random select from active FRQ library
         alt hit

@@ -5,7 +5,6 @@ import {
 	frqAttempts,
 	questionFeedback,
 	referrals,
-	studyPlanAudits,
 	studyPlans,
 	superBillingAccess,
 	superGrants,
@@ -28,7 +27,6 @@ export async function deleteAppDataDocuments(userIds: string[]): Promise<void> {
 		db.delete(superGrants).where(inArray(superGrants.userId, userIds)),
 		db.delete(superUsageRollups).where(inArray(superUsageRollups.userId, userIds)),
 		db.delete(studyPlans).where(inArray(studyPlans.userId, userIds)),
-		db.delete(studyPlanAudits).where(inArray(studyPlanAudits.userId, userIds)),
 		db.delete(coachAudits).where(inArray(coachAudits.userId, userIds)),
 		db
 			.delete(referrals)

@@ -16,7 +16,6 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
-import type { StudyPlanInsights } from '$lib/super/types';
 
 export const appSchema = pgSchema('app');
 
@@ -467,7 +466,6 @@ export const studyPlans = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		startsOn: date('starts_on', { mode: 'date' }).notNull(),
-		insights: jsonb('insights').$type<StudyPlanInsights | null>(),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -490,23 +488,6 @@ export const studyTasks = appSchema.table(
 		practiceHref: text('practice_href')
 	},
 	(table) => [index('study_tasks_plan_date_idx').on(table.planId, table.taskDate)]
-);
-
-export const studyPlanAudits = appSchema.table(
-	'study_plan_audits',
-	{
-		id: text('id').primaryKey(),
-		userId: text('user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		action: text('action').notNull(),
-		before: jsonb('before').$type<Record<string, unknown> | null>(),
-		after: jsonb('after').$type<Record<string, unknown>>().notNull(),
-		undoneAt: timestamp('undone_at', { withTimezone: true, mode: 'date' }),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [index('study_plan_audits_user_created_idx').on(table.userId, table.createdAt)]
 );
 
 export const coachAudits = appSchema.table(

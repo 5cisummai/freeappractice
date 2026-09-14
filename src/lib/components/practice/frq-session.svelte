@@ -4,8 +4,7 @@
 	import FullQuestion from '$lib/components/questions/full-question.svelte';
 	import FrqResponse from '$lib/components/questions/frq-response.svelte';
 	import FrqFeedback from '$lib/components/questions/frq-feedback.svelte';
-	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
-	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
+	import QuestionTutor from '$lib/components/questions/question-tutor.svelte';
 	import { createFrqCore } from '$lib/components/questions/frq-core.svelte.js';
 	import { presentedStemFromFrq } from '$lib/components/questions/presented-question.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -21,7 +20,9 @@
 		tutorMode?: TutorMode;
 		showFirstUseHint?: boolean;
 		onGraded?: (attempt: FrqAttemptView) => void;
+		onSkipped?: () => void;
 		onExit?: () => void;
+		nextAfterGrade?: boolean;
 	};
 
 	let {
@@ -33,7 +34,9 @@
 		tutorMode = 'free',
 		showFirstUseHint = false,
 		onGraded,
-		onExit
+		onSkipped,
+		onExit,
+		nextAfterGrade = true
 	}: FrqSessionProps = $props();
 
 	let mounted = $state(false);
@@ -47,21 +50,20 @@
 		getRequestVersion: () => requestVersion,
 		getPresetQuestionId: () => presetQuestionId,
 		getMounted: () => mounted,
-		getOnGraded: () => onGraded
+		getOnGraded: () => onGraded,
+		getOnSkip: () => onSkipped
 	});
 
 	const overlayOpen = $derived(requestVersion > 0 && Boolean(core.question));
-	const navItems = $derived.by(
-		(): ExamNavItem[] => [
-			{
-				index: 0,
-				loaded: true,
-				answered: core.hasResponse || Boolean(core.grade),
-				flagged,
-				failed: false
-			}
-		]
-	);
+	const navItems = $derived.by((): ExamNavItem[] => [
+		{
+			index: 0,
+			loaded: true,
+			answered: core.hasResponse || Boolean(core.grade),
+			flagged,
+			failed: false
+		}
+	]);
 
 	$effect(() => {
 		core.syncRequestVersion();
@@ -180,7 +182,9 @@
 			<div class="flex flex-wrap justify-end gap-2">
 				<Button variant="outline" onclick={handleSkip} disabled={core.isGrading}>Skip</Button>
 				{#if core.grade}
-					<Button onclick={handleNextQuestion}>Next question</Button>
+					{#if nextAfterGrade}
+						<Button onclick={handleNextQuestion}>Next question</Button>
+					{/if}
 				{:else}
 					<Button onclick={() => void core.submit()} disabled={!core.hasResponse || core.isGrading}>
 						{core.isGrading ? 'Grading…' : 'Submit for feedback'}
@@ -190,31 +194,18 @@
 		{/snippet}
 
 		{#snippet tools()}
-			{#if tutorMode !== 'hidden'}
-				{#key question.questionId}
-					{#if tutorMode === 'personalized'}
-						<SuperTutorWidget
-							apClass={question.apClass}
-							unit={question.unit}
-							questionId={question.questionId}
-							frqQuestionId={question.questionId}
-							frqAttemptId={core.attemptId}
-							topic={question.formatId}
-							{showFirstUseHint}
-						/>
-					{:else}
-						<TutorWidget
-							apClass={question.apClass}
-							unit={question.unit}
-							questionId={question.questionId}
-							frqQuestionId={question.questionId}
-							frqAttemptId={core.attemptId}
-							topic={question.formatId}
-							{showFirstUseHint}
-						/>
-					{/if}
-				{/key}
-			{/if}
+			{#key question.questionId}
+				<QuestionTutor
+					{tutorMode}
+					apClass={question.apClass}
+					unit={question.unit}
+					questionId={question.questionId}
+					frqQuestionId={question.questionId}
+					frqAttemptId={core.attemptId}
+					topic={question.formatId}
+					{showFirstUseHint}
+				/>
+			{/key}
 		{/snippet}
 	</FullQuestion>
 {/if}
