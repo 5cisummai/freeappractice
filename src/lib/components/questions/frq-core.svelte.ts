@@ -9,7 +9,11 @@ import {
 	serializeFrqQuestionDraft
 } from '$lib/question-bank/frq/draft.client.js';
 import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/question-bank/frq/types';
-import { PoolWarmingError, requestFrqQuestion, requestFrqQuestionById } from '$lib/question-bank/request.client';
+import {
+	PoolWarmingError,
+	requestFrqQuestion,
+	requestFrqQuestionById
+} from '$lib/question-bank/request.client';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;
@@ -61,7 +65,11 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	);
 	const questionLoadFailed = $derived(Boolean(errorMessage) && !isPoolWarming && !isLoading);
 	const showEmptyState = $derived(
-		!isLoading && !questionLoadFailed && !isPoolWarming && opts.getRequestVersion() === 0 && !question
+		!isLoading &&
+			!questionLoadFailed &&
+			!isPoolWarming &&
+			opts.getRequestVersion() === 0 &&
+			!question
 	);
 	const elapsedMs = $derived(startedAt > 0 ? Math.max(0, timerNowMs - startedAt) : 0);
 

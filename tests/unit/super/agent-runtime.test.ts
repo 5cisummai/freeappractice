@@ -65,7 +65,7 @@ describe('Coach stream startup', () => {
 
 		await expect(
 			createSuperAgentStreamResponse({
-				event: { request: new Request('https://app.test/api/coach'), locals: {} },
+				event: { request: new Request('https://app.test/api/super/agent'), locals: {} },
 				userId: 'user-1',
 				sessionId: 'session-1',
 				context: { surface: 'coach', page: 'coach' },

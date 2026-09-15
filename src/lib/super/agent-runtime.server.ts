@@ -15,7 +15,6 @@ import {
 	refreshLock
 } from '$lib/super/ai-controls.server';
 import { createSuperAgent, type SuperAgentUIMessage } from '$lib/super/agent.server';
-import type { SuperAgentContext } from '$lib/super/agent-request';
 import { buildSuperAgentContext } from '$lib/super/context.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
@@ -25,9 +24,10 @@ import {
 	isSuperAgentToolContinuation,
 	lastSuperAgentUserText,
 	textFromSuperAgentParts,
+	type CoachThinkingMode,
+	type SuperAgentContext,
 	type SuperAgentRequest
 } from '$lib/super/agent-request';
-import type { CoachThinkingMode } from '$lib/super/agent-request';
 import {
 	buildSuperAgentUiMessages,
 	reconstructApprovalContinuationMessage
@@ -84,8 +84,42 @@ export type SuperAgentStreamOptions = {
 };
 
 function superAgentErrorLabel(context: SuperAgentContext): string {
-	if (context.surface === 'coach') return 'Coach';
-	return context.questionType === 'frq' ? 'Super FRQ Tutor' : 'Super Tutor';
+	switch (context.surface) {
+		case 'coach':
+			return 'Coach';
+		case 'question':
+			return context.questionType === 'frq' ? 'Super FRQ Tutor' : 'Super Tutor';
+		default: {
+			const _exhaustive: never = context.surface;
+			return _exhaustive;
+		}
+	}
+}
+
+function memoryExchangeSurface(surface: SuperAgentContext['surface']): 'coach' | 'tutor' {
+	switch (surface) {
+		case 'coach':
+			return 'coach';
+		case 'question':
+			return 'tutor';
+		default: {
+			const _exhaustive: never = surface;
+			return _exhaustive;
+		}
+	}
+}
+
+function memoryWriteLabel(context: SuperAgentContext): 'MCQ' | 'FRQ' | 'Coach' {
+	switch (context.surface) {
+		case 'coach':
+			return 'Coach';
+		case 'question':
+			return context.questionType === 'frq' ? 'FRQ' : 'MCQ';
+		default: {
+			const _exhaustive: never = context.surface;
+			return _exhaustive;
+		}
+	}
 }
 
 function rateLimitedResponse(retryAt: number | null): Response {
@@ -241,15 +275,20 @@ export async function createSuperAgentStreamResponse(
 				.find((message) => message.role === 'assistant');
 			if (!lastAssistant) {
 				await cleanup();
-				return json(
-					{
-						error:
-							surface === 'coach'
-								? 'Pip could not continue that practice question.'
-								: 'Could not continue that practice question.'
-					},
-					{ status: 409 }
-				);
+				let continuationError: string;
+				switch (surface) {
+					case 'coach':
+						continuationError = 'Pip could not continue that practice question.';
+						break;
+					case 'question':
+						continuationError = 'Could not continue that practice question.';
+						break;
+					default: {
+						const _exhaustive: never = surface;
+						continuationError = _exhaustive;
+					}
+				}
+				return json({ error: continuationError }, { status: 409 });
 			}
 			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
 				'input-available',
@@ -384,9 +423,9 @@ export async function createSuperAgentStreamResponse(
 								addTutorMemoryExchange(
 									userId,
 									{ user: lastUserMessage, assistant: assistantResponse },
-									{ surface: surface === 'coach' ? 'coach' : 'tutor' }
+									{ surface: memoryExchangeSurface(surface) }
 								),
-								surface === 'coach' ? 'Coach' : context.questionType === 'frq' ? 'FRQ' : 'MCQ'
+								memoryWriteLabel(context)
 							);
 						}
 					}

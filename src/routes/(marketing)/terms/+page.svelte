@@ -201,9 +201,9 @@
 					Terms, security concerns, or operational reasons. You may delete your account through the
 					Service or by contacting us. Deletion removes the account record from our primary database
 					and initiates removal of app-owned profile, practice, personalization, billing-mirror,
-					study-plan, feedback, audit, and tutor-memory data. Some information may
-					remain in backups, logs, billing records, or third-party systems for a limited time, and
-					provider backups or support records may not be immediately removable by us.
+					study-plan, feedback, audit, and tutor-memory data. Some information may remain in
+					backups, logs, billing records, or third-party systems for a limited time, and provider
+					backups or support records may not be immediately removable by us.
 				</p>
 			</section>
 

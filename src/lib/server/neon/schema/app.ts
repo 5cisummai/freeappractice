@@ -64,21 +64,18 @@ export const appFeedback = appSchema.table(
 
 // User-owned application data. Arrays and JSONB are limited to values that
 // are genuinely document-shaped; facts that are queried or joined are rows.
-export const userProfiles = appSchema.table(
-	'user_profiles',
-	{
-		userId: text('user_id')
-			.primaryKey()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
-		subjects: text('subjects')
-			.array()
-			.notNull()
-			.default(sql`ARRAY[]::text[]`),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	}
-);
+export const userProfiles = appSchema.table('user_profiles', {
+	userId: text('user_id')
+		.primaryKey()
+		.references(() => authUsers.id, { onDelete: 'cascade' }),
+	assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
+	subjects: text('subjects')
+		.array()
+		.notNull()
+		.default(sql`ARRAY[]::text[]`),
+	createdAt: createdAt(),
+	updatedAt: updatedAt()
+});
 
 export const userSubjects = appSchema.table(
 	'user_subjects',

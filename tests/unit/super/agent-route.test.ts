@@ -51,6 +51,12 @@ describe('handleSuperAgentPost', () => {
 			'user-1',
 			'coach'
 		);
+		expect(mocks.createSuperAgentStreamResponse).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: 'user-1',
+				context: expect.objectContaining({ surface: 'coach', page: 'coach' })
+			})
+		);
 	});
 
 	it('authorizes question surface with personalized tutor and requires question context', async () => {
@@ -82,6 +88,16 @@ describe('handleSuperAgentPost', () => {
 			expect.anything(),
 			'user-1',
 			'personalizedTutor'
+		);
+		expect(mocks.createSuperAgentStreamResponse).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: 'user-1',
+				context: expect.objectContaining({
+					surface: 'question',
+					questionId: sessionId,
+					questionType: 'mcq'
+				})
+			})
 		);
 	});
 });

@@ -75,6 +75,11 @@ import {
 import { DELETE as meMemoryIdDelete } from '../../../src/routes/api/me/tutor-memories/[memoryId]/+server';
 import { POST as coachAuthorizePost } from '../../../src/routes/api/coach/session/authorize/+server';
 import { POST as coachActionUndoPost } from '../../../src/routes/api/coach/actions/[id]/undo/+server';
+import { POST as coachPost, config as coachConfig } from '../../../src/routes/api/coach/+server';
+import {
+	POST as superAgentPost,
+	config as superAgentConfig
+} from '../../../src/routes/api/super/agent/+server';
 
 const profile = {
 	ageConfirmedAt: null,
@@ -125,6 +130,8 @@ describe('Super API routes', () => {
 		expect(meMemoriesDelete).toBe(memoryDelete);
 		expect(meMemoryIdDelete).toBe(memoryIdDelete);
 		expect(coachAuthorizePost).toBe(mocks.coachApprovalPost);
+		expect(coachPost).toBe(superAgentPost);
+		expect(coachConfig).toBe(superAgentConfig);
 	});
 
 	it('takes Coach undo audit ID from the route parameter', async () => {

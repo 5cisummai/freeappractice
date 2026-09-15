@@ -129,7 +129,7 @@
 			!isMobile.current &&
 			Boolean(
 				stem.hasStimulus &&
-					(stem.leftPanel || (stem.materials?.length ?? 0) > 0 || stem.diagramSpec)
+				(stem.leftPanel || (stem.materials?.length ?? 0) > 0 || stem.diagramSpec)
 			)
 	);
 	const displayNumber = $derived(Number(questionNumber));
@@ -151,7 +151,9 @@
 	const showFooterNav = $derived(Boolean(onNext || onPrev || (isReviewStage && onSubmit)));
 	const nextLabel = $derived(nextActionLabel ?? (isLastQuestion ? 'Review' : 'Next'));
 	const reviewHeading = $derived(reviewTitle ?? title ?? 'Review your answers');
-	const canUseEliminator = $derived(Boolean(onToggleStrike) && !hasCheckedAnswer && !usesCustomResponse);
+	const canUseEliminator = $derived(
+		Boolean(onToggleStrike) && !hasCheckedAnswer && !usesCustomResponse
+	);
 	const canAnnotate = $derived(Boolean(onAddTextAnnotation) && !hasCheckedAnswer);
 	const showQuestionChrome = $derived(Boolean(onToggleFlag) || canUseEliminator);
 
@@ -675,7 +677,12 @@
 						</Button>
 					{:else}
 						{#if onPrev}
-							<Button variant="default" size="sm" disabled={prevDisabled} onclick={() => onPrev?.()}>
+							<Button
+								variant="default"
+								size="sm"
+								disabled={prevDisabled}
+								onclick={() => onPrev?.()}
+							>
 								Back
 							</Button>
 						{/if}

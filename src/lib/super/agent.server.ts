@@ -4,8 +4,7 @@ import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import { logger } from '$lib/server/logger';
 import { pruneSuperAgentModelMessages } from '$lib/super/agent-messages.server';
-import type { SuperAgentContext } from '$lib/super/agent-request';
-import type { CoachThinkingMode } from '$lib/super/agent-request';
+import type { CoachThinkingMode, SuperAgentContext } from '$lib/super/agent-request';
 import { createSuperTools } from '$lib/super/coach-tools.server';
 
 export type { SuperAgentContext } from '$lib/super/agent-request';
@@ -39,19 +38,44 @@ export function createSuperAgent(input: {
 		conversationId
 	} = input;
 	const surface = currentContext?.surface ?? 'coach';
+	let reasoningEffort: 'low' | 'medium' | 'high';
+	switch (thinkingMode) {
+		case 'quick':
+			reasoningEffort = 'low';
+			break;
+		case 'thinking':
+			reasoningEffort = 'medium';
+			break;
+		case 'deep':
+			reasoningEffort = 'high';
+			break;
+		default: {
+			const _exhaustive: never = thinkingMode;
+			reasoningEffort = _exhaustive;
+		}
+	}
 	const answerDisclosureRestriction =
 		'Never reveal the correct answer to the current MCQ, the hidden reference answer, or private FRQ rubric text. Use server-owned answer and grading facts only to guide reasoning and diagnose misconceptions.';
-	const surfaceInstructions =
-		surface === 'question'
-			? [
-					'You are helping with the current practice question. Start from that question and the student’s likely reasoning, then connect it to relevant prior evidence.',
-					'When the student says help, infer that they want help with the current question without asking them to restate it.',
-					answerDisclosureRestriction
-				].join('\n')
-			: [
-					'You are on the Coach surface. Lead with the best next action based on the student evidence and current page context.',
-					...(currentContext?.questionId ? [answerDisclosureRestriction] : [])
-				].join('\n');
+	let surfaceInstructions: string;
+	switch (surface) {
+		case 'question':
+			surfaceInstructions = [
+				'You are helping with the current practice question. Start from that question and the student’s likely reasoning, then connect it to relevant prior evidence.',
+				'When the student says help, infer that they want help with the current question without asking them to restate it.',
+				answerDisclosureRestriction
+			].join('\n');
+			break;
+		case 'coach':
+			surfaceInstructions = [
+				'You are on the Coach surface. Lead with the best next action based on the student evidence and current page context.',
+				...(currentContext?.questionId ? [answerDisclosureRestriction] : [])
+			].join('\n');
+			break;
+		default: {
+			const _exhaustive: never = surface;
+			throw new Error(`Unhandled Super Agent surface: ${_exhaustive}`);
+		}
+	}
 
 	return new ToolLoopAgent({
 		id: 'super',
@@ -59,8 +83,7 @@ export function createSuperAgent(input: {
 		providerOptions: {
 			openai: {
 				forceReasoning: true,
-				reasoningEffort:
-					thinkingMode === 'quick' ? 'low' : thinkingMode === 'deep' ? 'high' : 'medium'
+				reasoningEffort
 			}
 		},
 		maxOutputTokens: 700,

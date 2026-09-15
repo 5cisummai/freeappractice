@@ -189,10 +189,11 @@
 				<h2 class="text-xl font-semibold">6. Cookies and Local Storage</h2>
 				<p>
 					We use HTTP-only session cookies to keep you signed in, plus first-party cookies for
-					onboarding, first-use hints, timezone, analytics consent, and sidebar state. Local storage stores theme and settings preferences and opt-in analytics
-					controls. Session storage can hold temporary written-response drafts and Coach session
-					state. Durable Super conversation messages remain server-side so a signed-in student can
-					continue a Coach or question Tutor thread after reload.
+					onboarding, first-use hints, timezone, analytics consent, and sidebar state. Local storage
+					stores theme and settings preferences and opt-in analytics controls. Session storage can
+					hold temporary written-response drafts and Coach session state. Durable Super conversation
+					messages remain server-side so a signed-in student can continue a Coach or question Tutor
+					thread after reload.
 				</p>
 				<p class="mt-2">
 					If you accept optional PostHog analytics, PostHog may set first-party cookies and use
@@ -304,10 +305,10 @@
 					progress, bookmarks, and written-response submissions while keeping your account. You can
 					request account deletion in Settings or by contacting us. Account deletion initiates
 					removal of app-owned account, profile, practice, personalization, billing-mirror,
-					study-plan, feedback, and audit records; authentication records are
-					handled by Better Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued and
-					retried. Information held by third parties, backups, logs, or support records may persist
-					under their own practices or legal obligations.
+					study-plan, feedback, and audit records; authentication records are handled by Better
+					Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued and retried.
+					Information held by third parties, backups, logs, or support records may persist under
+					their own practices or legal obligations.
 				</p>
 			</section>
 
