@@ -4,7 +4,6 @@
 	import { quintOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import {
-		DefaultChatTransport,
 		lastAssistantMessageIsCompleteWithApprovalResponses,
 		lastAssistantMessageIsCompleteWithToolCalls
 	} from 'ai';
@@ -29,12 +28,9 @@
 		isCoachPracticeQuestionPending,
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
-	import {
-		MAX_SUPER_AGENT_MESSAGES,
-		minimalSuperAgentClientMessages
-	} from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	import type { SuperAgentUIMessage } from '$lib/super/coach.server';
+	import type { SuperAgentUIMessage } from '$lib/super/agent.server';
+	import { createSuperAgentTransport } from '$lib/super/agent-transport';
 	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { approvalProposalLabel, getApprovalProposal } from '$lib/super/approval-ui';
 	import { toast } from 'svelte-sonner';
@@ -142,35 +138,21 @@
 		sendAutomaticallyWhen: ({ messages }) =>
 			lastAssistantMessageIsCompleteWithToolCalls({ messages }) ||
 			lastAssistantMessageIsCompleteWithApprovalResponses({ messages }),
-		transport: new DefaultChatTransport<SuperAgentUIMessage>({
-			api: '/api/tutor/chat',
-			fetch: async (url, init) => {
-				const response = await apiFetch(String(url), init);
-				const responseConversationId = response.headers.get('X-Super-Conversation-Id');
-				if (responseConversationId) {
-					conversationId = responseConversationId;
-					sessionStorage.setItem(conversationStorageKey(), responseConversationId);
-				}
-				showUsageWarning(response);
-				return response;
+		transport: createSuperAgentTransport({
+			getSessionId: () => sessionId,
+			getConversationId: () => conversationId || undefined,
+			setConversationId: (id) => {
+				conversationId = id;
+				sessionStorage.setItem(conversationStorageKey(), id);
 			},
-			prepareSendMessagesRequest: ({ messages }) => ({
-				api: isFrq ? '/api/tutor/frq' : '/api/tutor/chat',
-				body: {
-					sessionId,
-					context: {
-						mode: 'question',
-						page: 'practice',
-						questionId: isFrq ? frqQuestionId : questionId,
-						questionType: isFrq ? 'frq' : 'mcq',
-						...(frqAttemptId ? { frqAttemptId } : {})
-					},
-					...(conversationId ? { conversationId } : {}),
-					messages: conversationId
-						? minimalSuperAgentClientMessages(messages)
-						: messages.slice(-MAX_SUPER_AGENT_MESSAGES)
-				}
-			})
+			getContext: () => ({
+				surface: 'question',
+				page: 'practice',
+				questionId: isFrq ? frqQuestionId : questionId,
+				questionType: isFrq ? 'frq' : 'mcq',
+				...(frqAttemptId ? { frqAttemptId } : {})
+			}),
+			onUsageWarning: showUsageWarning
 		})
 	});
 

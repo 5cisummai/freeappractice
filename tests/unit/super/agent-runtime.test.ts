@@ -68,10 +68,8 @@ describe('Coach stream startup', () => {
 				event: { request: new Request('https://app.test/api/coach'), locals: {} },
 				userId: 'user-1',
 				sessionId: 'session-1',
-				context: { mode: 'coach' },
-				messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help me study' }] }],
-				surface: 'coach',
-				errorLabel: 'Coach'
+				context: { surface: 'coach', page: 'coach' },
+				messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help me study' }] }]
 			} as Parameters<typeof createSuperAgentStreamResponse>[0])
 		).rejects.toBe(failure);
 

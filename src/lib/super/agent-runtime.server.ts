@@ -14,11 +14,8 @@ import {
 	releaseLock,
 	refreshLock
 } from '$lib/super/ai-controls.server';
-import {
-	createSuperAgent,
-	type SuperAgentContext,
-	type SuperAgentUIMessage
-} from '$lib/super/agent.server';
+import { createSuperAgent, type SuperAgentUIMessage } from '$lib/super/agent.server';
+import type { SuperAgentContext } from '$lib/super/agent-request';
 import { buildSuperAgentContext } from '$lib/super/context.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
@@ -84,9 +81,12 @@ export type SuperAgentStreamOptions = {
 	conversationId?: string;
 	coachActions?: SuperAgentRequest['coachActions'];
 	thinkingMode?: CoachThinkingMode;
-	surface: 'coach' | 'question';
-	errorLabel: string;
 };
+
+function superAgentErrorLabel(context: SuperAgentContext): string {
+	if (context.surface === 'coach') return 'Coach';
+	return context.questionType === 'frq' ? 'Super FRQ Tutor' : 'Super Tutor';
+}
 
 function rateLimitedResponse(retryAt: number | null): Response {
 	return json(
@@ -113,10 +113,10 @@ export async function createSuperAgentStreamResponse(
 		messages,
 		conversationId: requestedConversationId,
 		coachActions,
-		thinkingMode = 'quick',
-		surface,
-		errorLabel
+		thinkingMode = 'quick'
 	} = options;
+	const surface = context.surface;
+	const errorLabel = superAgentErrorLabel(context);
 	const clientMessages = messages;
 	const isContinuation = isSuperAgentToolContinuation(clientMessages);
 	if (isContinuation && !requestedConversationId) {
@@ -313,7 +313,6 @@ export async function createSuperAgentStreamResponse(
 			selectedApClasses: profile.selectedApClasses,
 			personalizationContext: personalization.text,
 			historySummary,
-			mode: context.mode,
 			currentContext: context,
 			conversationId,
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { getApCurriculumKnowledge } from '$lib/ap-knowledge/catalog';
 import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/super/ai-controls.server';
-import type { SuperToolsInput } from '$lib/super/coach-agent.types';
+import type { SuperToolsInput } from '$lib/super/agent-request';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import {
 	getCoachActivitySummary,

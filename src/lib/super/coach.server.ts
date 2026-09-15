@@ -5,12 +5,6 @@ import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.serv
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView, TutorProfileView } from '$lib/super/types';
 
-export type { SuperAgentContext, SuperAgentMode } from '$lib/super/coach-agent.types';
-export { createSuperTools } from '$lib/super/coach-tools.server';
-export type { SuperToolsInput } from '$lib/super/coach-agent.types';
-export { createCoachAgent, createSuperAgent } from '$lib/super/agent.server';
-export type { CoachUIMessage, SuperAgentUIMessage } from '$lib/super/agent.server';
-
 export type CoachAuditView = {
 	id: string;
 	toolName: 'update_goals' | 'update_study_plan';
