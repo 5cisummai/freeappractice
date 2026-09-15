@@ -410,16 +410,6 @@ export async function clearReviewJobBatch(jobId: string, outputFileId?: string):
 	});
 }
 
-export async function listActiveReviewJobIds(): Promise<string[]> {
-	const rows = await getNeonDatabase()
-		.select({ id: qualityReviewJobs.id })
-		.from(qualityReviewJobs)
-		.where(inArray(qualityReviewJobs.status, ['preparing', 'in_progress']))
-		.orderBy(asc(qualityReviewJobs.updatedAt))
-		.limit(5);
-	return rows.map((row) => row.id);
-}
-
 export interface ReviewJobItemDocument {
 	id: string;
 	jobId: string;

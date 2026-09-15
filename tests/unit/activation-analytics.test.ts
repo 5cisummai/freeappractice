@@ -16,6 +16,12 @@ vi.mock('$lib/client/posthog-analytics', () => ({
 	capturePostHogEvent
 }));
 
+afterEach(() => {
+	vi.unstubAllGlobals();
+	capturePostHogEvent.mockReset();
+	resetActivationAnalyticsForTests();
+});
+
 function createStorage() {
 	const values = new Map<string, string>();
 	return {
@@ -26,12 +32,6 @@ function createStorage() {
 }
 
 describe('captureFirstAnswerSubmitted', () => {
-	afterEach(() => {
-		vi.unstubAllGlobals();
-		capturePostHogEvent.mockReset();
-		resetActivationAnalyticsForTests();
-	});
-
 	it('queues the first answer before analytics consent', () => {
 		const localStorage = createStorage();
 		vi.stubGlobal('window', { localStorage });
@@ -90,12 +90,6 @@ describe('captureFirstAnswerSubmitted', () => {
 });
 
 describe('journey_key', () => {
-	afterEach(() => {
-		vi.unstubAllGlobals();
-		capturePostHogEvent.mockReset();
-		resetActivationAnalyticsForTests();
-	});
-
 	it('attaches an in-memory journey_key to pre-consent queued events', () => {
 		const localStorage = createStorage();
 		vi.stubGlobal('crypto', { randomUUID: () => 'journey-test-key' });
@@ -130,12 +124,6 @@ describe('journey_key', () => {
 });
 
 describe('captureUserLoggedIn', () => {
-	afterEach(() => {
-		vi.unstubAllGlobals();
-		capturePostHogEvent.mockReset();
-		resetActivationAnalyticsForTests();
-	});
-
 	it('fires once per session even when called again', () => {
 		vi.stubGlobal('window', { localStorage: createStorage() });
 

@@ -10,7 +10,7 @@ import {
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqAttempts } from '$lib/server/neon/schema';
 import { buildTutorPersonalization } from '$lib/tutor/personalization.server';
-import type { SuperAgentContext } from '$lib/super/coach-agent.types';
+import type { SuperAgentContext } from '$lib/super/agent-request';
 
 export type CurrentSuperQuestion =
 	| { kind: 'mcq'; question: StoredQuestion }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PoolWarmingError } from '$lib/question-bank/request.client';
 import {
+	PoolWarmingError,
 	requestFrqQuestion,
 	requestMcqQuestion,
 	requestMcqQuestions,

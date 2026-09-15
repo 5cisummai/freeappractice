@@ -4,7 +4,6 @@ import { APP_LAYOUT_DEPENDENCY } from '$lib/layout-dependencies';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { activeOrgUsesUserSuper, loadAppOrganizations } from '$lib/auth/organizations.server';
 import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
-import { claimReferralFromCookie } from '$lib/referrals/referrals.server';
 import {
 	getAgeConfirmedAtForRequest,
 	getPlanAccessForRequest
@@ -40,7 +39,6 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 	}
 
 	const userId = locals.userId!;
-	await claimReferralFromCookie(cookies, userId, request);
 	const assistantFeaturesEnabled = await getAssistantFeaturesEnabledForRequest(locals, userId);
 	const organizations = await loadAppOrganizations(
 		userId,

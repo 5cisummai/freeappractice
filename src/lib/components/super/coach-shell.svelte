@@ -5,7 +5,6 @@
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
 	import {
-		DefaultChatTransport,
 		lastAssistantMessageIsCompleteWithApprovalResponses,
 		lastAssistantMessageIsCompleteWithToolCalls
 	} from 'ai';
@@ -50,18 +49,15 @@
 		isCoachPracticeQuestionPending,
 		type CoachPracticeQuestionToolOutput
 	} from '$lib/super/coach-practice-question';
-	import type { CoachUIMessage } from '$lib/super/coach.server';
+	import type { SuperAgentUIMessage } from '$lib/super/agent.server';
+	import { createSuperAgentTransport } from '$lib/super/agent-transport';
 	import { useCoachPageToolbar, useCoachSidebar } from './coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
 		type CoachComposerActionId
 	} from '$lib/super/coach-composer-actions';
-	import {
-		MAX_SUPER_AGENT_MESSAGES,
-		minimalSuperAgentClientMessages,
-		type CoachThinkingMode
-	} from '$lib/super/agent-request';
+	import type { CoachThinkingMode } from '$lib/super/agent-request';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	import { cn } from '$lib/utils.js';
 	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
@@ -181,35 +177,23 @@
 		}
 	};
 
-	const coach = new Chat<CoachUIMessage>({
+	const coach = new Chat<SuperAgentUIMessage>({
 		messages: [],
 		sendAutomaticallyWhen: ({ messages }) =>
 			lastAssistantMessageIsCompleteWithToolCalls({ messages }) ||
 			lastAssistantMessageIsCompleteWithApprovalResponses({ messages }),
-		transport: new DefaultChatTransport<CoachUIMessage>({
-			api: '/api/coach',
-			fetch: async (url, init) => {
-				const response = await apiFetch(String(url), init);
-				const responseConversationId = response.headers.get('X-Super-Conversation-Id');
-				if (responseConversationId && responseConversationId !== conversationId) {
-					conversationId = responseConversationId;
-					sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, responseConversationId);
-					void loadConversations();
-				}
-				showUsageWarning(response);
-				return response;
+		transport: createSuperAgentTransport({
+			getSessionId: () => sessionId,
+			getConversationId: () => conversationId || undefined,
+			setConversationId: (id) => {
+				conversationId = id;
+				sessionStorage.setItem(COACH_CONVERSATION_STORAGE_KEY, id);
 			},
-			prepareSendMessagesRequest: ({ messages }) => ({
-				body: {
-					sessionId,
-					...(conversationId ? { conversationId } : {}),
-					...(pendingCoachActions.length ? { coachActions: pendingCoachActions } : {}),
-					thinkingMode,
-					messages: conversationId
-						? minimalSuperAgentClientMessages(messages)
-						: messages.slice(-MAX_SUPER_AGENT_MESSAGES)
-				}
-			})
+			getContext: () => ({ surface: 'coach', page: 'coach' }),
+			onUsageWarning: showUsageWarning,
+			onConversationIdChange: () => void loadConversations(),
+			getThinkingMode: () => thinkingMode,
+			getCoachActions: () => pendingCoachActions
 		})
 	});
 
@@ -271,7 +255,7 @@
 		return state === 'input-streaming' || state === 'input-available';
 	}
 
-	function messageText(message: CoachUIMessage): string {
+	function messageText(message: SuperAgentUIMessage): string {
 		return message.parts
 			.filter((part) => part.type === 'text')
 			.map((part) => part.text)
@@ -297,21 +281,21 @@
 		return type.startsWith('tool-update_') ? asIcon(PencilIcon) : asIcon(SearchIcon);
 	}
 
-	function getToolActivities(message: CoachUIMessage): ToolActivity[] {
+	function getToolActivities(message: SuperAgentUIMessage): ToolActivity[] {
 		return message.parts.flatMap((part, index) => {
 			const toolPart = getToolPart(part);
 			return toolPart ? [getToolActivity(toolPart, index)] : [];
 		});
 	}
 
-	function hasCompletedPracticeQuestion(message: CoachUIMessage): boolean {
+	function hasCompletedPracticeQuestion(message: SuperAgentUIMessage): boolean {
 		return message.parts.some((part) => {
 			const toolPart = getToolPart(part);
 			return Boolean(toolPart && getCoachPracticeQuestionToolOutput(toolPart.output));
 		});
 	}
 
-	function isStreamingAnswer(message: CoachUIMessage, messageIndex: number): boolean {
+	function isStreamingAnswer(message: SuperAgentUIMessage, messageIndex: number): boolean {
 		return (
 			streaming &&
 			messageIndex === coach.messages.length - 1 &&
@@ -457,8 +441,10 @@
 
 	$effect(() => {
 		if (surface !== 'page') return;
-		coachPageToolbar.setSnippet(pageToolbar);
-		return () => coachPageToolbar.setSnippet(null);
+		coachPageToolbar.snippet = pageToolbar;
+		return () => {
+			coachPageToolbar.snippet = null;
+		};
 	});
 
 	async function loadConversations(): Promise<void> {
@@ -487,12 +473,12 @@
 				messages?: Array<{
 					id: string;
 					role: 'user' | 'assistant';
-					parts: CoachUIMessage['parts'];
+					parts: SuperAgentUIMessage['parts'];
 				}>;
 			}>(response);
 			if (!response.ok || !payload?.messages || request !== conversationLoadRequest) return false;
 			await coach.stop();
-			coach.messages = payload.messages as CoachUIMessage[];
+			coach.messages = payload.messages as SuperAgentUIMessage[];
 			return true;
 		} catch {
 			return false;
@@ -540,7 +526,7 @@
 		}
 	}
 
-	async function copyMessage(message: CoachUIMessage): Promise<void> {
+	async function copyMessage(message: SuperAgentUIMessage): Promise<void> {
 		const text = messageText(message);
 		await copyText(text, 'Response copied.');
 	}

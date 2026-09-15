@@ -30,12 +30,11 @@
 		count?: number;
 		generateDisabled?: boolean;
 		generateLabel?: string;
+		allowedClassNames?: readonly string[];
 		onGenerate?: () => void;
 		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
 		showFirstUseHint?: boolean;
 	};
-
-	const courses = $derived(getCourses());
 
 	let {
 		selectedClass = $bindable(''),
@@ -45,10 +44,18 @@
 		count = $bindable(10),
 		generateDisabled = false,
 		generateLabel = 'Practice',
+		allowedClassNames,
 		onGenerate,
 		onSelectionChange,
 		showFirstUseHint = false
 	}: QuestionSelectorProps = $props();
+
+	const courses = $derived.by(() => {
+		const catalog = getCourses();
+		if (!allowedClassNames?.length) return catalog;
+		const allowed = new Set(allowedClassNames);
+		return catalog.filter((course) => allowed.has(course.name));
+	});
 
 	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
 	const unitOptions = $derived(

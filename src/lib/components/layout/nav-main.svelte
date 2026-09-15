@@ -6,7 +6,6 @@
 	import BookOpenIconComponent from '@tabler/icons-svelte/icons/book-filled';
 	import BarChart3IconComponent from '@tabler/icons-svelte/icons/chart-pie-filled';
 	import ShieldIconComponent from '@tabler/icons-svelte/icons/shield-filled';
-	import SparklesIconComponent from '@tabler/icons-svelte/icons/sparkles-filled';
 	import UsersIconComponent from '@tabler/icons-svelte/icons/user-filled';
 	import LayersIconComponent from '@tabler/icons-svelte/icons/stack-filled';
 	import PipIcon from '$lib/components/coach/pip-icon.svelte';
@@ -18,7 +17,6 @@
 		| '/app/progress'
 		| '/app/resources'
 		| '/app/coach'
-		| '/app/insights'
 		| '/app/members'
 		| '/app/materials'
 		| '/app/admin';
@@ -33,7 +31,6 @@
 	const BookOpenIcon = BookOpenIconComponent as unknown as Component;
 	const BarChart3Icon = BarChart3IconComponent as unknown as Component;
 	const ShieldIcon = ShieldIconComponent as unknown as Component;
-	const SparklesIcon = SparklesIconComponent as unknown as Component;
 	const PipNavIcon = PipIcon as unknown as Component;
 	const UsersIcon = UsersIconComponent as unknown as Component;
 	const LayersIcon = LayersIconComponent as unknown as Component;
@@ -61,9 +58,6 @@
 			{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
 			{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon }
 		];
-		if (assistantFeaturesEnabled) {
-			items.push({ href: '/app/insights', label: 'Insights', icon: SparklesIcon });
-		}
 		return items;
 	});
 

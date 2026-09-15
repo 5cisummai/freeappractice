@@ -10,6 +10,7 @@ import {
 } from '$lib/question-bank/pool-counts.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { poolRefillStates } from '$lib/server/neon/schema';
+import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
 import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '$lib/question-bank/pool-kinds.server';
 import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-types.server';
 import {
@@ -31,8 +32,12 @@ export class InvalidPoolBucketError extends Error {
 	}
 }
 
-export function isValidPoolBucket(bucket: Pick<PoolBucketKey, 'apClass' | 'unit'>): boolean {
-	return getUnitsForClass(bucket.apClass.trim()).includes(bucket.unit.trim());
+export function isValidPoolBucket(
+	bucket: Pick<PoolBucketKey, 'apClass' | 'unit'> & Partial<Pick<PoolBucketKey, 'questionType'>>
+): boolean {
+	if (!getUnitsForClass(bucket.apClass.trim()).includes(bucket.unit.trim())) return false;
+	if (bucket.questionType === 'frq' && !getFrqCourseProfile(bucket.apClass.trim())) return false;
+	return true;
 }
 
 function normalizePoolBucket(bucket: PoolBucketKey): PoolBucketKey {

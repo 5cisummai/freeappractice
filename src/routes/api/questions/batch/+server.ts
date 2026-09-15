@@ -19,8 +19,7 @@ const MAX_QUESTION_REQUEST_BYTES = 16 * 1024;
 
 /** Batch-only selection path — no synchronous LLM generation. */
 export const config = {
-	maxDuration: 15,
-	split: true
+	maxDuration: 15
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {

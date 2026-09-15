@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import QuestionCard from '$lib/components/questions/question-card.svelte';
-	import FrqCard from '$lib/components/questions/frq-card.svelte';
+	import FrqSession from '$lib/components/practice/frq-session.svelte';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
 	import type { AnswerResult } from '$lib/question-bank/mcq/types';
 	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
@@ -155,15 +155,15 @@
 				onSkip={handleSkipped}
 			/>
 		{:else}
-			<FrqCard
+			<FrqSession
 				selectedClass={question.apClass}
 				selectedUnit={question.unit}
 				presetQuestionId={question.questionId}
 				{requestVersion}
 				tutorMode="hidden"
 				onGraded={handleFrqGraded}
-				onSkip={handleSkipped}
-				skipAfterGrade={false}
+				onSkipped={handleSkipped}
+				nextAfterGrade={false}
 			/>
 		{/if}
 	</div>

@@ -4,7 +4,6 @@ import { and, asc, eq, gt, inArray, isNotNull, isNull, lte, or } from 'drizzle-o
 import { logger } from '$lib/server/logger';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
-	studyPlanAudits,
 	studyPlans,
 	superBillingAccess,
 	superCleanupJobs,
@@ -26,7 +25,6 @@ export type SuperMaintenanceSummary = {
 	cleanupCompleted: number;
 	cleanupRetried: number;
 	studyPlansDeleted: number;
-	studyPlanAuditsDeleted: number;
 };
 
 function memoryRetentionCutoff(now: Date): Date {
@@ -237,16 +235,12 @@ export async function runSuperMaintenance(
 		})
 	);
 
-	const [expiredGrants, expiredStudyPlans, expiredStudyPlanAudits] = await Promise.all([
+	const [expiredGrants, expiredStudyPlans] = await Promise.all([
 		db.delete(superGrants).where(lte(superGrants.expiresAt, now)).returning({ id: superGrants.id }),
 		db
 			.delete(studyPlans)
 			.where(lte(studyPlans.updatedAt, studyPlanCutoff))
-			.returning({ id: studyPlans.id }),
-		db
-			.delete(studyPlanAudits)
-			.where(lte(studyPlanAudits.createdAt, studyPlanCutoff))
-			.returning({ id: studyPlanAudits.id })
+			.returning({ id: studyPlans.id })
 	]);
 
 	const jobs = await db
@@ -262,7 +256,6 @@ export async function runSuperMaintenance(
 		expiredGrantsRemoved: expiredGrants.length,
 		cleanupCompleted: results.filter((result) => result === 'completed').length,
 		cleanupRetried: results.filter((result) => result === 'retried').length,
-		studyPlansDeleted: expiredStudyPlans.length,
-		studyPlanAuditsDeleted: expiredStudyPlanAudits.length
+		studyPlansDeleted: expiredStudyPlans.length
 	};
 }
