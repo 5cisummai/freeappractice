@@ -16,8 +16,7 @@ import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
 
 /** Selection-only path — no synchronous LLM generation. */
 export const config = {
-	maxDuration: 15,
-	split: true
+	maxDuration: 15
 };
 
 const MAX_QUESTION_REQUEST_BYTES = 16 * 1024;

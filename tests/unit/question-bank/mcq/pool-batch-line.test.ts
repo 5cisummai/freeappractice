@@ -72,7 +72,7 @@ describe('buildMcqPoolBatchLine', () => {
 		const parsed = JSON.parse(
 			buildFrqPoolBatchLine({
 				customId: 'frq-0001',
-				apClass: 'AP Biology',
+				apClass: 'AP English Language',
 				unit: 'Unit 1: Chemistry of Life',
 				model: 'gpt-5.6-luna'
 			})
@@ -92,7 +92,7 @@ describe('buildMcqPoolBatchLine', () => {
 		expect(parsed.url).toBe('/v1/responses');
 		expect(parsed.body.model).toBe('gpt-5.6-luna');
 		expect(parsed.body.reasoning.effort).toBe('high');
-		expect(parsed.body.input[0]?.content).toContain('Course: AP Biology');
+		expect(parsed.body.input[0]?.content).toContain('Course: AP English Language');
 		expect(parsed.body.text.format).toMatchObject({ name: 'frq_question', strict: true });
 		expect(parsed.body.max_output_tokens).toBe(16_000);
 	});

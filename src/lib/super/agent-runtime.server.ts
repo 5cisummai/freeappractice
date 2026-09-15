@@ -335,7 +335,7 @@ export async function createSuperAgentStreamResponse(
 				.catch((error) => logger.warn('Failed to roll up Super Agent usage', { error }));
 		};
 
-		return createAgentUIStreamResponse({
+		return await createAgentUIStreamResponse({
 			agent,
 			uiMessages,
 			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal]),

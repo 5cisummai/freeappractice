@@ -55,12 +55,7 @@
 											href={resolve(item.href)}
 											class="flex-col items-start gap-1.5 p-3"
 										>
-											<span
-												class={[
-													'text-sm font-medium',
-													item.href === '/super' ? 'super-text-gradient' : 'text-foreground'
-												]}
-											>
+											<span class="text-sm font-medium text-foreground">
 												{item.label}
 											</span>
 											<span class="text-xs leading-5 text-muted-foreground">
@@ -133,7 +128,7 @@
 							{item.label}
 						</a>
 					{/each}
-					{#each topbarResourceItems.filter((item) => item.href !== '/super') as item (item.href)}
+					{#each topbarResourceItems as item (item.href)}
 						<a
 							href={resolve(item.href)}
 							class="rounded-md px-2 py-2.5 font-medium text-foreground transition-colors hover:bg-muted hover:text-primary"

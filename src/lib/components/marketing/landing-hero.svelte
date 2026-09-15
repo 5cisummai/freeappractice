@@ -2,9 +2,9 @@
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_LINK_CLASS } from '$lib/components/marketing/hero-badge.js';
-	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
+	// import { Badge } from '$lib/components/ui/badge/index.js';
+	// import { HERO_BADGE_LINK_CLASS } from '$lib/components/marketing/hero-badge.js';
+	// import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
 
 	let { children }: { children?: Snippet } = $props();
 	let isDark = $state(false);
@@ -69,10 +69,10 @@
 
 	<div class="relative z-10 flex w-full max-w-5xl flex-col items-center">
 		<div class="flex max-w-3xl flex-col items-center space-y-6 text-center">
-			<Badge href="/signup?group=1" variant="outline" class={HERO_BADGE_LINK_CLASS}>
+			<!-- <Badge href="/signup?group=1" variant="outline" class={HERO_BADGE_LINK_CLASS}>
 				Create your study group
 				<ChevronRightIcon class="size-4" />
-			</Badge>
+			</Badge> -->
 			<h1
 				class="font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance text-foreground sm:text-5xl lg:text-[3.5rem]"
 			>
@@ -98,7 +98,7 @@
 			<p
 				class="max-w-xl text-base leading-7 text-balance text-muted-foreground sm:text-lg sm:leading-8"
 			>
-				Unlimited exam-style questions with personalized feedback across 20+ AP subjects.
+				Unlimited exam-style questions with personalized feedback across 20+ AP® subjects.
 			</p>
 		</div>
 
