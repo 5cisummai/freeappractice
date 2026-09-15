@@ -15,8 +15,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('$lib/auth/route-helpers.server', () => ({
 	getOptionalUserId: mocks.getOptionalUserId,
-	withAuthedHandler: (handler: (event: unknown, userId: string) => Promise<Response>) => (event: unknown) =>
-		handler(event, 'user-1')
+	withAuthedHandler:
+		(handler: (event: unknown, userId: string) => Promise<Response>) => (event: unknown) =>
+			handler(event, 'user-1')
 }));
 vi.mock('$lib/super/assistant.server', () => ({
 	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest

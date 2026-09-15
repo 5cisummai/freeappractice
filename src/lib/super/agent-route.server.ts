@@ -5,7 +5,6 @@ import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body
 import { createSuperAgentStreamResponse } from '$lib/super/agent-runtime.server';
 import { RedisRequiredError } from '$lib/super/ai-controls.server';
 import {
-	MAX_SUPER_AGENT_MESSAGES,
 	MAX_SUPER_AGENT_REQUEST_BYTES,
 	isSuperAgentToolContinuation,
 	superAgentRequestSchema,
@@ -15,10 +14,7 @@ import {
 /** Keep cleanup time inside Vercel's route duration even if a provider stream stalls. */
 export const superAgentRouteConfig = { maxDuration: 60 };
 
-export async function handleSuperAgentPost(
-	event: RequestEvent,
-	userId: string
-): Promise<Response> {
+export async function handleSuperAgentPost(event: RequestEvent, userId: string): Promise<Response> {
 	let body: unknown;
 	try {
 		body = await readJsonBody(event.request, MAX_SUPER_AGENT_REQUEST_BYTES);

@@ -13,7 +13,6 @@ import {
 	TUTOR_CHAT_STREAM_TIMEOUT_MS
 } from '$lib/tutor/chat-request';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';

@@ -12,11 +12,12 @@ vi.mock('$lib/super/agent-runtime.server', () => ({
 	createSuperAgentStreamResponse: mocks.createSuperAgentStreamResponse
 }));
 
+import type { RequestEvent } from '@sveltejs/kit';
 import { handleSuperAgentPost } from '$lib/super/agent-route.server';
 
 const sessionId = 'c8f3048f-1681-47f2-b1db-e912655275d0';
 
-function event(body: unknown) {
+function event(body: unknown): RequestEvent {
 	return {
 		request: new Request('https://app.test/api/super/agent', {
 			method: 'POST',
@@ -24,7 +25,7 @@ function event(body: unknown) {
 			headers: { 'content-type': 'application/json' }
 		}),
 		locals: {}
-	};
+	} as RequestEvent;
 }
 
 beforeEach(() => {
@@ -45,7 +46,11 @@ describe('handleSuperAgentPost', () => {
 			'user-1'
 		);
 
-		expect(mocks.authorizeFeatureRequest).toHaveBeenCalledWith(expect.anything(), 'user-1', 'coach');
+		expect(mocks.authorizeFeatureRequest).toHaveBeenCalledWith(
+			expect.anything(),
+			'user-1',
+			'coach'
+		);
 	});
 
 	it('authorizes question surface with personalized tutor and requires question context', async () => {
