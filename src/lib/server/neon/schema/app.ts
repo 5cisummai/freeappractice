@@ -70,7 +70,6 @@ export const userProfiles = appSchema.table(
 		userId: text('user_id')
 			.primaryKey()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		referralCode: text('referral_code'),
 		assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
 		subjects: text('subjects')
 			.array()
@@ -78,8 +77,7 @@ export const userProfiles = appSchema.table(
 			.default(sql`ARRAY[]::text[]`),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
-	},
-	(table) => [uniqueIndex('user_profiles_referral_code_uq').on(table.referralCode)]
+	}
 );
 
 export const userSubjects = appSchema.table(
@@ -249,26 +247,6 @@ export const bookmarks = appSchema.table(
 		createdAt: createdAt()
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.questionId] })]
-);
-
-export const referrals = appSchema.table(
-	'referrals',
-	{
-		id: text('id').primaryKey(),
-		referrerUserId: text('referrer_user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		referredUserId: text('referred_user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		activatedAt: timestamp('activated_at', { withTimezone: true, mode: 'date' }),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [
-		uniqueIndex('referrals_referred_user_uq').on(table.referredUserId),
-		index('referrals_referrer_activated_idx').on(table.referrerUserId, table.activatedAt)
-	]
 );
 
 export const frqAttempts = appSchema.table(

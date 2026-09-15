@@ -169,6 +169,13 @@
       "when": 1789344065917,
       "tag": "0024_flaky_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789512338180,
+      "tag": "0025_remove_referrals",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { mcqAttempts, referrals, userProgress } from '$lib/server/neon/schema';
+import { mcqAttempts, userProgress } from '$lib/server/neon/schema';
 import type { IQuestionAttempt } from '$lib/users/records.server';
 
 export type PersistedProgress = {
 	mastery: number;
 	totalAttempts: number;
 	correctAttempts: number;
-	referralActivated: boolean;
 	newlyRecorded: boolean;
 };
 
@@ -25,7 +24,6 @@ export async function persistQuestionAttempt(
 		mastery: number;
 		totalAttempts: number;
 		correctAttempts: number;
-		referralActivated: boolean;
 		newlyRecorded: boolean;
 	}>(sql`
 		WITH inserted AS (
@@ -65,14 +63,6 @@ export async function persistQuestionAttempt(
 				updated_at = EXCLUDED.updated_at
 			RETURNING mastery, total_attempts, correct_attempts
 		),
-		activated AS (
-			UPDATE ${referrals}
-			SET activated_at = ${attempt.attemptedAt}, updated_at = ${attempt.attemptedAt}
-			WHERE referred_user_id = ${userId}
-				AND activated_at IS NULL
-				AND EXISTS (SELECT 1 FROM inserted)
-			RETURNING id
-		),
 		selected_progress AS (
 			SELECT mastery, total_attempts, correct_attempts FROM progress
 			UNION ALL
@@ -88,7 +78,6 @@ export async function persistQuestionAttempt(
 			selected_progress.mastery,
 			selected_progress.total_attempts AS "totalAttempts",
 			selected_progress.correct_attempts AS "correctAttempts",
-			EXISTS (SELECT 1 FROM activated) AS "referralActivated",
 			EXISTS (SELECT 1 FROM inserted) AS "newlyRecorded"
 		FROM selected_progress
 	`);
@@ -98,7 +87,6 @@ export async function persistQuestionAttempt(
 		mastery: Number(progress.mastery),
 		totalAttempts: Number(progress.totalAttempts),
 		correctAttempts: Number(progress.correctAttempts),
-		referralActivated: progress.referralActivated,
 		newlyRecorded: progress.newlyRecorded
 	};
 }

@@ -19,7 +19,7 @@ Treat this as a focused product surface, not a playground for framework experime
 | `src/routes`                                         | SvelteKit pages, layouts, and thin HTTP boundaries                         |
 | `src/lib/question-bank`                              | Canonical question serving, generation, bank metadata, quality, and refill |
 | `src/lib/grading/frq`                                | FRQ attempt persistence and grading workflows                              |
-| `src/lib/users`, `src/lib/referrals`, `src/lib/auth` | Accounts, attempts, progress, history, bookmarks, and referrals            |
+| `src/lib/users`, `src/lib/auth`                      | Accounts, attempts, progress, history, and bookmarks                       |
 | `src/lib/super`, `src/lib/tutor`, `src/lib/mem0`     | Coach, tutor personalization, study plans, billing, and memory             |
 | `src/lib/question-bank/quality`, `src/lib/admin`     | Review jobs and operational dashboards                                     |
 | `src/lib/server/neon`                                | Drizzle schema and the Neon database client                                |

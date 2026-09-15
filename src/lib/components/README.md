@@ -23,14 +23,14 @@ Feature-specific UI lives in named subfolders. Shared primitives live under `ui/
 
 | Folder       | Purpose                           | Key files                                                                                                                                                         |
 | ------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `marketing/` | Landing page sections and banners | `features-section.svelte`, `aspiring-students-section.svelte`, `bottom-cta-section.svelte`, `public-page-hero.svelte`, `invite-banner.svelte`, `signature.svelte` |
+| `marketing/` | Landing page sections and banners | `features-section.svelte`, `aspiring-students-section.svelte`, `bottom-cta-section.svelte`, `public-page-hero.svelte`, `signature.svelte` |
 | `blog/`      | Blog index and post pages         | `blog-post-card.svelte`, `blog-related-links.svelte`                                                                                                              |
 
 ## Shell & auth
 
 | Folder    | Purpose                   | Key files                                                                                                                                                                                        |
 | --------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `layout/` | Site chrome and app shell | `topbar.svelte`, `site-footer.svelte`, `page-shell.svelte`, `app-sidebar.svelte`, `nav-user.svelte`, `theme-toggle.svelte`, `skip-to-main.svelte`, `back-to-home.svelte`, `referral-card.svelte` |
+| `layout/` | Site chrome and app shell | `topbar.svelte`, `site-footer.svelte`, `page-shell.svelte`, `app-sidebar.svelte`, `nav-user.svelte`, `theme-toggle.svelte`, `skip-to-main.svelte`, `back-to-home.svelte` |
 | `auth/`   | Sign-in and sign-up flows | `login-form.svelte`, `signup-form.svelte`, `google-logo.svelte`, `google-one-tap-prompt.svelte`                                                                                                  |
 
 ## Design system

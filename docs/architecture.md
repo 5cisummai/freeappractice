@@ -31,9 +31,8 @@ flowchart TB
         PracticeUI["components/practice — practice runner UI"]
         AI["ai/service.server.ts — Vercel AI SDK"]
         TutorLib["tutor/*"]
-        UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
-        Referrals["referrals/*"]
-        Catalog["catalog/* — AP classes, practice pages, validation"]
+		UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
+		Catalog["catalog/* — AP classes, practice pages, validation"]
         BlogLib["blog/* — markdown posts"]
         SiteUrl["site-url.ts — canonical origin"]
     end
@@ -64,7 +63,6 @@ flowchart TB
     AuthLib --> UsersLib
     UsersLib --> NeonDB
     UsersLib --> FrqLib
-    UsersLib --> Referrals
     QGen --> NeonDB
     QGen --> AI
     FrqLib --> NeonDB
@@ -73,7 +71,6 @@ flowchart TB
     TutorLib --> AI
     Catalog --> StaticJSON
     BlogLib --> BlogMD
-    Referrals --> NeonDB
     API --> GitHub
 
     PracticeSEO -.->|"CTA → /app/practice?apClass&unit"| AppUI
@@ -252,7 +249,7 @@ flowchart TD
     end
 
     subgraph Delete["Account cleanup"]
-        Del["deleteAppDataForUsers<br/>user/profile · attempt · referral rows"]
+        Del["deleteAppDataForUsers<br/>user/profile · attempt rows"]
     end
 
     Profile --> UserData["progress · MCQ/FRQ attempts<br/>bookmarks · practice experiments"]
@@ -346,11 +343,9 @@ erDiagram
     AUTH_USERS ||--o{ BOOKMARKS : has
     AUTH_USERS ||--o{ PRACTICE_EXPERIMENTS : assigned
     AUTH_USERS ||--o{ FRQ_ATTEMPT : has
-    AUTH_USERS ||--o{ REFERRAL : "referrer or referred"
 
     USER_PROFILES {
         string userId PK
-        string referralCode
         date createdAt
     }
 
@@ -388,12 +383,6 @@ erDiagram
         number pointsEarned
         number pointsAvailable
         number percentage
-    }
-
-    REFERRAL {
-        string referrerUserId
-        string referredUserId
-        string code
     }
 
     QUESTION_POOL {
@@ -444,7 +433,6 @@ erDiagram
 | **Question library** | Neon PostgreSQL = canonical and serving library; legacy S3 is import-only; refill workers generate; request path is selection-only (`POOL_WARMING` when empty) |
 | **Better Auth**      | Sessions, OAuth, email verification; creates the base user-profile row on signup; `deleteAppDataForUsers` cleans related app rows on account delete            |
 | **AI layer**         | One OpenAI-compatible provider for **worker** generation, FRQ grading, and tutor chat — not for `/api/question` serves                                         |
-| **Referrals**        | Invite cookie → claim → activate on first meaningful attempt                                                                                                   |
 | **Vercel**           | Hosting, cron refill route, `waitUntil` for background auth tasks, Flags SDK, optional Analytics/Speed Insights                                                |
 
 ---

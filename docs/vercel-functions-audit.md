@@ -43,7 +43,7 @@ Decide whether these routes intentionally rely exclusively on scheduled refill. 
 
 ### 5. Secondary performance opportunities
 
-- App/root server layouts still serialize some independent feature/access reads. Parallelize only after preserving referral grants, organization selection, and authorization dependencies.
+- App/root server layouts still serialize some independent feature/access reads. Parallelize only after preserving organization selection and authorization dependencies.
 - Sentry uses 100% trace sampling. Measure telemetry volume and latency before choosing a lower production rate; this is an operational tradeoff, not inherently a correctness bug.
 - Confirm function region against Neon and verify Fluid Compute in deployment settings. The project API confirmed Node 24, but did not establish region alignment, plan, or Fluid status. Absence of a `fluid` key in repository configuration is not evidence that Fluid is disabled.
 

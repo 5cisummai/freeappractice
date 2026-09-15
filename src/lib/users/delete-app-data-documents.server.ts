@@ -1,10 +1,9 @@
-import { inArray, or } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	coachAudits,
 	frqAttempts,
 	questionFeedback,
-	referrals,
 	studyPlans,
 	superBillingAccess,
 	superGrants,
@@ -27,11 +26,6 @@ export async function deleteAppDataDocuments(userIds: string[]): Promise<void> {
 		db.delete(superGrants).where(inArray(superGrants.userId, userIds)),
 		db.delete(superUsageRollups).where(inArray(superUsageRollups.userId, userIds)),
 		db.delete(studyPlans).where(inArray(studyPlans.userId, userIds)),
-		db.delete(coachAudits).where(inArray(coachAudits.userId, userIds)),
-		db
-			.delete(referrals)
-			.where(
-				or(inArray(referrals.referrerUserId, userIds), inArray(referrals.referredUserId, userIds))
-			)
+		db.delete(coachAudits).where(inArray(coachAudits.userId, userIds))
 	]);
 }
