@@ -8,7 +8,17 @@ export function getRedisClient(): Redis | null {
 	if (redisClient !== undefined) return redisClient;
 	const url = env.KV_REST_API_URL?.trim();
 	const token = env.KV_REST_API_TOKEN?.trim();
-	redisClient = url && token ? new Redis({ url, token }) : null;
+	redisClient =
+		url && token
+			? new Redis({
+					url,
+					token,
+					// Abort the transport as well as bounding callers with withRedisTimeout.
+					// A fresh signal is required for each request on this shared client.
+					signal: () => AbortSignal.timeout(750),
+					retry: false
+				})
+			: null;
 	return redisClient;
 }
 

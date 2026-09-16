@@ -6,13 +6,6 @@ import { logger } from '$lib/server/logger';
 import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
-import { buildHomepageLinkHeader } from '$lib/server/agent-discovery/link-headers';
-import {
-	acceptsMarkdown,
-	getHomepageMarkdown,
-	htmlToBasicMarkdown,
-	markdownResponse
-} from '$lib/server/agent-discovery/markdown';
 import { env } from '$env/dynamic/private';
 import { building, dev } from '$app/environment';
 import { createHandle } from 'flags/sveltekit';
@@ -72,21 +65,14 @@ function postProcessResponse(
 	}
 
 	if (event.url.pathname === '/' || event.url.pathname === '') {
-		response.headers.set('Link', buildHomepageLinkHeader());
-
 		// The homepage is public and identical for authenticated and anonymous users;
-		// authentication only redirects client-side. Cache it at Vercel's CDN while
-		// keeping the HTML/Markdown content-negotiation variants separate.
+		// authentication only redirects client-side. Cache it at Vercel's CDN.
 		if (event.request.method === 'GET' && response.status === 200) {
 			response.headers.set('Cache-Control', 'public, max-age=0');
 			response.headers.set(
 				'Vercel-CDN-Cache-Control',
 				'public, s-maxage=60, stale-while-revalidate=60'
 			);
-			const vary = response.headers.get('Vary');
-			if (!vary?.split(',').some((value) => value.trim().toLowerCase() === 'accept')) {
-				response.headers.set('Vary', vary ? `${vary}, Accept` : 'Accept');
-			}
 		}
 	}
 
@@ -96,23 +82,6 @@ function postProcessResponse(
 	}
 
 	return applyCorsHeaders(response, origin);
-}
-
-async function maybeServeMarkdown(
-	response: Response,
-	event: Parameters<Handle>[0]['event']
-): Promise<Response> {
-	if (event.request.method !== 'GET') return response;
-	if (!acceptsMarkdown(event.request)) return response;
-
-	const contentType = response.headers.get('content-type') ?? '';
-	if (!contentType.includes('text/html')) return response;
-
-	const { pathname } = event.url;
-
-	const html = await response.text();
-	const fallbackTitle = pathname.split('/').filter(Boolean).at(-1) ?? 'Free AP Practice';
-	return markdownResponse(htmlToBasicMarkdown(html, fallbackTitle));
 }
 
 const posthogProxyHandle: Handle = async ({ event, resolve }) => {
@@ -144,14 +113,6 @@ const posthogProxyHandle: Handle = async ({ event, resolve }) => {
 const appHandle: Handle = async ({ event, resolve }) => {
 	const origin = event.request.headers.get('origin');
 	const isAllowedOrigin = origin !== null && ALLOWED_ORIGINS.has(origin);
-
-	if (
-		event.request.method === 'GET' &&
-		acceptsMarkdown(event.request) &&
-		(event.url.pathname === '/' || event.url.pathname === '')
-	) {
-		return postProcessResponse(markdownResponse(await getHomepageMarkdown()), event, origin);
-	}
 
 	if (event.url.pathname === '/favicon.ico') {
 		return new Response(null, {
@@ -302,7 +263,7 @@ const appHandle: Handle = async ({ event, resolve }) => {
 	const requestStart = Date.now();
 
 	const resolved = await resolve(event);
-	const response = postProcessResponse(await maybeServeMarkdown(resolved, event), event, origin);
+	const response = postProcessResponse(resolved, event, origin);
 
 	const requestTimeMs = Date.now() - requestStart;
 	const requestMeta = {

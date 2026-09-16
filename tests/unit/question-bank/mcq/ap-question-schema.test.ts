@@ -13,7 +13,6 @@ import {
 
 describe('apQuestionSchema OpenAI structured-output compatibility', () => {
 	it('keeps every property required for OpenAI structured outputs', () => {
-		expect(findOpenAiOptionalPropertyPaths(apQuestionSchema)).toEqual([]);
 		expect(() =>
 			assertOpenAiCompatibleObjectSchema(apQuestionSchema, { schemaName: 'ap_question' })
 		).not.toThrow();

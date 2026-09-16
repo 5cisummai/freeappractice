@@ -33,7 +33,7 @@
 		<PublicPageHero
 			title="Terms of Service"
 			description="The rules and guidelines for using Free AP Practice."
-			meta="Last Updated: August 9, 2026"
+			meta="Last Updated: September 15, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -200,10 +200,10 @@
 					We may suspend or terminate access to the Service at any time for violations of these
 					Terms, security concerns, or operational reasons. You may delete your account through the
 					Service or by contacting us. Deletion removes the account record from our primary database
-					and initiates removal of app-owned profile, practice, personalization, referral,
-					billing-mirror, study-plan, feedback, audit, and tutor-memory data. Some information may
-					remain in backups, logs, billing records, or third-party systems for a limited time, and
-					provider backups or support records may not be immediately removable by us.
+					and initiates removal of app-owned profile, practice, personalization, billing-mirror,
+					study-plan, feedback, audit, and tutor-memory data. Some information may remain in
+					backups, logs, billing records, or third-party systems for a limited time, and provider
+					backups or support records may not be immediately removable by us.
 				</p>
 			</section>
 

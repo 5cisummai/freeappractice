@@ -14,7 +14,7 @@ flowchart TB
         AuthUI["Auth pages<br/>/login, /signup, /verify-email,<br/>/forgot-password, /reset-password"]
         PracticeSEO["SEO practice landings<br/>/practice/[...slug]"]
         AppUI["Authenticated app /app/*<br/>dashboard · practice · progress<br/>history · resources · settings"]
-        Components["Feature UI under $lib/components<br/>PracticeShell · QuestionCard · FrqCard<br/>Tutor · Sidebar · Data tables"]
+        Components["Feature UI under $lib/components<br/>PracticeShell · QuestionCard · FrqSession<br/>Tutor · Sidebar · Data tables"]
     end
 
     subgraph Vercel["SvelteKit on Vercel"]
@@ -31,9 +31,8 @@ flowchart TB
         PracticeUI["components/practice — practice runner UI"]
         AI["ai/service.server.ts — Vercel AI SDK"]
         TutorLib["tutor/*"]
-        UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
-        Referrals["referrals/*"]
-        Catalog["catalog/* — AP classes, practice pages, validation"]
+		UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
+		Catalog["catalog/* — AP classes, practice pages, validation"]
         BlogLib["blog/* — markdown posts"]
         SiteUrl["site-url.ts — canonical origin"]
     end
@@ -64,7 +63,6 @@ flowchart TB
     AuthLib --> UsersLib
     UsersLib --> NeonDB
     UsersLib --> FrqLib
-    UsersLib --> Referrals
     QGen --> NeonDB
     QGen --> AI
     FrqLib --> NeonDB
@@ -73,7 +71,6 @@ flowchart TB
     TutorLib --> AI
     Catalog --> StaticJSON
     BlogLib --> BlogMD
-    Referrals --> NeonDB
     API --> GitHub
 
     PracticeSEO -.->|"CTA → /app/practice?apClass&unit"| AppUI
@@ -201,7 +198,7 @@ flowchart TD
     RefillReq --> Worker
     Worker --> NeonInsert["Generate or import<br/>then insert active Neon row"]
 
-    Return --> UI["QuestionCard or FrqCard"]
+    Return --> UI["QuestionCard or FrqSession"]
     UI --> Attempt["User answers"]
     Attempt --> Record["MCQ: POST /api/me/record-attempt<br/>FRQ: POST /api/question/frq/grade"]
     Record --> Profile["MCQ → relational attempt + progress rows<br/>FRQ → relational attempt + grade rows"]
@@ -252,7 +249,7 @@ flowchart TD
     end
 
     subgraph Delete["Account cleanup"]
-        Del["deleteAppDataForUsers<br/>user/profile · attempt · referral rows"]
+        Del["deleteAppDataForUsers<br/>user/profile · attempt rows"]
     end
 
     Profile --> UserData["progress · MCQ/FRQ attempts<br/>bookmarks · practice experiments"]
@@ -272,7 +269,7 @@ sequenceDiagram
     participant U as Student
     participant App as /app/practice
     participant PS as PracticeShell
-    participant Card as QuestionCard / FrqCard
+    participant Card as QuestionCard / FrqSession
     participant Sess as question-card-session
     participant API as API
     participant AI as OpenAI / LM Studio
@@ -299,7 +296,7 @@ sequenceDiagram
             API->>DB: Atomic MCQ attempt + progress update
         end
     else FRQ
-        PS->>Card: FrqCard
+        PS->>Card: FrqSession
         Card->>API: POST /api/question/frq
         API->>DB: indexed random select from active FRQ library
         alt hit
@@ -346,11 +343,9 @@ erDiagram
     AUTH_USERS ||--o{ BOOKMARKS : has
     AUTH_USERS ||--o{ PRACTICE_EXPERIMENTS : assigned
     AUTH_USERS ||--o{ FRQ_ATTEMPT : has
-    AUTH_USERS ||--o{ REFERRAL : "referrer or referred"
 
     USER_PROFILES {
         string userId PK
-        string referralCode
         date createdAt
     }
 
@@ -388,12 +383,6 @@ erDiagram
         number pointsEarned
         number pointsAvailable
         number percentage
-    }
-
-    REFERRAL {
-        string referrerUserId
-        string referredUserId
-        string code
     }
 
     QUESTION_POOL {
@@ -444,7 +433,6 @@ erDiagram
 | **Question library** | Neon PostgreSQL = canonical and serving library; legacy S3 is import-only; refill workers generate; request path is selection-only (`POOL_WARMING` when empty) |
 | **Better Auth**      | Sessions, OAuth, email verification; creates the base user-profile row on signup; `deleteAppDataForUsers` cleans related app rows on account delete            |
 | **AI layer**         | One OpenAI-compatible provider for **worker** generation, FRQ grading, and tutor chat — not for `/api/question` serves                                         |
-| **Referrals**        | Invite cookie → claim → activate on first meaningful attempt                                                                                                   |
 | **Vercel**           | Hosting, cron refill route, `waitUntil` for background auth tasks, Flags SDK, optional Analytics/Speed Insights                                                |
 
 ---

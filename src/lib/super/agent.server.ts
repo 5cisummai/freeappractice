@@ -4,11 +4,10 @@ import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { openaiModel } from '$lib/ai/service.server';
 import { logger } from '$lib/server/logger';
 import { pruneSuperAgentModelMessages } from '$lib/super/agent-messages.server';
-import type { SuperAgentContext, SuperAgentMode } from '$lib/super/coach-agent.types';
-import type { CoachThinkingMode } from '$lib/super/agent-request';
+import type { CoachThinkingMode, SuperAgentContext } from '$lib/super/agent-request';
 import { createSuperTools } from '$lib/super/coach-tools.server';
 
-export type { SuperAgentContext, SuperAgentMode } from '$lib/super/coach-agent.types';
+export type { SuperAgentContext } from '$lib/super/agent-request';
 
 /**
  * The Super agent is intentionally only model behavior plus tools.
@@ -22,7 +21,6 @@ export function createSuperAgent(input: {
 	personalizationContext?: string;
 	composerActionInstructions?: string;
 	historySummary?: string;
-	mode?: SuperAgentMode;
 	thinkingMode?: CoachThinkingMode;
 	currentContext?: SuperAgentContext;
 	conversationId?: string;
@@ -35,41 +33,64 @@ export function createSuperAgent(input: {
 		personalizationContext,
 		composerActionInstructions,
 		historySummary,
-		mode = 'coach',
 		thinkingMode = 'quick',
 		currentContext,
 		conversationId
 	} = input;
+	const surface = currentContext?.surface ?? 'coach';
+	let reasoningEffort: 'low' | 'medium' | 'high';
+	switch (thinkingMode) {
+		case 'quick':
+			reasoningEffort = 'low';
+			break;
+		case 'thinking':
+			reasoningEffort = 'medium';
+			break;
+		case 'deep':
+			reasoningEffort = 'high';
+			break;
+		default: {
+			const _exhaustive: never = thinkingMode;
+			reasoningEffort = _exhaustive;
+		}
+	}
 	const answerDisclosureRestriction =
 		'Never reveal the correct answer to the current MCQ, the hidden reference answer, or private FRQ rubric text. Use server-owned answer and grading facts only to guide reasoning and diagnose misconceptions.';
-	const modeInstructions =
-		mode === 'question'
-			? [
-					'You are operating in question mode. Start with the current question and the student’s likely reasoning, then connect it to relevant prior evidence.',
-					'When the student says help, infer that they want help with the current question without asking them to restate it.',
-					answerDisclosureRestriction,
-					'You have the same tools and action capabilities as Coach.'
-				].join('\n')
-			: [
-					'You are operating in Coach mode. Lead with the best next action based on the student evidence and current page context.',
-					...(currentContext?.questionId ? [answerDisclosureRestriction] : [])
-				].join('\n');
+	let surfaceInstructions: string;
+	switch (surface) {
+		case 'question':
+			surfaceInstructions = [
+				'You are helping with the current practice question. Start from that question and the student’s likely reasoning, then connect it to relevant prior evidence.',
+				'When the student says help, infer that they want help with the current question without asking them to restate it.',
+				answerDisclosureRestriction
+			].join('\n');
+			break;
+		case 'coach':
+			surfaceInstructions = [
+				'You are on the Coach surface. Lead with the best next action based on the student evidence and current page context.',
+				...(currentContext?.questionId ? [answerDisclosureRestriction] : [])
+			].join('\n');
+			break;
+		default: {
+			const _exhaustive: never = surface;
+			throw new Error(`Unhandled Super Agent surface: ${_exhaustive}`);
+		}
+	}
 
 	return new ToolLoopAgent({
-		id: 'super-coach',
+		id: 'super',
 		model: openaiModel(COACH_MODEL),
 		providerOptions: {
 			openai: {
 				forceReasoning: true,
-				reasoningEffort:
-					thinkingMode === 'quick' ? 'low' : thinkingMode === 'deep' ? 'high' : 'medium'
+				reasoningEffort
 			}
 		},
 		maxOutputTokens: 700,
 		stopWhen: stepCountIs(20),
 		instructions: [
-			'You are Super Coach for AP students. Be encouraging, specific, concise, and honest about uncertainty.',
-			modeInstructions,
+			'You are Super Agent for AP students. Be encouraging, specific, concise, and honest about uncertainty.',
+			surfaceInstructions,
 			'Format every response as Markdown. Wrap inline math in single dollar delimiters like `$mg\\sin\\theta$` and display equations in double dollar delimiters like `$$N=mg\\cos\\theta$$`. Never emit bare LaTeX equations without delimiters.',
 			'Use tools for curriculum and student data. Each tool description defines what it returns and when to use it. Never invent progress, scores, eligibility, or calendar events.',
 			'Ground advice in tool results and provided context. Say when evidence is thin, and turn recommendations into a small measurable next action.',
@@ -96,7 +117,7 @@ export function createSuperAgent(input: {
 			if (stepNumber === 0) {
 				logger.info('Super Agent context pruned', {
 					conversationId,
-					mode,
+					surface,
 					modelMessagesBefore: messages.length,
 					modelMessagesAfter: pruned.length
 				});
@@ -106,8 +127,4 @@ export function createSuperAgent(input: {
 	});
 }
 
-/** The Coach page renders these tool calls directly from the SDK UI stream. */
-export const createCoachAgent = createSuperAgent;
-
-export type CoachUIMessage = InferAgentUIMessage<ReturnType<typeof createSuperAgent>>;
-export type SuperAgentUIMessage = CoachUIMessage;
+export type SuperAgentUIMessage = InferAgentUIMessage<ReturnType<typeof createSuperAgent>>;

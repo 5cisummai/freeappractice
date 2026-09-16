@@ -21,14 +21,13 @@ const attempt = {
 describe('persistQuestionAttempt', () => {
 	beforeEach(() => vi.clearAllMocks());
 
-	it('returns the atomic insert, progress, and referral result', async () => {
+	it('returns the atomic insert and progress result', async () => {
 		mocks.execute.mockResolvedValue({
 			rows: [
 				{
 					mastery: 75,
 					totalAttempts: 4,
 					correctAttempts: 3,
-					referralActivated: true,
 					newlyRecorded: true
 				}
 			]
@@ -40,7 +39,6 @@ describe('persistQuestionAttempt', () => {
 			mastery: 75,
 			totalAttempts: 4,
 			correctAttempts: 3,
-			referralActivated: true,
 			newlyRecorded: true
 		});
 		expect(mocks.execute).toHaveBeenCalledOnce();
@@ -53,7 +51,6 @@ describe('persistQuestionAttempt', () => {
 					mastery: '75',
 					totalAttempts: '4',
 					correctAttempts: '3',
-					referralActivated: false,
 					newlyRecorded: false
 				}
 			]
@@ -63,7 +60,6 @@ describe('persistQuestionAttempt', () => {
 			persistQuestionAttempt('student-1', attempt, '019fe8b0-0000-7000-8000-000000000001')
 		).resolves.toMatchObject({
 			totalAttempts: 4,
-			referralActivated: false,
 			newlyRecorded: false
 		});
 	});

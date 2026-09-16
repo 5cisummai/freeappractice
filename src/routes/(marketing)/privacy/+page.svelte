@@ -31,7 +31,7 @@
 		<PublicPageHero
 			title="Privacy Policy"
 			description="How we collect, use, and protect your information when you use Free AP Practice."
-			meta="Last Updated: August 11, 2026"
+			meta="Last Updated: September 15, 2026"
 		/>
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
@@ -93,10 +93,6 @@
 						<strong>Billing data:</strong> subscription and billing status, plan, billing period, and
 						Stripe customer and subscription identifiers. Stripe handles payment-card details.
 					</li>
-					<li>
-						<strong>Referral data:</strong> referral codes, attribution timestamps, and the account relationship
-						needed to measure referrals.
-					</li>
 				</ul>
 				<h3 class="mt-4 text-lg font-medium">2.2 Automatically Collected Data</h3>
 				<ul class="list-disc space-y-1 pl-6">
@@ -124,7 +120,7 @@
 				<ul class="list-disc space-y-1 pl-6">
 					<li>Theme, layout, and settings preferences</li>
 					<li>Analytics consent, an analytics journey key, and related opt-in measurement flags</li>
-					<li>Onboarding, first-use hint, referral, timezone, and sidebar-state cookies</li>
+					<li>Onboarding, first-use hint, timezone, and sidebar-state cookies</li>
 					<li>
 						Temporary conversation identifiers, Coach state, and written-response drafts in session
 						storage
@@ -140,7 +136,7 @@
 						responses
 					</li>
 					<li>To authenticate accounts, maintain sessions, and protect the Service</li>
-					<li>To track progress, bookmarks, attempts, referrals, and saved preferences</li>
+					<li>To track progress, bookmarks, attempts, and saved preferences</li>
 					<li>To personalize tutoring and build or update study plans</li>
 					<li>To send transactional emails such as verification and password reset emails</li>
 					<li>To process subscriptions, payments, taxes, cancellations, and account access</li>
@@ -193,11 +189,11 @@
 				<h2 class="text-xl font-semibold">6. Cookies and Local Storage</h2>
 				<p>
 					We use HTTP-only session cookies to keep you signed in, plus first-party cookies for
-					onboarding, first-use hints, referral attribution, timezone, analytics consent, and
-					sidebar state. Local storage stores theme and settings preferences and opt-in analytics
-					controls. Session storage can hold temporary written-response drafts and Coach session
-					state. Durable Super conversation messages remain server-side so a signed-in student can
-					continue a Coach or question Tutor thread after reload.
+					onboarding, first-use hints, timezone, analytics consent, and sidebar state. Local storage
+					stores theme and settings preferences and opt-in analytics controls. Session storage can
+					hold temporary written-response drafts and Coach session state. Durable Super conversation
+					messages remain server-side so a signed-in student can continue a Coach or question Tutor
+					thread after reload.
 				</p>
 				<p class="mt-2">
 					If you accept optional PostHog analytics, PostHog may set first-party cookies and use
@@ -308,11 +304,11 @@
 					You can clear practice data from Settings, which removes question history, mastery
 					progress, bookmarks, and written-response submissions while keeping your account. You can
 					request account deletion in Settings or by contacting us. Account deletion initiates
-					removal of app-owned account, profile, practice, personalization, referral,
-					billing-mirror, study-plan, feedback, and audit records; authentication records are
-					handled by Better Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued and
-					retried. Information held by third parties, backups, logs, or support records may persist
-					under their own practices or legal obligations.
+					removal of app-owned account, profile, practice, personalization, billing-mirror,
+					study-plan, feedback, and audit records; authentication records are handled by Better
+					Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued and retried.
+					Information held by third parties, backups, logs, or support records may persist under
+					their own practices or legal obligations.
 				</p>
 			</section>
 

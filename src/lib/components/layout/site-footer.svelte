@@ -52,7 +52,7 @@
 					>
 				</p>
 				<p class="max-w-xs text-xs leading-5 text-muted-foreground">
-					Literally free AP practice questions.
+					Free AP exam practice for students.
 				</p>
 			</div>
 

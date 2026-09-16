@@ -10,14 +10,7 @@ import { createTutorChatStream } from '$lib/tutor/chat-stream.server';
 import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { chat } from '$lib/tutor/service.server';
-import { createSuperAgentStreamResponse } from '$lib/super/agent-runtime.server';
-import {
-	MAX_SUPER_AGENT_REQUEST_BYTES,
-	superAgentRequestSchema,
-	toSuperAgentContext
-} from '$lib/super/agent-request';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;
@@ -28,7 +21,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 		let body: unknown;
 		try {
-			body = await readJsonBody(request, MAX_SUPER_AGENT_REQUEST_BYTES);
+			body = await readJsonBody(request, MAX_TUTOR_CHAT_REQUEST_BYTES);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
 				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
@@ -36,37 +29,7 @@ export const POST: RequestHandler = async (event) => {
 			return json({ error: 'Tutor chat request must be valid JSON' }, { status: 400 });
 		}
 
-		const superRequest = superAgentRequestSchema.safeParse(body);
-		if (superRequest.success && superRequest.data.context.mode === 'question') {
-			if (!userId) return json({ error: 'Authentication required' }, { status: 401 });
-			const access = await authorizeFeatureRequest(event, userId, 'personalizedTutor');
-			if (!access.allowed) return json({ error: access.message }, { status: access.status });
-			if (
-				superRequest.data.context.questionType !== 'mcq' ||
-				!superRequest.data.context.questionId
-			) {
-				return json({ error: 'A current question is required for Super Tutor.' }, { status: 400 });
-			}
-			try {
-				return await createSuperAgentStreamResponse({
-					event,
-					userId,
-					sessionId: superRequest.data.sessionId,
-					context: toSuperAgentContext(superRequest.data.context),
-					messages: superRequest.data.messages,
-					surface: 'question',
-					errorLabel: 'Super Tutor'
-				});
-			} catch (error) {
-				logger.error('Super Tutor chat error', { error });
-				return json({ error: 'Failed to start Super Tutor' }, { status: 500 });
-			}
-		}
-
 		const result = tutorChatRequestSchema.safeParse(body);
-		if (Buffer.byteLength(JSON.stringify(body)) > MAX_TUTOR_CHAT_REQUEST_BYTES) {
-			return json({ error: 'Tutor chat request is too large' }, { status: 413 });
-		}
 		if (!result.success) {
 			return json(
 				{

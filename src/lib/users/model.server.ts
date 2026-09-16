@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
 import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
@@ -10,10 +9,6 @@ import {
 	userProgress,
 	userSubjects
 } from '$lib/server/neon/schema';
-
-export function createReferralCode(): string {
-	return randomBytes(9).toString('base64url');
-}
 
 /** Persist only the user's selected subjects instead of rewriting their full profile. */
 export async function updateUserSubjects(userId: string, subjects: string[]): Promise<void> {
@@ -39,23 +34,8 @@ export async function updateUserSubjects(userId: string, subjects: string[]): Pr
 	await db.batch([updateProfile, deleteSubjects]);
 }
 
-/** Return the existing referral code or assign one with a single atomic update. */
-export async function ensureUserReferralCode(userId: string): Promise<string> {
-	const db = getNeonDatabase();
-	const candidate = createReferralCode();
-	const [profile] = await db
-		.update(userProfiles)
-		.set({ referralCode: sql`coalesce(${userProfiles.referralCode}, ${candidate})` })
-		.where(eq(userProfiles.userId, userId))
-		.returning({ referralCode: userProfiles.referralCode });
-
-	if (!profile?.referralCode) throw new Error('User profile not found');
-	return profile.referralCode;
-}
-
 export interface IUserProfile {
 	userId: string;
-	referralCode?: string;
 	subjects: string[];
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
@@ -64,18 +44,17 @@ export interface IUserProfile {
 	updatedAt: Date;
 }
 
-type ProfileFilter = { userId?: string; referralCode?: string };
+type ProfileFilter = { userId?: string };
 
 function whereFor(filter: ProfileFilter) {
 	if (filter.userId) return eq(userProfiles.userId, filter.userId);
-	if (filter.referralCode) return eq(userProfiles.referralCode, filter.referralCode);
 	return undefined;
 }
 
 export async function createUserProfile(userId: string): Promise<void> {
 	await getNeonDatabase()
 		.insert(userProfiles)
-		.values({ userId, referralCode: createReferralCode() })
+		.values({ userId })
 		.onConflictDoNothing({ target: userProfiles.userId });
 }
 

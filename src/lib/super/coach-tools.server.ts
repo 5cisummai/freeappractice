@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
 import { getApCurriculumKnowledge } from '$lib/ap-knowledge/catalog';
 import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/super/ai-controls.server';
-import type { SuperToolsInput } from '$lib/super/coach-agent.types';
+import type { SuperToolsInput } from '$lib/super/agent-request';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 import {
 	getCoachActivitySummary,
@@ -178,7 +178,7 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		read_study_plan: tool({
 			description:
-				'Active weekly study plan, task statuses, and the latest insights narrative. Use for planning, schedule, or "what should I work on" questions.',
+				'Active weekly study plan and task statuses. Use for planning, scheduling, or "what should I work on" questions.',
 			inputSchema: z.object({}),
 			execute: () => getCurrentStudyPlan(userId)
 		}),

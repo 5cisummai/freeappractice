@@ -5,6 +5,28 @@
 
 	const changelog = [
 		{
+			version: '1.9.0',
+			date: 'September 15, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Moved written-response practice into a dedicated Free Response tab with a full-session layout for answering, review, and feedback'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Practice tabs are now Unlimited MCQ, Graded Quizzes, and Free Response',
+						'Written-response practice currently covers AP English Language',
+						'Simplified homepage calls to action and error pages, and removed Super from public navigation',
+						'Removed the Insights page; weekly study plans remain available in Pip',
+						'Removed classmate referral invites and the invite banner on subject pages'
+					]
+				}
+			]
+		},
+		{
 			version: '1.8.5',
 			date: 'September 12, 2026',
 			sections: [
@@ -1403,7 +1425,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 12, 2026"
+			meta="Last Updated: September 15, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

@@ -31,7 +31,6 @@ import {
 	getQuestionQuality,
 	getReviewJob,
 	getReviewJobItem,
-	listActiveReviewJobIds,
 	listAssessedQuestionIds,
 	listClaimedReviewQuestionIds,
 	listReviewJobItems,
@@ -759,21 +758,6 @@ export async function setReviewJobState(
 	await updateReviewJob(job.id, { status: job.status });
 	if (action === 'resume') return refreshReviewJob(jobId);
 	return toJobSummary(job);
-}
-
-export async function recoverActiveReviewJobs(): Promise<number> {
-	const jobs = await listActiveReviewJobIds();
-	for (const jobId of jobs) {
-		try {
-			await refreshReviewJob(jobId);
-		} catch (error) {
-			logger.error('Question quality recovery failed', {
-				jobId,
-				error: error instanceof Error ? error.message : String(error)
-			});
-		}
-	}
-	return jobs.length;
 }
 
 export async function recordHumanDecision(opts: {

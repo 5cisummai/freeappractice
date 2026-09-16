@@ -455,11 +455,11 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 					interactive
 					class="mb-5"
 				/>
-				<h1
+				<h2
 					class="font-display text-3xl leading-tight font-medium tracking-tight text-balance text-foreground sm:text-4xl"
 				>
 					Where should we start?
-				</h1>
+				</h2>
 			</div>
 		{/if}
 

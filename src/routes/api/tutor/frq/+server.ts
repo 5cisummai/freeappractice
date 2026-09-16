@@ -13,18 +13,10 @@ import {
 	TUTOR_CHAT_STREAM_TIMEOUT_MS
 } from '$lib/tutor/chat-request';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { logger } from '$lib/server/logger';
 import { limitGenericTutor } from '$lib/super/ai-controls.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
-import { createSuperAgentStreamResponse } from '$lib/super/agent-runtime.server';
-import {
-	MAX_SUPER_AGENT_REQUEST_BYTES,
-	superAgentRequestSchema,
-	toSuperAgentContext
-} from '$lib/super/agent-request';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
@@ -36,7 +28,7 @@ export const POST: RequestHandler = withAuthedHandler(
 
 		let body: unknown;
 		try {
-			body = await readJsonBody(event.request, MAX_SUPER_AGENT_REQUEST_BYTES);
+			body = await readJsonBody(event.request, MAX_TUTOR_CHAT_REQUEST_BYTES);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
 				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
@@ -44,39 +36,7 @@ export const POST: RequestHandler = withAuthedHandler(
 			return json({ error: 'Invalid tutor chat request' }, { status: 400 });
 		}
 
-		const superRequest = superAgentRequestSchema.safeParse(body);
-		if (superRequest.success && superRequest.data.context.mode === 'question') {
-			const access = await authorizeFeatureRequest(event, userId, 'personalizedTutor');
-			if (!access.allowed) return json({ error: access.message }, { status: access.status });
-			if (
-				superRequest.data.context.questionType !== 'frq' ||
-				!superRequest.data.context.questionId
-			) {
-				return json(
-					{ error: 'A current FRQ question is required for Super Tutor.' },
-					{ status: 400 }
-				);
-			}
-			try {
-				return await createSuperAgentStreamResponse({
-					event,
-					userId,
-					sessionId: superRequest.data.sessionId,
-					context: toSuperAgentContext(superRequest.data.context),
-					messages: superRequest.data.messages,
-					surface: 'question',
-					errorLabel: 'Super FRQ Tutor'
-				});
-			} catch (error) {
-				logger.error('Super FRQ Tutor chat error', { error });
-				return json({ error: 'Failed to start Super FRQ Tutor' }, { status: 500 });
-			}
-		}
-
 		const result = frqTutorChatRequestSchema.safeParse(body);
-		if (Buffer.byteLength(JSON.stringify(body)) > MAX_TUTOR_CHAT_REQUEST_BYTES) {
-			return json({ error: 'Tutor chat request is too large' }, { status: 413 });
-		}
 		if (!result.success) {
 			return json(
 				{

@@ -16,7 +16,6 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
-import type { StudyPlanInsights } from '$lib/super/types';
 
 export const appSchema = pgSchema('app');
 
@@ -65,23 +64,18 @@ export const appFeedback = appSchema.table(
 
 // User-owned application data. Arrays and JSONB are limited to values that
 // are genuinely document-shaped; facts that are queried or joined are rows.
-export const userProfiles = appSchema.table(
-	'user_profiles',
-	{
-		userId: text('user_id')
-			.primaryKey()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		referralCode: text('referral_code'),
-		assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
-		subjects: text('subjects')
-			.array()
-			.notNull()
-			.default(sql`ARRAY[]::text[]`),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [uniqueIndex('user_profiles_referral_code_uq').on(table.referralCode)]
-);
+export const userProfiles = appSchema.table('user_profiles', {
+	userId: text('user_id')
+		.primaryKey()
+		.references(() => authUsers.id, { onDelete: 'cascade' }),
+	assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
+	subjects: text('subjects')
+		.array()
+		.notNull()
+		.default(sql`ARRAY[]::text[]`),
+	createdAt: createdAt(),
+	updatedAt: updatedAt()
+});
 
 export const userSubjects = appSchema.table(
 	'user_subjects',
@@ -250,26 +244,6 @@ export const bookmarks = appSchema.table(
 		createdAt: createdAt()
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.questionId] })]
-);
-
-export const referrals = appSchema.table(
-	'referrals',
-	{
-		id: text('id').primaryKey(),
-		referrerUserId: text('referrer_user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		referredUserId: text('referred_user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		activatedAt: timestamp('activated_at', { withTimezone: true, mode: 'date' }),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [
-		uniqueIndex('referrals_referred_user_uq').on(table.referredUserId),
-		index('referrals_referrer_activated_idx').on(table.referrerUserId, table.activatedAt)
-	]
 );
 
 export const frqAttempts = appSchema.table(
@@ -467,7 +441,6 @@ export const studyPlans = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		startsOn: date('starts_on', { mode: 'date' }).notNull(),
-		insights: jsonb('insights').$type<StudyPlanInsights | null>(),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -490,23 +463,6 @@ export const studyTasks = appSchema.table(
 		practiceHref: text('practice_href')
 	},
 	(table) => [index('study_tasks_plan_date_idx').on(table.planId, table.taskDate)]
-);
-
-export const studyPlanAudits = appSchema.table(
-	'study_plan_audits',
-	{
-		id: text('id').primaryKey(),
-		userId: text('user_id')
-			.notNull()
-			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		action: text('action').notNull(),
-		before: jsonb('before').$type<Record<string, unknown> | null>(),
-		after: jsonb('after').$type<Record<string, unknown>>().notNull(),
-		undoneAt: timestamp('undone_at', { withTimezone: true, mode: 'date' }),
-		createdAt: createdAt(),
-		updatedAt: updatedAt()
-	},
-	(table) => [index('study_plan_audits_user_created_idx').on(table.userId, table.createdAt)]
 );
 
 export const coachAudits = appSchema.table(

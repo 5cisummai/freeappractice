@@ -74,13 +74,6 @@ export async function recordQuestionAttempt(
 	};
 
 	const progress = await persistQuestionAttempt(userId, attempt, attemptId || undefined);
-	if (progress.referralActivated) {
-		capturePostHogServerEvent(request, {
-			distinctId: userId,
-			event: 'referral_activated',
-			properties: { source: 'first_attempt' }
-		});
-	}
 
 	if (progress.newlyRecorded)
 		capturePostHogServerEvent(request, {

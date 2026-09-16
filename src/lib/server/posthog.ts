@@ -22,7 +22,11 @@ function getPostHogClient() {
 		posthogClient = new PostHog(PUBLIC_POSTHOG_PROJECT_TOKEN, {
 			host: PUBLIC_POSTHOG_HOST,
 			flushAt: 1,
-			flushInterval: 0
+			flushInterval: 0,
+			// These captures run through Vercel waitUntil. Keep a provider outage
+			// from consuming the request's entire serverless duration.
+			requestTimeout: 1000,
+			fetchRetryCount: 0
 		});
 	}
 	return posthogClient;

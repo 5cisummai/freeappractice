@@ -9,7 +9,6 @@ type SiteNavItem = {
 		| '/about'
 		| '/changelog'
 		| '/pricing'
-		| '/super'
 		| '/privacy'
 		| '/terms'
 		| '/login'
@@ -26,11 +25,6 @@ type SiteNavGroup = {
 export const topbarNavItems: SiteNavItem[] = [{ href: '/subjects', label: 'Subjects' }];
 
 export const topbarResourceItems = [
-	{
-		href: '/super',
-		label: 'Super',
-		description: 'Personalized tutoring, Coach, and study plans.'
-	},
 	{
 		href: '/about',
 		label: 'About',

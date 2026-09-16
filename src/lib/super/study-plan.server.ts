@@ -2,15 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, exists, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { studyPlans, studyTasks } from '$lib/server/neon/schema';
-import { parseStudyPlanInsights } from '$lib/super/study-plan-insights';
 import { getPlanAccess } from '$lib/super/billing.server';
 import { getTutorProfileView } from '$lib/super/profile.server';
-import {
-	hasPaidCapability,
-	type StudyPlanInsights,
-	type StudyPlanView,
-	type StudyTask
-} from '$lib/super/types';
+import { hasPaidCapability, type StudyPlanView, type StudyTask } from '$lib/super/types';
 import { isDuplicateKeyError } from '$lib/question-bank/util.server';
 
 export const STUDY_PLAN_RETENTION_DAYS = 90;
@@ -19,7 +13,6 @@ export const STUDY_PLAN_MAX_TASK_MINUTES = 30;
 export type StudyPlanDraft = {
 	startsOn: string | Date;
 	tasks: StudyTask[];
-	insights?: StudyPlanInsights | null;
 };
 
 export class StudyPlansLockedError extends Error {
@@ -74,7 +67,6 @@ export function toStudyPlanView(plan: {
 		status: 'todo' | 'done';
 		practiceHref?: string;
 	}>;
-	insights?: StudyPlanInsights | null;
 	updatedAt: Date | string;
 }): StudyPlanView {
 	return {
@@ -90,7 +82,6 @@ export function toStudyPlanView(plan: {
 			status: task.status,
 			...(task.practiceHref ? { practiceHref: task.practiceHref } : {})
 		})),
-		...(plan.insights ? { insights: plan.insights } : {}),
 		updatedAt: isoDate(plan.updatedAt)
 	};
 }
@@ -131,7 +122,6 @@ type StoredPlan = {
 	userId: string;
 	startsOn: Date;
 	tasks: StoredPlanTask[];
-	insights: StudyPlanInsights | null;
 	updatedAt: Date;
 };
 
@@ -160,7 +150,6 @@ async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
 		userId: plan.userId,
 		startsOn: plan.startsOn,
 		updatedAt: plan.updatedAt,
-		insights: parseStudyPlanInsights(plan.insights),
 		tasks: (tasks as Array<Record<string, any>>).map((task) => ({
 			id: task.id,
 			apClass: task.apClass,
@@ -178,8 +167,7 @@ async function writeStoredPlan(
 	userId: string,
 	startsOn: Date,
 	tasks: StudyTask[],
-	options: StoredPlanWriteOptions = {},
-	insights?: StudyPlanInsights | null
+	options: StoredPlanWriteOptions = {}
 ): Promise<StoredPlan> {
 	const db = getNeonDatabase() as any;
 	const existing = options.existing === undefined ? await readStoredPlan(userId) : options.existing;
@@ -196,8 +184,7 @@ async function writeStoredPlan(
 				.update(studyPlans as any)
 				.set({
 					startsOn,
-					updatedAt,
-					...(insights !== undefined ? { insights } : {})
+					updatedAt
 				})
 				.where(
 					and(
@@ -212,8 +199,7 @@ async function writeStoredPlan(
 					id: planId,
 					userId,
 					startsOn,
-					updatedAt,
-					...(insights !== undefined ? { insights } : {})
+					updatedAt
 				})
 				.returning({ id: (studyPlans as any).id });
 
@@ -292,30 +278,18 @@ export async function saveStudyPlan(
 			try {
 				if (!existing) {
 					return toStudyPlanView(
-						await writeStoredPlan(
-							userId,
-							startsOn,
-							tasks,
-							{
-								existing: null,
-								expectedUpdatedAt: null
-							},
-							draft.insights
-						)
+						await writeStoredPlan(userId, startsOn, tasks, {
+							existing: null,
+							expectedUpdatedAt: null
+						})
 					);
 				}
 				const nextTasks = mergeTasks(existing.tasks as StudyTask[], tasks);
 				return toStudyPlanView(
-					await writeStoredPlan(
-						userId,
-						startsOn,
-						nextTasks,
-						{
-							existing,
-							expectedUpdatedAt: existing.updatedAt
-						},
-						draft.insights
-					)
+					await writeStoredPlan(userId, startsOn, nextTasks, {
+						existing,
+						expectedUpdatedAt: existing.updatedAt
+					})
 				);
 			} catch (error) {
 				if (isDuplicateKeyError(error) || error instanceof StudyPlanConflictError) continue;
@@ -327,16 +301,10 @@ export async function saveStudyPlan(
 
 	const existing = await readStoredPlan(userId);
 	return toStudyPlanView(
-		await writeStoredPlan(
-			userId,
-			startsOn,
-			tasks,
-			{
-				existing,
-				expectedUpdatedAt: existing?.updatedAt ?? null
-			},
-			draft.insights
-		)
+		await writeStoredPlan(userId, startsOn, tasks, {
+			existing,
+			expectedUpdatedAt: existing?.updatedAt ?? null
+		})
 	);
 }
 

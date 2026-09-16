@@ -14,11 +14,7 @@ import {
 	releaseLock,
 	refreshLock
 } from '$lib/super/ai-controls.server';
-import {
-	createSuperAgent,
-	type SuperAgentContext,
-	type SuperAgentUIMessage
-} from '$lib/super/agent.server';
+import { createSuperAgent, type SuperAgentUIMessage } from '$lib/super/agent.server';
 import { buildSuperAgentContext } from '$lib/super/context.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
@@ -28,9 +24,10 @@ import {
 	isSuperAgentToolContinuation,
 	lastSuperAgentUserText,
 	textFromSuperAgentParts,
+	type CoachThinkingMode,
+	type SuperAgentContext,
 	type SuperAgentRequest
 } from '$lib/super/agent-request';
-import type { CoachThinkingMode } from '$lib/super/agent-request';
 import {
 	buildSuperAgentUiMessages,
 	reconstructApprovalContinuationMessage
@@ -84,9 +81,46 @@ export type SuperAgentStreamOptions = {
 	conversationId?: string;
 	coachActions?: SuperAgentRequest['coachActions'];
 	thinkingMode?: CoachThinkingMode;
-	surface: 'coach' | 'question';
-	errorLabel: string;
 };
+
+function superAgentErrorLabel(context: SuperAgentContext): string {
+	switch (context.surface) {
+		case 'coach':
+			return 'Coach';
+		case 'question':
+			return context.questionType === 'frq' ? 'Super FRQ Tutor' : 'Super Tutor';
+		default: {
+			const _exhaustive: never = context.surface;
+			return _exhaustive;
+		}
+	}
+}
+
+function memoryExchangeSurface(surface: SuperAgentContext['surface']): 'coach' | 'tutor' {
+	switch (surface) {
+		case 'coach':
+			return 'coach';
+		case 'question':
+			return 'tutor';
+		default: {
+			const _exhaustive: never = surface;
+			return _exhaustive;
+		}
+	}
+}
+
+function memoryWriteLabel(context: SuperAgentContext): 'MCQ' | 'FRQ' | 'Coach' {
+	switch (context.surface) {
+		case 'coach':
+			return 'Coach';
+		case 'question':
+			return context.questionType === 'frq' ? 'FRQ' : 'MCQ';
+		default: {
+			const _exhaustive: never = context.surface;
+			return _exhaustive;
+		}
+	}
+}
 
 function rateLimitedResponse(retryAt: number | null): Response {
 	return json(
@@ -113,10 +147,10 @@ export async function createSuperAgentStreamResponse(
 		messages,
 		conversationId: requestedConversationId,
 		coachActions,
-		thinkingMode = 'quick',
-		surface,
-		errorLabel
+		thinkingMode = 'quick'
 	} = options;
+	const surface = context.surface;
+	const errorLabel = superAgentErrorLabel(context);
 	const clientMessages = messages;
 	const isContinuation = isSuperAgentToolContinuation(clientMessages);
 	if (isContinuation && !requestedConversationId) {
@@ -241,15 +275,20 @@ export async function createSuperAgentStreamResponse(
 				.find((message) => message.role === 'assistant');
 			if (!lastAssistant) {
 				await cleanup();
-				return json(
-					{
-						error:
-							surface === 'coach'
-								? 'Pip could not continue that practice question.'
-								: 'Could not continue that practice question.'
-					},
-					{ status: 409 }
-				);
+				let continuationError: string;
+				switch (surface) {
+					case 'coach':
+						continuationError = 'Pip could not continue that practice question.';
+						break;
+					case 'question':
+						continuationError = 'Could not continue that practice question.';
+						break;
+					default: {
+						const _exhaustive: never = surface;
+						continuationError = _exhaustive;
+					}
+				}
+				return json({ error: continuationError }, { status: 409 });
 			}
 			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
 				'input-available',
@@ -313,7 +352,6 @@ export async function createSuperAgentStreamResponse(
 			selectedApClasses: profile.selectedApClasses,
 			personalizationContext: personalization.text,
 			historySummary,
-			mode: context.mode,
 			currentContext: context,
 			conversationId,
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
@@ -335,7 +373,7 @@ export async function createSuperAgentStreamResponse(
 				.catch((error) => logger.warn('Failed to roll up Super Agent usage', { error }));
 		};
 
-		return createAgentUIStreamResponse({
+		return await createAgentUIStreamResponse({
 			agent,
 			uiMessages,
 			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal]),
@@ -385,9 +423,9 @@ export async function createSuperAgentStreamResponse(
 								addTutorMemoryExchange(
 									userId,
 									{ user: lastUserMessage, assistant: assistantResponse },
-									{ surface: surface === 'coach' ? 'coach' : 'tutor' }
+									{ surface: memoryExchangeSurface(surface) }
 								),
-								surface === 'coach' ? 'Coach' : context.questionType === 'frq' ? 'FRQ' : 'MCQ'
+								memoryWriteLabel(context)
 							);
 						}
 					}

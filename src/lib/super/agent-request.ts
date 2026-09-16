@@ -1,11 +1,30 @@
 import { z } from 'zod';
 import { coachComposerActionIds } from '$lib/super/coach-composer-actions';
-import type { SuperAgentContext } from '$lib/super/coach-agent.types';
 
 export const MAX_SUPER_AGENT_MESSAGES = 48;
 export const MAX_SUPER_AGENT_REQUEST_BYTES = 8 * 1024 * 1024;
 export const MAX_SUPER_AGENT_TEXT_CHARS = 16_000;
 export const MAX_TUTOR_MEMORY_EXCHANGE_CHARS = 8_000;
+
+export const SUPER_AGENT_SURFACES = ['coach', 'question'] as const;
+export type SuperAgentSurface = (typeof SUPER_AGENT_SURFACES)[number];
+
+export type SuperAgentContext = {
+	surface: SuperAgentSurface;
+	page?: 'coach' | 'practice' | 'progress' | 'history';
+	questionId?: string;
+	questionType?: 'mcq' | 'frq';
+	frqAttemptId?: string;
+	quizId?: string;
+};
+
+export type SuperToolsInput = {
+	locals: App.Locals;
+	userId: string;
+	sessionId: string;
+	currentContext?: SuperAgentContext;
+	conversationId?: string;
+};
 
 export const coachThinkingModeSchema = z.enum(['quick', 'thinking', 'deep']);
 export type CoachThinkingMode = z.infer<typeof coachThinkingModeSchema>;
@@ -22,7 +41,7 @@ export const superAgentMessageSchema = z.looseObject({
 });
 
 export const superAgentContextSchema = z.strictObject({
-	mode: z.enum(['coach', 'question']),
+	surface: z.enum(SUPER_AGENT_SURFACES),
 	page: z.enum(['coach', 'practice', 'progress', 'history']).optional(),
 	questionId: z.uuid().optional(),
 	questionType: z.enum(['mcq', 'frq']).optional(),

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
 	import BackToHome from '$lib/components/layout/back-to-home.svelte';
-	import InviteBanner from '$lib/components/marketing/invite-banner.svelte';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
 	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
@@ -36,8 +35,6 @@
 
 <main id="main-content" class="mx-auto w-full max-w-4xl flex-1 px-5 py-12 sm:px-8">
 	<BackToHome />
-
-	<InviteBanner />
 
 	<PublicPageHero
 		class="mt-6"
