@@ -1,6 +1,5 @@
 <script lang="ts">
 	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
-	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 </script>
 
@@ -26,15 +25,9 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<BackToHome />
+		<PublicPageHero title="Privacy Policy" meta="Last Updated: September 15, 2026" />
 
-		<PublicPageHero
-			title="Privacy Policy"
-			description="How we collect, use, and protect your information when you use Free AP Practice."
-			meta="Last Updated: September 15, 2026"
-		/>
-
-		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
+		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-8 text-base leading-7">
 			<section>
 				<h2 class="text-xl font-semibold">1. Introduction</h2>
 				<p>
