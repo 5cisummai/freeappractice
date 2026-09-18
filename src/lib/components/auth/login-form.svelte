@@ -78,7 +78,7 @@
 		infoMessage = '';
 		resending = true;
 		try {
-			const sendError = await requestVerificationEmail(email);
+			const { error: sendError } = await requestVerificationEmail(email);
 			if (sendError) {
 				errorMessage = sendError;
 				return;
