@@ -7,13 +7,14 @@ type ResendSendResult = {
  * Resend returns `{ data, error }` instead of throwing on API failures.
  * Throw so callers (and Better Auth's awaited sendVerificationEmail path) can surface errors.
  */
-export function assertResendSent(result: ResendSendResult): void {
+export function assertResendSent(result: ResendSendResult): string {
 	if (result.error) {
 		throw new Error(result.error.message || 'Failed to send email');
 	}
 	if (!result.data?.id) {
 		throw new Error('Failed to send email');
 	}
+	return result.data.id;
 }
 
 export const EMAIL_SEND_FAILED_MESSAGE =

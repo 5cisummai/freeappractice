@@ -19,6 +19,44 @@ import { createdAt, updatedAt } from './common';
 
 export const appSchema = pgSchema('app');
 
+export const emailDeliveries = appSchema.table(
+	'email_deliveries',
+	{
+		id: text('id').primaryKey(),
+		emailType: text('email_type').notNull(),
+		status: text('status').notNull().default('pending'),
+		resendEmailId: text('resend_email_id'),
+		lastEventType: text('last_event_type'),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		check(
+			'email_deliveries_email_type_check',
+			sql`${table.emailType} IN ('verification', 'password_reset', 'email_change', 'account_deletion', 'existing_signup', 'organization_invitation')`
+		),
+		check('email_deliveries_status_check', sql`${table.status} IN ('pending', 'sent', 'failed')`),
+		uniqueIndex('email_deliveries_resend_email_id_uq').on(table.resendEmailId),
+		index('email_deliveries_created_idx').on(table.createdAt)
+	]
+);
+
+export const resendWebhookEvents = appSchema.table(
+	'resend_webhook_events',
+	{
+		svixId: text('svix_id').primaryKey(),
+		deliveryId: text('delivery_id'),
+		resendEmailId: text('resend_email_id'),
+		eventType: text('event_type').notNull(),
+		eventCreatedAt: timestamp('event_created_at', { withTimezone: true, mode: 'date' }).notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		index('resend_webhook_events_delivery_idx').on(table.deliveryId),
+		index('resend_webhook_events_email_idx').on(table.resendEmailId)
+	]
+);
+
 export const bugReports = appSchema.table(
 	'bug_reports',
 	{

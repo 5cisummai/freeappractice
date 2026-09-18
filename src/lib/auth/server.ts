@@ -17,6 +17,7 @@ import {
 	sendExistingUserSignupEmail,
 	sendResetEmail
 } from '$lib/auth/email.server';
+import { getEmailDeliveryContext } from '$lib/server/email-delivery.server';
 import { createUserProfile } from '$lib/users/model.server';
 import { deleteAppDataDocuments } from '$lib/users/delete-app-data-documents.server';
 import {
@@ -114,8 +115,13 @@ export const auth = betterAuth({
 		modelName: 'authUsers',
 		changeEmail: {
 			enabled: true,
-			sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
-				await sendChangeEmailConfirmationEmail(user.email, newEmail, url);
+			sendChangeEmailConfirmation: async ({ user, newEmail, url }, request) => {
+				await sendChangeEmailConfirmationEmail(
+					user.email,
+					newEmail,
+					url,
+					getEmailDeliveryContext(request, 'email_change')
+				);
 			}
 		},
 		deleteUser: {
@@ -127,8 +133,12 @@ export const auth = betterAuth({
 						: undefined;
 				await prepareAccountDeletion(user.id, stripeCustomerId);
 			},
-			sendDeleteAccountVerification: async ({ user, url }) => {
-				await sendDeleteAccountEmail(user.email, url);
+			sendDeleteAccountVerification: async ({ user, url }, request) => {
+				await sendDeleteAccountEmail(
+					user.email,
+					url,
+					getEmailDeliveryContext(request, 'account_deletion')
+				);
 			},
 			afterDelete: async (user) => {
 				await deleteAppDataDocuments([user.id]);
@@ -173,11 +183,14 @@ export const auth = betterAuth({
 			},
 			verify: async ({ password, hash }) => bcrypt.compare(password, hash)
 		},
-		sendResetPassword: async ({ user, url }) => {
-			await sendResetEmail(user.email, url);
+		sendResetPassword: async ({ user, url }, request) => {
+			await sendResetEmail(user.email, url, getEmailDeliveryContext(request, 'password_reset'));
 		},
-		onExistingUserSignUp: async ({ user }) => {
-			await sendExistingUserSignupEmail(user.email);
+		onExistingUserSignUp: async ({ user }, request) => {
+			await sendExistingUserSignupEmail(
+				user.email,
+				getEmailDeliveryContext(request, 'existing_signup')
+			);
 		}
 	},
 	emailVerification: {
@@ -187,8 +200,12 @@ export const auth = betterAuth({
 		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
 		expiresIn: 15 * 60,
-		sendVerificationEmail: async ({ user, url }) => {
-			await sendConfirmationEmail(user.email, url);
+		sendVerificationEmail: async ({ user, url }, request) => {
+			await sendConfirmationEmail(
+				user.email,
+				url,
+				getEmailDeliveryContext(request, 'verification')
+			);
 		},
 		afterEmailVerification: async () => {
 			captureAnonymousServerMetric('account_email_verified', {
