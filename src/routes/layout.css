@@ -258,7 +258,6 @@
 .prose {
 	max-width: none;
 	color: var(--foreground);
-	font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
 	font-size: 1rem;
 	line-height: 1.75;
 }

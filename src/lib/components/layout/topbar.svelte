@@ -16,7 +16,7 @@
 	let mobileOpen = $state(false);
 </script>
 
-<header class="topbar relative z-50 border-b border-border/40 bg-transparent">
+<header class="topbar relative z-50 bg-transparent">
 	<div class="relative mx-auto flex h-14 w-full max-w-7xl items-center px-5 sm:px-8 lg:px-10">
 		<div class="topbar-logo flex min-w-0 flex-1 items-center">
 			<a

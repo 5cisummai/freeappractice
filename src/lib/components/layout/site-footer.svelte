@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { footerNavGroups } from '$lib/site-nav.js';
+	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
 	import MailIcon from '@tabler/icons-svelte/icons/mail-filled';
 
 	const contactLinks = [
@@ -40,82 +42,136 @@
 			external: true
 		}
 	] as const;
+
+	let isDark = $state(false);
+
+	onMount(() => {
+		const root = document.documentElement;
+		const syncTheme = () => {
+			isDark = root.classList.contains('dark');
+		};
+
+		syncTheme();
+		const observer = new MutationObserver(syncTheme);
+		observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+
+		return () => observer.disconnect();
+	});
+
+	const footerImage = $derived(isDark ? '/hero-bg-dark.webp' : '/hero-bg.webp');
 </script>
 
-<footer class="bg border-t border-border">
-	<div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-		<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
-			<div class="flex flex-col gap-1.5 lg:col-span-1">
-				<p class="font-semibold text-foreground">
-					<a href={resolve('/')} class="underline-offset-2 hover:text-foreground hover:underline"
-						>Free AP Practice</a
-					>
-				</p>
-				<p class="max-w-xs text-xs leading-5 text-muted-foreground">
-					Free AP exam practice for students.
-				</p>
-			</div>
+<div class="relative">
+	<div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+		<svelte:boundary>
+			<HalftoneCMYK
+				width="100%"
+				height="100%"
+				image={footerImage}
+				class="absolute inset-0 size-full"
+				colorBack={isDark ? '#080b14' : '#fbfaf4'}
+				colorC="#2563eb"
+				colorM="#8b5cf6"
+				colorY="#f4b740"
+				colorK="#1e3a8a"
+				type="ink"
+				size={0.12}
+				gridNoise={0.08}
+				softness={0.65}
+				contrast={1.05}
+				gainC={0.18}
+				gainM={0.08}
+				gainY={0.1}
+				gainK={0.04}
+				grainMixer={0.02}
+				grainOverlay={0.03}
+				grainSize={0.5}
+				minPixelRatio={1}
+				fit="cover"
+			/>
 
-			{#each footerNavGroups as group (group.label)}
-				<nav class="flex flex-col gap-2" aria-label="{group.label} links">
-					<p class="font-semibold tracking-wide text-foreground">
-						{group.label}
-					</p>
-					<ul class="flex flex-col gap-1.5">
-						{#each group.items as item (item.href)}
-							<li>
-								<a
-									href={resolve(item.href)}
-									class="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-								>
-									{item.label}
-								</a>
-							</li>
-						{/each}
-					</ul>
-				</nav>
-			{/each}
-		</div>
-
-		<div
-			class="mt-8 flex flex-col gap-4 border-t border-border pt-5 text-sm sm:flex-row sm:items-center sm:justify-between"
-		>
-			<nav class="flex flex-wrap items-center gap-4" aria-label="Contact links">
-				{#each contactLinks as link (link.label)}
-					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					<a
-						href={link.href}
-						target={link.external ? '_blank' : undefined}
-						rel={link.external ? 'noopener noreferrer' : undefined}
-						class="text-muted-foreground transition-colors hover:text-foreground"
-						aria-label={link.label}
-					>
-						{#if link.label === 'Email'}
-							<MailIcon class="size-4.5" aria-hidden="true" />
-						{:else}
-							<svg
-								role="img"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-								class="size-4.5 fill-current"
-								aria-hidden="true"
-							>
-								<title>{link.label}</title>
-								<path d={link.path} />
-							</svg>
-						{/if}
-					</a>
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				{/each}
-			</nav>
-
-			<div class="flex flex-col gap-1 sm:items-end sm:text-right">
-				<p class="text-xs text-muted-foreground">© 2026 Free AP Practice</p>
-				<p class="max-w-2xl text-xs leading-5 text-muted-foreground">
-					*AP &amp; Advanced Placement Program are registered trademarks of the College Board, which
-					wasn’t involved in the production of, and doesn’t endorse this site.
-				</p>
-			</div>
-		</div>
+			{#snippet failed()}
+				<img src={footerImage} alt="" class="size-full object-cover" />
+			{/snippet}
+		</svelte:boundary>
 	</div>
-</footer>
+
+	<footer
+		class="relative overflow-hidden border-t border-border/60 bg-card/80 shadow-md shadow-black/5 backdrop-blur-lg"
+	>
+		<div class="mx-auto flex w-full max-w-6xl flex-col gap-4">
+			<div class="px-6 pt-14 pb-10 sm:px-10">
+				<div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+					<div class="flex flex-col gap-4 lg:col-span-1">
+						<a
+							href={resolve('/')}
+							class="flex w-fit items-center gap-2.5 text-base font-semibold tracking-tight text-foreground"
+						>
+							<img src="/logo.png" alt="" class="size-7 rounded-sm" />
+							<span>Free AP Practice</span>
+						</a>
+						<p class="max-w-xs text-sm leading-6 text-muted-foreground">
+							Free AP exam practice for students.
+						</p>
+						<nav class="flex flex-wrap items-center gap-3.5" aria-label="Contact links">
+							{#each contactLinks as link (link.label)}
+								<!-- eslint-disable svelte/no-navigation-without-resolve -->
+								<a
+									href={link.href}
+									target={link.external ? '_blank' : undefined}
+									rel={link.external ? 'noopener noreferrer' : undefined}
+									class="text-muted-foreground transition-colors hover:text-foreground"
+									aria-label={link.label}
+								>
+									{#if link.label === 'Email'}
+										<MailIcon class="size-4.5" aria-hidden="true" />
+									{:else}
+										<svg
+											role="img"
+											viewBox="0 0 24 24"
+											xmlns="http://www.w3.org/2000/svg"
+											class="size-4.5 fill-current"
+											aria-hidden="true"
+										>
+											<title>{link.label}</title>
+											<path d={link.path} />
+										</svg>
+									{/if}
+								</a>
+								<!-- eslint-enable svelte/no-navigation-without-resolve -->
+							{/each}
+						</nav>
+					</div>
+
+					{#each footerNavGroups as group (group.label)}
+						<nav class="flex flex-col gap-3" aria-label="{group.label} links">
+							<p class="font-semibold text-foreground">
+								{group.label}
+							</p>
+							<ul class="flex flex-col gap-2">
+								{#each group.items as item (item.href)}
+									<li>
+										<a
+											href={resolve(item.href)}
+											class="text-sm text-muted-foreground transition-colors hover:text-foreground"
+										>
+											{item.label}
+										</a>
+									</li>
+								{/each}
+							</ul>
+						</nav>
+					{/each}
+				</div>
+
+				<div class="mt-10 flex flex-col gap-2 pt-6 text-left text-muted-foreground">
+					<p class="text-sm">© 2026 Free AP Practice</p>
+					<p class="text-xs leading-5">
+						*AP &amp; Advanced Placement Program are registered trademarks of the College Board,
+						which wasn’t involved in the production of, and doesn’t endorse this site.
+					</p>
+				</div>
+			</div>
+		</div>
+	</footer>
+</div>
