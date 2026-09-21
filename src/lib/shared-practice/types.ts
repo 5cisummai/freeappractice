@@ -15,7 +15,7 @@ export type SharedQuizView = {
 
 export type PendingSharedQuizRun = {
 	quizId: string;
-	sharedSlug: string;
+	sharedSlug?: string;
 	apClass: string;
 	unit: string;
 	startedAt: string;
