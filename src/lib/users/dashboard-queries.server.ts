@@ -1,6 +1,6 @@
 import { and, count, eq, isNotNull, max, sql } from 'drizzle-orm';
 import { getFrqProgressForUser } from '$lib/grading/frq/attempts.server';
-import { frqAttemptGrades, frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
+import { frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { getCurrentStreak } from '$lib/users/streak.server';
 import { questionPayloadTextField } from '$lib/server/neon/jsonb';
@@ -80,14 +80,13 @@ export async function getDashboardStats(
 		? db
 				.select({
 					total: sql<number>`count(*)::int`,
-					averagePercentage: sql<number>`coalesce(avg(${frqAttemptGrades.percentage}), 0)`,
+					averagePercentage: sql<number>`coalesce(avg(${frqAttempts.percentage}), 0)`,
 					totalTimeMs: sql<number>`coalesce(sum(${safeTime(frqAttempts.timeTakenMs)}), 0)`,
 					recentTotal: sql<number>`count(*) FILTER (
 						WHERE ${frqAttempts.createdAt} >= ${recentCutoff}
 					)::int`
 				})
 				.from(frqAttempts)
-				.innerJoin(frqAttemptGrades, eq(frqAttemptGrades.attemptId, frqAttempts.id))
 				.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
 		: Promise.resolve([]);
 	const frqSubjectsPromise: Promise<FrqSubjectRow[]> = includeFrq
@@ -95,10 +94,9 @@ export async function getDashboardStats(
 				.select({
 					subject: frqAttempts.apClass,
 					total: sql<number>`count(*)::int`,
-					totalPercentage: sql<number>`coalesce(sum(${frqAttemptGrades.percentage}), 0)`
+					totalPercentage: sql<number>`coalesce(sum(${frqAttempts.percentage}), 0)`
 				})
 				.from(frqAttempts)
-				.innerJoin(frqAttemptGrades, eq(frqAttemptGrades.attemptId, frqAttempts.id))
 				.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
 				.groupBy(frqAttempts.apClass)
 		: Promise.resolve([]);

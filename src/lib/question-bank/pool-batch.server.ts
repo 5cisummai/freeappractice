@@ -7,6 +7,7 @@ import {
 import { buildMcqPoolBatchLine } from '$lib/question-bank/mcq/batch-line';
 import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { buildFrqPoolBatchLine } from '$lib/question-bank/frq/pool-batch-line';
+import { selectFrqFormat } from '$lib/question-bank/frq/profiles.server';
 
 export { downloadOpenAiFile, retrieveOpenAiBatch };
 
@@ -14,6 +15,7 @@ export type PoolBatchManifestEntry = {
 	apClass: string;
 	unit: string;
 	questionType?: 'mcq' | 'frq';
+	formatId?: string;
 };
 
 export type PoolBatchManifest = {
@@ -75,6 +77,7 @@ export function buildFrqPoolBatchJsonl(opts: {
 		apClass: string;
 		unit: string;
 		recentTopics?: string[];
+		formatId?: string;
 	}>;
 	model?: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
@@ -84,12 +87,14 @@ export function buildFrqPoolBatchJsonl(opts: {
 	const entries: Record<string, PoolBatchManifestEntry> = {};
 
 	for (const req of opts.requests) {
+		const format = selectFrqFormat(req.apClass, req.formatId);
 		lines.push(
 			buildFrqPoolBatchLine({
 				customId: req.customId,
 				apClass: req.apClass,
 				unit: req.unit,
 				recentTopics: req.recentTopics,
+				formatId: format.formatId,
 				model,
 				reasoningEffort: opts.reasoningEffort
 			})
@@ -97,7 +102,8 @@ export function buildFrqPoolBatchJsonl(opts: {
 		entries[req.customId] = {
 			apClass: req.apClass,
 			unit: req.unit,
-			questionType: 'frq'
+			questionType: 'frq',
+			formatId: format.formatId
 		};
 	}
 

@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { FrqGrade } from '$lib/question-bank/frq/types';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
 
@@ -261,9 +262,10 @@ export const frqAttempts = appSchema.table(
 		responses: jsonb('responses').$type<Record<string, string>>().notNull(),
 		status: text('status').notNull(),
 		timeTakenMs: integer('time_taken_ms').notNull(),
-		profileVersion: text('profile_version').notNull(),
-		rubricVersion: text('rubric_version').notNull(),
-		promptVersion: text('prompt_version').notNull(),
+		pointsEarned: real('points_earned'),
+		pointsAvailable: real('points_available'),
+		percentage: real('percentage'),
+		grade: jsonb('grade').$type<FrqGrade>(),
 		gradingModel: text('grading_model'),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
@@ -273,33 +275,6 @@ export const frqAttempts = appSchema.table(
 		index('frq_attempts_user_created_idx').on(table.userId, table.createdAt),
 		index('frq_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
 	]
-);
-
-export const frqAttemptGrades = appSchema.table('frq_attempt_grades', {
-	attemptId: text('attempt_id')
-		.primaryKey()
-		.references(() => frqAttempts.id, { onDelete: 'cascade' }),
-	pointsEarned: real('points_earned').notNull(),
-	pointsAvailable: real('points_available').notNull(),
-	percentage: real('percentage').notNull(),
-	overallFeedback: text('overall_feedback').notNull()
-});
-
-export const frqAttemptCriterionGrades = appSchema.table(
-	'frq_attempt_criterion_grades',
-	{
-		attemptId: text('attempt_id')
-			.notNull()
-			.references(() => frqAttempts.id, { onDelete: 'cascade' }),
-		criterionId: text('criterion_id').notNull(),
-		sectionId: text('section_id').notNull(),
-		label: text('label').notNull(),
-		points: real('points').notNull(),
-		pointsAvailable: real('points_available').notNull(),
-		evidence: text('evidence').notNull().default(''),
-		feedback: text('feedback').notNull()
-	},
-	(table) => [primaryKey({ columns: [table.attemptId, table.criterionId] })]
 );
 
 export const tutorProfiles = appSchema.table(

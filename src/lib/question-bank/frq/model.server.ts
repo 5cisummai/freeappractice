@@ -1,13 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, gte, lt, ne, notInArray, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
-import {
-	FrqQuestionSchema,
-	type FrqMaterial,
-	type FrqRubricCriterion,
-	type FrqSection,
-	type FrqQuestion
-} from '$lib/question-bank/frq/types';
+import { FrqQuestionSchema, type FrqQuestion } from '$lib/question-bank/frq/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	frqQuestions,
@@ -42,21 +36,16 @@ export async function countActiveFrqQuestions(apClass: string, unit: string): Pr
 }
 
 export function toFrqQuestion(doc: IFrqQuestion): FrqQuestion {
+	const { contentHash, questionId, randomKey, active, createdAt, updatedAt, ...data } = doc;
+	void contentHash;
+	void questionId;
+	void randomKey;
+	void active;
+	void createdAt;
+	void updatedAt;
 	return FrqQuestionSchema.parse({
-		schemaVersion: doc.schemaVersion,
-		formatId: doc.formatId,
-		profileVersion: doc.profileVersion,
-		promptVersion: doc.promptVersion,
-		rubricVersion: doc.rubricVersion,
-		prompt: doc.prompt,
-		materials: doc.materials,
-		sections: doc.sections,
-		rubric: doc.rubric,
-		totalPoints: doc.totalPoints,
-		mainTopic: resolveQuestionMainTopic(doc.mainTopic, doc.topicsCovered),
-		topicsCovered: doc.topicsCovered,
-		apClass: doc.apClass,
-		unit: doc.unit
+		...data,
+		mainTopic: resolveQuestionMainTopic(data.mainTopic, data.topicsCovered)
 	});
 }
 
@@ -118,49 +107,33 @@ export async function getFrqQuestionById(questionId: string): Promise<FrqQuestio
 	return toFrqQuestion(question);
 }
 
-export async function createFrqQuestion(input: {
-	questionId?: string;
-	apClass: string;
-	unit: string;
-	formatId: string;
-	profileVersion: string;
-	promptVersion: string;
-	rubricVersion: string;
-	schemaVersion?: 1;
-	prompt: string;
-	materials?: FrqMaterial[];
-	sections?: FrqSection[];
-	rubric?: FrqRubricCriterion[];
-	totalPoints: number;
-	mainTopic?: string;
-	topicsCovered: string;
-	contentHash: string;
-	randomKey?: number;
-	active?: boolean;
-	createdAt?: Date;
-	updatedAt?: Date;
-}): Promise<IFrqQuestion> {
+export async function createFrqQuestion(
+	input: FrqQuestion & {
+		questionId?: string;
+		contentHash: string;
+		randomKey?: number;
+		active?: boolean;
+		createdAt?: Date;
+		updatedAt?: Date;
+	}
+): Promise<IFrqQuestion> {
 	const db = getNeonDatabase();
 	const questionId = String(input.questionId ?? '');
 	if (!questionId) throw new Error('FRQ question requires questionId');
 	const createdAt = input.createdAt ?? new Date();
 	const updatedAt = input.updatedAt ?? createdAt;
-	const data: FrqQuestionPayload = {
-		apClass: input.apClass,
-		unit: input.unit,
+	const data: FrqQuestionPayload = FrqQuestionSchema.parse({
+		schemaVersion: input.schemaVersion,
 		formatId: input.formatId,
-		profileVersion: input.profileVersion,
-		promptVersion: input.promptVersion,
-		rubricVersion: input.rubricVersion,
-		schemaVersion: input.schemaVersion ?? 1,
+		responseMode: input.responseMode,
 		prompt: input.prompt,
-		materials: input.materials ?? [],
-		sections: input.sections ?? [],
-		rubric: input.rubric ?? [],
-		totalPoints: input.totalPoints,
-		mainTopic: resolveQuestionMainTopic(input.mainTopic, input.topicsCovered) || 'Legacy topic',
-		topicsCovered: input.topicsCovered
-	};
+		materials: input.materials,
+		parts: input.parts,
+		mainTopic: resolveQuestionMainTopic(input.mainTopic, input.topicsCovered),
+		topicsCovered: input.topicsCovered,
+		apClass: input.apClass,
+		unit: input.unit
+	});
 
 	const registryInsert = db
 		.insert(questionRegistry)

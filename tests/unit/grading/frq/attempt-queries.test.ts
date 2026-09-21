@@ -15,9 +15,7 @@ import { getFrqProgressForUser } from '$lib/grading/frq/attempts.server';
 function progressQuery(rows: unknown[]) {
 	return {
 		from: () => ({
-			innerJoin: () => ({
-				where: () => ({ groupBy: async () => rows })
-			})
+			where: () => ({ groupBy: async () => rows })
 		})
 	};
 }

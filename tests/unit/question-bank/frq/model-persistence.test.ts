@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-	frqAttemptCriterionGrades,
-	frqAttemptGrades,
 	frqAttempts,
 	frqQuestions,
 	questionRecentTopics,
@@ -23,25 +21,22 @@ const mocks = vi.hoisted(() => ({
 		data: {
 			apClass: 'AP Biology',
 			unit: 'Unit 4',
-			formatId: 'scientific-analysis',
-			profileVersion: 'biology-v1',
-			promptVersion: 'frq-v1',
-			rubricVersion: 'rubric-v1',
-			schemaVersion: 1,
+			formatId: 'short-conceptual-analysis',
+			responseMode: 'parts',
+			schemaVersion: 2,
 			prompt: 'Analyze the scenario.',
 			materials: [{ id: 'material-1', title: 'Results', content: 'A: 2' }],
-			sections: [{ id: 'a', label: 'A', prompt: 'Explain.', responseKind: 'text', maxPoints: 2 }],
-			rubric: [
+			parts: [
 				{
-					id: 'criterion-1',
-					sectionId: 'a',
-					label: 'Reasoning',
-					maxPoints: 2,
-					referenceAnswer: 'A correct explanation.',
-					levels: [{ points: 2, description: 'Complete answer.' }]
+					id: 'A',
+					label: 'A',
+					prompt: 'Explain.',
+					points: 1,
+					earns: 'Award 1 for a complete explanation.',
+					answer: 'A correct explanation.'
 				}
 			],
-			totalPoints: 2,
+			mainTopic: 'Cell signaling',
 			topicsCovered: 'Cell signaling'
 		},
 		contentHash: 'hash-1',
@@ -105,27 +100,22 @@ const input = {
 	questionId: 'frq-1',
 	apClass: 'AP Biology',
 	unit: 'Unit 4',
-	formatId: 'scientific-analysis',
-	profileVersion: 'biology-v1',
-	promptVersion: 'frq-v1',
-	rubricVersion: 'rubric-v1',
-	schemaVersion: 1 as const,
+	formatId: 'short-conceptual-analysis',
+	responseMode: 'parts' as const,
+	schemaVersion: 2 as const,
 	prompt: 'Analyze the scenario.',
 	materials: [{ id: 'material-1', title: 'Results', content: 'A: 2' }],
-	sections: [
-		{ id: 'a', label: 'A', prompt: 'Explain.', responseKind: 'text' as const, maxPoints: 2 }
-	],
-	rubric: [
+	parts: [
 		{
-			id: 'criterion-1',
-			sectionId: 'a',
-			label: 'Reasoning',
-			maxPoints: 2,
-			referenceAnswer: 'A correct explanation.',
-			levels: [{ points: 2, description: 'Complete answer.' }]
+			id: 'A',
+			label: 'A',
+			prompt: 'Explain.',
+			points: 1,
+			earns: 'Award 1 for a complete explanation.',
+			answer: 'A correct explanation.'
 		}
 	],
-	totalPoints: 2,
+	mainTopic: 'Cell signaling',
 	topicsCovered: 'Cell signaling',
 	contentHash: 'hash-1',
 	randomKey: 0.5,
@@ -149,30 +139,40 @@ describe('direct FRQ persistence', () => {
 		]);
 		expect(writes[2]?.table).toBe(questionRecentTopics);
 		expect(result.materials[0]).toEqual({ id: 'material-1', title: 'Results', content: 'A: 2' });
-		expect(result.rubric[0]?.levels).toEqual([{ points: 2, description: 'Complete answer.' }]);
+		expect(result.parts[0]?.answer).toBe('A correct explanation.');
 	});
 
-	it('updates grading rows atomically through Drizzle', async () => {
+	it('stores the grade on the attempt row', async () => {
 		const attempt = { id: 'attempt-1' } as IFrqAttempt;
-		await updateFrqAttemptGrade(
-			attempt,
-			{
-				pointsEarned: 1,
-				pointsAvailable: 2,
-				percentage: 50,
-				overallFeedback: 'Keep practicing.',
-				criteria: []
-			},
-			'model-1'
-		);
+		const grade = {
+			parts: [
+				{
+					id: 'A',
+					label: 'A',
+					points: 1,
+					pointsAvailable: 1,
+					feedback: 'Complete.'
+				}
+			],
+			pointsEarned: 1,
+			pointsAvailable: 1,
+			percentage: 100,
+			overallFeedback: 'Keep practicing.'
+		};
+		await updateFrqAttemptGrade(attempt, grade, 'model-1');
 
-		const [writes] = mocks.db.batch.mock.calls[0] as [Array<Record<string, unknown>>];
-		expect(writes).toHaveLength(4);
-		expect(writes.map((query) => query.table)).toEqual([
-			frqAttempts,
-			frqAttemptGrades,
-			frqAttemptCriterionGrades,
-			frqAttemptGrades
-		]);
+		expect(mocks.db.batch).not.toHaveBeenCalled();
+		expect(mocks.db.update).toHaveBeenCalledWith(frqAttempts);
+		const update = mocks.queries.find(
+			(query) => query.kind === 'update' && query.table === frqAttempts
+		);
+		expect(update?.valuesArg).toMatchObject({
+			status: 'graded',
+			gradingModel: 'model-1',
+			pointsEarned: 1,
+			pointsAvailable: 1,
+			percentage: 100,
+			grade
+		});
 	});
 });
