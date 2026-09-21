@@ -1,4 +1,8 @@
-import { PublicFrqQuestionSchema, type PublicFrqQuestion } from '$lib/question-bank/frq/types';
+import {
+	frqResponseIds,
+	PublicFrqQuestionSchema,
+	type PublicFrqQuestion
+} from '$lib/question-bank/frq/types';
 
 export const FRQ_DRAFT_VERSION = 1 as const;
 export const FRQ_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -66,13 +70,13 @@ function readStoredValue(raw: string | null): unknown | null {
 
 export function parseFrqQuestionDraft(
 	raw: string | null,
-	question: Pick<PublicFrqQuestion, 'questionId' | 'sections'>,
+	question: Pick<PublicFrqQuestion, 'questionId' | 'responseMode' | 'parts'>,
 	now = Date.now()
 ): FrqDraftResponses | null {
 	const value = readStoredValue(raw);
 	if (!isRecord(value) || parseEnvelope(value, now) === null) return null;
 	if (value.questionId !== question.questionId) return null;
-	return parseResponses(value.responses, new Set(question.sections.map((section) => section.id)));
+	return parseResponses(value.responses, new Set(frqResponseIds(question)));
 }
 
 export function parseFrqLatestDraft(
@@ -90,15 +94,12 @@ export function parseFrqLatestDraft(
 		return null;
 	}
 
-	const responses = parseResponses(
-		value.responses,
-		new Set(question.sections.map((section) => section.id))
-	);
+	const responses = parseResponses(value.responses, new Set(frqResponseIds(question)));
 	return responses ? { question, responses } : null;
 }
 
 export function serializeFrqQuestionDraft(
-	question: Pick<PublicFrqQuestion, 'questionId' | 'sections'>,
+	question: Pick<PublicFrqQuestion, 'questionId'>,
 	responses: FrqDraftResponses,
 	now = Date.now()
 ): string {

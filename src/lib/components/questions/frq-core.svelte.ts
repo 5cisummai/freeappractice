@@ -8,7 +8,12 @@ import {
 	serializeFrqLatestDraft,
 	serializeFrqQuestionDraft
 } from '$lib/question-bank/frq/draft.client.js';
-import type { FrqAttemptView, FrqGrade, PublicFrqQuestion } from '$lib/question-bank/frq/types';
+import {
+	frqResponseIds,
+	type FrqAttemptView,
+	type FrqGrade,
+	type PublicFrqQuestion
+} from '$lib/question-bank/frq/types';
 import {
 	PoolWarmingError,
 	requestFrqQuestion,
@@ -101,7 +106,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	}
 
 	function emptyResponses(nextQuestion: PublicFrqQuestion): Record<string, string> {
-		return Object.fromEntries(nextQuestion.sections.map((section) => [section.id, '']));
+		return Object.fromEntries(frqResponseIds(nextQuestion).map((responseId) => [responseId, '']));
 	}
 
 	function restoreDraft(nextQuestion: PublicFrqQuestion): Record<string, string> {

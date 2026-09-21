@@ -109,18 +109,18 @@
 								</div>
 								<div class="space-y-3">
 									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-										Criterion feedback
+										Part feedback
 									</p>
-									{#each frqDetail.grade.criteria as criterion (criterion.criterionId)}
+									{#each frqDetail.grade.parts as part (part.id)}
 										<div class="rounded-xl border border-border/70 p-4">
 											<div class="flex items-center justify-between gap-3">
-												<p class="text-sm font-medium">{criterion.label}</p>
+												<p class="text-sm font-medium">{part.label}</p>
 												<p class="text-sm font-semibold tabular-nums">
-													{criterion.points}/{criterion.pointsAvailable}
+													{part.points}/{part.pointsAvailable}
 												</p>
 											</div>
 											<p class="mt-1 text-sm leading-6 text-muted-foreground">
-												{criterion.feedback}
+												{part.feedback}
 											</p>
 										</div>
 									{/each}

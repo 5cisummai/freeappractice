@@ -117,9 +117,9 @@ export async function giveCoachPracticeQuestion(
 			}),
 			topic: publicQuestion.topicsCovered,
 			prompt: publicQuestion.prompt,
-			sections: publicQuestion.sections.map((section) => ({
-				label: section.label,
-				prompt: section.prompt
+			sections: publicQuestion.parts.map((part) => ({
+				label: part.label,
+				prompt: part.prompt
 			})),
 			materials: publicQuestion.materials.map((material) => ({
 				title: material.title,

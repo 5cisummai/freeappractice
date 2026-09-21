@@ -9,11 +9,17 @@ export function buildFrqPoolBatchLine(opts: {
 	apClass: string;
 	unit: string;
 	recentTopics?: string[];
+	formatId?: string;
 	model: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
 	maxOutputTokens?: number;
 }): string {
-	const prompt = buildFrqGenerationPrompt(opts.apClass, opts.unit, opts.recentTopics ?? []);
+	const prompt = buildFrqGenerationPrompt(
+		opts.apClass,
+		opts.unit,
+		opts.recentTopics ?? [],
+		opts.formatId
+	);
 
 	return JSON.stringify({
 		custom_id: opts.customId,

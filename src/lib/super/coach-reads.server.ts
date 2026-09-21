@@ -71,11 +71,11 @@ export async function getCoachFrqPerformance(
 		pointsAvailable: attempt.grade?.pointsAvailable ?? 0,
 		percentage: attempt.grade?.percentage ?? 0,
 		overallFeedback: attempt.grade?.overallFeedback ?? '',
-		criteria: (attempt.grade?.criteria ?? []).map((criterion) => ({
-			label: criterion.label,
-			points: criterion.points,
-			pointsAvailable: criterion.pointsAvailable,
-			feedback: criterion.feedback
+		parts: (attempt.grade?.parts ?? []).map((part) => ({
+			label: part.label,
+			points: part.points,
+			pointsAvailable: part.pointsAvailable,
+			feedback: part.feedback
 		}))
 	}));
 }

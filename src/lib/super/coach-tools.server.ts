@@ -199,7 +199,7 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		read_frq_performance: tool({
 			description:
-				'Recent graded FRQ attempts with criterion feedback. Use only for FRQ writing questions—not for MCQ mistakes.',
+				'Recent graded FRQ attempts with part feedback. Use only for FRQ writing questions—not for MCQ mistakes.',
 			inputSchema: z.object({
 				apClass: z.string().trim().min(1).max(100).optional(),
 				unit: z.string().trim().min(1).max(200).optional(),
