@@ -311,9 +311,13 @@
 			}))
 		};
 		if (savePendingSharedQuizRun(run)) {
+			historyStatus = 'idle';
+			historyError = '';
 			showSignupPrompt = true;
 		} else {
-			historyError = 'This quiz could not be saved. Please try again after signing up.';
+			historyStatus = 'error';
+			showSignupPrompt = false;
+			historyError = 'This quiz could not be saved on this device. Please try again.';
 		}
 	}
 
@@ -602,7 +606,9 @@
 								variant="outline"
 								size="sm"
 								onclick={() => {
-									if (lastSnapshot) void persistQuizHistory(lastSnapshot);
+									if (!lastSnapshot) return;
+									if (page.data.userId) void persistQuizHistory(lastSnapshot);
+									else saveAnonymousRun(lastSnapshot);
 								}}
 							>
 								Retry save

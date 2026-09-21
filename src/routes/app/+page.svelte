@@ -153,7 +153,7 @@
 			aria-labelledby="recommendation-heading"
 		>
 			<div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-				<div class="min-w-0 flex flex-1 flex-col gap-4 self-stretch">
+				<div class="flex min-w-0 flex-1 flex-col gap-4 self-stretch">
 					<div class="space-y-1">
 						<h2
 							id="recommendation-heading"

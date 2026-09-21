@@ -15,9 +15,7 @@ function createStorage() {
 	};
 }
 
-function guestQuizRun(
-	overrides: Partial<PendingSharedQuizRun> = {}
-): PendingSharedQuizRun {
+function guestQuizRun(overrides: Partial<PendingSharedQuizRun> = {}): PendingSharedQuizRun {
 	return {
 		quizId: '11111111-1111-4111-8111-111111111111',
 		apClass: 'AP World History',

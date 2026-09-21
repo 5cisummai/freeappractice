@@ -75,7 +75,13 @@ export async function maybePromptGoogleOneTap(pathname: string): Promise<void> {
 	if (promptedPaths.has(pathname)) return;
 	if (activePromptPath === pathname) return;
 
-	const { data } = await authClient.getSession();
+	let data: Awaited<ReturnType<typeof authClient.getSession>>['data'];
+	try {
+		({ data } = await authClient.getSession());
+	} catch {
+		// A failed session lookup should not reject the prompt.
+		return;
+	}
 	if (data?.session) return;
 	if (activePromptPath !== null && activePromptPath !== pathname) return;
 

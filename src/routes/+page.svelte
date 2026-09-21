@@ -93,11 +93,16 @@
 
 	onMount(() => {
 		captureLandingPageViewed();
-		void authClient.getSession().then(({ data }) => {
-			if (data?.session) {
-				void goto(resolve('/app'), { replaceState: true });
-			}
-		});
+		void authClient
+			.getSession()
+			.then(({ data }) => {
+				if (data?.session) {
+					void goto(resolve('/app'), { replaceState: true });
+				}
+			})
+			.catch(() => {
+				// A failed session lookup leaves the public homepage in place.
+			});
 	});
 </script>
 
@@ -179,9 +184,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.9.0",
+			"softwareVersion": "1.9.1",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-09-15",
+			"dateModified": "2026-09-21",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
