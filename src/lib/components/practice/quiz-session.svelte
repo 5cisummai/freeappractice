@@ -102,9 +102,11 @@
 		},
 		onComplete: (snapshot) => {
 			lastSnapshot = snapshot;
-			if (persistHistory) void persistQuizHistory(snapshot);
-			else if (sharedSlug) saveAnonymousSharedRun(snapshot);
-			else showSignupPrompt = !page.data.userId;
+			if (page.data.userId) {
+				if (persistHistory || sharedSlug) void persistQuizHistory(snapshot);
+				return;
+			}
+			saveAnonymousRun(snapshot);
 		}
 	});
 
@@ -278,6 +280,11 @@
 				})
 			});
 			const payload = await readJsonOrNull<{ error?: string }>(response);
+			if (response.status === 401) {
+				saveAnonymousRun(snapshot);
+				historyStatus = 'idle';
+				return;
+			}
 			if (!response.ok) {
 				throw new Error(getResponseMessage(payload, 'Could not save quiz history.'));
 			}
@@ -288,11 +295,10 @@
 		}
 	}
 
-	function saveAnonymousSharedRun(snapshot: ExamSnapshot): void {
-		if (!sharedSlug) return;
+	function saveAnonymousRun(snapshot: ExamSnapshot): void {
 		const run: PendingSharedQuizRun = {
 			quizId: snapshot.examId,
-			sharedSlug,
+			...(sharedSlug ? { sharedSlug } : {}),
 			apClass: selectedClass,
 			unit: selectedUnit || 'All Units',
 			startedAt: snapshot.startedAt,
@@ -305,9 +311,13 @@
 			}))
 		};
 		if (savePendingSharedQuizRun(run)) {
+			historyStatus = 'idle';
+			historyError = '';
 			showSignupPrompt = true;
 		} else {
-			historyError = 'This quiz could not be saved. Please try again after signing up.';
+			historyStatus = 'error';
+			showSignupPrompt = false;
+			historyError = 'This quiz could not be saved on this device. Please try again.';
 		}
 	}
 
@@ -596,7 +606,9 @@
 								variant="outline"
 								size="sm"
 								onclick={() => {
-									if (lastSnapshot) void persistQuizHistory(lastSnapshot);
+									if (!lastSnapshot) return;
+									if (page.data.userId) void persistQuizHistory(lastSnapshot);
+									else saveAnonymousRun(lastSnapshot);
 								}}
 							>
 								Retry save

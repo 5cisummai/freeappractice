@@ -5,6 +5,28 @@
 
 	const changelog = [
 		{
+			version: '1.9.1',
+			date: 'September 21, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Refreshed the site footer, legal pages, and recommended practice card',
+						'Updated the organization switcher to call study groups “groups”'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Guest quiz results can now be saved to history after signing up',
+						'Pages automatically reload after an interrupted module download',
+						'Guest quizzes now show a retry option when a result cannot be saved on the device',
+						'Public pages remain usable when a session lookup fails'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.0',
 			date: 'September 15, 2026',
 			sections: [
@@ -1425,7 +1447,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 15, 2026"
+			meta="Last Updated: September 21, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

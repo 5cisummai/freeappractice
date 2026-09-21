@@ -153,7 +153,7 @@
 			aria-labelledby="recommendation-heading"
 		>
 			<div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-				<div class="min-w-0 flex-1 space-y-4">
+				<div class="flex min-w-0 flex-1 flex-col gap-4 self-stretch">
 					<div class="space-y-1">
 						<h2
 							id="recommendation-heading"
@@ -161,14 +161,9 @@
 						>
 							{recommendation.name}
 						</h2>
-						<p class="text-sm text-muted-foreground">
-							{hasPracticedRecommendation
-								? 'Continue where you left off'
-								: 'Start with a few questions'}
-						</p>
 					</div>
 
-					<div class="space-y-2">
+					<div class="mt-auto space-y-2">
 						<p class="text-sm text-muted-foreground">
 							{recommendation.percent}% complete · {recommendation.shown} / {SUBJECT_PROGRESS_GOAL}
 							questions

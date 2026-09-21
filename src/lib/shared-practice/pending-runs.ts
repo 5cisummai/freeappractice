@@ -9,7 +9,6 @@ function parsePendingSharedQuizRun(value: unknown): PendingSharedQuizRun | null 
 	const candidate = value as Partial<PendingSharedQuizRun>;
 	if (
 		typeof candidate.quizId !== 'string' ||
-		typeof candidate.sharedSlug !== 'string' ||
 		typeof candidate.apClass !== 'string' ||
 		typeof candidate.unit !== 'string' ||
 		typeof candidate.startedAt !== 'string' ||
@@ -19,6 +18,7 @@ function parsePendingSharedQuizRun(value: unknown): PendingSharedQuizRun | null 
 	}
 	return {
 		...candidate,
+		...(typeof candidate.sharedSlug === 'string' ? { sharedSlug: candidate.sharedSlug } : {}),
 		retryCount:
 			typeof candidate.retryCount === 'number' && candidate.retryCount >= 0
 				? Math.floor(candidate.retryCount)
