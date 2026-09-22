@@ -11,6 +11,7 @@ const ALLOWED_CLASS_NAMES = getAllowedClassNames();
 interface ValidatedQuestionRequest {
 	className: string;
 	unit: string;
+	formatId?: string;
 	excludeQuestionIds: string[];
 }
 
@@ -18,7 +19,7 @@ type QuestionRequestResult =
 	{ ok: true; value: ValidatedQuestionRequest } | { ok: false; response: Response };
 
 export function validateQuestionRequest(body: unknown): QuestionRequestResult {
-	const { className, unit, customTopic, excludeQuestionIds } = (body ?? {}) as Record<
+	const { className, unit, formatId, customTopic, excludeQuestionIds } = (body ?? {}) as Record<
 		string,
 		unknown
 	>;
@@ -59,6 +60,19 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	}
 
 	const trimmedUnit = typeof unit === 'string' ? unit.trim() : '';
+	if (formatId !== undefined && typeof formatId !== 'string') {
+		return {
+			ok: false,
+			response: json({ error: 'formatId must be a string if provided' }, { status: 400 })
+		};
+	}
+	const trimmedFormatId = typeof formatId === 'string' ? formatId.trim() : '';
+	if (trimmedFormatId.length > 80) {
+		return {
+			ok: false,
+			response: json({ error: 'formatId must be at most 80 characters' }, { status: 400 })
+		};
+	}
 	if (trimmedUnit.length > MAX_UNIT_LEN) {
 		return {
 			ok: false,
@@ -122,6 +136,7 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		value: {
 			className: trimmedClassName,
 			unit: trimmedUnit,
+			...(trimmedFormatId ? { formatId: trimmedFormatId } : {}),
 			excludeQuestionIds: excludedIds
 		}
 	};

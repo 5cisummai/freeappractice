@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getCourses } from '$lib/catalog/ap-classes';
+	import { frqPracticeFor } from '$lib/question-bank/frq/practice';
 	import { getFocusedPracticeHref } from '$lib/catalog/practice-pages';
 	import { tick } from 'svelte';
 	import BugIcon from '@tabler/icons-svelte/icons/bug-filled';
@@ -27,6 +28,8 @@
 		selectedUnit?: string;
 		unitRange?: number[];
 		quizMode?: boolean;
+		mode?: 'mcq' | 'frq';
+		selectedFormat?: string;
 		count?: number;
 		generateDisabled?: boolean;
 		generateLabel?: string;
@@ -41,6 +44,8 @@
 		selectedUnit = $bindable(''),
 		unitRange = $bindable<number[] | undefined>(undefined),
 		quizMode = false,
+		mode = 'mcq',
+		selectedFormat = $bindable(''),
 		count = $bindable(10),
 		generateDisabled = false,
 		generateLabel = 'Practice',
@@ -61,6 +66,10 @@
 	const unitOptions = $derived(
 		selectedCourse ? [...selectedCourse.semester1, ...selectedCourse.semester2] : []
 	);
+	const frqPractice = $derived(mode === 'frq' ? frqPracticeFor(selectedClass) : null);
+	const taskControl = $derived(frqPractice?.control === 'task');
+	const taskOptions = $derived(frqPractice?.tasks ?? []);
+	const scopeLabel = $derived(taskControl ? 'Task' : 'Unit');
 	const shareHref = $derived(getFocusedPracticeHref(selectedClass, selectedUnit));
 	const shareText = $derived(
 		selectedUnit
@@ -93,14 +102,23 @@
 	function selectClass(name: string): void {
 		selectedClass = name;
 		selectedUnit = '';
+		selectedFormat = '';
 		unitRange = undefined;
 		classOpen = false;
 		tick().then(() => classTriggerRef?.focus());
 		notifySelectionChange();
 	}
 
+	$effect(() => {
+		if (!taskControl) return;
+		if (taskOptions.some((task) => task.formatId === selectedFormat)) return;
+		const first = taskOptions[0]?.formatId;
+		if (first) selectedFormat = first;
+	});
+
 	function selectUnit(unit: string): void {
-		selectedUnit = unit;
+		if (taskControl) selectedFormat = unit;
+		else selectedUnit = unit;
 		unitRange = undefined;
 		unitOpen = false;
 		tick().then(() => unitTriggerRef?.focus());
@@ -108,7 +126,7 @@
 	}
 
 	function selectCustomRange(): void {
-		if (!unitOptions.length) return;
+		if (mode === 'frq' || !unitOptions.length) return;
 
 		selectedUnit = '';
 		unitRange = [0, unitOptions.length - 1];
@@ -125,6 +143,7 @@
 	function clearSelection(): void {
 		selectedClass = '';
 		selectedUnit = '';
+		selectedFormat = '';
 		unitRange = undefined;
 		optionsOpen = false;
 		notifySelectionChange();
@@ -243,14 +262,16 @@
 				<FirstUseHint
 					id="practice-selector"
 					anchorId="practice-class-hint-target"
-					text="Choose your AP class first, then pick a unit."
+					text={taskControl
+						? 'Choose your AP class first, then pick a task.'
+						: 'Choose your AP class first, then pick a unit.'}
 					align="start"
 				/>
 			{/if}
 		</div>
 
 		<div class="flex min-w-48 flex-1 flex-col gap-2">
-			<Label id="question-selector-unit-label">Unit</Label>
+			<Label id="question-selector-unit-label">{scopeLabel}</Label>
 			<Popover.Root bind:open={unitOpen}>
 				<Popover.Trigger bind:ref={unitTriggerRef}>
 					{#snippet child({ props })}
@@ -266,8 +287,11 @@
 							<span class="truncate">
 								{#if !selectedClass}
 									Select a course first
-								{:else if unitRange}
+								{:else if !taskControl && unitRange}
 									Custom range
+								{:else if taskControl}
+									{taskOptions.find((task) => task.formatId === selectedFormat)?.label ||
+										'Select a task'}
 								{:else if !selectedUnit}
 									All Units
 								{:else}
@@ -283,36 +307,52 @@
 						<Command.Input
 							id="question-selector-unit-search"
 							name="unit-search"
-							placeholder="Search units..."
+							placeholder={taskControl ? 'Search tasks...' : 'Search units...'}
 						/>
 						<Command.List>
-							<Command.Empty>No unit found.</Command.Empty>
+							<Command.Empty>{taskControl ? 'No task found.' : 'No unit found.'}</Command.Empty>
 							<Command.Group>
-								<Command.Item value="" onSelect={() => selectUnit('')}>
-									<CheckIcon
-										class={cn('mr-2 size-4 shrink-0', selectedUnit !== '' && 'text-transparent')}
-									/>
-									All Units
-								</Command.Item>
-								{#each unitOptions as unit (unit)}
-									<Command.Item value={unit} onSelect={() => selectUnit(unit)}>
+								{#if taskControl}
+									{#each taskOptions as task (task.formatId)}
+										<Command.Item value={task.label} onSelect={() => selectUnit(task.formatId)}>
+											<CheckIcon
+												class={cn(
+													'mr-2 size-4 shrink-0',
+													selectedFormat !== task.formatId && 'text-transparent'
+												)}
+											/>
+											{task.label}
+										</Command.Item>
+									{/each}
+								{:else}
+									<Command.Item value="All Units" onSelect={() => selectUnit('')}>
 										<CheckIcon
-											class={cn(
-												'mr-2 size-4 shrink-0',
-												selectedUnit !== unit && 'text-transparent'
-											)}
+											class={cn('mr-2 size-4 shrink-0', selectedUnit !== '' && 'text-transparent')}
 										/>
-										{unit}
+										All Units
 									</Command.Item>
-								{/each}
+									{#each unitOptions as unit (unit)}
+										<Command.Item value={unit} onSelect={() => selectUnit(unit)}>
+											<CheckIcon
+												class={cn(
+													'mr-2 size-4 shrink-0',
+													selectedUnit !== unit && 'text-transparent'
+												)}
+											/>
+											{unit}
+										</Command.Item>
+									{/each}
+								{/if}
 							</Command.Group>
-							<div class="my-1 h-px bg-border" aria-hidden="true"></div>
-							<Command.Group>
-								<Command.Item value="custom-range" onSelect={selectCustomRange}>
-									<SlidersHorizontalIcon class="mr-2 size-4" />
-									Custom range
-								</Command.Item>
-							</Command.Group>
+							{#if mode !== 'frq'}
+								<div class="my-1 h-px bg-border" aria-hidden="true"></div>
+								<Command.Group>
+									<Command.Item value="custom-range" onSelect={selectCustomRange}>
+										<SlidersHorizontalIcon class="mr-2 size-4" />
+										Custom range
+									</Command.Item>
+								</Command.Group>
+							{/if}
 						</Command.List>
 					</Command.Root>
 				</Popover.Content>
@@ -407,7 +447,7 @@
 		</Popover.Root>
 	</div>
 
-	{#if unitRange && unitOptions.length > 0}
+	{#if mode !== 'frq' && unitRange && unitOptions.length > 0}
 		<div class="mx-auto max-w-3xl rounded-lg border border-border/70 bg-muted/30 px-4 py-3">
 			<Slider
 				bind:value={unitRange}

@@ -1,4 +1,5 @@
 import { generateAndPersistFrq } from '$lib/question-bank/frq/generation.server';
+import { frqPracticeFor, FRQ_ALL_UNITS } from '$lib/question-bank/frq/practice';
 import {
 	generateQuestionForPool,
 	generateStimulusSetForPool
@@ -42,7 +43,10 @@ async function generateMcqPoolQuestion(
 
 const generationAdapters = {
 	mcq: generateMcqPoolQuestion,
-	frq: (apClass: string, unit: string) => generateAndPersistFrq(apClass, unit)
+	frq: (apClass: string, unit: string) =>
+		frqPracticeFor(apClass)?.control === 'task'
+			? generateAndPersistFrq(apClass, FRQ_ALL_UNITS, undefined, unit)
+			: generateAndPersistFrq(apClass, unit)
 } satisfies Record<
 	PoolRefillQuestionType,
 	(

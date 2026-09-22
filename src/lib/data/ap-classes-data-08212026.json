@@ -1449,6 +1449,8 @@
 				},
 				"frq": {
 					"enabled": true,
+					"control": "unit",
+					"scope": "single-unit",
 					"formats": [
 						{
 							"formatId": "long-experimental-analysis",
@@ -2457,6 +2459,8 @@
 				},
 				"frq": {
 					"enabled": true,
+					"control": "unit",
+					"scope": "anchor",
 					"formats": [
 						{
 							"formatId": "long-answer",
@@ -10983,6 +10987,13 @@
 				},
 				"frq": {
 					"enabled": true,
+					"control": "task",
+					"scope": "none",
+					"taskLabels": {
+						"synthesis": "Synthesis",
+						"rhetorical-analysis": "Rhetorical analysis",
+						"argument": "Argument"
+					},
 					"formats": [
 						{
 							"formatId": "argument",
@@ -13759,6 +13770,15 @@
 				},
 				"frq": {
 					"enabled": true,
+					"control": "task",
+					"scope": "period",
+					"taskLabels": {
+						"secondary-text-source": "Secondary text",
+						"primary-text-source": "Primary text",
+						"primary-or-secondary-non-text-source": "Non-text source",
+						"document-based-question": "Document-based",
+						"long-essay": "Long essay"
+					},
 					"formats": [
 						{
 							"formatId": "document-based-question",
@@ -17380,6 +17400,13 @@
 				},
 				"frq": {
 					"enabled": true,
+					"control": "task",
+					"scope": "multi-unit",
+					"taskLabels": {
+						"no-stimulus-scenario": "No stimulus",
+						"one-stimulus-scenario": "One stimulus",
+						"two-stimulus-scenario": "Two stimuli"
+					},
 					"formats": [
 						{
 							"formatId": "no-stimulus-scenario",

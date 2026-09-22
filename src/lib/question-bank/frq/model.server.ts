@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, gte, lt, ne, notInArray, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
+import { frqStoredPoolFilter } from '$lib/question-bank/frq/practice';
 import { FrqQuestionSchema, type FrqQuestion } from '$lib/question-bank/frq/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
@@ -22,16 +23,24 @@ export interface IFrqQuestion extends FrqQuestionPayload {
 }
 
 const { apClass: apClassField, unit: unitField } = questionBucketFields(frqQuestions.data);
+const formatField = sql<string>`${frqQuestions.data} ->> 'formatId'`;
 
 export function newFrqPoolRandomKey(): number {
 	return Math.random();
 }
 
 export async function countActiveFrqQuestions(apClass: string, unit: string): Promise<number> {
+	const filter = frqStoredPoolFilter(apClass, unit);
+	const predicates = [
+		eq(apClassField, apClass),
+		eq(unitField, filter.unit),
+		eq(frqQuestions.active, true)
+	];
+	if (filter.formatId) predicates.push(eq(formatField, filter.formatId));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(frqQuestions)
-		.where(and(eq(apClassField, apClass), eq(unitField, unit), eq(frqQuestions.active, true)));
+		.where(and(...predicates));
 	return Number(row?.count ?? 0);
 }
 
@@ -64,14 +73,16 @@ export async function findFrqQuestionByPool(input: {
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
 }): Promise<IFrqQuestion | null> {
+	const filter = frqStoredPoolFilter(input.apClass, input.unit);
 	const predicates = [
 		eq(apClassField, input.apClass),
-		eq(unitField, input.unit),
+		eq(unitField, filter.unit),
 		ne(frqQuestions.active, false),
 		input.fromPivot === 'after'
 			? gte(frqQuestions.randomKey, input.pivot)
 			: lt(frqQuestions.randomKey, input.pivot)
 	];
+	if (filter.formatId) predicates.push(eq(formatField, filter.formatId));
 	if (input.excludeQuestionIds.length)
 		predicates.push(notInArray(frqQuestions.questionId, input.excludeQuestionIds));
 	const rows = await getNeonDatabase(input.onDatabaseInit)

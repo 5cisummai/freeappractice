@@ -110,7 +110,7 @@ const FORMATS: Record<string, readonly FrqFormatRecord[]> = {
 			materialMax: 0,
 			pointTotal: 7,
 			parts: HUMAN_PARTS,
-			guidance: `${ORIGINAL} Write one geographic scenario that draws on this unit and at least one other unit. About 25 minutes. Exactly seven student tasks, A–G, at 1 point each. Each part uses one task verb: identify, define, describe, explain, or compare. Explain-the-degree is still 1 point: the response states low, moderate, or high and gives the cause. You write each part’s student prompt, an earns line in that verb’s terms, and one acceptable response.`,
+			guidance: `${ORIGINAL} Write one geographic scenario. About 25 minutes. Exactly seven student tasks, A–G, at 1 point each. Each part uses one task verb: identify, define, describe, explain, or compare. Explain-the-degree is still 1 point: the response states low, moderate, or high and gives the cause. You write each part’s student prompt, an earns line in that verb’s terms, and one acceptable response.`,
 			gradingGuidance:
 				'Score each part separately. Award 0 or 1 in the terms of that part’s earns line.'
 		}),
@@ -299,7 +299,7 @@ const FORMATS: Record<string, readonly FrqFormatRecord[]> = {
 						'Award point 1 when comparison, causation, or continuity and change frames the argument. Award point 2 for complex understanding on that same row. Award 0 otherwise. This is one 0–2 row.'
 				}
 			],
-			guidance: `${ORIGINAL} One long essay, about 40 minutes. No documents. Include an orientation sentence and an explicit limit that the essay does not have to cover the whole period. You write the prompt. For each fixed row, echo the id and write only the private answer. The student writes one essay.`,
+			guidance: `${ORIGINAL} One long essay, about 40 minutes. No documents. The period is about half the course. Include an orientation sentence and an explicit limit that the essay does not have to cover the whole period. You write the prompt. For each fixed row, echo the id and write only the private answer. The student writes one essay.`,
 			gradingGuidance:
 				'Score the single essay on the four fixed rows. Award every integer from 0 through that row’s points. Reasoning is one 0–2 row, not two separate tasks.'
 		})

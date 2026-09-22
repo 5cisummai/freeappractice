@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { getUnitsForClass } from '$lib/catalog/ap-classes';
+import { frqBucketUnits, frqPracticeFor } from '$lib/question-bank/frq/practice';
 import { countActiveFrqQuestions } from '$lib/question-bank/frq/model.server';
 import { getFrqCourseNames } from '$lib/question-bank/frq/profiles.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
@@ -14,22 +14,30 @@ function bucketKey(apClass: string, unit: string): string {
 
 function listBuckets(): PoolKindBucket[] {
 	return getFrqCourseNames().flatMap((apClass) =>
-		getUnitsForClass(apClass).map((unit) => ({ questionType: 'frq' as const, apClass, unit }))
+		frqBucketUnits(apClass).map((unit) => ({ questionType: 'frq' as const, apClass, unit }))
 	);
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
 	const { apClass, unit } = questionBucketFields(frqQuestions.data);
+	const formatId = sql<string>`${frqQuestions.data} ->> 'formatId'`;
 	const rows = await getNeonDatabase()
 		.select({
 			apClass,
 			unit,
+			formatId,
 			count: sql<number>`count(*)`
 		})
 		.from(frqQuestions)
 		.where(eq(frqQuestions.active, true))
-		.groupBy(apClass, unit);
-	return new Map(rows.map((row) => [bucketKey(row.apClass, row.unit), Number(row.count)]));
+		.groupBy(apClass, unit, formatId);
+	const counts = new Map<string, number>();
+	for (const row of rows) {
+		const keyUnit = frqPracticeFor(row.apClass)?.control === 'task' ? row.formatId : row.unit;
+		const key = bucketKey(row.apClass, keyUnit);
+		counts.set(key, (counts.get(key) ?? 0) + Number(row.count));
+	}
+	return counts;
 }
 
 /** FRQ catalog, storage counters, and target metadata. */
