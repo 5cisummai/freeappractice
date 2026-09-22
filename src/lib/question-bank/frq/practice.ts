@@ -48,12 +48,20 @@ function examFormatIds(course: (typeof AP_DATA.courses)[number]): string[] {
 export function frqPracticeFor(courseName: string): FrqPractice | null {
 	const course = AP_DATA.courses.find((item) => item.name === courseName);
 	const frq = course?.generation.frq;
-	if (!course || !frq || !('control' in frq) || !('scope' in frq) || !('formats' in frq))
+	if (
+		!course ||
+		!frq ||
+		!('control' in frq) ||
+		typeof frq.control !== 'string' ||
+		!('scope' in frq) ||
+		typeof frq.scope !== 'string' ||
+		!('formats' in frq)
+	)
 		return null;
 	if (!isControl(frq.control) || !isScope(frq.scope)) return null;
-	const labels = 'taskLabels' in frq ? frq.taskLabels : {};
+	const labels = ('taskLabels' in frq ? frq.taskLabels : undefined) ?? {};
 	const tasks = examFormatIds(course).map((formatId) => {
-		const label = formatId in labels ? labels[formatId as keyof typeof labels] : formatId;
+		const label = labels[formatId as keyof typeof labels] ?? formatId;
 		return { formatId, label };
 	});
 	return { control: frq.control, scope: frq.scope, tasks };

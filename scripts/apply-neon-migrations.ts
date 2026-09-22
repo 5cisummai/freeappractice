@@ -21,6 +21,9 @@ const sql = neon(databaseUrl);
 const migrationsDirectory = resolve(process.env.DRIZZLE_MIGRATIONS_DIR ?? 'drizzle');
 const statementBreakpoint = /--> statement-breakpoint/g;
 const QUESTION_JSONB_CLEANUP_MIGRATION = '0020_nice_exiles.sql';
+const MIGRATION_ID_ALIASES: Record<string, string> = {
+	'0027_windy_william_stryker': '0026_windy_william_stryker'
+};
 
 function checksum(contents: string): string {
 	return createHash('sha256').update(contents).digest('hex');
@@ -51,13 +54,20 @@ async function main(): Promise<void> {
 		const id = file.replace(/\.sql$/, '');
 		const contents = await readFile(join(migrationsDirectory, file), 'utf8');
 		const digest = checksum(contents);
-		const existing = (await sql.query(
+		let existing = (await sql.query(
 			'SELECT checksum FROM public._neon_schema_migrations WHERE id = $1',
 			[id]
 		)) as Array<{ checksum: string }>;
+		const legacyId = MIGRATION_ID_ALIASES[id];
+		if (!existing[0] && legacyId) {
+			existing = (await sql.query(
+				'SELECT checksum FROM public._neon_schema_migrations WHERE id = $1',
+				[legacyId]
+			)) as Array<{ checksum: string }>;
+		}
 		if (existing[0]) {
 			if (existing[0].checksum !== digest)
-				throw new Error(`Applied migration was modified: ${file}`);
+				throw new Error(`Applied migration was modified or renamed: ${file}`);
 			continue;
 		}
 
