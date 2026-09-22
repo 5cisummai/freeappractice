@@ -74,7 +74,7 @@ describe('buildMcqPoolBatchLine', () => {
 				customId: 'frq-0001',
 				apClass: 'AP English Language',
 				unit: 'Unit 1: Chemistry of Life',
-				model: 'gpt-5.6-luna'
+				model: 'gpt-6-luna'
 			})
 		) as {
 			custom_id: string;
@@ -90,7 +90,7 @@ describe('buildMcqPoolBatchLine', () => {
 
 		expect(parsed.custom_id).toBe('frq-0001');
 		expect(parsed.url).toBe('/v1/responses');
-		expect(parsed.body.model).toBe('gpt-5.6-luna');
+		expect(parsed.body.model).toBe('gpt-6-luna');
 		expect(parsed.body.reasoning.effort).toBe('high');
 		expect(parsed.body.input[0]?.content).toContain('Course: AP English Language');
 		expect(parsed.body.text.format).toMatchObject({ name: 'frq_question', strict: true });

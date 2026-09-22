@@ -78,7 +78,7 @@ describe('MCQ live generation pipeline', () => {
 		expect(result.questionId).toEqual(expect.any(String));
 		expect(result.answer.mainTopic).toBe(validGeneratedQuestion.mainTopic);
 		expect(result.provider).toBe('ai');
-		expect(result.model).toBe('gpt-5.6-luna');
+		expect(result.model).toBe('gpt-6-luna');
 		expect(result.timing?.generationMs).toBeGreaterThanOrEqual(0);
 		expect(result.timing?.persistenceMs).toBeGreaterThanOrEqual(0);
 	});
@@ -145,7 +145,7 @@ describe('MCQ live generation pipeline', () => {
 		);
 		expect(aiCallMock).toHaveBeenCalledWith(
 			'generateAPStimulusSet',
-			'gpt-5.6-luna',
+			'gpt-6-luna',
 			expect.objectContaining({ mode: 'diagram' })
 		);
 	});
