@@ -23,19 +23,33 @@ describe('pool refill bucket validation', () => {
 		).toBe(false);
 	});
 
-	it('rejects FRQ buckets for courses that are not enabled', () => {
+	it('pools task courses by format and unit courses by catalog unit', () => {
+		expect(
+			isValidPoolBucket({
+				questionType: 'frq',
+				apClass: 'AP English Language',
+				unit: 'synthesis'
+			})
+		).toBe(true);
 		expect(
 			isValidPoolBucket({
 				questionType: 'frq',
 				apClass: 'AP English Language',
 				unit: 'Unit 1: The Rhetorical Situation'
 			})
-		).toBe(true);
+		).toBe(false);
 		expect(
 			isValidPoolBucket({
 				questionType: 'frq',
 				apClass: 'AP Biology',
 				unit: 'Unit 1: Chemistry of Life'
+			})
+		).toBe(true);
+		expect(
+			isValidPoolBucket({
+				questionType: 'frq',
+				apClass: 'AP Biology',
+				unit: 'long-experimental-analysis'
 			})
 		).toBe(false);
 		expect(

@@ -2,6 +2,7 @@ import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js
 import { QuestionRequestError } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
+import { FRQ_ALL_UNITS, frqPracticeFor } from '$lib/question-bank/frq/practice';
 import {
 	parseFrqLatestDraft,
 	parseFrqQuestionDraft,
@@ -27,7 +28,7 @@ const TIMER_TICK_MS = 250;
 export type FrqCoreOpts = {
 	getSelectedClass: () => string;
 	getSelectedUnit: () => string;
-	getUnitRange: () => readonly number[] | undefined;
+	getSelectedFormat: () => string;
 	getRequestVersion: () => number;
 	getPresetQuestionId: () => string;
 	getMounted: () => boolean;
@@ -61,9 +62,16 @@ export function createFrqCore(opts: FrqCoreOpts) {
 
 	const selectedClass = $derived(opts.getSelectedClass());
 	const selectedUnit = $derived(opts.getSelectedUnit());
+	const selectedFormat = $derived(opts.getSelectedFormat());
 	const draftKey = $derived(question?.questionId ? `frq-draft:${question.questionId}` : '');
 	const draftScopeKey = $derived(
-		selectedClass ? `frq-latest-draft:${selectedClass}:${selectedUnit || 'all-units'}` : ''
+		selectedClass
+			? `frq-latest-draft:${selectedClass}:${
+					frqPracticeFor(selectedClass)?.control === 'task'
+						? selectedFormat || 'task'
+						: selectedUnit || 'all-units'
+				}`
+			: ''
 	);
 	const hasResponse = $derived(
 		Object.values(responses).some((response) => response.trim().length > 0)
@@ -181,7 +189,11 @@ export function createFrqCore(opts: FrqCoreOpts) {
 			? 'Checking whether written-response practice is ready…'
 			: 'Loading a written-response task…';
 		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, opts.getUnitRange());
+			const practice = frqPracticeFor(selectedClass);
+			const effectiveUnit =
+				practice?.control === 'task'
+					? FRQ_ALL_UNITS
+					: resolveEffectiveUnit(selectedClass, selectedUnit);
 			const requestedPresetId = opts.getPresetQuestionId().trim();
 			const presetId =
 				requestedPresetId && consumedPresetQuestionId !== requestedPresetId
@@ -189,7 +201,12 @@ export function createFrqCore(opts: FrqCoreOpts) {
 					: '';
 			const result = presetId
 				? await requestFrqQuestionById(presetId)
-				: await requestFrqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+				: await requestFrqQuestion(
+						selectedClass,
+						effectiveUnit,
+						[...seenQuestionIds],
+						practice?.control === 'task' ? selectedFormat : undefined
+					);
 			if (presetId) consumedPresetQuestionId = presetId;
 			if (result.exclusionsReset) seenQuestionIds = [];
 			question = result.question;

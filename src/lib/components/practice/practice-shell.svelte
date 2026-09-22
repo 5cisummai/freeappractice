@@ -81,6 +81,7 @@
 
 	let selectedClass = $state(startingSelection.selectedClass);
 	let selectedUnit = $state(startingSelection.selectedUnit);
+	let selectedFormat = $state('');
 	let unitRange = $state<number[] | undefined>(startingSelection.unitRange);
 	let requestVersion = $state(untrack(() => initial.requestVersion ?? 0));
 	let quizRequestVersion = $state(0);
@@ -148,9 +149,11 @@
 			}
 		}
 
+		if (nextMode === 'frq') unitRange = undefined;
 		if (nextMode === 'frq' && selectedClass && !frqCourses.includes(selectedClass)) {
 			selectedClass = '';
 			selectedUnit = '';
+			selectedFormat = '';
 			unitRange = undefined;
 			onEvent?.({ type: 'selection-change', selectedClass: '', selectedUnit: '' });
 		}
@@ -221,7 +224,9 @@
 				<QuestionSelector
 					bind:selectedClass
 					bind:selectedUnit
+					bind:selectedFormat
 					bind:unitRange
+					{mode}
 					allowedClassNames={practiceMode === 'frq' ? frqCourses : undefined}
 					showFirstUseHint={showFirstUseHints}
 					quizMode={activeQuizMode}
@@ -295,7 +300,7 @@
 				/>
 			{/key}
 		{:else if practiceMode === 'frq'}
-			{#key `frq:${selectedClass}:${selectedUnit}:${unitRange?.join(',') ?? ''}`}
+			{#key `frq:${selectedClass}:${selectedUnit}:${selectedFormat}`}
 				<LazyComponent
 					load={loadFrqSession}
 					pending="Loading free response…"
@@ -305,7 +310,7 @@
 						<FrqSession
 							{selectedClass}
 							{selectedUnit}
-							{unitRange}
+							{selectedFormat}
 							{requestVersion}
 							{presetQuestionId}
 							{tutorMode}

@@ -5,6 +5,11 @@ import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
 import { structuredObject } from '$lib/ai/service.server';
 import { AP_DATA } from '$lib/data/ap-data';
 import {
+	FRQ_SCOPE_SENTENCE,
+	frqPracticeFor,
+	resolveFrqPoolRequest
+} from '$lib/question-bank/frq/practice';
+import {
 	type FrqFormatRecord,
 	type FrqFixedPart,
 	selectFrqFormat
@@ -120,6 +125,8 @@ export function buildFrqGenerationPrompt(
 	formatId?: string
 ): { system: string; user: string; format: FrqFormatRecord } {
 	const format = selectFrqFormat(apClass, formatId);
+	const scope = frqPracticeFor(apClass)?.scope;
+	const anchorUnit = scope === 'single-unit' || scope === 'anchor';
 	const recent = recentTopics.length
 		? `Avoid repeating these recently used concepts or scenarios:\n${recentTopics.map((topic) => `- ${topic}`).join('\n')}`
 		: '';
@@ -127,23 +134,37 @@ export function buildFrqGenerationPrompt(
 	const partRules = format.parts
 		? `Fixed parts:\n${format.parts.map(describeFixedPart).join('\n')}\nReturn one object per fixed part id. Do not add, drop, or renumber parts. Do not change points.`
 		: `You write the parts. Each points value is a positive integer, usually 1, and the parts sum to ${format.pointTotal}. A part worth more than 1 point is only undivided work, and its earns line names point 1, point 2, and so on in order.`;
-	const system = `You create wholly original written-response practice for an independent study application. Never copy, reconstruct, or closely imitate any identifiable exam question, passage, scoring guideline, or copyrighted source.
-
-Course: ${apClass}
-Unit: ${unit}
-${course?.generation.courseGuidance ?? ''}
-${unitNotes(apClass, unit)}
-Format: ${format.formatId}
-Materials: ${format.materialMin === format.materialMax ? `exactly ${format.materialMin}` : `${format.materialMin} to ${format.materialMax}`}
-Student response: ${format.responseMode === 'essay' ? 'one essay, scored on the fixed rows' : 'one answer box per part'}
-${format.guidance}
-${partRules}
-${recent}
-
-Return the scenario prompt, the materials, and the parts. Materials may use Markdown and $...$ or $$...$$ LaTeX. Set title to null when a material has no title. Set points to null on a fixed part. Write points only when you are choosing the parts. The private answer is grading information, not student-facing copy. Do not return a second rubric, a levels array, or a total.`;
+	const scopeSentence = scope ? FRQ_SCOPE_SENTENCE[scope] : '';
+	const covered =
+		scope === 'multi-unit' || scope === 'period'
+			? 'Put the units or period you used in topicsCovered.'
+			: '';
+	const notes = scope === 'multi-unit' || scope === 'period' ? '' : unitNotes(apClass, unit);
+	const system = [
+		'You create wholly original written-response practice for an independent study application. Never copy, reconstruct, or closely imitate any identifiable exam question, passage, scoring guideline, or copyrighted source.',
+		'',
+		`Course: ${apClass}`,
+		anchorUnit ? `Unit: ${unit}` : '',
+		course?.generation.courseGuidance ?? '',
+		notes,
+		`Format: ${format.formatId}`,
+		`Materials: ${format.materialMin === format.materialMax ? `exactly ${format.materialMin}` : `${format.materialMin} to ${format.materialMax}`}`,
+		`Student response: ${format.responseMode === 'essay' ? 'one essay, scored on the fixed rows' : 'one answer box per part'}`,
+		format.guidance,
+		partRules,
+		scopeSentence,
+		covered,
+		recent,
+		'',
+		'Return the scenario prompt, the materials, and the parts. Materials may use Markdown and $...$ or $$...$$ LaTeX. Set title to null when a material has no title. Set points to null on a fixed part. Write points only when you are choosing the parts. The private answer is grading information, not student-facing copy. Do not return a second rubric, a levels array, or a total.'
+	]
+		.filter((line, index, lines) => line !== '' || lines[index - 1] !== '')
+		.join('\n');
 	return {
 		system,
-		user: `Create an original ${apClass} ${format.formatId} task for ${unit}.`,
+		user: anchorUnit
+			? `Create an original ${apClass} ${format.formatId} task for ${unit}.`
+			: `Create an original ${apClass} ${format.formatId} task.`,
 		format
 	};
 }
@@ -224,6 +245,7 @@ export function parseGeneratedFrq(
 	) {
 		throw new Error('Generated FRQ does not satisfy the format material count');
 	}
+	const storedUnit = frqPracticeFor(apClass)?.control === 'task' ? 'All Units' : unit;
 	return FrqQuestionSchema.parse({
 		schemaVersion: FRQ_SCHEMA_VERSION,
 		formatId: format.formatId,
@@ -237,7 +259,7 @@ export function parseGeneratedFrq(
 		mainTopic: parsed.mainTopic,
 		topicsCovered: parsed.topicsCovered,
 		apClass,
-		unit
+		unit: storedUnit
 	});
 }
 
@@ -320,8 +342,9 @@ export async function persistGeneratedFrqToPool(
 	model = 'batch',
 	formatId?: string
 ): Promise<FrqGenerateResult> {
+	const resolved = resolveFrqPoolRequest(apClass, normalizeUnit(unit), formatId);
 	return persistFrqQuestion(
-		parseGeneratedFrq(apClass, normalizeUnit(unit), generated, formatId),
+		parseGeneratedFrq(apClass, resolved.storedUnit, generated, resolved.formatId),
 		0,
 		model
 	);
@@ -338,11 +361,12 @@ export async function generateAndPersistFrq(
 	recentTopics?: string[],
 	formatId?: string
 ): Promise<FrqGenerateResult> {
-	const cacheUnit = normalizeUnit(unit);
+	const resolved = resolveFrqPoolRequest(apClass, normalizeUnit(unit), formatId);
 	const generationStarted = Date.now();
 	const topics =
-		recentTopics ?? (await getRecentFrqTopics(apClass, cacheUnit).catch(() => [] as string[]));
-	const question = await generateFrq(apClass, cacheUnit, topics, formatId);
+		recentTopics ??
+		(await getRecentFrqTopics(apClass, resolved.storedUnit).catch(() => [] as string[]));
+	const question = await generateFrq(apClass, resolved.storedUnit, topics, resolved.formatId);
 	const generationMs = Date.now() - generationStarted;
 	return persistFrqQuestion(question, generationMs, FRQ_GENERATION_MODEL);
 }

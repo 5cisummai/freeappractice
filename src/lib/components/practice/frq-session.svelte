@@ -14,7 +14,7 @@
 	type FrqSessionProps = {
 		selectedClass: string;
 		selectedUnit: string;
-		unitRange?: readonly number[];
+		selectedFormat?: string;
 		requestVersion: number;
 		presetQuestionId?: string;
 		tutorMode?: TutorMode;
@@ -28,7 +28,7 @@
 	let {
 		selectedClass,
 		selectedUnit,
-		unitRange,
+		selectedFormat = '',
 		requestVersion,
 		presetQuestionId = '',
 		tutorMode = 'free',
@@ -46,7 +46,7 @@
 	const core = createFrqCore({
 		getSelectedClass: () => selectedClass,
 		getSelectedUnit: () => selectedUnit,
-		getUnitRange: () => unitRange,
+		getSelectedFormat: () => selectedFormat,
 		getRequestVersion: () => requestVersion,
 		getPresetQuestionId: () => presetQuestionId,
 		getMounted: () => mounted,

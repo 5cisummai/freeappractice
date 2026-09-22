@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import { getUnitsForClass } from '$lib/catalog/ap-classes';
 import { AP_DATA } from '$lib/data/ap-data';
-import { parseGeneratedFrq } from '$lib/question-bank/frq/generation.server';
+import {
+	buildFrqGenerationPrompt,
+	parseGeneratedFrq
+} from '$lib/question-bank/frq/generation.server';
+import {
+	FRQ_SCOPE_SENTENCE,
+	frqPracticeFor,
+	resolveFrqPoolRequest
+} from '$lib/question-bank/frq/practice';
 import {
 	frqFormatWire,
 	getFrqCourseNames,
@@ -247,5 +256,101 @@ describe('FRQ format records', () => {
 		expect(() => parseGeneratedFrq('AP Chemistry', 'Unit 1', undivided, 'long-answer')).toThrow(
 			'name each point in order'
 		);
+	});
+
+	it('reads control and scope from the course record', () => {
+		expect(frqPracticeFor('AP English Language')).toMatchObject({ control: 'task', scope: 'none' });
+		expect(frqPracticeFor('AP Human Geography')).toMatchObject({
+			control: 'task',
+			scope: 'multi-unit'
+		});
+		expect(frqPracticeFor('AP World History')).toMatchObject({ control: 'task', scope: 'period' });
+		expect(frqPracticeFor('AP Biology')).toMatchObject({ control: 'unit', scope: 'single-unit' });
+		expect(frqPracticeFor('AP Chemistry')).toMatchObject({ control: 'unit', scope: 'anchor' });
+		expect(frqPracticeFor('AP English Language')?.tasks).toEqual([
+			{ formatId: 'synthesis', label: 'Synthesis' },
+			{ formatId: 'rhetorical-analysis', label: 'Rhetorical analysis' },
+			{ formatId: 'argument', label: 'Argument' }
+		]);
+		expect(frqPracticeFor('AP Human Geography')?.tasks.map((task) => task.label)).toEqual([
+			'No stimulus',
+			'One stimulus',
+			'Two stimuli'
+		]);
+		expect(frqPracticeFor('AP World History')?.tasks.map((task) => task.label)).toEqual([
+			'Secondary text',
+			'Primary text',
+			'Non-text source',
+			'Document-based',
+			'Long essay'
+		]);
+	});
+
+	it('adds one scope sentence and stores task courses as All Units', () => {
+		const english = buildFrqGenerationPrompt('AP English Language', 'All Units', [], 'argument');
+		expect(english.system).not.toContain('Unit:');
+		expect(english.system).not.toContain(FRQ_SCOPE_SENTENCE['single-unit']);
+		expect(english.user).toBe('Create an original AP English Language argument task.');
+
+		const geography = buildFrqGenerationPrompt(
+			'AP Human Geography',
+			'All Units',
+			[],
+			'no-stimulus-scenario'
+		);
+		expect(geography.system).toContain(FRQ_SCOPE_SENTENCE['multi-unit']);
+		expect(geography.system).not.toContain('Unit:');
+		expect(geography.system).not.toContain('Unit keywords');
+
+		const history = buildFrqGenerationPrompt('AP World History', 'All Units', [], 'long-essay');
+		expect(history.system).toContain(FRQ_SCOPE_SENTENCE.period);
+		expect(history.system).toContain('about half the course');
+		expect(history.system).not.toContain('Unit keywords');
+
+		const biologyUnit = 'Unit 1: Chemistry of Life';
+		const biology = buildFrqGenerationPrompt(
+			'AP Biology',
+			biologyUnit,
+			[],
+			'short-conceptual-analysis'
+		);
+		expect(biology.system).toContain(`Unit: ${biologyUnit}`);
+		expect(biology.system).toContain(FRQ_SCOPE_SENTENCE['single-unit']);
+		expect(biology.user).toContain(biologyUnit);
+
+		const chemistryUnit = 'Unit 4: Chemical Reactions';
+		const chemistry = buildFrqGenerationPrompt('AP Chemistry', chemistryUnit, [], 'long-answer');
+		expect(chemistry.system).toContain(`Unit: ${chemistryUnit}`);
+		expect(chemistry.system).toContain(FRQ_SCOPE_SENTENCE.anchor);
+
+		expect(
+			parseGeneratedFrq('AP English Language', 'Unit 1', generatedFor(english.format), 'argument')
+				.unit
+		).toBe('All Units');
+		expect(
+			parseGeneratedFrq(
+				'AP Biology',
+				biologyUnit,
+				generatedFor(biology.format),
+				'short-conceptual-analysis'
+			).unit
+		).toBe(biologyUnit);
+	});
+
+	it('rewrites an empty unit selection only for unit courses', () => {
+		const english = resolveFrqPoolRequest('AP English Language', '', 'synthesis');
+		expect(english).toEqual({
+			storedUnit: 'All Units',
+			poolUnit: 'synthesis',
+			formatId: 'synthesis'
+		});
+		const biology = resolveFrqPoolRequest('AP Biology', '');
+		expect(getUnitsForClass('AP Biology')).toContain(biology.storedUnit);
+		expect(biology.poolUnit).toBe(biology.storedUnit);
+		const chemistry = resolveFrqPoolRequest('AP Chemistry', 'All Units');
+		expect(getUnitsForClass('AP Chemistry')).toContain(chemistry.storedUnit);
+		expect(chemistry.poolUnit).toBe(chemistry.storedUnit);
+		const kept = resolveFrqPoolRequest('AP Biology', 'Unit 3: Cellular Energetics');
+		expect(kept.storedUnit).toBe('Unit 3: Cellular Energetics');
 	});
 });
