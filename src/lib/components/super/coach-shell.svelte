@@ -1133,12 +1133,12 @@
 
 			{#if clientReady}
 				<PromptInput.Root
-					class="rounded-[24px] border border-border/70 bg-background shadow-sm transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-sm"
+					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)]"
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>
 					{#if selectedCoachActionIds.length}
-						<PromptInput.Header class="px-2.5 pt-2">
+						<PromptInput.Header class="px-3 pt-3">
 							{#each selectedCoachActionIds as actionId (actionId)}
 								{@const action = coachComposerActions.find((item) => item.id === actionId)}
 								{@const Icon = coachActionIcons[actionId]}
@@ -1161,76 +1161,84 @@
 							{/each}
 						</PromptInput.Header>
 					{/if}
-					<div class="flex items-end gap-1 p-1.5">
-						<PromptInput.ActionMenu bind:open={coachActionsOpen}>
-							<PromptInput.ActionMenuTrigger
-								class="size-9 shrink-0 self-end rounded-full text-muted-foreground hover:text-foreground"
-								disabled={!sessionId || streaming}
-								aria-label="Pip actions"
-							/>
-							<PromptInput.ActionMenuContent
-								align="start"
-								sideOffset={8}
-								class="w-[min(18rem,calc(100vw-2rem))] p-1"
-							>
-								{#each coachComposerActions as action (action.id)}
-									{@const Icon = coachActionIcons[action.id]}
-									{@const selected = selectedCoachActionIds.includes(action.id)}
-									<PromptInput.ActionMenuItem
-										class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
-										disabled={!sessionId || streaming}
-										onSelect={() => toggleCoachAction(action.id)}
-									>
-										<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-										<div class="min-w-0 flex-1 text-left">
-											<div class="text-sm leading-5 font-medium">{action.title}</div>
-											<div class="text-xs leading-4 text-muted-foreground">
-												{action.description}
+					<PromptInput.Body class={cn('px-3', selectedCoachActionIds.length ? 'pt-2' : 'pt-3')}>
+						<PromptInput.Textarea
+							bind:ref={composerInputRef}
+							bind:value={input}
+							placeholder="Ask Pip"
+							class="text-md md:text-md min-h-8 resize-none px-0 py-0 leading-6 placeholder:text-muted-foreground/80"
+						/>
+					</PromptInput.Body>
+					<PromptInput.Toolbar class="gap-2 p-3 pt-2">
+						<PromptInput.Tools class="gap-1.5 [&_button:first-child]:rounded-full">
+							<PromptInput.ActionMenu bind:open={coachActionsOpen}>
+								<PromptInput.ActionMenuTrigger
+									class="size-8 rounded-full border border-border/70 bg-background p-0 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+									disabled={!sessionId || streaming}
+									aria-label="Pip actions"
+								/>
+								<PromptInput.ActionMenuContent
+									align="start"
+									sideOffset={8}
+									class="w-[min(18rem,calc(100vw-2rem))] p-1"
+								>
+									{#each coachComposerActions as action (action.id)}
+										{@const Icon = coachActionIcons[action.id]}
+										{@const selected = selectedCoachActionIds.includes(action.id)}
+										<PromptInput.ActionMenuItem
+											class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
+											disabled={!sessionId || streaming}
+											onSelect={() => toggleCoachAction(action.id)}
+										>
+											<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+											<div class="min-w-0 flex-1 text-left">
+												<div class="text-sm leading-5 font-medium">{action.title}</div>
+												<div class="text-xs leading-4 text-muted-foreground">
+													{action.description}
+												</div>
 											</div>
-										</div>
-									</PromptInput.ActionMenuItem>
-								{/each}
-							</PromptInput.ActionMenuContent>
-						</PromptInput.ActionMenu>
-						<PromptInput.Body class="min-w-0 flex-1">
-							<PromptInput.Textarea
-								bind:ref={composerInputRef}
-								bind:value={input}
-								placeholder="Ask Pip"
-								class="text-md md:text-md min-h-9 px-0 py-1.5 leading-6 placeholder:text-muted-foreground/80"
-							/>
-						</PromptInput.Body>
-						<Select.Root
-							type="single"
-							value={thinkingMode}
-							onValueChange={(value) => {
-								if (value) thinkingMode = value as CoachThinkingMode;
-							}}
-						>
-							<Select.Trigger
-								class="h-9 shrink-0 gap-1 self-end border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
-								disabled={!sessionId || streaming}
-								aria-label="Pip response depth"
+										</PromptInput.ActionMenuItem>
+									{/each}
+								</PromptInput.ActionMenuContent>
+							</PromptInput.ActionMenu>
+							<Select.Root
+								type="single"
+								value={thinkingMode}
+								onValueChange={(value) => {
+									if (value) thinkingMode = value as CoachThinkingMode;
+								}}
 							>
-								{@const Icon = selectedThinkingMode.icon}
-								<Icon class="size-3.5 shrink-0" aria-hidden="true" />
-								<span>{selectedThinkingMode.label}</span>
-							</Select.Trigger>
-							<Select.Content align="end" class="min-w-[10.5rem]">
-								{#each thinkingModeOptions as option (option.value)}
-									{@const Icon = option.icon}
-									<Select.Item value={option.value}>
-										<Icon class="size-4 text-muted-foreground" aria-hidden="true" />
-										{option.label}
-									</Select.Item>
-								{/each}
-							</Select.Content>
-						</Select.Root>
+								<Select.Trigger
+									class="h-8 shrink-0 gap-1 rounded-full border-transparent bg-transparent px-2.5 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
+									disabled={!sessionId || streaming}
+									aria-label="Pip response depth"
+								>
+									{@const Icon = selectedThinkingMode.icon}
+									<Icon class="size-3.5 shrink-0" aria-hidden="true" />
+									<span>{selectedThinkingMode.label}</span>
+								</Select.Trigger>
+								<Select.Content align="end" class="min-w-[10.5rem]">
+									{#each thinkingModeOptions as option (option.value)}
+										{@const Icon = option.icon}
+										<Select.Item value={option.value}>
+											<Icon class="size-4 text-muted-foreground" aria-hidden="true" />
+											{option.label}
+										</Select.Item>
+									{/each}
+								</Select.Content>
+							</Select.Root>
+						</PromptInput.Tools>
 						<PromptInput.Submit
 							status={coach.status as ChatStatus}
+							size="icon-sm"
 							disabled={!canSendComposer && !streaming}
 							onStop={() => coach.stop()}
-							class="size-9 shrink-0 self-end rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
+							class={cn(
+								'size-8 rounded-full p-0 shadow-none',
+								canSendComposer || streaming
+									? SUPER_GRADIENT_BUTTON_CLASS
+									: 'border-0 bg-muted text-muted-foreground hover:bg-muted'
+							)}
 						>
 							{#if streaming}
 								<SquareIcon class="size-4" />
@@ -1238,7 +1246,7 @@
 								<ArrowUpIcon class="size-4" />
 							{/if}
 						</PromptInput.Submit>
-					</div>
+					</PromptInput.Toolbar>
 				</PromptInput.Root>
 
 				{#if emptyChat}
