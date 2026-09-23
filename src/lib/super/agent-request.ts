@@ -24,6 +24,7 @@ export type SuperToolsInput = {
 	sessionId: string;
 	currentContext?: SuperAgentContext;
 	conversationId?: string;
+	chargeWebSearch: () => Promise<boolean>;
 };
 
 export const coachThinkingModeSchema = z.enum(['quick', 'thinking', 'deep']);

@@ -130,22 +130,22 @@ function usageKey(userId: string, month: string): string {
 }
 
 const RESERVE_USAGE_SCRIPT = `
-local used = redis.call('INCR', KEYS[1])
-if used == 1 then redis.call('EXPIRE', KEYS[1], tonumber(ARGV[2])) end
+local used = redis.call('INCRBY', KEYS[1], tonumber(ARGV[3]))
+if used == tonumber(ARGV[3]) then redis.call('EXPIRE', KEYS[1], tonumber(ARGV[2])) end
 if used > tonumber(ARGV[1]) then
-  redis.call('DECR', KEYS[1])
-  return {0, used - 1}
+  redis.call('DECRBY', KEYS[1], tonumber(ARGV[3]))
+  return {0, used - tonumber(ARGV[3])}
 end
 return {1, used}
 `;
 
 const RELEASE_USAGE_SCRIPT = `
 local used = tonumber(redis.call('GET', KEYS[1]) or '0')
-if used <= 1 then
+if used <= tonumber(ARGV[1]) then
   redis.call('DEL', KEYS[1])
   return 0
 end
-return redis.call('DECR', KEYS[1])
+return redis.call('DECRBY', KEYS[1], tonumber(ARGV[1]))
 `;
 
 export type UsageReservation = {
@@ -167,10 +167,11 @@ export function getPersonalizedUsageWarning(
 	return null;
 }
 
-/** Atomically reserves one personalized turn before a model call. */
+/** Atomically reserves the requested message units before a model call or web search. */
 export async function reservePersonalizedTurn(
 	userId: string,
-	now = new Date()
+	now = new Date(),
+	units = 1
 ): Promise<UsageReservation | null> {
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();
@@ -182,7 +183,7 @@ export async function reservePersonalizedTurn(
 				.createScript<number[]>(RESERVE_USAGE_SCRIPT)
 				.exec(
 					[usageKey(userId, month)],
-					[String(limitCount), String(secondsUntilUsageExpiry(now))]
+					[String(limitCount), String(secondsUntilUsageExpiry(now)), String(units)]
 				),
 			750
 		);
@@ -197,12 +198,18 @@ export async function reservePersonalizedTurn(
 }
 
 /** Only call when the model failed before producing useful output. */
-export async function releasePersonalizedTurn(userId: string, month: string): Promise<void> {
+export async function releasePersonalizedTurn(
+	userId: string,
+	month: string,
+	units = 1
+): Promise<void> {
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();
 	try {
 		await withRedisTimeout(
-			redis.createScript<number>(RELEASE_USAGE_SCRIPT).exec([usageKey(userId, month)], []),
+			redis
+				.createScript<number>(RELEASE_USAGE_SCRIPT)
+				.exec([usageKey(userId, month)], [String(units)]),
 			750
 		);
 	} catch (error) {

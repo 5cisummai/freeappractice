@@ -199,7 +199,7 @@ async function coachWriteDenied(locals: App.Locals, userId: string): Promise<str
 }
 
 export function createSuperTools(input: SuperToolsInput) {
-	const { locals, userId, sessionId, currentContext, conversationId } = input;
+	const { locals, userId, sessionId, currentContext, conversationId, chargeWebSearch } = input;
 
 	return {
 		...(env.PARALLEL_API_KEY?.trim()
@@ -224,6 +224,9 @@ export function createSuperTools(input: SuperToolsInput) {
 									},
 									{ signal: abortSignal }
 								);
+								if (!(await chargeWebSearch())) {
+									return { error: 'Web search requires five remaining messages this month.' };
+								}
 								return {
 									results: response.results.map((result) => ({
 										title: result.title ?? result.url,

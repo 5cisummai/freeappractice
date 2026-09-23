@@ -355,7 +355,8 @@ export async function createSuperAgentStreamResponse(
 			currentContext: context,
 			conversationId,
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
-			thinkingMode
+			thinkingMode,
+			chargeWebSearch: personalizedTurn.chargeWebSearch
 		});
 
 		const markUsageIfNeeded = async (responseMessage: SuperAgentUIMessage) => {

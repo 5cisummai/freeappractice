@@ -25,6 +25,7 @@ export function createSuperAgent(input: {
 	thinkingMode?: CoachThinkingMode;
 	currentContext?: SuperAgentContext;
 	conversationId?: string;
+	chargeWebSearch: () => Promise<boolean>;
 }) {
 	const {
 		locals,
@@ -36,7 +37,8 @@ export function createSuperAgent(input: {
 		historySummary,
 		thinkingMode = 'quick',
 		currentContext,
-		conversationId
+		conversationId,
+		chargeWebSearch
 	} = input;
 	const surface = currentContext?.surface ?? 'coach';
 	let reasoningEffort: 'low' | 'medium' | 'high';
@@ -124,7 +126,14 @@ export function createSuperAgent(input: {
 		]
 			.filter(Boolean)
 			.join('\n'),
-		tools: createSuperTools({ locals, userId, sessionId, currentContext, conversationId }),
+		tools: createSuperTools({
+			locals,
+			userId,
+			sessionId,
+			currentContext,
+			conversationId,
+			chargeWebSearch
+		}),
 		prepareStep: async ({ messages, stepNumber }) => {
 			const pruned = pruneSuperAgentModelMessages(messages);
 			if (stepNumber === 0) {
