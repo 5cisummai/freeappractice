@@ -11,14 +11,17 @@
 				{
 					title: 'New Features',
 					items: [
-						'Free Response practice now offers task selection for supported courses, with prompts and scoring matched to each task format'
+						'Free Response practice now offers task selection for supported courses, with prompts and scoring matched to each task format',
+						'MCQ and Free Response question tutoring is now free for everyone',
+						'Settings now lets you review saved Tutor memories'
 					]
 				},
 				{
 					title: 'Improvements',
 					items: [
 						'Free Response feedback now shows scores and comments for each task part',
-						'Pip has a roomier message composer with actions and response depth controls below the text box'
+						'Pip has a roomier message composer and shows sources used in its answers',
+						'Super now includes 500 Coach messages per month during the free beta and 1,000 on paid plans'
 					]
 				},
 				{

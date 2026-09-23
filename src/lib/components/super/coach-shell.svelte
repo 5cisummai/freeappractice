@@ -323,7 +323,7 @@
 								title: typeof title === 'string' ? title : url,
 								url,
 								hostname: parsed.hostname.replace(/^www\./, ''),
-									faviconUrl: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=32`
+								faviconUrl: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=32`
 							}
 						];
 					} catch {
@@ -1043,29 +1043,29 @@
 												</ChainOfThought.Header>
 												<ChainOfThought.Content class="py-1">
 													{#each activities as activity (activity.key)}
-										<ChainOfThought.Step
-											icon={activity.type === 'reasoning'
-												? StepBrainIcon
-												: (toolActivityIcons[activity.type] ??
-														(activity.type.startsWith('tool-update_')
-															? StepPencilIcon
-															: StepFallbackIcon))}
-													label={activity.type === 'reasoning' ? undefined : activity.label}
+														<ChainOfThought.Step
+															icon={activity.type === 'reasoning'
+																? StepBrainIcon
+																: (toolActivityIcons[activity.type] ??
+																	(activity.type.startsWith('tool-update_')
+																		? StepPencilIcon
+																		: StepFallbackIcon))}
+															label={activity.type === 'reasoning' ? undefined : activity.label}
 															status={activity.state === 'running' ? 'active' : 'complete'}
 															class={cn(
 																activity.state === 'running' &&
 																	'animate-pulse motion-reduce:animate-none',
 																activity.state === 'error' && 'text-destructive'
 															)}
-											>
-												{#if activity.reasoning}
-													<RichText
-														text={activity.reasoning}
-														blocks
-														class="max-w-2xl text-sm leading-6 text-muted-foreground"
-													/>
-												{/if}
-											{#if activity.sources.length}
+														>
+															{#if activity.reasoning}
+																<RichText
+																	text={activity.reasoning}
+																	blocks
+																	class="max-w-2xl text-sm leading-6 text-muted-foreground"
+																/>
+															{/if}
+															{#if activity.sources.length}
 																<ChainOfThought.SearchResults class="flex-wrap gap-1.5">
 																	{#each activity.sources as source (source.url)}
 																		<ChainOfThought.SearchResult
@@ -1073,19 +1073,20 @@
 																			target="_blank"
 																			rel="noopener noreferrer"
 																			title={source.title}
-																				class="max-w-full hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
-																			>
-																				<img
-																					src={source.faviconUrl}
-																					alt=""
-																					width="14"
-																					height="14"
-																					loading="lazy"
-																					referrerpolicy="no-referrer"
-																					class="size-3.5 rounded-sm object-contain"
-																					onerror={(event) => ((event.currentTarget as HTMLImageElement).hidden = true)}
-																				/>
-																				{source.hostname}
+																			class="max-w-full hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
+																		>
+																			<img
+																				src={source.faviconUrl}
+																				alt=""
+																				width="14"
+																				height="14"
+																				loading="lazy"
+																				referrerpolicy="no-referrer"
+																				class="size-3.5 rounded-sm object-contain"
+																				onerror={(event) =>
+																					((event.currentTarget as HTMLImageElement).hidden = true)}
+																			/>
+																			{source.hostname}
 																		</ChainOfThought.SearchResult>
 																	{/each}
 																</ChainOfThought.SearchResults>

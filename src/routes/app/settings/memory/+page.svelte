@@ -40,14 +40,15 @@
 			</Card.Root>
 		{:else if data.memories.length}
 			<p class="text-sm text-muted-foreground">
-				{data.memories.length} {data.memories.length === 1 ? 'memory' : 'memories'} stored
+				{data.memories.length}
+				{data.memories.length === 1 ? 'memory' : 'memories'} stored
 			</p>
 			<ul class="space-y-3">
 				{#each data.memories as memory (memory.id)}
 					<li>
 						<Card.Root class="border-border/70 shadow-sm">
 							<Card.Content class="space-y-3 p-5">
-								<p class="ph-mask-pii break-words text-sm leading-6 whitespace-pre-wrap">
+								<p class="ph-mask-pii text-sm leading-6 break-words whitespace-pre-wrap">
 									{memory.text}
 								</p>
 								<time
