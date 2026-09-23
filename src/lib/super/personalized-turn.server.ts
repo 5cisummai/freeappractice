@@ -13,6 +13,7 @@ export type ReservedPersonalizedTurn = {
 	reservation: UsageReservation;
 	usageWarning: PersonalizedUsageWarning;
 	markOutput: () => Promise<void>;
+	chargeWebSearch: () => Promise<boolean>;
 	releaseIfUnused: () => Promise<void>;
 };
 
@@ -29,11 +30,13 @@ export async function startPersonalizedTurn(userId: string): Promise<Personalize
 	const rate = await limitSuperAi(userId);
 	if (!rate.allowed) return { kind: 'rate-limited', retryAt: rate.retryAt };
 
-	const reservation = await reservePersonalizedTurn(userId);
+	const turnStartedAt = new Date();
+	const reservation = await reservePersonalizedTurn(userId, turnStartedAt);
 	if (!reservation) return { kind: 'exhausted' };
 
 	let outputStarted = false;
 	let released = false;
+	let searchCharge: Promise<boolean> | undefined;
 	return {
 		kind: 'reserved',
 		reservation,
@@ -43,10 +46,21 @@ export async function startPersonalizedTurn(userId: string): Promise<Personalize
 			outputStarted = true;
 			await rollupPersonalizedUsage(userId, reservation);
 		},
+		chargeWebSearch: () => {
+			searchCharge ??= (async () => {
+				const extra = await reservePersonalizedTurn(userId, turnStartedAt, 4);
+				if (!extra) return false;
+				reservation.used = extra.used;
+				reservation.remaining = extra.remaining;
+				return true;
+			})();
+			return searchCharge;
+		},
 		releaseIfUnused: async () => {
 			if (outputStarted || released) return;
 			released = true;
-			await releasePersonalizedTurn(userId, reservation.month);
+			const searchCharged = await searchCharge?.catch(() => false);
+			await releasePersonalizedTurn(userId, reservation.month, searchCharged ? 5 : 1);
 		}
 	};
 }
