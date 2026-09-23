@@ -127,7 +127,7 @@ async function main() {
 			const generated = JSON.parse(text) as unknown;
 			if (dryRun) {
 				if ((entry.questionType ?? 'mcq') === 'frq') {
-					parseGeneratedFrq(entry.apClass, entry.unit, generated);
+					parseGeneratedFrq(entry.apClass, entry.unit, generated, entry.formatId);
 				} else {
 					parseGeneratedApQuestion(generated);
 				}
@@ -142,7 +142,13 @@ async function main() {
 				target,
 				() =>
 					questionType === 'frq'
-						? persistGeneratedFrqToPool(entry.apClass, entry.unit, generated, manifest.model)
+						? persistGeneratedFrqToPool(
+								entry.apClass,
+								entry.unit,
+								generated,
+								manifest.model,
+								entry.formatId
+							)
 						: persistParsedQuestionToPool(
 								entry.apClass,
 								entry.unit,

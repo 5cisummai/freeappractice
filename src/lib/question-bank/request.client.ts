@@ -33,6 +33,7 @@ type QuestionRequestOptions<TQuestion> = {
 	endpoint: string;
 	className: string;
 	unit: string;
+	formatId?: string;
 	excludeQuestionIds?: string[];
 	warmingMessage: string;
 	errorMessage: string;
@@ -52,6 +53,7 @@ export async function requestQuestion<TQuestion>(
 		className: options.className,
 		unit: options.unit
 	};
+	if (options.formatId) body.formatId = options.formatId;
 	if (options.excludeQuestionIds?.length) body.excludeQuestionIds = options.excludeQuestionIds;
 
 	try {
@@ -231,12 +233,14 @@ type FrqQuestionApiResponse = QuestionApiResponse & {
 export function requestFrqQuestion(
 	className: string,
 	unit: string,
-	excludeQuestionIds: string[] = []
+	excludeQuestionIds: string[] = [],
+	formatId?: string
 ): Promise<FrqFetchResult> {
 	return requestQuestion({
 		endpoint: '/api/question/frq',
 		className,
 		unit,
+		formatId,
 		excludeQuestionIds,
 		warmingMessage: 'Written-response pool is warming up. Please retry shortly.',
 		errorMessage: 'Could not load written-response practice.',

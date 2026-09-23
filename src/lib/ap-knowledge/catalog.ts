@@ -43,7 +43,7 @@ export type ApKnowledgeResult =
 	  };
 
 const supportedCourses = AP_DATA.courses;
-const courseByName = new Map(supportedCourses.map((course) => [normalize(course.name), course]));
+const courseByName = new Map(supportedCourses.map((course) => [course.name, course] as const));
 const sourceById = new Map(AP_DATA.sources.map((source) => [source.id, source] as const));
 
 export const AP_KNOWLEDGE_CATALOG_VERSION = AP_DATA.datasetVersion;
@@ -158,7 +158,7 @@ export function getApCurriculumKnowledge(input: {
 		};
 	}
 
-	const course = courseByName.get(normalize(input.apClass));
+	const course = courseByName.get(input.apClass);
 	if (!course) {
 		return {
 			kind: 'not_found',

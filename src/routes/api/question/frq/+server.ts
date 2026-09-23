@@ -4,6 +4,7 @@ import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
 import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
 import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
+import { resolveFrqPoolRequest, UnknownFrqTaskError } from '$lib/question-bank/frq/practice';
 import { frqBank } from '$lib/question-bank/frq/bank.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import {
@@ -47,7 +48,16 @@ export const POST: RequestHandler = withAuthedHandler(
 					{ status: 400 }
 				);
 			}
-			const outcome = await frqBank.get(apClass, unit, {
+			let poolUnit = unit;
+			try {
+				poolUnit = resolveFrqPoolRequest(apClass, unit, validated.value.formatId).poolUnit;
+			} catch (error) {
+				if (error instanceof UnknownFrqTaskError) {
+					return json({ error: error.message }, { status: 400 });
+				}
+				throw error;
+			}
+			const outcome = await frqBank.get(apClass, poolUnit, {
 				excludeQuestionIds: validated.value.excludeQuestionIds,
 				metrics: path,
 				allowRefill: true

@@ -6,6 +6,7 @@ import {
 	markSubscriptionBillingIssue,
 	mirrorSuperSubscription
 } from '$lib/super/billing.server';
+import { SUPER_MONTHLY_MESSAGE_LIMIT } from '$lib/super/types';
 
 function toSubscriptionMirror(subscription: Subscription, event?: { id: string; created: number }) {
 	return {
@@ -72,7 +73,7 @@ export function createSuperStripePlugin() {
 					name: 'super',
 					priceId: monthlyPriceId,
 					annualDiscountPriceId: annualPriceId,
-					limits: { personalizedMessagesPerMonth: 600 }
+					limits: { personalizedMessagesPerMonth: SUPER_MONTHLY_MESSAGE_LIMIT }
 				}
 			],
 			getCheckoutSessionParams: ({ subscription }) => ({

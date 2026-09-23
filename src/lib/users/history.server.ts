@@ -1,7 +1,7 @@
 import type { HistoryItem, HistorySummary, QuestionAttempt } from '$lib/users/types';
 import { sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttemptGrades, frqAttempts, mcqAttempts, quizAttempts } from '$lib/server/neon/schema';
+import { frqAttempts, mcqAttempts, quizAttempts } from '$lib/server/neon/schema';
 import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
 
 type PracticeHistoryPageResult = {
@@ -193,10 +193,10 @@ export async function getPracticeHistoryPage(
 				attemptedAt: frqAttempts.createdAt
 			}),
 			...(filters.result === 'correct'
-				? [sql`${frqAttemptGrades.percentage} >= ${FRQ_PASS_THRESHOLD}`]
+				? [sql`${frqAttempts.percentage} >= ${FRQ_PASS_THRESHOLD}`]
 				: []),
 			...(filters.result === 'incorrect'
-				? [sql`${frqAttemptGrades.percentage} < ${FRQ_PASS_THRESHOLD}`]
+				? [sql`${frqAttempts.percentage} < ${FRQ_PASS_THRESHOLD}`]
 				: [])
 		];
 		sources.push(sql`
@@ -210,18 +210,16 @@ export async function getPracticeHistoryPage(
 				NULL::boolean AS "wasCorrect",
 				${frqAttempts.timeTakenMs} AS "timeTakenMs",
 				${frqAttempts.createdAt} AS "attemptedAt",
-				${frqAttemptGrades.pointsEarned} AS "pointsEarned",
-				${frqAttemptGrades.pointsAvailable} AS "pointsAvailable",
-				${frqAttemptGrades.percentage} AS percentage,
+				${frqAttempts.pointsEarned} AS "pointsEarned",
+				${frqAttempts.pointsAvailable} AS "pointsAvailable",
+				${frqAttempts.percentage} AS percentage,
 				NULL::integer AS "requestedCount",
 				NULL::integer AS "answeredCount",
 				NULL::integer AS "correctCount",
 				NULL::integer AS "incorrectCount",
 				NULL::integer AS "scorePercent",
-				${frqAttemptGrades.percentage} AS "resultScore"
+				${frqAttempts.percentage} AS "resultScore"
 			FROM ${frqAttempts}
-			INNER JOIN ${frqAttemptGrades}
-				ON ${frqAttemptGrades.attemptId} = ${frqAttempts.id}
 			WHERE ${sql.join(conditions, sql` AND `)}
 		`);
 	}

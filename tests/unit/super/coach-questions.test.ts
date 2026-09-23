@@ -92,13 +92,13 @@ describe('giveCoachPracticeQuestion', () => {
 					unit: 'Unit 2',
 					topicsCovered: 'Cells',
 					prompt: 'Describe osmosis.',
-					sections: [
+					responseMode: 'parts',
+					parts: [
 						{
-							id: 'a',
-							label: 'Part A',
+							id: 'A',
+							label: 'A',
 							prompt: 'Explain the process.',
-							responseKind: 'text',
-							maxPoints: 4
+							points: 1
 						}
 					],
 					materials: []

@@ -47,7 +47,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const [profile, billing, usage] = await Promise.all([
 		getTutorProfileViewForRequest(locals, userId),
 		getSuperBillingView(userId),
-		readSettingsUsage(userId, hasPaidCapability(planAccess, 'personalizedTutor'))
+		readSettingsUsage(userId, hasPaidCapability(planAccess, 'coach'))
 	]);
 
 	return {

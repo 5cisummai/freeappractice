@@ -1282,18 +1282,14 @@
 				"payloadEncoding": "jsonb"
 			},
 			"schema": {
-				"schemaVersion": 1,
+				"schemaVersion": 2,
 				"requiredFields": [
 					"schemaVersion",
 					"formatId",
-					"profileVersion",
-					"promptVersion",
-					"rubricVersion",
+					"responseMode",
 					"prompt",
 					"materials",
-					"sections",
-					"rubric",
-					"totalPoints",
+					"parts",
 					"topicsCovered",
 					"mainTopic",
 					"apClass",
@@ -1302,40 +1298,38 @@
 				"studentVisibleFields": [
 					"prompt",
 					"materials",
-					"sections",
+					"responseMode",
+					"parts",
 					"topicsCovered",
 					"apClass",
 					"unit"
 				],
-				"privateGradingFields": ["rubric"],
+				"privateGradingFields": ["parts.answer", "parts.earns"],
 				"materialFields": ["id", "title?", "content"],
-				"sectionFields": ["id", "label", "prompt", "responseKind=text", "maxPoints"],
-				"rubricCriterionFields": [
-					"id",
-					"sectionId",
-					"label",
-					"maxPoints",
-					"levels",
-					"referenceAnswer"
-				],
+				"partFields": ["id", "label", "prompt", "points", "earns", "answer"],
 				"validationRules": [
 					"IDs use stable label characters and length limits.",
-					"Section IDs and rubric criterion IDs are unique.",
-					"Each criterion references a known section.",
-					"Criterion levels have unique points including zero and reach maxPoints.",
-					"Rubric total equals totalPoints.",
-					"Each section rubric total equals section maxPoints.",
-					"Responses are text-only and bounded by section and total character limits."
+					"Part IDs are unique.",
+					"Partial credit is every integer from 0 through that part's points.",
+					"Essay formats store one student response scored on the fixed parts.",
+					"Short-answer formats store one student response per part.",
+					"Answers and earns lines stay server-side."
 				]
 			},
 			"generationRules": [
-				"Use the selected course profile.",
+				"Use one format record per generation call.",
 				"Create wholly original content.",
-				"Keep rubric facts private from the student payload.",
+				"Keep answers and earns lines private from the student payload.",
 				"Use recent-topic diversity when available.",
 				"Persist course and unit metadata with the question."
 			],
-			"appSupportedCourses": ["AP English Language"]
+			"appSupportedCourses": [
+				"AP Biology",
+				"AP Chemistry",
+				"AP English Language",
+				"AP Human Geography",
+				"AP World History"
+			]
 		}
 	},
 	"courses": [
@@ -1350,8 +1344,8 @@
 						"enabled": true
 					},
 					"frq": {
-						"enabled": false,
-						"profileId": null
+						"enabled": true,
+						"profileId": "ap-biology-frq-profile"
 					},
 					"classPageId": "ap-biology"
 				}
@@ -1454,8 +1448,185 @@
 					"biologySpecialCalibration": true
 				},
 				"frq": {
-					"enabled": false,
-					"unsupportedByAppReason": "No course profile is defined in src/lib/question-bank/frq/profiles.server.ts."
+					"enabled": true,
+					"control": "unit",
+					"scope": "single-unit",
+					"formats": [
+						{
+							"formatId": "long-experimental-analysis",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 2,
+							"pointTotal": 9,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 3
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 3
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 2
+								}
+							]
+						},
+						{
+							"formatId": "long-experimental-analysis-with-graphing",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 9,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 4
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 2
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 2
+								}
+							]
+						},
+						{
+							"formatId": "short-conceptual-analysis",
+							"responseMode": "parts",
+							"materialMin": 0,
+							"materialMax": 1,
+							"pointTotal": 4,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "short-data-analysis",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 4,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "short-model-or-visual-analysis",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 4,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "short-scientific-investigation",
+							"responseMode": "parts",
+							"materialMin": 0,
+							"materialMax": 1,
+							"pointTotal": 4,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								}
+							]
+						}
+					]
 				}
 			},
 			"units": [
@@ -2191,8 +2362,8 @@
 						"enabled": true
 					},
 					"frq": {
-						"enabled": false,
-						"profileId": null
+						"enabled": true,
+						"profileId": "ap-chemistry-frq-profile"
 					},
 					"classPageId": "ap-chemistry"
 				}
@@ -2287,8 +2458,25 @@
 					"biologySpecialCalibration": false
 				},
 				"frq": {
-					"enabled": false,
-					"unsupportedByAppReason": "No course profile is defined in src/lib/question-bank/frq/profiles.server.ts."
+					"enabled": true,
+					"control": "unit",
+					"scope": "anchor",
+					"formats": [
+						{
+							"formatId": "long-answer",
+							"responseMode": "parts",
+							"materialMin": 0,
+							"materialMax": 4,
+							"pointTotal": 10
+						},
+						{
+							"formatId": "short-answer",
+							"responseMode": "parts",
+							"materialMin": 0,
+							"materialMax": 3,
+							"pointTotal": 4
+						}
+					]
 				}
 			},
 			"units": [
@@ -10799,19 +10987,87 @@
 				},
 				"frq": {
 					"enabled": true,
-					"formatId": "argument-analysis",
-					"supportedFormats": ["materials", "multi-section", "text"],
-					"generationConstraints": {
-						"minSections": 1,
-						"maxSections": 12,
-						"maxMaterials": 12
+					"control": "task",
+					"scope": "none",
+					"taskLabels": {
+						"synthesis": "Synthesis",
+						"rhetorical-analysis": "Rhetorical analysis",
+						"argument": "Argument"
 					},
-					"scoringMechanics": "criterion-level-rubric",
-					"allowedResponseTypes": ["text"],
-					"profileVersion": "english-language-v1",
-					"rubricVersion": "english-language-rubric-v1",
-					"generationGuidance": "Create an original short passage or source set and a single analytical or argumentative writing task. The material must be wholly original and must not imitate an identifiable published or exam passage.",
-					"gradingGuidance": "Evaluate a defensible central claim, relevant evidence and reasoning, and control of the argument. Reward specific analysis rather than terminology alone."
+					"formats": [
+						{
+							"formatId": "argument",
+							"responseMode": "essay",
+							"materialMin": 0,
+							"materialMax": 0,
+							"pointTotal": 6,
+							"parts": [
+								{
+									"id": "thesis",
+									"label": "Thesis",
+									"points": 1
+								},
+								{
+									"id": "evidence-commentary",
+									"label": "Evidence and Commentary",
+									"points": 4
+								},
+								{
+									"id": "sophistication",
+									"label": "Sophistication",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "rhetorical-analysis",
+							"responseMode": "essay",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 6,
+							"parts": [
+								{
+									"id": "thesis",
+									"label": "Thesis",
+									"points": 1
+								},
+								{
+									"id": "evidence-commentary",
+									"label": "Evidence and Commentary",
+									"points": 4
+								},
+								{
+									"id": "sophistication",
+									"label": "Sophistication",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "synthesis",
+							"responseMode": "essay",
+							"materialMin": 6,
+							"materialMax": 6,
+							"pointTotal": 6,
+							"parts": [
+								{
+									"id": "thesis",
+									"label": "Thesis",
+									"points": 1
+								},
+								{
+									"id": "evidence-commentary",
+									"label": "Evidence and Commentary",
+									"points": 4
+								},
+								{
+									"id": "sophistication",
+									"label": "Sophistication",
+									"points": 1
+								}
+							]
+						}
+					]
 				}
 			},
 			"units": [
@@ -13392,8 +13648,8 @@
 						"enabled": true
 					},
 					"frq": {
-						"enabled": false,
-						"profileId": null
+						"enabled": true,
+						"profileId": "ap-world-history-frq-profile"
 					},
 					"classPageId": "ap-world-history"
 				}
@@ -13513,8 +13769,158 @@
 					"biologySpecialCalibration": false
 				},
 				"frq": {
-					"enabled": false,
-					"unsupportedByAppReason": "No course profile is defined in src/lib/question-bank/frq/profiles.server.ts."
+					"enabled": true,
+					"control": "task",
+					"scope": "period",
+					"taskLabels": {
+						"secondary-text-source": "Secondary text",
+						"primary-text-source": "Primary text",
+						"primary-or-secondary-non-text-source": "Non-text source",
+						"document-based-question": "Document-based",
+						"long-essay": "Long essay"
+					},
+					"formats": [
+						{
+							"formatId": "document-based-question",
+							"responseMode": "essay",
+							"materialMin": 7,
+							"materialMax": 7,
+							"pointTotal": 7,
+							"parts": [
+								{
+									"id": "thesis",
+									"label": "Thesis",
+									"points": 1
+								},
+								{
+									"id": "context",
+									"label": "Contextualization",
+									"points": 1
+								},
+								{
+									"id": "evidence-documents",
+									"label": "Evidence from the documents",
+									"points": 2
+								},
+								{
+									"id": "evidence-beyond",
+									"label": "Evidence beyond the documents",
+									"points": 1
+								},
+								{
+									"id": "sourcing",
+									"label": "Sourcing",
+									"points": 1
+								},
+								{
+									"id": "complexity",
+									"label": "Complexity",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "long-essay",
+							"responseMode": "essay",
+							"materialMin": 0,
+							"materialMax": 0,
+							"pointTotal": 6,
+							"parts": [
+								{
+									"id": "thesis",
+									"label": "Thesis",
+									"points": 1
+								},
+								{
+									"id": "context",
+									"label": "Contextualization",
+									"points": 1
+								},
+								{
+									"id": "evidence",
+									"label": "Evidence",
+									"points": 2
+								},
+								{
+									"id": "reasoning",
+									"label": "Reasoning",
+									"points": 2
+								}
+							]
+						},
+						{
+							"formatId": "primary-or-secondary-non-text-source",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 3,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "primary-text-source",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 3,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "secondary-text-source",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 3,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								}
+							]
+						}
+					]
 				}
 			},
 			"units": [
@@ -16894,8 +17300,8 @@
 						"enabled": true
 					},
 					"frq": {
-						"enabled": false,
-						"profileId": null
+						"enabled": true,
+						"profileId": "ap-human-geography-frq-profile"
 					},
 					"classPageId": "ap-human-geography"
 				}
@@ -16993,8 +17399,148 @@
 					"biologySpecialCalibration": false
 				},
 				"frq": {
-					"enabled": false,
-					"unsupportedByAppReason": "No course profile is defined in src/lib/question-bank/frq/profiles.server.ts."
+					"enabled": true,
+					"control": "task",
+					"scope": "multi-unit",
+					"taskLabels": {
+						"no-stimulus-scenario": "No stimulus",
+						"one-stimulus-scenario": "One stimulus",
+						"two-stimulus-scenario": "Two stimuli"
+					},
+					"formats": [
+						{
+							"formatId": "no-stimulus-scenario",
+							"responseMode": "parts",
+							"materialMin": 0,
+							"materialMax": 0,
+							"pointTotal": 7,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								},
+								{
+									"id": "E",
+									"label": "E",
+									"points": 1
+								},
+								{
+									"id": "F",
+									"label": "F",
+									"points": 1
+								},
+								{
+									"id": "G",
+									"label": "G",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "one-stimulus-scenario",
+							"responseMode": "parts",
+							"materialMin": 1,
+							"materialMax": 1,
+							"pointTotal": 7,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								},
+								{
+									"id": "E",
+									"label": "E",
+									"points": 1
+								},
+								{
+									"id": "F",
+									"label": "F",
+									"points": 1
+								},
+								{
+									"id": "G",
+									"label": "G",
+									"points": 1
+								}
+							]
+						},
+						{
+							"formatId": "two-stimulus-scenario",
+							"responseMode": "parts",
+							"materialMin": 2,
+							"materialMax": 2,
+							"pointTotal": 7,
+							"parts": [
+								{
+									"id": "A",
+									"label": "A",
+									"points": 1
+								},
+								{
+									"id": "B",
+									"label": "B",
+									"points": 1
+								},
+								{
+									"id": "C",
+									"label": "C",
+									"points": 1
+								},
+								{
+									"id": "D",
+									"label": "D",
+									"points": 1
+								},
+								{
+									"id": "E",
+									"label": "E",
+									"points": 1
+								},
+								{
+									"id": "F",
+									"label": "F",
+									"points": 1
+								},
+								{
+									"id": "G",
+									"label": "G",
+									"points": 1
+								}
+							]
+						}
+					]
 				}
 			},
 			"units": [

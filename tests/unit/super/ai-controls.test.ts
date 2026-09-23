@@ -15,24 +15,24 @@ describe('getPersonalizedUsageWarning', () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(false);
 	});
 
-	it('warns at 80% and escalates at 95% of the 600-turn monthly limit', () => {
-		expect(getPersonalizedUsageWarning({ used: 479 })).toBeNull();
-		expect(getPersonalizedUsageWarning({ used: 480 })).toBe(80);
-		expect(getPersonalizedUsageWarning({ used: 569 })).toBe(80);
-		expect(getPersonalizedUsageWarning({ used: 570 })).toBe(95);
+	it('warns at 80% and escalates at 95% of the 1,000-turn monthly limit', () => {
+		expect(getPersonalizedUsageWarning({ used: 799 })).toBeNull();
+		expect(getPersonalizedUsageWarning({ used: 800 })).toBe(80);
+		expect(getPersonalizedUsageWarning({ used: 949 })).toBe(80);
+		expect(getPersonalizedUsageWarning({ used: 950 })).toBe(95);
 	});
 
-	it('uses the 300-turn beta limit when provided', () => {
-		expect(getPersonalizedUsageWarning({ used: 239, limit: 300 })).toBeNull();
-		expect(getPersonalizedUsageWarning({ used: 240, limit: 300 })).toBe(80);
-		expect(getPersonalizedUsageWarning({ used: 285, limit: 300 })).toBe(95);
+	it('uses the 500-turn beta limit when provided', () => {
+		expect(getPersonalizedUsageWarning({ used: 399, limit: 500 })).toBeNull();
+		expect(getPersonalizedUsageWarning({ used: 400, limit: 500 })).toBe(80);
+		expect(getPersonalizedUsageWarning({ used: 475, limit: 500 })).toBe(95);
 	});
 
 	it('selects the beta limit only while the beta flag is on', async () => {
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(true);
-		await expect(getSuperMonthlyMessageLimit()).resolves.toBe(300);
+		await expect(getSuperMonthlyMessageLimit()).resolves.toBe(500);
 
 		mocks.isSuperFreeBetaEnabled.mockResolvedValue(false);
-		await expect(getSuperMonthlyMessageLimit()).resolves.toBe(600);
+		await expect(getSuperMonthlyMessageLimit()).resolves.toBe(1000);
 	});
 });

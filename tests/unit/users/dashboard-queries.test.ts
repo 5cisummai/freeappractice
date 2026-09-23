@@ -50,10 +50,10 @@ describe('dashboard aggregate queries', () => {
 				groupedQuery([{ subject: 'AP Biology', total: 8, correct: 6, totalTimeMs: 80_000 }])
 			)
 			.mockReturnValueOnce(
-				joinedQuery([{ total: 2, averagePercentage: 75, totalTimeMs: 40_000, recentTotal: 1 }])
+				plainQuery([{ total: 2, averagePercentage: 75, totalTimeMs: 40_000, recentTotal: 1 }])
 			)
 			.mockReturnValueOnce(
-				joinedQuery([{ subject: 'AP Biology', total: 2, totalPercentage: 150 }], true)
+				groupedQuery([{ subject: 'AP Biology', total: 2, totalPercentage: 150 }])
 			);
 		mocks.execute.mockResolvedValueOnce({ rows: [{ streak: 5 }] });
 

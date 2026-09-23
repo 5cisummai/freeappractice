@@ -4,6 +4,14 @@ import { env } from '$env/dynamic/private';
 import { getSiteUrl } from '$lib/site-url';
 import { assertResendSent } from '$lib/auth/resend-result';
 import { escapeHtml } from '$lib/escape-html';
+import { EMAIL_DELIVERY_TAG } from '$lib/auth/email-delivery';
+import {
+	createPendingEmailDelivery,
+	markEmailDeliveryAccepted,
+	recordEmailDeliveryFailure,
+	type EmailDeliveryContext
+} from '$lib/server/email-delivery.server';
+import { logger } from '$lib/server/logger';
 
 const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
@@ -13,14 +21,43 @@ function getResend(): Resend {
 	return (resend ??= new Resend(RESEND_API_KEY));
 }
 
-async function sendEmail(payload: { to: string; subject: string; html: string }): Promise<void> {
-	const result = await getResend().emails.send({
-		from: FROM,
-		to: payload.to,
-		subject: payload.subject,
-		html: payload.html
-	});
-	assertResendSent(result);
+async function sendEmail(payload: {
+	to: string;
+	subject: string;
+	html: string;
+	delivery?: EmailDeliveryContext;
+}): Promise<void> {
+	if (payload.delivery) await createPendingEmailDelivery(payload.delivery);
+
+	try {
+		const result = await getResend().emails.send({
+			from: FROM,
+			to: payload.to,
+			subject: payload.subject,
+			html: payload.html,
+			...(payload.delivery
+				? {
+						tags: [
+							{ name: EMAIL_DELIVERY_TAG, value: payload.delivery.id },
+							{ name: 'email_type', value: payload.delivery.type }
+						]
+					}
+				: {})
+		});
+		const resendEmailId = assertResendSent(result);
+
+		if (payload.delivery) {
+			try {
+				await markEmailDeliveryAccepted(payload.delivery.id, resendEmailId);
+			} catch (error) {
+				// The provider send already succeeded. The webhook can still finish the status update.
+				logger.warn('Could not record accepted email delivery', { error });
+			}
+		}
+	} catch (error) {
+		if (payload.delivery) await recordEmailDeliveryFailure(payload.delivery.id, error);
+		throw error;
+	}
 }
 
 function resolveAuthLink(urlOrToken: string, path: '/verify-email' | '/reset-password'): string {
@@ -29,12 +66,17 @@ function resolveAuthLink(urlOrToken: string, path: '/verify-email' | '/reset-pas
 }
 
 /** Send verification email using Better Auth's full verification URL when provided. */
-export async function sendConfirmationEmail(email: string, urlOrToken: string): Promise<void> {
+export async function sendConfirmationEmail(
+	email: string,
+	urlOrToken: string,
+	delivery?: EmailDeliveryContext
+): Promise<void> {
 	const link = resolveAuthLink(urlOrToken, '/verify-email');
 	const safeLink = escapeHtml(link);
 	await sendEmail({
 		to: email,
 		subject: 'Confirm your Free AP Practice account',
+		delivery,
 		html: `
       <h2>Welcome to Free AP Practice</h2>
       <p>Please confirm your email to activate your account.</p>
@@ -45,12 +87,17 @@ export async function sendConfirmationEmail(email: string, urlOrToken: string): 
 }
 
 /** Send password reset email using Better Auth's full reset URL when provided. */
-export async function sendResetEmail(email: string, urlOrToken: string): Promise<void> {
+export async function sendResetEmail(
+	email: string,
+	urlOrToken: string,
+	delivery?: EmailDeliveryContext
+): Promise<void> {
 	const link = resolveAuthLink(urlOrToken, '/reset-password');
 	const safeLink = escapeHtml(link);
 	await sendEmail({
 		to: email,
 		subject: 'Reset your Free AP Practice password',
+		delivery,
 		html: `
       <h2>Password Reset</h2>
       <p>Click the link below to reset your password.</p>
@@ -65,13 +112,15 @@ export async function sendResetEmail(email: string, urlOrToken: string): Promise
 export async function sendChangeEmailConfirmationEmail(
 	currentEmail: string,
 	newEmail: string,
-	url: string
+	url: string,
+	delivery?: EmailDeliveryContext
 ): Promise<void> {
 	const safeLink = escapeHtml(url);
 	const safeNewEmail = escapeHtml(newEmail);
 	await sendEmail({
 		to: currentEmail,
 		subject: 'Approve email change on Free AP Practice',
+		delivery,
 		html: `
       <h2>Approve email change</h2>
       <p>Someone requested changing your Free AP Practice email to <strong>${safeNewEmail}</strong>.</p>
@@ -82,11 +131,16 @@ export async function sendChangeEmailConfirmationEmail(
 }
 
 /** Confirm account deletion via email (required for OAuth-only users). */
-export async function sendDeleteAccountEmail(email: string, url: string): Promise<void> {
+export async function sendDeleteAccountEmail(
+	email: string,
+	url: string,
+	delivery?: EmailDeliveryContext
+): Promise<void> {
 	const safeLink = escapeHtml(url);
 	await sendEmail({
 		to: email,
 		subject: 'Confirm account deletion – Free AP Practice',
+		delivery,
 		html: `
       <h2>Confirm account deletion</h2>
       <p>Click the link below to permanently delete your Free AP Practice account and data.</p>
@@ -98,11 +152,15 @@ export async function sendDeleteAccountEmail(email: string, url: string): Promis
 }
 
 /** Notify an existing user that someone tried to sign up with their email. */
-export async function sendExistingUserSignupEmail(email: string): Promise<void> {
+export async function sendExistingUserSignupEmail(
+	email: string,
+	delivery?: EmailDeliveryContext
+): Promise<void> {
 	const safeLogin = escapeHtml(`${getSiteUrl()}/login`);
 	await sendEmail({
 		to: email,
 		subject: 'Sign-up attempt on your Free AP Practice account',
+		delivery,
 		html: `
       <h2>Sign-up attempt detected</h2>
       <p>Someone tried to create an account using your email address.</p>
@@ -118,6 +176,7 @@ export async function sendOrganizationInvitationEmail(payload: {
 	organizationName: string;
 	inviterName: string;
 	inviteLink: string;
+	delivery?: EmailDeliveryContext;
 }): Promise<void> {
 	const safeOrg = escapeHtml(payload.organizationName);
 	const safeInviter = escapeHtml(payload.inviterName);
@@ -125,6 +184,7 @@ export async function sendOrganizationInvitationEmail(payload: {
 	await sendEmail({
 		to: payload.to,
 		subject: `Join ${payload.organizationName} on Free AP Practice`,
+		delivery: payload.delivery,
 		html: `
       <h2>You're invited</h2>
       <p>${safeInviter} invited you to join <strong>${safeOrg}</strong> on Free AP Practice.</p>

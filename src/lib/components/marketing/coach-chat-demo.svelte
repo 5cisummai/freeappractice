@@ -6,6 +6,7 @@
 	import RichText from '$lib/components/content/rich-text.svelte';
 	import { COACH_AVATAR_STATES } from '$lib/coach/avatar-state';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
+	import { cn } from '$lib/utils.js';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
@@ -466,15 +467,9 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 		<div
 			class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)]"
 		>
-			<div class="flex items-end gap-1 p-1.5">
-				<span
-					class="flex size-9 shrink-0 items-center justify-center self-end rounded-full text-muted-foreground"
-					aria-hidden="true"
-				>
-					<PlusFilledIcon class="size-4" />
-				</span>
+			<div class="px-3 pt-3">
 				<p
-					class="relative min-h-9 min-w-0 flex-1 px-0 py-1.5 text-base leading-6 {composerText
+					class="relative min-h-8 min-w-0 text-base leading-6 {composerText
 						? 'text-foreground'
 						: 'text-muted-foreground/80'}"
 				>
@@ -485,18 +480,32 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 						></span>
 					{/if}
 				</p>
+			</div>
+			<div class="flex items-center justify-between gap-2 p-3 pt-2">
+				<div class="flex items-center gap-1.5">
+					<span
+						class="flex size-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background p-0 text-muted-foreground"
+						aria-hidden="true"
+					>
+						<PlusFilledIcon class="size-4" />
+					</span>
+					<span
+						class="flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-sm text-muted-foreground"
+						aria-hidden="true"
+					>
+						<BoltFilledIcon class="size-3.5 shrink-0" />
+						<span>Quick</span>
+						<ChevronDownIcon class="size-3.5 shrink-0 opacity-60" />
+					</span>
+				</div>
 				<span
-					class="flex h-9 shrink-0 items-center gap-1 self-end px-2 text-sm text-muted-foreground"
-					aria-hidden="true"
-				>
-					<BoltFilledIcon class="size-3.5 shrink-0" />
-					<span>Quick</span>
-					<ChevronDownIcon class="size-3.5 shrink-0 opacity-60" />
-				</span>
-				<span
-					class="flex size-9 shrink-0 items-center justify-center self-end rounded-full transition-transform {SUPER_GRADIENT_BUTTON_CLASS} {canSend
-						? ''
-						: 'opacity-40'} {sendPressed ? 'scale-95' : ''}"
+					class={cn(
+						'flex size-8 shrink-0 items-center justify-center rounded-full p-0 transition-transform',
+						canSend || composerBusy
+							? SUPER_GRADIENT_BUTTON_CLASS
+							: 'bg-muted text-muted-foreground',
+						sendPressed && 'scale-95'
+					)}
 				>
 					{#if composerBusy}
 						<SquareIcon class="size-4" />

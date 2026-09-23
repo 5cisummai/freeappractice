@@ -1,5 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
+import { resolveFrqPoolRequest } from '$lib/question-bank/frq/practice';
 import { mcqBank } from '$lib/question-bank/mcq/bank.server';
 import { frqBank } from '$lib/question-bank/frq/bank.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
@@ -91,7 +92,8 @@ export async function giveCoachPracticeQuestion(
 		if (!getFrqCourseProfile(apClass)) {
 			return { error: 'Written-response practice is not available for this course.' };
 		}
-		const outcome = await frqBank.get(apClass, unit, { excludeQuestionIds, allowRefill: true });
+		const poolUnit = resolveFrqPoolRequest(apClass, unit).poolUnit;
+		const outcome = await frqBank.get(apClass, poolUnit, { excludeQuestionIds, allowRefill: true });
 		if (outcome.status === 'warming') {
 			return {
 				error: 'Written-response practice is warming up. Please try again shortly.',
@@ -117,9 +119,9 @@ export async function giveCoachPracticeQuestion(
 			}),
 			topic: publicQuestion.topicsCovered,
 			prompt: publicQuestion.prompt,
-			sections: publicQuestion.sections.map((section) => ({
-				label: section.label,
-				prompt: section.prompt
+			sections: publicQuestion.parts.map((part) => ({
+				label: part.label,
+				prompt: part.prompt
 			})),
 			materials: publicQuestion.materials.map((material) => ({
 				title: material.title,

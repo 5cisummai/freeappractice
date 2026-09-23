@@ -1,7 +1,7 @@
 import type { Snippet } from 'svelte';
 import type { QuestionCardModel } from '$lib/question-bank/question-card-model';
 
-export type TutorMode = 'hidden' | 'free' | 'personalized';
+export type TutorMode = 'hidden' | 'free';
 
 export type QuestionOption = {
 	id: string;

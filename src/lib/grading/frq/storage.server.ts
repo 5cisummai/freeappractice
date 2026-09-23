@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { FrqGrade } from '$lib/question-bank/frq/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttemptCriterionGrades, frqAttemptGrades, frqAttempts } from '$lib/server/neon/schema';
+import { frqAttempts } from '$lib/server/neon/schema';
 
 export interface IFrqAttempt {
 	id: string;
@@ -16,70 +16,48 @@ export interface IFrqAttempt {
 	status: 'grading' | 'graded';
 	grade?: FrqGrade;
 	timeTakenMs: number;
-	profileVersion: string;
-	rubricVersion: string;
-	promptVersion: string;
+	pointsEarned: number | null;
+	pointsAvailable: number | null;
+	percentage: number | null;
 	gradingModel?: string;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
-async function hydrateAttempts(rows: IFrqAttempt[]): Promise<IFrqAttempt[]> {
-	if (!rows.length) return [];
-
-	const db = getNeonDatabase();
-	const attemptIds = [...new Set(rows.map((row) => row.id))];
-	const [gradeRows, criterionRows] = await Promise.all([
-		db.select().from(frqAttemptGrades).where(inArray(frqAttemptGrades.attemptId, attemptIds)),
-		db
-			.select()
-			.from(frqAttemptCriterionGrades)
-			.where(inArray(frqAttemptCriterionGrades.attemptId, attemptIds))
-	]);
-	const gradesByAttempt = new Map(
-		(gradeRows as Array<Record<string, any>>).map((grade) => [grade.attemptId, grade])
-	);
-	const criteriaByAttempt = new Map<string, Array<Record<string, any>>>();
-	for (const criterion of criterionRows as Array<Record<string, any>>) {
-		const list = criteriaByAttempt.get(criterion.attemptId) ?? [];
-		list.push(criterion);
-		criteriaByAttempt.set(criterion.attemptId, list);
-	}
-
-	return rows.map((row) => {
-		const grade = gradesByAttempt.get(row.id);
-		return {
-			...row,
-			grade: grade
-				? {
-						criteria: (criteriaByAttempt.get(row.id) ?? []).map((item) => ({
-							criterionId: item.criterionId,
-							sectionId: item.sectionId,
-							label: item.label,
-							points: item.points,
-							pointsAvailable: item.pointsAvailable,
-							evidence: item.evidence,
-							feedback: item.feedback
-						})),
-						pointsEarned: grade.pointsEarned,
-						pointsAvailable: grade.pointsAvailable,
-						percentage: grade.percentage,
-						overallFeedback: grade.overallFeedback
-					}
-				: undefined
-		};
-	});
+function toAttempt(row: typeof frqAttempts.$inferSelect): IFrqAttempt {
+	return {
+		id: row.id,
+		userId: row.userId,
+		submissionId: row.submissionId,
+		questionId: row.questionId,
+		apClass: row.apClass,
+		unit: row.unit,
+		formatId: row.formatId,
+		responses: row.responses,
+		status: row.status === 'graded' ? 'graded' : 'grading',
+		grade: row.grade ?? undefined,
+		timeTakenMs: row.timeTakenMs,
+		pointsEarned: row.pointsEarned,
+		pointsAvailable: row.pointsAvailable,
+		percentage: row.percentage,
+		gradingModel: row.gradingModel ?? undefined,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt
+	};
 }
 
 export async function createFrqAttempt(
-	input: Omit<IFrqAttempt, 'id' | 'createdAt' | 'updatedAt' | 'grade'>
+	input: Omit<
+		IFrqAttempt,
+		'id' | 'createdAt' | 'updatedAt' | 'grade' | 'pointsEarned' | 'pointsAvailable' | 'percentage'
+	>
 ): Promise<IFrqAttempt> {
 	const rows = await getNeonDatabase()
 		.insert(frqAttempts)
 		.values({ id: randomUUID(), ...input })
 		.returning();
 	if (!rows[0]) throw new Error('FRQ attempt insert returned no row');
-	return (await hydrateAttempts([rows[0] as IFrqAttempt]))[0];
+	return toAttempt(rows[0]);
 }
 
 export async function findFrqAttemptBySubmission(
@@ -91,7 +69,7 @@ export async function findFrqAttemptBySubmission(
 		.from(frqAttempts)
 		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.submissionId, submissionId)))
 		.limit(1);
-	return rows[0] ? (await hydrateAttempts([rows[0] as IFrqAttempt]))[0] : null;
+	return rows[0] ? toAttempt(rows[0]) : null;
 }
 
 export async function findGradedFrqAttempt(
@@ -109,7 +87,7 @@ export async function findGradedFrqAttempt(
 			)
 		)
 		.limit(1);
-	return rows[0] ? (await hydrateAttempts([rows[0] as IFrqAttempt]))[0] : null;
+	return rows[0] ? toAttempt(rows[0]) : null;
 }
 
 export type RecentGradedFrqAttemptQuery = {
@@ -137,7 +115,7 @@ export async function findRecentGradedFrqAttempts(
 		)
 		.orderBy(desc(frqAttempts.createdAt))
 		.limit(limit);
-	return hydrateAttempts(rows as IFrqAttempt[]);
+	return rows.map(toAttempt);
 }
 
 export async function updateFrqAttemptGrade(
@@ -145,29 +123,18 @@ export async function updateFrqAttemptGrade(
 	grade: FrqGrade,
 	gradingModel: string
 ): Promise<void> {
-	const db = getNeonDatabase();
-	const writes: any[] = [
-		db
-			.update(frqAttempts)
-			.set({ status: 'graded', gradingModel, updatedAt: new Date() })
-			.where(eq(frqAttempts.id, attempt.id)),
-		db.delete(frqAttemptGrades).where(eq(frqAttemptGrades.attemptId, attempt.id)),
-		db.delete(frqAttemptCriterionGrades).where(eq(frqAttemptCriterionGrades.attemptId, attempt.id)),
-		db.insert(frqAttemptGrades).values({
-			attemptId: attempt.id,
+	await getNeonDatabase()
+		.update(frqAttempts)
+		.set({
+			status: 'graded',
+			gradingModel,
 			pointsEarned: grade.pointsEarned,
 			pointsAvailable: grade.pointsAvailable,
 			percentage: grade.percentage,
-			overallFeedback: grade.overallFeedback
+			grade,
+			updatedAt: new Date()
 		})
-	];
-	if (grade.criteria.length)
-		writes.push(
-			db
-				.insert(frqAttemptCriterionGrades)
-				.values(grade.criteria.map((item) => ({ attemptId: attempt.id, ...item })))
-		);
-	await db.batch(writes as [any, ...any[]]);
+		.where(eq(frqAttempts.id, attempt.id));
 }
 
 export async function deleteFrqAttemptIfGrading(attemptId: string): Promise<number> {

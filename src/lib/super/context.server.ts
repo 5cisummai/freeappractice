@@ -114,9 +114,9 @@ function questionText(current: CurrentSuperQuestion | null): string {
 		question.materials.length
 			? `Materials:\n${question.materials.map((material) => `${material.title ?? 'Material'}: ${material.content}`).join('\n')}`
 			: '',
-		`Sections:\n${question.sections.map((section) => `${section.label}: ${section.prompt}`).join('\n')}`,
+		`Parts:\n${question.parts.map((part) => `${part.label}: ${part.prompt}`).join('\n')}`,
 		attempt
-			? `Current graded attempt feedback:\n${attempt.grade.criteria.map((criterion) => `${criterion.label}: ${criterion.points}/${criterion.pointsAvailable} — ${criterion.feedback}`).join('\n')}\nOverall: ${attempt.grade.overallFeedback}`
+			? `Current graded attempt feedback:\n${attempt.grade.parts.map((part) => `${part.label}: ${part.points}/${part.pointsAvailable} — ${part.feedback}`).join('\n')}\nOverall: ${attempt.grade.overallFeedback}`
 			: 'The student has not submitted this FRQ yet.'
 	]
 		.filter(Boolean)

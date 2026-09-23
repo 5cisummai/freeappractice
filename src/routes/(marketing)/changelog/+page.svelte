@@ -5,6 +5,34 @@
 
 	const changelog = [
 		{
+			version: '1.9.2',
+			date: 'September 22, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Free Response practice now offers task selection for supported courses, with prompts and scoring matched to each task format',
+						'MCQ and Free Response question tutoring is now free for everyone',
+						'Settings now lets you review saved Tutor memories'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Free Response feedback now shows scores and comments for each task part',
+						'Pip has a roomier message composer and shows sources used in its answers',
+						'Super now includes 500 Coach messages per month during the free beta and 1,000 on paid plans'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'The verification email screen now shows sending progress and reports delivery failures with a retry option'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.1',
 			date: 'September 21, 2026',
 			sections: [
@@ -1447,7 +1475,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 21, 2026"
+			meta="Last Updated: September 22, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

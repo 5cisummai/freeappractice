@@ -3,6 +3,58 @@ import { pruneSuperAgentModelMessages } from '$lib/super/agent-messages.server';
 import type { ModelMessage } from 'ai';
 
 describe('pruneSuperAgentModelMessages', () => {
+	it('keeps earlier results from the current turn available for later tool steps', () => {
+		const messages: ModelMessage[] = [
+			{ role: 'user', content: 'Compare the AP Government catalog with my progress' },
+			{
+				role: 'assistant',
+				content: [
+					{
+						type: 'tool-call',
+						toolCallId: 'catalog-call',
+						toolName: 'read_course_catalog',
+						input: { apClass: 'AP US Government' }
+					}
+				]
+			},
+			{
+				role: 'tool',
+				content: [
+					{
+						type: 'tool-result',
+						toolCallId: 'catalog-call',
+						toolName: 'read_course_catalog',
+						output: { type: 'json', value: { units: ['Unit 1'] } }
+					}
+				]
+			},
+			{
+				role: 'assistant',
+				content: [
+					{
+						type: 'tool-call',
+						toolCallId: 'progress-call',
+						toolName: 'read_progress_summary',
+						input: {}
+					}
+				]
+			},
+			{
+				role: 'tool',
+				content: [
+					{
+						type: 'tool-result',
+						toolCallId: 'progress-call',
+						toolName: 'read_progress_summary',
+						output: { type: 'json', value: { weakestUnits: [] } }
+					}
+				]
+			}
+		];
+
+		expect(pruneSuperAgentModelMessages(messages)).toEqual(messages);
+	});
+
 	it('drops older tool results while keeping recent tool output', () => {
 		const messages: ModelMessage[] = [
 			{ role: 'user', content: 'Help me study' },

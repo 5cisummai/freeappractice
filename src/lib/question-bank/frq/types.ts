@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
-export const FRQ_SCHEMA_VERSION = 1 as const;
-const MAX_FRQ_SECTION_RESPONSE_CHARS = 12_000;
+export const FRQ_SCHEMA_VERSION = 2 as const;
+export const FRQ_ESSAY_RESPONSE_ID = 'essay';
+const MAX_FRQ_PART_RESPONSE_CHARS = 12_000;
 const MAX_FRQ_TOTAL_RESPONSE_CHARS = 40_000;
 
 const stableId = z
@@ -19,31 +20,14 @@ export const FrqMaterialSchema = z
 	})
 	.strict();
 
-export const FrqSectionSchema = z
+export const FrqPartSchema = z
 	.object({
 		id: stableId,
-		label: z.string().trim().min(1).max(40),
+		label: z.string().trim().min(1).max(80),
 		prompt: z.string().trim().min(1).max(8_000),
-		responseKind: z.literal('text'),
-		maxPoints: z.number().int().min(1).max(12)
-	})
-	.strict();
-
-const FrqRubricLevelSchema = z
-	.object({
-		points: z.number().int().min(0).max(12),
-		description: z.string().trim().min(1).max(4_000)
-	})
-	.strict();
-
-export const FrqRubricCriterionSchema = z
-	.object({
-		id: stableId,
-		sectionId: stableId,
-		label: z.string().trim().min(1).max(160),
-		maxPoints: z.number().int().min(1).max(12),
-		levels: z.array(FrqRubricLevelSchema).min(2).max(13),
-		referenceAnswer: z.string().trim().min(1).max(8_000)
+		points: z.number().int().min(1).max(12),
+		earns: z.string().trim().min(1).max(4_000),
+		answer: z.string().trim().min(1).max(8_000)
 	})
 	.strict();
 
@@ -51,14 +35,10 @@ const FrqQuestionBaseSchema = z
 	.object({
 		schemaVersion: z.literal(FRQ_SCHEMA_VERSION),
 		formatId: stableId,
-		profileVersion: stableId,
-		promptVersion: stableId,
-		rubricVersion: stableId,
+		responseMode: z.enum(['essay', 'parts']),
 		prompt: z.string().trim().min(1).max(12_000),
 		materials: z.array(FrqMaterialSchema).max(12),
-		sections: z.array(FrqSectionSchema).min(1).max(12),
-		rubric: z.array(FrqRubricCriterionSchema).min(1).max(30),
-		totalPoints: z.number().int().min(1).max(100),
+		parts: z.array(FrqPartSchema).min(1).max(12),
 		mainTopic: z.string().trim().min(1).max(240),
 		topicsCovered: z.string().trim().min(1).max(1_000),
 		apClass: z.string().trim().min(1).max(120),
@@ -67,102 +47,94 @@ const FrqQuestionBaseSchema = z
 	.strict();
 
 export const FrqQuestionSchema = FrqQuestionBaseSchema.superRefine((question, context) => {
-	const sectionIds = new Set<string>();
-	for (const section of question.sections) {
-		if (sectionIds.has(section.id)) {
-			context.addIssue({ code: 'custom', message: `Duplicate section ID: ${section.id}` });
+	const partIds = new Set<string>();
+	for (const part of question.parts) {
+		if (partIds.has(part.id)) {
+			context.addIssue({ code: 'custom', message: `Duplicate part ID: ${part.id}` });
 		}
-		sectionIds.add(section.id);
-	}
-
-	const criterionIds = new Set<string>();
-	let rubricTotal = 0;
-	for (const criterion of question.rubric) {
-		if (criterionIds.has(criterion.id)) {
-			context.addIssue({ code: 'custom', message: `Duplicate criterion ID: ${criterion.id}` });
-		}
-		criterionIds.add(criterion.id);
-		if (!sectionIds.has(criterion.sectionId)) {
-			context.addIssue({
-				code: 'custom',
-				message: `Criterion ${criterion.id} references an unknown section`
-			});
-		}
-
-		const points = criterion.levels.map((level) => level.points);
-		if (new Set(points).size !== points.length || !points.includes(0)) {
-			context.addIssue({
-				code: 'custom',
-				message: `Criterion ${criterion.id} needs unique levels including zero`
-			});
-		}
-		if (Math.max(...points) !== criterion.maxPoints) {
-			context.addIssue({
-				code: 'custom',
-				message: `Criterion ${criterion.id} levels must reach maxPoints`
-			});
-		}
-		rubricTotal += criterion.maxPoints;
-	}
-
-	if (rubricTotal !== question.totalPoints) {
-		context.addIssue({ code: 'custom', message: 'Rubric points must equal totalPoints' });
-	}
-
-	for (const section of question.sections) {
-		const sectionTotal = question.rubric
-			.filter((criterion) => criterion.sectionId === section.id)
-			.reduce((sum, criterion) => sum + criterion.maxPoints, 0);
-		if (sectionTotal !== section.maxPoints) {
-			context.addIssue({
-				code: 'custom',
-				message: `Rubric points for ${section.id} must equal the section maxPoints`
-			});
-		}
+		partIds.add(part.id);
 	}
 });
 
 export type FrqQuestion = z.infer<typeof FrqQuestionSchema>;
 export type FrqMaterial = z.infer<typeof FrqMaterialSchema>;
-export type FrqSection = z.infer<typeof FrqSectionSchema>;
-export type FrqRubricCriterion = z.infer<typeof FrqRubricCriterionSchema>;
+export type FrqPart = z.infer<typeof FrqPartSchema>;
+export type FrqResponseMode = FrqQuestion['responseMode'];
 
-export const PublicFrqQuestionSchema = FrqQuestionBaseSchema.omit({ rubric: true }).extend({
-	questionId: stableId
+export const PublicFrqPartSchema = FrqPartSchema.omit({ answer: true, earns: true });
+
+export const PublicFrqQuestionSchema = FrqQuestionBaseSchema.omit({ parts: true }).extend({
+	questionId: stableId,
+	parts: z.array(PublicFrqPartSchema).min(1).max(12)
 });
 
-export type PublicFrqQuestion = Omit<FrqQuestion, 'rubric' | 'mainTopic'> & {
-	questionId: string;
-	mainTopic?: string;
-};
+export type PublicFrqPart = z.infer<typeof PublicFrqPartSchema>;
+export type PublicFrqQuestion = z.infer<typeof PublicFrqQuestionSchema>;
+
+export function frqTotalPoints(question: { parts: readonly { points: number }[] }): number {
+	return question.parts.reduce((sum, part) => sum + part.points, 0);
+}
+
+export function frqResponseIds(question: {
+	responseMode: FrqResponseMode;
+	parts: readonly { id: string }[];
+}): string[] {
+	switch (question.responseMode) {
+		case 'essay':
+			return [FRQ_ESSAY_RESPONSE_ID];
+		case 'parts':
+			return question.parts.map((part) => part.id);
+		default: {
+			const exhaustive: never = question.responseMode;
+			return exhaustive;
+		}
+	}
+}
+
+export function frqPartResponse(
+	question: { responseMode: FrqResponseMode },
+	responses: Record<string, string>,
+	partId: string
+): string {
+	switch (question.responseMode) {
+		case 'essay':
+			return responses[FRQ_ESSAY_RESPONSE_ID]?.trim() ?? '';
+		case 'parts':
+			return responses[partId]?.trim() ?? '';
+		default: {
+			const exhaustive: never = question.responseMode;
+			return exhaustive;
+		}
+	}
+}
 
 export const FrqGradeModelOutputSchema = z
 	.object({
-		criteria: z
+		parts: z
 			.array(
 				z
 					.object({
-						criterionId: stableId,
+						id: stableId,
 						points: z.number().int().min(0).max(12),
-						evidence: z.string().trim().max(2_000),
 						feedback: z.string().trim().min(1).max(2_000)
 					})
 					.strict()
 			)
-			.min(1)
-			.max(30),
+			.max(12),
 		overallFeedback: z.string().trim().min(1).max(4_000)
 	})
 	.strict();
 
-export type FrqCriterionGrade = z.infer<typeof FrqGradeModelOutputSchema>['criteria'][number] & {
+export type FrqPartGrade = {
+	id: string;
 	label: string;
-	sectionId: string;
+	points: number;
 	pointsAvailable: number;
+	feedback: string;
 };
 
 export type FrqGrade = {
-	criteria: FrqCriterionGrade[];
+	parts: FrqPartGrade[];
 	pointsEarned: number;
 	pointsAvailable: number;
 	percentage: number;
@@ -179,8 +151,6 @@ export type FrqAttemptView = {
 	grade: FrqGrade;
 	timeTakenMs: number;
 	attemptedAt: string;
-	profileVersion: string;
-	rubricVersion: string;
 	model: string;
 };
 
@@ -188,14 +158,14 @@ export const FrqGradeRequestSchema = z
 	.object({
 		questionId: z.string().uuid(),
 		submissionId: z.string().uuid(),
-		responses: z.record(z.string(), z.string().max(MAX_FRQ_SECTION_RESPONSE_CHARS)),
+		responses: z.record(z.string(), z.string().max(MAX_FRQ_PART_RESPONSE_CHARS)),
 		timeTakenMs: z.number().finite().optional().default(0)
 	})
 	.strict()
 	.superRefine((value, context) => {
 		const responses = Object.values(value.responses);
 		if (Object.keys(value.responses).length > 12) {
-			context.addIssue({ code: 'custom', message: 'Too many response sections' });
+			context.addIssue({ code: 'custom', message: 'Too many response parts' });
 		}
 		if (!responses.some((response) => response.trim())) {
 			context.addIssue({ code: 'custom', message: 'Write a response before submitting' });
@@ -219,7 +189,17 @@ export type FrqProgressSummary = {
 };
 
 export function toPublicFrqQuestion(questionId: string, question: FrqQuestion): PublicFrqQuestion {
-	const { rubric, ...publicQuestion } = question;
-	void rubric;
-	return { ...publicQuestion, questionId };
+	return {
+		questionId,
+		schemaVersion: question.schemaVersion,
+		formatId: question.formatId,
+		responseMode: question.responseMode,
+		prompt: question.prompt,
+		materials: question.materials,
+		parts: question.parts.map(({ id, label, prompt, points }) => ({ id, label, prompt, points })),
+		mainTopic: question.mainTopic,
+		topicsCovered: question.topicsCovered,
+		apClass: question.apClass,
+		unit: question.unit
+	};
 }

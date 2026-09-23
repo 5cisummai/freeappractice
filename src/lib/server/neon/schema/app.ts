@@ -14,10 +14,49 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { FrqGrade } from '$lib/question-bank/frq/types';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
 
 export const appSchema = pgSchema('app');
+
+export const emailDeliveries = appSchema.table(
+	'email_deliveries',
+	{
+		id: text('id').primaryKey(),
+		emailType: text('email_type').notNull(),
+		status: text('status').notNull().default('pending'),
+		resendEmailId: text('resend_email_id'),
+		lastEventType: text('last_event_type'),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		check(
+			'email_deliveries_email_type_check',
+			sql`${table.emailType} IN ('verification', 'password_reset', 'email_change', 'account_deletion', 'existing_signup', 'organization_invitation')`
+		),
+		check('email_deliveries_status_check', sql`${table.status} IN ('pending', 'sent', 'failed')`),
+		uniqueIndex('email_deliveries_resend_email_id_uq').on(table.resendEmailId),
+		index('email_deliveries_created_idx').on(table.createdAt)
+	]
+);
+
+export const resendWebhookEvents = appSchema.table(
+	'resend_webhook_events',
+	{
+		svixId: text('svix_id').primaryKey(),
+		deliveryId: text('delivery_id'),
+		resendEmailId: text('resend_email_id'),
+		eventType: text('event_type').notNull(),
+		eventCreatedAt: timestamp('event_created_at', { withTimezone: true, mode: 'date' }).notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		index('resend_webhook_events_delivery_idx').on(table.deliveryId),
+		index('resend_webhook_events_email_idx').on(table.resendEmailId)
+	]
+);
 
 export const bugReports = appSchema.table(
 	'bug_reports',
@@ -261,9 +300,10 @@ export const frqAttempts = appSchema.table(
 		responses: jsonb('responses').$type<Record<string, string>>().notNull(),
 		status: text('status').notNull(),
 		timeTakenMs: integer('time_taken_ms').notNull(),
-		profileVersion: text('profile_version').notNull(),
-		rubricVersion: text('rubric_version').notNull(),
-		promptVersion: text('prompt_version').notNull(),
+		pointsEarned: real('points_earned'),
+		pointsAvailable: real('points_available'),
+		percentage: real('percentage'),
+		grade: jsonb('grade').$type<FrqGrade>(),
 		gradingModel: text('grading_model'),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
@@ -273,33 +313,6 @@ export const frqAttempts = appSchema.table(
 		index('frq_attempts_user_created_idx').on(table.userId, table.createdAt),
 		index('frq_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
 	]
-);
-
-export const frqAttemptGrades = appSchema.table('frq_attempt_grades', {
-	attemptId: text('attempt_id')
-		.primaryKey()
-		.references(() => frqAttempts.id, { onDelete: 'cascade' }),
-	pointsEarned: real('points_earned').notNull(),
-	pointsAvailable: real('points_available').notNull(),
-	percentage: real('percentage').notNull(),
-	overallFeedback: text('overall_feedback').notNull()
-});
-
-export const frqAttemptCriterionGrades = appSchema.table(
-	'frq_attempt_criterion_grades',
-	{
-		attemptId: text('attempt_id')
-			.notNull()
-			.references(() => frqAttempts.id, { onDelete: 'cascade' }),
-		criterionId: text('criterion_id').notNull(),
-		sectionId: text('section_id').notNull(),
-		label: text('label').notNull(),
-		points: real('points').notNull(),
-		pointsAvailable: real('points_available').notNull(),
-		evidence: text('evidence').notNull().default(''),
-		feedback: text('feedback').notNull()
-	},
-	(table) => [primaryKey({ columns: [table.attemptId, table.criterionId] })]
 );
 
 export const tutorProfiles = appSchema.table(
