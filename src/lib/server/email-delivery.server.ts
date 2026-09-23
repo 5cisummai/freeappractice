@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { WebhookEventPayload } from 'resend';
 import {
 	EMAIL_DELIVERY_HEADER,
@@ -98,6 +98,26 @@ export async function processResendWebhook(
 	const deliveryId = data.tags?.[EMAIL_DELIVERY_TAG];
 	if (!isEmailDeliveryId(deliveryId)) return { duplicate: false, tracked: false };
 
+	const status = eventStatus(event.type);
+	if (!status) {
+		await db
+			.update(emailDeliveries)
+			.set({ lastEventType: event.type, updatedAt: new Date() })
+			.where(and(eq(emailDeliveries.id, deliveryId), eq(emailDeliveries.status, 'pending')));
+	} else {
+		await db
+			.update(emailDeliveries)
+			.set({ status, lastEventType: event.type, updatedAt: new Date() })
+			.where(
+				and(
+					eq(emailDeliveries.id, deliveryId),
+					inArray(emailDeliveries.status, status === 'failed' ? ['pending', 'sent'] : ['pending'])
+				)
+			);
+	}
+
+	// Apply the idempotent state transition before recording the event. If the
+	// insert fails, Resend's retry can safely apply the transition again.
 	const inserted = await db
 		.insert(resendWebhookEvents)
 		.values({
@@ -110,28 +130,7 @@ export async function processResendWebhook(
 		.onConflictDoNothing()
 		.returning({ svixId: resendWebhookEvents.svixId });
 
-	if (inserted.length === 0) return { duplicate: true, tracked: true };
-
-	const status = eventStatus(event.type);
-	if (!status) {
-		await db
-			.update(emailDeliveries)
-			.set({ lastEventType: event.type, updatedAt: new Date() })
-			.where(and(eq(emailDeliveries.id, deliveryId), eq(emailDeliveries.status, 'pending')));
-		return { duplicate: false, tracked: true };
-	}
-
-	await db
-		.update(emailDeliveries)
-		.set({ status, lastEventType: event.type, updatedAt: new Date() })
-		.where(
-			and(
-				eq(emailDeliveries.id, deliveryId),
-				eq(emailDeliveries.status, 'pending')
-			)
-		);
-
-	return { duplicate: false, tracked: true };
+	return { duplicate: inserted.length === 0, tracked: true };
 }
 
 export async function recordEmailDeliveryFailure(id: string, error: unknown): Promise<void> {

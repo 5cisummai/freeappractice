@@ -21,6 +21,7 @@ const sql = neon(databaseUrl);
 const migrationsDirectory = resolve(process.env.DRIZZLE_MIGRATIONS_DIR ?? 'drizzle');
 const statementBreakpoint = /--> statement-breakpoint/g;
 const QUESTION_JSONB_CLEANUP_MIGRATION = '0020_nice_exiles.sql';
+const FRQ_GRADE_CLEANUP_MIGRATION = '0027_windy_william_stryker.sql';
 const MIGRATION_ID_ALIASES: Record<string, string> = {
 	'0027_windy_william_stryker': '0026_windy_william_stryker'
 };
@@ -77,6 +78,14 @@ async function main(): Promise<void> {
 		if (file === QUESTION_JSONB_CLEANUP_MIGRATION) {
 			await backfillQuestionJsonb();
 			await assertQuestionJsonbReady();
+		}
+		if (file === FRQ_GRADE_CLEANUP_MIGRATION) {
+			const [row] = (await sql.query(
+				'SELECT EXISTS (SELECT 1 FROM app.frq_attempt_grades) AS has_grades'
+			)) as Array<{ has_grades: boolean }>;
+			if (row?.has_grades) {
+				throw new Error('Migration 0027 would discard existing FRQ grades; migrate them first');
+			}
 		}
 
 		const transaction = contents
