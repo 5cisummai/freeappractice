@@ -1,6 +1,5 @@
 <script lang="ts">
 	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
-	import SuperTutorWidget from '$lib/components/questions/super-tutor-widget.svelte';
 	import type { TutorMode } from '$lib/question-bank/mcq/types.js';
 
 	type QuestionTutorProps = {
@@ -26,17 +25,7 @@
 	}: QuestionTutorProps = $props();
 </script>
 
-{#if tutorMode === 'personalized'}
-	<SuperTutorWidget
-		{apClass}
-		{unit}
-		{questionId}
-		{frqQuestionId}
-		{frqAttemptId}
-		{topic}
-		{showFirstUseHint}
-	/>
-{:else if tutorMode !== 'hidden'}
+{#if tutorMode !== 'hidden'}
 	<TutorWidget
 		{apClass}
 		{unit}

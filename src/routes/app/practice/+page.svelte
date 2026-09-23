@@ -128,11 +128,7 @@
 					initial={runnerInitial}
 					capabilities={{
 						frqCourses: data.frqEnabled ? data.frqCourses : [],
-						tutorMode: !data.assistantFeaturesEnabled
-							? 'hidden'
-							: data.isPersonalizedTutor
-								? 'personalized'
-								: 'free',
+						tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden',
 						showFirstUseHints: true
 					}}
 					quiz={{ persistHistory: true, sharedQuiz: data.sharedQuiz }}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, type Component } from 'svelte';
-	import { fade, fly, slide } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { ChatStatus } from 'ai';
@@ -12,17 +12,29 @@
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
+	import StepSearchIcon from '@lucide/svelte/icons/search';
+	import StepPencilIcon from '@lucide/svelte/icons/pencil';
+	import StepBrainIcon from '@lucide/svelte/icons/brain';
+	import StepBookIcon from '@lucide/svelte/icons/book-open';
+	import StepUnitIcon from '@lucide/svelte/icons/book-marked';
+	import StepPlanIcon from '@lucide/svelte/icons/calendar-days';
+	import StepProgressIcon from '@lucide/svelte/icons/chart-no-axes-combined';
+	import StepQuizIcon from '@lucide/svelte/icons/clipboard-check';
+	import StepQuestionIcon from '@lucide/svelte/icons/clipboard-list';
+	import StepProfileIcon from '@lucide/svelte/icons/user-round';
+	import StepGoalsIcon from '@lucide/svelte/icons/target';
+	import StepDiagramIcon from '@lucide/svelte/icons/image';
+	import StepActivityIcon from '@lucide/svelte/icons/activity';
+	import StepFallbackIcon from '@lucide/svelte/icons/wrench';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy';
 	import ThumbDownFilledIcon from '@tabler/icons-svelte/icons/thumb-down-filled';
 	import ThumbDownIcon from '@tabler/icons-svelte/icons/thumb-down';
 	import ThumbUpFilledIcon from '@tabler/icons-svelte/icons/thumb-up-filled';
 	import ThumbUpIcon from '@tabler/icons-svelte/icons/thumb-up';
-	import CircleAlertIcon from '@tabler/icons-svelte/icons/alert-circle';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
 	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
-	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
 	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import Sparkles2FilledIcon from '@tabler/icons-svelte/icons/sparkles-2-filled';
@@ -31,6 +43,8 @@
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
+	import * as ChainOfThought from '$lib/components/ai-elements/chain-of-thought/index.js';
+	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
 	import * as Confirmation from '$lib/components/ai-elements/confirmation/index.js';
 	import * as Message from '$lib/components/ai-elements/message/index.js';
 	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
@@ -127,6 +141,10 @@
 	type CoachMessageFeedback = 'helpful' | 'not_helpful';
 
 	const toolActivityLabels: Record<string, { running: string; complete: string }> = {
+		'tool-search_web': {
+			running: 'Searching the web…',
+			complete: 'Searched the web'
+		},
 		'tool-read_course_catalog': {
 			running: 'Checking the course catalog…',
 			complete: 'Checked the course catalog'
@@ -177,6 +195,23 @@
 		}
 	};
 
+	const toolActivityIcons: Record<string, typeof StepSearchIcon> = {
+		'tool-search_web': StepSearchIcon,
+		'tool-read_course_catalog': StepBookIcon,
+		'tool-read_current_question': StepQuestionIcon,
+		'tool-read_profile': StepProfileIcon,
+		'tool-read_progress_summary': StepProgressIcon,
+		'tool-read_quiz_attempt': StepQuizIcon,
+		'tool-read_study_plan': StepPlanIcon,
+		'tool-read_activity_summary': StepActivityIcon,
+		'tool-read_unit_detail': StepUnitIcon,
+		'tool-read_frq_performance': StepProgressIcon,
+		'tool-give_practice_question': StepQuestionIcon,
+		'tool-update_goals': StepGoalsIcon,
+		'tool-update_study_plan': StepPlanIcon,
+		'tool-generate_diagram': StepDiagramIcon
+	};
+
 	const coach = new Chat<SuperAgentUIMessage>({
 		messages: [],
 		sendAutomaticallyWhen: ({ messages }) =>
@@ -222,6 +257,8 @@
 		type: string;
 		label: string;
 		state: 'running' | 'complete' | 'error';
+		reasoning?: string;
+		sources: { title: string; url: string; hostname: string; faviconUrl: string }[];
 	};
 
 	type ApprovalSummary = {
@@ -269,23 +306,79 @@
 				: isToolInProgress(part.state)
 					? 'running'
 					: 'complete';
+		const results =
+			part.type === 'tool-search_web' && part.output && typeof part.output === 'object'
+				? (part.output as { results?: unknown }).results
+				: null;
+		const sources = Array.isArray(results)
+			? results.flatMap((result) => {
+					if (!result || typeof result !== 'object') return [];
+					const { title, url } = result as { title?: unknown; url?: unknown };
+					if (typeof url !== 'string') return [];
+					try {
+						const parsed = new URL(url);
+						if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return [];
+						return [
+							{
+								title: typeof title === 'string' ? title : url,
+								url,
+								hostname: parsed.hostname.replace(/^www\./, ''),
+									faviconUrl: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=32`
+							}
+						];
+					} catch {
+						return [];
+					}
+				})
+			: [];
 		return {
 			key: `${part.type}-${index}`,
 			type: part.type,
 			label: state === 'error' ? 'Could not finish this step' : toolActivityLabel(part.type, state),
-			state
+			state,
+			sources: sources.filter(
+				(source, sourceIndex) =>
+					sources.findIndex((candidate) => candidate.hostname === source.hostname) === sourceIndex
+			)
 		};
 	}
 
-	function getToolActivityIcon(type: string): Component {
-		return type.startsWith('tool-update_') ? asIcon(PencilIcon) : asIcon(SearchIcon);
-	}
-
 	function getToolActivities(message: SuperAgentUIMessage): ToolActivity[] {
-		return message.parts.flatMap((part, index) => {
+		const activities: ToolActivity[] = [];
+		message.parts.forEach((part, index) => {
+			if (part.type === 'reasoning' && part.text.trim()) {
+				activities.push({
+					key: `reasoning-${index}`,
+					type: 'reasoning',
+					label: 'Thinking…',
+					state: part.state === 'streaming' ? 'running' : 'complete',
+					reasoning: part.text,
+					sources: []
+				});
+				return;
+			}
 			const toolPart = getToolPart(part);
-			return toolPart ? [getToolActivity(toolPart, index)] : [];
+			if (!toolPart) return;
+			const activity = getToolActivity(toolPart, index);
+			const previous = activities.at(-1);
+			if (
+				previous?.type === activity.type &&
+				previous.state !== 'error' &&
+				activity.state !== 'error'
+			) {
+				previous.state =
+					previous.state === 'running' || activity.state === 'running' ? 'running' : 'complete';
+				previous.label = toolActivityLabel(previous.type, previous.state);
+				for (const source of activity.sources) {
+					if (!previous.sources.some((existing) => existing.hostname === source.hostname)) {
+						previous.sources.push(source);
+					}
+				}
+			} else {
+				activities.push(activity);
+			}
 		});
+		return activities;
 	}
 
 	function hasCompletedPracticeQuestion(message: SuperAgentUIMessage): boolean {
@@ -308,16 +401,12 @@
 		if (active) return active.label;
 		if (activities.some((activity) => activity.state === 'error'))
 			return 'Some activity could not finish';
-		if (activities.length === 1) return activities[0].label;
+		if (activities.length === 1) return 'Completed 1 step';
 		return `Completed ${activities.length} steps`;
 	}
 
 	function isActivityOpen(messageId: string): boolean {
 		return activityOpen[messageId] ?? streaming;
-	}
-
-	function toggleActivity(messageId: string): void {
-		activityOpen[messageId] = !isActivityOpen(messageId);
 	}
 
 	function asRecord(value: unknown): Record<string, unknown> {
@@ -936,80 +1025,75 @@
 											{/if}
 										{/each}
 										{#if activities.length}
-											{@const SummaryIcon = getToolActivityIcon(activities[0].type)}
-											<div
-												class="group mt-2 max-w-3xl"
-												in:fade={{ duration: motionMs * 0.45, easing: cubicOut }}
+											<ChainOfThought.Root
+												class="mt-3 max-w-3xl"
+												open={isActivityOpen(message.id)}
+												onOpenChange={(open) => (activityOpen[message.id] = open)}
 											>
-												<button
-													type="button"
-													class="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-													aria-expanded={isActivityOpen(message.id)}
-													aria-controls={`activity-${message.id}`}
-													onclick={() => toggleActivity(message.id)}
+												<ChainOfThought.Header
+													class="rounded-md py-1 font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 												>
-													<SummaryIcon
-														class={cn(
-															'size-4 shrink-0 text-muted-foreground',
-															activities.some((activity) => activity.state === 'running') &&
-																'animate-pulse motion-reduce:animate-none',
-															activities.some((activity) => activity.state === 'error') &&
-																'text-destructive'
-														)}
-														aria-hidden="true"
-													/>
-													<span class="min-w-0 flex-1 truncate font-medium text-foreground/85">
+													{#if isCurrentAssistant && streaming && activities.some((activity) => activity.state === 'running')}
+														<Shimmer as="span" content_length={activitySummary(activities).length}>
+															{activitySummary(activities)}
+														</Shimmer>
+													{:else}
 														{activitySummary(activities)}
-													</span>
-													<ChevronDownIcon
-														class={cn(
-															'size-3.5 shrink-0 opacity-60 transition-transform duration-200 group-hover:opacity-100',
-															isActivityOpen(message.id) && 'rotate-180'
-														)}
-														aria-hidden="true"
+													{/if}
+												</ChainOfThought.Header>
+												<ChainOfThought.Content class="py-1">
+													{#each activities as activity (activity.key)}
+										<ChainOfThought.Step
+											icon={activity.type === 'reasoning'
+												? StepBrainIcon
+												: (toolActivityIcons[activity.type] ??
+														(activity.type.startsWith('tool-update_')
+															? StepPencilIcon
+															: StepFallbackIcon))}
+													label={activity.type === 'reasoning' ? undefined : activity.label}
+															status={activity.state === 'running' ? 'active' : 'complete'}
+															class={cn(
+																activity.state === 'running' &&
+																	'animate-pulse motion-reduce:animate-none',
+																activity.state === 'error' && 'text-destructive'
+															)}
+											>
+												{#if activity.reasoning}
+													<RichText
+														text={activity.reasoning}
+														blocks
+														class="max-w-2xl text-sm leading-6 text-muted-foreground"
 													/>
-												</button>
-												{#if isActivityOpen(message.id)}
-													<div
-														id={`activity-${message.id}`}
-														class="ml-2 border-l border-border/70 py-1 pl-4 text-sm leading-6 text-muted-foreground"
-														aria-live="polite"
-														in:slide={{ duration: motionMs * 0.45, easing: cubicOut }}
-														out:slide={{ duration: motionMs * 0.3, easing: cubicOut }}
-													>
-														<ul class="space-y-1">
-															{#each activities as activity (activity.key)}
-																{@const ActivityIcon = getToolActivityIcon(activity.type)}
-																<li
-																	class="flex items-center gap-2"
-																	in:fly={{ y: 4, duration: motionMs * 0.4, easing: cubicOut }}
-																>
-																	{#if activity.state === 'running'}
-																		<Loader2Icon
-																			class="size-3.5 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none"
-																			aria-hidden="true"
-																		/>
-																	{:else if activity.state === 'error'}
-																		<CircleAlertIcon
-																			class="size-3.5 shrink-0 text-destructive"
-																			aria-hidden="true"
-																		/>
-																	{/if}
-																	<ActivityIcon
-																		class="size-3.5 shrink-0 text-muted-foreground"
-																		aria-hidden="true"
-																	/>
-																	<span
-																		class={cn(activity.state === 'error' && 'text-destructive')}
-																	>
-																		{activity.label}
-																	</span>
-																</li>
-															{/each}
-														</ul>
-													</div>
 												{/if}
-											</div>
+											{#if activity.sources.length}
+																<ChainOfThought.SearchResults class="flex-wrap gap-1.5">
+																	{#each activity.sources as source (source.url)}
+																		<ChainOfThought.SearchResult
+																			href={source.url}
+																			target="_blank"
+																			rel="noopener noreferrer"
+																			title={source.title}
+																				class="max-w-full hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
+																			>
+																				<img
+																					src={source.faviconUrl}
+																					alt=""
+																					width="14"
+																					height="14"
+																					loading="lazy"
+																					referrerpolicy="no-referrer"
+																					class="size-3.5 rounded-sm object-contain"
+																					onerror={(event) => ((event.currentTarget as HTMLImageElement).hidden = true)}
+																				/>
+																				{source.hostname}
+																		</ChainOfThought.SearchResult>
+																	{/each}
+																</ChainOfThought.SearchResults>
+															{/if}
+														</ChainOfThought.Step>
+													{/each}
+												</ChainOfThought.Content>
+											</ChainOfThought.Root>
 										{/if}
 										{#each message.parts as part, index (`text-${message.id}-${index}`)}
 											{#if part.type === 'text' && part.text.trim()}
@@ -1133,12 +1217,12 @@
 
 			{#if clientReady}
 				<PromptInput.Root
-					class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] focus-within:border-border focus-within:shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)]"
+					class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
 					onSubmit={({ text }) => send(text)}
 					clearOnSubmit={false}
 				>
 					{#if selectedCoachActionIds.length}
-						<PromptInput.Header class="px-3 pt-3">
+						<PromptInput.Header class="p-3">
 							{#each selectedCoachActionIds as actionId (actionId)}
 								{@const action = coachComposerActions.find((item) => item.id === actionId)}
 								{@const Icon = coachActionIcons[actionId]}
@@ -1161,19 +1245,19 @@
 							{/each}
 						</PromptInput.Header>
 					{/if}
-					<PromptInput.Body class={cn('px-3', selectedCoachActionIds.length ? 'pt-2' : 'pt-3')}>
+					<PromptInput.Body class="flex-1 ps-4 pe-2">
 						<PromptInput.Textarea
 							bind:ref={composerInputRef}
 							bind:value={input}
 							placeholder="Ask Pip"
-							class="text-md md:text-md min-h-8 resize-none px-0 py-0 leading-6 placeholder:text-muted-foreground/80"
+							class="text-md min-h-[32px] flex-1 resize-none overflow-auto px-0 py-0 leading-6 placeholder:text-muted-foreground/70"
 						/>
 					</PromptInput.Body>
-					<PromptInput.Toolbar class="gap-2 p-3 pt-2">
+					<PromptInput.Toolbar class="gap-2 px-2 py-0">
 						<PromptInput.Tools class="gap-1.5 [&_button:first-child]:rounded-full">
 							<PromptInput.ActionMenu bind:open={coachActionsOpen}>
 								<PromptInput.ActionMenuTrigger
-									class="size-8 rounded-full border border-border/70 bg-background p-0 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+									class="size-8 rounded-full p-0 text-foreground shadow-none hover:bg-muted"
 									disabled={!sessionId || streaming}
 									aria-label="Pip actions"
 								/>
@@ -1204,6 +1288,8 @@
 									{/each}
 								</PromptInput.ActionMenuContent>
 							</PromptInput.ActionMenu>
+						</PromptInput.Tools>
+						<div class="flex items-center gap-2">
 							<Select.Root
 								type="single"
 								value={thinkingMode}
@@ -1230,25 +1316,25 @@
 									{/each}
 								</Select.Content>
 							</Select.Root>
-						</PromptInput.Tools>
-						<PromptInput.Submit
-							status={coach.status as ChatStatus}
-							size="icon-sm"
-							disabled={!canSendComposer && !streaming}
-							onStop={() => coach.stop()}
-							class={cn(
-								'size-8 rounded-full p-0 shadow-none',
-								canSendComposer || streaming
-									? SUPER_GRADIENT_BUTTON_CLASS
-									: 'border-0 bg-muted text-muted-foreground hover:bg-muted'
-							)}
-						>
-							{#if streaming}
-								<SquareIcon class="size-4" />
-							{:else}
-								<ArrowUpIcon class="size-4" />
-							{/if}
-						</PromptInput.Submit>
+							<PromptInput.Submit
+								status={coach.status as ChatStatus}
+								size="icon-sm"
+								disabled={!canSendComposer && !streaming}
+								onStop={() => coach.stop()}
+								class={cn(
+									'size-8 rounded-full p-0 shadow-none',
+									canSendComposer || streaming
+										? SUPER_GRADIENT_BUTTON_CLASS
+										: 'border-0 bg-muted text-muted-foreground hover:bg-muted'
+								)}
+							>
+								{#if streaming}
+									<SquareIcon class="size-4" />
+								{:else}
+									<ArrowUpIcon class="size-4" />
+								{/if}
+							</PromptInput.Submit>
+						</div>
 					</PromptInput.Toolbar>
 				</PromptInput.Root>
 

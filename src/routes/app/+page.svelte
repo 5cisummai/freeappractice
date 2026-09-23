@@ -228,9 +228,7 @@
 				href={resolve('/pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
-				<span
-					><span class="font-medium">Super:</span> personalized tutoring, Pip, and study plans.</span
-				>
+				<span><span class="font-medium">Super:</span> Pip and personalized study plans.</span>
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>
 		{/if}
@@ -316,9 +314,7 @@
 				href={resolve('/pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
-				<span
-					><span class="font-medium">Super:</span> personalized tutoring, Pip, and study plans.</span
-				>
+				<span><span class="font-medium">Super:</span> Pip and personalized study plans.</span>
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>
 		{/if}

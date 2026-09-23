@@ -1,5 +1,5 @@
-export const SUPER_MONTHLY_MESSAGE_LIMIT = 600;
-export const SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT = 300;
+export const SUPER_MONTHLY_MESSAGE_LIMIT = 1000;
+export const SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT = 500;
 export const SUPER_PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Plan = 'free' | 'super';

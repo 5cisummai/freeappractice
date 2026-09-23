@@ -60,13 +60,14 @@
 					</li>
 					<li>
 						<strong>AI interactions:</strong> prompts, written responses, conversation context, and feedback
-						you send to the standard tutor, personalized tutor, Coach, or other AI features. Coach may
-						also process your practice data to generate recommendations and study plans.
+						you send to the standard tutor, Coach, or other AI features. Coach may also process your practice
+						data to generate recommendations and study plans.
 					</li>
 					<li>
-						<strong>Super conversations:</strong> Super Coach and question-focused Super Tutor conversations,
-						tool activity, and approved actions are stored for continuity and personalization. The standard
-						free Tutor does not use this durable Super conversation system.
+						<strong>Super conversations:</strong> Coach conversations, tool activity, and approved actions
+						are stored for continuity and personalization. Previously stored Super Tutor conversations
+						may remain until deleted. The standard free Tutor does not use this durable Super conversation
+						system.
 					</li>
 					<li>
 						<strong>Tutor memory:</strong> when you enable it and acknowledge its disclosure, the tutor
@@ -157,10 +158,10 @@
 			<section>
 				<h2 class="text-xl font-semibold">5. Super AI and Tutor Memory</h2>
 				<p>
-					Super’s personalized tutor, Coach, and study plans use your selected AP classes, target
-					dates, study availability, teaching-style preference, and scored practice patterns. We do
-					not use these features to predict AP exam scores or make decisions about admission,
-					employment, credit, insurance, or other high-impact opportunities.
+					Super’s Coach and study plans use your selected AP classes, target dates, study
+					availability, teaching-style preference, and scored practice patterns. We do not use these
+					features to predict AP exam scores or make decisions about admission, employment, credit,
+					insurance, or other high-impact opportunities.
 				</p>
 				<p class="mt-2">
 					Tutor memory is optional and is limited to learning preferences, stable study constraints,

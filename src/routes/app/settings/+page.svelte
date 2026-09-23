@@ -387,12 +387,12 @@
 								{:else if data.billing?.status === 'past_due'}
 									Payment is past due; Super access remains available during the grace period.
 								{:else}
-									Personalized tutoring, Pip, and study plans are active.
+									Pip and personalized study plans are active.
 								{/if}
 							{:else if data.freeBetaEnabled}
-								Claim your free Super offer for personalized tutoring and study planning.
+								Claim your free Super offer for Pip and personalized study planning.
 							{:else}
-								Upgrade when you want personalized tutoring and study planning.
+								Upgrade when you want Pip and personalized study planning.
 							{/if}
 						</p>
 					</div>
@@ -446,7 +446,7 @@
 						</div>
 						<div>
 							<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-								Personalized AI usage
+								Coach usage
 							</p>
 							{#if data.usage.status === 'available'}
 								<p class="mt-1 text-sm">
@@ -454,7 +454,7 @@
 								</p>
 								{#if data.usage.warning}
 									<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-										You have used {data.usage.warning}% of this month's personalized messages.
+										You have used {data.usage.warning}% of this month's Coach messages.
 									</p>
 								{/if}
 							{:else}
@@ -472,15 +472,12 @@
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Tutor memory</p>
 						<p class="text-sm text-muted-foreground">
-							Memory is {data.profile.memoryEnabled ? 'on' : 'paused'}. Review, delete, or update
-							your memory preferences.
+							Memory is {data.profile.memoryEnabled ? 'on' : 'paused'}. View all the memories
+							currently stored for your Tutor.
 						</p>
 					</div>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						href={`${resolve('/app/super/setup')}#tutor-memory`}>Manage memory</Button
+					<Button type="button" variant="outline" size="sm" href={resolve('/app/settings/memory')}
+						>View memories</Button
 					>
 				</div>
 			</div>

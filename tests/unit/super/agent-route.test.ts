@@ -59,45 +59,26 @@ describe('handleSuperAgentPost', () => {
 		);
 	});
 
-	it('authorizes question surface with personalized tutor and requires question context', async () => {
-		const denied = await handleSuperAgentPost(
-			event({
-				sessionId,
-				context: { surface: 'question', page: 'practice' },
-				messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help' }] }]
-			}),
-			'user-1'
-		);
-		expect(denied.status).toBe(400);
+	it.each(['mcq', 'frq'])(
+		'rejects %s question tutoring before authorization or streaming',
+		async (questionType) => {
+			const response = await handleSuperAgentPost(
+				event({
+					sessionId,
+					context: {
+						surface: 'question',
+						page: 'practice',
+						questionId: sessionId,
+						questionType
+					},
+					messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help' }] }]
+				}),
+				'user-1'
+			);
 
-		await handleSuperAgentPost(
-			event({
-				sessionId,
-				context: {
-					surface: 'question',
-					page: 'practice',
-					questionId: sessionId,
-					questionType: 'mcq'
-				},
-				messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help' }] }]
-			}),
-			'user-1'
-		);
-
-		expect(mocks.authorizeFeatureRequest).toHaveBeenCalledWith(
-			expect.anything(),
-			'user-1',
-			'personalizedTutor'
-		);
-		expect(mocks.createSuperAgentStreamResponse).toHaveBeenCalledWith(
-			expect.objectContaining({
-				userId: 'user-1',
-				context: expect.objectContaining({
-					surface: 'question',
-					questionId: sessionId,
-					questionType: 'mcq'
-				})
-			})
-		);
-	});
+			expect(response.status).toBe(404);
+			expect(mocks.authorizeFeatureRequest).not.toHaveBeenCalled();
+			expect(mocks.createSuperAgentStreamResponse).not.toHaveBeenCalled();
+		}
+	);
 });

@@ -24,10 +24,9 @@
 	];
 	const superFeatures = [
 		'Everything in Free',
-		'Personalized MCQ and FRQ tutoring',
-		'AI Coach with weekly study plans you approve',
+		'AI Coach personalized to your practice',
 		'Weekly study plans you approve with Coach',
-		'600 personalized tutor messages per month'
+		'1,000 Coach messages per month'
 	];
 </script>
 

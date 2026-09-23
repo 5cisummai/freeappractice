@@ -36,7 +36,7 @@
 <section id="super" class="w-full space-y-12" aria-labelledby="super-section-heading">
 	<SectionIntro id="super-section-heading">
 		{#snippet title()}
-			Intelligent tutoring built around
+			Intelligent coaching built around
 			<span class="relative inline-block px-1">
 				you<svg
 					class="pointer-events-none absolute -bottom-1 left-0 h-3 w-full text-primary"

@@ -1,6 +1,7 @@
 import { pruneMessages, type ModelMessage } from 'ai';
 
 const BULKY_READ_TOOLS = [
+	'search_web',
 	'generate_diagram',
 	'read_course_catalog',
 	'read_activity_summary',
@@ -16,10 +17,13 @@ const STANDARD_READ_TOOLS = [
 	'read_study_plan'
 ] as const;
 
-/** Trim tool and reasoning noise before each agent step while keeping recent tool results. */
+/** Preserve evidence gathered in this turn; trim older turns already covered by history. */
 export function pruneSuperAgentModelMessages(messages: ModelMessage[]): ModelMessage[] {
-	return pruneMessages({
-		messages,
+	const currentTurnStart = messages.findLastIndex((message) => message.role === 'user');
+	if (currentTurnStart <= 0) return messages;
+
+	const olderMessages = pruneMessages({
+		messages: messages.slice(0, currentTurnStart),
 		// OpenAI Responses message items can require their paired reasoning item.
 		// Keep the complete reasoning history instead of pruning prior assistant parts.
 		reasoning: 'none',
@@ -31,4 +35,5 @@ export function pruneSuperAgentModelMessages(messages: ModelMessage[]): ModelMes
 		],
 		emptyMessages: 'remove'
 	});
+	return [...olderMessages, ...messages.slice(currentTurnStart)];
 }

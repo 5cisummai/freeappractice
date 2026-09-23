@@ -52,6 +52,7 @@ const config = {
 					'https://images.unsplash.com',
 					'https://*.googleapis.com',
 					'https://*.gstatic.com',
+					'https://www.google.com',
 					'https://lh3.googleusercontent.com'
 				],
 				'connect-src': [
