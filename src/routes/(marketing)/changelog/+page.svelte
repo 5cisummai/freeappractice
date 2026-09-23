@@ -5,6 +5,31 @@
 
 	const changelog = [
 		{
+			version: '1.9.2',
+			date: 'September 22, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Free Response practice now offers task selection for supported courses, with prompts and scoring matched to each task format'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Free Response feedback now shows scores and comments for each task part',
+						'Pip has a roomier message composer with actions and response depth controls below the text box'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'The verification email screen now shows sending progress and reports delivery failures with a retry option'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.1',
 			date: 'September 21, 2026',
 			sections: [
@@ -1447,7 +1472,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 21, 2026"
+			meta="Last Updated: September 22, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

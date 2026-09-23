@@ -118,7 +118,7 @@ describe('coach read tools', () => {
 					pointsAvailable: 7,
 					percentage: 57,
 					overallFeedback: 'Strong setup, weak analysis.',
-					criteria: [
+					parts: [
 						{
 							label: 'Free-body diagram',
 							points: 2,
@@ -144,7 +144,7 @@ describe('coach read tools', () => {
 				pointsAvailable: 7,
 				percentage: 57,
 				overallFeedback: 'Strong setup, weak analysis.',
-				criteria: [
+				parts: [
 					{
 						label: 'Free-body diagram',
 						points: 2,

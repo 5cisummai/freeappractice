@@ -51,9 +51,9 @@ The verification shape is:
 ```ts
 const payload = await request.text();
 const event = resend.webhooks.verify({
-  payload,
-  headers: { id, timestamp, signature },
-  webhookSecret: RESEND_WEBHOOK_SECRET
+	payload,
+	headers: { id, timestamp, signature },
+	webhookSecret: RESEND_WEBHOOK_SECRET
 });
 ```
 

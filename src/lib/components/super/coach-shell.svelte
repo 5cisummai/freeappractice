@@ -1190,7 +1190,10 @@
 											disabled={!sessionId || streaming}
 											onSelect={() => toggleCoachAction(action.id)}
 										>
-											<Icon class="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+											<Icon
+												class="mt-0.5 size-4 shrink-0 text-muted-foreground"
+												aria-hidden="true"
+											/>
 											<div class="min-w-0 flex-1 text-left">
 												<div class="text-sm leading-5 font-medium">{action.title}</div>
 												<div class="text-xs leading-4 text-muted-foreground">
