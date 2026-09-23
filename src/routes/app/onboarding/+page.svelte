@@ -593,7 +593,7 @@
 												<h2 class="mt-5 font-display text-2xl font-medium">Super</h2>
 												<p class="mt-2 text-sm leading-6 text-muted-foreground">
 													{superSetup?.freeBetaEnabled
-														? 'Personalized tutoring, Pip, and study plans during the beta.'
+														? 'Pip and personalized study plans during the beta. Tutoring stays free.'
 														: '$9/month or $79/year for the full personalized study toolkit.'}
 												</p>
 											</div>

@@ -18,12 +18,12 @@
 			: 'text-3xl sm:text-4xl'}"
 	>
 		{#snippet title()}
-			A tutor that learns how you learn.
+			Free tutoring. Personalized coaching.
 		{/snippet}
 		{#snippet description()}
 			<p>
-				A personalized tutor for your learning style and a coach that guides you to your best
-				scores.
+				Get help with every practice question for free. Super adds a Coach that guides your study
+				plan.
 			</p>
 		{/snippet}
 	</SectionIntro>

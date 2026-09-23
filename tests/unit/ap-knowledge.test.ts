@@ -28,6 +28,22 @@ describe('AP curriculum knowledge', () => {
 		}
 	});
 
+	it('matches only the exact canonical app course name', () => {
+		const canonical = getApCurriculumKnowledge({ apClass: 'AP US Government' });
+		expect(canonical.kind).toBe('course');
+		if (canonical.kind === 'course') {
+			expect(canonical.course.apClass).toBe('AP US Government');
+			expect(canonical.units).toHaveLength(5);
+		}
+
+		for (const officialName of [
+			'AP U.S. Government and Politics',
+			'AP United States Government and Politics'
+		]) {
+			expect(getApCurriculumKnowledge({ apClass: officialName }).kind).toBe('not_found');
+		}
+	});
+
 	it('safely resolves every current catalog unit without crossing unit content', () => {
 		const catalog = getApCurriculumKnowledge({});
 		expect(catalog.kind).toBe('catalog');

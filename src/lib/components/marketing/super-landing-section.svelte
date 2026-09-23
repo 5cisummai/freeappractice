@@ -23,11 +23,9 @@
 	];
 
 	const superIncludes = $derived([
-		'Personalized MCQ and FRQ tutoring',
-		'AI Coach with weekly study plans',
-		freeBeta
-			? '300 personalized messages per month during beta'
-			: '600 personalized messages per month'
+		'AI Coach personalized to your practice',
+		'Weekly study plans you approve with Coach',
+		freeBeta ? '500 Coach messages per month during beta' : '1,000 Coach messages per month'
 	]);
 
 	const cardClass =
@@ -46,7 +44,7 @@
 				Built around you
 			</h2>
 			<p class="text-base leading-7 text-muted-foreground">
-				Tutor, Coach, and weekly plans—personalized from your practice.
+				Free question tutoring, plus Coach and weekly plans personalized from your practice.
 			</p>
 		</div>
 
@@ -153,7 +151,7 @@
 					</div>
 				</div>
 				<div class="space-y-2 border-t border-border/70 px-6 py-5">
-					<h3 class="text-lg font-semibold tracking-tight">MCQ and FRQ tutoring</h3>
+					<h3 class="text-lg font-semibold tracking-tight">Free MCQ and FRQ tutoring</h3>
 					<p class="text-sm leading-6 text-muted-foreground">
 						Help on multiple choice and free response, where you practice.
 					</p>
@@ -180,7 +178,7 @@
 					All of this, built on your practice data
 				</h2>
 				<p class="text-sm leading-6 text-muted-foreground">
-					Free practice stays free. Super adds personalization when you want it.
+					Practice and tutoring stay free. Super adds personalized Coach and study plans.
 				</p>
 			</div>
 			<ul class="space-y-3">

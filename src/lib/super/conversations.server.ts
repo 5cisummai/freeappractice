@@ -82,7 +82,7 @@ export async function generateConversationTitle(
 			maxOutputTokens: 40,
 			providerOptions: {
 				openai: {
-					reasoningEffort: 'none'
+					reasoningEffort: 'low'
 				}
 			}
 		});

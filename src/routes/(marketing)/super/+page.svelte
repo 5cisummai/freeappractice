@@ -13,18 +13,18 @@
 </script>
 
 <svelte:head>
-	<title>Super | Personalized AP Tutoring | Free AP Practice</title>
+	<title>Super | Personalized AP Coach | Free AP Practice</title>
 	<meta
 		name="description"
-		content="Super adds a personalized tutor, AI Coach, and weekly study plans built around your AP practice history."
+		content="Super adds AI Coach and weekly study plans built around your AP practice history. Question tutoring is free for everyone."
 	/>
 	<link rel="canonical" href="https://freeappractice.org/super" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://freeappractice.org/super" />
-	<meta property="og:title" content="Super | Personalized AP Tutoring" />
+	<meta property="og:title" content="Super | Personalized AP Coach" />
 	<meta
 		property="og:description"
-		content="Personalized MCQ and FRQ tutoring, AI Coach, and weekly study plans for AP students."
+		content="Free MCQ and FRQ tutoring, plus AI Coach and weekly study plans with Super."
 	/>
 	<meta property="og:image" content="https://freeappractice.org/icon.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
@@ -51,7 +51,7 @@
 					<p
 						class="mx-auto max-w-lg text-base leading-7 text-muted-foreground delay-200 sm:text-lg {twAnimateIn}"
 					>
-						Tutor, Coach, and weekly plans—personalized from your practice.
+						Free question tutoring. Coach and weekly plans personalized from your practice.
 					</p>
 				</div>
 
@@ -110,11 +110,10 @@
 			</h2>
 			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
 				{#if data.superFreeBetaEnabled}
-					Get personalized tutoring, Coach, and weekly study plans with 300 messages per month—free
-					during the Super beta.
+					Get Coach and weekly study plans with 500 Coach messages per month, free during the Super
+					beta. Question tutoring stays free for everyone.
 				{:else}
-					Add personalized tutoring, Coach, and weekly study plans on top of unlimited free
-					practice.
+					Add Coach and weekly study plans on top of unlimited free practice and question tutoring.
 				{/if}
 			</p>
 			<div class="mt-7 flex flex-wrap items-center justify-center gap-3">

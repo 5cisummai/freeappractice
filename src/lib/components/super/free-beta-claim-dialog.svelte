@@ -47,7 +47,7 @@
 				Claim your free Super offer
 			</Dialog.Title>
 			<Dialog.Description class="text-center text-sm leading-6">
-				Unlock personalized tutoring, Pip, and weekly study plans.
+				Unlock Pip and personalized weekly study plans. Tutoring stays free for everyone.
 			</Dialog.Description>
 		</Dialog.Header>
 
