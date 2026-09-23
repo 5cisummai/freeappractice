@@ -9,7 +9,10 @@ import {
 	QuizPoolWarmingError,
 	resolveQuizUnits
 } from '$lib/question-bank/mcq/quiz-assembler.server';
-import { generatedQuestionToMcqAnswerBody } from '$lib/question-bank/mcq/public-payload.server';
+import {
+	generatedQuestionToMcqAnswerBody,
+	withoutPreAttemptAnswerKey
+} from '$lib/question-bank/mcq/public-payload.server';
 import { requestPoolRefill } from '$lib/question-bank/pool-refill-queue.server';
 import { logger } from '$lib/server/logger';
 
@@ -109,7 +112,7 @@ export const POST: RequestHandler = async (event) => {
 
 		return json({
 			questions: result.questions.map((question) => ({
-				answer: generatedQuestionToMcqAnswerBody(question),
+				answer: withoutPreAttemptAnswerKey(generatedQuestionToMcqAnswerBody(question)),
 				provider: 'cache',
 				model: 'cached',
 				cached: true,

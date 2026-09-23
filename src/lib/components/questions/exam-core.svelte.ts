@@ -1,3 +1,4 @@
+import { gradeMcqAttempts } from '$lib/question-bank/request.client';
 import type {
 	AnswerResult,
 	ExamCoreOpts,
@@ -523,8 +524,54 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		timerNowMs = Date.now();
 	}
 
+	async function revealSubmittedAnswerKeys(): Promise<void> {
+		const pending = questions.flatMap((question, index) => {
+			if (!question || question.correctAnswer || !draftSelections[index]) return [];
+			const questionId = question.questionId?.trim();
+			const selectedAnswer = draftSelections[index];
+			if (!questionId || !selectedAnswer) return [];
+			return [{ index, questionId, selectedAnswer }];
+		});
+		const selectedWithoutKey = questions.some(
+			(question, index) =>
+				Boolean(draftSelections[index]) && Boolean(question) && !question?.correctAnswer
+		);
+		if (pending.length === 0) {
+			if (selectedWithoutKey) throw new Error('Could not grade this quiz.');
+			return;
+		}
+
+		const graded = await gradeMcqAttempts(
+			pending.map(({ questionId, selectedAnswer }) => ({ questionId, selectedAnswer }))
+		);
+		questions = questions.map((question, index) => {
+			const pendingItem = pending.find((item) => item.index === index);
+			if (!question || !pendingItem) return question;
+			const result = graded.find((item) => item.questionId === pendingItem.questionId);
+			if (!result) return question;
+			return {
+				...question,
+				correctAnswer: result.correctAnswer,
+				explanation: result.explanation
+			};
+		});
+
+		const stillHidden = questions.some(
+			(question, index) =>
+				Boolean(draftSelections[index]) && Boolean(question) && !question?.correctAnswer
+		);
+		if (stillHidden) throw new Error('Could not grade this quiz.');
+	}
+
 	async function submit(): Promise<void> {
 		if (!canSubmit || status === 'complete') return;
+
+		try {
+			await revealSubmittedAnswerKeys();
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : 'Could not grade this quiz.';
+			return;
+		}
 
 		const finalAnswers = buildFinalAnswers();
 		answers = finalAnswers;

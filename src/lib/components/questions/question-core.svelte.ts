@@ -9,6 +9,7 @@ import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
 import {
 	PoolWarmingError,
+	gradeMcqAttempts,
 	requestMcqQuestion,
 	requestMcqQuestionById
 } from '$lib/question-bank/request.client';
@@ -59,6 +60,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 	let textAnnotations = $state<TextAnnotation[]>([]);
 	let warmingRetryTimer: ReturnType<typeof setTimeout> | null = null;
 	let consumedPresetQuestionId = $state(false);
+	let checkInFlight = false;
 
 	const effectiveQuestionNumber = $derived(opts.getQuestionNumber() || `${questionCount}`);
 	const selectedOption = $derived(opts.getSelectedOption());
@@ -224,7 +226,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 	}
 
 	function selectOption(optionId: string | null): void {
-		if (hasCheckedAnswer) return;
+		if (hasCheckedAnswer || checkInFlight) return;
 		if (optionId !== null && struckOptionIds.includes(optionId)) return;
 		opts.setSelectedOption(optionId);
 		opts.onOptionSelected?.(optionId);
@@ -298,30 +300,55 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 		});
 	}
 
-	function checkAnswer(): void {
+	async function checkAnswer(): Promise<void> {
 		const currentSelection = opts.getSelectedOption();
-		if (!currentSelection) return;
+		if (!currentSelection || checkInFlight || !currentQuestion) return;
 		opts.onCheckAnswer?.(currentSelection);
+		checkInFlight = true;
 
-		const result = buildAnswerResult(currentSelection);
-		if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
-		const completeResult = result as AnswerResult & {
-			selectedAnswer: string;
-			isCorrect: boolean;
-		};
+		try {
+			if (!currentQuestion.correctAnswer) {
+				const questionId = currentQuestion.questionId?.trim();
+				if (!questionId) {
+					statusMessage = 'Could not grade this answer.';
+					return;
+				}
+				const [graded] = await gradeMcqAttempts([{ questionId, selectedAnswer: currentSelection }]);
+				if (!graded || graded.questionId !== questionId) {
+					statusMessage = 'Could not grade this answer.';
+					return;
+				}
+				currentQuestion = {
+					...currentQuestion,
+					correctAnswer: graded.correctAnswer,
+					explanation: graded.explanation
+				};
+			}
 
-		hasCheckedAnswer = true;
-		checkedSelection = completeResult.selectedAnswer;
-		answerResult = completeResult;
-		opts.onAnswered?.(completeResult);
-		captureFirstAnswerAnalytics(completeResult);
-		captureQuestionCompletedAnalytics(
-			completeResult,
-			completeResult.isCorrect ? 'correct' : 'incorrect'
-		);
+			const result = buildAnswerResult(currentSelection);
+			if (!result || result.selectedAnswer === undefined || result.isCorrect === undefined) return;
+			const completeResult = result as AnswerResult & {
+				selectedAnswer: string;
+				isCorrect: boolean;
+			};
 
-		if (opts.getAutoShowExplanation() && currentQuestion?.explanation) {
-			showExplanation = true;
+			hasCheckedAnswer = true;
+			checkedSelection = completeResult.selectedAnswer;
+			answerResult = completeResult;
+			opts.onAnswered?.(completeResult);
+			captureFirstAnswerAnalytics(completeResult);
+			captureQuestionCompletedAnalytics(
+				completeResult,
+				completeResult.isCorrect ? 'correct' : 'incorrect'
+			);
+
+			if (opts.getAutoShowExplanation() && currentQuestion?.explanation) {
+				showExplanation = true;
+			}
+		} catch (error) {
+			statusMessage = error instanceof Error ? error.message : 'Could not grade this answer.';
+		} finally {
+			checkInFlight = false;
 		}
 	}
 

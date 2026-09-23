@@ -13,6 +13,7 @@ import {
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
 import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
+import { withoutPreAttemptAnswerKey } from '$lib/question-bank/mcq/public-payload.server';
 
 /** Selection-only path — no synchronous LLM generation. */
 export const config = {
@@ -102,7 +103,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			case 'found':
 				recordMetric(200, path.segment ?? 'pool_hit', outcome.result.cached ?? true);
 				return json({
-					answer: outcome.result.answer,
+					answer: withoutPreAttemptAnswerKey(outcome.result.answer),
 					provider: outcome.result.provider,
 					model: outcome.result.model,
 					cached: outcome.result.cached ?? true,

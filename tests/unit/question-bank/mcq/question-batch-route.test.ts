@@ -93,10 +93,11 @@ describe('POST /api/questions/batch', () => {
 			1,
 			expect.objectContaining({ excludeQuestionIds: ['old'], allowRefill: false })
 		);
-		expect(await response.json()).toEqual({
+		const body = await response.json();
+		expect(body).toEqual({
 			questions: [
 				{
-					answer: expect.objectContaining({ question: 'Q1', correctAnswer: 'A' }),
+					answer: expect.objectContaining({ question: 'Q1', optionA: 'A' }),
 					provider: 'cache',
 					model: 'cached',
 					cached: true,
@@ -105,5 +106,7 @@ describe('POST /api/questions/batch', () => {
 			],
 			exclusionsReset: false
 		});
+		expect(body.questions[0].answer).not.toHaveProperty('correctAnswer');
+		expect(body.questions[0].answer).not.toHaveProperty('explanation');
 	});
 });

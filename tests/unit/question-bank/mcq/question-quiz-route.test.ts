@@ -27,13 +27,20 @@ vi.mock('$lib/question-bank/mcq/quiz-assembler.server', () => ({
 	resolveQuizUnits
 }));
 vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({ requestPoolRefill }));
-vi.mock('$lib/question-bank/mcq/public-payload.server', () => ({
-	generatedQuestionToMcqAnswerBody: vi.fn()
-}));
+vi.mock('$lib/question-bank/mcq/public-payload.server', async () => {
+	const actual = await vi.importActual<
+		typeof import('$lib/question-bank/mcq/public-payload.server')
+	>('$lib/question-bank/mcq/public-payload.server');
+	return {
+		...actual,
+		generatedQuestionToMcqAnswerBody: vi.fn()
+	};
+});
 vi.mock('$lib/server/logger', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
+import { generatedQuestionToMcqAnswerBody } from '../../../../src/lib/question-bank/mcq/public-payload.server';
 import { POST } from '../../../../src/routes/api/question/quiz/+server';
 
 describe('POST /api/question/quiz refill authorization', () => {
@@ -91,5 +98,41 @@ describe('POST /api/question/quiz refill authorization', () => {
 			unit: 'Unit 1'
 		});
 		expect((await response.json()).refillRequested).toBe(true);
+	});
+
+	it('omits answer keys before an attempt', async () => {
+		vi.mocked(generatedQuestionToMcqAnswerBody).mockReturnValue({
+			question: 'Q?',
+			optionA: 'One',
+			optionB: 'Two',
+			optionC: 'Three',
+			optionD: 'Four',
+			correctAnswer: 'C',
+			explanation: 'Because C',
+			mainTopic: 'Cells',
+			topicsCovered: 'Cells',
+			diagramSpec: null,
+			hasDiagram: false
+		});
+		assembleMcqQuiz.mockResolvedValueOnce({
+			questions: [{ questionId: 'q-1', prompt: 'Q?' }],
+			metrics: { requested: 1, served: 1 }
+		});
+
+		const response = await POST({
+			request: new Request('http://localhost/api/question/quiz', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ className: 'AP Biology', unit: 'Unit 1', count: 1 })
+			}),
+			locals: {}
+		} as Parameters<typeof POST>[0]);
+
+		expect(response.status).toBe(200);
+		const body = await response.json();
+		expect(body.questions[0].answer).toMatchObject({ question: 'Q?', optionA: 'One' });
+		expect(body.questions[0].answer).not.toHaveProperty('correctAnswer');
+		expect(body.questions[0].answer).not.toHaveProperty('explanation');
+		expect(body.questions[0].questionId).toBe('q-1');
 	});
 });

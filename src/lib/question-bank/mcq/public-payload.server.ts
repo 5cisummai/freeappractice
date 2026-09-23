@@ -55,6 +55,16 @@ export function storedQuestionToMcqAnswerBody(question: StoredQuestion): McqAnsw
 	};
 }
 
+/** Drop the key and explanation from a question served before the student answers. */
+export function withoutPreAttemptAnswerKey<
+	T extends { correctAnswer?: unknown; explanation?: unknown }
+>(body: T): Omit<T, 'correctAnswer' | 'explanation'> {
+	const publicBody: Record<string, unknown> = { ...body };
+	delete publicBody.correctAnswer;
+	delete publicBody.explanation;
+	return publicBody as Omit<T, 'correctAnswer' | 'explanation'>;
+}
+
 /** Build the stable answer envelope used by both single-question and quiz APIs. */
 export function generatedQuestionToMcqAnswerBody(question: GeneratedQuestion): McqAnswerBody {
 	const correctAnswer =

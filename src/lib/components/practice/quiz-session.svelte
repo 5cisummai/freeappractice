@@ -83,22 +83,10 @@
 		loadQuestion: async (excludeIds) => {
 			const unit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
 			const result = await requestMcqQuestion(selectedClass, unit, excludeIds);
-			if (!result.question.correctAnswer) {
-				throw new Error('Question did not include an answer key.');
-			}
 			return result.question;
 		},
 		loadQuestions: async (requestedCount) => {
-			const questions = await requestMcqQuiz(
-				selectedClass,
-				selectedUnit,
-				requestedCount,
-				unitRange
-			);
-			if (questions.some((question) => !question.correctAnswer)) {
-				throw new Error('Quiz service returned a question without an answer key.');
-			}
-			return questions;
+			return requestMcqQuiz(selectedClass, selectedUnit, requestedCount, unitRange);
 		},
 		onComplete: (snapshot) => {
 			lastSnapshot = snapshot;

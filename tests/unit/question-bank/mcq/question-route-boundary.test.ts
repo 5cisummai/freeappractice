@@ -163,7 +163,9 @@ describe('POST /api/question selection-only boundary', () => {
 		const body = await response.json();
 		expect(body.questionId).toBe('q-hit-1');
 		expect(body.cached).toBe(true);
-		expect(body.answer).toMatchObject({ question: 'Q?', correctAnswer: 'A' });
+		expect(body.answer).toMatchObject({ question: 'Q?', optionA: 'A' });
+		expect(body.answer).not.toHaveProperty('correctAnswer');
+		expect(body.answer).not.toHaveProperty('explanation');
 	});
 });
 

@@ -104,9 +104,6 @@ const { response, attempts } = await requestQuestion();
 const payload = parseQuestionPayload(response);
 const questionPrompt = String(payload.question ?? payload.prompt ?? '').trim();
 const optionLabels = getOptionLabels(payload);
-const correctAnswer = String(payload.correctAnswer ?? payload.answer ?? '')
-	.toUpperCase()
-	.match(/\b[A-D]\b/)?.[0];
 const questionId = String(response.questionId ?? payload.questionId ?? '').trim();
 
 if (!questionPrompt) throw new Error('Question payload is missing a prompt');
@@ -118,8 +115,28 @@ if (
 		`Question payload must contain four A–D choices; received ${optionLabels.join(', ')}`
 	);
 }
-if (!correctAnswer) throw new Error('Question payload is missing a correct answer');
+if ('correctAnswer' in payload || 'explanation' in payload) {
+	throw new Error('Question payload included an answer key before an attempt');
+}
 if (!questionId) throw new Error('Question response is missing questionId');
+
+const gradeResponse = await fetch(new URL('/api/question/grade', smokeBase), {
+	method: 'POST',
+	headers: { 'content-type': 'application/json' },
+	body: JSON.stringify({ attempts: [{ questionId, selectedAnswer: 'A' }] })
+});
+const grade = await readJson(gradeResponse);
+if (!gradeResponse.ok) {
+	throw new Error(
+		`Grade API returned HTTP ${gradeResponse.status}: ${String(grade.error ?? 'unknown error')}`
+	);
+}
+const graded = Array.isArray(grade.results) ? grade.results[0] : undefined;
+const correctAnswer =
+	isRecord(graded) && typeof graded.correctAnswer === 'string' ? graded.correctAnswer : '';
+if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+	throw new Error('Graded response did not include an answer key');
+}
 
 console.log(
 	`Question smoke passed: ${className}${unit ? ` / ${unit}` : ''} (${questionId}, ${attempts} attempt${attempts === 1 ? '' : 's'})`

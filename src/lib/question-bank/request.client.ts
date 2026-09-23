@@ -94,6 +94,41 @@ export async function requestQuestion<TQuestion>(
 
 export type QuestionFetchResult = QuestionRequestResult<GeneratedQuestion>;
 
+export type McqGradeResult = {
+	questionId: string;
+	selectedAnswer: string;
+	isCorrect: boolean;
+	correctAnswer: string;
+	explanation: string;
+};
+
+/** Grade submitted choices. The key and explanation are returned only for those attempts. */
+export async function gradeMcqAttempts(
+	attempts: Array<{ questionId: string; selectedAnswer: string }>
+): Promise<McqGradeResult[]> {
+	try {
+		const response = await apiFetch('/api/question/grade', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ attempts })
+		});
+		const payload = await readJsonOrNull<{ results?: McqGradeResult[]; error?: string }>(response);
+		if (!response.ok || !payload?.results?.length) {
+			throw new QuestionRequestError(
+				getResponseMessage(payload, 'Could not grade this answer.'),
+				response.ok ? null : response.status
+			);
+		}
+		return payload.results;
+	} catch (error) {
+		if (error instanceof QuestionRequestError) throw error;
+		throw new QuestionRequestError(
+			error instanceof Error ? error.message : 'Could not grade this answer.',
+			null
+		);
+	}
+}
+
 /** Load one MCQ from POST /api/question. */
 export function requestMcqQuestion(
 	className: string,

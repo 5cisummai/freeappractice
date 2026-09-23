@@ -13,6 +13,7 @@ import {
 	type QuestionRequestSegment
 } from '$lib/server/question-request-metrics';
 import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
+import { withoutPreAttemptAnswerKey } from '$lib/question-bank/mcq/public-payload.server';
 
 const MAX_QUESTION_BATCH_COUNT = 10;
 const MAX_QUESTION_REQUEST_BYTES = 16 * 1024;
@@ -118,7 +119,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				recordMetric(200, path.segment ?? 'pool_hit', true);
 				return json({
 					questions: outcome.results.map((result) => ({
-						answer: result.answer,
+						answer: withoutPreAttemptAnswerKey(result.answer),
 						provider: result.provider,
 						model: result.model,
 						cached: result.cached,
