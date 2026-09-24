@@ -73,7 +73,7 @@
 		property="og:description"
 		content="Plan your AP year and preview Unit 1 this summer with free practice questions and study guides."
 	/>
-	<meta property="og:image" content="https://freeappractice.org/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="Summer AP Study Guide | Free AP Practice" />
@@ -81,7 +81,7 @@
 		name="twitter:description"
 		content="Plan your AP year and preview Unit 1 this summer with free practice questions."
 	/>
-	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-background text-foreground">

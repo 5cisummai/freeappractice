@@ -453,7 +453,7 @@
 									{data.usage.remaining} of {data.usage.limit} messages remaining this month.
 								</p>
 								<p class="mt-1 text-xs text-muted-foreground">
-									Messages using web search count as five.
+									Messages using web search count as three.
 								</p>
 								{#if data.usage.warning}
 									<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">

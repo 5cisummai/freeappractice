@@ -64,7 +64,7 @@
 	<meta property="og:url" content={meta.url} />
 	<meta property="og:title" content={meta.ogTitle} />
 	<meta property="og:description" content={meta.ogDescription} />
-	<meta property="og:image" content="https://freeappractice.org/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 
@@ -72,7 +72,7 @@
 	<meta name="twitter:url" content={meta.url} />
 	<meta name="twitter:title" content={meta.twitterTitle} />
 	<meta name="twitter:description" content={meta.twitterDescription} />
-	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 	<meta name="twitter:site" content="@freeappractice" />
 
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->

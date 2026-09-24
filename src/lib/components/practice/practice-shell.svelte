@@ -174,6 +174,7 @@
 	function handleSelectionChange(className: string, unit: string): void {
 		if (activeQuizMode) quizRequestVersion = 0;
 		else requestVersion = 0;
+		presetQuestionId = '';
 		selectedClass = className;
 		selectedUnit = unit;
 		onEvent?.({ type: 'selection-change', selectedClass: className, selectedUnit: unit });

@@ -41,14 +41,3 @@ export function isEligibleUnverifiedUser(
 	if (!(user.createdAt instanceof Date) || Number.isNaN(user.createdAt.getTime())) return false;
 	return user.createdAt < cutoff;
 }
-
-/**
- * Filter that can never match a verified account.
- * Uses exact `false` (not `$ne: true`) so missing/odd values are never deleted.
- */
-export function unverifiedStaleFilter(cutoff: Date) {
-	return {
-		emailVerified: false as const,
-		createdAt: { $lt: cutoff }
-	};
-}

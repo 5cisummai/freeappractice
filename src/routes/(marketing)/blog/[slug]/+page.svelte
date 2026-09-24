@@ -19,7 +19,7 @@
 	{#if data.post.coverImage}
 		<meta property="og:image" content={data.post.coverImage} />
 	{:else}
-		<meta property="og:image" content="https://freeappractice.org/icon.png" />
+		<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	{/if}
 	<meta property="og:title" content={data.post.title} />
 	<meta property="og:description" content={data.post.excerpt} />
@@ -32,7 +32,7 @@
 	<meta name="twitter:description" content={data.post.excerpt} />
 	<meta
 		name="twitter:image"
-		content={data.post.coverImage ? data.post.coverImage : 'https://freeappractice.org/icon.png'}
+		content={data.post.coverImage ? data.post.coverImage : 'https://freeappractice.org/logo.png'}
 	/>
 </svelte:head>
 

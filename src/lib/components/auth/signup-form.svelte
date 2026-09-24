@@ -69,7 +69,7 @@
 				name,
 				email,
 				password,
-				callbackURL: authCallbackUrl('/app')
+				callbackURL: authCallbackUrlForAppPath(redirectPath)
 			});
 			if (error) {
 				errorMessage = error.message ?? 'Registration failed';
@@ -148,7 +148,7 @@
 						Or continue with email
 					</Field.Separator>
 					{#if errorMessage}
-						<p class="text-center text-sm text-destructive">{errorMessage}</p>
+						<p role="alert" class="text-center text-sm text-destructive">{errorMessage}</p>
 					{/if}
 					<Field.Field>
 						<Field.Label for="name">Full Name</Field.Label>
@@ -206,7 +206,7 @@
 						</Button>
 						<Field.Description class="text-center">
 							Already have an account? <a
-								href={resolve('/login')}
+								href={resolve(`/login?redirect=${encodeURIComponent(redirectPath)}`)}
 								class="underline underline-offset-4">Sign in</a
 							>
 						</Field.Description>

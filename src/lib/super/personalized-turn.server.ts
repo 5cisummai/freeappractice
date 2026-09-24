@@ -48,7 +48,7 @@ export async function startPersonalizedTurn(userId: string): Promise<Personalize
 		},
 		chargeWebSearch: () => {
 			searchCharge ??= (async () => {
-				const extra = await reservePersonalizedTurn(userId, turnStartedAt, 4);
+				const extra = await reservePersonalizedTurn(userId, turnStartedAt, 2);
 				if (!extra) return false;
 				reservation.used = extra.used;
 				reservation.remaining = extra.remaining;
@@ -60,7 +60,7 @@ export async function startPersonalizedTurn(userId: string): Promise<Personalize
 			if (outputStarted || released) return;
 			released = true;
 			const searchCharged = await searchCharge?.catch(() => false);
-			await releasePersonalizedTurn(userId, reservation.month, searchCharged ? 5 : 1);
+			await releasePersonalizedTurn(userId, reservation.month, searchCharged ? 3 : 1);
 		}
 	};
 }

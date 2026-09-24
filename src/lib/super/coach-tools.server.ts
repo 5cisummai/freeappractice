@@ -225,7 +225,7 @@ export function createSuperTools(input: SuperToolsInput) {
 									{ signal: abortSignal }
 								);
 								if (!(await chargeWebSearch())) {
-									return { error: 'Web search requires five remaining messages this month.' };
+									return { error: 'Web search requires three remaining messages this month.' };
 								}
 								return {
 									results: response.results.map((result) => ({

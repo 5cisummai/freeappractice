@@ -163,12 +163,6 @@
 		onClose={handleClose}
 	>
 		{#snippet response()}
-			<FrqResponse
-				{question}
-				responses={core.responses}
-				disabled={Boolean(core.grade) || core.isGrading}
-				onUpdate={core.updateResponse}
-			/>
 			{#if core.grade}
 				<FrqFeedback
 					grade={core.grade}
@@ -176,6 +170,13 @@
 					onReportDisagreement={core.reportDisagreement}
 				/>
 			{/if}
+			<FrqResponse
+				{question}
+				responses={core.responses}
+				grade={core.grade}
+				disabled={Boolean(core.grade) || core.isGrading}
+				onUpdate={core.updateResponse}
+			/>
 		{/snippet}
 
 		{#snippet actions()}

@@ -173,7 +173,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	async function loadQuestion(options: { isAutoWarmingRetry?: boolean } = {}): Promise<void> {
 		if (!selectedClass || isLoading) return;
 		clearWarmingRetryTimer();
-		loadGeneration += 1;
+		const generation = ++loadGeneration;
 		isLoading = true;
 		isGrading = false;
 		grade = null;
@@ -207,6 +207,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 						[...seenQuestionIds],
 						practice?.control === 'task' ? selectedFormat : undefined
 					);
+			if (generation !== loadGeneration || !opts.getMounted()) return;
 			if (presetId) consumedPresetQuestionId = presetId;
 			if (result.exclusionsReset) seenQuestionIds = [];
 			question = result.question;
@@ -222,6 +223,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 				question_id: result.question.questionId
 			});
 		} catch (error) {
+			if (generation !== loadGeneration || !opts.getMounted()) return;
 			if (error instanceof PoolWarmingError) {
 				question = null;
 				errorMessage = '';
@@ -250,7 +252,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 				statusMessage = '';
 			}
 		} finally {
-			isLoading = false;
+			if (generation === loadGeneration && opts.getMounted()) isLoading = false;
 		}
 	}
 

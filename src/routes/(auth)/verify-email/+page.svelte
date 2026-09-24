@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
@@ -10,8 +10,14 @@
 
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');
+	let redirectTimer: ReturnType<typeof setTimeout> | undefined;
+	let destroyed = false;
 
 	const token = $derived(page.url.searchParams.get('token') ?? '');
+	onDestroy(() => {
+		destroyed = true;
+		clearTimeout(redirectTimer);
+	});
 
 	onMount(async () => {
 		if (!token) {
@@ -31,8 +37,9 @@
 				errorMessage = error.message ?? 'Verification failed';
 				return;
 			}
+			if (destroyed) return;
 			status = 'success';
-			setTimeout(() => goto(resolve('/app')), 2000);
+			redirectTimer = setTimeout(() => goto(resolve('/app')), 2000);
 		} catch {
 			status = 'error';
 			errorMessage = 'Network error. Please try again.';

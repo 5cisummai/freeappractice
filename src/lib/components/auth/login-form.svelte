@@ -190,7 +190,7 @@
 						</Button>
 						<FieldDescription class="text-center">
 							Don't have an account? <a
-								href={resolve('/signup')}
+								href={resolve(`/signup?redirect=${encodeURIComponent(redirectPath)}`)}
 								class="underline underline-offset-4">Sign up</a
 							>
 						</FieldDescription>
