@@ -2,7 +2,10 @@
 	import { resolve } from '$app/paths';
 	import { SvelteMap } from 'svelte/reactivity';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
+	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-week-filled';
+	import CheckIcon from '@tabler/icons-svelte/icons/check';
 	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
+	import ClockIcon from '@tabler/icons-svelte/icons/clock';
 	import FlameIcon from '@tabler/icons-svelte/icons/flame-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
@@ -10,6 +13,7 @@
 	import OrgGroupDashboard from '$lib/components/layout/org-group-dashboard.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import type { StudyTask } from '$lib/super/types';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';
@@ -27,6 +31,24 @@
 	const statsData = $derived(data.stats as StatsData);
 	const progressData = $derived((data.progress as ProgressEntry[] | undefined) ?? []);
 	const planAccess = $derived(data.planAccess);
+	const studyPlan = $derived(data.studyPlan);
+	const canViewStudyPlan = $derived(data.canViewStudyPlan ?? false);
+	const planTaskCount = $derived(studyPlan?.tasks.length ?? 0);
+	const planCompletedCount = $derived(
+		studyPlan?.tasks.filter((task) => task.status === 'done').length ?? 0
+	);
+	const firstIncompleteTaskId = $derived.by(() => {
+		const tasks = [...(studyPlan?.tasks ?? [])].sort((a, b) => a.date.localeCompare(b.date));
+		return tasks.find((task) => task.status === 'todo')?.id ?? null;
+	});
+	const compactPlanTasks = $derived.by(() => {
+		const tasks = [...(studyPlan?.tasks ?? [])].sort((a, b) => a.date.localeCompare(b.date));
+		const todos = tasks.filter((task) => task.status === 'todo');
+		return todos.slice(0, 3);
+	});
+	const allPlanTasksComplete = $derived(
+		planTaskCount > 0 && planCompletedCount === planTaskCount
+	);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -113,6 +135,21 @@
 		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
 	}
 
+	function taskTitle(task: StudyTask): string {
+		return task.unit.trim() || task.apClass;
+	}
+
+	function modeLabel(mode: StudyTask['mode']): string {
+		if (mode === 'frq') return 'Free response';
+		if (mode === 'review') return 'Review';
+		return 'MCQ';
+	}
+
+	function formatPlanTaskDate(dateKey: string): string {
+		const date = new Date(`${dateKey.slice(0, 10)}T12:00:00.000Z`);
+		return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+	}
+
 	function progressBarClass(iconClass: string): string {
 		if (iconClass.includes('sky')) return 'bg-sky-500';
 		if (iconClass.includes('emerald')) return 'bg-emerald-500';
@@ -132,6 +169,149 @@
 <svelte:head>
 	<title>Home | Free AP Practice</title>
 </svelte:head>
+
+{#snippet myPlanSection()}
+	{#if canViewStudyPlan}
+		<section class="space-y-3" aria-labelledby="my-plan-heading">
+			{#if studyPlan && planTaskCount === 0}
+				<div class="flex flex-wrap items-end justify-between gap-3">
+					<h2
+						id="my-plan-heading"
+						class="font-display text-xl font-medium tracking-tight sm:text-2xl"
+					>
+						My plan
+					</h2>
+					<a
+						href={resolve('/app/plan')}
+						class="text-sm font-medium text-primary underline-offset-4 hover:underline"
+					>
+						View plan
+					</a>
+				</div>
+				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+					<Card.Content class="p-4 text-sm text-muted-foreground sm:p-5">
+						This plan has no tasks yet.
+						<a
+							href={resolve('/app/plan')}
+							class="font-medium text-primary underline-offset-4 hover:underline"
+						>
+							View plan
+						</a>
+					</Card.Content>
+				</Card.Root>
+			{:else if studyPlan && planTaskCount > 0}
+				<div class="flex flex-wrap items-end justify-between gap-3">
+					<h2
+						id="my-plan-heading"
+						class="font-display text-xl font-medium tracking-tight sm:text-2xl"
+					>
+						My plan
+					</h2>
+					<a
+						href={resolve('/app/plan')}
+						class="text-sm font-medium text-primary underline-offset-4 hover:underline"
+					>
+						View plan
+					</a>
+				</div>
+
+				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+					<Card.Content class="space-y-3 p-4 sm:p-5">
+						<p class="text-sm text-muted-foreground">
+							{planCompletedCount} of {planTaskCount} tasks complete
+						</p>
+
+						{#if allPlanTasksComplete}
+							<p class="text-sm text-muted-foreground">
+								All tasks complete.
+								<a
+									href={resolve('/app/plan')}
+									class="font-medium text-primary underline-offset-4 hover:underline"
+								>
+									View plan
+								</a>
+							</p>
+						{:else}
+							<div class="divide-y divide-border/70">
+								{#each compactPlanTasks as task (task.id)}
+									{@const isFirstIncomplete =
+										task.status === 'todo' && task.id === firstIncompleteTaskId}
+									<div class="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+										<div
+											class={[
+												'flex size-5 shrink-0 items-center justify-center rounded-full',
+												task.status === 'done'
+													? 'bg-foreground text-background'
+													: 'border-2 border-muted-foreground/35 bg-transparent'
+											]}
+											aria-hidden="true"
+										>
+											{#if task.status === 'done'}
+												<CheckIcon class="size-3 stroke-[3]" />
+											{/if}
+										</div>
+
+										<div class="min-w-0 flex-1">
+											<p class="truncate text-sm font-medium">{taskTitle(task)}</p>
+											<p class="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
+												<span>{modeLabel(task.mode)}</span>
+												<span aria-hidden="true">·</span>
+												<span class="inline-flex items-center gap-0.5">
+													<ClockIcon class="size-3.5" aria-hidden="true" />
+													{task.durationMinutes} min
+												</span>
+												<span aria-hidden="true">·</span>
+												<span>{formatPlanTaskDate(task.date)}</span>
+											</p>
+										</div>
+
+										{#if isFirstIncomplete}
+											<Button
+												href={task.practiceHref ?? resolve('/app/plan')}
+												size="sm"
+												class="shrink-0 rounded-full px-3"
+											>
+												Start
+												<ChevronRightIcon class="size-4" aria-hidden="true" />
+											</Button>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</Card.Content>
+				</Card.Root>
+			{:else}
+				<h2 id="my-plan-heading" class="font-display text-xl font-medium tracking-tight sm:text-2xl">
+					My plan
+				</h2>
+				<Card.Root
+					class="rounded-2xl border border-dashed border-border/80 bg-muted/20 shadow-none ring-0"
+				>
+					<Card.Content
+						class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+					>
+						<div class="flex items-start gap-3">
+							<div
+								class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+							>
+								<CalendarIcon class="size-4" aria-hidden="true" />
+							</div>
+							<p class="text-sm text-muted-foreground">Ask Pip to build your weekly plan</p>
+						</div>
+						<Button
+							href={resolve('/app/coach?q=Help%20me%20create%20a%20study%20plan')}
+							size="sm"
+							class="shrink-0"
+						>
+							Create with Pip
+						</Button>
+					</Card.Content>
+				</Card.Root>
+			{/if}
+		</section>
+	{/if}
+{/snippet}
 
 <PageShell title={shellTitle} description={shellDescription} maskTitle>
 	{#snippet actions()}
@@ -213,6 +393,8 @@
 			</div>
 		</section>
 	{/if}
+
+	{@render myPlanSection()}
 
 	{#if showOrgFeatures}
 		<OrgGroupDashboard
@@ -318,6 +500,7 @@
 				<ArrowRightIcon class="size-4 shrink-0 text-primary" />
 			</a>
 		{/if}
+
 		<EmptyState
 			title="No subjects selected yet"
 			description="Choose the subjects you want to see on your dashboard."

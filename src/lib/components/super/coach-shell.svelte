@@ -76,6 +76,8 @@
 	import { cn } from '$lib/utils.js';
 	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { getApprovalProposal, type ApprovalProposal } from '$lib/super/approval-ui';
+	import CoachQuestionCard from '$lib/components/super/coach-question-card.svelte';
+	import type { CoachQuestionToolOutput } from '$lib/super/coach-question';
 	import { toast } from 'svelte-sonner';
 
 	type CoachShellProps = {
@@ -192,6 +194,10 @@
 		'tool-give_practice_question': {
 			running: 'Waiting for question answer…',
 			complete: 'Picked a practice question'
+		},
+		'tool-ask_student': {
+			running: 'Waiting for your response…',
+			complete: 'Got your response'
 		}
 	};
 
@@ -207,6 +213,7 @@
 		'tool-read_unit_detail': StepUnitIcon,
 		'tool-read_frq_performance': StepProgressIcon,
 		'tool-give_practice_question': StepQuestionIcon,
+		'tool-ask_student': StepQuestionIcon,
 		'tool-update_goals': StepGoalsIcon,
 		'tool-update_study_plan': StepPlanIcon,
 		'tool-generate_diagram': StepDiagramIcon
@@ -236,9 +243,36 @@
 	let composerHasText = $derived(input.trim().length > 0);
 	let hasMessages = $derived((coach.messages ?? []).length > 0);
 	let emptyChat = $derived(!hasMessages);
+	let pendingCoachQuestion = $derived.by(() => {
+		const lastMessage = coach.messages.at(-1);
+		if (!lastMessage || lastMessage.role !== 'assistant') return null;
+		for (const part of [...lastMessage.parts].reverse()) {
+			const toolPart = getToolPart(part);
+			if (
+				toolPart?.type === 'tool-ask_student' &&
+				isToolInProgress(toolPart.state) &&
+				typeof toolPart.toolCallId === 'string'
+			) {
+				return { toolCallId: toolPart.toolCallId, input: toolPart.input };
+			}
+		}
+		return null;
+	});
+	let pendingCoachApproval = $derived.by(() => {
+		const lastMessage = coach.messages.at(-1);
+		if (!lastMessage || lastMessage.role !== 'assistant') return null;
+		for (const part of [...lastMessage.parts].reverse()) {
+			const toolPart = getToolPart(part);
+			if (!toolPart) continue;
+			const approval = getApprovalProposal(toolPart);
+			if (approval?.state === 'approval-requested') return approval;
+		}
+		return null;
+	});
 	let canSendComposer = $derived(
 		Boolean(sessionId) &&
 			!streaming &&
+			!pendingCoachQuestion &&
 			(input.trim().length > 0 || selectedCoachActionIds.length > 0)
 	);
 
@@ -399,8 +433,7 @@
 	function activitySummary(activities: ToolActivity[]): string {
 		const active = activities.find((activity) => activity.state === 'running');
 		if (active) return active.label;
-		if (activities.some((activity) => activity.state === 'error'))
-			return 'Some activity could not finish';
+		if (activities.some((activity) => activity.state === 'error')) return 'Activity';
 		if (activities.length === 1) return 'Completed 1 step';
 		return `Completed ${activities.length} steps`;
 	}
@@ -436,10 +469,24 @@
 		);
 	}
 
-	function formatStudyTask(value: unknown): string | null {
+	function formatStudyTask(value: unknown, weekStart: unknown): string | null {
 		const task = asRecord(value);
+		let taskDate = task.date;
+		if (
+			typeof weekStart === 'string' &&
+			/^\d{4}-\d{2}-\d{2}$/.test(weekStart) &&
+			typeof task.dayOffset === 'number' &&
+			Number.isInteger(task.dayOffset) &&
+			task.dayOffset >= 0 &&
+			task.dayOffset <= 6
+		) {
+			const [year, month, day] = weekStart.split('-').map(Number);
+			taskDate = new Date(Date.UTC(year, month - 1, day + task.dayOffset))
+				.toISOString()
+				.slice(0, 10);
+		}
 		const pieces = [
-			formatDate(task.date),
+			formatDate(taskDate),
 			typeof task.apClass === 'string' ? task.apClass : null,
 			typeof task.unit === 'string' ? task.unit : null,
 			typeof task.durationMinutes === 'number' ? `${task.durationMinutes} min` : null
@@ -475,7 +522,9 @@
 		}
 
 		const tasks = Array.isArray(proposed.tasks)
-			? proposed.tasks.map(formatStudyTask).filter((task): task is string => Boolean(task))
+			? proposed.tasks
+					.map((task) => formatStudyTask(task, proposed.weekStart))
+					.filter((task): task is string => Boolean(task))
 			: [];
 		const lines = tasks.slice(0, 4);
 		if (tasks.length > 4) lines.push(`Plus ${tasks.length - 4} more study sessions`);
@@ -501,12 +550,18 @@
 
 	onMount(() => {
 		clientReady = true;
-		const prompt = new URLSearchParams(window.location.search).get('prompt')?.trim() ?? '';
-		sessionId = prompt
+		const url = new URL(window.location.href);
+		const query = surface === 'page' ? (url.searchParams.get('q')?.trim() ?? '') : '';
+		sessionId = query
 			? crypto.randomUUID()
 			: (sessionStorage.getItem(COACH_SESSION_STORAGE_KEY) ?? crypto.randomUUID());
 		sessionStorage.setItem(COACH_SESSION_STORAGE_KEY, sessionId);
-		conversationId = prompt ? '' : (sessionStorage.getItem(COACH_CONVERSATION_STORAGE_KEY) ?? '');
+		if (query) {
+			sessionStorage.removeItem(COACH_CONVERSATION_STORAGE_KEY);
+			url.searchParams.delete('q');
+			window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+		}
+		conversationId = query ? '' : (sessionStorage.getItem(COACH_CONVERSATION_STORAGE_KEY) ?? '');
 		if (conversationId) {
 			const storedConversationId = conversationId;
 			void loadConversation(storedConversationId).then((loaded) => {
@@ -517,12 +572,7 @@
 			});
 		}
 		void loadConversations();
-		if (prompt) {
-			const url = new URL(window.location.href);
-			url.searchParams.delete('prompt');
-			window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-			void tick().then(() => send(prompt));
-		}
+		if (query) input = query;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			motionMs = 0;
 		}
@@ -678,10 +728,25 @@
 		}
 	}
 
+	async function submitCoachQuestionResult(
+		toolCallId: string,
+		output: CoachQuestionToolOutput
+	): Promise<boolean> {
+		if (!toolCallId || streaming) return false;
+		try {
+			await coach.addToolOutput({ tool: 'ask_student', toolCallId, output });
+			return true;
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Could not submit your response.');
+			return false;
+		}
+	}
+
 	async function send(text: string) {
 		const trimmed = text.trim();
 		const actionIds = [...selectedCoachActionIds];
-		if ((!trimmed && actionIds.length === 0) || streaming || !sessionId) return;
+		if ((!trimmed && actionIds.length === 0) || streaming || pendingCoachQuestion || !sessionId)
+			return;
 
 		const message = formatCoachComposerMessage(trimmed, actionIds);
 		pendingCoachActions = actionIds;
@@ -969,59 +1034,6 @@
 												{:else if practiceQuestionResult}
 													<CoachPracticeQuestionResult result={practiceQuestionResult} />
 												{/if}
-												{@const approval = getApprovalProposal(toolPart)}
-												{#if approval}
-													{@const summary = getApprovalSummary(approval)}
-													<div
-														class="mt-2 max-w-3xl"
-														in:fly={{ y: 6, duration: motionMs * 0.55, easing: cubicOut }}
-													>
-														<Confirmation.Root state={approval.state} approval={approval.approval}>
-															<Confirmation.Request>
-																<Confirmation.Title>Approval needed</Confirmation.Title>
-																<p class="text-sm leading-6 text-muted-foreground">
-																	Pip is ready to make this change.
-																</p>
-																<div class="rounded-xl bg-muted/60 p-3">
-																	<p class="text-sm font-medium">{summary.title}</p>
-																	<ul
-																		class="mt-2 space-y-1 text-sm leading-5 text-muted-foreground"
-																	>
-																		{#each summary.lines as line, index (`${line}-${index}`)}
-																			<li class="flex gap-2">
-																				<span
-																					class="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60"
-																				></span>
-																				<span>{line}</span>
-																			</li>
-																		{/each}
-																	</ul>
-																</div>
-																<Confirmation.Actions class="justify-start">
-																	<Confirmation.Action
-																		disabled={approving}
-																		onclick={() => respondToApproval(approval.approvalId, true)}
-																	>
-																		{approving ? 'Responding…' : 'Approve update'}
-																	</Confirmation.Action>
-																	<Confirmation.Action
-																		variant="outline"
-																		disabled={approving}
-																		onclick={() => respondToApproval(approval.approvalId, false)}
-																	>
-																		Decline
-																	</Confirmation.Action>
-																</Confirmation.Actions>
-															</Confirmation.Request>
-															<Confirmation.Accepted>
-																<Confirmation.Title>Update approved</Confirmation.Title>
-															</Confirmation.Accepted>
-															<Confirmation.Rejected>
-																<Confirmation.Title>Update declined</Confirmation.Title>
-															</Confirmation.Rejected>
-														</Confirmation.Root>
-													</div>
-												{/if}
 											{/if}
 										{/each}
 										{#if activities.length}
@@ -1033,7 +1045,7 @@
 												<ChainOfThought.Header
 													class="rounded-md py-1 font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 												>
-													{#if isCurrentAssistant && streaming && activities.some((activity) => activity.state === 'running')}
+													{#if isCurrentAssistant && activities.some((activity) => activity.state === 'running')}
 														<Shimmer as="span" content_length={activitySummary(activities).length}>
 															{activitySummary(activities)}
 														</Shimmer>
@@ -1217,6 +1229,65 @@
 			{/if}
 
 			{#if clientReady}
+				{#if pendingCoachApproval}
+					{@const summary = getApprovalSummary(pendingCoachApproval)}
+					<div
+						class="mb-3 max-w-3xl"
+						in:fly={{ y: 6, duration: motionMs * 0.55, easing: cubicOut }}
+					>
+						<Confirmation.Root
+							state={pendingCoachApproval.state}
+							approval={pendingCoachApproval.approval}
+						>
+							<Confirmation.Request>
+								<Confirmation.Title>Approval needed</Confirmation.Title>
+								<p class="text-sm leading-6 text-muted-foreground">
+									Pip is ready to make this change.
+								</p>
+								<div class="rounded-xl bg-muted/60 p-3">
+									<p class="text-sm font-medium">{summary.title}</p>
+									<ul class="mt-2 space-y-1 text-sm leading-5 text-muted-foreground">
+										{#each summary.lines as line, index (`${line}-${index}`)}
+											<li class="flex gap-2">
+												<span class="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/60"
+												></span>
+												<span>{line}</span>
+											</li>
+										{/each}
+									</ul>
+								</div>
+								<Confirmation.Actions class="justify-start">
+									<Confirmation.Action
+										disabled={approving}
+										onclick={() => respondToApproval(pendingCoachApproval.approvalId, true)}
+									>
+										{approving ? 'Responding…' : 'Approve update'}
+									</Confirmation.Action>
+									<Confirmation.Action
+										variant="outline"
+										disabled={approving}
+										onclick={() => respondToApproval(pendingCoachApproval.approvalId, false)}
+									>
+										Decline
+									</Confirmation.Action>
+								</Confirmation.Actions>
+							</Confirmation.Request>
+							<Confirmation.Accepted>
+								<Confirmation.Title>Update approved</Confirmation.Title>
+							</Confirmation.Accepted>
+							<Confirmation.Rejected>
+								<Confirmation.Title>Update declined</Confirmation.Title>
+							</Confirmation.Rejected>
+						</Confirmation.Root>
+					</div>
+				{/if}
+				{#if pendingCoachQuestion}
+					<CoachQuestionCard
+						input={pendingCoachQuestion.input}
+						onResolve={(output) =>
+							submitCoachQuestionResult(pendingCoachQuestion.toolCallId, output)}
+					/>
+				{/if}
 				<PromptInput.Root
 					class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
 					onSubmit={({ text }) => send(text)}
@@ -1251,6 +1322,7 @@
 							bind:ref={composerInputRef}
 							bind:value={input}
 							placeholder="Ask Pip"
+							disabled={!sessionId || streaming || Boolean(pendingCoachQuestion)}
 							class="text-md min-h-[32px] flex-1 resize-none overflow-auto px-0 py-0 leading-6 placeholder:text-muted-foreground/70"
 						/>
 					</PromptInput.Body>

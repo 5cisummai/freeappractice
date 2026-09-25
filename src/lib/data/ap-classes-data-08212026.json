@@ -1269,7 +1269,7 @@
 				"maxGenerationsPerRun": 5,
 				"leaseTtlMs": 120000,
 				"retryDelayMs": 60000,
-				"dailyLlmGenerationBudget": 500,
+				"dailyLlmGenerationBudget": 1000,
 				"warmingRetryAfterSeconds": 15,
 				"workerTimeBudgetMs": 50000
 			}

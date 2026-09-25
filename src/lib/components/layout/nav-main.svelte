@@ -10,6 +10,7 @@
 	import UsersIconComponent from '@tabler/icons-svelte/icons/user-filled';
 	import LayersIconComponent from '@tabler/icons-svelte/icons/stack-filled';
 	import PipIcon from '$lib/components/coach/pip-icon.svelte';
+	import { Badge } from '$lib/components/ui/badge';
 	import type { Component } from 'svelte';
 
 	type NavHref =
@@ -117,6 +118,13 @@
 								>
 									<item.icon />
 									<span>{item.label}</span>
+									{#if item.href === '/app/plan'}
+										<Badge
+											variant="secondary"
+											class="ml-auto h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
+										>New</Badge
+										>
+									{/if}
 								</a>
 							{/snippet}
 						</Sidebar.MenuButton>

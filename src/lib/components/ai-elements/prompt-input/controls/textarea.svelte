@@ -10,6 +10,7 @@
 		class?: string;
 		placeholder?: string;
 		value?: string;
+		disabled?: boolean;
 		onchange?: (event: Event) => void;
 	}
 	// indexing

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { coachComposerActionIds } from '$lib/super/coach-composer-actions';
 
-export const MAX_SUPER_AGENT_MESSAGES = 48;
+export const MAX_SUPER_AGENT_MESSAGES = 96;
 export const MAX_SUPER_AGENT_REQUEST_BYTES = 8 * 1024 * 1024;
 export const MAX_SUPER_AGENT_TEXT_CHARS = 16_000;
 export const MAX_TUTOR_MEMORY_EXCHANGE_CHARS = 8_000;
