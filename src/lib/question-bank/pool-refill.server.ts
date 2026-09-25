@@ -31,7 +31,7 @@ export type RefillRunSummary = {
 };
 
 const MAX_ATTEMPTS = 8;
-const MAX_CONCURRENT_REFILL_JOBS = 8;
+const MAX_CONCURRENT_REFILL_JOBS = 40;
 const MAX_CLAIM_ATTEMPTS = 32;
 
 async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {

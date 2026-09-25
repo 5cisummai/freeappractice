@@ -3,7 +3,7 @@
  *
  * Build + submit an OpenAI Batch (~50% cheaper) for MCQ or FRQ pool deficits
  * vs the unified dataset's `questionBank.mcq.poolRules` preferred ceilings (not demand-scaled).
- * Caps at remaining daily generation budget (default ~500/day).
+ * Caps at remaining daily generation budget (default ~1000/day).
  *
  *   bun run pool:batch-submit
  *   bun run pool:batch-submit -- --limit 100 --dry-run

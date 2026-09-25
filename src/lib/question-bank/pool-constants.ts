@@ -18,9 +18,9 @@ export const QUESTION_POOL_LEASE_TTL_MS = 120_000;
 export const QUESTION_POOL_RETRY_DELAY_MS = 60_000;
 /**
  * Hard daily LLM generation cap (UTC day).
- * ~5k output tokens/MCQ → 500 gens ≈ 2.5M output tokens/day.
+ * ~5k output tokens/MCQ → 1000 gens ≈ 5M output tokens/day.
  */
-export const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 500;
+export const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 1000;
 /** Retry-After seconds on `503 POOL_WARMING`. */
 export const QUESTION_POOL_WARMING_RETRY_AFTER_SECONDS = 15;
 /** Soft wall-clock budget for one worker run (keep under Vercel maxDuration). */
