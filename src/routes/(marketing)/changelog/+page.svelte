@@ -5,6 +5,16 @@
 
 	const changelog = [
 		{
+			version: '1.9.4',
+			date: 'September 25, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: ['Home and onboarding now use “courses” for your AP selections and practice links']
+				}
+			]
+		},
+		{
 			version: '1.9.3',
 			date: 'September 25, 2026',
 			sections: [
