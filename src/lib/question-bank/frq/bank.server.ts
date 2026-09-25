@@ -6,7 +6,6 @@ import {
 } from '$lib/question-bank/frq/model.server';
 import { toPublicFrqQuestion, type PublicFrqQuestion } from '$lib/question-bank/frq/types';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
-import { normalizeUnit } from '$lib/question-bank/util.server';
 import { scheduleBackgroundTask } from '$lib/server/background-task.server';
 
 type FrqServiceResult = {
@@ -19,7 +18,6 @@ type FrqServiceResult = {
 
 export const frqBank = new QuestionBank<IFrqQuestion, FrqServiceResult>({
 	logScope: 'frq-pool',
-	normalizeUnit,
 	countActive: countActiveFrqQuestions,
 	findRandom: findFrqQuestionByPool,
 	scheduleBackgroundTask,
@@ -33,8 +31,8 @@ export const frqBank = new QuestionBank<IFrqQuestion, FrqServiceResult>({
 			cached: true
 		};
 	},
-	requestRefill: async (apClass, unit) => {
+	requestRefill: async (course, unit) => {
 		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');
-		return requestPoolRefill({ questionType: 'frq', apClass, unit });
+		return requestPoolRefill({ questionType: 'frq', course, unit });
 	}
 });

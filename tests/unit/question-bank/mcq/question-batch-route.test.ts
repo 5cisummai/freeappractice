@@ -36,7 +36,7 @@ describe('POST /api/questions/batch', () => {
 			request: new Request('http://localhost/api/questions/batch', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ className: 'AP Biology', unit: 'Unit 1', count: 11 })
+				body: JSON.stringify({ course: 'AP Biology', unit: 'Unit 1: Chemistry of Life', count: 11 })
 			})
 		} as Parameters<typeof POST>[0]);
 
@@ -67,8 +67,8 @@ describe('POST /api/questions/batch', () => {
 					model: 'cached',
 					cached: true,
 					questionId: 'q-1',
-					apClass: 'AP Biology',
-					unit: 'Unit 1'
+					course: 'AP Biology',
+					unit: 'Unit 1: Chemistry of Life'
 				}
 			]
 		});
@@ -78,8 +78,8 @@ describe('POST /api/questions/batch', () => {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
-					className: 'AP Biology',
-					unit: 'Unit 1',
+					course: 'AP Biology',
+					unit: 'Unit 1: Chemistry of Life',
 					count: 1,
 					excludeQuestionIds: ['old']
 				})
@@ -89,10 +89,11 @@ describe('POST /api/questions/batch', () => {
 		expect(response.status).toBe(200);
 		expect(getMany).toHaveBeenCalledWith(
 			'AP Biology',
-			'Unit 1',
+			'Unit 1: Chemistry of Life',
 			1,
-			expect.objectContaining({ excludeQuestionIds: ['old'], allowRefill: false })
+			expect.objectContaining({ excludeQuestionIds: ['old'] })
 		);
+		expect(getMany.mock.calls[0][3]).not.toHaveProperty('allowRefill');
 		expect(await response.json()).toEqual({
 			questions: [
 				{

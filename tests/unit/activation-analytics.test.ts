@@ -38,7 +38,7 @@ describe('captureFirstAnswerSubmitted', () => {
 		vi.stubGlobal('localStorage', localStorage);
 
 		captureFirstAnswerSubmitted({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			isCorrect: true,
 			timeTakenMs: 1000
@@ -56,7 +56,7 @@ describe('captureFirstAnswerSubmitted', () => {
 		vi.stubGlobal('localStorage', localStorage);
 
 		const answer = {
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			isCorrect: true,
 			timeTakenMs: 1000
@@ -75,7 +75,7 @@ describe('captureFirstAnswerSubmitted', () => {
 		vi.stubGlobal('localStorage', localStorage);
 
 		captureFirstAnswerSubmitted({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			isCorrect: true,
 			timeTakenMs: 1000

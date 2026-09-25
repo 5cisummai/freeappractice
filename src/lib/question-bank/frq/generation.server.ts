@@ -27,8 +27,7 @@ import {
 import {
 	assertNoNullCharacters,
 	computeContentHash,
-	isDuplicateKeyError,
-	normalizeUnit
+	isDuplicateKeyError
 } from '$lib/question-bank/util.server';
 import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
 import { logger } from '$lib/server/logger';
@@ -89,13 +88,13 @@ export type FrqGenerateResult = {
 	timing?: { generationMs: number; persistenceMs: number };
 };
 
-export async function getRecentFrqTopics(apClass: string, unit: string): Promise<string[]> {
-	return getRecentTopics({ kind: 'frq', apClass, unit, limit: RECENT_TOPICS_WINDOW });
+export async function getRecentFrqTopics(course: string, unit: string): Promise<string[]> {
+	return getRecentTopics({ kind: 'frq', course, unit, limit: RECENT_TOPICS_WINDOW });
 }
 
-function unitNotes(apClass: string, unit: string): string {
-	const course = AP_DATA.courses.find((item) => item.name === apClass);
-	const match = course?.units.find((item) => item.label === unit);
+function unitNotes(course: string, unit: string): string {
+	const courseData = AP_DATA.courses.find((item) => item.name === course);
+	const match = courseData?.units.find((item) => item.label === unit);
 	if (!match) return '';
 	const keywords = match.generation.mcq.keywords.join(', ');
 	const constraints = match.generation.mcq.constraints.join('; ');
@@ -119,18 +118,18 @@ function describeFixedPart(part: FrqFixedPart): string {
 }
 
 export function buildFrqGenerationPrompt(
-	apClass: string,
+	course: string,
 	unit: string,
 	recentTopics: string[],
 	formatId?: string
 ): { system: string; user: string; format: FrqFormatRecord } {
-	const format = selectFrqFormat(apClass, formatId);
-	const scope = frqPracticeFor(apClass)?.scope;
+	const format = selectFrqFormat(course, formatId);
+	const scope = frqPracticeFor(course)?.scope;
 	const anchorUnit = scope === 'single-unit' || scope === 'anchor';
 	const recent = recentTopics.length
 		? `Avoid repeating these recently used concepts or scenarios:\n${recentTopics.map((topic) => `- ${topic}`).join('\n')}`
 		: '';
-	const course = AP_DATA.courses.find((item) => item.name === apClass);
+	const match = AP_DATA.courses.find((item) => item.name === course);
 	const partRules = format.parts
 		? `Fixed parts:\n${format.parts.map(describeFixedPart).join('\n')}\nReturn one object per fixed part id. Do not add, drop, or renumber parts. Do not change points.`
 		: `You write the parts. Each points value is a positive integer, usually 1, and the parts sum to ${format.pointTotal}. A part worth more than 1 point is only undivided work, and its earns line names point 1, point 2, and so on in order.`;
@@ -139,13 +138,13 @@ export function buildFrqGenerationPrompt(
 		scope === 'multi-unit' || scope === 'period'
 			? 'Put the units or period you used in topicsCovered.'
 			: '';
-	const notes = scope === 'multi-unit' || scope === 'period' ? '' : unitNotes(apClass, unit);
+	const notes = scope === 'multi-unit' || scope === 'period' ? '' : unitNotes(course, unit);
 	const system = [
 		'You create wholly original written-response practice for an independent study application. Never copy, reconstruct, or closely imitate any identifiable exam question, passage, scoring guideline, or copyrighted source.',
 		'',
-		`Course: ${apClass}`,
+		`Course: ${course}`,
 		anchorUnit ? `Unit: ${unit}` : '',
-		course?.generation.courseGuidance ?? '',
+		match?.generation.courseGuidance ?? '',
 		notes,
 		`Format: ${format.formatId}`,
 		`Materials: ${format.materialMin === format.materialMax ? `exactly ${format.materialMin}` : `${format.materialMin} to ${format.materialMax}`}`,
@@ -163,8 +162,8 @@ export function buildFrqGenerationPrompt(
 	return {
 		system,
 		user: anchorUnit
-			? `Create an original ${apClass} ${format.formatId} task for ${unit}.`
-			: `Create an original ${apClass} ${format.formatId} task.`,
+			? `Create an original ${course} ${format.formatId} task for ${unit}.`
+			: `Create an original ${course} ${format.formatId} task.`,
 		format
 	};
 }
@@ -232,12 +231,12 @@ function assembleParts(format: FrqFormatRecord, generated: GeneratedFrq): FrqPar
 }
 
 export function parseGeneratedFrq(
-	apClass: string,
+	course: string,
 	unit: string,
 	generated: unknown,
 	formatId?: string
 ): FrqQuestion {
-	const format = selectFrqFormat(apClass, formatId);
+	const format = selectFrqFormat(course, formatId);
 	const parsed = GeneratedFrqSchema.parse(generated);
 	if (
 		parsed.materials.length < format.materialMin ||
@@ -245,7 +244,7 @@ export function parseGeneratedFrq(
 	) {
 		throw new Error('Generated FRQ does not satisfy the format material count');
 	}
-	const storedUnit = frqPracticeFor(apClass)?.control === 'task' ? 'All Units' : unit;
+	const storedUnit = frqPracticeFor(course)?.control === 'task' ? 'All Units' : unit;
 	return FrqQuestionSchema.parse({
 		schemaVersion: FRQ_SCHEMA_VERSION,
 		formatId: format.formatId,
@@ -258,18 +257,18 @@ export function parseGeneratedFrq(
 		parts: assembleParts(format, parsed),
 		mainTopic: parsed.mainTopic,
 		topicsCovered: parsed.topicsCovered,
-		apClass,
+		course,
 		unit: storedUnit
 	});
 }
 
 async function generateFrq(
-	apClass: string,
+	course: string,
 	unit: string,
 	recentTopics: string[],
 	formatId?: string
 ): Promise<FrqQuestion> {
-	const prompt = buildFrqGenerationPrompt(apClass, unit, recentTopics, formatId);
+	const prompt = buildFrqGenerationPrompt(course, unit, recentTopics, formatId);
 	const { parsed } = await structuredObject({
 		callName: 'generateFrqQuestion',
 		model: FRQ_GENERATION_MODEL,
@@ -278,9 +277,9 @@ async function generateFrq(
 		schema: GeneratedFrqSchema,
 		schemaName: 'frq_question',
 		reasoningEffort: 'high',
-		logContext: { apClass, unit, formatId: prompt.format.formatId }
+		logContext: { course, unit, formatId: prompt.format.formatId }
 	});
-	return parseGeneratedFrq(apClass, unit, parsed, prompt.format.formatId);
+	return parseGeneratedFrq(course, unit, parsed, prompt.format.formatId);
 }
 
 async function persistFrqQuestion(
@@ -289,7 +288,7 @@ async function persistFrqQuestion(
 	model: string
 ): Promise<FrqGenerateResult> {
 	assertNoNullCharacters(question, 'generated FRQ');
-	const { apClass, unit } = question;
+	const { course, unit } = question;
 	const persistenceStarted = Date.now();
 	const questionId = randomUUID();
 	const contentHash = computeContentHash(
@@ -317,7 +316,7 @@ async function persistFrqQuestion(
 		if (!isDuplicateKeyError(error)) throw error;
 		skippedDuplicate = true;
 		logger.info('[frq-generation] generated duplicate was not inserted into the pool', {
-			apClass,
+			course,
 			unit,
 			contentHash
 		});
@@ -336,15 +335,15 @@ async function persistFrqQuestion(
 }
 
 export async function persistGeneratedFrqToPool(
-	apClass: string,
+	course: string,
 	unit: string,
 	generated: unknown,
 	model = 'batch',
 	formatId?: string
 ): Promise<FrqGenerateResult> {
-	const resolved = resolveFrqPoolRequest(apClass, normalizeUnit(unit), formatId);
+	const resolved = resolveFrqPoolRequest(course, unit?.trim() ?? '', formatId);
 	return persistFrqQuestion(
-		parseGeneratedFrq(apClass, resolved.storedUnit, generated, resolved.formatId),
+		parseGeneratedFrq(course, resolved.storedUnit, generated, resolved.formatId),
 		0,
 		model
 	);
@@ -356,17 +355,17 @@ export async function persistGeneratedFrqToPool(
  * One call uses one format record.
  */
 export async function generateAndPersistFrq(
-	apClass: string,
+	course: string,
 	unit: string,
 	recentTopics?: string[],
 	formatId?: string
 ): Promise<FrqGenerateResult> {
-	const resolved = resolveFrqPoolRequest(apClass, normalizeUnit(unit), formatId);
+	const resolved = resolveFrqPoolRequest(course, unit?.trim() ?? '', formatId);
 	const generationStarted = Date.now();
 	const topics =
 		recentTopics ??
-		(await getRecentFrqTopics(apClass, resolved.storedUnit).catch(() => [] as string[]));
-	const question = await generateFrq(apClass, resolved.storedUnit, topics, resolved.formatId);
+		(await getRecentFrqTopics(course, resolved.storedUnit).catch(() => [] as string[]));
+	const question = await generateFrq(course, resolved.storedUnit, topics, resolved.formatId);
 	const generationMs = Date.now() - generationStarted;
 	return persistFrqQuestion(question, generationMs, FRQ_GENERATION_MODEL);
 }

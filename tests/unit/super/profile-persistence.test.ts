@@ -90,7 +90,7 @@ describe('tutor profile persistence', () => {
 	it('updates the parent and replaces both relation sets in one batch', async () => {
 		const result = await updateTutorProfile('user-1', {
 			selectedApClasses: ['AP Biology', 'AP Chemistry'],
-			targetDates: [{ apClass: 'AP Biology', targetDate: '2027-05-10' }],
+			targetDates: [{ course: 'AP Biology', targetDate: '2027-05-10' }],
 			studyAvailability: 'Weeknights'
 		});
 

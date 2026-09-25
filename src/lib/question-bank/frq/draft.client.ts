@@ -81,7 +81,7 @@ export function parseFrqQuestionDraft(
 
 export function parseFrqLatestDraft(
 	raw: string | null,
-	context: { apClass: string; unit?: string },
+	context: { course: string; unit?: string },
 	now = Date.now()
 ): FrqLatestDraft | null {
 	const value = readStoredValue(raw);
@@ -90,7 +90,7 @@ export function parseFrqLatestDraft(
 	const questionResult = PublicFrqQuestionSchema.safeParse(value.question);
 	if (!questionResult.success) return null;
 	const question = questionResult.data;
-	if (question.apClass !== context.apClass || (context.unit && question.unit !== context.unit)) {
+	if (question.course !== context.course || (context.unit && question.unit !== context.unit)) {
 		return null;
 	}
 

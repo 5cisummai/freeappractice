@@ -13,7 +13,7 @@ export function createHistoryColumns(
 ): ColumnDef<HistoryItem>[] {
 	return [
 		{
-			accessorKey: 'attempt.apClass',
+			accessorKey: 'attempt.course',
 			id: 'subject',
 			header: ({ column }) =>
 				renderComponent(HistoryDataTableSortButton, {
@@ -31,12 +31,12 @@ export function createHistoryColumns(
 					};
 				});
 				return renderSnippet(subjectSnippet, {
-					subject: row.original.attempt.apClass,
+					subject: row.original.attempt.course,
 					unit: row.original.attempt.unit ?? ''
 				});
 			},
 			sortingFn: (rowA, rowB) =>
-				rowA.original.attempt.apClass.localeCompare(rowB.original.attempt.apClass)
+				rowA.original.attempt.course.localeCompare(rowB.original.attempt.course)
 		},
 		{
 			id: 'attemptedAt',

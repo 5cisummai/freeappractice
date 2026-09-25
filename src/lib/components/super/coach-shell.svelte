@@ -487,7 +487,7 @@
 		}
 		const pieces = [
 			formatDate(taskDate),
-			typeof task.apClass === 'string' ? task.apClass : null,
+			typeof task.course === 'string' ? task.course : null,
 			typeof task.unit === 'string' ? task.unit : null,
 			typeof task.durationMinutes === 'number' ? `${task.durationMinutes} min` : null
 		].filter((piece): piece is string => Boolean(piece));
@@ -507,9 +507,9 @@
 			if (Array.isArray(proposed.targetDates)) {
 				for (const target of proposed.targetDates.slice(0, 3)) {
 					const item = asRecord(target);
-					const apClass = typeof item.apClass === 'string' ? item.apClass : 'AP course';
+					const course = typeof item.course === 'string' ? item.course : 'AP course';
 					const date = formatDate(item.targetDate);
-					lines.push(date ? `${apClass} target: ${date}` : `${apClass} target date`);
+					lines.push(date ? `${course} target: ${date}` : `${course} target date`);
 				}
 			}
 			if (typeof proposed.studyAvailability === 'string' && proposed.studyAvailability.trim()) {

@@ -9,7 +9,7 @@ async function errorBody(result: ReturnType<typeof validateQuestionRequest>) {
 describe('validateQuestionRequest', () => {
 	it('accepts a valid class and unit', () => {
 		const result = validateQuestionRequest({
-			className: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1: Chemistry of Life',
 			excludeQuestionIds: ['a', ' a ', 'b', '']
 		});
@@ -17,33 +17,41 @@ describe('validateQuestionRequest', () => {
 		expect(result.ok).toBe(true);
 		if (!result.ok) return;
 		expect(result.value).toEqual({
-			className: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1: Chemistry of Life',
 			excludeQuestionIds: ['a', 'b']
 		});
 	});
 
-	it('requires a non-empty supported className', async () => {
+	it('requires a non-empty supported course', async () => {
 		expect((await errorBody(validateQuestionRequest({}))).status).toBe(400);
-		expect((await errorBody(validateQuestionRequest({ className: '  ' }))).status).toBe(400);
+		expect((await errorBody(validateQuestionRequest({ course: '  ' }))).status).toBe(400);
 		expect(
-			(await errorBody(validateQuestionRequest({ className: 'Not A Real Class' }))).body.error
+			(await errorBody(validateQuestionRequest({ course: 'Not A Real Class' }))).body.error
 		).toMatch(/supported AP course/);
 	});
 
-	it('rejects oversized className and unit', async () => {
-		expect((await errorBody(validateQuestionRequest({ className: 'A'.repeat(121) }))).status).toBe(
+	it('rejects oversized course and unit', async () => {
+		expect((await errorBody(validateQuestionRequest({ course: 'A'.repeat(121) }))).status).toBe(
 			400
 		);
 		expect(
-			(await errorBody(validateQuestionRequest({ className: 'AP Biology', unit: 'u'.repeat(201) })))
+			(await errorBody(validateQuestionRequest({ course: 'AP Biology', unit: 'u'.repeat(201) })))
 				.status
 		).toBe(400);
 	});
 
+	it('rejects unit aliases outside the course catalog', async () => {
+		const result = await errorBody(
+			validateQuestionRequest({ course: 'AP Biology', unit: 'Unit 1' })
+		);
+		expect(result.status).toBe(400);
+		expect(result.body.error).toMatch(/supported course unit/);
+	});
+
 	it('returns 410 when customTopic is provided', async () => {
 		const result = await errorBody(
-			validateQuestionRequest({ className: 'AP Biology', customTopic: 'mito' })
+			validateQuestionRequest({ course: 'AP Biology', customTopic: 'mito' })
 		);
 		expect(result.status).toBe(410);
 		expect(result.body.error).toMatch(/deprecated/);
@@ -51,17 +59,14 @@ describe('validateQuestionRequest', () => {
 
 	it('rejects non-array excludeQuestionIds and non-string ids', async () => {
 		expect(
-			(
-				await errorBody(
-					validateQuestionRequest({ className: 'AP Biology', excludeQuestionIds: 'x' })
-				)
-			).status
+			(await errorBody(validateQuestionRequest({ course: 'AP Biology', excludeQuestionIds: 'x' })))
+				.status
 		).toBe(400);
 		expect(
 			(
 				await errorBody(
 					validateQuestionRequest({
-						className: 'AP Biology',
+						course: 'AP Biology',
 						excludeQuestionIds: [1]
 					})
 				)
@@ -72,7 +77,7 @@ describe('validateQuestionRequest', () => {
 	it('caps excludeQuestionIds at 100 unique ids', () => {
 		const ids = Array.from({ length: 120 }, (_, i) => `id-${i}`);
 		const result = validateQuestionRequest({
-			className: 'AP Biology',
+			course: 'AP Biology',
 			excludeQuestionIds: ids
 		});
 		expect(result.ok).toBe(true);

@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('$lib/auth/server', () => ({ auth: { api: { listUsers: mocks.listUsers } } }));
 vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
 vi.mock('$lib/question-bank/gen-stats.server', () => ({
-	getMcqGenerationCountsByClass: vi.fn(async () => ({}))
+	getMcqGenerationCountsByCourse: vi.fn(async () => ({}))
 }));
 vi.mock('$lib/question-bank/quality/dashboard.server', () => ({
 	getQualityDashboardSnapshot: mocks.getQualityDashboardSnapshot

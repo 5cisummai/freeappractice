@@ -22,17 +22,17 @@ export interface IFrqQuestion extends FrqQuestionPayload {
 	updatedAt: Date;
 }
 
-const { apClass: apClassField, unit: unitField } = questionBucketFields(frqQuestions.data);
+const { course: courseField, unit: unitField } = questionBucketFields(frqQuestions.data);
 const formatField = sql<string>`${frqQuestions.data} ->> 'formatId'`;
 
 export function newFrqPoolRandomKey(): number {
 	return Math.random();
 }
 
-export async function countActiveFrqQuestions(apClass: string, unit: string): Promise<number> {
-	const filter = frqStoredPoolFilter(apClass, unit);
+export async function countActiveFrqQuestions(course: string, unit: string): Promise<number> {
+	const filter = frqStoredPoolFilter(course, unit);
 	const predicates = [
-		eq(apClassField, apClass),
+		eq(courseField, course),
 		eq(unitField, filter.unit),
 		eq(frqQuestions.active, true)
 	];
@@ -66,16 +66,16 @@ function frqQuestionRow(row: typeof frqQuestions.$inferSelect): IFrqQuestion {
 }
 
 export async function findFrqQuestionByPool(input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
 	fromPivot: 'after' | 'before';
 	onDatabaseInit?: (elapsedMs: number) => void;
 }): Promise<IFrqQuestion | null> {
-	const filter = frqStoredPoolFilter(input.apClass, input.unit);
+	const filter = frqStoredPoolFilter(input.course, input.unit);
 	const predicates = [
-		eq(apClassField, input.apClass),
+		eq(courseField, input.course),
 		eq(unitField, filter.unit),
 		ne(frqQuestions.active, false),
 		input.fromPivot === 'after'
@@ -142,7 +142,7 @@ export async function createFrqQuestion(
 		parts: input.parts,
 		mainTopic: resolveQuestionMainTopic(input.mainTopic, input.topicsCovered),
 		topicsCovered: input.topicsCovered,
-		apClass: input.apClass,
+		course: input.course,
 		unit: input.unit
 	});
 
@@ -151,7 +151,7 @@ export async function createFrqQuestion(
 		.values({
 			questionId,
 			kind: 'frq',
-			apClass: input.apClass,
+			course: input.course,
 			unit: input.unit,
 			contentHash: input.contentHash,
 			questionCreatedAt: createdAt,
@@ -163,7 +163,7 @@ export async function createFrqQuestion(
 			target: questionRegistry.questionId,
 			set: {
 				kind: 'frq',
-				apClass: input.apClass,
+				course: input.course,
 				unit: input.unit,
 				contentHash: input.contentHash,
 				updatedAt
@@ -200,7 +200,7 @@ export async function createFrqQuestion(
 			db.insert(questionRecentTopics).values({
 				id: randomUUID(),
 				kind: 'frq',
-				apClass: input.apClass,
+				course: input.course,
 				unit: input.unit,
 				topicsCovered,
 				questionId

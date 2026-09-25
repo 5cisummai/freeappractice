@@ -20,7 +20,7 @@ import type {
 	PoolRefillState as PoolRefillStateRow,
 	PoolRefillStatus
 } from '$lib/question-bank/pool-refill-types.server';
-import { getMcqGenerationCountsByClass } from '$lib/question-bank/gen-stats.server';
+import { getMcqGenerationCountsByCourse } from '$lib/question-bank/gen-stats.server';
 import { getQualityDashboardSnapshot } from '$lib/question-bank/quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-bank/quality/types';
 import { getSuperAdminOverview } from '$lib/super/admin.server';
@@ -60,7 +60,7 @@ interface AdminDashboardData {
 }
 
 type BucketAggRow = {
-	bucket: { apClass: string; unit: string };
+	bucket: { course: string; unit: string };
 	total: number;
 	oldestCreatedAt?: Date;
 	newestCreatedAt?: Date;
@@ -116,7 +116,7 @@ async function aggregateActiveBuckets(
 		questionType === 'mcq'
 			? await db
 					.select({
-						apClass: mcqBucket.apClass,
+						course: mcqBucket.course,
 						unit: mcqBucket.unit,
 						total: count(),
 						oldestCreatedAt: min(mcqQuestions.createdAt),
@@ -124,10 +124,10 @@ async function aggregateActiveBuckets(
 					})
 					.from(mcqQuestions)
 					.where(eq(mcqQuestions.active, true))
-					.groupBy(mcqBucket.apClass, mcqBucket.unit)
+					.groupBy(mcqBucket.course, mcqBucket.unit)
 			: await db
 					.select({
-						apClass: frqBucket.apClass,
+						course: frqBucket.course,
 						unit: frqBucket.unit,
 						total: count(),
 						oldestCreatedAt: min(frqQuestions.createdAt),
@@ -135,11 +135,11 @@ async function aggregateActiveBuckets(
 					})
 					.from(frqQuestions)
 					.where(eq(frqQuestions.active, true))
-					.groupBy(frqBucket.apClass, frqBucket.unit);
+					.groupBy(frqBucket.course, frqBucket.unit);
 	for (const row of rows) {
-		const key = `${row.apClass}::${row.unit}`;
+		const key = `${row.course}::${row.unit}`;
 		map.set(key, {
-			bucket: { apClass: row.apClass, unit: row.unit },
+			bucket: { course: row.course, unit: row.unit },
 			total: Number(row.total),
 			oldestCreatedAt: row.oldestCreatedAt ?? undefined,
 			newestCreatedAt: row.newestCreatedAt ?? undefined
@@ -164,7 +164,7 @@ function buildPoolBuckets(opts: {
 	>;
 }): CacheBucketSummary[] {
 	return opts.catalog.map((bucket) => {
-		const key = `${bucket.apClass}::${bucket.unit}`;
+		const key = `${bucket.course}::${bucket.unit}`;
 		const active = opts.activeByKey.get(key);
 		const refill = opts.refillByKey.get(key);
 		const activeCount = active?.total ?? refill?.observedCount ?? 0;
@@ -174,7 +174,7 @@ function buildPoolBuckets(opts: {
 
 		return {
 			questionType: opts.questionType,
-			apClass: bucket.apClass,
+			course: bucket.course,
 			unit: bucket.unit,
 			total: activeCount,
 			activeCount,
@@ -236,7 +236,7 @@ export async function getPoolReadinessSnapshot(): Promise<{
 	buckets: CacheBucketSummary[];
 }> {
 	const env = QUESTION_POOL_CONFIG;
-	const generationCountsByClass = await getMcqGenerationCountsByClass();
+	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
 	const mcqTarget = env.mcqTarget;
 	const frqTarget = env.frqTarget;
 
@@ -269,7 +269,7 @@ export async function getPoolReadinessSnapshot(): Promise<{
 
 	for (const state of refillStates as PoolRefillStateRow[]) {
 		const map = refillByType[state.questionType];
-		map.set(`${state.apClass}::${state.unit}`, {
+		map.set(`${state.course}::${state.unit}`, {
 			status: state.status,
 			lastSuccessAt: state.lastSuccessAt ?? null,
 			lastError: state.lastError ?? null,
@@ -283,8 +283,8 @@ export async function getPoolReadinessSnapshot(): Promise<{
 			targetFor: (bucket) =>
 				poolTargetForBucket({
 					questionType: 'mcq',
-					apClass: bucket.apClass,
-					generationCountsByClass,
+					course: bucket.course,
+					generationCountsByCourse,
 					config: env
 				}),
 			catalog: listCatalogBuckets('mcq'),
@@ -296,7 +296,7 @@ export async function getPoolReadinessSnapshot(): Promise<{
 			targetFor: (bucket) =>
 				poolTargetForBucket({
 					questionType: 'frq',
-					apClass: bucket.apClass,
+					course: bucket.course,
 					config: env
 				}),
 			catalog: listCatalogBuckets('frq'),
@@ -314,7 +314,7 @@ export async function getPoolReadinessSnapshot(): Promise<{
 		}
 		if (b.deficit !== a.deficit) return b.deficit - a.deficit;
 		if (a.questionType !== b.questionType) return a.questionType.localeCompare(b.questionType);
-		if (a.apClass !== b.apClass) return a.apClass.localeCompare(b.apClass);
+		if (a.course !== b.course) return a.course.localeCompare(b.course);
 		return a.unit.localeCompare(b.unit);
 	});
 
@@ -324,10 +324,10 @@ export async function getPoolReadinessSnapshot(): Promise<{
 	};
 }
 
-function executeReturningRows(result: unknown): Array<{ ap_class: string; unit: string }> {
-	if (Array.isArray(result)) return result as Array<{ ap_class: string; unit: string }>;
+function executeReturningRows(result: unknown): Array<{ course: string; unit: string }> {
+	if (Array.isArray(result)) return result as Array<{ course: string; unit: string }>;
 	if (result && typeof result === 'object' && 'rows' in result) {
-		return (result as { rows: Array<{ ap_class: string; unit: string }> }).rows ?? [];
+		return (result as { rows: Array<{ course: string; unit: string }> }).rows ?? [];
 	}
 	return [];
 }
@@ -354,7 +354,7 @@ export async function cancelPoolBucketRefill(
 		.where(
 			and(
 				eq(poolRefillStates.questionType, bucket.questionType),
-				eq(poolRefillStates.apClass, bucket.apClass),
+				eq(poolRefillStates.course, bucket.course),
 				eq(poolRefillStates.unit, bucket.unit),
 				or(
 					inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
@@ -377,11 +377,11 @@ export async function retirePoolBucketQuestions(
 ): Promise<{ retired: number; enqueued: true }> {
 	const table = bucket.questionType === 'mcq' ? mcqQuestions : frqQuestions;
 	const db = getNeonDatabase();
-	const { apClass, unit } = questionBucketFields(table.data);
+	const { course, unit } = questionBucketFields(table.data);
 	const rows = await db
 		.select({ questionId: table.questionId })
 		.from(table)
-		.where(and(eq(apClass, bucket.apClass), eq(unit, bucket.unit), eq(table.active, true)))
+		.where(and(eq(course, bucket.course), eq(unit, bucket.unit), eq(table.active, true)))
 		.orderBy(asc(table.createdAt))
 		.limit(quantity);
 	const questionIds = rows.map((row) => row.questionId);
@@ -411,13 +411,13 @@ export async function retireOldestPoolPercent(
 		WITH ranked AS (
 			SELECT
 				question_id,
-				data ->> 'apClass' AS ap_class,
+				data ->> 'course' AS course,
 				data ->> 'unit' AS unit,
 				ROW_NUMBER() OVER (
-					PARTITION BY data ->> 'apClass', data ->> 'unit'
+					PARTITION BY data ->> 'course', data ->> 'unit'
 					ORDER BY created_at ASC
 				) AS rn,
-				COUNT(*) OVER (PARTITION BY data ->> 'apClass', data ->> 'unit') AS bucket_count
+				COUNT(*) OVER (PARTITION BY data ->> 'course', data ->> 'unit') AS bucket_count
 			FROM ${sql.raw(`content.${table}`)}
 			WHERE active = true
 		)
@@ -426,7 +426,7 @@ export async function retireOldestPoolPercent(
 		FROM ranked
 		WHERE question.question_id = ranked.question_id
 			AND ranked.rn <= FLOOR(ranked.bucket_count * ${percent} / 100.0)
-		RETURNING ranked.ap_class AS ap_class, ranked.unit AS unit
+		RETURNING ranked.course AS course, ranked.unit AS unit
 	`;
 	const [mcqRetired, frqRetired] = await Promise.all([
 		db.execute(retireSql('mcq_questions')),
@@ -436,16 +436,16 @@ export async function retireOldestPoolPercent(
 	const frqRows = executeReturningRows(frqRetired);
 	const buckets = new Map<string, PoolBucketKey>();
 	for (const row of mcqRows) {
-		buckets.set(`mcq:${row.ap_class}:${row.unit}`, {
+		buckets.set(`mcq:${row.course}:${row.unit}`, {
 			questionType: 'mcq',
-			apClass: row.ap_class,
+			course: row.course,
 			unit: row.unit
 		});
 	}
 	for (const row of frqRows) {
-		buckets.set(`frq:${row.ap_class}:${row.unit}`, {
+		buckets.set(`frq:${row.course}:${row.unit}`, {
 			questionType: 'frq',
-			apClass: row.ap_class,
+			course: row.course,
 			unit: row.unit
 		});
 	}

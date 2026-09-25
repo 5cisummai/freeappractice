@@ -5,7 +5,7 @@ export type SharedQuizView = {
 	slug: string;
 	title: string;
 	kind: 'quiz';
-	apClass: string;
+	course: string;
 	unit: string;
 	itemCount: number;
 	creatorName: string | null;
@@ -16,7 +16,7 @@ export type SharedQuizView = {
 export type PendingSharedQuizRun = {
 	quizId: string;
 	sharedSlug?: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	startedAt: string;
 	retryCount: number;

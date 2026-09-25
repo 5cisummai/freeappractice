@@ -11,8 +11,8 @@ import {
 	readOnboardingIntent,
 	serializeCompletedOnboarding
 } from '$lib/onboarding.js';
-import { getCourses } from '$lib/catalog/ap-classes.js';
-import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
+import { getCourses } from '$lib/catalog/ap-courses.js';
+import { getUserCourses, updateUserCourses } from '$lib/users/model.server.js';
 import { getSuperBillingView, isSuperStripeConfigured } from '$lib/super/billing.server';
 import {
 	getPlanAccessForRequest,
@@ -20,7 +20,7 @@ import {
 } from '$lib/super/feature-access.server';
 import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 
-const validSubjects = new Set(getCourses().map((course) => course.name));
+const validCourses = new Set(getCourses().map((course) => course.name));
 const validGoals = new Set<string>(ONBOARDING_GOALS);
 
 export const load: PageServerLoad = async ({ cookies, url, locals }) => {
@@ -29,8 +29,8 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 	const isSuperQuery = url.searchParams.get('super') === '1';
 	const isSuperIntent =
 		isSuperQuery || readOnboardingIntent(cookies.get(ONBOARDING_INTENT_COOKIE_NAME)) === 'super';
-	const [selectedSubjects, profile] = await Promise.all([
-		getUserSubjects(locals.userId!),
+	const [selectedCourses, profile] = await Promise.all([
+		getUserCourses(locals.userId!),
 		getTutorProfileViewForRequest(locals, locals.userId!)
 	]);
 
@@ -60,7 +60,7 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 
 	if (!isSuperIntent) {
 		return {
-			selectedSubjects,
+			selectedCourses,
 			selectedGoals: currentState.goals,
 			superIntent: false,
 			ageConfirmedAt: profile.ageConfirmedAt,
@@ -80,7 +80,7 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 		]);
 
 	return {
-		selectedSubjects,
+		selectedCourses,
 		selectedGoals: currentState.goals,
 		superIntent: true,
 		ageConfirmedAt: profile.ageConfirmedAt,
@@ -99,25 +99,23 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 export const actions: Actions = {
 	default: async ({ cookies, request, locals }) => {
 		const formData = await request.formData();
-		const subjects = formData
-			.getAll('subjects')
-			.filter(
-				(subject): subject is string => typeof subject === 'string' && validSubjects.has(subject)
-			);
+		const courses = formData
+			.getAll('courses')
+			.filter((course): course is string => typeof course === 'string' && validCourses.has(course));
 		const goals = formData
 			.getAll('goals')
 			.filter((goal): goal is OnboardingGoal => typeof goal === 'string' && validGoals.has(goal));
 
-		if (subjects.length === 0) {
-			return fail(400, { error: 'Choose at least one subject to continue.' });
+		if (courses.length === 0) {
+			return fail(400, { error: 'Choose at least one course to continue.' });
 		}
 		if (goals.length === 0) {
 			return fail(400, { error: 'Choose at least one goal to continue.' });
 		}
 
-		await updateUserSubjects(locals.userId!, subjects);
+		await updateUserCourses(locals.userId!, courses);
 
-		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(subjects, goals), {
+		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(goals), {
 			...ONBOARDING_PENDING_COOKIE_OPTIONS
 		});
 		cookies.delete(ONBOARDING_INTENT_COOKIE_NAME, { path: '/' });

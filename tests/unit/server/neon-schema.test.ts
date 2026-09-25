@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { drizzle } from 'drizzle-orm/neon-http';
 import {
-	appSchema,
 	authAccounts,
 	authAccountsRelations,
 	authInvitations,
@@ -12,19 +11,13 @@ import {
 	authOrganizations,
 	authOrganizationsRelations,
 	authRateLimits,
-	authSchema,
 	authSessions,
 	authSessionsRelations,
 	authSubscriptions,
 	authUsers,
 	authUsersRelations,
 	authVerifications,
-	betterAuthSchema,
-	bugReports,
-	contentSchema,
-	opsSchema,
-	poolRefillStates,
-	questionRegistry
+	betterAuthSchema
 } from '$lib/server/neon/schema';
 
 const authAdapterOptions = {
@@ -70,10 +63,6 @@ async function compileAdapterJoin(
 
 describe('Neon Drizzle schema', () => {
 	it('keeps all PostgreSQL domains and Better Auth relations available', () => {
-		expect(authSchema).toBeDefined();
-		expect(appSchema).toBeDefined();
-		expect(contentSchema).toBeDefined();
-		expect(opsSchema).toBeDefined();
 		expect(betterAuthSchema).toEqual({
 			authUsers,
 			authSessions,
@@ -91,13 +80,6 @@ describe('Neon Drizzle schema', () => {
 			authMembersRelations,
 			authInvitationsRelations
 		});
-	});
-
-	it('exports domain tables directly from the barrel', () => {
-		expect(questionRegistry).toBeDefined();
-		expect(bugReports).toBeDefined();
-		expect(poolRefillStates).toBeDefined();
-		expect(authUsers).toBeDefined();
 	});
 
 	it.each([

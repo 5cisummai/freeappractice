@@ -11,7 +11,7 @@ function topicEntry(
 	overrides: Partial<ProgressEntry> & Pick<ProgressEntry, 'topics'>
 ): ProgressEntry {
 	return {
-		apClass: 'AP Biology',
+		course: 'AP Biology',
 		unit: 'Unit 4',
 		totalAttempts: 18,
 		mastery: 62,
@@ -69,14 +69,14 @@ describe('selectNextFocus', () => {
 	it('falls back to the lowest-mastery unit when no topic has enough attempts', () => {
 		const focus = selectNextFocus([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				totalAttempts: 8,
 				mastery: 80,
 				topics: [{ name: 'A', attempts: 1, correctAttempts: 1, mastery: 100 }]
 			},
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 4',
 				totalAttempts: 6,
 				mastery: 50,
@@ -99,7 +99,7 @@ describe('history chart derivations', () => {
 			kind: 'mcq',
 			attempt: {
 				questionId: 'q1',
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
@@ -122,7 +122,7 @@ describe('stacked activity derivation', () => {
 			kind: 'mcq',
 			attempt: {
 				questionId: 'q1',
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
@@ -133,7 +133,7 @@ describe('stacked activity derivation', () => {
 			kind: 'mcq',
 			attempt: {
 				questionId: 'q2',
-				apClass: 'AP Chemistry',
+				course: 'AP Chemistry',
 				unit: 'Unit 1',
 				selectedAnswer: 'A',
 				wasCorrect: true,
@@ -161,7 +161,7 @@ describe('stacked activity derivation', () => {
 					kind: 'mcq',
 					attempt: {
 						questionId: 'q3',
-						apClass: 'AP Biology',
+						course: 'AP Biology',
 						unit: 'Unit 2',
 						selectedAnswer: 'A' as const,
 						wasCorrect: true,
@@ -186,7 +186,7 @@ describe('stacked activity derivation', () => {
 			kind: 'mcq' as const,
 			attempt: {
 				questionId: `q-${index}`,
-				apClass: `AP Class ${index}`,
+				course: `AP Class ${index}`,
 				unit: 'Unit 1',
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
@@ -207,7 +207,7 @@ describe('stacked activity derivation', () => {
 			kind: 'mcq' as const,
 			attempt: {
 				questionId: `priority-q-${index}`,
-				apClass: `AP Priority Class ${index}`,
+				course: `AP Priority Class ${index}`,
 				unit: 'Unit 1',
 				selectedAnswer: 'A' as const,
 				wasCorrect: true,
@@ -229,7 +229,7 @@ describe('stacked activity derivation', () => {
 				kind: 'mcq',
 				attempt: {
 					questionId: 'recent-biology',
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1',
 					selectedAnswer: 'A',
 					wasCorrect: true,
@@ -240,7 +240,7 @@ describe('stacked activity derivation', () => {
 				kind: 'mcq' as const,
 				attempt: {
 					questionId: `older-chemistry-${index}`,
-					apClass: 'AP Chemistry',
+					course: 'AP Chemistry',
 					unit: 'Unit 1',
 					selectedAnswer: 'A' as const,
 					wasCorrect: true,
@@ -265,7 +265,7 @@ describe('accuracy scope derivation', () => {
 					kind: 'mcq',
 					attempt: {
 						questionId: 'accuracy-1',
-						apClass: 'AP Biology',
+						course: 'AP Biology',
 						unit: 'Unit 1',
 						selectedAnswer: 'A',
 						wasCorrect: true,
@@ -276,7 +276,7 @@ describe('accuracy scope derivation', () => {
 					kind: 'mcq',
 					attempt: {
 						questionId: 'accuracy-2',
-						apClass: 'AP Biology',
+						course: 'AP Biology',
 						unit: 'Unit 1',
 						selectedAnswer: 'A',
 						wasCorrect: false,
@@ -297,7 +297,7 @@ describe('accuracy scope derivation', () => {
 					kind: 'mcq',
 					attempt: {
 						questionId: 'unit-1',
-						apClass: 'AP Biology',
+						course: 'AP Biology',
 						unit: 'Unit 1',
 						selectedAnswer: 'A',
 						wasCorrect: true,
@@ -308,7 +308,7 @@ describe('accuracy scope derivation', () => {
 					kind: 'mcq',
 					attempt: {
 						questionId: 'unit-2',
-						apClass: 'AP Biology',
+						course: 'AP Biology',
 						unit: 'Unit 2',
 						selectedAnswer: 'A',
 						wasCorrect: false,

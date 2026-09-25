@@ -14,18 +14,17 @@ export const config = {
 	maxDuration: 15
 };
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request }) => {
 	const { path, recordMetric, prepare } = createQuestionPoolRequest(request);
 
 	try {
 		const prepared = await prepare();
 		if (!prepared.ok) return prepared.response;
 
-		const { className, unit: requestedUnit, excludeQuestionIds } = prepared.value;
-		const outcome = await mcqBank.get(className, requestedUnit, {
+		const { course, unit: requestedUnit, excludeQuestionIds } = prepared.value;
+		const outcome = await mcqBank.get(course, requestedUnit, {
 			excludeQuestionIds,
-			metrics: path,
-			allowRefill: Boolean(locals?.userId)
+			metrics: path
 		});
 
 		switch (outcome.status) {

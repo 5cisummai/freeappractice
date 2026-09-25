@@ -47,7 +47,7 @@ export async function submitQuestionFeedback(opts: {
 	questionId: string;
 	userId: string;
 	type: FeedbackType;
-	apClass?: string;
+	course?: string;
 	unit?: string;
 }): Promise<{ accepted: boolean; summary: FeedbackSummary }> {
 	const questionId = opts.questionId.trim();
@@ -66,7 +66,7 @@ export async function submitQuestionFeedback(opts: {
 				questionId,
 				userId: opts.userId,
 				type: opts.type,
-				apClass: opts.apClass,
+				course: opts.course,
 				unit: opts.unit
 			})
 			.onConflictDoNothing({
@@ -153,9 +153,7 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 		db
 			.select({
 				questionId: questionQuality.questionId,
-				apClass: sql<
-					string | null
-				>`coalesce(${questionQuality.apClass}, ${questionRegistry.apClass})`,
+				course: sql<string | null>`coalesce(${questionQuality.course}, ${questionRegistry.course})`,
 				unit: sql<string | null>`coalesce(${questionQuality.unit}, ${questionRegistry.unit})`,
 				feedbackPriority: questionQuality.feedbackPriority,
 				blindHumanReview: questionQuality.blindHumanReview,
@@ -188,7 +186,7 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 			const raw = question as Record<string, unknown> | null;
 			return {
 				questionId: quality.questionId,
-				apClass: quality.apClass ?? question?.apClass,
+				course: quality.course ?? question?.course,
 				unit: quality.unit ?? question?.unit,
 				stimulus:
 					typeof raw?.stimulus === 'string'

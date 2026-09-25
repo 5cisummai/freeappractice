@@ -8,7 +8,7 @@ describe('buildMcqPoolBatchLine', () => {
 	it('emits OpenAI Batch /v1/responses JSONL with strict ap_question schema', () => {
 		const line = buildMcqPoolBatchLine({
 			customId: 'mcq-0001',
-			className: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			recentTopics: ['photosynthesis overview'],
 			model: 'gpt-5.4-mini',
@@ -72,7 +72,7 @@ describe('buildMcqPoolBatchLine', () => {
 		const parsed = JSON.parse(
 			buildFrqPoolBatchLine({
 				customId: 'frq-0001',
-				apClass: 'AP English Language',
+				course: 'AP English Language',
 				unit: 'Unit 1: Chemistry of Life',
 				model: 'gpt-6-luna'
 			})

@@ -4,7 +4,7 @@ import Parallel from 'parallel-web';
 import { env } from '$env/dynamic/private';
 import { z } from 'zod';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
-import { getApCurriculumKnowledge, resolveApCurriculumCourseName } from '$lib/ap-knowledge/catalog';
+import { getApCurriculumKnowledge, listApCurriculumCourseNames } from '$lib/ap-knowledge/catalog';
 import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/super/ai-controls.server';
 import type { SuperToolsInput } from '$lib/super/agent-request';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
@@ -14,7 +14,7 @@ import {
 	getCoachUnitDetail
 } from '$lib/super/coach-reads.server';
 import { getCurrentSuperQuestion } from '$lib/super/context.server';
-import { apClassSchema, studyPlanToolInputSchema } from '$lib/super/coach-tool-schemas';
+import { courseSchema, studyPlanToolInputSchema } from '$lib/super/coach-tool-schemas';
 import { renderDiagram } from '$lib/super/diagram-renderer.server';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { addStudyPlanDays, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
@@ -27,7 +27,7 @@ import { getUserProgress } from '$lib/users/model.server';
 import { getQuizAttemptForCoach } from '$lib/users/quiz-history.server';
 
 const targetDateSchema = z.object({
-	apClass: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),
+	course: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),
 	targetDate: z
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -267,9 +267,9 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		read_course_catalog: tool({
 			description:
-				'Get the curated AP course and unit titles. Omit apClass to list supported courses; pass apClass without unit to get all its units; pass both to resolve one unit title. A course overview already includes every unit, so do not call once per unit. This catalog is not live exam policy; use official web sources for current rules and detailed topics.',
+				'Get the curated AP course and unit titles. Omit course to list supported courses; pass course without unit to get all its units; pass both to resolve one unit title. A course overview already includes every unit, so do not call once per unit. This catalog is not live exam policy; use official web sources for current rules and detailed topics.',
 			inputSchema: z.object({
-				apClass: apClassSchema
+				course: courseSchema
 					.optional()
 					.describe(
 						'Omit only to list supported courses; otherwise use a canonical app label or supported official alias.'
@@ -282,9 +282,9 @@ export function createSuperTools(input: SuperToolsInput) {
 					.optional()
 					.describe('Specific unit only. Omit for the full course; do not pass "all".')
 			}),
-			execute: async ({ apClass, unit }) =>
+			execute: async ({ course, unit }) =>
 				getApCurriculumKnowledge({
-					apClass,
+					course,
 					unit: unit?.toLowerCase() === 'all' ? undefined : unit
 				})
 		}),
@@ -305,7 +305,7 @@ export function createSuperTools(input: SuperToolsInput) {
 					.sort((a, b) => a.mastery - b.mastery || b.totalAttempts - a.totalAttempts)
 					.slice(0, 6)
 					.map((item) => ({
-						apClass: item.apClass,
+						course: item.course,
 						unit: item.unit,
 						mastery: item.mastery,
 						totalAttempts: item.totalAttempts,
@@ -351,7 +351,7 @@ export function createSuperTools(input: SuperToolsInput) {
 			description:
 				'Read MCQ mastery and up to five recent mistakes for one exact course/unit pair. Use for a named unit instead of read_progress_summary. If progress is null, there is no exact matching tracked progress; do not retry with abbreviated unit names.',
 			inputSchema: z.object({
-				apClass: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),
+				course: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),
 				unit: z
 					.string()
 					.trim()
@@ -361,13 +361,13 @@ export function createSuperTools(input: SuperToolsInput) {
 						'Exact full unit title from the catalog or student progress; do not use only "Unit 1".'
 					)
 			}),
-			execute: ({ apClass, unit }) => getCoachUnitDetail(userId, apClass, unit)
+			execute: ({ course, unit }) => getCoachUnitDetail(userId, course, unit)
 		}),
 		read_frq_performance: tool({
 			description:
 				'Read recent graded FRQ attempts with scores and feedback for each part. Use for FRQ writing questions, not MCQ mistakes. Omit filters for recent attempts across courses.',
 			inputSchema: z.object({
-				apClass: z
+				course: z
 					.string()
 					.trim()
 					.min(1)
@@ -454,7 +454,7 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		update_study_plan: tool({
 			description:
-				'Propose a new or updated weekly study plan only when the student asks to save or change it. Use weekStart as the first local calendar date of the plan in YYYY-MM-DD form, then schedule each task with dayOffset 0 through 6. Do not provide timestamps or a time zone. Use canonical AP course labels when possible; supported aliases are normalized. Each task lasts 5 to 30 minutes. Requires student approval before writing; use read_study_plan first when modifying an existing plan and preserve completed tasks. If the result has updated=false, report the returned error and do not claim the plan was saved.',
+				'Propose a new or updated weekly study plan only when the student asks to save or change it. Use weekStart as the first local calendar date of the plan in YYYY-MM-DD form, then schedule each task with dayOffset 0 through 6. Do not provide timestamps or a time zone. Use the listed AP course labels. Each task lasts 5 to 30 minutes. Requires student approval before writing; use read_study_plan first when modifying an existing plan and preserve completed tasks. If the result has updated=false, report the returned error and do not claim the plan was saved.',
 			inputSchema: studyPlanToolInputSchema,
 			strict: true,
 			needsApproval: true,
@@ -462,14 +462,13 @@ export function createSuperTools(input: SuperToolsInput) {
 				const denied = await coachWriteDenied(locals, userId);
 				if (denied) return { updated: false, error: denied };
 				const datedTasks: StudyTask[] = [];
-				for (const { dayOffset, apClass, practiceHref, ...task } of tasks) {
-					const canonicalApClass = resolveApCurriculumCourseName(apClass);
-					if (!canonicalApClass) {
-						return { updated: false, error: `Unsupported AP course: ${apClass}` };
+				for (const { dayOffset, course, practiceHref, ...task } of tasks) {
+					if (!listApCurriculumCourseNames().includes(course)) {
+						return { updated: false, error: `Unsupported AP course: ${course}` };
 					}
 					datedTasks.push({
 						...task,
-						apClass: canonicalApClass,
+						course,
 						...(practiceHref ? { practiceHref } : {}),
 						date: addStudyPlanDays(weekStart, dayOffset),
 						status: 'todo'
@@ -493,7 +492,7 @@ export function createSuperTools(input: SuperToolsInput) {
 							const proposed = proposedById.get(task.id);
 							return (
 								!proposed ||
-								proposed.apClass !== task.apClass ||
+								proposed.course !== task.course ||
 								proposed.unit !== task.unit ||
 								proposed.mode !== task.mode ||
 								proposed.date.slice(0, 10) !== task.date.slice(0, 10) ||

@@ -15,7 +15,7 @@ const ANSWER_LETTERS = new Set(['A', 'B', 'C', 'D']);
 type QuizAttemptInput = {
 	quizId?: unknown;
 	sharedSlug?: unknown;
-	apClass?: unknown;
+	course?: unknown;
 	unit?: unknown;
 	startedAt?: unknown;
 	items?: unknown;
@@ -44,7 +44,7 @@ export type PersistQuizAttemptResult =
 
 export type CoachQuizAttempt = {
 	quizId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	requestedCount: number;
 	answeredCount: number;
@@ -137,11 +137,11 @@ export async function persistQuizAttempt(
 	const input = body as QuizAttemptInput;
 	const quizId = asTrimmedString(input.quizId);
 	const sharedSlug = asTrimmedString(input.sharedSlug);
-	const apClass = sharedSlug ? '' : asTrimmedString(input.apClass);
+	const course = sharedSlug ? '' : asTrimmedString(input.course);
 	const unit = sharedSlug ? 'All Units' : asTrimmedString(input.unit) || 'All Units';
 	const items = parseQuizQuestions(input.items);
 
-	if ((!apClass && !sharedSlug) || apClass.length > 120 || unit.length > 120) {
+	if ((!course && !sharedSlug) || course.length > 120 || unit.length > 120) {
 		return { status: 400, body: { error: 'A valid class and unit are required.' } };
 	}
 	if (quizId && !UUID_PATTERN.test(quizId)) {
@@ -167,7 +167,7 @@ export async function persistQuizAttempt(
 		}
 	}
 
-	const resolvedApClass = sharedQuiz?.status === 'ready' ? sharedQuiz.apClass : apClass;
+	const resolvedApClass = sharedQuiz?.status === 'ready' ? sharedQuiz.course : course;
 	const resolvedUnit = sharedQuiz?.status === 'ready' ? sharedQuiz.unit : unit;
 	const expectedSharedPracticeSetId = sharedQuiz?.status === 'ready' ? sharedQuiz.id : null;
 
@@ -218,7 +218,7 @@ export async function persistQuizAttempt(
 		.values({
 			id: persistedQuizId,
 			userId,
-			apClass: resolvedApClass,
+			course: resolvedApClass,
 			unit: resolvedUnit,
 			requestedCount: items.length,
 			answeredCount,
@@ -278,7 +278,7 @@ export async function persistQuizAttempt(
 					userId,
 					{
 						questionId: item.questionId,
-						apClass: question.apClass ?? resolvedApClass,
+						course: question.course ?? resolvedApClass,
 						unit: question.unit ?? resolvedUnit,
 						selectedAnswer: item.selectedAnswer!,
 						wasCorrect: item.selectedAnswer === question.correctAnswer,
@@ -313,7 +313,7 @@ export async function getQuizAttemptForCoach(
 	const [summary] = await db
 		.select({
 			id: quizAttempts.id,
-			apClass: quizAttempts.apClass,
+			course: quizAttempts.course,
 			unit: quizAttempts.unit,
 			requestedCount: quizAttempts.requestedCount,
 			answeredCount: quizAttempts.answeredCount,
@@ -345,7 +345,7 @@ export async function getQuizAttemptForCoach(
 
 	return {
 		quizId: summary.id,
-		apClass: summary.apClass,
+		course: summary.course,
 		unit: summary.unit,
 		requestedCount: summary.requestedCount,
 		answeredCount: summary.answeredCount,

@@ -4,7 +4,7 @@
 
 	type QuestionTutorProps = {
 		tutorMode?: TutorMode;
-		apClass?: string;
+		course?: string;
 		unit?: string;
 		questionId?: string;
 		frqQuestionId?: string;
@@ -15,7 +15,7 @@
 
 	let {
 		tutorMode = 'free',
-		apClass = '',
+		course = '',
 		unit = '',
 		questionId = '',
 		frqQuestionId = '',
@@ -27,7 +27,7 @@
 
 {#if tutorMode !== 'hidden'}
 	<TutorWidget
-		{apClass}
+		{course}
 		{unit}
 		{questionId}
 		{frqQuestionId}

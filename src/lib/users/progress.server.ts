@@ -6,13 +6,13 @@ import { getQuestionsLookupMap } from '$lib/question-bank/mcq/repository.server'
 
 export function findOrCreateProgressEntry(
 	progress: IProgress[],
-	apClass: string,
+	course: string,
 	unit: string
 ): IProgress {
-	let entry = progress.find((p) => p.apClass === apClass && p.unit === unit);
+	let entry = progress.find((p) => p.course === course && p.unit === unit);
 	if (!entry) {
 		progress.push({
-			apClass,
+			course,
 			unit,
 			completed: false,
 			mastery: 0,
@@ -32,14 +32,14 @@ const DELTA_MIN_WINDOW = 5;
  * the 10 before that. Undefined until both windows have enough attempts.
  */
 function computeRecentDelta(
-	attempts: { apClass: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[],
-	apClass: string,
+	attempts: { course: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[],
+	course: string,
 	unit: string
 ): number | undefined {
 	const unitAttempts = attempts
 		.filter(
 			(attempt) =>
-				attempt.apClass === apClass &&
+				attempt.course === course &&
 				(attempt.unit ?? '') === unit &&
 				attempt.wasCorrect !== undefined
 		)
@@ -56,14 +56,14 @@ function computeRecentDelta(
 }
 
 function computeRecentMistakes(
-	attempts: { apClass: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[],
-	apClass: string,
+	attempts: { course: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[],
+	course: string,
 	unit: string
 ): number {
 	return attempts
 		.filter(
 			(attempt) =>
-				attempt.apClass === apClass && (attempt.unit ?? '') === unit && attempt.wasCorrect === false
+				attempt.course === course && (attempt.unit ?? '') === unit && attempt.wasCorrect === false
 		)
 		.sort((a, b) => new Date(b.attemptedAt).getTime() - new Date(a.attemptedAt).getTime())
 		.slice(0, 10).length;
@@ -71,7 +71,7 @@ function computeRecentMistakes(
 
 export function buildProgressData(user: IUserProfile): ProgressEntry[] {
 	const attempts = (user.questionHistory ?? []).map((attempt) => ({
-		apClass: attempt.apClass,
+		course: attempt.course,
 		unit: attempt.unit ?? '',
 		wasCorrect: attempt.wasCorrect,
 		attemptedAt: attempt.attemptedAt
@@ -81,11 +81,11 @@ export function buildProgressData(user: IUserProfile): ProgressEntry[] {
 
 export function buildProgressDataFromAttempts(
 	progress: IProgress[],
-	attempts: { apClass: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[]
+	attempts: { course: string; unit: string; wasCorrect?: boolean; attemptedAt: Date }[]
 ): ProgressEntry[] {
 	return progress.map((entry) => {
 		const result: ProgressEntry = {
-			apClass: entry.apClass,
+			course: entry.course,
 			unit: entry.unit,
 			totalAttempts: entry.totalAttempts,
 			correctAttempts: entry.correctAttempts,
@@ -93,8 +93,8 @@ export function buildProgressDataFromAttempts(
 			lastAttemptAt: entry.lastAttemptAt?.toISOString()
 		};
 		if (attempts.length) {
-			result.recentDelta = computeRecentDelta(attempts, entry.apClass, entry.unit);
-			result.recentMistakes = computeRecentMistakes(attempts, entry.apClass, entry.unit);
+			result.recentDelta = computeRecentDelta(attempts, entry.course, entry.unit);
+			result.recentMistakes = computeRecentMistakes(attempts, entry.course, entry.unit);
 		}
 		return result;
 	});
@@ -122,7 +122,7 @@ export async function addTopicProgressData(
 		if (!rawTopic) continue;
 		const name = topicName(rawTopic);
 		if (!name) continue;
-		const unitKey = `${attempt.apClass}\u0000${attempt.unit}`;
+		const unitKey = `${attempt.course}\u0000${attempt.unit}`;
 		const byTopic = topicsByUnit.get(unitKey) ?? new Map<string, MasteryTopic>();
 		const topic = byTopic.get(name) ?? {
 			name,
@@ -144,7 +144,7 @@ export async function addTopicProgressData(
 
 	return progress.map((entry) => ({
 		...entry,
-		topics: [...(topicsByUnit.get(`${entry.apClass}\u0000${entry.unit}`)?.values() ?? [])].sort(
+		topics: [...(topicsByUnit.get(`${entry.course}\u0000${entry.unit}`)?.values() ?? [])].sort(
 			(a, b) => b.attempts - a.attempts || a.name.localeCompare(b.name)
 		)
 	}));
@@ -155,12 +155,12 @@ export function mergeFrqProgress(
 	frqProgress: FrqProgressSummary[]
 ): ProgressEntry[] {
 	const byKey = new Map(
-		mcqProgress.map((entry) => [`${entry.apClass}\u0000${entry.unit}`, { ...entry }])
+		mcqProgress.map((entry) => [`${entry.course}\u0000${entry.unit}`, { ...entry }])
 	);
 	for (const frq of frqProgress) {
-		const key = `${frq.apClass}\u0000${frq.unit}`;
+		const key = `${frq.course}\u0000${frq.unit}`;
 		const entry = byKey.get(key) ?? {
-			apClass: frq.apClass,
+			course: frq.course,
 			unit: frq.unit,
 			totalAttempts: 0,
 			correctAttempts: 0,

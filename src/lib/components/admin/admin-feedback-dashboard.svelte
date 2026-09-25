@@ -39,12 +39,12 @@
 	function questionContext(item: AdminFeedbackItem): string | null {
 		if (item.source !== 'bug_report' || !item.metadata) return null;
 		const questionNumber = item.metadata.questionNumber;
-		const selectedClass = item.metadata.selectedClass;
+		const selectedCourse = item.metadata.selectedCourse;
 		const selectedUnit = item.metadata.selectedUnit;
 		if (typeof questionNumber !== 'string' && typeof questionNumber !== 'number') return null;
 
 		const parts = [`Question ${questionNumber}`];
-		if (typeof selectedClass === 'string' && selectedClass) parts.push(selectedClass);
+		if (typeof selectedCourse === 'string' && selectedCourse) parts.push(selectedCourse);
 		if (typeof selectedUnit === 'string' && selectedUnit) parts.push(selectedUnit);
 		return parts.join(' · ');
 	}

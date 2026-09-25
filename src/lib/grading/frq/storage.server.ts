@@ -9,7 +9,7 @@ export interface IFrqAttempt {
 	userId: string;
 	submissionId: string;
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	formatId: string;
 	responses: Record<string, string>;
@@ -30,7 +30,7 @@ function toAttempt(row: typeof frqAttempts.$inferSelect): IFrqAttempt {
 		userId: row.userId,
 		submissionId: row.submissionId,
 		questionId: row.questionId,
-		apClass: row.apClass,
+		course: row.course,
 		unit: row.unit,
 		formatId: row.formatId,
 		responses: row.responses,
@@ -92,7 +92,7 @@ export async function findGradedFrqAttempt(
 
 export type RecentGradedFrqAttemptQuery = {
 	limit?: number;
-	apClass?: string;
+	course?: string;
 	unit?: string;
 };
 
@@ -109,7 +109,7 @@ export async function findRecentGradedFrqAttempts(
 			and(
 				eq(frqAttempts.userId, userId),
 				eq(frqAttempts.status, 'graded'),
-				normalized.apClass ? eq(frqAttempts.apClass, normalized.apClass) : undefined,
+				normalized.course ? eq(frqAttempts.course, normalized.course) : undefined,
 				normalized.unit ? eq(frqAttempts.unit, normalized.unit) : undefined
 			)
 		)

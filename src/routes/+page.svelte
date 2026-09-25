@@ -306,7 +306,7 @@
 					>
 						<PracticeRunner
 							initial={{
-								selectedClass: 'AP World History',
+								selectedCourse: 'AP World History',
 								selectedUnit: 'Unit 1: The Global Tapestry'
 							}}
 							capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}

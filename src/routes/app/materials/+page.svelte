@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
-	import { getSubjectPresentation } from '$lib/onboarding-subjects.js';
+	import { getCoursePresentation } from '$lib/onboarding-courses.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import EmptyState from '$lib/components/app/empty-state.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
@@ -72,20 +72,20 @@
 	{#if data.materials.length > 0}
 		<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 			{#each data.materials as material (material.id)}
-				{@const subject = getSubjectPresentation(material.apClass)}
-				{@const SubjectIcon = subject.icon}
+				{@const course = getCoursePresentation(material.course)}
+				{@const CourseIcon = course.icon}
 				<Card.Root class="flex flex-col overflow-hidden border-border/70 py-0 shadow-sm">
 					<Card.Content class="flex flex-1 flex-col gap-4 p-5">
 						<div class="flex items-start gap-3">
 							<div
-								class="flex size-11 shrink-0 items-center justify-center rounded-xl {subject.iconClass}"
+								class="flex size-11 shrink-0 items-center justify-center rounded-xl {course.iconClass}"
 							>
-								<SubjectIcon class="size-5" />
+								<CourseIcon class="size-5" />
 							</div>
 							<div class="min-w-0 flex-1 space-y-1">
 								<p class="line-clamp-2 leading-snug font-medium">{material.title}</p>
 								<p class="text-sm text-muted-foreground">
-									{material.apClass}
+									{material.course}
 									{#if material.unit && material.unit !== 'All Units'}
 										· {material.unit}
 									{/if}

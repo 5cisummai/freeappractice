@@ -14,7 +14,7 @@ const MAX_EXCLUDED_QUESTION_IDS = 50;
 
 async function getRecentQuestionIds(
 	userId: string,
-	apClass: string,
+	course: string,
 	mode: 'mcq' | 'frq'
 ): Promise<string[]> {
 	const db = getNeonDatabase();
@@ -22,7 +22,7 @@ async function getRecentQuestionIds(
 		const rows = await db
 			.select({ questionId: frqAttempts.questionId })
 			.from(frqAttempts)
-			.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.apClass, apClass)))
+			.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.course, course)))
 			.orderBy(desc(frqAttempts.createdAt), desc(frqAttempts.id))
 			.limit(MAX_EXCLUDED_QUESTION_IDS);
 		return [...new Set(rows.map((row) => row.questionId))];
@@ -31,7 +31,7 @@ async function getRecentQuestionIds(
 	const rows = await db
 		.select({ questionId: mcqAttempts.questionId })
 		.from(mcqAttempts)
-		.where(and(eq(mcqAttempts.userId, userId), eq(mcqAttempts.apClass, apClass)))
+		.where(and(eq(mcqAttempts.userId, userId), eq(mcqAttempts.course, course)))
 		.orderBy(desc(mcqAttempts.attemptedAt), desc(mcqAttempts.id))
 		.limit(MAX_EXCLUDED_QUESTION_IDS);
 	return [...new Set(rows.map((row) => row.questionId))];
@@ -39,7 +39,7 @@ async function getRecentQuestionIds(
 
 function mcqCoachOutput(input: {
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	prompt: string;
 	optionA: string;
@@ -54,10 +54,10 @@ function mcqCoachOutput(input: {
 		kind: 'practice_question',
 		mode: 'mcq',
 		questionId: input.questionId,
-		apClass: input.apClass,
+		course: input.course,
 		unit: input.unit,
 		practiceHref: buildCoachPracticeHref({
-			apClass: input.apClass,
+			course: input.course,
 			unit: input.unit,
 			mode: 'mcq',
 			questionId: input.questionId
@@ -78,22 +78,22 @@ function mcqCoachOutput(input: {
 export async function giveCoachPracticeQuestion(
 	userId: string,
 	input: {
-		apClass: string;
+		course: string;
 		unit?: string;
 		mode?: 'mcq' | 'frq';
 	}
 ): Promise<CoachPracticeQuestionOutput | { error: string; retryAfterSeconds?: number }> {
 	const mode = input.mode ?? 'mcq';
-	const apClass = input.apClass.trim();
+	const course = input.course.trim();
 	const unit = input.unit?.trim() ?? '';
-	const excludeQuestionIds = await getRecentQuestionIds(userId, apClass, mode);
+	const excludeQuestionIds = await getRecentQuestionIds(userId, course, mode);
 
 	if (mode === 'frq') {
-		if (!getFrqCourseProfile(apClass)) {
+		if (!getFrqCourseProfile(course)) {
 			return { error: 'Written-response practice is not available for this course.' };
 		}
-		const poolUnit = resolveFrqPoolRequest(apClass, unit).poolUnit;
-		const outcome = await frqBank.get(apClass, poolUnit, { excludeQuestionIds, allowRefill: true });
+		const poolUnit = resolveFrqPoolRequest(course, unit).poolUnit;
+		const outcome = await frqBank.get(course, poolUnit, { excludeQuestionIds, allowRefill: true });
 		if (outcome.status === 'warming') {
 			return {
 				error: 'Written-response practice is warming up. Please try again shortly.',
@@ -109,10 +109,10 @@ export async function giveCoachPracticeQuestion(
 			kind: 'practice_question',
 			mode: 'frq',
 			questionId,
-			apClass: publicQuestion.apClass,
+			course: publicQuestion.course,
 			unit: publicQuestion.unit,
 			practiceHref: buildCoachPracticeHref({
-				apClass: publicQuestion.apClass,
+				course: publicQuestion.course,
 				unit: publicQuestion.unit,
 				mode: 'frq',
 				questionId
@@ -130,7 +130,7 @@ export async function giveCoachPracticeQuestion(
 		};
 	}
 
-	const outcome = await mcqBank.get(apClass, unit, { excludeQuestionIds, allowRefill: true });
+	const outcome = await mcqBank.get(course, unit, { excludeQuestionIds, allowRefill: true });
 	if (outcome.status === 'warming') {
 		return {
 			error: 'Question pool is warming up. Please try again shortly.',
@@ -141,10 +141,10 @@ export async function giveCoachPracticeQuestion(
 		return { error: 'Could not load a practice question right now.' };
 	}
 
-	const { answer, questionId, apClass: resolvedClass, unit: resolvedUnit } = outcome.result;
+	const { answer, questionId, course: resolvedCourse, unit: resolvedUnit } = outcome.result;
 	return mcqCoachOutput({
 		questionId,
-		apClass: resolvedClass,
+		course: resolvedCourse,
 		unit: resolvedUnit || unit || 'All Units',
 		prompt: answer.question,
 		optionA: answer.optionA,

@@ -56,7 +56,7 @@ describe('POST /api/question selection-only boundary', () => {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
-					className: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1: Chemistry of Life'
 				})
 			})
@@ -75,11 +75,12 @@ describe('POST /api/question selection-only boundary', () => {
 		expect(getQuestion).toHaveBeenCalledWith(
 			'AP Biology',
 			'Unit 1: Chemistry of Life',
-			expect.objectContaining({ allowRefill: false })
+			expect.any(Object)
 		);
+		expect(getQuestion.mock.calls[0][2]).not.toHaveProperty('allowRefill');
 	});
 
-	it('allows an authenticated pool miss to schedule a refill', async () => {
+	it('does not request a refill from the session-free endpoint', async () => {
 		getQuestion.mockResolvedValueOnce({ status: 'warming', retryAfterSeconds: 15 });
 
 		await POST({
@@ -87,7 +88,7 @@ describe('POST /api/question selection-only boundary', () => {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
-					className: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1: Chemistry of Life'
 				})
 			}),
@@ -97,8 +98,9 @@ describe('POST /api/question selection-only boundary', () => {
 		expect(getQuestion).toHaveBeenCalledWith(
 			'AP Biology',
 			'Unit 1: Chemistry of Life',
-			expect.objectContaining({ allowRefill: true })
+			expect.any(Object)
 		);
+		expect(getQuestion.mock.calls[0][2]).not.toHaveProperty('allowRefill');
 	});
 
 	it('returns POOL_UNAVAILABLE on DB failure without invoking generation', async () => {
@@ -112,7 +114,7 @@ describe('POST /api/question selection-only boundary', () => {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
-					className: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1: Chemistry of Life'
 				})
 			})
@@ -143,7 +145,7 @@ describe('POST /api/question selection-only boundary', () => {
 				model: 'cached',
 				cached: true,
 				questionId: 'q-hit-1',
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1: Chemistry of Life'
 			}
 		});
@@ -153,7 +155,7 @@ describe('POST /api/question selection-only boundary', () => {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
-					className: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1: Chemistry of Life'
 				})
 			})

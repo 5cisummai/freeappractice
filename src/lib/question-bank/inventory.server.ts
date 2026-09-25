@@ -14,7 +14,7 @@ export type QuestionInventoryKind = 'mcq' | 'frq';
 export type InventoryQuestion = {
 	kind: QuestionInventoryKind;
 	id: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	createdAt: string;
 	contentHash?: string;
@@ -31,7 +31,7 @@ function normalizeMcq(question: StoredQuestion): InventoryQuestion {
 	return {
 		kind: 'mcq',
 		id: question.id,
-		apClass: question.apClass ?? '',
+		course: question.course ?? '',
 		unit: question.unit ?? '',
 		createdAt: question.createdAt,
 		contentHash: question.contentHash,
@@ -43,7 +43,7 @@ function normalizeFrq(question: IFrqQuestion): InventoryQuestion {
 	return {
 		kind: 'frq',
 		id: question.questionId,
-		apClass: question.apClass,
+		course: question.course,
 		unit: question.unit,
 		createdAt: question.createdAt.toISOString(),
 		contentHash: question.contentHash,

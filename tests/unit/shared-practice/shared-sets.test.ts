@@ -20,7 +20,7 @@ import {
 
 const question = {
 	id: 'question-1',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	contentHash: 'hash-1'
 };
 

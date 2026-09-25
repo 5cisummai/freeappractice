@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCourses } from '$lib/catalog/ap-classes';
+import { getCourses } from '$lib/catalog/ap-courses';
 import {
 	buildMcqGenerationPrompt,
 	buildStimulusSetGenerationPrompt,
@@ -30,7 +30,7 @@ describe('MCQ unit context (exact catalog keys)', () => {
 
 	it('embeds deterministic unit context into the MCQ generation prompt', () => {
 		const { system } = buildMcqGenerationPrompt({
-			className: 'AP Calculus AB',
+			course: 'AP Calculus AB',
 			unit: 'Unit 1: Limits and Continuity'
 		});
 		expect(system).toContain('UNIT FOCUS: Unit 1: Limits and Continuity');
@@ -40,7 +40,7 @@ describe('MCQ unit context (exact catalog keys)', () => {
 
 	it('embeds the local Examfig field reference into stimulus prompts', () => {
 		const { system } = buildStimulusSetGenerationPrompt({
-			className: 'AP Human Geography',
+			course: 'AP Human Geography',
 			unit: 'Unit 1: Thinking Geographically',
 			childCount: 3,
 			mode: 'diagram'
@@ -60,12 +60,12 @@ describe('MCQ unit context (exact catalog keys)', () => {
 
 	it('omits unavailable diagram guidance instead of describing it as disabled', () => {
 		const questionPrompt = buildMcqGenerationPrompt({
-			className: 'AP Calculus AB',
+			course: 'AP Calculus AB',
 			unit: 'Unit 1: Limits and Continuity',
 			diagramsEnabled: false
 		});
 		const textStimulusPrompt = buildStimulusSetGenerationPrompt({
-			className: 'AP Human Geography',
+			course: 'AP Human Geography',
 			unit: 'Unit 1: Thinking Geographically',
 			childCount: 3,
 			mode: 'text'

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getUnitsForClass } from '$lib/catalog/ap-classes';
+import { getUnitsForCourse } from '$lib/catalog/ap-courses';
 import { AP_DATA } from '$lib/data/ap-data';
 import {
 	buildFrqGenerationPrompt,
@@ -345,10 +345,10 @@ describe('FRQ format records', () => {
 			formatId: 'synthesis'
 		});
 		const biology = resolveFrqPoolRequest('AP Biology', '');
-		expect(getUnitsForClass('AP Biology')).toContain(biology.storedUnit);
+		expect(getUnitsForCourse('AP Biology')).toContain(biology.storedUnit);
 		expect(biology.poolUnit).toBe(biology.storedUnit);
 		const chemistry = resolveFrqPoolRequest('AP Chemistry', 'All Units');
-		expect(getUnitsForClass('AP Chemistry')).toContain(chemistry.storedUnit);
+		expect(getUnitsForCourse('AP Chemistry')).toContain(chemistry.storedUnit);
 		expect(chemistry.poolUnit).toBe(chemistry.storedUnit);
 		const kept = resolveFrqPoolRequest('AP Biology', 'Unit 3: Cellular Energetics');
 		expect(kept.storedUnit).toBe('Unit 3: Cellular Energetics');

@@ -113,29 +113,29 @@ export function captureLandingPageViewed(): void {
 	captureActivation(ACTIVATION_EVENTS.landingPageViewed, { path: '/' });
 }
 
-export function capturePracticeSelectorUsed(apClass: string, unit: string): void {
-	if (!apClass.trim()) return;
+export function capturePracticeSelectorUsed(course: string, unit: string): void {
+	if (!course.trim()) return;
 	captureActivation(ACTIVATION_EVENTS.practiceSelectorUsed, {
-		ap_class: apClass,
+		course: course,
 		unit
 	});
 }
 
-export function captureGenerateClicked(apClass: string, unit: string): void {
+export function captureGenerateClicked(course: string, unit: string): void {
 	captureActivation(ACTIVATION_EVENTS.generateClicked, {
-		ap_class: apClass,
+		course: course,
 		unit
 	});
 }
 
 export function captureQuestionRequestSucceeded(opts: {
-	apClass: string;
+	course: string;
 	unit: string;
 	source: QuestionSource;
 	latencyMs: number;
 }): void {
 	captureActivation(ACTIVATION_EVENTS.questionRequestSucceeded, {
-		ap_class: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		source: opts.source,
 		latency_ms: opts.latencyMs,
@@ -144,14 +144,14 @@ export function captureQuestionRequestSucceeded(opts: {
 }
 
 export function captureQuestionRequestFailed(opts: {
-	apClass: string;
+	course: string;
 	unit: string;
 	failureKind: QuestionFailureKind;
 	status?: number | null;
 	latencyMs?: number;
 }): void {
 	captureActivation(ACTIVATION_EVENTS.questionRequestFailed, {
-		ap_class: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		failure_kind: opts.failureKind,
 		...(opts.status != null ? { status: opts.status } : {}),
@@ -162,7 +162,7 @@ export function captureQuestionRequestFailed(opts: {
 }
 
 export function captureFirstAnswerSubmitted(opts: {
-	apClass: string;
+	course: string;
 	unit: string;
 	isCorrect: boolean;
 	timeTakenMs: number;
@@ -182,7 +182,7 @@ export function captureFirstAnswerSubmitted(opts: {
 	firstAnswerCapturedThisSession = true;
 
 	captureActivation(ACTIVATION_EVENTS.firstAnswerSubmitted, {
-		ap_class: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		is_correct: opts.isCorrect,
 		time_taken_ms: opts.timeTakenMs,

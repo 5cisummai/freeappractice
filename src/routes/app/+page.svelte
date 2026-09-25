@@ -15,7 +15,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import type { StudyTask } from '$lib/super/types';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
-	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
+	import { onboardingCourses } from '$lib/onboarding-courses.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const SUBJECT_PROGRESS_GOAL = 100;
@@ -52,58 +52,58 @@
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
 	);
 
-	const answeredBySubject = $derived(
-		new Map((statsData?.subjectBreakdown ?? []).map((entry) => [entry.subject, entry.total]))
+	const answeredByCourse = $derived(
+		new Map((statsData?.courseBreakdown ?? []).map((entry) => [entry.course, entry.total]))
 	);
 
-	const lastMcqAtBySubject = $derived.by(() => {
+	const lastMcqAtByCourse = $derived.by(() => {
 		const map = new SvelteMap<string, string>();
 		for (const entry of progressData) {
 			if (!entry.lastAttemptAt) continue;
-			const current = map.get(entry.apClass);
+			const current = map.get(entry.course);
 			if (!current || entry.lastAttemptAt > current) {
-				map.set(entry.apClass, entry.lastAttemptAt);
+				map.set(entry.course, entry.lastAttemptAt);
 			}
 		}
 		return map;
 	});
 
-	const subjectMeta = new Map(onboardingSubjects.map((subject) => [subject.name, subject]));
+	const courseMeta = new Map(onboardingCourses.map((course) => [course.name, course]));
 
-	const subjectCards = $derived.by(() =>
-		((data.selectedSubjects as string[] | undefined) ?? [])
+	const courseCards = $derived.by(() =>
+		((data.selectedCourses as string[] | undefined) ?? [])
 			.map((name) => {
-				const subject = subjectMeta.get(name);
-				if (!subject) return null;
+				const course = courseMeta.get(name);
+				if (!course) return null;
 
-				const answered = answeredBySubject.get(name) ?? 0;
+				const answered = answeredByCourse.get(name) ?? 0;
 				const shown = Math.min(answered, SUBJECT_PROGRESS_GOAL);
 				const percent = Math.min(
 					Math.floor((answered / SUBJECT_PROGRESS_GOAL) * 100),
 					SUBJECT_PROGRESS_GOAL
 				);
-				const lastPracticedAt = lastMcqAtBySubject.get(name) ?? null;
+				const lastPracticedAt = lastMcqAtByCourse.get(name) ?? null;
 
 				return {
-					...subject,
+					...course,
 					answered,
 					shown,
 					percent,
 					lastPracticedAt,
-					href: `${resolve('/app/practice')}?apClass=${encodeURIComponent(name)}`
+					href: `${resolve('/app/practice')}?course=${encodeURIComponent(name)}`
 				};
 			})
-			.filter((subject): subject is NonNullable<typeof subject> => subject !== null)
+			.filter((course): course is NonNullable<typeof course> => course !== null)
 	);
 
 	const recommendation = $derived.by(() => {
-		if (subjectCards.length === 0) return null;
+		if (courseCards.length === 0) return null;
 
-		let best = subjectCards[0];
-		for (const subject of subjectCards) {
-			if (!subject.lastPracticedAt) continue;
-			if (!best.lastPracticedAt || subject.lastPracticedAt > best.lastPracticedAt) {
-				best = subject;
+		let best = courseCards[0];
+		for (const course of courseCards) {
+			if (!course.lastPracticedAt) continue;
+			if (!best.lastPracticedAt || course.lastPracticedAt > best.lastPracticedAt) {
+				best = course;
 			}
 		}
 		return best;
@@ -113,7 +113,7 @@
 		hasActivity ? `Welcome back, ${firstName}` : `Welcome, ${firstName}!`
 	);
 	const shellDescription = $derived(
-		hasActivity ? "Let's keep your momentum going." : "You're all set. Your subjects are ready."
+		hasActivity ? "Let's keep your momentum going." : "You're all set. Your courses are ready."
 	);
 	const showOrgFeatures = $derived(data.activeOrganization?.orgType === 'group');
 
@@ -134,7 +134,7 @@
 	}
 
 	function taskTitle(task: StudyTask): string {
-		return task.unit.trim() || task.apClass;
+		return task.unit.trim() || task.course;
 	}
 
 	function modeLabel(mode: StudyTask['mode']): string {
@@ -326,7 +326,7 @@
 		</div>
 	{/snippet}
 
-	{#if subjectCards.length > 0 && recommendation}
+	{#if courseCards.length > 0 && recommendation}
 		{@const RecIcon = recommendation.icon}
 		{@const hasPracticedRecommendation = Boolean(recommendation.lastPracticedAt)}
 		<section
@@ -367,7 +367,7 @@
 					<FirstUseHint
 						id="dashboard-practice"
 						anchorId="dashboard-practice-hint-target"
-						text="Start here. Choose a subject and begin practicing."
+						text="Start here. Choose a course and begin practicing."
 						align="start"
 					/>
 				</div>
@@ -405,7 +405,7 @@
 		/>
 	{/if}
 
-	{#if subjectCards.length > 0 && recommendation}
+	{#if courseCards.length > 0 && recommendation}
 		{#if planAccess?.plan !== 'super'}
 			<a
 				href={resolve('/pricing')}
@@ -416,39 +416,39 @@
 			</a>
 		{/if}
 
-		<section class="space-y-4" aria-labelledby="your-subjects">
+		<section class="space-y-4" aria-labelledby="your-courses">
 			<div class="flex flex-wrap items-end justify-between gap-3">
-				<h2 id="your-subjects" class="font-display text-xl font-medium tracking-tight sm:text-2xl">
-					Your subjects
+				<h2 id="your-courses" class="font-display text-xl font-medium tracking-tight sm:text-2xl">
+					Your courses
 				</h2>
 				<a
 					href={resolve('/app/settings#practice')}
 					class="text-sm font-medium text-primary underline-offset-4 hover:underline"
 				>
-					Manage subjects
+					Manage courses
 				</a>
 			</div>
 
 			<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
 				<div class="divide-y divide-border/70">
-					{#each subjectCards as subject (subject.name)}
-						{@const SubjectIcon = subject.icon}
-						{@const hasPracticed = Boolean(subject.lastPracticedAt)}
+					{#each courseCards as course (course.name)}
+						{@const CourseIcon = course.icon}
+						{@const hasPracticed = Boolean(course.lastPracticedAt)}
 						<a
-							href={resolve(`/app/practice?apClass=${encodeURIComponent(subject.name)}`)}
+							href={resolve(`/app/practice?course=${encodeURIComponent(course.name)}`)}
 							class="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
 						>
 							<div
-								class="flex size-10 shrink-0 items-center justify-center rounded-lg {subject.iconClass}"
+								class="flex size-10 shrink-0 items-center justify-center rounded-lg {course.iconClass}"
 							>
-								<SubjectIcon class="size-5" />
+								<CourseIcon class="size-5" />
 							</div>
 
 							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-medium">{subject.name}</p>
+								<p class="truncate text-sm font-medium">{course.name}</p>
 								<p class="text-xs text-muted-foreground sm:hidden">
 									{#if hasPracticed}
-										Last practiced {formatLastPracticed(subject.lastPracticedAt)}
+										Last practiced {formatLastPracticed(course.lastPracticedAt)}
 									{:else}
 										Get started
 									{/if}
@@ -460,26 +460,26 @@
 									<div
 										class="h-2 flex-1 overflow-hidden rounded-full bg-muted"
 										role="progressbar"
-										aria-valuenow={subject.percent}
+										aria-valuenow={course.percent}
 										aria-valuemin={0}
 										aria-valuemax={100}
-										aria-label={`${subject.name} progress`}
+										aria-label={`${course.name} progress`}
 									>
 										<div
 											class="h-full rounded-full transition-all {progressBarClass(
-												subject.iconClass
+												course.iconClass
 											)}"
-											style:width="{subject.percent}%"
+											style:width="{course.percent}%"
 										></div>
 									</div>
 									<span class="w-10 text-right text-sm font-semibold tabular-nums">
-										{subject.percent}%
+										{course.percent}%
 									</span>
 								</div>
 
 								<div class="hidden w-28 shrink-0 text-right sm:block">
 									<p class="text-xs text-muted-foreground">Last practiced</p>
-									<p class="text-sm font-medium">{formatLastPracticed(subject.lastPracticedAt)}</p>
+									<p class="text-sm font-medium">{formatLastPracticed(course.lastPracticedAt)}</p>
 								</div>
 							{:else}
 								<p class="hidden text-sm font-medium text-muted-foreground sm:block">Get started</p>
@@ -503,12 +503,12 @@
 		{/if}
 
 		<EmptyState
-			title="No subjects selected yet"
-			description="Choose the subjects you want to see on your dashboard."
+			title="No courses selected yet"
+			description="Choose the courses you want to see on your dashboard."
 			imageUrl={lightbulbImage}
 		>
 			{#snippet button()}
-				<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose subjects</Button>
+				<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose courses</Button>
 			{/snippet}
 		</EmptyState>
 	{/if}

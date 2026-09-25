@@ -7,7 +7,7 @@ const verdict = z.enum(['good', 'bad'] satisfies [QualityVerdict, QualityVerdict
 export const reviewFiltersSchema = z
 	.object({
 		kind: z.enum(['mcq', 'frq']).optional(),
-		apClass: z.string().trim().max(100).optional(),
+		course: z.string().trim().max(100).optional(),
 		unit: z.string().trim().max(100).optional(),
 		qualityState: z.enum(['unreviewed', 'awaiting_human', 'final']).optional(),
 		createdAfter: z.string().trim().max(80).optional(),
@@ -43,7 +43,7 @@ export const feedbackRequestSchema = z
 			FeedbackType,
 			FeedbackType
 		]),
-		apClass: z.string().trim().max(100).optional(),
+		course: z.string().trim().max(100).optional(),
 		unit: z.string().trim().max(100).optional()
 	})
 	.strict();

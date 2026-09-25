@@ -45,7 +45,7 @@ const frqPayload = {
 		],
 		totalPoints: 1,
 		topicsCovered: 'Cells',
-		apClass: 'AP Biology',
+		course: 'AP Biology',
 		unit: 'Unit 1'
 	},
 	cached: false

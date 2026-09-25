@@ -6,7 +6,7 @@ import {
 	QuestionRequestError
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
+import { resolveEffectiveUnit } from '$lib/catalog/ap-courses';
 import {
 	PoolWarmingError,
 	requestMcqQuestion,
@@ -133,12 +133,12 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 		options: { isAutoWarmingRetry?: boolean } = {}
 	): Promise<void> {
 		if (isLoading) return;
-		const selectedClass = opts.getSelectedClass();
+		const selectedCourse = opts.getSelectedCourse();
 		const selectedUnit = opts.getSelectedUnit();
 		const presetQuestionId = consumedPresetQuestionId
 			? ''
 			: (opts.getPresetQuestionId()?.trim() ?? '');
-		if (!selectedClass && !presetQuestionId) {
+		if (!selectedCourse && !presetQuestionId) {
 			statusMessage = 'Please choose a class before requesting a question.';
 			return;
 		}
@@ -159,13 +159,13 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 
 		const loadStartedAt = Date.now();
 		try {
-			const effectiveUnit = resolveEffectiveUnit(selectedClass, selectedUnit, opts.getUnitRange());
+			const effectiveUnit = resolveEffectiveUnit(selectedCourse, selectedUnit, opts.getUnitRange());
 			const result = presetQuestionId
 				? await requestMcqQuestionById(presetQuestionId)
-				: await requestMcqQuestion(selectedClass, effectiveUnit, [...seenQuestionIds]);
+				: await requestMcqQuestion(selectedCourse, effectiveUnit, [...seenQuestionIds]);
 			if (presetQuestionId) consumedPresetQuestionId = true;
 			captureQuestionRequestSucceeded({
-				apClass: selectedClass,
+				course: selectedCourse,
 				unit: selectedUnit,
 				source: result.source,
 				latencyMs: result.latencyMs
@@ -183,7 +183,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 			resetInteractionState(true);
 		} catch (error) {
 			captureQuestionRequestFailed({
-				apClass: selectedClass,
+				course: selectedCourse,
 				unit: selectedUnit,
 				failureKind: error instanceof QuestionRequestError ? error.failureKind : 'network',
 				status: error instanceof QuestionRequestError ? error.status : null,
@@ -264,10 +264,10 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 	function captureFirstAnswerAnalytics(
 		result: AnswerResult & { selectedAnswer: string; isCorrect: boolean }
 	): void {
-		const selectedClass = opts.getSelectedClass();
+		const selectedCourse = opts.getSelectedCourse();
 		const selectedUnit = opts.getSelectedUnit();
 		capturePostHogEvent('question_answered', {
-			ap_class: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit,
 			question_id: result.questionId,
 			topic: currentQuestion?.topic,
@@ -276,7 +276,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 			time_taken_ms: result.timeTakenMs
 		});
 		captureFirstAnswerSubmitted({
-			apClass: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit,
 			isCorrect: result.isCorrect,
 			timeTakenMs: result.timeTakenMs
@@ -291,7 +291,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 			terminal_outcome: terminalOutcome,
 			is_correct: result.isCorrect,
 			elapsed_ms: result.timeTakenMs,
-			ap_class: opts.getSelectedClass(),
+			course: opts.getSelectedCourse(),
 			unit: opts.getSelectedUnit(),
 			topic: currentQuestion?.topic,
 			source: currentQuestion?.source
@@ -336,7 +336,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 	async function skip(): Promise<void> {
 		opts.onSkip?.();
 		capturePostHogEvent('question_skipped', {
-			ap_class: opts.getSelectedClass(),
+			course: opts.getSelectedCourse(),
 			unit: opts.getSelectedUnit(),
 			question_id: currentQuestion?.questionId,
 			topic: currentQuestion?.topic,
@@ -348,7 +348,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 	async function notLearned(): Promise<void> {
 		opts.onNotLearned?.();
 		capturePostHogEvent('question_marked_not_learned', {
-			ap_class: opts.getSelectedClass(),
+			course: opts.getSelectedCourse(),
 			unit: opts.getSelectedUnit(),
 			question_id: currentQuestion?.questionId,
 			topic: currentQuestion?.topic,
@@ -368,7 +368,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 		capturePostHogEvent('question_feedback_submitted', {
 			reason,
 			question_id: currentQuestion.questionId,
-			ap_class: opts.getSelectedClass(),
+			course: opts.getSelectedCourse(),
 			unit: opts.getSelectedUnit(),
 			topic: currentQuestion.topic,
 			source: currentQuestion.source,
@@ -380,7 +380,7 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 			body: JSON.stringify({
 				questionId: currentQuestion.questionId,
 				type: reason,
-				apClass: opts.getSelectedClass(),
+				course: opts.getSelectedCourse(),
 				unit: opts.getSelectedUnit()
 			})
 		}).catch(() => {

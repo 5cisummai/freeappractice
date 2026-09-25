@@ -10,8 +10,8 @@
 
 	function activityTarget(item: OrganizationActivityItem): string {
 		if (item.quizTitle) return item.quizTitle;
-		if (item.unit && item.unit !== 'All Units') return `${item.apClass} — ${item.unit}`;
-		return item.apClass;
+		if (item.unit && item.unit !== 'All Units') return `${item.course} — ${item.unit}`;
+		return item.course;
 	}
 
 	function formatRelativeTime(iso: string): string {

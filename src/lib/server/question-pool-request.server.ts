@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { validateQuestionRequest } from '$lib/catalog/question-request.server';
-import { normalizeUnit } from '$lib/question-bank/util.server';
 import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
 import {
 	capturePathQuestionRequestMetric,
@@ -17,7 +16,7 @@ export function createQuestionPoolRequest(request: Request) {
 	const startedAt = Date.now();
 	const path = createQuestionPathMetrics();
 	let validationMs = 0;
-	let apClass = '';
+	let course = '';
 	let unit = '';
 
 	function recordMetric(
@@ -30,7 +29,7 @@ export function createQuestionPoolRequest(request: Request) {
 			path,
 			startedAt,
 			validationMs,
-			apClass,
+			course,
 			unit,
 			httpStatus: status,
 			segment,
@@ -87,8 +86,8 @@ export function createQuestionPoolRequest(request: Request) {
 			return { ok: false as const, response: validated.response };
 		}
 
-		apClass = validated.value.className;
-		unit = normalizeUnit(validated.value.unit);
+		course = validated.value.course;
+		unit = validated.value.unit.trim();
 		return { ok: true as const, body, value: validated.value };
 	}
 

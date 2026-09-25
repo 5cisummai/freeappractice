@@ -22,7 +22,7 @@ export type CoachPracticeQuestionOutput = {
 	kind: 'practice_question';
 	mode: 'mcq' | 'frq';
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	practiceHref: string;
 	topic?: string;
@@ -35,7 +35,7 @@ export type CoachPracticeQuestionOutput = {
 };
 
 export const coachPracticeQuestionToolInputSchema = z.object({
-	apClass: z.string().trim().min(1).max(100),
+	course: z.string().trim().min(1).max(100),
 	unit: z.string().trim().min(1).max(200).optional(),
 	mode: z.enum(['mcq', 'frq']).default('mcq')
 });
@@ -48,7 +48,7 @@ export const coachPracticeQuestionToolOutputSchema = z.object({
 		.describe('Whether the student answered or skipped the inline question.'),
 	mode: z.enum(['mcq', 'frq']).describe('Question type that was shown.'),
 	questionId: z.string().min(1).describe('Bank question id that was served.'),
-	apClass: z.string().min(1),
+	course: z.string().min(1),
 	unit: z.string().min(1),
 	topic: z.string().optional(),
 	prompt: z.string().min(1).describe('Question stem shown to the student.'),
@@ -89,7 +89,7 @@ export function getCoachPracticeQuestionOutput(value: unknown): CoachPracticeQue
 		output.kind !== 'practice_question' ||
 		(output.mode !== 'mcq' && output.mode !== 'frq') ||
 		typeof output.questionId !== 'string' ||
-		typeof output.apClass !== 'string' ||
+		typeof output.course !== 'string' ||
 		typeof output.unit !== 'string' ||
 		typeof output.practiceHref !== 'string' ||
 		typeof output.prompt !== 'string'
@@ -100,13 +100,13 @@ export function getCoachPracticeQuestionOutput(value: unknown): CoachPracticeQue
 }
 
 export function buildCoachPracticeHref(input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	mode: 'mcq' | 'frq';
 	questionId: string;
 }): string {
 	const params = new URLSearchParams({
-		apClass: input.apClass,
+		course: input.course,
 		unit: input.unit,
 		questionId: input.questionId
 	});
@@ -125,7 +125,7 @@ export function buildCoachPracticeQuestionToolOutput(input: {
 		status,
 		mode: question.mode,
 		questionId: question.questionId,
-		apClass: question.apClass,
+		course: question.course,
 		unit: question.unit,
 		topic: question.topic,
 		prompt: question.prompt,

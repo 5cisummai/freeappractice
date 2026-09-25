@@ -2,7 +2,7 @@
  * Generate independent MCQs and render their Examfig diagrams into a local HTML gallery.
  * This never reads from or writes to the question pool.
  *
- *   bun run questions:preview -- --class "AP Biology" --unit "Unit 1" --count 5
+ *   bun run questions:preview -- --course "AP Biology" --unit "Unit 1" --count 5
  */
 
 import 'dotenv/config';
@@ -75,7 +75,7 @@ function renderQuestionCard(result: GenerateResult, index: number): string {
 }
 
 function buildHtml(
-	className: string,
+	course: string,
 	unit: string | undefined,
 	generated: GenerateResult[],
 	failed: string[],
@@ -91,7 +91,7 @@ function buildHtml(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Question preview — ${escapeHtml(className)}</title>
+  <title>Question preview — ${escapeHtml(course)}</title>
   <style>
     :root { color-scheme: light; font-family: system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
     body { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
@@ -116,7 +116,7 @@ function buildHtml(
 <body>
   <header>
     <h1>Independent question preview</h1>
-    <div class="meta">${escapeHtml(className)}${unit ? ` · ${escapeHtml(unit)}` : ''}</div>
+    <div class="meta">${escapeHtml(course)}${unit ? ` · ${escapeHtml(unit)}` : ''}</div>
     <div class="meta">Generated ${generated.length} question(s) without writing to the database.</div>
     <div class="flag">stimulus-questions flag: ${flagEnabled ? 'ON' : 'OFF'}</div>
   </header>
@@ -129,18 +129,18 @@ function buildHtml(
 async function main() {
 	if (process.argv.includes('--help') || process.argv.includes('-h')) {
 		console.log(
-			'Usage: bun run questions:preview -- --class "AP Biology" [--unit "Unit 1"] [--count 5] [--output tmp/question-previews/run]'
+			'Usage: bun run questions:preview -- --course "AP Biology" [--unit "Unit 1"] [--count 5] [--output tmp/question-previews/run]'
 		);
 		return;
 	}
-	const className = argValue('--class');
+	const course = argValue('--course');
 	const unit = argValue('--unit');
 	const count = Math.min(argInt('--count', 5), 50);
 	const outputArg = argValue('--output');
 
-	if (!className) {
+	if (!course) {
 		console.error(
-			'Usage: bun run questions:preview -- --class "AP Biology" [--unit "Unit 1"] [--count 5] [--output tmp/question-previews/run]'
+			'Usage: bun run questions:preview -- --course "AP Biology" [--unit "Unit 1"] [--count 5] [--output tmp/question-previews/run]'
 		);
 		process.exit(1);
 	}
@@ -167,7 +167,7 @@ async function main() {
 	for (let index = 0; index < count; index += 1) {
 		console.log(`Generating question ${index + 1}/${count}...`);
 		try {
-			generated.push(await generateAPQuestion({ className, unit, diagramsEnabled: flagEnabled }));
+			generated.push(await generateAPQuestion({ course, unit, diagramsEnabled: flagEnabled }));
 		} catch (error) {
 			failed.push(error instanceof Error ? error.message : String(error));
 			console.error(`Question ${index + 1} failed:`, error);
@@ -176,11 +176,11 @@ async function main() {
 
 	await writeFile(
 		path.join(outputDir, 'index.html'),
-		buildHtml(className, unit, generated, failed, flagEnabled)
+		buildHtml(course, unit, generated, failed, flagEnabled)
 	);
 	await writeFile(
 		path.join(outputDir, 'questions.json'),
-		JSON.stringify({ className, unit, generated, failed }, null, 2) + '\n'
+		JSON.stringify({ course, unit, generated, failed }, null, 2) + '\n'
 	);
 	console.log(`Preview written to ${path.join(outputDir, 'index.html')}`);
 }

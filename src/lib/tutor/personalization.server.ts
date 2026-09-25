@@ -8,7 +8,7 @@ const MAX_FRQ_EVIDENCE_GROUPS = 5;
 const MAX_RECENT_PERCENTAGES_PER_GROUP = 3;
 
 type FrqEvidenceAttempt = {
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	createdAt?: Date | string;
 	grade?: {
@@ -19,7 +19,7 @@ type FrqEvidenceAttempt = {
 };
 
 type FrqEvidenceGroup = {
-	apClass: string;
+	course: string;
 	unit: string;
 	attempts: number;
 	pointsEarned: number;
@@ -49,12 +49,12 @@ async function getRecentFrqEvidence(userId: string): Promise<string[]> {
 		if (!finiteNumber(pointsEarned) || !finiteNumber(pointsAvailable) || pointsAvailable <= 0)
 			continue;
 
-		const apClass = compactLabel(attempt.apClass);
+		const course = compactLabel(attempt.course);
 		const unit = compactLabel(attempt.unit);
-		const key = `${apClass}\u0000${unit}`;
+		const key = `${course}\u0000${unit}`;
 		const latestAttemptAt = attempt.createdAt ? new Date(attempt.createdAt).getTime() : 0;
 		const group = groups.get(key) ?? {
-			apClass,
+			course,
 			unit,
 			attempts: 0,
 			pointsEarned: 0,
@@ -85,7 +85,7 @@ async function getRecentFrqEvidence(userId: string): Promise<string[]> {
 			const recentScores = group.recentPercentages.length
 				? `; recent percentages ${group.recentPercentages.join('%, ')}%`
 				: '';
-			return `${group.apClass} ${group.unit}: ${group.attempts} graded FRQ${group.attempts === 1 ? '' : 's'}, ${aggregatePercentage}% aggregate (${group.pointsEarned}/${group.pointsAvailable} rubric points)${recentScores}.`;
+			return `${group.course} ${group.unit}: ${group.attempts} graded FRQ${group.attempts === 1 ? '' : 's'}, ${aggregatePercentage}% aggregate (${group.pointsEarned}/${group.pointsAvailable} rubric points)${recentScores}.`;
 		});
 }
 
@@ -117,7 +117,7 @@ export async function buildTutorPersonalization(
 		.slice(0, 5)
 		.map(
 			(item) =>
-				`${item.apClass} ${item.unit}: ${item.mastery}% mastery across ${item.totalAttempts} attempts`
+				`${item.course} ${item.unit}: ${item.mastery}% mastery across ${item.totalAttempts} attempts`
 		);
 
 	const parts = [
@@ -125,7 +125,7 @@ export async function buildTutorPersonalization(
 		`Preferred teaching style: ${profile.teachingStyle.replaceAll('_', ' ')}.`,
 		profile.studyAvailability ? `Stated study availability: ${profile.studyAvailability}` : '',
 		profile.targetDates.length
-			? `Target dates: ${profile.targetDates.map((target) => `${target.apClass} ${target.targetDate}`).join('; ')}`
+			? `Target dates: ${profile.targetDates.map((target) => `${target.course} ${target.targetDate}`).join('; ')}`
 			: '',
 		recentProgress.length ? `Recent progress: ${recentProgress.join('; ')}` : '',
 		frqEvidence.length

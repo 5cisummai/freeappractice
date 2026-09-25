@@ -21,7 +21,7 @@ type TutorProfileRecord = {
 	ageConfirmedAt: Date | null;
 	mem0UserId: string;
 	selectedApClasses: string[];
-	targetDates: Array<{ apClass: string; targetDate: Date }>;
+	targetDates: Array<{ course: string; targetDate: Date }>;
 	studyAvailability: string;
 	teachingStyle: TutorTeachingStyle;
 	memoryEnabled: boolean;
@@ -48,7 +48,7 @@ function toTutorProfileView(profile: TutorProfileRecord): TutorProfileView {
 		ageConfirmedAt: profile.ageConfirmedAt?.toISOString() ?? null,
 		selectedApClasses: [...profile.selectedApClasses],
 		targetDates: profile.targetDates.map((target) => ({
-			apClass: target.apClass,
+			course: target.course,
 			targetDate: target.targetDate.toISOString().slice(0, 10)
 		})),
 		studyAvailability: profile.studyAvailability,
@@ -68,9 +68,9 @@ async function hydrateTutorRelations(profile: TutorProfileRecord): Promise<Tutor
 			.orderBy(asc(tutorProfileClasses.position)),
 		db.select().from(tutorTargetDates).where(eq(tutorTargetDates.userId, profile.userId))
 	]);
-	profile.selectedApClasses = classes.map((row) => row.apClass);
+	profile.selectedApClasses = classes.map((row) => row.course);
 	profile.targetDates = dates.map((row) => ({
-		apClass: row.apClass,
+		course: row.course,
 		targetDate: row.targetDate
 	}));
 	return profile;
@@ -257,7 +257,7 @@ export async function updateTutorProfile(
 				db
 					.insert(tutorProfileClasses)
 					.values(
-						profile.selectedApClasses.map((apClass, position) => ({ userId, apClass, position }))
+						profile.selectedApClasses.map((course, position) => ({ userId, course, position }))
 					)
 			);
 		}
@@ -265,10 +265,10 @@ export async function updateTutorProfile(
 	if (patch.targetDates !== undefined) {
 		profile.targetDates = patch.targetDates
 			.map((target) => ({
-				apClass: target.apClass.trim(),
+				course: target.course.trim(),
 				targetDate: new Date(target.targetDate)
 			}))
-			.filter((target) => target.apClass && Number.isFinite(target.targetDate.getTime()))
+			.filter((target) => target.course && Number.isFinite(target.targetDate.getTime()))
 			.slice(0, MAX_TARGET_DATES);
 		writes.push(db.delete(tutorTargetDates).where(eq(tutorTargetDates.userId, userId)));
 		if (profile.targetDates.length) {

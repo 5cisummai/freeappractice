@@ -16,7 +16,7 @@ export const config = {
 	maxDuration: 15
 };
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ request }) => {
 	const { path, recordMetric, prepare } = createQuestionPoolRequest(request);
 
 	try {
@@ -37,11 +37,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			);
 		}
 
-		const { className, unit: requestedUnit, excludeQuestionIds } = prepared.value;
-		const outcome = await mcqBank.getMany(className, requestedUnit, rawCount, {
+		const { course, unit: requestedUnit, excludeQuestionIds } = prepared.value;
+		const outcome = await mcqBank.getMany(course, requestedUnit, rawCount, {
 			excludeQuestionIds,
-			metrics: path,
-			allowRefill: Boolean(locals?.userId)
+			metrics: path
 		});
 
 		switch (outcome.status) {

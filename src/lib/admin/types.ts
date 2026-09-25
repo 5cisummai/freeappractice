@@ -58,7 +58,7 @@ export interface CacheOverview {
 
 export interface CacheBucketSummary {
 	questionType: PoolQuestionType;
-	apClass: string;
+	course: string;
 	unit: string;
 	/** Active reusable questions in the serving pool. */
 	total: number;

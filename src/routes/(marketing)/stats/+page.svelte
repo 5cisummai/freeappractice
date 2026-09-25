@@ -3,13 +3,13 @@
 	import { resolve } from '$app/paths';
 	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
 	import BackToHome from '$lib/components/layout/back-to-home.svelte';
-	import { getClassPracticePageByClassName } from '$lib/catalog/practice-pages.js';
+	import { getCoursePracticePageByCourse } from '$lib/catalog/practice-pages.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
 
 	interface GenerationStats {
-		byApClass: Record<string, number>;
+		byCourse: Record<string, number>;
 		byUnit: Record<string, number>;
 		totals: {
 			questions: number;
@@ -41,12 +41,12 @@
 		}
 	});
 
-	const classTableData = $derived.by(() => {
-		if (!generationStats?.byApClass || !generationStats?.totals.questions) return [];
+	const courseTableData = $derived.by(() => {
+		if (!generationStats?.byCourse || !generationStats?.totals.questions) return [];
 		const total = generationStats.totals.questions;
-		return Object.entries(generationStats.byApClass)
-			.map(([subject, count]) => ({
-				subject,
+		return Object.entries(generationStats.byCourse)
+			.map(([course, count]) => ({
+				course,
 				count,
 				percentage: Math.round((count / total) * 100)
 			}))
@@ -63,7 +63,7 @@
 
 	const totalGenerated = $derived(generationStats?.totals.questions ?? 0);
 	const totalChars = $derived(generationStats?.totals.totalQuestionChars ?? 0);
-	const apClassesCount = $derived(Object.keys(generationStats?.byApClass ?? {}).length);
+	const courseesCount = $derived(Object.keys(generationStats?.byCourse ?? {}).length);
 	const unitsCount = $derived(Object.keys(generationStats?.byUnit ?? {}).length);
 </script>
 
@@ -71,7 +71,7 @@
 	<title>Stats | Free AP Practice</title>
 	<meta
 		name="description"
-		content="Explore question generation statistics across AP subjects and units on Free AP Practice."
+		content="Explore question generation statistics across AP courses and units on Free AP Practice."
 	/>
 	<link rel="canonical" href="https://freeappractice.org/stats" />
 	<meta property="og:type" content="website" />
@@ -79,7 +79,7 @@
 	<meta property="og:title" content="Stats | Free AP Practice" />
 	<meta
 		property="og:description"
-		content="Explore question generation statistics across AP subjects and units."
+		content="Explore question generation statistics across AP courses and units."
 	/>
 	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
@@ -87,7 +87,7 @@
 	<meta name="twitter:title" content="Stats | Free AP Practice" />
 	<meta
 		name="twitter:description"
-		content="Explore question generation statistics across AP subjects and units."
+		content="Explore question generation statistics across AP courses and units."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 </svelte:head>
@@ -177,7 +177,7 @@
 					</Card.Root>
 					<Card.Root class="p-5">
 						<div class="text-sm text-muted-foreground">AP Classes</div>
-						<div class="text-3xl font-bold">{apClassesCount}</div>
+						<div class="text-3xl font-bold">{courseesCount}</div>
 					</Card.Root>
 					<Card.Root class="p-5">
 						<div class="text-sm text-muted-foreground">Unique Units</div>
@@ -201,19 +201,19 @@
 								</Table.Row>
 							</Table.Header>
 							<Table.Body>
-								{#each classTableData as row (row.subject)}
+								{#each courseTableData as row (row.course)}
 									<Table.Row>
 										<Table.Cell class="font-medium">
-											{@const classPage = getClassPracticePageByClassName(row.subject)}
-											{#if classPage}
+											{@const coursePage = getCoursePracticePageByCourse(row.course)}
+											{#if coursePage}
 												<a
-													href={resolve(`/practice/${classPage.slug}`)}
+													href={resolve(`/practice/${coursePage.slug}`)}
 													class="underline-offset-2 hover:text-primary hover:underline"
 												>
-													{row.subject}
+													{row.course}
 												</a>
 											{:else}
-												{row.subject}
+												{row.course}
 											{/if}
 										</Table.Cell>
 										<Table.Cell class="text-right">{row.count.toLocaleString()}</Table.Cell>

@@ -63,7 +63,7 @@
 		onAnswered
 	}: QuestionCardProps = $props();
 
-	const selectedClass = $derived(model.selectedClass);
+	const selectedCourse = $derived(model.selectedCourse);
 	const selectedUnit = $derived(model.selectedUnit);
 	const quizMode = $derived(model.delivery.kind === 'quiz');
 	const questionNumber = $derived(
@@ -92,7 +92,7 @@
 	let eliminatorActive = $state(false);
 
 	const core = createQuestionCore({
-		getSelectedClass: () => selectedClass,
+		getSelectedCourse: () => selectedCourse,
 		getSelectedUnit: () => selectedUnit,
 		getUnitRange: () => unitRange,
 		getRequestVersion: () => requestVersion,
@@ -160,7 +160,7 @@
 		const ctx: BugReportContext = {
 			questionId: core.currentQuestion?.questionId,
 			questionNumber: core.effectiveQuestionNumber,
-			selectedClass,
+			selectedCourse,
 			selectedUnit,
 			prompt: core.currentQuestion?.prompt,
 			correctAnswer: core.currentQuestion?.correctAnswer,
@@ -175,7 +175,7 @@
 		core.setShowExplanation(true);
 		capturePostHogEvent('explanation_viewed', {
 			question_id: core.currentQuestion?.questionId,
-			ap_class: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit,
 			topic: core.currentQuestion?.topic,
 			source: core.currentQuestion?.source,
@@ -590,7 +590,7 @@
 		{#key core.currentQuestion.questionId ?? core.currentQuestion.prompt}
 			<QuestionTutor
 				{tutorMode}
-				apClass={selectedClass}
+				course={selectedCourse}
 				unit={tutorUnitLabel}
 				questionId={core.currentQuestion.questionId}
 				topic={core.currentQuestion.topic}
@@ -602,7 +602,7 @@
 	<BugReportDialog
 		bind:open={bugReportOpen}
 		context={bugReportContext}
-		{selectedClass}
+		{selectedCourse}
 		{selectedUnit}
 	/>
 

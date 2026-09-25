@@ -72,7 +72,7 @@ describe('question quality inventory writes', () => {
 		await syncQuestionMetadata([
 			{
 				questionId: 'q-1',
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				questionCreatedAt: new Date('2026-08-01T00:00:00.000Z'),
 				contentHash: 'hash-1',
@@ -91,7 +91,7 @@ describe('question quality inventory writes', () => {
 	it('updates one registry row without rewriting quality state', async () => {
 		await updateQuestionRegistryMetadata({
 			questionId: 'q-1',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			questionCreatedAt: new Date('2026-08-01T00:00:00.000Z'),
 			contentHash: 'hash-1',

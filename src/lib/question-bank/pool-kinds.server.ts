@@ -5,7 +5,7 @@ import type { QuestionPoolConfig } from '$lib/question-bank/pool-constants';
 
 export type PoolKindBucket = {
 	questionType: PoolRefillQuestionType;
-	apClass: string;
+	course: string;
 	unit: string;
 };
 
@@ -13,11 +13,11 @@ export type PoolKindAdapter = {
 	questionType: PoolRefillQuestionType;
 	minimumGenerationHeadroomMs: number;
 	listBuckets: () => PoolKindBucket[];
-	countActive: (apClass: string, unit: string) => Promise<number>;
+	countActive: (course: string, unit: string) => Promise<number>;
 	countActiveByBucket: () => Promise<Map<string, number>>;
 	targetFor: (input: {
-		apClass: string;
-		generationCountsByClass?: Record<string, number>;
+		course: string;
+		generationCountsByCourse?: Record<string, number>;
 		config?: QuestionPoolConfig;
 	}) => number;
 };

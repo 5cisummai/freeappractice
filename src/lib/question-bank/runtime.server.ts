@@ -8,7 +8,7 @@ export interface PoolDocument {
 }
 
 type PoolQuery<TDoc extends PoolDocument> = (input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
@@ -18,7 +18,7 @@ type PoolQuery<TDoc extends PoolDocument> = (input: {
 }) => Promise<TDoc | null>;
 
 type PoolBatchQuery<TDoc extends PoolDocument> = (input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
@@ -29,17 +29,12 @@ type PoolBatchQuery<TDoc extends PoolDocument> = (input: {
 
 export interface QuestionBankConfig<TDoc extends PoolDocument, TCached> {
 	logScope: string;
-	normalizeUnit: (unit?: string | null) => string;
-	countActive: (
-		className: string,
-		unit: string,
-		allowStimulusQuestions?: boolean
-	) => Promise<number>;
+	countActive: (course: string, unit: string, allowStimulusQuestions?: boolean) => Promise<number>;
 	findRandom: PoolQuery<TDoc>;
 	findRandomBatch?: PoolBatchQuery<TDoc>;
 	serveCached: (doc: TDoc) => Promise<TCached> | TCached;
 	/** Request asynchronous population when the bucket is empty. */
-	requestRefill?: (className: string, unit: string) => Promise<void>;
+	requestRefill?: (course: string, unit: string) => Promise<void>;
 	resolveAllowStimulusQuestions?: () => Promise<boolean> | boolean;
 	/** Defer non-critical refill scheduling until after the response when available. */
 	scheduleBackgroundTask?: (task: Promise<unknown>) => void;
@@ -76,7 +71,7 @@ function normalizeExcludedQuestionIds(ids: string[] | undefined): string[] {
  */
 export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 	findRandom: PoolQuery<TDoc>;
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot?: number;
@@ -85,7 +80,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 }): Promise<TDoc | null> {
 	const pivot = opts.pivot ?? Math.random();
 	const first = await opts.findRandom({
-		apClass: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
@@ -96,7 +91,7 @@ export async function selectRandomActiveDoc<TDoc extends PoolDocument>(opts: {
 	if (first) return first;
 
 	return opts.findRandom({
-		apClass: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		excludeQuestionIds: opts.excludeQuestionIds,
 		pivot,
@@ -121,15 +116,15 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 	}
 
 	private async requestRefillAfterMiss(
-		className: string,
+		course: string,
 		unit: string,
 		allowRefill: boolean
 	): Promise<void> {
 		if (!this.config.requestRefill || !allowRefill) return;
 
-		const refill = this.config.requestRefill(className, unit).catch((error) => {
+		const refill = this.config.requestRefill(course, unit).catch((error) => {
 			logger.warn(`[${this.config.logScope}] failed to enqueue refill`, {
-				className,
+				course,
 				unit,
 				error
 			});
@@ -142,11 +137,11 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 	}
 
 	async get(
-		className: string,
+		course: string,
 		unit?: string,
 		options: GetQuestionOptions = {}
 	): Promise<PoolSelectionResult<TCached>> {
-		const cacheUnit = this.config.normalizeUnit(unit);
+		const cacheUnit = unit?.trim() ?? '';
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
 		const pool = QUESTION_POOL_CONFIG;
@@ -163,7 +158,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 			let exclusionsReset = false;
 			let doc = await selectRandomActiveDoc({
 				findRandom: this.config.findRandom,
-				apClass: className,
+				course: course,
 				unit: cacheUnit,
 				excludeQuestionIds,
 				onDatabaseInit,
@@ -172,7 +167,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 
 			if (!doc && excludeQuestionIds.length) {
 				const activeCount = await this.config.countActive(
-					className,
+					course,
 					cacheUnit,
 					allowStimulusQuestions
 				);
@@ -180,7 +175,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 					exclusionsReset = true;
 					doc = await selectRandomActiveDoc({
 						findRandom: this.config.findRandom,
-						apClass: className,
+						course: course,
 						unit: cacheUnit,
 						excludeQuestionIds: [],
 						onDatabaseInit,
@@ -201,10 +196,10 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 
 			if (metrics) metrics.segment = 'pool_warming';
 			logger.info(`[${this.config.logScope}] pool empty, returning POOL_WARMING`, {
-				className,
+				course,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(className, cacheUnit, options.allowRefill === true);
+			await this.requestRefillAfterMiss(course, cacheUnit, options.allowRefill === true);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {
@@ -212,7 +207,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				metrics.segment = 'pool_error';
 			}
 			logger.error(`[${this.config.logScope}] pool selection failed`, {
-				className,
+				course,
 				unit: cacheUnit,
 				error: err
 			});
@@ -221,7 +216,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 	}
 
 	async getMany(
-		className: string,
+		course: string,
 		unit?: string,
 		count = 1,
 		options: GetQuestionOptions = {}
@@ -229,7 +224,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 		| { status: 'found'; results: TCached[]; exclusionsReset: boolean }
 		| Exclude<PoolSelectionResult<TCached>, { status: 'found' }>
 	> {
-		const cacheUnit = this.config.normalizeUnit(unit);
+		const cacheUnit = unit?.trim() ?? '';
 		const requestedCount = Math.max(1, Math.floor(count));
 		const excludeQuestionIds = normalizeExcludedQuestionIds(options.excludeQuestionIds);
 		const metrics = options.metrics;
@@ -248,7 +243,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 			let docs: TDoc[];
 			if (this.config.findRandomBatch) {
 				docs = await this.config.findRandomBatch({
-					apClass: className,
+					course: course,
 					unit: cacheUnit,
 					excludeQuestionIds,
 					pivot: Math.random(),
@@ -262,7 +257,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				for (let index = 0; index < requestedCount; index += 1) {
 					const doc = await selectRandomActiveDoc({
 						findRandom: this.config.findRandom,
-						apClass: className,
+						course: course,
 						unit: cacheUnit,
 						excludeQuestionIds: seenIds,
 						onDatabaseInit,
@@ -276,7 +271,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 
 			if (docs.length < requestedCount && excludeQuestionIds.length) {
 				const activeCount = await this.config.countActive(
-					className,
+					course,
 					cacheUnit,
 					allowStimulusQuestions
 				);
@@ -287,7 +282,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 						.filter((id): id is string => Boolean(id));
 					const moreDocs = this.config.findRandomBatch
 						? await this.config.findRandomBatch({
-								apClass: className,
+								course: course,
 								unit: cacheUnit,
 								excludeQuestionIds: [...selectedIds],
 								pivot: Math.random(),
@@ -312,10 +307,10 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 
 			if (metrics) metrics.segment = 'pool_warming';
 			logger.info(`[${this.config.logScope}] pool empty, returning POOL_WARMING`, {
-				className,
+				course,
 				unit: cacheUnit
 			});
-			await this.requestRefillAfterMiss(className, cacheUnit, options.allowRefill === true);
+			await this.requestRefillAfterMiss(course, cacheUnit, options.allowRefill === true);
 			return { status: 'warming', retryAfterSeconds: pool.warmingRetryAfterSeconds };
 		} catch (err) {
 			if (metrics) {
@@ -323,7 +318,7 @@ export class QuestionBank<TDoc extends PoolDocument, TCached> {
 				metrics.segment = 'pool_error';
 			}
 			logger.error(`[${this.config.logScope}] pool selection failed`, {
-				className,
+				course,
 				unit: cacheUnit,
 				error: err
 			});

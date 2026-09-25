@@ -50,7 +50,7 @@ export const POST: RequestHandler = async (event) => {
 			distinctId: userId ?? 'anonymous',
 			event: 'tutor_chat_started',
 			properties: {
-				ap_class: question.apClass,
+				course: question.course,
 				unit: question.unit,
 				has_prior_conversation: result.data.conversationHistory.length > 0,
 				personalized: false
@@ -62,7 +62,7 @@ export const POST: RequestHandler = async (event) => {
 				question: question.question,
 				correctAnswer: question.correctAnswer,
 				explanation: question.explanation,
-				apClass: question.apClass ?? '',
+				course: question.course ?? '',
 				unit: question.unit ?? '',
 				answerChoices: {
 					A: question.optionA,

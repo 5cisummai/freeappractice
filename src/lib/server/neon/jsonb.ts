@@ -1,6 +1,6 @@
 import { sql, type SQL, type SQLWrapper } from 'drizzle-orm';
 
-export type QuestionPayloadTextField = 'apClass' | 'unit' | 'topicsCovered';
+export type QuestionPayloadTextField = 'course' | 'unit' | 'topicsCovered';
 
 /** Build one of the indexed text expressions stored in a question JSONB payload. */
 export function questionPayloadTextField(
@@ -8,8 +8,8 @@ export function questionPayloadTextField(
 	field: QuestionPayloadTextField
 ): SQL<string> {
 	switch (field) {
-		case 'apClass':
-			return sql<string>`${data} ->> 'apClass'`;
+		case 'course':
+			return sql<string>`${data} ->> 'course'`;
 		case 'unit':
 			return sql<string>`${data} ->> 'unit'`;
 		case 'topicsCovered':
@@ -23,11 +23,11 @@ export function questionPayloadTextField(
 
 /** Indexed course/unit expressions used by pool queries. */
 export function questionBucketFields(data: SQLWrapper): {
-	apClass: SQL<string>;
+	course: SQL<string>;
 	unit: SQL<string>;
 } {
 	return {
-		apClass: questionPayloadTextField(data, 'apClass'),
+		course: questionPayloadTextField(data, 'course'),
 		unit: questionPayloadTextField(data, 'unit')
 	};
 }

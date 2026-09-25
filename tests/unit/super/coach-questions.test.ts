@@ -51,7 +51,7 @@ describe('giveCoachPracticeQuestion', () => {
 			status: 'found',
 			result: {
 				questionId: 'mcq-1',
-				apClass: 'AP Physics 1',
+				course: 'AP Physics 1',
 				unit: 'Unit 1',
 				answer: {
 					question: 'What is velocity?',
@@ -67,15 +67,15 @@ describe('giveCoachPracticeQuestion', () => {
 		});
 
 		await expect(
-			giveCoachPracticeQuestion('user-1', { apClass: 'AP Physics 1', unit: 'Unit 1' })
+			giveCoachPracticeQuestion('user-1', { course: 'AP Physics 1', unit: 'Unit 1' })
 		).resolves.toMatchObject({
 			kind: 'practice_question',
 			mode: 'mcq',
 			questionId: 'mcq-1',
-			apClass: 'AP Physics 1',
+			course: 'AP Physics 1',
 			unit: 'Unit 1',
 			prompt: 'What is velocity?',
-			practiceHref: '/app/practice?apClass=AP+Physics+1&unit=Unit+1&questionId=mcq-1',
+			practiceHref: '/app/practice?course=AP+Physics+1&unit=Unit+1&questionId=mcq-1',
 			options: expect.arrayContaining([{ id: 'A', label: 'A', text: 'Speed with direction' }])
 		});
 		expect(mocks.getQuestionById).not.toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('giveCoachPracticeQuestion', () => {
 			result: {
 				questionId: 'frq-1',
 				publicQuestion: {
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 2',
 					topicsCovered: 'Cells',
 					prompt: 'Describe osmosis.',
@@ -108,7 +108,7 @@ describe('giveCoachPracticeQuestion', () => {
 
 		await expect(
 			giveCoachPracticeQuestion('user-1', {
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 2',
 				mode: 'frq'
 			})
@@ -117,7 +117,7 @@ describe('giveCoachPracticeQuestion', () => {
 			mode: 'frq',
 			questionId: 'frq-1',
 			prompt: 'Describe osmosis.',
-			practiceHref: '/app/practice?apClass=AP+Biology&unit=Unit+2&questionId=frq-1&mode=frq'
+			practiceHref: '/app/practice?course=AP+Biology&unit=Unit+2&questionId=frq-1&mode=frq'
 		});
 	});
 });

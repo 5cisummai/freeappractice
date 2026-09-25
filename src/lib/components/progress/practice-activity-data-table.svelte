@@ -73,7 +73,7 @@
 			{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
 				<Table.Row>
 					{#each headerGroup.headers as header (header.id)}
-						<Table.Head class={header.column.id === 'subject' ? 'ps-4' : undefined}>
+						<Table.Head class={header.column.id === 'course' ? 'ps-4' : undefined}>
 							{#if !header.isPlaceholder}
 								<FlexRender
 									content={header.column.columnDef.header}
@@ -89,7 +89,7 @@
 			{#each table.getRowModel().rows as row (row.id)}
 				<Table.Row class="even:bg-muted/30">
 					{#each row.getVisibleCells() as cell (cell.id)}
-						<Table.Cell class={cell.column.id === 'subject' ? 'ps-4' : undefined}>
+						<Table.Cell class={cell.column.id === 'course' ? 'ps-4' : undefined}>
 							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 						</Table.Cell>
 					{/each}

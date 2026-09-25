@@ -27,7 +27,7 @@ describe('FRQ dashboard queries', () => {
 		mocks.select.mockReturnValueOnce(
 			progressQuery([
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 2',
 					attempts: '3',
 					pointsEarned: '7',
@@ -35,7 +35,7 @@ describe('FRQ dashboard queries', () => {
 					lastAttemptAt: new Date('2026-08-01T00:00:00.000Z')
 				},
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 3',
 					attempts: '1',
 					pointsEarned: '0',
@@ -47,7 +47,7 @@ describe('FRQ dashboard queries', () => {
 
 		await expect(getFrqProgressForUser('student-1')).resolves.toEqual([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 2',
 				attempts: 3,
 				pointsEarned: 7,
@@ -56,7 +56,7 @@ describe('FRQ dashboard queries', () => {
 				lastAttemptAt: '2026-08-01T00:00:00.000Z'
 			},
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 3',
 				attempts: 1,
 				pointsEarned: 0,

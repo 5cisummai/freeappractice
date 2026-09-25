@@ -30,9 +30,3 @@ export function assertNoNullCharacters(value: unknown, path = 'generated content
 export function computeContentHash(text: string): string {
 	return createHash('sha256').update(text.trim().toLowerCase().replace(/\s+/g, ' ')).digest('hex');
 }
-
-/** Normalize a unit string for cache/pool operations. */
-export function normalizeUnit(unit?: string | null, fallback = ''): string {
-	const trimmed = typeof unit === 'string' ? unit.trim() : '';
-	return trimmed || fallback;
-}

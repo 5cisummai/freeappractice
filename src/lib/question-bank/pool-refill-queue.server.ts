@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
-import { getMcqGenerationCountsByClass } from '$lib/question-bank/gen-stats.server';
-import { getUnitsForClass } from '$lib/catalog/ap-classes';
+import { getMcqGenerationCountsByCourse } from '$lib/question-bank/gen-stats.server';
+import { getUnitsForCourse } from '$lib/catalog/ap-courses';
 import { frqBucketUnits } from '$lib/question-bank/frq/practice';
 import {
 	countActivePoolRows,
@@ -21,30 +21,30 @@ import {
 
 export type PoolBucketKey = {
 	questionType: PoolRefillQuestionType;
-	apClass: string;
+	course: string;
 	unit: string;
 };
 
 export class InvalidPoolBucketError extends Error {
-	constructor(bucket: Pick<PoolBucketKey, 'apClass' | 'unit'>) {
-		super(`Invalid catalog pool bucket: ${bucket.apClass} / ${bucket.unit}`);
+	constructor(bucket: Pick<PoolBucketKey, 'course' | 'unit'>) {
+		super(`Invalid catalog pool bucket: ${bucket.course} / ${bucket.unit}`);
 		this.name = 'InvalidPoolBucketError';
 	}
 }
 
 export function isValidPoolBucket(
-	bucket: Pick<PoolBucketKey, 'apClass' | 'unit'> & Partial<Pick<PoolBucketKey, 'questionType'>>
+	bucket: Pick<PoolBucketKey, 'course' | 'unit'> & Partial<Pick<PoolBucketKey, 'questionType'>>
 ): boolean {
-	const apClass = bucket.apClass.trim();
+	const course = bucket.course.trim();
 	const unit = bucket.unit.trim();
-	if (bucket.questionType === 'frq') return frqBucketUnits(apClass).includes(unit);
-	return getUnitsForClass(apClass).includes(unit);
+	if (bucket.questionType === 'frq') return frqBucketUnits(course).includes(unit);
+	return getUnitsForCourse(course).includes(unit);
 }
 
 function normalizePoolBucket(bucket: PoolBucketKey): PoolBucketKey {
 	return {
 		questionType: bucket.questionType,
-		apClass: bucket.apClass.trim(),
+		course: bucket.course.trim(),
 		unit: bucket.unit.trim()
 	};
 }
@@ -67,27 +67,27 @@ export {
 export async function requestPoolRefill(
 	bucket: PoolBucketKey,
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG,
-	generationCountsByClass?: Record<string, number>,
+	generationCountsByCourse?: Record<string, number>,
 	observedCountOverride?: number
 ): Promise<void> {
 	if (!isValidPoolBucket(bucket)) throw new InvalidPoolBucketError(bucket);
 	bucket = normalizePoolBucket(bucket);
 
 	const counts =
-		generationCountsByClass ??
-		(bucket.questionType === 'mcq' ? await getMcqGenerationCountsByClass() : {});
+		generationCountsByCourse ??
+		(bucket.questionType === 'mcq' ? await getMcqGenerationCountsByCourse() : {});
 	const target = getPoolKindAdapter(bucket.questionType).targetFor({
-		apClass: bucket.apClass,
-		generationCountsByClass: counts,
+		course: bucket.course,
+		generationCountsByCourse: counts,
 		config: env
 	});
 	const observedCount =
 		observedCountOverride ??
-		(await countActivePoolRowsForServing(bucket.questionType, bucket.apClass, bucket.unit));
+		(await countActivePoolRowsForServing(bucket.questionType, bucket.course, bucket.unit));
 	const now = new Date();
 	const key = {
 		questionType: bucket.questionType,
-		apClass: bucket.apClass,
+		course: bucket.course,
 		unit: bucket.unit
 	};
 
@@ -109,7 +109,7 @@ export async function requestPoolRefill(
 			nextAttemptAt: observedCount < target ? now : null
 		})
 		.onConflictDoUpdate({
-			target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+			target: [poolRefillStates.questionType, poolRefillStates.course, poolRefillStates.unit],
 			set: { target, observedCount, requestedAt: now, updatedAt: now }
 		});
 
@@ -131,7 +131,7 @@ export async function requestPoolRefill(
 			.where(
 				and(
 					eq(poolRefillStates.questionType, key.questionType),
-					eq(poolRefillStates.apClass, key.apClass),
+					eq(poolRefillStates.course, key.course),
 					eq(poolRefillStates.unit, key.unit),
 					or(
 						inArray(poolRefillStates.status, ['idle', 'failed', 'budget_exhausted', 'pending']),
@@ -159,7 +159,7 @@ export async function requestPoolRefill(
 		.where(
 			and(
 				eq(poolRefillStates.questionType, key.questionType),
-				eq(poolRefillStates.apClass, key.apClass),
+				eq(poolRefillStates.course, key.course),
 				eq(poolRefillStates.unit, key.unit),
 				or(
 					inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
@@ -176,7 +176,7 @@ export async function requestPoolRefill(
 export async function reconcilePoolRefillJobs(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<{ reconciled: number; enqueued: number }> {
-	const generationCountsByClass = await getMcqGenerationCountsByClass();
+	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
 	let reconciled = 0;
 	let enqueued = 0;
 
@@ -185,18 +185,18 @@ export async function reconcilePoolRefillJobs(
 		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = adapter.targetFor({
-				apClass: bucket.apClass,
-				generationCountsByClass,
+				course: bucket.course,
+				generationCountsByCourse,
 				config: env
 			});
-			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
+			const observedCount = observedByBucket.get(`${bucket.course}\u0000${bucket.unit}`) ?? 0;
 			reconciled += 1;
 			await getNeonDatabase()
 				.insert(poolRefillStates)
 				.values({
 					id: randomUUID(),
 					questionType,
-					apClass: bucket.apClass,
+					course: bucket.course,
 					unit: bucket.unit,
 					target,
 					observedCount,
@@ -208,12 +208,12 @@ export async function reconcilePoolRefillJobs(
 					leaseExpiresAt: null
 				})
 				.onConflictDoUpdate({
-					target: [poolRefillStates.questionType, poolRefillStates.apClass, poolRefillStates.unit],
+					target: [poolRefillStates.questionType, poolRefillStates.course, poolRefillStates.unit],
 					set: { target, observedCount, updatedAt: new Date() }
 				});
 
 			if (isBelowLowWater(observedCount, target, env.lowWaterRatio)) {
-				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
+				await requestPoolRefill(bucket, env, generationCountsByCourse, observedCount);
 				enqueued += 1;
 			} else if (observedCount >= target) {
 				const now = new Date();
@@ -230,7 +230,7 @@ export async function reconcilePoolRefillJobs(
 					.where(
 						and(
 							eq(poolRefillStates.questionType, questionType),
-							eq(poolRefillStates.apClass, bucket.apClass),
+							eq(poolRefillStates.course, bucket.course),
 							eq(poolRefillStates.unit, bucket.unit),
 							or(
 								inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
@@ -256,20 +256,20 @@ export async function reconcilePoolRefillJobs(
 export async function enqueueAllCatalogDeficits(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<number> {
-	const generationCountsByClass = await getMcqGenerationCountsByClass();
+	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
 	let enqueued = 0;
 	for (const questionType of POOL_QUESTION_TYPES) {
 		const adapter = getPoolKindAdapter(questionType);
 		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = adapter.targetFor({
-				apClass: bucket.apClass,
-				generationCountsByClass,
+				course: bucket.course,
+				generationCountsByCourse,
 				config: env
 			});
-			const observedCount = observedByBucket.get(`${bucket.apClass}\u0000${bucket.unit}`) ?? 0;
+			const observedCount = observedByBucket.get(`${bucket.course}\u0000${bucket.unit}`) ?? 0;
 			if (observedCount < target) {
-				await requestPoolRefill(bucket, env, generationCountsByClass, observedCount);
+				await requestPoolRefill(bucket, env, generationCountsByCourse, observedCount);
 				enqueued += 1;
 			}
 		}

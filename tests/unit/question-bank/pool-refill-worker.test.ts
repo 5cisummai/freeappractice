@@ -20,8 +20,8 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: () => mocks.db }));
 vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
-	countActivePoolRowsForServing: vi.fn(async (_type: string, apClass: string, unit: string) =>
-		mocks.state.completedBuckets.has(`${apClass}\u0000${unit}`) ? 1 : 0
+	countActivePoolRowsForServing: vi.fn(async (_type: string, course: string, unit: string) =>
+		mocks.state.completedBuckets.has(`${course}\u0000${unit}`) ? 1 : 0
 	),
 	getPoolRefillHealthCounts: vi.fn(async () => ({
 		emptyObserved: 0,
@@ -42,7 +42,7 @@ vi.mock('$lib/question-bank/pool-capacity.server', () => ({
 }));
 vi.mock('$lib/question-bank/pool-kind-worker.server', () => ({
 	estimatePoolGenerationSlots: vi.fn(async () => 1),
-	generatePoolQuestion: vi.fn(async (_type: string, apClass: string, unit: string) => {
+	generatePoolQuestion: vi.fn(async (_type: string, course: string, unit: string) => {
 		mocks.state.activeGenerations += 1;
 		mocks.state.maxConcurrentGenerations = Math.max(
 			mocks.state.maxConcurrentGenerations,
@@ -50,7 +50,7 @@ vi.mock('$lib/question-bank/pool-kind-worker.server', () => ({
 		);
 		await new Promise((resolve) => setTimeout(resolve, 20));
 		mocks.state.activeGenerations -= 1;
-		mocks.state.completedBuckets.add(`${apClass}\u0000${unit}`);
+		mocks.state.completedBuckets.add(`${course}\u0000${unit}`);
 		return { skippedDuplicate: false, generatedCount: 1 };
 	})
 }));
@@ -83,7 +83,7 @@ function makeJob(index: number): PoolRefillState {
 	return {
 		id: `job-${index}`,
 		questionType: 'mcq',
-		apClass: 'AP Biology',
+		course: 'AP Biology',
 		unit: `Unit ${index}`,
 		status: 'pending',
 		target: 1,

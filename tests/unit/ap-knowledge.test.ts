@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getAllowedClassNames } from '$lib/catalog/ap-classes';
+import { getAllowedCourses, getUnitsForCourse } from '$lib/catalog/ap-courses';
 import {
 	AP_KNOWLEDGE_CATALOG_VERSION,
 	getApCurriculumKnowledge,
@@ -8,46 +8,36 @@ import {
 
 describe('AP curriculum knowledge', () => {
 	it('covers every supported real AP course', () => {
-		const supportedRealCourses = [...getAllowedClassNames()];
+		const supportedRealCourses = [...getAllowedCourses()];
 
 		expect(listApCurriculumCourseNames().sort()).toEqual(supportedRealCourses.sort());
 	});
 
 	it('provides an official source and aligned unit list for every curated course', () => {
-		for (const apClass of listApCurriculumCourseNames()) {
-			const result = getApCurriculumKnowledge({ apClass });
-			expect(result.kind, apClass).toBe('course');
+		for (const course of listApCurriculumCourseNames()) {
+			const result = getApCurriculumKnowledge({ course });
+			expect(result.kind, course).toBe('course');
 			if (result.kind !== 'course') continue;
-			expect(result.units.length, apClass).toBeGreaterThan(0);
-			expect(result.sources.length, apClass).toBeGreaterThan(0);
+			expect(result.units.length, course).toBeGreaterThan(0);
+			expect(result.sources.length, course).toBeGreaterThan(0);
 			for (const source of result.sources) {
-				expect(source.url, apClass).toMatch(
+				expect(source.url, course).toMatch(
 					/^https:\/\/(apcentral|apstudents)\.collegeboard\.org\//
 				);
 			}
 		}
 	});
 
-	it('normalizes the official Government and Politics names to the canonical app course', () => {
-		const canonical = getApCurriculumKnowledge({ apClass: 'AP US Government' });
+	it('uses the app course name exactly', () => {
+		const canonical = getApCurriculumKnowledge({ course: 'AP US Government' });
 		expect(canonical.kind).toBe('course');
 		if (canonical.kind === 'course') {
-			expect(canonical.course.apClass).toBe('AP US Government');
+			expect(canonical.course.course).toBe('AP US Government');
 			expect(canonical.units).toHaveLength(5);
 		}
-
-		for (const officialName of [
-			'AP U.S. Government and Politics',
-			'AP US Government and Politics',
-			'AP United States Government and Politics'
-		]) {
-			const result = getApCurriculumKnowledge({ apClass: officialName });
-			expect(result.kind).toBe('course');
-			if (result.kind === 'course') {
-				expect(result.course.apClass).toBe('AP US Government');
-				expect(result.units).toHaveLength(5);
-			}
-		}
+		expect(getApCurriculumKnowledge({ course: 'AP U.S. Government and Politics' }).kind).toBe(
+			'not_found'
+		);
 	});
 
 	it('safely resolves every current catalog unit without crossing unit content', () => {
@@ -56,17 +46,17 @@ describe('AP curriculum knowledge', () => {
 		if (catalog.kind !== 'catalog') return;
 		for (const course of catalog.courses) {
 			for (const unit of course.units) {
-				const result = getApCurriculumKnowledge({ apClass: course.apClass, unit });
-				expect(result.kind, `${course.apClass} — ${unit}`).toBe('unit');
+				const result = getApCurriculumKnowledge({ course: course.course, unit });
+				expect(result.kind, `${course.course} — ${unit}`).toBe('unit');
 				if (result.kind !== 'unit') continue;
-				expect(result.unit.name, `${course.apClass} — ${unit}`).toBe(unit);
+				expect(result.unit.name, `${course.course} — ${unit}`).toBe(unit);
 			}
 		}
 	});
 
-	it('supports CSP big ideas and rejects stale Physics mappings', () => {
+	it('uses current app unit labels', () => {
 		const csp = getApCurriculumKnowledge({
-			apClass: 'AP Computer Science Principles',
+			course: 'AP Computer Science Principles',
 			unit: 'Big Idea 3: Algorithms and Programming'
 		});
 		expect(csp.kind).toBe('unit');
@@ -75,51 +65,47 @@ describe('AP curriculum knowledge', () => {
 		}
 
 		const physicsInduction = getApCurriculumKnowledge({
-			apClass: 'AP Physics 2',
+			course: 'AP Physics 2',
 			unit: 'Unit 13: Electromagnetic Induction'
 		});
-		expect(physicsInduction.kind).toBe('not_found');
+		expect(physicsInduction.kind).toBe('unit');
 
 		const staleNumberWithCurrentTitle = getApCurriculumKnowledge({
-			apClass: 'AP Physics 2',
+			course: 'AP Physics 2',
 			unit: 'Unit 15: Waves, Sound, and Physical Optics'
 		});
-		expect(staleNumberWithCurrentTitle.kind).toBe('not_found');
+		expect(staleNumberWithCurrentTitle.kind).toBe('unit');
 
 		const physicsOptics = getApCurriculumKnowledge({
-			apClass: 'AP Physics 2',
+			course: 'AP Physics 2',
 			unit: 'Geometric Optics'
 		});
-		expect(physicsOptics.kind).toBe('unit');
-		if (physicsOptics.kind === 'unit') {
-			expect(physicsOptics.unit.name).toBe('Unit 13: Geometric Optics');
-			expect(physicsOptics.unit.coverage).toBe('official_unit_title_only');
-		}
+		expect(physicsOptics.kind).toBe('not_found');
 
-		const statistics = getApCurriculumKnowledge({ apClass: 'AP Statistics' });
+		const statistics = getApCurriculumKnowledge({ course: 'AP Statistics' });
 		expect(statistics.kind).toBe('course');
 		if (statistics.kind === 'course') {
-			expect(statistics.units).toHaveLength(5);
-			expect(statistics.units.at(-1)?.name).toBe('Unit 5: Regression Analysis');
+			expect(statistics.units.map((unit) => unit.name)).toEqual(getUnitsForCourse('AP Statistics'));
 		}
 
-		const spanish = getApCurriculumKnowledge({ apClass: 'AP Spanish Language' });
+		const spanish = getApCurriculumKnowledge({ course: 'AP Spanish Language' });
 		expect(spanish.kind).toBe('course');
 		if (spanish.kind === 'course') {
-			expect(spanish.units[1]?.name).toBe('Unit 2: Language and Culture');
-			expect(spanish.units.at(-1)?.name).toBe('Unit 6: Global Contexts');
+			expect(spanish.units.map((unit) => unit.name)).toEqual(
+				getUnitsForCourse('AP Spanish Language')
+			);
 		}
 	});
 
 	it('returns bounded factual knowledge for an exact unit', () => {
 		const result = getApCurriculumKnowledge({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 3: Cellular Energetics'
 		});
 
 		expect(result.kind).toBe('unit');
 		if (result.kind !== 'unit') throw new Error('Expected unit knowledge');
-		expect(result.course.apClass).toBe('AP Biology');
+		expect(result.course.course).toBe('AP Biology');
 		expect(result.unit.name).toBe('Unit 3: Cellular Energetics');
 		expect(result.unit.coverage).toBe('official_unit_title_only');
 		expect(result.sources[0]?.url).toMatch(
@@ -128,19 +114,17 @@ describe('AP curriculum knowledge', () => {
 		expect(result.sources[0]?.url).not.toContain('utm_');
 	});
 
-	it('matches a unit from a student-friendly partial title', () => {
+	it('requires the app unit label', () => {
 		const result = getApCurriculumKnowledge({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'cellular energetics'
 		});
 
-		expect(result.kind).toBe('unit');
-		if (result.kind !== 'unit') throw new Error('Expected unit knowledge');
-		expect(result.unit.name).toBe('Unit 3: Cellular Energetics');
+		expect(result.kind).toBe('not_found');
 	});
 
 	it('returns a concise course map without copied curriculum prose', () => {
-		const result = getApCurriculumKnowledge({ apClass: 'AP Calculus AB' });
+		const result = getApCurriculumKnowledge({ course: 'AP Calculus AB' });
 
 		expect(result.kind).toBe('course');
 		if (result.kind !== 'course') throw new Error('Expected course knowledge');
@@ -164,11 +148,11 @@ describe('AP curriculum knowledge', () => {
 		expect(getApCurriculumKnowledge({ unit: 'Unit 3' })).toEqual(
 			expect.objectContaining({
 				kind: 'not_found',
-				message: expect.stringContaining('AP class')
+				message: expect.stringContaining('AP course')
 			})
 		);
 		expect(
-			getApCurriculumKnowledge({ apClass: 'AP Biology', unit: 'Unit 99: Time Travel' })
+			getApCurriculumKnowledge({ course: 'AP Biology', unit: 'Unit 99: Time Travel' })
 		).toEqual(
 			expect.objectContaining({
 				kind: 'not_found',

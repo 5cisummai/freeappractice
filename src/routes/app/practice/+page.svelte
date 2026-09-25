@@ -14,7 +14,7 @@
 
 	let { data } = $props();
 
-	const presetClass = $derived(page.url.searchParams.get('apClass') ?? '');
+	const presetCourse = $derived(page.url.searchParams.get('course') ?? '');
 	const presetUnit = $derived(page.url.searchParams.get('unit') ?? '');
 	const presetMode = $derived(page.url.searchParams.get('mode') ?? '');
 	const presetQuestion = $derived(page.url.searchParams.get('questionId') ?? '');
@@ -22,11 +22,11 @@
 	const runnerKey = $derived(
 		data.sharedQuiz
 			? `shared:${data.sharedQuiz.slug}`
-			: `practice:${presetClass}:${presetUnit}:${presetMode}:${presetQuestion}`
+			: `practice:${presetCourse}:${presetUnit}:${presetMode}:${presetQuestion}`
 	);
 
 	const runnerInitial = $derived({
-		selectedClass: data.sharedQuiz?.apClass ?? presetClass,
+		selectedCourse: data.sharedQuiz?.course ?? presetCourse,
 		selectedUnit: data.sharedQuiz
 			? data.sharedQuiz.unit === 'All Units'
 				? ''
@@ -41,10 +41,10 @@
 	type ApiErrorPayload = { error?: string };
 
 	onMount(() => {
-		const apClass = page.url.searchParams.get('apClass') ?? '';
+		const course = page.url.searchParams.get('course') ?? '';
 		const unit = page.url.searchParams.get('unit') ?? '';
 		capturePostHogEvent('practice_page_viewed', {
-			ap_class: apClass || undefined,
+			course: course || undefined,
 			page_type: 'app',
 			unit: unit || undefined
 		});
@@ -97,7 +97,7 @@
 		if (event.type === 'answered') handleAnswered(event.result);
 		if (event.type === 'frq-graded') {
 			capturePostHogEvent('frq_progress_saved', {
-				ap_class: event.attempt.apClass,
+				course: event.attempt.course,
 				unit: event.attempt.unit
 			});
 		}

@@ -11,7 +11,7 @@
 		"questionInstancesIncluded": false,
 		"questionInstancesStorage": "Neon PostgreSQL JSONB; see questionBank",
 		"appSourceFiles": [
-			"src/lib/data/ap-classes-data-08212026.json",
+			"src/lib/data/ap-courses-data-08212026.json",
 			"src/lib/data/ap-data.ts",
 			"src/lib/question-bank/mcq/generation.server.ts",
 			"src/lib/question-bank/frq/types.ts",
@@ -125,7 +125,7 @@
 			"id": "app-ap-classes",
 			"publisher": "Free AP Practice",
 			"title": "Canonical unified AP course catalog",
-			"url": "src/lib/data/ap-classes-data-08212026.json",
+			"url": "src/lib/data/ap-courses-data-08212026.json",
 			"sourceType": "app-source",
 			"official": false,
 			"accessedAt": "2026-08-21",
@@ -136,7 +136,7 @@
 			"id": "app-unit-descriptions",
 			"publisher": "Free AP Practice",
 			"title": "Canonical unified AP unit generation context",
-			"url": "src/lib/data/ap-classes-data-08212026.json",
+			"url": "src/lib/data/ap-courses-data-08212026.json",
 			"sourceType": "app-source",
 			"official": false,
 			"accessedAt": "2026-08-21",
@@ -152,13 +152,13 @@
 			"official": false,
 			"accessedAt": "2026-08-21",
 			"supports": ["seo-content", "unit-page-content", "class-page-content"],
-			"notes": "Class and unit SEO content is maintained in the separate practice-pages dataset and referenced by classPageId and practicePageId."
+			"notes": "Class and unit SEO content is maintained in the separate practice-pages dataset and referenced by coursePageId and practicePageId."
 		},
 		{
 			"id": "app-question-pool-targets",
 			"publisher": "Free AP Practice",
 			"title": "Canonical unified question pool target configuration",
-			"url": "src/lib/data/ap-classes-data-08212026.json",
+			"url": "src/lib/data/ap-courses-data-08212026.json",
 			"sourceType": "app-source",
 			"official": false,
 			"accessedAt": "2026-08-21",
@@ -1245,7 +1245,7 @@
 					"topicsCovered"
 				],
 				"optionalFields": ["diagram"],
-				"metadataFields": ["apClass", "unit"],
+				"metadataFields": ["course", "unit"],
 				"correctAnswerValues": ["A", "B", "C", "D"],
 				"additionalProperties": false,
 				"validationNotes": [
@@ -1261,7 +1261,7 @@
 			"poolRules": {
 				"defaultMcqTarget": 23,
 				"minMcqTarget": 12,
-				"mcqTargetsByClass": {
+				"mcqTargetsByCourse": {
 					"AP Biology": 41
 				},
 				"frqTarget": 10,
@@ -1292,7 +1292,7 @@
 					"parts",
 					"topicsCovered",
 					"mainTopic",
-					"apClass",
+					"course",
 					"unit"
 				],
 				"studentVisibleFields": [
@@ -1301,7 +1301,7 @@
 					"responseMode",
 					"parts",
 					"topicsCovered",
-					"apClass",
+					"course",
 					"unit"
 				],
 				"privateGradingFields": ["parts.answer", "parts.earns"],
@@ -1347,7 +1347,7 @@
 						"enabled": true,
 						"profileId": "ap-biology-frq-profile"
 					},
-					"classPageId": "ap-biology"
+					"coursePageId": "ap-biology"
 				}
 			},
 			"official": {
@@ -2365,7 +2365,7 @@
 						"enabled": true,
 						"profileId": "ap-chemistry-frq-profile"
 					},
-					"classPageId": "ap-chemistry"
+					"coursePageId": "ap-chemistry"
 				}
 			},
 			"official": {
@@ -3268,7 +3268,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-physics-1"
+					"coursePageId": "ap-physics-1"
 				}
 			},
 			"official": {
@@ -4080,7 +4080,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-physics-2"
+					"coursePageId": "ap-physics-2"
 				}
 			},
 			"official": {
@@ -4756,7 +4756,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-physics-c-mechanics"
+					"coursePageId": "ap-physics-c-mechanics"
 				}
 			},
 			"official": {
@@ -5480,7 +5480,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-physics-c-em"
+					"coursePageId": "ap-physics-c-em"
 				}
 			},
 			"official": {
@@ -6011,7 +6011,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-environmental-science"
+					"coursePageId": "ap-environmental-science"
 				}
 			},
 			"official": {
@@ -6744,7 +6744,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-calculus-ab"
+					"coursePageId": "ap-calculus-ab"
 				}
 			},
 			"official": {
@@ -7681,7 +7681,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-calculus-bc"
+					"coursePageId": "ap-calculus-bc"
 				}
 			},
 			"official": {
@@ -8468,7 +8468,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-statistics"
+					"coursePageId": "ap-statistics"
 				}
 			},
 			"official": {
@@ -9401,7 +9401,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-precalculus"
+					"coursePageId": "ap-precalculus"
 				}
 			},
 			"official": {
@@ -9896,7 +9896,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-computer-science-a"
+					"coursePageId": "ap-computer-science-a"
 				}
 			},
 			"official": {
@@ -10366,7 +10366,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-computer-science-principles"
+					"coursePageId": "ap-computer-science-principles"
 				}
 			},
 			"official": {
@@ -10893,7 +10893,7 @@
 						"enabled": true,
 						"profileId": "ap-english-language-frq-profile"
 					},
-					"classPageId": "ap-english-language"
+					"coursePageId": "ap-english-language"
 				}
 			},
 			"official": {
@@ -11846,7 +11846,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-english-literature"
+					"coursePageId": "ap-english-literature"
 				}
 			},
 			"official": {
@@ -12736,7 +12736,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-us-history"
+					"coursePageId": "ap-us-history"
 				}
 			},
 			"official": {
@@ -13651,7 +13651,7 @@
 						"enabled": true,
 						"profileId": "ap-world-history-frq-profile"
 					},
-					"classPageId": "ap-world-history"
+					"coursePageId": "ap-world-history"
 				}
 			},
 			"official": {
@@ -14714,7 +14714,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-european-history"
+					"coursePageId": "ap-european-history"
 				}
 			},
 			"official": {
@@ -15627,7 +15627,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-us-government"
+					"coursePageId": "ap-us-government"
 				}
 			},
 			"official": {
@@ -16187,7 +16187,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-comparative-government"
+					"coursePageId": "ap-comparative-government"
 				}
 			},
 			"official": {
@@ -16751,7 +16751,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-psychology"
+					"coursePageId": "ap-psychology"
 				}
 			},
 			"official": {
@@ -17303,7 +17303,7 @@
 						"enabled": true,
 						"profileId": "ap-human-geography-frq-profile"
 					},
-					"classPageId": "ap-human-geography"
+					"coursePageId": "ap-human-geography"
 				}
 			},
 			"official": {
@@ -18165,7 +18165,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-macroeconomics"
+					"coursePageId": "ap-macroeconomics"
 				}
 			},
 			"official": {
@@ -18796,7 +18796,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-microeconomics"
+					"coursePageId": "ap-microeconomics"
 				}
 			},
 			"official": {
@@ -19434,7 +19434,7 @@
 						"enabled": false,
 						"profileId": null
 					},
-					"classPageId": "ap-spanish-language"
+					"coursePageId": "ap-spanish-language"
 				}
 			},
 			"official": {

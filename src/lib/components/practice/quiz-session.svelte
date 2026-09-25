@@ -11,7 +11,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { resolveEffectiveUnit } from '$lib/catalog/ap-classes.js';
+	import { resolveEffectiveUnit } from '$lib/catalog/ap-courses.js';
 	import { requestMcqQuestion, requestMcqQuiz } from '$lib/question-bank/request.client.js';
 	import { createTextAnnotation } from '$lib/components/questions/text-annotation-dom.js';
 	import type {
@@ -28,7 +28,7 @@
 	import UsersIcon from '@tabler/icons-svelte/icons/users';
 
 	type QuizSessionProps = {
-		selectedClass: string;
+		selectedCourse: string;
 		selectedUnit: string;
 		unitRange?: readonly number[];
 		count: number;
@@ -44,7 +44,7 @@
 	};
 
 	let {
-		selectedClass,
+		selectedCourse,
 		selectedUnit,
 		unitRange,
 		count,
@@ -81,8 +81,8 @@
 	const exam = createExamCore({
 		getMounted: () => mounted,
 		loadQuestion: async (excludeIds) => {
-			const unit = resolveEffectiveUnit(selectedClass, selectedUnit, unitRange);
-			const result = await requestMcqQuestion(selectedClass, unit, excludeIds);
+			const unit = resolveEffectiveUnit(selectedCourse, selectedUnit, unitRange);
+			const result = await requestMcqQuestion(selectedCourse, unit, excludeIds);
 			if (!result.question.correctAnswer) {
 				throw new Error('Question did not include an answer key.');
 			}
@@ -90,7 +90,7 @@
 		},
 		loadQuestions: async (requestedCount) => {
 			const questions = await requestMcqQuiz(
-				selectedClass,
+				selectedCourse,
 				selectedUnit,
 				requestedCount,
 				unitRange
@@ -126,9 +126,9 @@
 	const quizTitle = $derived(
 		title ??
 			(selectedUnit
-				? `${selectedClass} · ${selectedUnit}`
-				: selectedClass
-					? `${selectedClass} Quiz`
+				? `${selectedCourse} · ${selectedUnit}`
+				: selectedCourse
+					? `${selectedCourse} Quiz`
 					: 'Graded Quiz')
 	);
 	const currentQuestionId = $derived(exam.currentQuestion?.questionId?.trim() ?? '');
@@ -174,7 +174,7 @@
 		const prompt = [
 			'I just finished a graded practice quiz and want to review it with you.',
 			`Quiz ID: ${exam.examId}.`,
-			`Course: ${selectedClass}. Unit: ${selectedUnit || 'All Units'}.`,
+			`Course: ${selectedCourse}. Unit: ${selectedUnit || 'All Units'}.`,
 			`Score: ${exam.correctCount}/${exam.requestedCount} (${exam.scorePercent}%).`,
 			missedSummary.length
 				? `Missed questions:\n${missedSummary.join('\n')}`
@@ -228,11 +228,11 @@
 	}
 
 	function selectionKey(): string {
-		return `${selectedClass}::${selectedUnit}::${unitRange?.join(',') ?? ''}`;
+		return `${selectedCourse}::${selectedUnit}::${unitRange?.join(',') ?? ''}`;
 	}
 
 	async function startQuiz(): Promise<void> {
-		if (!enabled || !selectedClass) return;
+		if (!enabled || !selectedCourse) return;
 		resetLocalSessionState();
 		setGenerating(true);
 		try {
@@ -240,7 +240,7 @@
 				count,
 				questions: initialQuestions?.length ? initialQuestions : undefined,
 				meta: {
-					apClass: selectedClass,
+					course: selectedCourse,
 					unit: selectedUnit || 'All Units',
 					kind: 'quiz'
 				}
@@ -273,7 +273,7 @@
 				body: JSON.stringify({
 					quizId: snapshot.examId,
 					...(sharedSlug ? { sharedSlug } : {}),
-					apClass: selectedClass,
+					course: selectedCourse,
 					unit: selectedUnit || 'All Units',
 					startedAt: snapshot.startedAt,
 					items
@@ -299,7 +299,7 @@
 		const run: PendingSharedQuizRun = {
 			quizId: snapshot.examId,
 			...(sharedSlug ? { sharedSlug } : {}),
-			apClass: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit || 'All Units',
 			startedAt: snapshot.startedAt,
 			retryCount: 0,
@@ -354,7 +354,7 @@
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					apClass: selectedClass,
+					course: selectedCourse,
 					unit: selectedUnit || 'All Units',
 					questionIds,
 					...(attachToGroup && groupOrganizationId ? { organizationId: groupOrganizationId } : {})

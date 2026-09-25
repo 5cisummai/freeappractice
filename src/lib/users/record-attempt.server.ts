@@ -1,6 +1,5 @@
 import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
 import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
-import { normalizeUnit } from '$lib/question-bank/util.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
 import type { IQuestionAttempt } from '$lib/users/records.server';
@@ -56,16 +55,16 @@ export async function recordQuestionAttempt(
 		return { status: 404, body: { error: 'Question metadata was not found' } };
 	}
 
-	const apClass = typeof question.apClass === 'string' ? question.apClass.trim() : '';
-	const normalizedUnit = normalizeUnit(question.unit);
-	if (!apClass || !normalizedUnit) {
+	const course = typeof question.course === 'string' ? question.course.trim() : '';
+	const normalizedUnit = question.unit?.trim() ?? '';
+	if (!course || !normalizedUnit) {
 		return { status: 422, body: { error: 'Question metadata is missing class or unit' } };
 	}
 
 	const wasCorrect = letter === question.correctAnswer;
 	const attempt: IQuestionAttempt = {
 		questionId: normalizedQuestionId,
-		apClass,
+		course,
 		unit: normalizedUnit,
 		selectedAnswer: letter,
 		wasCorrect,
@@ -81,7 +80,7 @@ export async function recordQuestionAttempt(
 			event: 'question_attempt_recorded',
 			properties: {
 				question_id: normalizedQuestionId,
-				ap_class: apClass,
+				course: course,
 				unit: normalizedUnit,
 				was_correct: attempt.wasCorrect,
 				time_taken_ms: elapsedTimeMs,

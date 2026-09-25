@@ -12,7 +12,7 @@ export const GET = withAuthedHandler(
 	async (event, userId) => {
 		const limit = Math.min(parseInt(event.url.searchParams.get('limit') ?? '50', 10) || 50, 200);
 		const page = Math.max(parseInt(event.url.searchParams.get('page') ?? '1', 10) || 1, 1);
-		const apClass = event.url.searchParams.get('apClass')?.trim() || undefined;
+		const course = event.url.searchParams.get('course')?.trim() || undefined;
 		const search = event.url.searchParams.get('search')?.trim() || undefined;
 		const filters = {
 			unit: event.url.searchParams.get('unit')?.trim() || undefined,
@@ -30,7 +30,7 @@ export const GET = withAuthedHandler(
 		const pageResult = await getPracticeHistoryPage(userId, {
 			page,
 			limit,
-			apClass,
+			course,
 			search,
 			sort,
 			filters,

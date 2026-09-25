@@ -12,7 +12,7 @@
 	import type { ExamNavItem, TutorMode } from '$lib/question-bank/mcq/types';
 
 	type FrqSessionProps = {
-		selectedClass: string;
+		selectedCourse: string;
 		selectedUnit: string;
 		selectedFormat?: string;
 		requestVersion: number;
@@ -26,7 +26,7 @@
 	};
 
 	let {
-		selectedClass,
+		selectedCourse,
 		selectedUnit,
 		selectedFormat = '',
 		requestVersion,
@@ -44,7 +44,7 @@
 	let stage = $state<'question' | 'review'>('question');
 
 	const core = createFrqCore({
-		getSelectedClass: () => selectedClass,
+		getSelectedCourse: () => selectedCourse,
 		getSelectedUnit: () => selectedUnit,
 		getSelectedFormat: () => selectedFormat,
 		getRequestVersion: () => requestVersion,
@@ -198,7 +198,7 @@
 			{#key question.questionId}
 				<QuestionTutor
 					{tutorMode}
-					apClass={question.apClass}
+					course={question.course}
 					unit={question.unit}
 					questionId={question.questionId}
 					frqQuestionId={question.questionId}

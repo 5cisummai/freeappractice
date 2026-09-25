@@ -73,6 +73,8 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 	let timerNowMs = $state(Date.now());
 	let runToken = 0;
 	let timerInterval: ReturnType<typeof setInterval> | null = null;
+	let questionTimeSpentMs: number[] = [];
+	let enteredQuestionAtMs = 0;
 
 	const loadedCount = $derived(questions.filter(Boolean).length);
 	const currentQuestion = $derived(questions[currentIndex] ?? null);
@@ -128,6 +130,25 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		timerInterval = null;
 	}
 
+	function activeElapsedNow(): number {
+		if (!startedAtMs) return 0;
+		const now = Date.now();
+		const pauseMs = accumulatedPauseMs + (isPaused && pausedAtMs !== null ? now - pausedAtMs : 0);
+		return Math.max(0, now - startedAtMs - pauseMs);
+	}
+
+	function leaveCurrentQuestion(): void {
+		if (!Number.isFinite(enteredQuestionAtMs)) return;
+		questionTimeSpentMs[currentIndex] += Math.max(0, activeElapsedNow() - enteredQuestionAtMs);
+		enteredQuestionAtMs = NaN;
+	}
+
+	function visitQuestion(index: number): void {
+		leaveCurrentQuestion();
+		currentIndex = index;
+		enteredQuestionAtMs = activeElapsedNow();
+	}
+
 	function startTimer(): void {
 		stopTimer();
 		timerInterval = setInterval(() => {
@@ -168,12 +189,15 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		pausedAtMs = null;
 		accumulatedPauseMs = 0;
 		timerNowMs = Date.now();
+		questionTimeSpentMs = [];
+		enteredQuestionAtMs = 0;
 	}
 
 	function initializeSlots(count: number): void {
 		questions = Array.from({ length: count }, () => null);
 		draftSelections = Array.from({ length: count }, () => null);
 		answers = Array.from({ length: count }, () => null);
+		questionTimeSpentMs = Array.from({ length: count }, () => 0);
 		flaggedIndexes = [];
 		failedIndexes = [];
 		currentIndex = 0;
@@ -190,6 +214,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		pausedAtMs = null;
 		accumulatedPauseMs = 0;
 		timerNowMs = now;
+		enteredQuestionAtMs = 0;
 		startTimer();
 	}
 
@@ -452,7 +477,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 	function goTo(index: number): void {
 		if (status !== 'active' && status !== 'review') return;
 		if (!questions[index] || index === currentIndex) return;
-		currentIndex = index;
+		visitQuestion(index);
 	}
 
 	function next(): void {
@@ -463,30 +488,50 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			enterReview();
 			return;
 		}
-		currentIndex += 1;
+		visitQuestion(currentIndex + 1);
 	}
 
 	function prev(): void {
 		if (status !== 'active' && status !== 'review') return;
 		if (currentIndex <= 0) return;
-		currentIndex -= 1;
+		visitQuestion(currentIndex - 1);
 	}
 
 	function enterReview(): void {
 		if (!canFinish || status !== 'active') return;
+		leaveCurrentQuestion();
 		status = 'review';
 	}
 
 	function exitReviewTo(index: number): void {
 		if (!questions[index]) return;
 		currentIndex = index;
+		enteredQuestionAtMs = activeElapsedNow();
 		status = 'active';
 	}
 
 	function setDraft(index: number, optionId: string | null): void {
 		if (status !== 'active' && status !== 'review') return;
 		if (index < 0 || index >= draftSelections.length) return;
-		draftSelections[index] = optionId;
+		if (!optionId) {
+			draftSelections[index] = null;
+			answers[index] = null;
+			return;
+		}
+		const question = questions[index];
+		if (!question?.correctAnswer) return;
+		const currentVisitMs =
+			index === currentIndex && Number.isFinite(enteredQuestionAtMs)
+				? Math.max(0, activeElapsedNow() - enteredQuestionAtMs)
+				: 0;
+		recordAnswer(index, {
+			questionId: questionId(question),
+			questionNumber: String(index + 1),
+			selectedAnswer: optionId,
+			correctAnswer: question.correctAnswer,
+			isCorrect: optionId === question.correctAnswer,
+			timeTakenMs: questionTimeSpentMs[index] + currentVisitMs
+		});
 	}
 
 	function setDraftCurrent(optionId: string | null): void {

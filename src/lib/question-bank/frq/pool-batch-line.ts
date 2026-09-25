@@ -6,7 +6,7 @@ import {
 /** One OpenAI Batch JSONL request for FRQ pool generation (`/v1/responses`). */
 export function buildFrqPoolBatchLine(opts: {
 	customId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	recentTopics?: string[];
 	formatId?: string;
@@ -15,7 +15,7 @@ export function buildFrqPoolBatchLine(opts: {
 	maxOutputTokens?: number;
 }): string {
 	const prompt = buildFrqGenerationPrompt(
-		opts.apClass,
+		opts.course,
 		opts.unit,
 		opts.recentTopics ?? [],
 		opts.formatId

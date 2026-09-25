@@ -20,8 +20,7 @@ import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
 import {
 	assertNoNullCharacters,
 	computeContentHash,
-	isDuplicateKeyError,
-	normalizeUnit
+	isDuplicateKeyError
 } from '$lib/question-bank/util.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
@@ -68,7 +67,7 @@ function stimulusChildHash(
 /** Build an active-library pool document with the full MCQ body inline. */
 function buildHotPoolDoc(opts: {
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	contentHash: string;
 	answer: APQuestionData;
@@ -77,7 +76,7 @@ function buildHotPoolDoc(opts: {
 }): Pick<
 	IQuestion,
 	| 'questionId'
-	| 'apClass'
+	| 'course'
 	| 'unit'
 	| 'mainTopic'
 	| 'contentHash'
@@ -97,7 +96,7 @@ function buildHotPoolDoc(opts: {
 	const { answer } = opts;
 	return {
 		questionId: opts.questionId,
-		apClass: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		contentHash: opts.contentHash,
 		mainTopic: answer.mainTopic,
@@ -117,7 +116,7 @@ function buildHotPoolDoc(opts: {
 }
 
 async function insertHotPoolDoc(
-	className: string,
+	course: string,
 	cacheUnit: string,
 	answer: APQuestionData,
 	questionId: string
@@ -133,7 +132,7 @@ async function insertHotPoolDoc(
 	}
 	return createCanonicalMcqQuestion(
 		buildHotPoolDoc({
-			apClass: className,
+			course: course,
 			unit: cacheUnit,
 			contentHash: computeContentHash(answer.question),
 			answer,
@@ -147,21 +146,21 @@ async function insertHotPoolDoc(
  * Must not be imported by request-path selection modules.
  */
 export async function generateQuestionForPool(
-	className: string,
+	course: string,
 	unit: string,
 	recentTopics: string[] = []
 ): Promise<GenerateResult & { skippedDuplicate?: boolean }> {
-	const cacheUnit = normalizeUnit(unit);
+	const cacheUnit = unit?.trim() ?? '';
 	const topics = recentTopics.length
 		? recentTopics
-		: await getRecentTopics({ kind: 'mcq', apClass: className, unit: cacheUnit }).catch(() => []);
-	const policy = getStimulusPolicy(className);
+		: await getRecentTopics({ kind: 'mcq', course: course, unit: cacheUnit }).catch(() => []);
+	const policy = getStimulusPolicy(course);
 	const diagramsEnabled =
 		(await isStimulusQuestionsEnabled()) &&
 		policy.allowDiscreteDiagrams &&
 		isStimulusPolicyEnabledForUnit(policy, cacheUnit);
 	const result = await generateAPQuestion({
-		className,
+		course,
 		unit,
 		recentTopics: topics,
 		diagramsEnabled
@@ -179,7 +178,7 @@ export async function generateQuestionForPool(
 	}
 
 	return insertGeneratedQuestionIntoPool({
-		className,
+		course,
 		unit: cacheUnit,
 		answer,
 		questionId,
@@ -189,14 +188,14 @@ export async function generateQuestionForPool(
 }
 
 export async function generateStimulusSetForPool(opts: {
-	className: string;
+	course: string;
 	unit: string;
 	childCount: number;
 	mode: 'text' | 'diagram' | 'mixed';
 	recentTopics?: string[];
 }): Promise<GenerateStimulusSetResult & { skippedDuplicate?: boolean; questionIds: string[] }> {
-	const cacheUnit = normalizeUnit(opts.unit);
-	const policy = getStimulusPolicy(opts.className);
+	const cacheUnit = opts.unit?.trim() ?? '';
+	const policy = getStimulusPolicy(opts.course);
 	const stimulusQuestionsEnabled = await isStimulusQuestionsEnabled();
 	if (
 		!stimulusQuestionsEnabled ||
@@ -218,9 +217,7 @@ export async function generateStimulusSetForPool(opts: {
 	}
 	const topics = opts.recentTopics?.length
 		? opts.recentTopics
-		: await getRecentTopics({ kind: 'mcq', apClass: opts.className, unit: cacheUnit }).catch(
-				() => []
-			);
+		: await getRecentTopics({ kind: 'mcq', course: opts.course, unit: cacheUnit }).catch(() => []);
 	const generated = await generateAPStimulusSet({
 		...opts,
 		recentTopics: topics,
@@ -234,19 +231,19 @@ export async function generateStimulusSetForPool(opts: {
 			);
 		}
 	}
-	const persisted = await persistStimulusSetToPool(opts.className, cacheUnit, generated.answer);
+	const persisted = await persistStimulusSetToPool(opts.course, cacheUnit, generated.answer);
 	return { ...generated, ...persisted };
 }
 
 /** Persist a batch/sync-parsed MCQ into Neon (worker/batch collect only). */
 export async function persistParsedQuestionToPool(
-	className: string,
+	course: string,
 	unit: string,
 	answer: APQuestionData
 ): Promise<{ questionId: string; skippedDuplicate?: boolean }> {
-	const cacheUnit = normalizeUnit(unit);
+	const cacheUnit = unit?.trim() ?? '';
 	if (answer.diagram) {
-		const policy = getStimulusPolicy(className);
+		const policy = getStimulusPolicy(course);
 		const allowed =
 			(await isStimulusQuestionsEnabled()) &&
 			policy.allowDiscreteDiagrams &&
@@ -260,7 +257,7 @@ export async function persistParsedQuestionToPool(
 	}
 	const questionId = randomUUID();
 	const inserted = await insertGeneratedQuestionIntoPool({
-		className,
+		course,
 		unit: cacheUnit,
 		answer,
 		questionId,
@@ -280,7 +277,7 @@ export async function persistParsedQuestionToPool(
 
 /** Persist every child of one validated stimulus set atomically. */
 export async function persistStimulusSetToPool(
-	className: string,
+	course: string,
 	unit: string,
 	input: APStimulusSetData & { diagram: Record<string, unknown> | null }
 ): Promise<{ questionIds: string[]; skippedDuplicate?: boolean }> {
@@ -299,14 +296,14 @@ export async function persistStimulusSetToPool(
 		const mainTopic = resolveQuestionMainTopic(child.mainTopic, topicsCovered) || 'Generated topic';
 		return {
 			questionId,
-			className,
+			course,
 			unit,
 			contentHash: stimulusChildHash(stimulus, child),
 			contentLength: child.question.length,
 			topicsId: randomUUID(),
 			topicsCovered,
 			data: {
-				apClass: className,
+				course: course,
 				unit,
 				mainTopic,
 				topicsCovered,
@@ -332,7 +329,7 @@ export async function persistStimulusSetToPool(
 			WITH input AS (
 				SELECT
 					item->>'questionId' AS question_id,
-					item->>'className' AS ap_class,
+					item->>'course' AS course,
 					item->>'unit' AS unit,
 					item->>'contentHash' AS content_hash,
 					(item->>'contentLength')::int AS content_length,
@@ -342,8 +339,8 @@ export async function persistStimulusSetToPool(
 				FROM jsonb_array_elements(${JSON.stringify(rows)}::jsonb) AS source(item)
 			), registry_rows AS (
 				INSERT INTO content.question_registry
-					(question_id, kind, ap_class, unit, content_hash, content_length)
-				SELECT question_id, 'mcq', ap_class, unit, content_hash, content_length
+					(question_id, kind, course, unit, content_hash, content_length)
+				SELECT question_id, 'mcq', course, unit, content_hash, content_length
 				FROM input
 				RETURNING question_id
 			), question_rows AS (
@@ -355,8 +352,8 @@ export async function persistStimulusSetToPool(
 				RETURNING question_id
 			), topic_rows AS (
 				INSERT INTO content.question_recent_topics
-					(id, kind, ap_class, unit, topics_covered, question_id)
-				SELECT topics_id, 'mcq', ap_class, unit, topics_covered, question_id
+					(id, kind, course, unit, topics_covered, question_id)
+				SELECT topics_id, 'mcq', course, unit, topics_covered, question_id
 				FROM input
 				WHERE topics_covered <> ''
 			)
@@ -375,7 +372,7 @@ export async function persistStimulusSetToPool(
 }
 
 async function insertGeneratedQuestionIntoPool(opts: {
-	className: string;
+	course: string;
 	unit: string;
 	answer: APQuestionData;
 	questionId: string;
@@ -385,11 +382,11 @@ async function insertGeneratedQuestionIntoPool(opts: {
 	const contentHash = computeContentHash(opts.answer.question);
 	const poolInsertStarted = Date.now();
 	try {
-		await insertHotPoolDoc(opts.className, opts.unit, opts.answer, opts.questionId);
+		await insertHotPoolDoc(opts.course, opts.unit, opts.answer, opts.questionId);
 	} catch (err: unknown) {
 		if (isDuplicateKeyError(err)) {
 			logger.info('[pool-write] duplicate key on pool insert, skipping', {
-				className: opts.className,
+				course: opts.course,
 				unit: opts.unit,
 				contentHash
 			});

@@ -30,18 +30,18 @@
 		progress,
 		historyItems,
 		historyError = false,
-		selectedSubjects = []
+		selectedCourses = []
 	}: {
 		stats: StatsData;
 		progress: ProgressEntry[];
 		historyItems: HistoryItem[];
 		historyError?: boolean;
-		selectedSubjects?: string[];
+		selectedCourses?: string[];
 	} = $props();
 
 	let selectedCourse = $state<CourseFilter>(ALL_COURSES);
 
-	const courses = $derived(availableCourses(progress, stats, selectedSubjects));
+	const courses = $derived(availableCourses(progress, stats, selectedCourses));
 	const showCourseSelect = $derived(courses.length > 1);
 	const courseHistory = $derived(filterHistory(historyItems, selectedCourse));
 	const accuracyRows = $derived(accuracyByScope(courseHistory, selectedCourse));
@@ -118,7 +118,7 @@
 		<StackedProgressChart
 			items={historyItems}
 			course={selectedCourse}
-			priorityLabels={selectedSubjects}
+			priorityLabels={selectedCourses}
 		/>
 
 		<div class="grid gap-4 lg:grid-cols-2">
@@ -182,7 +182,7 @@
 								{nextFocus.mastery}% mastery · {nextFocus.attempts} attempts
 							</p>
 						</div>
-						<Button href={practiceHref(nextFocus.apClass, nextFocus.unit)}>
+						<Button href={practiceHref(nextFocus.course, nextFocus.unit)}>
 							Practice {nextFocus.topic ?? nextFocus.unit}
 						</Button>
 					{:else}

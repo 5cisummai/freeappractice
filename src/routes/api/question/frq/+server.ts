@@ -18,7 +18,7 @@ export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const startedAt = Date.now();
 		const path = createQuestionPathMetrics('frq');
-		let apClass = '';
+		let course = '';
 		let unit = '';
 		let validationMs = 0;
 		const gated = await requireFrqPracticeEnabled();
@@ -32,7 +32,7 @@ export const POST: RequestHandler = withAuthedHandler(
 					path,
 					startedAt,
 					validationMs,
-					apClass,
+					course,
 					unit,
 					httpStatus: validated.response.status,
 					segment: 'error',
@@ -41,8 +41,8 @@ export const POST: RequestHandler = withAuthedHandler(
 				});
 				return validated.response;
 			}
-			({ className: apClass, unit } = validated.value);
-			if (!getFrqCourseProfile(apClass)) {
+			({ course: course, unit } = validated.value);
+			if (!getFrqCourseProfile(course)) {
 				return json(
 					{ error: 'Written-response practice is not available for this course' },
 					{ status: 400 }
@@ -50,14 +50,14 @@ export const POST: RequestHandler = withAuthedHandler(
 			}
 			let poolUnit = unit;
 			try {
-				poolUnit = resolveFrqPoolRequest(apClass, unit, validated.value.formatId).poolUnit;
+				poolUnit = resolveFrqPoolRequest(course, unit, validated.value.formatId).poolUnit;
 			} catch (error) {
 				if (error instanceof UnknownFrqTaskError) {
 					return json({ error: error.message }, { status: 400 });
 				}
 				throw error;
 			}
-			const outcome = await frqBank.get(apClass, poolUnit, {
+			const outcome = await frqBank.get(course, poolUnit, {
 				excludeQuestionIds: validated.value.excludeQuestionIds,
 				metrics: path,
 				allowRefill: true
@@ -69,7 +69,7 @@ export const POST: RequestHandler = withAuthedHandler(
 						path,
 						startedAt,
 						validationMs,
-						apClass,
+						course,
 						unit,
 						httpStatus: 200,
 						segment: path.segment ?? 'pool_hit',
@@ -83,7 +83,7 @@ export const POST: RequestHandler = withAuthedHandler(
 							question_type: path.questionType,
 							cache_outcome: 'hit',
 							provider: outcome.result.provider,
-							ap_class: apClass,
+							course: course,
 							unit,
 							db_connect_ms: path.dbConnectMs,
 							pool_query_ms: path.poolQueryMs
@@ -103,7 +103,7 @@ export const POST: RequestHandler = withAuthedHandler(
 						path,
 						startedAt,
 						validationMs,
-						apClass,
+						course,
 						unit,
 						httpStatus: 503,
 						segment: 'pool_warming',
@@ -127,7 +127,7 @@ export const POST: RequestHandler = withAuthedHandler(
 						path,
 						startedAt,
 						validationMs,
-						apClass,
+						course,
 						unit,
 						httpStatus: 503,
 						segment: 'pool_error',
@@ -152,7 +152,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				path,
 				startedAt,
 				validationMs,
-				apClass,
+				course,
 				unit,
 				httpStatus: 500,
 				segment: 'error',
@@ -165,7 +165,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				properties: {
 					request_source: 'authenticated_app',
 					question_type: path.questionType,
-					ap_class: apClass,
+					course: course,
 					unit,
 					latency_ms: Date.now() - startedAt,
 					error_type: error instanceof Error ? error.name : 'unknown'

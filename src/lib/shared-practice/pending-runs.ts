@@ -9,7 +9,7 @@ function parsePendingSharedQuizRun(value: unknown): PendingSharedQuizRun | null 
 	const candidate = value as Partial<PendingSharedQuizRun>;
 	if (
 		typeof candidate.quizId !== 'string' ||
-		typeof candidate.apClass !== 'string' ||
+		typeof candidate.course !== 'string' ||
 		typeof candidate.unit !== 'string' ||
 		typeof candidate.startedAt !== 'string' ||
 		!Array.isArray(candidate.items)

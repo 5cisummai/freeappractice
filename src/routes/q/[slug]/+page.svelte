@@ -59,7 +59,7 @@
 							{#snippet children(PracticeRunner)}
 								<PracticeRunner
 									initial={{
-										selectedClass: sharedQuiz.apClass,
+										selectedCourse: sharedQuiz.course,
 										selectedUnit: sharedQuiz.unit === 'All Units' ? '' : sharedQuiz.unit,
 										requestVersion: 1
 									}}
@@ -92,7 +92,7 @@
 					</Card.Header>
 					<Card.Content class="space-y-4 text-center">
 						<p class="text-sm text-muted-foreground">
-							{data.sharedQuiz.itemCount} multiple-choice questions · {data.sharedQuiz.apClass}
+							{data.sharedQuiz.itemCount} multiple-choice questions · {data.sharedQuiz.course}
 						</p>
 						<Button href={startHref} class="w-full">Start quiz</Button>
 						{#if !data.isAuthenticated}

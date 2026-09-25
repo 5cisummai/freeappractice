@@ -167,7 +167,7 @@ function normalizeFilters(
 	return {
 		...filters,
 		kind: filters.kind ?? 'mcq',
-		apClass: filters.apClass?.trim() || undefined,
+		course: filters.course?.trim() || undefined,
 		unit: filters.unit?.trim() || undefined,
 		minimumAgeDays,
 		maxCount
@@ -210,7 +210,7 @@ export async function reconcileQuestionInventory(
 						const serialized = JSON.stringify(question.content);
 						return {
 							questionId: object.questionId,
-							apClass: typeof question.apClass === 'string' ? question.apClass : undefined,
+							course: typeof question.course === 'string' ? question.course : undefined,
 							unit: typeof question.unit === 'string' ? question.unit : undefined,
 							questionCreatedAt: question.createdAt
 								? new Date(question.createdAt)
@@ -254,7 +254,7 @@ export async function previewReviewJob(
 			'V1 review runs only accept unreviewed questions to prevent duplicate labeling'
 		);
 	}
-	if (normalized.apClass || normalized.unit) {
+	if (normalized.course || normalized.unit) {
 		const db = getNeonDatabase();
 		const [{ count: unsynced }] = await db
 			.select({ count: sql<number>`count(*)::int` })
@@ -273,7 +273,7 @@ export async function previewReviewJob(
 			and(isNull(questionRegistry.questionCreatedAt), lte(questionRegistry.createdAt, cutoff))
 		)
 	];
-	if (normalized.apClass) registryFilters.push(eq(questionRegistry.apClass, normalized.apClass));
+	if (normalized.course) registryFilters.push(eq(questionRegistry.course, normalized.course));
 	if (normalized.unit) registryFilters.push(eq(questionRegistry.unit, normalized.unit));
 	if (normalized.createdAfter || normalized.createdBefore) {
 		const requestedEnd = normalized.createdBefore ? new Date(normalized.createdBefore) : cutoff;
@@ -487,7 +487,7 @@ async function submitNextBatch(jobId: string): Promise<void> {
 				const serialized = JSON.stringify(question);
 				await updateQuestionRegistryMetadata({
 					questionId: item.questionId,
-					apClass: inventoryItem.apClass,
+					course: inventoryItem.course,
 					unit: inventoryItem.unit,
 					questionCreatedAt: new Date(inventoryItem.createdAt),
 					contentHash: createHash('sha256').update(serialized).digest('hex'),
@@ -587,7 +587,7 @@ async function updateQualityFromBatchLine(
 				contentHash: questionRegistry.contentHash,
 				s3Etag: questionRegistry.s3Etag,
 				questionCreatedAt: questionRegistry.questionCreatedAt,
-				apClass: questionRegistry.apClass,
+				course: questionRegistry.course,
 				unit: questionRegistry.unit
 			})
 			.from(questionRegistry)
@@ -603,7 +603,7 @@ async function updateQualityFromBatchLine(
 				sourceHash: registry?.contentHash ?? null,
 				sourceEtag: registry?.s3Etag ?? null,
 				sourceCreatedAt: registry?.questionCreatedAt ?? null,
-				apClass: registry?.apClass ?? null,
+				course: registry?.course ?? null,
 				unit: registry?.unit ?? null,
 				state: transitionQualityState(
 					existing?.state ?? 'unreviewed',

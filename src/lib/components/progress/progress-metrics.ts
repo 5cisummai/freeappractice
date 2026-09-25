@@ -12,7 +12,7 @@ export type CourseFilter = typeof ALL_COURSES | string;
 
 export type NextFocus = {
 	kind: 'topic' | 'unit';
-	apClass: string;
+	course: string;
 	unit: string;
 	topic?: string;
 	mastery: number;
@@ -50,13 +50,13 @@ export type AccuracyScopeRow = {
 export function availableCourses(
 	progress: ProgressEntry[],
 	stats: StatsData,
-	selectedSubjects: string[]
+	selectedCourses: string[]
 ): string[] {
 	return [
 		...new Set([
-			...selectedSubjects,
-			...stats.subjectBreakdown.map((subject) => subject.subject),
-			...progress.map((entry) => entry.apClass)
+			...selectedCourses,
+			...stats.courseBreakdown.map((course) => course.course),
+			...progress.map((entry) => entry.course)
 		])
 	]
 		.filter(Boolean)
@@ -65,16 +65,16 @@ export function availableCourses(
 
 export function filterProgress(progress: ProgressEntry[], course: CourseFilter): ProgressEntry[] {
 	if (course === ALL_COURSES) return progress;
-	return progress.filter((entry) => entry.apClass === course);
+	return progress.filter((entry) => entry.course === course);
 }
 
 export function filterHistory(items: HistoryItem[], course: CourseFilter): HistoryItem[] {
 	if (course === ALL_COURSES) return items;
-	return items.filter((item) => item.attempt.apClass === course);
+	return items.filter((item) => item.attempt.course === course);
 }
 
 function scopeLabel(item: HistoryItem, course: CourseFilter): string {
-	return course === ALL_COURSES ? item.attempt.apClass : item.attempt.unit || 'All units';
+	return course === ALL_COURSES ? item.attempt.course : item.attempt.unit || 'All units';
 }
 
 export function accuracyByScope(items: HistoryItem[], course: CourseFilter): AccuracyScopeRow[] {
@@ -108,7 +108,7 @@ export function selectNextFocus(progress: ProgressEntry[]): NextFocus | null {
 			if (topic.attempts < MIN_TOPIC_ATTEMPTS || topic.mastery === null) continue;
 			topicCandidates.push({
 				kind: 'topic',
-				apClass: entry.apClass,
+				course: entry.course,
 				unit: entry.unit,
 				topic: topic.name,
 				mastery: topic.mastery,
@@ -130,7 +130,7 @@ export function selectNextFocus(progress: ProgressEntry[]): NextFocus | null {
 		if (!pick) return null;
 		return {
 			kind: pick.kind,
-			apClass: pick.apClass,
+			course: pick.course,
 			unit: pick.unit,
 			topic: pick.topic,
 			mastery: pick.mastery,
@@ -150,7 +150,7 @@ export function selectNextFocus(progress: ProgressEntry[]): NextFocus | null {
 	if (!unit) return null;
 	return {
 		kind: 'unit',
-		apClass: unit.apClass,
+		course: unit.course,
 		unit: unit.unit,
 		mastery: unit.mastery,
 		attempts: unit.totalAttempts + (unit.frqAttempts ?? 0),
@@ -169,9 +169,9 @@ export function nextFocusCopy(focus: NextFocus): { heading: string; supporting: 
 	return { heading, supporting };
 }
 
-export function practiceHref(apClass: string, unit?: string, mode?: 'frq'): string {
+export function practiceHref(course: string, unit?: string, mode?: 'frq'): string {
 	const params = new URLSearchParams();
-	if (apClass) params.set('apClass', apClass);
+	if (course) params.set('course', course);
 	if (unit) params.set('unit', unit);
 	if (mode) params.set('mode', mode);
 	const query = params.toString();
@@ -189,7 +189,7 @@ export function stackedActivityByScope(
 	const totals = new Map<string, number>();
 
 	for (const item of items) {
-		if (course !== ALL_COURSES && item.attempt.apClass !== course) continue;
+		if (course !== ALL_COURSES && item.attempt.course !== course) continue;
 		const label = scopeLabel(item, course);
 		labels.add(label);
 		totals.set(label, (totals.get(label) ?? 0) + 1);

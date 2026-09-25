@@ -31,7 +31,7 @@ export function isAccountSurface(pathname: string): boolean {
 export function isAgeGateExempt(pathname: string): boolean {
 	return (
 		pathname.startsWith('/api/auth/') ||
-		pathname === '/api/me/subjects' ||
+		pathname === '/api/me/courses' ||
 		pathname === '/api/super/confirm-age' ||
 		matchesPath(pathname, '/app/onboarding') ||
 		matchesPath(pathname, '/app/confirm-age')

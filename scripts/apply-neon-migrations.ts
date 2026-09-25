@@ -22,6 +22,7 @@ const migrationsDirectory = resolve(process.env.DRIZZLE_MIGRATIONS_DIR ?? 'drizz
 const statementBreakpoint = /--> statement-breakpoint/g;
 const QUESTION_JSONB_CLEANUP_MIGRATION = '0020_nice_exiles.sql';
 const FRQ_GRADE_CLEANUP_MIGRATION = '0027_windy_william_stryker.sql';
+const COURSE_RENAME_MIGRATION = '0028_serious_skin.sql';
 const MIGRATION_ID_ALIASES: Record<string, string> = {
 	'0027_windy_william_stryker': '0026_windy_william_stryker'
 };
@@ -93,6 +94,15 @@ async function main(): Promise<void> {
 			.map((statement) => statement.trim())
 			.filter(Boolean)
 			.map((statement) => sql.query(statement));
+		if (file === COURSE_RENAME_MIGRATION) {
+			for (const table of ['mcq_questions', 'frq_questions']) {
+				transaction.unshift(
+					sql.query(
+						`UPDATE content.${table} SET data = (data - 'apClass') || jsonb_build_object('course', data->'apClass') WHERE data ? 'apClass'`
+					)
+				);
+			}
+		}
 		transaction.push(
 			sql.query('INSERT INTO public._neon_schema_migrations (id, checksum) VALUES ($1, $2)', [
 				id,

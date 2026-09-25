@@ -10,7 +10,7 @@ export const poolRefillStates = opsSchema.table(
 	{
 		id: text('id').primaryKey(),
 		questionType: text('question_type').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		status: text('status').notNull(),
 		target: integer('target').notNull(),
@@ -27,7 +27,7 @@ export const poolRefillStates = opsSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		uniqueIndex('pool_refill_states_bucket_uq').on(table.questionType, table.apClass, table.unit),
+		uniqueIndex('pool_refill_states_bucket_uq').on(table.questionType, table.course, table.unit),
 		index('pool_refill_states_claim_idx').on(
 			table.status,
 			table.nextAttemptAt,
@@ -41,7 +41,7 @@ export const poolBucketWriteLocks = opsSchema.table(
 	{
 		id: text('id').primaryKey(),
 		questionType: text('question_type').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		leaseOwner: text('lease_owner'),
 		leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true, mode: 'date' }),
@@ -51,7 +51,7 @@ export const poolBucketWriteLocks = opsSchema.table(
 	(table) => [
 		uniqueIndex('pool_bucket_write_locks_bucket_uq').on(
 			table.questionType,
-			table.apClass,
+			table.course,
 			table.unit
 		)
 	]

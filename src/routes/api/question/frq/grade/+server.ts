@@ -26,7 +26,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				distinctId: userId,
 				event: 'frq_response_graded',
 				properties: {
-					ap_class: attempt.apClass,
+					course: attempt.course,
 					unit: attempt.unit,
 					grading_latency_ms: Date.now() - startedAt,
 					points_earned: attempt.grade.pointsEarned,

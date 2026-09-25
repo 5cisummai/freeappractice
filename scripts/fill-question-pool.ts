@@ -18,7 +18,7 @@ import {
 } from '../src/lib/question-bank/pool-refill-queue.server';
 import { countOpenPoolRefillJobs } from '../src/lib/question-bank/pool-counts.server';
 import { runQuestionPoolRefillWorker } from '../src/lib/question-bank/pool-refill.server';
-import { getMcqGenerationCountsByClass } from '../src/lib/question-bank/gen-stats.server';
+import { getMcqGenerationCountsByCourse } from '../src/lib/question-bank/gen-stats.server';
 import { QUESTION_POOL_CONFIG } from '../src/lib/question-bank/pool-constants';
 import {
 	getPoolKindAdapter,
@@ -42,7 +42,7 @@ const maxRounds = Math.max(
 );
 
 async function printDeficitSummary(
-	generationCountsByClass: Record<string, number>
+	generationCountsByCourse: Record<string, number>
 ): Promise<{ deficit: number; pending: number }> {
 	const env = QUESTION_POOL_CONFIG;
 	let deficit = 0;
@@ -53,11 +53,11 @@ async function printDeficitSummary(
 		const adapter = getPoolKindAdapter(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
 			const target = adapter.targetFor({
-				apClass: bucket.apClass,
-				generationCountsByClass,
+				course: bucket.course,
+				generationCountsByCourse,
 				config: env
 			});
-			const active = await countActivePoolRows(questionType, bucket.apClass, bucket.unit);
+			const active = await countActivePoolRows(questionType, bucket.course, bucket.unit);
 			deficit += Math.max(0, target - active);
 		}
 	}
@@ -86,21 +86,21 @@ async function main() {
 		maxRounds
 	});
 
-	const generationCountsByClass = await getMcqGenerationCountsByClass();
-	await printDeficitSummary(generationCountsByClass);
+	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
+	await printDeficitSummary(generationCountsByCourse);
 
 	let enqueued = 0;
 	if (typeFilter === 'mcq' || typeFilter === 'frq') {
 		const adapter = getPoolKindAdapter(typeFilter);
 		for (const bucket of listCatalogBuckets(typeFilter)) {
 			const target = adapter.targetFor({
-				apClass: bucket.apClass,
-				generationCountsByClass,
+				course: bucket.course,
+				generationCountsByCourse,
 				config: env
 			});
-			const active = await countActivePoolRows(typeFilter, bucket.apClass, bucket.unit);
+			const active = await countActivePoolRows(typeFilter, bucket.course, bucket.unit);
 			if (active < target) {
-				await requestPoolRefill(bucket, env, generationCountsByClass);
+				await requestPoolRefill(bucket, env, generationCountsByCourse);
 				enqueued += 1;
 			}
 		}
@@ -127,7 +127,7 @@ async function main() {
 			`Round ${round}: generated=${summary.generated} skipped=${summary.skippedDuplicates} failed=${summary.failed} processed=${summary.processed} stopped=${summary.stoppedReason} budgetRemaining=${summary.budgetRemaining}`
 		);
 
-		const { deficit, pending } = await printDeficitSummary(generationCountsByClass);
+		const { deficit, pending } = await printDeficitSummary(generationCountsByCourse);
 		if (summary.stoppedReason === 'daily_budget') {
 			console.log('Stopped: daily LLM budget exhausted.');
 			break;
@@ -147,7 +147,7 @@ async function main() {
 		totalSkipped,
 		totalFailed
 	});
-	await printDeficitSummary(generationCountsByClass);
+	await printDeficitSummary(generationCountsByCourse);
 	process.exit(0);
 }
 

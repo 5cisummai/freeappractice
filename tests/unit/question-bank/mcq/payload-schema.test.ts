@@ -4,7 +4,7 @@ import { parseMcqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
 describe('parseMcqQuestionPayload', () => {
 	it('fills optional fields omitted by legacy JSONB rows', () => {
 		const parsed = parseMcqQuestionPayload({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			question: 'Which organelle makes ATP?',
 			correctAnswer: 'b',
 			optionA: 'Nucleus',
@@ -14,7 +14,7 @@ describe('parseMcqQuestionPayload', () => {
 		});
 
 		expect(parsed).toMatchObject({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'all-units',
 			mainTopic: 'Legacy topic',
 			topicsCovered: '',
@@ -27,7 +27,7 @@ describe('parseMcqQuestionPayload', () => {
 
 	it('derives hasDiagram from a legacy diagram object', () => {
 		const parsed = parseMcqQuestionPayload({
-			apClass: 'AP Physics 1',
+			course: 'AP Physics 1',
 			unit: 'Kinematics',
 			question: 'Which graph is correct?',
 			correctAnswer: 'A',
@@ -40,7 +40,7 @@ describe('parseMcqQuestionPayload', () => {
 
 	it('parses structured stimulus metadata without changing legacy fields', () => {
 		const parsed = parseMcqQuestionPayload({
-			apClass: 'AP World History',
+			course: 'AP World History',
 			unit: 'Unit 3',
 			mainTopic: 'Trade networks',
 			question: 'Which conclusion is best supported?',
@@ -72,7 +72,7 @@ describe('parseMcqQuestionPayload', () => {
 
 	it('ignores malformed set metadata instead of breaking a legacy row', () => {
 		const parsed = parseMcqQuestionPayload({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			question: 'Which organelle makes ATP?',
 			optionA: 'A',
 			optionB: 'B',

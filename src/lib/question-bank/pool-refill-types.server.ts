@@ -4,7 +4,7 @@ export type PoolRefillStatus = 'pending' | 'running' | 'idle' | 'failed' | 'budg
 export interface PoolRefillState {
 	id: string;
 	questionType: PoolRefillQuestionType;
-	apClass: string;
+	course: string;
 	unit: string;
 	status: PoolRefillStatus;
 	target: number;
@@ -24,7 +24,7 @@ export interface PoolRefillState {
 export type PoolBucketWriteLock = {
 	id: string;
 	questionType: PoolRefillQuestionType;
-	apClass: string;
+	course: string;
 	unit: string;
 	leaseOwner?: string | null;
 	leaseExpiresAt?: Date | null;

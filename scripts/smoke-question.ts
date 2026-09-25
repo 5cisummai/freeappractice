@@ -1,5 +1,5 @@
 const baseUrl = process.env.SMOKE_BASE_URL?.trim();
-const className = process.env.SMOKE_CLASS?.trim() || 'AP Biology';
+const course = process.env.SMOKE_CLASS?.trim() || 'AP Biology';
 const unit = process.env.SMOKE_UNIT?.trim() || '';
 const maxAttempts = Number(process.env.SMOKE_MAX_ATTEMPTS || 4);
 
@@ -77,7 +77,7 @@ async function requestQuestion(): Promise<{ response: JsonRecord; attempts: numb
 		const httpResponse = await fetch(new URL('/api/question', smokeBase), {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ className, unit })
+			body: JSON.stringify({ course, unit })
 		});
 		const response = await readJson(httpResponse);
 
@@ -122,7 +122,7 @@ if (!correctAnswer) throw new Error('Question payload is missing a correct answe
 if (!questionId) throw new Error('Question response is missing questionId');
 
 console.log(
-	`Question smoke passed: ${className}${unit ? ` / ${unit}` : ''} (${questionId}, ${attempts} attempt${attempts === 1 ? '' : 's'})`
+	`Question smoke passed: ${course}${unit ? ` / ${unit}` : ''} (${questionId}, ${attempts} attempt${attempts === 1 ? '' : 's'})`
 );
 
 export {};

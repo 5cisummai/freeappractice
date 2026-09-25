@@ -10,7 +10,7 @@
  *   bun run pool:retire --dry-run
  *   bun run pool:retire --confirm=RETIRE-POOL
  *   bun run pool:retire --type mcq --confirm=RETIRE-POOL
- *   bun run pool:retire --class "AP Biology" --unit "Unit 1" --confirm=RETIRE-POOL
+ *   bun run pool:retire --course "AP Biology" --unit "Unit 1" --confirm=RETIRE-POOL
  */
 
 import 'dotenv/config';
@@ -34,9 +34,9 @@ const typeFilter = (
 	getFlagValue('--type') ??
 	'all'
 ).toLowerCase();
-const classFilter =
-	process.argv.find((arg) => arg.startsWith('--class='))?.slice('--class='.length) ??
-	getFlagValue('--class');
+const courseFilter =
+	process.argv.find((arg) => arg.startsWith('--course='))?.slice('--course='.length) ??
+	getFlagValue('--course');
 const unitFilter =
 	process.argv.find((arg) => arg.startsWith('--unit='))?.slice('--unit='.length) ??
 	getFlagValue('--unit');
@@ -48,17 +48,17 @@ function getFlagValue(flag: string): string | undefined {
 }
 
 type BucketRow = {
-	apClass: string;
+	course: string;
 	unit: string;
 	total: number;
 };
 
 function buildConditions(table: typeof mcqQuestions | typeof frqQuestions) {
-	const apClass = questionPayloadTextField(table.data, 'apClass');
+	const course = questionPayloadTextField(table.data, 'course');
 	const unit = questionPayloadTextField(table.data, 'unit');
 	return [
 		eq(table.active, true),
-		...(classFilter?.trim() ? [eq(apClass, classFilter.trim())] : []),
+		...(courseFilter?.trim() ? [eq(course, courseFilter.trim())] : []),
 		...(unitFilter?.trim() ? [eq(unit, unitFilter.trim())] : [])
 	];
 }
@@ -66,26 +66,25 @@ function buildConditions(table: typeof mcqQuestions | typeof frqQuestions) {
 async function summarize(
 	table: typeof mcqQuestions | typeof frqQuestions
 ): Promise<{ total: number; buckets: BucketRow[] }> {
-	const apClass = questionPayloadTextField(table.data, 'apClass');
+	const course = questionPayloadTextField(table.data, 'course');
 	const unit = questionPayloadTextField(table.data, 'unit');
 	const rows = await getNeonDatabase()
 		.select({
-			apClass,
+			course,
 			unit,
 			total: sql<number>`count(*)`
 		})
 		.from(table)
 		.where(and(...buildConditions(table)))
-		.groupBy(apClass, unit);
+		.groupBy(course, unit);
 	const buckets = rows.map((row) => ({
-		apClass: row.apClass,
+		course: row.course,
 		unit: row.unit,
 		total: Number(row.total)
 	}));
 	const total = buckets.reduce((sum, bucket) => sum + bucket.total, 0);
 	buckets.sort(
-		(a, b) =>
-			b.total - a.total || a.apClass.localeCompare(b.apClass) || a.unit.localeCompare(b.unit)
+		(a, b) => b.total - a.total || a.course.localeCompare(b.course) || a.unit.localeCompare(b.unit)
 	);
 	return { total, buckets };
 }
@@ -95,7 +94,7 @@ function printBucketReport(label: string, buckets: BucketRow[], total: number): 
 	console.log(`  active rows: ${total}`);
 	console.log(`  affected buckets: ${buckets.length}`);
 	for (const bucket of buckets.slice(0, 40)) {
-		console.log(`    - ${bucket.apClass} · ${bucket.unit}: ${bucket.total}`);
+		console.log(`    - ${bucket.course} · ${bucket.unit}: ${bucket.total}`);
 	}
 	if (buckets.length > 40) {
 		console.log(`    … and ${buckets.length - 40} more bucket(s)`);
@@ -123,7 +122,7 @@ async function main() {
 
 	const affectedBuckets = new Set<string>();
 	for (const bucket of [...mcq.buckets, ...frq.buckets]) {
-		affectedBuckets.add(`${bucket.apClass}::${bucket.unit}`);
+		affectedBuckets.add(`${bucket.course}::${bucket.unit}`);
 	}
 
 	console.log(`\nTotal affected buckets (union): ${affectedBuckets.size}`);

@@ -49,7 +49,7 @@
 	}
 
 	function taskTitle(task: StudyTask): string {
-		return task.unit.trim() || task.apClass;
+		return task.unit.trim() || task.course;
 	}
 
 	function modeLabel(mode: 'mcq' | 'frq' | 'review'): string {
@@ -205,7 +205,7 @@
 													{task.durationMinutes} min
 												</span>
 												<span aria-hidden="true">/</span>
-												<span>{task.apClass}</span>
+												<span>{task.course}</span>
 											</p>
 										</div>
 

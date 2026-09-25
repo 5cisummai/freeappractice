@@ -17,7 +17,7 @@ export type ReviewJobStatus =
 
 export interface ReviewFilters {
 	kind?: 'mcq' | 'frq';
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	qualityState?: 'unreviewed' | 'awaiting_human' | 'final';
 	createdAfter?: string;
@@ -95,7 +95,7 @@ export interface QualityJobSummary {
 
 export interface HumanReviewItem {
 	questionId: string;
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	stimulus?: string;
 	question?: string;

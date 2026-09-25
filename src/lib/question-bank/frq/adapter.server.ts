@@ -8,33 +8,33 @@ import { questionBucketFields } from '$lib/server/neon/jsonb';
 import { poolTargetForBucket, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
 import type { PoolKindAdapter, PoolKindBucket } from '$lib/question-bank/pool-kinds.server';
 
-function bucketKey(apClass: string, unit: string): string {
-	return `${apClass}\u0000${unit}`;
+function bucketKey(course: string, unit: string): string {
+	return `${course}\u0000${unit}`;
 }
 
 function listBuckets(): PoolKindBucket[] {
-	return getFrqCourseNames().flatMap((apClass) =>
-		frqBucketUnits(apClass).map((unit) => ({ questionType: 'frq' as const, apClass, unit }))
+	return getFrqCourseNames().flatMap((course) =>
+		frqBucketUnits(course).map((unit) => ({ questionType: 'frq' as const, course, unit }))
 	);
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
-	const { apClass, unit } = questionBucketFields(frqQuestions.data);
+	const { course, unit } = questionBucketFields(frqQuestions.data);
 	const formatId = sql<string>`${frqQuestions.data} ->> 'formatId'`;
 	const rows = await getNeonDatabase()
 		.select({
-			apClass,
+			course,
 			unit,
 			formatId,
 			count: sql<number>`count(*)`
 		})
 		.from(frqQuestions)
 		.where(eq(frqQuestions.active, true))
-		.groupBy(apClass, unit, formatId);
+		.groupBy(course, unit, formatId);
 	const counts = new Map<string, number>();
 	for (const row of rows) {
-		const keyUnit = frqPracticeFor(row.apClass)?.control === 'task' ? row.formatId : row.unit;
-		const key = bucketKey(row.apClass, keyUnit);
+		const keyUnit = frqPracticeFor(row.course)?.control === 'task' ? row.formatId : row.unit;
+		const key = bucketKey(row.course, keyUnit);
 		counts.set(key, (counts.get(key) ?? 0) + Number(row.count));
 	}
 	return counts;
@@ -48,8 +48,8 @@ export const frqPoolKind: PoolKindAdapter = {
 	countActive: countActiveFrqQuestions,
 	countActiveByBucket,
 	targetFor: (input: {
-		apClass: string;
-		generationCountsByClass?: Record<string, number>;
+		course: string;
+		generationCountsByCourse?: Record<string, number>;
 		config?: QuestionPoolConfig;
 	}) => poolTargetForBucket({ questionType: 'frq', ...input })
 };

@@ -4,22 +4,22 @@
 	import type { PracticePage } from '$lib/catalog/practice-pages.js';
 	import {
 		formatUnitLabel,
-		getClassPracticePageFor,
-		getUnitPagesForClass
+		getCoursePracticePageFor,
+		getUnitPagesForCourse
 	} from '$lib/catalog/practice-pages.js';
 
 	let { page }: { page: PracticePage } = $props();
 
-	const classPage = $derived(getClassPracticePageFor(page));
-	const unitPages = $derived(getUnitPagesForClass(page.className));
+	const coursePage = $derived(getCoursePracticePageFor(page));
+	const unitPages = $derived(getUnitPagesForCourse(page.course));
 </script>
 
 <nav class="space-y-8" aria-label="Practice hub navigation">
-	{#if page.type === 'class'}
+	{#if page.type === 'course'}
 		{#if unitPages.length > 0}
 			<section>
 				<h2 class="mb-3 text-sm font-semibold tracking-wide text-foreground uppercase">
-					Units in {page.className}
+					Units in {page.course}
 				</h2>
 				<ul class="grid gap-2 sm:grid-cols-2">
 					{#each unitPages as unitPage (unitPage.slug)}
@@ -46,7 +46,7 @@
 		{#if unitPages.length > 0}
 			<section>
 				<h2 class="mb-3 text-sm font-semibold tracking-wide text-foreground uppercase">
-					All units in {page.className}
+					All units in {page.course}
 				</h2>
 				<ul class="grid gap-2 sm:grid-cols-2">
 					{#each unitPages as unitPage (unitPage.slug)}
@@ -71,13 +71,13 @@
 		{/if}
 	{/if}
 
-	{#if classPage && page.type !== 'class'}
+	{#if coursePage && page.type !== 'course'}
 		<section>
 			<a
-				href={resolve(`/practice/${classPage.slug}`)}
+				href={resolve(`/practice/${coursePage.slug}`)}
 				class="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
 			>
-				All {page.className} practice
+				All {page.course} practice
 				<ArrowRightIcon class="size-4" />
 			</a>
 		</section>

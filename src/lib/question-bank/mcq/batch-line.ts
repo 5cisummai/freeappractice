@@ -3,7 +3,7 @@ import { apQuestionJsonSchema, buildMcqGenerationPrompt } from './generation.ser
 /** One OpenAI Batch JSONL request for MCQ pool generation (`/v1/responses`). */
 export function buildMcqPoolBatchLine(opts: {
 	customId: string;
-	className: string;
+	course: string;
 	unit: string;
 	recentTopics?: string[];
 	model: string;
@@ -12,7 +12,7 @@ export function buildMcqPoolBatchLine(opts: {
 	diagramsEnabled?: boolean;
 }): string {
 	const { system, user } = buildMcqGenerationPrompt({
-		className: opts.className,
+		course: opts.course,
 		unit: opts.unit,
 		recentTopics: opts.recentTopics,
 		diagramsEnabled: opts.diagramsEnabled

@@ -37,7 +37,7 @@ function toAttemptView(attempt: IFrqAttempt): FrqAttemptView {
 	return {
 		id: attempt.id,
 		questionId: attempt.questionId,
-		apClass: attempt.apClass,
+		course: attempt.course,
 		unit: attempt.unit,
 		formatId: attempt.formatId,
 		responses: attempt.responses,
@@ -68,7 +68,7 @@ async function claimSubmission(
 			userId,
 			submissionId: request.submissionId,
 			questionId: request.questionId,
-			apClass: question.apClass,
+			course: question.course,
 			unit: question.unit,
 			formatId: question.formatId,
 			responses: request.responses,
@@ -133,7 +133,7 @@ export async function gradeFrqAttempt(
 ): Promise<FrqAttemptView> {
 	const question = await getFrqQuestionById(request.questionId);
 	const gradingGuidance =
-		getFrqFormat(question.apClass, question.formatId)?.gradingGuidance ??
+		getFrqFormat(question.course, question.formatId)?.gradingGuidance ??
 		'Score each stored part as an integer from 0 through that part’s points.';
 	validateResponseKeys(question, request.responses);
 
@@ -168,7 +168,7 @@ export async function gradeFrqAttempt(
 			schema: FrqGradeModelOutputSchema,
 			schemaName: 'frq_grade',
 			reasoningEffort: 'high',
-			logContext: { questionId: request.questionId, apClass: question.apClass }
+			logContext: { questionId: request.questionId, course: question.course }
 		});
 		const grade = buildFrqGrade(question, request.responses, parsed);
 		await updateFrqAttemptGrade(attempt, grade, model);
@@ -205,7 +205,7 @@ export async function getFrqAttemptForUser(
 export async function getFrqProgressForUser(userId: string): Promise<FrqProgressSummary[]> {
 	const rows = await getNeonDatabase()
 		.select({
-			apClass: frqAttempts.apClass,
+			course: frqAttempts.course,
 			unit: frqAttempts.unit,
 			attempts: count(),
 			pointsEarned: sql<number>`coalesce(${sum(frqAttempts.pointsEarned)}, 0)`,
@@ -214,12 +214,12 @@ export async function getFrqProgressForUser(userId: string): Promise<FrqProgress
 		})
 		.from(frqAttempts)
 		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
-		.groupBy(frqAttempts.apClass, frqAttempts.unit);
+		.groupBy(frqAttempts.course, frqAttempts.unit);
 	return rows.map((row) => {
 		const pointsEarned = Number(row.pointsEarned);
 		const pointsAvailable = Number(row.pointsAvailable);
 		return {
-			apClass: row.apClass,
+			course: row.course,
 			unit: row.unit,
 			attempts: Number(row.attempts),
 			pointsEarned,

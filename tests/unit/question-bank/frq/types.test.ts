@@ -27,7 +27,7 @@ function validQuestion() {
 		],
 		mainTopic: 'Cell signaling',
 		topicsCovered: 'Cell signaling evidence',
-		apClass: 'AP Biology',
+		course: 'AP Biology',
 		unit: 'Unit 4'
 	};
 }

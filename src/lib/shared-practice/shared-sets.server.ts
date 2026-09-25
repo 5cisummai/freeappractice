@@ -40,9 +40,9 @@ function normalizeSlug(slug: string): string {
 	return slug.trim().toLowerCase();
 }
 
-function buildTitle(apClass: string, unit: string, itemCount: number): string {
+function buildTitle(course: string, unit: string, itemCount: number): string {
 	const unitPart = unit && unit !== 'All Units' ? ` ${unit}` : '';
-	return `${apClass}${unitPart} — ${itemCount} Questions`;
+	return `${course}${unitPart} — ${itemCount} Questions`;
 }
 
 function toGeneratedQuestion(question: StoredQuestion): GeneratedQuestion {
@@ -63,7 +63,7 @@ function toQuizView(
 		slug: set.slug,
 		title: set.title,
 		kind: 'quiz',
-		apClass: set.apClass,
+		course: set.course,
 		unit: set.unit,
 		itemCount: set.itemCount,
 		creatorName: creatorName?.trim() || null,
@@ -104,18 +104,18 @@ export async function createSharedQuiz(input: {
 	}
 
 	const firstQuestion = questionMap.get(questionIds[0]!)!;
-	const apClass = firstQuestion.apClass?.trim() ?? '';
-	if (!apClass)
+	const course = firstQuestion.course?.trim() ?? '';
+	if (!course)
 		throw new SharedQuizValidationError('A shared quiz question is missing its AP class.');
 	const unit = input.unit?.trim() || 'All Units';
-	if (questionIds.some((id) => (questionMap.get(id)!.apClass?.trim() ?? '') !== apClass)) {
+	if (questionIds.some((id) => (questionMap.get(id)!.course?.trim() ?? '') !== course)) {
 		throw new SharedQuizValidationError('A shared quiz must contain questions from one AP class.');
 	}
 	if (unit.length > 120) throw new SharedQuizValidationError('Quiz unit is too long.');
 
 	const db = getNeonDatabase();
 	const expiresAt = new Date(Date.now() + SHARED_QUIZ_TTL_MS);
-	const title = buildTitle(apClass, unit, questionIds.length);
+	const title = buildTitle(course, unit, questionIds.length);
 
 	for (let attempt = 0; attempt < 3; attempt += 1) {
 		const id = randomUUID();
@@ -123,11 +123,11 @@ export async function createSharedQuiz(input: {
 		const result = await db.execute<{ id: string; slug: string }>(sql`
 			WITH inserted_set AS (
 				INSERT INTO "app"."shared_practice_sets" (
-					"id", "slug", "kind", "creator_user_id", "organization_id", "title", "ap_class", "unit",
+					"id", "slug", "kind", "creator_user_id", "organization_id", "title", "course", "unit",
 					"item_count", "status", "expires_at"
 				)
 				VALUES (
-					${id}, ${slug}, 'quiz', ${input.creatorUserId ?? null}, ${input.organizationId ?? null}, ${title}, ${apClass}, ${unit},
+					${id}, ${slug}, 'quiz', ${input.creatorUserId ?? null}, ${input.organizationId ?? null}, ${title}, ${course}, ${unit},
 					${questionIds.length}::integer, 'active', ${expiresAt}::timestamptz
 				)
 				ON CONFLICT ("slug") DO NOTHING
@@ -259,7 +259,7 @@ export async function getSharedQuizForCompletion(slug: string): Promise<
 	| {
 			status: 'ready';
 			id: string;
-			apClass: string;
+			course: string;
 			unit: string;
 			questionIds: string[];
 	  }
@@ -270,7 +270,7 @@ export async function getSharedQuizForCompletion(slug: string): Promise<
 	return {
 		status: 'ready',
 		id: result.quiz.id,
-		apClass: result.quiz.apClass,
+		course: result.quiz.course,
 		unit: result.quiz.unit,
 		questionIds: result.quiz.questions.map((question) => question.questionId!).filter(Boolean)
 	};

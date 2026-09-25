@@ -2,7 +2,7 @@
  * Manual question-quality controls against the authenticated admin API.
  *
  * Preview only:
- *   bun run quality --preview --class "AP Biology" --unit "Unit 1" --max 250
+ *   bun run quality --preview --course "AP Biology" --unit "Unit 1" --max 250
  * Preview and explicitly approve:
  *   bun run quality --preview --approve --max 500
  * Refresh/pause/resume/cancel:
@@ -62,7 +62,7 @@ async function main() {
 	const preview = (await request({
 		action: 'preview',
 		filters: {
-			apClass: valueAfter('--class'),
+			course: valueAfter('--course'),
 			unit: valueAfter('--unit'),
 			createdAfter: valueAfter('--after'),
 			createdBefore: valueAfter('--before'),

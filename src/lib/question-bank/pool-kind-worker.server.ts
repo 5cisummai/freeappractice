@@ -15,19 +15,19 @@ import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-type
 type GenerationResult = { skippedDuplicate?: boolean; generatedCount?: number };
 
 async function generateMcqPoolQuestion(
-	apClass: string,
+	course: string,
 	unit: string,
 	target = 0,
 	reservedSlots?: number
 ): Promise<GenerationResult> {
 	const childCount =
-		reservedSlots ?? (await estimatePoolGenerationSlots('mcq', apClass, unit, target));
+		reservedSlots ?? (await estimatePoolGenerationSlots('mcq', course, unit, target));
 	if (childCount > 1) {
-		const profile = getStimulusPolicy(apClass).profiles[0]!;
+		const profile = getStimulusPolicy(course).profiles[0]!;
 		const mode =
 			profile.allowedModes[Math.floor(Math.random() * profile.allowedModes.length)] ?? 'text';
 		const result = await generateStimulusSetForPool({
-			className: apClass,
+			course: course,
 			unit,
 			childCount,
 			mode
@@ -37,20 +37,20 @@ async function generateMcqPoolQuestion(
 			generatedCount: result.questionIds.length
 		};
 	}
-	const result = await generateQuestionForPool(apClass, unit);
+	const result = await generateQuestionForPool(course, unit);
 	return { skippedDuplicate: result.skippedDuplicate, generatedCount: 1 };
 }
 
 const generationAdapters = {
 	mcq: generateMcqPoolQuestion,
-	frq: (apClass: string, unit: string) =>
-		frqPracticeFor(apClass)?.control === 'task'
-			? generateAndPersistFrq(apClass, FRQ_ALL_UNITS, undefined, unit)
-			: generateAndPersistFrq(apClass, unit)
+	frq: (course: string, unit: string) =>
+		frqPracticeFor(course)?.control === 'task'
+			? generateAndPersistFrq(course, FRQ_ALL_UNITS, undefined, unit)
+			: generateAndPersistFrq(course, unit)
 } satisfies Record<
 	PoolRefillQuestionType,
 	(
-		apClass: string,
+		course: string,
 		unit: string,
 		target?: number,
 		reservedSlots?: number
@@ -60,23 +60,23 @@ const generationAdapters = {
 /** Worker-only seam. Never import this module from request-path serving code. */
 export function generatePoolQuestion(
 	questionType: PoolRefillQuestionType,
-	apClass: string,
+	course: string,
 	unit: string,
 	target?: number,
 	reservedSlots?: number
 ): Promise<GenerationResult> {
-	return generationAdapters[questionType](apClass, unit, target, reservedSlots);
+	return generationAdapters[questionType](course, unit, target, reservedSlots);
 }
 
 /** Estimate child slots to reserve before a refill call. */
 export async function estimatePoolGenerationSlots(
 	questionType: PoolRefillQuestionType,
-	apClass: string,
+	course: string,
 	unit: string,
 	target: number
 ): Promise<number> {
 	if (questionType !== 'mcq') return 1;
-	const policy = getStimulusPolicy(apClass);
+	const policy = getStimulusPolicy(course);
 	if (
 		!(await isStimulusQuestionsEnabled()) ||
 		!policy.setsEnabled ||
@@ -86,8 +86,8 @@ export async function estimatePoolGenerationSlots(
 	const profile = policy.profiles[0];
 	if (!profile) return 1;
 	const [activeCount, activeDiscreteCount] = await Promise.all([
-		countActiveMcqQuestions(apClass, unit),
-		countActiveMcqQuestions(apClass, unit, false)
+		countActiveMcqQuestions(course, unit),
+		countActiveMcqQuestions(course, unit, false)
 	]);
 	const deficit = Math.max(0, target - activeCount);
 	const targetStimulusCount = Math.round((target * policy.quizTargetQuestionPercent) / 100);

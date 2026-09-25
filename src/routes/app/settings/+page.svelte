@@ -17,7 +17,7 @@
 	import { themeController } from '$lib/client/theme.svelte.js';
 	import { resetUiHints } from '$lib/client/ui-hints.svelte.js';
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
-	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
+	import { onboardingCourseGroups } from '$lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
 	const APP_VERSION = '1.9.3';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
@@ -64,10 +64,10 @@
 	const themeLabel = $derived(
 		theme === 'light' || theme === 'dark' || theme === 'system' ? THEME_LABELS[theme] : 'System'
 	);
-	const selectedSubjects = $derived(new Set(data.selectedSubjects));
+	const selectedCourses = $derived(new Set(data.selectedCourses));
 
-	function subjectId(subject: string): string {
-		return `settings-subject-${subject.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+	function courseId(course: string): string {
+		return `settings-course-${course.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 	}
 
 	function sectionFromHash(hash: string): SettingsSection {
@@ -222,40 +222,40 @@
 
 		<Tabs.Content value="practice" class="flex w-full min-w-0 flex-col gap-3">
 			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-				<form method="POST" action="?/updateSubjects" class="space-y-4 px-4 py-4">
+				<form method="POST" action="?/updateCourses" class="space-y-4 px-4 py-4">
 					<div class="space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Classes</p>
 						<p class="text-sm text-muted-foreground">Choose the AP classes you want to practice.</p>
 					</div>
 					<div class="space-y-5">
-						{#each onboardingSubjectGroups as group (group.label)}
-							<section class="space-y-2" aria-labelledby={subjectId(group.label)}>
-								<h2 id={subjectId(group.label)} class="text-xs font-medium text-muted-foreground">
+						{#each onboardingCourseGroups as group (group.label)}
+							<section class="space-y-2" aria-labelledby={courseId(group.label)}>
+								<h2 id={courseId(group.label)} class="text-xs font-medium text-muted-foreground">
 									{group.label}
 								</h2>
 								<div class="grid gap-2 sm:grid-cols-2">
-									{#each group.subjects as subject (subject.name)}
-										{@const id = subjectId(subject.name)}
-										{@const SubjectIcon = subject.icon}
+									{#each group.courses as course (course.name)}
+										{@const id = courseId(course.name)}
+										{@const CourseIcon = course.icon}
 										<div>
 											<input
 												{id}
 												type="checkbox"
-												name="subjects"
-												value={subject.name}
+												name="courses"
+												value={course.name}
 												class="peer sr-only"
-												checked={selectedSubjects.has(subject.name)}
+												checked={selectedCourses.has(course.name)}
 											/>
 											<label
 												for={id}
-												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.selection-check]:opacity-100 peer-checked:[&_.subject-icon]:bg-primary peer-checked:[&_.subject-icon]:text-primary-foreground"
+												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:bg-primary peer-checked:[&_.course-icon]:text-primary-foreground peer-checked:[&_.selection-check]:opacity-100"
 											>
 												<span
-													class="subject-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors"
+													class="course-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors"
 												>
-													<SubjectIcon class="size-4" />
+													<CourseIcon class="size-4" />
 												</span>
-												<span class="min-w-0 flex-1 leading-tight font-medium">{subject.name}</span>
+												<span class="min-w-0 flex-1 leading-tight font-medium">{course.name}</span>
 												<span
 													class="selection-check flex size-4 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
 													aria-hidden="true"
@@ -269,8 +269,8 @@
 							</section>
 						{/each}
 					</div>
-					{#if form?.subjectError}
-						<p class="text-sm text-destructive" role="alert">{form.subjectError}</p>
+					{#if form?.courseError}
+						<p class="text-sm text-destructive" role="alert">{form.courseError}</p>
 					{/if}
 					<div class="flex justify-end">
 						<Button type="submit" size="sm">Save classes</Button>
@@ -492,7 +492,7 @@
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">Reset onboarding</p>
 						<p class="text-sm text-muted-foreground">
-							Show the subject selection screen again so you can test the onboarding flow.
+							Show the course selection screen again so you can test the onboarding flow.
 						</p>
 					</div>
 					<Button

@@ -51,8 +51,8 @@ export const QUESTION_POOL_CONFIG: QuestionPoolConfig = {
 };
 
 /** Preferred (max) MCQ target for a class before demand scaling. */
-export function preferredMcqTarget(apClass: string): number {
-	const mapped = (poolTargets.mcqTargetsByClass as Record<string, number | undefined>)[apClass];
+export function preferredMcqTarget(course: string): number {
+	const mapped = (poolTargets.mcqTargetsByCourse as Record<string, number | undefined>)[course];
 	return mapped ?? QUESTION_POOL_DEFAULT_MCQ_TARGET;
 }
 
@@ -63,38 +63,38 @@ export function preferredMcqTarget(apClass: string): number {
  * With empty stats, returns the preferred ceiling (cold-start fill).
  */
 export function resolveMcqTarget(
-	apClass: string,
-	generationCountsByClass: Record<string, number>
+	course: string,
+	generationCountsByCourse: Record<string, number>
 ): number {
-	const preferred = preferredMcqTarget(apClass);
+	const preferred = preferredMcqTarget(course);
 	const min = QUESTION_POOL_MIN_MCQ_TARGET;
 	if (preferred <= min) return preferred;
 
-	const counts = Object.values(generationCountsByClass).map((n) =>
+	const counts = Object.values(generationCountsByCourse).map((n) =>
 		typeof n === 'number' && Number.isFinite(n) ? Math.max(0, n) : 0
 	);
 	const maxCount = counts.length > 0 ? Math.max(0, ...counts) : 0;
 	if (maxCount <= 0) return preferred;
 
-	const rawClassCount = generationCountsByClass[apClass];
-	const classCount =
-		typeof rawClassCount === 'number' && Number.isFinite(rawClassCount)
-			? Math.max(0, rawClassCount)
+	const rawCourseCount = generationCountsByCourse[course];
+	const courseCount =
+		typeof rawCourseCount === 'number' && Number.isFinite(rawCourseCount)
+			? Math.max(0, rawCourseCount)
 			: 0;
-	const ratio = Math.min(1, classCount / maxCount);
+	const ratio = Math.min(1, courseCount / maxCount);
 	return Math.round(min + (preferred - min) * ratio);
 }
 
 export function poolTargetForBucket(opts: {
 	questionType: 'mcq' | 'frq';
-	apClass: string;
-	generationCountsByClass?: Record<string, number>;
+	course: string;
+	generationCountsByCourse?: Record<string, number>;
 	config?: QuestionPoolConfig;
 }): number {
 	const config = opts.config ?? QUESTION_POOL_CONFIG;
 	switch (opts.questionType) {
 		case 'mcq':
-			return resolveMcqTarget(opts.apClass, opts.generationCountsByClass ?? {});
+			return resolveMcqTarget(opts.course, opts.generationCountsByCourse ?? {});
 		case 'frq':
 			return config.frqTarget;
 		default: {

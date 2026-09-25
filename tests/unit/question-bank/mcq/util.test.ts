@@ -2,19 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
 	assertNoNullCharacters,
 	computeContentHash,
-	isDuplicateKeyError,
-	normalizeUnit
+	isDuplicateKeyError
 } from '$lib/question-bank/util.server';
-
-describe('normalizeUnit', () => {
-	it('trims units and falls back when empty', () => {
-		expect(normalizeUnit('  Unit 1  ')).toBe('Unit 1');
-		expect(normalizeUnit('')).toBe('');
-		expect(normalizeUnit(null, 'fallback')).toBe('fallback');
-		expect(normalizeUnit(undefined, 'fallback')).toBe('fallback');
-		expect(normalizeUnit('   ', 'fallback')).toBe('fallback');
-	});
-});
 
 describe('computeContentHash', () => {
 	it('normalizes whitespace and case before hashing', () => {

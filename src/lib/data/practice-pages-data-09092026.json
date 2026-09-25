@@ -12,30 +12,30 @@
 		]
 	},
 	"faqTemplates": {
-		"class": [
+		"course": [
 			{
 				"id": "what-is-practice",
-				"question": "What is {className} practice?",
-				"answer": "This page gives you free, exam-style {className} multiple-choice questions with instant explanations. You can practice any available unit without signing up."
+				"question": "What is {course} practice?",
+				"answer": "This page gives you free, exam-style {course} multiple-choice questions with instant explanations. You can practice any available unit without signing up."
 			},
 			{
 				"id": "where-mcq-practice",
-				"question": "Where can I find free {className} MCQ practice?",
-				"answer": "Click Practice above to start free {className} MCQ practice. Choose a specific unit for focused review or leave the selector on all units for a mixed set."
+				"question": "Where can I find free {course} MCQ practice?",
+				"answer": "Click Practice above to start free {course} MCQ practice. Choose a specific unit for focused review or leave the selector on all units for a mixed set."
 			},
 			{
 				"id": "which-units",
-				"question": "Which {className} units can I practice?",
-				"answer": "Use the unit selector above to choose any available {className} unit, or practice across the full course with a mixed set of questions."
+				"question": "Which {course} units can I practice?",
+				"answer": "Use the unit selector above to choose any available {course} unit, or practice across the full course with a mixed set of questions."
 			},
 			{
 				"id": "like-real-exam",
-				"question": "Are these {className} questions like the real AP exam?",
+				"question": "Are these {course} questions like the real AP exam?",
 				"answer": "The questions are designed to reflect AP-style reasoning and practice the skills used on the exam. They are unofficial practice materials, not released College Board questions."
 			},
 			{
 				"id": "how-to-use",
-				"question": "How should I use {className} practice?",
+				"question": "How should I use {course} practice?",
 				"answer": "Begin with the unit your class is studying, answer a short run of questions, and read every explanation. Then revisit the questions you missed before moving to a mixed set."
 			}
 		],
@@ -53,7 +53,7 @@
 			{
 				"id": "topics-covered",
 				"question": "What topics are covered in {practiceLabel}?",
-				"answer": "{unitDescription} The practice questions are tied to {unitName} in {className}."
+				"answer": "{unitDescription} The practice questions are tied to {unit} in {course}."
 			},
 			{
 				"id": "like-real-exam",
@@ -63,14 +63,14 @@
 			{
 				"id": "how-to-use",
 				"question": "How should I use {practiceLabel} practice?",
-				"answer": "Start with an untimed set while you learn {unitName}, read each explanation carefully, and then try a lightly timed set to check whether you can apply the ideas under exam conditions."
+				"answer": "Start with an untimed set while you learn {unit}, read each explanation carefully, and then try a lightly timed set to check whether you can apply the ideas under exam conditions."
 			}
 		]
 	},
 	"pages": [
 		{
 			"id": "ap-biology",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-biology",
 			"seo": {
 				"title": "Free AP Biology Practice Questions | FreeAPPractice.org",
@@ -395,7 +395,7 @@
 		},
 		{
 			"id": "ap-chemistry",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-chemistry",
 			"seo": {
 				"title": "Free AP Chemistry Practice Questions | FreeAPPractice.org",
@@ -757,7 +757,7 @@
 		},
 		{
 			"id": "ap-physics-1",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-physics-1",
 			"seo": {
 				"title": "Free AP Physics 1 Practice Questions | FreeAPPractice.org",
@@ -1082,7 +1082,7 @@
 		},
 		{
 			"id": "ap-physics-2",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-physics-2",
 			"seo": {
 				"title": "Free AP Physics 2 Practice Questions | FreeAPPractice.org",
@@ -1370,7 +1370,7 @@
 		},
 		{
 			"id": "ap-physics-c-mechanics",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-physics-c-mechanics",
 			"seo": {
 				"title": "Free AP Physics C: Mechanics Practice Questions | FreeAPPractice.org",
@@ -1616,7 +1616,7 @@
 		},
 		{
 			"id": "ap-physics-c-em",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-physics-c-eandm",
 			"seo": {
 				"title": "Free AP Physics C: E&M Practice Questions | FreeAPPractice.org",
@@ -1867,7 +1867,7 @@
 		},
 		{
 			"id": "ap-environmental-science",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-environmental-science",
 			"seo": {
 				"title": "Free AP Environmental Science Practice Questions | FreeAPPractice.org",
@@ -2229,7 +2229,7 @@
 		},
 		{
 			"id": "ap-calculus-ab",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-calculus-ab",
 			"seo": {
 				"title": "Free AP Calculus AB Practice Questions | FreeAPPractice.org",
@@ -2554,7 +2554,7 @@
 		},
 		{
 			"id": "ap-calculus-bc",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-calculus-bc",
 			"seo": {
 				"title": "Free AP Calculus BC Practice Questions | FreeAPPractice.org",
@@ -2953,7 +2953,7 @@
 		},
 		{
 			"id": "ap-statistics",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-statistics",
 			"seo": {
 				"title": "Free AP Statistics Practice Questions | FreeAPPractice.org",
@@ -3255,7 +3255,7 @@
 		},
 		{
 			"id": "ap-precalculus",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-precalculus",
 			"seo": {
 				"title": "Free AP Precalculus Practice Questions | FreeAPPractice.org",
@@ -3402,7 +3402,7 @@
 		},
 		{
 			"id": "ap-computer-science-a",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-computer-science-a",
 			"seo": {
 				"title": "Free AP Computer Science A Practice Questions | FreeAPPractice.org",
@@ -3579,7 +3579,7 @@
 		},
 		{
 			"id": "ap-computer-science-principles",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-computer-science-principles",
 			"seo": {
 				"title": "Free AP Computer Science Principles Practice Questions | FreeAPPractice.org",
@@ -3788,7 +3788,7 @@
 		},
 		{
 			"id": "ap-english-language",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-english-language",
 			"seo": {
 				"title": "Free AP English Language Practice Questions | FreeAPPractice.org",
@@ -4090,7 +4090,7 @@
 		},
 		{
 			"id": "ap-english-literature",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-english-literature",
 			"seo": {
 				"title": "Free AP English Literature Practice Questions | FreeAPPractice.org",
@@ -4392,7 +4392,7 @@
 		},
 		{
 			"id": "ap-us-history",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-us-history",
 			"seo": {
 				"title": "Free AP US History Practice Questions | FreeAPPractice.org",
@@ -4745,7 +4745,7 @@
 		},
 		{
 			"id": "ap-world-history",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-world-history",
 			"seo": {
 				"title": "Free AP World History Practice Questions | FreeAPPractice.org",
@@ -5098,7 +5098,7 @@
 		},
 		{
 			"id": "ap-european-history",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-european-history",
 			"seo": {
 				"title": "Free AP European History Practice Questions | FreeAPPractice.org",
@@ -5451,7 +5451,7 @@
 		},
 		{
 			"id": "ap-us-government",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-us-government",
 			"seo": {
 				"title": "Free AP US Government Practice Questions | FreeAPPractice.org",
@@ -5660,7 +5660,7 @@
 		},
 		{
 			"id": "ap-comparative-government",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-comparative-government",
 			"seo": {
 				"title": "Free AP Comparative Government Practice Questions | FreeAPPractice.org",
@@ -5869,7 +5869,7 @@
 		},
 		{
 			"id": "ap-psychology",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-psychology",
 			"seo": {
 				"title": "Free AP Psychology Practice Questions | FreeAPPractice.org",
@@ -6047,7 +6047,7 @@
 		},
 		{
 			"id": "ap-human-geography",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-human-geography",
 			"seo": {
 				"title": "Free AP Human Geography Practice Questions | FreeAPPractice.org",
@@ -6287,7 +6287,7 @@
 		},
 		{
 			"id": "ap-macroeconomics",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-macroeconomics",
 			"seo": {
 				"title": "Free AP Macroeconomics Practice Questions | FreeAPPractice.org",
@@ -6496,7 +6496,7 @@
 		},
 		{
 			"id": "ap-microeconomics",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-microeconomics",
 			"seo": {
 				"title": "Free AP Microeconomics Practice Questions | FreeAPPractice.org",
@@ -6705,7 +6705,7 @@
 		},
 		{
 			"id": "ap-spanish-language",
-			"type": "class",
+			"type": "course",
 			"courseId": "ap-spanish-language",
 			"seo": {
 				"title": "Free AP Spanish Language Practice Questions | FreeAPPractice.org",

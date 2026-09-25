@@ -28,7 +28,7 @@ describe('question pool constants', () => {
 			...QUESTION_POOL_CONFIG,
 			frqTarget: 4
 		};
-		expect(poolTargetForBucket({ questionType: 'frq', apClass: 'AP Biology', config })).toBe(4);
+		expect(poolTargetForBucket({ questionType: 'frq', course: 'AP Biology', config })).toBe(4);
 	});
 
 	it('scales MCQ targets from generation-stats demand', () => {
@@ -41,8 +41,8 @@ describe('question pool constants', () => {
 		expect(
 			poolTargetForBucket({
 				questionType: 'mcq',
-				apClass: 'AP Chemistry',
-				generationCountsByClass: counts
+				course: 'AP Chemistry',
+				generationCountsByCourse: counts
 			})
 		).toBe(18);
 	});

@@ -28,7 +28,7 @@ export type QuestionPoolHealthMetricProps = {
 export type QuestionRequestMetricProps = {
 	question_type: 'mcq' | 'frq';
 	segment: QuestionRequestSegment;
-	ap_class: string;
+	course: string;
 	unit: string;
 	validation_ms: number;
 	db_connect_ms: number;
@@ -43,7 +43,7 @@ export type QuestionRequestMetricProps = {
 const ALLOWED_PROP_KEYS = new Set<keyof QuestionRequestMetricProps>([
 	'question_type',
 	'segment',
-	'ap_class',
+	'course',
 	'unit',
 	'validation_ms',
 	'db_connect_ms',
@@ -89,7 +89,7 @@ export function capturePathQuestionRequestMetric(opts: {
 	path: QuestionPathMetrics;
 	startedAt: number;
 	validationMs: number;
-	apClass: string;
+	course: string;
 	unit: string;
 	httpStatus: number;
 	segment: QuestionRequestSegment;
@@ -99,7 +99,7 @@ export function capturePathQuestionRequestMetric(opts: {
 	captureQuestionRequestMetric({
 		question_type: opts.path.questionType,
 		segment: opts.segment,
-		ap_class: opts.apClass,
+		course: opts.course,
 		unit: opts.unit,
 		validation_ms: opts.validationMs,
 		db_connect_ms: opts.path.dbConnectMs,

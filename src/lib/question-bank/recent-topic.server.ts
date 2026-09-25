@@ -6,7 +6,7 @@ import { questionRecentTopics } from '$lib/server/neon/schema';
 const DEFAULT_WINDOW = 20;
 type QuestionKind = 'mcq' | 'frq';
 export type RecentTopicSummary = {
-	apClass: string;
+	course: string;
 	unit: string;
 	topicsCovered: string;
 	createdAt: Date;
@@ -14,7 +14,7 @@ export type RecentTopicSummary = {
 
 export async function recordRecentTopic(opts: {
 	kind: QuestionKind;
-	apClass: string;
+	course: string;
 	unit: string;
 	topicsCovered: string;
 	questionId?: string;
@@ -27,7 +27,7 @@ export async function recordRecentTopic(opts: {
 		.values({
 			id: randomUUID(),
 			kind: opts.kind,
-			apClass: opts.apClass,
+			course: opts.course,
 			unit: opts.unit,
 			topicsCovered,
 			questionId: opts.questionId ?? null
@@ -36,7 +36,7 @@ export async function recordRecentTopic(opts: {
 
 export async function getRecentTopics(opts: {
 	kind: QuestionKind;
-	apClass: string;
+	course: string;
 	unit: string;
 	limit?: number;
 }): Promise<string[]> {
@@ -46,7 +46,7 @@ export async function getRecentTopics(opts: {
 		.where(
 			and(
 				eq(questionRecentTopics.kind, opts.kind),
-				eq(questionRecentTopics.apClass, opts.apClass),
+				eq(questionRecentTopics.course, opts.course),
 				eq(questionRecentTopics.unit, opts.unit),
 				ne(questionRecentTopics.topicsCovered, '')
 			)
@@ -59,7 +59,7 @@ export async function getRecentTopics(opts: {
 export async function getLatestRecentTopics(limit = 10): Promise<RecentTopicSummary[]> {
 	return getNeonDatabase()
 		.select({
-			apClass: questionRecentTopics.apClass,
+			course: questionRecentTopics.course,
 			unit: questionRecentTopics.unit,
 			topicsCovered: questionRecentTopics.topicsCovered,
 			createdAt: questionRecentTopics.createdAt

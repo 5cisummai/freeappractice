@@ -22,20 +22,20 @@ export async function getCoachActivitySummary(userId: string) {
 			mcqAccuracy: stats.recentPerformance.accuracyLast7Days,
 			frqSubmissions: stats.recentPerformance.frqSubmissionsLast7Days
 		},
-		subjectBreakdown: stats.subjectBreakdown.slice(0, 8)
+		courseBreakdown: stats.courseBreakdown.slice(0, 8)
 	};
 }
 
-export async function getCoachUnitDetail(userId: string, apClass: string, unit: string) {
+export async function getCoachUnitDetail(userId: string, course: string, unit: string) {
 	const [progressRows, recentMistakes] = await Promise.all([
 		getUserProgress(userId),
-		getRecentSuperMistakes(userId, { apClass, unit })
+		getRecentSuperMistakes(userId, { course, unit })
 	]);
 
-	const progress = progressRows.find((row) => row.apClass === apClass && row.unit === unit);
+	const progress = progressRows.find((row) => row.course === course && row.unit === unit);
 
 	return {
-		apClass,
+		course,
 		unit,
 		progress: progress
 			? {
@@ -52,19 +52,19 @@ export async function getCoachUnitDetail(userId: string, apClass: string, unit: 
 
 export async function getCoachFrqPerformance(
 	userId: string,
-	filter: { apClass?: string; unit?: string; limit?: number } = {}
+	filter: { course?: string; unit?: string; limit?: number } = {}
 ) {
 	const limit = Math.min(Math.max(filter.limit ?? 5, 1), 6);
 	const attempts = await findRecentGradedFrqAttempts(userId, {
 		limit,
-		apClass: filter.apClass,
+		course: filter.course,
 		unit: filter.unit
 	});
 
 	return attempts.map((attempt) => ({
 		attemptId: attempt.id,
 		questionId: attempt.questionId,
-		apClass: attempt.apClass,
+		course: attempt.course,
 		unit: attempt.unit,
 		attemptedAt: attempt.createdAt.toISOString(),
 		pointsEarned: attempt.grade?.pointsEarned ?? 0,

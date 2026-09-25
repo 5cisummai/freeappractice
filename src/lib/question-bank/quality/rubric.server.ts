@@ -44,8 +44,8 @@ export const assessmentJsonSchema = {
 	]
 } as const;
 
-function courseGuidance(apClass?: string): string {
-	return `Judge alignment with the real ${apClass || 'AP'} course framework and the stated unit. Do not forgive factual errors merely because the question resembles an AP item.`;
+function courseGuidance(course?: string): string {
+	return `Judge alignment with the real ${course || 'AP'} course framework and the stated unit. Do not forgive factual errors merely because the question resembles an AP item.`;
 }
 
 export function requiresWebSearchForQuestion(_question: Record<string, unknown>): boolean {
@@ -69,7 +69,7 @@ export function buildQuestionQualityPrompt(question: Record<string, unknown>): {
 	developer: string;
 	user: string;
 } {
-	const apClass = typeof question.apClass === 'string' ? question.apClass : undefined;
+	const course = typeof question.course === 'string' ? question.course : undefined;
 	return {
 		developer: `You are a meticulous AP assessment specialist reviewing one multiple-choice question before a human calibration process.
 
@@ -86,7 +86,7 @@ Evaluate all of the following:
 8. Formatting, accessibility, and safety.
 9. For questions with a shared stimulus, distinguish a child-only defect from a stimulus-wide or set-wide defect.
 
-${courseGuidance(apClass)}
+${courseGuidance(course)}
 
 WEB-GROUNDED REVIEW:
 - For real AP courses, use the hosted web-search tool before deciding. Find the current official College Board course framework, unit expectations, skills, and exam guidance relevant to this question.

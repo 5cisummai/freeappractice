@@ -31,7 +31,7 @@ export async function writePoolBucketBelowTarget<T>(
 ): Promise<CapacityResult<T>> {
 	const key = {
 		questionType: bucket.questionType,
-		apClass: bucket.apClass,
+		course: bucket.course,
 		unit: bucket.unit
 	};
 	const owner = randomUUID();
@@ -54,7 +54,7 @@ export async function writePoolBucketBelowTarget<T>(
 			.where(
 				and(
 					eq(poolBucketWriteLocks.questionType, key.questionType),
-					eq(poolBucketWriteLocks.apClass, key.apClass),
+					eq(poolBucketWriteLocks.course, key.course),
 					eq(poolBucketWriteLocks.unit, key.unit),
 					or(
 						isNull(poolBucketWriteLocks.leaseOwner),
@@ -77,7 +77,7 @@ export async function writePoolBucketBelowTarget<T>(
 	try {
 		const activeCount = await countActivePoolRowsForServing(
 			bucket.questionType,
-			bucket.apClass,
+			bucket.course,
 			bucket.unit
 		);
 		if (activeCount >= target) return { status: 'at_target', activeCount };
@@ -89,7 +89,7 @@ export async function writePoolBucketBelowTarget<T>(
 			.where(
 				and(
 					eq(poolBucketWriteLocks.questionType, key.questionType),
-					eq(poolBucketWriteLocks.apClass, key.apClass),
+					eq(poolBucketWriteLocks.course, key.course),
 					eq(poolBucketWriteLocks.unit, key.unit),
 					eq(poolBucketWriteLocks.leaseOwner, owner)
 				)

@@ -57,7 +57,7 @@ function question(id: string, position?: number) {
 		contentHash: id,
 		createdAt: new Date(),
 		updatedAt: new Date(),
-		apClass: 'AP Biology',
+		course: 'AP Biology',
 		unit: 'Unit 1',
 		mainTopic: 'Topic',
 		topicsCovered: 'Topic',
@@ -91,7 +91,7 @@ describe('assembleMcqQuiz', () => {
 		]);
 		vi.spyOn(Math, 'random').mockReturnValue(0);
 		const result = await assembleMcqQuiz(
-			{ apClass: 'AP Biology', unit: 'Unit 1', count: 2 },
+			{ course: 'AP Biology', unit: 'Unit 1', count: 2 },
 			{ globalFlagEnabled: true }
 		);
 		expect(result.questions).toHaveLength(2);
@@ -103,7 +103,7 @@ describe('assembleMcqQuiz', () => {
 	it('keeps a standalone stimulus question independently selectable', async () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([question('standalone')]);
 		const result = await assembleMcqQuiz(
-			{ apClass: 'AP Biology', unit: 'Unit 1', count: 1 },
+			{ course: 'AP Biology', unit: 'Unit 1', count: 1 },
 			{ globalFlagEnabled: true }
 		);
 		expect(result.questions[0]?.hasStimulus).toBe(true);
@@ -119,7 +119,7 @@ describe('assembleMcqQuiz', () => {
 		]);
 		vi.spyOn(Math, 'random').mockReturnValue(0.99);
 		const result = await assembleMcqQuiz(
-			{ apClass: 'AP Biology', unit: 'Unit 1', count: 2 },
+			{ course: 'AP Biology', unit: 'Unit 1', count: 2 },
 			{ globalFlagEnabled: true }
 		);
 		expect(result.questions.map((item) => item.questionId)).toEqual(['q2', 'q3']);
@@ -130,7 +130,7 @@ describe('assembleMcqQuiz', () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([question('only')]);
 		await expect(
 			assembleMcqQuiz(
-				{ apClass: 'AP Biology', unit: 'Unit 1', count: 10 },
+				{ course: 'AP Biology', unit: 'Unit 1', count: 10 },
 				{ globalFlagEnabled: true }
 			)
 		).rejects.toMatchObject({
@@ -144,7 +144,7 @@ describe('assembleMcqQuiz', () => {
 	it('serves existing stimulus questions from units outside the generation allowlist', async () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([{ ...question('u4', 0), unit: 'Unit 4' }]);
 		const result = await assembleMcqQuiz(
-			{ apClass: 'AP Biology', unit: 'Unit 4', count: 1 },
+			{ course: 'AP Biology', unit: 'Unit 4', count: 1 },
 			{ globalFlagEnabled: true }
 		);
 		expect(result.questions[0]?.questionId).toBe('u4');
@@ -152,7 +152,7 @@ describe('assembleMcqQuiz', () => {
 		expect(logger.info).toHaveBeenCalledWith(
 			'Quiz stimulus target deviation',
 			expect.objectContaining({
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 4',
 				stimulusTargetQuestionCount: 0,
 				stimulusQuestionCount: 1,

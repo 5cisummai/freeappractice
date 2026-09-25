@@ -88,14 +88,14 @@
 				{
 					title: 'New Features',
 					items: [
-						'Moved written-response practice into a dedicated Free Response tab with a full-session layout for answering, review, and feedback'
+						'Added a Free Response tab to the authenticated written-response pilot, with a full-session layout for answering, review, and feedback'
 					]
 				},
 				{
 					title: 'Improvements',
 					items: [
-						'Practice tabs are now Unlimited MCQ, Graded Quizzes, and Free Response',
-						'Written-response practice currently covers AP English Language',
+						'Authenticated practice shows Unlimited MCQ, Graded Quizzes, and Free Response when the pilot is enabled',
+						'The written-response pilot currently covers AP English Language',
 						'Simplified homepage calls to action and error pages, and removed Super from public navigation',
 						'Removed the Insights page; weekly study plans remain available in Pip',
 						'Removed classmate referral invites and the invite banner on subject pages'

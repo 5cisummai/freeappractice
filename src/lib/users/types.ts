@@ -1,5 +1,5 @@
 export interface ProgressEntry {
-	apClass: string;
+	course: string;
 	unit: string;
 	totalAttempts: number;
 	correctAttempts?: number;
@@ -39,8 +39,8 @@ export interface StatsData {
 		accuracyLast7Days: number;
 		frqSubmissionsLast7Days: number;
 	};
-	subjectBreakdown: Array<{
-		subject: string;
+	courseBreakdown: Array<{
+		course: string;
 		total: number;
 		correct: number;
 		accuracy: number;
@@ -52,7 +52,7 @@ export interface StatsData {
 
 export type QuestionAttempt = {
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	selectedAnswer: 'A' | 'B' | 'C' | 'D';
 	wasCorrect: boolean;
@@ -70,7 +70,7 @@ export type FrqHistoryItem = {
 	attempt: {
 		id: string;
 		questionId: string;
-		apClass: string;
+		course: string;
 		unit: string;
 		pointsEarned: number;
 		pointsAvailable: number;
@@ -85,7 +85,7 @@ export type QuizHistoryItem = {
 	attempt: {
 		id: string;
 		questionId: string;
-		apClass: string;
+		course: string;
 		unit: string;
 		requestedCount: number;
 		answeredCount: number;

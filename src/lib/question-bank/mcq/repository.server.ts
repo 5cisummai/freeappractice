@@ -21,7 +21,7 @@ export interface IQuestion extends McqQuestionPayload {
 	updatedAt: Date;
 }
 
-const { apClass: apClassField, unit: unitField } = questionBucketFields(mcqQuestions.data);
+const { course: courseField, unit: unitField } = questionBucketFields(mcqQuestions.data);
 
 // Legacy rows may omit these JSON keys. Coalesce each comparison so the
 // feature-off filter treats missing metadata as non-stimulus instead of
@@ -37,7 +37,7 @@ export type McqPoolQuestion = McqQuestionPayload & {
 	questionId: string;
 	randomKey: number;
 	active: boolean;
-	apClass: string;
+	course: string;
 	unit: string;
 };
 
@@ -47,7 +47,7 @@ const poolQuestionSelection = {
 	questionId: mcqQuestions.questionId,
 	randomKey: mcqQuestions.randomKey,
 	active: mcqQuestions.active,
-	apClass: sql<string>`COALESCE(NULLIF(${jsonText('apClass')}, ''), 'Unknown')`,
+	course: sql<string>`COALESCE(NULLIF(${jsonText('course')}, ''), 'Unknown')`,
 	unit: sql<string>`COALESCE(NULLIF(${jsonText('unit')}, ''), 'all-units')`,
 	mainTopic: sql<string>`COALESCE(NULLIF(${jsonText('mainTopic')}, ''), NULLIF(${jsonText('topicsCovered')}, ''), 'Legacy topic')`,
 	topicsCovered: sql<string>`COALESCE(${jsonText('topicsCovered')}, '')`,
@@ -153,7 +153,7 @@ function poolQuestionFromRow(row: McqPoolQuestionRow): McqPoolQuestion {
 }
 
 function poolLookupPredicates(input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
@@ -161,7 +161,7 @@ function poolLookupPredicates(input: {
 	allowStimulusQuestions?: boolean;
 }) {
 	const predicates = [
-		eq(apClassField, input.apClass),
+		eq(courseField, input.course),
 		eq(unitField, input.unit),
 		eq(mcqQuestions.active, true),
 		input.fromPivot === 'after'
@@ -215,15 +215,11 @@ export function newPoolRandomKey(): number {
 }
 
 export async function countActiveMcqQuestions(
-	apClass: string,
+	course: string,
 	unit: string,
 	allowStimulusQuestions = true
 ): Promise<number> {
-	const predicates = [
-		eq(apClassField, apClass),
-		eq(unitField, unit),
-		eq(mcqQuestions.active, true)
-	];
+	const predicates = [eq(courseField, course), eq(unitField, unit), eq(mcqQuestions.active, true)];
 	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
@@ -246,7 +242,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 	const topicsCovered = input.topicsCovered?.trim() ?? '';
 	const mainTopic = resolveQuestionMainTopic(input.mainTopic, topicsCovered) || 'Legacy topic';
 	const data: McqQuestionPayload = {
-		apClass: input.apClass,
+		course: input.course,
 		unit,
 		mainTopic,
 		topicsCovered,
@@ -270,7 +266,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		.values({
 			questionId,
 			kind: 'mcq',
-			apClass: input.apClass,
+			course: input.course,
 			unit,
 			contentHash: input.contentHash,
 			contentLength: input.question.length
@@ -279,7 +275,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 			target: questionRegistry.questionId,
 			set: {
 				kind: 'mcq',
-				apClass: input.apClass,
+				course: input.course,
 				unit,
 				contentHash: input.contentHash,
 				contentLength: input.question.length
@@ -299,7 +295,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		? db.insert(questionRecentTopics).values({
 				id: randomUUID(),
 				kind: 'mcq',
-				apClass: input.apClass,
+				course: input.course,
 				unit,
 				topicsCovered,
 				questionId
@@ -315,7 +311,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 }
 
 export async function findCachedQuestionByPool(input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
@@ -335,7 +331,7 @@ export async function findCachedQuestionByPool(input: {
 
 /** Select a batch around one random pivot in a single Neon HTTP batch. */
 export async function findCachedQuestionsByPool(input: {
-	apClass: string;
+	course: string;
 	unit: string;
 	excludeQuestionIds: string[];
 	pivot: number;
@@ -351,7 +347,7 @@ export async function findCachedQuestionsByPool(input: {
 			.where(
 				and(
 					...poolLookupPredicates({
-						apClass: input.apClass,
+						course: input.course,
 						unit: input.unit,
 						excludeQuestionIds: input.excludeQuestionIds,
 						pivot: input.pivot,
@@ -394,7 +390,7 @@ export async function findAllCachedQuestions(): Promise<IQuestion[]> {
 
 /** Load active MCQs for quiz assembly across one or more real units. */
 export async function findActiveQuestionsForQuiz(input: {
-	apClass: string;
+	course: string;
 	units: string[];
 	limit?: number;
 }): Promise<IQuestion[]> {
@@ -424,7 +420,7 @@ export async function findActiveQuestionsForQuiz(input: {
 				)`;
 	const bucketPredicate = and(
 		eq(mcqQuestions.active, true),
-		eq(apClassField, input.apClass),
+		eq(courseField, input.course),
 		inArray(unitField, units),
 		qualityPredicate
 	);
@@ -479,7 +475,7 @@ export interface StoredQuestion {
 	optionD: string;
 	correctAnswer: 'A' | 'B' | 'C' | 'D';
 	explanation: string;
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	mainTopic?: string;
 	contentHash?: string;
@@ -509,7 +505,7 @@ export function storedQuestionFromPayload(input: {
 		optionD: data.optionD,
 		correctAnswer: data.correctAnswer,
 		explanation: data.explanation,
-		apClass: data.apClass,
+		course: data.course,
 		unit: data.unit,
 		mainTopic: data.mainTopic,
 		...(input.contentHash ? { contentHash: input.contentHash } : {}),

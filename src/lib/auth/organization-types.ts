@@ -12,7 +12,7 @@ export type OrganizationActivityItem = {
 	id: string;
 	userId: string;
 	userName: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	scorePercent: number;
 	quizTitle: string | null;
@@ -23,7 +23,7 @@ export type OrganizationSharedSet = {
 	id: string;
 	slug: string;
 	title: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	itemCount: number;
 	expiresAt: string;

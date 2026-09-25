@@ -1,11 +1,19 @@
 <script lang="ts">
+	import { updated } from '$app/state';
+	import { onMount } from 'svelte';
 	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
 	import BackToHome from '$lib/components/layout/back-to-home.svelte';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
-	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
+	import { getCoursePracticePages } from '$lib/catalog/practice-pages.js';
 
-	const subjects = getClassPracticePages();
+	const subjects = getCoursePracticePages();
+
+	onMount(() => {
+		void updated.check().then((isUpdated) => {
+			if (isUpdated) window.location.reload();
+		});
+	});
 </script>
 
 <svelte:head>
@@ -51,7 +59,7 @@
 						href={resolve(`/practice/${subject.slug}`)}
 						class="group flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40"
 					>
-						<span class="font-medium group-hover:text-primary">{subject.className}</span>
+						<span class="font-medium group-hover:text-primary">{subject.course}</span>
 						<ArrowRightIcon
 							class="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
 						/>

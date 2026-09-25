@@ -7,7 +7,6 @@ import {
 } from '$lib/question-bank/mcq/repository.server';
 import { copyStimulusFields, type McqAnswerBody } from '$lib/question-bank/mcq/types';
 import { QuestionBank } from '$lib/question-bank/runtime.server';
-import { normalizeUnit } from '$lib/question-bank/util.server';
 import { scheduleBackgroundTask } from '$lib/server/background-task.server';
 
 type CachedResult = {
@@ -16,7 +15,7 @@ type CachedResult = {
 	model: string;
 	cached: boolean;
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 };
 
@@ -59,7 +58,6 @@ function hotPoolBodyFromDoc(
 
 export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
 	logScope: 'pool',
-	normalizeUnit,
 	countActive: countActiveMcqQuestions,
 	findRandom: findCachedQuestionByPool,
 	findRandomBatch: findCachedQuestionsByPool,
@@ -73,11 +71,11 @@ export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
 		model: 'cached',
 		cached: true,
 		questionId: doc.questionId,
-		apClass: doc.apClass,
+		course: doc.course,
 		unit: doc.unit
 	}),
-	requestRefill: async (className, unit) => {
+	requestRefill: async (course, unit) => {
 		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');
-		return requestPoolRefill({ questionType: 'mcq', apClass: className, unit });
+		return requestPoolRefill({ questionType: 'mcq', course: course, unit });
 	}
 });

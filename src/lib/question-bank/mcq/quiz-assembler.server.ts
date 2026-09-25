@@ -1,4 +1,4 @@
-import { getUnitsForClass } from '$lib/catalog/ap-classes';
+import { getUnitsForCourse } from '$lib/catalog/ap-courses';
 import {
 	findActiveQuestionsForQuiz,
 	storedQuestionFromPayload,
@@ -14,7 +14,7 @@ import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
 import { logger } from '$lib/server/logger';
 
 export type QuizAssemblyInput = {
-	apClass: string;
+	course: string;
 	unit?: string;
 	unitRange?: readonly number[];
 	count: number;
@@ -68,12 +68,12 @@ function shuffle<T>(values: T[]): T[] {
 }
 
 export function resolveQuizUnits(
-	apClass: string,
+	course: string,
 	unit: string | undefined,
 	unitRange?: readonly number[]
 ): string[] {
 	if (unit?.trim()) return [unit.trim()];
-	const units = getUnitsForClass(apClass);
+	const units = getUnitsForCourse(course);
 	if (!units.length) return [];
 	const maxIndex = units.length - 1;
 	const start = Math.min(Math.max(Math.trunc(unitRange?.[0] ?? 0), 0), maxIndex);
@@ -232,12 +232,12 @@ export async function assembleMcqQuiz(
 	options: { globalFlagEnabled: boolean }
 ): Promise<QuizAssemblyResult> {
 	const count = Math.min(50, Math.max(1, Math.floor(input.count)));
-	const policy = getStimulusPolicy(input.apClass);
-	const units = resolveQuizUnits(input.apClass, input.unit, input.unitRange);
+	const policy = getStimulusPolicy(input.course);
+	const units = resolveQuizUnits(input.course, input.unit, input.unitRange);
 	const stimulusTargetEnabled =
 		options.globalFlagEnabled && units.some((unit) => isStimulusPolicyEnabledForUnit(policy, unit));
 	const rows = await findActiveQuestionsForQuiz({
-		apClass: input.apClass,
+		course: input.course,
 		units,
 		limit: count
 	});
@@ -283,7 +283,7 @@ export async function assembleMcqQuiz(
 
 	const stimulusTargetDeviation = stimulusQuestionCount - targetStimulusQuestions;
 	logger.info('Quiz stimulus target deviation', {
-		apClass: input.apClass,
+		course: input.course,
 		unit: input.unit,
 		requestedCount: count,
 		stimulusTargetQuestionCount: targetStimulusQuestions,
