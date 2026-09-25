@@ -4,7 +4,7 @@ import Parallel from 'parallel-web';
 import { env } from '$env/dynamic/private';
 import { z } from 'zod';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
-import { getApCurriculumKnowledge, listApCurriculumCourseNames } from '$lib/ap-knowledge/catalog';
+import { getApCurriculumKnowledge, resolveApCurriculumCourseName } from '$lib/ap-knowledge/catalog';
 import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/super/ai-controls.server';
 import type { SuperToolsInput } from '$lib/super/agent-request';
 import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
@@ -14,12 +14,15 @@ import {
 	getCoachUnitDetail
 } from '$lib/super/coach-reads.server';
 import { getCurrentSuperQuestion } from '$lib/super/context.server';
+import { apClassSchema, studyPlanToolInputSchema } from '$lib/super/coach-tool-schemas';
 import { renderDiagram } from '$lib/super/diagram-renderer.server';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
-import { getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
-import type { StudyTask } from '$lib/super/types';
+import { addStudyPlanDays, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
+import { StudyPlanConflictError, StudyPlansLockedError } from '$lib/super/study-plan.server';
+import type { StudyPlanView, StudyTask } from '$lib/super/types';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { coachAudits } from '$lib/server/neon/schema';
+import { logger } from '$lib/server/logger';
 import { getUserProgress } from '$lib/users/model.server';
 import { getQuizAttemptForCoach } from '$lib/users/quiz-history.server';
 
@@ -29,22 +32,6 @@ const targetDateSchema = z.object({
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/)
 		.describe('Target exam date in YYYY-MM-DD format.')
-});
-
-const studyTaskSchema = z.object({
-	id: z.string().trim().min(1).max(200).describe('Stable unique ID for this task within the plan.'),
-	apClass: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),
-	unit: z.string().trim().min(1).max(200).describe('Full unit title for this course.'),
-	mode: z.enum(['mcq', 'frq', 'review']).describe('Kind of study activity.'),
-	date: z.iso.datetime().describe('Scheduled date and time as an ISO 8601 timestamp.'),
-	durationMinutes: z.number().int().min(5).max(30).describe('Time allotted, from 5 to 30 minutes.'),
-	status: z.enum(['todo', 'done']).default('todo').describe('Use todo for a new task.'),
-	practiceHref: z
-		.string()
-		.startsWith('/app/practice')
-		.max(500)
-		.optional()
-		.describe('Optional in-app practice link; omit if no valid practice URL is known.')
 });
 
 const diagramObjectSchema = z.object({
@@ -125,10 +112,6 @@ const diagramSpecSchema = z
 		'Semantic examfig DiagramSpec. Add only fields required by the chosen type; never pass SVG or layout coordinates.'
 	);
 
-const apClassSchema = z
-	.enum(listApCurriculumCourseNames() as [string, ...string[]])
-	.describe('Exact app-facing AP course name from the allowed values.');
-
 const webSearchSchema = z.object({
 	objective: z
 		.string()
@@ -198,10 +181,40 @@ async function coachWriteDenied(locals: App.Locals, userId: string): Promise<str
 	return access.allowed ? null : access.message;
 }
 
+function studyPlanToolView(plan: StudyPlanView | null): StudyPlanView | null {
+	return plan
+		? {
+				...plan,
+				startsOn: plan.startsOn.slice(0, 10),
+				tasks: plan.tasks.map((task) => ({ ...task, date: task.date.slice(0, 10) }))
+			}
+		: null;
+}
+
 export function createSuperTools(input: SuperToolsInput) {
 	const { locals, userId, sessionId, currentContext, conversationId, chargeWebSearch } = input;
 
 	return {
+		ask_student: tool({
+			description:
+				'Ask the student one concise question when essential information is missing and cannot be inferred from the conversation or their saved context. The student can choose an option or write a response. Do not use for confirmation or when you can answer without asking.',
+			inputSchema: z.object({
+				question: z
+					.string()
+					.trim()
+					.min(1)
+					.max(500)
+					.describe('One concise question for the student.'),
+				options: z
+					.array(z.string().trim().min(1).max(120))
+					.min(2)
+					.max(5)
+					.optional()
+					.describe(
+						'Optional 2 to 5 concise answer choices; the student can still write a response.'
+					)
+			})
+		}),
 		...(env.PARALLEL_API_KEY?.trim()
 			? {
 					search_web: tool({
@@ -225,7 +238,7 @@ export function createSuperTools(input: SuperToolsInput) {
 									{ signal: abortSignal }
 								);
 								if (!(await chargeWebSearch())) {
-									return { error: 'Web search requires five remaining messages this month.' };
+									return { error: 'Web search requires three remaining messages this month.' };
 								}
 								return {
 									results: response.results.map((result) => ({
@@ -259,7 +272,7 @@ export function createSuperTools(input: SuperToolsInput) {
 				apClass: apClassSchema
 					.optional()
 					.describe(
-						'Omit only to list supported courses; otherwise use the exact app-facing name.'
+						'Omit only to list supported courses; otherwise use a canonical app label or supported official alias.'
 					),
 				unit: z
 					.string()
@@ -324,7 +337,7 @@ export function createSuperTools(input: SuperToolsInput) {
 			description:
 				'Read the active weekly study plan and each task’s status. Use for planning, scheduling, or what-to-study-next questions. A null result means there is no active plan; do not repeat the read.',
 			inputSchema: z.object({}).describe('No arguments; reads the current student study plan.'),
-			execute: () => getCurrentStudyPlan(userId)
+			execute: async () => studyPlanToolView(await getCurrentStudyPlan(userId))
 		}),
 		read_activity_summary: tool({
 			description:
@@ -441,40 +454,52 @@ export function createSuperTools(input: SuperToolsInput) {
 		}),
 		update_study_plan: tool({
 			description:
-				'Propose a new or updated weekly study plan only when the student asks to save or change it. Each task lasts 5 to 30 minutes. Requires student approval before writing; use read_study_plan first when modifying an existing plan and preserve completed tasks.',
-			inputSchema: z.object({
-				startsOn: z.iso
-					.datetime()
-					.describe('Start date for the weekly plan as an ISO 8601 timestamp.'),
-				behavior: z
-					.enum(['replace', 'merge'])
-					.default('replace')
-					.describe(
-						'Defaults to replace, which swaps the plan; merge adds or updates tasks while preserving others.'
-					),
-				tasks: z
-					.array(studyTaskSchema)
-					.max(28)
-					.describe('Up to 28 scheduled study tasks for the plan.')
-			}),
+				'Propose a new or updated weekly study plan only when the student asks to save or change it. Use weekStart as the first local calendar date of the plan in YYYY-MM-DD form, then schedule each task with dayOffset 0 through 6. Do not provide timestamps or a time zone. Use canonical AP course labels when possible; supported aliases are normalized. Each task lasts 5 to 30 minutes. Requires student approval before writing; use read_study_plan first when modifying an existing plan and preserve completed tasks. If the result has updated=false, report the returned error and do not claim the plan was saved.',
+			inputSchema: studyPlanToolInputSchema,
+			strict: true,
 			needsApproval: true,
-			execute: async ({ startsOn, behavior, tasks }) => {
+			execute: async ({ weekStart, behavior, tasks }) => {
 				const denied = await coachWriteDenied(locals, userId);
 				if (denied) return { updated: false, error: denied };
-				const operationInput = { startsOn, behavior, tasks };
+				const datedTasks: StudyTask[] = [];
+				for (const { dayOffset, apClass, practiceHref, ...task } of tasks) {
+					const canonicalApClass = resolveApCurriculumCourseName(apClass);
+					if (!canonicalApClass) {
+						return { updated: false, error: `Unsupported AP course: ${apClass}` };
+					}
+					datedTasks.push({
+						...task,
+						apClass: canonicalApClass,
+						...(practiceHref ? { practiceHref } : {}),
+						date: addStudyPlanDays(weekStart, dayOffset),
+						status: 'todo'
+					});
+				}
+				const operationInput = { weekStart, behavior, tasks: datedTasks };
 				const operationId = coachOperationId(sessionId, 'update_study_plan', operationInput);
 				if (!(await claimIdempotencyKey(userId, operationId))) {
 					return { updated: true, alreadyApplied: true };
 				}
+				let existingPlan: StudyPlanView | null;
+				let after: StudyPlanView;
+				let before: Record<string, unknown>;
 				try {
-					const existingPlan = await getCurrentStudyPlan(userId);
-					const before = existingPlan ?? {};
+					existingPlan = await getCurrentStudyPlan(userId);
+					before = existingPlan ?? {};
 					if (behavior === 'replace' && existingPlan) {
-						const proposedById = new Map(tasks.map((task) => [task.id, task]));
+						const proposedById = new Map(datedTasks.map((task) => [task.id, task]));
 						const modifiesCompletedTask = existingPlan.tasks.some((task) => {
 							if (task.status !== 'done') return false;
 							const proposed = proposedById.get(task.id);
-							return !proposed || JSON.stringify(proposed) !== JSON.stringify(task);
+							return (
+								!proposed ||
+								proposed.apClass !== task.apClass ||
+								proposed.unit !== task.unit ||
+								proposed.mode !== task.mode ||
+								proposed.date.slice(0, 10) !== task.date.slice(0, 10) ||
+								proposed.durationMinutes !== task.durationMinutes ||
+								(proposed.practiceHref ?? '') !== (task.practiceHref ?? '')
+							);
 						});
 						if (modifiesCompletedTask) {
 							await releaseIdempotencyKey(userId, operationId);
@@ -484,17 +509,30 @@ export function createSuperTools(input: SuperToolsInput) {
 							};
 						}
 					}
-					const after = await saveStudyPlan(
+					after = await saveStudyPlan(
 						userId,
-						{ startsOn, tasks: tasks as StudyTask[] },
+						{ startsOn: weekStart, tasks: datedTasks },
 						{ behavior }
 					);
-					await writeAudit(userId, sessionId, 'update_study_plan', before, after, conversationId);
-					return { updated: true, studyPlan: after };
 				} catch (error) {
 					await releaseIdempotencyKey(userId, operationId);
-					throw error;
+					logger.error('Study plan tool save failed', { userId, sessionId, error });
+					return {
+						updated: false,
+						error:
+							error instanceof StudyPlanConflictError
+								? 'The study plan changed while saving. Refresh the plan and try again.'
+								: error instanceof StudyPlansLockedError
+									? 'Study plan access is unavailable for this account.'
+									: 'The save could not be confirmed. Check the Plan page before trying again.'
+					};
 				}
+				try {
+					await writeAudit(userId, sessionId, 'update_study_plan', before, after, conversationId);
+				} catch (error) {
+					logger.error('Study plan saved but audit write failed', { userId, sessionId, error });
+				}
+				return { updated: true, studyPlan: studyPlanToolView(after) };
 			}
 		})
 	};

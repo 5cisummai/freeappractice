@@ -26,7 +26,7 @@
 		property="og:description"
 		content="Free MCQ and FRQ tutoring, plus AI Coach and weekly study plans with Super."
 	/>
-	<meta property="og:image" content="https://freeappractice.org/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 </svelte:head>

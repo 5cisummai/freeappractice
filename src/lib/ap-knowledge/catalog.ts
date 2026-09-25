@@ -46,6 +46,12 @@ const supportedCourses = AP_DATA.courses;
 const courseByName = new Map(supportedCourses.map((course) => [course.name, course] as const));
 const sourceById = new Map(AP_DATA.sources.map((source) => [source.id, source] as const));
 
+const courseAliases = new Map([
+	['AP U.S. Government and Politics', 'AP US Government'],
+	['AP US Government and Politics', 'AP US Government'],
+	['AP United States Government and Politics', 'AP US Government']
+]);
+
 export const AP_KNOWLEDGE_CATALOG_VERSION = AP_DATA.datasetVersion;
 export const AP_KNOWLEDGE_REVIEWED_AT = AP_DATA.asOf;
 export const AP_KNOWLEDGE_FRESHNESS_NOTE =
@@ -135,6 +141,22 @@ export function listApCurriculumCourseNames(): string[] {
 	return supportedCourses.map((course) => course.name);
 }
 
+export function listApCurriculumCourseLookupNames(): string[] {
+	return [...listApCurriculumCourseNames(), ...courseAliases.keys()];
+}
+
+export function resolveApCurriculumCourseName(value: string): string | undefined {
+	const normalized = normalize(value);
+	const canonicalName = supportedCourses.find(
+		(course) => normalize(course.name) === normalized
+	)?.name;
+	if (canonicalName) return canonicalName;
+	for (const [alias, canonical] of courseAliases) {
+		if (normalize(alias) === normalized) return canonical;
+	}
+	return undefined;
+}
+
 /** Retrieve bounded AP catalog facts and links to the current official sources. */
 export function getApCurriculumKnowledge(input: {
 	apClass?: string;
@@ -158,7 +180,8 @@ export function getApCurriculumKnowledge(input: {
 		};
 	}
 
-	const course = courseByName.get(input.apClass);
+	const canonicalName = resolveApCurriculumCourseName(input.apClass);
+	const course = canonicalName ? courseByName.get(canonicalName) : undefined;
 	if (!course) {
 		return {
 			kind: 'not_found',

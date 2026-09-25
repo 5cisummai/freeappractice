@@ -69,7 +69,7 @@
 				name,
 				email,
 				password,
-				callbackURL: authCallbackUrl('/app')
+				callbackURL: authCallbackUrlForAppPath(redirectPath)
 			});
 			if (error) {
 				errorMessage = error.message ?? 'Registration failed';
@@ -81,9 +81,12 @@
 			}
 			captureSignupCompleted('email');
 			// Use Better Auth's awaited, rate-limited endpoint so delivery failures are recoverable.
-			const { deliveryId, error: verificationError } = await requestVerificationEmail(email);
+			const { deliveryId, error: verificationError } = await requestVerificationEmail(
+				email,
+				redirectPath
+			);
 			// Onboarding pending cookie is set server-side in databaseHooks.user.create.after.
-			const emailSentQuery = `email=${encodeURIComponent(email)}&delivery=${encodeURIComponent(deliveryId)}${
+			const emailSentQuery = `email=${encodeURIComponent(email)}&delivery=${encodeURIComponent(deliveryId)}&redirect=${encodeURIComponent(redirectPath)}${
 				verificationError ? '&send=failed' : ''
 			}`;
 			const emailSentHref = `${resolve('/email-sent')}?${emailSentQuery}`;
@@ -148,7 +151,7 @@
 						Or continue with email
 					</Field.Separator>
 					{#if errorMessage}
-						<p class="text-center text-sm text-destructive">{errorMessage}</p>
+						<p role="alert" class="text-center text-sm text-destructive">{errorMessage}</p>
 					{/if}
 					<Field.Field>
 						<Field.Label for="name">Full Name</Field.Label>
@@ -206,7 +209,7 @@
 						</Button>
 						<Field.Description class="text-center">
 							Already have an account? <a
-								href={resolve('/login')}
+								href={resolve(`/login?redirect=${encodeURIComponent(redirectPath)}`)}
 								class="underline underline-offset-4">Sign in</a
 							>
 						</Field.Description>

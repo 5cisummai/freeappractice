@@ -107,7 +107,13 @@ export function reconstructApprovalContinuationMessage(
 		};
 	}) as SuperAgentUIMessage['parts'];
 
-	return replaced ? { ...storedMessage, parts } : null;
+	return replaced
+		? {
+				...storedMessage,
+				...(clientAssistant.id ? { id: clientAssistant.id } : {}),
+				parts
+			}
+		: null;
 }
 
 function messageTranscript(row: ConversationMessage): string {
@@ -238,6 +244,7 @@ export async function buildSuperAgentUiMessages(input: {
 			if (lastAssistantIndex >= 0) {
 				uiMessages[lastAssistantIndex] = {
 					...uiMessages[lastAssistantIndex],
+					...(continuationAssistant.id ? { id: continuationAssistant.id } : {}),
 					parts: continuationAssistant.parts as SuperAgentUIMessage['parts']
 				};
 			} else {

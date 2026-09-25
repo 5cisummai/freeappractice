@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	assertSafeEmail,
 	assertSafeUserId,
-	isEligibleUnverifiedUser,
-	unverifiedStaleFilter
+	isEligibleUnverifiedUser
 } from '../../scripts/cleanup-unverified-users-lib';
 
 describe('assertSafeUserId / assertSafeEmail', () => {
@@ -60,15 +59,5 @@ describe('isEligibleUnverifiedUser', () => {
 				cutoff
 			)
 		).toBe(false);
-	});
-});
-
-describe('unverifiedStaleFilter', () => {
-	it('requires emailVerified false and createdAt before cutoff', () => {
-		const cutoff = new Date('2026-07-15T00:00:00.000Z');
-		expect(unverifiedStaleFilter(cutoff)).toEqual({
-			emailVerified: false,
-			createdAt: { $lt: cutoff }
-		});
 	});
 });

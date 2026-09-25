@@ -67,7 +67,7 @@
 		property="og:description"
 		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
 	/>
-	<meta property="og:image" content="https://freeappractice.org/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="Free AP Practice Tests &amp; Questions" />
@@ -75,7 +75,7 @@
 		name="twitter:description"
 		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
 	/>
-	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html jsonLdMarkup}
 </svelte:head>

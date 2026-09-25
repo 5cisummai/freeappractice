@@ -9,6 +9,7 @@
 	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
 	import LazyComponent from '$lib/components/app/lazy-component.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import { Badge } from '$lib/components/ui/badge';
 	import { cn } from '$lib/utils.js';
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
 
@@ -174,6 +175,7 @@
 	function handleSelectionChange(className: string, unit: string): void {
 		if (activeQuizMode) quizRequestVersion = 0;
 		else requestVersion = 0;
+		presetQuestionId = '';
 		selectedClass = className;
 		selectedUnit = unit;
 		onEvent?.({ type: 'selection-change', selectedClass: className, selectedUnit: unit });
@@ -216,7 +218,12 @@
 						<Tabs.Trigger value="unlimited">Unlimited MCQ</Tabs.Trigger>
 						<Tabs.Trigger value="graded">Graded Quizzes</Tabs.Trigger>
 						{#if frqTabEnabled}
-							<Tabs.Trigger value="frq">Free Response</Tabs.Trigger>
+							<Tabs.Trigger value="frq">
+								Free Response
+								<Badge variant="secondary" class="h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
+									>New</Badge
+								>
+							</Tabs.Trigger>
 						{/if}
 					</Tabs.List>
 				</Tabs.Root>

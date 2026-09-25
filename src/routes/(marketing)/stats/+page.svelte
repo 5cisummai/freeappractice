@@ -69,6 +69,27 @@
 
 <svelte:head>
 	<title>Stats | Free AP Practice</title>
+	<meta
+		name="description"
+		content="Explore question generation statistics across AP subjects and units on Free AP Practice."
+	/>
+	<link rel="canonical" href="https://freeappractice.org/stats" />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://freeappractice.org/stats" />
+	<meta property="og:title" content="Stats | Free AP Practice" />
+	<meta
+		property="og:description"
+		content="Explore question generation statistics across AP subjects and units."
+	/>
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
+	<meta property="og:site_name" content="FreeAPPractice.org" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Stats | Free AP Practice" />
+	<meta
+		name="twitter:description"
+		content="Explore question generation statistics across AP subjects and units."
+	/>
+	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 </svelte:head>
 
 <main id="main-content" class="flex-1 py-12">

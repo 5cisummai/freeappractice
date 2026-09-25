@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
+	import { safeAppPath } from '$lib/auth/urls.js';
 	import {
 		getEmailDeliveryFailureMessage,
 		getEmailDeliverySuccessMessage,
@@ -14,6 +15,7 @@
 	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
 
 	const email = $derived(page.url.searchParams.get('email'));
+	const redirectPath = $derived(safeAppPath(page.url.searchParams.get('redirect')));
 	let activeDeliveryId = $state(page.url.searchParams.get('delivery') ?? '');
 	let deliveryStatus = $state<EmailDeliveryStatus>(
 		page.url.searchParams.get('send') === 'failed' ? 'failed' : 'pending'
@@ -106,7 +108,7 @@
 		timedOut = false;
 		resending = true;
 		try {
-			const result = await requestVerificationEmail(email);
+			const result = await requestVerificationEmail(email, redirectPath);
 			activeDeliveryId = result.deliveryId;
 			if (result.error) {
 				deliveryStatus = 'failed';
@@ -189,7 +191,10 @@
 			</Button>
 		{/if}
 		<div class="text-center">
-			<a href={resolve('/login')} class="text-sm underline underline-offset-4">Back to sign in</a>
+			<a
+				href={resolve(`/login?redirect=${encodeURIComponent(redirectPath)}`)}
+				class="text-sm underline underline-offset-4">Back to sign in</a
+			>
 		</div>
 	</Card.Content>
 </Card.Root>

@@ -32,7 +32,7 @@ function redirectToLoginIfNeeded(response: Response): void {
 	const path = window.location.pathname;
 	if (path.startsWith('/login') || path.startsWith('/signup')) return;
 
-	void goto(resolve('/login'));
+	void goto(resolve(`/login?redirect=${encodeURIComponent(path + window.location.search)}`));
 }
 
 /** App API fetch. Better Auth uses same-origin cookies for authentication. */

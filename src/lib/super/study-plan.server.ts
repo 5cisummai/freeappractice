@@ -15,6 +15,24 @@ export type StudyPlanDraft = {
 	tasks: StudyTask[];
 };
 
+/** Add calendar days to a validated YYYY-MM-DD date without applying a time zone. */
+export function addStudyPlanDays(weekStart: string, dayOffset: number): string {
+	if (
+		!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) ||
+		!Number.isInteger(dayOffset) ||
+		dayOffset < 0 ||
+		dayOffset > 6
+	) {
+		throw new Error('Study plan day is invalid');
+	}
+	const date = new Date(`${weekStart}T00:00:00.000Z`);
+	if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== weekStart) {
+		throw new Error('Study plan start date is invalid');
+	}
+	date.setUTCDate(date.getUTCDate() + dayOffset);
+	return date.toISOString().slice(0, 10);
+}
+
 export class StudyPlansLockedError extends Error {
 	constructor(message = 'Study plans are unavailable without active access') {
 		super(message);
@@ -225,7 +243,7 @@ async function writeStoredPlan(
 						${task.apClass},
 						${task.unit},
 						${task.mode},
-						${startOfUtcDay(task.date)},
+						${startOfUtcDay(task.date).toISOString().slice(0, 10)},
 						${task.durationMinutes},
 						${task.status},
 						${task.practiceHref ?? null}
@@ -236,7 +254,7 @@ async function writeStoredPlan(
 		statements.push(
 			db.insert(studyTasks as any).select(sql`
 				SELECT incoming.id, incoming.plan_id, incoming.ap_class, incoming.unit,
-					incoming.mode, incoming.task_date, incoming.duration_minutes,
+					incoming.mode, incoming.task_date::date, incoming.duration_minutes::integer,
 					incoming.status, incoming.practice_href
 				FROM (VALUES ${values}) AS incoming(
 					id, plan_id, ap_class, unit, mode, task_date,

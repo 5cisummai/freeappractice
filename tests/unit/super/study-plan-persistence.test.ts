@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 
 const mocks = vi.hoisted(() => ({
 	batch: vi.fn(),
@@ -44,7 +46,11 @@ vi.mock('$lib/question-bank/util.server', () => ({
 	isDuplicateKeyError: vi.fn().mockReturnValue(false)
 }));
 
-import { saveStudyPlan, StudyPlanConflictError } from '$lib/super/study-plan.server';
+import {
+	addStudyPlanDays,
+	saveStudyPlan,
+	StudyPlanConflictError
+} from '$lib/super/study-plan.server';
 
 function selectBuilder() {
 	const builder = {
@@ -95,6 +101,8 @@ const draft = {
 	]
 };
 
+const dialect = new PgDialect();
+
 describe('study-plan persistence', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -117,6 +125,13 @@ describe('study-plan persistence', () => {
 		mocks.batch.mockResolvedValue([[{ id: 'plan-1' }], [], []]);
 	});
 
+	it('maps day offsets to calendar dates without timestamp or timezone shifts', () => {
+		expect(addStudyPlanDays('2026-08-10', 0)).toBe('2026-08-10');
+		expect(addStudyPlanDays('2026-08-10', 6)).toBe('2026-08-16');
+		expect(addStudyPlanDays('2026-02-27', 3)).toBe('2026-03-02');
+		expect(() => addStudyPlanDays('2026-02-30', 0)).toThrow('Study plan start date is invalid');
+	});
+
 	it('composes the parent CAS, task delete, and task insert in one batch', async () => {
 		await expect(saveStudyPlan('user-1', draft)).resolves.toMatchObject({
 			id: 'plan-1',
@@ -130,6 +145,11 @@ describe('study-plan persistence', () => {
 		expect(mocks.delete).toHaveBeenCalledOnce();
 		expect(mocks.insert).toHaveBeenCalledOnce();
 		expect(mocks.insertSelect).toHaveBeenCalledOnce();
+		const taskInsert = mocks.insertSelect.mock.calls[0][0] as SQL;
+		const taskQuery = dialect.sqlToQuery(taskInsert);
+		expect(taskQuery.sql).toContain('incoming.task_date::date');
+		expect(taskQuery.sql).toContain('incoming.duration_minutes::integer');
+		expect(taskQuery.params).toContain('2026-08-10');
 		expect(mocks.updateSet).toHaveBeenCalledWith({
 			startsOn: new Date('2026-08-10T00:00:00.000Z'),
 			updatedAt: expect.any(Date)

@@ -43,6 +43,7 @@ import {
 	markConversationMessageStreaming
 } from '$lib/super/conversations.server';
 import { coachComposerActionInstructions } from '$lib/super/coach-composer-actions';
+import { timezoneFromCookies } from '$lib/users/timezone';
 
 const SUPER_AGENT_STREAM_TIMEOUT_MS = 55_000;
 
@@ -150,6 +151,7 @@ export async function createSuperAgentStreamResponse(
 		thinkingMode = 'quick'
 	} = options;
 	const surface = context.surface;
+	const timeZone = timezoneFromCookies(event.cookies) ?? 'UTC';
 	const errorLabel = superAgentErrorLabel(context);
 	const clientMessages = messages;
 	const isContinuation = isSuperAgentToolContinuation(clientMessages);
@@ -350,6 +352,7 @@ export async function createSuperAgentStreamResponse(
 			userId,
 			sessionId,
 			selectedApClasses: profile.selectedApClasses,
+			timeZone,
 			personalizationContext: personalization.text,
 			historySummary,
 			currentContext: context,
@@ -385,6 +388,9 @@ export async function createSuperAgentStreamResponse(
 					surface,
 					conversationId,
 					stepNumber: step.stepNumber,
+					finishReason: step.finishReason,
+					toolCallNames: step.toolCalls.flatMap((call) => (call ? [call.toolName] : [])),
+					toolResultNames: step.toolResults.flatMap((result) => (result ? [result.toolName] : [])),
 					inputTokens: step.usage.inputTokens,
 					outputTokens: step.usage.outputTokens,
 					totalTokens: step.usage.totalTokens,
@@ -402,6 +408,7 @@ export async function createSuperAgentStreamResponse(
 						await finalizeConversationMessage(userId, assistantMessageId, {
 							content: assistantResponse,
 							parts: responseMessage.parts as unknown[],
+							clientMessageId: responseMessage.id,
 							status: isAborted ? 'aborted' : 'complete'
 						});
 						if (surface === 'coach' && conversationId) {

@@ -5,16 +5,19 @@
 	import HomeIconComponent from '@tabler/icons-svelte/icons/home-filled';
 	import BookOpenIconComponent from '@tabler/icons-svelte/icons/book-filled';
 	import BarChart3IconComponent from '@tabler/icons-svelte/icons/chart-pie-filled';
+	import CalendarIconComponent from '@tabler/icons-svelte/icons/calendar-week-filled';
 	import ShieldIconComponent from '@tabler/icons-svelte/icons/shield-filled';
 	import UsersIconComponent from '@tabler/icons-svelte/icons/user-filled';
 	import LayersIconComponent from '@tabler/icons-svelte/icons/stack-filled';
 	import PipIcon from '$lib/components/coach/pip-icon.svelte';
+	import { Badge } from '$lib/components/ui/badge';
 	import type { Component } from 'svelte';
 
 	type NavHref =
 		| '/app'
 		| '/app/practice'
 		| '/app/progress'
+		| '/app/plan'
 		| '/app/resources'
 		| '/app/coach'
 		| '/app/members'
@@ -30,6 +33,7 @@
 	const HomeIcon = HomeIconComponent as unknown as Component;
 	const BookOpenIcon = BookOpenIconComponent as unknown as Component;
 	const BarChart3Icon = BarChart3IconComponent as unknown as Component;
+	const CalendarIcon = CalendarIconComponent as unknown as Component;
 	const ShieldIcon = ShieldIconComponent as unknown as Component;
 	const PipNavIcon = PipIcon as unknown as Component;
 	const UsersIcon = UsersIconComponent as unknown as Component;
@@ -58,6 +62,9 @@
 			{ href: '/app/practice', label: 'Practice', icon: BookOpenIcon },
 			{ href: '/app/progress', label: 'Progress', icon: BarChart3Icon }
 		];
+		if (assistantFeaturesEnabled) {
+			items.push({ href: '/app/plan', label: 'Plan', icon: CalendarIcon });
+		}
 		return items;
 	});
 
@@ -111,6 +118,12 @@
 								>
 									<item.icon />
 									<span>{item.label}</span>
+									{#if item.href === '/app/plan'}
+										<Badge
+											variant="secondary"
+											class="ml-auto h-5 bg-primary/10 px-1.5 text-[10px] text-primary">New</Badge
+										>
+									{/if}
 								</a>
 							{/snippet}
 						</Sidebar.MenuButton>

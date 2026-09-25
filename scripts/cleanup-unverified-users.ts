@@ -28,8 +28,7 @@ import {
 export {
 	assertSafeEmail,
 	assertSafeUserId,
-	isEligibleUnverifiedUser,
-	unverifiedStaleFilter
+	isEligibleUnverifiedUser
 } from './cleanup-unverified-users-lib';
 
 const DEFAULT_MAX_AGE_DAYS = 1;

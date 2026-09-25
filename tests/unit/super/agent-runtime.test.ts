@@ -65,12 +65,16 @@ describe('Coach stream startup', () => {
 
 		await expect(
 			createSuperAgentStreamResponse({
-				event: { request: new Request('https://app.test/api/super/agent'), locals: {} },
+				event: {
+					request: new Request('https://app.test/api/super/agent'),
+					locals: {},
+					cookies: { get: () => undefined }
+				},
 				userId: 'user-1',
 				sessionId: 'session-1',
 				context: { surface: 'coach', page: 'coach' },
 				messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help me study' }] }]
-			} as Parameters<typeof createSuperAgentStreamResponse>[0])
+			} as unknown as Parameters<typeof createSuperAgentStreamResponse>[0])
 		).rejects.toBe(failure);
 
 		expect(mocks.finalize).toHaveBeenCalledWith('user-1', 'message-1', {

@@ -184,7 +184,7 @@
 		]
 			.filter(Boolean)
 			.join('\n');
-		return `${resolve('/app/coach')}?prompt=${encodeURIComponent(prompt)}`;
+		return `${resolve('/app/coach')}?q=${encodeURIComponent(prompt)}`;
 	});
 
 	function setGenerating(value: boolean): void {

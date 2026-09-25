@@ -19,7 +19,7 @@
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingSubjectGroups } from '$lib/onboarding-subjects.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	const APP_VERSION = '1.9.2';
+	const APP_VERSION = '1.9.3';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
@@ -453,7 +453,7 @@
 									{data.usage.remaining} of {data.usage.limit} messages remaining this month.
 								</p>
 								<p class="mt-1 text-xs text-muted-foreground">
-									Messages using web search count as five.
+									Messages using web search count as three.
 								</p>
 								{#if data.usage.warning}
 									<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">

@@ -4,7 +4,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
-	import { NativeSelect } from '$lib/components/ui/native-select/index.js';
+	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import {
@@ -145,16 +145,24 @@
 
 					<div class="space-y-2">
 						<Label for="feedback-category">Category</Label>
-						<NativeSelect
-							id="feedback-category"
-							bind:value={category}
-							class="w-full"
-							aria-invalid={Boolean(fieldErrors.category)}
-						>
-							{#each APP_FEEDBACK_CATEGORIES as value (value)}
-								<option {value}>{APP_FEEDBACK_CATEGORY_LABELS[value]}</option>
-							{/each}
-						</NativeSelect>
+						<Select.Root type="single" bind:value={category}>
+							<Select.Trigger
+								id="feedback-category"
+								class="w-full"
+								aria-invalid={Boolean(fieldErrors.category)}
+							>
+								{APP_FEEDBACK_CATEGORY_LABELS[category]}
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Group>
+									{#each APP_FEEDBACK_CATEGORIES as value (value)}
+										<Select.Item {value} label={APP_FEEDBACK_CATEGORY_LABELS[value]}>
+											{APP_FEEDBACK_CATEGORY_LABELS[value]}
+										</Select.Item>
+									{/each}
+								</Select.Group>
+							</Select.Content>
+						</Select.Root>
 						{#if fieldErrors.category}
 							<p class="text-sm text-destructive">{fieldErrors.category}</p>
 						{/if}

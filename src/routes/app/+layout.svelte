@@ -115,7 +115,7 @@
 				activeOrganization={data.activeOrganization}
 				ownedGroupCount={data.ownedGroupCount}
 			/>
-			<Sidebar.Inset>
+			<Sidebar.Inset class="min-w-0">
 				<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
 					<SidebarTrigger />
 					<div class="ml-auto flex items-center gap-2">
@@ -131,7 +131,7 @@
 					</div>
 				</header>
 
-				<div class="flex-1">
+				<div class="min-w-0 flex-1">
 					{@render children()}
 				</div>
 			</Sidebar.Inset>

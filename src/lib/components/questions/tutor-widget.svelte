@@ -67,11 +67,14 @@
 	let hasDragged = $state(false);
 	let dragOffsetX = 0;
 	let dragOffsetY = 0;
+	let dragStartX = 0;
+	let dragStartY = 0;
 
 	const BUTTON_SIZE = 48;
 	const PANEL_WIDTH = 340;
 	const PANEL_HEIGHT = 480;
 	const VIEWPORT_MARGIN = 12;
+	const DRAG_THRESHOLD = 6;
 	const PANEL_GAP = 8;
 	const STREAM_TIMEOUT_MS = 30000;
 	const scrollTrigger = $derived.by(() => {
@@ -361,6 +364,8 @@
 		if (e.button !== 0) return;
 		isDragging = true;
 		hasDragged = false;
+		dragStartX = e.clientX;
+		dragStartY = e.clientY;
 		dragOffsetX = e.clientX - btnX;
 		dragOffsetY = e.clientY - btnY;
 		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -368,6 +373,8 @@
 
 	function onBtnPointerMove(e: PointerEvent) {
 		if (!isDragging) return;
+		if (!hasDragged && Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY) < DRAG_THRESHOLD)
+			return;
 		hasDragged = true;
 		const clamped = clampButtonPosition(e.clientX - dragOffsetX, e.clientY - dragOffsetY);
 		btnX = clamped.x;
@@ -376,6 +383,11 @@
 
 	function onBtnPointerUp() {
 		isDragging = false;
+	}
+
+	function onBtnPointerCancel() {
+		isDragging = false;
+		hasDragged = false;
 	}
 
 	onMount(() => {
@@ -476,6 +488,7 @@
 			]}
 		>
 			<textarea
+				aria-label="Ask the tutor a question"
 				{@attach !embedded && autofocusInput}
 				bind:value={inputText}
 				onkeydown={handleKeydown}
@@ -539,6 +552,8 @@
 			onpointerdown={onBtnPointerDown}
 			onpointermove={onBtnPointerMove}
 			onpointerup={onBtnPointerUp}
+			onpointercancel={onBtnPointerCancel}
+			onlostpointercapture={onBtnPointerUp}
 			onclick={() => {
 				if (hasDragged) {
 					hasDragged = false;

@@ -57,8 +57,10 @@
 		}
 	];
 
+	// w-0 min-w-full keeps the row at the inset width so shrink-0 cards scroll
+	// inside the list instead of widening the whole Sidebar.Inset.
 	const scrollRowClass =
-		'no-scrollbar mt-4 flex list-none snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth p-0 pb-1';
+		'no-scrollbar mt-4 flex w-0 min-w-full list-none snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth p-0 pb-1';
 	const cardItemClass = 'w-[min(100%,18rem)] shrink-0 snap-start sm:w-72 lg:w-80';
 </script>
 

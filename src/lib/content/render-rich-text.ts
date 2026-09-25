@@ -16,7 +16,7 @@ export function isSafeMarkdownUrl(url: string): boolean {
 }
 
 function renderKatex(tex: string, displayMode: boolean): string {
-	return katex.renderToString(tex, { displayMode, throwOnError: false, output: 'html' });
+	return katex.renderToString(tex, { displayMode, throwOnError: false });
 }
 
 const blockMathExtension = {

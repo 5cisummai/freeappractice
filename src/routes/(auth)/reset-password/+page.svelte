@@ -74,7 +74,7 @@
 			<form onsubmit={handleSubmit}>
 				<Field.Group>
 					{#if errorMessage}
-						<p class="text-center text-sm text-destructive">{errorMessage}</p>
+						<p role="alert" class="text-center text-sm text-destructive">{errorMessage}</p>
 					{/if}
 					<Field.Field>
 						<Field.Label for="password">New Password</Field.Label>

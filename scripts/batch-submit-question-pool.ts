@@ -205,7 +205,7 @@ async function main() {
 		process.exit(1);
 	}
 
-	const idempotencyKey = `pool-mcq-${randomUUID()}`;
+	const idempotencyKey = `pool-${questionType}-${randomUUID()}`;
 	try {
 		const submitted = await submitMcqPoolBatch({
 			jsonl,

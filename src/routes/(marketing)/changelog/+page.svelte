@@ -5,6 +5,33 @@
 
 	const changelog = [
 		{
+			version: '1.9.3',
+			date: 'September 25, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'A dedicated Study Plan page shows your weekly schedule and progress, with a summary on Home',
+						'Pip can ask interactive questions mid-chat, with choices or a written reply before continuing'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Free Response feedback now appears next to each answer, with color cues for how you scored',
+						'Study group quizzes and the leaderboard are combined into a compact My Group section on Home',
+						'Settings explains that Coach messages using web search count as three toward your monthly allowance'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Email verification keeps your intended destination when you resend a verification email or return to sign in'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.2',
 			date: 'September 22, 2026',
 			sections: [
@@ -1458,14 +1485,14 @@
 	<meta property="og:url" content="https://freeappractice.org/changelog" />
 	<meta property="og:title" content="Changelog | Free AP Practice" />
 	<meta property="og:description" content="Changelog and release notes for Free AP Practice" />
-	<meta property="og:image" content="https://freeappractice.org/icon.png" />
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta property="og:locale" content="en_US" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content="https://freeappractice.org/changelog" />
 	<meta name="twitter:title" content="Changelog | Free AP Practice" />
 	<meta name="twitter:description" content="Changelog and release notes for Free AP Practice" />
-	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 </svelte:head>
 
 <main id="main-content" class="flex-1 py-12">
@@ -1475,7 +1502,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 22, 2026"
+			meta="Last Updated: September 25, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

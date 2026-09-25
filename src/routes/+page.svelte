@@ -38,7 +38,7 @@
 				id: 'which-subjects-supported',
 				question: 'Which AP subjects are covered?',
 				answer:
-					'We cover 20+ AP subjects including Sciences (Biology, Chemistry, Physics 1/2/C), Mathematics (Calculus AB/BC, Statistics, Precalculus), Computer Science (A and Principles), English (Language and Literature), History (US, World, European), Social Sciences (Psychology, Human Geography, Government), and Economics (Macro and Micro).'
+					'We cover 20+ AP subjects including Sciences (Biology, Chemistry, Physics 1, Physics 2, Physics C: Mechanics, Physics C: Electricity and Magnetism), Mathematics (Calculus AB/BC, Statistics, Precalculus), Computer Science (A and Principles), English (Language and Literature), History (US, World, European), Social Sciences (Psychology, Human Geography, Government), and Economics (Macro and Micro).'
 			},
 			{
 				id: 'how-accurate',
@@ -139,9 +139,9 @@
 		property="og:description"
 		content="The fastest way to practice AP online: pick a subject, start practicing, get instant feedback. Free, unlimited, no signup across 20+ subjects."
 	/>
-	<meta property="og:image" content="https://freeappractice.org/icon.png" />
-	<meta property="og:image:width" content="1200" />
-	<meta property="og:image:height" content="630" />
+	<meta property="og:image" content="https://freeappractice.org/logo.png" />
+	<meta property="og:image:width" content="500" />
+	<meta property="og:image:height" content="500" />
 	<meta
 		property="og:image:alt"
 		content="FreeAPPractice.org – fastest free AP practice, 2 clicks to start"
@@ -156,7 +156,7 @@
 		name="twitter:description"
 		content="Fastest free AP practice online: pick a subject, start practicing, get instant feedback. Unlimited questions across 20+ subjects."
 	/>
-	<meta name="twitter:image" content="https://freeappractice.org/icon.png" />
+	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 	<meta
 		name="twitter:image:alt"
 		content="FreeAPPractice.org – fastest free AP practice, 2 clicks to start"
@@ -173,8 +173,8 @@
 			"alternateName": "Free AP Practice",
 			"url": "https://freeappractice.org",
 			"description": "The fastest free AP practice online—start in 2 clicks with no signup. Unlimited AP-style practice questions and instant feedback across 20+ subjects.",
-			"logo": "https://freeappractice.org/icon.png",
-			"image": "https://freeappractice.org/icon.png",
+			"logo": "https://freeappractice.org/logo.png",
+			"image": "https://freeappractice.org/logo.png",
 			"applicationCategory": "EducationalApplication",
 			"offers": {
 				"@type": "Offer",
@@ -184,9 +184,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.9.2",
+			"softwareVersion": "1.9.3",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-09-22",
+			"dateModified": "2026-09-25",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [
@@ -211,7 +211,7 @@
 				"name": "FreeAPPractice.org",
 				"logo": {
 					"@type": "ImageObject",
-					"url": "https://freeappractice.org/icon.png"
+					"url": "https://freeappractice.org/logo.png"
 				}
 			},
 			"featureList": [
@@ -250,7 +250,7 @@
 			"@type": "Organization",
 			"name": "Free AP Practice",
 			"url": "https://freeappractice.org",
-			"logo": "https://freeappractice.org/icon.png",
+			"logo": "https://freeappractice.org/logo.png",
 			"description": "Free AP-style practice questions for students",
 			"founder": {
 				"@type": "Person",

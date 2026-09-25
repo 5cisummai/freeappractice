@@ -192,13 +192,9 @@
 								>
 									<p class="font-medium text-foreground">Question context</p>
 									<p>
-										Question {context.questionNumber}
-										{#if context.selectedClass}
-											in {context.selectedClass}
-										{/if}
-										{#if context.selectedUnit}
-											- {context.selectedUnit}
-										{/if}
+										Question {context.questionNumber}{context.selectedClass
+											? ` in ${context.selectedClass}`
+											: ''}{context.selectedUnit ? ` – ${context.selectedUnit}` : ''}
 									</p>
 									{#if context.correctAnswer}
 										<p>Correct answer: {context.correctAnswer}</p>

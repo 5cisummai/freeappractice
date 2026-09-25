@@ -337,6 +337,7 @@ export async function finalizeConversationMessage(
 		content: string;
 		parts: unknown[];
 		status: 'complete' | 'aborted' | 'error';
+		clientMessageId?: string;
 	}
 ): Promise<void> {
 	const [message] = await getNeonDatabase()
@@ -353,6 +354,7 @@ export async function finalizeConversationMessage(
 			content: input.content,
 			parts: input.parts,
 			status: input.status,
+			...(input.clientMessageId ? { clientMessageId: input.clientMessageId } : {}),
 			updatedAt: new Date()
 		})
 		.where(eq(conversationMessages.id, messageId));
