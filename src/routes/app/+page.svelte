@@ -46,9 +46,7 @@
 		const todos = tasks.filter((task) => task.status === 'todo');
 		return todos.slice(0, 3);
 	});
-	const allPlanTasksComplete = $derived(
-		planTaskCount > 0 && planCompletedCount === planTaskCount
-	);
+	const allPlanTasksComplete = $derived(planTaskCount > 0 && planCompletedCount === planTaskCount);
 	const streak = $derived(statsData?.overview.currentStreak ?? 0);
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
@@ -282,7 +280,10 @@
 					</Card.Content>
 				</Card.Root>
 			{:else}
-				<h2 id="my-plan-heading" class="font-display text-xl font-medium tracking-tight sm:text-2xl">
+				<h2
+					id="my-plan-heading"
+					class="font-display text-xl font-medium tracking-tight sm:text-2xl"
+				>
 					My plan
 				</h2>
 				<Card.Root

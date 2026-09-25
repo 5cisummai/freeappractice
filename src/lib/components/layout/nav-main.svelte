@@ -121,8 +121,7 @@
 									{#if item.href === '/app/plan'}
 										<Badge
 											variant="secondary"
-											class="ml-auto h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
-										>New</Badge
+											class="ml-auto h-5 bg-primary/10 px-1.5 text-[10px] text-primary">New</Badge
 										>
 									{/if}
 								</a>

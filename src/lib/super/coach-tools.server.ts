@@ -482,7 +482,7 @@ export function createSuperTools(input: SuperToolsInput) {
 				}
 				let existingPlan: StudyPlanView | null;
 				let after: StudyPlanView;
-				let before: Record<string, unknown> = {};
+				let before: Record<string, unknown>;
 				try {
 					existingPlan = await getCurrentStudyPlan(userId);
 					before = existingPlan ?? {};

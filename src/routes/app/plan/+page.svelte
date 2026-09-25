@@ -158,7 +158,7 @@
 								<span id={`plan-day-${day}`} class="text-xs text-muted-foreground">
 									{dateParts.weekday}
 								</span>
-								<span class="text-2xl font-bold tabular-nums leading-tight">{dateParts.day}</span>
+								<span class="text-2xl leading-tight font-bold tabular-nums">{dateParts.day}</span>
 								<span class="text-xs text-muted-foreground">{dateParts.month}</span>
 							</div>
 							<div class="min-w-0 flex-1">
@@ -187,7 +187,7 @@
 										<div class="min-w-0 flex-1 space-y-1">
 											<p
 												class={[
-													'font-semibold leading-snug',
+													'leading-snug font-semibold',
 													task.status === 'done'
 														? 'text-muted-foreground line-through'
 														: 'text-foreground'
@@ -195,7 +195,9 @@
 											>
 												{taskTitle(task)}
 											</p>
-											<p class="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+											<p
+												class="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground"
+											>
 												<span>{modeLabel(task.mode)}</span>
 												<span aria-hidden="true">/</span>
 												<span class="inline-flex items-center gap-0.5">
@@ -209,12 +211,7 @@
 
 										<div class="shrink-0">
 											{#if task.status === 'done'}
-												<Button
-													variant="secondary"
-													size="sm"
-													class="rounded-full px-3"
-													disabled
-												>
+												<Button variant="secondary" size="sm" class="rounded-full px-3" disabled>
 													Start
 													<ChevronRightIcon class="size-4" />
 												</Button>

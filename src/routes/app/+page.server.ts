@@ -32,8 +32,15 @@ export const load: PageServerLoad = async ({ cookies, locals, parent }) => {
 	}
 	const showOrgFeatures = activeOrganization?.orgType === 'group';
 	const timeZone = timezoneFromCookies(cookies);
-	const [dashboard, planAccess, studyPlanAccess, studyPlan, orgActivity, orgSharedSets, orgLeaderboard] =
-		await Promise.all([
+	const [
+		dashboard,
+		planAccess,
+		studyPlanAccess,
+		studyPlan,
+		orgActivity,
+		orgSharedSets,
+		orgLeaderboard
+	] = await Promise.all([
 		dashboardPromise,
 		planAccessPromise,
 		studyPlanAccessPromise,

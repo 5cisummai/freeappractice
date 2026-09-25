@@ -5,6 +5,33 @@
 
 	const changelog = [
 		{
+			version: '1.9.3',
+			date: 'September 25, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'A dedicated Study Plan page shows your weekly schedule and progress, with a summary on Home',
+						'Pip can ask interactive questions mid-chat, with choices or a written reply before continuing'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Free Response feedback now appears next to each answer, with color cues for how you scored',
+						'Study group quizzes and the leaderboard are combined into a compact My Group section on Home',
+						'Settings explains that Coach messages using web search count as three toward your monthly allowance'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Email verification keeps your intended destination when you resend a verification email or return to sign in'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.2',
 			date: 'September 22, 2026',
 			sections: [
@@ -1475,7 +1502,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 22, 2026"
+			meta="Last Updated: September 25, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

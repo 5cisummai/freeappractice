@@ -220,10 +220,8 @@
 						{#if frqTabEnabled}
 							<Tabs.Trigger value="frq">
 								Free Response
-								<Badge
-									variant="secondary"
-									class="h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
-								>New</Badge
+								<Badge variant="secondary" class="h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
+									>New</Badge
 								>
 							</Tabs.Trigger>
 						{/if}

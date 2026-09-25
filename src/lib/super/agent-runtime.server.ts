@@ -390,9 +390,7 @@ export async function createSuperAgentStreamResponse(
 					stepNumber: step.stepNumber,
 					finishReason: step.finishReason,
 					toolCallNames: step.toolCalls.flatMap((call) => (call ? [call.toolName] : [])),
-					toolResultNames: step.toolResults.flatMap((result) =>
-						result ? [result.toolName] : []
-					),
+					toolResultNames: step.toolResults.flatMap((result) => (result ? [result.toolName] : [])),
 					inputTokens: step.usage.inputTokens,
 					outputTokens: step.usage.outputTokens,
 					totalTokens: step.usage.totalTokens,

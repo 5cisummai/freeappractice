@@ -126,11 +126,7 @@
 													{index + 1}
 												</span>
 												{#if entry.image}
-													<img
-														src={entry.image}
-														alt=""
-														class="size-7 rounded-md object-cover"
-													/>
+													<img src={entry.image} alt="" class="size-7 rounded-md object-cover" />
 												{:else}
 													<span
 														class="flex size-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold {orgAvatarClass(

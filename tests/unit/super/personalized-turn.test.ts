@@ -60,11 +60,11 @@ describe('personalized turn lifecycle', () => {
 		expect(mocks.releasePersonalizedTurn).toHaveBeenCalledTimes(1);
 	});
 
-	it('counts a searched message as five even when search is called twice', async () => {
+	it('counts a searched message as three even when search is called twice', async () => {
 		const reservation = { month: '2026-09', used: 6, limit: 12, remaining: 6 };
 		mocks.reservePersonalizedTurn
 			.mockResolvedValueOnce(reservation)
-			.mockResolvedValueOnce({ month: '2026-09', used: 10, limit: 12, remaining: 2 });
+			.mockResolvedValueOnce({ month: '2026-09', used: 8, limit: 12, remaining: 4 });
 		const turn = await startPersonalizedTurn('user-1');
 		if (turn.kind !== 'reserved') throw new Error('expected reservation');
 
@@ -73,17 +73,17 @@ describe('personalized turn lifecycle', () => {
 			true
 		]);
 		expect(mocks.reservePersonalizedTurn).toHaveBeenCalledTimes(2);
-		expect(mocks.reservePersonalizedTurn).toHaveBeenLastCalledWith('user-1', expect.any(Date), 4);
+		expect(mocks.reservePersonalizedTurn).toHaveBeenLastCalledWith('user-1', expect.any(Date), 2);
 		await turn.markOutput();
 		expect(mocks.rollupPersonalizedUsage).toHaveBeenCalledWith('user-1', {
 			month: '2026-09',
-			used: 10,
+			used: 8,
 			limit: 12,
-			remaining: 2
+			remaining: 4
 		});
 	});
 
-	it('leaves only the base message charged if four extra units cannot be reserved', async () => {
+	it('leaves only the base message charged if two extra units cannot be reserved', async () => {
 		mocks.reservePersonalizedTurn
 			.mockResolvedValueOnce({ month: '2026-09', used: 9, limit: 10, remaining: 1 })
 			.mockResolvedValueOnce(null);
@@ -100,15 +100,15 @@ describe('personalized turn lifecycle', () => {
 		});
 	});
 
-	it('releases all five units when searched output never arrives', async () => {
+	it('releases all three units when searched output never arrives', async () => {
 		mocks.reservePersonalizedTurn
 			.mockResolvedValueOnce({ month: '2026-09', used: 1, limit: 10, remaining: 9 })
-			.mockResolvedValueOnce({ month: '2026-09', used: 5, limit: 10, remaining: 5 });
+			.mockResolvedValueOnce({ month: '2026-09', used: 3, limit: 10, remaining: 7 });
 		const turn = await startPersonalizedTurn('user-1');
 		if (turn.kind !== 'reserved') throw new Error('expected reservation');
 
 		await turn.chargeWebSearch();
 		await turn.releaseIfUnused();
-		expect(mocks.releasePersonalizedTurn).toHaveBeenCalledWith('user-1', '2026-09', 5);
+		expect(mocks.releasePersonalizedTurn).toHaveBeenCalledWith('user-1', '2026-09', 3);
 	});
 });

@@ -156,7 +156,7 @@
 							<Select.Content>
 								<Select.Group>
 									{#each APP_FEEDBACK_CATEGORIES as value (value)}
-										<Select.Item value={value} label={APP_FEEDBACK_CATEGORY_LABELS[value]}>
+										<Select.Item {value} label={APP_FEEDBACK_CATEGORY_LABELS[value]}>
 											{APP_FEEDBACK_CATEGORY_LABELS[value]}
 										</Select.Item>
 									{/each}
