@@ -4,7 +4,6 @@ import { isSuperCoachEnabled } from '$lib/flags';
 import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
-import { getRecentCoachAudits } from '$lib/super/coach.server';
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -18,10 +17,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		isSuperCoachEnabled()
 	]);
 	return {
-		planAccess,
 		hasCoachAccess: hasPaidCapability(planAccess, 'coach'),
 		profile,
-		coachEnabled,
-		audits: hasPaidCapability(planAccess, 'coach') ? await getRecentCoachAudits(userId) : []
+		coachEnabled
 	};
 };

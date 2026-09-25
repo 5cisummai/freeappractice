@@ -13,18 +13,18 @@ export const QUESTION_POOL_MIN_MCQ_TARGET = poolTargets.minMcqTarget;
 export const QUESTION_POOL_FRQ_TARGET = poolTargets.frqTarget;
 
 /** Refill enqueue threshold as a fraction of target (e.g. 0.9 → refill below 90%). */
-export const QUESTION_POOL_LOW_WATER_RATIO = 0.9;
-export const QUESTION_POOL_LEASE_TTL_MS = 120_000;
-export const QUESTION_POOL_RETRY_DELAY_MS = 60_000;
+const QUESTION_POOL_LOW_WATER_RATIO = 0.9;
+const QUESTION_POOL_LEASE_TTL_MS = 120_000;
+const QUESTION_POOL_RETRY_DELAY_MS = 60_000;
 /**
  * Hard daily LLM generation cap (UTC day).
  * ~5k output tokens/MCQ → 1000 gens ≈ 5M output tokens/day.
  */
-export const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 1000;
+const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 1000;
 /** Retry-After seconds on `503 POOL_WARMING`. */
-export const QUESTION_POOL_WARMING_RETRY_AFTER_SECONDS = 15;
+const QUESTION_POOL_WARMING_RETRY_AFTER_SECONDS = 15;
 /** Soft wall-clock budget for one worker run (keep under Vercel maxDuration). */
-export const QUESTION_POOL_WORKER_TIME_BUDGET_MS = 120_000;
+const QUESTION_POOL_WORKER_TIME_BUDGET_MS = 120_000;
 
 export type QuestionPoolConfig = {
 	/** Default MCQ ceiling when a class is not listed in the JSON map. */

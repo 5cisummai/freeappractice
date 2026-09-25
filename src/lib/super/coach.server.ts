@@ -1,41 +1,9 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { coachAudits } from '$lib/server/neon/schema';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import type { StudyPlanView, TutorProfileView } from '$lib/super/types';
-
-export type CoachAuditView = {
-	id: string;
-	toolName: 'update_goals' | 'update_study_plan';
-	createdAt: string;
-	undoneAt: string | null;
-};
-
-export async function getRecentCoachAudits(userId: string): Promise<CoachAuditView[]> {
-	const audits = await getNeonDatabase()
-		.select({
-			id: coachAudits.id,
-			toolName: coachAudits.toolName,
-			createdAt: coachAudits.createdAt,
-			undoneAt: coachAudits.undoneAt
-		})
-		.from(coachAudits)
-		.where(eq(coachAudits.userId, userId))
-		.orderBy(desc(coachAudits.createdAt), desc(coachAudits.id))
-		.limit(25);
-	return audits.flatMap((audit) => {
-		if (audit.toolName !== 'update_goals' && audit.toolName !== 'update_study_plan') return [];
-		return [
-			{
-				id: audit.id,
-				toolName: audit.toolName,
-				createdAt: audit.createdAt.toISOString(),
-				undoneAt: audit.undoneAt?.toISOString() ?? null
-			}
-		];
-	});
-}
 
 function goalSnapshot(
 	profile: TutorProfileView

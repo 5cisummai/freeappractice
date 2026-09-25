@@ -8,7 +8,7 @@ Feature-specific UI lives in named subfolders. Shared primitives live under `ui/
 | ------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `questions/` | Question practice UI — card and selection        | `question-card.svelte`, `full-question.svelte`, `question-core.svelte.ts`, `exam-core.svelte.ts`, `question-selector.svelte`, `mcq-answer-choices.svelte`, `frq-response.svelte`, `question-tutor.svelte`, `bug-report-dialog.svelte` |
 | `practice/`  | Practice chrome + public landing pages           | `practice-shell.svelte` (MCQ/FRQ/quiz orchestrator), `quiz-session.svelte`, `practice-landing.svelte`, `practice-breadcrumbs.svelte`, `practice-hub-nav.svelte`                                                                       |
-| `history/`   | Question attempt history tables and detail sheet | `history-data-table.svelte`, `history-detail-sheet.svelte`, `history-columns.ts`                                                                                                                                                      |
+| `history/`   | Question attempt history details and columns     | `history-detail-sheet.svelte`, `history-columns.ts`                                                                                                                                                                                    |
 | `admin/`     | Admin dashboard tables and cache UI              | `admin-users-data-table.svelte`, `admin-cache-dashboard.svelte`                                                                                                                                                                       |
 
 ## Shared components
@@ -17,7 +17,6 @@ Feature-specific UI lives in named subfolders. Shared primitives live under `ui/
 | --------------------------------------- | -------------------------------------------------------------------------- |
 | `content/rich-text.svelte`              | Markdown, math, and code rendering — used by questions, history, and tutor |
 | `questions/tutor-widget.svelte`         | In-question AI tutor panel                                                 |
-| `history/progress-history-panel.svelte` | Progress dashboard history panel                                           |
 
 ## Marketing & content
 

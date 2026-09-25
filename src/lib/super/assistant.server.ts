@@ -20,14 +20,3 @@ export function getAssistantFeaturesEnabledForRequest(
 	locals.assistantFeaturesEnabled ??= getAssistantFeaturesEnabled(userId);
 	return locals.assistantFeaturesEnabled;
 }
-
-/** Persist the hidden settings action without exposing a visible control yet. */
-export async function setAssistantFeaturesEnabled(userId: string, enabled: boolean): Promise<void> {
-	await getNeonDatabase()
-		.insert(userProfiles)
-		.values({ userId, assistantFeaturesEnabled: enabled })
-		.onConflictDoUpdate({
-			target: userProfiles.userId,
-			set: { assistantFeaturesEnabled: enabled, updatedAt: new Date() }
-		});
-}

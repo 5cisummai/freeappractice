@@ -53,8 +53,8 @@ const courseAliases = new Map([
 ]);
 
 export const AP_KNOWLEDGE_CATALOG_VERSION = AP_DATA.datasetVersion;
-export const AP_KNOWLEDGE_REVIEWED_AT = AP_DATA.asOf;
-export const AP_KNOWLEDGE_FRESHNESS_NOTE =
+const AP_KNOWLEDGE_REVIEWED_AT = AP_DATA.asOf;
+const AP_KNOWLEDGE_FRESHNESS_NOTE =
 	`Course and unit labels are an MVP ${AP_KNOWLEDGE_CATALOG_VERSION} catalog reviewed ${AP_KNOWLEDGE_REVIEWED_AT}. ` +
 	'Only unit titles and official links are source-backed. Check the linked official pages for live exam dates, policies, detailed topics, and later revisions.';
 

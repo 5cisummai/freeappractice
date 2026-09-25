@@ -8,10 +8,6 @@ import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { getUserSubjects, updateUserSubjects } from '$lib/users/model.server.js';
-import {
-	getAssistantFeaturesEnabledForRequest,
-	setAssistantFeaturesEnabled
-} from '$lib/super/assistant.server';
 
 const validSubjects = new Set(getCourses().map((course) => course.name));
 
@@ -38,11 +34,10 @@ async function readSettingsUsage(userId: string, enabled: boolean): Promise<Sett
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;
-	const [userProfile, planAccess, freeBetaEnabled, assistantFeaturesEnabled] = await Promise.all([
+	const [userProfile, planAccess, freeBetaEnabled] = await Promise.all([
 		getUserSubjects(userId),
 		getPlanAccessForRequest(locals, userId),
-		isSuperFreeBetaEnabled(),
-		getAssistantFeaturesEnabledForRequest(locals, userId)
+		isSuperFreeBetaEnabled()
 	]);
 	const [profile, billing, usage] = await Promise.all([
 		getTutorProfileViewForRequest(locals, userId),
@@ -52,7 +47,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		selectedSubjects: userProfile,
-		assistantFeaturesEnabled,
 		planAccess,
 		freeBetaEnabled,
 		profile,
@@ -62,15 +56,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	updateAssistantFeatures: async ({ request, locals }) => {
-		const formData = await request.formData();
-		const rawEnabled = formData.get('enabled');
-		if (rawEnabled !== 'true' && rawEnabled !== 'false') {
-			return fail(400, { assistantFeaturesError: 'A valid assistant setting is required.' });
-		}
-		await setAssistantFeaturesEnabled(locals.userId!, rawEnabled === 'true');
-		return { assistantFeaturesUpdated: true };
-	},
 	updateSubjects: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const subjects = formData
