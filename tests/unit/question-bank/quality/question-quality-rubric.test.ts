@@ -10,13 +10,13 @@ import {
 
 describe('question quality rubric', () => {
 	it('uses real-course guidance', () => {
-		expect(buildQuestionQualityPrompt({ apClass: 'AP Biology' }).developer).toContain(
+		expect(buildQuestionQualityPrompt({ course: 'AP Biology' }).developer).toContain(
 			'real AP Biology course framework'
 		);
 	});
 
 	it('automatically marks malformed Markdown or formatting as BAD', () => {
-		const prompt = buildQuestionQualityPrompt({ apClass: 'AP Biology' });
+		const prompt = buildQuestionQualityPrompt({ course: 'AP Biology' });
 
 		expect(prompt.developer).toContain('Markdown or other formatting is malformed');
 		expect(prompt.developer).toContain('return BAD automatically');
@@ -24,7 +24,7 @@ describe('question quality rubric', () => {
 	});
 
 	it('configures web grounding for supported AP courses', () => {
-		expect(requiresWebSearchForQuestion({ apClass: 'AP Biology' })).toBe(true);
+		expect(requiresWebSearchForQuestion({ course: 'AP Biology' })).toBe(true);
 		expect(buildQuestionQualityWebSearchTool('high')).toEqual({
 			type: 'web_search',
 			search_context_size: 'high'

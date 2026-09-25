@@ -25,7 +25,7 @@
 	type Props = {
 		open?: boolean;
 		context?: BugReportContext | null;
-		selectedClass?: string;
+		selectedCourse?: string;
 		selectedUnit?: string;
 	};
 
@@ -43,7 +43,7 @@
 	let {
 		open = $bindable(false),
 		context = null,
-		selectedClass = '',
+		selectedCourse = '',
 		selectedUnit = ''
 	}: Props = $props();
 
@@ -58,7 +58,7 @@
 	}
 
 	function formFromContext(ctx: BugReportContext): BugReportForm {
-		const classLabel = ctx.selectedClass || selectedClass || 'practice';
+		const courseLabel = ctx.selectedCourse || selectedCourse || 'practice';
 		const unitLabel = (ctx.selectedUnit ?? selectedUnit ?? '').trim() || 'all-units';
 		const questionLabel = ctx.questionNumber
 			? `Question ${ctx.questionNumber}`
@@ -66,7 +66,7 @@
 
 		return {
 			title: `Bug report: ${questionLabel}`,
-			description: `I found an issue while working through ${questionLabel} in ${classLabel} / ${unitLabel}.`,
+			description: `I found an issue while working through ${questionLabel} in ${courseLabel} / ${unitLabel}.`,
 			steps: '1. Open the question.\n2. Reproduce the issue.\n3. Describe what happened.',
 			expected: 'The question should load and behave normally.',
 			severity: 'medium',
@@ -98,13 +98,13 @@
 				? {
 						questionId: context.questionId,
 						questionNumber: context.questionNumber,
-						selectedClass: context.selectedClass ?? selectedClass,
+						selectedCourse: context.selectedCourse ?? selectedCourse,
 						selectedUnit: context.selectedUnit ?? selectedUnit,
 						prompt: context.prompt,
 						correctAnswer: context.correctAnswer,
 						hasStimulus: context.hasStimulus
 					}
-				: { selectedClass, selectedUnit }
+				: { selectedCourse, selectedUnit }
 		};
 	}
 
@@ -192,8 +192,8 @@
 								>
 									<p class="font-medium text-foreground">Question context</p>
 									<p>
-										Question {context.questionNumber}{context.selectedClass
-											? ` in ${context.selectedClass}`
+										Question {context.questionNumber}{context.selectedCourse
+											? ` in ${context.selectedCourse}`
 											: ''}{context.selectedUnit ? ` – ${context.selectedUnit}` : ''}
 									</p>
 									{#if context.correctAnswer}

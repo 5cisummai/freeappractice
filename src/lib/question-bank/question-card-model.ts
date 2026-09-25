@@ -1,7 +1,7 @@
 import type { AnswerResult, GeneratedQuestion } from '$lib/question-bank/mcq/types';
 
 export type QuestionCardModel = {
-	selectedClass: string;
+	selectedCourse: string;
 	selectedUnit: string;
 	delivery:
 		| {
@@ -19,14 +19,14 @@ export type QuestionCardModel = {
 };
 
 export function unlimitedQuestionCardModel(input: {
-	selectedClass: string;
+	selectedCourse: string;
 	selectedUnit: string;
 	unitRange?: readonly number[];
 	requestVersion: number;
 	presetQuestionId?: string;
 }): QuestionCardModel {
 	return {
-		selectedClass: input.selectedClass,
+		selectedCourse: input.selectedCourse,
 		selectedUnit: input.selectedUnit,
 		delivery: {
 			kind: 'unlimited',
@@ -38,14 +38,14 @@ export function unlimitedQuestionCardModel(input: {
 }
 
 export function quizQuestionCardModel(input: {
-	selectedClass: string;
+	selectedCourse: string;
 	selectedUnit: string;
 	question: GeneratedQuestion | null;
 	answer: AnswerResult | null;
 	questionNumber: string;
 }): QuestionCardModel {
 	return {
-		selectedClass: input.selectedClass,
+		selectedCourse: input.selectedCourse,
 		selectedUnit: input.selectedUnit,
 		delivery: {
 			kind: 'quiz',

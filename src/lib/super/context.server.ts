@@ -50,16 +50,16 @@ export async function getCurrentSuperQuestion(
 
 export async function getRecentSuperMistakes(
 	userId: string,
-	filter: { apClass?: string; unit?: string } = {}
+	filter: { course?: string; unit?: string } = {}
 ) {
 	const db = getNeonDatabase();
-	const className = filter.apClass;
+	const course = filter.course;
 	const unit = filter.unit;
 	const attempts = await db
 		.select({
 			id: mcqAttempts.id,
 			questionId: mcqAttempts.questionId,
-			apClass: mcqAttempts.apClass,
+			course: mcqAttempts.course,
 			unit: mcqAttempts.unit,
 			selectedAnswer: mcqAttempts.selectedAnswer,
 			wasCorrect: mcqAttempts.wasCorrect,
@@ -70,7 +70,7 @@ export async function getRecentSuperMistakes(
 			and(
 				eq(mcqAttempts.userId, userId),
 				eq(mcqAttempts.wasCorrect, false),
-				className ? eq(mcqAttempts.apClass, className) : undefined,
+				course ? eq(mcqAttempts.course, course) : undefined,
 				unit ? eq(mcqAttempts.unit, unit) : undefined
 			)
 		)
@@ -80,7 +80,7 @@ export async function getRecentSuperMistakes(
 	const questionById = new Map(questions.map((question) => [question.id, question]));
 	return attempts.map((attempt) => ({
 		questionId: attempt.questionId,
-		apClass: attempt.apClass,
+		course: attempt.course,
 		unit: attempt.unit,
 		selectedAnswer: attempt.selectedAnswer,
 		attemptedAt: attempt.attemptedAt.toISOString(),
@@ -95,7 +95,7 @@ function questionText(current: CurrentSuperQuestion | null): string {
 	if (current.kind === 'mcq') {
 		const { question } = current;
 		return [
-			`Current MCQ (${question.apClass ?? 'AP Course'} · ${question.unit ?? 'N/A'}):`,
+			`Current MCQ (${question.course ?? 'AP Course'} · ${question.unit ?? 'N/A'}):`,
 			`Question: ${question.question}`,
 			`A. ${question.optionA}`,
 			`B. ${question.optionB}`,
@@ -109,7 +109,7 @@ function questionText(current: CurrentSuperQuestion | null): string {
 	}
 	const { question, attempt } = current;
 	return [
-		`Current FRQ (${question.apClass} · ${question.unit}):`,
+		`Current FRQ (${question.course} · ${question.unit}):`,
 		`Prompt: ${question.prompt}`,
 		question.materials.length
 			? `Materials:\n${question.materials.map((material) => `${material.title ?? 'Material'}: ${material.content}`).join('\n')}`
@@ -134,8 +134,8 @@ export async function buildSuperAgentContext(
 		buildTutorPersonalization(userId, query),
 		includeMistakes
 			? getRecentSuperMistakes(userId, {
-					...(typeof currentQuestion?.question.apClass === 'string'
-						? { apClass: currentQuestion.question.apClass }
+					...(typeof currentQuestion?.question.course === 'string'
+						? { course: currentQuestion.question.course }
 						: {}),
 					...(typeof currentQuestion?.question.unit === 'string'
 						? { unit: currentQuestion.question.unit }
@@ -149,7 +149,7 @@ export async function buildSuperAgentContext(
 		context?.page ? `Current app page: ${context.page}.` : '',
 		questionText(currentQuestion),
 		mistakes.length
-			? `Recent relevant mistakes:\n${mistakes.map((mistake) => `${mistake.apClass} ${mistake.unit} ${mistake.questionId} (${mistake.attemptedAt}) topic=${mistake.topic ?? 'unknown'} selected=${mistake.selectedAnswer ?? 'none'}\n${mistake.question ?? ''}\nExplanation: ${mistake.explanation ?? ''}`).join('\n')}`
+			? `Recent relevant mistakes:\n${mistakes.map((mistake) => `${mistake.course} ${mistake.unit} ${mistake.questionId} (${mistake.attemptedAt}) topic=${mistake.topic ?? 'unknown'} selected=${mistake.selectedAnswer ?? 'none'}\n${mistake.question ?? ''}\nExplanation: ${mistake.explanation ?? ''}`).join('\n')}`
 			: ''
 	].filter(Boolean);
 

@@ -184,7 +184,7 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.9.3",
+			"softwareVersion": "1.9.4",
 			"datePublished": "2025-12-12",
 			"dateModified": "2026-09-25",
 			"inLanguage": "en-US",
@@ -306,7 +306,7 @@
 					>
 						<PracticeRunner
 							initial={{
-								selectedClass: 'AP World History',
+								selectedCourse: 'AP World History',
 								selectedUnit: 'Unit 1: The Global Tapestry'
 							}}
 							capabilities={{ tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden' }}

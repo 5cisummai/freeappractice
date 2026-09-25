@@ -47,13 +47,13 @@ describe('dashboard aggregate queries', () => {
 				])
 			)
 			.mockReturnValueOnce(
-				groupedQuery([{ subject: 'AP Biology', total: 8, correct: 6, totalTimeMs: 80_000 }])
+				groupedQuery([{ course: 'AP Biology', total: 8, correct: 6, totalTimeMs: 80_000 }])
 			)
 			.mockReturnValueOnce(
 				plainQuery([{ total: 2, averagePercentage: 75, totalTimeMs: 40_000, recentTotal: 1 }])
 			)
 			.mockReturnValueOnce(
-				groupedQuery([{ subject: 'AP Biology', total: 2, totalPercentage: 150 }])
+				groupedQuery([{ course: 'AP Biology', total: 2, totalPercentage: 150 }])
 			);
 		mocks.execute.mockResolvedValueOnce({ rows: [{ streak: 5 }] });
 
@@ -78,9 +78,9 @@ describe('dashboard aggregate queries', () => {
 				accuracyLast7Days: 75,
 				frqSubmissionsLast7Days: 1
 			},
-			subjectBreakdown: [
+			courseBreakdown: [
 				{
-					subject: 'AP Biology',
+					course: 'AP Biology',
 					total: 8,
 					correct: 6,
 					frqAttempts: 2,
@@ -92,7 +92,7 @@ describe('dashboard aggregate queries', () => {
 
 	it('uses only twenty recent attempts per unit and grouped topic rows for progress', async () => {
 		const recent = Array.from({ length: 15 }, (_, index) => ({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			wasCorrect: index < 10,
 			attemptedAt: new Date(Date.UTC(2026, 7, 20 - index))
@@ -102,7 +102,7 @@ describe('dashboard aggregate queries', () => {
 			joinedQuery(
 				[
 					{
-						apClass: 'AP Biology',
+						course: 'AP Biology',
 						unit: 'Unit 1',
 						name: 'Cell signaling',
 						attempts: 8,
@@ -120,7 +120,7 @@ describe('dashboard aggregate queries', () => {
 			'student-1',
 			[
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1',
 					completed: false,
 					mastery: 67,

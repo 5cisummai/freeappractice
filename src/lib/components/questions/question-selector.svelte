@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getCourses } from '$lib/catalog/ap-classes';
+	import { getCourses } from '$lib/catalog/ap-courses';
 	import { frqPracticeFor } from '$lib/question-bank/frq/practice';
 	import { getFocusedPracticeHref } from '$lib/catalog/practice-pages';
 	import { tick } from 'svelte';
@@ -24,7 +24,7 @@
 	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
 
 	type QuestionSelectorProps = {
-		selectedClass?: string;
+		selectedCourse?: string;
 		selectedUnit?: string;
 		unitRange?: number[];
 		quizMode?: boolean;
@@ -33,14 +33,14 @@
 		count?: number;
 		generateDisabled?: boolean;
 		generateLabel?: string;
-		allowedClassNames?: readonly string[];
+		allowedCourses?: readonly string[];
 		onGenerate?: () => void;
-		onSelectionChange?: (selectedClass: string, selectedUnit: string) => void;
+		onSelectionChange?: (selectedCourse: string, selectedUnit: string) => void;
 		showFirstUseHint?: boolean;
 	};
 
 	let {
-		selectedClass = $bindable(''),
+		selectedCourse = $bindable(''),
 		selectedUnit = $bindable(''),
 		unitRange = $bindable<number[] | undefined>(undefined),
 		quizMode = false,
@@ -49,7 +49,7 @@
 		count = $bindable(10),
 		generateDisabled = false,
 		generateLabel = 'Practice',
-		allowedClassNames,
+		allowedCourses,
 		onGenerate,
 		onSelectionChange,
 		showFirstUseHint = false
@@ -57,24 +57,24 @@
 
 	const courses = $derived.by(() => {
 		const catalog = getCourses();
-		if (!allowedClassNames?.length) return catalog;
-		const allowed = new Set(allowedClassNames);
+		if (!allowedCourses?.length) return catalog;
+		const allowed = new Set(allowedCourses);
 		return catalog.filter((course) => allowed.has(course.name));
 	});
 
-	const selectedCourse = $derived(courses.find((c) => c.name === selectedClass));
+	const activeCourse = $derived(courses.find((c) => c.name === selectedCourse));
 	const unitOptions = $derived(
-		selectedCourse ? [...selectedCourse.semester1, ...selectedCourse.semester2] : []
+		activeCourse ? [...activeCourse.semester1, ...activeCourse.semester2] : []
 	);
-	const frqPractice = $derived(mode === 'frq' ? frqPracticeFor(selectedClass) : null);
+	const frqPractice = $derived(mode === 'frq' ? frqPracticeFor(selectedCourse) : null);
 	const taskControl = $derived(frqPractice?.control === 'task');
 	const taskOptions = $derived(frqPractice?.tasks ?? []);
 	const scopeLabel = $derived(taskControl ? 'Task' : 'Unit');
-	const shareHref = $derived(getFocusedPracticeHref(selectedClass, selectedUnit));
+	const shareHref = $derived(getFocusedPracticeHref(selectedCourse, selectedUnit));
 	const shareText = $derived(
 		selectedUnit
-			? `Practice ${selectedClass}, ${selectedUnit}, with your AP class.`
-			: `Practice ${selectedClass} with your AP class.`
+			? `Practice ${selectedCourse}, ${selectedUnit}, with your AP class.`
+			: `Practice ${selectedCourse} with your AP class.`
 	);
 	const unitRangeStart = $derived(unitRange?.[0] ?? 0);
 	const unitRangeEnd = $derived(unitRange?.[1] ?? Math.max(unitOptions.length - 1, 0));
@@ -95,12 +95,12 @@
 
 	function notifySelectionChange(): void {
 		shareStatus = '';
-		onSelectionChange?.(selectedClass, selectedUnit);
-		if (selectedClass) capturePracticeSelectorUsed(selectedClass, selectedUnit);
+		onSelectionChange?.(selectedCourse, selectedUnit);
+		if (selectedCourse) capturePracticeSelectorUsed(selectedCourse, selectedUnit);
 	}
 
 	function selectClass(name: string): void {
-		selectedClass = name;
+		selectedCourse = name;
 		selectedUnit = '';
 		selectedFormat = '';
 		unitRange = undefined;
@@ -141,7 +141,7 @@
 	}
 
 	function clearSelection(): void {
-		selectedClass = '';
+		selectedCourse = '';
 		selectedUnit = '';
 		selectedFormat = '';
 		unitRange = undefined;
@@ -151,7 +151,7 @@
 
 	function captureShareIntent(method: 'clipboard' | 'native_share'): void {
 		capturePostHogEvent('practice_page_share_intent', {
-			ap_class: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit || undefined,
 			page_type: selectedUnit ? 'unit' : 'class',
 			method
@@ -179,7 +179,7 @@
 	}
 
 	async function sharePracticePage(): Promise<void> {
-		if (!selectedClass || !shareHref) return;
+		if (!selectedCourse || !shareHref) return;
 
 		const url = new URL(shareHref, window.location.origin).toString();
 		shareStatus = '';
@@ -190,7 +190,7 @@
 
 			try {
 				await navigator.share({
-					title: `Free ${selectedClass} practice`,
+					title: `Free ${selectedCourse} practice`,
 					text: shareText,
 					url
 				});
@@ -227,7 +227,7 @@
 							aria-expanded={classOpen}
 							class="w-full justify-between font-normal"
 						>
-							<span class="truncate">{selectedClass || 'Select a course'}</span>
+							<span class="truncate">{selectedCourse || 'Select a course'}</span>
 							<SelectorIcon class="ml-2 size-4 shrink-0 opacity-50" />
 						</Button>
 					{/snippet}
@@ -247,7 +247,7 @@
 										<CheckIcon
 											class={cn(
 												'mr-2 size-4 shrink-0',
-												selectedClass !== course.name && 'text-transparent'
+												selectedCourse !== course.name && 'text-transparent'
 											)}
 										/>
 										{course.name}
@@ -281,11 +281,11 @@
 							role="combobox"
 							aria-labelledby="question-selector-unit-label"
 							aria-expanded={unitOpen}
-							disabled={!selectedClass}
+							disabled={!selectedCourse}
 							class="w-full justify-between font-normal"
 						>
 							<span class="truncate">
-								{#if !selectedClass}
+								{#if !selectedCourse}
 									Select a course first
 								{:else if !taskControl && unitRange}
 									Custom range
@@ -376,7 +376,7 @@
 
 		<Button
 			onclick={onGenerate}
-			disabled={!selectedClass || generateDisabled}
+			disabled={!selectedCourse || generateDisabled}
 			class="h-10 shrink-0 px-4 text-sm"
 		>
 			{generateLabel}
@@ -432,7 +432,7 @@
 						variant="ghost"
 						class="h-9 w-full justify-start gap-2 px-2 font-normal"
 						onclick={clearSelection}
-						disabled={!selectedClass && !selectedUnit}
+						disabled={!selectedCourse && !selectedUnit}
 					>
 						<RotateCcwIcon class="size-4" />
 						Clear selection
@@ -466,4 +466,4 @@
 	{/if}
 </div>
 
-<BugReportDialog bind:open={bugReportOpen} {selectedClass} {selectedUnit} />
+<BugReportDialog bind:open={bugReportOpen} {selectedCourse} {selectedUnit} />

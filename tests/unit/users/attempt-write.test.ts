@@ -10,7 +10,7 @@ import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
 
 const attempt = {
 	questionId: 'question-1',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	unit: 'Unit 1',
 	selectedAnswer: 'B' as const,
 	wasCorrect: true,

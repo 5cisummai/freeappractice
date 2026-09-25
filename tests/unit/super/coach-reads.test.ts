@@ -54,7 +54,7 @@ describe('coach read tools', () => {
 				accuracyLast7Days: 78,
 				frqSubmissionsLast7Days: 2
 			},
-			subjectBreakdown: [{ subject: 'AP Biology', total: 80, frqAttempts: 3 }]
+			courseBreakdown: [{ course: 'AP Biology', total: 80, frqAttempts: 3 }]
 		});
 
 		await expect(getCoachActivitySummary('user-1')).resolves.toEqual({
@@ -71,14 +71,14 @@ describe('coach read tools', () => {
 				mcqAccuracy: 78,
 				frqSubmissions: 2
 			},
-			subjectBreakdown: [{ subject: 'AP Biology', total: 80, frqAttempts: 3 }]
+			courseBreakdown: [{ course: 'AP Biology', total: 80, frqAttempts: 3 }]
 		});
 	});
 
 	it('combines unit progress and mistakes', async () => {
 		mocks.getUserProgress.mockResolvedValue([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 3',
 				mastery: 64,
 				totalAttempts: 12,
@@ -88,10 +88,10 @@ describe('coach read tools', () => {
 			}
 		]);
 		mocks.getRecentSuperMistakes.mockResolvedValue([
-			{ questionId: 'q-1', apClass: 'AP Biology', unit: 'Unit 3' }
+			{ questionId: 'q-1', course: 'AP Biology', unit: 'Unit 3' }
 		]);
 		await expect(getCoachUnitDetail('user-1', 'AP Biology', 'Unit 3')).resolves.toEqual({
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 3',
 			progress: {
 				mastery: 64,
@@ -100,7 +100,7 @@ describe('coach read tools', () => {
 				lastAttemptAt: '2026-08-10T12:00:00.000Z',
 				lastReviewedAt: null
 			},
-			recentMistakes: [{ questionId: 'q-1', apClass: 'AP Biology', unit: 'Unit 3' }]
+			recentMistakes: [{ questionId: 'q-1', course: 'AP Biology', unit: 'Unit 3' }]
 		});
 	});
 
@@ -109,7 +109,7 @@ describe('coach read tools', () => {
 			{
 				id: 'attempt-1',
 				questionId: 'question-1',
-				apClass: 'AP Physics 1',
+				course: 'AP Physics 1',
 				unit: 'Unit 2',
 				createdAt: new Date('2026-08-11T10:00:00.000Z'),
 				responses: { sectionA: 'student answer text' },
@@ -132,12 +132,12 @@ describe('coach read tools', () => {
 		]);
 
 		await expect(
-			getCoachFrqPerformance('user-1', { apClass: 'AP Physics 1', unit: 'Unit 2', limit: 3 })
+			getCoachFrqPerformance('user-1', { course: 'AP Physics 1', unit: 'Unit 2', limit: 3 })
 		).resolves.toEqual([
 			{
 				attemptId: 'attempt-1',
 				questionId: 'question-1',
-				apClass: 'AP Physics 1',
+				course: 'AP Physics 1',
 				unit: 'Unit 2',
 				attemptedAt: '2026-08-11T10:00:00.000Z',
 				pointsEarned: 4,
@@ -156,7 +156,7 @@ describe('coach read tools', () => {
 		]);
 		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenCalledWith('user-1', {
 			limit: 3,
-			apClass: 'AP Physics 1',
+			course: 'AP Physics 1',
 			unit: 'Unit 2'
 		});
 	});
@@ -167,14 +167,14 @@ describe('coach read tools', () => {
 		await getCoachFrqPerformance('user-1', { limit: 50 });
 		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenLastCalledWith('user-1', {
 			limit: 6,
-			apClass: undefined,
+			course: undefined,
 			unit: undefined
 		});
 
 		await getCoachFrqPerformance('user-1');
 		expect(mocks.findRecentGradedFrqAttempts).toHaveBeenLastCalledWith('user-1', {
 			limit: 5,
-			apClass: undefined,
+			course: undefined,
 			unit: undefined
 		});
 	});

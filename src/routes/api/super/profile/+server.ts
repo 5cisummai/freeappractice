@@ -27,7 +27,7 @@ const profilePatchSchema = z
 			.array(
 				z
 					.object({
-						apClass: z.string().trim().min(1).max(MAX_TEXT_LENGTH),
+						course: z.string().trim().min(1).max(MAX_TEXT_LENGTH),
 						targetDate: targetDateSchema
 					})
 					.strict()

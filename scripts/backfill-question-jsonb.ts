@@ -18,12 +18,12 @@ export async function assertQuestionJsonbReady(): Promise<void> {
 			(SELECT COUNT(*)::int FROM content.mcq_questions WHERE data IS NULL) AS missing_mcq,
 			(SELECT COUNT(*)::int FROM content.frq_questions WHERE data IS NULL) AS missing_frq,
 			(SELECT COUNT(*)::int FROM content.mcq_questions
-				WHERE COALESCE(data ->> 'apClass', '') = ''
+				WHERE COALESCE(data ->> 'course', '') = ''
 					OR COALESCE(data ->> 'unit', '') = ''
 					OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
 			) AS invalid_mcq,
 			(SELECT COUNT(*)::int FROM content.frq_questions
-				WHERE COALESCE(data ->> 'apClass', '') = ''
+				WHERE COALESCE(data ->> 'course', '') = ''
 					OR COALESCE(data ->> 'unit', '') = ''
 					OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
 			) AS invalid_frq
@@ -48,7 +48,7 @@ export async function backfillQuestionJsonb(): Promise<void> {
 				FROM information_schema.columns
 				WHERE table_schema = 'content'
 					AND table_name = 'mcq_questions'
-					AND column_name = 'ap_class'
+					AND column_name = 'course'
 			) AS has_legacy_columns,
 			EXISTS (
 				SELECT 1
@@ -71,7 +71,7 @@ export async function backfillQuestionJsonb(): Promise<void> {
 		sql.query(`
 			UPDATE content.mcq_questions
 			SET data = jsonb_build_object(
-				'apClass', ap_class,
+				'course', course,
 				'unit', unit,
 				'topicsCovered', COALESCE(topics_covered, ''),
 				'question', question,
@@ -91,7 +91,7 @@ export async function backfillQuestionJsonb(): Promise<void> {
 		sql.query(`
 			UPDATE content.frq_questions AS question
 			SET data = jsonb_build_object(
-				'apClass', question.ap_class,
+				'course', question.course,
 				'unit', question.unit,
 				'formatId', question.format_id,
 				'profileVersion', question.profile_version,
@@ -148,15 +148,15 @@ export async function backfillQuestionJsonb(): Promise<void> {
 	]);
 
 	// Rows written during the dual-write window can already have `data` while
-	// still missing apClass/unit/mainTopic. The copy above only fills NULLs.
+	// still missing course/unit/mainTopic. The copy above only fills NULLs.
 	await sql.transaction([
 		sql.query(`
 			UPDATE content.mcq_questions
 			SET data = data || jsonb_build_object(
-				'apClass', COALESCE(
-					NULLIF(BTRIM(data ->> 'apClass'), ''),
-					NULLIF(BTRIM(data ->> 'ap_class'), ''),
-					NULLIF(BTRIM(ap_class), ''),
+				'course', COALESCE(
+					NULLIF(BTRIM(data ->> 'course'), ''),
+					NULLIF(BTRIM(data ->> 'course'), ''),
+					NULLIF(BTRIM(course), ''),
 					'Unknown'
 				),
 				'unit', COALESCE(
@@ -171,17 +171,17 @@ export async function backfillQuestionJsonb(): Promise<void> {
 					'Legacy topic'
 				)
 			)
-			WHERE COALESCE(data ->> 'apClass', '') = ''
+			WHERE COALESCE(data ->> 'course', '') = ''
 				OR COALESCE(data ->> 'unit', '') = ''
 				OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
 		`),
 		sql.query(`
 			UPDATE content.frq_questions
 			SET data = data || jsonb_build_object(
-				'apClass', COALESCE(
-					NULLIF(BTRIM(data ->> 'apClass'), ''),
-					NULLIF(BTRIM(data ->> 'ap_class'), ''),
-					NULLIF(BTRIM(ap_class), ''),
+				'course', COALESCE(
+					NULLIF(BTRIM(data ->> 'course'), ''),
+					NULLIF(BTRIM(data ->> 'course'), ''),
+					NULLIF(BTRIM(course), ''),
 					'Unknown'
 				),
 				'unit', COALESCE(
@@ -196,7 +196,7 @@ export async function backfillQuestionJsonb(): Promise<void> {
 					'Legacy topic'
 				)
 			)
-			WHERE COALESCE(data ->> 'apClass', '') = ''
+			WHERE COALESCE(data ->> 'course', '') = ''
 				OR COALESCE(data ->> 'unit', '') = ''
 				OR COALESCE(NULLIF(data ->> 'mainTopic', ''), data ->> 'topicsCovered', '') = ''
 		`)

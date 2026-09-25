@@ -31,7 +31,7 @@ export type QuestionRequestResult<TQuestion> = {
 
 type QuestionRequestOptions<TQuestion> = {
 	endpoint: string;
-	className: string;
+	course: string;
 	unit: string;
 	formatId?: string;
 	excludeQuestionIds?: string[];
@@ -50,7 +50,7 @@ export async function requestQuestion<TQuestion>(
 ): Promise<QuestionRequestResult<TQuestion>> {
 	const startedAt = Date.now();
 	const body: Record<string, string | string[]> = {
-		className: options.className,
+		course: options.course,
 		unit: options.unit
 	};
 	if (options.formatId) body.formatId = options.formatId;
@@ -96,13 +96,13 @@ export type QuestionFetchResult = QuestionRequestResult<GeneratedQuestion>;
 
 /** Load one MCQ from POST /api/question. */
 export function requestMcqQuestion(
-	className: string,
+	course: string,
 	unit: string,
 	excludeQuestionIds: string[] = []
 ): Promise<QuestionFetchResult> {
 	return requestQuestion({
 		endpoint: '/api/question',
-		className,
+		course,
 		unit,
 		excludeQuestionIds,
 		warmingMessage: 'Question pool is warming up. Please retry shortly.',
@@ -113,7 +113,7 @@ export function requestMcqQuestion(
 
 /** Load an entire MCQ quiz in one request so shared-stimulus sets remain intact. */
 export async function requestMcqQuiz(
-	className: string,
+	course: string,
 	unit: string,
 	count: number,
 	unitRange?: readonly number[]
@@ -122,7 +122,7 @@ export async function requestMcqQuiz(
 		const response = await apiFetch('/api/question/quiz', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ className, unit, count, unitRange })
+			body: JSON.stringify({ course, unit, count, unitRange })
 		});
 		const payload = await readJsonOrNull<QuestionApiResponse>(response);
 		if (isPoolWarmingResponse(payload)) {
@@ -158,7 +158,7 @@ export async function requestMcqQuiz(
 
 /** Load up to ten MCQs in one request for quiz startup and refill. */
 export async function requestMcqQuestions(
-	className: string,
+	course: string,
 	unit: string,
 	count: number,
 	excludeQuestionIds: string[] = []
@@ -166,7 +166,7 @@ export async function requestMcqQuestions(
 	const response = await apiFetch('/api/questions/batch', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ className, unit, count, excludeQuestionIds })
+		body: JSON.stringify({ course, unit, count, excludeQuestionIds })
 	});
 	const payload = await readJsonOrNull<McqBatchResponse>(response);
 
@@ -231,14 +231,14 @@ type FrqQuestionApiResponse = QuestionApiResponse & {
 
 /** Load one FRQ from POST /api/question/frq. */
 export function requestFrqQuestion(
-	className: string,
+	course: string,
 	unit: string,
 	excludeQuestionIds: string[] = [],
 	formatId?: string
 ): Promise<FrqFetchResult> {
 	return requestQuestion({
 		endpoint: '/api/question/frq',
-		className,
+		course,
 		unit,
 		formatId,
 		excludeQuestionIds,

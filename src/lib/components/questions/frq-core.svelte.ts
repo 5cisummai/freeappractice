@@ -1,7 +1,7 @@
 import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 import { QuestionRequestError } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
-import { resolveEffectiveUnit } from '$lib/catalog/ap-classes';
+import { resolveEffectiveUnit } from '$lib/catalog/ap-courses';
 import { FRQ_ALL_UNITS, frqPracticeFor } from '$lib/question-bank/frq/practice';
 import {
 	parseFrqLatestDraft,
@@ -26,7 +26,7 @@ const MAX_POOL_WARMING_AUTO_RETRIES = 3;
 const TIMER_TICK_MS = 250;
 
 export type FrqCoreOpts = {
-	getSelectedClass: () => string;
+	getSelectedCourse: () => string;
 	getSelectedUnit: () => string;
 	getSelectedFormat: () => string;
 	getRequestVersion: () => number;
@@ -60,14 +60,14 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	let loadGeneration = 0;
 	let lastLoadedRequestVersion = 0;
 
-	const selectedClass = $derived(opts.getSelectedClass());
+	const selectedCourse = $derived(opts.getSelectedCourse());
 	const selectedUnit = $derived(opts.getSelectedUnit());
 	const selectedFormat = $derived(opts.getSelectedFormat());
 	const draftKey = $derived(question?.questionId ? `frq-draft:${question.questionId}` : '');
 	const draftScopeKey = $derived(
-		selectedClass
-			? `frq-latest-draft:${selectedClass}:${
-					frqPracticeFor(selectedClass)?.control === 'task'
+		selectedCourse
+			? `frq-latest-draft:${selectedCourse}:${
+					frqPracticeFor(selectedCourse)?.control === 'task'
 						? selectedFormat || 'task'
 						: selectedUnit || 'all-units'
 				}`
@@ -130,7 +130,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	function restoreLatestDraft(): boolean {
 		if (!draftScopeKey || typeof sessionStorage === 'undefined') return false;
 		const saved = parseFrqLatestDraft(sessionStorage.getItem(draftScopeKey), {
-			apClass: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit || undefined
 		});
 		if (!saved) return false;
@@ -155,7 +155,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 		if (draftScopeKey) {
 			const saved = sessionStorage.getItem(draftScopeKey);
 			const latest = parseFrqLatestDraft(saved, {
-				apClass: selectedClass,
+				course: selectedCourse,
 				unit: selectedUnit || undefined
 			});
 			if (!latest || latest.question.questionId === question?.questionId) {
@@ -171,7 +171,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	}
 
 	async function loadQuestion(options: { isAutoWarmingRetry?: boolean } = {}): Promise<void> {
-		if (!selectedClass || isLoading) return;
+		if (!selectedCourse || isLoading) return;
 		clearWarmingRetryTimer();
 		const generation = ++loadGeneration;
 		isLoading = true;
@@ -189,11 +189,11 @@ export function createFrqCore(opts: FrqCoreOpts) {
 			? 'Checking whether written-response practice is ready…'
 			: 'Loading a written-response task…';
 		try {
-			const practice = frqPracticeFor(selectedClass);
+			const practice = frqPracticeFor(selectedCourse);
 			const effectiveUnit =
 				practice?.control === 'task'
 					? FRQ_ALL_UNITS
-					: resolveEffectiveUnit(selectedClass, selectedUnit);
+					: resolveEffectiveUnit(selectedCourse, selectedUnit);
 			const requestedPresetId = opts.getPresetQuestionId().trim();
 			const presetId =
 				requestedPresetId && consumedPresetQuestionId !== requestedPresetId
@@ -202,7 +202,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 			const result = presetId
 				? await requestFrqQuestionById(presetId)
 				: await requestFrqQuestion(
-						selectedClass,
+						selectedCourse,
 						effectiveUnit,
 						[...seenQuestionIds],
 						practice?.control === 'task' ? selectedFormat : undefined
@@ -218,7 +218,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 			statusMessage = 'Write your responses, then submit for rubric feedback.';
 			rememberQuestion(result.question.questionId);
 			capturePostHogEvent('frq_question_loaded', {
-				ap_class: selectedClass,
+				course: selectedCourse,
 				unit: selectedUnit,
 				question_id: result.question.questionId
 			});
@@ -321,7 +321,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 		capturePostHogEvent('frq_grade_disagreement_reported', {
 			question_id: question.questionId,
 			attempt_id: attemptId,
-			ap_class: selectedClass,
+			course: selectedCourse,
 			unit: selectedUnit,
 			points_earned: grade.pointsEarned,
 			points_available: grade.pointsAvailable

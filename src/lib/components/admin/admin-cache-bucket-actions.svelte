@@ -73,7 +73,7 @@
 				size="icon-sm"
 				class="text-muted-foreground"
 				{disabled}
-				aria-label={`Actions for ${bucket.apClass} ${bucket.unit}`}
+				aria-label={`Actions for ${bucket.course} ${bucket.unit}`}
 			>
 				<EllipsisIcon class="size-4" />
 			</Button>
@@ -117,14 +117,14 @@
 			<p class="mb-2 text-sm font-medium">Retire questions</p>
 			<div class="space-y-2">
 				<label
-					for={`retire-${bucket.questionType}-${bucket.apClass}-${bucket.unit}`}
+					for={`retire-${bucket.questionType}-${bucket.course}-${bucket.unit}`}
 					class="text-sm font-medium"
 				>
 					Questions to delete
 				</label>
 				<div class="flex items-center gap-2">
 					<Input
-						id={`retire-${bucket.questionType}-${bucket.apClass}-${bucket.unit}`}
+						id={`retire-${bucket.questionType}-${bucket.course}-${bucket.unit}`}
 						type="number"
 						min="1"
 						max={bucket.activeCount}
@@ -155,7 +155,7 @@
 				Delete {retireCount} question{retireCount === 1 ? '' : 's'}?
 			</AlertDialog.Title>
 			<AlertDialog.Description>
-				This retires the oldest active {bucket.questionType.toUpperCase()} questions from {bucket.apClass}
+				This retires the oldest active {bucket.questionType.toUpperCase()} questions from {bucket.course}
 				· {bucket.unit}, then queues a refill back to the quota.
 			</AlertDialog.Description>
 		</AlertDialog.Header>

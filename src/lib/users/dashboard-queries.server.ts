@@ -17,8 +17,8 @@ type OverviewRow = {
 	recentCorrect: number;
 };
 
-type SubjectRow = {
-	subject: string;
+type CourseRow = {
+	course: string;
 	total: number;
 	correct: number;
 	totalTimeMs: number;
@@ -31,8 +31,8 @@ type FrqOverviewRow = {
 	recentTotal: number;
 };
 
-type FrqSubjectRow = {
-	subject: string;
+type FrqCourseRow = {
+	course: string;
 	total: number;
 	totalPercentage: number;
 };
@@ -64,9 +64,9 @@ export async function getDashboardStats(
 		})
 		.from(mcqAttempts)
 		.where(eq(mcqAttempts.userId, userId));
-	const mcqSubjectsPromise = db
+	const mcqCoursesPromise = db
 		.select({
-			subject: mcqAttempts.apClass,
+			course: mcqAttempts.course,
 			total: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} IS NOT NULL)::int`,
 			correct: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} = true)::int`,
 			totalTimeMs: sql<number>`coalesce(sum(${safeTime(mcqAttempts.timeTakenMs)}) FILTER (
@@ -75,7 +75,7 @@ export async function getDashboardStats(
 		})
 		.from(mcqAttempts)
 		.where(eq(mcqAttempts.userId, userId))
-		.groupBy(mcqAttempts.apClass);
+		.groupBy(mcqAttempts.course);
 	const frqOverviewPromise: Promise<FrqOverviewRow[]> = includeFrq
 		? db
 				.select({
@@ -89,23 +89,23 @@ export async function getDashboardStats(
 				.from(frqAttempts)
 				.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
 		: Promise.resolve([]);
-	const frqSubjectsPromise: Promise<FrqSubjectRow[]> = includeFrq
+	const frqCoursesPromise: Promise<FrqCourseRow[]> = includeFrq
 		? db
 				.select({
-					subject: frqAttempts.apClass,
+					course: frqAttempts.course,
 					total: sql<number>`count(*)::int`,
 					totalPercentage: sql<number>`coalesce(sum(${frqAttempts.percentage}), 0)`
 				})
 				.from(frqAttempts)
 				.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
-				.groupBy(frqAttempts.apClass)
+				.groupBy(frqAttempts.course)
 		: Promise.resolve([]);
 
-	const [mcqRows, mcqSubjects, frqRows, frqSubjects, currentStreak] = await Promise.all([
+	const [mcqRows, mcqCourses, frqRows, frqCourses, currentStreak] = await Promise.all([
 		mcqOverviewPromise,
-		mcqSubjectsPromise,
+		mcqCoursesPromise,
 		frqOverviewPromise,
-		frqSubjectsPromise,
+		frqCoursesPromise,
 		getCurrentStreak(userId, timeZone, includeFrq)
 	]);
 	const mcq: OverviewRow = mcqRows[0] ?? {
@@ -125,9 +125,9 @@ export async function getDashboardStats(
 	const correctAnswers = Number(mcq.correct);
 	const recentQuestions = Number(mcq.recentTotal);
 	const recentCorrect = Number(mcq.recentCorrect);
-	const frqBySubject = new Map(frqSubjects.map((row) => [row.subject, row]));
-	const mcqBySubject = new Map(mcqSubjects.map((row) => [row.subject, row]));
-	const subjects = new Set([...mcqBySubject.keys(), ...frqBySubject.keys()]);
+	const frqByCourse = new Map(frqCourses.map((row) => [row.course, row]));
+	const mcqByCourse = new Map(mcqCourses.map((row) => [row.course, row]));
+	const courses = new Set([...mcqByCourse.keys(), ...frqByCourse.keys()]);
 
 	return {
 		overview: {
@@ -147,31 +147,31 @@ export async function getDashboardStats(
 			accuracyLast7Days: recentQuestions ? Math.round((recentCorrect / recentQuestions) * 100) : 0,
 			frqSubmissionsLast7Days: Number(frq.recentTotal)
 		},
-		subjectBreakdown: [...subjects]
-			.map((subject) => {
-				const mcqSubject: SubjectRow = mcqBySubject.get(subject) ?? {
-					subject,
+		courseBreakdown: [...courses]
+			.map((course) => {
+				const mcqCourse: CourseRow = mcqByCourse.get(course) ?? {
+					course,
 					total: 0,
 					correct: 0,
 					totalTimeMs: 0
 				};
-				const frqSubject: FrqSubjectRow = frqBySubject.get(subject) ?? {
-					subject,
+				const frqCourse: FrqCourseRow = frqByCourse.get(course) ?? {
+					course,
 					total: 0,
 					totalPercentage: 0
 				};
-				const total = Number(mcqSubject.total);
-				const correct = Number(mcqSubject.correct);
-				const frqAttempts = Number(frqSubject.total);
+				const total = Number(mcqCourse.total);
+				const correct = Number(mcqCourse.correct);
+				const frqAttempts = Number(frqCourse.total);
 				return {
-					subject,
+					course,
 					total,
 					correct,
 					accuracy: total ? Math.round((correct / total) * 100) : 0,
-					avgTimeSeconds: total ? Math.round(Number(mcqSubject.totalTimeMs) / total / 1000) : 0,
+					avgTimeSeconds: total ? Math.round(Number(mcqCourse.totalTimeMs) / total / 1000) : 0,
 					frqAttempts,
 					frqAveragePercentage: frqAttempts
-						? Math.round(Number(frqSubject.totalPercentage) / frqAttempts)
+						? Math.round(Number(frqCourse.totalPercentage) / frqAttempts)
 						: 0
 				};
 			})
@@ -180,7 +180,7 @@ export async function getDashboardStats(
 }
 
 type RecentAttemptRow = {
-	apClass: string;
+	course: string;
 	unit: string;
 	wasCorrect: boolean;
 	attemptedAt: Date;
@@ -195,27 +195,27 @@ export async function getDashboardProgress(
 	const recentAttemptsPromise = db.execute<RecentAttemptRow>(sql`
 		WITH ranked AS (
 			SELECT
-				${mcqAttempts.apClass} AS "apClass",
+				${mcqAttempts.course} AS "course",
 				${mcqAttempts.unit} AS unit,
 				${mcqAttempts.wasCorrect} AS "wasCorrect",
 				${mcqAttempts.attemptedAt} AS "attemptedAt",
 				row_number() OVER (
-					PARTITION BY ${mcqAttempts.apClass}, ${mcqAttempts.unit}
+					PARTITION BY ${mcqAttempts.course}, ${mcqAttempts.unit}
 					ORDER BY ${mcqAttempts.attemptedAt} DESC
 				) AS position
 			FROM ${mcqAttempts}
 			WHERE ${mcqAttempts.userId} = ${userId}
 				AND ${mcqAttempts.wasCorrect} IS NOT NULL
 		)
-		SELECT "apClass", unit, "wasCorrect", "attemptedAt"
+		SELECT "course", unit, "wasCorrect", "attemptedAt"
 		FROM ranked
 		WHERE position <= 20
-		ORDER BY "apClass", unit, "attemptedAt" DESC
+		ORDER BY "course", unit, "attemptedAt" DESC
 	`);
 	const topicsCovered = questionPayloadTextField(mcqQuestions.data, 'topicsCovered');
 	const topicsPromise = db
 		.select({
-			apClass: mcqAttempts.apClass,
+			course: mcqAttempts.course,
 			unit: mcqAttempts.unit,
 			name: sql<string>`trim(${topicsCovered})`,
 			attempts: count(),
@@ -232,7 +232,7 @@ export async function getDashboardProgress(
 				sql`trim(${topicsCovered}) <> ''`
 			)
 		)
-		.groupBy(mcqAttempts.apClass, mcqAttempts.unit, sql`trim(${topicsCovered})`);
+		.groupBy(mcqAttempts.course, mcqAttempts.unit, sql`trim(${topicsCovered})`);
 	const [recentResult, topicRows, frqProgress] = await Promise.all([
 		recentAttemptsPromise,
 		topicsPromise,
@@ -256,14 +256,14 @@ export async function getDashboardProgress(
 			mastery: Number(row.gradedAttempts) ? Math.round((correctAttempts / attempts) * 100) : null,
 			lastAttemptAt: row.lastAttemptAt?.toISOString()
 		};
-		const key = `${row.apClass}\u0000${row.unit}`;
+		const key = `${row.course}\u0000${row.unit}`;
 		const list = topicsByUnit.get(key) ?? [];
 		list.push(topic);
 		topicsByUnit.set(key, list);
 	}
 	const withTopics = withRecent.map((entry) => ({
 		...entry,
-		topics: (topicsByUnit.get(`${entry.apClass}\u0000${entry.unit}`) ?? []).sort(
+		topics: (topicsByUnit.get(`${entry.course}\u0000${entry.unit}`) ?? []).sort(
 			(a, b) => b.attempts - a.attempts || a.name.localeCompare(b.name)
 		)
 	}));

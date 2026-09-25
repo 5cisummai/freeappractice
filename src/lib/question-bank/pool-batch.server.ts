@@ -12,7 +12,7 @@ import { selectFrqFormat } from '$lib/question-bank/frq/profiles.server';
 export { downloadOpenAiFile, retrieveOpenAiBatch };
 
 export type PoolBatchManifestEntry = {
-	apClass: string;
+	course: string;
 	unit: string;
 	questionType?: 'mcq' | 'frq';
 	formatId?: string;
@@ -28,7 +28,7 @@ export type PoolBatchManifest = {
 export function buildMcqPoolBatchJsonl(opts: {
 	requests: Array<{
 		customId: string;
-		apClass: string;
+		course: string;
 		unit: string;
 		recentTopics?: string[];
 		diagramsEnabled?: boolean;
@@ -45,7 +45,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 		lines.push(
 			buildMcqPoolBatchLine({
 				customId: req.customId,
-				className: req.apClass,
+				course: req.course,
 				unit: req.unit,
 				recentTopics: req.recentTopics,
 				model,
@@ -54,7 +54,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 			})
 		);
 		entries[req.customId] = {
-			apClass: req.apClass,
+			course: req.course,
 			unit: req.unit,
 			questionType: 'mcq'
 		};
@@ -74,7 +74,7 @@ export function buildMcqPoolBatchJsonl(opts: {
 export function buildFrqPoolBatchJsonl(opts: {
 	requests: Array<{
 		customId: string;
-		apClass: string;
+		course: string;
 		unit: string;
 		recentTopics?: string[];
 		formatId?: string;
@@ -87,11 +87,11 @@ export function buildFrqPoolBatchJsonl(opts: {
 	const entries: Record<string, PoolBatchManifestEntry> = {};
 
 	for (const req of opts.requests) {
-		const format = selectFrqFormat(req.apClass, req.formatId);
+		const format = selectFrqFormat(req.course, req.formatId);
 		lines.push(
 			buildFrqPoolBatchLine({
 				customId: req.customId,
-				apClass: req.apClass,
+				course: req.course,
 				unit: req.unit,
 				recentTopics: req.recentTopics,
 				formatId: format.formatId,
@@ -100,7 +100,7 @@ export function buildFrqPoolBatchJsonl(opts: {
 			})
 		);
 		entries[req.customId] = {
-			apClass: req.apClass,
+			course: req.course,
 			unit: req.unit,
 			questionType: 'frq',
 			formatId: format.formatId

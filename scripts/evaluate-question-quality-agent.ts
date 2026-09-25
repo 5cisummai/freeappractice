@@ -13,7 +13,7 @@ import { buildBatchLine } from '../src/lib/question-bank/quality/batch-line';
 import { getQuestionById } from '../src/lib/question-bank/mcq/repository.server';
 import { extractResponseOutputText } from '../src/lib/question-bank/quality/rubric.server';
 
-type GoldItem = { questionId: string; verdict: 'good' | 'bad'; apClass: string };
+type GoldItem = { questionId: string; verdict: 'good' | 'bad'; course: string };
 type Candidate = {
 	model: string;
 	effort: 'low' | 'medium';
@@ -115,7 +115,7 @@ async function createBatch(inputFileId: string, candidate: Candidate): Promise<s
 
 function stratified(items: GoldItem[], maximum: number): GoldItem[] {
 	const groups = new Map<string, GoldItem[]>();
-	for (const item of items) groups.set(item.apClass, [...(groups.get(item.apClass) ?? []), item]);
+	for (const item of items) groups.set(item.course, [...(groups.get(item.course) ?? []), item]);
 	const result: GoldItem[] = [];
 	while (result.length < maximum && [...groups.values()].some((group) => group.length)) {
 		for (const group of groups.values()) {
@@ -133,7 +133,7 @@ async function submit() {
 		await getNeonDatabase()
 			.select({
 				questionId: questionQuality.questionId,
-				apClass: questionQuality.apClass,
+				course: questionQuality.course,
 				humanAssessment: questionQuality.humanAssessment
 			})
 			.from(questionQuality)
@@ -145,14 +145,14 @@ async function submit() {
 		);
 	}) as Array<{
 		questionId: string;
-		apClass?: string;
+		course?: string;
 		humanAssessment: { verdict: 'good' | 'bad' };
 	}>;
 	const gold = stratified(
 		raw.map((row) => ({
 			questionId: row.questionId,
 			verdict: row.humanAssessment.verdict,
-			apClass: row.apClass || 'Unknown'
+			course: row.course || 'Unknown'
 		})),
 		maximum
 	);
@@ -239,7 +239,7 @@ async function refresh() {
 				inputTokens += row.response.body.usage?.input_tokens ?? 0;
 				outputTokens += row.response.body.usage?.output_tokens ?? 0;
 				const course =
-					state.gold.find((item) => item.questionId === row.custom_id)?.apClass ?? 'Unknown';
+					state.gold.find((item) => item.questionId === row.custom_id)?.course ?? 'Unknown';
 				const courseCounts = byCourseCounts.get(course) ?? { count: 0, matches: 0 };
 				courseCounts.count += 1;
 				if (matched) courseCounts.matches += 1;

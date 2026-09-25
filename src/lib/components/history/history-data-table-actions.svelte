@@ -38,7 +38,7 @@
 				variant="ghost"
 				size="icon"
 				class="relative size-8 p-0"
-				aria-label={`Actions for ${item.attempt.apClass} question`}
+				aria-label={`Actions for ${item.attempt.course} question`}
 			>
 				<EllipsisIcon class="size-4" />
 			</Button>

@@ -50,7 +50,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 		resolveQuizUnits.mockReturnValue(['Unit 1']);
 		validateQuestionRequest.mockReturnValue({
 			ok: true,
-			value: { className: 'AP Biology', unit: 'Unit 1' }
+			value: { course: 'AP Biology', unit: 'Unit 1' }
 		});
 	});
 
@@ -61,7 +61,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 			request: new Request('http://localhost/api/question/quiz', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ className: 'AP Biology', unit: 'Unit 1', count: 1 })
+				body: JSON.stringify({ course: 'AP Biology', unit: 'Unit 1', count: 1 })
 			}),
 			locals: { userId: undefined }
 		} as Parameters<typeof POST>[0]);
@@ -79,7 +79,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 			request: new Request('http://localhost/api/question/quiz', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ className: 'AP Biology', unit: 'Unit 1', count: 1 })
+				body: JSON.stringify({ course: 'AP Biology', unit: 'Unit 1', count: 1 })
 			}),
 			locals: { userId: 'user-1' }
 		} as Parameters<typeof POST>[0]);
@@ -87,7 +87,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 		expect(response.status).toBe(503);
 		expect(requestPoolRefill).toHaveBeenCalledWith({
 			questionType: 'mcq',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1'
 		});
 		expect((await response.json()).refillRequested).toBe(true);

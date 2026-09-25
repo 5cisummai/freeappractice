@@ -25,11 +25,11 @@ interface UnitPromptSections {
 	keywordsContext: string;
 }
 
-function unitContextKey(apClass: string, unit: string): string {
-	return `${apClass}\0${unit}`;
+function unitContextKey(course: string, unit: string): string {
+	return `${course}\0${unit}`;
 }
 
-/** Exact apClass + unit label → generation controls from the unified catalog. */
+/** Exact course + unit label → generation controls from the unified catalog. */
 const unitContextByKey: ReadonlyMap<string, UnitContext> = (() => {
 	const map = new Map<string, UnitContext>();
 	for (const course of AP_DATA.courses) {
@@ -44,18 +44,18 @@ const unitContextByKey: ReadonlyMap<string, UnitContext> = (() => {
 })();
 
 /** Exact lookup only - keys must match the unified app catalog class names and unit labels. */
-export function getUnitContextData(className: string, unitIdentifier: string): UnitContext | null {
-	if (!className || !unitIdentifier) return null;
-	return unitContextByKey.get(unitContextKey(className, unitIdentifier.trim())) ?? null;
+export function getUnitContextData(course: string, unitIdentifier: string): UnitContext | null {
+	if (!course || !unitIdentifier) return null;
+	return unitContextByKey.get(unitContextKey(course, unitIdentifier.trim())) ?? null;
 }
 
 function buildUnitSections(
-	className: string,
+	course: string,
 	unit: string | undefined,
 	questionLabel = 'question'
 ): UnitPromptSections {
-	if (!className || !unit) return { unitContext: '', keywordsContext: '' };
-	const ctx = getUnitContextData(className, unit);
+	if (!course || !unit) return { unitContext: '', keywordsContext: '' };
+	const ctx = getUnitContextData(course, unit);
 	if (!ctx) return { unitContext: '', keywordsContext: '' };
 	return {
 		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
@@ -240,15 +240,15 @@ export interface GenerateStimulusSetResult {
 
 /** Build system/user prompts for one MCQ (shared by sync + Batch API paths). */
 export function buildMcqGenerationPrompt(opts: {
-	className: string;
+	course: string;
 	unit?: string;
 	recentTopics?: string[];
 	diagramsEnabled?: boolean;
 }): { system: string; user: string } {
-	const { className, unit, recentTopics, diagramsEnabled = false } = opts;
-	if (!className) throw new Error('className is required');
+	const { course, unit, recentTopics, diagramsEnabled = false } = opts;
+	if (!course) throw new Error('course is required');
 
-	const { unitContext, keywordsContext } = buildUnitSections(className, unit, 'question');
+	const { unitContext, keywordsContext } = buildUnitSections(course, unit, 'question');
 	const diversitySection = buildDiversitySection(recentTopics, {
 		label: 'TOPICS',
 		avoidLabel: 'subtopic, concept, or scenario',
@@ -285,25 +285,25 @@ OUTPUT CONTRACT:
 - Return only the JSON object matching the supplied schema.
 - Do not include markdown, commentary, or text before or after the JSON.`;
 
-	const userMessage = `Create an AP-level practice question for ${className}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
+	const userMessage = `Create an AP-level practice question for ${course}${unit ? ` covering ${unit}` : ''}.\n\nReturn ONLY the JSON object, no other text.`;
 
 	return { system: systemPrompt, user: userMessage };
 }
 
 export function buildStimulusSetGenerationPrompt(opts: {
-	className: string;
+	course: string;
 	unit?: string;
 	childCount: number;
 	mode: 'text' | 'diagram' | 'mixed';
 	recentTopics?: string[];
 	allowedDiagramTypes?: string[];
 }): { system: string; user: string } {
-	const { className, unit, childCount, mode, recentTopics } = opts;
-	if (!className) throw new Error('className is required');
+	const { course, unit, childCount, mode, recentTopics } = opts;
+	if (!course) throw new Error('course is required');
 	if (!Number.isInteger(childCount) || childCount < 1 || childCount > 5) {
 		throw new Error('childCount must be an integer between 1 and 5');
 	}
-	const { unitContext, keywordsContext } = buildUnitSections(className, unit, 'question');
+	const { unitContext, keywordsContext } = buildUnitSections(course, unit, 'question');
 	const diversitySection = buildDiversitySection(recentTopics, {
 		label: 'TOPICS',
 		avoidLabel: 'subtopic, concept, or scenario',
@@ -317,12 +317,12 @@ export function buildStimulusSetGenerationPrompt(opts: {
 				: 'STIMULUS FORMAT: Provide both a text stimulus and a semantic Examfig DiagramSpec.';
 	const diagramSection = mode === 'text' ? '' : `\n${EXAMFIG_DIAGRAM_SKILL}`;
 	const allowedDiagramTypes =
-		opts.allowedDiagramTypes ?? getStimulusPolicy(className).profiles[0]?.diagramTypes ?? [];
+		opts.allowedDiagramTypes ?? getStimulusPolicy(course).profiles[0]?.diagramTypes ?? [];
 	const diagramPolicy =
 		mode === 'text'
 			? ''
-			: `\nCOURSE-SPECIFIC DIAGRAM POLICY:\n- Allowed diagram types for ${className}: ${allowedDiagramTypes.join(', ')}\n- Use only one of these allowed types. Do not select any other type from the general Examfig reference.`;
-	const system = `You write AP-aligned multiple-choice stimulus sets for ${className}. Create exactly ${childCount} independently answerable questions that share one stimulus. Do not reproduce or closely imitate official questions, passages, quotations, documents, authors, dates, or attributions.
+			: `\nCOURSE-SPECIFIC DIAGRAM POLICY:\n- Allowed diagram types for ${course}: ${allowedDiagramTypes.join(', ')}\n- Use only one of these allowed types. Do not select any other type from the general Examfig reference.`;
+	const system = `You write AP-aligned multiple-choice stimulus sets for ${course}. Create exactly ${childCount} independently answerable questions that share one stimulus. Do not reproduce or closely imitate official questions, passages, quotations, documents, authors, dates, or attributions.
 
 COURSE AND UNIT SCOPE:
 ${unitContext}${keywordsContext}${diversitySection}
@@ -352,12 +352,12 @@ OUTPUT CONTRACT:
 - Begin directly with the stimulus content. Do not add labels, titles, source disclaimers, or phrases such as "Original practice material" to stimulus.text.
 - Do not include markdown, commentary, or text before or after the JSON.
 `;
-	const user = `Create a ${childCount}-question practice set for ${className}${unit ? ` covering ${unit}` : ''}. Return only the JSON object.`;
+	const user = `Create a ${childCount}-question practice set for ${course}${unit ? ` covering ${unit}` : ''}. Return only the JSON object.`;
 	return { system, user };
 }
 
 async function generateAPQuestionBody(opts: {
-	className: string;
+	course: string;
 	unit?: string;
 	recentTopics?: string[];
 	diagramsEnabled?: boolean;
@@ -374,7 +374,7 @@ async function generateAPQuestionBody(opts: {
 		schemaName: 'ap_question',
 		reasoningEffort: 'medium',
 		tools: diagramsEnabled ? examfigTools : undefined,
-		logContext: { className: opts.className, unit: opts.unit }
+		logContext: { course: opts.course, unit: opts.unit }
 	});
 	const parsed = parseGeneratedApQuestion(result.parsed);
 
@@ -394,7 +394,7 @@ async function generateAPQuestionBody(opts: {
 }
 
 export async function generateAPStimulusSet(opts: {
-	className: string;
+	course: string;
 	unit?: string;
 	childCount: number;
 	mode: 'text' | 'diagram' | 'mixed';
@@ -404,7 +404,7 @@ export async function generateAPStimulusSet(opts: {
 	if (!opts.stimulusQuestionsEnabled) {
 		throw new Error('Stimulus question generation is disabled.');
 	}
-	const policy = getStimulusPolicy(opts.className);
+	const policy = getStimulusPolicy(opts.course);
 	const profile = policy.profiles[0];
 	if (
 		!policy.setsEnabled ||
@@ -431,7 +431,7 @@ export async function generateAPStimulusSet(opts: {
 		reasoningEffort: 'medium',
 		tools: opts.mode === 'text' ? undefined : examfigTools,
 		logContext: {
-			className: opts.className,
+			course: opts.course,
 			unit: opts.unit,
 			childCount: opts.childCount,
 			mode: opts.mode
@@ -465,15 +465,15 @@ export async function generateAPStimulusSet(opts: {
 }
 
 export async function generateAPQuestion(opts: {
-	className: string;
+	course: string;
 	unit?: string;
 	recentTopics?: string[];
 	diagramsEnabled?: boolean;
 }): Promise<GenerateResult> {
-	const { className, unit } = opts;
+	const { course, unit } = opts;
 	const generationStarted = Date.now();
 	const { parsed, model } = await generateAPQuestionBody({
-		className,
+		course,
 		unit,
 		recentTopics: opts.recentTopics,
 		diagramsEnabled: opts.diagramsEnabled

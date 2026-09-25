@@ -27,7 +27,7 @@ describe('canonical question inventories', () => {
 	it('normalizes an MCQ behind the shared inventory shape', async () => {
 		mocks.getQuestionById.mockResolvedValue({
 			id: 'mcq-1',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			createdAt: '2026-08-01T00:00:00.000Z',
 			contentHash: 'mcq-hash',
@@ -37,7 +37,7 @@ describe('canonical question inventories', () => {
 		await expect(getQuestionInventory('mcq').get('mcq-1')).resolves.toMatchObject({
 			kind: 'mcq',
 			id: 'mcq-1',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			contentHash: 'mcq-hash',
 			content: { question: 'Stem' }
@@ -47,7 +47,7 @@ describe('canonical question inventories', () => {
 	it('normalizes an FRQ without enabling automated quality review', async () => {
 		mocks.findFrqQuestionById.mockResolvedValue({
 			questionId: 'frq-1',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 2',
 			createdAt: new Date('2026-08-02T00:00:00.000Z'),
 			contentHash: 'frq-hash',
@@ -57,7 +57,7 @@ describe('canonical question inventories', () => {
 		await expect(getQuestionInventory('frq').get('frq-1')).resolves.toMatchObject({
 			kind: 'frq',
 			id: 'frq-1',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 2',
 			content: { prompt: 'Explain' }
 		});
@@ -67,7 +67,7 @@ describe('canonical question inventories', () => {
 		mocks.listFrqQuestions.mockResolvedValue([
 			{
 				questionId: 'frq-2',
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 3',
 				createdAt: new Date('2026-08-03T00:00:00.000Z'),
 				contentHash: 'frq-hash-2',

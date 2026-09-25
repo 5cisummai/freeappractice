@@ -12,7 +12,7 @@ const context = {
 	question: 'What process produces ATP?',
 	correctAnswer: 'Cellular respiration',
 	explanation: '',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	unit: 'Unit 3',
 	answerChoices: null
 };

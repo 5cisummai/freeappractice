@@ -75,7 +75,7 @@ export async function* chat(opts: {
 	question: string;
 	correctAnswer: string;
 	explanation: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	answerChoices: { A: string; B: string; C: string; D: string } | null;
 	conversationHistory: TutorMessage[];
@@ -87,7 +87,7 @@ export async function* chat(opts: {
 		question,
 		correctAnswer,
 		explanation,
-		apClass,
+		course,
 		unit,
 		answerChoices,
 		conversationHistory,
@@ -102,7 +102,7 @@ export async function* chat(opts: {
 
 	const system = `You are a helpful AP exam tutor. You're helping a student understand a specific practice question.
 
-Course: ${apClass || 'AP Course'}
+Course: ${course || 'AP Course'}
 Unit: ${unit || 'N/A'}
 
 Question: ${question}${choicesText}
@@ -162,7 +162,7 @@ export async function* chatFrq(opts: {
 	const system = [
 		'You are a helpful AP written-response tutor.',
 		'',
-		'Course: ' + question.apClass,
+		'Course: ' + question.course,
 		'Unit: ' + question.unit,
 		'Prompt: ' + question.prompt,
 		materialsText ? 'Materials:\n' + materialsText : '',
@@ -181,6 +181,6 @@ export async function* chatFrq(opts: {
 	yield* streamTutorResponse(
 		'chatFrq',
 		{ system, conversationHistory, userMessage, signal },
-		{ historyLength: conversationHistory.length, apClass: question.apClass }
+		{ historyLength: conversationHistory.length, course: question.course }
 	);
 }

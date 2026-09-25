@@ -41,7 +41,7 @@ const FrqQuestionBaseSchema = z
 		parts: z.array(FrqPartSchema).min(1).max(12),
 		mainTopic: z.string().trim().min(1).max(240),
 		topicsCovered: z.string().trim().min(1).max(1_000),
-		apClass: z.string().trim().min(1).max(120),
+		course: z.string().trim().min(1).max(120),
 		unit: z.string().trim().min(1).max(200)
 	})
 	.strict();
@@ -144,7 +144,7 @@ export type FrqGrade = {
 export type FrqAttemptView = {
 	id: string;
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	formatId: string;
 	responses: Record<string, string>;
@@ -179,7 +179,7 @@ export const FrqGradeRequestSchema = z
 export type FrqGradeRequest = z.infer<typeof FrqGradeRequestSchema>;
 
 export type FrqProgressSummary = {
-	apClass: string;
+	course: string;
 	unit: string;
 	attempts: number;
 	pointsEarned: number;
@@ -199,7 +199,7 @@ export function toPublicFrqQuestion(questionId: string, question: FrqQuestion): 
 		parts: question.parts.map(({ id, label, prompt, points }) => ({ id, label, prompt, points })),
 		mainTopic: question.mainTopic,
 		topicsCovered: question.topicsCovered,
-		apClass: question.apClass,
+		course: question.course,
 		unit: question.unit
 	};
 }

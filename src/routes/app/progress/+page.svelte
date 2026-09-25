@@ -13,5 +13,5 @@
 	progress={data.progress}
 	historyItems={data.historyItems}
 	historyError={data.historyError}
-	selectedSubjects={data.selectedSubjects ?? []}
+	selectedCourses={data.selectedCourses ?? []}
 />

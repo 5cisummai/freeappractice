@@ -102,7 +102,7 @@
 		<Badge variant="secondary">Practice question</Badge>
 		{#if question}
 			<span class="text-sm text-muted-foreground">
-				{question.apClass} · {question.unit}
+				{question.course} · {question.unit}
 			</span>
 			<span class="text-xs text-muted-foreground">{modeLabel}</span>
 		{/if}
@@ -140,7 +140,7 @@
 		{:else if question.mode === 'mcq'}
 			<QuestionCard
 				model={unlimitedQuestionCardModel({
-					selectedClass: question.apClass,
+					selectedCourse: question.course,
 					selectedUnit: question.unit,
 					requestVersion,
 					presetQuestionId: question.questionId
@@ -156,7 +156,7 @@
 			/>
 		{:else}
 			<FrqSession
-				selectedClass={question.apClass}
+				selectedCourse={question.course}
 				selectedUnit={question.unit}
 				presetQuestionId={question.questionId}
 				{requestVersion}

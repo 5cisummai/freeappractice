@@ -42,7 +42,6 @@ export default defineConfig(
 			'src/lib/question-bank/mcq/repository.server.ts',
 			'src/lib/question-bank/gen-stats.server.ts',
 			'src/lib/question-bank/pool-refill.server.ts',
-			'src/lib/question-bank/question-id-registry.server.ts',
 			'src/lib/question-bank/recent-topic.server.ts',
 			'src/lib/server/neon/model.ts',
 			'src/lib/super/models.server.ts',

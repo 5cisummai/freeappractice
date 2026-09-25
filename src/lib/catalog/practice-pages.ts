@@ -1,5 +1,5 @@
 import { PRACTICE_PAGES } from '$lib/data/ap-data';
-import { getCourses, getUnitsForClass } from '$lib/catalog/ap-classes';
+import { getCourses, getUnitsForCourse } from '$lib/catalog/ap-courses';
 
 type PracticePageLinkKind =
 	'college-board' | 'subject-tool' | 'blog' | 'external' | 'internal' | 'practice';
@@ -18,9 +18,9 @@ type PracticePageFaqItem = {
 
 export type PracticePage = {
 	slug: string;
-	type: 'class' | 'unit';
-	className: string;
-	unitName?: string;
+	type: 'course' | 'unit';
+	course: string;
+	unit?: string;
 	seo: {
 		title: string;
 		description: string;
@@ -62,25 +62,23 @@ function validatePages(pages: PracticePage[]): void {
 		}
 		slugSet.add(page.slug);
 
-		const course = courses.find((c) => c.name === page.className);
+		const course = courses.find((c) => c.name === page.course);
 		if (!course) {
-			throw new Error(`Unknown className "${page.className}" for slug ${page.slug}`);
+			throw new Error(`Unknown course "${page.course}" for slug ${page.slug}`);
 		}
 
 		if (page.type === 'unit') {
-			if (!page.unitName) {
-				throw new Error(`Unit page ${page.slug} missing unitName`);
+			if (!page.unit) {
+				throw new Error(`Unit page ${page.slug} missing unit`);
 			}
-			const units = getUnitsForClass(page.className);
-			if (!units.includes(page.unitName)) {
-				throw new Error(
-					`Unit "${page.unitName}" not found in ${page.className} (slug: ${page.slug})`
-				);
+			const units = getUnitsForCourse(page.course);
+			if (!units.includes(page.unit)) {
+				throw new Error(`Unit "${page.unit}" not found in ${page.course} (slug: ${page.slug})`);
 			}
 		}
 
-		if (page.type === 'class' && page.unitName) {
-			throw new Error(`Class page ${page.slug} should not have unitName`);
+		if (page.type === 'course' && page.unit) {
+			throw new Error(`Class page ${page.slug} should not have unit`);
 		}
 	}
 }
@@ -90,7 +88,7 @@ validatePages(pages);
 
 const pageBySlug = new Map(pages.map((page) => [page.slug, page]));
 
-const unitsByClass = new Map<string, PracticePage[]>();
+const unitsByCourse = new Map<string, PracticePage[]>();
 
 function extractUnitOrder(slug: string): number {
 	const match = slug.match(/\/unit-(\d+)$/);
@@ -99,17 +97,17 @@ function extractUnitOrder(slug: string): number {
 
 for (const page of pages) {
 	if (page.type === 'unit') {
-		const units = unitsByClass.get(page.className) ?? [];
+		const units = unitsByCourse.get(page.course) ?? [];
 		units.push(page);
-		unitsByClass.set(page.className, units);
+		unitsByCourse.set(page.course, units);
 	}
 }
 
-for (const [, units] of unitsByClass) {
+for (const [, units] of unitsByCourse) {
 	units.sort((a, b) => extractUnitOrder(a.slug) - extractUnitOrder(b.slug));
 }
 
-function getClassSlugForPage(page: PracticePage): string {
+function getCourseSlugForPage(page: PracticePage): string {
 	return page.slug.split('/')[0]!;
 }
 
@@ -117,12 +115,12 @@ function getPracticePageHref(page: PracticePage): string {
 	return `/practice/${page.slug}`;
 }
 
-export function getUnitPagesForClass(className: string): PracticePage[] {
-	return unitsByClass.get(className) ?? [];
+export function getUnitPagesForCourse(course: string): PracticePage[] {
+	return unitsByCourse.get(course) ?? [];
 }
 
-export function getClassPracticePageFor(page: PracticePage): PracticePage | null {
-	const classSlug = getClassSlugForPage(page);
+export function getCoursePracticePageFor(page: PracticePage): PracticePage | null {
+	const classSlug = getCourseSlugForPage(page);
 	return pageBySlug.get(classSlug) ?? null;
 }
 
@@ -131,7 +129,7 @@ export function getAdjacentUnitPages(page: PracticePage): {
 	next?: PracticePage;
 } {
 	if (page.type !== 'unit') return {};
-	const units = getUnitPagesForClass(page.className);
+	const units = getUnitPagesForCourse(page.course);
 	const index = units.findIndex((unit) => unit.slug === page.slug);
 	if (index < 0) return {};
 	return {
@@ -141,28 +139,28 @@ export function getAdjacentUnitPages(page: PracticePage): {
 }
 
 export function formatUnitLabel(page: PracticePage): string {
-	if (page.type === 'unit' && page.unitName) {
-		return page.unitName.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '');
+	if (page.type === 'unit' && page.unit) {
+		return page.unit.replace(/^(?:Unit|Big Idea)\s+\d+:\s*/, '');
 	}
 	return page.seo.h1;
 }
 
-export function getClassPracticePageByClassName(className: string): PracticePage | null {
-	return pages.find((page) => page.type === 'class' && page.className === className) ?? null;
+export function getCoursePracticePageByCourse(course: string): PracticePage | null {
+	return pages.find((page) => page.type === 'course' && page.course === course) ?? null;
 }
 
-function getClassPracticeHref(className: string): string | null {
-	const page = getClassPracticePageByClassName(className);
+function getCoursePracticeHref(course: string): string | null {
+	const page = getCoursePracticePageByCourse(course);
 	return page ? getPracticePageHref(page) : null;
 }
 
 /** Returns the canonical public practice page for the current selector state. */
-export function getFocusedPracticeHref(className: string, unitName?: string): string | null {
-	const unitPage = unitName
-		? getUnitPagesForClass(className).find((page) => page.unitName === unitName)
+export function getFocusedPracticeHref(course: string, unit?: string): string | null {
+	const unitPage = unit
+		? getUnitPagesForCourse(course).find((page) => page.unit === unit)
 		: undefined;
 
-	return unitPage ? getPracticePageHref(unitPage) : getClassPracticeHref(className);
+	return unitPage ? getPracticePageHref(unitPage) : getCoursePracticeHref(course);
 }
 
 export function getPageBySlug(slugParam: string): PracticePage | null {
@@ -183,13 +181,13 @@ export function getAllPageSlugs(): string[] {
 	return pages.map((page) => page.slug);
 }
 
-export function getClassPracticePages(): PracticePage[] {
+export function getCoursePracticePages(): PracticePage[] {
 	return pages
-		.filter((page) => page.type === 'class')
-		.sort((a, b) => a.className.localeCompare(b.className));
+		.filter((page) => page.type === 'course')
+		.sort((a, b) => a.course.localeCompare(b.course));
 }
 
 export function getSitemapPriority(page: PracticePage): string {
-	if (page.type === 'class') return '0.8';
+	if (page.type === 'course') return '0.8';
 	return '0.7';
 }

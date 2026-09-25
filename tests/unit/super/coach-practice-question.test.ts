@@ -10,12 +10,12 @@ describe('coach practice question tool helpers', () => {
 	it('parses tool input', () => {
 		expect(
 			getCoachPracticeQuestionToolInput({
-				apClass: 'AP Physics 1',
+				course: 'AP Physics 1',
 				unit: 'Unit 1',
 				mode: 'mcq'
 			})
 		).toEqual({
-			apClass: 'AP Physics 1',
+			course: 'AP Physics 1',
 			unit: 'Unit 1',
 			mode: 'mcq'
 		});
@@ -28,7 +28,7 @@ describe('coach practice question tool helpers', () => {
 				kind: 'practice_question',
 				mode: 'mcq',
 				questionId: 'mcq-1',
-				apClass: 'AP Physics 1',
+				course: 'AP Physics 1',
 				unit: 'Unit 1',
 				practiceHref: '/app/practice',
 				prompt: 'What is velocity?'

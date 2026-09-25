@@ -215,12 +215,12 @@ const disabledPolicy: StimulusPolicy = {
 	profiles: []
 };
 
-export function getStimulusPolicy(className: string): StimulusPolicy {
-	return Object.hasOwn(policies, className) ? policies[className]! : disabledPolicy;
+export function getStimulusPolicy(course: string): StimulusPolicy {
+	return Object.hasOwn(policies, course) ? policies[course]! : disabledPolicy;
 }
 
-export function getPolicyProfile(className: string, profileId: string): StimulusProfile | null {
-	return getStimulusPolicy(className).profiles.find((profile) => profile.id === profileId) ?? null;
+export function getPolicyProfile(course: string, profileId: string): StimulusProfile | null {
+	return getStimulusPolicy(course).profiles.find((profile) => profile.id === profileId) ?? null;
 }
 
 export function isStimulusPolicyEnabledForUnit(policy: StimulusPolicy, unit?: string): boolean {

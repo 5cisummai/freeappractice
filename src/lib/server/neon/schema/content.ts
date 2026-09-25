@@ -28,7 +28,7 @@ export const questionRegistry = contentSchema.table(
 	{
 		questionId: text('question_id').primaryKey(),
 		kind: text('kind').notNull(),
-		apClass: text('ap_class'),
+		course: text('course'),
 		unit: text('unit'),
 		questionCreatedAt: timestamp('question_created_at', { withTimezone: true, mode: 'date' }),
 		s3Etag: text('s3_etag'),
@@ -39,7 +39,7 @@ export const questionRegistry = contentSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		index('question_registry_kind_class_unit_idx').on(table.kind, table.apClass, table.unit),
+		index('question_registry_kind_course_unit_idx').on(table.kind, table.course, table.unit),
 		index('question_registry_question_created_idx').on(table.questionCreatedAt),
 		index('question_registry_content_hash_idx').on(table.contentHash)
 	]
@@ -60,12 +60,12 @@ export const mcqQuestions = contentSchema.table(
 	},
 	(table) => [
 		index('mcq_questions_bucket_created_idx').on(
-			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'course')`,
 			sql`(${table.data} ->> 'unit')`,
 			table.createdAt
 		),
 		index('mcq_questions_bucket_random_idx').on(
-			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'course')`,
 			sql`(${table.data} ->> 'unit')`,
 			table.active,
 			table.randomKey
@@ -89,12 +89,12 @@ export const frqQuestions = contentSchema.table(
 	},
 	(table) => [
 		index('frq_questions_bucket_created_idx').on(
-			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'course')`,
 			sql`(${table.data} ->> 'unit')`,
 			table.createdAt
 		),
 		index('frq_questions_bucket_random_idx').on(
-			sql`(${table.data} ->> 'apClass')`,
+			sql`(${table.data} ->> 'course')`,
 			sql`(${table.data} ->> 'unit')`,
 			table.active,
 			table.randomKey
@@ -108,7 +108,7 @@ export const questionRecentTopics = contentSchema.table(
 	{
 		id: text('id').primaryKey(),
 		kind: text('kind').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		topicsCovered: text('topics_covered').notNull(),
 		questionId: text('question_id'),
@@ -117,7 +117,7 @@ export const questionRecentTopics = contentSchema.table(
 	(table) => [
 		index('question_recent_topics_bucket_created_idx').on(
 			table.kind,
-			table.apClass,
+			table.course,
 			table.unit,
 			table.createdAt
 		)
@@ -125,33 +125,33 @@ export const questionRecentTopics = contentSchema.table(
 );
 
 /** Rollups replace the three legacy counter collections and are always derived. */
-export const questionGenerationByClass = contentSchema
-	.view('question_generation_by_class', {
-		apClass: text('ap_class').notNull(),
+export const questionGenerationByCourse = contentSchema
+	.view('question_generation_by_course', {
+		course: text('course').notNull(),
 		count: integer('count').notNull(),
 		totalQuestionChars: integer('total_question_chars').notNull()
 	})
 	.as(
-		sql`SELECT ap_class, COUNT(*)::int AS count,
+		sql`SELECT course, COUNT(*)::int AS count,
 		COALESCE(SUM(content_length), 0)::int AS total_question_chars
 	FROM content.question_registry
 	WHERE kind = 'mcq'
-	GROUP BY ap_class`
+	GROUP BY course`
 	);
 
 export const questionGenerationByUnit = contentSchema
 	.view('question_generation_by_unit', {
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		count: integer('count').notNull(),
 		totalQuestionChars: integer('total_question_chars').notNull()
 	})
 	.as(
-		sql`SELECT ap_class, unit, COUNT(*)::int AS count,
+		sql`SELECT course, unit, COUNT(*)::int AS count,
 		COALESCE(SUM(content_length), 0)::int AS total_question_chars
 	FROM content.question_registry
 	WHERE kind = 'mcq'
-	GROUP BY ap_class, unit`
+	GROUP BY course, unit`
 	);
 
 export const questionGenerationByGlobalUnit = contentSchema
@@ -180,7 +180,7 @@ export const questionQuality = contentSchema.table(
 		sourceHash: text('source_hash'),
 		sourceEtag: text('source_etag'),
 		sourceCreatedAt: timestamp('source_created_at', { withTimezone: true, mode: 'date' }),
-		apClass: text('ap_class'),
+		course: text('course'),
 		unit: text('unit'),
 		state: text('state').notNull().default('unreviewed'),
 		aiAssessment: jsonb('ai_assessment').$type<Record<string, unknown>>(),
@@ -234,7 +234,7 @@ export const questionFeedback = contentSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		type: text('type').notNull(),
-		apClass: text('ap_class'),
+		course: text('course'),
 		unit: text('unit'),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()

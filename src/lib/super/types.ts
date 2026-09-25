@@ -56,7 +56,7 @@ export const FREE_PLAN_ACCESS: PlanAccess = {
 export type TutorTeachingStyle = 'socratic' | 'concise' | 'step_by_step';
 
 export type TutorTargetDate = {
-	apClass: string;
+	course: string;
 	targetDate: string;
 };
 
@@ -81,7 +81,7 @@ export type StudyTaskStatus = 'todo' | 'done';
 
 export type StudyTask = {
 	id: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	mode: 'mcq' | 'frq' | 'review';
 	date: string;

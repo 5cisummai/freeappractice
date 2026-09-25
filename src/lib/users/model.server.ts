@@ -7,36 +7,36 @@ import {
 	quizAttempts,
 	userProfiles,
 	userProgress,
-	userSubjects
+	userCourses
 } from '$lib/server/neon/schema';
 
-/** Persist only the user's selected subjects instead of rewriting their full profile. */
-export async function updateUserSubjects(userId: string, subjects: string[]): Promise<void> {
+/** Persist only the user's selected courses instead of rewriting their full profile. */
+export async function updateUserCourses(userId: string, courses: string[]): Promise<void> {
 	const db = getNeonDatabase();
 	const updateProfile = db
 		.update(userProfiles)
-		.set({ subjects, updatedAt: new Date() })
+		.set({ courses, updatedAt: new Date() })
 		.where(eq(userProfiles.userId, userId));
-	const deleteSubjects = db.delete(userSubjects).where(eq(userSubjects.userId, userId));
+	const deleteCourses = db.delete(userCourses).where(eq(userCourses.userId, userId));
 
-	if (subjects.length) {
-		const insertSubjects = db.insert(userSubjects).values(
-			subjects.map((subject, position) => ({
+	if (courses.length) {
+		const insertCourses = db.insert(userCourses).values(
+			courses.map((course, position) => ({
 				userId,
-				subject,
+				course,
 				position
 			}))
 		);
-		await db.batch([updateProfile, deleteSubjects, insertSubjects]);
+		await db.batch([updateProfile, deleteCourses, insertCourses]);
 		return;
 	}
 
-	await db.batch([updateProfile, deleteSubjects]);
+	await db.batch([updateProfile, deleteCourses]);
 }
 
 export interface IUserProfile {
 	userId: string;
-	subjects: string[];
+	courses: string[];
 	progress: IProgress[];
 	questionHistory: IQuestionAttempt[];
 	bookmarkedQuestions: string[];
@@ -58,13 +58,13 @@ export async function createUserProfile(userId: string): Promise<void> {
 		.onConflictDoNothing({ target: userProfiles.userId });
 }
 
-export async function getUserSubjects(userId: string): Promise<string[]> {
+export async function getUserCourses(userId: string): Promise<string[]> {
 	const rows = await getNeonDatabase()
-		.select({ subject: userSubjects.subject })
-		.from(userSubjects)
-		.where(eq(userSubjects.userId, userId))
-		.orderBy(asc(userSubjects.position));
-	return rows.map((row) => row.subject);
+		.select({ course: userCourses.course })
+		.from(userCourses)
+		.where(eq(userCourses.userId, userId))
+		.orderBy(asc(userCourses.position));
+	return rows.map((row) => row.course);
 }
 
 export async function getUserProgress(userId: string): Promise<IProgress[]> {
@@ -73,7 +73,7 @@ export async function getUserProgress(userId: string): Promise<IProgress[]> {
 		.from(userProgress)
 		.where(eq(userProgress.userId, userId));
 	return rows.map((row) => ({
-		apClass: row.apClass,
+		course: row.course,
 		unit: row.unit,
 		completed: row.completed,
 		mastery: row.mastery,
@@ -84,14 +84,14 @@ export async function getUserProgress(userId: string): Promise<IProgress[]> {
 	}));
 }
 
-export type UserDashboardProfile = Pick<IUserProfile, 'subjects' | 'progress' | 'createdAt'>;
+export type UserDashboardProfile = Pick<IUserProfile, 'courses' | 'progress' | 'createdAt'>;
 
 /** Read the small profile base used by dashboard aggregate queries. */
 export async function getUserDashboardProfile(
 	userId: string
 ): Promise<UserDashboardProfile | null> {
 	const db = getNeonDatabase();
-	const [profiles, subjects, progress] = await Promise.all([
+	const [profiles, courses, progress] = await Promise.all([
 		db
 			.select({
 				createdAt: userProfiles.createdAt
@@ -99,12 +99,12 @@ export async function getUserDashboardProfile(
 			.from(userProfiles)
 			.where(eq(userProfiles.userId, userId))
 			.limit(1),
-		getUserSubjects(userId),
+		getUserCourses(userId),
 		getUserProgress(userId)
 	]);
 	const profile = profiles[0];
 	if (!profile) return null;
-	return { subjects, progress, createdAt: profile.createdAt };
+	return { courses, progress, createdAt: profile.createdAt };
 }
 
 export async function countUserProfiles(filter: ProfileFilter = {}): Promise<number> {
@@ -119,7 +119,7 @@ export async function deleteUserProfiles(userIds: string[]): Promise<void> {
 	if (!userIds.length) return;
 	const db = getNeonDatabase();
 	await db.batch([
-		db.delete(userSubjects).where(inArray(userSubjects.userId, userIds)),
+		db.delete(userCourses).where(inArray(userCourses.userId, userIds)),
 		db.delete(userProgress).where(inArray(userProgress.userId, userIds)),
 		db.delete(mcqAttempts).where(inArray(mcqAttempts.userId, userIds)),
 		db.delete(quizAttempts).where(inArray(quizAttempts.userId, userIds)),

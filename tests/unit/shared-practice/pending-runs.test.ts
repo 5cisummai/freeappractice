@@ -18,7 +18,7 @@ function createStorage() {
 function guestQuizRun(overrides: Partial<PendingSharedQuizRun> = {}): PendingSharedQuizRun {
 	return {
 		quizId: '11111111-1111-4111-8111-111111111111',
-		apClass: 'AP World History',
+		course: 'AP World History',
 		unit: 'Unit 1: The Global Tapestry',
 		startedAt: '2026-09-20T12:00:00.000Z',
 		retryCount: 0,

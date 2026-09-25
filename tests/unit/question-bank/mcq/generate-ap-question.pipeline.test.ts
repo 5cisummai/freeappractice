@@ -70,7 +70,7 @@ describe('MCQ live generation pipeline', () => {
 		});
 
 		const result = await generateAPQuestion({
-			className: 'AP Human Geography',
+			course: 'AP Human Geography',
 			unit: 'Unit 5: Agriculture and Rural Land-Use Patterns and Processes'
 		});
 
@@ -90,7 +90,7 @@ describe('MCQ live generation pipeline', () => {
 		});
 
 		const result = await generateAPQuestion({
-			className: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1'
 		});
 
@@ -131,7 +131,7 @@ describe('MCQ live generation pipeline', () => {
 		});
 
 		await generateAPStimulusSet({
-			className: 'AP Chemistry',
+			course: 'AP Chemistry',
 			unit: 'Unit 1: Atomic Structure and Properties',
 			childCount: 3,
 			mode: 'diagram',
@@ -178,7 +178,7 @@ describe('MCQ live generation pipeline', () => {
 
 		await expect(
 			generateAPStimulusSet({
-				className: 'AP Human Geography',
+				course: 'AP Human Geography',
 				unit: 'Unit 1: Thinking Geographically',
 				childCount: 3,
 				mode: 'diagram',

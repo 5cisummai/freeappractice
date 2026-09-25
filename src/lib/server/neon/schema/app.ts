@@ -108,7 +108,7 @@ export const userProfiles = appSchema.table('user_profiles', {
 		.primaryKey()
 		.references(() => authUsers.id, { onDelete: 'cascade' }),
 	assistantFeaturesEnabled: boolean('assistant_features_enabled').notNull().default(true),
-	subjects: text('subjects')
+	courses: text('courses')
 		.array()
 		.notNull()
 		.default(sql`ARRAY[]::text[]`),
@@ -116,17 +116,17 @@ export const userProfiles = appSchema.table('user_profiles', {
 	updatedAt: updatedAt()
 });
 
-export const userSubjects = appSchema.table(
-	'user_subjects',
+export const userCourses = appSchema.table(
+	'user_courses',
 	{
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		subject: text('subject').notNull(),
+		course: text('course').notNull(),
 		position: integer('position').notNull().default(0),
 		createdAt: createdAt()
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.subject] })]
+	(table) => [primaryKey({ columns: [table.userId, table.course] })]
 );
 
 export const mcqAttempts = appSchema.table(
@@ -137,7 +137,7 @@ export const mcqAttempts = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		questionId: text('question_id').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		selectedAnswer: text('selected_answer'),
 		wasCorrect: boolean('was_correct'),
@@ -148,7 +148,7 @@ export const mcqAttempts = appSchema.table(
 	(table) => [
 		index('mcq_attempts_user_attempted_idx').on(table.userId, table.attemptedAt),
 		index('mcq_attempts_question_idx').on(table.questionId),
-		index('mcq_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
+		index('mcq_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
 	]
 );
 
@@ -159,7 +159,7 @@ export const quizAttempts = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		requestedCount: integer('requested_count').notNull(),
 		answeredCount: integer('answered_count').notNull(),
@@ -177,7 +177,7 @@ export const quizAttempts = appSchema.table(
 	},
 	(table) => [
 		index('quiz_attempts_user_completed_idx').on(table.userId, table.completedAt),
-		index('quiz_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
+		index('quiz_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
 	]
 );
 
@@ -194,7 +194,7 @@ export const sharedPracticeSets = appSchema.table(
 			onDelete: 'set null'
 		}),
 		title: text('title').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		itemCount: integer('item_count').notNull(),
 		status: text('status').notNull().default('active'),
@@ -257,7 +257,7 @@ export const userProgress = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		completed: boolean('completed').notNull().default(false),
 		mastery: real('mastery').notNull().default(0),
@@ -268,7 +268,7 @@ export const userProgress = appSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		primaryKey({ columns: [table.userId, table.apClass, table.unit] }),
+		primaryKey({ columns: [table.userId, table.course, table.unit] }),
 		check('user_progress_mastery_range', sql`${table.mastery} >= 0 AND ${table.mastery} <= 100`)
 	]
 );
@@ -294,7 +294,7 @@ export const frqAttempts = appSchema.table(
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		submissionId: text('submission_id').notNull(),
 		questionId: text('question_id').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		formatId: text('format_id').notNull(),
 		responses: jsonb('responses').$type<Record<string, string>>().notNull(),
@@ -311,7 +311,7 @@ export const frqAttempts = appSchema.table(
 	(table) => [
 		uniqueIndex('frq_attempts_user_submission_uq').on(table.userId, table.submissionId),
 		index('frq_attempts_user_created_idx').on(table.userId, table.createdAt),
-		index('frq_attempts_user_class_unit_idx').on(table.userId, table.apClass, table.unit)
+		index('frq_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
 	]
 );
 
@@ -352,10 +352,10 @@ export const tutorProfileClasses = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => tutorProfiles.userId, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		position: integer('position').notNull().default(0)
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.apClass] })]
+	(table) => [primaryKey({ columns: [table.userId, table.course] })]
 );
 
 export const tutorTargetDates = appSchema.table(
@@ -364,10 +364,10 @@ export const tutorTargetDates = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => tutorProfiles.userId, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		targetDate: date('target_date', { mode: 'date' }).notNull()
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.apClass] })]
+	(table) => [primaryKey({ columns: [table.userId, table.course] })]
 );
 
 export const superBillingAccess = appSchema.table(
@@ -467,7 +467,7 @@ export const studyTasks = appSchema.table(
 		planId: text('plan_id')
 			.notNull()
 			.references(() => studyPlans.id, { onDelete: 'cascade' }),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		mode: text('mode').notNull(),
 		taskDate: date('task_date', { mode: 'date' }).notNull(),
@@ -563,7 +563,7 @@ export const seenQuestions = appSchema.table(
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		contentHash: text('content_hash').notNull(),
 		questionType: text('question_type').notNull(),
-		apClass: text('ap_class').notNull(),
+		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		seenAt: timestamp('seen_at', { withTimezone: true, mode: 'date' }).notNull()
 	},

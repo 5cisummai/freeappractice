@@ -30,7 +30,7 @@ describe('study-plan tool schema', () => {
 		expect(taskSchema?.additionalProperties).toBe(false);
 		expect(taskSchema?.required).toEqual([
 			'id',
-			'apClass',
+			'course',
 			'unit',
 			'mode',
 			'dayOffset',
@@ -42,14 +42,14 @@ describe('study-plan tool schema', () => {
 		expect(taskProperties.practiceHref?.description).toContain('or null when unavailable');
 	});
 
-	it('accepts the Government alias and rejects malformed plan-mode inputs', () => {
+	it('accepts the app Government course and rejects malformed plan-mode inputs', () => {
 		const validInput = {
 			weekStart: '2026-09-21',
 			behavior: 'replace',
 			tasks: [
 				{
 					id: 'gov-unit-1',
-					apClass: 'AP U.S. Government and Politics',
+					course: 'AP US Government',
 					unit: 'Unit 1: Foundations of American Democracy',
 					mode: 'mcq',
 					dayOffset: 0,

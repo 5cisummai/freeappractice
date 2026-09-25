@@ -13,7 +13,7 @@ describe('pruneSuperAgentModelMessages', () => {
 						type: 'tool-call',
 						toolCallId: 'catalog-call',
 						toolName: 'read_course_catalog',
-						input: { apClass: 'AP US Government' }
+						input: { course: 'AP US Government' }
 					}
 				]
 			},
@@ -89,7 +89,7 @@ describe('pruneSuperAgentModelMessages', () => {
 						type: 'tool-call',
 						toolCallId: 'new-call',
 						toolName: 'give_practice_question',
-						input: { apClass: 'AP Physics 1' }
+						input: { course: 'AP Physics 1' }
 					}
 				]
 			},
@@ -156,7 +156,7 @@ describe('pruneSuperAgentModelMessages', () => {
 						type: 'tool-call',
 						toolCallId: 'old-question',
 						toolName: 'give_practice_question',
-						input: { apClass: 'AP Physics 1' }
+						input: { course: 'AP Physics 1' }
 					}
 				]
 			},
@@ -180,7 +180,7 @@ describe('pruneSuperAgentModelMessages', () => {
 						type: 'tool-call',
 						toolCallId: 'new-question',
 						toolName: 'give_practice_question',
-						input: { apClass: 'AP Physics 1' }
+						input: { course: 'AP Physics 1' }
 					}
 				]
 			},

@@ -23,7 +23,7 @@
 	}
 
 	type TutorWidgetProps = {
-		apClass?: string;
+		course?: string;
 		unit?: string;
 		questionId?: string;
 		frqQuestionId?: string;
@@ -34,7 +34,7 @@
 	};
 
 	let {
-		apClass = '',
+		course = '',
 		unit = '',
 		questionId = '',
 		frqQuestionId = '',
@@ -312,7 +312,7 @@
 
 			capturePostHogEvent('tutor_response_completed', {
 				question_id: questionId || undefined,
-				ap_class: apClass,
+				course: course,
 				unit,
 				topic: topic || undefined,
 				response_time_ms: Date.now() - startedAt,
@@ -326,7 +326,7 @@
 				error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'request_failed';
 			capturePostHogEvent('tutor_response_failed', {
 				question_id: questionId || undefined,
-				ap_class: apClass,
+				course: course,
 				unit,
 				topic: topic || undefined,
 				failure_kind: failureKind,

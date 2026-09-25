@@ -1,5 +1,5 @@
 export interface IProgress {
-	apClass: string;
+	course: string;
 	unit: string;
 	completed: boolean;
 	mastery: number;
@@ -11,7 +11,7 @@ export interface IProgress {
 
 export interface IQuestionAttempt {
 	questionId: string;
-	apClass: string;
+	course: string;
 	unit: string;
 	selectedAnswer: 'A' | 'B' | 'C' | 'D';
 	wasCorrect: boolean;

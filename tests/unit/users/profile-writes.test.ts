@@ -21,7 +21,7 @@ vi.mock('$lib/server/neon/db', () => ({
 	})
 }));
 
-import { createUserProfile, updateUserSubjects } from '$lib/users/model.server';
+import { createUserProfile, updateUserCourses } from '$lib/users/model.server';
 
 describe('focused user profile writes', () => {
 	beforeEach(() => {
@@ -43,20 +43,20 @@ describe('focused user profile writes', () => {
 		expect(mocks.onConflictDoNothing).toHaveBeenCalledOnce();
 	});
 
-	it('updates subjects without loading or saving a whole profile document', async () => {
-		const updateQuery = { kind: 'update-subjects' };
-		const deleteQuery = { kind: 'delete-subjects' };
-		const insertQuery = { kind: 'insert-subjects' };
+	it('updates courses without loading or saving a whole profile document', async () => {
+		const updateQuery = { kind: 'update-courses' };
+		const deleteQuery = { kind: 'delete-courses' };
+		const insertQuery = { kind: 'insert-courses' };
 		mocks.updateWhere.mockReturnValueOnce(updateQuery);
 		mocks.deleteWhere.mockReturnValueOnce(deleteQuery);
 		mocks.insertValues.mockReturnValueOnce(insertQuery);
 
-		await updateUserSubjects('student-1', ['AP Biology', 'AP Chemistry']);
+		await updateUserCourses('student-1', ['AP Biology', 'AP Chemistry']);
 
 		expect(mocks.batch).toHaveBeenCalledWith([updateQuery, deleteQuery, insertQuery]);
 		expect(mocks.insertValues).toHaveBeenCalledWith([
-			{ userId: 'student-1', subject: 'AP Biology', position: 0 },
-			{ userId: 'student-1', subject: 'AP Chemistry', position: 1 }
+			{ userId: 'student-1', course: 'AP Biology', position: 0 },
+			{ userId: 'student-1', course: 'AP Chemistry', position: 1 }
 		]);
 	});
 });

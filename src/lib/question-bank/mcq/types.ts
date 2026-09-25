@@ -85,7 +85,7 @@ export type AddTextAnnotationInput = {
 };
 
 export type QuestionCoreOpts = {
-	getSelectedClass: () => string;
+	getSelectedCourse: () => string;
 	getSelectedUnit: () => string;
 	getUnitRange: () => readonly number[] | undefined;
 	getRequestVersion: () => number;
@@ -111,7 +111,7 @@ export type ExamStatus = 'idle' | 'loading' | 'active' | 'review' | 'complete' |
 export type ExamKind = 'quiz' | 'practice-test';
 
 export type ExamMeta = {
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	kind?: ExamKind;
 };
@@ -181,7 +181,7 @@ export type AnswerResult = {
 export type BugReportContext = {
 	questionId?: string;
 	questionNumber: string;
-	selectedClass?: string;
+	selectedCourse?: string;
 	selectedUnit?: string;
 	prompt?: string;
 	correctAnswer?: string;

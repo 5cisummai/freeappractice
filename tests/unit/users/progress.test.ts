@@ -11,7 +11,7 @@ describe('findOrCreateProgressEntry', () => {
 	it('returns an existing entry for the same class and unit', () => {
 		const progress: IProgress[] = [
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				completed: false,
 				mastery: 40,
@@ -30,7 +30,7 @@ describe('findOrCreateProgressEntry', () => {
 		const entry = findOrCreateProgressEntry(progress, 'AP Chemistry', 'Unit 2');
 		expect(progress).toHaveLength(1);
 		expect(entry).toMatchObject({
-			apClass: 'AP Chemistry',
+			course: 'AP Chemistry',
 			unit: 'Unit 2',
 			completed: false,
 			mastery: 0,
@@ -46,7 +46,7 @@ describe('buildProgressData', () => {
 		const user = {
 			progress: [
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1',
 					completed: false,
 					mastery: 50,
@@ -59,7 +59,7 @@ describe('buildProgressData', () => {
 
 		expect(buildProgressData(user)).toEqual([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				totalAttempts: 4,
 				correctAttempts: 2,
@@ -75,7 +75,7 @@ describe('mergeFrqProgress', () => {
 		const merged = mergeFrqProgress(
 			[
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 4',
 					totalAttempts: 2,
 					correctAttempts: 1,
@@ -84,7 +84,7 @@ describe('mergeFrqProgress', () => {
 			],
 			[
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 4',
 					attempts: 1,
 					pointsEarned: 9,

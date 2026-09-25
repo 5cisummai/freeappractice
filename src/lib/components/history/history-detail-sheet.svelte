@@ -39,7 +39,7 @@
 	function practiceHref(): string {
 		if (!item) return resolve('/app/practice');
 		const unitParam = item.attempt.unit ? `&unit=${encodeURIComponent(item.attempt.unit)}` : '';
-		return `${resolve('/app/practice')}?apClass=${encodeURIComponent(item.attempt.apClass)}${unitParam}`;
+		return `${resolve('/app/practice')}?course=${encodeURIComponent(item.attempt.course)}${unitParam}`;
 	}
 </script>
 
@@ -51,7 +51,7 @@
 		{#if item}
 			<Sheet.Header class="space-y-3 border-b border-border/60 p-6 pr-14 text-left">
 				<div class="flex flex-wrap items-center gap-2">
-					<Sheet.Title class="text-base">{item.attempt.apClass}</Sheet.Title>
+					<Sheet.Title class="text-base">{item.attempt.course}</Sheet.Title>
 					{#if item.attempt.unit}
 						<span class="text-sm text-muted-foreground">· {item.attempt.unit}</span>
 					{/if}

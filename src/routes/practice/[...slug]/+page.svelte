@@ -33,12 +33,12 @@
 	// Key by page identity so remounts / same-page afterNavigate do not double-count.
 	let lastPracticeViewKey = '';
 	afterNavigate(() => {
-		const unit = 'unitName' in data.page ? data.page.unitName : '';
-		const key = `${data.page.type}:${data.page.className}:${unit}`;
+		const unit = 'unit' in data.page ? data.page.unit : '';
+		const key = `${data.page.type}:${data.page.course}:${unit}`;
 		if (key === lastPracticeViewKey) return;
 		lastPracticeViewKey = key;
 		capturePostHogEvent('practice_page_viewed', {
-			ap_class: data.page.className,
+			course: data.page.course,
 			page_type: data.page.type,
 			unit: unit || undefined
 		});

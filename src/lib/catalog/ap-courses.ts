@@ -7,24 +7,24 @@ export function getCourses(): ApCourse[] {
 	return courses;
 }
 
-export function getUnitsForClass(className: string): string[] {
-	const course = courses.find((c) => c.name === className);
-	if (!course) return [];
-	return [...course.semester1, ...course.semester2];
+export function getUnitsForCourse(course: string): string[] {
+	const match = courses.find((c) => c.name === course);
+	if (!match) return [];
+	return [...match.semester1, ...match.semester2];
 }
 
-export function getAllowedClassNames(): Set<string> {
+export function getAllowedCourses(): Set<string> {
 	return new Set(courses.map((c) => c.name));
 }
 
-/** When "All Units" is selected (unit === ''), pick a random real unit for the class. */
+/** When "All Units" is selected (unit === ''), pick a random real unit for the course. */
 export function resolveEffectiveUnit(
-	cls: string,
+	course: string,
 	unit: string,
 	unitRange?: readonly number[]
 ): string {
 	if (unit.trim()) return unit.trim();
-	const allUnits = getUnitsForClass(cls);
+	const allUnits = getUnitsForCourse(course);
 	if (!allUnits.length) return '';
 
 	const maxIndex = allUnits.length - 1;

@@ -36,7 +36,7 @@ describe('buildTutorPersonalization', () => {
 		});
 		mocks.getUserProgress.mockResolvedValue([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 2',
 				mastery: 62,
 				totalAttempts: 4,
@@ -51,7 +51,7 @@ describe('buildTutorPersonalization', () => {
 		const forbiddenFeedback = 'RUBRIC_FEEDBACK_SHOULD_NOT_ENTER_CONTEXT';
 		mocks.findRecentGradedFrqAttempts.mockResolvedValue([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 2',
 				createdAt: new Date('2026-07-20T00:00:00.000Z'),
 				responses: { response: forbiddenResponse },
@@ -64,13 +64,13 @@ describe('buildTutorPersonalization', () => {
 				}
 			},
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 2',
 				createdAt: new Date('2026-07-19T00:00:00.000Z'),
 				grade: { percentage: 50, pointsEarned: 5, pointsAvailable: 10 }
 			},
 			{
-				apClass: 'AP Chemistry',
+				course: 'AP Chemistry',
 				unit: 'Unit 1',
 				createdAt: new Date('2026-07-18T00:00:00.000Z'),
 				grade: { percentage: 75, pointsEarned: 9, pointsAvailable: 12 }
@@ -95,13 +95,13 @@ describe('buildTutorPersonalization', () => {
 	it('limits evidence to the most recent course/unit groups and ignores incomplete grades', async () => {
 		mocks.findRecentGradedFrqAttempts.mockResolvedValue([
 			...Array.from({ length: 6 }, (_, index) => ({
-				apClass: `AP Course ${index + 1}`,
+				course: `AP Course ${index + 1}`,
 				unit: 'Unit 1',
 				createdAt: new Date(Date.UTC(2026, 6, 20 - index)),
 				grade: { percentage: 70, pointsEarned: 7, pointsAvailable: 10 }
 			})),
 			{
-				apClass: 'AP Course 7',
+				course: 'AP Course 7',
 				unit: 'Unit 1',
 				createdAt: new Date('2026-07-01T00:00:00.000Z'),
 				grade: { percentage: 100, pointsEarned: 10, pointsAvailable: 0 }

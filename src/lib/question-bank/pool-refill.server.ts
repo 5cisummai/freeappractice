@@ -202,7 +202,7 @@ export async function tryAcquireRefillLease(
 		.where(
 			and(
 				eq(poolRefillStates.questionType, bucket.questionType),
-				eq(poolRefillStates.apClass, bucket.apClass),
+				eq(poolRefillStates.course, bucket.course),
 				eq(poolRefillStates.unit, bucket.unit),
 				or(
 					eq(poolRefillStates.status, 'pending'),
@@ -291,7 +291,7 @@ async function generateOne(
 	reservedSlots?: number
 ): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean; generatedCount: number }> {
 	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
-		generatePoolQuestion(bucket.questionType, bucket.apClass, bucket.unit, target, reservedSlots)
+		generatePoolQuestion(bucket.questionType, bucket.course, bucket.unit, target, reservedSlots)
 	);
 	if (guarded.status === 'at_target') {
 		return { skippedDuplicate: false, skippedAtTarget: true, generatedCount: 0 };
@@ -354,7 +354,7 @@ async function claimNextRefillJob(
 		const leased = await tryAcquireRefillLease(
 			{
 				questionType: candidate.questionType,
-				apClass: candidate.apClass,
+				course: candidate.course,
 				unit: candidate.unit
 			},
 			{ owner, leaseTtlMs: env.leaseTtlMs }
@@ -380,7 +380,7 @@ export async function processRefillJob(
 	let budgetUsed = 0;
 	const bucket: PoolBucketKey = {
 		questionType: doc.questionType,
-		apClass: doc.apClass,
+		course: doc.course,
 		unit: doc.unit
 	};
 
@@ -393,7 +393,7 @@ export async function processRefillJob(
 
 			const observedCount = await countActivePoolRowsForServing(
 				bucket.questionType,
-				bucket.apClass,
+				bucket.course,
 				bucket.unit
 			);
 			if (observedCount >= lease.target) {
@@ -409,7 +409,7 @@ export async function processRefillJob(
 
 			const requestedSlots = await estimatePoolGenerationSlots(
 				bucket.questionType,
-				bucket.apClass,
+				bucket.course,
 				bucket.unit,
 				lease.target
 			);
@@ -453,7 +453,7 @@ export async function processRefillJob(
 				reservedSlotsForAttempt = 0;
 				const latestCount = await countActivePoolRowsForServing(
 					bucket.questionType,
-					bucket.apClass,
+					bucket.course,
 					bucket.unit
 				);
 				await releaseLeaseSuccess(lease, latestCount, generated);
@@ -480,7 +480,7 @@ export async function processRefillJob(
 
 		const observedCount = await countActivePoolRowsForServing(
 			bucket.questionType,
-			bucket.apClass,
+			bucket.course,
 			bucket.unit
 		);
 		await releaseLeaseSuccess(lease, observedCount, generated);

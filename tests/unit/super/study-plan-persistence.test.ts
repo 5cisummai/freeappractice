@@ -76,13 +76,13 @@ const existingPlan = {
 const existingTask = {
 	id: 'task-1',
 	planId: 'plan-1',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	unit: 'Unit 1',
 	mode: 'mcq',
 	taskDate: new Date('2026-08-10T00:00:00.000Z'),
 	durationMinutes: 25,
 	status: 'todo',
-	practiceHref: '/app/practice?apClass=AP+Biology&unit=Unit+1'
+	practiceHref: '/app/practice?course=AP+Biology&unit=Unit+1'
 };
 
 const draft = {
@@ -90,13 +90,13 @@ const draft = {
 	tasks: [
 		{
 			id: 'task-1',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			mode: 'mcq' as const,
 			date: '2026-08-10T00:00:00.000Z',
 			durationMinutes: 25,
 			status: 'todo' as const,
-			practiceHref: '/app/practice?apClass=AP+Biology&unit=Unit+1'
+			practiceHref: '/app/practice?course=AP+Biology&unit=Unit+1'
 		}
 	]
 };

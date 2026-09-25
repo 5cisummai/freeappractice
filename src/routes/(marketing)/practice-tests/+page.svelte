@@ -3,11 +3,11 @@
 	import BookOpenCheckIcon from '@tabler/icons-svelte/icons/book-filled';
 	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import { resolve } from '$app/paths';
-	import { getClassPracticePages } from '$lib/catalog/practice-pages.js';
+	import { getCoursePracticePages } from '$lib/catalog/practice-pages.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
 
-	const subjects = getClassPracticePages();
+	const subjects = getCoursePracticePages();
 
 	const officialResources = [
 		{
@@ -43,7 +43,7 @@
 			itemListElement: subjects.map((subject, index) => ({
 				'@type': 'ListItem',
 				position: index + 1,
-				name: `${subject.className} Practice Test`,
+				name: `${subject.course} Practice Test`,
 				url: `https://freeappractice.org/practice/${subject.slug}`
 			}))
 		}
@@ -133,10 +133,10 @@
 						>
 							<div>
 								<h3 class="text-lg font-semibold tracking-tight group-hover:text-primary">
-									{subject.className} Practice Test
+									{subject.course} Practice Test
 								</h3>
 								<p class="mt-2 text-sm leading-6 text-muted-foreground">
-									Test yourself with AP-style multiple-choice questions across the {subject.className}
+									Test yourself with AP-style multiple-choice questions across the {subject.course}
 									curriculum.
 								</p>
 							</div>

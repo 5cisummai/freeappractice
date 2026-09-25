@@ -26,8 +26,8 @@ export function buildPracticePageMeta(page: PracticePage) {
 export function buildPracticePageJsonLd(page: PracticePage): Record<string, unknown> {
 	const meta = buildPracticePageMeta(page);
 	const resourceName =
-		page.type === 'unit' && page.unitName
-			? `${page.className}: ${formatUnitLabel(page)}`
+		page.type === 'unit' && page.unit
+			? `${page.course}: ${formatUnitLabel(page)}`
 			: formatUnitLabel(page);
 
 	return {
@@ -47,7 +47,7 @@ export function buildPracticePageJsonLd(page: PracticePage): Record<string, unkn
 		},
 		about: {
 			'@type': 'Course',
-			name: page.className
+			name: page.course
 		}
 	};
 }
@@ -62,11 +62,11 @@ export function buildPracticeBreadcrumbs(
 
 	const classSlug = page.slug.split('/')[0]!;
 	crumbs.push({
-		label: page.className,
-		href: page.type === 'class' ? undefined : `/practice/${classSlug}`
+		label: page.course,
+		href: page.type === 'course' ? undefined : `/practice/${classSlug}`
 	});
 
-	if (page.type === 'unit' && page.unitName) {
+	if (page.type === 'unit' && page.unit) {
 		crumbs.push({
 			label: formatUnitLabel(page)
 		});

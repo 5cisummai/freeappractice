@@ -22,9 +22,9 @@ export type OnboardingGoal = (typeof ONBOARDING_GOALS)[number];
 export type OnboardingIntent = 'free' | 'super';
 
 export type OnboardingState =
-	| { status: 'unset'; subjects: string[]; goals: OnboardingGoal[] }
-	| { status: 'pending'; subjects: string[]; goals: OnboardingGoal[] }
-	| { status: 'complete'; subjects: string[]; goals: OnboardingGoal[] };
+	| { status: 'unset'; goals: OnboardingGoal[] }
+	| { status: 'pending'; goals: OnboardingGoal[] }
+	| { status: 'complete'; goals: OnboardingGoal[] };
 
 function validGoals(value: unknown): OnboardingGoal[] {
 	if (!Array.isArray(value)) return [];
@@ -35,36 +35,31 @@ function validGoals(value: unknown): OnboardingGoal[] {
 }
 
 export function readOnboardingState(value: string | undefined): OnboardingState {
-	if (!value) return { status: 'unset', subjects: [], goals: [] };
-	if (value === 'pending') return { status: 'pending', subjects: [], goals: [] };
-	if (value === 'complete') return { status: 'complete', subjects: [], goals: [] };
+	if (!value) return { status: 'unset', goals: [] };
+	if (value === 'pending') return { status: 'pending', goals: [] };
+	if (value === 'complete') return { status: 'complete', goals: [] };
 
 	try {
 		const parsed = JSON.parse(value) as {
 			status?: string;
-			subjects?: unknown;
 			goals?: unknown;
 		};
-		if (parsed.status !== 'complete' || !Array.isArray(parsed.subjects)) {
-			return { status: 'unset', subjects: [], goals: [] };
+		if (parsed.status !== 'complete') {
+			return { status: 'unset', goals: [] };
 		}
 
 		return {
 			status: 'complete',
-			subjects: parsed.subjects.filter((subject): subject is string => typeof subject === 'string'),
 			goals: validGoals(parsed.goals)
 		};
 	} catch {
-		return { status: 'unset', subjects: [], goals: [] };
+		return { status: 'unset', goals: [] };
 	}
 }
 
-export function serializeCompletedOnboarding(
-	subjects: string[] = [],
-	goals: OnboardingGoal[] = []
-): string {
-	if (subjects.length === 0 && goals.length === 0) return 'complete';
-	return JSON.stringify({ status: 'complete', subjects, goals });
+export function serializeCompletedOnboarding(goals: OnboardingGoal[] = []): string {
+	if (goals.length === 0) return 'complete';
+	return JSON.stringify({ status: 'complete', goals });
 }
 
 export function readOnboardingIntent(value: string | undefined): OnboardingIntent {

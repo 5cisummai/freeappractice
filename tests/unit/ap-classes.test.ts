@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getUnitsForClass, resolveEffectiveUnit } from '$lib/catalog/ap-classes';
+import { getUnitsForCourse, resolveEffectiveUnit } from '$lib/catalog/ap-courses';
 
-const biologyUnits = getUnitsForClass('AP Biology');
+const biologyUnits = getUnitsForCourse('AP Biology');
 
 afterEach(() => vi.restoreAllMocks());
 

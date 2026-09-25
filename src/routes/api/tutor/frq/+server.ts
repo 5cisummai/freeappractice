@@ -48,7 +48,7 @@ export const POST: RequestHandler = withAuthedHandler(
 		}
 
 		const question = await getFrqQuestionById(result.data.questionId);
-		if (!getFrqCourseProfile(question.apClass)) {
+		if (!getFrqCourseProfile(question.course)) {
 			return json(
 				{ error: 'Written-response practice is unavailable for this course' },
 				{ status: 404 }
@@ -70,7 +70,7 @@ export const POST: RequestHandler = withAuthedHandler(
 			distinctId: userId,
 			event: 'frq_tutor_chat_started',
 			properties: {
-				ap_class: question.apClass,
+				course: question.course,
 				unit: question.unit,
 				has_submission: Boolean(attempt),
 				has_prior_conversation: result.data.conversationHistory.length > 0,

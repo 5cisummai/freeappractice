@@ -33,7 +33,7 @@
 	}
 
 	let dashboard = $state<QualityDashboardSnapshot>(initialDashboard());
-	let apClass = $state('');
+	let course = $state('');
 	let unit = $state('');
 	let createdAfter = $state('');
 	let createdBefore = $state('');
@@ -60,7 +60,7 @@
 
 	function buildFilters(): ReviewFilters {
 		return {
-			...(apClass.trim() ? { apClass: apClass.trim() } : {}),
+			...(course.trim() ? { course: course.trim() } : {}),
 			...(unit.trim() ? { unit: unit.trim() } : {}),
 			...(createdAfter ? { createdAfter } : {}),
 			...(createdBefore ? { createdBefore } : {}),
@@ -471,7 +471,7 @@
 							>
 								<div class="flex flex-wrap items-center gap-2">
 									<span class="rounded-full bg-muted px-3 py-1 text-xs font-medium"
-										>{activeReviewItem.apClass ?? 'Unknown AP class'}</span
+										>{activeReviewItem.course ?? 'Unknown AP class'}</span
 									>
 									{#if activeReviewItem.unit}<span class="text-xs text-muted-foreground"
 											>{activeReviewItem.unit}</span
@@ -485,7 +485,7 @@
 							{#key activeReviewItem.questionId}
 								<QuestionCard
 									model={unlimitedQuestionCardModel({
-										selectedClass: activeReviewItem.apClass ?? '',
+										selectedCourse: activeReviewItem.course ?? '',
 										selectedUnit: activeReviewItem.unit ?? '',
 										requestVersion: 1,
 										presetQuestionId: activeReviewItem.questionId
@@ -662,7 +662,7 @@
 						<div class="space-y-2">
 							<Label for="quality-ap-class">AP class</Label><Input
 								id="quality-ap-class"
-								bind:value={apClass}
+								bind:value={course}
 								placeholder="e.g. AP Biology"
 								autocomplete="off"
 							/>

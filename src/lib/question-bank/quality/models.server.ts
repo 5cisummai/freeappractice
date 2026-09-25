@@ -23,7 +23,7 @@ export interface QuestionQualityDocument {
 	sourceHash?: string;
 	sourceEtag?: string;
 	sourceCreatedAt?: Date;
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	state: QualityState;
 	aiAssessment?: AiQualityAssessment;
@@ -116,7 +116,7 @@ export type QuestionQualityUpdate = Partial<{
 	sourceHash: string | null;
 	sourceEtag: string | null;
 	sourceCreatedAt: Date | null;
-	apClass: string | null;
+	course: string | null;
 	unit: string | null;
 	state: QualityState;
 	aiAssessment: AiQualityAssessment | null;

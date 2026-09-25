@@ -6,7 +6,7 @@ vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
 
-import { getUserDashboardProfile, getUserProgress, getUserSubjects } from '$lib/users/model.server';
+import { getUserDashboardProfile, getUserProgress, getUserCourses } from '$lib/users/model.server';
 
 function orderedQuery(rows: unknown[]) {
 	return { from: () => ({ where: () => ({ orderBy: async () => rows }) }) };
@@ -19,11 +19,11 @@ function plainQuery(rows: unknown[]) {
 describe('focused user profile reads', () => {
 	beforeEach(() => vi.clearAllMocks());
 
-	it('reads subjects and progress independently', async () => {
-		mocks.select.mockReturnValueOnce(orderedQuery([{ subject: 'AP Biology' }])).mockReturnValueOnce(
+	it('reads courses and progress independently', async () => {
+		mocks.select.mockReturnValueOnce(orderedQuery([{ course: 'AP Biology' }])).mockReturnValueOnce(
 			plainQuery([
 				{
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1',
 					completed: false,
 					mastery: 75,
@@ -35,10 +35,10 @@ describe('focused user profile reads', () => {
 			])
 		);
 
-		await expect(getUserSubjects('student-1')).resolves.toEqual(['AP Biology']);
+		await expect(getUserCourses('student-1')).resolves.toEqual(['AP Biology']);
 		await expect(getUserProgress('student-1')).resolves.toEqual([
 			{
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				completed: false,
 				mastery: 75,
@@ -60,13 +60,13 @@ describe('focused user profile reads', () => {
 					})
 				})
 			})
-			.mockReturnValueOnce(orderedQuery([{ subject: 'AP Chemistry' }]))
+			.mockReturnValueOnce(orderedQuery([{ course: 'AP Chemistry' }]))
 			.mockReturnValueOnce(plainQuery([]));
 
 		const profile = await getUserDashboardProfile('student-1');
 
 		expect(profile).toMatchObject({
-			subjects: ['AP Chemistry'],
+			courses: ['AP Chemistry'],
 			progress: [],
 			createdAt
 		});

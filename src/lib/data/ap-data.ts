@@ -1,4 +1,4 @@
-import dataset from './ap-classes-data-08212026.json';
+import dataset from './ap-courses-data-08212026.json';
 import practicePagesDataset from './practice-pages-data-09092026.json';
 
 export const AP_DATA = dataset;
@@ -40,7 +40,7 @@ type PracticeFaqTemplate = {
 	answer: string;
 };
 
-type PracticeFaqPageType = 'class' | 'unit';
+type PracticeFaqPageType = 'course' | 'unit';
 
 const FAQ_TEMPLATES = PRACTICE_PAGES_DATA.faqTemplates as Record<
 	PracticeFaqPageType,
@@ -53,13 +53,13 @@ function renderFaqTemplate(template: string, values: Record<string, string>): st
 
 function buildPracticePageFaq(
 	type: PracticeFaqPageType,
-	className: string,
-	unit?: UnifiedUnit
+	course: string,
+	unitData?: UnifiedUnit
 ): PracticeFaqTemplate[] {
-	const unitName = unit?.label ?? '';
-	const practiceLabel = unit ? `${className} ${unitName}` : className;
-	const unitDescription = unit?.official.description ?? `${className} course content`;
-	const values = { className, unitName, practiceLabel, unitDescription };
+	const unit = unitData?.label ?? '';
+	const practiceLabel = unitData ? `${course} ${unit}` : course;
+	const unitDescription = unitData?.official.description ?? `${course} course content`;
+	const values = { course, unit, practiceLabel, unitDescription };
 
 	return FAQ_TEMPLATES[type].map((template) => ({
 		id: `${type}-${template.id}`,
@@ -75,13 +75,13 @@ export const PRACTICE_PAGES = PRACTICE_PAGES_DATA.pages.map((page) => {
 
 	const unit = page.unitId ? unitById.get(page.unitId) : undefined;
 	if (page.unitId && !unit) throw new Error(`Unknown practice page unit: ${page.unitId}`);
-	const pageType: PracticeFaqPageType = page.type === 'unit' ? 'unit' : 'class';
+	const pageType: PracticeFaqPageType = page.type === 'unit' ? 'unit' : 'course';
 
 	return {
 		slug: page.id,
 		type: pageType,
-		className: course.name,
-		...(unit ? { unitName: unit.label } : {}),
+		course: course.name,
+		...(unit ? { unit: unit.label } : {}),
 		seo: page.seo,
 		article: page.article,
 		links: page.links,

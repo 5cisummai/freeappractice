@@ -7,8 +7,8 @@ describe('history query parameter parsing', () => {
 			field: 'attemptedAt',
 			direction: 'desc'
 		});
-		expect(parseHistorySort('subject', 'asc')).toEqual({
-			field: 'subject',
+		expect(parseHistorySort('course', 'asc')).toEqual({
+			field: 'course',
 			direction: 'asc'
 		});
 		expect(parseHistorySort('result', 'desc')).toEqual({

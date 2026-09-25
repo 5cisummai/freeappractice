@@ -13,7 +13,7 @@ export interface QuestionInventoryWrite {
 
 export interface QuestionMetadataWrite {
 	questionId: string;
-	apClass?: string;
+	course?: string;
 	unit?: string;
 	questionCreatedAt?: Date;
 	contentHash: string;
@@ -43,7 +43,7 @@ function metadataPayload(rows: QuestionMetadataWrite[]): string {
 	return JSON.stringify(
 		rows.map((row) => ({
 			questionId: row.questionId,
-			apClass: row.apClass ?? null,
+			course: row.course ?? null,
 			unit: row.unit ?? null,
 			questionCreatedAt: row.questionCreatedAt?.toISOString() ?? null,
 			contentHash: row.contentHash,
@@ -97,7 +97,7 @@ export async function syncQuestionMetadata(rows: QuestionMetadataWrite[]): Promi
 				SELECT *
 				FROM jsonb_to_recordset(${metadataPayload(group)}::jsonb) AS row(
 					"questionId" text,
-					"apClass" text,
+					"course" text,
 					"unit" text,
 					"questionCreatedAt" timestamptz,
 					"contentHash" text,
@@ -106,7 +106,7 @@ export async function syncQuestionMetadata(rows: QuestionMetadataWrite[]): Promi
 			),
 			updated_registry AS (
 				UPDATE ${questionRegistry} AS registry
-				SET ap_class = coalesce(incoming."apClass", registry.ap_class),
+				SET course = coalesce(incoming."course", registry.course),
 					unit = coalesce(incoming."unit", registry.unit),
 					question_created_at = coalesce(incoming."questionCreatedAt", registry.question_created_at),
 					content_hash = incoming."contentHash",
@@ -134,7 +134,7 @@ export async function syncQuestionMetadata(rows: QuestionMetadataWrite[]): Promi
 export async function updateQuestionRegistryMetadata(row: QuestionMetadataWrite): Promise<void> {
 	await getNeonDatabase().execute(sql`
 		UPDATE ${questionRegistry}
-		SET ap_class = coalesce(${row.apClass ?? null}, ap_class),
+		SET course = coalesce(${row.course ?? null}, course),
 			unit = coalesce(${row.unit ?? null}, unit),
 			question_created_at = coalesce(${row.questionCreatedAt ?? null}, question_created_at),
 			content_hash = ${row.contentHash},

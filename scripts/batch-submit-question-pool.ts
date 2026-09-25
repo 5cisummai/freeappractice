@@ -8,7 +8,7 @@
  *   bun run pool:batch-submit
  *   bun run pool:batch-submit -- --limit 100 --dry-run
  *   bun run pool:batch-submit -- --type frq --limit 200
- *   bun run pool:batch-submit -- --class "AP Biology" --unit "Unit 1" --limit 20
+ *   bun run pool:batch-submit -- --course "AP Biology" --unit "Unit 1" --limit 20
  */
 
 import 'dotenv/config';
@@ -53,7 +53,7 @@ function argInt(flag: string, fallback: number): number {
 
 const dryRun = process.argv.includes('--dry-run');
 const questionType = (argValue('--type') ?? 'mcq').toLowerCase();
-const classFilter = argValue('--class');
+const courseFilter = argValue('--course');
 const unitFilter = argValue('--unit');
 const limit = argInt('--limit', 500);
 
@@ -84,7 +84,7 @@ async function main() {
 		budgetRemaining,
 		limit,
 		maxRequests,
-		classFilter: classFilter ?? null,
+		courseFilter: courseFilter ?? null,
 		unitFilter: unitFilter ?? null,
 		questionType,
 		stimulusEnabled,
@@ -99,19 +99,19 @@ async function main() {
 		process.exit(0);
 	}
 
-	type Slot = { apClass: string; unit: string };
+	type Slot = { course: string; unit: string };
 	type Deficit = Slot & { active: number; target: number; need: number };
 
 	const deficits: Deficit[] = [];
 	for (const bucket of listCatalogBuckets(questionType)) {
-		if (classFilter && bucket.apClass !== classFilter) continue;
+		if (courseFilter && bucket.course !== courseFilter) continue;
 		if (unitFilter && bucket.unit !== unitFilter) continue;
-		const active = await countActivePoolRowsForServing(questionType, bucket.apClass, bucket.unit);
-		const target = questionType === 'mcq' ? preferredMcqTarget(bucket.apClass) : env.frqTarget;
+		const active = await countActivePoolRowsForServing(questionType, bucket.course, bucket.unit);
+		const target = questionType === 'mcq' ? preferredMcqTarget(bucket.course) : env.frqTarget;
 		const need = Math.max(0, target - active);
 		if (need > 0) {
 			deficits.push({
-				apClass: bucket.apClass,
+				course: bucket.course,
 				unit: bucket.unit,
 				active,
 				target,
@@ -121,7 +121,7 @@ async function main() {
 	}
 
 	// Largest holes first so a capped run (e.g. 500) helps the neediest buckets.
-	deficits.sort((a, b) => b.need - a.need || a.apClass.localeCompare(b.apClass));
+	deficits.sort((a, b) => b.need - a.need || a.course.localeCompare(b.course));
 
 	const totalNeed = deficits.reduce((sum, d) => sum + d.need, 0);
 	console.log(`${questionType.toUpperCase()} preferred-target deficits`, {
@@ -133,7 +133,7 @@ async function main() {
 	const slots: Slot[] = [];
 	for (const deficit of deficits) {
 		for (let i = 0; i < deficit.need && slots.length < maxRequests; i += 1) {
-			slots.push({ apClass: deficit.apClass, unit: deficit.unit });
+			slots.push({ course: deficit.course, unit: deficit.unit });
 		}
 		if (slots.length >= maxRequests) break;
 	}
@@ -149,28 +149,28 @@ async function main() {
 	const requests = [];
 	for (let i = 0; i < slots.length; i += 1) {
 		const slot = slots[i]!;
-		const cacheKey = `${slot.apClass}::${slot.unit}`;
+		const cacheKey = `${slot.course}::${slot.unit}`;
 		let recentTopics = topicCache.get(cacheKey);
 		if (!recentTopics) {
 			recentTopics =
 				questionType === 'mcq'
-					? await getRecentTopics({ kind: 'mcq', apClass: slot.apClass, unit: slot.unit }).catch(
+					? await getRecentTopics({ kind: 'mcq', course: slot.course, unit: slot.unit }).catch(
 							() => []
 						)
-					: await getRecentFrqTopics(slot.apClass, slot.unit).catch(() => []);
+					: await getRecentFrqTopics(slot.course, slot.unit).catch(() => []);
 			topicCache.set(cacheKey, recentTopics);
 		}
 		requests.push({
 			customId: `${questionType}-${String(i + 1).padStart(4, '0')}`,
-			apClass: slot.apClass,
+			course: slot.course,
 			unit: slot.unit,
 			recentTopics,
 			...(questionType === 'mcq'
 				? {
 						diagramsEnabled:
 							stimulusEnabled &&
-							getStimulusPolicy(slot.apClass).allowDiscreteDiagrams &&
-							isStimulusPolicyEnabledForUnit(getStimulusPolicy(slot.apClass), slot.unit)
+							getStimulusPolicy(slot.course).allowDiscreteDiagrams &&
+							isStimulusPolicyEnabledForUnit(getStimulusPolicy(slot.course), slot.unit)
 					}
 				: {})
 		});

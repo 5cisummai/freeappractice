@@ -1,5 +1,5 @@
 export const MINIMUM_ACCOUNT_AGE = 13;
-export const EARLIEST_BIRTH_DATE = '1900-01-01';
+const EARLIEST_BIRTH_DATE = '1900-01-01';
 
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -27,15 +27,11 @@ function parseYmd(value: string): [number, number, number] | null {
 	return [year, month, day];
 }
 
-export function formatDateInput(year: number, month: number, day: number): string {
+function formatDateInput(year: number, month: number, day: number): string {
 	return `${year}-${pad(month)}-${pad(day)}`;
 }
 
-export function localDateInputValue(date = new Date()): string {
-	return formatDateInput(date.getFullYear(), date.getMonth() + 1, date.getDate());
-}
-
-export function utcDateInputValue(date = new Date()): string {
+function utcDateInputValue(date = new Date()): string {
 	return date.toISOString().slice(0, 10);
 }
 
@@ -51,7 +47,7 @@ function defaultBirthDateToday(): string {
 	return addDaysToDateInput(utcDateInputValue(), 1) ?? utcDateInputValue();
 }
 
-export function addYearsToDateInput(value: string, years: number): string | null {
+function addYearsToDateInput(value: string, years: number): string | null {
 	const parts = parseYmd(value);
 	if (!parts) return null;
 	const [year, month, day] = parts;
@@ -73,10 +69,6 @@ export function isAtLeastAge(
 	if (!isValidBirthDate(value, today)) return false;
 	const birthday = addYearsToDateInput(value, age);
 	return birthday !== null && today >= birthday;
-}
-
-export function earliestBirthDateForInput(today = localDateInputValue()): string {
-	return addYearsToDateInput(today, -120) ?? EARLIEST_BIRTH_DATE;
 }
 
 export class InvalidBirthDateError extends Error {

@@ -28,11 +28,11 @@ export async function persistQuestionAttempt(
 	}>(sql`
 		WITH inserted AS (
 			INSERT INTO ${mcqAttempts} (
-				id, user_id, question_id, ap_class, unit, selected_answer, was_correct,
+				id, user_id, question_id, course, unit, selected_answer, was_correct,
 				time_taken_ms, attempted_at, created_at
 			)
 			VALUES (
-				${attemptId}, ${userId}, ${attempt.questionId}, ${attempt.apClass}, ${attempt.unit},
+				${attemptId}, ${userId}, ${attempt.questionId}, ${attempt.course}, ${attempt.unit},
 				${attempt.selectedAnswer}, ${attempt.wasCorrect},
 				${attempt.timeTakenMs ?? null}, ${attempt.attemptedAt}, ${attempt.attemptedAt}
 			)
@@ -41,15 +41,15 @@ export async function persistQuestionAttempt(
 		),
 		progress AS (
 			INSERT INTO ${userProgress} (
-				user_id, ap_class, unit, mastery, total_attempts, correct_attempts,
+				user_id, course, unit, mastery, total_attempts, correct_attempts,
 				last_attempt_at, updated_at
 			)
 			SELECT
-				${userId}, ${attempt.apClass}, ${attempt.unit},
+				${userId}, ${attempt.course}, ${attempt.unit},
 				${attemptDelta ? correctDelta * 100 : 0}, ${attemptDelta}, ${correctDelta},
 				${attempt.attemptedAt}, ${attempt.attemptedAt}
 			FROM inserted
-			ON CONFLICT (user_id, ap_class, unit) DO UPDATE SET
+			ON CONFLICT (user_id, course, unit) DO UPDATE SET
 				total_attempts = ${userProgress.totalAttempts} + EXCLUDED.total_attempts,
 				correct_attempts = ${userProgress.correctAttempts} + EXCLUDED.correct_attempts,
 				mastery = CASE
@@ -69,7 +69,7 @@ export async function persistQuestionAttempt(
 			SELECT mastery, total_attempts, correct_attempts
 			FROM ${userProgress}
 			WHERE user_id = ${userId}
-				AND ap_class = ${attempt.apClass}
+				AND course = ${attempt.course}
 				AND unit = ${attempt.unit}
 				AND NOT EXISTS (SELECT 1 FROM inserted)
 			LIMIT 1

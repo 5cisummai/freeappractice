@@ -13,18 +13,18 @@ export const QUESTION_POOL_MIN_MCQ_TARGET = poolTargets.minMcqTarget;
 export const QUESTION_POOL_FRQ_TARGET = poolTargets.frqTarget;
 
 /** Refill enqueue threshold as a fraction of target (e.g. 0.9 → refill below 90%). */
-export const QUESTION_POOL_LOW_WATER_RATIO = 0.9;
-export const QUESTION_POOL_LEASE_TTL_MS = 120_000;
-export const QUESTION_POOL_RETRY_DELAY_MS = 60_000;
+const QUESTION_POOL_LOW_WATER_RATIO = 0.9;
+const QUESTION_POOL_LEASE_TTL_MS = 120_000;
+const QUESTION_POOL_RETRY_DELAY_MS = 60_000;
 /**
  * Hard daily LLM generation cap (UTC day).
  * ~5k output tokens/MCQ → 1000 gens ≈ 5M output tokens/day.
  */
-export const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 1000;
+const QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET = 1000;
 /** Retry-After seconds on `503 POOL_WARMING`. */
-export const QUESTION_POOL_WARMING_RETRY_AFTER_SECONDS = 15;
+const QUESTION_POOL_WARMING_RETRY_AFTER_SECONDS = 15;
 /** Soft wall-clock budget for one worker run (keep under Vercel maxDuration). */
-export const QUESTION_POOL_WORKER_TIME_BUDGET_MS = 120_000;
+const QUESTION_POOL_WORKER_TIME_BUDGET_MS = 120_000;
 
 export type QuestionPoolConfig = {
 	/** Default MCQ ceiling when a class is not listed in the JSON map. */
@@ -51,8 +51,8 @@ export const QUESTION_POOL_CONFIG: QuestionPoolConfig = {
 };
 
 /** Preferred (max) MCQ target for a class before demand scaling. */
-export function preferredMcqTarget(apClass: string): number {
-	const mapped = (poolTargets.mcqTargetsByClass as Record<string, number | undefined>)[apClass];
+export function preferredMcqTarget(course: string): number {
+	const mapped = (poolTargets.mcqTargetsByCourse as Record<string, number | undefined>)[course];
 	return mapped ?? QUESTION_POOL_DEFAULT_MCQ_TARGET;
 }
 
@@ -63,38 +63,38 @@ export function preferredMcqTarget(apClass: string): number {
  * With empty stats, returns the preferred ceiling (cold-start fill).
  */
 export function resolveMcqTarget(
-	apClass: string,
-	generationCountsByClass: Record<string, number>
+	course: string,
+	generationCountsByCourse: Record<string, number>
 ): number {
-	const preferred = preferredMcqTarget(apClass);
+	const preferred = preferredMcqTarget(course);
 	const min = QUESTION_POOL_MIN_MCQ_TARGET;
 	if (preferred <= min) return preferred;
 
-	const counts = Object.values(generationCountsByClass).map((n) =>
+	const counts = Object.values(generationCountsByCourse).map((n) =>
 		typeof n === 'number' && Number.isFinite(n) ? Math.max(0, n) : 0
 	);
 	const maxCount = counts.length > 0 ? Math.max(0, ...counts) : 0;
 	if (maxCount <= 0) return preferred;
 
-	const rawClassCount = generationCountsByClass[apClass];
-	const classCount =
-		typeof rawClassCount === 'number' && Number.isFinite(rawClassCount)
-			? Math.max(0, rawClassCount)
+	const rawCourseCount = generationCountsByCourse[course];
+	const courseCount =
+		typeof rawCourseCount === 'number' && Number.isFinite(rawCourseCount)
+			? Math.max(0, rawCourseCount)
 			: 0;
-	const ratio = Math.min(1, classCount / maxCount);
+	const ratio = Math.min(1, courseCount / maxCount);
 	return Math.round(min + (preferred - min) * ratio);
 }
 
 export function poolTargetForBucket(opts: {
 	questionType: 'mcq' | 'frq';
-	apClass: string;
-	generationCountsByClass?: Record<string, number>;
+	course: string;
+	generationCountsByCourse?: Record<string, number>;
 	config?: QuestionPoolConfig;
 }): number {
 	const config = opts.config ?? QUESTION_POOL_CONFIG;
 	switch (opts.questionType) {
 		case 'mcq':
-			return resolveMcqTarget(opts.apClass, opts.generationCountsByClass ?? {});
+			return resolveMcqTarget(opts.course, opts.generationCountsByCourse ?? {});
 		case 'frq':
 			return config.frqTarget;
 		default: {

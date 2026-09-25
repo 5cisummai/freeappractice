@@ -425,9 +425,9 @@ function assertFormats(records: readonly FrqFormatRecord[]): void {
 for (const records of Object.values(FORMATS)) assertFormats(records);
 
 export function getFrqCourseProfile(
-	apClass: string
+	course: string
 ): { formats: readonly FrqFormatRecord[] } | null {
-	const formats = FORMATS[apClass];
+	const formats = FORMATS[course];
 	return formats ? { formats } : null;
 }
 
@@ -435,21 +435,21 @@ export function getFrqCourseNames(): string[] {
 	return Object.keys(FORMATS);
 }
 
-export function getFrqFormat(apClass: string, formatId: string): FrqFormatRecord | null {
+export function getFrqFormat(course: string, formatId: string): FrqFormatRecord | null {
 	return (
-		getFrqCourseProfile(apClass)?.formats.find((record) => record.formatId === formatId) ?? null
+		getFrqCourseProfile(course)?.formats.find((record) => record.formatId === formatId) ?? null
 	);
 }
 
-export function selectFrqFormat(apClass: string, formatId?: string): FrqFormatRecord {
-	const profile = getFrqCourseProfile(apClass);
+export function selectFrqFormat(course: string, formatId?: string): FrqFormatRecord {
+	const profile = getFrqCourseProfile(course);
 	if (!profile) throw new Error('FRQ practice is not available for this course');
 	if (!formatId) {
 		const index = Math.floor(Math.random() * profile.formats.length);
 		return profile.formats[index]!;
 	}
 	const format = profile.formats.find((record) => record.formatId === formatId);
-	if (!format) throw new Error(`Unknown FRQ format ${formatId} for ${apClass}`);
+	if (!format) throw new Error(`Unknown FRQ format ${formatId} for ${course}`);
 	return format;
 }
 

@@ -14,6 +14,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
+	import OrgActivityList from '$lib/components/marketing/org-activity-list.svelte';
 	import { getSiteUrl } from '$lib/site-url';
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';
 	import { toast } from 'svelte-sonner';
@@ -23,7 +24,7 @@
 			id: 'activity-1',
 			userId: 'demo-alex',
 			userName: 'Ryan P.',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 3',
 			scorePercent: 84,
 			quizTitle: 'Unit 3 review quiz',
@@ -33,7 +34,7 @@
 			id: 'activity-2',
 			userId: 'demo-jordan',
 			userName: 'Gabe O.',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 3',
 			scorePercent: 76,
 			quizTitle: 'Unit 3 review quiz',
@@ -43,7 +44,7 @@
 			id: 'activity-3',
 			userId: 'demo-sam',
 			userName: 'Holden T.',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 2',
 			scorePercent: 91,
 			quizTitle: 'Photosynthesis check-in',
@@ -86,7 +87,7 @@
 			id: 'quiz-1',
 			slug: 'unit-3-review',
 			title: 'Unit 3 review quiz',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 3',
 			itemCount: 20,
 			expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
@@ -98,7 +99,7 @@
 			id: 'quiz-2',
 			slug: 'photosynthesis-check-in',
 			title: 'Photosynthesis check-in',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 2',
 			itemCount: 12,
 			expiresAt: new Date(Date.now() + 14 * 86_400_000).toISOString(),
@@ -107,31 +108,6 @@
 			completionCount: 2
 		}
 	];
-
-	function activityTarget(item: OrganizationActivityItem): string {
-		if (item.quizTitle) return item.quizTitle;
-		if (item.unit && item.unit !== 'All Units') return `${item.apClass} — ${item.unit}`;
-		return item.apClass;
-	}
-
-	function formatRelativeTime(iso: string): string {
-		const date = new Date(iso);
-		if (Number.isNaN(date.getTime())) return '';
-
-		const diffMs = Date.now() - date.getTime();
-		const diffMinutes = Math.floor(diffMs / 60_000);
-		if (diffMinutes < 1) return 'Just now';
-		if (diffMinutes < 60) return `${diffMinutes}m ago`;
-
-		const diffHours = Math.floor(diffMinutes / 60);
-		if (diffHours < 24) return `${diffHours}h ago`;
-
-		const diffDays = Math.floor(diffHours / 24);
-		if (diffDays === 1) return 'Yesterday';
-		if (diffDays < 7) return `${diffDays}d ago`;
-
-		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
-	}
 
 	async function copyMarketingLink() {
 		try {
@@ -176,31 +152,7 @@
 		<article class="{cardClass} min-h-72 lg:col-span-7">
 			<div class={wellClass} aria-hidden="true">
 				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
-					<ul class="divide-y divide-border/70">
-						{#each mockActivity as item (item.id)}
-							<li class="flex items-center gap-3 px-5 py-4">
-								<span
-									class="flex size-9 shrink-0 items-center justify-center rounded-md text-sm font-semibold {orgAvatarClass(
-										item.userId
-									)}"
-								>
-									{orgAvatarLetter(item.userName)}
-								</span>
-								<div class="min-w-0 flex-1">
-									<p class="text-sm">
-										<span class="font-medium">{item.userName}</span>
-										scored
-										<span class="font-medium tabular-nums">{item.scorePercent}%</span>
-										on
-										<span class="font-medium">{activityTarget(item)}</span>
-									</p>
-									<p class="text-xs text-muted-foreground">
-										{formatRelativeTime(item.completedAt)}
-									</p>
-								</div>
-							</li>
-						{/each}
-					</ul>
+					<OrgActivityList items={mockActivity} preview />
 				</Card.Root>
 			</div>
 			<div class={captionClass}>

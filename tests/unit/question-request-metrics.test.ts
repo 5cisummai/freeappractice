@@ -17,7 +17,7 @@ describe('question-request-metrics', () => {
 		const props = {
 			question_type: 'mcq',
 			segment: 'pool_hit',
-			ap_class: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			validation_ms: 2,
 			db_connect_ms: 5,
@@ -37,7 +37,7 @@ describe('question-request-metrics', () => {
 		expect(sanitized).toEqual({
 			question_type: 'mcq',
 			segment: 'pool_hit',
-			ap_class: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			validation_ms: 2,
 			db_connect_ms: 5,

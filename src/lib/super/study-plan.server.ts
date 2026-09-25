@@ -77,7 +77,7 @@ export function toStudyPlanView(plan: {
 	startsOn: Date | string;
 	tasks: Array<{
 		id: string;
-		apClass: string;
+		course: string;
 		unit: string;
 		mode: 'mcq' | 'frq' | 'review';
 		date: Date | string;
@@ -92,7 +92,7 @@ export function toStudyPlanView(plan: {
 		startsOn: isoDate(plan.startsOn),
 		tasks: plan.tasks.map((task) => ({
 			id: task.id,
-			apClass: task.apClass,
+			course: task.course,
 			unit: task.unit,
 			mode: task.mode,
 			date: isoDate(task.date),
@@ -170,7 +170,7 @@ async function readStoredPlan(userId: string): Promise<StoredPlan | null> {
 		updatedAt: plan.updatedAt,
 		tasks: (tasks as Array<Record<string, any>>).map((task) => ({
 			id: task.id,
-			apClass: task.apClass,
+			course: task.course,
 			unit: task.unit,
 			mode: task.mode,
 			date: task.taskDate,
@@ -240,7 +240,7 @@ async function writeStoredPlan(
 					sql`(
 						${task.id},
 						${planId},
-						${task.apClass},
+						${task.course},
 						${task.unit},
 						${task.mode},
 						${startOfUtcDay(task.date).toISOString().slice(0, 10)},
@@ -253,11 +253,11 @@ async function writeStoredPlan(
 		);
 		statements.push(
 			db.insert(studyTasks as any).select(sql`
-				SELECT incoming.id, incoming.plan_id, incoming.ap_class, incoming.unit,
+				SELECT incoming.id, incoming.plan_id, incoming.course, incoming.unit,
 					incoming.mode, incoming.task_date::date, incoming.duration_minutes::integer,
 					incoming.status, incoming.practice_href
 				FROM (VALUES ${values}) AS incoming(
-					id, plan_id, ap_class, unit, mode, task_date,
+					id, plan_id, course, unit, mode, task_date,
 					duration_minutes, status, practice_href
 				)
 				WHERE EXISTS (

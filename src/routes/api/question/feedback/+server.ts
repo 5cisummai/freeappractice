@@ -26,7 +26,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 				questionId: body.questionId,
 				userId: locals.userId,
 				type: body.type,
-				apClass: body.apClass,
+				course: body.course,
 				unit: body.unit
 			}),
 			{ status: 202 }

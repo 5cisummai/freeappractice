@@ -1,5 +1,5 @@
 import { AP_DATA } from '$lib/data/ap-data';
-import { getUnitsForClass, resolveEffectiveUnit } from '$lib/catalog/ap-classes';
+import { getUnitsForCourse, resolveEffectiveUnit } from '$lib/catalog/ap-courses';
 
 export const FRQ_ALL_UNITS = 'All Units';
 
@@ -85,11 +85,11 @@ export type FrqPoolRequest = {
  * Unit courses keep the unit bucket. An empty selection becomes one catalog unit.
  */
 export function resolveFrqPoolRequest(
-	apClass: string,
+	course: string,
 	unit: string,
 	formatId?: string
 ): FrqPoolRequest {
-	const practice = frqPracticeFor(apClass);
+	const practice = frqPracticeFor(course);
 	if (!practice) throw new Error('FRQ practice is not available for this course');
 	if (practice.control === 'task') {
 		const requested = formatId?.trim() ?? '';
@@ -106,7 +106,7 @@ export function resolveFrqPoolRequest(
 	}
 	const trimmed = unit.trim();
 	const storedUnit =
-		trimmed && trimmed !== FRQ_ALL_UNITS ? trimmed : resolveEffectiveUnit(apClass, '');
+		trimmed && trimmed !== FRQ_ALL_UNITS ? trimmed : resolveEffectiveUnit(course, '');
 	return {
 		storedUnit,
 		poolUnit: storedUnit,
@@ -116,18 +116,18 @@ export function resolveFrqPoolRequest(
 
 /** Pool lookups for a task course read All Units plus the format id stored in the bucket key. */
 export function frqStoredPoolFilter(
-	apClass: string,
+	course: string,
 	poolUnit: string
 ): { unit: string; formatId?: string } {
-	const practice = frqPracticeFor(apClass);
+	const practice = frqPracticeFor(course);
 	if (practice?.control === 'task') return { unit: FRQ_ALL_UNITS, formatId: poolUnit };
 	return { unit: poolUnit };
 }
 
 /** Task courses have one bucket per format. Unit courses keep one bucket per catalog unit. */
-export function frqBucketUnits(apClass: string): string[] {
-	const practice = frqPracticeFor(apClass);
+export function frqBucketUnits(course: string): string[] {
+	const practice = frqPracticeFor(course);
 	if (!practice) return [];
 	if (practice.control === 'task') return practice.tasks.map((task) => task.formatId);
-	return getUnitsForClass(apClass);
+	return getUnitsForCourse(course);
 }

@@ -9,9 +9,8 @@
 
 	function getInitialSelection(practicePage: PracticePage) {
 		return {
-			selectedClass: practicePage.className,
-			selectedUnit:
-				practicePage.type === 'unit' && practicePage.unitName ? practicePage.unitName : ''
+			selectedCourse: practicePage.course,
+			selectedUnit: practicePage.type === 'unit' && practicePage.unit ? practicePage.unit : ''
 		};
 	}
 
@@ -79,7 +78,7 @@
 			</section>
 
 			<section class="mx-auto max-w-250">
-				{#key `${practicePage.className}:${practicePage.type}:${practicePage.unitName ?? ''}`}
+				{#key `${practicePage.course}:${practicePage.type}:${practicePage.unit ?? ''}`}
 					<PracticeRunner
 						{initial}
 						presentation="hero"

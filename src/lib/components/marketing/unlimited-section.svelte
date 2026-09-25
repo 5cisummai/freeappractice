@@ -249,7 +249,7 @@
 					<TutorWidget
 						embedded
 						questionId={DEMO_TUTOR_QUESTION.id}
-						apClass={DEMO_TUTOR_QUESTION.apClass}
+						course={DEMO_TUTOR_QUESTION.course}
 						unit={DEMO_TUTOR_QUESTION.unit}
 					/>
 				</div>

@@ -113,7 +113,7 @@ describe('generic tutor routes', () => {
 			question: 'Q',
 			correctAnswer: 'A',
 			explanation: 'E',
-			apClass: 'AP Bio',
+			course: 'AP Bio',
 			unit: 'Unit 1',
 			optionA: 'a',
 			optionB: 'b',

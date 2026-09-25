@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { listApCurriculumCourseLookupNames } from '$lib/ap-knowledge/catalog';
+import { listApCurriculumCourseNames } from '$lib/ap-knowledge/catalog';
 
-export const apClassSchema = z
-	.enum(listApCurriculumCourseLookupNames() as [string, ...string[]])
-	.describe('Canonical app-facing AP course label or supported official alias.');
+export const courseSchema = z
+	.enum(listApCurriculumCourseNames() as [string, ...string[]])
+	.describe('App-facing AP course name.');
 
 const studyTaskSchema = z
 	.strictObject({
@@ -13,9 +13,7 @@ const studyTaskSchema = z
 			.min(1)
 			.max(200)
 			.describe('Stable unique ID for this task within the plan.'),
-		apClass: apClassSchema.describe(
-			'Course label; save using the canonical app-facing course name.'
-		),
+		course: courseSchema.describe('App-facing AP course name.'),
 		unit: z.string().trim().min(1).max(200).describe('Full unit title for this AP course.'),
 		mode: z
 			.enum(['mcq', 'frq', 'review'])

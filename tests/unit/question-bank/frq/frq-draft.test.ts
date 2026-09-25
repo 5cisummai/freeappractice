@@ -27,7 +27,7 @@ const question: PublicFrqQuestion = {
 	],
 	mainTopic: 'Cells',
 	topicsCovered: 'Cells',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	unit: 'Unit 1'
 };
 
@@ -38,9 +38,9 @@ describe('FRQ session drafts', () => {
 		const latestDraft = serializeFrqLatestDraft(question, responses, now);
 
 		expect(parseFrqQuestionDraft(questionDraft, question, now)).toEqual(responses);
-		expect(
-			parseFrqLatestDraft(latestDraft, { apClass: 'AP Biology', unit: 'Unit 1' }, now)
-		).toEqual({ question, responses });
+		expect(parseFrqLatestDraft(latestDraft, { course: 'AP Biology', unit: 'Unit 1' }, now)).toEqual(
+			{ question, responses }
+		);
 	});
 
 	it('rejects malformed, stale, and wrong-version question drafts', () => {
@@ -73,11 +73,11 @@ describe('FRQ session drafts', () => {
 	it('rejects latest drafts for another course or invalid question data', () => {
 		const raw = serializeFrqLatestDraft(question, { A: 'response' }, now);
 
-		expect(parseFrqLatestDraft(raw, { apClass: 'AP Chemistry', unit: 'Unit 1' }, now)).toBeNull();
+		expect(parseFrqLatestDraft(raw, { course: 'AP Chemistry', unit: 'Unit 1' }, now)).toBeNull();
 		expect(
 			parseFrqLatestDraft(
 				JSON.stringify({ version: FRQ_DRAFT_VERSION, savedAt: now, question: { prompt: 'x' } }),
-				{ apClass: 'AP Biology' },
+				{ course: 'AP Biology' },
 				now
 			)
 		).toBeNull();

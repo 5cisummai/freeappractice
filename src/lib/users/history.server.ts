@@ -26,7 +26,7 @@ export type HistoryFilters = {
 type HistoryQueryOptions = {
 	page: number;
 	limit: number;
-	apClass?: string;
+	course?: string;
 	search?: string;
 	sort?: HistorySort;
 	filters?: HistoryFilters;
@@ -38,7 +38,7 @@ export const PROGRESS_HISTORY_LIMIT = 2000;
 
 type McqHistoryRow = {
 	questionId: string | null;
-	apClass: string;
+	course: string;
 	unit: string;
 	selectedAnswer: string | null;
 	wasCorrect: boolean | null;
@@ -89,11 +89,11 @@ function parseHistoryDate(value: string | null | undefined, endOfDay = false): n
 }
 
 type HistorySort = {
-	field: 'attemptedAt' | 'subject' | 'result';
+	field: 'attemptedAt' | 'course' | 'result';
 	direction: 'asc' | 'desc';
 };
 
-const SORT_FIELDS = new Set<HistorySort['field']>(['attemptedAt', 'subject', 'result']);
+const SORT_FIELDS = new Set<HistorySort['field']>(['attemptedAt', 'course', 'result']);
 
 export function parseHistorySort(
 	sortBy: string | null | undefined,
@@ -114,7 +114,7 @@ export async function getPracticeHistoryPage(
 	const {
 		page,
 		limit,
-		apClass,
+		course,
 		search,
 		sort = { field: 'attemptedAt', direction: 'desc' },
 		filters = {},
@@ -136,16 +136,16 @@ export async function getPracticeHistoryPage(
 	const searchText = search?.trim();
 	const commonConditions = (columns: {
 		userId: unknown;
-		apClass: unknown;
+		course: unknown;
 		unit: unknown;
 		attemptedAt: unknown;
 	}): SQL[] => [
 		sql`${columns.userId} = ${userId}`,
-		...(apClass ? [sql`${columns.apClass} = ${apClass}`] : []),
+		...(course ? [sql`${columns.course} = ${course}`] : []),
 		...(filters.unit ? [sql`${columns.unit} = ${filters.unit}`] : []),
 		...(searchText
 			? [
-					sql`position(lower(${searchText}) in lower(${columns.apClass} || ' ' || ${columns.unit})) > 0`
+					sql`position(lower(${searchText}) in lower(${columns.course} || ' ' || ${columns.unit})) > 0`
 				]
 			: []),
 		...(from ? [sql`${columns.attemptedAt} >= ${new Date(from)}`] : []),
@@ -163,7 +163,7 @@ export async function getPracticeHistoryPage(
 				'mcq'::text AS kind,
 				${mcqAttempts.id} AS id,
 				${mcqAttempts.questionId} AS "questionId",
-				${mcqAttempts.apClass} AS "apClass",
+				${mcqAttempts.course} AS "course",
 				${mcqAttempts.unit} AS unit,
 				${mcqAttempts.selectedAnswer} AS "selectedAnswer",
 				${mcqAttempts.wasCorrect} AS "wasCorrect",
@@ -188,7 +188,7 @@ export async function getPracticeHistoryPage(
 			sql`${frqAttempts.status} = 'graded'`,
 			...commonConditions({
 				userId: frqAttempts.userId,
-				apClass: frqAttempts.apClass,
+				course: frqAttempts.course,
 				unit: frqAttempts.unit,
 				attemptedAt: frqAttempts.createdAt
 			}),
@@ -204,7 +204,7 @@ export async function getPracticeHistoryPage(
 				'frq'::text AS kind,
 				${frqAttempts.id} AS id,
 				${frqAttempts.questionId} AS "questionId",
-				${frqAttempts.apClass} AS "apClass",
+				${frqAttempts.course} AS "course",
 				${frqAttempts.unit} AS unit,
 				NULL::text AS "selectedAnswer",
 				NULL::boolean AS "wasCorrect",
@@ -227,7 +227,7 @@ export async function getPracticeHistoryPage(
 		const conditions = [
 			...commonConditions({
 				userId: quizAttempts.userId,
-				apClass: quizAttempts.apClass,
+				course: quizAttempts.course,
 				unit: quizAttempts.unit,
 				attemptedAt: quizAttempts.completedAt
 			}),
@@ -243,7 +243,7 @@ export async function getPracticeHistoryPage(
 				'quiz'::text AS kind,
 				${quizAttempts.id} AS id,
 				NULL::text AS "questionId",
-				${quizAttempts.apClass} AS "apClass",
+				${quizAttempts.course} AS "course",
 				${quizAttempts.unit} AS unit,
 				NULL::text AS "selectedAnswer",
 				NULL::boolean AS "wasCorrect",
@@ -266,8 +266,8 @@ export async function getPracticeHistoryPage(
 	const history = sql.join(sources, sql` UNION ALL `);
 	const direction = sql.raw(sort.direction === 'asc' ? 'ASC' : 'DESC');
 	const primarySort =
-		sort.field === 'subject'
-			? sql`"apClass" ${direction}, unit ${direction}, "attemptedAt" ${direction}`
+		sort.field === 'course'
+			? sql`"course" ${direction}, unit ${direction}, "attemptedAt" ${direction}`
 			: sort.field === 'result'
 				? sql`"resultScore" ${direction}, "attemptedAt" ${direction}`
 				: sql`"attemptedAt" ${direction}`;
@@ -296,7 +296,7 @@ export async function getPracticeHistoryPage(
 				kind: 'mcq',
 				attempt: {
 					questionId: row.questionId,
-					apClass: row.apClass,
+					course: row.course,
 					unit: row.unit,
 					selectedAnswer: row.selectedAnswer as QuestionAttempt['selectedAnswer'],
 					wasCorrect: row.wasCorrect ?? false,
@@ -311,7 +311,7 @@ export async function getPracticeHistoryPage(
 				attempt: {
 					id: row.id,
 					questionId: row.id,
-					apClass: row.apClass,
+					course: row.course,
 					unit: row.unit,
 					requestedCount: Number(row.requestedCount ?? 0),
 					answeredCount: Number(row.answeredCount ?? 0),
@@ -331,7 +331,7 @@ export async function getPracticeHistoryPage(
 			attempt: {
 				id: row.id,
 				questionId: row.questionId,
-				apClass: row.apClass,
+				course: row.course,
 				unit: row.unit,
 				pointsEarned: Number(row.pointsEarned),
 				pointsAvailable: Number(row.pointsAvailable),

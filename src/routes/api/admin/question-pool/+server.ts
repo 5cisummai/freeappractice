@@ -34,7 +34,7 @@ export const POST: RequestHandler = async (event) => {
 	const body = (await event.request.json()) as {
 		action?: string;
 		questionType?: string;
-		apClass?: string;
+		course?: string;
 		unit?: string;
 		quantity?: number;
 		percent?: number;
@@ -45,15 +45,15 @@ export const POST: RequestHandler = async (event) => {
 			if (!isPoolQuestionType(body.questionType)) {
 				return json({ message: 'questionType must be mcq or frq' }, { status: 400 });
 			}
-			const apClass = body.apClass?.trim() ?? '';
+			const course = body.course?.trim() ?? '';
 			const unit = body.unit?.trim() ?? '';
-			if (!apClass || !unit) {
-				return json({ message: 'apClass and unit are required' }, { status: 400 });
+			if (!course || !unit) {
+				return json({ message: 'course and unit are required' }, { status: 400 });
 			}
 			try {
 				await enqueuePoolBucketRefill({
 					questionType: body.questionType,
-					apClass,
+					course,
 					unit
 				});
 			} catch (error) {
@@ -68,14 +68,14 @@ export const POST: RequestHandler = async (event) => {
 			if (!isPoolQuestionType(body.questionType)) {
 				return json({ message: 'questionType must be mcq or frq' }, { status: 400 });
 			}
-			const apClass = body.apClass?.trim() ?? '';
+			const course = body.course?.trim() ?? '';
 			const unit = body.unit?.trim() ?? '';
-			if (!apClass || !unit) {
-				return json({ message: 'apClass and unit are required' }, { status: 400 });
+			if (!course || !unit) {
+				return json({ message: 'course and unit are required' }, { status: 400 });
 			}
 			const result = await cancelPoolBucketRefill({
 				questionType: body.questionType,
-				apClass,
+				course,
 				unit
 			});
 			return json({ ok: true, ...result });
@@ -88,11 +88,11 @@ export const POST: RequestHandler = async (event) => {
 			if (!isPoolQuestionType(body.questionType)) {
 				return json({ message: 'questionType must be mcq or frq' }, { status: 400 });
 			}
-			const apClass = body.apClass?.trim() ?? '';
+			const course = body.course?.trim() ?? '';
 			const unit = body.unit?.trim() ?? '';
 			const quantity = body.quantity;
-			if (!apClass || !unit) {
-				return json({ message: 'apClass and unit are required' }, { status: 400 });
+			if (!course || !unit) {
+				return json({ message: 'course and unit are required' }, { status: 400 });
 			}
 			if (
 				typeof quantity !== 'number' ||
@@ -106,7 +106,7 @@ export const POST: RequestHandler = async (event) => {
 				);
 			}
 			const result = await retirePoolBucketQuestions(
-				{ questionType: body.questionType, apClass, unit },
+				{ questionType: body.questionType, course, unit },
 				quantity
 			);
 			return json({ ok: true, ...result }, { status: 202 });

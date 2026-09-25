@@ -31,7 +31,7 @@ describe('recent question topics', () => {
 	it('persists the question kind with every recent topic', async () => {
 		await recordRecentTopic({
 			kind: 'frq',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 4',
 			topicsCovered: ' Cell signaling '
 		});
@@ -43,7 +43,7 @@ describe('recent question topics', () => {
 
 	it('requires a kind when reading recent topics', async () => {
 		await expect(
-			getRecentTopics({ kind: 'mcq', apClass: 'AP Biology', unit: 'Unit 4' })
+			getRecentTopics({ kind: 'mcq', course: 'AP Biology', unit: 'Unit 4' })
 		).resolves.toEqual(['Cell signaling']);
 		expect(mocks.where).toHaveBeenCalledOnce();
 	});

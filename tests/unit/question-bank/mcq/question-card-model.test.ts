@@ -8,12 +8,12 @@ describe('question card delivery models', () => {
 	it('adapts unlimited delivery into the shared card model', () => {
 		expect(
 			unlimitedQuestionCardModel({
-				selectedClass: 'AP Biology',
+				selectedCourse: 'AP Biology',
 				selectedUnit: 'Unit 1',
 				requestVersion: 2
 			})
 		).toMatchObject({
-			selectedClass: 'AP Biology',
+			selectedCourse: 'AP Biology',
 			delivery: { kind: 'unlimited', requestVersion: 2 }
 		});
 	});
@@ -22,7 +22,7 @@ describe('question card delivery models', () => {
 		const question = { prompt: 'Stem', options: [], hasStimulus: false };
 		expect(
 			quizQuestionCardModel({
-				selectedClass: 'AP Biology',
+				selectedCourse: 'AP Biology',
 				selectedUnit: 'Unit 1',
 				question,
 				answer: null,

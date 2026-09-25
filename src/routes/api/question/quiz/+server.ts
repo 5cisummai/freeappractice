@@ -30,15 +30,15 @@ function parseUnitRange(value: unknown): readonly number[] | undefined {
 }
 
 async function requestQuizRefill(
-	className: string,
+	course: string,
 	unit: string,
 	unitRange?: readonly number[]
 ): Promise<boolean> {
-	const units = resolveQuizUnits(className, unit, unitRange);
+	const units = resolveQuizUnits(course, unit, unitRange);
 	if (!units.length) return false;
 	const results = await Promise.allSettled(
 		units.map((refillUnit) =>
-			requestPoolRefill({ questionType: 'mcq', apClass: className, unit: refillUnit })
+			requestPoolRefill({ questionType: 'mcq', course: course, unit: refillUnit })
 		)
 	);
 	return results.some((result) => result.status === 'fulfilled');
@@ -99,7 +99,7 @@ export const POST: RequestHandler = async (event) => {
 		const globalFlagEnabled = await isStimulusQuestionsEnabled();
 		const result = await assembleMcqQuiz(
 			{
-				apClass: validated.value.className,
+				course: validated.value.course,
 				unit: validated.value.unit,
 				unitRange: requestedUnitRange,
 				count
@@ -123,14 +123,14 @@ export const POST: RequestHandler = async (event) => {
 				requestBody && typeof requestBody === 'object'
 					? (requestBody as Record<string, unknown>)
 					: {};
-			const className = typeof record.className === 'string' ? record.className.trim() : '';
+			const course = typeof record.course === 'string' ? record.course.trim() : '';
 			const unit = typeof record.unit === 'string' ? record.unit.trim() : '';
 			let refillRequested = false;
-			if (event.locals.userId && className) {
+			if (event.locals.userId && course) {
 				try {
-					refillRequested = await requestQuizRefill(className, unit, requestedUnitRange);
+					refillRequested = await requestQuizRefill(course, unit, requestedUnitRange);
 				} catch (refillError) {
-					logger.warn('Quiz pool refill request failed', { className, unit, refillError });
+					logger.warn('Quiz pool refill request failed', { course, unit, refillError });
 				}
 			}
 			return json(

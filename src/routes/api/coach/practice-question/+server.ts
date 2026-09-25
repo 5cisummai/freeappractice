@@ -8,7 +8,7 @@ import { giveCoachPracticeQuestion } from '$lib/super/coach-questions.server';
 
 const practiceQuestionRequestSchema = z
 	.object({
-		apClass: z.string().trim().min(1).max(100),
+		course: z.string().trim().min(1).max(100),
 		unit: z.string().trim().min(1).max(200).optional(),
 		mode: z.enum(['mcq', 'frq']).default('mcq')
 	})

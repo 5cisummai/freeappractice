@@ -21,7 +21,7 @@ import { createCanonicalMcqQuestion } from '$lib/question-bank/mcq/repository.se
 
 const sampleQuestion = {
 	questionId: 'mcq-1',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	unit: 'Unit 1',
 	contentHash: 'hash-1',
 	topicsCovered: ' Cell signaling ',
@@ -59,7 +59,7 @@ describe('canonical MCQ persistence', () => {
 				{
 					questionId: sampleQuestion.questionId,
 					data: {
-						apClass: sampleQuestion.apClass,
+						course: sampleQuestion.course,
 						unit: sampleQuestion.unit,
 						topicsCovered: 'Cell signaling',
 						question: sampleQuestion.question,
@@ -105,7 +105,7 @@ describe('canonical MCQ persistence', () => {
 			expect.objectContaining({
 				questionId: 'mcq-1',
 				data: expect.objectContaining({
-					apClass: 'AP Biology',
+					course: 'AP Biology',
 					unit: 'Unit 1',
 					topicsCovered: 'Cell signaling'
 				})
@@ -114,7 +114,7 @@ describe('canonical MCQ persistence', () => {
 		expect(recentTopic.values).toHaveBeenCalledWith(
 			expect.objectContaining({
 				kind: 'mcq',
-				apClass: 'AP Biology',
+				course: 'AP Biology',
 				unit: 'Unit 1',
 				topicsCovered: 'Cell signaling',
 				questionId: 'mcq-1'

@@ -166,7 +166,7 @@ describe('Super API routes', () => {
 		const valid = await profilePatch(
 			event({
 				selectedApClasses: ['AP Biology'],
-				targetDates: [{ apClass: 'AP Biology', targetDate: '2027-05-10' }],
+				targetDates: [{ course: 'AP Biology', targetDate: '2027-05-10' }],
 				studyAvailability: 'Weeknights',
 				teachingStyle: 'step_by_step',
 				memoryEnabled: false
@@ -175,7 +175,7 @@ describe('Super API routes', () => {
 		expect(valid.status).toBe(200);
 		expect(mocks.updateTutorProfile).toHaveBeenCalledWith('user-1', {
 			selectedApClasses: ['AP Biology'],
-			targetDates: [{ apClass: 'AP Biology', targetDate: '2027-05-10' }],
+			targetDates: [{ course: 'AP Biology', targetDate: '2027-05-10' }],
 			studyAvailability: 'Weeknights',
 			teachingStyle: 'step_by_step',
 			memoryEnabled: false

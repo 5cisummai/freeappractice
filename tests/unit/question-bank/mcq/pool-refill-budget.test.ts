@@ -93,7 +93,7 @@ describe('direct Drizzle pool persistence', () => {
 		const lease: PoolRefillState = {
 			id: 'job-1',
 			questionType: 'mcq',
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			status: 'running',
 			target: 10,
@@ -116,13 +116,17 @@ describe('direct Drizzle pool persistence', () => {
 		});
 
 		const result = await tryAcquireRefillLease(
-			{ questionType: 'mcq', apClass: 'AP Biology', unit: 'Unit 1' },
+			{ questionType: 'mcq', course: 'AP Biology', unit: 'Unit 1' },
 			{ owner: 'worker-1', leaseTtlMs: 120_000, now: new Date('2026-08-09T12:00:00Z') }
 		);
 
 		expect(result).toEqual(lease);
 		expect(mocks.db.update).toHaveBeenCalledWith(poolRefillStates);
-		expect(mocks.queries[0]?.valuesArg ?? mocks.queries[0]?.set).toBeDefined();
+		expect(mocks.queries[0]?.where).toHaveBeenCalledOnce();
+		expect(mocks.queries[0]?.where).toHaveBeenCalledWith(expect.anything());
+		expect(mocks.queries[0]?.set).toHaveBeenCalledWith(
+			expect.objectContaining({ status: 'running', leaseOwner: 'worker-1' })
+		);
 	});
 
 	it('returns the remaining daily budget from the Drizzle row', async () => {

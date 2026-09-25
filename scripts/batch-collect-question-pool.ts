@@ -127,7 +127,7 @@ async function main() {
 			const generated = JSON.parse(text) as unknown;
 			if (dryRun) {
 				if ((entry.questionType ?? 'mcq') === 'frq') {
-					parseGeneratedFrq(entry.apClass, entry.unit, generated, entry.formatId);
+					parseGeneratedFrq(entry.course, entry.unit, generated, entry.formatId);
 				} else {
 					parseGeneratedApQuestion(generated);
 				}
@@ -136,21 +136,21 @@ async function main() {
 			}
 			const questionType = entry.questionType ?? 'mcq';
 			const target =
-				questionType === 'mcq' ? preferredMcqTarget(entry.apClass) : QUESTION_POOL_CONFIG.frqTarget;
+				questionType === 'mcq' ? preferredMcqTarget(entry.course) : QUESTION_POOL_CONFIG.frqTarget;
 			const guarded = await writePoolBucketBelowTarget(
-				{ questionType, apClass: entry.apClass, unit: entry.unit },
+				{ questionType, course: entry.course, unit: entry.unit },
 				target,
 				() =>
 					questionType === 'frq'
 						? persistGeneratedFrqToPool(
-								entry.apClass,
+								entry.course,
 								entry.unit,
 								generated,
 								manifest.model,
 								entry.formatId
 							)
 						: persistParsedQuestionToPool(
-								entry.apClass,
+								entry.course,
 								entry.unit,
 								parseGeneratedApQuestion(generated)
 							)

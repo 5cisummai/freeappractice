@@ -38,7 +38,7 @@ describe('selectRandomActiveDoc', () => {
 	it('selects the first doc with randomKey >= pivot', async () => {
 		const hit = await selectRandomActiveDoc({
 			findRandom: createFindRandom(docs),
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: [],
 			pivot: 0.35
@@ -49,7 +49,7 @@ describe('selectRandomActiveDoc', () => {
 	it('wraps around when no doc has randomKey >= pivot', async () => {
 		const hit = await selectRandomActiveDoc({
 			findRandom: createFindRandom(docs),
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: [],
 			pivot: 0.95
@@ -60,7 +60,7 @@ describe('selectRandomActiveDoc', () => {
 	it('honors exclusion list on both pivot passes', async () => {
 		const hit = await selectRandomActiveDoc({
 			findRandom: createFindRandom(docs),
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: ['a', 'b'],
 			pivot: 0.95
@@ -71,7 +71,7 @@ describe('selectRandomActiveDoc', () => {
 	it('returns null when every active id is excluded', async () => {
 		const hit = await selectRandomActiveDoc({
 			findRandom: createFindRandom(docs),
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 1',
 			excludeQuestionIds: ['a', 'b', 'c'],
 			pivot: 0.2
@@ -90,8 +90,7 @@ describe('QuestionBank selection boundary', () => {
 		const requestRefill = vi.fn(async () => {});
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
-			countActive: async (className, unit) => countActivePoolRows('mcq', className, unit),
+			countActive: async (course, unit) => countActivePoolRows('mcq', course, unit),
 			findRandom: async () => null,
 			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
 			requestRefill
@@ -116,7 +115,6 @@ describe('QuestionBank selection boundary', () => {
 		const scheduleBackgroundTask = vi.fn();
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 0,
 			findRandom: async () => null,
 			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
@@ -136,7 +134,6 @@ describe('QuestionBank selection boundary', () => {
 		const requestRefill = vi.fn(async () => {});
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 0,
 			findRandom: async () => null,
 			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId }),
@@ -152,8 +149,7 @@ describe('QuestionBank selection boundary', () => {
 		countActivePoolRows.mockResolvedValue(1);
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
-			countActive: async (className, unit) => countActivePoolRows('mcq', className, unit),
+			countActive: async (course, unit) => countActivePoolRows('mcq', course, unit),
 			findRandom: createFindRandom(docs),
 			serveCached: async (doc) => ({ cached: true, questionId: doc.questionId })
 		});
@@ -171,7 +167,6 @@ describe('QuestionBank selection boundary', () => {
 	it('returns failed when the pool query is unavailable', async () => {
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 0,
 			findRandom: async () => {
 				throw new Error('db down');
@@ -191,7 +186,6 @@ describe('QuestionBank selection boundary', () => {
 		};
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 0,
 			findRandom: async (input) => {
 				input.onDatabaseInit?.(7);
@@ -214,7 +208,6 @@ describe('QuestionBank selection boundary', () => {
 		]);
 		const bank = new QuestionBank({
 			logScope: 'test',
-			normalizeUnit: (u) => u ?? '',
 			countActive: async () => 2,
 			findRandom: async () => null,
 			findRandomBatch,

@@ -11,22 +11,22 @@ const OPEN_REFILL_STATUSES = ['pending', 'failed', 'budget_exhausted', 'running'
 /** Count active canonical pool rows without hydrating any question documents. */
 export async function countActivePoolRows(
 	questionType: PoolRefillQuestionType,
-	apClass: string,
+	course: string,
 	unit: string
 ): Promise<number> {
-	return getPoolKindAdapter(questionType).countActive(apClass, unit);
+	return getPoolKindAdapter(questionType).countActive(course, unit);
 }
 
 /** Count rows that can actually be served under the current feature flags. */
 export async function countActivePoolRowsForServing(
 	questionType: PoolRefillQuestionType,
-	apClass: string,
+	course: string,
 	unit: string
 ): Promise<number> {
 	if (questionType === 'mcq') {
-		return countActiveMcqQuestions(apClass, unit, await isStimulusQuestionsEnabled());
+		return countActiveMcqQuestions(course, unit, await isStimulusQuestionsEnabled());
 	}
-	return countActivePoolRows(questionType, apClass, unit);
+	return countActivePoolRows(questionType, course, unit);
 }
 
 /** Load active counts for every bucket in one grouped query for ops reconciliation. */

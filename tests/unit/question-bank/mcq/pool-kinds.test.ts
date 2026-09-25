@@ -15,12 +15,12 @@ describe('question pool kind adapters', () => {
 		expect(frq.minimumGenerationHeadroomMs).toBe(35_000);
 		expect(
 			mcq.targetFor({
-				apClass: 'AP Chemistry',
-				generationCountsByClass: { 'AP Biology': 100, 'AP Chemistry': 50 }
+				course: 'AP Chemistry',
+				generationCountsByCourse: { 'AP Biology': 100, 'AP Chemistry': 50 }
 			})
 		).toBe(18);
 		expect(
-			frq.targetFor({ apClass: 'AP Biology', config: { ...QUESTION_POOL_CONFIG, frqTarget: 4 } })
+			frq.targetFor({ course: 'AP Biology', config: { ...QUESTION_POOL_CONFIG, frqTarget: 4 } })
 		).toBe(4);
 	});
 });

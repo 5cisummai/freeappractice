@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 	questionRow: {
 		questionId: 'frq-1',
 		data: {
-			apClass: 'AP Biology',
+			course: 'AP Biology',
 			unit: 'Unit 4',
 			formatId: 'short-conceptual-analysis',
 			responseMode: 'parts',
@@ -98,7 +98,7 @@ import { updateFrqAttemptGrade, type IFrqAttempt } from '$lib/grading/frq/storag
 
 const input = {
 	questionId: 'frq-1',
-	apClass: 'AP Biology',
+	course: 'AP Biology',
 	unit: 'Unit 4',
 	formatId: 'short-conceptual-analysis',
 	responseMode: 'parts' as const,

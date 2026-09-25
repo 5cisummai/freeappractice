@@ -1,15 +1,15 @@
 import { json } from '@sveltejs/kit';
-import { getAllowedClassNames } from '$lib/catalog/ap-classes';
+import { getAllowedCourses, getUnitsForCourse } from '$lib/catalog/ap-courses';
 
-const MAX_CLASS_NAME_LEN = 120;
+const MAX_COURSE_LEN = 120;
 const MAX_UNIT_LEN = 200;
 const MAX_EXCLUDED_QUESTION_IDS = 100;
 const MAX_QUESTION_ID_LEN = 120;
 
-const ALLOWED_CLASS_NAMES = getAllowedClassNames();
+const ALLOWED_COURSES = getAllowedCourses();
 
 interface ValidatedQuestionRequest {
-	className: string;
+	course: string;
 	unit: string;
 	formatId?: string;
 	excludeQuestionIds: string[];
@@ -19,36 +19,36 @@ type QuestionRequestResult =
 	{ ok: true; value: ValidatedQuestionRequest } | { ok: false; response: Response };
 
 export function validateQuestionRequest(body: unknown): QuestionRequestResult {
-	const { className, unit, formatId, customTopic, excludeQuestionIds } = (body ?? {}) as Record<
+	const { course, unit, formatId, customTopic, excludeQuestionIds } = (body ?? {}) as Record<
 		string,
 		unknown
 	>;
 
-	if (typeof className !== 'string' || !className.trim()) {
+	if (typeof course !== 'string' || !course.trim()) {
 		return {
 			ok: false,
 			response: json(
-				{ error: 'className is required and must be a non-empty string' },
+				{ error: 'course is required and must be a non-empty string' },
 				{ status: 400 }
 			)
 		};
 	}
 
-	const trimmedClassName = className.trim();
-	if (trimmedClassName.length > MAX_CLASS_NAME_LEN) {
+	const trimmedCourse = course.trim();
+	if (trimmedCourse.length > MAX_COURSE_LEN) {
 		return {
 			ok: false,
 			response: json(
-				{ error: `className must be at most ${MAX_CLASS_NAME_LEN} characters` },
+				{ error: `course must be at most ${MAX_COURSE_LEN} characters` },
 				{ status: 400 }
 			)
 		};
 	}
 
-	if (!ALLOWED_CLASS_NAMES.has(trimmedClassName)) {
+	if (!ALLOWED_COURSES.has(trimmedCourse)) {
 		return {
 			ok: false,
-			response: json({ error: 'className must be a supported AP course' }, { status: 400 })
+			response: json({ error: 'course must be a supported AP course' }, { status: 400 })
 		};
 	}
 
@@ -93,12 +93,22 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 				response: json(
 					{
 						error:
-							'customTopic is deprecated; use a class unit instead. Live custom-topic generation has been removed.'
+							'customTopic is deprecated; use a course unit instead. Live custom-topic generation has been removed.'
 					},
 					{ status: 410 }
 				)
 			};
 		}
+	}
+	if (
+		trimmedUnit &&
+		trimmedUnit !== 'All Units' &&
+		!getUnitsForCourse(trimmedCourse).includes(trimmedUnit)
+	) {
+		return {
+			ok: false,
+			response: json({ error: 'unit must be a supported course unit' }, { status: 400 })
+		};
 	}
 
 	if (excludeQuestionIds !== undefined && !Array.isArray(excludeQuestionIds)) {
@@ -134,7 +144,7 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	return {
 		ok: true,
 		value: {
-			className: trimmedClassName,
+			course: trimmedCourse,
 			unit: trimmedUnit,
 			...(trimmedFormatId ? { formatId: trimmedFormatId } : {}),
 			excludeQuestionIds: excludedIds

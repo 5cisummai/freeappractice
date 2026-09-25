@@ -1,0 +1,7 @@
+{
+	"minimumVersion": "3.28.0",
+	"ignoreExports": [
+		{ "file": "src/lib/components/ui/**/index.ts", "exports": ["*"] },
+		{ "file": "src/lib/components/ai-elements/**/index.ts", "exports": ["*"] }
+	]
+}

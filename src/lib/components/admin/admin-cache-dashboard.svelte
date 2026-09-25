@@ -39,7 +39,7 @@
 		liveBuckets.filter((bucket) => {
 			if (bucket.questionType !== typeFilter) return false;
 			if (!normalizedSearch) return true;
-			return `${bucket.apClass} ${bucket.unit}`.toLowerCase().includes(normalizedSearch);
+			return `${bucket.course} ${bucket.unit}`.toLowerCase().includes(normalizedSearch);
 		})
 	);
 	const retireOldestPreviewCount = $derived(
@@ -50,7 +50,7 @@
 	);
 
 	function bucketKey(bucket: CacheBucketSummary): string {
-		return `${bucket.questionType}:${bucket.apClass}:${bucket.unit}`;
+		return `${bucket.questionType}:${bucket.course}:${bucket.unit}`;
 	}
 
 	function healthClasses(health: CacheBucketSummary['health']): string {
@@ -171,12 +171,12 @@
 			await request({
 				action: 'enqueueBucket',
 				questionType: bucket.questionType,
-				apClass: bucket.apClass,
+				course: bucket.course,
 				unit: bucket.unit
 			});
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
-			toast.success(`Refill queued for ${bucket.apClass} · ${bucket.unit}.`);
+			toast.success(`Refill queued for ${bucket.course} · ${bucket.unit}.`);
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Unable to queue refill.');
 		} finally {
@@ -191,13 +191,13 @@
 			const result = await request<{ cancelled: boolean }>({
 				action: 'cancelRefill',
 				questionType: bucket.questionType,
-				apClass: bucket.apClass,
+				course: bucket.course,
 				unit: bucket.unit
 			});
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
 			const message = result.cancelled
-				? `Refill cleared for ${bucket.apClass} · ${bucket.unit}.`
+				? `Refill cleared for ${bucket.course} · ${bucket.unit}.`
 				: 'No queued refill was found for that bucket.';
 			toast.success(message);
 		} catch (error) {
@@ -241,15 +241,15 @@
 			const result = await request<{ retired: number }>({
 				action: 'retireBucket',
 				questionType: bucket.questionType,
-				apClass: bucket.apClass,
+				course: bucket.course,
 				unit: bucket.unit,
 				quantity
 			});
 			const snapshot = await request<PoolSnapshot>({ action: 'refresh' });
 			localBuckets = snapshot.buckets;
 			const message = result.retired
-				? `Deleted ${result.retired} ${bucket.questionType.toUpperCase()} question(s) from ${bucket.apClass} · ${bucket.unit}; refill queued.`
-				: `No active ${bucket.questionType.toUpperCase()} questions were available in ${bucket.apClass} · ${bucket.unit}.`;
+				? `Deleted ${result.retired} ${bucket.questionType.toUpperCase()} question(s) from ${bucket.course} · ${bucket.unit}; refill queued.`
+				: `No active ${bucket.questionType.toUpperCase()} questions were available in ${bucket.course} · ${bucket.unit}.`;
 			toast.success(message);
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Unable to delete questions.');
@@ -388,7 +388,7 @@
 			<Table.Body>
 				{#each visibleBuckets as bucket (bucketKey(bucket))}
 					<Table.Row>
-						<Table.Cell class="font-medium">{bucket.apClass}</Table.Cell>
+						<Table.Cell class="font-medium">{bucket.course}</Table.Cell>
 						<Table.Cell class="max-w-52 truncate" title={bucket.unit}>{bucket.unit}</Table.Cell>
 						<Table.Cell>
 							<div class="min-w-36 space-y-1.5">

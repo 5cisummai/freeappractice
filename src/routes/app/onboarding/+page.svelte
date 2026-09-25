@@ -13,7 +13,7 @@
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 	import type { Component } from 'svelte';
-	import { onboardingSubjects } from '$lib/onboarding-subjects.js';
+	import { onboardingCourses } from '$lib/onboarding-courses.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 	import { MINIMUM_ACCOUNT_AGE } from '$lib/auth/age.js';
 	import type { OnboardingGoal } from '$lib/onboarding.js';
@@ -26,7 +26,7 @@
 
 	let { data, form } = $props();
 
-	type SetupStep = 'welcome' | 'subjects' | 'plan' | 'style' | 'memory';
+	type SetupStep = 'welcome' | 'courses' | 'plan' | 'style' | 'memory';
 	type TeachingStyle = 'socratic' | 'concise' | 'step_by_step';
 	type StudyGoal = OnboardingGoal;
 
@@ -36,7 +36,7 @@
 	const initialAgeConfirmed = Boolean(initialData.ageConfirmedAt);
 	const welcomeName = initialData.userName?.trim().split(/\s+/)[0] || 'there';
 
-	let selectedSubjects = $state([...initialData.selectedSubjects]);
+	let selectedCourses = $state([...initialData.selectedCourses]);
 	let superOptedIn = $state(initialData.superIntent);
 	let superActivated = $state(initialSuperAccess);
 	let ageConfirmed = $state(initialAgeConfirmed);
@@ -45,7 +45,7 @@
 	let selectedGoals = $state<StudyGoal[]>(
 		initialData.selectedGoals.length > 0 ? [...initialData.selectedGoals] : [DEFAULT_GOAL]
 	);
-	let subjectSearch = $state('');
+	let courseSearch = $state('');
 	let teachingStyle = $state<TeachingStyle>(superSetup?.profile.teachingStyle ?? 'concise');
 	let memoryEnabled = $state(Boolean(superSetup?.profile.memoryEnabled));
 	let memoryDisclosureSeen = $state(Boolean(superSetup?.profile.memoryDisclosureSeenAt));
@@ -67,7 +67,7 @@
 	const hasSuperAccess = $derived(superActivated);
 	const needsPlan = $derived(superOptedIn && !hasSuperAccess);
 	const steps = $derived.by(() => {
-		const next: SetupStep[] = ['welcome', 'subjects'];
+		const next: SetupStep[] = ['welcome', 'courses'];
 		if (superOptedIn) {
 			if (needsPlan) next.push('plan');
 			next.push('style', 'memory');
@@ -81,9 +81,9 @@
 				title: `Welcome, ${welcomeName}!`,
 				description: 'What are your goals?'
 			},
-			subjects: {
+			courses: {
 				title: 'What are you taking?',
-				description: 'Choose the AP subjects you want to practice. You can change them anytime.'
+				description: 'Choose the AP courses you want to practice. You can change them anytime.'
 			},
 			plan: {
 				title: 'Choose how you want to study',
@@ -107,14 +107,14 @@
 	const needsAgeVerification = $derived(!ageConfirmed);
 	const canContinueWelcome = $derived(selectedGoals.length > 0 && (ageConfirmed || ageAttested));
 	const asIcon = (icon: unknown) => icon as Component<{ class?: string }>;
-	const filteredSubjects = $derived.by(() => {
-		const query = subjectSearch.trim().toLowerCase();
-		if (!query) return onboardingSubjects;
+	const filteredCourses = $derived.by(() => {
+		const query = courseSearch.trim().toLowerCase();
+		if (!query) return onboardingCourses;
 
-		return onboardingSubjects.filter(
-			(subject) =>
-				subject.name.toLowerCase().includes(query) ||
-				subject.description.toLowerCase().includes(query)
+		return onboardingCourses.filter(
+			(course) =>
+				course.name.toLowerCase().includes(query) ||
+				course.description.toLowerCase().includes(query)
 		);
 	});
 	const studyGoalOptions: Array<{
@@ -172,13 +172,13 @@
 		selectedGoals = selectedGoals.filter((selected) => selected !== goal);
 	}
 
-	function toggleSubject(subject: string, checked: boolean) {
+	function toggleCourse(course: string, checked: boolean) {
 		if (checked) {
-			if (!selectedSubjects.includes(subject)) selectedSubjects = [...selectedSubjects, subject];
+			if (!selectedCourses.includes(course)) selectedCourses = [...selectedCourses, course];
 			return;
 		}
 
-		selectedSubjects = selectedSubjects.filter((selected) => selected !== subject);
+		selectedCourses = selectedCourses.filter((selected) => selected !== course);
 	}
 
 	function wait(milliseconds: number): Promise<void> {
@@ -201,14 +201,14 @@
 		if (previous) goTo(previous);
 	}
 
-	async function saveSubjects() {
-		const response = await apiFetch('/api/me/subjects', {
+	async function saveCourses() {
+		const response = await apiFetch('/api/me/courses', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ subjects: selectedSubjects })
+			body: JSON.stringify({ courses: selectedCourses })
 		});
 		const result = await readJsonOrNull<{ error?: string }>(response);
-		if (!response.ok) throw new Error(getResponseMessage(result, 'Could not save your subjects.'));
+		if (!response.ok) throw new Error(getResponseMessage(result, 'Could not save your courses.'));
 	}
 
 	async function confirmAge() {
@@ -309,17 +309,17 @@
 					}
 					await confirmAge();
 				}
-				goTo('subjects');
+				goTo('courses');
 				return;
 			}
 
-			if (currentStep === 'subjects') {
-				if (selectedSubjects.length === 0) {
-					errorMessage = 'Choose at least one subject to continue.';
+			if (currentStep === 'courses') {
+				if (selectedCourses.length === 0) {
+					errorMessage = 'Choose at least one course to continue.';
 					return;
 				}
 				if (superOptedIn) {
-					await saveSubjects();
+					await saveCourses();
 					goTo(needsPlan ? 'plan' : 'style');
 				} else submitFinish();
 				return;
@@ -415,8 +415,8 @@
 				</div>
 			</header>
 
-			{#each selectedSubjects as subject (subject)}
-				<input type="hidden" name="subjects" value={subject} />
+			{#each selectedCourses as course (course)}
+				<input type="hidden" name="courses" value={course} />
 			{/each}
 			{#each selectedGoals as goal (goal)}
 				<input type="hidden" name="goals" value={goal} />
@@ -427,7 +427,7 @@
 					class="flex flex-1 animate-in flex-col gap-8 duration-500 fade-in slide-in-from-bottom-3 motion-reduce:animate-none sm:gap-10"
 				>
 					<div
-						class="mx-auto flex w-full flex-1 flex-col {currentStep === 'subjects'
+						class="mx-auto flex w-full flex-1 flex-col {currentStep === 'courses'
 							? 'max-w-none'
 							: 'max-w-3xl'}"
 					>
@@ -443,7 +443,7 @@
 						</div>
 
 						<div class="mt-8">
-							{#if currentStep === 'subjects'}
+							{#if currentStep === 'courses'}
 								<div class="space-y-6">
 									<div class="relative">
 										<SearchIcon
@@ -452,39 +452,39 @@
 										/>
 										<Input
 											type="search"
-											placeholder="Search AP subjects"
-											bind:value={subjectSearch}
+											placeholder="Search AP courses"
+											bind:value={courseSearch}
 											class="pl-9"
-											aria-label="Search AP subjects"
+											aria-label="Search AP courses"
 										/>
 									</div>
-									{#if filteredSubjects.length === 0}
+									{#if filteredCourses.length === 0}
 										<p class="py-8 text-center text-sm text-muted-foreground">
-											No subjects match "{subjectSearch.trim()}".
+											No courses match "{courseSearch.trim()}".
 										</p>
 									{:else}
 										<div class="grid grid-cols-2 gap-2 lg:grid-cols-3">
-											{#each filteredSubjects as subject (subject.name)}
-												{@const SubjectIcon = subject.icon}
+											{#each filteredCourses as course (course.name)}
+												{@const CourseIcon = course.icon}
 												<label
-													class="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-transparent bg-muted/50 px-4 py-3 text-sm transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {subject.checkedClass}"
+													class="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-transparent bg-muted/50 px-4 py-3 text-sm transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {course.checkedClass}"
 												>
 													<input
 														type="checkbox"
-														value={subject.name}
-														checked={selectedSubjects.includes(subject.name)}
+														value={course.name}
+														checked={selectedCourses.includes(course.name)}
 														onchange={(event) =>
-															toggleSubject(
-																subject.name,
+															toggleCourse(
+																course.name,
 																(event.currentTarget as HTMLInputElement).checked
 															)}
 														class="sr-only"
 													/>
 													<span
-														class="subject-icon flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors {subject.iconClass}"
-														><SubjectIcon class="size-4" /></span
+														class="course-icon flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors {course.iconClass}"
+														><CourseIcon class="size-4" /></span
 													>
-													<span class="min-w-0 flex-1 font-medium">{subject.name}</span>
+													<span class="min-w-0 flex-1 font-medium">{course.name}</span>
 													<span
 														class="selection-check flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
 														aria-hidden="true"><CheckIcon class="size-3" /></span
@@ -494,8 +494,8 @@
 										</div>
 									{/if}
 									<p class="text-center text-sm text-muted-foreground">
-										{selectedSubjects.length}
-										{selectedSubjects.length === 1 ? 'subject' : 'subjects'} selected
+										{selectedCourses.length}
+										{selectedCourses.length === 1 ? 'course' : 'courses'} selected
 									</p>
 								</div>
 							{:else if currentStep === 'welcome'}
@@ -689,7 +689,7 @@
 									onclick={goBack}
 									disabled={saving || finishing || billingBusy}
 									><ArrowLeftIcon class="size-4" /> Back</Button
-								>{/if}{#if data.superIntent && currentStep !== 'subjects' && currentStep !== 'welcome'}<Button
+								>{/if}{#if data.superIntent && currentStep !== 'courses' && currentStep !== 'welcome'}<Button
 									type="button"
 									variant="ghost"
 									onclick={skipSuperSetup}

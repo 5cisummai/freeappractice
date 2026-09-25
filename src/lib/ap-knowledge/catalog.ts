@@ -1,7 +1,7 @@
 import { AP_DATA, type UnifiedCourse } from '$lib/data/ap-data';
 
 type ApKnowledgeCourseSummary = {
-	apClass: string;
+	course: string;
 };
 
 export type ApKnowledgeSource = {
@@ -15,7 +15,7 @@ export type ApKnowledgeResult =
 			catalogVersion: string;
 			reviewedAt: string;
 			freshnessNote: string;
-			courses: Array<{ apClass: string; units: string[] }>;
+			courses: Array<{ course: string; units: string[] }>;
 	  }
 	| {
 			kind: 'course';
@@ -46,80 +46,25 @@ const supportedCourses = AP_DATA.courses;
 const courseByName = new Map(supportedCourses.map((course) => [course.name, course] as const));
 const sourceById = new Map(AP_DATA.sources.map((source) => [source.id, source] as const));
 
-const courseAliases = new Map([
-	['AP U.S. Government and Politics', 'AP US Government'],
-	['AP US Government and Politics', 'AP US Government'],
-	['AP United States Government and Politics', 'AP US Government']
-]);
-
 export const AP_KNOWLEDGE_CATALOG_VERSION = AP_DATA.datasetVersion;
-export const AP_KNOWLEDGE_REVIEWED_AT = AP_DATA.asOf;
-export const AP_KNOWLEDGE_FRESHNESS_NOTE =
+const AP_KNOWLEDGE_REVIEWED_AT = AP_DATA.asOf;
+const AP_KNOWLEDGE_FRESHNESS_NOTE =
 	`Course and unit labels are an MVP ${AP_KNOWLEDGE_CATALOG_VERSION} catalog reviewed ${AP_KNOWLEDGE_REVIEWED_AT}. ` +
 	'Only unit titles and official links are source-backed. Check the linked official pages for live exam dates, policies, detailed topics, and later revisions.';
 
-function normalize(value: string): string {
-	return value
-		.normalize('NFKD')
-		.toLowerCase()
-		.replace(/&/g, ' and ')
-		.replace(/[^a-z0-9]+/g, ' ')
-		.trim();
-}
-
 function unitsFor(course: UnifiedCourse): string[] {
-	return course.official.framework.unitLabels
-		? [...course.official.framework.unitLabels]
-		: course.units.map((unit) => unit.label);
+	return course.units.map((unit) => unit.label);
 }
 
-function unitTitle(value: string): string {
-	return value.replace(/^\s*(?:unit|big idea)\s*\d+\s*:\s*/i, '').trim();
+function courseSummary(course: string): ApKnowledgeCourseSummary {
+	return { course };
 }
 
-function unitNumber(value: string): number | null {
-	const match = value.match(/\b(?:unit|big idea)\s*(\d+)\b/i);
-	return match ? Number(match[1]) : null;
-}
+function sourcesFor(course: string): ApKnowledgeSource[] {
+	const match = supportedCourses.find((candidate) => candidate.name === course);
+	if (!match) return [];
 
-function findUnit(course: UnifiedCourse, requested: string) {
-	const query = normalize(requested);
-	const queryNumber = unitNumber(requested);
-	const requestedTitle = requested.match(/:\s*(.+)$/)?.[1]?.trim();
-	const titleQuery = normalize(requestedTitle ?? requested);
-	const candidates = unitsFor(course).map((name) => ({
-		name,
-		number: unitNumber(name),
-		title: normalize(unitTitle(name))
-	}));
-	const exact = candidates.find(
-		(candidate) => normalize(candidate.name) === query || candidate.title === query
-	);
-	if (exact) return exact.name;
-	if (queryNumber !== null) {
-		const numbered = candidates.find((candidate) => candidate.number === queryNumber);
-		if (numbered && !requestedTitle) return numbered.name;
-	}
-	if (titleQuery.length >= 4) {
-		const partial = candidates.find(
-			(candidate) =>
-				(queryNumber === null || candidate.number === queryNumber) &&
-				(candidate.title.includes(titleQuery) || titleQuery.includes(candidate.title))
-		);
-		if (partial) return partial.name;
-	}
-	return null;
-}
-
-function courseSummary(apClass: string): ApKnowledgeCourseSummary {
-	return { apClass };
-}
-
-function sourcesFor(apClass: string): ApKnowledgeSource[] {
-	const course = supportedCourses.find((candidate) => candidate.name === apClass);
-	if (!course) return [];
-
-	const sourceIds = [...course.official.sourceIds, ...course.official.exam.sourceIds].filter(
+	const sourceIds = [...match.official.sourceIds, ...match.official.exam.sourceIds].filter(
 		(id, index, ids) =>
 			(id.startsWith('cb-course-') || id.startsWith('cb-exam-')) && ids.indexOf(id) === index
 	);
@@ -141,32 +86,16 @@ export function listApCurriculumCourseNames(): string[] {
 	return supportedCourses.map((course) => course.name);
 }
 
-export function listApCurriculumCourseLookupNames(): string[] {
-	return [...listApCurriculumCourseNames(), ...courseAliases.keys()];
-}
-
-export function resolveApCurriculumCourseName(value: string): string | undefined {
-	const normalized = normalize(value);
-	const canonicalName = supportedCourses.find(
-		(course) => normalize(course.name) === normalized
-	)?.name;
-	if (canonicalName) return canonicalName;
-	for (const [alias, canonical] of courseAliases) {
-		if (normalize(alias) === normalized) return canonical;
-	}
-	return undefined;
-}
-
 /** Retrieve bounded AP catalog facts and links to the current official sources. */
 export function getApCurriculumKnowledge(input: {
-	apClass?: string;
+	course?: string;
 	unit?: string;
 }): ApKnowledgeResult {
-	if (!input.apClass?.trim()) {
+	if (!input.course?.trim()) {
 		if (input.unit?.trim()) {
 			return {
 				kind: 'not_found',
-				message: 'Choose an AP class before requesting unit curriculum knowledge.',
+				message: 'Choose an AP course before requesting unit curriculum knowledge.',
 				availableCourses: listApCurriculumCourseNames()
 			};
 		}
@@ -174,18 +103,17 @@ export function getApCurriculumKnowledge(input: {
 			kind: 'catalog',
 			...metadata(),
 			courses: supportedCourses.map((course) => ({
-				apClass: course.name,
+				course: course.name,
 				units: unitsFor(course)
 			}))
 		};
 	}
 
-	const canonicalName = resolveApCurriculumCourseName(input.apClass);
-	const course = canonicalName ? courseByName.get(canonicalName) : undefined;
+	const course = courseByName.get(input.course);
 	if (!course) {
 		return {
 			kind: 'not_found',
-			message: `No curated AP curriculum knowledge is available for ${input.apClass}.`,
+			message: `No curated AP curriculum knowledge is available for ${input.course}.`,
 			availableCourses: listApCurriculumCourseNames()
 		};
 	}
@@ -201,7 +129,7 @@ export function getApCurriculumKnowledge(input: {
 		};
 	}
 
-	const unit = findUnit(course, input.unit);
+	const unit = unitsFor(course).find((name) => name === input.unit);
 	if (!unit) {
 		return {
 			kind: 'not_found',
