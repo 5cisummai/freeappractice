@@ -81,9 +81,12 @@
 			}
 			captureSignupCompleted('email');
 			// Use Better Auth's awaited, rate-limited endpoint so delivery failures are recoverable.
-			const { deliveryId, error: verificationError } = await requestVerificationEmail(email);
+			const { deliveryId, error: verificationError } = await requestVerificationEmail(
+				email,
+				redirectPath
+			);
 			// Onboarding pending cookie is set server-side in databaseHooks.user.create.after.
-			const emailSentQuery = `email=${encodeURIComponent(email)}&delivery=${encodeURIComponent(deliveryId)}${
+			const emailSentQuery = `email=${encodeURIComponent(email)}&delivery=${encodeURIComponent(deliveryId)}&redirect=${encodeURIComponent(redirectPath)}${
 				verificationError ? '&send=failed' : ''
 			}`;
 			const emailSentHref = `${resolve('/email-sent')}?${emailSentQuery}`;
