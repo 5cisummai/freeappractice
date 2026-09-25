@@ -1,1 +1,0 @@
-DROP TABLE "app"."insight_reports" CASCADE;

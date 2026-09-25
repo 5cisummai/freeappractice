@@ -1,1 +1,0 @@
-ALTER TABLE "app"."study_plans" ADD COLUMN "insights" jsonb;

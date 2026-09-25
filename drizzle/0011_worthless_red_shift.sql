@@ -1,1 +1,0 @@
-ALTER TABLE "app"."user_profiles" ADD COLUMN "assistant_features_enabled" boolean DEFAULT true NOT NULL;

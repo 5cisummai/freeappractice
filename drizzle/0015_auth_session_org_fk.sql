@@ -1,1 +1,0 @@
-ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_active_organization_id_organizations_id_fk" FOREIGN KEY ("active_organization_id") REFERENCES "auth"."organizations"("id") ON DELETE set null ON UPDATE no action;

@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { neon } from '@neondatabase/serverless';
-import { assertQuestionJsonbReady, backfillQuestionJsonb } from './backfill-question-jsonb';
+import { canAdoptNeonBaseline, NEON_BASELINE_ID } from './neon-baseline';
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!databaseUrl) throw new Error('DATABASE_URL is required');
@@ -20,12 +20,6 @@ if (!/^postgres(?:ql)?:\/\//i.test(databaseUrl))
 const sql = neon(databaseUrl);
 const migrationsDirectory = resolve(process.env.DRIZZLE_MIGRATIONS_DIR ?? 'drizzle');
 const statementBreakpoint = /--> statement-breakpoint/g;
-const QUESTION_JSONB_CLEANUP_MIGRATION = '0020_nice_exiles.sql';
-const FRQ_GRADE_CLEANUP_MIGRATION = '0027_windy_william_stryker.sql';
-const COURSE_RENAME_MIGRATION = '0028_serious_skin.sql';
-const MIGRATION_ID_ALIASES: Record<string, string> = {
-	'0027_windy_william_stryker': '0026_windy_william_stryker'
-};
 
 function checksum(contents: string): string {
 	return createHash('sha256').update(contents).digest('hex');
@@ -56,36 +50,27 @@ async function main(): Promise<void> {
 		const id = file.replace(/\.sql$/, '');
 		const contents = await readFile(join(migrationsDirectory, file), 'utf8');
 		const digest = checksum(contents);
-		let existing = (await sql.query(
+		const existing = (await sql.query(
 			'SELECT checksum FROM public._neon_schema_migrations WHERE id = $1',
 			[id]
 		)) as Array<{ checksum: string }>;
-		const legacyId = MIGRATION_ID_ALIASES[id];
-		if (!existing[0] && legacyId) {
-			existing = (await sql.query(
-				'SELECT checksum FROM public._neon_schema_migrations WHERE id = $1',
-				[legacyId]
-			)) as Array<{ checksum: string }>;
-		}
 		if (existing[0]) {
 			if (existing[0].checksum !== digest)
 				throw new Error(`Applied migration was modified or renamed: ${file}`);
 			continue;
 		}
 
-		// The cleanup migration drops the legacy columns/tables after the JSONB
-		// payload is populated. Keep the normal `db:apply` path safe for callers
-		// that do not use the CI-specific migration cap and backfill step.
-		if (file === QUESTION_JSONB_CLEANUP_MIGRATION) {
-			await backfillQuestionJsonb();
-			await assertQuestionJsonbReady();
-		}
-		if (file === FRQ_GRADE_CLEANUP_MIGRATION) {
-			const [row] = (await sql.query(
-				'SELECT EXISTS (SELECT 1 FROM app.frq_attempt_grades) AS has_grades'
-			)) as Array<{ has_grades: boolean }>;
-			if (row?.has_grades) {
-				throw new Error('Migration 0027 would discard existing FRQ grades; migrate them first');
+		if (id === NEON_BASELINE_ID) {
+			const applied = (await sql.query(
+				'SELECT id, checksum FROM public._neon_schema_migrations'
+			)) as Array<{ id: string; checksum: string }>;
+			if (canAdoptNeonBaseline(applied)) {
+				await sql.query(
+					'INSERT INTO public._neon_schema_migrations (id, checksum) VALUES ($1, $2)',
+					[id, digest]
+				);
+				console.log(`Adopted ${file}; existing schema and data were preserved`);
+				continue;
 			}
 		}
 
@@ -94,15 +79,6 @@ async function main(): Promise<void> {
 			.map((statement) => statement.trim())
 			.filter(Boolean)
 			.map((statement) => sql.query(statement));
-		if (file === COURSE_RENAME_MIGRATION) {
-			for (const table of ['mcq_questions', 'frq_questions']) {
-				transaction.unshift(
-					sql.query(
-						`UPDATE content.${table} SET data = (data - 'apClass') || jsonb_build_object('course', data->'apClass') WHERE data ? 'apClass'`
-					)
-				);
-			}
-		}
 		transaction.push(
 			sql.query('INSERT INTO public._neon_schema_migrations (id, checksum) VALUES ($1, $2)', [
 				id,
@@ -110,6 +86,7 @@ async function main(): Promise<void> {
 			])
 		);
 		await sql.transaction(transaction);
+		console.log(`Applied ${file}`);
 	}
 }
 

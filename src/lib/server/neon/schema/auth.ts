@@ -1,6 +1,7 @@
 import {
 	bigint,
 	boolean,
+	check,
 	index,
 	integer,
 	pgSchema,
@@ -9,7 +10,7 @@ import {
 	timestamp,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { createdAt, updatedAt } from './common';
 
 export const authSchema = pgSchema('auth');
@@ -150,7 +151,13 @@ export const authOrganizations = authSchema.table(
 	},
 	(table) => [
 		uniqueIndex('auth_organizations_slug_uq').on(table.slug),
-		uniqueIndex('auth_organizations_share_token_uq').on(table.shareToken),
+		uniqueIndex('auth_organizations_share_token_uq')
+			.on(table.shareToken)
+			.where(sql`${table.shareToken} IS NOT NULL`),
+		check(
+			'organizations_org_type_check',
+			sql`${table.orgType} IN ('personal', 'group', 'school', 'enterprise')`
+		),
 		index('auth_organizations_org_type_idx').on(table.orgType)
 	]
 );
