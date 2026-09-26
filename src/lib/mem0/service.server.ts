@@ -5,6 +5,7 @@ import { env } from '$env/dynamic/private';
 import { isSuperMemoryEnabled } from '$lib/flags';
 import { MAX_TUTOR_MEMORY_EXCHANGE_CHARS } from '$lib/super/agent-request';
 import { getMem0UserId, getTutorProfileView } from '$lib/super/profile.server';
+import { installNeonHttpPGVector } from './neon-http-pgvector.server';
 
 let memoryClient: Mem0Memory | null | undefined;
 const TUTOR_MEMORY_DIMENSION = 1536;
@@ -64,6 +65,7 @@ function getMemoryClient(): Mem0Memory | null {
 	const apiKey = env.OPEN_AI_KEY?.trim();
 	const databaseUrl = env.DATABASE_URL?.trim();
 	const baseURL = env.OPENAI_BASE_URL?.trim() || env.OPENAI_URL?.trim();
+	if (apiKey && databaseUrl) installNeonHttpPGVector();
 
 	memoryClient =
 		apiKey && databaseUrl
@@ -82,6 +84,7 @@ function getMemoryClient(): Mem0Memory | null {
 					vectorStore: {
 						provider: 'pgvector',
 						config: {
+							transport: 'neon-http',
 							collectionName: getTutorMemoryTable(),
 							dimension: TUTOR_MEMORY_DIMENSION,
 							embeddingModelDims: TUTOR_MEMORY_DIMENSION,
