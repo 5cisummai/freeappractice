@@ -2,6 +2,7 @@ export * from './schema/auth';
 export * from './schema/app';
 export * from './schema/content';
 export * from './schema/ops';
+export * from './schema/memory';
 
 import {
 	authAccounts,

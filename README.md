@@ -141,8 +141,9 @@ Commonly needed for full functionality:
 
 Super is disabled until Stripe credentials and both price IDs are present. Configure `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`,
-`UPSTASH_VECTOR_REST_URL`, `UPSTASH_VECTOR_REST_TOKEN`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
-`REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags.
+`DATABASE_URL`, `OPEN_AI_KEY`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
+`REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags. Enable the pgvector
+extension and apply the Drizzle migrations to each Neon database before enabling memory.
 
 In Stripe, configure the Customer Portal to allow cancellation at period end, restoration before the end of
 the current period, and switching between the two Super prices at the next renewal. Point the Stripe webhook

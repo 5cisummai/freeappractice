@@ -1,4 +1,4 @@
-import { Index } from '@upstash/vector';
+import { neon } from '@neondatabase/serverless';
 import { Memory as Mem0Memory } from 'mem0ai/oss';
 import { createHmac } from 'node:crypto';
 import { env } from '$env/dynamic/private';
@@ -7,9 +7,6 @@ import { MAX_TUTOR_MEMORY_EXCHANGE_CHARS } from '$lib/super/agent-request';
 import { getMem0UserId, getTutorProfileView } from '$lib/super/profile.server';
 
 let memoryClient: Mem0Memory | null | undefined;
-let memoryIndex: Index<Record<string, unknown>> | null | undefined;
-
-const TUTOR_MEMORY_NAMESPACE = 'tutor-memory';
 const TUTOR_MEMORY_DIMENSION = 1536;
 
 const MEMORY_INSTRUCTIONS = [
@@ -32,13 +29,13 @@ function getTutorMemoryEnvironment(): 'development' | 'preview' | 'production' {
 			: 'development';
 }
 
-/** Keep local, preview, and production memories isolated in the shared vector index. */
+/** Keep local, preview, and production memories isolated in Neon. */
 function getTutorMemoryScope(): string {
 	return `tutor:${getTutorMemoryEnvironment()}`;
 }
 
-function getTutorMemoryNamespace(): string {
-	return `${TUTOR_MEMORY_NAMESPACE}-${getTutorMemoryEnvironment()}`;
+function getTutorMemoryTable(): string {
+	return `tutor_memory_${getTutorMemoryEnvironment()}`;
 }
 
 function getTutorMemoryFilters(userId: string): Record<string, string> {
@@ -65,12 +62,11 @@ export async function resolveTutorMemoryId(
 function getMemoryClient(): Mem0Memory | null {
 	if (memoryClient !== undefined) return memoryClient;
 	const apiKey = env.OPEN_AI_KEY?.trim();
-	const vectorUrl = env.UPSTASH_VECTOR_REST_URL?.trim();
-	const vectorToken = env.UPSTASH_VECTOR_REST_TOKEN?.trim();
+	const databaseUrl = env.DATABASE_URL?.trim();
 	const baseURL = env.OPENAI_BASE_URL?.trim() || env.OPENAI_URL?.trim();
 
 	memoryClient =
-		apiKey && vectorUrl && vectorToken
+		apiKey && databaseUrl
 			? new Mem0Memory({
 					disableHistory: true,
 					customInstructions: MEMORY_INSTRUCTIONS,
@@ -84,12 +80,12 @@ function getMemoryClient(): Mem0Memory | null {
 						}
 					},
 					vectorStore: {
-						provider: 'upstash_vector',
+						provider: 'pgvector',
 						config: {
-							collectionName: getTutorMemoryNamespace(),
+							collectionName: getTutorMemoryTable(),
 							dimension: TUTOR_MEMORY_DIMENSION,
-							url: vectorUrl,
-							token: vectorToken
+							embeddingModelDims: TUTOR_MEMORY_DIMENSION,
+							connectionString: databaseUrl
 						}
 					},
 					llm: {
@@ -105,19 +101,9 @@ function getMemoryClient(): Mem0Memory | null {
 	return memoryClient;
 }
 
-function getMemoryIndex(): Index<Record<string, unknown>> | null {
-	if (memoryIndex !== undefined) return memoryIndex;
-	const vectorUrl = env.UPSTASH_VECTOR_REST_URL?.trim();
-	const vectorToken = env.UPSTASH_VECTOR_REST_TOKEN?.trim();
-	memoryIndex =
-		vectorUrl && vectorToken
-			? new Index<Record<string, unknown>>({
-					url: vectorUrl,
-					token: vectorToken,
-					enableTelemetry: false
-				})
-			: null;
-	return memoryIndex;
+function getMemorySql() {
+	const databaseUrl = env.DATABASE_URL?.trim();
+	return databaseUrl ? neon(databaseUrl) : null;
 }
 
 export function isTutorMemoryConfigured(): boolean {
@@ -194,39 +180,14 @@ export async function addTutorMemoryExchange(
 
 export async function listTutorMemories(userId: string): Promise<TutorMemory[]> {
 	const mem0UserId = await getMem0UserId(userId);
-	const index = getMemoryIndex();
-	if (index) {
-		const memories: TutorMemory[] = [];
-		const seenCursors = new Set<string>();
-		let cursor = '0';
-		while (!seenCursors.has(cursor)) {
-			seenCursors.add(cursor);
-			const page = await index.range(
-				{ cursor, limit: 100, includeMetadata: true },
-				{ namespace: getTutorMemoryNamespace() }
-			);
-			for (const vector of page.vectors) {
-				if (vector.metadata?.user_id !== mem0UserId) continue;
-				const memory = toTutorMemory({
-					id: String(vector.id),
-					metadata: vector.metadata
-				});
-				if (memory) memories.push(memory);
-			}
-			if (!page.nextCursor || page.nextCursor === cursor) break;
-			cursor = page.nextCursor;
-		}
-		return memories;
-	}
-
-	const client = getMemoryClient();
-	if (!client) return [];
-	const result = await client.getAll({
-		filters: getTutorMemoryFilters(mem0UserId),
-		topK: 1_000
-	});
-	return result.results
-		.map(toTutorMemory)
+	const sql = getMemorySql();
+	if (!sql) return [];
+	const rows = (await sql.query(
+		`SELECT id, payload FROM ${getTutorMemoryTable()} WHERE payload->>'user_id' = $1 ORDER BY payload->>'createdAt' DESC`,
+		[mem0UserId]
+	)) as Array<{ id: string; payload: Record<string, unknown> }>;
+	return rows
+		.map((row) => toTutorMemory({ id: row.id, metadata: row.payload }))
 		.filter((memory): memory is TutorMemory => memory !== null);
 }
 
@@ -235,53 +196,22 @@ export async function deleteTutorMemory(userId: string, memoryId: string): Promi
 	if (!memories.some((memory) => memory.id === memoryId)) {
 		throw new Error('Tutor memory was not found');
 	}
-	const index = getMemoryIndex();
-	if (index) {
-		await index.delete(memoryId, { namespace: getTutorMemoryNamespace() });
-		return;
-	}
-	const client = getMemoryClient();
-	if (!client) throw new Error('Tutor memory is not configured');
-	await client.delete(memoryId);
+	const sql = getMemorySql();
+	if (!sql) throw new Error('Tutor memory is not configured');
+	await sql.query(
+		`DELETE FROM ${getTutorMemoryTable()} WHERE id = $1 AND payload->>'user_id' = $2`,
+		[memoryId, await getMem0UserId(userId)]
+	);
 }
 
 export async function deleteAllTutorMemoriesById(mem0UserId: string): Promise<void> {
-	const index = getMemoryIndex();
-	if (index) {
-		const memoryIds: string[] = [];
-		const seenCursors = new Set<string>();
-		let cursor = '0';
-		while (!seenCursors.has(cursor)) {
-			seenCursors.add(cursor);
-			const page = await index.range(
-				{ cursor, limit: 100, includeMetadata: true },
-				{ namespace: getTutorMemoryNamespace() }
-			);
-			for (const vector of page.vectors) {
-				if (vector.metadata?.user_id === mem0UserId) memoryIds.push(String(vector.id));
-			}
-			if (!page.nextCursor || page.nextCursor === cursor) break;
-			cursor = page.nextCursor;
-		}
-		for (let offset = 0; offset < memoryIds.length; offset += 100) {
-			await index.delete(memoryIds.slice(offset, offset + 100), {
-				namespace: getTutorMemoryNamespace()
-			});
-		}
-		return;
-	}
-
-	const client = getMemoryClient();
-	if (!client) throw new Error('Tutor memory is not configured');
-	while (true) {
-		const memories = await client.getAll({
-			filters: getTutorMemoryFilters(mem0UserId),
-			topK: 1_000,
-			showExpired: true
-		});
-		if (!memories.results.length) break;
-		for (const memory of memories.results) await client.delete(memory.id);
-	}
+	const sql = getMemorySql();
+	if (!sql) throw new Error('Tutor memory is not configured');
+	const table = getTutorMemoryTable();
+	await sql.transaction([
+		sql.query(`DELETE FROM ${table}_entities WHERE payload->>'user_id' = $1`, [mem0UserId]),
+		sql.query(`DELETE FROM ${table} WHERE payload->>'user_id' = $1`, [mem0UserId])
+	]);
 }
 
 export async function deleteAllTutorMemories(userId: string): Promise<void> {
