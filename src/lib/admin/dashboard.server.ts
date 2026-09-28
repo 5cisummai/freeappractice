@@ -513,7 +513,7 @@ export async function getAdminDashboardData(opts: {
 		pastDueSubscriptions: 0,
 		activeGrants: 0,
 		month: '',
-		personalizedMessagesThisMonth: 0,
+		creditsMilliThisMonth: 0,
 		subscriptions: [],
 		failedCleanupJobs: []
 	};

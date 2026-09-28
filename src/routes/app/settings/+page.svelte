@@ -450,14 +450,15 @@
 							</p>
 							{#if data.usage.status === 'available'}
 								<p class="mt-1 text-sm">
-									{data.usage.remaining} of {data.usage.limit} messages remaining this month.
+									{data.usage.remainingCredits} of {data.usage.limitCredits} Coach credits remaining
+									this month.
 								</p>
 								<p class="mt-1 text-xs text-muted-foreground">
-									Messages using web search count as three.
+									Each turn uses credits based on AI usage. Web search adds 0.25 credits.
 								</p>
 								{#if data.usage.warning}
 									<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-										You have used {data.usage.warning}% of this month's Coach messages.
+										You have used {data.usage.warning}% of this month's Coach credits.
 									</p>
 								{/if}
 							{:else}

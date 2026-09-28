@@ -15,7 +15,6 @@ vi.mock('$lib/mem0/service.server', () => ({
 vi.mock('$lib/server/logger', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock('$lib/super/ai-controls.server', () => ({
 	acquireCoachLock: async () => ({ key: 'lock', token: 'token' }),
-	getSuperMonthlyMessageLimit: vi.fn(),
 	RedisRequiredError: class extends Error {},
 	releaseLock: mocks.releaseLock,
 	refreshLock: vi.fn()
@@ -33,7 +32,8 @@ vi.mock('$lib/super/feature-access.server', () => ({
 vi.mock('$lib/super/personalized-turn.server', () => ({
 	startPersonalizedTurn: async () => ({
 		kind: 'reserved',
-		reservation: { remaining: 10 },
+		reservation: { remaining: 10_000 },
+		markOutput: vi.fn(async () => {}),
 		releaseIfUnused: mocks.releaseIfUnused
 	})
 }));
@@ -72,6 +72,7 @@ describe('Coach stream startup', () => {
 				},
 				userId: 'user-1',
 				sessionId: 'session-1',
+				accessReason: 'subscription',
 				context: { surface: 'coach', page: 'coach' },
 				messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help me study' }] }]
 			} as unknown as Parameters<typeof createSuperAgentStreamResponse>[0])

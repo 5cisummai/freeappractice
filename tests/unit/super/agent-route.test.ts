@@ -31,7 +31,10 @@ function event(body: unknown): RequestEvent {
 beforeEach(() => {
 	mocks.authorizeFeatureRequest.mockReset();
 	mocks.createSuperAgentStreamResponse.mockReset();
-	mocks.authorizeFeatureRequest.mockResolvedValue({ allowed: true });
+	mocks.authorizeFeatureRequest.mockResolvedValue({
+		allowed: true,
+		planAccess: { plan: 'super', accessReason: 'subscription' }
+	});
 	mocks.createSuperAgentStreamResponse.mockResolvedValue(new Response('ok'));
 });
 

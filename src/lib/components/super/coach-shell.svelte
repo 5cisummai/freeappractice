@@ -663,8 +663,8 @@
 		lastUsageWarning = warning;
 		toast.message(
 			warning === 95
-				? `You have ${remaining} personalized AI messages left this month.`
-				: `You have used ${warning}% of this month's personalized AI messages.`
+				? `You have ${remaining} Coach credits left this month.`
+				: `You have used ${warning}% of this month's Coach credits.`
 		);
 	}
 

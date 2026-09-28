@@ -26,7 +26,7 @@
 		'Everything in Free',
 		'AI Coach personalized to your practice',
 		'Weekly study plans you approve with Coach',
-		'1,000 Coach messages per month'
+		'200 Coach credits per month'
 	];
 </script>
 

@@ -76,13 +76,13 @@
 				{#if data.superFreeBetaEnabled}
 					<p>
 						During the Super free beta, authenticated students aged 13 or older can claim free
-						access to Coach, weekly study plans, and up to 500 Coach messages per month.
+						access to Coach, weekly study plans, and up to 100 Coach credits per month.
 					</p>
 				{:else}
 					<p>
 						Super is an optional subscription for students aged 13 or older. It is offered at $9 per
 						month or $79 per year, plus applicable tax, and renews automatically until you cancel.
-						Super includes Coach, weekly study plans, and up to 1,000 Coach messages per month. We
+						Super includes Coach, weekly study plans, and up to 200 Coach credits per month. We
 						do not offer a free trial, promotional pricing, discounts, or extra usage charges for
 						Super unless the checkout page expressly says otherwise.
 					</p>

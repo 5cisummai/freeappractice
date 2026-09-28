@@ -3,28 +3,39 @@ import type { Actions, PageServerLoad } from './$types';
 import { getCourses } from '$lib/catalog/ap-courses.js';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/super/ai-controls.server';
+import { formatCreditsFromMilli } from '$lib/super/usage-credits';
 import { getSuperBillingView } from '$lib/super/billing.server';
 import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
-import { hasPaidCapability } from '$lib/super/types';
+import { hasPaidCapability, type SuperAccessReason } from '$lib/super/types';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
 import { getUserCourses, updateUserCourses } from '$lib/users/model.server.js';
 
 const validCourses = new Set(getCourses().map((course) => course.name));
 
 type SettingsUsage =
-	| { status: 'available'; used: number; limit: number; remaining: number; warning: 80 | 95 | null }
+	| {
+			status: 'available';
+			usedCredits: string;
+			limitCredits: string;
+			remainingCredits: string;
+			warning: 80 | 95 | null;
+		}
 	| { status: 'unavailable' }
 	| { status: 'not_available' };
 
-async function readSettingsUsage(userId: string, enabled: boolean): Promise<SettingsUsage> {
+async function readSettingsUsage(
+	userId: string,
+	enabled: boolean,
+	accessReason: SuperAccessReason
+): Promise<SettingsUsage> {
 	if (!enabled) return { status: 'not_available' };
 	try {
-		const usage = await getPersonalizedUsage(userId);
+		const usage = await getPersonalizedUsage(userId, accessReason);
 		return {
 			status: 'available',
-			used: usage.used,
-			limit: usage.limit,
-			remaining: usage.remaining,
+			usedCredits: formatCreditsFromMilli(usage.used),
+			limitCredits: formatCreditsFromMilli(usage.limit),
+			remainingCredits: formatCreditsFromMilli(usage.remaining),
 			warning: getPersonalizedUsageWarning(usage)
 		};
 	} catch {
@@ -42,7 +53,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const [profile, billing, usage] = await Promise.all([
 		getTutorProfileViewForRequest(locals, userId),
 		getSuperBillingView(userId),
-		readSettingsUsage(userId, hasPaidCapability(planAccess, 'coach'))
+		readSettingsUsage(userId, hasPaidCapability(planAccess, 'coach'), planAccess.accessReason)
 	]);
 
 	return {

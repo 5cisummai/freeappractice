@@ -1,0 +1,96 @@
+import type { LanguageModelUsage } from 'ai';
+import type { SuperAccessReason } from '$lib/super/types';
+
+/** Display/API: 25 credits per USD. */
+export const CREDITS_PER_USD = 25;
+
+export const SUPER_FREE_BETA_MONTHLY_USD = 4;
+export const SUPER_MONTHLY_USD = 8;
+
+export const SUPER_FREE_BETA_MONTHLY_CREDITS = SUPER_FREE_BETA_MONTHLY_USD * CREDITS_PER_USD;
+export const SUPER_MONTHLY_CREDITS = SUPER_MONTHLY_USD * CREDITS_PER_USD;
+
+/** One credit = 1000 millicredits (supports 0.25 credit surcharges). */
+export const MILLICREDITS_PER_CREDIT = 1000;
+
+export const SUPER_FREE_BETA_MONTHLY_CREDITS_MILLI =
+	SUPER_FREE_BETA_MONTHLY_CREDITS * MILLICREDITS_PER_CREDIT;
+export const SUPER_MONTHLY_CREDITS_MILLI = SUPER_MONTHLY_CREDITS * MILLICREDITS_PER_CREDIT;
+
+export const WEB_SEARCH_SURCHARGE_MILLI = 250;
+
+/** `openai/gpt-6-luna` standard tier (per token), from AI Gateway pricing. */
+const LUNA_USD_PER_INPUT_TOKEN = 0.000_000_1;
+const LUNA_USD_PER_CACHE_READ_TOKEN = 0.000_000_01;
+const LUNA_USD_PER_CACHE_WRITE_TOKEN = 0.000_000_125;
+const LUNA_USD_PER_OUTPUT_TOKEN = 0.000_000_5;
+
+export function monthlyCreditLimitMilli(accessReason: SuperAccessReason): number {
+	return accessReason === 'free_beta'
+		? SUPER_FREE_BETA_MONTHLY_CREDITS_MILLI
+		: SUPER_MONTHLY_CREDITS_MILLI;
+}
+
+export function formatCreditsFromMilli(millicredits: number): string {
+	const credits = millicredits / MILLICREDITS_PER_CREDIT;
+	if (Math.abs(credits - Math.round(credits)) < 0.001) return String(Math.round(credits));
+	return credits.toFixed(2).replace(/\.?0+$/, '');
+}
+
+export function usdFromLanguageModelUsage(usage: LanguageModelUsage): number {
+	const inputTokens = usage.inputTokens ?? 0;
+	const outputTokens = usage.outputTokens ?? 0;
+	const details = usage.inputTokenDetails;
+	const cacheRead =
+		details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+	const cacheWrite = details?.cacheWriteTokens ?? 0;
+	const noCache =
+		details?.noCacheTokens ??
+		Math.max(0, inputTokens - cacheRead - cacheWrite);
+
+	return (
+		noCache * LUNA_USD_PER_INPUT_TOKEN +
+		cacheRead * LUNA_USD_PER_CACHE_READ_TOKEN +
+		cacheWrite * LUNA_USD_PER_CACHE_WRITE_TOKEN +
+		outputTokens * LUNA_USD_PER_OUTPUT_TOKEN
+	);
+}
+
+export function millicreditsFromLanguageModelUsage(usage: LanguageModelUsage): number {
+	const usd = usdFromLanguageModelUsage(usage);
+	return Math.max(0, Math.round(usd * CREDITS_PER_USD * MILLICREDITS_PER_CREDIT));
+}
+
+export function createEmptyLanguageModelUsage(): LanguageModelUsage {
+	return { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+}
+
+export function addLanguageModelUsage(
+	target: LanguageModelUsage,
+	step: LanguageModelUsage
+): LanguageModelUsage {
+	const inputTokens = (target.inputTokens ?? 0) + (step.inputTokens ?? 0);
+	const outputTokens = (target.outputTokens ?? 0) + (step.outputTokens ?? 0);
+	const totalTokens = (target.totalTokens ?? 0) + (step.totalTokens ?? 0);
+
+	const stepDetails = step.inputTokenDetails;
+	const targetDetails = target.inputTokenDetails;
+	const inputTokenDetails =
+		stepDetails || targetDetails
+			? {
+					noCacheTokens:
+						(targetDetails?.noCacheTokens ?? 0) + (stepDetails?.noCacheTokens ?? 0),
+					cacheReadTokens:
+						(targetDetails?.cacheReadTokens ?? 0) + (stepDetails?.cacheReadTokens ?? 0),
+					cacheWriteTokens:
+						(targetDetails?.cacheWriteTokens ?? 0) + (stepDetails?.cacheWriteTokens ?? 0)
+				}
+			: undefined;
+
+	return {
+		inputTokens,
+		outputTokens,
+		totalTokens,
+		...(inputTokenDetails ? { inputTokenDetails } : {})
+	};
+}

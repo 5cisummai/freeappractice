@@ -149,6 +149,11 @@ export function createSuperTools(input: SuperToolsInput) {
 						inputSchema: webSearchSchema,
 						execute: async ({ objective, search_queries }, { abortSignal }) => {
 							try {
+								if (!(await chargeWebSearch())) {
+									return {
+										error: 'Web search requires at least 0.25 Coach credits remaining this month.'
+									};
+								}
 								const response = await getParallelClient().search(
 									{
 										objective,
@@ -163,9 +168,6 @@ export function createSuperTools(input: SuperToolsInput) {
 									},
 									{ signal: abortSignal }
 								);
-								if (!(await chargeWebSearch())) {
-									return { error: 'Web search requires three remaining messages this month.' };
-								}
 								return {
 									results: response.results.map((result) => ({
 										title: result.title ?? result.url,
