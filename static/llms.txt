@@ -38,6 +38,10 @@ Use this site to choose AP classes wisely, build a summer study habit (about 15â
 - [Which APs Should You Take?](https://freeappractice.org/blog/which-aps-to-take): Course planning after exam season and for next year
 - [Summer AP Study Plan](https://freeappractice.org/blog/summer-ap-study-plan): Realistic 4-week Unit 1 preview schedule
 
+## API
+
+- [OpenAPI spec](https://freeappractice.org/openapi.json): Current public and authenticated API surface (MCQ/FRQ practice, quizzes, tutor, Coach, Super, progress, auth)
+
 ## Optional
 
 - [Terms of Service](https://freeappractice.org/terms)

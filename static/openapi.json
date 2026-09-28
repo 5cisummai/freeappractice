@@ -2,8 +2,8 @@
 	"openapi": "3.1.0",
 	"info": {
 		"title": "Free AP Practice API",
-		"version": "1.4.3",
-		"description": "Public and authenticated APIs for AP practice question generation, progress tracking, and the AI tutor.",
+		"version": "1.9.4",
+		"description": "Public and authenticated APIs for AP practice (MCQ and FRQ), quizzes, progress tracking, the AI tutor, Coach, Super, and shared practice sets. Admin, cron, and webhook routes are not documented here.",
 		"contact": {
 			"name": "Free AP Practice Support",
 			"email": "support@freeappractice.org",
@@ -17,9 +17,15 @@
 	],
 	"tags": [
 		{ "name": "health", "description": "Service health" },
-		{ "name": "questions", "description": "Question generation" },
+		{ "name": "questions", "description": "MCQ question serving and quizzes" },
+		{ "name": "frq", "description": "Written-response (FRQ) practice and grading" },
 		{ "name": "user", "description": "Authenticated user data" },
 		{ "name": "tutor", "description": "AI tutor chat" },
+		{ "name": "coach", "description": "Super Coach agent" },
+		{ "name": "super", "description": "Super plan, profile, conversations, and memory" },
+		{ "name": "practice", "description": "Shared practice sets" },
+		{ "name": "orgs", "description": "Organizations and invite links" },
+		{ "name": "feedback", "description": "App and question feedback" },
 		{ "name": "auth", "description": "Better Auth session endpoints" }
 	],
 	"paths": {
@@ -48,27 +54,189 @@
 		"/api/question": {
 			"post": {
 				"tags": ["questions"],
-				"summary": "Generate a practice question",
+				"summary": "Serve one MCQ from the question pool",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/QuestionRequest" }
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Question payload with questionId and answer metadata" },
+					"400": { "description": "Invalid request" },
+					"410": { "description": "Deprecated customTopic request" },
+					"413": { "description": "Request body too large" },
+					"429": { "description": "Rate limited" },
+					"500": { "description": "Request failed" },
+					"503": { "description": "Question pool warming or unavailable" }
+				}
+			}
+		},
+		"/api/questions/batch": {
+			"post": {
+				"tags": ["questions"],
+				"summary": "Serve a batch of MCQs from the question pool",
 				"requestBody": {
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"type": "object",
-								"required": ["className"],
-								"properties": {
-									"className": { "type": "string", "example": "AP Biology" },
-									"unit": { "type": "string", "example": "Unit 1: Chemistry of Life" }
-								}
+								"allOf": [
+									{ "$ref": "#/components/schemas/QuestionRequest" },
+									{
+										"type": "object",
+										"required": ["count"],
+										"properties": {
+											"count": {
+												"type": "integer",
+												"minimum": 1,
+												"maximum": 10,
+												"description": "Number of questions to return"
+											}
+										}
+									}
+								]
 							}
 						}
 					}
 				},
 				"responses": {
-					"200": { "description": "Generated question metadata" },
+					"200": { "description": "Batch of question payloads" },
 					"400": { "description": "Invalid request" },
 					"410": { "description": "Deprecated customTopic request" },
-					"500": { "description": "Generation failed" }
+					"413": { "description": "Request body too large" },
+					"429": { "description": "Rate limited" },
+					"500": { "description": "Request failed" },
+					"503": { "description": "Question pool warming or unavailable" }
+				}
+			}
+		},
+		"/api/question/quiz": {
+			"post": {
+				"tags": ["questions"],
+				"summary": "Assemble an MCQ quiz",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"allOf": [
+									{ "$ref": "#/components/schemas/QuestionRequest" },
+									{
+										"type": "object",
+										"properties": {
+											"count": {
+												"type": "integer",
+												"minimum": 1,
+												"maximum": 50,
+												"default": 10
+											},
+											"unitRange": {
+												"type": "array",
+												"minItems": 2,
+												"maxItems": 2,
+												"items": { "type": "integer", "minimum": 0 },
+												"description": "Inclusive unit index range"
+											}
+										}
+									}
+								]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Assembled quiz questions" },
+					"400": { "description": "Invalid request" },
+					"413": { "description": "Request body too large" },
+					"429": { "description": "Rate limited" },
+					"500": { "description": "Quiz assembly failed" },
+					"503": { "description": "Question pool warming" }
+				}
+			}
+		},
+		"/api/question/by-id/{questionId}": {
+			"get": {
+				"tags": ["questions"],
+				"summary": "Get a cached MCQ by id",
+				"parameters": [{ "$ref": "#/components/parameters/questionId" }],
+				"responses": {
+					"200": { "description": "Question payload" },
+					"400": { "description": "questionId is required" },
+					"404": { "description": "Question not found" }
+				}
+			}
+		},
+		"/api/question/generation-stats": {
+			"get": {
+				"tags": ["questions"],
+				"summary": "Public MCQ generation and registry stats",
+				"responses": {
+					"200": { "description": "Generation stats" },
+					"500": { "description": "Failed to load stats" }
+				}
+			}
+		},
+		"/api/question/feedback": {
+			"post": {
+				"tags": ["feedback"],
+				"summary": "Submit feedback on a question",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"202": { "description": "Feedback accepted" },
+					"400": { "description": "Invalid feedback request" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/question/frq": {
+			"post": {
+				"tags": ["frq"],
+				"summary": "Serve one FRQ from the written-response pool",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/QuestionRequest" }
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "FRQ payload" },
+					"400": { "description": "Invalid request or course/format not supported" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "FRQ practice is disabled" },
+					"503": { "description": "Question pool warming or unavailable" }
+				}
+			}
+		},
+		"/api/question/frq/by-id/{questionId}": {
+			"get": {
+				"tags": ["frq"],
+				"summary": "Get a cached FRQ by id",
+				"parameters": [{ "$ref": "#/components/parameters/questionId" }],
+				"responses": {
+					"200": { "description": "FRQ payload" },
+					"400": { "description": "questionId is required" },
+					"403": { "description": "FRQ practice is disabled" },
+					"404": { "description": "Question not found" }
+				}
+			}
+		},
+		"/api/question/frq/grade": {
+			"post": {
+				"tags": ["frq"],
+				"summary": "Grade a written response",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Graded attempt" },
+					"400": { "description": "Invalid written response" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "FRQ practice is disabled" },
+					"409": { "description": "Attempt already in progress" }
 				}
 			}
 		},
@@ -94,28 +262,35 @@
 				}
 			}
 		},
-		"/api/tutor/chat": {
-			"post": {
-				"tags": ["tutor"],
-				"summary": "Chat with the AI tutor",
-				"description": "Public endpoint — no authentication required.",
+		"/api/me/history": {
+			"get": {
+				"tags": ["user"],
+				"summary": "Get paginated practice history",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [
+					{
+						"name": "page",
+						"in": "query",
+						"schema": { "type": "integer", "minimum": 1, "default": 1 }
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 }
+					},
+					{ "name": "course", "in": "query", "schema": { "type": "string" } },
+					{ "name": "unit", "in": "query", "schema": { "type": "string" } },
+					{ "name": "search", "in": "query", "schema": { "type": "string" } },
+					{ "name": "kind", "in": "query", "schema": { "type": "string" } },
+					{ "name": "result", "in": "query", "schema": { "type": "string" } },
+					{ "name": "from", "in": "query", "schema": { "type": "string" } },
+					{ "name": "to", "in": "query", "schema": { "type": "string" } },
+					{ "name": "sortBy", "in": "query", "schema": { "type": "string" } },
+					{ "name": "sortDir", "in": "query", "schema": { "type": "string" } }
+				],
 				"responses": {
-					"200": { "description": "Tutor response stream or JSON" },
-					"400": { "description": "Invalid request" },
-					"413": { "description": "Request body too large" },
-					"500": { "description": "Tutor chat failed" }
-				}
-			}
-		},
-		"/api/tutor/greeting": {
-			"post": {
-				"tags": ["tutor"],
-				"summary": "Get an AI tutor greeting for a question",
-				"description": "Public endpoint — no authentication required.",
-				"responses": {
-					"200": { "description": "Greeting message" },
-					"400": { "description": "Question is required" },
-					"500": { "description": "Greeting failed (may include fallback message)" }
+					"200": { "description": "History page" },
+					"401": { "description": "Not authenticated" }
 				}
 			}
 		},
@@ -133,6 +308,20 @@
 				"tags": ["user"],
 				"summary": "Toggle a question bookmark",
 				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["questionId"],
+								"properties": {
+									"questionId": { "type": "string" }
+								}
+							}
+						}
+					}
+				},
 				"responses": {
 					"200": { "description": "Bookmark toggled" },
 					"400": { "description": "questionId is required" },
@@ -140,7 +329,725 @@
 				}
 			}
 		},
-
+		"/api/me/record-attempt": {
+			"post": {
+				"tags": ["user"],
+				"summary": "Record an MCQ attempt",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Attempt recorded" },
+					"400": { "description": "Invalid attempt payload" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/me/quiz-attempts": {
+			"post": {
+				"tags": ["user"],
+				"summary": "Save a completed quiz attempt",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Quiz history saved" },
+					"400": { "description": "Invalid quiz payload" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/me/courses": {
+			"post": {
+				"tags": ["user"],
+				"summary": "Save selected AP courses",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["courses"],
+								"properties": {
+									"courses": {
+										"type": "array",
+										"items": { "type": "string" },
+										"minItems": 1
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Saved course list" },
+					"400": { "description": "Choose at least one valid AP course" },
+					"401": { "description": "Not authenticated" },
+					"413": { "description": "Request body too large" }
+				}
+			}
+		},
+		"/api/me/practice-data": {
+			"delete": {
+				"tags": ["user"],
+				"summary": "Clear the signed-in user's practice data",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Practice data cleared" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/me/frq-attempt/{id}": {
+			"get": {
+				"tags": ["frq"],
+				"summary": "Get a written-response attempt",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "string" }
+					}
+				],
+				"responses": {
+					"200": { "description": "Attempt payload" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "FRQ practice is disabled" },
+					"404": { "description": "Attempt not found" }
+				}
+			}
+		},
+		"/api/me/tutor-profile": {
+			"get": {
+				"tags": ["super"],
+				"summary": "Get Super tutor profile",
+				"description": "Alias of GET /api/super/profile.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Tutor profile and memory flags" },
+					"401": { "description": "Not authenticated" }
+				}
+			},
+			"patch": {
+				"tags": ["super"],
+				"summary": "Update Super tutor profile",
+				"description": "Alias of PATCH /api/super/profile.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Updated profile" },
+					"400": { "description": "Invalid profile update" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/me/tutor-memories": {
+			"get": {
+				"tags": ["super"],
+				"summary": "List Super tutor memories",
+				"description": "Alias of GET /api/super/memory.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Memory list" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Age not confirmed or feature unavailable" },
+					"503": { "description": "Memory temporarily unavailable" }
+				}
+			},
+			"post": {
+				"tags": ["super"],
+				"summary": "Acknowledge Super tutor memory disclosure",
+				"description": "Alias of POST /api/super/memory.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Disclosure acknowledged" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Age not confirmed" }
+				}
+			},
+			"delete": {
+				"tags": ["super"],
+				"summary": "Delete all Super tutor memories",
+				"description": "Alias of DELETE /api/super/memory.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Memories deleted" },
+					"401": { "description": "Not authenticated" },
+					"503": { "description": "Memory not configured" }
+				}
+			}
+		},
+		"/api/me/tutor-memories/{memoryId}": {
+			"delete": {
+				"tags": ["super"],
+				"summary": "Delete one Super tutor memory",
+				"description": "Alias of DELETE /api/super/memory/{memoryId}.",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [{ "$ref": "#/components/parameters/memoryId" }],
+				"responses": {
+					"200": { "description": "Memory deleted" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Memory not found" }
+				}
+			}
+		},
+		"/api/tutor/chat": {
+			"post": {
+				"tags": ["tutor"],
+				"summary": "Chat with the AI tutor about an MCQ",
+				"description": "Public endpoint. Authentication is optional. Returns a streamed response.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["questionId", "message"],
+								"properties": {
+									"questionId": { "type": "string", "format": "uuid" },
+									"message": { "type": "string", "maxLength": 2000 },
+									"conversationHistory": {
+										"type": "array",
+										"maxItems": 12,
+										"items": {
+											"type": "object",
+											"required": ["role", "content"],
+											"properties": {
+												"role": { "type": "string", "enum": ["user", "assistant"] },
+												"content": { "type": "string" }
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Tutor response stream" },
+					"400": { "description": "Invalid request" },
+					"403": { "description": "Assistant features disabled for this account" },
+					"404": { "description": "Question not found" },
+					"413": { "description": "Request body too large" },
+					"429": { "description": "Rate limited" },
+					"500": { "description": "Tutor chat failed" }
+				}
+			}
+		},
+		"/api/tutor/greeting": {
+			"post": {
+				"tags": ["tutor"],
+				"summary": "Get an AI tutor greeting for a question",
+				"description": "Public endpoint. Authentication is optional.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["questionId"],
+								"properties": {
+									"questionId": { "type": "string", "format": "uuid" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Greeting message" },
+					"400": { "description": "Invalid request" },
+					"403": { "description": "Assistant features disabled for this account" },
+					"404": { "description": "Question not found" },
+					"429": { "description": "Rate limited" },
+					"500": { "description": "Greeting failed (may include fallback message)" }
+				}
+			}
+		},
+		"/api/tutor/frq": {
+			"post": {
+				"tags": ["tutor"],
+				"summary": "Chat with the AI tutor about an FRQ attempt",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Tutor response stream" },
+					"400": { "description": "Invalid request" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "FRQ practice or assistant features unavailable" },
+					"413": { "description": "Request body too large" },
+					"429": { "description": "Rate limited" }
+				}
+			}
+		},
+		"/api/super/agent": {
+			"post": {
+				"tags": ["coach"],
+				"summary": "Start or continue a Super Coach conversation",
+				"description": "Authenticated streaming endpoint. /api/coach is an alias.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Coach response stream" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Coach is not available for this account" }
+				}
+			}
+		},
+		"/api/coach": {
+			"post": {
+				"tags": ["coach"],
+				"summary": "Start or continue a Super Coach conversation",
+				"description": "Alias of POST /api/super/agent.",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Coach response stream" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Coach is not available for this account" }
+				}
+			}
+		},
+		"/api/coach/practice-question": {
+			"post": {
+				"tags": ["coach"],
+				"summary": "Have Coach serve a practice question",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["course"],
+								"properties": {
+									"course": { "type": "string" },
+									"unit": { "type": "string" },
+									"mode": { "type": "string", "enum": ["mcq", "frq"], "default": "mcq" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Practice question" },
+					"400": { "description": "Invalid request" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Coach is not available for this account" },
+					"503": { "description": "Question pool warming" }
+				}
+			}
+		},
+		"/api/coach/undo": {
+			"post": {
+				"tags": ["coach"],
+				"summary": "Undo a Coach action",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [
+					{
+						"name": "Idempotency-Key",
+						"in": "header",
+						"required": true,
+						"schema": { "type": "string", "maxLength": 200 }
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["auditId"],
+								"properties": {
+									"auditId": { "type": "string" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Change undone" },
+					"400": { "description": "Invalid undo request or missing idempotency key" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Coach is not available for this account" },
+					"404": { "description": "Coach change was not found" },
+					"409": { "description": "Undo already requested" },
+					"503": { "description": "Undo temporarily unavailable" }
+				}
+			}
+		},
+		"/api/coach/actions/{id}/undo": {
+			"post": {
+				"tags": ["coach"],
+				"summary": "Undo a Coach action by id",
+				"description": "Alias of POST /api/coach/undo with auditId taken from the path.",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "string" }
+					},
+					{
+						"name": "Idempotency-Key",
+						"in": "header",
+						"required": true,
+						"schema": { "type": "string", "maxLength": 200 }
+					}
+				],
+				"responses": {
+					"200": { "description": "Change undone" },
+					"400": { "description": "Invalid undo request or missing idempotency key" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Coach change was not found" }
+				}
+			}
+		},
+		"/api/super/profile": {
+			"get": {
+				"tags": ["super"],
+				"summary": "Get Super tutor profile",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Tutor profile and memory flags" },
+					"401": { "description": "Not authenticated" }
+				}
+			},
+			"patch": {
+				"tags": ["super"],
+				"summary": "Update Super tutor profile",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"selectedApClasses": {
+										"type": "array",
+										"items": { "type": "string" },
+										"maxItems": 20
+									},
+									"targetDates": {
+										"type": "array",
+										"maxItems": 20,
+										"items": {
+											"type": "object",
+											"properties": {
+												"course": { "type": "string" },
+												"targetDate": { "type": "string", "format": "date" }
+											}
+										}
+									},
+									"studyAvailability": { "type": "string", "maxLength": 500 },
+									"teachingStyle": {
+										"type": "string",
+										"enum": ["socratic", "concise", "step_by_step"]
+									},
+									"memoryEnabled": { "type": "boolean" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Updated profile" },
+					"400": { "description": "Invalid profile update" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/super/conversations": {
+			"get": {
+				"tags": ["super"],
+				"summary": "List Super Coach conversations",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Conversation list" },
+					"401": { "description": "Not authenticated" }
+				}
+			}
+		},
+		"/api/super/conversations/{id}": {
+			"get": {
+				"tags": ["super"],
+				"summary": "Get a Super conversation and its messages",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [{ "$ref": "#/components/parameters/conversationId" }],
+				"responses": {
+					"200": { "description": "Conversation with messages" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Conversation not found" }
+				}
+			},
+			"patch": {
+				"tags": ["super"],
+				"summary": "Rename a Super conversation",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [{ "$ref": "#/components/parameters/conversationId" }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["title"],
+								"properties": {
+									"title": { "type": "string", "minLength": 1, "maxLength": 160 }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Updated title" },
+					"400": { "description": "Invalid conversation update" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Conversation not found" }
+				}
+			},
+			"delete": {
+				"tags": ["super"],
+				"summary": "Delete a Super conversation",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [{ "$ref": "#/components/parameters/conversationId" }],
+				"responses": {
+					"200": { "description": "Conversation deleted" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Conversation not found" }
+				}
+			}
+		},
+		"/api/super/memory": {
+			"get": {
+				"tags": ["super"],
+				"summary": "List Super tutor memories",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Memory list" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Age not confirmed or feature unavailable" },
+					"503": { "description": "Memory temporarily unavailable" }
+				}
+			},
+			"post": {
+				"tags": ["super"],
+				"summary": "Acknowledge Super tutor memory disclosure",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Disclosure acknowledged" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Age not confirmed" }
+				}
+			},
+			"delete": {
+				"tags": ["super"],
+				"summary": "Delete all Super tutor memories",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Memories deleted" },
+					"401": { "description": "Not authenticated" },
+					"503": { "description": "Memory not configured" }
+				}
+			}
+		},
+		"/api/super/memory/{memoryId}": {
+			"delete": {
+				"tags": ["super"],
+				"summary": "Delete one Super tutor memory",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [{ "$ref": "#/components/parameters/memoryId" }],
+				"responses": {
+					"200": { "description": "Memory deleted" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Memory not found" }
+				}
+			}
+		},
+		"/api/super/confirm-age": {
+			"post": {
+				"tags": ["super"],
+				"summary": "Confirm age for Super tutor memory",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"birthDate": { "type": "string", "format": "date" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Age confirmed" },
+					"400": { "description": "Invalid birth date" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Under age" },
+					"413": { "description": "Request body too large" }
+				}
+			}
+		},
+		"/api/super/claim-free-beta": {
+			"post": {
+				"tags": ["super"],
+				"summary": "Claim the Super free beta offer",
+				"security": [{ "sessionCookie": [] }],
+				"responses": {
+					"200": { "description": "Offer claimed" },
+					"401": { "description": "Not authenticated" },
+					"410": { "description": "Free beta is no longer available" }
+				}
+			}
+		},
+		"/api/shared-practice-sets": {
+			"post": {
+				"tags": ["practice"],
+				"summary": "Create a shared quiz link",
+				"description": "Authentication is optional. Signed-in users have a higher rate limit.",
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["questionIds"],
+								"properties": {
+									"questionIds": {
+										"type": "array",
+										"items": { "type": "string" }
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Shared quiz created" },
+					"400": { "description": "Invalid quiz payload" },
+					"429": { "description": "Too many share links" }
+				}
+			}
+		},
+		"/api/shared-practice-sets/{id}": {
+			"patch": {
+				"tags": ["practice"],
+				"summary": "Attach a shared quiz to an organization",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [{ "$ref": "#/components/parameters/sharedSetId" }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["organizationId"],
+								"properties": {
+									"organizationId": { "type": "string" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Attached" },
+					"400": { "description": "Invalid request" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Not allowed for that organization" }
+				}
+			},
+			"delete": {
+				"tags": ["practice"],
+				"summary": "Detach a shared quiz from an organization",
+				"security": [{ "sessionCookie": [] }],
+				"parameters": [
+					{ "$ref": "#/components/parameters/sharedSetId" },
+					{
+						"name": "organizationId",
+						"in": "query",
+						"schema": { "type": "string" }
+					}
+				],
+				"responses": {
+					"200": { "description": "Detached" },
+					"400": { "description": "Invalid request" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Not allowed for that organization" }
+				}
+			}
+		},
+		"/api/orgs/join": {
+			"post": {
+				"tags": ["orgs"],
+				"summary": "Join an organization from an invite token",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["token"],
+								"properties": {
+									"token": { "type": "string" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Joined or already a member" },
+					"400": { "description": "Invalid invite link" },
+					"401": { "description": "Not authenticated" },
+					"404": { "description": "Invite link invalid or expired" }
+				}
+			}
+		},
+		"/api/orgs/invite-link": {
+			"post": {
+				"tags": ["orgs"],
+				"summary": "Create an organization invite link",
+				"security": [{ "sessionCookie": [] }],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"required": ["organizationId"],
+								"properties": {
+									"organizationId": { "type": "string" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Invite URL" },
+					"400": { "description": "Organization is required" },
+					"401": { "description": "Not authenticated" },
+					"403": { "description": "Not allowed to create an invite link" }
+				}
+			}
+		},
+		"/api/feedback": {
+			"post": {
+				"tags": ["feedback"],
+				"summary": "Submit app feedback",
+				"responses": {
+					"200": { "description": "Feedback accepted" },
+					"400": { "description": "Invalid feedback" }
+				}
+			}
+		},
+		"/api/bug-report": {
+			"post": {
+				"tags": ["feedback"],
+				"summary": "Submit a bug report",
+				"responses": {
+					"200": { "description": "Bug report accepted" },
+					"400": { "description": "Invalid bug report" }
+				}
+			}
+		},
 		"/api/auth/sign-up/email": {
 			"post": {
 				"tags": ["auth"],
@@ -159,12 +1066,48 @@
 				}
 			}
 		},
+		"/api/auth/sign-in/social": {
+			"post": {
+				"tags": ["auth"],
+				"summary": "Start social sign-in (Google)",
+				"responses": {
+					"200": { "description": "Redirect URL or session" }
+				}
+			}
+		},
+		"/api/auth/sign-out": {
+			"post": {
+				"tags": ["auth"],
+				"summary": "Sign out the current session",
+				"responses": {
+					"200": { "description": "Session cleared" }
+				}
+			}
+		},
 		"/api/auth/get-session": {
 			"get": {
 				"tags": ["auth"],
 				"summary": "Get current session",
 				"responses": {
 					"200": { "description": "Session payload or null" }
+				}
+			}
+		},
+		"/api/auth/request-password-reset": {
+			"post": {
+				"tags": ["auth"],
+				"summary": "Request a password reset email",
+				"responses": {
+					"200": { "description": "Reset email sent if the account exists" }
+				}
+			}
+		},
+		"/api/auth/reset-password": {
+			"post": {
+				"tags": ["auth"],
+				"summary": "Reset password with a token",
+				"responses": {
+					"200": { "description": "Password updated" }
 				}
 			}
 		}
@@ -175,7 +1118,59 @@
 				"type": "apiKey",
 				"in": "cookie",
 				"name": "better-auth.session_token",
-				"description": "Better Auth session cookie issued after sign-in"
+				"description": "Better Auth session cookie issued after sign-in. HTTPS uses the __Secure- prefix."
+			}
+		},
+		"parameters": {
+			"questionId": {
+				"name": "questionId",
+				"in": "path",
+				"required": true,
+				"schema": { "type": "string" }
+			},
+			"memoryId": {
+				"name": "memoryId",
+				"in": "path",
+				"required": true,
+				"schema": { "type": "string" }
+			},
+			"conversationId": {
+				"name": "id",
+				"in": "path",
+				"required": true,
+				"schema": { "type": "string" }
+			},
+			"sharedSetId": {
+				"name": "id",
+				"in": "path",
+				"required": true,
+				"schema": { "type": "string" }
+			}
+		},
+		"schemas": {
+			"QuestionRequest": {
+				"type": "object",
+				"required": ["course"],
+				"properties": {
+					"course": {
+						"type": "string",
+						"example": "AP Biology",
+						"description": "Supported AP course name"
+					},
+					"unit": {
+						"type": "string",
+						"example": "Unit 1: Chemistry of Life"
+					},
+					"formatId": {
+						"type": "string",
+						"description": "Optional FRQ format identifier"
+					},
+					"excludeQuestionIds": {
+						"type": "array",
+						"items": { "type": "string" },
+						"maxItems": 100
+					}
+				}
 			}
 		}
 	}
