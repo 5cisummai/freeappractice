@@ -3,6 +3,8 @@ import { pruneMessages, type ModelMessage } from 'ai';
 const BULKY_READ_TOOLS = [
 	'search_web',
 	'generate_diagram',
+	'open_physics_sim',
+	'open_math_explorer',
 	'read_course_catalog',
 	'read_activity_summary',
 	'read_quiz_attempt',

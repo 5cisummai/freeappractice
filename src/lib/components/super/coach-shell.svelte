@@ -9,6 +9,7 @@
 		lastAssistantMessageIsCompleteWithToolCalls
 	} from 'ai';
 	import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
+	import Atom2FilledIcon from '@tabler/icons-svelte/icons/atom-2-filled';
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
@@ -25,6 +26,7 @@
 	import StepGoalsIcon from '@lucide/svelte/icons/target';
 	import StepDiagramIcon from '@lucide/svelte/icons/image';
 	import StepActivityIcon from '@lucide/svelte/icons/activity';
+	import StepSigmaIcon from '@lucide/svelte/icons/sigma';
 	import StepFallbackIcon from '@lucide/svelte/icons/wrench';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy';
 	import ThumbDownFilledIcon from '@tabler/icons-svelte/icons/thumb-down-filled';
@@ -52,6 +54,8 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import { getCanvasHtmlOutput } from '$lib/canvas/canvas-ui';
+	import CoachCanvasPanel from '$lib/components/super/coach-canvas-panel.svelte';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
 	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
@@ -115,7 +119,8 @@
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
 		'study-next': asIcon(BookOpenIcon),
 		'study-plan': asIcon(CalendarDaysIcon),
-		'review-progress': asIcon(BarChart3Icon)
+		'review-progress': asIcon(BarChart3Icon),
+		'physics-sim': asIcon(Atom2FilledIcon)
 	};
 
 	const thinkingModeOptions: Array<{
@@ -182,6 +187,14 @@
 			running: 'Drawing a diagram…',
 			complete: 'Drew a diagram'
 		},
+		'tool-open_physics_sim': {
+			running: 'Building a physics simulation…',
+			complete: 'Opened a physics simulation'
+		},
+		'tool-open_math_explorer': {
+			running: 'Building a math explorer…',
+			complete: 'Opened a math explorer'
+		},
 		'tool-read_activity_summary': {
 			running: 'Checking your activity…',
 			complete: 'Checked your activity'
@@ -219,8 +232,11 @@
 		'tool-ask_student': StepQuestionIcon,
 		'tool-update_goals': StepGoalsIcon,
 		'tool-update_study_plan': StepPlanIcon,
-		'tool-generate_diagram': StepDiagramIcon
+		'tool-generate_diagram': StepDiagramIcon,
+		'tool-open_physics_sim': StepActivityIcon,
+		'tool-open_math_explorer': StepSigmaIcon
 	};
+
 
 	const coach = new Chat<SuperAgentUIMessage>({
 		messages: [],
@@ -537,18 +553,12 @@
 		};
 	}
 
+	// Only show the floating thinking blob before an assistant message exists.
+	// Once the assistant row is present, its CoachAvatar owns the thinking state.
 	let showThinkingIndicator = $derived.by(() => {
 		if (!streaming) return false;
-
 		const last = coach.messages.at(-1);
-		if (!last || last.role !== 'assistant') return true;
-
-		const tools = last.parts
-			.map(getToolPart)
-			.filter((part): part is CoachToolPart => part !== null);
-		if (tools.some((tool) => isToolInProgress(tool.state))) return false;
-		if (messageText(last).trim()) return false;
-		return tools.length === 0;
+		return !last || last.role !== 'assistant';
 	});
 
 	onMount(() => {
@@ -1037,6 +1047,10 @@
 															</figcaption>
 														{/if}
 													</figure>
+												{/if}
+												{@const canvasArtifact = getCanvasHtmlOutput(toolPart.output)}
+												{#if canvasArtifact && (toolPart.type === 'tool-open_physics_sim' || toolPart.type === 'tool-open_math_explorer')}
+													<CoachCanvasPanel artifact={canvasArtifact} />
 												{/if}
 												{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(
 													toolPart.output

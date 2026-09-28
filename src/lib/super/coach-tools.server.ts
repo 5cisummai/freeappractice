@@ -15,7 +15,11 @@ import {
 } from '$lib/super/coach-reads.server';
 import { getCurrentSuperQuestion } from '$lib/super/context.server';
 import { courseSchema, studyPlanToolInputSchema } from '$lib/super/coach-tool-schemas';
-import { renderDiagram } from '$lib/super/diagram-renderer.server';
+import {
+	canvasToolToKind,
+	generativeCanvasToolInputSchema,
+	prepareGenerativeCanvasHtml
+} from '$lib/canvas';
 import { getTutorProfileView, updateTutorProfile } from '$lib/super/profile.server';
 import { addStudyPlanDays, getCurrentStudyPlan, saveStudyPlan } from '$lib/super/study-plan.server';
 import { StudyPlanConflictError, StudyPlansLockedError } from '$lib/super/study-plan.server';
@@ -33,84 +37,6 @@ const targetDateSchema = z.object({
 		.regex(/^\d{4}-\d{2}-\d{2}$/)
 		.describe('Target exam date in YYYY-MM-DD format.')
 });
-
-const diagramObjectSchema = z.object({
-	shape: z.enum(['block', 'circle']).describe('Object shape for a physics diagram.'),
-	label: z.string().trim().max(80).optional().describe('Short visible object label.')
-});
-
-const forceDirectionSchema = z
-	.union([
-		z.enum(['up', 'down', 'left', 'right', 'normal', 'up-slope']),
-		z.object({ angle: z.number().min(-360).max(360).describe('Direction angle in degrees.') })
-	])
-	.describe('Named direction or an angle in degrees.');
-
-const forceSchema = z.object({
-	direction: forceDirectionSchema,
-	label: z.string().trim().min(1).max(80).describe('Short force label, such as weight or normal.'),
-	magnitude: z
-		.number()
-		.min(0)
-		.max(1_000_000)
-		.optional()
-		.describe('Optional nonnegative magnitude.'),
-	unit: z.string().trim().max(40).optional().describe('Optional magnitude unit, such as N.'),
-	kind: z
-		.enum(['gravity', 'normal', 'friction', 'tension', 'spring', 'applied', 'drag', 'buoyant'])
-		.optional()
-		.describe('Optional semantic force category.')
-});
-
-const diagramSpecSchema = z
-	.looseObject({
-		type: z
-			.string()
-			.trim()
-			.min(1)
-			.max(80)
-			.describe('Supported examfig diagram type, such as free-body or function-graph.'),
-		accessibleDescription: z
-			.string()
-			.trim()
-			.min(1)
-			.max(2_000)
-			.describe('Plain-language description for screen readers.'),
-		title: z.string().trim().max(200).optional().describe('Optional short diagram title.'),
-		width: z
-			.number()
-			.int()
-			.min(1)
-			.max(4_000)
-			.optional()
-			.describe('Optional rendered width in pixels.'),
-		height: z
-			.number()
-			.int()
-			.min(1)
-			.max(4_000)
-			.optional()
-			.describe('Optional rendered height in pixels.'),
-		theme: z.literal('monochrome').optional().describe('Optional monochrome theme.'),
-		object: diagramObjectSchema
-			.optional()
-			.describe('Object shown in a physics diagram, when required by type.'),
-		forces: z
-			.array(forceSchema)
-			.min(1)
-			.max(12)
-			.optional()
-			.describe('Forces for a free-body or similar physics diagram.'),
-		angle: z
-			.number()
-			.min(-360)
-			.max(360)
-			.optional()
-			.describe('Angle in degrees for diagram types that require one.')
-	})
-	.describe(
-		'Semantic examfig DiagramSpec. Add only fields required by the chosen type; never pass SVG or layout coordinates.'
-	);
 
 const webSearchSchema = z.object({
 	objective: z
@@ -391,25 +317,36 @@ export function createSuperTools(input: SuperToolsInput) {
 			}),
 			execute: (filter) => getCoachFrqPerformance(userId, filter)
 		}),
-		generate_diagram: tool({
+		open_physics_sim: tool({
 			description:
-				'Generate an educational diagram that renders inline in the chat. Use this when a visual would clarify the explanation. Pass an examfig semantic DiagramSpec in spec, never SVG or pixel coordinates. Always include accessibleDescription. Supported types include free-body, inclined-plane, mechanics-scene, vector-scene, energy-chart, motion-map, circuit, wave-diagram, ray-diagram, function-graph, unit-circle, data-plot, process-diagram, and other registered examfig science/math types. For AP Physics, prefer free-body, inclined-plane, mechanics-scene, energy-chart, motion-map, or vector-scene.',
-			inputSchema: z.object({
-				spec: diagramSpecSchema.describe(
-					'Complete semantic examfig specification for the requested visual.'
-				)
-			}),
-			execute: async ({ spec }) => {
-				try {
-					return renderDiagram(spec);
-				} catch (error) {
-					return {
-						error:
-							error instanceof Error
-								? `The diagram could not be rendered: ${error.message}`
-								: 'The diagram could not be rendered.'
-					};
-				}
+				'Open a generative interactive physics simulation inline in Coach chat. Pass one complete self-contained HTML document in html with inline <style> and <script> only—no markdown fences, no external scripts, CDNs, fonts, or network fetch. Keep styling basic and minimal: system fonts, little CSS, no decorative gradients/shadows, short compact markup/JS. For equations, use $...$ / $$...$$ lightweight LaTeX (greek, sub/sup, \\frac, \\sqrt, \\sin); a host lite renderer typesets it—do not load KaTeX. Use canvas or SVG, requestAnimationFrame or sliders for motion, label units, and keep models AP Physics–correct (e.g. g = 9.8 m/s²). Include a visible title and short student instructions. Use this when a visual would clarify physics or the student should manipulate a simulation.',
+			inputSchema: generativeCanvasToolInputSchema,
+			execute: ({ title, accessibleDescription, html }) => {
+				const prepared = prepareGenerativeCanvasHtml(html);
+				if (!prepared.ok) return { error: prepared.error };
+				return {
+					kind: 'canvas_html' as const,
+					tool: canvasToolToKind('open_physics_sim'),
+					title,
+					accessibleDescription,
+					html: prepared.html
+				};
+			}
+		}),
+		open_math_explorer: tool({
+			description:
+				'Open a generative interactive math explorer inline in Coach chat. Pass one complete self-contained HTML document in html with inline <style> and <script> only—no markdown fences, no external scripts, CDNs, or network fetch. Keep styling basic and minimal: system fonts, little CSS, no decorative gradients/shadows, short compact markup/JS. For equations, use $...$ / $$...$$ lightweight LaTeX (greek, sub/sup, \\frac, \\sqrt, \\sin); a host lite renderer typesets it—do not load KaTeX. Build graphs, parameter sliders, unit-circle explorations, or derivative intuition with vanilla JS; sample expressions with your own safe numeric code—never eval student text or load math libraries from the network. Include clear axes and a visible title plus short student instructions. Use this when a graph or interactive math visual would help.',
+			inputSchema: generativeCanvasToolInputSchema,
+			execute: ({ title, accessibleDescription, html }) => {
+				const prepared = prepareGenerativeCanvasHtml(html);
+				if (!prepared.ok) return { error: prepared.error };
+				return {
+					kind: 'canvas_html' as const,
+					tool: canvasToolToKind('open_math_explorer'),
+					title,
+					accessibleDescription,
+					html: prepared.html
+				};
 			}
 		}),
 		update_goals: tool({
