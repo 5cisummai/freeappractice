@@ -7,9 +7,12 @@
 	import FeedbackDialog from '$lib/components/layout/feedback-dialog.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 
-	import CompassIcon from '@tabler/icons-svelte/icons/compass-filled';
 	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
+	import UsersGroupIcon from '@tabler/icons-svelte/icons/users-group';
+	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import type { UserOrganization } from '$lib/auth/organization-types';
+
+	const COMMUNITY_DISCORD_URL = 'https://discord.gg/6PpCq8P57';
 
 	let {
 		isAdmin,
@@ -29,9 +32,9 @@
 
 	const showMembers = $derived(activeOrganization?.orgType === 'group');
 
-	function isActive(href: '/app/settings' | '/app/resources'): boolean {
-		const resolved = resolve(href);
-		return page.url.pathname === resolved || page.url.pathname.startsWith(resolved + '/');
+	function isSettingsActive(): boolean {
+		const resolved = resolve('/app/settings');
+		return page.url.pathname === resolved || page.url.pathname.startsWith(`${resolved}/`);
 	}
 </script>
 
@@ -60,14 +63,14 @@
 		<Sidebar.Menu>
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton
-					isActive={isActive('/app/settings')}
+					isActive={isSettingsActive()}
 					tooltipContent="Settings"
 					class="data-active:bg-primary/10 data-active:font-medium data-active:text-primary"
 				>
 					{#snippet child({ props })}
 						<a
 							href={resolve('/app/settings')}
-							aria-current={isActive('/app/settings') ? 'page' : undefined}
+							aria-current={isSettingsActive() ? 'page' : undefined}
 							{...props}
 						>
 							<SettingsIcon />
@@ -78,19 +81,18 @@
 			</Sidebar.MenuItem>
 			<FeedbackDialog />
 			<Sidebar.MenuItem>
-				<Sidebar.MenuButton
-					isActive={isActive('/app/resources')}
-					tooltipContent="Resources"
-					class="data-active:bg-primary/10 data-active:font-medium data-active:text-primary"
-				>
+				<Sidebar.MenuButton tooltipContent="Community">
 					{#snippet child({ props })}
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 						<a
-							href={resolve('/app/resources')}
-							aria-current={isActive('/app/resources') ? 'page' : undefined}
+							href={COMMUNITY_DISCORD_URL}
+							target="_blank"
+							rel="noopener noreferrer"
 							{...props}
 						>
-							<CompassIcon />
-							<span>Resources</span>
+							<UsersGroupIcon />
+							<span>Community</span>
+							<ExternalLinkIcon class="ml-auto size-3.5 text-muted-foreground" aria-hidden="true" />
 						</a>
 					{/snippet}
 				</Sidebar.MenuButton>

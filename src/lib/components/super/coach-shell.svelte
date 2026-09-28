@@ -77,6 +77,7 @@
 	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { getApprovalProposal, type ApprovalProposal } from '$lib/super/approval-ui';
 	import CoachQuestionCard from '$lib/components/super/coach-question-card.svelte';
+	import CoachMessageFeedbackDialog from '$lib/components/super/coach-message-feedback-dialog.svelte';
 	import type { CoachQuestionToolOutput } from '$lib/super/coach-question';
 	import { toast } from 'svelte-sonner';
 
@@ -107,6 +108,8 @@
 	let conversationLoadRequest = 0;
 	let pendingCoachActions: CoachComposerActionId[] = [];
 	let messageFeedbackById = $state<Record<string, CoachMessageFeedback>>({});
+	let notHelpfulFeedbackOpen = $state(false);
+	let notHelpfulFeedbackMessageId = $state<string | null>(null);
 	const asIcon = (icon: unknown) => icon as Component;
 
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
@@ -684,6 +687,19 @@
 		messageFeedbackById = { ...messageFeedbackById, [messageId]: feedback };
 	}
 
+	function openNotHelpfulFeedback(messageId: string): void {
+		if (messageFeedbackById[messageId] === 'not_helpful') {
+			toggleMessageFeedback(messageId, 'not_helpful');
+			return;
+		}
+		notHelpfulFeedbackMessageId = messageId;
+		notHelpfulFeedbackOpen = true;
+	}
+
+	function handleNotHelpfulFeedbackSubmitted(messageId: string): void {
+		messageFeedbackById = { ...messageFeedbackById, [messageId]: 'not_helpful' };
+	}
+
 	async function regenerateMessage(messageId: string): Promise<void> {
 		if (streaming) return;
 		try {
@@ -1162,7 +1178,7 @@
 														messageFeedback(message.id) === 'not_helpful' &&
 															'bg-muted text-foreground'
 													)}
-													onclick={() => toggleMessageFeedback(message.id, 'not_helpful')}
+													onclick={() => openNotHelpfulFeedback(message.id)}
 												>
 													{#if messageFeedback(message.id) === 'not_helpful'}
 														<ThumbDownFilledIcon />
@@ -1444,4 +1460,12 @@
 			{/if}
 		</div>
 	</div>
+
+	<CoachMessageFeedbackDialog
+		bind:open={notHelpfulFeedbackOpen}
+		messageId={notHelpfulFeedbackMessageId}
+		{conversationId}
+		messages={coach.messages}
+		onSubmitted={handleNotHelpfulFeedbackSubmitted}
+	/>
 </div>
