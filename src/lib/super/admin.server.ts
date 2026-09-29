@@ -156,7 +156,7 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 				.limit(100),
 			db
 				.select({
-					total: sql<number>`coalesce(${sum(superUsageRollups.personalizedMessages)}, 0)::int`
+					total: sql<string>`coalesce(${sum(superUsageRollups.creditsMilli)}, 0)::bigint`
 				})
 				.from(superUsageRollups)
 				.where(eq(superUsageRollups.month, month)),
@@ -192,7 +192,7 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 		),
 		activeGrants: Number(activeGrantCount[0]?.total ?? 0),
 		month,
-		personalizedMessagesThisMonth: Number(usageTotal[0]?.total ?? 0),
+		creditsMilliThisMonth: Number(usageTotal[0]?.total ?? 0),
 		subscriptions: subscriptions.map((subscription) =>
 			toSubscriptionView(subscription, accessByUser.get(subscription.userId) ?? null)
 		),

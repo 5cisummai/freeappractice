@@ -99,7 +99,7 @@ describe('direct Drizzle Super admin operations', () => {
 			activeSubscriptions: 2,
 			pastDueSubscriptions: 1,
 			activeGrants: 3,
-			personalizedMessagesThisMonth: 12,
+			creditsMilliThisMonth: 12,
 			subscriptions: [
 				{ userId: 'user-1', stripeSubscriptionId: 'sub_1', accessReason: 'subscription' }
 			],

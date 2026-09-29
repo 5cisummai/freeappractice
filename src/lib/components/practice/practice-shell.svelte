@@ -215,11 +215,18 @@
 					class="mb-4 w-full"
 				>
 					<Tabs.List aria-label="Practice modes" class={tabsListClass}>
-						<Tabs.Trigger value="unlimited">Unlimited MCQ</Tabs.Trigger>
-						<Tabs.Trigger value="graded">Graded Quizzes</Tabs.Trigger>
+						<Tabs.Trigger value="unlimited" aria-label="Unlimited MCQ">
+							<span class="sm:hidden">MCQ</span>
+							<span class="hidden sm:inline">Unlimited MCQ</span>
+						</Tabs.Trigger>
+						<Tabs.Trigger value="graded" aria-label="Graded Quizzes">
+							<span class="sm:hidden">Quiz</span>
+							<span class="hidden sm:inline">Graded Quizzes</span>
+						</Tabs.Trigger>
 						{#if frqTabEnabled}
-							<Tabs.Trigger value="frq">
-								Free Response
+							<Tabs.Trigger value="frq" aria-label="Free Response">
+								<span class="sm:hidden">FRQ</span>
+								<span class="hidden sm:inline">Free Response</span>
 								<Badge variant="secondary" class="h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
 									>New</Badge
 								>

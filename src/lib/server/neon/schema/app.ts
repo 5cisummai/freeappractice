@@ -440,7 +440,7 @@ export const superUsageRollups = appSchema.table(
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
 		month: text('month').notNull(),
-		personalizedMessages: integer('personalized_messages').notNull().default(0),
+		creditsMilli: integer('credits_milli').notNull().default(0),
 		updatedAt: updatedAt()
 	},
 	(table) => [primaryKey({ columns: [table.userId, table.month] })]

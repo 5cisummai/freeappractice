@@ -1,5 +1,13 @@
-export const SUPER_MONTHLY_MESSAGE_LIMIT = 1000;
-export const SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT = 500;
+export {
+	CREDITS_PER_USD,
+	SUPER_FREE_BETA_MONTHLY_CREDITS,
+	SUPER_FREE_BETA_MONTHLY_CREDITS_MILLI,
+	SUPER_FREE_BETA_MONTHLY_USD,
+	SUPER_MONTHLY_CREDITS,
+	SUPER_MONTHLY_CREDITS_MILLI,
+	SUPER_MONTHLY_USD,
+	WEB_SEARCH_SURCHARGE_MILLI
+} from '$lib/super/usage-credits';
 export const SUPER_PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Plan = 'free' | 'super';
@@ -146,7 +154,7 @@ export type SuperAdminOverview = {
 	pastDueSubscriptions: number;
 	activeGrants: number;
 	month: string;
-	personalizedMessagesThisMonth: number;
+	creditsMilliThisMonth: number;
 	subscriptions: SuperSubscriptionView[];
 	failedCleanupJobs: SuperCleanupJobView[];
 };

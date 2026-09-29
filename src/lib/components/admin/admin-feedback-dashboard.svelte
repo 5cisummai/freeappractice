@@ -1,8 +1,13 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import QuestionCard from '$lib/components/questions/question-card.svelte';
+	import { toast } from 'svelte-sonner';
+	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model.js';
 	import type { AdminFeedbackItem } from '$lib/admin/types.js';
 	import { APP_FEEDBACK_CATEGORY_LABELS } from '$lib/schemas/app-feedback.js';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let {
 		items = [],
@@ -17,6 +22,19 @@
 		totalBugReports?: number;
 		errorMessage?: string | null;
 	} = $props();
+
+	let markingBadQuestionId = $state<string | null>(null);
+	let markedBadQuestionIds = $state<Record<string, true>>({});
+	let expandedPreviewIds = new SvelteSet<string>();
+
+	function previewExpandKey(itemId: string, questionId: string): string {
+		return `${itemId}:${questionId}`;
+	}
+
+	function setPreviewExpanded(key: string, open: boolean): void {
+		if (open) expandedPreviewIds.add(key);
+		else expandedPreviewIds.delete(key);
+	}
 
 	function formatDateTime(value: Date | string | null | undefined): string {
 		if (!value) return '—';
@@ -47,6 +65,61 @@
 		if (typeof selectedCourse === 'string' && selectedCourse) parts.push(selectedCourse);
 		if (typeof selectedUnit === 'string' && selectedUnit) parts.push(selectedUnit);
 		return parts.join(' · ');
+	}
+
+	function questionPreview(
+		item: AdminFeedbackItem
+	): { questionId: string; selectedCourse: string; selectedUnit: string } | null {
+		if (item.source !== 'bug_report' || !item.metadata) return null;
+		const questionId = item.metadata.questionId;
+		if (typeof questionId !== 'string' || !questionId) return null;
+		const selectedCourse =
+			typeof item.metadata.selectedCourse === 'string' ? item.metadata.selectedCourse : '';
+		const selectedUnit =
+			typeof item.metadata.selectedUnit === 'string' ? item.metadata.selectedUnit : '';
+		return { questionId, selectedCourse, selectedUnit };
+	}
+
+	function isMarkedBad(item: AdminFeedbackItem, questionId: string): boolean {
+		return item.questionFinalVerdict === 'bad' || !!markedBadQuestionIds[questionId];
+	}
+
+	async function markQuestionBad(
+		item: AdminFeedbackItem,
+		preview: { questionId: string; selectedCourse: string; selectedUnit: string }
+	): Promise<void> {
+		if (markingBadQuestionId || isMarkedBad(item, preview.questionId)) return;
+		markingBadQuestionId = preview.questionId;
+		const notes = `Marked bad from bug report: ${item.title ?? item.id} (report ${item.id})`;
+		try {
+			const response = await fetch('/api/admin/question-quality', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'humanDecision',
+					questionId: preview.questionId,
+					verdict: 'bad',
+					notes
+				})
+			});
+			if (!response.ok) {
+				let message = 'Unable to mark question as bad.';
+				try {
+					const data = (await response.json()) as { message?: string };
+					if (typeof data.message === 'string') message = data.message;
+				} catch {
+					// ignore parse errors
+				}
+				toast.error(message);
+				return;
+			}
+			markedBadQuestionIds = { ...markedBadQuestionIds, [preview.questionId]: true };
+			toast.success('Question marked bad.');
+		} catch {
+			toast.error('Unable to mark question as bad.');
+		} finally {
+			markingBadQuestionId = null;
+		}
 	}
 </script>
 
@@ -103,16 +176,63 @@
 								{/if}
 								<p class="text-sm break-words whitespace-pre-wrap">{item.description}</p>
 								{#if item.steps}
-									<div class="rounded-md border border-border/70 bg-muted/30 p-3 text-sm">
+									<div class="space-y-1 text-sm">
 										<p class="font-medium text-muted-foreground">Steps to reproduce</p>
-										<p class="mt-1 break-words whitespace-pre-wrap">{item.steps}</p>
+										<p class="break-words whitespace-pre-wrap">{item.steps}</p>
 									</div>
 								{/if}
 								{#if item.expected}
-									<div class="rounded-md border border-border/70 bg-muted/30 p-3 text-sm">
+									<div class="space-y-1 text-sm">
 										<p class="font-medium text-muted-foreground">Expected result</p>
-										<p class="mt-1 break-words whitespace-pre-wrap">{item.expected}</p>
+										<p class="break-words whitespace-pre-wrap">{item.expected}</p>
 									</div>
+								{/if}
+								{@const preview = questionPreview(item)}
+								{#if preview}
+									{@const expandKey = previewExpandKey(item.id, preview.questionId)}
+									<div class="flex justify-end">
+										<Button
+											size="sm"
+											variant="outline"
+											class="border-destructive/30 text-destructive hover:bg-destructive/10"
+											onclick={() => void markQuestionBad(item, preview)}
+											disabled={isMarkedBad(item, preview.questionId) ||
+												markingBadQuestionId === preview.questionId}
+										>
+											{isMarkedBad(item, preview.questionId)
+												? 'Marked bad'
+												: markingBadQuestionId === preview.questionId
+													? 'Marking…'
+													: 'Mark bad'}
+										</Button>
+									</div>
+									<details
+										class="rounded-lg border border-border/60"
+										ontoggle={(event) => setPreviewExpanded(expandKey, event.currentTarget.open)}
+									>
+										<summary class="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">
+											Question preview
+										</summary>
+										{#if expandedPreviewIds.has(expandKey)}
+											<div class="border-t border-border/60 p-2">
+												{#key preview.questionId}
+													<QuestionCard
+														model={unlimitedQuestionCardModel({
+															selectedCourse: preview.selectedCourse,
+															selectedUnit: preview.selectedUnit,
+															requestVersion: 1,
+															presetQuestionId: preview.questionId
+														})}
+														tutorMode="hidden"
+														showUtilityActions={false}
+														showFirstUseHint={false}
+														nextDisabled={true}
+														class="border-0 bg-transparent shadow-none ring-0"
+													/>
+												{/key}
+											</div>
+										{/if}
+									</details>
 								{/if}
 							{/if}
 						</div>

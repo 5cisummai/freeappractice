@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { on } from 'svelte/events';
 	import ThumbDownIcon from '@tabler/icons-svelte/icons/thumb-down';
 	import ThumbUpIcon from '@tabler/icons-svelte/icons/thumb-up';
 	import type {
@@ -44,13 +43,9 @@
 	let statusMessage = $state<string | null>(null);
 	let errorMessage = $state<string | null>(null);
 	let humanNotes = $state<Record<string, string>>({});
-	let dragOffset = $state(0);
-	let dragging = $state(false);
-	let swipeQuestionId = $state<string | null>(null);
-	let swipeDecision = $state<QualityVerdict | null>(null);
+	let pendingVerdict = $state<QualityVerdict | null>(null);
 
 	const activeReviewItem = $derived(dashboard.humanQueue[0] ?? null);
-	const nextReviewItem = $derived(dashboard.humanQueue[1] ?? null);
 	const terminalJobStatuses: ReviewJobStatus[] = ['completed', 'cancelled', 'failed'];
 
 	function numberValue(value: NumericInput, fallback: number): number {
@@ -165,73 +160,6 @@
 		return busyAction === key;
 	}
 
-	function cardTransform(item: HumanReviewItem): string | undefined {
-		if (swipeQuestionId === item.questionId && swipeDecision === 'good') {
-			return 'transform: translateX(115%) rotate(12deg);';
-		}
-		if (swipeQuestionId === item.questionId && swipeDecision === 'bad') {
-			return 'transform: translateX(-115%) rotate(-12deg);';
-		}
-		if (dragging && dragOffset !== 0) {
-			const rotation = Math.max(-12, Math.min(12, dragOffset / 24));
-			return `transform: translateX(${dragOffset}px) rotate(${rotation}deg);`;
-		}
-		return undefined;
-	}
-
-	function cardSwipeClasses(item: HumanReviewItem): string {
-		return swipeQuestionId === item.questionId && swipeDecision
-			? 'opacity-0 transition-[transform,opacity] duration-300 ease-out'
-			: dragging
-				? 'transition-none'
-				: 'transition-[transform,opacity] duration-300 ease-out';
-	}
-
-	function swipeCard(node: HTMLElement): () => void {
-		let pointerId: number | null = null;
-		let startX: number | null = null;
-
-		function handlePointerDown(event: PointerEvent): void {
-			if (busyAction || !activeReviewItem) return;
-			startX = event.clientX;
-			pointerId = event.pointerId;
-			dragging = true;
-			node.setPointerCapture(event.pointerId);
-		}
-
-		function handlePointerMove(event: PointerEvent): void {
-			if (startX === null || event.pointerId !== pointerId) return;
-			dragOffset = event.clientX - startX;
-		}
-
-		function resetDrag(event?: PointerEvent): void {
-			if (event && node.hasPointerCapture(event.pointerId))
-				node.releasePointerCapture(event.pointerId);
-			startX = null;
-			pointerId = null;
-			dragging = false;
-			dragOffset = 0;
-		}
-
-		function handlePointerEnd(event: PointerEvent): void {
-			if (startX === null || event.pointerId !== pointerId) return;
-			const offset = dragOffset;
-			resetDrag(event);
-			if (!busyAction && activeReviewItem && Math.abs(offset) >= 120) {
-				void submitHumanDecision(activeReviewItem, offset > 0 ? 'good' : 'bad');
-			}
-		}
-
-		const cleanup = [
-			on(node, 'pointerdown', handlePointerDown),
-			on(node, 'pointermove', handlePointerMove),
-			on(node, 'pointerup', handlePointerEnd),
-			on(node, 'pointercancel', () => resetDrag())
-		];
-
-		return () => cleanup.forEach((remove) => remove());
-	}
-
 	function handleGlobalKeydown(event: KeyboardEvent): void {
 		if (!activeReviewItem || busyAction || event.repeat) return;
 		if (
@@ -335,10 +263,8 @@
 		const key = `decision:${item.questionId}`;
 		if (busyAction) return;
 		busyAction = key;
-		swipeQuestionId = item.questionId;
-		swipeDecision = verdict;
+		pendingVerdict = verdict;
 		clearMessages();
-		await new Promise<void>((resolve) => setTimeout(resolve, 240));
 		try {
 			await request({
 				action: 'humanDecision',
@@ -353,9 +279,7 @@
 			errorMessage = error instanceof Error ? error.message : 'Unable to save this human decision.';
 		} finally {
 			busyAction = null;
-			swipeQuestionId = null;
-			swipeDecision = null;
-			dragOffset = 0;
+			pendingVerdict = null;
 		}
 	}
 </script>
@@ -430,7 +354,7 @@
 				<div>
 					<Card.Title>Human review</Card.Title>
 					<Card.Description
-						>Swipe right for Good, left for Bad. You can also use the buttons or arrow keys.</Card.Description
+						>Mark each question Good or Bad. Use the buttons or arrow keys (← Bad, → Good).</Card.Description
 					>
 				</div>
 				<span
@@ -443,173 +367,146 @@
 		<Card.Content class="p-4 sm:p-6">
 			{#if activeReviewItem}
 				<div class="mx-auto max-w-3xl">
-					<div class="relative min-h-136">
-						{#if nextReviewItem}
-							<div
-								class="absolute inset-x-3 top-3 h-full rounded-2xl border border-border/50 bg-muted/50 shadow-sm"
-								aria-hidden="true"
-							></div>
-						{/if}
-
-						<article
-							{@attach swipeCard}
-							class={`relative min-h-136 cursor-grab touch-pan-y rounded-2xl border border-border bg-background p-5 shadow-lg active:cursor-grabbing sm:p-7 ${cardSwipeClasses(activeReviewItem)}`}
-							style={cardTransform(activeReviewItem)}
-							role="group"
-							aria-label={`Review question ${activeReviewItem.questionId}`}
-						>
-							{#if swipeQuestionId === activeReviewItem.questionId && swipeDecision}
-								<div
-									class={`absolute top-6 left-1/2 z-10 -translate-x-1/2 rounded-full border px-4 py-1.5 text-sm font-semibold tracking-[0.18em] uppercase ${swipeDecision === 'good' ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'border-destructive/30 bg-destructive/15 text-destructive'}`}
+					<article
+						class="rounded-2xl border border-border bg-background shadow-lg"
+						role="group"
+						aria-label={`Review question ${activeReviewItem.questionId}`}
+					>
+						<div class="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 sm:px-7 sm:pt-7">
+							<div class="flex flex-wrap items-center gap-2">
+								<span class="rounded-full bg-muted px-3 py-1 text-xs font-medium"
+									>{activeReviewItem.course ?? 'Unknown AP class'}</span
 								>
-									{swipeDecision === 'good' ? 'Good' : 'Bad'}
-								</div>
-							{/if}
-
-							<div
-								class="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 sm:px-7 sm:pt-7"
+								{#if activeReviewItem.unit}<span class="text-xs text-muted-foreground"
+										>{activeReviewItem.unit}</span
+									>{/if}
+							</div>
+							<span class="font-mono text-xs text-muted-foreground"
+								>{shortId(activeReviewItem.questionId)}</span
 							>
-								<div class="flex flex-wrap items-center gap-2">
-									<span class="rounded-full bg-muted px-3 py-1 text-xs font-medium"
-										>{activeReviewItem.course ?? 'Unknown AP class'}</span
-									>
-									{#if activeReviewItem.unit}<span class="text-xs text-muted-foreground"
-											>{activeReviewItem.unit}</span
-										>{/if}
-								</div>
-								<span class="font-mono text-xs text-muted-foreground"
-									>{shortId(activeReviewItem.questionId)}</span
+						</div>
+
+						{#key activeReviewItem.questionId}
+							<QuestionCard
+								model={unlimitedQuestionCardModel({
+									selectedCourse: activeReviewItem.course ?? '',
+									selectedUnit: activeReviewItem.unit ?? '',
+									requestVersion: 1,
+									presetQuestionId: activeReviewItem.questionId
+								})}
+								tutorMode="hidden"
+								showUtilityActions={false}
+								showFirstUseHint={false}
+								nextDisabled={true}
+								class="border-0 bg-transparent shadow-none ring-0"
+							/>
+						{/key}
+
+						<div class="px-5 pb-5 sm:px-7 sm:pb-7">
+							<details class="mt-6 rounded-xl border border-border/70 bg-muted/20">
+								<summary class="cursor-pointer px-4 py-3 text-sm font-medium"
+									>Show review context</summary
 								>
-							</div>
-
-							{#key activeReviewItem.questionId}
-								<QuestionCard
-									model={unlimitedQuestionCardModel({
-										selectedCourse: activeReviewItem.course ?? '',
-										selectedUnit: activeReviewItem.unit ?? '',
-										requestVersion: 1,
-										presetQuestionId: activeReviewItem.questionId
-									})}
-									tutorMode="hidden"
-									showUtilityActions={false}
-									showFirstUseHint={false}
-									nextDisabled={true}
-									class="border-0 bg-transparent shadow-none ring-0"
-								/>
-							{/key}
-
-							<div class="px-5 pb-5 sm:px-7 sm:pb-7">
-								<details class="mt-6 rounded-xl border border-border/70 bg-muted/20">
-									<summary class="cursor-pointer px-4 py-3 text-sm font-medium"
-										>Show review context</summary
-									>
-									<div class="space-y-4 border-t border-border/70 px-4 py-4">
-										{#if activeReviewItem.blind}
-											<p
-												class="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-violet-800 dark:text-violet-200"
-											>
-												Blind review is active. Make an independent decision before seeing the AI
-												assessment.
-											</p>
-										{:else if activeReviewItem.aiAssessment}
-											<div class="space-y-3">
-												<div class="flex flex-wrap items-center gap-2">
-													<p class="text-sm font-medium">AI assessment</p>
-													<span
-														class={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${verdictClasses(activeReviewItem.aiAssessment.verdict)}`}
-														>{activeReviewItem.aiAssessment.verdict}</span
-													>
-													<span class="text-xs text-muted-foreground"
-														>{formatConfidence(activeReviewItem.aiAssessment.confidence)} confidence ·
-														{activeReviewItem.aiAssessment.model}</span
-													>
-												</div>
-												{#if activeReviewItem.aiAssessment.issueCodes.length > 0}<p class="text-sm">
-														<span class="font-medium">Issues:</span>
-														{activeReviewItem.aiAssessment.issueCodes.join(', ')}
-													</p>{/if}
-												{#if activeReviewItem.aiAssessment.evidence.length > 0}
-													<ul class="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-														{#each activeReviewItem.aiAssessment.evidence as evidence (evidence)}<li
-															>
-																{evidence}
-															</li>{/each}
-													</ul>
-												{/if}
-											</div>
-										{/if}
-
-										{#if activeReviewItem.explanation}
-											<div class="border-t border-border/70 pt-3">
-												<p class="mb-2 text-sm font-medium">Explanation</p>
-												<RichText
-													text={activeReviewItem.explanation}
-													class="text-sm leading-6 text-muted-foreground"
-												/>
-											</div>
-										{/if}
-
-										<div
-											class="flex flex-wrap gap-x-4 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground"
+								<div class="space-y-4 border-t border-border/70 px-4 py-4">
+									{#if activeReviewItem.blind}
+										<p
+											class="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2 text-sm text-violet-800 dark:text-violet-200"
 										>
-											<span>Answer reports: {activeReviewItem.feedbackSummary.answerIncorrect}</span
-											>
-											<span
-												>Clarity reports: {activeReviewItem.feedbackSummary.questionUnclear}</span
-											>
-											<span
-												>Explanation reports: {activeReviewItem.feedbackSummary
-													.explanationUnclear}</span
-											>
-											<span
-												>Unique reporters: {activeReviewItem.feedbackSummary.uniqueReporters}</span
-											>
+											Blind review is active. Make an independent decision before seeing the AI
+											assessment.
+										</p>
+									{:else if activeReviewItem.aiAssessment}
+										<div class="space-y-3">
+											<div class="flex flex-wrap items-center gap-2">
+												<p class="text-sm font-medium">AI assessment</p>
+												<span
+													class={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${verdictClasses(activeReviewItem.aiAssessment.verdict)}`}
+													>{activeReviewItem.aiAssessment.verdict}</span
+												>
+												<span class="text-xs text-muted-foreground"
+													>{formatConfidence(activeReviewItem.aiAssessment.confidence)} confidence ·
+													{activeReviewItem.aiAssessment.model}</span
+												>
+											</div>
+											{#if activeReviewItem.aiAssessment.issueCodes.length > 0}<p class="text-sm">
+													<span class="font-medium">Issues:</span>
+													{activeReviewItem.aiAssessment.issueCodes.join(', ')}
+												</p>{/if}
+											{#if activeReviewItem.aiAssessment.evidence.length > 0}
+												<ul class="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+													{#each activeReviewItem.aiAssessment.evidence as evidence (evidence)}<li>
+															{evidence}
+														</li>{/each}
+												</ul>
+											{/if}
 										</div>
+									{/if}
 
-										<div class="space-y-2">
-											<Label for={noteId(activeReviewItem.questionId)}>Reviewer notes</Label>
-											<textarea
-												id={noteId(activeReviewItem.questionId)}
-												class="min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-												placeholder="Optional context for the audit trail"
-												value={humanNotes[activeReviewItem.questionId] ?? ''}
-												oninput={(event) => updateNote(activeReviewItem.questionId, event)}
-											></textarea>
+									{#if activeReviewItem.explanation}
+										<div class="border-t border-border/70 pt-3">
+											<p class="mb-2 text-sm font-medium">Explanation</p>
+											<RichText
+												text={activeReviewItem.explanation}
+												class="text-sm leading-6 text-muted-foreground"
+											/>
 										</div>
+									{/if}
+
+									<div
+										class="flex flex-wrap gap-x-4 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground"
+									>
+										<span>Answer reports: {activeReviewItem.feedbackSummary.answerIncorrect}</span>
+										<span>Clarity reports: {activeReviewItem.feedbackSummary.questionUnclear}</span>
+										<span
+											>Explanation reports: {activeReviewItem.feedbackSummary
+												.explanationUnclear}</span
+										>
+										<span>Unique reporters: {activeReviewItem.feedbackSummary.uniqueReporters}</span
+										>
 									</div>
-								</details>
 
-								<div
-									class="mt-6 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<p class="text-xs text-muted-foreground">Drag the card or choose a decision.</p>
-									<div class="flex gap-3">
-										<Button
-											variant="outline"
-											class="min-w-28 gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
-											onclick={() => void submitHumanDecision(activeReviewItem, 'bad')}
-											disabled={!!busyAction}
-										>
-											<ThumbDownIcon size={17} />
-											{isBusy(`decision:${activeReviewItem.questionId}`) && swipeDecision === 'bad'
-												? 'Saving…'
-												: 'Bad'}
-										</Button>
-										<Button
-											class="min-w-28 gap-2 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-											onclick={() => void submitHumanDecision(activeReviewItem, 'good')}
-											disabled={!!busyAction}
-										>
-											<ThumbUpIcon size={17} />
-											{isBusy(`decision:${activeReviewItem.questionId}`) && swipeDecision === 'good'
-												? 'Saving…'
-												: 'Good'}
-										</Button>
+									<div class="space-y-2">
+										<Label for={noteId(activeReviewItem.questionId)}>Reviewer notes</Label>
+										<textarea
+											id={noteId(activeReviewItem.questionId)}
+											class="min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+											placeholder="Optional context for the audit trail"
+											value={humanNotes[activeReviewItem.questionId] ?? ''}
+											oninput={(event) => updateNote(activeReviewItem.questionId, event)}
+										></textarea>
 									</div>
 								</div>
+							</details>
+
+							<div
+								class="mt-6 flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-end"
+							>
+								<div class="flex gap-3">
+									<Button
+										variant="outline"
+										class="min-w-28 gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
+										onclick={() => void submitHumanDecision(activeReviewItem, 'bad')}
+										disabled={!!busyAction}
+									>
+										<ThumbDownIcon size={17} />
+										{isBusy(`decision:${activeReviewItem.questionId}`) && pendingVerdict === 'bad'
+											? 'Saving…'
+											: 'Bad'}
+									</Button>
+									<Button
+										class="min-w-28 gap-2 bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+										onclick={() => void submitHumanDecision(activeReviewItem, 'good')}
+										disabled={!!busyAction}
+									>
+										<ThumbUpIcon size={17} />
+										{isBusy(`decision:${activeReviewItem.questionId}`) && pendingVerdict === 'good'
+											? 'Saving…'
+											: 'Good'}
+									</Button>
+								</div>
 							</div>
-						</article>
-					</div>
+						</div>
+					</article>
 				</div>
 			{:else}
 				<div class="rounded-xl border border-dashed border-border/70 p-10 text-center">

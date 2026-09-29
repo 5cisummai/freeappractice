@@ -2,18 +2,24 @@
  * Super turn runtime: owns request lifecycle, context assembly, persistence,
  * quota/lock cleanup, and UI streaming around the pure ToolLoopAgent.
  */
-import { consumeStream, createAgentUIStreamResponse } from 'ai';
+import { consumeStream, createAgentUIStreamResponse, type LanguageModelUsage } from 'ai';
 import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
 import { logger } from '$lib/server/logger';
 import {
 	acquireCoachLock,
-	getSuperMonthlyMessageLimit,
 	RedisRequiredError,
 	releaseLock,
 	refreshLock
 } from '$lib/super/ai-controls.server';
+import type { SuperAccessReason } from '$lib/super/types';
+import {
+	addLanguageModelUsage,
+	createEmptyLanguageModelUsage,
+	formatCreditsFromMilli,
+	monthlyCreditLimitMilli
+} from '$lib/super/usage-credits';
 import { createSuperAgent, type SuperAgentUIMessage } from '$lib/super/agent.server';
 import { buildSuperAgentContext } from '$lib/super/context.server';
 import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
@@ -77,6 +83,7 @@ export type SuperAgentStreamOptions = {
 	event: RequestEvent;
 	userId: string;
 	sessionId: string;
+	accessReason: SuperAccessReason;
 	context: SuperAgentContext;
 	messages: SuperAgentRequest['messages'];
 	conversationId?: string;
@@ -144,6 +151,7 @@ export async function createSuperAgentStreamResponse(
 		event,
 		userId,
 		sessionId,
+		accessReason,
 		context,
 		messages,
 		conversationId: requestedConversationId,
@@ -164,7 +172,7 @@ export async function createSuperAgentStreamResponse(
 
 	let personalizedTurn: Awaited<ReturnType<typeof startPersonalizedTurn>>;
 	try {
-		personalizedTurn = await startPersonalizedTurn(userId);
+		personalizedTurn = await startPersonalizedTurn(userId, accessReason);
 	} catch (error) {
 		if (error instanceof RedisRequiredError) {
 			return json(
@@ -179,7 +187,7 @@ export async function createSuperAgentStreamResponse(
 	if (personalizedTurn.kind === 'exhausted') {
 		return json(
 			{
-				error: `Your ${await getSuperMonthlyMessageLimit()} personalized messages for this month have been used.`
+				error: `Your ${formatCreditsFromMilli(monthlyCreditLimitMilli(accessReason))} Coach credits for this month have been used.`
 			},
 			{ status: 429 }
 		);
@@ -212,6 +220,7 @@ export async function createSuperAgentStreamResponse(
 	let conversationId: string | undefined;
 	try {
 		let emittedOutput = false;
+		let turnUsage: LanguageModelUsage = createEmptyLanguageModelUsage();
 		let cleanedUp = false;
 		const streamTimeout = new AbortController();
 		const streamTimeoutId = setTimeout(() => streamTimeout.abort(), SUPER_AGENT_STREAM_TIMEOUT_MS);
@@ -359,7 +368,8 @@ export async function createSuperAgentStreamResponse(
 			conversationId,
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
 			thinkingMode,
-			chargeWebSearch: personalizedTurn.chargeWebSearch
+			chargeWebSearch: personalizedTurn.chargeWebSearch,
+			recordWebSearch: personalizedTurn.recordWebSearch
 		});
 
 		const markUsageIfNeeded = async (responseMessage: SuperAgentUIMessage) => {
@@ -371,10 +381,12 @@ export async function createSuperAgentStreamResponse(
 				return typeof part.type === 'string' && part.type.startsWith('tool-');
 			});
 			if (!hasBillableOutput) return;
-			emittedOutput = true;
-			await personalizedTurn
-				.markOutput()
-				.catch((error) => logger.warn('Failed to roll up Super Agent usage', { error }));
+			try {
+				await personalizedTurn.markOutput(turnUsage);
+				emittedOutput = true;
+			} catch (error) {
+				logger.warn('Failed to roll up Super Agent usage', { error });
+			}
 		};
 
 		return await createAgentUIStreamResponse({
@@ -384,6 +396,7 @@ export async function createSuperAgentStreamResponse(
 			consumeSseStream: consumeStream,
 			originalMessages: uiMessages,
 			onStepFinish: (step) => {
+				turnUsage = addLanguageModelUsage(turnUsage, step.usage);
 				logger.info('Super Agent step finish', {
 					surface,
 					conversationId,
@@ -451,7 +464,7 @@ export async function createSuperAgentStreamResponse(
 				'X-Tutor-Personalization-Degraded': personalization.memoryDegraded ? '1' : '0',
 				'X-Super-Usage-Remaining':
 					personalizedTurn.kind === 'reserved'
-						? String(personalizedTurn.reservation.remaining)
+						? formatCreditsFromMilli(personalizedTurn.reservation.remaining)
 						: '0',
 				...(personalizedTurn.kind === 'reserved' && personalizedTurn.usageWarning
 					? { 'X-Super-Usage-Warning': String(personalizedTurn.usageWarning) }

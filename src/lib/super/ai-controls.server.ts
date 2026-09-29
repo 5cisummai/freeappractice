@@ -7,13 +7,10 @@ import {
 	redisNamespace,
 	withRedisTimeout
 } from '$lib/redis/server';
-import { isSuperFreeBetaEnabled } from '$lib/flags';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { superUsageRollups } from '$lib/server/neon/schema';
-import {
-	SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT,
-	SUPER_MONTHLY_MESSAGE_LIMIT
-} from '$lib/super/types';
+import { monthlyCreditLimitMilli, SUPER_MONTHLY_CREDITS_MILLI } from '$lib/super/usage-credits';
+import type { SuperAccessReason } from '$lib/super/types';
 
 const RATE_WINDOW = '10 m' as const;
 const GENERIC_ANONYMOUS_LIMIT = 12;
@@ -106,12 +103,6 @@ export async function limitSuperAi(userId: string): Promise<RateLimitDecision> {
 	return limit(SUPER_AI_LIMIT, 'super-ai', `user:${userId}`, false);
 }
 
-export async function getSuperMonthlyMessageLimit(): Promise<number> {
-	return (await isSuperFreeBetaEnabled())
-		? SUPER_FREE_BETA_MONTHLY_MESSAGE_LIMIT
-		: SUPER_MONTHLY_MESSAGE_LIMIT;
-}
-
 function currentUtcMonth(now = new Date()): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 }
@@ -125,29 +116,18 @@ function secondsUntilUsageExpiry(now = new Date()): number {
 	return Math.max(60, Math.ceil((expiry.getTime() - now.getTime()) / 1000));
 }
 
+/** Millicredit counters use a versioned key so legacy message-count values are not reused. */
 function usageKey(userId: string, month: string): string {
-	return `${redisNamespace()}:usage:${month}:${userId}`;
+	return `${redisNamespace()}:usage:milli:v1:${month}:${userId}`;
 }
 
-const RESERVE_USAGE_SCRIPT = `
-local used = redis.call('INCRBY', KEYS[1], tonumber(ARGV[3]))
-if used == tonumber(ARGV[3]) then redis.call('EXPIRE', KEYS[1], tonumber(ARGV[2])) end
-if used > tonumber(ARGV[1]) then
-  redis.call('DECRBY', KEYS[1], tonumber(ARGV[3]))
-  return {0, used - tonumber(ARGV[3])}
-end
-return {1, used}
+const CHARGE_USAGE_SCRIPT = `
+local used = redis.call('INCRBY', KEYS[1], tonumber(ARGV[2]))
+if used == tonumber(ARGV[2]) then redis.call('EXPIRE', KEYS[1], tonumber(ARGV[1])) end
+return used
 `;
 
-const RELEASE_USAGE_SCRIPT = `
-local used = tonumber(redis.call('GET', KEYS[1]) or '0')
-if used <= tonumber(ARGV[1]) then
-  redis.call('DEL', KEYS[1])
-  return 0
-end
-return redis.call('DECRBY', KEYS[1], tonumber(ARGV[1]))
-`;
-
+/** Monthly Coach usage in millicredits (1000 millicredits = 1 credit). */
 export type UsageReservation = {
 	month: string;
 	used: number;
@@ -161,76 +141,60 @@ export type PersonalizedUsageWarning = 80 | 95 | null;
 export function getPersonalizedUsageWarning(
 	usage: Pick<UsageReservation, 'used'> & Partial<Pick<UsageReservation, 'limit'>>
 ): PersonalizedUsageWarning {
-	const percentage = (usage.used / (usage.limit ?? SUPER_MONTHLY_MESSAGE_LIMIT)) * 100;
+	const limitMilli = usage.limit ?? SUPER_MONTHLY_CREDITS_MILLI;
+	const percentage = (usage.used / limitMilli) * 100;
 	if (percentage >= 95) return 95;
 	if (percentage >= 80) return 80;
 	return null;
 }
 
-/** Atomically reserves the requested message units before a model call or web search. */
-export async function reservePersonalizedTurn(
-	userId: string,
-	now = new Date(),
-	units = 1
-): Promise<UsageReservation | null> {
-	const redis = getRedisClient();
-	if (!redis) throw new RedisRequiredError();
-	const month = currentUtcMonth(now);
-	const limitCount = await getSuperMonthlyMessageLimit();
-	try {
-		const result = await withRedisTimeout(
-			redis
-				.createScript<number[]>(RESERVE_USAGE_SCRIPT)
-				.exec(
-					[usageKey(userId, month)],
-					[String(limitCount), String(secondsUntilUsageExpiry(now)), String(units)]
-				),
-			750
-		);
-		const allowed = Number(result[0]) === 1;
-		const used = Number(result[1]);
-		if (!allowed) return null;
-		return { month, used, limit: limitCount, remaining: Math.max(0, limitCount - used) };
-	} catch (error) {
-		if (error instanceof RedisRequiredError) throw error;
-		throw new RedisRequiredError();
-	}
-}
-
-/** Only call when the model failed before producing useful output. */
-export async function releasePersonalizedTurn(
-	userId: string,
-	month: string,
-	units = 1
-): Promise<void> {
-	const redis = getRedisClient();
-	if (!redis) throw new RedisRequiredError();
-	try {
-		await withRedisTimeout(
-			redis
-				.createScript<number>(RELEASE_USAGE_SCRIPT)
-				.exec([usageKey(userId, month)], [String(units)]),
-			750
-		);
-	} catch (error) {
-		if (error instanceof RedisRequiredError) throw error;
-		throw new RedisRequiredError();
-	}
-}
-
 export async function getPersonalizedUsage(
 	userId: string,
+	accessReason: SuperAccessReason,
 	now = new Date()
 ): Promise<UsageReservation> {
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();
 	const month = currentUtcMonth(now);
-	const limitCount = await getSuperMonthlyMessageLimit();
+	const limitCount = monthlyCreditLimitMilli(accessReason);
 	try {
 		const used = Number(
 			(await withRedisTimeout(redis.get<number>(usageKey(userId, month)), 750)) ?? 0
 		);
 		return { month, used, limit: limitCount, remaining: Math.max(0, limitCount - used) };
+	} catch (error) {
+		if (error instanceof RedisRequiredError) throw error;
+		throw new RedisRequiredError();
+	}
+}
+
+/** Adds millicredits after a billable Coach turn (soft overage allowed for the completing turn). */
+export async function chargePersonalizedCredits(
+	userId: string,
+	month: string,
+	millicredits: number,
+	now = new Date()
+): Promise<number> {
+	if (millicredits <= 0) {
+		const redis = getRedisClient();
+		if (!redis) throw new RedisRequiredError();
+		return Number((await withRedisTimeout(redis.get<number>(usageKey(userId, month)), 750)) ?? 0);
+	}
+	const redis = getRedisClient();
+	if (!redis) throw new RedisRequiredError();
+	try {
+		const used = Number(
+			await withRedisTimeout(
+				redis
+					.createScript<number>(CHARGE_USAGE_SCRIPT)
+					.exec(
+						[usageKey(userId, month)],
+						[String(secondsUntilUsageExpiry(now)), String(millicredits)]
+					),
+				750
+			)
+		);
+		return used;
 	} catch (error) {
 		if (error instanceof RedisRequiredError) throw error;
 		throw new RedisRequiredError();
@@ -248,13 +212,13 @@ export async function rollupPersonalizedUsage(
 		.values({
 			userId,
 			month: usage.month,
-			personalizedMessages: usage.used,
+			creditsMilli: usage.used,
 			updatedAt: now
 		})
 		.onConflictDoUpdate({
 			target: [superUsageRollups.userId, superUsageRollups.month],
 			set: {
-				personalizedMessages: sql`GREATEST(${superUsageRollups.personalizedMessages}, ${usage.used})`,
+				creditsMilli: sql`GREATEST(${superUsageRollups.creditsMilli}, ${usage.used})`,
 				updatedAt: now
 			}
 		});

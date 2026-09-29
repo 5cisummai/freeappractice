@@ -27,7 +27,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Terms of Service" meta="Last Updated: September 15, 2026" />
+		<PublicPageHero title="Terms of Service" meta="Last Updated: September 28, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
 			<section>
@@ -76,15 +76,15 @@
 				{#if data.superFreeBetaEnabled}
 					<p>
 						During the Super free beta, authenticated students aged 13 or older can claim free
-						access to Coach, weekly study plans, and up to 500 Coach messages per month.
+						access to Coach, weekly study plans, and up to 100 Coach credits per month.
 					</p>
 				{:else}
 					<p>
 						Super is an optional subscription for students aged 13 or older. It is offered at $9 per
 						month or $79 per year, plus applicable tax, and renews automatically until you cancel.
-						Super includes Coach, weekly study plans, and up to 1,000 Coach messages per month. We
-						do not offer a free trial, promotional pricing, discounts, or extra usage charges for
-						Super unless the checkout page expressly says otherwise.
+						Super includes Coach, weekly study plans, and up to 200 Coach credits per month. We do
+						not offer a free trial, promotional pricing, discounts, or extra usage charges for Super
+						unless the checkout page expressly says otherwise.
 					</p>
 					<p class="mt-2">
 						You can cancel or restore a cancellation before the current subscription period ends in

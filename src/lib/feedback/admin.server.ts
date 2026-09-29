@@ -1,9 +1,9 @@
-import { count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import type { AdminFeedbackItem } from '$lib/admin/types';
 import type { AppFeedbackCategory } from '$lib/schemas/app-feedback';
 import type { BugReportSeverity } from '$lib/schemas/bug-report';
 import { getNeonDatabase } from '$lib/server/neon/db';
-import { appFeedback, authUsers, bugReports } from '$lib/server/neon/schema';
+import { appFeedback, authUsers, bugReports, questionQuality } from '$lib/server/neon/schema';
 
 const FEEDBACK_CATEGORY_SET = new Set<string>([
 	'general',
@@ -131,8 +131,42 @@ export async function listFeedbackTabForAdmin(limit = 50): Promise<{
 		.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 		.slice(0, limit);
 
+	const questionIds = [
+		...new Set(
+			items.flatMap((item) => {
+				const questionId = item.metadata?.questionId;
+				return typeof questionId === 'string' && questionId ? [questionId] : [];
+			})
+		)
+	];
+	const verdictByQuestionId = new Map<string, 'good' | 'bad'>();
+	if (questionIds.length > 0) {
+		const rows = await getNeonDatabase()
+			.select({
+				questionId: questionQuality.questionId,
+				finalVerdict: questionQuality.finalVerdict
+			})
+			.from(questionQuality)
+			.where(
+				and(
+					inArray(questionQuality.questionId, questionIds),
+					inArray(questionQuality.finalVerdict, ['good', 'bad'])
+				)
+			);
+		for (const row of rows) {
+			if (row.finalVerdict === 'good' || row.finalVerdict === 'bad') {
+				verdictByQuestionId.set(row.questionId, row.finalVerdict);
+			}
+		}
+	}
+
 	return {
-		items,
+		items: items.map((item) => {
+			const questionId = item.metadata?.questionId;
+			if (typeof questionId !== 'string' || !questionId) return item;
+			const verdict = verdictByQuestionId.get(questionId);
+			return verdict ? { ...item, questionFinalVerdict: verdict } : item;
+		}),
 		totalSidebar: sidebar.total,
 		totalBugReports: bugReportsSnapshot.total
 	};

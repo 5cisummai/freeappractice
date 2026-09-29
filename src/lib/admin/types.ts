@@ -37,6 +37,8 @@ export interface AdminFeedbackItem {
 	severity?: BugReportSeverity;
 	reporterEmail?: string | null;
 	metadata?: Record<string, unknown>;
+	/** Present when a bug report references a question that already has a final quality verdict. */
+	questionFinalVerdict?: 'good' | 'bad' | null;
 }
 
 export interface CacheOverview {

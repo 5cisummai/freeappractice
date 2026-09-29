@@ -767,7 +767,15 @@ export async function recordHumanDecision(opts: {
 	reviewerId: string;
 }): Promise<void> {
 	const now = new Date();
+	await ensureQuestionQuality(opts.questionId);
 	const existing = await getQuestionQuality(opts.questionId);
+	if (existing?.state === 'final' && existing.finalVerdict === opts.verdict) {
+		return;
+	}
+	const nextState =
+		existing?.state === 'final'
+			? 'final'
+			: transitionQualityState(existing?.state ?? 'unreviewed', 'finalize');
 	const result = await updateQuestionQuality(opts.questionId, {
 		humanAssessment: {
 			verdict: opts.verdict,
@@ -779,7 +787,7 @@ export async function recordHumanDecision(opts: {
 		finalVerdict: opts.verdict,
 		finalSource: 'human',
 		finalizedAt: now,
-		state: transitionQualityState(existing?.state ?? 'awaiting_human', 'finalize'),
+		state: nextState,
 		needsHumanReview: false,
 		blindHumanReview: false
 	});

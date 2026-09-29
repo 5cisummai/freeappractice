@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { json } from '@sveltejs/kit';
 import { limitFeedback } from '$lib/feedback/rate-limit.server';
-import { appFeedbackSchema } from '$lib/schemas/app-feedback';
+import { appFeedbackSchema, formatAppFeedbackMessageForStorage } from '$lib/schemas/app-feedback';
 import { logger } from '$lib/server/logger';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { appFeedback } from '$lib/server/neon/schema';
@@ -15,7 +15,7 @@ export async function submitAppFeedback(
 	try {
 		let body: unknown;
 		try {
-			body = await readJsonBody(request, 32 * 1024);
+			body = await readJsonBody(request, 384 * 1024);
 		} catch {
 			return json({ error: 'Invalid request body' }, { status: 400 });
 		}
@@ -57,7 +57,7 @@ export async function submitAppFeedback(
 				id,
 				userId: userId ?? null,
 				category: parsed.category,
-				message: parsed.message
+				message: formatAppFeedbackMessageForStorage(parsed)
 			});
 
 		logger.info('App feedback stored', {

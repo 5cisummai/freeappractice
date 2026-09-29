@@ -81,8 +81,8 @@
 			<p class="mt-2 text-3xl font-semibold">{overview.activeGrants}</p></Card.Root
 		>
 		<Card.Root class="p-5"
-			><p class="text-sm text-muted-foreground">AI turns · {overview.month}</p>
-			<p class="mt-2 text-3xl font-semibold">{overview.personalizedMessagesThisMonth}</p></Card.Root
+			><p class="text-sm text-muted-foreground">Coach credits (milli) · {overview.month}</p>
+			<p class="mt-2 text-3xl font-semibold">{overview.creditsMilliThisMonth}</p></Card.Root
 		>
 	</div>
 

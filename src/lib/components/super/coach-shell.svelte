@@ -9,6 +9,7 @@
 		lastAssistantMessageIsCompleteWithToolCalls
 	} from 'ai';
 	import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
+	import Atom2FilledIcon from '@tabler/icons-svelte/icons/atom-2-filled';
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
@@ -25,6 +26,7 @@
 	import StepGoalsIcon from '@lucide/svelte/icons/target';
 	import StepDiagramIcon from '@lucide/svelte/icons/image';
 	import StepActivityIcon from '@lucide/svelte/icons/activity';
+	import StepSigmaIcon from '@lucide/svelte/icons/sigma';
 	import StepFallbackIcon from '@lucide/svelte/icons/wrench';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy';
 	import ThumbDownFilledIcon from '@tabler/icons-svelte/icons/thumb-down-filled';
@@ -52,6 +54,8 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
 	import RichText from '$lib/components/content/rich-text.svelte';
+	import { getCanvasHtmlOutput } from '$lib/canvas/canvas-ui';
+	import CoachCanvasPanel from '$lib/components/super/coach-canvas-panel.svelte';
 	import { diagramDataUrl, getDiagramOutput } from '$lib/super/diagram-ui';
 	import CoachPracticeQuestionCard from '$lib/components/super/coach-practice-question-card.svelte';
 	import CoachPracticeQuestionResult from '$lib/components/super/coach-practice-question-result.svelte';
@@ -77,6 +81,7 @@
 	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { getApprovalProposal, type ApprovalProposal } from '$lib/super/approval-ui';
 	import CoachQuestionCard from '$lib/components/super/coach-question-card.svelte';
+	import CoachMessageFeedbackDialog from '$lib/components/super/coach-message-feedback-dialog.svelte';
 	import type { CoachQuestionToolOutput } from '$lib/super/coach-question';
 	import { toast } from 'svelte-sonner';
 
@@ -107,12 +112,15 @@
 	let conversationLoadRequest = 0;
 	let pendingCoachActions: CoachComposerActionId[] = [];
 	let messageFeedbackById = $state<Record<string, CoachMessageFeedback>>({});
+	let notHelpfulFeedbackOpen = $state(false);
+	let notHelpfulFeedbackMessageId = $state<string | null>(null);
 	const asIcon = (icon: unknown) => icon as Component;
 
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
 		'study-next': asIcon(BookOpenIcon),
 		'study-plan': asIcon(CalendarDaysIcon),
-		'review-progress': asIcon(BarChart3Icon)
+		'review-progress': asIcon(BarChart3Icon),
+		'physics-sim': asIcon(Atom2FilledIcon)
 	};
 
 	const thinkingModeOptions: Array<{
@@ -179,6 +187,14 @@
 			running: 'Drawing a diagram…',
 			complete: 'Drew a diagram'
 		},
+		'tool-open_physics_sim': {
+			running: 'Building a physics simulation…',
+			complete: 'Opened a physics simulation'
+		},
+		'tool-open_math_explorer': {
+			running: 'Building a math explorer…',
+			complete: 'Opened a math explorer'
+		},
 		'tool-read_activity_summary': {
 			running: 'Checking your activity…',
 			complete: 'Checked your activity'
@@ -216,7 +232,9 @@
 		'tool-ask_student': StepQuestionIcon,
 		'tool-update_goals': StepGoalsIcon,
 		'tool-update_study_plan': StepPlanIcon,
-		'tool-generate_diagram': StepDiagramIcon
+		'tool-generate_diagram': StepDiagramIcon,
+		'tool-open_physics_sim': StepActivityIcon,
+		'tool-open_math_explorer': StepSigmaIcon
 	};
 
 	const coach = new Chat<SuperAgentUIMessage>({
@@ -534,18 +552,12 @@
 		};
 	}
 
+	// Only show the floating thinking blob before an assistant message exists.
+	// Once the assistant row is present, its CoachAvatar owns the thinking state.
 	let showThinkingIndicator = $derived.by(() => {
 		if (!streaming) return false;
-
 		const last = coach.messages.at(-1);
-		if (!last || last.role !== 'assistant') return true;
-
-		const tools = last.parts
-			.map(getToolPart)
-			.filter((part): part is CoachToolPart => part !== null);
-		if (tools.some((tool) => isToolInProgress(tool.state))) return false;
-		if (messageText(last).trim()) return false;
-		return tools.length === 0;
+		return !last || last.role !== 'assistant';
 	});
 
 	onMount(() => {
@@ -650,8 +662,8 @@
 		lastUsageWarning = warning;
 		toast.message(
 			warning === 95
-				? `You have ${remaining} personalized AI messages left this month.`
-				: `You have used ${warning}% of this month's personalized AI messages.`
+				? `You have ${remaining} Coach credits left this month.`
+				: `You have used ${warning}% of this month's Coach credits.`
 		);
 	}
 
@@ -682,6 +694,19 @@
 			return;
 		}
 		messageFeedbackById = { ...messageFeedbackById, [messageId]: feedback };
+	}
+
+	function openNotHelpfulFeedback(messageId: string): void {
+		if (messageFeedbackById[messageId] === 'not_helpful') {
+			toggleMessageFeedback(messageId, 'not_helpful');
+			return;
+		}
+		notHelpfulFeedbackMessageId = messageId;
+		notHelpfulFeedbackOpen = true;
+	}
+
+	function handleNotHelpfulFeedbackSubmitted(messageId: string): void {
+		messageFeedbackById = { ...messageFeedbackById, [messageId]: 'not_helpful' };
 	}
 
 	async function regenerateMessage(messageId: string): Promise<void> {
@@ -1022,6 +1047,10 @@
 														{/if}
 													</figure>
 												{/if}
+												{@const canvasArtifact = getCanvasHtmlOutput(toolPart.output)}
+												{#if canvasArtifact && (toolPart.type === 'tool-open_physics_sim' || toolPart.type === 'tool-open_math_explorer')}
+													<CoachCanvasPanel artifact={canvasArtifact} />
+												{/if}
 												{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(
 													toolPart.output
 												)}
@@ -1162,7 +1191,7 @@
 														messageFeedback(message.id) === 'not_helpful' &&
 															'bg-muted text-foreground'
 													)}
-													onclick={() => toggleMessageFeedback(message.id, 'not_helpful')}
+													onclick={() => openNotHelpfulFeedback(message.id)}
 												>
 													{#if messageFeedback(message.id) === 'not_helpful'}
 														<ThumbDownFilledIcon />
@@ -1444,4 +1473,12 @@
 			{/if}
 		</div>
 	</div>
+
+	<CoachMessageFeedbackDialog
+		bind:open={notHelpfulFeedbackOpen}
+		messageId={notHelpfulFeedbackMessageId}
+		{conversationId}
+		messages={coach.messages}
+		onSubmitted={handleNotHelpfulFeedbackSubmitted}
+	/>
 </div>

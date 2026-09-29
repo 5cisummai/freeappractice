@@ -64,7 +64,7 @@ describe('admin dashboard query ownership', () => {
 			pastDueSubscriptions: 0,
 			activeGrants: 0,
 			month: '2026-08',
-			personalizedMessagesThisMonth: 0,
+			creditsMilliThisMonth: 0,
 			subscriptions: [],
 			failedCleanupJobs: []
 		});

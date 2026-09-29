@@ -25,6 +25,7 @@ export type SuperToolsInput = {
 	currentContext?: SuperAgentContext;
 	conversationId?: string;
 	chargeWebSearch: () => Promise<boolean>;
+	recordWebSearch: () => void;
 };
 
 export const coachThinkingModeSchema = z.enum(['quick', 'thinking', 'deep']);
@@ -53,7 +54,7 @@ export const superAgentContextSchema = z.strictObject({
 export const superAgentRequestSchema = z.strictObject({
 	sessionId: z.uuid(),
 	conversationId: z.uuid().optional(),
-	coachActions: z.array(z.enum(coachComposerActionIds)).max(4).optional(),
+	coachActions: z.array(z.enum(coachComposerActionIds)).max(5).optional(),
 	thinkingMode: coachThinkingModeSchema.default('quick'),
 	context: superAgentContextSchema,
 	messages: z

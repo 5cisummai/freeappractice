@@ -57,6 +57,7 @@ export async function handleSuperAgentPost(event: RequestEvent, userId: string):
 			event,
 			userId,
 			sessionId,
+			accessReason: access.planAccess.accessReason ?? 'subscription',
 			conversationId,
 			coachActions,
 			thinkingMode,

@@ -1,19 +1,28 @@
+import type { LanguageModelUsage } from 'ai';
 import {
+	chargePersonalizedCredits,
+	getPersonalizedUsage,
 	getPersonalizedUsageWarning,
 	limitSuperAi,
-	releasePersonalizedTurn,
-	reservePersonalizedTurn,
 	rollupPersonalizedUsage,
 	type PersonalizedUsageWarning,
 	type UsageReservation
 } from '$lib/super/ai-controls.server';
+import {
+	millicreditsFromLanguageModelUsage,
+	WEB_SEARCH_SURCHARGE_MILLI
+} from '$lib/super/usage-credits';
+import type { SuperAccessReason } from '$lib/super/types';
 
 export type ReservedPersonalizedTurn = {
 	kind: 'reserved';
 	reservation: UsageReservation;
 	usageWarning: PersonalizedUsageWarning;
-	markOutput: () => Promise<void>;
+	markOutput: (usage: LanguageModelUsage) => Promise<void>;
+	/** Returns whether another web search is affordable; does not charge until `recordWebSearch`. */
 	chargeWebSearch: () => Promise<boolean>;
+	/** Record a successful web search so its surcharge is included in `markOutput`. */
+	recordWebSearch: () => void;
 	releaseIfUnused: () => Promise<void>;
 };
 
@@ -26,41 +35,58 @@ export type PersonalizedTurnStart =
  * Shared personalized-turn ordering. Feature routes own entitlement, age, prompts,
  * locks, memory, streaming, and fallback decisions around this small lifecycle.
  */
-export async function startPersonalizedTurn(userId: string): Promise<PersonalizedTurnStart> {
+export async function startPersonalizedTurn(
+	userId: string,
+	accessReason: SuperAccessReason
+): Promise<PersonalizedTurnStart> {
 	const rate = await limitSuperAi(userId);
 	if (!rate.allowed) return { kind: 'rate-limited', retryAt: rate.retryAt };
 
 	const turnStartedAt = new Date();
-	const reservation = await reservePersonalizedTurn(userId, turnStartedAt);
-	if (!reservation) return { kind: 'exhausted' };
+	const reservation = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
+	if (reservation.used >= reservation.limit) return { kind: 'exhausted' };
 
-	let outputStarted = false;
-	let released = false;
-	let searchCharge: Promise<boolean> | undefined;
+	let webSearchCount = 0;
+	let chargePromise: Promise<void> | null = null;
+
 	return {
 		kind: 'reserved',
 		reservation,
 		usageWarning: getPersonalizedUsageWarning(reservation),
-		markOutput: async () => {
-			if (outputStarted || released) return;
-			outputStarted = true;
-			await rollupPersonalizedUsage(userId, reservation);
-		},
-		chargeWebSearch: () => {
-			searchCharge ??= (async () => {
-				const extra = await reservePersonalizedTurn(userId, turnStartedAt, 2);
-				if (!extra) return false;
-				reservation.used = extra.used;
-				reservation.remaining = extra.remaining;
-				return true;
+		markOutput: async (turnUsage) => {
+			if (chargePromise) return chargePromise;
+			chargePromise = (async () => {
+				let millicredits = millicreditsFromLanguageModelUsage(turnUsage);
+				if (webSearchCount > 0) millicredits += webSearchCount * WEB_SEARCH_SURCHARGE_MILLI;
+				const used = await chargePersonalizedCredits(
+					userId,
+					reservation.month,
+					millicredits,
+					turnStartedAt
+				);
+				await rollupPersonalizedUsage(userId, {
+					month: reservation.month,
+					used,
+					limit: reservation.limit,
+					remaining: Math.max(0, reservation.limit - used)
+				});
 			})();
-			return searchCharge;
+			try {
+				await chargePromise;
+			} catch (error) {
+				chargePromise = null;
+				throw error;
+			}
+		},
+		chargeWebSearch: async () => {
+			const current = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
+			return current.remaining >= (webSearchCount + 1) * WEB_SEARCH_SURCHARGE_MILLI;
+		},
+		recordWebSearch: () => {
+			webSearchCount += 1;
 		},
 		releaseIfUnused: async () => {
-			if (outputStarted || released) return;
-			released = true;
-			const searchCharged = await searchCharge?.catch(() => false);
-			await releasePersonalizedTurn(userId, reservation.month, searchCharged ? 3 : 1);
+			// Token billing charges only after billable output; nothing to release.
 		}
 	};
 }

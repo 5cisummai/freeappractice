@@ -15,6 +15,13 @@
       "when": 1790395343268,
       "tag": "0001_chemical_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790638615822,
+      "tag": "0002_super_usage_credits_milli",
+      "breakpoints": true
     }
   ]
 }
