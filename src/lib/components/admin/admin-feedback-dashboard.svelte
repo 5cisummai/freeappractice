@@ -192,17 +192,17 @@
 									</div>
 									{#key preview.questionId}
 										<QuestionCard
-												model={unlimitedQuestionCardModel({
-													selectedCourse: preview.selectedCourse,
-													selectedUnit: preview.selectedUnit,
-													requestVersion: 1,
-													presetQuestionId: preview.questionId
-												})}
-												tutorMode="hidden"
-												showUtilityActions={false}
-												showFirstUseHint={false}
-												nextDisabled={true}
-												class="border-0 bg-transparent shadow-none ring-0"
+											model={unlimitedQuestionCardModel({
+												selectedCourse: preview.selectedCourse,
+												selectedUnit: preview.selectedUnit,
+												requestVersion: 1,
+												presetQuestionId: preview.questionId
+											})}
+											tutorMode="hidden"
+											showUtilityActions={false}
+											showFirstUseHint={false}
+											nextDisabled={true}
+											class="border-0 bg-transparent shadow-none ring-0"
 										/>
 									{/key}
 								{/if}

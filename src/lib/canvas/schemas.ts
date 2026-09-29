@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 export const generativeCanvasToolInputSchema = z.object({
-	title: z.string().trim().min(1).max(200).describe('Short visible title for the interactive canvas.'),
+	title: z
+		.string()
+		.trim()
+		.min(1)
+		.max(200)
+		.describe('Short visible title for the interactive canvas.'),
 	accessibleDescription: z
 		.string()
 		.trim()

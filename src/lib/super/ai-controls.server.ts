@@ -9,10 +9,7 @@ import {
 } from '$lib/redis/server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { superUsageRollups } from '$lib/server/neon/schema';
-import {
-	monthlyCreditLimitMilli,
-	SUPER_MONTHLY_CREDITS_MILLI
-} from '$lib/super/usage-credits';
+import { monthlyCreditLimitMilli, SUPER_MONTHLY_CREDITS_MILLI } from '$lib/super/usage-credits';
 import type { SuperAccessReason } from '$lib/super/types';
 
 const RATE_WINDOW = '10 m' as const;
@@ -180,9 +177,7 @@ export async function chargePersonalizedCredits(
 	if (millicredits <= 0) {
 		const redis = getRedisClient();
 		if (!redis) throw new RedisRequiredError();
-		return Number(
-			(await withRedisTimeout(redis.get<number>(usageKey(userId, month)), 750)) ?? 0
-		);
+		return Number((await withRedisTimeout(redis.get<number>(usageKey(userId, month)), 750)) ?? 0);
 	}
 	const redis = getRedisClient();
 	if (!redis) throw new RedisRequiredError();

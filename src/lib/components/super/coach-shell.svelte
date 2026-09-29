@@ -237,7 +237,6 @@
 		'tool-open_math_explorer': StepSigmaIcon
 	};
 
-
 	const coach = new Chat<SuperAgentUIMessage>({
 		messages: [],
 		sendAutomaticallyWhen: ({ messages }) =>

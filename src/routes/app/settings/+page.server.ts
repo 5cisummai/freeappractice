@@ -19,7 +19,7 @@ type SettingsUsage =
 			limitCredits: string;
 			remainingCredits: string;
 			warning: 80 | 95 | null;
-		}
+	  }
 	| { status: 'unavailable' }
 	| { status: 'not_available' };
 

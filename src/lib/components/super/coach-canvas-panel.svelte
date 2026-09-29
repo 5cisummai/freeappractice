@@ -45,7 +45,7 @@
 			{@attach bindFrame}
 			title={artifact.accessibleDescription}
 			sandbox="allow-scripts"
-			srcdoc={srcdoc}
+			{srcdoc}
 			class="block w-full border-0 bg-background"
 			style:height={frameHeight ? `${frameHeight}px` : '1px'}
 		></iframe>

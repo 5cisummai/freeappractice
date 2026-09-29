@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment -- plain iframe runtime injected as a raw string */
 // @ts-nocheck
 (function () {
 	var GREEK = {
@@ -162,7 +163,8 @@
 			return { html: '', next: next };
 		}
 		if (name === 'quad') return { html: '&nbsp;&nbsp;&nbsp;&nbsp;', next: next };
-		if (name === 'qquad') return { html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', next: next };
+		if (name === 'qquad')
+			return { html: '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', next: next };
 		if (GREEK[name]) return { html: GREEK[name], next: next };
 		if (SYMBOLS[name]) return { html: '<span class="rm">' + SYMBOLS[name] + '</span>', next: next };
 		if (FUNCS[name]) return { html: '<span class="rm">' + FUNCS[name] + '</span>', next: next };

@@ -73,7 +73,12 @@ export async function backfillApClassToCourse(): Promise<void> {
 	const before = await countLegacyRows();
 	console.log('Before:', before);
 
-	if (before.mcq_missing === 0 && before.frq_missing === 0 && before.mcq_with_apclass === 0 && before.frq_with_apclass === 0) {
+	if (
+		before.mcq_missing === 0 &&
+		before.frq_missing === 0 &&
+		before.mcq_with_apclass === 0 &&
+		before.frq_with_apclass === 0
+	) {
 		console.log('Nothing to backfill.');
 		return;
 	}
@@ -123,7 +128,12 @@ export async function backfillApClassToCourse(): Promise<void> {
 	const probeAfter = await sampleBucket('AP Physics 1', 'Unit 1: Kinematics');
 	console.log('Probe AP Physics 1 / Unit 1: Kinematics after:', probeAfter);
 
-	if (after.mcq_missing !== 0 || after.frq_missing !== 0 || after.mcq_with_apclass !== 0 || after.frq_with_apclass !== 0) {
+	if (
+		after.mcq_missing !== 0 ||
+		after.frq_missing !== 0 ||
+		after.mcq_with_apclass !== 0 ||
+		after.frq_with_apclass !== 0
+	) {
 		throw new Error(
 			`Backfill incomplete: mcq_missing=${after.mcq_missing} frq_missing=${after.frq_missing} mcq_with_apclass=${after.mcq_with_apclass} frq_with_apclass=${after.frq_with_apclass}`
 		);

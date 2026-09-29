@@ -57,8 +57,7 @@ const RESIZE_BRIDGE_SCRIPT = `<script data-pip-canvas-resize>
 </script>`;
 
 export type PrepareGenerativeCanvasHtmlResult =
-	| { ok: true; html: string }
-	| { ok: false; error: string };
+	{ ok: true; html: string } | { ok: false; error: string };
 
 function normalizeToFullDocument(html: string): string {
 	const trimmed = html.trim();

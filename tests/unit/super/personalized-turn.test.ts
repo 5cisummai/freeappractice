@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LanguageModelUsage } from 'ai';
 
 const mocks = vi.hoisted(() => ({
 	limitSuperAi: vi.fn(),
@@ -11,6 +12,23 @@ const mocks = vi.hoisted(() => ({
 vi.mock('$lib/super/ai-controls.server', () => mocks);
 
 import { startPersonalizedTurn } from '$lib/super/personalized-turn.server';
+
+function usage(inputTokens: number, outputTokens: number, totalTokens: number): LanguageModelUsage {
+	return {
+		inputTokens,
+		outputTokens,
+		totalTokens,
+		inputTokenDetails: {
+			noCacheTokens: inputTokens,
+			cacheReadTokens: 0,
+			cacheWriteTokens: 0
+		},
+		outputTokenDetails: {
+			textTokens: outputTokens,
+			reasoningTokens: 0
+		}
+	};
+}
 
 describe('personalized turn lifecycle', () => {
 	beforeEach(() => {
@@ -54,8 +72,8 @@ describe('personalized turn lifecycle', () => {
 
 		expect(turn.usageWarning).toBe(80);
 		expect(mocks.getPersonalizedUsageWarning).toHaveBeenCalledTimes(1);
-		await turn.markOutput({ inputTokens: 1000, outputTokens: 500, totalTokens: 1500 });
-		await turn.markOutput({ inputTokens: 1, outputTokens: 1, totalTokens: 2 });
+		await turn.markOutput(usage(1000, 500, 1500));
+		await turn.markOutput(usage(1, 1, 2));
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledTimes(1);
 		expect(mocks.rollupPersonalizedUsage).toHaveBeenCalledTimes(1);
 	});
@@ -71,7 +89,7 @@ describe('personalized turn lifecycle', () => {
 			true,
 			true
 		]);
-		await turn.markOutput({ inputTokens: 0, outputTokens: 0, totalTokens: 0 });
+		await turn.markOutput(usage(0, 0, 0));
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledWith(
 			'user-1',
 			'2026-09',
@@ -88,7 +106,7 @@ describe('personalized turn lifecycle', () => {
 		if (turn.kind !== 'reserved') throw new Error('expected reservation');
 
 		await expect(turn.chargeWebSearch()).resolves.toBe(false);
-		await turn.markOutput({ inputTokens: 100, outputTokens: 50, totalTokens: 150 });
+		await turn.markOutput(usage(100, 50, 150));
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalled();
 		const chargedMilli = mocks.chargePersonalizedCredits.mock.calls[0]?.[2] as number;
 		expect(chargedMilli).toBeLessThan(250);

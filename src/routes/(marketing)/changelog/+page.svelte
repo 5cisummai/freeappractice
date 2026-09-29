@@ -5,6 +5,28 @@
 
 	const changelog = [
 		{
+			version: '1.9.5',
+			date: 'September 28, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Coach can open interactive physics and math canvas sims, with a Physics sim shortcut in the composer',
+						'Mark a Coach reply as not helpful and optionally share more detail, including recent chat context'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Coach monthly usage is now credits based on AI usage (100 during beta, 200 on Super), and web search adds 0.25 credits',
+						'Settings, Super pricing, and terms describe Coach credits instead of message counts',
+						'The sidebar Community link opens Discord',
+						'Practice mode tabs use shorter labels on small screens'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.4',
 			date: 'September 25, 2026',
 			sections: [
@@ -1512,7 +1534,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 25, 2026"
+			meta="Last Updated: September 28, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

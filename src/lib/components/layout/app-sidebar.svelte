@@ -84,12 +84,7 @@
 				<Sidebar.MenuButton tooltipContent="Community">
 					{#snippet child({ props })}
 						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-						<a
-							href={COMMUNITY_DISCORD_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-							{...props}
-						>
+						<a href={COMMUNITY_DISCORD_URL} target="_blank" rel="noopener noreferrer" {...props}>
 							<UsersGroupIcon />
 							<span>Community</span>
 							<ExternalLinkIcon class="ml-auto size-3.5 text-muted-foreground" aria-hidden="true" />

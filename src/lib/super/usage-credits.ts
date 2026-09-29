@@ -41,12 +41,9 @@ export function usdFromLanguageModelUsage(usage: LanguageModelUsage): number {
 	const inputTokens = usage.inputTokens ?? 0;
 	const outputTokens = usage.outputTokens ?? 0;
 	const details = usage.inputTokenDetails;
-	const cacheRead =
-		details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+	const cacheRead = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
 	const cacheWrite = details?.cacheWriteTokens ?? 0;
-	const noCache =
-		details?.noCacheTokens ??
-		Math.max(0, inputTokens - cacheRead - cacheWrite);
+	const noCache = details?.noCacheTokens ?? Math.max(0, inputTokens - cacheRead - cacheWrite);
 
 	return (
 		noCache * LUNA_USD_PER_INPUT_TOKEN +
@@ -62,7 +59,20 @@ export function millicreditsFromLanguageModelUsage(usage: LanguageModelUsage): n
 }
 
 export function createEmptyLanguageModelUsage(): LanguageModelUsage {
-	return { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+	return {
+		inputTokens: 0,
+		outputTokens: 0,
+		totalTokens: 0,
+		inputTokenDetails: {
+			noCacheTokens: 0,
+			cacheReadTokens: 0,
+			cacheWriteTokens: 0
+		},
+		outputTokenDetails: {
+			textTokens: 0,
+			reasoningTokens: 0
+		}
+	};
 }
 
 export function addLanguageModelUsage(
@@ -73,24 +83,27 @@ export function addLanguageModelUsage(
 	const outputTokens = (target.outputTokens ?? 0) + (step.outputTokens ?? 0);
 	const totalTokens = (target.totalTokens ?? 0) + (step.totalTokens ?? 0);
 
-	const stepDetails = step.inputTokenDetails;
-	const targetDetails = target.inputTokenDetails;
-	const inputTokenDetails =
-		stepDetails || targetDetails
-			? {
-					noCacheTokens:
-						(targetDetails?.noCacheTokens ?? 0) + (stepDetails?.noCacheTokens ?? 0),
-					cacheReadTokens:
-						(targetDetails?.cacheReadTokens ?? 0) + (stepDetails?.cacheReadTokens ?? 0),
-					cacheWriteTokens:
-						(targetDetails?.cacheWriteTokens ?? 0) + (stepDetails?.cacheWriteTokens ?? 0)
-				}
-			: undefined;
-
 	return {
 		inputTokens,
 		outputTokens,
 		totalTokens,
-		...(inputTokenDetails ? { inputTokenDetails } : {})
+		inputTokenDetails: {
+			noCacheTokens:
+				(target.inputTokenDetails?.noCacheTokens ?? 0) +
+				(step.inputTokenDetails?.noCacheTokens ?? 0),
+			cacheReadTokens:
+				(target.inputTokenDetails?.cacheReadTokens ?? 0) +
+				(step.inputTokenDetails?.cacheReadTokens ?? 0),
+			cacheWriteTokens:
+				(target.inputTokenDetails?.cacheWriteTokens ?? 0) +
+				(step.inputTokenDetails?.cacheWriteTokens ?? 0)
+		},
+		outputTokenDetails: {
+			textTokens:
+				(target.outputTokenDetails?.textTokens ?? 0) + (step.outputTokenDetails?.textTokens ?? 0),
+			reasoningTokens:
+				(target.outputTokenDetails?.reasoningTokens ?? 0) +
+				(step.outputTokenDetails?.reasoningTokens ?? 0)
+		}
 	};
 }

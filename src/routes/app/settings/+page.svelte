@@ -19,7 +19,7 @@
 	import { resetPostHogUser } from '$lib/client/posthog-analytics';
 	import { onboardingCourseGroups } from '$lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	const APP_VERSION = '1.9.4';
+	const APP_VERSION = '1.9.5';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
@@ -450,8 +450,8 @@
 							</p>
 							{#if data.usage.status === 'available'}
 								<p class="mt-1 text-sm">
-									{data.usage.remainingCredits} of {data.usage.limitCredits} Coach credits remaining
-									this month.
+									{data.usage.remainingCredits} of {data.usage.limitCredits} Coach credits remaining this
+									month.
 								</p>
 								<p class="mt-1 text-xs text-muted-foreground">
 									Each turn uses credits based on AI usage. Web search adds 0.25 credits.

@@ -2,7 +2,7 @@
 	"openapi": "3.1.0",
 	"info": {
 		"title": "Free AP Practice API",
-		"version": "1.9.4",
+		"version": "1.9.5",
 		"description": "Public and authenticated APIs for AP practice (MCQ and FRQ), quizzes, progress tracking, the AI tutor, Coach, Super, and shared practice sets. Admin, cron, and webhook routes are not documented here.",
 		"contact": {
 			"name": "Free AP Practice Support",
