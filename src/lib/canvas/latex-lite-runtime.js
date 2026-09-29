@@ -221,12 +221,12 @@
 		var last = 0;
 		var match;
 		while ((match = re.exec(text))) {
-			result += text.slice(last, match.index);
+			result += esc(text.slice(last, match.index));
 			if (match[1] != null) result += wrap(renderExpr(match[1]), true);
 			else result += wrap(renderExpr(match[2]), false);
 			last = match.index + match[0].length;
 		}
-		result += text.slice(last);
+		result += esc(text.slice(last));
 		return result;
 	}
 

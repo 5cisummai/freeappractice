@@ -106,12 +106,14 @@ export async function backfillApClassToCourse(): Promise<void> {
 				AND nullif(btrim(COALESCE(data ->> 'apClass', '')), '') IS NOT NULL
 		`),
 		// Rows that already had course but still carry the legacy key.
+		// Keep apClass when course is still blank so unresolved rows stay detectable.
 		sql.query(`
 			UPDATE content.mcq_questions
 			SET
 				data = data - 'apClass',
 				updated_at = NOW()
 			WHERE data ? 'apClass'
+				AND nullif(btrim(COALESCE(data ->> 'course', '')), '') IS NOT NULL
 		`),
 		sql.query(`
 			UPDATE content.frq_questions
@@ -119,6 +121,7 @@ export async function backfillApClassToCourse(): Promise<void> {
 				data = data - 'apClass',
 				updated_at = NOW()
 			WHERE data ? 'apClass'
+				AND nullif(btrim(COALESCE(data ->> 'course', '')), '') IS NOT NULL
 		`)
 	]);
 

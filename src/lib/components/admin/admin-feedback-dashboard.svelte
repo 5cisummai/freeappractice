@@ -7,6 +7,7 @@
 	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model.js';
 	import type { AdminFeedbackItem } from '$lib/admin/types.js';
 	import { APP_FEEDBACK_CATEGORY_LABELS } from '$lib/schemas/app-feedback.js';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let {
 		items = [],
@@ -24,6 +25,16 @@
 
 	let markingBadQuestionId = $state<string | null>(null);
 	let markedBadQuestionIds = $state<Record<string, true>>({});
+	let expandedPreviewIds = new SvelteSet<string>();
+
+	function previewExpandKey(itemId: string, questionId: string): string {
+		return `${itemId}:${questionId}`;
+	}
+
+	function setPreviewExpanded(key: string, open: boolean): void {
+		if (open) expandedPreviewIds.add(key);
+		else expandedPreviewIds.delete(key);
+	}
 
 	function formatDateTime(value: Date | string | null | undefined): string {
 		if (!value) return '—';
@@ -69,11 +80,15 @@
 		return { questionId, selectedCourse, selectedUnit };
 	}
 
+	function isMarkedBad(item: AdminFeedbackItem, questionId: string): boolean {
+		return item.questionFinalVerdict === 'bad' || !!markedBadQuestionIds[questionId];
+	}
+
 	async function markQuestionBad(
 		item: AdminFeedbackItem,
 		preview: { questionId: string; selectedCourse: string; selectedUnit: string }
 	): Promise<void> {
-		if (markingBadQuestionId) return;
+		if (markingBadQuestionId || isMarkedBad(item, preview.questionId)) return;
 		markingBadQuestionId = preview.questionId;
 		const notes = `Marked bad from bug report: ${item.title ?? item.id} (report ${item.id})`;
 		try {
@@ -174,37 +189,50 @@
 								{/if}
 								{@const preview = questionPreview(item)}
 								{#if preview}
+									{@const expandKey = previewExpandKey(item.id, preview.questionId)}
 									<div class="flex justify-end">
 										<Button
 											size="sm"
 											variant="outline"
 											class="border-destructive/30 text-destructive hover:bg-destructive/10"
 											onclick={() => void markQuestionBad(item, preview)}
-											disabled={!!markedBadQuestionIds[preview.questionId] ||
+											disabled={isMarkedBad(item, preview.questionId) ||
 												markingBadQuestionId === preview.questionId}
 										>
-											{markedBadQuestionIds[preview.questionId]
+											{isMarkedBad(item, preview.questionId)
 												? 'Marked bad'
 												: markingBadQuestionId === preview.questionId
 													? 'Marking…'
 													: 'Mark bad'}
 										</Button>
 									</div>
-									{#key preview.questionId}
-										<QuestionCard
-											model={unlimitedQuestionCardModel({
-												selectedCourse: preview.selectedCourse,
-												selectedUnit: preview.selectedUnit,
-												requestVersion: 1,
-												presetQuestionId: preview.questionId
-											})}
-											tutorMode="hidden"
-											showUtilityActions={false}
-											showFirstUseHint={false}
-											nextDisabled={true}
-											class="border-0 bg-transparent shadow-none ring-0"
-										/>
-									{/key}
+									<details
+										class="rounded-lg border border-border/60"
+										ontoggle={(event) => setPreviewExpanded(expandKey, event.currentTarget.open)}
+									>
+										<summary class="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">
+											Question preview
+										</summary>
+										{#if expandedPreviewIds.has(expandKey)}
+											<div class="border-t border-border/60 p-2">
+												{#key preview.questionId}
+													<QuestionCard
+														model={unlimitedQuestionCardModel({
+															selectedCourse: preview.selectedCourse,
+															selectedUnit: preview.selectedUnit,
+															requestVersion: 1,
+															presetQuestionId: preview.questionId
+														})}
+														tutorMode="hidden"
+														showUtilityActions={false}
+														showFirstUseHint={false}
+														nextDisabled={true}
+														class="border-0 bg-transparent shadow-none ring-0"
+													/>
+												{/key}
+											</div>
+										{/if}
+									</details>
 								{/if}
 							{/if}
 						</div>

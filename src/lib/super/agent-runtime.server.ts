@@ -368,7 +368,8 @@ export async function createSuperAgentStreamResponse(
 			conversationId,
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
 			thinkingMode,
-			chargeWebSearch: personalizedTurn.chargeWebSearch
+			chargeWebSearch: personalizedTurn.chargeWebSearch,
+			recordWebSearch: personalizedTurn.recordWebSearch
 		});
 
 		const markUsageIfNeeded = async (responseMessage: SuperAgentUIMessage) => {
@@ -380,10 +381,12 @@ export async function createSuperAgentStreamResponse(
 				return typeof part.type === 'string' && part.type.startsWith('tool-');
 			});
 			if (!hasBillableOutput) return;
-			emittedOutput = true;
-			await personalizedTurn
-				.markOutput(turnUsage)
-				.catch((error) => logger.warn('Failed to roll up Super Agent usage', { error }));
+			try {
+				await personalizedTurn.markOutput(turnUsage);
+				emittedOutput = true;
+			} catch (error) {
+				logger.warn('Failed to roll up Super Agent usage', { error });
+			}
 		};
 
 		return await createAgentUIStreamResponse({

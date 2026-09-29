@@ -75,6 +75,15 @@ export function createEmptyLanguageModelUsage(): LanguageModelUsage {
 	};
 }
 
+function noCacheTokensFromUsage(usage: LanguageModelUsage): number {
+	const details = usage.inputTokenDetails;
+	if (details?.noCacheTokens != null) return details.noCacheTokens;
+	const inputTokens = usage.inputTokens ?? 0;
+	const cacheRead = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+	const cacheWrite = details?.cacheWriteTokens ?? 0;
+	return Math.max(0, inputTokens - cacheRead - cacheWrite);
+}
+
 export function addLanguageModelUsage(
 	target: LanguageModelUsage,
 	step: LanguageModelUsage
@@ -88,9 +97,7 @@ export function addLanguageModelUsage(
 		outputTokens,
 		totalTokens,
 		inputTokenDetails: {
-			noCacheTokens:
-				(target.inputTokenDetails?.noCacheTokens ?? 0) +
-				(step.inputTokenDetails?.noCacheTokens ?? 0),
+			noCacheTokens: noCacheTokensFromUsage(target) + noCacheTokensFromUsage(step),
 			cacheReadTokens:
 				(target.inputTokenDetails?.cacheReadTokens ?? 0) +
 				(step.inputTokenDetails?.cacheReadTokens ?? 0),

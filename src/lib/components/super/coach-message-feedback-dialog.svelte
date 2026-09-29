@@ -87,13 +87,28 @@
 			.trim();
 	}
 
+	const MAX_MESSAGE_CONTENT_LENGTH = 16_000;
+	const MAX_HISTORY_ENTRIES = 150;
+	const MAX_TOTAL_CONTENT_LENGTH = 100_000;
+
 	function buildChatHistory(): CoachFeedbackChatMessage[] {
-		return messages.flatMap((message) => {
+		const entries = messages.flatMap((message) => {
 			if (message.role !== 'user' && message.role !== 'assistant') return [];
-			const content = coachMessageText(message);
+			const content = coachMessageText(message).slice(0, MAX_MESSAGE_CONTENT_LENGTH);
 			if (!content) return [];
 			return [{ role: message.role, content }];
 		});
+
+		const recent = entries.slice(-MAX_HISTORY_ENTRIES);
+		let totalContentLength = 0;
+		const capped: CoachFeedbackChatMessage[] = [];
+		for (let index = recent.length - 1; index >= 0; index -= 1) {
+			const entry = recent[index];
+			if (totalContentLength + entry.content.length > MAX_TOTAL_CONTENT_LENGTH) break;
+			totalContentLength += entry.content.length;
+			capped.unshift(entry);
+		}
+		return capped;
 	}
 
 	async function handleSubmit(event: SubmitEvent): Promise<void> {
@@ -186,18 +201,23 @@
 						{/if}
 					</div>
 
-					<div class="flex items-start gap-3">
-						<Checkbox
-							id="coach-feedback-include-history"
-							bind:checked={includeChatHistory}
-							class="mt-0.5"
-						/>
-						<Label
-							for="coach-feedback-include-history"
-							class="cursor-pointer text-sm leading-5 font-normal text-foreground"
-						>
-							Include this chat history
-						</Label>
+					<div class="space-y-1">
+						<div class="flex items-start gap-3">
+							<Checkbox
+								id="coach-feedback-include-history"
+								bind:checked={includeChatHistory}
+								class="mt-0.5"
+							/>
+							<Label
+								for="coach-feedback-include-history"
+								class="cursor-pointer text-sm leading-5 font-normal text-foreground"
+							>
+								Include this chat history
+							</Label>
+						</div>
+						{#if fieldErrors.chatHistory}
+							<p class="text-sm text-destructive">{fieldErrors.chatHistory}</p>
+						{/if}
 					</div>
 
 					{#if error}

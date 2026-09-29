@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { LanguageModelUsage } from 'ai';
 import {
+	addLanguageModelUsage,
+	createEmptyLanguageModelUsage,
 	millicreditsFromLanguageModelUsage,
 	usdFromLanguageModelUsage,
 	WEB_SEARCH_SURCHARGE_MILLI
@@ -58,5 +60,24 @@ describe('usage credits', () => {
 
 	it('defines the web-search surcharge in millicredits', () => {
 		expect(WEB_SEARCH_SURCHARGE_MILLI).toBe(250);
+	});
+
+	it('derives missing noCacheTokens from inputTokens when aggregating steps', () => {
+		const aggregated = addLanguageModelUsage(createEmptyLanguageModelUsage(), {
+			inputTokens: 1_000_000,
+			outputTokens: 0,
+			totalTokens: 1_000_000,
+			inputTokenDetails: {
+				noCacheTokens: undefined,
+				cacheReadTokens: undefined,
+				cacheWriteTokens: undefined
+			},
+			outputTokenDetails: {
+				textTokens: 0,
+				reasoningTokens: 0
+			}
+		});
+		expect(aggregated.inputTokenDetails.noCacheTokens).toBe(1_000_000);
+		expect(usdFromLanguageModelUsage(aggregated)).toBeCloseTo(0.1, 6);
 	});
 });

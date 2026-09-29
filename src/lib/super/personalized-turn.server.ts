@@ -19,7 +19,10 @@ export type ReservedPersonalizedTurn = {
 	reservation: UsageReservation;
 	usageWarning: PersonalizedUsageWarning;
 	markOutput: (usage: LanguageModelUsage) => Promise<void>;
+	/** Returns whether another web search is affordable; does not charge until `recordWebSearch`. */
 	chargeWebSearch: () => Promise<boolean>;
+	/** Record a successful web search so its surcharge is included in `markOutput`. */
+	recordWebSearch: () => void;
 	releaseIfUnused: () => Promise<void>;
 };
 
@@ -43,40 +46,44 @@ export async function startPersonalizedTurn(
 	const reservation = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
 	if (reservation.used >= reservation.limit) return { kind: 'exhausted' };
 
-	let outputStarted = false;
-	let webSearchCharged = false;
-	let searchCheck: Promise<boolean> | undefined;
+	let webSearchCount = 0;
+	let chargePromise: Promise<void> | null = null;
 
 	return {
 		kind: 'reserved',
 		reservation,
 		usageWarning: getPersonalizedUsageWarning(reservation),
 		markOutput: async (turnUsage) => {
-			if (outputStarted) return;
-			outputStarted = true;
-			let millicredits = millicreditsFromLanguageModelUsage(turnUsage);
-			if (webSearchCharged) millicredits += WEB_SEARCH_SURCHARGE_MILLI;
-			const used = await chargePersonalizedCredits(
-				userId,
-				reservation.month,
-				millicredits,
-				turnStartedAt
-			);
-			await rollupPersonalizedUsage(userId, {
-				month: reservation.month,
-				used,
-				limit: reservation.limit,
-				remaining: Math.max(0, reservation.limit - used)
-			});
-		},
-		chargeWebSearch: () => {
-			searchCheck ??= (async () => {
-				const current = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
-				if (current.remaining < WEB_SEARCH_SURCHARGE_MILLI) return false;
-				webSearchCharged = true;
-				return true;
+			if (chargePromise) return chargePromise;
+			chargePromise = (async () => {
+				let millicredits = millicreditsFromLanguageModelUsage(turnUsage);
+				if (webSearchCount > 0) millicredits += webSearchCount * WEB_SEARCH_SURCHARGE_MILLI;
+				const used = await chargePersonalizedCredits(
+					userId,
+					reservation.month,
+					millicredits,
+					turnStartedAt
+				);
+				await rollupPersonalizedUsage(userId, {
+					month: reservation.month,
+					used,
+					limit: reservation.limit,
+					remaining: Math.max(0, reservation.limit - used)
+				});
 			})();
-			return searchCheck;
+			try {
+				await chargePromise;
+			} catch (error) {
+				chargePromise = null;
+				throw error;
+			}
+		},
+		chargeWebSearch: async () => {
+			const current = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
+			return current.remaining >= (webSearchCount + 1) * WEB_SEARCH_SURCHARGE_MILLI;
+		},
+		recordWebSearch: () => {
+			webSearchCount += 1;
 		},
 		releaseIfUnused: async () => {
 			// Token billing charges only after billable output; nothing to release.

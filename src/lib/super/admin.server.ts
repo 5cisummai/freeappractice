@@ -156,7 +156,7 @@ export async function getSuperAdminOverview(now = new Date()): Promise<SuperAdmi
 				.limit(100),
 			db
 				.select({
-					total: sql<number>`coalesce(${sum(superUsageRollups.creditsMilli)}, 0)::int`
+					total: sql<string>`coalesce(${sum(superUsageRollups.creditsMilli)}, 0)::bigint`
 				})
 				.from(superUsageRollups)
 				.where(eq(superUsageRollups.month, month)),

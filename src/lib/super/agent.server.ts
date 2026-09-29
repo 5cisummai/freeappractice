@@ -27,6 +27,7 @@ export function createSuperAgent(input: {
 	currentContext?: SuperAgentContext;
 	conversationId?: string;
 	chargeWebSearch: () => Promise<boolean>;
+	recordWebSearch: () => void;
 }) {
 	const {
 		locals,
@@ -40,7 +41,8 @@ export function createSuperAgent(input: {
 		thinkingMode = 'quick',
 		currentContext,
 		conversationId,
-		chargeWebSearch
+		chargeWebSearch,
+		recordWebSearch
 	} = input;
 	const localDate = formatDayInTimeZone(new Date(), timeZone);
 	const surface = currentContext?.surface ?? 'coach';
@@ -141,7 +143,8 @@ export function createSuperAgent(input: {
 			sessionId,
 			currentContext,
 			conversationId,
-			chargeWebSearch
+			chargeWebSearch,
+			recordWebSearch
 		}),
 		prepareStep: async ({ messages, stepNumber }) => {
 			const pruned = pruneSuperAgentModelMessages(messages);

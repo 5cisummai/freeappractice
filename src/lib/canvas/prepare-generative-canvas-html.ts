@@ -75,8 +75,9 @@ ${trimmed}
 }
 
 function injectCspMeta(html: string): string {
-	if (/content-security-policy/i.test(html)) return html;
-	const meta = `<meta http-equiv="Content-Security-Policy" content="${CSP_CONTENT}">`;
+	// Only skip when our host-owned meta is already present; never trust authored CSP text.
+	if (html.includes('data-pip-canvas-csp')) return html;
+	const meta = `<meta http-equiv="Content-Security-Policy" content="${CSP_CONTENT}" data-pip-canvas-csp>`;
 	if (/<head[^>]*>/i.test(html)) {
 		return html.replace(/<head([^>]*)>/i, `<head$1>\n${meta}`);
 	}

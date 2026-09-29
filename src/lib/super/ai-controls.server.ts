@@ -116,8 +116,9 @@ function secondsUntilUsageExpiry(now = new Date()): number {
 	return Math.max(60, Math.ceil((expiry.getTime() - now.getTime()) / 1000));
 }
 
+/** Millicredit counters use a versioned key so legacy message-count values are not reused. */
 function usageKey(userId: string, month: string): string {
-	return `${redisNamespace()}:usage:${month}:${userId}`;
+	return `${redisNamespace()}:usage:milli:v1:${month}:${userId}`;
 }
 
 const CHARGE_USAGE_SCRIPT = `

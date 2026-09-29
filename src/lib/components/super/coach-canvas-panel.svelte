@@ -10,8 +10,14 @@
 	let { artifact }: CoachCanvasEmbedProps = $props();
 
 	const srcdoc = $derived(ensureGenerativeCanvasHtml(artifact.html));
+	const MAX_FRAME_HEIGHT = 720;
+
 	let heightBySrcdoc = $state<Record<string, number>>({});
-	const frameHeight = $derived(heightBySrcdoc[srcdoc]);
+	const reportedHeight = $derived(heightBySrcdoc[srcdoc]);
+	const frameHeight = $derived(
+		reportedHeight ? Math.min(reportedHeight, MAX_FRAME_HEIGHT) : undefined
+	);
+	const frameHeightCapped = $derived(reportedHeight != null && reportedHeight > MAX_FRAME_HEIGHT);
 
 	const bindFrame: Attachment<HTMLIFrameElement> = (element) => {
 		function handleMessage(event: MessageEvent) {
@@ -46,7 +52,7 @@
 			title={artifact.accessibleDescription}
 			sandbox="allow-scripts"
 			{srcdoc}
-			class="block w-full border-0 bg-background"
+			class={['block w-full border-0 bg-background', frameHeightCapped && 'overflow-y-auto']}
 			style:height={frameHeight ? `${frameHeight}px` : '1px'}
 		></iframe>
 	{/key}

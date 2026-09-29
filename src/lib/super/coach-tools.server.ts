@@ -118,7 +118,15 @@ function studyPlanToolView(plan: StudyPlanView | null): StudyPlanView | null {
 }
 
 export function createSuperTools(input: SuperToolsInput) {
-	const { locals, userId, sessionId, currentContext, conversationId, chargeWebSearch } = input;
+	const {
+		locals,
+		userId,
+		sessionId,
+		currentContext,
+		conversationId,
+		chargeWebSearch,
+		recordWebSearch
+	} = input;
 
 	return {
 		ask_student: tool({
@@ -168,6 +176,7 @@ export function createSuperTools(input: SuperToolsInput) {
 									},
 									{ signal: abortSignal }
 								);
+								recordWebSearch();
 								return {
 									results: response.results.map((result) => ({
 										title: result.title ?? result.url,

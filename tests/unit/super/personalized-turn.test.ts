@@ -78,30 +78,56 @@ describe('personalized turn lifecycle', () => {
 		expect(mocks.rollupPersonalizedUsage).toHaveBeenCalledTimes(1);
 	});
 
-	it('adds the web-search surcharge when search was allowed', async () => {
-		mocks.getPersonalizedUsage
-			.mockResolvedValueOnce({ month: '2026-09', used: 0, limit: 200_000, remaining: 200_000 })
-			.mockResolvedValueOnce({ month: '2026-09', used: 0, limit: 200_000, remaining: 200_000 });
+	it('adds a web-search surcharge for each recorded successful search', async () => {
+		mocks.getPersonalizedUsage.mockResolvedValue({
+			month: '2026-09',
+			used: 0,
+			limit: 200_000,
+			remaining: 200_000
+		});
 		const turn = await startPersonalizedTurn('user-1', 'subscription');
 		if (turn.kind !== 'reserved') throw new Error('expected reservation');
 
-		expect(await Promise.all([turn.chargeWebSearch(), turn.chargeWebSearch()])).toEqual([
-			true,
-			true
-		]);
+		expect(await turn.chargeWebSearch()).toBe(true);
+		turn.recordWebSearch();
+		expect(await turn.chargeWebSearch()).toBe(true);
+		turn.recordWebSearch();
 		await turn.markOutput(usage(0, 0, 0));
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledWith(
 			'user-1',
 			'2026-09',
-			250,
+			500,
+			expect.any(Date)
+		);
+	});
+
+	it('does not charge a web search that was approved but not recorded', async () => {
+		mocks.getPersonalizedUsage.mockResolvedValue({
+			month: '2026-09',
+			used: 0,
+			limit: 200_000,
+			remaining: 200_000
+		});
+		const turn = await startPersonalizedTurn('user-1', 'subscription');
+		if (turn.kind !== 'reserved') throw new Error('expected reservation');
+
+		expect(await turn.chargeWebSearch()).toBe(true);
+		await turn.markOutput(usage(0, 0, 0));
+		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledWith(
+			'user-1',
+			'2026-09',
+			0,
 			expect.any(Date)
 		);
 	});
 
 	it('rejects web search when fewer than 0.25 credits remain', async () => {
-		mocks.getPersonalizedUsage
-			.mockResolvedValueOnce({ month: '2026-09', used: 199_900, limit: 200_000, remaining: 100 })
-			.mockResolvedValueOnce({ month: '2026-09', used: 199_900, limit: 200_000, remaining: 100 });
+		mocks.getPersonalizedUsage.mockResolvedValue({
+			month: '2026-09',
+			used: 199_900,
+			limit: 200_000,
+			remaining: 100
+		});
 		const turn = await startPersonalizedTurn('user-1', 'subscription');
 		if (turn.kind !== 'reserved') throw new Error('expected reservation');
 
@@ -110,5 +136,23 @@ describe('personalized turn lifecycle', () => {
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalled();
 		const chargedMilli = mocks.chargePersonalizedCredits.mock.calls[0]?.[2] as number;
 		expect(chargedMilli).toBeLessThan(250);
+	});
+
+	it('allows markOutput to retry after a failed charge', async () => {
+		mocks.getPersonalizedUsage.mockResolvedValue({
+			month: '2026-09',
+			used: 0,
+			limit: 200_000,
+			remaining: 200_000
+		});
+		mocks.chargePersonalizedCredits
+			.mockRejectedValueOnce(new Error('redis down'))
+			.mockResolvedValueOnce(250);
+		const turn = await startPersonalizedTurn('user-1', 'subscription');
+		if (turn.kind !== 'reserved') throw new Error('expected reservation');
+
+		await expect(turn.markOutput(usage(0, 0, 0))).rejects.toThrow('redis down');
+		await turn.markOutput(usage(0, 0, 0));
+		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledTimes(2);
 	});
 });

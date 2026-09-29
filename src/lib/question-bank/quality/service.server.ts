@@ -769,6 +769,9 @@ export async function recordHumanDecision(opts: {
 	const now = new Date();
 	await ensureQuestionQuality(opts.questionId);
 	const existing = await getQuestionQuality(opts.questionId);
+	if (existing?.state === 'final' && existing.finalVerdict === opts.verdict) {
+		return;
+	}
 	const nextState =
 		existing?.state === 'final'
 			? 'final'
