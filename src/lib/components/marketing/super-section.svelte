@@ -3,9 +3,7 @@
 	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
 	import { twAnimateInViewSubtle } from '$lib/tw-animate';
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
-	import DownloadIcon from '@tabler/icons-svelte/icons/download-filled';
-	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
-	import FileTextIcon from '@tabler/icons-svelte/icons/file-text-filled';
+	import PlayerPlayFilledIcon from '@tabler/icons-svelte/icons/player-play-filled';
 
 	const planTasks = [
 		{
@@ -73,51 +71,109 @@
 		<article class="{cardClass} min-h-72 {twAnimateInViewSubtle} lg:col-span-5">
 			<div class="{wellClass} min-h-52 p-4 sm:p-5" aria-hidden="true">
 				<div
-					class="pointer-events-none relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-foreground/10"
+					class="pointer-events-none flex h-full min-h-44 flex-col overflow-hidden rounded-xl border border-border bg-white shadow-sm ring-1 ring-foreground/10"
 				>
-					<div class="absolute top-2.5 right-2.5 z-10 flex gap-1">
-						<span
-							class="inline-flex h-7 items-center gap-1 rounded-md bg-background/85 px-2 text-[0.7rem] font-medium shadow-sm backdrop-blur-sm"
-						>
-							<ExternalLinkIcon class="size-3" />
-							Open PDF
-						</span>
-						<span
-							class="inline-flex h-7 items-center gap-1 rounded-md bg-background/85 px-2 text-[0.7rem] font-medium shadow-sm backdrop-blur-sm"
-						>
-							<DownloadIcon class="size-3" />
-							Download
-						</span>
-					</div>
-					<div class="space-y-3 px-4 pt-11 pb-4 text-neutral-900">
-						<div class="flex items-center gap-2 text-neutral-500">
-							<FileTextIcon class="size-3.5" />
-							<p class="text-[0.65rem] font-medium tracking-wide uppercase">
-								Personal assessment brief
-							</p>
+					<div
+						class="flex items-center justify-between gap-2 border-b border-border bg-neutral-50 px-3 py-2"
+					>
+						<div class="flex min-w-0 items-center gap-2">
+							<span class="size-2 shrink-0 rounded-full bg-emerald-500"></span>
+							<p class="truncate text-[0.7rem] font-medium text-neutral-800">Projectile Motion</p>
 						</div>
-						<p class="font-display text-lg font-medium tracking-tight">AP Biology</p>
-						<p class="text-xs leading-5 text-neutral-600">
-							Strongest: Unit 2 cell structure. Focus next: Unit 3 energetics and FRQ evidence
-							phrasing.
-						</p>
-						<div class="grid grid-cols-2 gap-2">
-							<div class="rounded-lg bg-neutral-100 px-2.5 py-1.5">
-								<p class="text-[0.65rem] text-neutral-500">MCQ accuracy</p>
-								<p class="text-base font-semibold">82%</p>
-							</div>
-							<div class="rounded-lg bg-neutral-100 px-2.5 py-1.5">
-								<p class="text-[0.65rem] text-neutral-500">Units to review</p>
-								<p class="text-base font-semibold">2</p>
+						<div class="flex shrink-0 items-center gap-1">
+							<span
+								class="rounded-md bg-primary px-1.5 py-0.5 text-[0.6rem] font-medium text-primary-foreground"
+								>Physics</span
+							>
+							<span class="rounded-md px-1.5 py-0.5 text-[0.6rem] font-medium text-neutral-400"
+								>Math</span
+							>
+						</div>
+					</div>
+					<div class="relative flex-1 bg-neutral-50/80">
+						<svg
+							class="absolute inset-0 h-full w-full"
+							viewBox="0 0 320 140"
+							fill="none"
+							preserveAspectRatio="xMidYMid slice"
+							aria-hidden="true"
+						>
+							<line
+								x1="16"
+								y1="118"
+								x2="304"
+								y2="118"
+								stroke="rgba(15,23,42,0.12)"
+								stroke-width="1"
+							/>
+							<path
+								d="M 40 118 Q 120 20 200 118"
+								stroke="rgba(14,165,233,0.35)"
+								stroke-width="2"
+								stroke-dasharray="4 3"
+								fill="none"
+							/>
+							<path
+								d="M 40 118 Q 160 8 280 118"
+								stroke="rgb(2,132,199)"
+								stroke-width="2.5"
+								fill="none"
+							/>
+							<line
+								x1="40"
+								y1="118"
+								x2="88"
+								y2="78"
+								stroke="rgba(217,119,6,0.75)"
+								stroke-width="1.5"
+								stroke-dasharray="3 2"
+							/>
+							<circle cx="168" cy="42" r="5" fill="rgb(2,132,199)" />
+							<circle cx="40" cy="118" r="4" fill="rgb(217,119,6)" />
+						</svg>
+					</div>
+					<div class="space-y-2.5 border-t border-border bg-white px-3 py-2.5">
+						<div class="flex items-center gap-2">
+							<span
+								class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
+							>
+								<PlayerPlayFilledIcon class="size-3.5" />
+							</span>
+							<div class="min-w-0 flex-1 space-y-2">
+								<div class="flex items-center gap-2">
+									<span class="w-14 shrink-0 text-[0.6rem] text-neutral-500">Angle</span>
+									<div class="relative h-1.5 flex-1 rounded-full bg-neutral-200">
+										<div class="absolute inset-y-0 left-0 w-[55%] rounded-full bg-sky-500"></div>
+										<div
+											class="absolute top-1/2 left-[55%] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-600/20 bg-white shadow-sm"
+										></div>
+									</div>
+									<span class="w-7 shrink-0 text-right text-[0.6rem] font-medium text-neutral-700"
+										>45°</span
+									>
+								</div>
+								<div class="flex items-center gap-2">
+									<span class="w-14 shrink-0 text-[0.6rem] text-neutral-500">Speed</span>
+									<div class="relative h-1.5 flex-1 rounded-full bg-neutral-200">
+										<div class="absolute inset-y-0 left-0 w-[72%] rounded-full bg-sky-500"></div>
+										<div
+											class="absolute top-1/2 left-[72%] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-sky-600/20 bg-white shadow-sm"
+										></div>
+									</div>
+									<span class="w-7 shrink-0 text-right text-[0.6rem] font-medium text-neutral-700"
+										>18</span
+									>
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 			<div class={captionClass}>
-				<h3 class="text-xl font-semibold tracking-tight">See what's actually slipping</h3>
+				<h3 class="text-xl font-semibold tracking-tight">Learn with Physics and Math Sims</h3>
 				<p class="mt-2 text-sm leading-6 text-muted-foreground">
-					Get weekly reports on your progress and areas for improvement.
+					Coach opens interactive canvas sims so you can manipulate the model, not just read about
+					it.
 				</p>
 			</div>
 		</article>
