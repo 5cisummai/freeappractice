@@ -6,6 +6,10 @@ const CSP_CONTENT =
 	"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'";
 
 const CANVAS_LAYOUT_STYLE = `<style data-pip-canvas-layout>
+html {
+  padding: 8px !important;
+  box-sizing: border-box;
+}
 html, body {
   margin: 0 !important;
   height: auto !important;
@@ -110,7 +114,12 @@ function injectInHead(html: string, snippet: string): string {
 export function ensureGenerativeCanvasHtml(html: string): string {
 	let document = normalizeToFullDocument(html.trim());
 	document = injectCspMeta(document);
-	if (!document.includes('data-pip-canvas-layout')) {
+	if (document.includes('data-pip-canvas-layout')) {
+		document = document.replace(
+			/<style\b[^>]*data-pip-canvas-layout[^>]*>[\s\S]*?<\/style>/i,
+			CANVAS_LAYOUT_STYLE
+		);
+	} else {
 		document = injectInHead(document, CANVAS_LAYOUT_STYLE);
 	}
 	if (!document.includes('data-pip-latex-lite')) {

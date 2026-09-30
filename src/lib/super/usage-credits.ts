@@ -4,7 +4,7 @@ import type { SuperAccessReason } from '$lib/super/types';
 /** Display/API: 25 credits per USD. */
 export const CREDITS_PER_USD = 25;
 
-export const SUPER_FREE_BETA_MONTHLY_USD = 4;
+export const SUPER_FREE_BETA_MONTHLY_USD = 2;
 export const SUPER_MONTHLY_USD = 8;
 
 export const SUPER_FREE_BETA_MONTHLY_CREDITS = SUPER_FREE_BETA_MONTHLY_USD * CREDITS_PER_USD;

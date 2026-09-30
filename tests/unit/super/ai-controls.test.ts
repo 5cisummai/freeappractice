@@ -24,8 +24,8 @@ describe('getPersonalizedUsageWarning', () => {
 });
 
 describe('monthlyCreditLimitMilli', () => {
-	it('maps free beta to 100 credits and paid Super to 200 credits', () => {
-		expect(monthlyCreditLimitMilli('free_beta')).toBe(SUPER_FREE_BETA_MONTHLY_CREDITS_MILLI);
+	it('maps free beta to 50 credits and paid Super to 200 credits', () => {
+		expect(monthlyCreditLimitMilli('free_beta')).toBe(50_000);
 		expect(monthlyCreditLimitMilli('subscription')).toBe(SUPER_MONTHLY_CREDITS_MILLI);
 	});
 });

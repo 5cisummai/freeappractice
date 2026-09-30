@@ -25,7 +25,7 @@
 	const superIncludes = $derived([
 		'AI Coach personalized to your practice',
 		'Weekly study plans you approve with Coach',
-		freeBeta ? '100 Coach credits per month during beta' : '200 Coach credits per month'
+		freeBeta ? '50 Coach credits per month during beta' : '200 Coach credits per month'
 	]);
 
 	const cardClass =

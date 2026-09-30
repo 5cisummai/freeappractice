@@ -1047,10 +1047,6 @@
 														{/if}
 													</figure>
 												{/if}
-												{@const canvasArtifact = getCanvasHtmlOutput(toolPart.output)}
-												{#if canvasArtifact && (toolPart.type === 'tool-open_physics_sim' || toolPart.type === 'tool-open_math_explorer')}
-													<CoachCanvasPanel artifact={canvasArtifact} />
-												{/if}
 												{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(
 													toolPart.output
 												)}
@@ -1137,6 +1133,15 @@
 												</ChainOfThought.Content>
 											</ChainOfThought.Root>
 										{/if}
+										{#each message.parts as part, index (`canvas-${message.id}-${index}`)}
+											{@const toolPart = getToolPart(part)}
+											{#if toolPart && (toolPart.type === 'tool-open_physics_sim' || toolPart.type === 'tool-open_math_explorer')}
+												{@const canvasArtifact = getCanvasHtmlOutput(toolPart.output)}
+												{#if canvasArtifact}
+													<CoachCanvasPanel artifact={canvasArtifact} />
+												{/if}
+											{/if}
+										{/each}
 										{#each message.parts as part, index (`text-${message.id}-${index}`)}
 											{#if part.type === 'text' && part.text.trim()}
 												<Message.Content class="text-md max-w-3xl leading-7">
