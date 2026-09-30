@@ -19,11 +19,22 @@ export const SUPER_MONTHLY_CREDITS_MILLI = SUPER_MONTHLY_CREDITS * MILLICREDITS_
 
 export const WEB_SEARCH_SURCHARGE_MILLI = 250;
 
-/** `openai/gpt-6-luna` standard tier (per token), from AI Gateway pricing. */
-const LUNA_USD_PER_INPUT_TOKEN = 0.000_000_1;
-const LUNA_USD_PER_CACHE_READ_TOKEN = 0.000_000_01;
-const LUNA_USD_PER_CACHE_WRITE_TOKEN = 0.000_000_125;
-const LUNA_USD_PER_OUTPUT_TOKEN = 0.000_000_5;
+/** Standard per-token rates from AI Gateway's model catalog. */
+const MODEL_PRICING = {
+	'gpt-6-luna': {
+		input: 0.000_000_1,
+		cacheRead: 0.000_000_01,
+		cacheWrite: 0.000_000_125,
+		output: 0.000_000_5
+	},
+	'gpt-6.1-sol': {
+		input: 0.000_002,
+		cacheRead: 0.000_000_1,
+		cacheWrite: 0.000_002_5,
+		output: 0.000_01
+	}
+} as const;
+type PricedModel = keyof typeof MODEL_PRICING;
 
 export function monthlyCreditLimitMilli(accessReason: SuperAccessReason): number {
 	return accessReason === 'free_beta'
@@ -37,7 +48,10 @@ export function formatCreditsFromMilli(millicredits: number): string {
 	return credits.toFixed(2).replace(/\.?0+$/, '');
 }
 
-export function usdFromLanguageModelUsage(usage: LanguageModelUsage): number {
+export function usdFromLanguageModelUsage(
+	usage: LanguageModelUsage,
+	model: PricedModel = 'gpt-6-luna'
+): number {
 	const inputTokens = usage.inputTokens ?? 0;
 	const outputTokens = usage.outputTokens ?? 0;
 	const details = usage.inputTokenDetails;
@@ -45,16 +59,24 @@ export function usdFromLanguageModelUsage(usage: LanguageModelUsage): number {
 	const cacheWrite = details?.cacheWriteTokens ?? 0;
 	const noCache = details?.noCacheTokens ?? Math.max(0, inputTokens - cacheRead - cacheWrite);
 
+	const base = MODEL_PRICING[model];
+	const longContext = model === 'gpt-6.1-sol' && inputTokens >= 272_001;
+	const inputMultiplier = longContext ? 2 : 1;
+	const outputMultiplier = longContext ? 1.5 : 1;
+
 	return (
-		noCache * LUNA_USD_PER_INPUT_TOKEN +
-		cacheRead * LUNA_USD_PER_CACHE_READ_TOKEN +
-		cacheWrite * LUNA_USD_PER_CACHE_WRITE_TOKEN +
-		outputTokens * LUNA_USD_PER_OUTPUT_TOKEN
+		noCache * base.input * inputMultiplier +
+		cacheRead * base.cacheRead * inputMultiplier +
+		cacheWrite * base.cacheWrite * inputMultiplier +
+		outputTokens * base.output * outputMultiplier
 	);
 }
 
-export function millicreditsFromLanguageModelUsage(usage: LanguageModelUsage): number {
-	const usd = usdFromLanguageModelUsage(usage);
+export function millicreditsFromLanguageModelUsage(
+	usage: LanguageModelUsage,
+	additionalUsd = 0
+): number {
+	const usd = usdFromLanguageModelUsage(usage) + additionalUsd;
 	return Math.max(0, Math.round(usd * CREDITS_PER_USD * MILLICREDITS_PER_CREDIT));
 }
 

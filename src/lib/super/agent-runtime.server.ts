@@ -6,6 +6,7 @@ import { consumeStream, createAgentUIStreamResponse, type LanguageModelUsage } f
 import type { RequestEvent } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/mem0/service.server';
+import { SIM_MODEL } from '$lib/ai/ai-models-config';
 import { logger } from '$lib/server/logger';
 import {
 	acquireCoachLock,
@@ -18,7 +19,8 @@ import {
 	addLanguageModelUsage,
 	createEmptyLanguageModelUsage,
 	formatCreditsFromMilli,
-	monthlyCreditLimitMilli
+	monthlyCreditLimitMilli,
+	usdFromLanguageModelUsage
 } from '$lib/super/usage-credits';
 import { createSuperAgent, type SuperAgentUIMessage } from '$lib/super/agent.server';
 import { buildSuperAgentContext } from '$lib/super/context.server';
@@ -221,6 +223,7 @@ export async function createSuperAgentStreamResponse(
 	try {
 		let emittedOutput = false;
 		let turnUsage: LanguageModelUsage = createEmptyLanguageModelUsage();
+		let simulationUsd = 0;
 		let cleanedUp = false;
 		const streamTimeout = new AbortController();
 		const streamTimeoutId = setTimeout(() => streamTimeout.abort(), SUPER_AGENT_STREAM_TIMEOUT_MS);
@@ -369,6 +372,9 @@ export async function createSuperAgentStreamResponse(
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
 			thinkingMode,
 			chargeWebSearch: personalizedTurn.chargeWebSearch,
+			recordGenerationUsage: (usage) => {
+				simulationUsd += usdFromLanguageModelUsage(usage, SIM_MODEL);
+			},
 			recordWebSearch: personalizedTurn.recordWebSearch
 		});
 
@@ -382,7 +388,7 @@ export async function createSuperAgentStreamResponse(
 			});
 			if (!hasBillableOutput) return;
 			try {
-				await personalizedTurn.markOutput(turnUsage);
+				await personalizedTurn.markOutput(turnUsage, simulationUsd);
 				emittedOutput = true;
 			} catch (error) {
 				logger.warn('Failed to roll up Super Agent usage', { error });

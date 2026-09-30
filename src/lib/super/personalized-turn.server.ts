@@ -18,7 +18,7 @@ export type ReservedPersonalizedTurn = {
 	kind: 'reserved';
 	reservation: UsageReservation;
 	usageWarning: PersonalizedUsageWarning;
-	markOutput: (usage: LanguageModelUsage) => Promise<void>;
+	markOutput: (usage: LanguageModelUsage, additionalUsd?: number) => Promise<void>;
 	/** Returns whether another web search is affordable; does not charge until `recordWebSearch`. */
 	chargeWebSearch: () => Promise<boolean>;
 	/** Record a successful web search so its surcharge is included in `markOutput`. */
@@ -53,10 +53,10 @@ export async function startPersonalizedTurn(
 		kind: 'reserved',
 		reservation,
 		usageWarning: getPersonalizedUsageWarning(reservation),
-		markOutput: async (turnUsage) => {
+		markOutput: async (turnUsage, additionalUsd = 0) => {
 			if (chargePromise) return chargePromise;
 			chargePromise = (async () => {
-				let millicredits = millicreditsFromLanguageModelUsage(turnUsage);
+				let millicredits = millicreditsFromLanguageModelUsage(turnUsage, additionalUsd);
 				if (webSearchCount > 0) millicredits += webSearchCount * WEB_SEARCH_SURCHARGE_MILLI;
 				const used = await chargePersonalizedCredits(
 					userId,

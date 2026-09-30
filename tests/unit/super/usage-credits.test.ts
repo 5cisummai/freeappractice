@@ -33,6 +33,36 @@ function usage(partial: {
 }
 
 describe('usage credits', () => {
+	it('prices GPT-6.1-sol independently and combines its cost with Luna', () => {
+		const sim = usage({
+			inputTokens: 100_000,
+			outputTokens: 10_000,
+			totalTokens: 110_000,
+			noCacheTokens: 100_000
+		});
+		const simUsd = usdFromLanguageModelUsage(sim, 'gpt-6.1-sol');
+		expect(simUsd).toBeCloseTo(0.3);
+		const coach = usage({
+			inputTokens: 100_000,
+			outputTokens: 10_000,
+			totalTokens: 110_000,
+			noCacheTokens: 100_000
+		});
+		expect(millicreditsFromLanguageModelUsage(coach, simUsd)).toBe(7_875);
+	});
+
+	it('applies GPT-6.1-sol cache rates and long-context pricing', () => {
+		const sample = usage({
+			inputTokens: 300_000,
+			outputTokens: 10_000,
+			totalTokens: 310_000,
+			noCacheTokens: 100_000,
+			cacheReadTokens: 100_000,
+			cacheWriteTokens: 100_000
+		});
+		expect(usdFromLanguageModelUsage(sample, 'gpt-6.1-sol')).toBeCloseTo(0.4 + 0.02 + 0.5 + 0.15);
+	});
+
 	it('prices uncached input and output tokens for gpt-6-luna', () => {
 		const sample = usage({
 			inputTokens: 1_000_000,

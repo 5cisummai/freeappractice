@@ -41,7 +41,7 @@ export const coachComposerActions: CoachComposerAction[] = [
 		title: 'Physics sim',
 		description: 'Interactive canvas simulation',
 		instruction:
-			'The student selected Physics sim. Open an interactive physics simulation with open_physics_sim using minimal self-contained HTML (basic styling, compact layout). Choose a useful AP Physics scene for their courses and context if you know it; otherwise default to a clear starter such as projectile motion or an inclined plane with a few sliders they can adjust.'
+			'The student selected Physics sim. Open an interactive physics simulation with open_physics_sim by providing a title and detailed simulation description for the dedicated HTML generator. Choose a useful AP Physics scene for their courses and context if you know it; otherwise default to a clear starter such as projectile motion or an inclined plane with a few sliders they can adjust.'
 	}
 ];
 
