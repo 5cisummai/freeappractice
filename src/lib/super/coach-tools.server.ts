@@ -31,6 +31,7 @@ import { coachAudits } from '$lib/server/neon/schema';
 import { logger } from '$lib/server/logger';
 import { getUserProgress } from '$lib/users/model.server';
 import { getQuizAttemptForCoach } from '$lib/users/quiz-history.server';
+import { inspectCoachImageTool } from './coach-images.server';
 
 const targetDateSchema = z.object({
 	course: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),
@@ -188,6 +189,7 @@ export function createSuperTools(input: SuperToolsInput) {
 	}
 
 	return {
+		inspect_coach_image: inspectCoachImageTool(userId, conversationId),
 		ask_student: tool({
 			description:
 				'Ask the student one concise question when essential information is missing and cannot be inferred from the conversation or their saved context. The student can choose an option or write a response. Do not use for confirmation or when you can answer without asking.',

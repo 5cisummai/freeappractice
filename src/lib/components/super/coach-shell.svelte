@@ -3,7 +3,8 @@
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import { Chat } from '@ai-sdk/svelte';
-	import type { ChatStatus } from 'ai';
+	import type { ChatStatus, FileUIPart } from 'ai';
+	import { COACH_IMAGE_MAX_BYTES, COACH_IMAGE_TYPES, coachImageUrl } from '$lib/super/coach-images';
 	import {
 		lastAssistantMessageIsCompleteWithApprovalResponses,
 		lastAssistantMessageIsCompleteWithToolCalls
@@ -96,6 +97,8 @@
 	let sessionId = $state('');
 	let conversationId = $state('');
 	let input = $state('');
+	let imageInputEnabled = $state(false);
+	let attachments = $state<PromptInput.PromptInputAttachmentData[]>([]);
 	let approving = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
 	let motionMs = $state(320);
@@ -122,6 +125,32 @@
 		'review-progress': asIcon(BarChart3Icon),
 		'physics-sim': asIcon(Atom2FilledIcon)
 	};
+
+	const coachActionColors: Record<CoachComposerActionId, string> = {
+		'study-next': 'text-emerald-600 dark:text-emerald-400',
+		'study-plan': 'text-blue-600 dark:text-blue-400',
+		'review-progress': 'text-amber-600 dark:text-amber-400',
+		'physics-sim': 'text-violet-600 dark:text-violet-400'
+	};
+
+	onMount(() => {
+		function handleChipBackspace(event: KeyboardEvent) {
+			if (
+				event.target === composerInputRef &&
+				!event.isComposing &&
+				event.key === 'Backspace' &&
+				composerInputRef?.selectionStart === 0 &&
+				composerInputRef.selectionEnd === 0 &&
+				selectedCoachActionIds.length
+			) {
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				removeCoachAction(selectedCoachActionIds[selectedCoachActionIds.length - 1]);
+			}
+		}
+		window.addEventListener('keydown', handleChipBackspace, true);
+		return () => window.removeEventListener('keydown', handleChipBackspace, true);
+	});
 
 	const thinkingModeOptions: Array<{
 		value: CoachThinkingMode;
@@ -253,7 +282,24 @@
 			onUsageWarning: showUsageWarning,
 			onConversationIdChange: () => void loadConversations(),
 			getThinkingMode: () => thinkingMode,
-			getCoachActions: () => pendingCoachActions
+			getCoachActions: () => pendingCoachActions,
+			onImageUploaded: (id) => {
+				attachments = [];
+				const lastUser = coach.messages.findLast((message) => message.role === 'user');
+				if (!lastUser) return;
+				coach.messages = coach.messages.map((message) =>
+					message.id === lastUser.id
+						? {
+								...message,
+								parts: message.parts.map((part) =>
+									part.type === 'file'
+										? { type: 'file' as const, mediaType: 'image/webp', url: coachImageUrl(id) }
+										: part
+								)
+							}
+						: message
+				);
+			}
 		})
 	});
 
@@ -291,7 +337,9 @@
 		Boolean(sessionId) &&
 			!streaming &&
 			!pendingCoachQuestion &&
-			(input.trim().length > 0 || selectedCoachActionIds.length > 0)
+			(input.trim().length > 0 ||
+				selectedCoachActionIds.length > 0 ||
+				(imageInputEnabled && attachments.length > 0))
 	);
 
 	type CoachToolPart = {
@@ -456,8 +504,15 @@
 		return `Completed ${activities.length} steps`;
 	}
 
-	function isActivityOpen(messageId: string): boolean {
-		return activityOpen[messageId] ?? streaming;
+	function activityStateKey(message: SuperAgentUIMessage): string {
+		return `${message.id}:${messageText(message).trim() ? 'answer' : 'activity'}`;
+	}
+
+	function isActivityOpen(message: SuperAgentUIMessage, messageIndex: number): boolean {
+		return (
+			activityOpen[activityStateKey(message)] ??
+			(streaming && messageIndex === coach.messages.length - 1 && !messageText(message).trim())
+		);
 	}
 
 	function asRecord(value: unknown): Record<string, unknown> {
@@ -561,6 +616,12 @@
 	});
 
 	onMount(() => {
+		void apiFetch('/api/coach/images')
+			.then(readJsonOrNull)
+			.then((result) => {
+				imageInputEnabled = Boolean((result as { enabled?: boolean } | null)?.enabled);
+			})
+			.catch(() => undefined);
 		clientReady = true;
 		const url = new URL(window.location.href);
 		const query = surface === 'page' ? (url.searchParams.get('q')?.trim() ?? '') : '';
@@ -767,10 +828,15 @@
 		}
 	}
 
-	async function send(text: string) {
+	async function send(text: string, files?: FileUIPart[]) {
 		const trimmed = text.trim();
 		const actionIds = [...selectedCoachActionIds];
-		if ((!trimmed && actionIds.length === 0) || streaming || pendingCoachQuestion || !sessionId)
+		if (
+			(!trimmed && actionIds.length === 0 && !files?.length) ||
+			streaming ||
+			pendingCoachQuestion ||
+			!sessionId
+		)
 			return;
 
 		const message = formatCoachComposerMessage(trimmed, actionIds);
@@ -778,7 +844,10 @@
 		input = '';
 		selectedCoachActionIds = [];
 		try {
-			await coach.sendMessage({ text: message });
+			await coach.sendMessage({
+				text: message,
+				...(imageInputEnabled && files?.length ? { files } : {})
+			});
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Pip is unavailable right now.');
 		} finally {
@@ -806,6 +875,7 @@
 	}
 
 	async function startNewConversation(): Promise<void> {
+		attachments = [];
 		if (streaming) await coach.stop();
 		conversationLoadRequest++;
 		coach.messages = [];
@@ -985,6 +1055,15 @@
 											class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap"
 										>
 											{messageText(message)}
+											{#each message.parts as part, partIndex (partIndex)}
+												{#if part.type === 'file' && (part.url.startsWith('/api/coach/images/') || part.url.startsWith('data:image/'))}
+													<img
+														src={part.url}
+														alt="Your attachment"
+														class="mt-2 max-h-72 max-w-full rounded-xl object-contain"
+													/>
+												{/if}
+											{/each}
 										</Message.Content>
 									{:else}
 										{@const activities = getToolActivities(message)}
@@ -1064,8 +1143,8 @@
 										{#if activities.length}
 											<ChainOfThought.Root
 												class="mt-3 max-w-3xl"
-												open={isActivityOpen(message.id)}
-												onOpenChange={(open) => (activityOpen[message.id] = open)}
+												open={isActivityOpen(message, messageIndex)}
+												onOpenChange={(open) => (activityOpen[activityStateKey(message)] = open)}
 											>
 												<ChainOfThought.Header
 													class="rounded-md py-1 font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -1145,7 +1224,7 @@
 										{#each message.parts as part, index (`text-${message.id}-${index}`)}
 											{#if part.type === 'text' && part.text.trim()}
 												<Message.Content class="text-md max-w-3xl leading-7">
-													<RichText text={part.text} blocks />
+													<RichText text={part.text} blocks citationLinks />
 												</Message.Content>
 											{/if}
 										{/each}
@@ -1324,41 +1403,44 @@
 				{/if}
 				<PromptInput.Root
 					class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
-					onSubmit={({ text }) => send(text)}
+					onSubmit={({ text, files }) => send(text, files)}
+					bind:attachments
+					accept={imageInputEnabled ? COACH_IMAGE_TYPES.join(',') : 'application/x-disabled'}
+					maxFiles={imageInputEnabled ? 1 : 0}
+					maxFileSize={COACH_IMAGE_MAX_BYTES}
+					onError={({ message }) => toast.error(message)}
 					clearOnSubmit={false}
 				>
-					{#if selectedCoachActionIds.length}
-						<PromptInput.Header class="p-3">
+					{#if attachments.length}
+						<PromptInput.Attachments class="px-3">
+							{#snippet children(attachment)}<PromptInput.Attachment data={attachment} />{/snippet}
+						</PromptInput.Attachments>
+					{/if}
+					<PromptInput.Body class="flex-1 ps-4 pe-2">
+						<div class="flex items-start gap-2">
 							{#each selectedCoachActionIds as actionId (actionId)}
 								{@const action = coachComposerActions.find((item) => item.id === actionId)}
 								{@const Icon = coachActionIcons[actionId]}
 								{#if action}
-									<span
-										class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
+									<button
+										type="button"
+										class={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-sm font-medium transition-colors hover:bg-muted ${coachActionColors[actionId]}`}
+										aria-label={`Remove ${action.title}`}
+										onclick={() => removeCoachAction(actionId)}
 									>
-										<Icon class="size-3.5 text-muted-foreground" aria-hidden="true" />
-										{action.title}
-										<button
-											type="button"
-											class="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-											aria-label={`Remove ${action.title}`}
-											onclick={() => removeCoachAction(actionId)}
-										>
-											<XIcon class="size-3" aria-hidden="true" />
-										</button>
-									</span>
+										<Icon class="size-4" aria-hidden="true" />
+										{actionId === 'physics-sim' ? 'Simulation' : actionId === 'study-plan' ? 'Study Plan' : action.title}
+									</button>
 								{/if}
 							{/each}
-						</PromptInput.Header>
-					{/if}
-					<PromptInput.Body class="flex-1 ps-4 pe-2">
-						<PromptInput.Textarea
-							bind:ref={composerInputRef}
-							bind:value={input}
-							placeholder="Ask Pip"
-							disabled={!sessionId || streaming || Boolean(pendingCoachQuestion)}
-							class="text-md min-h-[32px] flex-1 resize-none overflow-auto px-0 py-0 leading-6 placeholder:text-muted-foreground/70"
-						/>
+							<PromptInput.Textarea
+								bind:ref={composerInputRef}
+								bind:value={input}
+								placeholder="Ask Pip"
+								disabled={!sessionId || streaming || Boolean(pendingCoachQuestion)}
+								class="text-md min-h-[32px] min-w-0 flex-1 resize-none overflow-auto px-0 py-0 leading-6 placeholder:text-muted-foreground/70"
+							/>
+						</div>
 					</PromptInput.Body>
 					<PromptInput.Toolbar class="gap-2 px-2 py-0">
 						<PromptInput.Tools class="gap-1.5 [&_button:first-child]:rounded-full">
@@ -1373,24 +1455,20 @@
 									sideOffset={8}
 									class="w-[min(18rem,calc(100vw-2rem))] p-1"
 								>
-									{#each coachComposerActions as action (action.id)}
-										{@const Icon = coachActionIcons[action.id]}
-										{@const selected = selectedCoachActionIds.includes(action.id)}
+									{#if imageInputEnabled}<PromptInput.ActionAddAttachments label="Add image" />{/if}
+									{#each (['physics-sim', 'study-plan'] as const) as actionId (actionId)}
+										{@const Icon = coachActionIcons[actionId]}
+										{@const selected = selectedCoachActionIds.includes(actionId)}
 										<PromptInput.ActionMenuItem
-											class={cn('items-start gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
+											class={cn('items-center gap-2 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
 											disabled={!sessionId || streaming}
-											onSelect={() => toggleCoachAction(action.id)}
+											onSelect={() => toggleCoachAction(actionId)}
 										>
 											<Icon
-												class="mt-0.5 size-4 shrink-0 text-muted-foreground"
+												class="size-4 shrink-0 text-muted-foreground"
 												aria-hidden="true"
 											/>
-											<div class="min-w-0 flex-1 text-left">
-												<div class="text-sm leading-5 font-medium">{action.title}</div>
-												<div class="text-xs leading-4 text-muted-foreground">
-													{action.description}
-												</div>
-											</div>
+											<span class="text-sm">{actionId === 'physics-sim' ? 'Create Simulation' : 'Study plan'}</span>
 										</PromptInput.ActionMenuItem>
 									{/each}
 								</PromptInput.ActionMenuContent>

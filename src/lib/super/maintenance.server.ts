@@ -14,6 +14,7 @@ import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/super/billin
 import { deletePostHogUser } from '$lib/server/posthog';
 import { STUDY_PLAN_RETENTION_DAYS } from '$lib/super/study-plan.server';
 import { SUPER_PAST_DUE_GRACE_MS } from '$lib/super/types';
+import { cleanupCoachImages } from './coach-images.server';
 
 const MEMORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const RETRY_DELAY_MS = 60 * 60 * 1000;
@@ -112,6 +113,7 @@ export async function runSuperMaintenance(
 	batchSize = DEFAULT_BATCH_SIZE
 ): Promise<SuperMaintenanceSummary> {
 	const db = getNeonDatabase();
+	await cleanupCoachImages(now);
 	const pastDueGraceCutoff = new Date(now.getTime() - SUPER_PAST_DUE_GRACE_MS);
 	const expiredPastDueRecords = await db
 		.select({ userId: superBillingAccess.userId, pastDueSince: superBillingAccess.pastDueSince })

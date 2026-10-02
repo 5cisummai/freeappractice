@@ -276,6 +276,7 @@ QUESTION QUALITY:
 
 WRITING AND FORMATTING:
 - For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display (block) math. Do NOT use \\(...\\), \\[...\\], \\begin{equation}, \\begin{align}, or any other LaTeX environment delimiters — they will not render.
+- For tabular data, use Markdown pipe tables in the stem (or explanation when needed). Prefer Markdown over an Examfig table diagram.
 - For code blocks use the triple backtick syntax (\`\`\`) to enclose code.
 - Explain why the correct answer is right and why each distractor is incorrect.
 - Use a newline before each option letter (A, B, C, D) when discussing them
@@ -340,6 +341,7 @@ QUESTION QUALITY:
 
 WRITING AND FORMATTING:
 - For ALL math and science notation use LaTeX with these exact delimiters ONLY: $...$ for inline math, $$...$$ for display math. Do not use other LaTeX delimiters or environments.
+- For tabular data, use Markdown pipe tables in stimulus.text. Prefer Markdown over an Examfig table diagram.
 - Use factual real-world context when it materially improves the stimulus, but write it in your own wording.
 - Do not reproduce source wording, quotes, official questions, or distinctive narrative details.
 - Prefer public facts, anonymized subjects, or clearly labeled composite scenarios.

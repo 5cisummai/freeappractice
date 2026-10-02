@@ -2,7 +2,6 @@
 	import { cn } from '$lib/utils';
 	import { getChainOfThoughtContext } from './chain-of-thought-context.svelte.js';
 	import { CollapsibleTrigger } from '$lib/components/ui/collapsible/index.js';
-	import BrainIcon from '@lucide/svelte/icons/brain';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import type { Snippet } from 'svelte';
 
@@ -22,8 +21,7 @@
 		className
 	)}
 >
-	<BrainIcon class="size-4" />
-	<span class="flex-1 text-left">
+	<span class="text-left">
 		{#if children}
 			{@render children()}
 		{:else}

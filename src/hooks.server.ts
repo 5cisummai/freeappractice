@@ -12,6 +12,7 @@ import { createHandle } from 'flags/sveltekit';
 import {
 	stimulusQuestionsEnabled,
 	frqPracticeEnabled,
+	coachImagesEnabled,
 	isSuperFreeBetaEnabled,
 	isSuperCheckoutEnabled,
 	superCheckoutEnabled,
@@ -291,6 +292,7 @@ export const handle = sequence(
 					secret: env.FLAGS_SECRET,
 					flags: {
 						frqPracticeEnabled,
+						coachImagesEnabled,
 						stimulusQuestionsEnabled,
 						superFreeBetaEnabled,
 						superCheckoutEnabled,

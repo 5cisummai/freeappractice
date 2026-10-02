@@ -52,6 +52,13 @@ import {
 } from '$lib/super/conversations.server';
 import { coachComposerActionInstructions } from '$lib/super/coach-composer-actions';
 import { timezoneFromCookies } from '$lib/users/timezone';
+import {
+	prepareCoachImageParts,
+	linkCoachImage,
+	coachImageModelMessages,
+	coachImageManifest
+} from './coach-images.server';
+import { CoachImageError } from './coach-image-validation.server';
 
 const SUPER_AGENT_STREAM_TIMEOUT_MS = 55_000;
 
@@ -242,7 +249,12 @@ export async function createSuperAgentStreamResponse(
 		};
 
 		const incomingUserText = lastSuperAgentUserText(clientMessages);
-		if (!incomingUserText && !isContinuation) {
+		const incomingUser = [...clientMessages].reverse().find((message) => message.role === 'user');
+		if (
+			!incomingUserText &&
+			!incomingUser?.parts.some((part) => part.type === 'file') &&
+			!isContinuation
+		) {
 			await cleanup();
 			return json({ error: 'The Super Agent needs a student message.' }, { status: 400 });
 		}
@@ -253,20 +265,34 @@ export async function createSuperAgentStreamResponse(
 			surface,
 			context,
 			...(!requestedConversationId && !isContinuation
-				? { title: await generateConversationTitle(incomingUserText, surface) }
+				? {
+						title: incomingUserText
+							? await generateConversationTitle(incomingUserText, surface)
+							: 'Image discussion'
+					}
 				: {})
 		});
 
+		let imageUpload: { id: string; bytes: Buffer } | undefined;
 		if (!isContinuation) {
-			const incomingUser = [...clientMessages].reverse().find((message) => message.role === 'user');
-			await appendConversationMessage(userId, {
+			let incomingParts = incomingUser?.parts ?? [];
+			if (incomingUser?.id && incomingParts.some((part) => part.type === 'file')) {
+				const saved = (
+					await getConversationMessages(userId, conversationId, MAX_SUPER_AGENT_MESSAGES)
+				).find((row) => row.clientMessageId === incomingUser.id);
+				if (saved) incomingParts = saved.parts as typeof incomingParts;
+			}
+			const prepared = await prepareCoachImageParts(userId, conversationId, incomingParts);
+			imageUpload = prepared.upload;
+			const userMessageId = await appendConversationMessage(userId, {
 				conversationId,
 				role: 'user',
 				content: incomingUserText,
-				parts: incomingUser?.parts ?? [{ type: 'text', text: incomingUserText }],
+				parts: prepared.savedParts,
 				clientMessageId: incomingUser?.id,
 				status: 'complete'
 			});
+			if (imageUpload) await linkCoachImage(imageUpload.id, userId, conversationId, userMessageId);
 		}
 
 		let continuationMessage: SuperAgentUIMessage | undefined;
@@ -366,7 +392,9 @@ export async function createSuperAgentStreamResponse(
 			selectedApClasses: profile.selectedApClasses,
 			timeZone,
 			personalizationContext: personalization.text,
-			historySummary,
+			historySummary: [historySummary, await coachImageManifest(userId, conversationId)]
+				.filter(Boolean)
+				.join('\n\n'),
 			currentContext: context,
 			conversationId,
 			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
@@ -397,7 +425,7 @@ export async function createSuperAgentStreamResponse(
 
 		return await createAgentUIStreamResponse({
 			agent,
-			uiMessages,
+			uiMessages: coachImageModelMessages(uiMessages, imageUpload),
 			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal]),
 			consumeSseStream: consumeStream,
 			originalMessages: uiMessages,
@@ -461,10 +489,14 @@ export async function createSuperAgentStreamResponse(
 				}
 			},
 			onError: (error) => {
-				logger.error(`${errorLabel} stream error`, { error });
+				// Provider errors can carry the full request, including private image bytes.
+				logger.error(`${errorLabel} stream error`, {
+					errorType: error instanceof Error ? error.name : 'UnknownError'
+				});
 				return 'The personalized AI could not complete that request. Please try again.';
 			},
 			headers: {
+				...(imageUpload ? { 'X-Coach-Image-Id': imageUpload.id } : {}),
 				'Cache-Control': 'no-cache',
 				'X-Super-Conversation-Id': conversationId,
 				'X-Tutor-Personalization-Degraded': personalization.memoryDegraded ? '1' : '0',
@@ -500,8 +532,18 @@ export async function createSuperAgentStreamResponse(
 				{ status: 503 }
 			);
 		}
+		if (error instanceof CoachImageError) return json({ error: error.message }, { status: 400 });
 		if (error instanceof ConversationAccessError) {
 			return json({ error: error.message }, { status: error.status });
+		}
+		if (messages.some((message) => message.parts.some((part) => part.type === 'file'))) {
+			logger.error('Coach image request failed', {
+				errorType: error instanceof Error ? error.name : 'UnknownError'
+			});
+			return json(
+				{ error: 'Coach could not process that image. Please try again.' },
+				{ status: 500 }
+			);
 		}
 		throw error;
 	}

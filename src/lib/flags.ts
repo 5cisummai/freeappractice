@@ -126,3 +126,16 @@ async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>):
 export const isSuperCheckoutEnabled = () => readSuperKillSwitch(superCheckoutEnabled);
 export const isSuperCoachEnabled = () => readSuperKillSwitch(superCoachEnabled);
 export const isSuperMemoryEnabled = () => readSuperKillSwitch(superMemoryEnabled);
+
+export const coachImagesEnabled = vercelFlag(
+	'coach-images',
+	'Allow private image input in Coach',
+	false
+);
+export async function isCoachImagesEnabled(): Promise<boolean> {
+	try {
+		return Boolean(await coachImagesEnabled());
+	} catch {
+		return false;
+	}
+}

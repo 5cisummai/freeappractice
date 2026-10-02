@@ -181,7 +181,7 @@ export function normalizeFences(src: string): string {
 	return result.join('\n');
 }
 
-function createMarkedInstance(blocks: boolean): Marked {
+function createMarkedInstance(blocks: boolean, citationLinks = false): Marked {
 	const renderCode = createCodeRenderer(blocks);
 
 	return new Marked({
@@ -196,6 +196,15 @@ function createMarkedInstance(blocks: boolean): Marked {
 			},
 			link({ href, title, text }) {
 				const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
+				if (citationLinks && /^https?:\/\//i.test(safeHref)) {
+					try {
+						const hostname = new URL(safeHref).hostname.replace(/^www\./, '');
+						const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`;
+						return `<a class="rich-citation" href="${escapeHtml(safeHref)}" title="${escapeHtml(title || text)}" target="_blank" rel="noopener noreferrer nofollow"><img src="${escapeHtml(faviconUrl)}" alt="" width="14" height="14" loading="lazy" referrerpolicy="no-referrer">${escapeHtml(hostname)}</a>`;
+					} catch {
+						// Invalid URLs retain the normal safe-link rendering below.
+					}
+				}
 				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
 				const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
 				const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
@@ -222,8 +231,10 @@ const markedBlocksInstance = createMarkedInstance(true);
  * Security: deny raw HTML; allowlist link/image URLs; KaTeX/hljs emit trusted HTML.
  * Intentionally avoids isomorphic-dompurify/jsdom (breaks Vercel Lambda require(ESM)).
  */
-export function renderRichTextHtml(text: string, options: { blocks?: boolean } = {}): string {
+const markedCitationInstance = createMarkedInstance(true, true);
+
+export function renderRichTextHtml(text: string, options: { blocks?: boolean; citationLinks?: boolean } = {}): string {
 	if (!text) return '';
-	const instance = options.blocks ? markedBlocksInstance : markedInstance;
+	const instance = options.citationLinks ? markedCitationInstance : options.blocks ? markedBlocksInstance : markedInstance;
 	return instance.parse(normalizeFences(text)) as string;
 }

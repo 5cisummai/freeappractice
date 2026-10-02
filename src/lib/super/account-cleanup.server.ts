@@ -8,6 +8,7 @@ import { deletePostHogUser } from '$lib/server/posthog';
 import { purgeKnownRedisControlsForUser } from '$lib/super/ai-controls.server';
 import { cancelStripeSubscriptionsForUser } from '$lib/super/billing.server';
 import { getMem0UserId } from '$lib/super/profile.server';
+import { cleanupCoachImages } from './coach-images.server';
 
 const RETRY_DELAY_MS = 60 * 60 * 1000;
 
@@ -43,6 +44,7 @@ export async function prepareAccountDeletion(
 }
 
 export async function processAccountDeletionCleanup(userId: string): Promise<void> {
+	await cleanupCoachImages(new Date(), userId);
 	await purgeKnownRedisControlsForUser(userId);
 	const db = getNeonDatabase();
 	const [job] = await db

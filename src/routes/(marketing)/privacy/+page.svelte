@@ -61,7 +61,10 @@
 					<li>
 						<strong>AI interactions:</strong> prompts, written responses, conversation context, and feedback
 						you send to the standard tutor, Coach, or other AI features. Coach may also process your practice
-						data to generate recommendations and study plans.
+						data to generate recommendations and study plans. Images you attach to Coach are stored privately
+						with that chat and sent to the AI provider when needed to answer your questions. They remain
+						until you delete the chat or your account, including if your Super subscription ends. File
+						deletion is queued and retried if storage is temporarily unavailable.
 					</li>
 					<li>
 						<strong>Super conversations:</strong> Coach conversations, tool activity, and approved actions

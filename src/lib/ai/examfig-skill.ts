@@ -12,8 +12,17 @@ Examfig consumes semantic DiagramSpec JSON and renders the SVG itself. Never out
 - type-specific semantic fields from the reference below
 Use short labels, semantic values, and monochrome-safe content. Do not invent fields. Do not micromanage layout.
 
+TABLES — MARKDOWN OVER EXAMFIG:
+- For any tabular data (comparison grids, data tables, rate tables, etc.), put a Markdown pipe table in the stem or stimulus text.
+- Do NOT use Examfig type "table". Prefer diagram=null (or another non-table diagram type when a true visual is needed) and express the table in Markdown.
+- Example Markdown table:
+| Condition | Rate |
+|---|---|
+| A | 1 |
+| B | 2 |
+
 WORKFLOW:
-1. Choose the narrowest diagram type that directly supports the tested concept.
+1. Choose the narrowest diagram type that directly supports the tested concept. Skip Examfig entirely when a Markdown table is enough.
 2. Build the semantic DiagramSpec.
 3. JSON.stringify the spec and call validateExamfigDiagram with it before finalizing when the tool is available.
 4. If validation fails, repair the JSON using the returned error and validate again.
@@ -32,7 +41,7 @@ Math and charts:
 - unit-circle: angleDegrees; optional showReferenceTriangle and label.
 - cross-section-volume: baseExpression, xDomain, and method; washer also needs outerExpression.
 - supply-demand: xDomain, yDomain, supply[], and demand[]; optional equilibrium.
-- table: headers[] and rows[][]; optional variant, caption, and cellAnnotations.
+- table: DEPRECATED for question generation — use a Markdown pipe table in stem/stimulus text instead of this type.
 
 Physics:
 - free-body: object { shape: "block" or "circle" } and forces[]; each force needs direction and label. Directions are up, down, left, right, normal, up-slope, or { angle: degrees }.
@@ -77,9 +86,6 @@ Biology and environment:
 
 VALID MAP EXAMPLE:
 {"type":"map","accessibleDescription":"A schematic map showing three regions and two migration markers.","regions":[{"id":"north","label":"North","pathPoints":[[0.1,0.1],[0.5,0.1],[0.45,0.45],[0.1,0.4]]},{"id":"south","label":"South","pathPoints":[[0.1,0.5],[0.45,0.55],[0.5,0.9],[0.1,0.85]]}],"markers":[{"id":"route","label":"Migration route","x":0.6,"y":0.5}]}
-
-VALID TABLE EXAMPLE:
-{"type":"table","accessibleDescription":"A table comparing rates for two conditions.","headers":["Condition","Rate"],"rows":[["A","1"],["B","2"]]}
 
 VALID FUNCTION-GRAPH EXAMPLE:
 {"type":"function-graph","accessibleDescription":"The graph of f(x)=x^2 from x=-2 to x=2.","xDomain":[-2,2],"yDomain":[0,4],"functions":[{"id":"f","label":"f(x)","expression":"x^2","stroke":"primary"}]}

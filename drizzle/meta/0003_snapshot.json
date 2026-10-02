@@ -1,6 +1,6 @@
 {
-  "id": "0db5752d-a9e6-4b8f-98e6-93a66d419a4a",
-  "prevId": "13142b48-3938-4708-9e5f-a37b375e8094",
+  "id": "43352049-a558-4cac-95bb-1d59342e213d",
+  "prevId": "0db5752d-a9e6-4b8f-98e6-93a66d419a4a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1454,6 +1454,147 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "app.coach_images": {
+      "name": "coach_images",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "store": {
+          "name": "store",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pathname": {
+          "name": "pathname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "coach_images_owner_conversation_idx": {
+          "name": "coach_images_owner_conversation_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "coach_images_cleanup_idx": {
+          "name": "coach_images_cleanup_idx",
+          "columns": [
+            {
+              "expression": "next_attempt_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "coach_images_conversation_id_conversations_id_fk": {
+          "name": "coach_images_conversation_id_conversations_id_fk",
+          "tableFrom": "coach_images",
+          "tableTo": "conversations",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "coach_images_message_id_conversation_messages_id_fk": {
+          "name": "coach_images_message_id_conversation_messages_id_fk",
+          "tableFrom": "coach_images",
+          "tableTo": "conversation_messages",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "coach_images_store_check": {
+          "name": "coach_images_store_check",
+          "value": "\"app\".\"coach_images\".\"store\" IN ('blob', 's3')"
+        }
+      },
       "isRLSEnabled": false
     },
     "app.conversation_messages": {

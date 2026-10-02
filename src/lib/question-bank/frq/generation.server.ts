@@ -155,7 +155,7 @@ export function buildFrqGenerationPrompt(
 		covered,
 		recent,
 		'',
-		'Return the scenario prompt, the materials, and the parts. Materials may use Markdown and $...$ or $$...$$ LaTeX. Set title to null when a material has no title. Set points to null on a fixed part. Write points only when you are choosing the parts. The private answer is grading information, not student-facing copy. Do not return a second rubric, a levels array, or a total.'
+		'Return the scenario prompt, the materials, and the parts. Materials may use Markdown and $...$ or $$...$$ LaTeX. For tabular data, use Markdown pipe tables in material content. Set title to null when a material has no title. Set points to null on a fixed part. Write points only when you are choosing the parts. The private answer is grading information, not student-facing copy. Do not return a second rubric, a levels array, or a total.'
 	]
 		.filter((line, index, lines) => line !== '' || lines[index - 1] !== '')
 		.join('\n');
