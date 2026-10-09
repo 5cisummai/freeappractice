@@ -399,24 +399,38 @@
 			.join('\n');
 	}
 
+	function searchSources(part: CoachToolPart) {
+		const results = part.type === 'tool-search_web' ? asRecord(part.output).results : null;
+		if (!Array.isArray(results)) return [];
+		return results.flatMap((result) => {
+			const { sourceId, title, url } = asRecord(result);
+			if (typeof url !== 'string') return [];
+			try {
+				const parsed = new URL(url);
+				if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return [];
+				return [
+					{
+						id: typeof sourceId === 'string' ? sourceId : undefined,
+						title: typeof title === 'string' ? title : url,
+						url,
+						hostname: parsed.hostname.replace(/^www\./, ''),
+						faviconUrl: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=32`
+					}
+				];
+			} catch {
+				return [];
+			}
+		});
+	}
+
 	function messageCitations(message: SuperAgentUIMessage) {
 		return message.parts.flatMap((part) => {
 			const tool = getToolPart(part);
-			if (tool?.type !== 'tool-search_web') return [];
-			const results = asRecord(tool.output).results;
-			if (!Array.isArray(results)) return [];
-			return results.flatMap((result) => {
-				const source = asRecord(result);
-				return typeof source.sourceId === 'string' && typeof source.url === 'string'
-					? [
-							{
-								id: source.sourceId,
-								url: source.url,
-								title: typeof source.title === 'string' ? source.title : source.url
-							}
-						]
-					: [];
-			});
+			return tool
+				? searchSources(tool).flatMap((source) =>
+						source.id ? [{ id: source.id, url: source.url, title: source.title }] : []
+					)
+				: [];
 		});
 	}
 
@@ -427,31 +441,7 @@
 				: isToolInProgress(part.state)
 					? 'running'
 					: 'complete';
-		const results =
-			part.type === 'tool-search_web' && part.output && typeof part.output === 'object'
-				? (part.output as { results?: unknown }).results
-				: null;
-		const sources = Array.isArray(results)
-			? results.flatMap((result) => {
-					if (!result || typeof result !== 'object') return [];
-					const { title, url } = result as { title?: unknown; url?: unknown };
-					if (typeof url !== 'string') return [];
-					try {
-						const parsed = new URL(url);
-						if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return [];
-						return [
-							{
-								title: typeof title === 'string' ? title : url,
-								url,
-								hostname: parsed.hostname.replace(/^www\./, ''),
-								faviconUrl: `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=32`
-							}
-						];
-					} catch {
-						return [];
-					}
-				})
-			: [];
+		const sources = searchSources(part);
 		return {
 			key: `${part.type}-${index}`,
 			type: part.type,
