@@ -399,6 +399,27 @@
 			.join('\n');
 	}
 
+	function messageCitations(message: SuperAgentUIMessage) {
+		return message.parts.flatMap((part) => {
+			const tool = getToolPart(part);
+			if (tool?.type !== 'tool-search_web') return [];
+			const results = asRecord(tool.output).results;
+			if (!Array.isArray(results)) return [];
+			return results.flatMap((result) => {
+				const source = asRecord(result);
+				return typeof source.sourceId === 'string' && typeof source.url === 'string'
+					? [
+							{
+								id: source.sourceId,
+								url: source.url,
+								title: typeof source.title === 'string' ? source.title : source.url
+							}
+						]
+					: [];
+			});
+		});
+	}
+
 	function getToolActivity(part: CoachToolPart, index: number): ToolActivity {
 		const state =
 			part.errorText || part.state === 'output-error'
@@ -1224,7 +1245,13 @@
 										{#each message.parts as part, index (`text-${message.id}-${index}`)}
 											{#if part.type === 'text' && part.text.trim()}
 												<Message.Content class="text-md max-w-3xl leading-7">
-													<RichText text={part.text} blocks citationLinks />
+													<RichText
+														text={part.text}
+														blocks
+														citations={coach.messages
+															.slice(0, messageIndex + 1)
+															.flatMap(messageCitations)}
+													/>
 												</Message.Content>
 											{/if}
 										{/each}
@@ -1429,7 +1456,11 @@
 										onclick={() => removeCoachAction(actionId)}
 									>
 										<Icon class="size-4" aria-hidden="true" />
-										{actionId === 'physics-sim' ? 'Simulation' : actionId === 'study-plan' ? 'Study Plan' : action.title}
+										{actionId === 'physics-sim'
+											? 'Simulation'
+											: actionId === 'study-plan'
+												? 'Study Plan'
+												: action.title}
 									</button>
 								{/if}
 							{/each}
@@ -1456,19 +1487,21 @@
 									class="w-[min(18rem,calc(100vw-2rem))] p-1"
 								>
 									{#if imageInputEnabled}<PromptInput.ActionAddAttachments label="Add image" />{/if}
-									{#each (['physics-sim', 'study-plan'] as const) as actionId (actionId)}
+									{#each ['physics-sim', 'study-plan'] as const as actionId (actionId)}
 										{@const Icon = coachActionIcons[actionId]}
 										{@const selected = selectedCoachActionIds.includes(actionId)}
 										<PromptInput.ActionMenuItem
-											class={cn('items-center gap-2 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
+											class={cn(
+												'items-center gap-2 rounded-lg px-2.5 py-2',
+												selected && 'bg-muted'
+											)}
 											disabled={!sessionId || streaming}
 											onSelect={() => toggleCoachAction(actionId)}
 										>
-											<Icon
-												class="size-4 shrink-0 text-muted-foreground"
-												aria-hidden="true"
-											/>
-											<span class="text-sm">{actionId === 'physics-sim' ? 'Create Simulation' : 'Study plan'}</span>
+											<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+											<span class="text-sm"
+												>{actionId === 'physics-sim' ? 'Create Simulation' : 'Study plan'}</span
+											>
 										</PromptInput.ActionMenuItem>
 									{/each}
 								</PromptInput.ActionMenuContent>

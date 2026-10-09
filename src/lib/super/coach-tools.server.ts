@@ -214,9 +214,9 @@ export function createSuperTools(input: SuperToolsInput) {
 			? {
 					search_web: tool({
 						description:
-							'Search public web sources when the user needs current or externally verifiable facts. Prefer official sources and cite the returned URLs. Do not search for information already returned in this turn. Never include student names, grades, or private account details.',
+							'Search public web sources when the user needs current or externally verifiable facts. Prefer official sources and cite results using [cite:sourceId] with their returned sourceId. Use normal Markdown links when directing the user to a page. Do not search for information already returned in this turn. Never include student names, grades, or private account details.',
 						inputSchema: webSearchSchema,
-						execute: async ({ objective, search_queries }, { abortSignal }) => {
+						execute: async ({ objective, search_queries }, { abortSignal, toolCallId }) => {
 							try {
 								if (!(await chargeWebSearch())) {
 									return {
@@ -239,7 +239,8 @@ export function createSuperTools(input: SuperToolsInput) {
 								);
 								recordWebSearch();
 								return {
-									results: response.results.map((result) => ({
+									results: response.results.map((result, index) => ({
+										sourceId: `${toolCallId}-${index + 1}`,
 										title: result.title ?? result.url,
 										url: result.url,
 										publishDate: result.publish_date ?? null,

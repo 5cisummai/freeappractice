@@ -1,24 +1,24 @@
 <script lang="ts">
 	import 'katex/dist/katex.min.css';
 	import 'highlight.js/styles/github.min.css';
-	import { renderRichTextHtml } from '$lib/content/render-rich-text';
+	import { renderRichTextHtml, type RichTextCitation } from '$lib/content/render-rich-text';
 	import { toast } from 'svelte-sonner';
 
 	let {
 		text = '',
 		inline = false,
 		blocks = false,
-		citationLinks = false,
+		citations = [],
 		class: className = ''
 	}: {
 		text: string;
 		inline?: boolean;
 		blocks?: boolean;
-		citationLinks?: boolean;
+		citations?: RichTextCitation[];
 		class?: string;
 	} = $props();
 
-	const renderedHtml = $derived(renderRichTextHtml(text, { blocks, citationLinks }));
+	const renderedHtml = $derived(renderRichTextHtml(text, { blocks, citations }));
 
 	const languageExtensions: Record<string, string> = {
 		bash: 'sh',

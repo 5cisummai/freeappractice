@@ -181,14 +181,44 @@ export function normalizeFences(src: string): string {
 	return result.join('\n');
 }
 
-function createMarkedInstance(blocks: boolean, citationLinks = false): Marked {
+export interface RichTextCitation {
+	id: string;
+	url: string;
+	title: string;
+}
+
+function createMarkedInstance(blocks: boolean, citations: RichTextCitation[] = []): Marked {
 	const renderCode = createCodeRenderer(blocks);
 
 	return new Marked({
 		gfm: true,
 		breaks: false,
 		async: false,
-		extensions: [blockMathExtension, inlineMathExtension],
+		extensions: [
+			blockMathExtension,
+			inlineMathExtension,
+			{
+				name: 'citation',
+				level: 'inline',
+				start: (src: string) => src.indexOf('[cite:'),
+				tokenizer(src: string) {
+					const match = /^\[cite:([A-Za-z0-9_-]+)\]/.exec(src);
+					if (match) return { type: 'citation', raw: match[0], id: match[1] };
+				},
+				renderer(token: Token) {
+					const id = 'id' in token ? token.id : undefined;
+					const source = citations.find((source) => source.id === id);
+					if (!source || !/^https?:\/\//i.test(source.url)) return escapeHtml(token.raw);
+					try {
+						const hostname = new URL(source.url).hostname.replace(/^www\./, '');
+						const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`;
+						return `<a class="rich-citation" href="${escapeHtml(source.url)}" title="${escapeHtml(source.title)}" target="_blank" rel="noopener noreferrer nofollow"><img src="${escapeHtml(faviconUrl)}" alt="" width="14" height="14" loading="lazy" referrerpolicy="no-referrer">${escapeHtml(hostname)}</a>`;
+					} catch {
+						return escapeHtml(token.raw);
+					}
+				}
+			}
+		],
 		renderer: {
 			html() {
 				// Drop raw HTML in markdown — XSS defense without jsdom/DOMPurify.
@@ -196,15 +226,6 @@ function createMarkedInstance(blocks: boolean, citationLinks = false): Marked {
 			},
 			link({ href, title, text }) {
 				const safeHref = href && isSafeMarkdownUrl(href) ? href : '#';
-				if (citationLinks && /^https?:\/\//i.test(safeHref)) {
-					try {
-						const hostname = new URL(safeHref).hostname.replace(/^www\./, '');
-						const faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=32`;
-						return `<a class="rich-citation" href="${escapeHtml(safeHref)}" title="${escapeHtml(title || text)}" target="_blank" rel="noopener noreferrer nofollow"><img src="${escapeHtml(faviconUrl)}" alt="" width="14" height="14" loading="lazy" referrerpolicy="no-referrer">${escapeHtml(hostname)}</a>`;
-					} catch {
-						// Invalid URLs retain the normal safe-link rendering below.
-					}
-				}
 				const safeTitle = title ? ` title="${escapeHtml(title)}"` : '';
 				const isInternal = safeHref.startsWith('/') || safeHref.startsWith('#');
 				const rel = isInternal ? undefined : 'noopener noreferrer nofollow';
@@ -231,10 +252,15 @@ const markedBlocksInstance = createMarkedInstance(true);
  * Security: deny raw HTML; allowlist link/image URLs; KaTeX/hljs emit trusted HTML.
  * Intentionally avoids isomorphic-dompurify/jsdom (breaks Vercel Lambda require(ESM)).
  */
-const markedCitationInstance = createMarkedInstance(true, true);
-
-export function renderRichTextHtml(text: string, options: { blocks?: boolean; citationLinks?: boolean } = {}): string {
+export function renderRichTextHtml(
+	text: string,
+	options: { blocks?: boolean; citations?: RichTextCitation[] } = {}
+): string {
 	if (!text) return '';
-	const instance = options.citationLinks ? markedCitationInstance : options.blocks ? markedBlocksInstance : markedInstance;
+	const instance = options.citations?.length
+		? createMarkedInstance(Boolean(options.blocks), options.citations)
+		: options.blocks
+			? markedBlocksInstance
+			: markedInstance;
 	return instance.parse(normalizeFences(text)) as string;
 }
