@@ -5,6 +5,28 @@
 
 	const changelog = [
 		{
+			version: '1.9.6',
+			date: 'October 10, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Coach supports private image attachments when image input is enabled',
+						'Coach web citations appear as source badges, while ordinary links keep their descriptive text'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Physics and math simulations use a dedicated generator, with clearer controls and layouts for smaller screens',
+						'Coach activity details collapse when an answer arrives, and simulations appear alongside the response',
+						'Coach shortcuts are easier to manage, including removing a selected shortcut with Backspace',
+						'Free beta now includes 50 Coach credits per month; Super continues to include 200, and simulation generation counts toward usage'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.5',
 			date: 'September 28, 2026',
 			sections: [
@@ -1534,7 +1556,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: September 28, 2026"
+			meta="Last Updated: October 10, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

@@ -34,7 +34,7 @@ describe('Vercel flag declarations', () => {
 	});
 
 	it('declares each flag with the Vercel adapter and no local decide function', () => {
-		expect(mocks.flag).toHaveBeenCalledTimes(6);
+		expect(mocks.flag).toHaveBeenCalledTimes(7);
 		expect(mocks.vercelAdapter).not.toHaveBeenCalled();
 		for (const [options] of mocks.flag.mock.calls) {
 			expect(options).toMatchObject({

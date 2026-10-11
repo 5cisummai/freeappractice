@@ -43,7 +43,6 @@
 	import Sparkles2FilledIcon from '@tabler/icons-svelte/icons/sparkles-2-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
 	import SidebarCloseIcon from '@tabler/icons-svelte/icons/x';
-	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
 	import * as ChainOfThought from '$lib/components/ai-elements/chain-of-thought/index.js';
