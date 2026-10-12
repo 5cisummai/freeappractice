@@ -6,7 +6,7 @@ import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import {
 	grantIndefiniteSuperToUser,
 	revokeActiveSuperGrantsForUser
-} from '$lib/super/admin.server';
+} from '$lib/billing/admin.server';
 
 const schema = z
 	.object({

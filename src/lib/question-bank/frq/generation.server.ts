@@ -1,9 +1,10 @@
+export const FRQ_GENERATION_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { zodSchema } from 'ai';
 import { z } from 'zod';
-import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
-import { structuredObject } from '$lib/ai/service.server';
-import { AP_DATA } from '$lib/data/ap-data';
+
+import { generateText, Output } from 'ai';
+import { AP_DATA } from '$lib/catalog/dataset';
 import {
 	FRQ_SCOPE_SENTENCE,
 	frqPracticeFor,
@@ -269,15 +270,12 @@ async function generateFrq(
 	formatId?: string
 ): Promise<FrqQuestion> {
 	const prompt = buildFrqGenerationPrompt(course, unit, recentTopics, formatId);
-	const { parsed } = await structuredObject({
-		callName: 'generateFrqQuestion',
+	const { output: parsed } = await generateText({
 		model: FRQ_GENERATION_MODEL,
-		system: prompt.system,
-		user: prompt.user,
-		schema: GeneratedFrqSchema,
-		schemaName: 'frq_question',
-		reasoningEffort: 'high',
-		logContext: { course, unit, formatId: prompt.format.formatId }
+		instructions: prompt.system,
+		prompt: prompt.user,
+		output: Output.object({ schema: GeneratedFrqSchema, name: 'frq_question' }),
+		providerOptions: { openai: { forceReasoning: true, reasoningEffort: 'high' } }
 	});
 	return parseGeneratedFrq(course, unit, parsed, prompt.format.formatId);
 }

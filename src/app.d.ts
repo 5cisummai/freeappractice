@@ -1,5 +1,6 @@
 import type { Session, User } from 'better-auth/db';
-import type { PlanAccess, TutorProfileView } from '$lib/super/types';
+import type { PlanAccess } from '$lib/billing/types';
+import type { TutorProfileView } from '$lib/agent/personalization/types';
 import type { OrgType } from '$lib/auth/organization-types';
 
 // See https://svelte.dev/docs/kit/types#app.d.ts

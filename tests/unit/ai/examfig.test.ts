@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateExamfigDiagram } from '$lib/ai/examfig.server';
+import { validateExamfigDiagram } from '$lib/diagrams/validation.server';
 import { renderExamfigDiagram } from '$lib/diagrams/examfig';
 
 describe('examfig diagram validation', () => {

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { validateQuestionRequest } from '$lib/catalog/question-request.server';
+import { validateQuestionRequest } from '$lib/question-bank/request.server';
 import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { isStimulusQuestionsEnabled } from '$lib/flags';

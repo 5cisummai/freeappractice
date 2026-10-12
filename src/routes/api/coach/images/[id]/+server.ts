@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getOwnedCoachImage } from '$lib/super/coach-images.server';
-import { readCoachImage, type CoachImageStore } from '$lib/super/coach-image-storage.server';
+import { getOwnedCoachImage } from '$lib/agent/attachments/images.server';
+import { readCoachImage, type CoachImageStore } from '$lib/agent/attachments/storage.server';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {

@@ -14,7 +14,7 @@ import {
 	type GenerateResult,
 	type GenerateStimulusSetResult
 } from '$lib/question-bank/mcq/generation.server';
-import { validateExamfigDiagram } from '$lib/ai/examfig.server';
+import { validateExamfigDiagram } from '$lib/diagrams/validation.server';
 import { logger } from '$lib/server/logger';
 import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
 import {

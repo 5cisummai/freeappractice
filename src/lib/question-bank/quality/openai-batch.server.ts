@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { AI_GATEWAY_BASE_URL, requireGatewayCredential } from '$lib/ai/gateway.server';
+import { AI_GATEWAY_BASE_URL, requireGatewayCredential } from '$lib/server/gateway-credentials.server';
 import { buildBatchLine as buildBatchLinePure } from './batch-line.js';
 
 function apiUrl(path: string): string {

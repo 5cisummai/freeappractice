@@ -5,11 +5,11 @@ import {
 	getTutorMemoryPublicId,
 	isTutorMemoryConfigured,
 	listTutorMemories
-} from '$lib/mem0/service.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
+} from '$lib/agent/memory/service.server';
+import { authorizeFeatureRequest } from '$lib/agent/access.server';
 import { isSuperMemoryEnabled } from '$lib/flags';
-import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/super/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/agent/personalization/profile.server';
+import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
 
 async function requireMemoryAccess(
 	event: Parameters<typeof GET>[0],

@@ -4,14 +4,14 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
-	import CoachSidebarProvider from '$lib/components/super/coach-sidebar-provider.svelte';
-	import CoachSidebarRoot from '$lib/components/super/coach-sidebar.svelte';
-	import CoachSidebarTrigger from '$lib/components/super/coach-sidebar-trigger.svelte';
-	import FreeBetaClaimDialog from '$lib/components/super/free-beta-claim-dialog.svelte';
+	import CoachSidebarProvider from '$lib/components/agent/coach-sidebar-provider.svelte';
+	import CoachSidebarRoot from '$lib/components/agent/coach-sidebar.svelte';
+	import CoachSidebarTrigger from '$lib/components/agent/coach-sidebar-trigger.svelte';
+	import FreeBetaClaimDialog from '$lib/components/agent/free-beta-claim-dialog.svelte';
 	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
-	import { setCoachPageToolbar } from '$lib/components/super/coach-context.svelte.js';
+	import { setCoachPageToolbar } from '$lib/components/agent/coach-context.svelte.js';
 	import {
 		captureAuthenticatedStudentReturnedIfNeeded,
 		captureSignupCompleted,
@@ -39,7 +39,7 @@
 	let layoutMounted = $state(false);
 	let coachSidebarOpen = $state(false);
 	const loadCoachShell = createLazyComponentLoader(
-		() => import('$lib/components/super/coach-shell.svelte')
+		() => import('$lib/components/agent/coach-shell.svelte')
 	);
 
 	function stripAuthQueryParam(param: 'signup' | 'login') {

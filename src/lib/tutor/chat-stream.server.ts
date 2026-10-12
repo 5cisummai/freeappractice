@@ -9,46 +9,19 @@ import {
 export type TutorChatFunction = typeof chat;
 type FrqTutorChatFunction = typeof chatFrq;
 
-type StreamCallbacks = {
-	onFirstChunk?: () => Promise<void> | void;
-	onFailureBeforeOutput?: () => Promise<void> | void;
-	onComplete?: (assistantResponse: string) => Promise<unknown> | unknown;
-};
-
-async function runCallback(callback: (() => Promise<void> | void) | undefined): Promise<void> {
-	if (!callback) return;
-	try {
-		await callback();
-	} catch (error) {
-		logger.error('Tutor stream lifecycle callback failed', { error });
-	}
-}
-
 function createChatStream(
 	requestSignal: AbortSignal,
 	createGenerator: (signal: AbortSignal) => AsyncGenerator<string>,
-	timeoutMs = TUTOR_CHAT_STREAM_TIMEOUT_MS,
-	callbacks: StreamCallbacks = {}
+	timeoutMs = TUTOR_CHAT_STREAM_TIMEOUT_MS
 ): ReadableStream<Uint8Array> {
 	const providerController = new AbortController();
 	const encoder = new TextEncoder();
 	let cancelled = false;
-	let timedOut = false;
-	let emittedOutput = false;
-
-	const abortProvider = () => {
-		if (!providerController.signal.aborted) providerController.abort();
-	};
-	const timeoutId = setTimeout(() => {
-		timedOut = true;
-		abortProvider();
-	}, timeoutMs);
-	requestSignal.addEventListener('abort', abortProvider, { once: true });
-
-	const cleanup = () => {
-		clearTimeout(timeoutId);
-		requestSignal.removeEventListener('abort', abortProvider);
-	};
+	const signal = AbortSignal.any([
+		requestSignal,
+		providerController.signal,
+		AbortSignal.timeout(timeoutMs)
+	]);
 
 	return new ReadableStream({
 		async start(controller) {
@@ -56,45 +29,35 @@ function createChatStream(
 				controller.enqueue(encoder.encode('data: ' + JSON.stringify(value) + '\n\n'));
 			};
 
-			let assistantResponse = '';
 			try {
-				for await (const chunk of createGenerator(providerController.signal)) {
+				signal.throwIfAborted();
+				for await (const chunk of createGenerator(signal)) {
 					if (cancelled) return;
-					if (!emittedOutput) {
-						emittedOutput = true;
-						await runCallback(callbacks.onFirstChunk);
-					}
-					assistantResponse += chunk;
 					enqueue({ content: chunk });
 				}
 				if (!cancelled) {
-					try {
-						const event = await callbacks.onComplete?.(assistantResponse);
-						if (event !== undefined) enqueue(event);
-					} catch (error) {
-						logger.error('Tutor completion callback failed', { error });
-					}
 					controller.enqueue(encoder.encode('data: [DONE]\n\n'));
 				}
 			} catch (error) {
 				if (cancelled) return;
-				if (!emittedOutput) await runCallback(callbacks.onFailureBeforeOutput);
-				if (providerController.signal.aborted) {
-					enqueue({ error: timedOut ? 'Tutor chat timed out' : 'Stream cancelled' });
+				if (signal.aborted) {
+					enqueue({
+						error:
+							signal.reason instanceof Error && signal.reason.name === 'TimeoutError'
+								? 'Tutor chat timed out'
+								: 'Stream cancelled'
+					});
 				} else {
 					logger.error('Tutor stream error', { error });
 					enqueue({ error: 'Stream error occurred' });
 				}
 			} finally {
-				cleanup();
 				if (!cancelled) controller.close();
 			}
 		},
 		cancel() {
 			cancelled = true;
-			if (!emittedOutput) void runCallback(callbacks.onFailureBeforeOutput);
-			abortProvider();
-			cleanup();
+			providerController.abort();
 		}
 	});
 }
@@ -103,7 +66,7 @@ export function createTutorChatStream(
 	context: Omit<Parameters<TutorChatFunction>[0], 'conversationHistory' | 'userMessage' | 'signal'>,
 	payload: TutorChatRequest,
 	requestSignal: AbortSignal,
-	options: { chatImpl: TutorChatFunction; timeoutMs?: number; callbacks?: StreamCallbacks }
+	options: { chatImpl: TutorChatFunction; timeoutMs?: number }
 ): ReadableStream<Uint8Array> {
 	return createChatStream(
 		requestSignal,
@@ -114,8 +77,7 @@ export function createTutorChatStream(
 				userMessage: payload.message,
 				signal
 			}),
-		options.timeoutMs,
-		options.callbacks
+		options.timeoutMs
 	);
 }
 
@@ -126,7 +88,7 @@ export function createFrqTutorChatStream(
 	>,
 	payload: FrqTutorChatRequest,
 	requestSignal: AbortSignal,
-	options: { chatImpl: FrqTutorChatFunction; timeoutMs?: number; callbacks?: StreamCallbacks }
+	options: { chatImpl: FrqTutorChatFunction; timeoutMs?: number }
 ): ReadableStream<Uint8Array> {
 	return createChatStream(
 		requestSignal,
@@ -137,7 +99,6 @@ export function createFrqTutorChatStream(
 				userMessage: payload.message,
 				signal
 			}),
-		options.timeoutMs,
-		options.callbacks
+		options.timeoutMs
 	);
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import CoachShell from '$lib/components/super/coach-shell.svelte';
+	import CoachShell from '$lib/components/agent/coach-shell.svelte';
 
 	let { data } = $props();
 </script>

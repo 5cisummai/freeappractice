@@ -1,13 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getCourses } from '$lib/catalog/ap-courses.js';
+import { getCourses } from '$lib/catalog/courses.js';
 import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/super/ai-controls.server';
-import { formatCreditsFromMilli } from '$lib/super/usage-credits';
-import { getSuperBillingView } from '$lib/super/billing.server';
-import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
-import { hasPaidCapability, type SuperAccessReason } from '$lib/super/types';
-import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/agent/usage/controls.server';
+import { formatCreditsFromMilli } from '$lib/agent/usage/credits';
+import { getSuperBillingView } from '$lib/billing/subscriptions.server';
+import { getPlanAccessForRequest } from '$lib/agent/access.server';
+import { hasPaidCapability, type SuperAccessReason } from '$lib/billing/types';
+import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
 import { getUserCourses, updateUserCourses } from '$lib/users/model.server.js';
 
 const validCourses = new Set(getCourses().map((course) => course.name));

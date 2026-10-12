@@ -4,7 +4,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Progress from '$lib/components/ui/progress/index.js';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import type { StudyTask } from '$lib/super/types';
+	import type { StudyTask } from '$lib/agent/plans/types';
 	import type { PageProps } from './$types';
 	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-week-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check';

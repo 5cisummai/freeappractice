@@ -1,0 +1,62 @@
+import { and, eq, isNull } from 'drizzle-orm';
+import { getNeonDatabase } from '$lib/server/neon/db';
+import { coachAudits } from '$lib/server/neon/schema';
+import { getTutorProfileView, updateTutorProfile } from '$lib/agent/personalization/profile.server';
+import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/agent/plans/store.server';
+import type { StudyPlanView } from '$lib/agent/plans/types';
+import type { TutorProfileView } from '$lib/agent/personalization/types';
+
+function goalSnapshot(
+	profile: TutorProfileView
+): Pick<TutorProfileView, 'selectedApClasses' | 'targetDates' | 'studyAvailability'> {
+	return {
+		selectedApClasses: profile.selectedApClasses,
+		targetDates: profile.targetDates,
+		studyAvailability: profile.studyAvailability
+	};
+}
+
+function hasSameValue(left: unknown, right: unknown): boolean {
+	return JSON.stringify(left) === JSON.stringify(right);
+}
+
+export async function undoCoachAudit(userId: string, auditId: string): Promise<boolean> {
+	const db = getNeonDatabase();
+	const [audit] = await db
+		.select()
+		.from(coachAudits)
+		.where(
+			and(eq(coachAudits.id, auditId), eq(coachAudits.userId, userId), isNull(coachAudits.undoneAt))
+		)
+		.limit(1);
+	if (!audit) return false;
+	if (audit.toolName === 'update_goals') {
+		const current = await getTutorProfileView(userId);
+		if (!hasSameValue(goalSnapshot(current), goalSnapshot(audit.after as TutorProfileView)))
+			return false;
+		await updateTutorProfile(userId, goalSnapshot(audit.before as TutorProfileView));
+	} else if (audit.toolName === 'update_study_plan') {
+		const before = audit.before as Partial<StudyPlanView>;
+		const after = audit.after as StudyPlanView;
+		const current = await getCurrentStudyPlan(userId);
+		if (!hasSameValue(current, after)) return false;
+		if (!before.startsOn || !before.tasks) await deleteStudyPlan(userId);
+		else {
+			await saveStudyPlan(
+				userId,
+				{ startsOn: before.startsOn, tasks: before.tasks },
+				{ behavior: 'replace' }
+			);
+		}
+	} else {
+		return false;
+	}
+	const updated = await db
+		.update(coachAudits)
+		.set({ undoneAt: new Date(), updatedAt: new Date() })
+		.where(
+			and(eq(coachAudits.id, auditId), eq(coachAudits.userId, userId), isNull(coachAudits.undoneAt))
+		)
+		.returning({ id: coachAudits.id });
+	return updated.length === 1;
+}

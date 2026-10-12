@@ -113,16 +113,16 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 
 Copy `.env.example` to `.env`. Required for a working local setup:
 
-| Variable             | Purpose                                                                        |
-| -------------------- | ------------------------------------------------------------------------------ |
-| `DATABASE_URL`       | Neon PostgreSQL connection string used by Drizzle over HTTPS                   |
-| `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
-| `BETTER_AUTH_URL`    | App base URL for auth callbacks (e.g. `http://localhost:5173`)                 |
-| `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key (or use `VERCEL_OIDC_TOKEN` on linked Vercel projects) |
-| `AI_GATEWAY_BASE_URL`| Optional; defaults to `https://ai-gateway.vercel.sh/v1`                         |
+| Variable              | Purpose                                                                          |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | Neon PostgreSQL connection string used by Drizzle over HTTPS                     |
+| `BETTER_AUTH_SECRET`  | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`)   |
+| `BETTER_AUTH_URL`     | App base URL for auth callbacks (e.g. `http://localhost:5173`)                   |
+| `AI_GATEWAY_API_KEY`  | Vercel AI Gateway API key (or use `VERCEL_OIDC_TOKEN` on linked Vercel projects) |
+| `AI_GATEWAY_BASE_URL` | Optional; defaults to `https://ai-gateway.vercel.sh/v1`                          |
 
-Model choices for every AI use case are plain exported constants in
-`src/lib/ai/ai-models-config.ts`.
+Model choices are owned by their domains: agent, tutor, question generation,
+grading, memory, and quality review. SDK callers use provider/model identifiers directly.
 
 Commonly needed for full functionality:
 
@@ -178,8 +178,7 @@ maintenance job. Failed, unattached uploads are eligible for cleanup after one h
 ### AI Gateway
 
 Model traffic goes through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway). Set
-`AI_GATEWAY_API_KEY` locally (or pull OIDC via `vercel env pull`). Model slugs live in
-`src/lib/ai/ai-models-config.ts` as `provider/model` strings (for example `openai/gpt-6-luna`).
+`AI_GATEWAY_API_KEY` locally (or pull OIDC via `vercel env pull`). Model slugs live alongside each domain’s implementation as `provider/model` strings (for example `openai/gpt-6-luna`).
 
 ## API overview
 

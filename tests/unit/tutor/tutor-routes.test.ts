@@ -19,7 +19,7 @@ vi.mock('$lib/auth/route-helpers.server', () => ({
 		(handler: (event: unknown, userId: string) => Promise<Response>) => (event: unknown) =>
 			handler(event, 'user-1')
 }));
-vi.mock('$lib/super/assistant.server', () => ({
+vi.mock('$lib/users/assistant-preferences.server', () => ({
 	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest
 }));
 vi.mock('$lib/tutor/service.server', () => ({
@@ -27,7 +27,7 @@ vi.mock('$lib/tutor/service.server', () => ({
 	chat: vi.fn(),
 	chatFrq: vi.fn()
 }));
-vi.mock('$lib/super/ai-controls.server', () => ({
+vi.mock('$lib/tutor/rate-limit.server', () => ({
 	limitGenericTutor: mocks.limitGenericTutor
 }));
 vi.mock('$lib/tutor/chat-stream.server', () => ({
@@ -67,6 +67,7 @@ const superBody = {
 };
 
 beforeEach(() => {
+	vi.clearAllMocks();
 	mocks.getOptionalUserId.mockResolvedValue('user-1');
 	mocks.getAssistantFeaturesEnabledForRequest.mockResolvedValue(true);
 	mocks.limitGenericTutor.mockResolvedValue({ allowed: true, retryAt: null });
@@ -137,5 +138,52 @@ describe('generic tutor routes', () => {
 
 		expect(response.status).toBe(200);
 		expect(mocks.createTutorChatStream).toHaveBeenCalled();
+	});
+});
+
+describe('standard tutoring for every plan', () => {
+	it.each(['free', 'super'])('uses standard MCQ tutoring for a %s user', async (plan) => {
+		mocks.resolveTutorQuestion.mockResolvedValue({
+			question: 'Q',
+			correctAnswer: 'A',
+			explanation: 'E',
+			course: 'AP Biology',
+			unit: 'Unit 1',
+			optionA: 'a',
+			optionB: 'b',
+			optionC: 'c',
+			optionD: 'd'
+		});
+		mocks.createTutorChatStream.mockReturnValue(new ReadableStream());
+		const response = await tutorChatPost({
+			request: new Request('https://app.test/api/tutor/chat', {
+				method: 'POST',
+				body: JSON.stringify({ questionId, message: 'Help', conversationHistory: [] }),
+				headers: { 'content-type': 'application/json' }
+			}),
+			locals: { planAccess: Promise.resolve({ plan }) }
+		} as Parameters<typeof tutorChatPost>[0]);
+		expect(response.status).toBe(200);
+		expect(mocks.limitGenericTutor).toHaveBeenCalledWith(expect.any(Request), 'user-1');
+		expect(mocks.createTutorChatStream.mock.calls[0][0]).not.toHaveProperty(
+			'personalizationContext'
+		);
+	});
+	it.each(['free', 'super'])('uses standard FRQ tutoring for a %s user', async (plan) => {
+		mocks.getFrqQuestionById.mockResolvedValue({ id: questionId, course: 'AP Biology' });
+		mocks.getFrqCourseProfile.mockReturnValue({});
+		mocks.createFrqTutorChatStream.mockReturnValue(new ReadableStream());
+		const response = await tutorFrqPost({
+			request: new Request('https://app.test/api/tutor/frq', {
+				method: 'POST',
+				body: JSON.stringify({ questionId, message: 'Help', conversationHistory: [] }),
+				headers: { 'content-type': 'application/json' }
+			}),
+			locals: { planAccess: Promise.resolve({ plan }) }
+		} as Parameters<typeof tutorFrqPost>[0]);
+		expect(response.status).toBe(200);
+		expect(mocks.createFrqTutorChatStream.mock.calls[0][0]).not.toHaveProperty(
+			'personalizationContext'
+		);
 	});
 });

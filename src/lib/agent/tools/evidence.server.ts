@@ -1,0 +1,81 @@
+import { findRecentGradedFrqAttempts } from '$lib/grading/frq/storage.server';
+import { getRecentMistakes } from '$lib/agent/personalization/context.server';
+import { getUserDashboardProfile, getUserProgress } from '$lib/users/model.server';
+import { getDashboardStats } from '$lib/users/dashboard-queries.server';
+
+export async function getCoachActivitySummary(userId: string) {
+	const profile = await getUserDashboardProfile(userId);
+	const memberSince = profile?.createdAt ?? new Date();
+	const stats = await getDashboardStats(userId, memberSince, 'UTC', true);
+
+	return {
+		currentStreak: stats.overview.currentStreak,
+		totalTimeHours: stats.overview.totalTimeHours,
+		lifetime: {
+			mcqAttempts: stats.overview.totalQuestions,
+			mcqAccuracy: stats.overview.accuracy,
+			frqSubmissions: stats.overview.frqSubmissions,
+			frqAveragePercentage: stats.overview.frqAveragePercentage
+		},
+		last7Days: {
+			mcqAttempts: stats.recentPerformance.questionsLast7Days,
+			mcqAccuracy: stats.recentPerformance.accuracyLast7Days,
+			frqSubmissions: stats.recentPerformance.frqSubmissionsLast7Days
+		},
+		courseBreakdown: stats.courseBreakdown.slice(0, 8)
+	};
+}
+
+export async function getCoachUnitDetail(userId: string, course: string, unit: string) {
+	const [progressRows, recentMistakes] = await Promise.all([
+		getUserProgress(userId),
+		getRecentMistakes(userId, { course, unit })
+	]);
+
+	const progress = progressRows.find((row) => row.course === course && row.unit === unit);
+
+	return {
+		course,
+		unit,
+		progress: progress
+			? {
+					mastery: progress.mastery,
+					totalAttempts: progress.totalAttempts,
+					correctAttempts: progress.correctAttempts,
+					lastAttemptAt: progress.lastAttemptAt?.toISOString() ?? null,
+					lastReviewedAt: progress.lastReviewedAt?.toISOString() ?? null
+				}
+			: null,
+		recentMistakes: recentMistakes.slice(0, 5)
+	};
+}
+
+export async function getCoachFrqPerformance(
+	userId: string,
+	filter: { course?: string; unit?: string; limit?: number } = {}
+) {
+	const limit = Math.min(Math.max(filter.limit ?? 5, 1), 6);
+	const attempts = await findRecentGradedFrqAttempts(userId, {
+		limit,
+		course: filter.course,
+		unit: filter.unit
+	});
+
+	return attempts.map((attempt) => ({
+		attemptId: attempt.id,
+		questionId: attempt.questionId,
+		course: attempt.course,
+		unit: attempt.unit,
+		attemptedAt: attempt.createdAt.toISOString(),
+		pointsEarned: attempt.grade?.pointsEarned ?? 0,
+		pointsAvailable: attempt.grade?.pointsAvailable ?? 0,
+		percentage: attempt.grade?.percentage ?? 0,
+		overallFeedback: attempt.grade?.overallFeedback ?? '',
+		parts: (attempt.grade?.parts ?? []).map((part) => ({
+			label: part.label,
+			points: part.points,
+			pointsAvailable: part.pointsAvailable,
+			feedback: part.feedback
+		}))
+	}));
+}

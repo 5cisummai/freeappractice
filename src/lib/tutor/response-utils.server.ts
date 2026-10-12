@@ -1,6 +1,4 @@
-import { waitUntil } from '@vercel/functions';
 import { json } from '@sveltejs/kit';
-import { logger } from '$lib/server/logger';
 
 export function tutorRateLimitedResponse(retryAt: number | null): Response {
 	return json(
@@ -14,18 +12,4 @@ export function tutorRateLimitedResponse(retryAt: number | null): Response {
 				}
 			: { status: 429 }
 	);
-}
-
-export function scheduleTutorMemoryWrite(
-	work: Promise<unknown>,
-	surface: 'MCQ' | 'FRQ' | 'Coach'
-): void {
-	const safeWork = work.catch((error) =>
-		logger.warn(`${surface} tutor memory update failed`, { error })
-	);
-	try {
-		waitUntil(safeWork);
-	} catch {
-		void safeWork;
-	}
 }

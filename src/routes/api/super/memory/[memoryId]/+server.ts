@@ -4,8 +4,8 @@ import {
 	deleteTutorMemory,
 	isTutorMemoryConfigured,
 	resolveTutorMemoryId
-} from '$lib/mem0/service.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
+} from '$lib/agent/memory/service.server';
+import { authorizeFeatureRequest } from '$lib/agent/access.server';
 
 export const DELETE = withAuthedHandler(
 	async (event, userId) => {

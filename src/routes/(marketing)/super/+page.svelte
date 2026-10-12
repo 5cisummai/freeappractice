@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SuperLandingSection from '$lib/components/marketing/super-landing-section.svelte';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/components/agent/ui';
 	import { twAnimateIn, twAnimateInView } from '$lib/tw-animate';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';

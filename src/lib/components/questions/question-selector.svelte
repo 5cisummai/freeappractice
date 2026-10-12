@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getCourses } from '$lib/catalog/ap-courses';
+	import { getCourses } from '$lib/catalog/courses';
 	import { frqPracticeFor } from '$lib/question-bank/frq/practice';
 	import { getFocusedPracticeHref } from '$lib/catalog/practice-pages';
 	import { tick } from 'svelte';

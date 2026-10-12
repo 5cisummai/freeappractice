@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getUnitsForCourse } from '$lib/catalog/ap-courses';
-import { AP_DATA } from '$lib/data/ap-data';
+import { getUnitsForCourse } from '$lib/catalog/courses';
+import { AP_DATA } from '$lib/catalog/dataset';
 import {
 	buildFrqGenerationPrompt,
 	parseGeneratedFrq

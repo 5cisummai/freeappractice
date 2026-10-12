@@ -23,9 +23,9 @@ import type {
 import { getMcqGenerationCountsByCourse } from '$lib/question-bank/gen-stats.server';
 import { getQualityDashboardSnapshot } from '$lib/question-bank/quality/dashboard.server';
 import type { QualityDashboardSnapshot } from '$lib/question-bank/quality/types';
-import { getSuperAdminOverview } from '$lib/super/admin.server';
-import { getAdminUserSuperAccess } from '$lib/super/billing.server';
-import type { SuperAdminOverview } from '$lib/super/types';
+import { getSuperAdminOverview } from '$lib/billing/admin.server';
+import { getAdminUserSuperAccess } from '$lib/billing/subscriptions.server';
+import type { SuperAdminOverview } from '$lib/billing/types';
 import { listFeedbackTabForAdmin } from '$lib/feedback/admin.server';
 import type {
 	AdminTab,

@@ -1,5 +1,9 @@
-import { PRACTICE_PAGES } from '$lib/data/ap-data';
-import { getCourses, getUnitsForCourse } from '$lib/catalog/ap-courses';
+import practicePagesDataset from './data/practice-pages.json';
+import { AP_DATA, type UnifiedUnit } from './dataset';
+
+import { getCourses, getUnitsForCourse } from './courses';
+
+const PRACTICE_PAGES_DATA = practicePagesDataset;
 
 type PracticePageLinkKind =
 	'college-board' | 'subject-tool' | 'blog' | 'external' | 'internal' | 'practice';
@@ -51,6 +55,66 @@ const TOPIC_PRACTICE_REDIRECTS: Record<string, string> = {
 	'ap-us-history/civil-war': 'ap-us-history/unit-5',
 	'ap-world-history/silk-road': 'ap-world-history/unit-2'
 };
+
+const courseById = new Map(AP_DATA.courses.map((course) => [course.id, course] as const));
+const unitById = new Map(
+	AP_DATA.courses.flatMap((course) => course.units.map((unit) => [unit.id, unit] as const))
+);
+
+type PracticeFaqTemplate = {
+	id: string;
+	question: string;
+	answer: string;
+};
+
+type PracticeFaqPageType = 'course' | 'unit';
+
+const FAQ_TEMPLATES = PRACTICE_PAGES_DATA.faqTemplates as Record<
+	PracticeFaqPageType,
+	PracticeFaqTemplate[]
+>;
+
+function renderFaqTemplate(template: string, values: Record<string, string>): string {
+	return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+}
+
+function buildPracticePageFaq(
+	type: PracticeFaqPageType,
+	course: string,
+	unitData?: UnifiedUnit
+): PracticeFaqTemplate[] {
+	const unit = unitData?.label ?? '';
+	const practiceLabel = unitData ? `${course} ${unit}` : course;
+	const unitDescription = unitData?.official.description ?? `${course} course content`;
+	const values = { course, unit, practiceLabel, unitDescription };
+
+	return FAQ_TEMPLATES[type].map((template) => ({
+		id: `${type}-${template.id}`,
+		question: renderFaqTemplate(template.question, values),
+		answer: renderFaqTemplate(template.answer, values)
+	}));
+}
+
+/** SEO, article, and FAQ records projected from the dedicated practice-page dataset. */
+const PRACTICE_PAGES = PRACTICE_PAGES_DATA.pages.map((page) => {
+	const course = courseById.get(page.courseId);
+	if (!course) throw new Error(`Unknown practice page course: ${page.courseId}`);
+
+	const unit = page.unitId ? unitById.get(page.unitId) : undefined;
+	if (page.unitId && !unit) throw new Error(`Unknown practice page unit: ${page.unitId}`);
+	const pageType: PracticeFaqPageType = page.type === 'unit' ? 'unit' : 'course';
+
+	return {
+		slug: page.id,
+		type: pageType,
+		course: course.name,
+		...(unit ? { unit: unit.label } : {}),
+		seo: page.seo,
+		article: page.article,
+		links: page.links,
+		faq: buildPracticePageFaq(pageType, course.name, unit)
+	};
+});
 
 function validatePages(pages: PracticePage[]): void {
 	const slugSet = new Set<string>();

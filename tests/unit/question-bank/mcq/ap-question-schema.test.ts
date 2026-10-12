@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	assertOpenAiCompatibleObjectSchema,
 	findOpenAiOptionalPropertyPaths
-} from '$lib/ai/openai-structured-schema';
+} from '$lib/question-bank/mcq/structured-schema';
 import {
 	apQuestionSchema,
 	apStimulusSetSchema,

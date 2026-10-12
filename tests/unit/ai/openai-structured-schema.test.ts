@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
 	assertOpenAiCompatibleObjectSchema,
 	findOpenAiOptionalPropertyPaths
-} from '$lib/ai/openai-structured-schema';
+} from '$lib/question-bank/mcq/structured-schema';
 
 describe('openai structured schema compatibility', () => {
 	it('flags Zod .optional() fields that OpenAI rejects', () => {

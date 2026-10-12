@@ -4,18 +4,17 @@
  */
 import { embed, generateText, Output, ToolLoopAgent, isStepCount } from 'ai';
 import { z } from 'zod';
+import { COACH_MODEL } from '$lib/agent/model';
+import { SIM_MODEL } from '$lib/agent/tools/simulation.server';
+import { CONVERSATION_TITLE_MODEL } from '$lib/agent/conversations/titles.server';
+import { MCQ_GENERATION_MODEL } from '$lib/question-bank/mcq/generation.server';
+import { QUESTION_QUALITY_MODEL } from '$lib/question-bank/quality/dashboard.server';
+import { MEM0_LLM_MODEL, MEM0_EMBEDDING_MODEL } from '$lib/agent/memory/service.server';
+import { TUTOR_MODEL } from '$lib/tutor/service.server';
 import {
-	COACH_MODEL,
-	CONVERSATION_TITLE_MODEL,
-	MCQ_GENERATION_MODEL,
-	MEM0_EMBEDDING_MODEL,
-	MEM0_LLM_MODEL,
-	QUESTION_QUALITY_MODEL,
-	SIM_MODEL,
-	TUTOR_MODEL
-} from '../src/lib/ai/ai-models-config';
-import { AI_GATEWAY_BASE_URL, gatewayModel, requireGatewayCredential } from '../src/lib/ai/gateway.server';
-import { structuredObject } from '../src/lib/ai/service.server';
+	AI_GATEWAY_BASE_URL,
+	requireGatewayCredential
+} from '$lib/server/gateway-credentials.server';
 
 type Result = { name: string; ok: boolean; detail: string; ms: number };
 
@@ -37,7 +36,7 @@ async function main() {
 	results.push(
 		await timed('tutor generateText', async () => {
 			const { text, usage } = await generateText({
-				model: gatewayModel(TUTOR_MODEL),
+				model: TUTOR_MODEL,
 				prompt: 'Reply with exactly: tutor-ok',
 				maxOutputTokens: 32
 			});
@@ -49,7 +48,7 @@ async function main() {
 	results.push(
 		await timed('coach generateText', async () => {
 			const { text } = await generateText({
-				model: gatewayModel(COACH_MODEL),
+				model: COACH_MODEL,
 				prompt: 'Reply with exactly: coach-ok',
 				maxOutputTokens: 32
 			});
@@ -61,7 +60,7 @@ async function main() {
 	results.push(
 		await timed('title generateText', async () => {
 			const { text } = await generateText({
-				model: gatewayModel(CONVERSATION_TITLE_MODEL),
+				model: CONVERSATION_TITLE_MODEL,
 				instructions:
 					'Write a short conversation title for this student message. 3 to 5 words. Return only the title. No quotes.',
 				prompt: 'student asks about AP Biology cells',
@@ -76,7 +75,7 @@ async function main() {
 	results.push(
 		await timed('sim generateText', async () => {
 			const { text } = await generateText({
-				model: gatewayModel(SIM_MODEL),
+				model: SIM_MODEL,
 				prompt: 'Reply with exactly: sim-ok',
 				maxOutputTokens: 32
 			});
@@ -86,31 +85,29 @@ async function main() {
 	);
 
 	results.push(
-		await timed('structuredObject (MCQ path)', async () => {
+		await timed('structured output', async () => {
 			const schema = z.object({
 				ok: z.boolean(),
 				label: z.string()
 			});
-			const { parsed, model } = await structuredObject({
-				callName: 'smokeStructured',
+			const { output: parsed } = await generateText({
 				model: MCQ_GENERATION_MODEL,
-				system: 'Return a tiny JSON object. Set ok=true and label="structured-ok".',
-				user: 'Produce the object now.',
-				schema,
-				schemaName: 'smoke_object',
-				reasoningEffort: 'low'
+				instructions: 'Return a tiny JSON object. Set ok=true and label="structured-ok".',
+				prompt: 'Produce the object now.',
+				output: Output.object({ schema, name: 'smoke_object' }),
+				providerOptions: { openai: { reasoningEffort: 'low' } }
 			});
 			if (!parsed.ok || !/structured-ok/i.test(parsed.label)) {
 				throw new Error(`bad parse: ${JSON.stringify(parsed)}`);
 			}
-			return model;
+			return MCQ_GENERATION_MODEL;
 		})
 	);
 
 	results.push(
 		await timed('quality model ToolLoopAgent', async () => {
 			const agent = new ToolLoopAgent({
-				model: gatewayModel(QUESTION_QUALITY_MODEL),
+				model: QUESTION_QUALITY_MODEL,
 				instructions: 'Reply briefly.',
 				stopWhen: isStepCount(1),
 				output: Output.object({
@@ -129,7 +126,7 @@ async function main() {
 	results.push(
 		await timed('mem0 llm generateText', async () => {
 			const { text } = await generateText({
-				model: gatewayModel(MEM0_LLM_MODEL),
+				model: MEM0_LLM_MODEL,
 				prompt: 'Reply with exactly: mem0-llm-ok',
 				maxOutputTokens: 32
 			});
@@ -141,7 +138,7 @@ async function main() {
 	results.push(
 		await timed('mem0 embeddings', async () => {
 			const { embedding, usage } = await embed({
-				model: gatewayModel(MEM0_EMBEDDING_MODEL),
+				model: MEM0_EMBEDDING_MODEL,
 				value: 'AP Biology cell membrane smoke test'
 			});
 			if (!Array.isArray(embedding) || embedding.length < 100) {
@@ -167,7 +164,11 @@ async function main() {
 	for (const r of results) {
 		console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}  (${r.ms}ms)  ${r.detail}`);
 	}
-	console.log(failed.length === 0 ? `\nALL ${results.length} AI smoke checks passed` : `\n${failed.length}/${results.length} failed`);
+	console.log(
+		failed.length === 0
+			? `\nALL ${results.length} AI smoke checks passed`
+			: `\n${failed.length}/${results.length} failed`
+	);
 	process.exit(failed.length === 0 ? 0 : 1);
 }
 

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { listOwnedConversations } from '$lib/super/conversations.server';
+import { listOwnedConversations } from '$lib/agent/conversations/store.server';
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (_event, userId) => {

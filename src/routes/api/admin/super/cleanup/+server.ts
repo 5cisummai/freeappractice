@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { retrySuperCleanupJob } from '$lib/super/admin.server';
+import { retrySuperCleanupJob } from '$lib/billing/admin.server';
 
 const retrySchema = z.object({ jobId: z.string().trim().min(1).max(100) }).strict();
 

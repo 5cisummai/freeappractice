@@ -7,15 +7,15 @@ import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 import {
 	getAgeConfirmedAtForRequest,
 	getPlanAccessForRequest
-} from '$lib/super/feature-access.server';
-import { hasPaidCapability } from '$lib/super/types';
-import { hasClaimedSuperFreeBeta } from '$lib/super/profile.server';
+} from '$lib/agent/access.server';
+import { hasPaidCapability } from '$lib/billing/types';
+import { hasClaimedSuperFreeBeta } from '$lib/agent/personalization/profile.server';
 import {
 	ONBOARDING_COOKIE_NAME,
 	ONBOARDING_PENDING_COOKIE_OPTIONS,
 	readOnboardingState
 } from '$lib/onboarding.js';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
 
 export const load: LayoutServerLoad = async ({ cookies, depends, locals, request, url }) => {
 	depends(APP_LAYOUT_DEPENDENCY);

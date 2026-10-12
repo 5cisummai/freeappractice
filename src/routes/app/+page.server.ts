@@ -5,8 +5,8 @@ import {
 	listOrganizationSharedSets
 } from '$lib/auth/organization-queries.server';
 import { loadUserDashboardData } from '$lib/users/dashboard.server';
-import { authorizeFeatureRequest, getPlanAccessForRequest } from '$lib/super/feature-access.server';
-import { getCurrentStudyPlan } from '$lib/super/study-plan.server';
+import { authorizeFeatureRequest, getPlanAccessForRequest } from '$lib/agent/access.server';
+import { getCurrentStudyPlan } from '$lib/agent/plans/store.server';
 import { timezoneFromCookies } from '$lib/users/timezone';
 
 export const load: PageServerLoad = async ({ cookies, locals, parent }) => {

@@ -13,7 +13,7 @@
 	import OrgGroupDashboard from '$lib/components/layout/org-group-dashboard.svelte';
 	import PageShell from '$lib/components/layout/page-shell.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import type { StudyTask } from '$lib/super/types';
+	import type { StudyTask } from '$lib/agent/plans/types';
 	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
 	import { onboardingCourses } from '$lib/onboarding-courses.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';

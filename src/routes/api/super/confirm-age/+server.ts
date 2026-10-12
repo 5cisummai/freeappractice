@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { InvalidBirthDateError, UnderAgeError } from '$lib/auth/age';
-import { confirmAge } from '$lib/super/profile.server';
+import { confirmAge } from '$lib/agent/personalization/profile.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 
 function readBirthDate(body: unknown): string | undefined {

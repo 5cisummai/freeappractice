@@ -2,9 +2,9 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
-import { claimIdempotencyKey, RedisRequiredError } from '$lib/super/ai-controls.server';
-import { undoCoachAudit } from '$lib/super/coach.server';
+import { authorizeFeatureRequest } from '$lib/agent/access.server';
+import { claimIdempotencyKey, RedisRequiredError } from '$lib/agent/usage/controls.server';
+import { undoCoachAudit } from '$lib/agent/tools/undo.server';
 
 const undoSchema = z.object({ auditId: z.string().regex(/^[a-f\d]{24}$/i) }).strict();
 

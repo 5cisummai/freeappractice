@@ -1,7 +1,7 @@
 import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
 import { QuestionRequestError } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
-import { resolveEffectiveUnit } from '$lib/catalog/ap-courses';
+import { resolveEffectiveUnit } from '$lib/catalog/courses';
 import { FRQ_ALL_UNITS, frqPracticeFor } from '$lib/question-bank/frq/practice';
 import {
 	parseFrqLatestDraft,

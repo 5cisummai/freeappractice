@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { dev } from '$app/environment';
-import { validateQuestionRequest } from '$lib/catalog/question-request.server';
+import { validateQuestionRequest } from '$lib/question-bank/request.server';
 import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
 import {
 	capturePathQuestionRequestMetric,

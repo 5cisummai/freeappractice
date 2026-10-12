@@ -2,9 +2,9 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '$lib/agent/access.server';
 import { readJsonBody } from '$lib/server/request-body.server';
-import { giveCoachPracticeQuestion } from '$lib/super/coach-questions.server';
+import { giveCoachPracticeQuestion } from '$lib/agent/tools/practice.server';
 
 const practiceQuestionRequestSchema = z
 	.object({

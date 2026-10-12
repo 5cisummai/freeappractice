@@ -5,7 +5,7 @@ import {
 	uploadBatchInput
 } from '$lib/question-bank/quality/openai-batch.server';
 import { buildMcqPoolBatchLine } from '$lib/question-bank/mcq/batch-line';
-import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
+import { MCQ_GENERATION_MODEL } from '$lib/question-bank/mcq/generation.server';
 import { buildFrqPoolBatchLine } from '$lib/question-bank/frq/pool-batch-line';
 import { selectFrqFormat } from '$lib/question-bank/frq/profiles.server';
 

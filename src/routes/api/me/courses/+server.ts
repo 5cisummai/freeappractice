@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { getCourses } from '$lib/catalog/ap-courses.js';
+import { getCourses } from '$lib/catalog/courses.js';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { updateUserCourses } from '$lib/users/model.server';

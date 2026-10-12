@@ -23,8 +23,8 @@ import { deleteAppDataDocuments } from '$lib/users/delete-app-data-documents.ser
 import {
 	prepareAccountDeletion,
 	processAccountDeletionCleanup
-} from '$lib/super/account-cleanup.server';
-import { createSuperStripePlugin } from '$lib/super/stripe-plugin.server';
+} from '$lib/users/account-cleanup.server';
+import { createSuperStripePlugin } from '$lib/billing/stripe-plugin.server';
 import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
 import { getAdminUserIds } from '$lib/auth/admin.server';
 import {

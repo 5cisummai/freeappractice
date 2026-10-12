@@ -126,7 +126,7 @@ export async function reserveDailyGenerationBudget(
 	if (await reserveGenerationSlots(dayKey, env.dailyLlmGenerationBudget - toReserve, toReserve))
 		return toReserve;
 
-	// Concurrent reservation raced — fall back to single-slot loop.
+	// Concurrent usage raced — fall back to single-slot loop.
 	let reserved = 0;
 	while (reserved < toReserve) {
 		const ok = await tryReserveDailyBudget(env);

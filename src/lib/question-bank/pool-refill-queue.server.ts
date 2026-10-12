@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
 import { getMcqGenerationCountsByCourse } from '$lib/question-bank/gen-stats.server';
-import { getUnitsForCourse } from '$lib/catalog/ap-courses';
+import { getUnitsForCourse } from '$lib/catalog/courses';
 import { frqBucketUnits } from '$lib/question-bank/frq/practice';
 import {
 	countActivePoolRows,

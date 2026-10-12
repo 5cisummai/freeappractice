@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCourses } from '$lib/catalog/ap-courses';
+import { getCourses } from '$lib/catalog/courses';
 import {
 	buildMcqGenerationPrompt,
 	buildStimulusSetGenerationPrompt,

@@ -11,7 +11,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { resolveEffectiveUnit } from '$lib/catalog/ap-courses.js';
+	import { resolveEffectiveUnit } from '$lib/catalog/courses.js';
 	import { requestMcqQuestion, requestMcqQuiz } from '$lib/question-bank/request.client.js';
 	import { createTextAnnotation } from '$lib/components/questions/text-annotation-dom.js';
 	import type {

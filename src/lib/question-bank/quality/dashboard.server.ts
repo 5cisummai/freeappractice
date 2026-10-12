@@ -1,6 +1,7 @@
+export const QUESTION_QUALITY_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { desc, eq, sql } from 'drizzle-orm';
-import { QUESTION_QUALITY_MODEL } from '$lib/ai/ai-models-config';
+
 import { getNeonDatabase } from '$lib/server/neon/db';
 import {
 	questionFeedback,

@@ -13,10 +13,10 @@ import {
 	TUTOR_CHAT_STREAM_TIMEOUT_MS
 } from '$lib/tutor/chat-request';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { limitGenericTutor } from '$lib/super/ai-controls.server';
+import { limitGenericTutor } from '$lib/tutor/rate-limit.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {

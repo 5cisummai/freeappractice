@@ -3,11 +3,11 @@ import type { RequestHandler } from './$types';
 import { getOptionalUserId } from '$lib/auth/route-helpers.server';
 import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { logger } from '$lib/server/logger';
-import { limitGenericTutor } from '$lib/super/ai-controls.server';
+import { limitGenericTutor } from '$lib/tutor/rate-limit.server';
 import { tutorGreetingRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { getGreeting } from '$lib/tutor/service.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
 
 export const POST: RequestHandler = async (event) => {
 	try {

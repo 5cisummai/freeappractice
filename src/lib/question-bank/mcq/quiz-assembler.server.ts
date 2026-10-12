@@ -1,4 +1,4 @@
-import { getUnitsForCourse } from '$lib/catalog/ap-courses';
+import { getUnitsForCourse } from '$lib/catalog/courses';
 import {
 	findActiveQuestionsForQuiz,
 	storedQuestionFromPayload,

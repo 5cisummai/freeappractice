@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { getCourses, getUnitsForCourse } from '$lib/catalog/ap-courses';
+import { getCourses, getUnitsForCourse } from '$lib/catalog/courses';
 import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { mcqQuestions } from '$lib/server/neon/schema';

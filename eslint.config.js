@@ -44,9 +44,8 @@ export default defineConfig(
 			'src/lib/question-bank/pool-refill.server.ts',
 			'src/lib/question-bank/recent-topic.server.ts',
 			'src/lib/server/neon/model.ts',
-			'src/lib/super/models.server.ts',
-			'src/lib/super/profile.server.ts',
-			'src/lib/super/study-plan.server.ts',
+			'src/lib/agent/personalization/profile.server.ts',
+			'src/lib/agent/plans/store.server.ts',
 			'src/lib/users/model.server.ts'
 		],
 		rules: {

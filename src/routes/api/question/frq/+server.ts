@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { validateQuestionRequest } from '$lib/catalog/question-request.server';
+import { validateQuestionRequest } from '$lib/question-bank/request.server';
 import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
 import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
 import { resolveFrqPoolRequest, UnknownFrqTaskError } from '$lib/question-bank/frq/practice';

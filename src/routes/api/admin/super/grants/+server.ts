@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { createSuperGrant, getSuperAdminOverview, revokeSuperGrant } from '$lib/super/admin.server';
+import { createSuperGrant, getSuperAdminOverview, revokeSuperGrant } from '$lib/billing/admin.server';
 
 const grantSchema = z
 	.object({

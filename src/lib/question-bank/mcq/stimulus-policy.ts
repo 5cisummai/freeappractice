@@ -1,4 +1,4 @@
-import { AP_DATA } from '$lib/data/ap-data';
+import { AP_DATA } from '$lib/catalog/dataset';
 
 export type StimulusMode = 'text' | 'diagram' | 'mixed';
 export type StimulusProfile = {

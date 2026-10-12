@@ -1,9 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isTutorMemoryConfigured } from '$lib/mem0/service.server';
-import { updateTutorProfile } from '$lib/super/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server';
+import { isTutorMemoryConfigured } from '$lib/agent/memory/service.server';
+import { updateTutorProfile } from '$lib/agent/personalization/profile.server';
+import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;

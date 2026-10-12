@@ -6,7 +6,7 @@ import {
 	QuestionRequestError
 } from '$lib/client/activation-analytics';
 import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-import { resolveEffectiveUnit } from '$lib/catalog/ap-courses';
+import { resolveEffectiveUnit } from '$lib/catalog/courses';
 import {
 	PoolWarmingError,
 	requestMcqQuestion,

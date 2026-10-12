@@ -1,0 +1,148 @@
+import type { RequestEvent } from '@sveltejs/kit';
+import { isSuperCoachEnabled, isSuperMemoryEnabled } from '$lib/flags';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
+import { hasPaidCapability, type PaidCapability, type PlanAccess } from '$lib/billing/types';
+import { type TutorProfileView } from '$lib/agent/personalization/types';
+import { activeOrgUsesUserSuper } from '$lib/auth/organizations.server';
+
+export type SuperFeature = 'coach' | 'studyPlans' | 'memory';
+
+const FEATURE_FLAGS: Partial<Record<SuperFeature, () => Promise<boolean>>> = {
+	coach: isSuperCoachEnabled,
+	studyPlans: isSuperCoachEnabled,
+	memory: isSuperMemoryEnabled
+};
+
+const FEATURE_CAPABILITIES: Record<SuperFeature, PaidCapability> = {
+	coach: 'coach',
+	studyPlans: 'studyPlans',
+	memory: 'memory'
+};
+
+export type AuthorizedFeatureContext = {
+	userId: string;
+	planAccess: PlanAccess;
+	profile: TutorProfileView;
+};
+
+export type FeatureAccessDecision =
+	| ({ allowed: true } & AuthorizedFeatureContext)
+	| {
+			allowed: false;
+			status: 403 | 503;
+			code: 'feature_disabled' | 'assistant_disabled' | 'subscription_required' | 'age_required';
+			message: string;
+	  };
+
+/** Request-local billing read shared by every Super product in this request. */
+export function getPlanAccessForRequest(
+	locals: Pick<App.Locals, 'planAccess'>,
+	userId: string
+): Promise<PlanAccess> {
+	return (locals.planAccess ??= import('$lib/billing/subscriptions.server').then(
+		({ getPlanAccess }) => getPlanAccess(userId)
+	));
+}
+
+/** Request-local profile read shared by Super access and product pages. */
+export function getTutorProfileViewForRequest(
+	locals: Pick<App.Locals, 'ageConfirmedAt' | 'tutorProfileView'>,
+	userId: string
+): Promise<TutorProfileView> {
+	if (locals.tutorProfileView) return locals.tutorProfileView;
+	const profilePromise = import('$lib/agent/personalization/profile.server').then(
+		({ getTutorProfileView }) => getTutorProfileView(userId)
+	);
+	locals.tutorProfileView = profilePromise;
+	locals.ageConfirmedAt ??= profilePromise.then((profile) =>
+		profile.ageConfirmedAt ? new Date(profile.ageConfirmedAt) : null
+	);
+	return profilePromise;
+}
+
+/** Request-local age check that avoids loading tutor profile relations. */
+export function getAgeConfirmedAtForRequest(
+	locals: Pick<App.Locals, 'ageConfirmedAt' | 'tutorProfileView'>,
+	userId: string
+): Promise<Date | null> {
+	if (locals.ageConfirmedAt) return locals.ageConfirmedAt;
+	if (locals.tutorProfileView) {
+		return (locals.ageConfirmedAt = locals.tutorProfileView.then((profile) =>
+			profile.ageConfirmedAt ? new Date(profile.ageConfirmedAt) : null
+		));
+	}
+	return (locals.ageConfirmedAt = import('$lib/agent/personalization/profile.server').then(
+		({ getAgeConfirmedAt }) => getAgeConfirmedAt(userId)
+	));
+}
+
+/** Resolve request-path access in flag, plan, and age order. */
+export async function authorizeFeatureRequest(
+	event: Pick<RequestEvent, 'locals'>,
+	userId: string,
+	feature: SuperFeature
+): Promise<FeatureAccessDecision> {
+	const flag = FEATURE_FLAGS[feature];
+	if (flag && !(await flag())) {
+		return {
+			allowed: false,
+			status: 503,
+			code: 'feature_disabled',
+			message: featureUnavailableMessage(feature)
+		};
+	}
+
+	if (
+		feature !== 'memory' &&
+		!(await getAssistantFeaturesEnabledForRequest(event.locals, userId))
+	) {
+		return {
+			allowed: false,
+			status: 403,
+			code: 'assistant_disabled',
+			message: 'Assistant features are disabled for this account.'
+		};
+	}
+
+	const planAccess = await getPlanAccessForRequest(event.locals, userId);
+	// Super stays user-billed in personal/group orgs. School/enterprise orgs
+	// will not inherit that entitlement (and later get isolated data).
+	if (!(await activeOrgUsesUserSuper(event.locals))) {
+		return {
+			allowed: false,
+			status: 403,
+			code: 'subscription_required',
+			message: 'Super is not available in this organization.'
+		};
+	}
+	if (!hasPaidCapability(planAccess, FEATURE_CAPABILITIES[feature])) {
+		return {
+			allowed: false,
+			status: 403,
+			code: 'subscription_required',
+			message: 'Super subscription required'
+		};
+	}
+
+	if (!(await getAgeConfirmedAtForRequest(event.locals, userId))) {
+		return {
+			allowed: false,
+			status: 403,
+			code: 'age_required',
+			message: 'You must be at least 13 to use Super features.'
+		};
+	}
+
+	return {
+		allowed: true,
+		userId,
+		planAccess,
+		profile: await getTutorProfileViewForRequest(event.locals, userId)
+	};
+}
+
+function featureUnavailableMessage(feature: SuperFeature): string {
+	if (feature === 'coach' || feature === 'studyPlans') return 'Pip is temporarily unavailable.';
+	if (feature === 'memory') return 'Tutor memory is temporarily unavailable.';
+	return 'Pip is temporarily unavailable.';
+}

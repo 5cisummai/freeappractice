@@ -17,10 +17,10 @@ vi.mock('$lib/question-bank/gen-stats.server', () => ({
 vi.mock('$lib/question-bank/quality/dashboard.server', () => ({
 	getQualityDashboardSnapshot: mocks.getQualityDashboardSnapshot
 }));
-vi.mock('$lib/super/admin.server', () => ({
+vi.mock('$lib/billing/admin.server', () => ({
 	getSuperAdminOverview: mocks.getSuperAdminOverview
 }));
-vi.mock('$lib/super/billing.server', () => ({
+vi.mock('$lib/billing/subscriptions.server', () => ({
 	getAdminUserSuperAccess: mocks.getAdminUserSuperAccess
 }));
 vi.mock('$lib/feedback/admin.server', () => ({

@@ -4,13 +4,13 @@ import { getOptionalUserId } from '$lib/auth/route-helpers.server';
 import { resolveTutorQuestion } from '$lib/tutor/service.server';
 import { capturePostHogServerEvent } from '$lib/server/posthog';
 import { logger } from '$lib/server/logger';
-import { limitGenericTutor } from '$lib/super/ai-controls.server';
+import { limitGenericTutor } from '$lib/tutor/rate-limit.server';
 import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
 import { createTutorChatStream } from '$lib/tutor/chat-stream.server';
 import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '$lib/tutor/chat-request';
 import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
 import { chat } from '$lib/tutor/service.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
+import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
 
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;

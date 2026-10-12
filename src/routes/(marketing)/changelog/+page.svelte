@@ -706,7 +706,7 @@
 					title: 'Reliability',
 					items: [
 						'Hardened Super lifecycle handling, memory retention cleanup, and personalization controls',
-						'Added stronger rate limiting and per-turn reservation for Super AI requests'
+						'Added stronger rate limiting and per-turn usage for Super AI requests'
 					]
 				}
 			]

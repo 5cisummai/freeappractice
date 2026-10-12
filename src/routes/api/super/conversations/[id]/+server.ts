@@ -4,14 +4,14 @@ import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { readJsonBody } from '$lib/server/request-body.server';
 import { waitUntil } from '@vercel/functions';
-import { cleanupCoachImages } from '$lib/super/coach-images.server';
+import { cleanupCoachImages } from '$lib/agent/attachments/images.server';
 import {
 	ConversationAccessError,
 	deleteOwnedConversation,
 	getConversationMessages,
 	getOwnedConversation,
 	renameOwnedConversation
-} from '$lib/super/conversations.server';
+} from '$lib/agent/conversations/store.server';
 
 const renameConversationSchema = z
 	.object({

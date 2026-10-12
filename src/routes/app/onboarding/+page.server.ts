@@ -11,13 +11,13 @@ import {
 	readOnboardingIntent,
 	serializeCompletedOnboarding
 } from '$lib/onboarding.js';
-import { getCourses } from '$lib/catalog/ap-courses.js';
+import { getCourses } from '$lib/catalog/courses.js';
 import { getUserCourses, updateUserCourses } from '$lib/users/model.server.js';
-import { getSuperBillingView, isSuperStripeConfigured } from '$lib/super/billing.server';
+import { getSuperBillingView, isSuperStripeConfigured } from '$lib/billing/subscriptions.server';
 import {
 	getPlanAccessForRequest,
 	getTutorProfileViewForRequest
-} from '$lib/super/feature-access.server';
+} from '$lib/agent/access.server';
 import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
 
 const validCourses = new Set(getCourses().map((course) => course.name));

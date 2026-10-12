@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { isAdminUser } from '$lib/auth/admin.server';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { grantIndefiniteSuperToClaimedFreeBetaUsers } from '$lib/super/admin.server';
+import { grantIndefiniteSuperToClaimedFreeBetaUsers } from '$lib/billing/admin.server';
 
 export const POST = withAuthedHandler(
 	async (event) => {

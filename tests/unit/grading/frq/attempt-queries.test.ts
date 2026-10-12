@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({ select: vi.fn() }));
 vi.mock('$lib/server/neon/db', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
-vi.mock('$lib/ai/service.server', () => ({ structuredObject: vi.fn() }));
+vi.mock('ai', async (load) => ({ ...(await load<typeof import('ai')>()), generateText: vi.fn() }));
 vi.mock('$lib/question-bank/frq/profiles.server', () => ({ getFrqCourseProfile: vi.fn() }));
 vi.mock('$lib/question-bank/frq/model.server', () => ({ getFrqQuestionById: vi.fn() }));
 vi.mock('$lib/server/logger', () => ({ logger: { error: vi.fn() } }));

@@ -8,18 +8,11 @@ const env = vi.hoisted(() => ({
 
 vi.mock('$env/dynamic/private', () => ({ env }));
 
-import {
-	AI_GATEWAY_BASE_URL,
-	gatewayModel,
-	isGatewayCredentialConfigured,
-	requireGatewayCredential
-} from '$lib/ai/gateway.server';
-import {
-	COACH_MODEL,
-	MCQ_GENERATION_MODEL,
-	MEM0_EMBEDDING_MODEL,
-	SIM_MODEL
-} from '$lib/ai/ai-models-config';
+import { AI_GATEWAY_BASE_URL, isGatewayCredentialConfigured, requireGatewayCredential } from '$lib/server/gateway-credentials.server';
+import { COACH_MODEL } from '$lib/agent/model';
+import { MCQ_GENERATION_MODEL } from '$lib/question-bank/mcq/generation.server';
+import { MEM0_EMBEDDING_MODEL } from '$lib/agent/memory/service.server';
+import { SIM_MODEL } from '$lib/agent/tools/simulation.server';
 
 describe('AI Gateway wiring', () => {
 	beforeEach(() => {
@@ -42,7 +35,7 @@ describe('AI Gateway wiring', () => {
 		env.AI_GATEWAY_API_KEY = 'test-key';
 		expect(isGatewayCredentialConfigured()).toBe(true);
 		expect(requireGatewayCredential()).toBe('test-key');
-		expect(gatewayModel(COACH_MODEL)).toBe('openai/gpt-6-luna');
+		expect(COACH_MODEL).toBe('openai/gpt-6-luna');
 	});
 
 	it('accepts VERCEL_OIDC_TOKEN when no API key is set', () => {

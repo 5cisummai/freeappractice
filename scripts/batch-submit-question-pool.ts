@@ -244,7 +244,7 @@ async function main() {
 	} catch (error) {
 		const refunded = await releaseDailyGenerationBudget(reserved);
 		console.error(
-			`Batch submit failed after budget reservation — refunded ${refunded}/${reserved} slots:`,
+			`Batch submit failed after budget usage — refunded ${refunded}/${reserved} slots:`,
 			error
 		);
 		process.exit(1);

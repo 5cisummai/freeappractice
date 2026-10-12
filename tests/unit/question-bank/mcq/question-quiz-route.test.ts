@@ -18,7 +18,7 @@ const {
 	QuizPoolWarmingError: class extends Error {}
 }));
 
-vi.mock('$lib/catalog/question-request.server', () => ({ validateQuestionRequest }));
+vi.mock('$lib/question-bank/request.server', () => ({ validateQuestionRequest }));
 vi.mock('$lib/server/api-rate-limit.server', () => ({ limitQuestionPoolRequests }));
 vi.mock('$lib/flags', () => ({ isStimulusQuestionsEnabled }));
 vi.mock('$lib/question-bank/mcq/quiz-assembler.server', () => ({
