@@ -27,7 +27,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Terms of Service" meta="Last Updated: September 28, 2026" />
+		<PublicPageHero title="Terms of Service" meta="Last Updated: October 11, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
 			<section>
@@ -56,8 +56,9 @@
 				<h2 class="text-xl font-semibold">3. Use License</h2>
 				<p>
 					We grant you a limited, revocable, non-exclusive license to use the Service for personal,
-					non-commercial study purposes only. This license does not transfer ownership of the
-					Service or its content.
+					non-commercial study and exam preparation only. The Service is a practice aid. It is not
+					authorization to cheat, plagiarize, or otherwise violate academic integrity rules. This
+					license does not transfer ownership of the Service or its content.
 				</p>
 			</section>
 
@@ -139,6 +140,16 @@
 					Service to extract another person’s data, evade rate limits or usage limits, interfere
 					with billing or access controls, or submit content you do not have the right to submit.
 				</p>
+				<p class="mt-2">
+					<strong>Academic integrity.</strong> You may not use the Service for academic dishonesty
+					or any similar misconduct. That includes, without limitation: cheating on homework, quizzes,
+					tests, or exams (including AP exams); submitting AI-generated or Service-generated answers
+					as your own graded work; plagiarizing explanations, essays, or solutions; using the Service
+					to complete assessments you are required to do independently; or helping others do any of
+					the above. Practice questions, grades, explanations, and tutor or Coach output are for
+					learning and self-study only. You remain responsible for following your school’s, teacher’s,
+					and College Board’s academic integrity and exam rules.
+				</p>
 			</section>
 
 			<section>
@@ -146,11 +157,12 @@
 				<p>
 					The Service depends on third-party providers, including OpenAI for AI operations, Google
 					for sign-in and Google One Tap, Neon-hosted PostgreSQL for database storage, Resend for
-					transactional emails, PostHog for optional product analytics, Vercel for hosting and
-					infrastructure, Sentry for error and performance monitoring, Stripe for payments and
-					taxes, Mem0 for optional tutor memory, and Upstash for short-lived service controls. Those
-					providers may process data according to their own terms and privacy policies. We are not
-					responsible for third-party services that we do not control.
+					transactional emails, PostHog for optional product analytics, Vercel for hosting,
+					infrastructure, and private Blob storage, Cloudflare for optional Web Analytics and asset
+					delivery, Sentry for error and performance monitoring, Stripe for payments and taxes, Mem0
+					for optional tutor memory, and Upstash for short-lived service controls and vector memory
+					storage. Those providers may process data according to their own terms and privacy
+					policies. We are not responsible for third-party services that we do not control.
 				</p>
 			</section>
 

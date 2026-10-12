@@ -25,7 +25,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Privacy Policy" meta="Last Updated: September 15, 2026" />
+		<PublicPageHero title="Privacy Policy" meta="Last Updated: October 11, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-8 text-base leading-7">
 			<section>
@@ -46,7 +46,8 @@
 					<li>
 						<strong>Account and sign-in data:</strong> name, email address, password hash, account timestamps,
 						and identifiers supplied through Google sign-in. OAuth tokens are stored by the authentication
-						system in encrypted form when needed for account linking.
+						system in encrypted form when needed for account linking. Session records may include IP
+						address and user agent.
 					</li>
 					<li>
 						<strong>Practice data:</strong> AP class and unit selections, answers, correctness, timing,
@@ -54,17 +55,22 @@
 						grades.
 					</li>
 					<li>
+						<strong>Organizations and shared practice:</strong> personal or free group workspace names,
+						membership and invite details (including invitee email when you invite someone), and shared
+						practice sets you create or join when those features are used.
+					</li>
+					<li>
 						<strong>Personalization data:</strong> selected classes, target dates, study availability,
-						teaching-style preference, age-confirmation timestamp, memory preference, and memory disclosure
-						acknowledgement.
+						teaching-style preference, age-confirmation timestamp (a 13+ self-attestation; we do not store
+						date of birth), memory preference, and memory disclosure acknowledgement.
 					</li>
 					<li>
 						<strong>AI interactions:</strong> prompts, written responses, conversation context, and feedback
 						you send to the standard tutor, Coach, or other AI features. Coach may also process your practice
-						data to generate recommendations and study plans. Images you attach to Coach are stored privately
-						with that chat and sent to the AI provider when needed to answer your questions. They remain
-						until you delete the chat or your account, including if your Super subscription ends. File
-						deletion is queued and retried if storage is temporarily unavailable.
+						data to generate recommendations and study plans. Images you attach to Coach are stored in
+						private Vercel Blob storage tied to that chat and sent to the AI provider when needed to answer
+						your questions. They remain until you delete the chat or your account, including if your Super
+						subscription ends. File deletion is queued and retried if storage is temporarily unavailable.
 					</li>
 					<li>
 						<strong>Super conversations:</strong> Coach conversations, tool activity, and approved actions
@@ -77,6 +83,10 @@
 						may send recent tutor exchanges to Mem0 to extract limited learning preferences, study constraints,
 						recurring misconceptions, and helpful explanation strategies. Memory is associated with a
 						pseudonymous identifier and is not intended to store full transcripts.
+					</li>
+					<li>
+						<strong>Question feedback:</strong> ratings or free-text comments you submit about practice
+						questions for content-quality review.
 					</li>
 					<li>
 						<strong>Bug reports and support requests:</strong> the title, description, reproduction steps,
@@ -111,6 +121,10 @@
 						<strong>When optional analytics are enabled:</strong> product analytics events, feature usage,
 						a pseudonymous account identifier after sign-in, client-side errors, and masked session-replay
 						data collected through PostHog
+					</li>
+					<li>
+						Aggregate page-view and performance signals from Vercel Analytics and Speed Insights, and
+						browser analytics beacons from Cloudflare Web Analytics when that integration is enabled
 					</li>
 				</ul>
 				<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
@@ -213,8 +227,14 @@
 						performance-related signals
 					</li>
 					<li>
+						<strong>Cloudflare Web Analytics:</strong> aggregate browser analytics beacons when that
+						integration is enabled in production
+					</li>
+					<li>
 						<strong>PostHog (opt-in):</strong> product analytics, feature usage, masked session replay,
-						client-side error tracking, and a pseudonymous account identifier after sign-in
+						client-side error tracking, and a pseudonymous account identifier after sign-in. Detailed
+						events are sent through a first-party proxy host; rejected consent still permits limited
+						cookieless page-view measurement
 					</li>
 					<li>
 						<strong>Sentry:</strong> production error and performance monitoring, which may receive error,
@@ -242,16 +262,23 @@
 						and used
 					</li>
 					<li>
-						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, feature
-						data, and private bug reports
+						<strong>Neon-hosted PostgreSQL:</strong> database storage for accounts, practice, organizations,
+						shared practice sets, feature data, email-delivery metadata, and private bug reports
 					</li>
-					<li><strong>Resend:</strong> verification and password-reset email delivery</li>
+					<li>
+						<strong>Resend:</strong> verification, password-reset, account, and organization-invite email
+						delivery; delivery status and webhook events may be mirrored in our database
+					</li>
 					<li>
 						<strong>PostHog:</strong> optional product analytics, error tracking, and session replay
 					</li>
 					<li>
-						<strong>Vercel:</strong> hosting, deployment infrastructure, cookieless analytics, and related
-						infrastructure
+						<strong>Vercel:</strong> hosting, deployment infrastructure, cookieless analytics, private Blob
+						storage for Coach image attachments, and related infrastructure
+					</li>
+					<li>
+						<strong>Cloudflare:</strong> Web Analytics beacons when enabled, and static-asset delivery when
+						a Cloudflare asset host is used
 					</li>
 					<li><strong>Sentry:</strong> production error and performance monitoring</li>
 					<li>
@@ -259,7 +286,8 @@
 					</li>
 					<li><strong>Mem0:</strong> optional pseudonymous tutor-memory storage</li>
 					<li>
-						<strong>Upstash:</strong> short-lived rate-limit, usage, approval, and request-control data
+						<strong>Upstash:</strong> short-lived rate-limit, usage, approval, and request-control data, and
+						vector storage used for optional tutor memory
 					</li>
 				</ul>
 				<p class="mt-2">
@@ -302,10 +330,12 @@
 					progress, bookmarks, and written-response submissions while keeping your account. You can
 					request account deletion in Settings or by contacting us. Account deletion initiates
 					removal of app-owned account, profile, practice, personalization, billing-mirror,
-					study-plan, feedback, and audit records; authentication records are handled by Better
-					Auth, Stripe subscriptions are canceled, and Mem0 cleanup is queued and retried.
-					Information held by third parties, backups, logs, or support records may persist under
-					their own practices or legal obligations.
+					study-plan, feedback, audit, shared-practice, and organization-membership records where
+					they are tied to your account; authentication records are handled by Better Auth, Stripe
+					subscriptions are canceled, and Mem0, PostHog person, and related cleanup jobs are queued
+					and retried when configured. Information held by third parties, backups, logs, email
+					providers, billing systems, or support records may persist under their own practices or
+					legal obligations.
 				</p>
 			</section>
 
