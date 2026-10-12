@@ -5,7 +5,7 @@ vi.mock('ai', async (importOriginal) => ({
 	...(await importOriginal<typeof import('ai')>()),
 	generateText: mocks.generateText
 }));
-vi.mock('$lib/ai/service.server', () => ({ openaiModel: () => 'simulation-model' }));
+vi.mock('$lib/ai/gateway.server', () => ({ gatewayModel: () => 'simulation-model' }));
 
 import { createSuperTools } from '$lib/super/coach-tools.server';
 import type { SuperToolsInput } from '$lib/super/agent-request';
@@ -32,13 +32,14 @@ describe('dedicated simulation generation', () => {
 			const output = await tools[name].execute!(brief, {
 				toolCallId: 'sim',
 				messages: [],
-				abortSignal
+				abortSignal,
+				context: {}
 			});
 			expect(mocks.generateText).toHaveBeenCalledWith(
 				expect.objectContaining({
 					abortSignal,
 					prompt: JSON.stringify(brief),
-					system: expect.stringContaining('Return only one complete HTML document')
+					instructions: expect.stringContaining('Return only one complete HTML document')
 				})
 			);
 			expect(recordGenerationUsage).toHaveBeenCalledWith(usage);
@@ -65,7 +66,7 @@ describe('dedicated simulation generation', () => {
 		});
 		const output = await tools.open_physics_sim.execute!(
 			{ title: 'Motion', description: 'Explore motion.' },
-			{ toolCallId: 'sim', messages: [] }
+			{ toolCallId: 'sim', messages: [], context: {} }
 		);
 		expect(output).toHaveProperty('error');
 		expect(recordGenerationUsage).toHaveBeenCalledOnce();

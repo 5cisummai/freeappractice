@@ -1,6 +1,6 @@
 import { generateText, streamText } from 'ai';
 import { TUTOR_MODEL } from '$lib/ai/ai-models-config';
-import { openaiModel } from '$lib/ai/service.server';
+import { gatewayModel } from '$lib/ai/gateway.server';
 import { logger } from '$lib/server/logger';
 import type { FrqAttemptView, FrqQuestion } from '$lib/question-bank/frq/types';
 import { getQuestionById, type StoredQuestion } from '$lib/question-bank/mcq/repository.server';
@@ -31,8 +31,8 @@ async function* streamTutorResponse(
 	const doneAiCall = logger.aiCall(operation, TUTOR_MODEL, logMeta);
 	try {
 		const result = streamText({
-			model: openaiModel(TUTOR_MODEL),
-			system,
+			model: gatewayModel(TUTOR_MODEL),
+			instructions: system,
 			messages: [...conversationHistory, { role: 'user', content: userMessage }],
 			maxOutputTokens: 500,
 			abortSignal: signal
@@ -57,8 +57,8 @@ export async function getGreeting(question: string): Promise<string> {
 	const doneAiCall = logger.aiCall('getGreeting', TUTOR_MODEL);
 	try {
 		const { text, usage } = await generateText({
-			model: openaiModel(TUTOR_MODEL),
-			system:
+			model: gatewayModel(TUTOR_MODEL),
+			instructions:
 				'You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.',
 			messages: [{ role: 'user', content: `The current question is: ${question}` }],
 			maxOutputTokens: 150

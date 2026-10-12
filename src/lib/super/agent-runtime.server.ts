@@ -429,7 +429,7 @@ export async function createSuperAgentStreamResponse(
 			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal]),
 			consumeSseStream: consumeStream,
 			originalMessages: uiMessages,
-			onStepFinish: (step) => {
+			onStepEnd: (step) => {
 				turnUsage = addLanguageModelUsage(turnUsage, step.usage);
 				logger.info('Super Agent step finish', {
 					surface,
@@ -445,7 +445,7 @@ export async function createSuperAgentStreamResponse(
 					modelId: step.model.modelId
 				});
 			},
-			onFinish: async ({ responseMessage, isAborted }) => {
+			onEnd: async ({ responseMessage, isAborted }) => {
 				try {
 					await markUsageIfNeeded(responseMessage);
 					const assistantResponse = textFromSuperAgentParts(

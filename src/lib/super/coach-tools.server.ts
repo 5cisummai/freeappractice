@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { generateText, tool } from 'ai';
 import type { CanvasHtmlArtifact } from '$lib/canvas/types';
-import { openaiModel } from '$lib/ai/service.server';
+import { gatewayModel } from '$lib/ai/gateway.server';
 import Parallel from 'parallel-web';
 import { env } from '$env/dynamic/private';
 import { z } from 'zod';
@@ -15,6 +15,14 @@ import {
 	getCoachFrqPerformance,
 	getCoachUnitDetail
 } from '$lib/super/coach-reads.server';
+import {
+	coachPracticeQuestionToolInputSchema,
+	coachPracticeQuestionToolOutputSchema
+} from '$lib/super/coach-practice-question';
+import {
+	coachQuestionToolInputSchema,
+	coachQuestionToolOutputSchema
+} from '$lib/super/coach-question';
 import { getCurrentSuperQuestion } from '$lib/super/context.server';
 import { courseSchema, studyPlanToolInputSchema } from '$lib/super/coach-tool-schemas';
 import {
@@ -141,14 +149,14 @@ export function createSuperTools(input: SuperToolsInput) {
 				{ abortSignal }
 			): Promise<CanvasHtmlArtifact | { error: string }> => {
 				const result = await generateText({
-					model: openaiModel(SIM_MODEL),
+					model: gatewayModel(SIM_MODEL),
 					// Explicit mode without breakpoints avoids caching these one-shot briefs.
 					providerOptions: {
 						openai: { reasoningEffort: 'low', promptCacheOptions: { mode: 'explicit' } }
 					},
 					abortSignal,
 					maxOutputTokens: 8_000,
-					system: [
+					instructions: [
 						`Create a scientifically and mathematically correct interactive ${subject} for an AP student.`,
 						'Return only one complete HTML document beginning with <!DOCTYPE html> and ending with </html>. No Markdown fences or explanation.',
 						'Use only inline CSS and vanilla JavaScript. The sandbox permits no network access, external scripts, libraries, fonts, images, or CDNs. Never eval user text.',
@@ -193,22 +201,14 @@ export function createSuperTools(input: SuperToolsInput) {
 		ask_student: tool({
 			description:
 				'Ask the student one concise question when essential information is missing and cannot be inferred from the conversation or their saved context. The student can choose an option or write a response. Do not use for confirmation or when you can answer without asking.',
-			inputSchema: z.object({
-				question: z
-					.string()
-					.trim()
-					.min(1)
-					.max(500)
-					.describe('One concise question for the student.'),
-				options: z
-					.array(z.string().trim().min(1).max(120))
-					.min(2)
-					.max(5)
-					.optional()
-					.describe(
-						'Optional 2 to 5 concise answer choices; the student can still write a response.'
-					)
-			})
+			inputSchema: coachQuestionToolInputSchema,
+			outputSchema: coachQuestionToolOutputSchema
+		}),
+		give_practice_question: tool({
+			description:
+				'Get one bank question and show it inline for the student to answer or skip. The tool pauses until they respond, then returns their result in the output: MCQ selected letter and correctness, or FRQ score and feedback. Use when the student wants a problem to try. Never reveal the correct answer in your reply.',
+			inputSchema: coachPracticeQuestionToolInputSchema,
+			outputSchema: coachPracticeQuestionToolOutputSchema
 		}),
 		...(env.PARALLEL_API_KEY?.trim()
 			? {

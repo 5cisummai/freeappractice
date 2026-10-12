@@ -38,31 +38,31 @@ type EvalState = { createdAt: string; gold: GoldItem[]; runs: EvalRun[]; reports
 
 const candidates: Candidate[] = [
 	{
-		model: 'gpt-5.6-luna',
+		model: 'openai/gpt-5.6-luna',
 		effort: 'medium',
 		inputUsdPerMillion: 0.25,
 		outputUsdPerMillion: 1.5
 	},
 	{
-		model: 'gpt-5.6-terra',
+		model: 'openai/gpt-5.6-terra',
 		effort: 'low',
 		inputUsdPerMillion: 0.625,
 		outputUsdPerMillion: 3.75
 	},
 	{
-		model: 'gpt-5.6-terra',
+		model: 'openai/gpt-5.6-terra',
 		effort: 'medium',
 		inputUsdPerMillion: 0.625,
 		outputUsdPerMillion: 3.75
 	},
 	{
-		model: 'gpt-5.6-sol',
+		model: 'openai/gpt-5.6-sol',
 		effort: 'low',
 		inputUsdPerMillion: 1.25,
 		outputUsdPerMillion: 7.5
 	},
 	{
-		model: 'gpt-5.6-sol',
+		model: 'openai/gpt-5.6-sol',
 		effort: 'medium',
 		inputUsdPerMillion: 1.25,
 		outputUsdPerMillion: 7.5
@@ -70,10 +70,11 @@ const candidates: Candidate[] = [
 ];
 const args = process.argv.slice(2);
 const statePath = valueAfter('--state') || '.question-quality-eval.json';
-const apiKey = process.env.OPEN_AI_KEY?.trim();
+const apiKey =
+	process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim();
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!apiKey || !databaseUrl) {
-	throw new Error('OPEN_AI_KEY and DATABASE_URL are required');
+	throw new Error('AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN) and DATABASE_URL are required');
 }
 
 function valueAfter(flag: string): string | undefined {
@@ -82,12 +83,14 @@ function valueAfter(flag: string): string | undefined {
 }
 
 async function openAi(path: string, init: RequestInit = {}): Promise<Response> {
-	const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
+	const base = (
+		process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1'
+	).replace(/\/$/, '');
 	const response = await fetch(`${base}${path}`, {
 		...init,
 		headers: { Authorization: `Bearer ${apiKey}`, ...init.headers }
 	});
-	if (!response.ok) throw new Error(`OpenAI ${path} failed: ${await response.text()}`);
+	if (!response.ok) throw new Error(`AI Gateway ${path} failed: ${await response.text()}`);
 	return response;
 }
 

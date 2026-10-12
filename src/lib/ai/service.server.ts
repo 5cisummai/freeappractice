@@ -1,34 +1,19 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import {
 	NoObjectGeneratedError,
 	NoOutputGeneratedError,
 	Output,
-	stepCountIs,
-	ToolLoopAgent
+	isStepCount,
+	ToolLoopAgent,
+	type ToolSet
 } from 'ai';
-import type { ToolSet } from 'ai';
 import type { z } from 'zod';
-import { OPEN_AI_KEY } from '$env/static/private';
-import { env } from '$env/dynamic/private';
+import { gatewayModel } from '$lib/ai/gateway.server';
 import { logger } from '$lib/server/logger';
 
-const OPENAI_BASE_URL = env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1';
 const STRUCTURED_OUTPUT_STEP_LIMIT = 10;
 const STRUCTURED_OUTPUT_FINAL_STEP = STRUCTURED_OUTPUT_STEP_LIMIT - 1;
 
-let provider: ReturnType<typeof createOpenAI> | null = null;
-
-/** OpenAI-compatible language model for the AI SDK. */
-export function openaiModel(id: string) {
-	if (!OPEN_AI_KEY) throw new Error('OPEN_AI_KEY is not set');
-	provider ??= createOpenAI({
-		apiKey: OPEN_AI_KEY,
-		baseURL: OPENAI_BASE_URL
-	});
-	return provider(id);
-}
-
-type StructuredObjectParams<T, TOOLS extends ToolSet = ToolSet> = {
+type StructuredObjectParams<T> = {
 	callName: string;
 	model: string;
 	system: string;
@@ -37,12 +22,12 @@ type StructuredObjectParams<T, TOOLS extends ToolSet = ToolSet> = {
 	schemaName: string;
 	reasoningEffort?: 'low' | 'medium' | 'high';
 	logContext?: Record<string, unknown>;
-	tools?: TOOLS;
+	tools?: ToolSet;
 };
 
 /** Structured object generation with shared logging and failure shaping. */
-export async function structuredObject<T, TOOLS extends ToolSet = ToolSet>(
-	opts: StructuredObjectParams<T, TOOLS>
+export async function structuredObject<T>(
+	opts: StructuredObjectParams<T>
 ): Promise<{ parsed: T; model: string }> {
 	const { callName, model, system, user, schema, schemaName, reasoningEffort, logContext, tools } =
 		opts;
@@ -50,13 +35,13 @@ export async function structuredObject<T, TOOLS extends ToolSet = ToolSet>(
 	let stepsCompleted = 0;
 	try {
 		const agent = new ToolLoopAgent({
-			model: openaiModel(model),
+			model: gatewayModel(model),
 			instructions: system,
-			tools,
-			stopWhen: stepCountIs(STRUCTURED_OUTPUT_STEP_LIMIT),
+			...(tools ? { tools } : {}),
+			stopWhen: isStepCount(STRUCTURED_OUTPUT_STEP_LIMIT),
 			prepareStep: ({ stepNumber }) =>
 				stepNumber >= STRUCTURED_OUTPUT_FINAL_STEP
-					? { activeTools: [], toolChoice: 'none' }
+					? { activeTools: [], toolChoice: 'none' as const }
 					: undefined,
 			output: Output.object({ name: schemaName, schema }),
 			providerOptions: {
@@ -65,7 +50,7 @@ export async function structuredObject<T, TOOLS extends ToolSet = ToolSet>(
 					...(reasoningEffort != null && { reasoningEffort })
 				}
 			},
-			onStepFinish: ({ finishReason, rawFinishReason, toolCalls, usage }) => {
+			onStepEnd: ({ finishReason, rawFinishReason, toolCalls, usage }) => {
 				stepsCompleted += 1;
 				logger.info(`[ai] ${callName} step ${stepsCompleted} finished`, {
 					...logContext,

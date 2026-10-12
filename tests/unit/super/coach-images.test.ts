@@ -134,7 +134,7 @@ describe('Coach image history and access', () => {
 		mocks.rows = [{ id, conversationId: 'chat', messageId: 'msg', store: 's3', pathname: 'path' }];
 		mocks.read.mockResolvedValue(Buffer.from('pixels'));
 		const imageTool = inspectCoachImageTool('user', 'chat');
-		const options = { toolCallId: 'fresh', messages: [] };
+		const options = { toolCallId: 'fresh', messages: [], context: {} };
 		const output = (await imageTool.execute!({ imageId: id }, options)) as {
 			imageId: string;
 			available: boolean;
@@ -154,13 +154,13 @@ describe('Coach image history and access', () => {
 	});
 	it('denies inspection when missing or disabled', async () => {
 		const imageTool = inspectCoachImageTool('user', 'chat');
-		expect(await imageTool.execute!({ imageId: id }, { toolCallId: 'call', messages: [] })).toEqual(
-			{ imageId: id, available: false }
-		);
+		expect(
+			await imageTool.execute!({ imageId: id }, { toolCallId: 'call', messages: [], context: {} })
+		).toEqual({ imageId: id, available: false });
 		mocks.enabled = false;
-		expect(await imageTool.execute!({ imageId: id }, { toolCallId: 'call', messages: [] })).toEqual(
-			{ imageId: id, available: false }
-		);
+		expect(
+			await imageTool.execute!({ imageId: id }, { toolCallId: 'call', messages: [], context: {} })
+		).toEqual({ imageId: id, available: false });
 		expect(mocks.read).not.toHaveBeenCalled();
 	});
 	it('retains deletion records on failure and removes them after a successful retry', async () => {

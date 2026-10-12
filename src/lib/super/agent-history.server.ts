@@ -1,7 +1,7 @@
 import { generateText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { CONVERSATION_TITLE_MODEL } from '$lib/ai/ai-models-config';
-import { openaiModel } from '$lib/ai/service.server';
+import { gatewayModel } from '$lib/ai/gateway.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { logger } from '$lib/server/logger';
 import { conversations } from '$lib/server/neon/schema';
@@ -137,8 +137,8 @@ async function rollConversationHistorySummary(input: {
 	const doneAiCall = logger.aiCall('rollConversationHistorySummary', CONVERSATION_TITLE_MODEL);
 	try {
 		const { text, usage } = await generateText({
-			model: openaiModel(CONVERSATION_TITLE_MODEL),
-			system:
+			model: gatewayModel(CONVERSATION_TITLE_MODEL),
+			instructions:
 				'Summarize this AP Coach conversation for continuity. Keep study goals, weak units, plans, practice-question topics, and decisions. Max 500 words. No greeting.',
 			prompt: input.previousSummary
 				? `Previous summary:\n${input.previousSummary}\n\nNew messages to fold in:\n${transcript}`

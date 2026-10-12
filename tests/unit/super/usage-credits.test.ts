@@ -40,7 +40,7 @@ describe('usage credits', () => {
 			totalTokens: 110_000,
 			noCacheTokens: 100_000
 		});
-		const simUsd = usdFromLanguageModelUsage(sim, 'gpt-6.1-sol');
+		const simUsd = usdFromLanguageModelUsage(sim, 'openai/gpt-6.1-sol');
 		expect(simUsd).toBeCloseTo(0.3);
 		const coach = usage({
 			inputTokens: 100_000,
@@ -60,7 +60,9 @@ describe('usage credits', () => {
 			cacheReadTokens: 100_000,
 			cacheWriteTokens: 100_000
 		});
-		expect(usdFromLanguageModelUsage(sample, 'gpt-6.1-sol')).toBeCloseTo(0.4 + 0.02 + 0.5 + 0.15);
+		expect(usdFromLanguageModelUsage(sample, 'openai/gpt-6.1-sol')).toBeCloseTo(
+			0.4 + 0.02 + 0.5 + 0.15
+		);
 	});
 
 	it('prices uncached input and output tokens for gpt-6-luna', () => {

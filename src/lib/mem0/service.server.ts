@@ -2,6 +2,12 @@ import { neon } from '@neondatabase/serverless';
 import { Memory as Mem0Memory } from 'mem0ai/oss';
 import { createHmac } from 'node:crypto';
 import { env } from '$env/dynamic/private';
+import { MEM0_EMBEDDING_MODEL, MEM0_LLM_MODEL } from '$lib/ai/ai-models-config';
+import {
+	AI_GATEWAY_BASE_URL,
+	isGatewayCredentialConfigured,
+	requireGatewayCredential
+} from '$lib/ai/gateway.server';
 import { isSuperMemoryEnabled } from '$lib/flags';
 import { MAX_TUTOR_MEMORY_EXCHANGE_CHARS } from '$lib/super/agent-request';
 import { getMem0UserId, getTutorProfileView } from '$lib/super/profile.server';
@@ -62,45 +68,44 @@ export async function resolveTutorMemoryId(
 
 function getMemoryClient(): Mem0Memory | null {
 	if (memoryClient !== undefined) return memoryClient;
-	const apiKey = env.OPEN_AI_KEY?.trim();
 	const databaseUrl = env.DATABASE_URL?.trim();
-	const baseURL = env.OPENAI_BASE_URL?.trim() || env.OPENAI_URL?.trim();
-	if (apiKey && databaseUrl) installNeonHttpPGVector();
+	const configured = isGatewayCredentialConfigured() && Boolean(databaseUrl);
+	if (configured) installNeonHttpPGVector();
 
-	memoryClient =
-		apiKey && databaseUrl
-			? new Mem0Memory({
-					disableHistory: true,
-					customInstructions: MEMORY_INSTRUCTIONS,
-					embedder: {
-						provider: 'openai',
-						config: {
-							apiKey,
-							model: 'text-embedding-3-small',
-							embeddingDims: TUTOR_MEMORY_DIMENSION,
-							...(baseURL ? { baseURL } : {})
-						}
-					},
-					vectorStore: {
-						provider: 'pgvector',
-						config: {
-							transport: 'neon-http',
-							collectionName: getTutorMemoryTable(),
-							dimension: TUTOR_MEMORY_DIMENSION,
-							embeddingModelDims: TUTOR_MEMORY_DIMENSION,
-							connectionString: databaseUrl
-						}
-					},
-					llm: {
-						provider: 'openai',
-						config: {
-							apiKey,
-							model: 'gpt-5.4-nano',
-							...(baseURL ? { baseURL } : {})
-						}
+	const gatewayBaseUrl = env.AI_GATEWAY_BASE_URL?.trim() || AI_GATEWAY_BASE_URL;
+	memoryClient = configured
+		? new Mem0Memory({
+				disableHistory: true,
+				customInstructions: MEMORY_INSTRUCTIONS,
+				embedder: {
+					provider: 'openai',
+					config: {
+						apiKey: requireGatewayCredential(),
+						model: MEM0_EMBEDDING_MODEL,
+						embeddingDims: TUTOR_MEMORY_DIMENSION,
+						baseURL: gatewayBaseUrl
 					}
-				})
-			: null;
+				},
+				vectorStore: {
+					provider: 'pgvector',
+					config: {
+						transport: 'neon-http',
+						collectionName: getTutorMemoryTable(),
+						dimension: TUTOR_MEMORY_DIMENSION,
+						embeddingModelDims: TUTOR_MEMORY_DIMENSION,
+						connectionString: databaseUrl!
+					}
+				},
+				llm: {
+					provider: 'openai',
+					config: {
+						apiKey: requireGatewayCredential(),
+						model: MEM0_LLM_MODEL,
+						baseURL: gatewayBaseUrl
+					}
+				}
+			})
+		: null;
 	return memoryClient;
 }
 

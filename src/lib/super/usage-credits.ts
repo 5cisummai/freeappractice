@@ -21,13 +21,13 @@ export const WEB_SEARCH_SURCHARGE_MILLI = 250;
 
 /** Standard per-token rates from AI Gateway's model catalog. */
 const MODEL_PRICING = {
-	'gpt-6-luna': {
+	'openai/gpt-6-luna': {
 		input: 0.000_000_1,
 		cacheRead: 0.000_000_01,
 		cacheWrite: 0.000_000_125,
 		output: 0.000_000_5
 	},
-	'gpt-6.1-sol': {
+	'openai/gpt-6.1-sol': {
 		input: 0.000_002,
 		cacheRead: 0.000_000_1,
 		cacheWrite: 0.000_002_5,
@@ -50,17 +50,17 @@ export function formatCreditsFromMilli(millicredits: number): string {
 
 export function usdFromLanguageModelUsage(
 	usage: LanguageModelUsage,
-	model: PricedModel = 'gpt-6-luna'
+	model: PricedModel = 'openai/gpt-6-luna'
 ): number {
 	const inputTokens = usage.inputTokens ?? 0;
 	const outputTokens = usage.outputTokens ?? 0;
 	const details = usage.inputTokenDetails;
-	const cacheRead = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+	const cacheRead = details?.cacheReadTokens ?? 0;
 	const cacheWrite = details?.cacheWriteTokens ?? 0;
 	const noCache = details?.noCacheTokens ?? Math.max(0, inputTokens - cacheRead - cacheWrite);
 
 	const base = MODEL_PRICING[model];
-	const longContext = model === 'gpt-6.1-sol' && inputTokens >= 272_001;
+	const longContext = model === 'openai/gpt-6.1-sol' && inputTokens >= 272_001;
 	const inputMultiplier = longContext ? 2 : 1;
 	const outputMultiplier = longContext ? 1.5 : 1;
 
@@ -101,7 +101,7 @@ function noCacheTokensFromUsage(usage: LanguageModelUsage): number {
 	const details = usage.inputTokenDetails;
 	if (details?.noCacheTokens != null) return details.noCacheTokens;
 	const inputTokens = usage.inputTokens ?? 0;
-	const cacheRead = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+	const cacheRead = details?.cacheReadTokens ?? 0;
 	const cacheWrite = details?.cacheWriteTokens ?? 0;
 	return Math.max(0, inputTokens - cacheRead - cacheWrite);
 }

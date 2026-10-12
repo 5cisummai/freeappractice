@@ -1,14 +1,10 @@
 import { env } from '$env/dynamic/private';
+import { AI_GATEWAY_BASE_URL, requireGatewayCredential } from '$lib/ai/gateway.server';
 import { buildBatchLine as buildBatchLinePure } from './batch-line.js';
 
-function getApiKey(): string {
-	const key = env.OPEN_AI_KEY?.trim();
-	if (!key) throw new Error('OPEN_AI_KEY is required for question quality review');
-	return key;
-}
-
 function apiUrl(path: string): string {
-	return `${(env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '')}${path}`;
+	const base = (env.AI_GATEWAY_BASE_URL || AI_GATEWAY_BASE_URL).replace(/\/$/, '');
+	return `${base}${path}`;
 }
 
 function webSearchContextSize(): 'low' | 'medium' | 'high' {
@@ -18,19 +14,20 @@ function webSearchContextSize(): 'low' | 'medium' | 'high' {
 		: 'high';
 }
 
-async function openAiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+async function gatewayFetch(path: string, init: RequestInit = {}): Promise<Response> {
+	const apiKey = requireGatewayCredential();
 	for (let attempt = 0; attempt < 4; attempt += 1) {
 		const response = await fetch(apiUrl(path), {
 			...init,
 			headers: {
-				Authorization: `Bearer ${getApiKey()}`,
+				Authorization: `Bearer ${apiKey}`,
 				...init.headers
 			}
 		});
 		if (response.ok) return response;
 		const retryable = response.status === 429 || response.status >= 500;
 		if (!retryable || attempt === 3) {
-			throw new Error(`OpenAI ${path} failed (${response.status}): ${await response.text()}`);
+			throw new Error(`AI Gateway ${path} failed (${response.status}): ${await response.text()}`);
 		}
 		const retryAfter = Number(response.headers.get('retry-after'));
 		const delayMs = Number.isFinite(retryAfter)
@@ -38,7 +35,7 @@ async function openAiFetch(path: string, init: RequestInit = {}): Promise<Respon
 			: 500 * 2 ** attempt + Math.floor(Math.random() * 250);
 		await new Promise((resolve) => setTimeout(resolve, delayMs));
 	}
-	throw new Error(`OpenAI ${path} failed after retries`);
+	throw new Error(`AI Gateway ${path} failed after retries`);
 }
 
 export function buildBatchLine(opts: {
@@ -62,7 +59,7 @@ export async function uploadBatchInput(
 	form.set('purpose', 'batch');
 	const parts = typeof contents === 'string' ? [contents] : contents;
 	form.set('file', new Blob(parts, { type: 'application/jsonl' }), filename);
-	const response = await openAiFetch('/files', { method: 'POST', body: form });
+	const response = await gatewayFetch('/files', { method: 'POST', body: form });
 	const payload = (await response.json()) as { id: string };
 	return payload.id;
 }
@@ -73,7 +70,7 @@ export async function createOpenAiBatch(opts: {
 	endpoint?: '/v1/responses' | '/v1/chat/completions';
 	metadata?: Record<string, string>;
 }): Promise<{ id: string; status: string }> {
-	const response = await openAiFetch('/batches', {
+	const response = await gatewayFetch('/batches', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -95,7 +92,7 @@ export async function retrieveOpenAiBatch(batchId: string): Promise<{
 	output_file_id?: string;
 	error_file_id?: string;
 }> {
-	const response = await openAiFetch(`/batches/${encodeURIComponent(batchId)}`);
+	const response = await gatewayFetch(`/batches/${encodeURIComponent(batchId)}`);
 	return response.json() as Promise<{
 		id: string;
 		status: string;
@@ -105,18 +102,18 @@ export async function retrieveOpenAiBatch(batchId: string): Promise<{
 }
 
 export async function downloadOpenAiFile(fileId: string): Promise<string> {
-	const response = await openAiFetch(`/files/${encodeURIComponent(fileId)}/content`);
+	const response = await gatewayFetch(`/files/${encodeURIComponent(fileId)}/content`);
 	return response.text();
 }
 
 export async function downloadOpenAiFileStream(
 	fileId: string
 ): Promise<ReadableStream<Uint8Array>> {
-	const response = await openAiFetch(`/files/${encodeURIComponent(fileId)}/content`);
-	if (!response.body) throw new Error('OpenAI file response did not include a body');
+	const response = await gatewayFetch(`/files/${encodeURIComponent(fileId)}/content`);
+	if (!response.body) throw new Error('AI Gateway file response did not include a body');
 	return response.body;
 }
 
 export async function cancelOpenAiBatch(batchId: string): Promise<void> {
-	await openAiFetch(`/batches/${encodeURIComponent(batchId)}/cancel`, { method: 'POST' });
+	await gatewayFetch(`/batches/${encodeURIComponent(batchId)}/cancel`, { method: 'POST' });
 }

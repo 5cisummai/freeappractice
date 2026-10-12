@@ -72,8 +72,7 @@
 		"vitest": "^4.1.11"
 	},
 	"dependencies": {
-		"@ai-sdk/openai": "^3.0.109",
-		"@ai-sdk/svelte": "4.0.209",
+		"@ai-sdk/svelte": "^5.0.138",
 		"@aws-sdk/client-s3": "^3.1144.0",
 		"@better-auth/drizzle-adapter": "1.6.30",
 		"@better-auth/stripe": "1.6.30",
@@ -95,7 +94,7 @@
 		"@vercel/blob": "^2.8.0",
 		"@vercel/functions": "^3.9.5",
 		"@vercel/speed-insights": "^2.0.0",
-		"ai": "^6.0.277",
+		"ai": "^7.0.138",
 		"bcryptjs": "^3.0.3",
 		"better-auth": "1.6.30",
 		"d3-scale": "^4.0.2",

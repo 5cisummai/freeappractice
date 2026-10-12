@@ -1,7 +1,7 @@
-import { ToolLoopAgent, type InferAgentUIMessage, type LanguageModelUsage, stepCountIs } from 'ai';
+import { ToolLoopAgent, type InferAgentUIMessage, type LanguageModelUsage, isStepCount } from 'ai';
 import { env } from '$env/dynamic/private';
 import { COACH_MODEL } from '$lib/ai/ai-models-config';
-import { openaiModel } from '$lib/ai/service.server';
+import { gatewayModel } from '$lib/ai/gateway.server';
 import { logger } from '$lib/server/logger';
 import { pruneSuperAgentModelMessages } from '$lib/super/agent-messages.server';
 import type { CoachThinkingMode, SuperAgentContext } from '$lib/super/agent-request';
@@ -89,7 +89,7 @@ export function createSuperAgent(input: {
 
 	return new ToolLoopAgent({
 		id: 'super',
-		model: openaiModel(COACH_MODEL),
+		model: gatewayModel(COACH_MODEL),
 		providerOptions: {
 			openai: {
 				forceReasoning: true,
@@ -98,7 +98,7 @@ export function createSuperAgent(input: {
 			}
 		},
 		maxOutputTokens: 8_000,
-		stopWhen: stepCountIs(8),
+		stopWhen: isStepCount(8),
 		instructions: [
 			'You are Super Agent for AP students. Be encouraging, specific, concise, and honest about uncertainty.',
 			surfaceInstructions,

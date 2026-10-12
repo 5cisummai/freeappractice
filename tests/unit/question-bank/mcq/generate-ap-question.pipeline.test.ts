@@ -10,13 +10,9 @@ const { aiCallMock, generateMock, infoMock, ToolLoopAgentMock } = vi.hoisted(() 
 	return { aiCallMock, generateMock, infoMock, ToolLoopAgentMock };
 });
 
-vi.mock('$env/static/private', () => ({
-	OPEN_AI_KEY: 'test-key'
-}));
-
 vi.mock('$env/dynamic/private', () => ({
 	env: {
-		OPENAI_BASE_URL: 'https://api.openai.com/v1'
+		AI_GATEWAY_API_KEY: 'test-key'
 	}
 }));
 
@@ -78,7 +74,7 @@ describe('MCQ live generation pipeline', () => {
 		expect(result.questionId).toEqual(expect.any(String));
 		expect(result.answer.mainTopic).toBe(validGeneratedQuestion.mainTopic);
 		expect(result.provider).toBe('ai');
-		expect(result.model).toBe('gpt-6-luna');
+		expect(result.model).toBe('openai/gpt-6-luna');
 		expect(result.timing?.generationMs).toBeGreaterThanOrEqual(0);
 		expect(result.timing?.persistenceMs).toBeGreaterThanOrEqual(0);
 	});
@@ -139,13 +135,13 @@ describe('MCQ live generation pipeline', () => {
 		});
 
 		const settings = ToolLoopAgentMock.mock.calls[0]?.[0] as
-			{ tools?: unknown; onStepFinish?: (event: unknown) => void } | undefined;
+			{ tools?: unknown; onStepEnd?: (event: unknown) => void } | undefined;
 		expect(settings?.tools).toEqual(
 			expect.objectContaining({ validateExamfigDiagram: expect.anything() })
 		);
 		expect(aiCallMock).toHaveBeenCalledWith(
 			'generateAPStimulusSet',
-			'gpt-6-luna',
+			'openai/gpt-6-luna',
 			expect.objectContaining({ mode: 'diagram' })
 		);
 	});

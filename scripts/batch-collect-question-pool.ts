@@ -51,8 +51,8 @@ async function main() {
 		console.error('DATABASE_URL is not set');
 		process.exit(1);
 	}
-	if (!process.env.OPEN_AI_KEY) {
-		console.error('OPEN_AI_KEY is not set');
+	if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+		console.error('AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN) is not set');
 		process.exit(1);
 	}
 

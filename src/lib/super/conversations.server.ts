@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { generateText } from 'ai';
 import { and, asc, desc, eq, isNull, max } from 'drizzle-orm';
 import { CONVERSATION_TITLE_MODEL } from '$lib/ai/ai-models-config';
-import { openaiModel } from '$lib/ai/service.server';
+import { gatewayModel } from '$lib/ai/gateway.server';
 import { getNeonDatabase } from '$lib/server/neon/db';
 import { logger } from '$lib/server/logger';
 import { conversationMessages, conversations, coachAudits } from '$lib/server/neon/schema';
@@ -75,8 +75,8 @@ export async function generateConversationTitle(
 	const doneAiCall = logger.aiCall('generateConversationTitle', CONVERSATION_TITLE_MODEL);
 	try {
 		const { text, usage } = await generateText({
-			model: openaiModel(CONVERSATION_TITLE_MODEL),
-			system:
+			model: gatewayModel(CONVERSATION_TITLE_MODEL),
+			instructions:
 				'Write a short conversation title for this student message. 3 to 5 words. Return only the title. No quotes.',
 			prompt: prompt.trim().slice(0, 500),
 			maxOutputTokens: 40,

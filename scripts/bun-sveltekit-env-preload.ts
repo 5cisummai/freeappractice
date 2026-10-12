@@ -7,15 +7,15 @@ import { plugin } from 'bun';
 function privateEnvExports(): string {
 	const keys = [
 		'DATABASE_URL',
-		'OPEN_AI_KEY',
+		'AI_GATEWAY_API_KEY',
+		'VERCEL_OIDC_TOKEN',
 		'CRON_SECRET',
 		'RESEND_API_KEY',
 		'GITHUB_BUG_REPORT_TOKEN',
 		'BETTER_AUTH_SECRET',
 		'BETTER_AUTH_URL',
 		'FLAGS_SECRET',
-		'OPENAI_BASE_URL',
-		'OPENAI_URL'
+		'AI_GATEWAY_BASE_URL'
 	] as const;
 
 	const lines = keys.map((key) => {
