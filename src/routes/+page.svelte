@@ -62,7 +62,7 @@
 				id: 'what-does-super-include',
 				question: 'What does Super include?',
 				answer: data.superFreeBetaEnabled
-					? 'During the free beta, you can claim Super for AI Coach, weekly study plans, and 100 Coach credits per month. MCQ and FRQ tutoring stays free for everyone.'
+					? 'During the free beta, you can claim Super for AI Coach, weekly study plans, and 50 Coach credits per month. MCQ and FRQ tutoring stays free for everyone.'
 					: 'Super includes AI Coach, weekly study plans, and 200 Coach credits per month. AP practice and question tutoring remain free without a Super subscription.'
 			}
 		];
@@ -184,9 +184,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.9.5",
+			"softwareVersion": "1.9.6",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-09-28",
+			"dateModified": "2026-10-10",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [

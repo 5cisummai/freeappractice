@@ -554,6 +554,32 @@ export const conversationMessages = appSchema.table(
 	]
 );
 
+// These rows survive chat/account deletion as a durable object-deletion queue.
+// SET NULL happens atomically with deletion, before message metadata disappears.
+export const coachImages = appSchema.table(
+	'coach_images',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id').notNull(),
+		conversationId: text('conversation_id').references(() => conversations.id, {
+			onDelete: 'set null'
+		}),
+		messageId: text('message_id').references(() => conversationMessages.id, {
+			onDelete: 'set null'
+		}),
+		store: text('store').notNull(),
+		pathname: text('pathname').notNull(),
+		createdAt: createdAt(),
+		nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+		attempts: integer('attempts').notNull().default(0)
+	},
+	(table) => [
+		index('coach_images_owner_conversation_idx').on(table.userId, table.conversationId),
+		index('coach_images_cleanup_idx').on(table.nextAttemptAt),
+		check('coach_images_store_check', sql`${table.store} IN ('blob', 's3')`)
+	]
+);
+
 export const seenQuestions = appSchema.table(
 	'seen_questions',
 	{

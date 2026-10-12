@@ -3,6 +3,8 @@ import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '$lib/auth/route-helpers.server';
 import { readJsonBody } from '$lib/server/request-body.server';
+import { waitUntil } from '@vercel/functions';
+import { cleanupCoachImages } from '$lib/super/coach-images.server';
 import {
 	ConversationAccessError,
 	deleteOwnedConversation,
@@ -75,6 +77,7 @@ export const DELETE: RequestHandler = withAuthedHandler(
 
 		try {
 			await deleteOwnedConversation(userId, conversationId);
+			waitUntil(cleanupCoachImages(new Date(), userId));
 			return json({ ok: true });
 		} catch (error) {
 			if (error instanceof ConversationAccessError) {

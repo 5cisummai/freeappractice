@@ -1,3 +1,4 @@
+import type { LanguageModelUsage } from 'ai';
 import { z } from 'zod';
 import { coachComposerActionIds } from '$lib/super/coach-composer-actions';
 
@@ -26,6 +27,7 @@ export type SuperToolsInput = {
 	conversationId?: string;
 	chargeWebSearch: () => Promise<boolean>;
 	recordWebSearch: () => void;
+	recordGenerationUsage?: (usage: LanguageModelUsage) => void;
 };
 
 export const coachThinkingModeSchema = z.enum(['quick', 'thinking', 'deep']);

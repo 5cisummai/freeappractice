@@ -39,6 +39,26 @@ describe('personalized turn lifecycle', () => {
 		mocks.rollupPersonalizedUsage.mockResolvedValue(undefined);
 	});
 
+	it('charges simulation dollars alongside Coach tokens exactly once', async () => {
+		mocks.getPersonalizedUsage.mockResolvedValue({
+			month: '2026-09',
+			used: 0,
+			limit: 200_000,
+			remaining: 200_000
+		});
+		const turn = await startPersonalizedTurn('user-1', 'subscription');
+		if (turn.kind !== 'reserved') throw new Error('expected reservation');
+		await turn.markOutput(usage(1000, 500, 1500), 0.3);
+		await turn.markOutput(usage(1000, 500, 1500), 0.3);
+		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledOnce();
+		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledWith(
+			'user-1',
+			'2026-09',
+			7509,
+			expect.any(Date)
+		);
+	});
+
 	it('rate-limits before reading usage', async () => {
 		mocks.limitSuperAi.mockResolvedValue({ allowed: false, retryAt: 123 });
 

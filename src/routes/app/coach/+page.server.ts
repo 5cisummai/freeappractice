@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { isSuperCoachEnabled } from '$lib/flags';
 import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
 import { hasPaidCapability } from '$lib/super/types';
@@ -7,7 +7,8 @@ import { getTutorProfileViewForRequest } from '$lib/super/feature-access.server'
 import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const userId = locals.userId!;
+	const userId = locals.userId;
+	if (!userId) redirect(302, '/login?redirect=%2Fapp%2Fcoach');
 	if (!(await getAssistantFeaturesEnabledForRequest(locals, userId))) {
 		error(403, 'Assistant features are disabled for this account.');
 	}

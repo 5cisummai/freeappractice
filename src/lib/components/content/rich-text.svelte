@@ -1,22 +1,24 @@
 <script lang="ts">
 	import 'katex/dist/katex.min.css';
 	import 'highlight.js/styles/github.min.css';
-	import { renderRichTextHtml } from '$lib/content/render-rich-text';
+	import { renderRichTextHtml, type RichTextCitation } from '$lib/content/render-rich-text';
 	import { toast } from 'svelte-sonner';
 
 	let {
 		text = '',
 		inline = false,
 		blocks = false,
+		citations = [],
 		class: className = ''
 	}: {
 		text: string;
 		inline?: boolean;
 		blocks?: boolean;
+		citations?: RichTextCitation[];
 		class?: string;
 	} = $props();
 
-	const renderedHtml = $derived(renderRichTextHtml(text, { blocks }));
+	const renderedHtml = $derived(renderRichTextHtml(text, { blocks, citations }));
 
 	const languageExtensions: Record<string, string> = {
 		bash: 'sh',
@@ -159,6 +161,20 @@
 		'[&_a]:underline-offset-2',
 		'[&_a]:transition-opacity',
 		'[&_a:hover]:opacity-70',
+		'[&_a.rich-citation]:inline-flex',
+		'[&_a.rich-citation]:items-center',
+		'[&_a.rich-citation]:gap-1',
+		'[&_a.rich-citation_img]:size-3.5',
+		'[&_a.rich-citation_img]:rounded-sm',
+		'[&_a.rich-citation]:align-middle',
+		'[&_a.rich-citation]:rounded-full',
+		'[&_a.rich-citation]:bg-muted',
+		'[&_a.rich-citation]:px-2',
+		'[&_a.rich-citation]:py-0.5',
+		'[&_a.rich-citation]:text-xs',
+		'[&_a.rich-citation]:font-medium',
+		'[&_a.rich-citation]:text-muted-foreground',
+		'[&_a.rich-citation]:no-underline',
 		'[&_blockquote]:my-2',
 		'[&_blockquote]:border-l-4',
 		'[&_blockquote]:border-border',

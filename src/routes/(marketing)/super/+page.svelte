@@ -110,7 +110,7 @@
 			</h2>
 			<p class="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
 				{#if data.superFreeBetaEnabled}
-					Get Coach and weekly study plans with 100 Coach credits per month, free during the Super
+					Get Coach and weekly study plans with 50 Coach credits per month, free during the Super
 					beta. Question tutoring stays free for everyone.
 				{:else}
 					Add Coach and weekly study plans on top of unlimited free practice and question tutoring.

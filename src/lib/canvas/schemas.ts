@@ -7,15 +7,12 @@ export const generativeCanvasToolInputSchema = z.object({
 		.min(1)
 		.max(200)
 		.describe('Short visible title for the interactive canvas.'),
-	accessibleDescription: z
+	description: z
 		.string()
 		.trim()
 		.min(1)
-		.max(2_000)
-		.describe('Screen-reader summary of what the canvas shows and how to use it.'),
-	html: z
-		.string()
-		.min(1)
-		.max(300_000)
-		.describe('Complete self-contained HTML document with inline CSS and JavaScript only.')
+		.max(8_000)
+		.describe(
+			'Detailed simulation brief: learning objective, AP course/topic, physical or mathematical model, initial values, units, controls and their ranges, visual behavior, and student instructions. Include all relevant conversation context; the generator only sees this brief and the title.'
+		)
 });

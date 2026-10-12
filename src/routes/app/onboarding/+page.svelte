@@ -467,7 +467,7 @@
 											{#each filteredCourses as course (course.name)}
 												{@const CourseIcon = course.icon}
 												<label
-													class="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-transparent bg-muted/50 px-4 py-3 text-sm transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {course.checkedClass}"
+													class="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-transparent bg-muted/50 px-4 py-3 text-sm transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring {course.checkedClass}"
 												>
 													<input
 														type="checkbox"
@@ -485,10 +485,6 @@
 														><CourseIcon class="size-4" /></span
 													>
 													<span class="min-w-0 flex-1 font-medium">{course.name}</span>
-													<span
-														class="selection-check flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
-														aria-hidden="true"><CheckIcon class="size-3" /></span
-													>
 												</label>
 											{/each}
 										</div>
@@ -504,7 +500,7 @@
 										{#each studyGoalOptions as option (option.value)}
 											{@const GoalIcon = option.icon}
 											<label
-												class="flex min-h-28 cursor-pointer flex-col justify-between rounded-2xl border border-transparent bg-muted/50 p-4 text-left transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:checked]:[&_.selection-check]:opacity-100 {option.checkedClass}"
+												class="flex min-h-28 cursor-pointer flex-col justify-between rounded-2xl border border-transparent bg-muted/50 p-4 text-left transition-colors duration-200 hover:bg-muted/80 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring {option.checkedClass}"
 											>
 												<input
 													type="checkbox"
@@ -522,12 +518,6 @@
 														class="goal-icon flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors {option.iconClass}"
 													>
 														<GoalIcon class="size-4" />
-													</span>
-													<span
-														class="selection-check flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
-														aria-hidden="true"
-													>
-														<CheckIcon class="size-3" />
 													</span>
 												</span>
 												<span class="mt-4">

@@ -76,7 +76,7 @@
 				{#if data.superFreeBetaEnabled}
 					<p>
 						During the Super free beta, authenticated students aged 13 or older can claim free
-						access to Coach, weekly study plans, and up to 100 Coach credits per month.
+						access to Coach, weekly study plans, and up to 50 Coach credits per month.
 					</p>
 				{:else}
 					<p>

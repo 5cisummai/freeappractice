@@ -167,6 +167,16 @@ Upstash-compatible Serverless Redis HTTP proxy in front of a local Redis server 
 
 Pool fill targets, leases, and daily LLM budget are coded in `src/lib/question-bank/pool-constants.ts` (not env). See `docs/question-pool-runbook.md`.
 
+Coach images use a connected **private Vercel Blob** store in deployments. Locally, run
+`bun run storage:local` to start RustFS and create its private S3 bucket, then add the
+`COACH_IMAGE_S3_*` values from `.env.example` to `.env.local`. The console is at
+`http://127.0.0.1:9001`. Enable the `coach-images` Vercel flag for Development to use
+the composer. Uploads accept one PNG, JPEG, or WebP up to 2 MB, with limits of 8192
+pixels per side and 16 megapixels. Images are normalized to WebP without metadata.
+Each chat permits 50 images and each account 500; deleting chats frees storage.
+Chat/account deletion preserves attachment paths for retryable cleanup in the Super
+maintenance job. Failed, unattached uploads are eligible for cleanup after one hour.
+
 ### Local AI with LM Studio
 
 To run question generation and tutoring against a local model instead of OpenAI:

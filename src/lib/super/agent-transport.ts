@@ -16,6 +16,7 @@ export type SuperAgentTransportOptions = {
 	getContext: () => SuperAgentContext;
 	onUsageWarning?: (response: Response) => void;
 	onConversationIdChange?: () => void;
+	onImageUploaded?: (id: string) => void;
 	getThinkingMode?: () => CoachThinkingMode;
 	getCoachActions?: () => CoachComposerActionId[];
 };
@@ -34,6 +35,8 @@ export function createSuperAgentTransport(
 				options.onConversationIdChange?.();
 			}
 			options.onUsageWarning?.(response);
+			const imageId = response.headers.get('X-Coach-Image-Id');
+			if (imageId) options.onImageUploaded?.(imageId);
 			return response;
 		},
 		prepareSendMessagesRequest: ({ messages }) => {

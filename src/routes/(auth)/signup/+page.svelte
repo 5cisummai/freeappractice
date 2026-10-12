@@ -6,11 +6,13 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
 	import { captureSignupStarted } from '$lib/client/activation-analytics';
+	import Atom2FilledIcon from '@tabler/icons-svelte/icons/atom-2-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import UsersRoundIcon from '@tabler/icons-svelte/icons/users';
 
 	const superSignup = $derived(page.url.searchParams.get('super') === '1');
 	const groupSignup = $derived(page.url.searchParams.get('group') === '1');
+	const simsSignup = $derived(page.url.searchParams.get('sims') === '1');
 
 	onMount(() => {
 		captureSignupStarted('page');
@@ -31,6 +33,13 @@
 			<SparklesIcon class="size-3.5 text-violet-500" aria-hidden="true" />
 			Sign up to access Super
 		</span>
+	</div>
+{:else if simsSignup}
+	<div class="flex justify-center">
+		<Badge variant="outline" class={HERO_BADGE_CLASS}>
+			<Atom2FilledIcon class="size-3.5 text-primary" aria-hidden="true" />
+			Sign up to use Sims
+		</Badge>
 	</div>
 {:else if groupSignup}
 	<div class="flex justify-center">

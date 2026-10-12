@@ -13,6 +13,34 @@ const packageJson = JSON.parse(
 ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
 
 describe('renderRichTextHtml', () => {
+	it('renders explicit citations separately from ordinary links', () => {
+		const html = renderRichTextHtml(
+			'A claim [cite:search-1]. [Open guide](https://example.com/guide)',
+			{
+				blocks: true,
+				citations: [{ id: 'search-1', url: 'https://example.org/paper', title: 'Research paper' }]
+			}
+		);
+		expect(html).toContain('class="rich-citation"');
+		expect(html).toContain('title="Research paper"');
+		expect(html).toContain('>example.org</a>');
+		expect(html).toContain('>Open guide</a>');
+		expect(html.match(/class="rich-citation"/g)).toHaveLength(1);
+	});
+
+	it('does not resolve unknown or unsafe citations or citations inside code', () => {
+		const html = renderRichTextHtml('[cite:unknown] [cite:unsafe] `[cite:valid]`', {
+			citations: [
+				{ id: 'unsafe', url: 'javascript:alert(1)', title: 'Unsafe' },
+				{ id: 'valid', url: 'https://example.org', title: 'Valid' }
+			]
+		});
+		expect(html).not.toContain('rich-citation');
+		expect(html).toContain('[cite:unknown]');
+		expect(html).toContain('[cite:unsafe]');
+		expect(html).toContain('<code>[cite:valid]</code>');
+	});
+
 	it('does not depend on isomorphic-dompurify (jsdom breaks Vercel Lambda require(ESM))', () => {
 		expect(packageJson.dependencies?.['isomorphic-dompurify']).toBeUndefined();
 		expect(packageJson.devDependencies?.['isomorphic-dompurify']).toBeUndefined();
