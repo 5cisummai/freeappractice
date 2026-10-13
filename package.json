@@ -37,8 +37,8 @@
 		"@eslint/js": "latest",
 		"@internationalized/date": "^3.12.4",
 		"@lucide/svelte": "^1.38.0",
-		"@sveltejs/adapter-vercel": "^6.3.4",
-		"@sveltejs/kit": "^2.70.3",
+		"@sveltejs/adapter-vercel": "^7.0.0",
+		"@sveltejs/kit": "^3.0.1",
 		"@sveltejs/mcp": "0.1.26",
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/vite": "^4.3.3",
@@ -59,7 +59,7 @@
 		"prettier-plugin-svelte": "^3.5.2",
 		"prettier-plugin-tailwindcss": "^0.7.4",
 		"shadcn-svelte": "^1.5.1",
-		"svelte": "^5.57.0",
+		"svelte": "^5.57.2",
 		"svelte-check": "^4.7.6",
 		"svelte-sonner": "^1.2.1",
 		"tailwind-merge": "^3.6.0",
@@ -85,15 +85,15 @@
 		"@fontsource/noto-serif": "^5.3.0",
 		"@fontsource/open-runde": "^5.3.0",
 		"@neondatabase/serverless": "^1.1.0",
-		"@sentry/sveltekit": "^10.73.0",
+		"@sentry/sveltekit": "^11.7.0",
 		"@tabler/icons-svelte": "^3.46.0",
 		"@tanstack/table-core": "^8.21.3",
 		"@upstash/ratelimit": "^2.0.8",
 		"@upstash/redis": "^1.38.4",
-		"@vercel/analytics": "2.0.1",
+		"@vercel/analytics": "2.3.0-canary",
 		"@vercel/blob": "^2.8.0",
 		"@vercel/functions": "^3.9.5",
-		"@vercel/speed-insights": "^2.0.0",
+		"@vercel/speed-insights": "2.1.0-canary",
 		"ai": "^7.0.138",
 		"bcryptjs": "^3.0.3",
 		"better-auth": "1.6.30",
@@ -121,8 +121,5 @@
 	},
 	"overrides": {
 		"motion-dom": "12.40.0"
-	},
-	"patchedDependencies": {
-		"@sveltejs/kit@2.70.3": "patches/@sveltejs%2Fkit@2.70.3.patch"
 	}
 }
