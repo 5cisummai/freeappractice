@@ -132,6 +132,19 @@ export const POST: RequestHandler = async (event) => {
 					logger.warn('Quiz pool refill request failed', { course, unit, refillError });
 				}
 			}
+			// Some questions exist but not enough for the requested count → client error.
+			// Empty pool stays 503 POOL_WARMING so clients can retry while refill runs.
+			if (error.availableCount > 0) {
+				return Response.json(
+					{
+						code: 'INSUFFICIENT_QUESTIONS',
+						error: error.message,
+						refillRequested,
+						availableCount: error.availableCount
+					},
+					{ status: 400 }
+				);
+			}
 			return Response.json(
 				{
 					code: 'POOL_WARMING',
