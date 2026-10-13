@@ -1,10 +1,17 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { coachAudits } from '$lib/server/neon/schema';
-import { getTutorProfileView, updateTutorProfile } from '$lib/agent/personalization/profile.server';
-import { deleteStudyPlan, getCurrentStudyPlan, saveStudyPlan } from '$lib/agent/plans/store.server';
-import type { StudyPlanView } from '$lib/agent/plans/types';
-import type { TutorProfileView } from '$lib/agent/personalization/types';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { coachAudits } from '#lib/server/neon/schema.js';
+import {
+	getTutorProfileView,
+	updateTutorProfile
+} from '#lib/agent/personalization/profile.server.js';
+import {
+	deleteStudyPlan,
+	getCurrentStudyPlan,
+	saveStudyPlan
+} from '#lib/agent/plans/store.server.js';
+import type { StudyPlanView } from '#lib/agent/plans/types.js';
+import type { TutorProfileView } from '#lib/agent/personalization/types.js';
 
 function goalSnapshot(
 	profile: TutorProfileView

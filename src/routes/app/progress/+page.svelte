@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ProgressDashboard from '$lib/components/progress/progress-dashboard.svelte';
+	import ProgressDashboard from '#lib/components/progress/progress-dashboard.svelte';
 
 	let { data } = $props();
 </script>

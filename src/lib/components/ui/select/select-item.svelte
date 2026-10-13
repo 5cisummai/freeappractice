@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Select as SelectPrimitive } from 'bits-ui';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
-	import { cn, type WithoutChild } from '$lib/utils.js';
+	import { cn, type WithoutChild } from '#lib/utils.js';
 
 	let {
 		ref = $bindable(null),

@@ -1,12 +1,11 @@
-import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { isAdminUser } from '$lib/auth/admin.server';
-import { auth } from '$lib/auth/server';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { isAdminUser } from '#lib/auth/admin.server.js';
+import { auth } from '#lib/auth/server.js';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import {
 	grantIndefiniteSuperToUser,
 	revokeActiveSuperGrantsForUser
-} from '$lib/billing/admin.server';
+} from '#lib/billing/admin.server.js';
 
 const schema = z
 	.object({
@@ -18,20 +17,23 @@ const schema = z
 export const POST = withAuthedHandler(
 	async (event) => {
 		if (!isAdminUser(event.locals.user!)) {
-			return json({ error: 'Admin access required' }, { status: 403 });
+			return Response.json({ error: 'Admin access required' }, { status: 403 });
 		}
 		const parsed = schema.safeParse(await event.request.json().catch(() => null));
-		if (!parsed.success) return json({ error: 'Invalid user action' }, { status: 400 });
+		if (!parsed.success) return Response.json({ error: 'Invalid user action' }, { status: 400 });
 
 		const { userId, action } = parsed.data;
 		if (userId === event.locals.user!.id && (action === 'ban' || action === 'revoke_super')) {
-			return json({ error: 'You cannot perform that action on your own account' }, { status: 400 });
+			return Response.json(
+				{ error: 'You cannot perform that action on your own account' },
+				{ status: 400 }
+			);
 		}
 
 		switch (action) {
 			case 'grant_super': {
 				const result = await grantIndefiniteSuperToUser(userId, event.locals.user!.id);
-				return json(
+				return Response.json(
 					result.granted
 						? { granted: true }
 						: { granted: false, message: 'User already has an indefinite Super grant' }
@@ -40,24 +42,24 @@ export const POST = withAuthedHandler(
 			case 'revoke_super': {
 				const revoked = await revokeActiveSuperGrantsForUser(userId);
 				return revoked > 0
-					? json({ revoked })
-					: json({ error: 'No active Super grant found' }, { status: 404 });
+					? Response.json({ revoked })
+					: Response.json({ error: 'No active Super grant found' }, { status: 404 });
 			}
 			case 'ban':
 				await auth.api.banUser({
 					headers: event.request.headers,
 					body: { userId, banReason: 'Banned by admin' }
 				});
-				return json({ banned: true });
+				return Response.json({ banned: true });
 			case 'unban':
 				await auth.api.unbanUser({
 					headers: event.request.headers,
 					body: { userId }
 				});
-				return json({ banned: false });
+				return Response.json({ banned: false });
 			default: {
 				const _exhaustive: never = action;
-				return json({ error: `Unhandled action: ${_exhaustive}` }, { status: 400 });
+				return Response.json({ error: `Unhandled action: ${_exhaustive}` }, { status: 400 });
 			}
 		}
 	},

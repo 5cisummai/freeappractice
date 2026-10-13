@@ -1,8 +1,8 @@
 import type { Cookies } from '@sveltejs/kit';
-import { isFrqPracticeEnabled } from '$lib/flags';
-import { getUserDashboardProfileOrFail } from '$lib/users/profile.server';
-import { getDashboardProgress, getDashboardStats } from '$lib/users/dashboard-queries.server';
-import { timezoneFromCookies } from '$lib/users/timezone';
+import { isFrqPracticeEnabled } from '#lib/flags.js';
+import { getUserDashboardProfileOrFail } from '#lib/users/profile.server.js';
+import { getDashboardProgress, getDashboardStats } from '#lib/users/dashboard-queries.server.js';
+import { timezoneFromCookies } from '#lib/users/timezone.js';
 
 export async function loadUserDashboardData(userId: string, cookies: Cookies) {
 	const [frqEnabled, user] = await Promise.all([

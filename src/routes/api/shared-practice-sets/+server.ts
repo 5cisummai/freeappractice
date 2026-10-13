@@ -1,29 +1,29 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
-import { assertCanAttachSharedSetToOrganization } from '$lib/auth/organization-queries.server';
-import { OrganizationPermissionError } from '$lib/auth/organization-types';
+import { type RequestHandler } from '@sveltejs/kit';
+import { assertCanAttachSharedSetToOrganization } from '#lib/auth/organization-queries.server.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 import {
 	createSharedQuiz,
 	SharedQuizValidationError
-} from '$lib/shared-practice/shared-sets.server';
-import { limitSharedPracticeSetCreation } from '$lib/shared-practice/rate-limit.server';
-import { getSiteUrl } from '$lib/site-url';
-import { logger } from '$lib/server/logger';
+} from '#lib/shared-practice/shared-sets.server.js';
+import { limitSharedPracticeSetCreation } from '#lib/shared-practice/rate-limit.server.js';
+import { getSiteUrl } from '#lib/site-url.js';
+import { logger } from '#lib/server/logger.js';
 
 export const POST: RequestHandler = async ({ request, locals, url }) => {
 	const body = await request.json().catch(() => null);
 	if (!body || typeof body !== 'object' || Array.isArray(body)) {
-		return json({ error: 'A valid quiz payload is required.' }, { status: 400 });
+		return Response.json({ error: 'A valid quiz payload is required.' }, { status: 400 });
 	}
 
 	const raw = body as Record<string, unknown>;
 	if (!Array.isArray(raw.questionIds) || raw.questionIds.some((id) => typeof id !== 'string')) {
-		return json({ error: 'questionIds must be an array of strings.' }, { status: 400 });
+		return Response.json({ error: 'questionIds must be an array of strings.' }, { status: 400 });
 	}
 	const rateLimit = await limitSharedPracticeSetCreation(request, locals.userId);
 	if (!rateLimit.allowed) {
 		const now = Date.now();
 		const retryAfterSeconds = Math.ceil(Math.max(0, (rateLimit.retryAt ?? now) - now) / 1000);
-		return json(
+		return Response.json(
 			{ error: 'Too many share links. Please try again shortly.', retryAfterSeconds },
 			{
 				status: 429,
@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 		const organizationId =
 			typeof raw.organizationId === 'string' ? raw.organizationId.trim() : undefined;
 		if (organizationId && !locals.userId) {
-			return json({ error: 'Sign in to share with an organization.' }, { status: 401 });
+			return Response.json({ error: 'Sign in to share with an organization.' }, { status: 401 });
 		}
 		if (organizationId && locals.userId) {
 			await assertCanAttachSharedSetToOrganization(locals.userId, organizationId);
@@ -53,7 +53,7 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 			creatorUserId: locals.userId,
 			organizationId: organizationId || undefined
 		});
-		return json({
+		return Response.json({
 			sharedQuiz: {
 				...sharedQuiz,
 				url: `${getSiteUrl(url.origin)}/q/${sharedQuiz.slug}`
@@ -61,12 +61,12 @@ export const POST: RequestHandler = async ({ request, locals, url }) => {
 		});
 	} catch (error) {
 		if (error instanceof SharedQuizValidationError) {
-			return json({ error: error.message }, { status: 400 });
+			return Response.json({ error: error.message }, { status: 400 });
 		}
 		if (error instanceof OrganizationPermissionError) {
-			return json({ error: error.message }, { status: 403 });
+			return Response.json({ error: error.message }, { status: 403 });
 		}
 		logger.error('Shared practice set creation failed', { error });
-		return json({ error: 'Could not create a share link.' }, { status: 500 });
+		return Response.json({ error: 'Could not create a share link.' }, { status: 500 });
 	}
 };

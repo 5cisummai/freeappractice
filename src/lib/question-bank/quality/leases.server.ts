@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, lt, or } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { qualityReviewJobs } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { qualityReviewJobs } from '#lib/server/neon/schema.js';
 
 const PROCESSING_LEASE_MS = 55_000;
 const SUBMISSION_LEASE_MS = 5 * 60_000;

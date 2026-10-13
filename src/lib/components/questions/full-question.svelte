@@ -4,20 +4,20 @@
 		AddTextAnnotationInput,
 		ExamNavItem,
 		TextAnnotation
-	} from '$lib/question-bank/mcq/types';
-	import type { PresentedStem } from '$lib/components/questions/presented-question.js';
-	import { IsMobile } from '$lib/hooks/is-mobile.svelte.js';
-	import AnnotatableRichText from '$lib/components/questions/annotatable-rich-text.svelte';
-	import McqAnswerChoices from '$lib/components/questions/mcq-answer-choices.svelte';
-	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import { portalToBody } from '$lib/components/questions/portal-to-body.svelte.js';
-	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import { cn } from '$lib/utils.js';
+	} from '#lib/question-bank/mcq/types.js';
+	import type { PresentedStem } from '#lib/components/questions/presented-question.js';
+	import { IsMobile } from '#lib/hooks/is-mobile.svelte.js';
+	import AnnotatableRichText from '#lib/components/questions/annotatable-rich-text.svelte';
+	import McqAnswerChoices from '#lib/components/questions/mcq-answer-choices.svelte';
+	import ExamfigDiagram from '#lib/components/questions/examfig-diagram.svelte';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import { portalToBody } from '#lib/components/questions/portal-to-body.svelte.js';
+	import ThemeToggle from '#lib/components/layout/theme-toggle.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import * as Resizable from '#lib/components/ui/resizable/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
+	import { cn } from '#lib/utils.js';
 	import BookmarkIcon from '@tabler/icons-svelte/icons/bookmark';
 	import BookmarkFilledIcon from '@tabler/icons-svelte/icons/bookmark-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check';

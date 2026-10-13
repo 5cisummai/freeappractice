@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { questionQuality, questionRegistry } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { questionQuality, questionRegistry } from '#lib/server/neon/schema.js';
 
 const WRITE_CHUNK_SIZE = 1_000;
 

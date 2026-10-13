@@ -6,16 +6,16 @@ const { getMany, capturePathQuestionRequestMetric, limitQuestionPoolRequests } =
 	limitQuestionPoolRequests: vi.fn()
 }));
 
-vi.mock('$lib/question-bank/mcq/bank.server', () => ({ mcqBank: { getMany } }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/question-bank/mcq/bank.server.js', () => ({ mcqBank: { getMany } }));
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
-vi.mock('$app/environment', () => ({ dev: true }));
-vi.mock('$lib/server/question-request-metrics', () => ({
+vi.mock('$app/env', () => ({ dev: true }));
+vi.mock('#lib/server/question-request-metrics.js', () => ({
 	createQuestionPathMetrics: () => ({ questionType: 'mcq', dbConnectMs: 0, poolQueryMs: 0 }),
 	capturePathQuestionRequestMetric
 }));
-vi.mock('$lib/server/api-rate-limit.server', () => ({ limitQuestionPoolRequests }));
+vi.mock('#lib/server/api-rate-limit.server.js', () => ({ limitQuestionPoolRequests }));
 
 import { POST } from '../../../../src/routes/api/questions/batch/+server';
 

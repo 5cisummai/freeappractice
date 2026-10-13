@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
+	import { invalidateAppRoute } from '#lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth/client.js';
+	import { authClient } from '#lib/auth/client.js';
 	import {
 		orgAvatarClass,
 		orgAvatarLetter,
 		type OrganizationRole
-	} from '$lib/auth/organization-types';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	} from '#lib/auth/organization-types.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Field, FieldGroup, FieldLabel } from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';
 	import { toast } from 'svelte-sonner';
 
@@ -135,9 +135,9 @@
 		<p class="mt-1 text-sm text-muted-foreground">
 			Shared quizzes live on the Materials page for everyone in the group.
 		</p>
-		<Button href={resolve('/app/materials')} variant="outline" class="mt-4 w-fit">
-			View materials
-		</Button>
+		<Button href={resolve('app/materials')} variant="outline" class="mt-4 w-fit"
+			>View materials</Button
+		>
 	</section>
 
 	<ul class="flex flex-col gap-2">

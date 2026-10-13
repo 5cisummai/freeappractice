@@ -1,19 +1,18 @@
 import { Resend } from 'resend';
-import { RESEND_API_KEY } from '$env/static/private';
-import { env } from '$env/dynamic/private';
-import { getSiteUrl } from '$lib/site-url';
-import { assertResendSent } from '$lib/auth/resend-result';
-import { escapeHtml } from '$lib/escape-html';
-import { EMAIL_DELIVERY_TAG } from '$lib/auth/email-delivery';
+import { RESEND_API_KEY, RESEND_FROM } from '$app/env/private';
+import { getSiteUrl } from '#lib/site-url.js';
+import { assertResendSent } from '#lib/auth/resend-result.js';
+import { escapeHtml } from '#lib/escape-html.js';
+import { EMAIL_DELIVERY_TAG } from '#lib/auth/email-delivery.js';
 import {
 	createPendingEmailDelivery,
 	markEmailDeliveryAccepted,
 	recordEmailDeliveryFailure,
 	type EmailDeliveryContext
-} from '$lib/server/email-delivery.server';
-import { logger } from '$lib/server/logger';
+} from '#lib/server/email-delivery.server.js';
+import { logger } from '#lib/server/logger.js';
 
-const FROM = env.RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
+const FROM = RESEND_FROM ?? 'Free AP Practice <auth@freeappractice.org>';
 
 let resend: Resend | undefined;
 

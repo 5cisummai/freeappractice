@@ -4,8 +4,8 @@ import {
 	latencyBucket,
 	localCalendarDay,
 	questionSourceFromCachedFlag
-} from '$lib/client/activation-analytics';
-import { classifyQuestionFailureFromStatus } from '$lib/question-failure';
+} from '#lib/client/activation-analytics.js';
+import { classifyQuestionFailureFromStatus } from '#lib/question-failure.js';
 
 describe('latencyBucket', () => {
 	it('maps durations to coarse buckets', () => {

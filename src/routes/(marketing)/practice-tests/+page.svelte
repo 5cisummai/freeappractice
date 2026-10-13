@@ -3,9 +3,9 @@
 	import BookOpenCheckIcon from '@tabler/icons-svelte/icons/book-filled';
 	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import { resolve } from '$app/paths';
-	import { getCoursePracticePages } from '$lib/catalog/practice-pages.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
+	import { getCoursePracticePages } from '#lib/catalog/practice-pages.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '#lib/components/marketing/hero-badge.js';
 
 	const subjects = getCoursePracticePages();
 
@@ -53,7 +53,7 @@
 </script>
 
 <svelte:head>
-	<title>Free AP Practice Tests &amp; Questions</title>
+	<title>Free AP Practice Tests & Questions</title>
 	<meta
 		name="description"
 		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
@@ -61,8 +61,11 @@
 	<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 	<link rel="canonical" href="https://freeappractice.org/practice-tests" />
 	<meta property="og:type" content="website" />
+
 	<meta property="og:url" content="https://freeappractice.org/practice-tests" />
-	<meta property="og:title" content="Free AP Practice Tests &amp; Questions" />
+
+	<meta property="og:title" content="Free AP Practice Tests & Questions" />
+
 	<meta
 		property="og:description"
 		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
@@ -70,7 +73,9 @@
 	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="Free AP Practice Tests &amp; Questions" />
+
+	<meta name="twitter:title" content="Free AP Practice Tests & Questions" />
+
 	<meta
 		name="twitter:description"
 		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
@@ -87,15 +92,16 @@
 			<h1
 				class="font-display text-4xl leading-[1.1] font-medium tracking-tight text-balance sm:text-5xl lg:text-6xl"
 			>
-				Free AP Practice Tests &amp; Questions
+				Free AP Practice Tests & Questions
 			</h1>
+
 			<p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
 				Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no
 				signup required.
 			</p>
 			<div class="mt-8 flex flex-wrap justify-center gap-3">
 				<a
-					href={resolve('/subjects')}
+					href={resolve('subjects')}
 					class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
 				>
 					Browse all AP subjects
@@ -128,7 +134,7 @@
 						class="group flex flex-col rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-muted/20"
 					>
 						<a
-							href={resolve(`/practice/${subject.slug}`)}
+							href={resolve(`practice/${subject.slug}`)}
 							class="flex items-start justify-between gap-4"
 						>
 							<div>

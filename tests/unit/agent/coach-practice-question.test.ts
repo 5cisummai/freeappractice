@@ -3,8 +3,8 @@ import {
 	buildCoachPracticeQuestionToolOutput,
 	getCoachPracticeQuestionToolInput,
 	getCoachPracticeQuestionToolOutput
-} from '$lib/agent/tools/practice';
-import { isAgentToolContinuation, lastAgentUserText } from '$lib/agent/request';
+} from '#lib/agent/tools/practice.js';
+import { isAgentToolContinuation, lastAgentUserText } from '#lib/agent/request.js';
 
 describe('coach practice question tool helpers', () => {
 	it('parses tool input', () => {

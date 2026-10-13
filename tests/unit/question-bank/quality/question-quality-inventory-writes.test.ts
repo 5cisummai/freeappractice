@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ execute: vi.fn() }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ execute: mocks.execute })
 }));
 
@@ -10,7 +10,7 @@ import {
 	syncQuestionMetadata,
 	updateQuestionRegistryMetadata,
 	upsertQuestionInventory
-} from '$lib/question-bank/quality/inventory-writes.server';
+} from '#lib/question-bank/quality/inventory-writes.server.js';
 
 function staticSql(statement: { queryChunks: unknown[] }): string {
 	return statement.queryChunks

@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, lte } from 'drizzle-orm';
-import { deleteAllTutorMemoriesById } from '$lib/agent/memory/service.server';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { superCleanupJobs } from '$lib/server/neon/schema';
-import { deletePostHogUser } from '$lib/server/posthog';
-import { purgeKnownRedisControlsForUser } from '$lib/agent/usage/controls.server';
-import { cancelStripeSubscriptionsForUser } from '$lib/billing/subscriptions.server';
-import { getMem0UserId } from '$lib/agent/personalization/profile.server';
-import { cleanupCoachImages } from '$lib/agent/attachments/images.server';
+import { deleteAllTutorMemoriesById } from '#lib/agent/memory/service.server.js';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { superCleanupJobs } from '#lib/server/neon/schema.js';
+import { deletePostHogUser } from '#lib/server/posthog.js';
+import { purgeKnownRedisControlsForUser } from '#lib/agent/usage/controls.server.js';
+import { cancelStripeSubscriptionsForUser } from '#lib/billing/subscriptions.server.js';
+import { getMem0UserId } from '#lib/agent/personalization/profile.server.js';
+import { cleanupCoachImages } from '#lib/agent/attachments/images.server.js';
 
 const RETRY_DELAY_MS = 60 * 60 * 1000;
 

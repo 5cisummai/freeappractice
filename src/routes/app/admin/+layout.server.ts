@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { isAdminUser } from '$lib/auth/admin.server';
+import { isAdminUser } from '#lib/auth/admin.server.js';
 
 export const load: LayoutServerLoad = ({ locals }) => {
 	if (!locals.session || !locals.user) {

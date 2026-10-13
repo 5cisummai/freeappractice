@@ -2,7 +2,7 @@ export {
 	isAnonymousMcqFetch,
 	shouldSkipGlobalApiRateLimit,
 	shouldSkipSessionLookup
-} from '$lib/server/request-policy.server';
+} from '#lib/server/request-policy.server.js';
 
 const ACCOUNT_API_PREFIXES = [
 	'/api/me',

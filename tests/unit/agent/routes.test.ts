@@ -21,16 +21,16 @@ const mocks = vi.hoisted(() => ({
 	coachUndoPost: vi.fn()
 }));
 
-vi.mock('$lib/auth/route-helpers.server', () => ({
+vi.mock('#lib/auth/route-helpers.server.js', () => ({
 	withAuthedHandler: mocks.withAuthedHandler
 }));
-vi.mock('$lib/agent/personalization/profile.server', () => ({
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	getTutorProfileView: mocks.getTutorProfileView,
 	updateTutorProfile: mocks.updateTutorProfile,
 	confirmAge: mocks.confirmAge,
 	markMemoryDisclosureSeen: mocks.markMemoryDisclosureSeen
 }));
-vi.mock('$lib/agent/memory/service.server', () => ({
+vi.mock('#lib/agent/memory/service.server.js', () => ({
 	isTutorMemoryConfigured: mocks.isTutorMemoryConfigured,
 	listTutorMemories: mocks.listTutorMemories,
 	getTutorMemoryPublicId: mocks.getTutorMemoryPublicId,
@@ -38,10 +38,10 @@ vi.mock('$lib/agent/memory/service.server', () => ({
 	deleteAllTutorMemories: mocks.deleteAllTutorMemories,
 	deleteTutorMemory: mocks.deleteTutorMemory
 }));
-vi.mock('$lib/flags', () => ({
+vi.mock('#lib/flags.js', () => ({
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
-vi.mock('$lib/agent/access.server', () => ({
+vi.mock('#lib/agent/access.server.js', () => ({
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
 }));
@@ -53,7 +53,7 @@ vi.mock('../../../src/routes/api/coach/undo/+server', () => ({
 }));
 
 import { POST as confirmAgePost } from '../../../src/routes/api/super/confirm-age/+server';
-import { InvalidBirthDateError, UnderAgeError } from '$lib/auth/age';
+import { InvalidBirthDateError, UnderAgeError } from '#lib/auth/age.js';
 import {
 	POST as memoryPost,
 	GET as memoryGet,

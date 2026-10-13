@@ -1,6 +1,6 @@
-import type { ExpressionId } from '$lib/components/agent/avatar/bloub/expressions';
-import type { ShapeId } from '$lib/components/agent/avatar/bloub/skins';
-import type { StateId } from '$lib/components/agent/avatar/bloub/states';
+import type { ExpressionId } from '#lib/components/agent/avatar/bloub/expressions.js';
+import type { ShapeId } from '#lib/components/agent/avatar/bloub/skins.js';
+import type { StateId } from '#lib/components/agent/avatar/bloub/states.js';
 
 /** States intended for the interactive Coach avatar. */
 export type CoachAvatarState = Exclude<StateId, 'swirl'>;

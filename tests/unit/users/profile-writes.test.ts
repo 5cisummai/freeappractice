@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 	onConflictDoNothing: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		batch: mocks.batch,
 		update: mocks.update,
@@ -21,7 +21,7 @@ vi.mock('$lib/server/neon/db', () => ({
 	})
 }));
 
-import { createUserProfile, updateUserCourses } from '$lib/users/model.server';
+import { createUserProfile, updateUserCourses } from '#lib/users/model.server.js';
 
 describe('focused user profile writes', () => {
 	beforeEach(() => {

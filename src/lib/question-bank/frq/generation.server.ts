@@ -4,18 +4,18 @@ import { zodSchema } from 'ai';
 import { z } from 'zod';
 
 import { generateText, Output } from 'ai';
-import { AP_DATA } from '$lib/catalog/dataset';
+import { AP_DATA } from '#lib/catalog/dataset.js';
 import {
 	FRQ_SCOPE_SENTENCE,
 	frqPracticeFor,
 	resolveFrqPoolRequest
-} from '$lib/question-bank/frq/practice';
+} from '#lib/question-bank/frq/practice.js';
 import {
 	type FrqFormatRecord,
 	type FrqFixedPart,
 	selectFrqFormat
-} from '$lib/question-bank/frq/profiles.server';
-import { createFrqQuestion, newFrqPoolRandomKey } from '$lib/question-bank/frq/model.server';
+} from '#lib/question-bank/frq/profiles.server.js';
+import { createFrqQuestion, newFrqPoolRandomKey } from '#lib/question-bank/frq/model.server.js';
 import {
 	FRQ_SCHEMA_VERSION,
 	FrqMaterialSchema,
@@ -24,14 +24,14 @@ import {
 	type FrqPart,
 	type FrqQuestion,
 	type PublicFrqQuestion
-} from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/types.js';
 import {
 	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError
-} from '$lib/question-bank/util.server';
-import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
-import { logger } from '$lib/server/logger';
+} from '#lib/question-bank/util.server.js';
+import { getRecentTopics } from '#lib/question-bank/recent-topic.server.js';
+import { logger } from '#lib/server/logger.js';
 
 const RECENT_TOPICS_WINDOW = 20;
 

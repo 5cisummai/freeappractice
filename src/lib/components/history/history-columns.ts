@@ -1,10 +1,10 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
-import type { HistoryItem } from '$lib/users/types.js';
-import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants.js';
-import { escapeHtml } from '$lib/escape-html.js';
-import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
-import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
+import type { HistoryItem } from '#lib/users/types.js';
+import { FRQ_PASS_THRESHOLD } from '#lib/users/history-constants.js';
+import { escapeHtml } from '#lib/escape-html.js';
+import { formatAttemptDate, formatTimeTaken } from '#lib/history-display.js';
+import { renderComponent, renderSnippet } from '#lib/components/ui/data-table/index.js';
 import HistoryDataTableSortButton from './history-data-table-sort-button.svelte';
 import HistoryDataTableActions from './history-data-table-actions.svelte';
 

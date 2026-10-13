@@ -15,14 +15,14 @@ vi.mock('@upstash/ratelimit', () => ({
 	}
 }));
 
-vi.mock('$lib/redis/server', () => ({
+vi.mock('#lib/redis/server.js', () => ({
 	getRedisClient: mocks.getRedisClient,
 	hashRedisIdentifier: mocks.hashRedisIdentifier,
 	redisNamespace: () => 'fap:test',
 	withRedisTimeout: mocks.withRedisTimeout
 }));
 
-import { limitBugReports } from '$lib/bug-report/rate-limit.server';
+import { limitBugReports } from '#lib/bug-report/rate-limit.server.js';
 
 describe('distributed bug-report rate limit', () => {
 	beforeEach(() => {

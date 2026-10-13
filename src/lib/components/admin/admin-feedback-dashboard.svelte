@@ -1,12 +1,12 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import QuestionCard from '$lib/components/questions/question-card.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import QuestionCard from '#lib/components/questions/question-card.svelte';
 	import { toast } from 'svelte-sonner';
-	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model.js';
-	import type { AdminFeedbackItem } from '$lib/admin/types.js';
-	import { APP_FEEDBACK_CATEGORY_LABELS } from '$lib/schemas/app-feedback.js';
+	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
+	import type { AdminFeedbackItem } from '#lib/admin/types.js';
+	import { APP_FEEDBACK_CATEGORY_LABELS } from '#lib/schemas/app-feedback.js';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	let {

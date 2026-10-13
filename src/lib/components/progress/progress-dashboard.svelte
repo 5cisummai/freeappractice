@@ -2,14 +2,14 @@
 	import { resolve } from '$app/paths';
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import TargetIcon from '@lucide/svelte/icons/target';
-	import * as Alert from '$lib/components/ui/alert/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Empty from '$lib/components/ui/empty/index.js';
-	import * as Progress from '$lib/components/ui/progress/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import type { HistoryItem, ProgressEntry, StatsData } from '$lib/users/types.js';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Empty from '#lib/components/ui/empty/index.js';
+	import * as Progress from '#lib/components/ui/progress/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import type { HistoryItem, ProgressEntry, StatsData } from '#lib/users/types.js';
 	import PracticeActivityDataTable from './practice-activity-data-table.svelte';
 	import StackedProgressChart from './stacked-progress-chart.svelte';
 	import {
@@ -111,7 +111,7 @@
 				</Empty.Description>
 			</Empty.Header>
 			<Empty.Content>
-				<Button href={resolve('/app/practice')} class="w-full sm:w-auto">Start practicing</Button>
+				<Button href={resolve('app/practice')} class="w-full sm:w-auto">Start practicing</Button>
 			</Empty.Content>
 		</Empty.Root>
 	{:else}
@@ -192,7 +192,7 @@
 								Practice a few questions to create a focused recommendation.
 							</p>
 						</div>
-						<Button href={resolve('/app/practice')}>Start practicing</Button>
+						<Button href={resolve('app/practice')}>Start practicing</Button>
 					{/if}
 				</Card.Content>
 			</Card.Root>

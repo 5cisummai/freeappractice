@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { getAdminDashboardData } from '$lib/admin/dashboard.server';
+import { getAdminDashboardData } from '#lib/admin/dashboard.server.js';
 
 const PAGE_SIZE = 25;
 

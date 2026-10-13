@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
-	import { cn } from '$lib/utils.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Skeleton } from '#lib/components/ui/skeleton/index.js';
+	import { cn } from '#lib/utils.js';
 
 	const optionRows = [0, 1, 2, 3];
 

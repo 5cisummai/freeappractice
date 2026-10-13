@@ -1,17 +1,17 @@
-import { getUnitsForCourse } from '$lib/catalog/courses';
+import { getUnitsForCourse } from '#lib/catalog/courses.js';
 import {
 	findActiveQuestionsForQuiz,
 	storedQuestionFromPayload,
 	type IQuestion
-} from '$lib/question-bank/mcq/repository.server';
-import { storedQuestionToGenerated } from '$lib/question-bank/mcq/public-payload.server';
+} from '#lib/question-bank/mcq/repository.server.js';
+import { storedQuestionToGenerated } from '#lib/question-bank/mcq/public-payload.server.js';
 import {
 	getStimulusPolicy,
 	isStimulusPolicyEnabledForUnit,
 	type StimulusPolicy
-} from '$lib/question-bank/mcq/stimulus-policy';
-import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
-import { logger } from '$lib/server/logger';
+} from '#lib/question-bank/mcq/stimulus-policy.js';
+import type { GeneratedQuestion } from '#lib/question-bank/mcq/types.js';
+import { logger } from '#lib/server/logger.js';
 
 export type QuizAssemblyInput = {
 	course: string;

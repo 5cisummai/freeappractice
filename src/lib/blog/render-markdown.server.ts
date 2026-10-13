@@ -1,8 +1,8 @@
 import { marked } from 'marked';
 import hljs from 'highlight.js';
 import { markedHighlight } from 'marked-highlight';
-import { escapeHtml } from '$lib/escape-html';
-import { isSafeMarkdownUrl } from '$lib/content/render-rich-text';
+import { escapeHtml } from '#lib/escape-html.js';
+import { isSafeMarkdownUrl } from '#lib/content/render-rich-text.js';
 
 let configured = false;
 

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { invalidateAppLayout } from '$lib/client/invalidate-data.js';
+	import { invalidateAppLayout } from '#lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { authClient } from '$lib/auth/client.js';
-	import { isShareToken } from '$lib/auth/organization-types';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	import { authClient } from '#lib/auth/client.js';
+	import { isShareToken } from '#lib/auth/organization-types.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import { onMount } from 'svelte';
 
 	let status = $state<'working' | 'success' | 'error'>('working');
@@ -42,7 +42,7 @@
 			status = 'success';
 			message = 'You joined the organization.';
 			await invalidateAppLayout();
-			await goto(resolve('/app'));
+			await goto(resolve('app'));
 		} catch (error) {
 			status = 'error';
 			message = error instanceof Error ? error.message : 'Could not accept that invitation.';
@@ -68,7 +68,7 @@
 			{#if status === 'working'}
 				<Spinner />
 			{:else if status === 'error'}
-				<Button href={resolve('/app')} variant="outline">Back to app</Button>
+				<Button href={resolve('app')} variant="outline">Back to app</Button>
 			{/if}
 		</Card.Content>
 	</Card.Root>

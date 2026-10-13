@@ -9,9 +9,9 @@ const mocks = vi.hoisted(() => ({
 	rollupPersonalizedUsage: vi.fn()
 }));
 
-vi.mock('$lib/agent/usage/controls.server', () => mocks);
+vi.mock('#lib/agent/usage/controls.server.js', () => mocks);
 
-import { startAgentTurn } from '$lib/agent/usage/turn.server';
+import { startAgentTurn } from '#lib/agent/usage/turn.server.js';
 
 function usage(inputTokens: number, outputTokens: number, totalTokens: number): LanguageModelUsage {
 	return {

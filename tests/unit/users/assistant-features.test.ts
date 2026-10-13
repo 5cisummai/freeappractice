@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ limit: vi.fn() }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		select: () => ({
 			from: () => ({ where: () => ({ limit: mocks.limit }) })
@@ -13,7 +13,7 @@ vi.mock('$lib/server/neon/db', () => ({
 import {
 	getAssistantFeaturesEnabled,
 	getAssistantFeaturesEnabledForRequest
-} from '$lib/users/assistant-preferences.server';
+} from '#lib/users/assistant-preferences.server.js';
 
 describe('assistant feature preference', () => {
 	beforeEach(() => {

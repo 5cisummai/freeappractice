@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldApplySubscriptionEvent } from '$lib/billing/subscriptions.server';
+import { shouldApplySubscriptionEvent } from '#lib/billing/subscriptions.server.js';
 
 describe('Stripe subscription event ordering', () => {
 	it('ignores a duplicate event id', () => {

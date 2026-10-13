@@ -1,6 +1,6 @@
-import { renderExamfigDiagram } from '$lib/diagrams/examfig';
+import { renderExamfigDiagram } from '#lib/diagrams/examfig.js';
 
-export type { ExamfigDiagramSpec } from '$lib/diagrams/examfig';
+export type { ExamfigDiagramSpec } from '#lib/diagrams/examfig.js';
 
 export type ExamfigValidationResult =
 	{ valid: true; warnings: string[]; renderedBytes: number } | { valid: false; errors: string[] };

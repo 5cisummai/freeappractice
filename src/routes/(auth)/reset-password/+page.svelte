@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Field from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Field from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
 	import { goto } from '$app/navigation';
-	import { authClient } from '$lib/auth/client.js';
+	import { authClient } from '#lib/auth/client.js';
 	import { resolve } from '$app/paths';
 	import {
 		isPasswordWithinLimit,
 		MIN_PASSWORD_LENGTH,
 		PASSWORD_LENGTH_ERROR,
 		PASSWORD_LENGTH_HINT
-	} from '$lib/auth/password-policy.js';
-	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
+	} from '#lib/auth/password-policy.js';
+	import AuthSeoHead from '#lib/components/auth/auth-seo-head.svelte';
 
 	const token = $derived(page.url.searchParams.get('token') ?? '');
 
@@ -42,7 +42,7 @@
 				errorMessage = error.message ?? 'Reset failed';
 				return;
 			}
-			goto(resolve('/login'));
+			goto(resolve('login'));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -66,7 +66,8 @@
 		{#if !token}
 			<div class="space-y-4 text-center">
 				<p class="text-sm text-destructive">This reset link is missing or invalid.</p>
-				<a href={resolve('/forgot-password')} class="text-sm underline underline-offset-4"
+
+				<a href={resolve('forgot-password')} class="text-sm underline underline-offset-4"
 					>Request a new link</a
 				>
 			</div>

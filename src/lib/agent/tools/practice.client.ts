@@ -1,6 +1,6 @@
-import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api';
-import type { CoachPracticeQuestionOutput } from '$lib/agent/tools/practice';
-import type { CoachPracticeQuestionToolInput } from '$lib/agent/tools/practice';
+import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+import type { CoachPracticeQuestionOutput } from '#lib/agent/tools/practice.js';
+import type { CoachPracticeQuestionToolInput } from '#lib/agent/tools/practice.js';
 
 type PracticeQuestionResponse = {
 	question?: CoachPracticeQuestionOutput;

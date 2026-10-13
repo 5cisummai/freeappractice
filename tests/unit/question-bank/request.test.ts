@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateQuestionRequest } from '$lib/question-bank/request.server';
+import { validateQuestionRequest } from '#lib/question-bank/request.server.js';
 
 async function errorBody(result: ReturnType<typeof validateQuestionRequest>) {
 	if (result.ok) throw new Error('expected failure');

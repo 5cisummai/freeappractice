@@ -1,12 +1,18 @@
 import { stripe as stripePlugin, type Subscription } from '@better-auth/stripe';
-import { env } from '$env/dynamic/private';
+
+import {
+	STRIPE_SUPER_MONTHLY_PRICE_ID,
+	STRIPE_SUPER_ANNUAL_PRICE_ID,
+	STRIPE_WEBHOOK_SECRET
+} from '$app/env/private';
+
 import {
 	getStripeClient,
 	isSuperStripeConfigured,
 	markSubscriptionBillingIssue,
 	mirrorSuperSubscription
-} from '$lib/billing/subscriptions.server';
-import { SUPER_MONTHLY_CREDITS } from '$lib/agent/usage/credits';
+} from '#lib/billing/subscriptions.server.js';
+import { SUPER_MONTHLY_CREDITS } from '#lib/agent/usage/credits.js';
 
 function toSubscriptionMirror(subscription: Subscription, event?: { id: string; created: number }) {
 	return {
@@ -32,13 +38,13 @@ function toSubscriptionMirror(subscription: Subscription, event?: { id: string; 
 /** Stripe is disabled until all credentials and both Super prices are configured. */
 export function createSuperStripePlugin() {
 	const stripeClient = getStripeClient();
-	const monthlyPriceId = env.STRIPE_SUPER_MONTHLY_PRICE_ID?.trim();
-	const annualPriceId = env.STRIPE_SUPER_ANNUAL_PRICE_ID?.trim();
+	const monthlyPriceId = STRIPE_SUPER_MONTHLY_PRICE_ID?.trim();
+	const annualPriceId = STRIPE_SUPER_ANNUAL_PRICE_ID?.trim();
 	if (!stripeClient || !isSuperStripeConfigured() || !monthlyPriceId || !annualPriceId) return null;
 
 	return stripePlugin({
 		stripeClient,
-		stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET!.trim(),
+		stripeWebhookSecret: STRIPE_WEBHOOK_SECRET!.trim(),
 		createCustomerOnSignUp: false,
 		schema: {
 			subscription: { modelName: 'authSubscriptions' }

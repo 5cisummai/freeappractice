@@ -1,13 +1,12 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { mcqBank } from '$lib/question-bank/mcq/bank.server';
-import { logger } from '$lib/server/logger';
+import { mcqBank } from '#lib/question-bank/mcq/bank.server.js';
+import { logger } from '#lib/server/logger.js';
 import {
 	createQuestionPoolRequest,
 	poolWarmingResponse,
 	poolUnavailableResponse,
 	questionRequestFailureResponse
-} from '$lib/server/question-pool-request.server';
+} from '#lib/server/question-pool-request.server.js';
 
 /** Selection-only path — no synchronous LLM generation. */
 export const config = {
@@ -30,7 +29,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		switch (outcome.status) {
 			case 'found':
 				recordMetric(200, path.segment ?? 'pool_hit', outcome.result.cached ?? true);
-				return json({
+				return Response.json({
 					answer: outcome.result.answer,
 					provider: outcome.result.provider,
 					model: outcome.result.model,

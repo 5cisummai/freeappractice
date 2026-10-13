@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
-	import type { HistoryItem } from '$lib/users/types.js';
-	import type { FrqAttemptView } from '$lib/question-bank/frq/types.js';
-	import { formatAttemptDate, formatTimeTaken } from '$lib/history-display.js';
-	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
-	import { getHistoryMcqQuestion } from '$lib/users/history-question.client.js';
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import ExamfigDiagram from '$lib/components/questions/examfig-diagram.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Sheet from '$lib/components/ui/sheet/index.js';
-	import { cn } from '$lib/utils.js';
+	import type { HistoryItem } from '#lib/users/types.js';
+	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
+	import { formatAttemptDate, formatTimeTaken } from '#lib/history-display.js';
+	import { apiFetch, readJsonOrNull } from '#lib/client/api.js';
+	import { getHistoryMcqQuestion } from '#lib/users/history-question.client.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import ExamfigDiagram from '#lib/components/questions/examfig-diagram.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Sheet from '#lib/components/ui/sheet/index.js';
+	import { cn } from '#lib/utils.js';
 
 	let {
 		item = null,
@@ -37,9 +37,9 @@
 	}
 
 	function practiceHref(): string {
-		if (!item) return resolve('/app/practice');
+		if (!item) return resolve('app/practice');
 		const unitParam = item.attempt.unit ? `&unit=${encodeURIComponent(item.attempt.unit)}` : '';
-		return `${resolve('/app/practice')}?course=${encodeURIComponent(item.attempt.course)}${unitParam}`;
+		return `${resolve('app/practice')}?course=${encodeURIComponent(item.attempt.course)}${unitParam}`;
 	}
 </script>
 

@@ -5,7 +5,7 @@ import {
 	sanitizeQuestionPoolHealthMetricProps,
 	sanitizeQuestionRequestMetricProps,
 	type QuestionRequestMetricProps
-} from '$lib/server/question-request-metrics';
+} from '#lib/server/question-request-metrics.js';
 
 describe('question-request-metrics', () => {
 	it('exports the stable event names', () => {

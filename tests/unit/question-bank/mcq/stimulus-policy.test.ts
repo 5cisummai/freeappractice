@@ -3,7 +3,7 @@ import {
 	getStimulusPolicy,
 	getSupportedStimulusCourseNames,
 	isStimulusPolicyEnabledForUnit
-} from '$lib/question-bank/mcq/stimulus-policy';
+} from '#lib/question-bank/mcq/stimulus-policy.js';
 
 describe('stimulus pilot policy', () => {
 	it('defines the five pilot courses with conservative profiles', () => {

@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { json } from '@sveltejs/kit';
-import { limitBugReports } from '$lib/bug-report/rate-limit.server';
-import { bugReportSchema } from '$lib/schemas/bug-report';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { bugReports } from '$lib/server/neon/schema';
-import { readJsonBody } from '$lib/server/request-body.server';
+import { limitBugReports } from '#lib/bug-report/rate-limit.server.js';
+import { bugReportSchema } from '#lib/schemas/bug-report.js';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { bugReports } from '#lib/server/neon/schema.js';
+import { readJsonBody } from '#lib/server/request-body.server.js';
 
 export async function submitBugReport(
 	request: Request,
@@ -17,12 +16,15 @@ export async function submitBugReport(
 		try {
 			body = await readJsonBody(request, 32 * 1024);
 		} catch {
-			return json({ error: 'Invalid request body' }, { status: 400 });
+			return Response.json({ error: 'Invalid request body' }, { status: 400 });
 		}
 
 		const result = bugReportSchema.safeParse(body);
 		if (!result.success) {
-			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
+			return Response.json(
+				{ error: 'Validation failed', details: result.error.flatten() },
+				{ status: 400 }
+			);
 		}
 		const parsed = result.data;
 		const now = Date.now();
@@ -33,7 +35,7 @@ export async function submitBugReport(
 		if (!rateLimit.allowed) {
 			const retryAfterMs = Math.max(0, (rateLimit.retryAt ?? now) - now);
 			const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
-			return json(
+			return Response.json(
 				{
 					error: 'Too many bug reports. Please wait a few minutes before submitting another one.',
 					retryAfterSeconds
@@ -71,9 +73,9 @@ export async function submitBugReport(
 			authenticated: Boolean(userId)
 		});
 
-		return json({ ok: true, id }, { status: 201 });
+		return Response.json({ ok: true, id }, { status: 201 });
 	} catch (err) {
 		logger.error('Bug report error', { error: err });
-		return json({ error: 'Failed to submit bug report' }, { status: 500 });
+		return Response.json({ error: 'Failed to submit bug report' }, { status: 500 });
 	}
 }

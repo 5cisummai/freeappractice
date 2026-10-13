@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	getPostHogOperationDisposition,
 	type PostHogOperationKind
-} from '$lib/client/posthog-consent-policy';
+} from '#lib/client/posthog-consent-policy.js';
 
 describe('getPostHogOperationDisposition', () => {
 	const detailedOperations: PostHogOperationKind[] = ['capture', 'identify'];

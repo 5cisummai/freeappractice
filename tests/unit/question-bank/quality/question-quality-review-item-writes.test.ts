@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 	returning: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ update: mocks.update })
 }));
 
@@ -17,7 +17,7 @@ import {
 	failPreparingSubmissionItems,
 	markPreparingItemsSubmitted,
 	requeueStalePreparingItems
-} from '$lib/question-bank/quality/review-item-writes.server';
+} from '#lib/question-bank/quality/review-item-writes.server.js';
 
 describe('question quality review item writes', () => {
 	beforeEach(() => {

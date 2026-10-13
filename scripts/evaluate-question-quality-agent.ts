@@ -70,8 +70,7 @@ const candidates: Candidate[] = [
 ];
 const args = process.argv.slice(2);
 const statePath = valueAfter('--state') || '.question-quality-eval.json';
-const apiKey =
-	process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim();
+const apiKey = process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim();
 const databaseUrl = process.env.DATABASE_URL?.trim();
 if (!apiKey || !databaseUrl) {
 	throw new Error('AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN) and DATABASE_URL are required');
@@ -83,9 +82,10 @@ function valueAfter(flag: string): string | undefined {
 }
 
 async function openAi(path: string, init: RequestInit = {}): Promise<Response> {
-	const base = (
-		process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1'
-	).replace(/\/$/, '');
+	const base = (process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1').replace(
+		/\/$/,
+		''
+	);
 	const response = await fetch(`${base}${path}`, {
 		...init,
 		headers: { Authorization: `Bearer ${apiKey}`, ...init.headers }

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_COMPACT_CLASS } from '$lib/components/marketing/hero-badge.js';
-	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
-	import { cn } from '$lib/utils';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_COMPACT_CLASS } from '#lib/components/marketing/hero-badge.js';
+	import { buttonVariants } from '#lib/components/ui/button/button.svelte';
+	import { cn } from '#lib/utils.js';
 
-	import { formatBlogDate, getBlogCategory } from '$lib/blog-display';
+	import { formatBlogDate, getBlogCategory } from '#lib/blog-display.js';
 	import ArrowUpRightIcon from '@tabler/icons-svelte/icons/arrow-up-right';
 	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-filled';
 
@@ -34,7 +34,7 @@
 <article
 	class="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-shadow hover:shadow-md"
 >
-	<a href={resolve(`/blog/${slug}`)} class="flex h-full flex-col">
+	<a href={resolve(`blog/${slug}`)} class="flex h-full flex-col">
 		<div class="p-4 pb-0">
 			<div class="overflow-hidden rounded-xl">
 				{#if coverImage}

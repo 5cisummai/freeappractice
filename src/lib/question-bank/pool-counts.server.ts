@@ -1,10 +1,10 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { poolRefillStates } from '$lib/server/neon/schema';
-import { isStimulusQuestionsEnabled } from '$lib/flags';
-import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
-import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
-import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-types.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { poolRefillStates } from '#lib/server/neon/schema.js';
+import { isStimulusQuestionsEnabled } from '#lib/flags.js';
+import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
+import { getPoolKindAdapter } from '#lib/question-bank/pool-kinds.server.js';
+import type { PoolRefillQuestionType } from '#lib/question-bank/pool-refill-types.server.js';
 
 const OPEN_REFILL_STATUSES = ['pending', 'failed', 'budget_exhausted', 'running'] as const;
 

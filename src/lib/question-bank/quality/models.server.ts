@@ -15,8 +15,8 @@ import {
 	qualityReviewJobItems,
 	qualityReviewJobs,
 	questionQuality
-} from '$lib/server/neon/schema';
-import { getNeonDatabase } from '$lib/server/neon/db';
+} from '#lib/server/neon/schema.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 
 export interface QuestionQualityDocument {
 	questionId: string;

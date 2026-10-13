@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { countActivePoolRows } = vi.hoisted(() => ({ countActivePoolRows: vi.fn() }));
 
-vi.mock('$lib/question-bank/pool-counts.server', () => ({ countActivePoolRows }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/question-bank/pool-counts.server.js', () => ({ countActivePoolRows }));
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-import { QuestionBank, selectRandomActiveDoc } from '$lib/question-bank/runtime.server';
-import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
+import { QuestionBank, selectRandomActiveDoc } from '#lib/question-bank/runtime.server.js';
+import { QUESTION_POOL_CONFIG } from '#lib/question-bank/pool-constants.js';
 
 type FakeDoc = { questionId: string; randomKey: number };
 

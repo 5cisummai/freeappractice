@@ -1,4 +1,4 @@
-import { ANALYTICS_CONSENT_KEY, type AnalyticsConsent } from '$lib/analytics-consent';
+import { ANALYTICS_CONSENT_KEY, type AnalyticsConsent } from '#lib/analytics-consent.js';
 
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 

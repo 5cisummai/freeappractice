@@ -1,6 +1,6 @@
 # Components directory
 
-Feature-specific UI lives in named subfolders. Shared primitives live under `ui/`. Import with full paths, e.g. `$lib/components/questions/question-card.svelte`.
+Feature-specific UI lives in named subfolders. Shared primitives live under `ui/`. Import with full paths, e.g. `#lib/components/questions/question-card.svelte`.
 
 ## App features
 
@@ -50,4 +50,4 @@ Feature-specific UI lives in named subfolders. Shared primitives live under `ui/
 
 ## Related modules (outside this folder)
 
-- Question types and props: `$lib/question-bank/mcq/types.ts`
+- Question types and props: `#lib/question-bank/mcq/types.ts`

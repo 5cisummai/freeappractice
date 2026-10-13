@@ -1,10 +1,10 @@
-import type { StoredQuestion } from '$lib/question-bank/mcq/repository.server';
+import type { StoredQuestion } from '#lib/question-bank/mcq/repository.server.js';
 import {
 	copyStimulusFields,
 	type GeneratedQuestion,
 	type McqAnswerBody
-} from '$lib/question-bank/mcq/types';
-import { parseQuestionParagraphs } from '$lib/question-bank/mcq/payload';
+} from '#lib/question-bank/mcq/types.js';
+import { parseQuestionParagraphs } from '#lib/question-bank/mcq/payload.js';
 
 export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQuestion {
 	const diagramSpec = question.diagramSpec ?? question.stimulus?.diagramSpec;

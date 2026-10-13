@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { Ratelimit } from '@upstash/ratelimit';
 import { sql } from 'drizzle-orm';
-import { getRedisClient, redisNamespace, withRedisTimeout } from '$lib/redis/server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { superUsageRollups } from '$lib/server/neon/schema';
-import { monthlyCreditLimitMilli, SUPER_MONTHLY_CREDITS_MILLI } from '$lib/agent/usage/credits';
-import type { SuperAccessReason } from '$lib/billing/types';
+import { getRedisClient, redisNamespace, withRedisTimeout } from '#lib/redis/server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { superUsageRollups } from '#lib/server/neon/schema.js';
+import { monthlyCreditLimitMilli, SUPER_MONTHLY_CREDITS_MILLI } from '#lib/agent/usage/credits.js';
+import type { SuperAccessReason } from '#lib/billing/types.js';
 
 const RATE_WINDOW = '10 m' as const;
 const SUPER_AI_LIMIT = 60;

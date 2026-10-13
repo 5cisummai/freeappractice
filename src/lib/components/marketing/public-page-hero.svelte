@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '#lib/components/marketing/hero-badge.js';
 
 	let {
 		title,

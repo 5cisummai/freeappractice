@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getAllowedCourses, getUnitsForCourse, getCourseNames } from '$lib/catalog/courses';
-import { CATALOG_VERSION, getCatalogFacts } from '$lib/catalog/sources';
+import { getAllowedCourses, getUnitsForCourse, getCourseNames } from '#lib/catalog/courses.js';
+import { CATALOG_VERSION, getCatalogFacts } from '#lib/catalog/sources.js';
 
 describe('catalog facts and official sources', () => {
 	it('covers every supported real AP course', () => {

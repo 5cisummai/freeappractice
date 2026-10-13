@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { historyFromParam, MAX_HISTORY_DAYS } from '$lib/components/progress/progress-metrics';
-import { loadUserDashboardData } from '$lib/users/dashboard.server';
-import { getProgressHistory } from '$lib/users/history.server';
-import { timezoneFromCookies } from '$lib/users/timezone';
+import { historyFromParam, MAX_HISTORY_DAYS } from '#lib/components/progress/progress-metrics.js';
+import { loadUserDashboardData } from '#lib/users/dashboard.server.js';
+import { getProgressHistory } from '#lib/users/history.server.js';
+import { timezoneFromCookies } from '#lib/users/timezone.js';
 
 export const load: PageServerLoad = async ({ cookies, locals }) => {
 	const userId = locals.userId!;

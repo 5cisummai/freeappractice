@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
-	import BackToHome from '$lib/components/layout/back-to-home.svelte';
-	import { getCoursePracticePageByCourse } from '$lib/catalog/practice-pages.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Table from '$lib/components/ui/table/index.js';
-	import * as Skeleton from '$lib/components/ui/skeleton/index.js';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '#lib/components/layout/back-to-home.svelte';
+	import { getCoursePracticePageByCourse } from '#lib/catalog/practice-pages.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import * as Skeleton from '#lib/components/ui/skeleton/index.js';
 
 	interface GenerationStats {
 		byCourse: Record<string, number>;
@@ -44,12 +44,9 @@
 	const courseTableData = $derived.by(() => {
 		if (!generationStats?.byCourse || !generationStats?.totals.questions) return [];
 		const total = generationStats.totals.questions;
+
 		return Object.entries(generationStats.byCourse)
-			.map(([course, count]) => ({
-				course,
-				count,
-				percentage: Math.round((count / total) * 100)
-			}))
+			.map(([course, count]) => ({ course, count, percentage: Math.round((count / total) * 100) }))
 			.sort((a, b) => b.count - a.count);
 	});
 
@@ -75,8 +72,11 @@
 	/>
 	<link rel="canonical" href="https://freeappractice.org/stats" />
 	<meta property="og:type" content="website" />
+
 	<meta property="og:url" content="https://freeappractice.org/stats" />
+
 	<meta property="og:title" content="Stats | Free AP Practice" />
+
 	<meta
 		property="og:description"
 		content="Explore question generation statistics across AP courses and units."
@@ -84,7 +84,9 @@
 	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
+
 	<meta name="twitter:title" content="Stats | Free AP Practice" />
+
 	<meta
 		name="twitter:description"
 		content="Explore question generation statistics across AP courses and units."
@@ -207,7 +209,7 @@
 											{@const coursePage = getCoursePracticePageByCourse(row.course)}
 											{#if coursePage}
 												<a
-													href={resolve(`/practice/${coursePage.slug}`)}
+													href={resolve(`practice/${coursePage.slug}`)}
 													class="underline-offset-2 hover:text-primary hover:underline"
 												>
 													{row.course}

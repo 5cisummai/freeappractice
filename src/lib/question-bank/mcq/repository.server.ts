@@ -1,16 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, gte, inArray, lt, not, notInArray, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	mcqQuestions,
 	questionRecentTopics,
 	questionRegistry,
 	type McqQuestionPayload
-} from '$lib/server/neon/schema';
-import { questionBucketFields } from '$lib/server/neon/jsonb';
-import { parseMcqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
-import { copyStimulusFields } from '$lib/question-bank/mcq/types';
-import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
+} from '#lib/server/neon/schema.js';
+import { questionBucketFields } from '#lib/server/neon/jsonb.js';
+import { parseMcqQuestionPayload } from '#lib/question-bank/mcq/payload-schema.js';
+import { copyStimulusFields } from '#lib/question-bank/mcq/types.js';
+import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 
 export interface IQuestion extends McqQuestionPayload {
 	questionId: string;

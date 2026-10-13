@@ -1,13 +1,13 @@
 <script lang="ts">
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
-	import { cn } from '$lib/utils.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import { cn } from '#lib/utils.js';
 	import {
 		FRQ_ESSAY_RESPONSE_ID,
 		type FrqGrade,
 		type FrqResponseMode,
 		type PublicFrqQuestion
-	} from '$lib/question-bank/frq/types';
+	} from '#lib/question-bank/frq/types.js';
 
 	type Props = {
 		question: PublicFrqQuestion;

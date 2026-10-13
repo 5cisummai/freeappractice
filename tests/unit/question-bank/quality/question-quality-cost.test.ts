@@ -7,11 +7,11 @@ const mocks = vi.hoisted(() => ({
 	where: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
 
-import { getCompletedReviewCost } from '$lib/question-bank/quality/cost.server';
+import { getCompletedReviewCost } from '#lib/question-bank/quality/cost.server.js';
 
 describe('question quality review cost', () => {
 	beforeEach(() => {

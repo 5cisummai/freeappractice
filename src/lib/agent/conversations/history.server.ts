@@ -1,10 +1,10 @@
-import { MAX_AGENT_MESSAGES, type AgentRequest } from '$lib/agent/request';
-import type { AgentUIMessage } from '$lib/agent/agent.server';
+import { MAX_AGENT_MESSAGES, type AgentRequest } from '#lib/agent/request.js';
+import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 import type { ConversationMessage } from './store.server';
 import {
 	shouldIncludeConversationRowForUi,
 	toAgentUiMessageFromConversationRow
-} from '$lib/agent/conversations/messages';
+} from '#lib/agent/conversations/messages.js';
 
 type ToolPartRecord = {
 	[key: string]: unknown;

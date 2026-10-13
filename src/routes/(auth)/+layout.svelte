@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
+	import ThemeToggle from '#lib/components/layout/theme-toggle.svelte';
 
 	let { children } = $props();
 </script>

@@ -1,20 +1,24 @@
-import type { TutorProfileView } from '$lib/agent/personalization/types';
+import type { TutorProfileView } from '#lib/agent/personalization/types.js';
 export const MEM0_EMBEDDING_MODEL = 'openai/text-embedding-3-small';
 export const MEM0_LLM_MODEL = 'openai/gpt-6-luna';
 import { neon } from '@neondatabase/serverless';
 import { Memory as Mem0Memory } from 'mem0ai/oss';
 import { createHmac } from 'node:crypto';
-import { env } from '$env/dynamic/private';
+import {
+	VERCEL_ENV,
+	DATABASE_URL,
+	AI_GATEWAY_BASE_URL as AI_GATEWAY_BASE_URL_OVERRIDE
+} from '$app/env/private';
 
 import {
 	AI_GATEWAY_BASE_URL,
 	isGatewayCredentialConfigured,
 	requireGatewayCredential
-} from '$lib/server/gateway-credentials.server';
-import { isSuperMemoryEnabled } from '$lib/flags';
-import { MAX_TUTOR_MEMORY_EXCHANGE_CHARS } from '$lib/agent/request';
-import { getMem0UserId, getTutorProfileView } from '$lib/agent/personalization/profile.server';
-import { installNeonHttpPGVector } from '$lib/agent/memory/neon-http-pgvector.server';
+} from '#lib/server/gateway-credentials.server.js';
+import { isSuperMemoryEnabled } from '#lib/flags.js';
+import { MAX_TUTOR_MEMORY_EXCHANGE_CHARS } from '#lib/agent/request.js';
+import { getMem0UserId, getTutorProfileView } from '#lib/agent/personalization/profile.server.js';
+import { installNeonHttpPGVector } from '#lib/agent/memory/neon-http-pgvector.server.js';
 
 let memoryClient: Mem0Memory | null | undefined;
 const TUTOR_MEMORY_DIMENSION = 1536;
@@ -32,9 +36,9 @@ export type TutorMemory = {
 };
 
 function getTutorMemoryEnvironment(): 'development' | 'preview' | 'production' {
-	return env.VERCEL_ENV === 'production'
+	return VERCEL_ENV === 'production'
 		? 'production'
-		: env.VERCEL_ENV === 'preview'
+		: VERCEL_ENV === 'preview'
 			? 'preview'
 			: 'development';
 }
@@ -71,11 +75,11 @@ export async function resolveTutorMemoryId(
 
 function getMemoryClient(): Mem0Memory | null {
 	if (memoryClient !== undefined) return memoryClient;
-	const databaseUrl = env.DATABASE_URL?.trim();
+	const databaseUrl = DATABASE_URL?.trim();
 	const configured = isGatewayCredentialConfigured() && Boolean(databaseUrl);
 	if (configured) installNeonHttpPGVector();
 
-	const gatewayBaseUrl = env.AI_GATEWAY_BASE_URL?.trim() || AI_GATEWAY_BASE_URL;
+	const gatewayBaseUrl = AI_GATEWAY_BASE_URL_OVERRIDE?.trim() || AI_GATEWAY_BASE_URL;
 	memoryClient = configured
 		? new Mem0Memory({
 				disableHistory: true,
@@ -113,7 +117,7 @@ function getMemoryClient(): Mem0Memory | null {
 }
 
 function getMemorySql() {
-	const databaseUrl = env.DATABASE_URL?.trim();
+	const databaseUrl = DATABASE_URL?.trim();
 	return databaseUrl ? neon(databaseUrl) : null;
 }
 
@@ -178,7 +182,11 @@ export async function addTutorMemoryExchange(
 	const mem0UserId = await getMem0UserId(userId);
 	await client.add(
 		[
-			{ role: 'user', content: exchange.user.slice(0, MAX_TUTOR_MEMORY_EXCHANGE_CHARS) },
+			{
+				role: 'user',
+				content: exchange.user.slice(0, MAX_TUTOR_MEMORY_EXCHANGE_CHARS)
+			},
+
 			{
 				role: 'assistant',
 				content: exchange.assistant.slice(0, MAX_TUTOR_MEMORY_EXCHANGE_CHARS)
@@ -197,10 +205,12 @@ export async function listTutorMemories(userId: string): Promise<TutorMemory[]> 
 	const mem0UserId = await getMem0UserId(userId);
 	const sql = getMemorySql();
 	if (!sql) return [];
+
 	const rows = (await sql.query(
 		`SELECT id, payload FROM ${getTutorMemoryTable()} WHERE payload->>'user_id' = $1 ORDER BY payload->>'createdAt' DESC`,
 		[mem0UserId]
 	)) as Array<{ id: string; payload: Record<string, unknown> }>;
+
 	return rows
 		.map((row) => toTutorMemory({ id: row.id, metadata: row.payload }))
 		.filter((memory): memory is TutorMemory => memory !== null);

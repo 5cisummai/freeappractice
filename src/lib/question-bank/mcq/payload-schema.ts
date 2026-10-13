@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
+import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 
 const LETTERS = ['A', 'B', 'C', 'D'] as const;
 

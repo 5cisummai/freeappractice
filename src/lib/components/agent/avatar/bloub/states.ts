@@ -14,15 +14,15 @@ import {
 	particles,
 	type ArcSpec,
 	type DotRender
-} from '$lib/components/agent/avatar/bloub/decor';
+} from '#lib/components/agent/avatar/bloub/decor.js';
 import {
 	EYE_H,
 	EYE_SPLIT,
 	EYE_W,
 	REST_GAZE,
 	type HeadGaze
-} from '$lib/components/agent/avatar/bloub/face';
-import { TAU, clamp, easings } from '$lib/components/agent/avatar/bloub/math';
+} from '#lib/components/agent/avatar/bloub/face.js';
+import { TAU, clamp, easings } from '#lib/components/agent/avatar/bloub/math.js';
 import {
 	circle,
 	hullOfCircles,
@@ -30,7 +30,7 @@ import {
 	profileFromPolygon,
 	silhouette,
 	type Silhouette
-} from '$lib/components/agent/avatar/bloub/shape';
+} from '#lib/components/agent/avatar/bloub/shape.js';
 
 export interface EyeCfg {
 	/** largeur locale (axe court de la gelule), en unites de rayon de boule */

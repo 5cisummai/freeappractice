@@ -1,14 +1,23 @@
-import { env } from '$env/dynamic/private';
-import { AI_GATEWAY_BASE_URL, requireGatewayCredential } from '$lib/server/gateway-credentials.server';
+import {
+	AI_GATEWAY_BASE_URL as AI_GATEWAY_BASE_URL_OVERRIDE,
+	QUESTION_QUALITY_WEB_SEARCH_CONTEXT_SIZE,
+	QUESTION_QUALITY_MAX_OUTPUT_TOKENS
+} from '$app/env/private';
+
+import {
+	AI_GATEWAY_BASE_URL,
+	requireGatewayCredential
+} from '#lib/server/gateway-credentials.server.js';
 import { buildBatchLine as buildBatchLinePure } from './batch-line.js';
 
 function apiUrl(path: string): string {
-	const base = (env.AI_GATEWAY_BASE_URL || AI_GATEWAY_BASE_URL).replace(/\/$/, '');
+	const base = (AI_GATEWAY_BASE_URL_OVERRIDE || AI_GATEWAY_BASE_URL).replace(/\/$/, '');
 	return `${base}${path}`;
 }
 
 function webSearchContextSize(): 'low' | 'medium' | 'high' {
-	const configured = env.QUESTION_QUALITY_WEB_SEARCH_CONTEXT_SIZE;
+	const configured = QUESTION_QUALITY_WEB_SEARCH_CONTEXT_SIZE;
+
 	return configured === 'low' || configured === 'medium' || configured === 'high'
 		? configured
 		: 'high';
@@ -46,7 +55,7 @@ export function buildBatchLine(opts: {
 }): string {
 	return buildBatchLinePure({
 		...opts,
-		maxOutputTokens: Number.parseInt(env.QUESTION_QUALITY_MAX_OUTPUT_TOKENS || '800', 10),
+		maxOutputTokens: Number.parseInt(QUESTION_QUALITY_MAX_OUTPUT_TOKENS || '800', 10),
 		webSearchContextSize: webSearchContextSize()
 	});
 }

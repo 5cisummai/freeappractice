@@ -1,7 +1,7 @@
-import { findRecentGradedFrqAttempts } from '$lib/grading/frq/storage.server';
-import { getRecentMistakes } from '$lib/agent/personalization/context.server';
-import { getUserDashboardProfile, getUserProgress } from '$lib/users/model.server';
-import { getDashboardStats } from '$lib/users/dashboard-queries.server';
+import { findRecentGradedFrqAttempts } from '#lib/grading/frq/storage.server.js';
+import { getRecentMistakes } from '#lib/agent/personalization/context.server.js';
+import { getUserDashboardProfile, getUserProgress } from '#lib/users/model.server.js';
+import { getDashboardStats } from '#lib/users/dashboard-queries.server.js';
 
 export async function getCoachActivitySummary(userId: string) {
 	const profile = await getUserDashboardProfile(userId);

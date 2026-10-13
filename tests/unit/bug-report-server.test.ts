@@ -10,12 +10,12 @@ const mocks = vi.hoisted(() => ({
 	loggerError: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: mocks.getNeonDatabase }));
-vi.mock('$lib/server/neon/schema', () => ({ bugReports: {} }));
-vi.mock('$lib/bug-report/rate-limit.server', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({ getNeonDatabase: mocks.getNeonDatabase }));
+vi.mock('#lib/server/neon/schema.js', () => ({ bugReports: {} }));
+vi.mock('#lib/bug-report/rate-limit.server.js', () => ({
 	limitBugReports: mocks.limitBugReports
 }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		info: mocks.loggerInfo,
 		warn: mocks.loggerWarn,
@@ -23,7 +23,7 @@ vi.mock('$lib/server/logger', () => ({
 	}
 }));
 
-import { submitBugReport } from '$lib/bug-report/server';
+import { submitBugReport } from '#lib/bug-report/server.js';
 
 describe('submitBugReport', () => {
 	beforeEach(() => {

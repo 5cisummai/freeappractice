@@ -1,23 +1,23 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
-import { getMcqGenerationCountsByCourse } from '$lib/question-bank/gen-stats.server';
-import { getUnitsForCourse } from '$lib/catalog/courses';
-import { frqBucketUnits } from '$lib/question-bank/frq/practice';
+import { getMcqGenerationCountsByCourse } from '#lib/question-bank/gen-stats.server.js';
+import { getUnitsForCourse } from '#lib/catalog/courses.js';
+import { frqBucketUnits } from '#lib/question-bank/frq/practice.js';
 import {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
 	countActivePoolRowsForServing,
 	getPoolRefillHealthCounts
-} from '$lib/question-bank/pool-counts.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { poolRefillStates } from '$lib/server/neon/schema';
-import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '$lib/question-bank/pool-kinds.server';
-import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-types.server';
+} from '#lib/question-bank/pool-counts.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { poolRefillStates } from '#lib/server/neon/schema.js';
+import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '#lib/question-bank/pool-kinds.server.js';
+import type { PoolRefillQuestionType } from '#lib/question-bank/pool-refill-types.server.js';
 import {
 	QUESTION_POOL_CONFIG,
 	isBelowLowWater,
 	type QuestionPoolConfig
-} from '$lib/question-bank/pool-constants';
+} from '#lib/question-bank/pool-constants.js';
 
 export type PoolBucketKey = {
 	questionType: PoolRefillQuestionType;

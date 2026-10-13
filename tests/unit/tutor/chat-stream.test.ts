@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createTutorChatStream, type TutorChatFunction } from '$lib/tutor/chat-stream.server';
+import { createTutorChatStream, type TutorChatFunction } from '#lib/tutor/chat-stream.server.js';
 
 const context = {
 	question: 'Q',

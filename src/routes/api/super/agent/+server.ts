@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { handleAgentPost, agentRouteConfig } from '$lib/agent/route.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { handleAgentPost, agentRouteConfig } from '#lib/agent/route.server.js';
 
 export const config = agentRouteConfig;
 

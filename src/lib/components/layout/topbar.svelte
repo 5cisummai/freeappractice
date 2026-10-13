@@ -2,15 +2,15 @@
 	import MenuIcon from '@tabler/icons-svelte/icons/menu-2';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import { resolve } from '$app/paths';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
-	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import ThemeToggle from '#lib/components/layout/theme-toggle.svelte';
+	import * as NavigationMenu from '#lib/components/ui/navigation-menu/index.js';
 	import {
 		topbarAuthItems,
 		topbarNavItems,
 		topbarPricingItem,
 		topbarResourceItems
-	} from '$lib/site-nav.js';
+	} from '#lib/site-nav.js';
 
 	let { showPricing = true }: { showPricing?: boolean } = $props();
 	let mobileOpen = $state(false);

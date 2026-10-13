@@ -43,17 +43,17 @@ import {
 	EXPRESSION_BY_ID,
 	EXPRESSIONS,
 	type BotExpression
-} from '$lib/components/agent/avatar/bloub/expressions';
-import { eyePoses } from '$lib/components/agent/avatar/bloub/face';
-import { radiusAtAngle, toPoints, type Point } from '$lib/components/agent/avatar/bloub/shape';
-import { SHAPES } from '$lib/components/agent/avatar/bloub/skins';
+} from '#lib/components/agent/avatar/bloub/expressions.js';
+import { eyePoses } from '#lib/components/agent/avatar/bloub/face.js';
+import { radiusAtAngle, toPoints, type Point } from '#lib/components/agent/avatar/bloub/shape.js';
+import { SHAPES } from '#lib/components/agent/avatar/bloub/skins.js';
 import {
 	STATE_BY_ID,
 	STATES,
 	type Pose,
 	type StateDef,
 	type StateId
-} from '$lib/components/agent/avatar/bloub/states';
+} from '#lib/components/agent/avatar/bloub/states.js';
 
 /** Rayon de reference du solveur. Le decalage rendu est en unites de ce rayon. */
 const R = 100;

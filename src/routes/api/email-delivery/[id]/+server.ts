@@ -1,6 +1,6 @@
-import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { isEmailDeliveryId } from '$lib/auth/email-delivery';
-import { getEmailDeliveryStatus } from '$lib/server/email-delivery.server';
+import { error, type RequestHandler } from '@sveltejs/kit';
+import { isEmailDeliveryId } from '#lib/auth/email-delivery.js';
+import { getEmailDeliveryStatus } from '#lib/server/email-delivery.server.js';
 
 export const GET: RequestHandler = async ({ params }) => {
 	const id = params.id?.trim();
@@ -9,5 +9,5 @@ export const GET: RequestHandler = async ({ params }) => {
 	const delivery = await getEmailDeliveryStatus(id);
 	if (!delivery) throw error(404, 'Email delivery not found');
 
-	return json(delivery);
+	return Response.json(delivery);
 };

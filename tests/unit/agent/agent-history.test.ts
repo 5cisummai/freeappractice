@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isAgentToolContinuation, minimalAgentClientMessages } from '$lib/agent/request';
+import { isAgentToolContinuation, minimalAgentClientMessages } from '#lib/agent/request.js';
 import {
 	shouldIncludeConversationRowForUi,
 	toAgentUiMessageFromConversationRow
-} from '$lib/agent/conversations/messages';
-import { reconstructApprovalContinuationMessage } from '$lib/agent/conversations/history.server';
+} from '#lib/agent/conversations/messages.js';
+import { reconstructApprovalContinuationMessage } from '#lib/agent/conversations/history.server.js';
 
 describe('minimalAgentClientMessages', () => {
 	it('sends only the latest user message for a normal turn', () => {

@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$env/dynamic/private', () => ({
-	env: { KV_REST_API_URL: 'https://redis.test', KV_REST_API_TOKEN: 'test-token' }
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	KV_REST_API_URL: 'https://redis.test',
+	KV_REST_API_TOKEN: 'test-token'
 }));
 
-import { getRedisClient } from '$lib/redis/server';
+import { getRedisClient } from '#lib/redis/server.js';
 
 afterEach(() => vi.unstubAllGlobals());
 

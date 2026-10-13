@@ -1,7 +1,7 @@
 <script lang="ts">
 	import 'katex/dist/katex.min.css';
 	import 'highlight.js/styles/github.min.css';
-	import { renderRichTextHtml, type RichTextCitation } from '$lib/content/render-rich-text';
+	import { renderRichTextHtml, type RichTextCitation } from '#lib/content/render-rich-text.js';
 	import { toast } from 'svelte-sonner';
 
 	let {

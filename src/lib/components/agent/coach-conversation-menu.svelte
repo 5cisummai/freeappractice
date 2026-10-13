@@ -2,12 +2,12 @@
 	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
 	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
 	import Trash2Icon from '@tabler/icons-svelte/icons/trash-filled';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { cn } from '$lib/utils.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { cn } from '#lib/utils.js';
 	import { toast } from 'svelte-sonner';
 
 	type CoachConversation = {

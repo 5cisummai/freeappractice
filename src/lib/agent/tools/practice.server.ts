@@ -1,14 +1,14 @@
 import { and, desc, eq } from 'drizzle-orm';
-import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
-import { resolveFrqPoolRequest } from '$lib/question-bank/frq/practice';
-import { mcqBank } from '$lib/question-bank/mcq/bank.server';
-import { frqBank } from '$lib/question-bank/frq/bank.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttempts, mcqAttempts } from '$lib/server/neon/schema';
+import { getFrqCourseProfile } from '#lib/question-bank/frq/profiles.server.js';
+import { resolveFrqPoolRequest } from '#lib/question-bank/frq/practice.js';
+import { mcqBank } from '#lib/question-bank/mcq/bank.server.js';
+import { frqBank } from '#lib/question-bank/frq/bank.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqAttempts, mcqAttempts } from '#lib/server/neon/schema.js';
 import {
 	buildCoachPracticeHref,
 	type CoachPracticeQuestionOutput
-} from '$lib/agent/tools/practice';
+} from '#lib/agent/tools/practice.js';
 
 const MAX_EXCLUDED_QUESTION_IDS = 50;
 

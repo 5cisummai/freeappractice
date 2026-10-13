@@ -1,9 +1,9 @@
-import type { PublicFrqQuestion } from '$lib/question-bank/frq/types';
+import type { PublicFrqQuestion } from '#lib/question-bank/frq/types.js';
 import type {
 	GeneratedQuestion,
 	QuestionOption,
 	QuestionPanel
-} from '$lib/question-bank/mcq/types';
+} from '#lib/question-bank/mcq/types.js';
 
 export type PresentedMaterial = {
 	id: string;

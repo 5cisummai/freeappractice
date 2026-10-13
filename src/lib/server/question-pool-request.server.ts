@@ -1,14 +1,13 @@
-import { json } from '@sveltejs/kit';
-import { dev } from '$app/environment';
-import { validateQuestionRequest } from '$lib/question-bank/request.server';
-import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
+import { dev } from '$app/env';
+import { validateQuestionRequest } from '#lib/question-bank/request.server.js';
+import { limitQuestionPoolRequests } from '#lib/server/api-rate-limit.server.js';
 import {
 	capturePathQuestionRequestMetric,
 	createQuestionPathMetrics,
 	type QuestionRequestErrorType,
 	type QuestionRequestSegment
-} from '$lib/server/question-request-metrics';
-import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
+} from '#lib/server/question-request-metrics.js';
+import { readJsonBody, RequestBodyTooLargeError } from '#lib/server/request-body.server.js';
 
 const MAX_QUESTION_REQUEST_BYTES = 16 * 1024;
 
@@ -49,7 +48,7 @@ export function createQuestionPoolRequest(request: Request) {
 			recordMetric(429, 'error', false, 'validation');
 			return {
 				ok: false as const,
-				response: json(
+				response: Response.json(
 					{ error: 'Too many requests', retryAfterSeconds },
 					{
 						status: 429,
@@ -73,7 +72,7 @@ export function createQuestionPoolRequest(request: Request) {
 				recordMetric(413, 'error', false, 'validation');
 				return {
 					ok: false as const,
-					response: json({ error: 'Request body is too large' }, { status: 413 })
+					response: Response.json({ error: 'Request body is too large' }, { status: 413 })
 				};
 			}
 			throw error;
@@ -95,7 +94,7 @@ export function createQuestionPoolRequest(request: Request) {
 }
 
 export function poolWarmingResponse(retryAfterSeconds: number): Response {
-	return json(
+	return Response.json(
 		{
 			code: 'POOL_WARMING',
 			error: 'Question pool is warming up. Please retry shortly.',
@@ -106,7 +105,7 @@ export function poolWarmingResponse(retryAfterSeconds: number): Response {
 }
 
 export function poolUnavailableResponse(error: unknown): Response {
-	return json(
+	return Response.json(
 		{
 			code: 'POOL_UNAVAILABLE',
 			error: 'Question pool temporarily unavailable',
@@ -122,5 +121,5 @@ export function questionRequestFailureResponse(error: unknown, message: string):
 			? error.message
 			: String(error)
 		: 'Internal server error';
-	return json({ error: message, details }, { status: 500 });
+	return Response.json({ error: message, details }, { status: 500 });
 }

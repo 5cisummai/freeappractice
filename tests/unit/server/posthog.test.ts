@@ -18,13 +18,13 @@ vi.mock('posthog-node', () => ({
 	}
 }));
 vi.mock('@vercel/functions', () => ({ waitUntil }));
-vi.mock('$app/environment', () => ({ building: false, dev: false }));
-vi.mock('$env/static/public', () => ({
+vi.mock('$app/env', () => ({ building: false, dev: false }));
+vi.mock('$app/env/public', () => ({
 	PUBLIC_POSTHOG_PROJECT_TOKEN: 'test-token',
 	PUBLIC_POSTHOG_HOST: 'https://posthog.test'
 }));
 
-import { captureAnonymousServerMetric } from '$lib/server/posthog';
+import { captureAnonymousServerMetric } from '#lib/server/posthog.js';
 
 describe('server PostHog capture', () => {
 	beforeEach(() => {

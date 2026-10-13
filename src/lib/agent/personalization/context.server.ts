@@ -1,17 +1,17 @@
 import type { TutorProfileView } from './types';
 import { and, desc, eq } from 'drizzle-orm';
-import { getFrqAttemptForUser } from '$lib/grading/frq/attempts.server';
-import { getFrqQuestionById } from '$lib/question-bank/frq/model.server';
-import type { FrqAttemptView, FrqQuestion } from '$lib/question-bank/frq/types';
+import { getFrqAttemptForUser } from '#lib/grading/frq/attempts.server.js';
+import { getFrqQuestionById } from '#lib/question-bank/frq/model.server.js';
+import type { FrqAttemptView, FrqQuestion } from '#lib/question-bank/frq/types.js';
 import {
 	getQuestionById,
 	getQuestionsByIds,
 	type StoredQuestion
-} from '$lib/question-bank/mcq/repository.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { mcqAttempts } from '$lib/server/neon/schema';
-import { buildLearningContext } from '$lib/agent/personalization/learning.server';
-import type { AgentContext } from '$lib/agent/request';
+} from '#lib/question-bank/mcq/repository.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { mcqAttempts } from '#lib/server/neon/schema.js';
+import { buildLearningContext } from '#lib/agent/personalization/learning.server.js';
+import type { AgentContext } from '#lib/agent/request.js';
 
 export type CurrentQuestion =
 	| { kind: 'mcq'; question: StoredQuestion }

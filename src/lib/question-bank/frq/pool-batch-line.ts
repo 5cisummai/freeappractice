@@ -1,7 +1,7 @@
 import {
 	buildFrqGenerationPrompt,
 	generatedFrqJsonSchema
-} from '$lib/question-bank/frq/generation.server';
+} from '#lib/question-bank/frq/generation.server.js';
 
 /** One OpenAI Batch JSONL request for FRQ pool generation (`/v1/responses`). */
 export function buildFrqPoolBatchLine(opts: {

@@ -1,8 +1,8 @@
-import { COACH_AVATAR_SHAPE } from '$lib/components/agent/avatar/avatar-state';
-import { BotEngine } from '$lib/components/agent/avatar/bloub/engine';
-import { EXPRESSION_BY_ID } from '$lib/components/agent/avatar/bloub/expressions';
-import { DEMI_VIEWBOX, RAYON } from '$lib/components/agent/avatar/bloub/repere';
-import { SHAPE_BY_ID } from '$lib/components/agent/avatar/bloub/skins';
+import { COACH_AVATAR_SHAPE } from '#lib/components/agent/avatar/avatar-state.js';
+import { BotEngine } from '#lib/components/agent/avatar/bloub/engine.js';
+import { EXPRESSION_BY_ID } from '#lib/components/agent/avatar/bloub/expressions.js';
+import { DEMI_VIEWBOX, RAYON } from '#lib/components/agent/avatar/bloub/repere.js';
+import { SHAPE_BY_ID } from '#lib/components/agent/avatar/bloub/skins.js';
 
 function samplePipIconMark() {
 	const engine = new BotEngine(RAYON);

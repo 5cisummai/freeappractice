@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { cn, type WithElementRef } from '$lib/utils';
+	import { cn, type WithElementRef } from '#lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import type { Snippet } from 'svelte';
 
@@ -9,7 +9,7 @@
 </script>
 
 <script lang="ts">
-	import { AlertDescription } from '$lib/components/ui/alert/index.js';
+	import { AlertDescription } from '#lib/components/ui/alert/index.js';
 
 	let {
 		class: className,

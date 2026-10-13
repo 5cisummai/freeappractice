@@ -1,11 +1,11 @@
 import { tool } from 'ai';
 
 import Parallel from 'parallel-web';
-import { env } from '$env/dynamic/private';
+import { PARALLEL_API_KEY } from '$app/env/private';
 import { z } from 'zod';
-import { COACH_MODEL } from '$lib/agent/model';
+import { COACH_MODEL } from '#lib/agent/model.js';
 
-import type { AgentToolsInput } from '$lib/agent/request';
+import type { AgentToolsInput } from '#lib/agent/request.js';
 
 const webSearchSchema = z.object({
 	objective: z
@@ -24,7 +24,7 @@ const webSearchSchema = z.object({
 let parallelClient: Parallel | undefined;
 
 function getParallelClient(): Parallel {
-	const apiKey = env.PARALLEL_API_KEY?.trim();
+	const apiKey = PARALLEL_API_KEY?.trim();
 	if (!apiKey) throw new Error('PARALLEL_API_KEY is not configured');
 	parallelClient ??= new Parallel({ apiKey, timeout: 15_000, maxRetries: 0 });
 	return parallelClient;
@@ -33,7 +33,7 @@ function getParallelClient(): Parallel {
 export function createSearchTools(input: AgentToolsInput) {
 	const { canAffordWebSearch, recordWebSearch } = input;
 	return {
-		...(env.PARALLEL_API_KEY?.trim()
+		...(PARALLEL_API_KEY?.trim()
 			? {
 					search_web: tool({
 						description:

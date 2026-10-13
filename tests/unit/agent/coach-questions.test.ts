@@ -9,26 +9,26 @@ const mocks = vi.hoisted(() => ({
 	getNeonDatabase: vi.fn()
 }));
 
-vi.mock('$lib/question-bank/mcq/bank.server', () => ({
+vi.mock('#lib/question-bank/mcq/bank.server.js', () => ({
 	mcqBank: { get: mocks.mcqBankGet }
 }));
-vi.mock('$lib/question-bank/frq/bank.server', () => ({
+vi.mock('#lib/question-bank/frq/bank.server.js', () => ({
 	frqBank: { get: mocks.frqBankGet }
 }));
-vi.mock('$lib/question-bank/mcq/repository.server', () => ({
+vi.mock('#lib/question-bank/mcq/repository.server.js', () => ({
 	getQuestionById: mocks.getQuestionById
 }));
-vi.mock('$lib/question-bank/frq/model.server', () => ({
+vi.mock('#lib/question-bank/frq/model.server.js', () => ({
 	getFrqQuestionById: mocks.getFrqQuestionById
 }));
-vi.mock('$lib/question-bank/frq/profiles.server', () => ({
+vi.mock('#lib/question-bank/frq/profiles.server.js', () => ({
 	getFrqCourseProfile: mocks.getFrqCourseProfile
 }));
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: mocks.getNeonDatabase
 }));
 
-import { giveCoachPracticeQuestion } from '$lib/agent/tools/practice.server';
+import { giveCoachPracticeQuestion } from '#lib/agent/tools/practice.server.js';
 
 describe('giveCoachPracticeQuestion', () => {
 	beforeEach(() => {

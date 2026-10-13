@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { forEachJsonlLine, JsonlChunkBuilder } from '$lib/question-bank/quality/jsonl';
+import { forEachJsonlLine, JsonlChunkBuilder } from '#lib/question-bank/quality/jsonl.js';
 
 describe('question quality JSONL processing', () => {
 	it('keeps input in bounded parts without joining a giant string', () => {

@@ -1,16 +1,15 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { validateQuestionRequest } from '$lib/question-bank/request.server';
-import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
-import { getFrqCourseProfile } from '$lib/question-bank/frq/profiles.server';
-import { resolveFrqPoolRequest, UnknownFrqTaskError } from '$lib/question-bank/frq/practice';
-import { frqBank } from '$lib/question-bank/frq/bank.server';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { validateQuestionRequest } from '#lib/question-bank/request.server.js';
+import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
+import { getFrqCourseProfile } from '#lib/question-bank/frq/profiles.server.js';
+import { resolveFrqPoolRequest, UnknownFrqTaskError } from '#lib/question-bank/frq/practice.js';
+import { frqBank } from '#lib/question-bank/frq/bank.server.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 import {
 	capturePathQuestionRequestMetric,
 	createQuestionPathMetrics
-} from '$lib/server/question-request-metrics';
+} from '#lib/server/question-request-metrics.js';
 
 export const config = { maxDuration: 15 };
 
@@ -43,7 +42,7 @@ export const POST: RequestHandler = withAuthedHandler(
 			}
 			({ course: course, unit } = validated.value);
 			if (!getFrqCourseProfile(course)) {
-				return json(
+				return Response.json(
 					{ error: 'Written-response practice is not available for this course' },
 					{ status: 400 }
 				);
@@ -53,7 +52,7 @@ export const POST: RequestHandler = withAuthedHandler(
 				poolUnit = resolveFrqPoolRequest(course, unit, validated.value.formatId).poolUnit;
 			} catch (error) {
 				if (error instanceof UnknownFrqTaskError) {
-					return json({ error: error.message }, { status: 400 });
+					return Response.json({ error: error.message }, { status: 400 });
 				}
 				throw error;
 			}
@@ -89,7 +88,7 @@ export const POST: RequestHandler = withAuthedHandler(
 							pool_query_ms: path.poolQueryMs
 						}
 					});
-					return json({
+					return Response.json({
 						question: outcome.result.publicQuestion,
 						questionId: outcome.result.questionId,
 						provider: outcome.result.provider,
@@ -110,7 +109,7 @@ export const POST: RequestHandler = withAuthedHandler(
 						cached: false,
 						errorType: 'busy'
 					});
-					return json(
+					return Response.json(
 						{
 							code: 'POOL_WARMING',
 							error: 'Written-response pool is warming up. Please retry shortly.',
@@ -134,7 +133,7 @@ export const POST: RequestHandler = withAuthedHandler(
 						cached: false,
 						errorType: 'unknown'
 					});
-					return json(
+					return Response.json(
 						{
 							code: 'POOL_UNAVAILABLE',
 							error: 'Written-response pool temporarily unavailable'

@@ -5,8 +5,8 @@ import {
 	feedbackSummaryFromCounts,
 	isCalibrationSample,
 	shouldRequireHumanReview
-} from '$lib/question-bank/quality/rules';
-import type { AiQualityAssessment } from '$lib/question-bank/quality/types';
+} from '#lib/question-bank/quality/rules.js';
+import type { AiQualityAssessment } from '#lib/question-bank/quality/types.js';
 
 const assessment: AiQualityAssessment = {
 	verdict: 'good',

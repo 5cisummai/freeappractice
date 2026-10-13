@@ -2,12 +2,12 @@ import {
 	findFrqQuestionById,
 	listFrqQuestions,
 	type IFrqQuestion
-} from '$lib/question-bank/frq/model.server';
+} from '#lib/question-bank/frq/model.server.js';
 import {
 	getAllQuestions,
 	getQuestionById,
 	type StoredQuestion
-} from '$lib/question-bank/mcq/repository.server';
+} from '#lib/question-bank/mcq/repository.server.js';
 
 export type QuestionInventoryKind = 'mcq' | 'frq';
 

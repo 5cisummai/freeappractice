@@ -1,13 +1,12 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { mcqBank } from '$lib/question-bank/mcq/bank.server';
-import { logger } from '$lib/server/logger';
+import { mcqBank } from '#lib/question-bank/mcq/bank.server.js';
+import { logger } from '#lib/server/logger.js';
 import {
 	createQuestionPoolRequest,
 	poolWarmingResponse,
 	poolUnavailableResponse,
 	questionRequestFailureResponse
-} from '$lib/server/question-pool-request.server';
+} from '#lib/server/question-pool-request.server.js';
 
 const MAX_QUESTION_BATCH_COUNT = 10;
 
@@ -31,7 +30,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			rawCount > MAX_QUESTION_BATCH_COUNT
 		) {
 			recordMetric(400, 'error', false, 'validation');
-			return json(
+			return Response.json(
 				{ error: `count must be an integer from 1 to ${MAX_QUESTION_BATCH_COUNT}` },
 				{ status: 400 }
 			);
@@ -46,7 +45,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		switch (outcome.status) {
 			case 'found':
 				recordMetric(200, path.segment ?? 'pool_hit', true);
-				return json({
+				return Response.json({
 					questions: outcome.results.map((result) => ({
 						answer: result.answer,
 						provider: result.provider,

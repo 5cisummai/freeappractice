@@ -1,12 +1,11 @@
-import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getBookmarkedQuestions, toggleBookmark } from '$lib/users/bookmarks.server';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { getBookmarkedQuestions, toggleBookmark } from '#lib/users/bookmarks.server.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 
 export const GET = withAuthedHandler(
 	async (_event, userId) => {
 		const questions = await getBookmarkedQuestions(userId);
-		return json({ bookmarks: questions });
+		return Response.json({ bookmarks: questions });
 	},
 	{ logLabel: 'Get bookmarks error', errorMessage: 'Failed to fetch bookmarks' }
 );
@@ -15,7 +14,7 @@ export const POST = withAuthedHandler(
 	async (event, userId) => {
 		const { questionId } = await event.request.json();
 		if (!questionId || typeof questionId !== 'string') {
-			return json({ error: 'questionId is required' }, { status: 400 });
+			return Response.json({ error: 'questionId is required' }, { status: 400 });
 		}
 
 		const bookmarked = await toggleBookmark(userId, questionId);
@@ -28,7 +27,7 @@ export const POST = withAuthedHandler(
 			}
 		});
 
-		return json({
+		return Response.json({
 			message: bookmarked ? 'Bookmark added' : 'Bookmark removed',
 			bookmarked
 		});

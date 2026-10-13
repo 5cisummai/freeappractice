@@ -1,9 +1,9 @@
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	questionGenerationByCourse,
 	questionGenerationByGlobalUnit,
 	questionGenerationByUnit
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 export interface GenerationStatsPayload {
 	byCourse: Record<string, number>;
 	byUnit: Record<string, number>;

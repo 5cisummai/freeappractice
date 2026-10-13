@@ -3,7 +3,7 @@ import {
 	COACH_IMAGE_MAX_BYTES,
 	COACH_IMAGE_MAX_DIMENSION,
 	COACH_IMAGE_MAX_PIXELS
-} from '$lib/agent/attachments/images';
+} from '#lib/agent/attachments/images.js';
 
 export class CoachImageError extends Error {}
 

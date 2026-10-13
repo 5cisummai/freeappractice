@@ -14,8 +14,8 @@ import {
 import { sql } from 'drizzle-orm';
 import { authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
-import type { FrqQuestion } from '$lib/question-bank/frq/types';
-import type { McqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
+import type { FrqQuestion } from '#lib/question-bank/frq/types.js';
+import type { McqQuestionPayload } from '#lib/question-bank/mcq/payload-schema.js';
 
 export const contentSchema = pgSchema('content');
 

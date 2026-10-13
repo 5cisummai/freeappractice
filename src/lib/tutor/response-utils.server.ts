@@ -1,7 +1,5 @@
-import { json } from '@sveltejs/kit';
-
 export function tutorRateLimitedResponse(retryAt: number | null): Response {
-	return json(
+	return Response.json(
 		{ error: 'Too many tutor requests. Please try again shortly.', retryAt },
 		retryAt
 			? {

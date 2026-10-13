@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
-	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import type { AdminUserRow } from '$lib/admin/types.js';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { invalidateAppRoute } from '#lib/client/invalidate-data.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import type { AdminUserRow } from '#lib/admin/types.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import { toast } from 'svelte-sonner';
 
 	let { user, ...restProps }: { user: AdminUserRow } = $props();

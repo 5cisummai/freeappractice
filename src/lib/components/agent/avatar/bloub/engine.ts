@@ -2,14 +2,14 @@ import {
 	arcRender,
 	type ArcRender,
 	type DotRender
-} from '$lib/components/agent/avatar/bloub/decor';
+} from '#lib/components/agent/avatar/bloub/decor.js';
 import {
 	blendExpression,
 	type BotExpression
-} from '$lib/components/agent/avatar/bloub/expressions';
-import { decalageDesYeux } from '$lib/components/agent/avatar/bloub/eyefit';
-import { blinkScale, eyePoses, liveliness } from '$lib/components/agent/avatar/bloub/face';
-import { clamp, easings, lerp, r2 } from '$lib/components/agent/avatar/bloub/math';
+} from '#lib/components/agent/avatar/bloub/expressions.js';
+import { decalageDesYeux } from '#lib/components/agent/avatar/bloub/eyefit.js';
+import { blinkScale, eyePoses, liveliness } from '#lib/components/agent/avatar/bloub/face.js';
+import { clamp, easings, lerp, r2 } from '#lib/components/agent/avatar/bloub/math.js';
 import {
 	blend,
 	capsulePath,
@@ -18,13 +18,13 @@ import {
 	toPoints,
 	type Point,
 	type Silhouette
-} from '$lib/components/agent/avatar/bloub/shape';
+} from '#lib/components/agent/avatar/bloub/shape.js';
 import {
 	STATE_BY_ID,
 	type Pose,
 	type StateDef,
 	type StateId
-} from '$lib/components/agent/avatar/bloub/states';
+} from '#lib/components/agent/avatar/bloub/states.js';
 
 export interface RenderedEye {
 	d: string;

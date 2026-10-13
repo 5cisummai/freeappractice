@@ -1,6 +1,6 @@
 import { resolve } from '$app/paths';
-import { formatDayInTimeZone } from '$lib/dates/calendar-day';
-import type { HistoryItem, ProgressEntry, StatsData } from '$lib/users/types.js';
+import { formatDayInTimeZone } from '#lib/dates/calendar-day.js';
+import type { HistoryItem, ProgressEntry, StatsData } from '#lib/users/types.js';
 
 export const ALL_COURSES = 'all';
 export const HISTORY_WINDOW_DAYS = 30;
@@ -175,7 +175,8 @@ export function practiceHref(course: string, unit?: string, mode?: 'frq'): strin
 	if (unit) params.set('unit', unit);
 	if (mode) params.set('mode', mode);
 	const query = params.toString();
-	return query ? `${resolve('/app/practice')}?${query}` : resolve('/app/practice');
+
+	return query ? `${resolve('app/practice')}?${query}` : resolve('app/practice');
 }
 
 export function stackedActivityByScope(

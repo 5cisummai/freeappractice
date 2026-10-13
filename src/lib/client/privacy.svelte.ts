@@ -1,17 +1,17 @@
-import type { AnalyticsConsent } from '$lib/analytics-consent';
+import type { AnalyticsConsent } from '#lib/analytics-consent.js';
 import {
 	clearAnalyticsConsentStorage,
 	persistAnalyticsConsent,
 	readAnalyticsConsent,
 	syncAnalyticsConsentCookie
-} from '$lib/client/analytics-consent';
-import { persistActivationAnalyticsAfterConsent } from '$lib/client/activation-analytics';
+} from '#lib/client/analytics-consent.js';
+import { persistActivationAnalyticsAfterConsent } from '#lib/client/activation-analytics.js';
 import {
 	applyPostHogConsent,
 	capturePostHogEvent,
 	initPostHogAnalytics,
 	resetPostHogConsent
-} from '$lib/client/posthog-analytics';
+} from '#lib/client/posthog-analytics.js';
 
 function createPrivacyState() {
 	let analyticsConsent = $state<AnalyticsConsent>(null);

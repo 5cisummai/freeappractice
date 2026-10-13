@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BlogPostCard from '$lib/components/blog/blog-post-card.svelte';
+	import BlogPostCard from '#lib/components/blog/blog-post-card.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();

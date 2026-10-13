@@ -7,7 +7,7 @@
 	import CoachComposer from './coach-composer.svelte';
 	import { Chat } from '@ai-sdk/svelte';
 	import type { FileUIPart } from 'ai';
-	import { coachImageUrl } from '$lib/agent/attachments/images';
+	import { coachImageUrl } from '#lib/agent/attachments/images.js';
 	import {
 		lastAssistantMessageIsCompleteWithApprovalResponses,
 		lastAssistantMessageIsCompleteWithToolCalls
@@ -22,38 +22,38 @@
 	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
 
 	import SidebarCloseIcon from '@tabler/icons-svelte/icons/x';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Conversation from '$lib/components/ai-elements/conversation/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Conversation from '#lib/components/ai-elements/conversation/index.js';
 
-	import * as Message from '$lib/components/ai-elements/message/index.js';
-	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Message from '#lib/components/ai-elements/message/index.js';
+	import * as PromptInput from '#lib/components/ai-elements/prompt-input/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
 
-	import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
+	import { apiFetch, readJsonOrNull } from '#lib/client/api.js';
 
-	import CoachConversationMenu from '$lib/components/agent/coach-conversation-menu.svelte';
-	import CoachAvatar from '$lib/components/agent/coach-avatar.svelte';
+	import CoachConversationMenu from '#lib/components/agent/coach-conversation-menu.svelte';
+	import CoachAvatar from '#lib/components/agent/coach-avatar.svelte';
 
-	import { type CoachPracticeQuestionToolOutput } from '$lib/agent/tools/practice';
-	import type { AgentUIMessage } from '$lib/agent/agent.server';
-	import { createAgentTransport } from '$lib/agent/transport';
+	import { type CoachPracticeQuestionToolOutput } from '#lib/agent/tools/practice.js';
+	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+	import { createAgentTransport } from '#lib/agent/transport.js';
 	import {
 		useCoachPageToolbar,
 		useCoachSidebar
-	} from '$lib/components/agent/coach-context.svelte.js';
+	} from '#lib/components/agent/coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
 		type CoachComposerActionId
-	} from '$lib/agent/personalization/composer-actions';
-	import type { CoachThinkingMode } from '$lib/agent/request';
+	} from '#lib/agent/personalization/composer-actions.js';
+	import type { CoachThinkingMode } from '#lib/agent/request.js';
 
-	import { cn } from '$lib/utils.js';
-	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
-	import { getApprovalProposal } from '$lib/components/agent/approval';
-	import CoachQuestionCard from '$lib/components/agent/coach-question-card.svelte';
-	import CoachMessageFeedbackDialog from '$lib/components/agent/coach-message-feedback-dialog.svelte';
-	import type { CoachQuestionToolOutput } from '$lib/agent/tools/question';
+	import { cn } from '#lib/utils.js';
+	import type { ToolUIPartApproval } from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
+	import { getApprovalProposal } from '#lib/components/agent/approval.js';
+	import CoachQuestionCard from '#lib/components/agent/coach-question-card.svelte';
+	import CoachMessageFeedbackDialog from '#lib/components/agent/coach-message-feedback-dialog.svelte';
+	import type { CoachQuestionToolOutput } from '#lib/agent/tools/question.js';
 	import { toast } from 'svelte-sonner';
 
 	type CoachShellProps = {

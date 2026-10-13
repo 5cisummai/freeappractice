@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getUnitsForCourse, resolveEffectiveUnit } from '$lib/catalog/courses';
+import { getUnitsForCourse, resolveEffectiveUnit } from '#lib/catalog/courses.js';
 
 const biologyUnits = getUnitsForCourse('AP Biology');
 

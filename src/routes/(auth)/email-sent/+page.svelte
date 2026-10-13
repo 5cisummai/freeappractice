@@ -2,17 +2,17 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
-	import { safeAppPath } from '$lib/auth/urls.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { requestVerificationEmail } from '#lib/auth/request-verification-email.js';
+	import { safeAppPath } from '#lib/auth/urls.js';
 	import {
 		getEmailDeliveryFailureMessage,
 		getEmailDeliverySuccessMessage,
 		type EmailDeliveryStatus,
 		type EmailDeliveryType
-	} from '$lib/auth/email-delivery';
-	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
+	} from '#lib/auth/email-delivery.js';
+	import AuthSeoHead from '#lib/components/auth/auth-seo-head.svelte';
 
 	const email = $derived(page.url.searchParams.get('email'));
 	const redirectPath = $derived(safeAppPath(page.url.searchParams.get('redirect')));
@@ -192,7 +192,7 @@
 		{/if}
 		<div class="text-center">
 			<a
-				href={resolve(`/login?redirect=${encodeURIComponent(redirectPath)}`)}
+				href={resolve(`login?redirect=${encodeURIComponent(redirectPath)}`)}
 				class="text-sm underline underline-offset-4">Back to sign in</a
 			>
 		</div>

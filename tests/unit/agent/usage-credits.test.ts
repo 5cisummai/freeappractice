@@ -6,7 +6,7 @@ import {
 	millicreditsFromLanguageModelUsage,
 	usdFromLanguageModelUsage,
 	WEB_SEARCH_SURCHARGE_MILLI
-} from '$lib/agent/usage/credits';
+} from '#lib/agent/usage/credits.js';
 
 function usage(partial: {
 	inputTokens: number;

@@ -1,5 +1,5 @@
-import type { QuestionPathMetrics } from '$lib/question-bank/runtime.server';
-import { captureAnonymousServerMetric } from '$lib/server/posthog';
+import type { QuestionPathMetrics } from '#lib/question-bank/runtime.server.js';
+import { captureAnonymousServerMetric } from '#lib/server/posthog.js';
 
 /** Outcome segments for question request reliability dashboards. */
 export type QuestionRequestSegment = 'pool_hit' | 'pool_warming' | 'pool_error' | 'error';

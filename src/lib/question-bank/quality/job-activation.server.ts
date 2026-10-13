@@ -1,10 +1,10 @@
 import { asc, and, eq, gt, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	qualityReviewJobCandidates,
 	qualityReviewJobItems,
 	qualityReviewJobs
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 import { isCalibrationSample } from './rules.js';
 import { transitionReviewJobStatus } from './transitions.js';
 

@@ -1,4 +1,4 @@
-import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
+import { PUBLIC_GOOGLE_CLIENT_ID } from '$app/env/public';
 import { createAuthClient } from 'better-auth/client';
 import {
 	adminClient,

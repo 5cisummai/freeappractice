@@ -18,19 +18,19 @@ const {
 	QuizPoolWarmingError: class extends Error {}
 }));
 
-vi.mock('$lib/question-bank/request.server', () => ({ validateQuestionRequest }));
-vi.mock('$lib/server/api-rate-limit.server', () => ({ limitQuestionPoolRequests }));
-vi.mock('$lib/flags', () => ({ isStimulusQuestionsEnabled }));
-vi.mock('$lib/question-bank/mcq/quiz-assembler.server', () => ({
+vi.mock('#lib/question-bank/request.server.js', () => ({ validateQuestionRequest }));
+vi.mock('#lib/server/api-rate-limit.server.js', () => ({ limitQuestionPoolRequests }));
+vi.mock('#lib/flags.js', () => ({ isStimulusQuestionsEnabled }));
+vi.mock('#lib/question-bank/mcq/quiz-assembler.server.js', () => ({
 	assembleMcqQuiz,
 	QuizPoolWarmingError,
 	resolveQuizUnits
 }));
-vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({ requestPoolRefill }));
-vi.mock('$lib/question-bank/mcq/public-payload.server', () => ({
+vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({ requestPoolRefill }));
+vi.mock('#lib/question-bank/mcq/public-payload.server.js', () => ({
 	generatedQuestionToMcqAnswerBody: vi.fn()
 }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 

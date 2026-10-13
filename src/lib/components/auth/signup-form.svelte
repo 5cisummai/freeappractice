@@ -1,27 +1,30 @@
 <script lang="ts">
-	import { cn } from '$lib/utils.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Field from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
+	import { cn } from '#lib/utils.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Field from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth/client.js';
-	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
-	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '$lib/auth/urls.js';
+	import { authClient } from '#lib/auth/client.js';
+	import { requestVerificationEmail } from '#lib/auth/request-verification-email.js';
+	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '#lib/auth/urls.js';
 	import { page } from '$app/state';
-	import { getSiteUrl } from '$lib/site-url';
-	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
-	import { captureSignupCompleted, captureSignupStarted } from '$lib/client/activation-analytics';
-	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
-	import { markOnboardingIntentInBrowser } from '$lib/onboarding.js';
+	import { getSiteUrl } from '#lib/site-url.js';
+	import GoogleLogo from '#lib/components/auth/google-logo.svelte';
+	import {
+		captureSignupCompleted,
+		captureSignupStarted
+	} from '#lib/client/activation-analytics.js';
+	import { identifyPostHogUser } from '#lib/client/posthog-analytics.js';
+	import { markOnboardingIntentInBrowser } from '#lib/onboarding.js';
 	import {
 		isPasswordWithinLimit,
 		MIN_PASSWORD_LENGTH,
 		PASSWORD_LENGTH_ERROR,
 		PASSWORD_LENGTH_HINT
-	} from '$lib/auth/password-policy.js';
+	} from '#lib/auth/password-policy.js';
 
 	let {
 		class: className,
@@ -45,7 +48,7 @@
 	const googleNewUserCallbackURL = $derived(
 		redirectPath.startsWith('/app/invite/')
 			? `${getSiteUrl()}${redirectPath}${redirectPath.includes('?') ? '&' : '?'}signup=google`
-			: `${authCallbackUrl('/app')}?signup=google`
+			: `${authCallbackUrl('app')}?signup=google`
 	);
 
 	async function handleSubmit(e: SubmitEvent) {
@@ -86,10 +89,10 @@
 				redirectPath
 			);
 			// Onboarding pending cookie is set server-side in databaseHooks.user.create.after.
-			const emailSentQuery = `email=${encodeURIComponent(email)}&delivery=${encodeURIComponent(deliveryId)}&redirect=${encodeURIComponent(redirectPath)}${
-				verificationError ? '&send=failed' : ''
-			}`;
-			const emailSentHref = `${resolve('/email-sent')}?${emailSentQuery}`;
+			const emailSentQuery = `email=${encodeURIComponent(email)}&delivery=${encodeURIComponent(deliveryId)}&redirect=${encodeURIComponent(redirectPath)}${verificationError ? '&send=failed' : ''}`;
+
+			const emailSentHref = `${resolve('email-sent')}?${emailSentQuery}`;
+
 			// The base path is resolved above; only the encoded query string is appended.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			goto(emailSentHref);
@@ -111,7 +114,7 @@
 				provider: 'google',
 				requestSignUp: true,
 				callbackURL: googleCallbackURL,
-				errorCallbackURL: authCallbackUrl('/signup'),
+				errorCallbackURL: authCallbackUrl('signup'),
 				newUserCallbackURL: googleNewUserCallbackURL
 			});
 			if (error) {
@@ -208,8 +211,10 @@
 							{loading ? 'Creating account...' : 'Create Account'}
 						</Button>
 						<Field.Description class="text-center">
-							Already have an account? <a
-								href={resolve(`/login?redirect=${encodeURIComponent(redirectPath)}`)}
+							Already have an account?
+
+							<a
+								href={resolve(`login?redirect=${encodeURIComponent(redirectPath)}`)}
 								class="underline underline-offset-4">Sign in</a
 							>
 						</Field.Description>
@@ -219,9 +224,14 @@
 		</Card.Content>
 	</Card.Root>
 	<Field.Description class="px-6 text-center">
-		By continuing, you agree to our <a href={resolve('/terms')} class="underline underline-offset-4"
-			>Terms of Service</a
-		>
-		and <a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
+		By continuing, you agree to our
+
+		<a href={resolve('terms')} class="underline underline-offset-4">Terms of Service</a>
+
+		and
+
+		<a href={resolve('privacy')} class="underline underline-offset-4">Privacy Policy</a>
+
+		.
 	</Field.Description>
 </div>

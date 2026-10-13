@@ -5,15 +5,15 @@ const mocks = vi.hoisted(() => ({
 	createAgentStreamResponse: vi.fn()
 }));
 
-vi.mock('$lib/agent/access.server', () => ({
+vi.mock('#lib/agent/access.server.js', () => ({
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest
 }));
-vi.mock('$lib/agent/stream.server', () => ({
+vi.mock('#lib/agent/stream.server.js', () => ({
 	createAgentStreamResponse: mocks.createAgentStreamResponse
 }));
 
 import type { RequestEvent } from '@sveltejs/kit';
-import { handleAgentPost } from '$lib/agent/route.server';
+import { handleAgentPost } from '#lib/agent/route.server.js';
 
 const sessionId = 'c8f3048f-1681-47f2-b1db-e912655275d0';
 

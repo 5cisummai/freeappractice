@@ -2,9 +2,9 @@
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
-	import * as Confirmation from '$lib/components/ai-elements/confirmation/index.js';
+	import * as Confirmation from '#lib/components/ai-elements/confirmation/index.js';
 
-	import { type ApprovalProposal } from '$lib/components/agent/approval';
+	import { type ApprovalProposal } from '#lib/components/agent/approval.js';
 
 	let {
 		pendingCoachApproval,

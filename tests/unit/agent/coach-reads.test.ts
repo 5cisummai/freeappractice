@@ -8,20 +8,20 @@ const mocks = vi.hoisted(() => ({
 	findRecentGradedFrqAttempts: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: vi.fn()
 }));
-vi.mock('$lib/users/model.server', () => ({
+vi.mock('#lib/users/model.server.js', () => ({
 	getUserDashboardProfile: mocks.getUserDashboardProfile,
 	getUserProgress: mocks.getUserProgress
 }));
-vi.mock('$lib/users/dashboard-queries.server', () => ({
+vi.mock('#lib/users/dashboard-queries.server.js', () => ({
 	getDashboardStats: mocks.getDashboardStats
 }));
-vi.mock('$lib/agent/personalization/context.server', () => ({
+vi.mock('#lib/agent/personalization/context.server.js', () => ({
 	getRecentMistakes: mocks.getRecentMistakes
 }));
-vi.mock('$lib/grading/frq/storage.server', () => ({
+vi.mock('#lib/grading/frq/storage.server.js', () => ({
 	findRecentGradedFrqAttempts: mocks.findRecentGradedFrqAttempts
 }));
 
@@ -29,7 +29,7 @@ import {
 	getCoachActivitySummary,
 	getCoachFrqPerformance,
 	getCoachUnitDetail
-} from '$lib/agent/tools/evidence.server';
+} from '#lib/agent/tools/evidence.server.js';
 
 describe('coach read tools', () => {
 	beforeEach(() => {

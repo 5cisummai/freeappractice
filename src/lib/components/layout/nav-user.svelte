@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth/client.js';
-	import * as Avatar from '$lib/components/ui/avatar/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { authClient } from '#lib/auth/client.js';
+	import * as Avatar from '#lib/components/ui/avatar/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
 	import LogOutIcon from '@tabler/icons-svelte/icons/logout';
 	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
-	import { resetPostHogUser } from '$lib/client/posthog-analytics';
+	import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
 
 	let {
 		user
@@ -97,10 +97,7 @@
 				<DropdownMenu.Group>
 					<DropdownMenu.Item>
 						{#snippet child({ props })}
-							<a href={resolve('/app/settings')} {...props}>
-								<SettingsIcon />
-								Settings
-							</a>
+							<a href={resolve('app/settings')} {...props}><SettingsIcon />Settings</a>
 						{/snippet}
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>

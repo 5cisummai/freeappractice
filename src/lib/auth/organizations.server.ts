@@ -1,15 +1,15 @@
-import { auth } from '$lib/auth/server';
+import { auth } from '#lib/auth/server.js';
 import {
 	ensurePersonalOrganization,
 	ensureOrganizationShareToken,
 	getOrganizationTypeForUser,
 	listUserOrganizations
-} from '$lib/auth/organization-queries.server';
+} from '#lib/auth/organization-queries.server.js';
 import {
 	orgUsesUserSuper,
 	type OrgType,
 	type UserOrganization
-} from '$lib/auth/organization-types';
+} from '#lib/auth/organization-types.js';
 
 export type AppOrganizationsPayload = {
 	organizations: UserOrganization[];

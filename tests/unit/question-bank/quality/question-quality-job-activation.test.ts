@@ -9,15 +9,15 @@ const mocks = vi.hoisted(() => ({
 	execute: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		select: mocks.select,
 		execute: mocks.execute
 	})
 }));
 
-import { activateReviewJob } from '$lib/question-bank/quality/job-activation.server';
-import { isCalibrationSample } from '$lib/question-bank/quality/rules';
+import { activateReviewJob } from '#lib/question-bank/quality/job-activation.server.js';
+import { isCalibrationSample } from '#lib/question-bank/quality/rules.js';
 
 function setupPreviewRows(rows: Array<{ questionId: string; rubricVersion: string }>) {
 	mocks.select.mockReturnValue({ from: mocks.from });

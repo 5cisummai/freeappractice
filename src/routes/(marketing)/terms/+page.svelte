@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
 	import { resolve } from '$app/paths';
 
 	let { data } = $props();
@@ -105,7 +105,7 @@
 					reports, written-response submissions, and account-related requests, remains yours. By
 					submitting content, you grant us a non-exclusive license to host, process, store, display,
 					analyze, and send that content to the providers described in our
-					<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>
+					<a href={resolve('privacy')} class="underline underline-offset-4">Privacy Policy</a>
 					as reasonably necessary to operate, maintain, secure, and improve the Service.
 				</p>
 				<p class="mt-2">
@@ -141,14 +141,14 @@
 					with billing or access controls, or submit content you do not have the right to submit.
 				</p>
 				<p class="mt-2">
-					<strong>Academic integrity.</strong> You may not use the Service for academic dishonesty
-					or any similar misconduct. That includes, without limitation: cheating on homework, quizzes,
-					tests, or exams (including AP exams); submitting AI-generated or Service-generated answers
-					as your own graded work; plagiarizing explanations, essays, or solutions; using the Service
-					to complete assessments you are required to do independently; or helping others do any of
-					the above. Practice questions, grades, explanations, and tutor or Coach output are for
-					learning and self-study only. You remain responsible for following your school’s, teacher’s,
-					and College Board’s academic integrity and exam rules.
+					<strong>Academic integrity.</strong> You may not use the Service for academic dishonesty or
+					any similar misconduct. That includes, without limitation: cheating on homework, quizzes, tests,
+					or exams (including AP exams); submitting AI-generated or Service-generated answers as your
+					own graded work; plagiarizing explanations, essays, or solutions; using the Service to complete
+					assessments you are required to do independently; or helping others do any of the above. Practice
+					questions, grades, explanations, and tutor or Coach output are for learning and self-study only.
+					You remain responsible for following your school’s, teacher’s, and College Board’s academic
+					integrity and exam rules.
 				</p>
 			</section>
 

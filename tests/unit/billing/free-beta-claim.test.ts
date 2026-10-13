@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { tutorProfiles } from '$lib/server/neon/schema';
+import { tutorProfiles } from '#lib/server/neon/schema.js';
 
 const mocks = vi.hoisted(() => ({
 	isSuperFreeBetaEnabled: vi.fn(),
@@ -9,16 +9,16 @@ const mocks = vi.hoisted(() => ({
 	claimed: false
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select, update: mocks.update })
 }));
-vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
+vi.mock('#lib/flags.js', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
 
 import {
 	claimSuperFreeBeta,
 	hasClaimedSuperFreeBeta,
 	SuperFreeBetaUnavailableError
-} from '$lib/agent/personalization/profile.server';
+} from '#lib/agent/personalization/profile.server.js';
 
 const now = new Date('2026-08-06T18:00:00.000Z');
 

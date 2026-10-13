@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPoolWarmingResponse, POOL_WARMING_CODE } from '$lib/question-bank/mcq/payload';
+import { isPoolWarmingResponse, POOL_WARMING_CODE } from '#lib/question-bank/mcq/payload.js';
 
 describe('POOL_WARMING payload', () => {
 	it('detects typed warming responses', () => {

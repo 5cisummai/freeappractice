@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	bookmarks,
 	frqAttempts,
 	mcqAttempts,
 	quizAttempts,
 	userProgress
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 
 /**
  * Clears practice progress for a user while keeping the account.

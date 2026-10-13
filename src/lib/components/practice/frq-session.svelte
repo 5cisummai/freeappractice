@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import FullQuestion from '$lib/components/questions/full-question.svelte';
-	import FrqResponse from '$lib/components/questions/frq-response.svelte';
-	import FrqFeedback from '$lib/components/questions/frq-feedback.svelte';
-	import QuestionTutor from '$lib/components/questions/question-tutor.svelte';
-	import { createFrqCore } from '$lib/components/questions/frq-core.svelte.js';
-	import { presentedStemFromFrq } from '$lib/components/questions/presented-question.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
-	import type { ExamNavItem, TutorMode } from '$lib/question-bank/mcq/types';
+	import EmptyState from '#lib/components/app/empty-state.svelte';
+	import FullQuestion from '#lib/components/questions/full-question.svelte';
+	import FrqResponse from '#lib/components/questions/frq-response.svelte';
+	import FrqFeedback from '#lib/components/questions/frq-feedback.svelte';
+	import QuestionTutor from '#lib/components/questions/question-tutor.svelte';
+	import { createFrqCore } from '#lib/components/questions/frq-core.svelte.js';
+	import { presentedStemFromFrq } from '#lib/components/questions/presented-question.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
+	import type { ExamNavItem, TutorMode } from '#lib/question-bank/mcq/types.js';
 
 	type FrqSessionProps = {
 		selectedCourse: string;

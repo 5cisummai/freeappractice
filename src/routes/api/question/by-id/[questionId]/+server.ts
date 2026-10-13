@@ -1,17 +1,16 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
-import { storedQuestionToMcqAnswerBody } from '$lib/question-bank/mcq/public-payload.server';
+import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
+import { storedQuestionToMcqAnswerBody } from '#lib/question-bank/mcq/public-payload.server.js';
 
 export const GET: RequestHandler = async ({ params }) => {
 	const questionId = params.questionId?.trim();
 	if (!questionId) {
-		return json({ error: 'questionId is required' }, { status: 400 });
+		return Response.json({ error: 'questionId is required' }, { status: 400 });
 	}
 
 	try {
 		const question = await getQuestionById(questionId);
-		return json({
+		return Response.json({
 			answer: storedQuestionToMcqAnswerBody(question),
 			provider: 'cache',
 			model: 'cached',
@@ -19,6 +18,6 @@ export const GET: RequestHandler = async ({ params }) => {
 			questionId: question.id
 		});
 	} catch {
-		return json({ error: 'Question not found' }, { status: 404 });
+		return Response.json({ error: 'Question not found' }, { status: 404 });
 	}
 };

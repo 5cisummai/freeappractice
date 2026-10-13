@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	import { type Icon as IconType } from '@lucide/svelte';
 	import DotIcon from '@lucide/svelte/icons/dot';
 	import type { Snippet } from 'svelte';

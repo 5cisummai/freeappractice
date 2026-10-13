@@ -13,41 +13,41 @@ const mocks = vi.hoisted(() => ({
 	requireFrqPracticeEnabled: vi.fn()
 }));
 
-vi.mock('$lib/auth/route-helpers.server', () => ({
+vi.mock('#lib/auth/route-helpers.server.js', () => ({
 	getOptionalUserId: mocks.getOptionalUserId,
 	withAuthedHandler:
 		(handler: (event: unknown, userId: string) => Promise<Response>) => (event: unknown) =>
 			handler(event, 'user-1')
 }));
-vi.mock('$lib/users/assistant-preferences.server', () => ({
+vi.mock('#lib/users/assistant-preferences.server.js', () => ({
 	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest
 }));
-vi.mock('$lib/tutor/service.server', () => ({
+vi.mock('#lib/tutor/service.server.js', () => ({
 	resolveTutorQuestion: mocks.resolveTutorQuestion,
 	chat: vi.fn(),
 	chatFrq: vi.fn()
 }));
-vi.mock('$lib/tutor/rate-limit.server', () => ({
+vi.mock('#lib/tutor/rate-limit.server.js', () => ({
 	limitGenericTutor: mocks.limitGenericTutor
 }));
-vi.mock('$lib/tutor/chat-stream.server', () => ({
+vi.mock('#lib/tutor/chat-stream.server.js', () => ({
 	createTutorChatStream: mocks.createTutorChatStream,
 	createFrqTutorChatStream: mocks.createFrqTutorChatStream
 }));
-vi.mock('$lib/question-bank/frq/model.server', () => ({
+vi.mock('#lib/question-bank/frq/model.server.js', () => ({
 	getFrqQuestionById: mocks.getFrqQuestionById
 }));
-vi.mock('$lib/question-bank/frq/profiles.server', () => ({
+vi.mock('#lib/question-bank/frq/profiles.server.js', () => ({
 	getFrqCourseProfile: mocks.getFrqCourseProfile
 }));
-vi.mock('$lib/grading/frq/attempts.server', () => ({
+vi.mock('#lib/grading/frq/attempts.server.js', () => ({
 	getFrqAttemptForUser: mocks.getFrqAttemptForUser
 }));
-vi.mock('$lib/question-bank/frq/gate.server', () => ({
+vi.mock('#lib/question-bank/frq/gate.server.js', () => ({
 	requireFrqPracticeEnabled: mocks.requireFrqPracticeEnabled
 }));
-vi.mock('$lib/server/posthog', () => ({ capturePostHogServerEvent: vi.fn() }));
-vi.mock('$lib/server/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('#lib/server/posthog.js', () => ({ capturePostHogServerEvent: vi.fn() }));
+vi.mock('#lib/server/logger.js', () => ({ logger: { error: vi.fn() } }));
 
 import { POST as tutorChatPost } from '../../../src/routes/api/tutor/chat/+server';
 import { POST as tutorFrqPost } from '../../../src/routes/api/tutor/frq/+server';

@@ -1,5 +1,5 @@
-import { getCourseNames } from '$lib/catalog/courses';
-import { AP_DATA, type UnifiedCourse } from '$lib/catalog/dataset';
+import { getCourseNames } from '#lib/catalog/courses.js';
+import { AP_DATA, type UnifiedCourse } from '#lib/catalog/dataset.js';
 
 type CatalogCourseSummary = {
 	course: string;

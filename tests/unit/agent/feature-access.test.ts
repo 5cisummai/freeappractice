@@ -10,23 +10,23 @@ const mocks = vi.hoisted(() => ({
 	getAssistantFeaturesEnabledForRequest: vi.fn()
 }));
 
-vi.mock('$lib/flags', () => ({
+vi.mock('#lib/flags.js', () => ({
 	isSuperCoachEnabled: mocks.isSuperCoachEnabled,
 	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
 }));
-vi.mock('$lib/billing/subscriptions.server', () => ({
+vi.mock('#lib/billing/subscriptions.server.js', () => ({
 	getPlanAccess: mocks.getPlanAccess,
 	getStripeClient: mocks.getStripeClient
 }));
-vi.mock('$lib/agent/personalization/profile.server', () => ({
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	getTutorProfileView: mocks.getTutorProfileView,
 	getAgeConfirmedAt: mocks.getAgeConfirmedAt
 }));
-vi.mock('$lib/users/assistant-preferences.server', () => ({
+vi.mock('#lib/users/assistant-preferences.server.js', () => ({
 	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest
 }));
 
-import { authorizeFeatureRequest } from '$lib/agent/access.server';
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
 
 const profile = {
 	ageConfirmedAt: '2026-08-04T00:00:00.000Z'

@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, isNull, max, ne, or, sql } from 'drizzle-orm';
 import { sanitizeConversationTitle, fallbackConversationTitle } from './titles.server';
 
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { conversationMessages, conversations, coachAudits } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { conversationMessages, conversations, coachAudits } from '#lib/server/neon/schema.js';
 
 export type ConversationSurface = 'coach' | 'question';
 

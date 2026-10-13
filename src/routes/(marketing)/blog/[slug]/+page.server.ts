@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '$lib/blog/service.server';
-import { getBlogProductCta, getBlogRelatedPosts } from '$lib/blog/related-links.js';
-import { renderBlogMarkdown } from '$lib/blog/render-markdown.server';
+import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '#lib/blog/service.server.js';
+import { getBlogProductCta, getBlogRelatedPosts } from '#lib/blog/related-links.js';
+import { renderBlogMarkdown } from '#lib/blog/render-markdown.server.js';
 import type { PageServerLoad } from './$types';
 
 export async function entries() {

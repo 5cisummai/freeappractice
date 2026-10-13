@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
-	import { Button } from '$lib/components/ui/button';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import { cn } from '#lib/utils.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 	import { getAttachmentsContext } from '../context/attachments.svelte.js';
 	import type { PromptInputAttachment } from '../context/types.js';
 	import AttachmentImagePreview from './attachment-image-preview.svelte';

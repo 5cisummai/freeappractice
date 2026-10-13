@@ -14,16 +14,19 @@ import {
 	sql,
 	sum
 } from 'drizzle-orm';
-import { isDuplicateKeyError } from '$lib/question-bank/util.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { isDuplicateKeyError } from '#lib/question-bank/util.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	superBillingAccess,
 	superCleanupJobs,
 	superGrants,
 	superUsageRollups,
 	tutorProfiles
-} from '$lib/server/neon/schema';
-import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/billing/subscriptions.server';
+} from '#lib/server/neon/schema.js';
+import {
+	getPlanAccess,
+	markSuperAccessEndedIfNoAccess
+} from '#lib/billing/subscriptions.server.js';
 import {
 	INDEFINITE_SUPER_GRANT_EXPIRES_AT,
 	type SuperAccessReason,
@@ -32,14 +35,14 @@ import {
 	type SuperCleanupJobView,
 	type SuperGrantView,
 	type SuperSubscriptionView
-} from '$lib/billing/types';
+} from '#lib/billing/types.js';
 
 export type {
 	SuperAdminOverview,
 	SuperCleanupJobView,
 	SuperGrantView,
 	SuperSubscriptionView
-} from '$lib/billing/types';
+} from '#lib/billing/types.js';
 
 function monthKey(now: Date): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;

@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 	select: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		batch: mocks.batch,
 		insert: mocks.insert,
@@ -20,7 +20,7 @@ import {
 	createReviewJob,
 	getReviewJob,
 	updateReviewJob
-} from '$lib/question-bank/quality/models.server';
+} from '#lib/question-bank/quality/models.server.js';
 
 describe('question quality persistence functions', () => {
 	beforeEach(() => {

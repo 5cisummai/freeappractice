@@ -1,5 +1,5 @@
 import type { RequestHandler } from './$types';
-import { submitAppFeedback } from '$lib/feedback/server';
+import { submitAppFeedback } from '#lib/feedback/server.js';
 
 export const POST: RequestHandler = async ({ request, getClientAddress, locals }) => {
 	return submitAppFeedback(request, getClientAddress(), locals.userId);

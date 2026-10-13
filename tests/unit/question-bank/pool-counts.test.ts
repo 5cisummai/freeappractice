@@ -5,11 +5,11 @@ const mocks = vi.hoisted(() => ({
 	select: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
 
-import { getPoolRefillHealthCounts } from '$lib/question-bank/pool-counts.server';
+import { getPoolRefillHealthCounts } from '#lib/question-bank/pool-counts.server.js';
 
 describe('pool refill health counts', () => {
 	beforeEach(() => {

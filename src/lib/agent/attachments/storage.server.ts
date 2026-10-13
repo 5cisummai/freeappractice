@@ -1,5 +1,12 @@
-import { dev } from '$app/environment';
-import { env } from '$env/dynamic/private';
+import { dev } from '$app/env';
+
+import {
+	COACH_IMAGE_S3_ENDPOINT,
+	COACH_IMAGE_S3_ACCESS_KEY,
+	COACH_IMAGE_S3_SECRET_KEY,
+	COACH_IMAGE_S3_BUCKET
+} from '$app/env/private';
+
 import { put, get, del } from '@vercel/blob';
 import {
 	S3Client,
@@ -11,19 +18,19 @@ import {
 export type CoachImageStore = 'blob' | 's3';
 
 export function coachImageStore(): CoachImageStore {
-	return dev && env.COACH_IMAGE_S3_ENDPOINT ? 's3' : 'blob';
+	return dev && COACH_IMAGE_S3_ENDPOINT ? 's3' : 'blob';
 }
 
 function s3() {
 	// An endpoint override is local development configuration, never a production fallback.
 	if (!dev) throw new Error('Local Coach image storage is unavailable in production');
 	return new S3Client({
-		endpoint: env.COACH_IMAGE_S3_ENDPOINT,
+		endpoint: COACH_IMAGE_S3_ENDPOINT,
 		region: 'us-east-1',
 		forcePathStyle: true,
 		credentials: {
-			accessKeyId: env.COACH_IMAGE_S3_ACCESS_KEY ?? '',
-			secretAccessKey: env.COACH_IMAGE_S3_SECRET_KEY ?? ''
+			accessKeyId: COACH_IMAGE_S3_ACCESS_KEY ?? '',
+			secretAccessKey: COACH_IMAGE_S3_SECRET_KEY ?? ''
 		}
 	});
 }
@@ -32,7 +39,7 @@ export async function putCoachImage(store: CoachImageStore, pathname: string, by
 	if (store === 's3') {
 		await s3().send(
 			new PutObjectCommand({
-				Bucket: env.COACH_IMAGE_S3_BUCKET,
+				Bucket: COACH_IMAGE_S3_BUCKET,
 				Key: pathname,
 				Body: bytes,
 				ContentType: 'image/webp'
@@ -50,8 +57,9 @@ export async function putCoachImage(store: CoachImageStore, pathname: string, by
 export async function readCoachImage(store: CoachImageStore, pathname: string): Promise<Buffer> {
 	if (store === 's3') {
 		const result = await s3().send(
-			new GetObjectCommand({ Bucket: env.COACH_IMAGE_S3_BUCKET, Key: pathname })
+			new GetObjectCommand({ Bucket: COACH_IMAGE_S3_BUCKET, Key: pathname })
 		);
+
 		if (!result.Body) throw new Error('Image unavailable');
 		return Buffer.from(await result.Body.transformToByteArray());
 	}
@@ -62,7 +70,7 @@ export async function readCoachImage(store: CoachImageStore, pathname: string): 
 
 export async function deleteCoachImage(store: CoachImageStore, pathname: string) {
 	if (store === 's3') {
-		await s3().send(new DeleteObjectCommand({ Bucket: env.COACH_IMAGE_S3_BUCKET, Key: pathname }));
+		await s3().send(new DeleteObjectCommand({ Bucket: COACH_IMAGE_S3_BUCKET, Key: pathname }));
 	} else {
 		await del(pathname);
 	}

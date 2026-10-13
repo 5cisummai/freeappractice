@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, lte, or } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { poolBucketWriteLocks } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { poolBucketWriteLocks } from '#lib/server/neon/schema.js';
 import {
 	countActivePoolRowsForServing,
 	type PoolBucketKey
-} from '$lib/question-bank/pool-refill-queue.server';
-import { isDuplicateKeyError } from '$lib/question-bank/util.server';
+} from '#lib/question-bank/pool-refill-queue.server.js';
+import { isDuplicateKeyError } from '#lib/question-bank/util.server.js';
 
 const LOCK_TTL_MS = 120_000;
 const LOCK_RETRY_MS = 50;

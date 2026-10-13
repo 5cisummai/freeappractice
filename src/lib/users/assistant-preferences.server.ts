@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { userProfiles } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { userProfiles } from '#lib/server/neon/schema.js';
 
 /** Read the account-wide switch for Tutor and Coach. */
 export async function getAssistantFeaturesEnabled(userId: string): Promise<boolean> {

@@ -2,25 +2,28 @@ import { createHash, randomUUID } from 'node:crypto';
 import { tool } from 'ai';
 
 import { z } from 'zod';
-import { COACH_MODEL } from '$lib/agent/model';
-import { getCourseNames } from '$lib/catalog/courses';
-import { claimIdempotencyKey, releaseIdempotencyKey } from '$lib/agent/usage/controls.server';
-import type { AgentToolsInput } from '$lib/agent/request';
-import { authorizeFeatureRequest } from '$lib/agent/access.server';
+import { COACH_MODEL } from '#lib/agent/model.js';
+import { getCourseNames } from '#lib/catalog/courses.js';
+import { claimIdempotencyKey, releaseIdempotencyKey } from '#lib/agent/usage/controls.server.js';
+import type { AgentToolsInput } from '#lib/agent/request.js';
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
 
-import { studyPlanToolInputSchema } from '$lib/agent/plans/tool-schema';
+import { studyPlanToolInputSchema } from '#lib/agent/plans/tool-schema.js';
 
-import { getTutorProfileView, updateTutorProfile } from '$lib/agent/personalization/profile.server';
+import {
+	getTutorProfileView,
+	updateTutorProfile
+} from '#lib/agent/personalization/profile.server.js';
 import {
 	addStudyPlanDays,
 	getCurrentStudyPlan,
 	saveStudyPlan
-} from '$lib/agent/plans/store.server';
-import { StudyPlanConflictError, StudyPlansLockedError } from '$lib/agent/plans/store.server';
-import type { StudyPlanView, StudyTask } from '$lib/agent/plans/types';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { coachAudits } from '$lib/server/neon/schema';
-import { logger } from '$lib/server/logger';
+} from '#lib/agent/plans/store.server.js';
+import { StudyPlanConflictError, StudyPlansLockedError } from '#lib/agent/plans/store.server.js';
+import type { StudyPlanView, StudyTask } from '#lib/agent/plans/types.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { coachAudits } from '#lib/server/neon/schema.js';
+import { logger } from '#lib/server/logger.js';
 
 const targetDateSchema = z.object({
 	course: z.string().trim().min(1).max(100).describe('Exact app-facing AP course name.'),

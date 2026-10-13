@@ -8,28 +8,30 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('ai', () => ({ consumeStream: vi.fn(), createAgentUIStreamResponse: mocks.startStream }));
-vi.mock('$lib/agent/memory/service.server', () => ({
+vi.mock('#lib/agent/memory/service.server.js', () => ({
 	addTutorMemoryExchange: vi.fn(),
 	isTutorMemoryAvailable: vi.fn()
 }));
-vi.mock('$lib/server/logger', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
-vi.mock('$lib/agent/usage/controls.server', () => ({
+vi.mock('#lib/server/logger.js', () => ({
+	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+vi.mock('#lib/agent/usage/controls.server.js', () => ({
 	acquireCoachLock: async () => ({ key: 'lock', token: 'token' }),
 	RedisRequiredError: class extends Error {},
 	releaseLock: mocks.releaseLock,
 	refreshLock: vi.fn()
 }));
-vi.mock('$lib/agent/agent.server', () => ({ createAgent: () => ({}) }));
-vi.mock('$lib/agent/personalization/context.server', () => ({
+vi.mock('#lib/agent/agent.server.js', () => ({ createAgent: () => ({}) }));
+vi.mock('#lib/agent/personalization/context.server.js', () => ({
 	buildAgentContext: async () => ({ text: '', memoryDegraded: false })
 }));
-vi.mock('$lib/agent/access.server', () => ({
+vi.mock('#lib/agent/access.server.js', () => ({
 	getTutorProfileViewForRequest: async () => ({
 		selectedApClasses: [],
 		memoryDisclosureSeenAt: null
 	})
 }));
-vi.mock('$lib/agent/usage/turn.server', () => ({
+vi.mock('#lib/agent/usage/turn.server.js', () => ({
 	startAgentTurn: async () => ({
 		kind: 'available',
 		usage: { remaining: 10_000 },
@@ -37,12 +39,12 @@ vi.mock('$lib/agent/usage/turn.server', () => ({
 		releaseIfUnused: mocks.releaseIfUnused
 	})
 }));
-vi.mock('$lib/tutor/response-utils.server', () => ({ scheduleTutorMemoryWrite: vi.fn() }));
-vi.mock('$lib/agent/conversations/history.server', () => ({
+vi.mock('#lib/tutor/response-utils.server.js', () => ({ scheduleTutorMemoryWrite: vi.fn() }));
+vi.mock('#lib/agent/conversations/history.server.js', () => ({
 	buildAgentUiMessages: () => ({ messages: [], historySummary: '' }),
 	reconstructApprovalContinuationMessage: vi.fn()
 }));
-vi.mock('$lib/agent/conversations/store.server', () => ({
+vi.mock('#lib/agent/conversations/store.server.js', () => ({
 	appendConversationMessage: async () => 'message-1',
 	ensureConversation: async () => ({ id: 'conversation-1', userId: 'user-1', context: {} }),
 	generateConversationTitle: async () => 'Title',
@@ -54,7 +56,7 @@ vi.mock('$lib/agent/conversations/store.server', () => ({
 	markConversationMessageStreaming: vi.fn()
 }));
 
-import { createAgentStreamResponse } from '$lib/agent/stream.server';
+import { createAgentStreamResponse } from '#lib/agent/stream.server.js';
 
 afterEach(() => vi.useRealTimers());
 

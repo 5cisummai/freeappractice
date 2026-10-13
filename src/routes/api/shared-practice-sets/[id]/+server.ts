@@ -1,11 +1,11 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
-import { OrganizationPermissionError } from '$lib/auth/organization-types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { type RequestHandler } from '@sveltejs/kit';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import {
 	attachSharedQuizToOrganization,
 	detachSharedQuizFromOrganization,
 	SharedQuizValidationError
-} from '$lib/shared-practice/shared-sets.server';
+} from '#lib/shared-practice/shared-sets.server.js';
 
 function parseOrganizationIdFromBody(body: unknown): string | null {
 	if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
@@ -21,24 +21,24 @@ function parseOrganizationIdFromQuery(event: Parameters<RequestHandler>[0]): str
 export const PATCH: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const setId = event.params.id?.trim() ?? '';
-		if (!setId) return json({ error: 'Shared quiz is required.' }, { status: 400 });
+		if (!setId) return Response.json({ error: 'Shared quiz is required.' }, { status: 400 });
 
 		const organizationId = parseOrganizationIdFromBody(
 			await event.request.json().catch(() => null)
 		);
 		if (!organizationId) {
-			return json({ error: 'Organization is required.' }, { status: 400 });
+			return Response.json({ error: 'Organization is required.' }, { status: 400 });
 		}
 
 		try {
 			await attachSharedQuizToOrganization({ setId, organizationId, userId });
-			return json({ attached: true });
+			return Response.json({ attached: true });
 		} catch (error) {
 			if (error instanceof SharedQuizValidationError) {
-				return json({ error: error.message }, { status: 400 });
+				return Response.json({ error: error.message }, { status: 400 });
 			}
 			if (error instanceof OrganizationPermissionError) {
-				return json({ error: error.message }, { status: 403 });
+				return Response.json({ error: error.message }, { status: 403 });
 			}
 			throw error;
 		}
@@ -52,22 +52,22 @@ export const PATCH: RequestHandler = withAuthedHandler(
 export const DELETE: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const setId = event.params.id?.trim() ?? '';
-		if (!setId) return json({ error: 'Shared quiz is required.' }, { status: 400 });
+		if (!setId) return Response.json({ error: 'Shared quiz is required.' }, { status: 400 });
 
 		const organizationId = parseOrganizationIdFromQuery(event);
 		if (!organizationId) {
-			return json({ error: 'Organization is required.' }, { status: 400 });
+			return Response.json({ error: 'Organization is required.' }, { status: 400 });
 		}
 
 		try {
 			await detachSharedQuizFromOrganization({ setId, organizationId, userId });
-			return json({ removed: true });
+			return Response.json({ removed: true });
 		} catch (error) {
 			if (error instanceof SharedQuizValidationError) {
-				return json({ error: error.message }, { status: 400 });
+				return Response.json({ error: error.message }, { status: 400 });
 			}
 			if (error instanceof OrganizationPermissionError) {
-				return json({ error: error.message }, { status: 403 });
+				return Response.json({ error: error.message }, { status: 403 });
 			}
 			throw error;
 		}

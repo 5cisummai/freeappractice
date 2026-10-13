@@ -4,7 +4,7 @@ import {
 	hashRedisIdentifier,
 	redisNamespace,
 	withRedisTimeout
-} from '$lib/redis/server';
+} from '#lib/redis/server.js';
 
 /** The same standard Tutor limit applies to all signed-in users, regardless of plan. */
 export async function limitGenericTutor(request: Request, userId?: string) {

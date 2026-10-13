@@ -6,14 +6,14 @@ const mocks = vi.hoisted(() => ({
 	getFrqProgressForUser: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select, execute: mocks.execute })
 }));
-vi.mock('$lib/grading/frq/attempts.server', () => ({
+vi.mock('#lib/grading/frq/attempts.server.js', () => ({
 	getFrqProgressForUser: mocks.getFrqProgressForUser
 }));
 
-import { getDashboardProgress, getDashboardStats } from '$lib/users/dashboard-queries.server';
+import { getDashboardProgress, getDashboardStats } from '#lib/users/dashboard-queries.server.js';
 
 function plainQuery(rows: unknown[]) {
 	return { from: () => ({ where: async () => rows }) };

@@ -1,14 +1,10 @@
+import type { HandleClientError } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
-import { injectAnalytics } from '@vercel/analytics/sveltekit';
-import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
-import { initPostHogAnalytics, capturePostHogException } from '$lib/client/posthog-analytics';
-import { sentryEnabled, sentryOptions } from '$lib/sentry-config';
-import type { HandleClientError } from '@sveltejs/kit';
+import { initPostHogAnalytics, capturePostHogException } from '#lib/client/posthog-analytics.js';
+import { sentryEnabled, sentryOptions } from '#lib/sentry-config.js';
 
 const CHUNK_RELOAD_AT_KEY = 'chunk-reload-at';
 const CHUNK_RELOAD_WINDOW_MS = 10_000;
-
-let vercelAnalyticsLoaded = false;
 
 if (sentryEnabled) {
 	Sentry.init(sentryOptions);
@@ -21,6 +17,7 @@ function dynamicImportFailureMessage(error: unknown): string {
 
 function isDynamicImportFailure(error: unknown): boolean {
 	const message = dynamicImportFailureMessage(error);
+
 	return (
 		message.includes('Failed to fetch dynamically imported module') ||
 		message.includes('Importing a module script failed') ||
@@ -54,24 +51,11 @@ if (typeof window !== 'undefined') {
 
 export async function init() {
 	initPostHogAnalytics();
-	if (!vercelAnalyticsLoaded && typeof window !== 'undefined') {
-		injectAnalytics();
-		injectSpeedInsights();
-		vercelAnalyticsLoaded = true;
-	}
 }
 
-export const handleError: HandleClientError = Sentry.handleErrorWithSentry(
-	async ({ error, status, message }) => {
-		if (isDynamicImportFailure(error) && reloadOnceForChunkFailure()) {
-			return { message, status };
-		}
+export const handleError: HandleClientError = Sentry.handleErrorWithSentry(({ kind, error }) => {
+	if (kind !== 'unknown') return;
+	if (isDynamicImportFailure(error) && reloadOnceForChunkFailure()) return;
 
-		capturePostHogException(error);
-
-		return {
-			message,
-			status
-		};
-	}
-);
+	capturePostHogException(error);
+});

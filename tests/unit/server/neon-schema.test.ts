@@ -18,7 +18,7 @@ import {
 	authUsersRelations,
 	authVerifications,
 	betterAuthSchema
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 
 const authAdapterOptions = {
 	experimental: { joins: true },

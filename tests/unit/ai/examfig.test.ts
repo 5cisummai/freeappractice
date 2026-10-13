@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { validateExamfigDiagram } from '$lib/diagrams/validation.server';
-import { renderExamfigDiagram } from '$lib/diagrams/examfig';
+import { validateExamfigDiagram } from '#lib/diagrams/validation.server.js';
+import { renderExamfigDiagram } from '#lib/diagrams/examfig.js';
 
 describe('examfig diagram validation', () => {
 	it('renders a valid semantic spec through the SSR runtime', () => {

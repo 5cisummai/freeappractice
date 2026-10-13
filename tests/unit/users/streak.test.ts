@@ -6,11 +6,11 @@ const mocks = vi.hoisted(() => ({
 	execute: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ execute: mocks.execute })
 }));
 
-import { getCurrentMcqStreaksForUsers, getCurrentStreak } from '$lib/users/streak.server';
+import { getCurrentMcqStreaksForUsers, getCurrentStreak } from '#lib/users/streak.server.js';
 
 const dialect = new PgDialect();
 

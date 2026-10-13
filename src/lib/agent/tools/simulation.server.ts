@@ -1,15 +1,15 @@
 export const SIM_MODEL = 'openai/gpt-6.1-sol';
 
 import { generateText, tool } from 'ai';
-import type { CanvasHtmlArtifact } from '$lib/canvas/types';
+import type { CanvasHtmlArtifact } from '#lib/canvas/types.js';
 
-import type { AgentToolsInput } from '$lib/agent/request';
+import type { AgentToolsInput } from '#lib/agent/request.js';
 
 import {
 	canvasToolToKind,
 	generativeCanvasToolInputSchema,
 	prepareGenerativeCanvasHtml
-} from '$lib/canvas';
+} from '#lib/canvas/index.js';
 
 export function createSimulationTools(input: AgentToolsInput) {
 	function simulationTool(kind: 'open_physics_sim' | 'open_math_explorer') {

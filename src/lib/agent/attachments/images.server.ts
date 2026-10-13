@@ -2,19 +2,19 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, isNotNull, lte, or, count } from 'drizzle-orm';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { coachImages } from '$lib/server/neon/schema';
-import { isCoachImagesEnabled } from '$lib/flags';
-import { coachImageId, coachImageUrl } from '$lib/agent/attachments/images';
-import { CoachImageError, validateCoachImage } from '$lib/agent/attachments/validation.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { coachImages } from '#lib/server/neon/schema.js';
+import { isCoachImagesEnabled } from '#lib/flags.js';
+import { coachImageId, coachImageUrl } from '#lib/agent/attachments/images.js';
+import { CoachImageError, validateCoachImage } from '#lib/agent/attachments/validation.server.js';
 import {
 	coachImageStore,
 	putCoachImage,
 	readCoachImage,
 	deleteCoachImage,
 	type CoachImageStore
-} from '$lib/agent/attachments/storage.server';
-import type { AgentUIMessage } from '$lib/agent/agent.server';
+} from '#lib/agent/attachments/storage.server.js';
+import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 
 export async function getOwnedCoachImage(userId: string, id: string, conversationId?: string) {
 	const [row] = await getNeonDatabase()

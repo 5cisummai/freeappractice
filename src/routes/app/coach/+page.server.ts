@@ -1,10 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
-import { isSuperCoachEnabled } from '$lib/flags';
-import { getPlanAccessForRequest } from '$lib/agent/access.server';
-import { hasPaidCapability } from '$lib/billing/types';
-import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
+import { isSuperCoachEnabled } from '#lib/flags.js';
+import { getPlanAccessForRequest } from '#lib/agent/access.server.js';
+import { hasPaidCapability } from '#lib/billing/types.js';
+import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
+import { getAssistantFeaturesEnabledForRequest } from '#lib/users/assistant-preferences.server.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId;

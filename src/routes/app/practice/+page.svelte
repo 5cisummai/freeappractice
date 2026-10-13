@@ -3,14 +3,14 @@
 	import { resolve } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import PracticeRunner, {
 		type PracticeEvent
-	} from '$lib/components/practice/practice-shell.svelte';
-	import type { AnswerResult } from '$lib/question-bank/mcq/types';
+	} from '#lib/components/practice/practice-shell.svelte';
+	import type { AnswerResult } from '#lib/question-bank/mcq/types.js';
 	import { toast } from 'svelte-sonner';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 
 	let { data } = $props();
 
@@ -102,7 +102,7 @@
 			});
 		}
 		if (event.type === 'quiz-exit' && data.sharedQuiz) {
-			void goto(resolve('/app/practice'));
+			void goto(resolve('app/practice'));
 		}
 	}
 </script>
@@ -119,7 +119,7 @@
 				<p class="mt-2 text-sm text-muted-foreground">{data.sharedQuizError}</p>
 				<a
 					class="mt-4 inline-flex text-sm font-medium text-primary hover:underline"
-					href={resolve('/app/practice')}>Start regular practice</a
+					href={resolve('app/practice')}>Start regular practice</a
 				>
 			</div>
 		{:else}

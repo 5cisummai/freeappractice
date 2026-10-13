@@ -13,15 +13,15 @@
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';
 	import type { Component } from 'svelte';
-	import { onboardingCourses } from '$lib/onboarding-courses.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { MINIMUM_ACCOUNT_AGE } from '$lib/auth/age.js';
-	import type { OnboardingGoal } from '$lib/onboarding.js';
-	import { authClient } from '$lib/auth/client.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
+	import { onboardingCourses } from '#lib/onboarding-courses.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { MINIMUM_ACCOUNT_AGE } from '#lib/auth/age.js';
+	import type { OnboardingGoal } from '#lib/onboarding.js';
+	import { authClient } from '#lib/auth/client.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
 	import { untrack } from 'svelte';
 
 	let { data, form } = $props();
@@ -271,9 +271,9 @@
 			const { data: checkout, error } = await authClient.subscription.upgrade({
 				plan: 'super',
 				annual,
-				successUrl: `${window.location.origin}${resolve('/app/onboarding')}?super=1&checkout=success`,
-				cancelUrl: `${window.location.origin}${resolve('/pricing')}`,
-				returnUrl: `${window.location.origin}${resolve('/app/onboarding')}?super=1`,
+				successUrl: `${window.location.origin}${resolve('app/onboarding')}?super=1&checkout=success`,
+				cancelUrl: `${window.location.origin}${resolve('pricing')}`,
+				returnUrl: `${window.location.origin}${resolve('app/onboarding')}?super=1`,
 				...(superSetup.billing?.subscriptionId
 					? { subscriptionId: superSetup.billing.subscriptionId }
 					: {}),
@@ -599,13 +599,16 @@
 											size="sm"
 											variant={annual ? 'outline' : 'default'}
 											onclick={() => (annual = false)}>Monthly</Button
-										><Button
+										>
+
+										<Button
 											type="button"
 											size="sm"
 											variant={annual ? 'default' : 'outline'}
 											onclick={() => (annual = true)}>Yearly</Button
 										>
-									</div>{/if}
+									</div>
+								{/if}
 							{:else if currentStep === 'style'}
 								<div class="mx-auto grid max-w-3xl gap-3">
 									{#each [{ value: 'socratic' as const, title: 'Socratic hints', detail: 'Guiding questions that help you reason it out.' }, { value: 'concise' as const, title: 'Concise explanations', detail: 'Short, direct answers when you want clarity fast.' }, { value: 'step_by_step' as const, title: 'Step by step', detail: 'Walk through problems in ordered stages.' }] as option (option.value)}
@@ -616,13 +619,21 @@
 											class="flex items-start gap-4 rounded-2xl border p-5 text-left transition-all {selected
 												? 'border-primary bg-primary/5 shadow-sm'
 												: 'border-border/70 bg-background/60 hover:border-primary/40'}"
-											><BrainIcon class="mt-0.5 size-5 shrink-0 text-primary" /><span class="flex-1"
-												><span class="block font-medium">{option.title}</span><span
-													class="mt-1 block text-sm leading-6 text-muted-foreground"
-													>{option.detail}</span
-												></span
-											>{#if selected}<CheckIcon class="size-5 text-primary" />{/if}</button
 										>
+											<BrainIcon class="mt-0.5 size-5 shrink-0 text-primary" />
+
+											<span class="flex-1">
+												<span class="block font-medium">{option.title}</span>
+
+												<span class="mt-1 block text-sm leading-6 text-muted-foreground"
+													>{option.detail}</span
+												>
+											</span>
+
+											{#if selected}
+												<CheckIcon class="size-5 text-primary" />
+											{/if}
+										</button>
 									{/each}
 								</div>
 							{:else if currentStep === 'memory'}
@@ -643,10 +654,15 @@
 											class="flex size-6 shrink-0 items-center justify-center rounded-full border {memoryEnabled
 												? 'border-primary bg-primary text-primary-foreground'
 												: 'border-border'}"
-											>{#if memoryEnabled}<CheckIcon class="size-4" />{/if}</span
-										></button
-									>
-									{#if !memoryDisclosureSeen}<p
+										>
+											{#if memoryEnabled}
+												<CheckIcon class="size-4" />
+											{/if}
+										</span>
+									</button>
+
+									{#if !memoryDisclosureSeen}
+										<p
 											class="rounded-2xl border border-border/70 bg-muted/40 px-5 py-4 text-sm leading-6 text-muted-foreground"
 										>
 											You can pause memory, review every saved fact, or delete everything from
@@ -694,12 +710,21 @@
 								finishing ||
 								billingBusy ||
 								(currentStep === 'welcome' && !canContinueWelcome)}
-							>{#if saving || billingBusy}Saving…{:else if finishing}Opening your dashboard…{:else if currentStep === 'plan' && planChoice === 'super'}{superSetup?.freeBetaEnabled
-									? 'Unlock Super'
-									: 'Continue to checkout'}{:else if isLast}Finish setup{:else}Continue{/if}{#if !saving && !billingBusy && !finishing}<ChevronRightIcon
-									class="size-4"
-								/>{/if}</Button
 						>
+							{#if saving || billingBusy}
+								Saving…
+							{:else if finishing}
+								Opening your dashboard…
+							{:else if currentStep === 'plan' && planChoice === 'super'}
+								{superSetup?.freeBetaEnabled ? 'Unlock Super' : 'Continue to checkout'}
+							{:else if isLast}
+								Finish setup
+							{:else}
+								Continue
+							{/if}{#if !saving && !billingBusy && !finishing}
+								<ChevronRightIcon class="size-4" />
+							{/if}
+						</Button>
 					</div>
 				</section>
 			{/key}

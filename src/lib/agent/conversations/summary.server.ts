@@ -1,10 +1,10 @@
 import { generateText } from 'ai';
 import { and, asc, eq, gt, lt, ne, or, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { conversationMessages, conversations } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { conversationMessages, conversations } from '#lib/server/neon/schema.js';
 import { getOwnedConversation } from './store.server';
 import { CONVERSATION_TITLE_MODEL } from './titles.server';
-import { textFromAgentParts } from '$lib/agent/request';
+import { textFromAgentParts } from '#lib/agent/request.js';
 
 /** Summarize only messages that fell outside the active window; retry on later turns. */
 export async function summarizeConversation(

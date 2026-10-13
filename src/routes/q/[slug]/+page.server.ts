@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { resolveSharedQuiz } from '$lib/shared-practice/shared-sets.server';
+import { resolveSharedQuiz } from '#lib/shared-practice/shared-sets.server.js';
 
 export const prerender = false;
 

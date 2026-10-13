@@ -9,21 +9,21 @@ const mocks = vi.hoisted(() => ({
 	selectResults: [] as unknown[][]
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		select: mocks.select,
 		update: mocks.update,
 		insert: mocks.insert
 	})
 }));
-vi.mock('$lib/billing/subscriptions.server', () => ({ getPlanAccess: mocks.getPlanAccess }));
+vi.mock('#lib/billing/subscriptions.server.js', () => ({ getPlanAccess: mocks.getPlanAccess }));
 
 import {
 	getSuperAdminOverview,
 	grantIndefiniteSuperToClaimedFreeBetaUsers,
 	retrySuperCleanupJob
-} from '$lib/billing/admin.server';
-import { INDEFINITE_SUPER_GRANT_EXPIRES_AT } from '$lib/billing/types';
+} from '#lib/billing/admin.server.js';
+import { INDEFINITE_SUPER_GRANT_EXPIRES_AT } from '#lib/billing/types.js';
 
 function selectBuilder(result: unknown[]) {
 	const builder: any = {

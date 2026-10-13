@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { getQuestionsLookupMap } from '$lib/question-bank/mcq/repository.server';
-import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
-import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
-import { getSharedQuizForCompletion } from '$lib/shared-practice/shared-sets.server';
-import { quizAttemptQuestions, quizAttempts } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { getQuestionsLookupMap } from '#lib/question-bank/mcq/repository.server.js';
+import { sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
+import { persistQuestionAttempt } from '#lib/users/attempt-write.server.js';
+import { getSharedQuizForCompletion } from '#lib/shared-practice/shared-sets.server.js';
+import { quizAttemptQuestions, quizAttempts } from '#lib/server/neon/schema.js';
 
 const MAX_QUIZ_COUNT = 50;
 const MAX_QUIZ_DURATION_MS = 24 * 60 * 60 * 1000;

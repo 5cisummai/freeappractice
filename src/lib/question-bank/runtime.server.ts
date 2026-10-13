@@ -1,5 +1,5 @@
-import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
-import { logger } from '$lib/server/logger';
+import { QUESTION_POOL_CONFIG } from '#lib/question-bank/pool-constants.js';
+import { logger } from '#lib/server/logger.js';
 
 export interface PoolDocument {
 	questionId?: string;

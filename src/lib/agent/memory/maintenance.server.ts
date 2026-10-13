@@ -1,14 +1,19 @@
-import { deleteAllTutorMemoriesById } from '$lib/agent/memory/service.server';
+import { deleteAllTutorMemoriesById } from '#lib/agent/memory/service.server.js';
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq, gt, inArray, isNull, lte } from 'drizzle-orm';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { studyPlans, superCleanupJobs, superGrants, tutorProfiles } from '$lib/server/neon/schema';
-import { getPlanAccess } from '$lib/billing/subscriptions.server';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import {
+	studyPlans,
+	superCleanupJobs,
+	superGrants,
+	tutorProfiles
+} from '#lib/server/neon/schema.js';
+import { getPlanAccess } from '#lib/billing/subscriptions.server.js';
 
-import { STUDY_PLAN_RETENTION_DAYS } from '$lib/agent/plans/store.server';
+import { STUDY_PLAN_RETENTION_DAYS } from '#lib/agent/plans/store.server.js';
 
-import { cleanupCoachImages } from '$lib/agent/attachments/images.server';
+import { cleanupCoachImages } from '#lib/agent/attachments/images.server.js';
 
 const MEMORY_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const RETRY_DELAY_MS = 60 * 60 * 1000;

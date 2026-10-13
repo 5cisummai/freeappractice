@@ -1,23 +1,26 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { poolGenerationBudgets, poolRefillStates } from '$lib/server/neon/schema';
-import type { PoolRefillState as PoolRefillStateRow } from '$lib/question-bank/pool-refill-types.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { poolGenerationBudgets, poolRefillStates } from '#lib/server/neon/schema.js';
+import type { PoolRefillState as PoolRefillStateRow } from '#lib/question-bank/pool-refill-types.server.js';
 import {
 	estimatePoolGenerationSlots,
 	generatePoolQuestion
-} from '$lib/question-bank/pool-kind-worker.server';
-import { getPoolKindAdapter } from '$lib/question-bank/pool-kinds.server';
+} from '#lib/question-bank/pool-kind-worker.server.js';
+import { getPoolKindAdapter } from '#lib/question-bank/pool-kinds.server.js';
 import {
 	countActivePoolRowsForServing,
 	getPoolRefillHealthCounts,
 	isValidPoolBucket,
 	type PoolBucketKey
-} from '$lib/question-bank/pool-refill-queue.server';
-import { writePoolBucketBelowTarget } from '$lib/question-bank/pool-capacity.server';
-import { QUESTION_POOL_CONFIG, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
-import { logger } from '$lib/server/logger';
-import { captureQuestionPoolHealthMetric } from '$lib/server/question-request-metrics';
+} from '#lib/question-bank/pool-refill-queue.server.js';
+import { writePoolBucketBelowTarget } from '#lib/question-bank/pool-capacity.server.js';
+import {
+	QUESTION_POOL_CONFIG,
+	type QuestionPoolConfig
+} from '#lib/question-bank/pool-constants.js';
+import { logger } from '#lib/server/logger.js';
+import { captureQuestionPoolHealthMetric } from '#lib/server/question-request-metrics.js';
 
 export type { PoolBucketKey };
 

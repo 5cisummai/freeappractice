@@ -1,4 +1,4 @@
-import { clamp, createRng, loopNoise } from '$lib/components/agent/avatar/bloub/math';
+import { clamp, createRng, loopNoise } from '#lib/components/agent/avatar/bloub/math.js';
 
 /**
  * Les yeux sont peints sur une sphere, pas poses a plat.

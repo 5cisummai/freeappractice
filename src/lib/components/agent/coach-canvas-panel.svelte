@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Attachment } from 'svelte/attachments';
-	import { ensureGenerativeCanvasHtml } from '$lib/canvas/prepare-generative-canvas-html';
-	import type { CanvasHtmlArtifact } from '$lib/canvas/types';
+	import { ensureGenerativeCanvasHtml } from '#lib/canvas/prepare-generative-canvas-html.js';
+	import type { CanvasHtmlArtifact } from '#lib/canvas/types.js';
 
 	type CoachCanvasEmbedProps = {
 		artifact: CanvasHtmlArtifact;

@@ -6,7 +6,7 @@ import {
 	extractResponseOutputText,
 	parseAssessmentText,
 	requiresWebSearchForQuestion
-} from '$lib/question-bank/quality/rubric.server';
+} from '#lib/question-bank/quality/rubric.server.js';
 
 describe('question quality rubric', () => {
 	it('uses real-course guidance', () => {

@@ -1,5 +1,5 @@
-import type { AppFeedbackCategory } from '$lib/schemas/app-feedback';
-import type { BugReportSeverity } from '$lib/schemas/bug-report';
+import type { AppFeedbackCategory } from '#lib/schemas/app-feedback.js';
+import type { BugReportSeverity } from '#lib/schemas/bug-report.js';
 
 export type AdminTab = 'users' | 'cache' | 'quality' | 'super' | 'feedback';
 

@@ -4,7 +4,7 @@ import {
 	getPageBySlug,
 	getTopicPracticeRedirect,
 	getTopicRedirectSlugs
-} from '$lib/catalog/practice-pages.js';
+} from '#lib/catalog/practice-pages.js';
 import type { PageServerLoad } from './$types';
 
 export function entries() {

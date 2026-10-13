@@ -1,5 +1,13 @@
-import { dev } from '$app/environment';
-import { env } from '$env/dynamic/private';
+import { dev } from '$app/env';
+import { PUBLIC_BASE_URL } from '$app/env/public';
+import {
+	APP_BASE_URL,
+	WEBSITE_URL,
+	BETTER_AUTH_URL,
+	VERCEL_URL,
+	VERCEL_BRANCH_URL,
+	VERCEL_PROJECT_PRODUCTION_URL
+} from '$app/env/private';
 
 const PRODUCTION_ORIGINS = ['https://freeappractice.org', 'https://www.freeappractice.org'];
 
@@ -18,13 +26,13 @@ function collectOriginsFromEnv(): Set<string> {
 	const origins = new Set<string>(PRODUCTION_ORIGINS);
 
 	for (const value of [
-		env.PUBLIC_BASE_URL,
-		env.APP_BASE_URL,
-		env.WEBSITE_URL,
-		env.BETTER_AUTH_URL,
-		env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined,
-		env.VERCEL_BRANCH_URL ? `https://${env.VERCEL_BRANCH_URL}` : undefined,
-		env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined
+		PUBLIC_BASE_URL,
+		APP_BASE_URL,
+		WEBSITE_URL,
+		BETTER_AUTH_URL,
+		VERCEL_URL ? `https://${VERCEL_URL}` : undefined,
+		VERCEL_BRANCH_URL ? `https://${VERCEL_BRANCH_URL}` : undefined,
+		VERCEL_PROJECT_PRODUCTION_URL ? `https://${VERCEL_PROJECT_PRODUCTION_URL}` : undefined
 	]) {
 		const origin = toOrigin(value);
 		if (origin) origins.add(origin);

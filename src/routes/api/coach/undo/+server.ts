@@ -1,34 +1,34 @@
-import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { authorizeFeatureRequest } from '$lib/agent/access.server';
-import { claimIdempotencyKey, RedisRequiredError } from '$lib/agent/usage/controls.server';
-import { undoCoachAudit } from '$lib/agent/tools/undo.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
+import { claimIdempotencyKey, RedisRequiredError } from '#lib/agent/usage/controls.server.js';
+import { undoCoachAudit } from '#lib/agent/tools/undo.server.js';
 
 const undoSchema = z.object({ auditId: z.string().regex(/^[a-f\d]{24}$/i) }).strict();
 
 export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const access = await authorizeFeatureRequest(event, userId, 'coach');
-		if (!access.allowed) return json({ error: access.message }, { status: access.status });
+		if (!access.allowed) return Response.json({ error: access.message }, { status: access.status });
 		const parsed = undoSchema.safeParse(await event.request.json().catch(() => null));
-		if (!parsed.success) return json({ error: 'Invalid Coach undo request' }, { status: 400 });
+		if (!parsed.success)
+			return Response.json({ error: 'Invalid Coach undo request' }, { status: 400 });
 		const idempotencyKey = event.request.headers.get('idempotency-key')?.trim();
 		if (!idempotencyKey || idempotencyKey.length > 200) {
-			return json({ error: 'An idempotency key is required.' }, { status: 400 });
+			return Response.json({ error: 'An idempotency key is required.' }, { status: 400 });
 		}
 		try {
 			if (!(await claimIdempotencyKey(userId, `coach-undo:${idempotencyKey}`))) {
-				return json({ error: 'This Coach undo was already requested.' }, { status: 409 });
+				return Response.json({ error: 'This Coach undo was already requested.' }, { status: 409 });
 			}
 			const undone = await undoCoachAudit(userId, parsed.data.auditId);
 			return undone
-				? json({ undone: true })
-				: json({ error: 'Coach change was not found' }, { status: 404 });
+				? Response.json({ undone: true })
+				: Response.json({ error: 'Coach change was not found' }, { status: 404 });
 		} catch (error) {
 			if (error instanceof RedisRequiredError) {
-				return json({ error: 'Coach undo is temporarily unavailable.' }, { status: 503 });
+				return Response.json({ error: 'Coach undo is temporarily unavailable.' }, { status: 503 });
 			}
 			throw error;
 		}

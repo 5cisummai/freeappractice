@@ -2,7 +2,7 @@ import {
 	frqResponseIds,
 	PublicFrqQuestionSchema,
 	type PublicFrqQuestion
-} from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/types.js';
 
 export const FRQ_DRAFT_VERSION = 1 as const;
 export const FRQ_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;

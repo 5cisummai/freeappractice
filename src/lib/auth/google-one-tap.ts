@@ -1,11 +1,11 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
-import { isGoogleOneTapRoute } from '$lib/routes/public-marketing.js';
-import { authClient, googleClientId } from '$lib/auth/client.js';
-import { captureSignupCompleted, captureUserLoggedIn } from '$lib/client/activation-analytics';
-import { identifyPostHogUser } from '$lib/client/posthog-analytics';
+import { invalidateAuthenticatedShell } from '#lib/client/invalidate-data.js';
+import { isGoogleOneTapRoute } from '#lib/routes/public-marketing.js';
+import { authClient, googleClientId } from '#lib/auth/client.js';
+import { captureSignupCompleted, captureUserLoggedIn } from '#lib/client/activation-analytics.js';
+import { identifyPostHogUser } from '#lib/client/posthog-analytics.js';
 
 type OneTapContext = 'signin' | 'signup' | 'use';
 
@@ -34,7 +34,7 @@ function handleOneTapSuccess(pathname: string, isNewUser: boolean): void {
 	}
 
 	if (isNewUser) {
-		void goto(resolve('/app/onboarding'));
+		void goto(resolve('app/onboarding'));
 		return;
 	}
 

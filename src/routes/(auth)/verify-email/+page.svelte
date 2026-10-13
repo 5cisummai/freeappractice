@@ -3,10 +3,10 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
-	import { authClient } from '$lib/auth/client.js';
-	import { authCallbackUrl } from '$lib/auth/urls.js';
-	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
+	import { authClient } from '#lib/auth/client.js';
+	import { authCallbackUrl } from '#lib/auth/urls.js';
+	import AuthSeoHead from '#lib/components/auth/auth-seo-head.svelte';
 
 	let status = $state<'loading' | 'success' | 'error'>('loading');
 	let errorMessage = $state('');
@@ -29,7 +29,7 @@
 			const { error } = await authClient.verifyEmail({
 				query: {
 					token,
-					callbackURL: authCallbackUrl('/app')
+					callbackURL: authCallbackUrl('app')
 				}
 			});
 			if (error) {
@@ -39,7 +39,7 @@
 			}
 			if (destroyed) return;
 			status = 'success';
-			redirectTimer = setTimeout(() => goto(resolve('/app')), 2000);
+			redirectTimer = setTimeout(() => goto(resolve('app')), 2000);
 		} catch {
 			status = 'error';
 			errorMessage = 'Network error. Please try again.';
@@ -81,8 +81,9 @@
 			<h1 class="text-xl font-semibold">Verification failed</h1>
 			<p class="text-sm text-destructive">{errorMessage}</p>
 			<div class="flex flex-col gap-2">
-				<a href={resolve('/login')} class="text-sm underline underline-offset-4">Go to sign in</a>
-				<a href={resolve('/signup')} class="text-sm underline underline-offset-4"
+				<a href={resolve('login')} class="text-sm underline underline-offset-4">Go to sign in</a>
+
+				<a href={resolve('signup')} class="text-sm underline underline-offset-4"
 					>Create new account</a
 				>
 			</div>

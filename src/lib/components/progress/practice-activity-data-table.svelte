@@ -5,12 +5,12 @@
 		getPaginationRowModel,
 		getSortedRowModel
 	} from '@tanstack/table-core';
-	import type { HistoryItem } from '$lib/users/types.js';
-	import { createHistoryColumns } from '$lib/components/history/history-columns.js';
-	import HistoryDetailSheet from '$lib/components/history/history-detail-sheet.svelte';
-	import * as Table from '$lib/components/ui/table/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { FlexRender, createSvelteTable } from '$lib/components/ui/data-table/index.js';
+	import type { HistoryItem } from '#lib/users/types.js';
+	import { createHistoryColumns } from '#lib/components/history/history-columns.js';
+	import HistoryDetailSheet from '#lib/components/history/history-detail-sheet.svelte';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { FlexRender, createSvelteTable } from '#lib/components/ui/data-table/index.js';
 
 	const PAGE_SIZE = 20;
 	const DEFAULT_SORTING: SortingState = [{ id: 'attemptedAt', desc: true }];

@@ -1,6 +1,6 @@
 import { invalidate } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { APP_LAYOUT_DEPENDENCY, ROOT_LAYOUT_DEPENDENCY } from '$lib/layout-dependencies';
+import { APP_LAYOUT_DEPENDENCY, ROOT_LAYOUT_DEPENDENCY } from '#lib/layout-dependencies.js';
 
 export type InvalidateScope =
 	| 'app-layout'

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import CoachChatDemo from '$lib/components/marketing/coach-chat-demo.svelte';
-	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
-	import { twAnimateInViewSubtle } from '$lib/tw-animate';
+	import CoachChatDemo from '#lib/components/marketing/coach-chat-demo.svelte';
+	import SectionIntro from '#lib/components/marketing/section-intro.svelte';
+	import { twAnimateInViewSubtle } from '#lib/tw-animate.js';
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import PlayerPlayFilledIcon from '@tabler/icons-svelte/icons/player-play-filled';
 

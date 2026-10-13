@@ -3,10 +3,10 @@
 		AddTextAnnotationInput,
 		QuestionOption,
 		TextAnnotation
-	} from '$lib/question-bank/mcq/types';
-	import AnnotatableRichText from '$lib/components/questions/annotatable-rich-text.svelte';
-	import { ANNOTATION_ID_ATTR } from '$lib/components/questions/text-annotation-dom.js';
-	import { cn } from '$lib/utils.js';
+	} from '#lib/question-bank/mcq/types.js';
+	import AnnotatableRichText from '#lib/components/questions/annotatable-rich-text.svelte';
+	import { ANNOTATION_ID_ATTR } from '#lib/components/questions/text-annotation-dom.js';
+	import { cn } from '#lib/utils.js';
 	import StrikethroughIcon from '@tabler/icons-svelte/icons/strikethrough';
 
 	let {
