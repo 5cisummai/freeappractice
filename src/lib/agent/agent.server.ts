@@ -17,6 +17,7 @@ export type { AgentContext } from '$lib/agent/request';
 export function createAgent(input: {
 	locals: App.Locals;
 	userId: string;
+	allowUserAnalytics?: boolean;
 	sessionId: string;
 	selectedApClasses: string[];
 	timeZone: string;
@@ -78,6 +79,9 @@ export function createAgent(input: {
 		onEnd: ({ totalUsage }) => onGenerationEnd?.(totalUsage),
 		model: COACH_MODEL,
 		providerOptions: {
+			...(input.allowUserAnalytics
+				? { gateway: { user: userId, tags: ['feature:coach'] } }
+				: {}),
 			openai: {
 				forceReasoning: true,
 				reasoningEffort,

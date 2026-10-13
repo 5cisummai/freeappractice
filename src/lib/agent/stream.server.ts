@@ -1,4 +1,5 @@
 import { scheduleBackgroundTask } from '$lib/server/background-task.server';
+import { hasAnalyticsConsent } from '$lib/server/analytics-consent';
 import {
 	fallbackConversationTitle,
 	updateAutomaticTitle
@@ -322,6 +323,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 		const agent = createAgent({
 			locals: event.locals,
 			userId,
+			allowUserAnalytics: hasAnalyticsConsent(event.request),
 			sessionId,
 			selectedApClasses: profile.selectedApClasses,
 			timeZone,

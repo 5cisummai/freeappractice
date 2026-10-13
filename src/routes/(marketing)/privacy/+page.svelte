@@ -25,7 +25,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Privacy Policy" meta="Last Updated: October 11, 2026" />
+		<PublicPageHero title="Privacy Policy" meta="Last Updated: October 12, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-8 text-base leading-7">
 			<section>
@@ -223,6 +223,16 @@
 				</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
 					<li>
+						<strong>Vercel AI Gateway (opt-in user attribution):</strong> when you accept optional
+						analytics, we attach your internal account identifier and a Coach feature tag to Coach
+						model requests so we can analyze per-account request counts, token usage, and AI costs
+						to manage costs and improve the product. These reporting fields do not include your name,
+						email address, or conversation text. The identifier can be linked to your account and
+						is not anonymous. Without consent, we omit these reporting fields; ordinary Gateway
+						processing, usage measurement, and operational logs still apply. Withdrawing consent
+						stops attribution on future requests from that browser and does not erase prior reports.
+					</li>
+					<li>
 						<strong>Vercel Analytics and Speed Insights:</strong> always-on, cookieless page views and
 						performance-related signals
 					</li>
@@ -274,7 +284,8 @@
 					</li>
 					<li>
 						<strong>Vercel:</strong> hosting, deployment infrastructure, cookieless analytics, private Blob
-						storage for Coach image attachments, and related infrastructure
+						storage for Coach image attachments, AI Gateway request processing and usage reporting,
+						and related infrastructure
 					</li>
 					<li>
 						<strong>Cloudflare:</strong> Web Analytics beacons when enabled, and static-asset delivery when
@@ -320,7 +331,8 @@
 						short-lived and expire automatically.
 					</li>
 					<li>
-						Server logs, monitoring records, emails, billing records, backups, and bug reports
+						Server logs, AI Gateway usage reports, monitoring records, emails, billing records,
+						backups, and bug reports
 						follow the retention practices of the relevant operator or provider; we do not currently
 						publish one fixed period for all of them.
 					</li>
@@ -344,7 +356,8 @@
 				<p>
 					Depending on your location, you may have rights to access, correct, delete, or receive a
 					copy of personal information, and to object to or limit certain processing. You can change
-					optional PostHog consent in Settings, disable tutor memory, delete memories, clear
+					optional analytics consent in Settings, which also controls Coach user attribution in
+					AI Gateway for that browser, disable tutor memory, delete memories, clear
 					practice data, or request account deletion. Contact us to exercise a right or ask for
 					help; we may need to verify the request and may retain information where law or security
 					requires it.
