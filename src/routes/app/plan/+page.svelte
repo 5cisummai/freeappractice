@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Progress from '$lib/components/ui/progress/index.js';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import type { StudyTask } from '$lib/agent/plans/types';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Progress from '#lib/components/ui/progress/index.js';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import type { StudyTask } from '#lib/agent/plans/types.js';
 	import type { PageProps } from './$types';
 	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-week-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check';

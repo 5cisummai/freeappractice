@@ -1,21 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
-import { isSuperFreeBetaEnabled } from '$lib/flags';
+import { isSuperFreeBetaEnabled } from '#lib/flags.js';
 import type {
 	TutorProfileUpdate,
 	TutorProfileView,
 	TutorTeachingStyle
-} from '$lib/agent/personalization/types';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
-import { isDuplicateKeyError } from '$lib/question-bank/util.server';
+} from '#lib/agent/personalization/types.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '#lib/server/neon/schema.js';
+import { isDuplicateKeyError } from '#lib/question-bank/util.server.js';
 import {
 	InvalidBirthDateError,
 	UnderAgeError,
 	isAtLeastAge,
 	isValidBirthDate
-} from '$lib/auth/age';
+} from '#lib/auth/age.js';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;

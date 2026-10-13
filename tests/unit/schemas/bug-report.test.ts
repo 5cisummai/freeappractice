@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bugReportSchema } from '$lib/schemas/bug-report';
+import { bugReportSchema } from '#lib/schemas/bug-report.js';
 
 const validReport = {
 	title: 'Broken submit button',

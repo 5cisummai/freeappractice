@@ -1,4 +1,4 @@
-import { logger } from '$lib/server/logger';
+import { logger } from '#lib/server/logger.js';
 import {
 	NoObjectGeneratedError,
 	NoOutputGeneratedError,
@@ -11,17 +11,17 @@ import {
 export const MCQ_GENERATION_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { AP_DATA } from '$lib/catalog/dataset';
+import { AP_DATA } from '#lib/catalog/dataset.js';
 
-import { EXAMFIG_DIAGRAM_SKILL } from '$lib/question-bank/mcq/diagram-prompt';
+import { EXAMFIG_DIAGRAM_SKILL } from '#lib/question-bank/mcq/diagram-prompt.js';
 
-import { examfigTools } from '$lib/question-bank/mcq/diagram-tools.server';
-import { validateExamfigDiagram } from '$lib/diagrams/validation.server';
-import { assertOpenAiCompatibleObjectSchema } from '$lib/question-bank/mcq/structured-schema';
+import { examfigTools } from '#lib/question-bank/mcq/diagram-tools.server.js';
+import { validateExamfigDiagram } from '#lib/diagrams/validation.server.js';
+import { assertOpenAiCompatibleObjectSchema } from '#lib/question-bank/mcq/structured-schema.js';
 import {
 	getStimulusPolicy,
 	isStimulusPolicyEnabledForUnit
-} from '$lib/question-bank/mcq/stimulus-policy';
+} from '#lib/question-bank/mcq/stimulus-policy.js';
 
 /**
  * MCQ generation: prompts, structured AI calls, and generation metrics.

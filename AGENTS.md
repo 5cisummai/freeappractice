@@ -6,7 +6,7 @@ Read this before changing anything. These rules override vague defaults.
 
 ## What this project is
 
-- **Stack**: TypeScript, Bun, SvelteKit
+- **Stack**: TypeScript, Bun, SvelteKit **V3**
 - **Tooling**: Prettier, ESLint, Tailwind CSS, Vercel adapter, MCP
 - **Product**: A free AP exam-practice app with MCQ/FRQ practice, progress and history, Coach, tutoring, study plans, and optional Super features
 
@@ -25,7 +25,7 @@ Treat this as a focused product surface, not a playground for framework experime
 | `src/lib/server/neon`                               | Drizzle schema and the Neon database client                                |
 | `scripts`                                           | Operations and database maintenance tooling                                |
 
-Neon PostgreSQL is the only application database. Domain functions call Drizzle directly; there is no compatibility model or MongoDB runtime dependency.
+Neon PostgreSQL is the only application database. Domain functions call Drizzle directly
 
 ## Drizzle migrations
 
@@ -108,8 +108,8 @@ Pick models by host and task weight.
 
 | Task weight | Model                  |
 | ----------- | ---------------------- |
-| Harder      | 5.6 Luna, xhigh effort |
-| Easier      | high effort            |
+| Harder      |  6.1 Sol, low/light effort |
+| Easier      | 6 Luna, high effort            |
 
 ---
 

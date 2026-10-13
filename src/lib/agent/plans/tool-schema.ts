@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getCourseNames } from '$lib/catalog/courses';
+import { getCourseNames } from '#lib/catalog/courses.js';
 
 export const courseSchema = z
 	.enum(getCourseNames() as [string, ...string[]])

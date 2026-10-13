@@ -1,8 +1,8 @@
-import type { IProgress } from '$lib/users/records.server';
-import type { IUserProfile } from '$lib/users/model.server';
-import type { MasteryTopic, ProgressEntry } from '$lib/users/types';
-import type { FrqProgressSummary } from '$lib/question-bank/frq/types';
-import { getQuestionsLookupMap } from '$lib/question-bank/mcq/repository.server';
+import type { IProgress } from '#lib/users/records.server.js';
+import type { IUserProfile } from '#lib/users/model.server.js';
+import type { MasteryTopic, ProgressEntry } from '#lib/users/types.js';
+import type { FrqProgressSummary } from '#lib/question-bank/frq/types.js';
+import { getQuestionsLookupMap } from '#lib/question-bank/mcq/repository.server.js';
 
 export function findOrCreateProgressEntry(
 	progress: IProgress[],

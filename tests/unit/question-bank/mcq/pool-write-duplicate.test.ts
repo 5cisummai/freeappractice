@@ -6,24 +6,24 @@ const { createCanonicalMcqQuestion, generateAPQuestion, getRecentTopics } = vi.h
 	getRecentTopics: vi.fn(async () => [])
 }));
 
-vi.mock('$lib/question-bank/mcq/repository.server', () => ({
+vi.mock('#lib/question-bank/mcq/repository.server.js', () => ({
 	createCanonicalMcqQuestion,
 	newPoolRandomKey: () => 0.42
 }));
 
-vi.mock('$lib/question-bank/mcq/generation.server', () => ({
+vi.mock('#lib/question-bank/mcq/generation.server.js', () => ({
 	generateAPQuestion
 }));
 
-vi.mock('$lib/question-bank/recent-topic.server', () => ({
+vi.mock('#lib/question-bank/recent-topic.server.js', () => ({
 	getRecentTopics
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-import { generateQuestionForPool } from '$lib/question-bank/mcq/write.server';
+import { generateQuestionForPool } from '#lib/question-bank/mcq/write.server.js';
 
 const sampleAnswer = {
 	question: 'What is photosynthesis?',

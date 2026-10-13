@@ -1,11 +1,11 @@
-import { PROFILE_SAMPLES } from '$lib/components/agent/avatar/bloub/profiles';
+import { PROFILE_SAMPLES } from '#lib/components/agent/avatar/bloub/profiles.js';
 import {
 	hullOfCircles,
 	profileFromPolygon,
 	regularPolygonProfile,
 	superellipseProfile,
 	unionOfCirclesProfile
-} from '$lib/components/agent/avatar/bloub/shape';
+} from '#lib/components/agent/avatar/bloub/shape.js';
 
 /**
  * Formes et couleurs proposees par le personnalisateur du bot.

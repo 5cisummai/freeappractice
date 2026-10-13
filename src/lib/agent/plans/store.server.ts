@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq, exists, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { studyPlans, studyTasks } from '$lib/server/neon/schema';
-import { getPlanAccess } from '$lib/billing/subscriptions.server';
-import { getTutorProfileView } from '$lib/agent/personalization/profile.server';
-import { hasPaidCapability } from '$lib/billing/types';
-import { type StudyPlanView, type StudyTask } from '$lib/agent/plans/types';
-import { isDuplicateKeyError } from '$lib/question-bank/util.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { studyPlans, studyTasks } from '#lib/server/neon/schema.js';
+import { getPlanAccess } from '#lib/billing/subscriptions.server.js';
+import { getTutorProfileView } from '#lib/agent/personalization/profile.server.js';
+import { hasPaidCapability } from '#lib/billing/types.js';
+import { type StudyPlanView, type StudyTask } from '#lib/agent/plans/types.js';
+import { isDuplicateKeyError } from '#lib/question-bank/util.server.js';
 
 export const STUDY_PLAN_RETENTION_DAYS = 90;
 export const STUDY_PLAN_MAX_TASK_MINUTES = 30;

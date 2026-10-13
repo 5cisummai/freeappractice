@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseHistoryKind, parseHistoryResult, parseHistorySort } from '$lib/users/history.server';
+import {
+	parseHistoryKind,
+	parseHistoryResult,
+	parseHistorySort
+} from '#lib/users/history.server.js';
 
 describe('history query parameter parsing', () => {
 	it('defaults to attemptedAt desc and accepts supported sort fields', () => {

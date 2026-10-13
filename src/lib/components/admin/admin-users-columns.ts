@@ -1,11 +1,11 @@
 import type { ColumnDef } from '@tanstack/table-core';
 import { createRawSnippet } from 'svelte';
-import { renderSnippet, renderComponent } from '$lib/components/ui/data-table/index.js';
-import AdminDataTableSortButton from '$lib/components/admin/admin-data-table-sort-button.svelte';
-import AdminUsersRowMenu from '$lib/components/admin/admin-users-row-menu.svelte';
-import AdminUsersTierBadge from '$lib/components/admin/admin-users-tier-badge.svelte';
-import type { AdminUserRow } from '$lib/admin/types.js';
-import { escapeHtml } from '$lib/escape-html.js';
+import { renderSnippet, renderComponent } from '#lib/components/ui/data-table/index.js';
+import AdminDataTableSortButton from '#lib/components/admin/admin-data-table-sort-button.svelte';
+import AdminUsersRowMenu from '#lib/components/admin/admin-users-row-menu.svelte';
+import AdminUsersTierBadge from '#lib/components/admin/admin-users-tier-badge.svelte';
+import type { AdminUserRow } from '#lib/admin/types.js';
+import { escapeHtml } from '#lib/escape-html.js';
 
 function formatDate(value: Date | string | null | undefined): string {
 	if (!value) return '-';

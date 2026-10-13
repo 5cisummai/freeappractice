@@ -5,7 +5,7 @@ import {
 	hashRedisIdentifier,
 	redisNamespace,
 	withRedisTimeout
-} from '$lib/redis/server';
+} from '#lib/redis/server.js';
 
 const WINDOW = '1 s' as const;
 const ANONYMOUS_LIMIT = 10;

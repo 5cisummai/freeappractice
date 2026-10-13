@@ -1,4 +1,4 @@
-import type { AnalyticsConsent } from '$lib/analytics-consent';
+import type { AnalyticsConsent } from '#lib/analytics-consent.js';
 
 export type PostHogOperationKind = 'capture' | 'identify' | 'pageview' | 'pageleave' | 'exception';
 export type PostHogOperationDisposition = 'queue' | 'send' | 'drop';

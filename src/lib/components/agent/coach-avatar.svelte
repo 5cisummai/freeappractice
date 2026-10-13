@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { watch } from 'runed';
-	import { cn } from '$lib/utils.js';
+	import { cn } from '#lib/utils.js';
 	import {
 		COACH_AVATAR_COLOR,
 		COACH_AVATAR_SHAPE,
@@ -10,13 +10,13 @@
 		type CoachAvatarBlock,
 		type CoachAvatarExpression,
 		type CoachAvatarState
-	} from '$lib/components/agent/avatar/avatar-state';
-	import { BotEngine, type BotFrame } from '$lib/components/agent/avatar/bloub/engine';
-	import { EXPRESSION_BY_ID } from '$lib/components/agent/avatar/bloub/expressions';
-	import { mixHex, SHAPE_BY_ID, type ShapeId } from '$lib/components/agent/avatar/bloub/skins';
-	import { DEMI_VIEWBOX, RAYON } from '$lib/components/agent/avatar/bloub/repere';
-	import { STATE_BY_ID } from '$lib/components/agent/avatar/bloub/states';
-	import { subscribeToAvatarTicker } from '$lib/components/agent/avatar/avatar-ticker';
+	} from '#lib/components/agent/avatar/avatar-state.js';
+	import { BotEngine, type BotFrame } from '#lib/components/agent/avatar/bloub/engine.js';
+	import { EXPRESSION_BY_ID } from '#lib/components/agent/avatar/bloub/expressions.js';
+	import { mixHex, SHAPE_BY_ID, type ShapeId } from '#lib/components/agent/avatar/bloub/skins.js';
+	import { DEMI_VIEWBOX, RAYON } from '#lib/components/agent/avatar/bloub/repere.js';
+	import { STATE_BY_ID } from '#lib/components/agent/avatar/bloub/states.js';
+	import { subscribeToAvatarTicker } from '#lib/components/agent/avatar/avatar-ticker.js';
 
 	type Props = {
 		state?: CoachAvatarState;

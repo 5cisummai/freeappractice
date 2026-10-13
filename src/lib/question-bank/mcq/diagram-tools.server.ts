@@ -1,6 +1,6 @@
 import type { ToolSet } from 'ai';
 import { z } from 'zod';
-import { validateExamfigDiagram } from '$lib/diagrams/validation.server';
+import { validateExamfigDiagram } from '#lib/diagrams/validation.server.js';
 
 const examfigDiagramInput = z.object({
 	spec: z.string().describe('A JSON-encoded semantic examfig DiagramSpec object, not SVG')

@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 	taskRows: [] as Array<Record<string, unknown>>
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		batch: mocks.batch,
 		select: mocks.select,
@@ -29,20 +29,21 @@ vi.mock('$lib/server/neon/db', () => ({
 	})
 }));
 
-vi.mock('$lib/billing/subscriptions.server', () => ({
+vi.mock('#lib/billing/subscriptions.server.js', () => ({
 	getPlanAccess: vi.fn().mockResolvedValue({ plan: 'super', accessReason: 'subscription' })
 }));
 
-vi.mock('$lib/billing/types', async () => {
-	const actual = await vi.importActual<typeof import('$lib/billing/types')>('$lib/billing/types');
+vi.mock('#lib/billing/types.js', async () => {
+	const actual =
+		await vi.importActual<typeof import('#lib/billing/types.js')>('#lib/billing/types.js');
 	return { ...actual, hasPaidCapability: vi.fn().mockReturnValue(true) };
 });
 
-vi.mock('$lib/agent/personalization/profile.server', () => ({
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	getTutorProfileView: vi.fn().mockResolvedValue({ ageConfirmedAt: new Date() })
 }));
 
-vi.mock('$lib/question-bank/util.server', () => ({
+vi.mock('#lib/question-bank/util.server.js', () => ({
 	isDuplicateKeyError: vi.fn().mockReturnValue(false)
 }));
 
@@ -50,7 +51,7 @@ import {
 	addStudyPlanDays,
 	saveStudyPlan,
 	StudyPlanConflictError
-} from '$lib/agent/plans/store.server';
+} from '#lib/agent/plans/store.server.js';
 
 function selectBuilder() {
 	const builder = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getFocusedPracticeHref } from '$lib/catalog/practice-pages';
+import { getFocusedPracticeHref } from '#lib/catalog/practice-pages.js';
 
 describe('getFocusedPracticeHref', () => {
 	it('uses the canonical class practice page when no unit is selected', () => {

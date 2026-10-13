@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { updated } from '$app/state';
 	import { onMount } from 'svelte';
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
-	import BackToHome from '$lib/components/layout/back-to-home.svelte';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '#lib/components/layout/back-to-home.svelte';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
-	import { getCoursePracticePages } from '$lib/catalog/practice-pages.js';
+	import { getCoursePracticePages } from '#lib/catalog/practice-pages.js';
 
 	const subjects = getCoursePracticePages();
 
@@ -24,8 +24,11 @@
 	/>
 	<link rel="canonical" href="https://freeappractice.org/subjects" />
 	<meta property="og:type" content="website" />
+
 	<meta property="og:url" content="https://freeappractice.org/subjects" />
+
 	<meta property="og:title" content="AP Subjects | Free AP Practice" />
+
 	<meta
 		property="og:description"
 		content="Browse all supported AP subjects and jump straight to free practice questions for each course."
@@ -33,7 +36,9 @@
 	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
+
 	<meta name="twitter:title" content="AP Subjects | Free AP Practice" />
+
 	<meta
 		name="twitter:description"
 		content="Browse all supported AP subjects and jump straight to free practice questions for each course."
@@ -56,7 +61,7 @@
 			{#each subjects as subject (subject.slug)}
 				<li>
 					<a
-						href={resolve(`/practice/${subject.slug}`)}
+						href={resolve(`practice/${subject.slug}`)}
 						class="group flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40"
 					>
 						<span class="font-medium group-hover:text-primary">{subject.course}</span>

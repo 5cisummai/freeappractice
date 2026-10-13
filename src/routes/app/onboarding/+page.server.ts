@@ -10,15 +10,15 @@ import {
 	readOnboardingState,
 	readOnboardingIntent,
 	serializeCompletedOnboarding
-} from '$lib/onboarding.js';
-import { getCourses } from '$lib/catalog/courses.js';
-import { getUserCourses, updateUserCourses } from '$lib/users/model.server.js';
-import { getSuperBillingView, isSuperStripeConfigured } from '$lib/billing/subscriptions.server';
+} from '#lib/onboarding.js';
+import { getCourses } from '#lib/catalog/courses.js';
+import { getUserCourses, updateUserCourses } from '#lib/users/model.server.js';
+import { getSuperBillingView, isSuperStripeConfigured } from '#lib/billing/subscriptions.server.js';
 import {
 	getPlanAccessForRequest,
 	getTutorProfileViewForRequest
-} from '$lib/agent/access.server';
-import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
+} from '#lib/agent/access.server.js';
+import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '#lib/flags.js';
 
 const validCourses = new Set(getCourses().map((course) => course.name));
 const validGoals = new Set<string>(ONBOARDING_GOALS);

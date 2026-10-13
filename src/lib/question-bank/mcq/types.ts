@@ -1,5 +1,5 @@
 import type { Snippet } from 'svelte';
-import type { QuestionCardModel } from '$lib/question-bank/question-card-model';
+import type { QuestionCardModel } from '#lib/question-bank/question-card-model.js';
 
 export type TutorMode = 'hidden' | 'free';
 

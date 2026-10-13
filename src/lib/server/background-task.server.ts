@@ -1,5 +1,5 @@
 import { waitUntil } from '@vercel/functions';
-import { logger } from '$lib/server/logger';
+import { logger } from '#lib/server/logger.js';
 
 /** Schedule non-critical work after the response when running on Vercel. */
 export function scheduleBackgroundTask(task: Promise<unknown>): void {

@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { mcqAttempts, userProgress } from '$lib/server/neon/schema';
-import type { IQuestionAttempt } from '$lib/users/records.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { mcqAttempts, userProgress } from '#lib/server/neon/schema.js';
+import type { IQuestionAttempt } from '#lib/users/records.server.js';
 
 export type PersistedProgress = {
 	mastery: number;

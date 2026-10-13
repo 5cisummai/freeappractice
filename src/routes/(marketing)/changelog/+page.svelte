@@ -1,6 +1,6 @@
 <script lang="ts">
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
-	import BackToHome from '$lib/components/layout/back-to-home.svelte';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '#lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
 	const changelog = [
@@ -1103,14 +1103,8 @@
 			version: '1.3.5',
 			date: 'April 24, 2026',
 			sections: [
-				{
-					title: 'New Features',
-					items: ['Added AP Spanish support']
-				},
-				{
-					title: 'Fixes',
-					items: ['Bug fixes']
-				},
+				{ title: 'New Features', items: ['Added AP Spanish support'] },
+				{ title: 'Fixes', items: ['Bug fixes'] },
 				{
 					title: 'Security',
 					items: [
@@ -1596,16 +1590,16 @@
 			</p>
 			<ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
 				<li>
-					<a href={resolve('/subjects')} class="underline-offset-2 hover:underline">Subjects</a>
+					<a href={resolve('subjects')} class="underline-offset-2 hover:underline">Subjects</a>
 				</li>
 				<li>
-					<a href={resolve('/summer')} class="underline-offset-2 hover:underline">Summer guide</a>
+					<a href={resolve('summer')} class="underline-offset-2 hover:underline">Summer guide</a>
 				</li>
 				<li>
-					<a href={resolve('/stats')} class="underline-offset-2 hover:underline">Stats</a>
+					<a href={resolve('stats')} class="underline-offset-2 hover:underline">Stats</a>
 				</li>
 				<li>
-					<a href={resolve('/blog')} class="underline-offset-2 hover:underline">Blog</a>
+					<a href={resolve('blog')} class="underline-offset-2 hover:underline">Blog</a>
 				</li>
 			</ul>
 		</section>

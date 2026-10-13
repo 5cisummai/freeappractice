@@ -1,9 +1,9 @@
-import { TAU, lerp, r2 } from '$lib/components/agent/avatar/bloub/math';
+import { TAU, lerp, r2 } from '#lib/components/agent/avatar/bloub/math.js';
 import {
 	PROFILES,
 	PROFILE_SAMPLES,
 	type ProfileName
-} from '$lib/components/agent/avatar/bloub/profiles';
+} from '#lib/components/agent/avatar/bloub/profiles.js';
 
 export interface Point {
 	x: number;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { logger } from '$lib/server/logger';
+import { logger } from '#lib/server/logger.js';
 
 describe('structured logger safety boundaries', () => {
 	afterEach(() => {

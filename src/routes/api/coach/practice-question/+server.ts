@@ -1,10 +1,9 @@
-import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { authorizeFeatureRequest } from '$lib/agent/access.server';
-import { readJsonBody } from '$lib/server/request-body.server';
-import { giveCoachPracticeQuestion } from '$lib/agent/tools/practice.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
+import { readJsonBody } from '#lib/server/request-body.server.js';
+import { giveCoachPracticeQuestion } from '#lib/agent/tools/practice.server.js';
 
 const practiceQuestionRequestSchema = z
 	.object({
@@ -18,27 +17,27 @@ export const POST: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const access = await authorizeFeatureRequest(event, userId, 'coach');
 		if (!access.allowed) {
-			return json({ error: access.message }, { status: access.status });
+			return Response.json({ error: access.message }, { status: access.status });
 		}
 
 		let body: unknown;
 		try {
 			body = await readJsonBody(event.request, 16 * 1024);
 		} catch {
-			return json({ error: 'Invalid practice question request' }, { status: 400 });
+			return Response.json({ error: 'Invalid practice question request' }, { status: 400 });
 		}
 
 		const parsed = practiceQuestionRequestSchema.safeParse(body);
 		if (!parsed.success) {
-			return json({ error: 'Invalid practice question request' }, { status: 400 });
+			return Response.json({ error: 'Invalid practice question request' }, { status: 400 });
 		}
 
 		const result = await giveCoachPracticeQuestion(userId, parsed.data);
 		if ('error' in result) {
-			return json(result, { status: result.retryAfterSeconds ? 503 : 400 });
+			return Response.json(result, { status: result.retryAfterSeconds ? 503 : 400 });
 		}
 
-		return json({ question: result });
+		return Response.json({ question: result });
 	},
 	{ logLabel: 'Coach practice question error', errorMessage: 'Failed to load practice question' }
 );

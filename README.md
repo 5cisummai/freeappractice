@@ -107,7 +107,7 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 | `bun check`               | Type-check with `svelte-check`             |
 | `bun test:unit`           | Run Vitest unit tests                      |
 | `bun run db:apply`        | Apply committed Drizzle migrations to Neon |
-| `bun lint` / `bun format` | ESLint and Prettier                        |
+| `bun lint` / `bun format` | Oxlint, ESLint (Svelte), and Prettier      |
 
 ## Environment variables
 

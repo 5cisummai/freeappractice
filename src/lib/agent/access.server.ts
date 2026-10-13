@@ -1,9 +1,9 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { isSuperCoachEnabled, isSuperMemoryEnabled } from '$lib/flags';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
-import { hasPaidCapability, type PaidCapability, type PlanAccess } from '$lib/billing/types';
-import { type TutorProfileView } from '$lib/agent/personalization/types';
-import { activeOrgUsesUserSuper } from '$lib/auth/organizations.server';
+import { isSuperCoachEnabled, isSuperMemoryEnabled } from '#lib/flags.js';
+import { getAssistantFeaturesEnabledForRequest } from '#lib/users/assistant-preferences.server.js';
+import { hasPaidCapability, type PaidCapability, type PlanAccess } from '#lib/billing/types.js';
+import { type TutorProfileView } from '#lib/agent/personalization/types.js';
+import { activeOrgUsesUserSuper } from '#lib/auth/organizations.server.js';
 
 export type SuperFeature = 'coach' | 'studyPlans' | 'memory';
 
@@ -39,7 +39,7 @@ export function getPlanAccessForRequest(
 	locals: Pick<App.Locals, 'planAccess'>,
 	userId: string
 ): Promise<PlanAccess> {
-	return (locals.planAccess ??= import('$lib/billing/subscriptions.server').then(
+	return (locals.planAccess ??= import('#lib/billing/subscriptions.server.js').then(
 		({ getPlanAccess }) => getPlanAccess(userId)
 	));
 }
@@ -50,7 +50,7 @@ export function getTutorProfileViewForRequest(
 	userId: string
 ): Promise<TutorProfileView> {
 	if (locals.tutorProfileView) return locals.tutorProfileView;
-	const profilePromise = import('$lib/agent/personalization/profile.server').then(
+	const profilePromise = import('#lib/agent/personalization/profile.server.js').then(
 		({ getTutorProfileView }) => getTutorProfileView(userId)
 	);
 	locals.tutorProfileView = profilePromise;
@@ -71,7 +71,7 @@ export function getAgeConfirmedAtForRequest(
 			profile.ageConfirmedAt ? new Date(profile.ageConfirmedAt) : null
 		));
 	}
-	return (locals.ageConfirmedAt = import('$lib/agent/personalization/profile.server').then(
+	return (locals.ageConfirmedAt = import('#lib/agent/personalization/profile.server.js').then(
 		({ getAgeConfirmedAt }) => getAgeConfirmedAt(userId)
 	));
 }

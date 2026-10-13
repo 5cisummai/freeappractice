@@ -1,12 +1,12 @@
 <script lang="ts" module>
-	import { cn } from '$lib/utils';
-	import type { ButtonProps } from '$lib/components/ui/button/index.js';
+	import { cn } from '#lib/utils.js';
+	import type { ButtonProps } from '#lib/components/ui/button/index.js';
 
 	export type ConversationScrollButtonProps = ButtonProps;
 </script>
 
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import ArrowDown from '@tabler/icons-svelte/icons/arrow-down';
 	import { getStickToBottomContext } from './stick-to-bottom-context.svelte.js';
 	import { fly } from 'svelte/transition';

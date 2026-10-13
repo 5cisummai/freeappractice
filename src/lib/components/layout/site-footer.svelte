@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { footerNavGroups } from '$lib/site-nav.js';
-	import HalftoneBackground from '$lib/components/marketing/halftone-background.svelte';
+	import { footerNavGroups } from '#lib/site-nav.js';
+	import HalftoneBackground from '#lib/components/marketing/halftone-background.svelte';
 	import MailIcon from '@tabler/icons-svelte/icons/mail-filled';
 
 	const contactLinks = [

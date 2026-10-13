@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/private';
+import { BETTER_AUTH_ADMIN_USER_IDS } from '$app/env/private';
 
 export function getAdminUserIds(): string[] {
-	return (env.BETTER_AUTH_ADMIN_USER_IDS ?? '')
+	return (BETTER_AUTH_ADMIN_USER_IDS ?? '')
 		.split(',')
 		.map((id) => id.trim())
 		.filter(Boolean);

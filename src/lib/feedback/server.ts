@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { json } from '@sveltejs/kit';
-import { limitFeedback } from '$lib/feedback/rate-limit.server';
-import { appFeedbackSchema, formatAppFeedbackMessageForStorage } from '$lib/schemas/app-feedback';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { appFeedback } from '$lib/server/neon/schema';
-import { readJsonBody } from '$lib/server/request-body.server';
+import { limitFeedback } from '#lib/feedback/rate-limit.server.js';
+import {
+	appFeedbackSchema,
+	formatAppFeedbackMessageForStorage
+} from '#lib/schemas/app-feedback.js';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { appFeedback } from '#lib/server/neon/schema.js';
+import { readJsonBody } from '#lib/server/request-body.server.js';
 
 export async function submitAppFeedback(
 	request: Request,
@@ -17,12 +19,15 @@ export async function submitAppFeedback(
 		try {
 			body = await readJsonBody(request, 384 * 1024);
 		} catch {
-			return json({ error: 'Invalid request body' }, { status: 400 });
+			return Response.json({ error: 'Invalid request body' }, { status: 400 });
 		}
 
 		const result = appFeedbackSchema.safeParse(body);
 		if (!result.success) {
-			return json({ error: 'Validation failed', details: result.error.flatten() }, { status: 400 });
+			return Response.json(
+				{ error: 'Validation failed', details: result.error.flatten() },
+				{ status: 400 }
+			);
 		}
 		const parsed = result.data;
 		const now = Date.now();
@@ -33,7 +38,7 @@ export async function submitAppFeedback(
 		if (!rateLimit.allowed) {
 			const retryAfterMs = Math.max(0, (rateLimit.retryAt ?? now) - now);
 			const retryAfterSeconds = Math.ceil(retryAfterMs / 1000);
-			return json(
+			return Response.json(
 				{
 					error: 'Too many feedback submissions. Please wait a few minutes before trying again.',
 					retryAfterSeconds
@@ -66,9 +71,9 @@ export async function submitAppFeedback(
 			authenticated: Boolean(userId)
 		});
 
-		return json({ ok: true, id }, { status: 201 });
+		return Response.json({ ok: true, id }, { status: 201 });
 	} catch (err) {
 		logger.error('App feedback error', { error: err });
-		return json({ error: 'Failed to submit feedback' }, { status: 500 });
+		return Response.json({ error: 'Failed to submit feedback' }, { status: 500 });
 	}
 }

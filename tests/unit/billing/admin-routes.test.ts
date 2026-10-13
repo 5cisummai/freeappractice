@@ -9,12 +9,12 @@ const mocks = vi.hoisted(() => ({
 			handler(event, (event as { locals: { user?: { id: string } } }).locals.user?.id ?? 'user-1')
 }));
 
-vi.mock('$lib/auth/admin.server', () => ({ isAdminUser: mocks.isAdminUser }));
-vi.mock('$lib/billing/admin.server', () => ({
+vi.mock('#lib/auth/admin.server.js', () => ({ isAdminUser: mocks.isAdminUser }));
+vi.mock('#lib/billing/admin.server.js', () => ({
 	retrySuperCleanupJob: mocks.retrySuperCleanupJob,
 	grantIndefiniteSuperToClaimedFreeBetaUsers: mocks.grantIndefiniteSuperToClaimedFreeBetaUsers
 }));
-vi.mock('$lib/auth/route-helpers.server', () => ({
+vi.mock('#lib/auth/route-helpers.server.js', () => ({
 	withAuthedHandler: mocks.withAuthedHandler
 }));
 

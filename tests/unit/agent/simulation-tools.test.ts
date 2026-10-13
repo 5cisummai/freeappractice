@@ -5,12 +5,12 @@ vi.mock('ai', async (importOriginal) => ({
 	...(await importOriginal<typeof import('ai')>()),
 	generateText: mocks.generateText
 }));
-vi.mock('$lib/server/gateway-credentials.server', () => ({
+vi.mock('#lib/server/gateway-credentials.server.js', () => ({
 	gatewayModel: () => 'simulation-model'
 }));
 
-import { createAgentTools } from '$lib/agent/tools/index.server';
-import type { AgentToolsInput } from '$lib/agent/request';
+import { createAgentTools } from '#lib/agent/tools/index.server.js';
+import type { AgentToolsInput } from '#lib/agent/request.js';
 
 beforeEach(() => vi.clearAllMocks());
 

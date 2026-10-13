@@ -1,8 +1,7 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getFrqQuestionById } from '$lib/question-bank/frq/model.server';
-import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
-import { toPublicFrqQuestion } from '$lib/question-bank/frq/types';
+import { getFrqQuestionById } from '#lib/question-bank/frq/model.server.js';
+import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
+import { toPublicFrqQuestion } from '#lib/question-bank/frq/types.js';
 
 export const GET: RequestHandler = async ({ params }) => {
 	const gated = await requireFrqPracticeEnabled();
@@ -10,12 +9,12 @@ export const GET: RequestHandler = async ({ params }) => {
 
 	const questionId = params.questionId?.trim();
 	if (!questionId) {
-		return json({ error: 'questionId is required' }, { status: 400 });
+		return Response.json({ error: 'questionId is required' }, { status: 400 });
 	}
 
 	try {
 		const question = await getFrqQuestionById(questionId);
-		return json({
+		return Response.json({
 			question: toPublicFrqQuestion(questionId, question),
 			provider: 'cache',
 			model: 'cached',
@@ -23,6 +22,6 @@ export const GET: RequestHandler = async ({ params }) => {
 			questionId
 		});
 	} catch {
-		return json({ error: 'Question not found' }, { status: 404 });
+		return Response.json({ error: 'Question not found' }, { status: 404 });
 	}
 };

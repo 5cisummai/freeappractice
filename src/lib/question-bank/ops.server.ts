@@ -3,12 +3,15 @@ import {
 	reconcilePoolRefillJobs,
 	requestPoolRefill,
 	type PoolBucketKey
-} from '$lib/question-bank/pool-refill-queue.server';
+} from '#lib/question-bank/pool-refill-queue.server.js';
 import {
 	runQuestionPoolRefillWorker,
 	type RefillRunSummary
-} from '$lib/question-bank/pool-refill.server';
-import { QUESTION_POOL_CONFIG, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
+} from '#lib/question-bank/pool-refill.server.js';
+import {
+	QUESTION_POOL_CONFIG,
+	type QuestionPoolConfig
+} from '#lib/question-bank/pool-constants.js';
 
 type RefillParams =
 	| { mode: 'request'; bucket: PoolBucketKey; config?: QuestionPoolConfig }

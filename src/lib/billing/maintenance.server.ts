@@ -1,10 +1,13 @@
 import { and, eq, isNotNull, isNull, lte, or } from 'drizzle-orm';
 
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { superBillingAccess, superGrants, tutorProfiles } from '$lib/server/neon/schema';
-import { getPlanAccess, markSuperAccessEndedIfNoAccess } from '$lib/billing/subscriptions.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { superBillingAccess, superGrants, tutorProfiles } from '#lib/server/neon/schema.js';
+import {
+	getPlanAccess,
+	markSuperAccessEndedIfNoAccess
+} from '#lib/billing/subscriptions.server.js';
 
-import { SUPER_PAST_DUE_GRACE_MS } from '$lib/billing/types';
+import { SUPER_PAST_DUE_GRACE_MS } from '#lib/billing/types.js';
 
 export async function runBillingMaintenance(now = new Date(), batchSize = 50): Promise<number> {
 	const db = getNeonDatabase();

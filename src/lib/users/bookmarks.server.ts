@@ -1,7 +1,10 @@
 import { asc, eq, sql } from 'drizzle-orm';
-import { getQuestionsByIds, type StoredQuestion } from '$lib/question-bank/mcq/repository.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { bookmarks } from '$lib/server/neon/schema';
+import {
+	getQuestionsByIds,
+	type StoredQuestion
+} from '#lib/question-bank/mcq/repository.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { bookmarks } from '#lib/server/neon/schema.js';
 
 /** Return bookmarked questions in the order in which the user saved them. */
 export async function getBookmarkedQuestions(userId: string): Promise<StoredQuestion[]> {

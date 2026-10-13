@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertResendSent } from '$lib/auth/resend-result';
+import { assertResendSent } from '#lib/auth/resend-result.js';
 
 describe('assertResendSent', () => {
 	it('throws when Resend returns an error payload', () => {

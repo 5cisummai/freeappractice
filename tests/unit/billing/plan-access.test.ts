@@ -7,15 +7,15 @@ const mocks = vi.hoisted(() => ({
 	selectResults: [] as unknown[][]
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
-vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
-vi.mock('$lib/agent/personalization/profile.server', () => ({
+vi.mock('#lib/flags.js', () => ({ isSuperFreeBetaEnabled: mocks.isSuperFreeBetaEnabled }));
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	markSuperAccessStarted: mocks.markSuperAccessStarted
 }));
 
-import { getPlanAccess } from '$lib/billing/subscriptions.server';
+import { getPlanAccess } from '#lib/billing/subscriptions.server.js';
 
 function selectBuilder(result: unknown[]) {
 	const builder: any = {

@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 const getPlanAccess = vi.hoisted(() => vi.fn());
 const getStripeClient = vi.hoisted(() => vi.fn(() => null));
-vi.mock('$lib/billing/subscriptions.server', () => ({ getPlanAccess, getStripeClient }));
+vi.mock('#lib/billing/subscriptions.server.js', () => ({ getPlanAccess, getStripeClient }));
 
-import { getPlanAccessForRequest } from '$lib/agent/access.server';
+import { getPlanAccessForRequest } from '#lib/agent/access.server.js';
 
 describe('request-local plan access cache', () => {
 	it('resolves billing once for a request locals object', async () => {

@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Checkbox } from '#lib/components/ui/checkbox/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import {
 		appFeedbackSchema,
 		type AppFeedbackPayload,
 		type CoachFeedbackChatMessage
-	} from '$lib/schemas/app-feedback';
-	import type { AgentUIMessage } from '$lib/agent/agent.server';
+	} from '#lib/schemas/app-feedback.js';
+	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 
 	type FeedbackField = keyof AppFeedbackPayload;
 	type FeedbackFieldErrors = Partial<Record<FeedbackField, string>>;

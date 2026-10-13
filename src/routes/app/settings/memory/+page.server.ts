@@ -3,7 +3,7 @@ import {
 	getTutorMemoryPublicId,
 	isTutorMemoryConfigured,
 	listTutorMemories
-} from '$lib/agent/memory/service.server';
+} from '#lib/agent/memory/service.server.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;

@@ -1,22 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { getUnitsForCourse } from '$lib/catalog/courses';
-import { AP_DATA } from '$lib/catalog/dataset';
+import { getUnitsForCourse } from '#lib/catalog/courses.js';
+import { AP_DATA } from '#lib/catalog/dataset.js';
 import {
 	buildFrqGenerationPrompt,
 	parseGeneratedFrq
-} from '$lib/question-bank/frq/generation.server';
+} from '#lib/question-bank/frq/generation.server.js';
 import {
 	FRQ_SCOPE_SENTENCE,
 	frqPracticeFor,
 	resolveFrqPoolRequest
-} from '$lib/question-bank/frq/practice';
+} from '#lib/question-bank/frq/practice.js';
 import {
 	frqFormatWire,
 	getFrqCourseNames,
 	getFrqFormat,
 	type FrqFormatRecord
-} from '$lib/question-bank/frq/profiles.server';
-import { frqResponseIds, frqTotalPoints, toPublicFrqQuestion } from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/profiles.server.js';
+import {
+	frqResponseIds,
+	frqTotalPoints,
+	toPublicFrqQuestion
+} from '#lib/question-bank/frq/types.js';
 
 const COURSES = [
 	'AP Human Geography',

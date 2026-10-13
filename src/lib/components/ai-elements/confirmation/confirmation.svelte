@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { cn, type WithElementRef } from '$lib/utils';
+	import { cn, type WithElementRef } from '#lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import type { Snippet } from 'svelte';
 	import type { ToolUIPartApproval, ToolUIPartState } from './confirmation-context.svelte.js';
@@ -13,7 +13,7 @@
 </script>
 
 <script lang="ts">
-	import { Alert } from '$lib/components/ui/alert/index.js';
+	import { Alert } from '#lib/components/ui/alert/index.js';
 	import { setConfirmationContext } from './confirmation-context.svelte.js';
 
 	let {

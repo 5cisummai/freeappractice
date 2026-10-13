@@ -2,7 +2,7 @@
 	import { onMount, tick, type Component } from 'svelte';
 
 	import type { ChatStatus, FileUIPart } from 'ai';
-	import { COACH_IMAGE_MAX_BYTES, COACH_IMAGE_TYPES } from '$lib/agent/attachments/images';
+	import { COACH_IMAGE_MAX_BYTES, COACH_IMAGE_TYPES } from '#lib/agent/attachments/images.js';
 
 	import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
 	import Atom2FilledIcon from '@tabler/icons-svelte/icons/atom-2-filled';
@@ -16,17 +16,17 @@
 	import Sparkles2FilledIcon from '@tabler/icons-svelte/icons/sparkles-2-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
 
-	import * as PromptInput from '$lib/components/ai-elements/prompt-input/index.js';
+	import * as PromptInput from '#lib/components/ai-elements/prompt-input/index.js';
 
-	import * as Select from '$lib/components/ui/select/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
 
 	import {
 		coachComposerActions,
 		type CoachComposerActionId
-	} from '$lib/agent/personalization/composer-actions';
-	import type { CoachThinkingMode } from '$lib/agent/request';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/components/agent/ui';
-	import { cn } from '$lib/utils.js';
+	} from '#lib/agent/personalization/composer-actions.js';
+	import type { CoachThinkingMode } from '#lib/agent/request.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
+	import { cn } from '#lib/utils.js';
 
 	import { toast } from 'svelte-sonner';
 

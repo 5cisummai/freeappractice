@@ -1,11 +1,11 @@
 <script lang="ts">
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import {
 		getCoachQuestionToolInput,
 		type CoachQuestionToolOutput
-	} from '$lib/agent/tools/question';
+	} from '#lib/agent/tools/question.js';
 
 	let {
 		input,

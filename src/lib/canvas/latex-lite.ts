@@ -1,4 +1,4 @@
-import latexLiteRuntime from '$lib/canvas/latex-lite-runtime.js?raw';
+import latexLiteRuntime from '#lib/canvas/latex-lite-runtime.js?raw';
 
 /** Tiny `$...$` / `$$...$$` renderer injected into generative canvas iframes (no KaTeX/CDN). */
 

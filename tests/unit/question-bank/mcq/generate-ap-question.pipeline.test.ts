@@ -10,10 +10,9 @@ const { aiCallMock, generateMock, infoMock, ToolLoopAgentMock } = vi.hoisted(() 
 	return { aiCallMock, generateMock, infoMock, ToolLoopAgentMock };
 });
 
-vi.mock('$env/dynamic/private', () => ({
-	env: {
-		AI_GATEWAY_API_KEY: 'test-key'
-	}
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	AI_GATEWAY_API_KEY: 'test-key'
 }));
 
 vi.mock('ai', async (importOriginal) => {
@@ -24,7 +23,7 @@ vi.mock('ai', async (importOriginal) => {
 	};
 });
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: {
 		aiCall: aiCallMock,
 		error: vi.fn(),
@@ -36,7 +35,7 @@ vi.mock('$lib/server/logger', () => ({
 import {
 	generateAPQuestion,
 	generateAPStimulusSet
-} from '$lib/question-bank/mcq/generation.server';
+} from '#lib/question-bank/mcq/generation.server.js';
 
 const validGeneratedQuestion = {
 	question: 'Which agricultural practice is most associated with intensive subsistence farming?',

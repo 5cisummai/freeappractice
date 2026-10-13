@@ -1,5 +1,5 @@
-import type { AgentToolsInput } from '$lib/agent/request';
-import { inspectCoachImageTool } from '$lib/agent/attachments/images.server';
+import type { AgentToolsInput } from '#lib/agent/request.js';
+import { inspectCoachImageTool } from '#lib/agent/attachments/images.server.js';
 import { createReadTools } from './read.server';
 import { createQuestionTools } from './questions.server';
 import { createSearchTools } from './search.server';

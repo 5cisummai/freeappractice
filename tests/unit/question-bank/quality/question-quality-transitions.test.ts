@@ -4,7 +4,7 @@ import {
 	transitionReviewItemStatus,
 	transitionReviewJobStatus,
 	transitionQualityState
-} from '$lib/question-bank/quality/transitions';
+} from '#lib/question-bank/quality/transitions.js';
 
 describe('question quality state transitions', () => {
 	it('allows the documented job lifecycle', () => {

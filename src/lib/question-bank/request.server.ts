@@ -1,5 +1,4 @@
-import { json } from '@sveltejs/kit';
-import { getAllowedCourses, getUnitsForCourse } from '$lib/catalog/courses';
+import { getAllowedCourses, getUnitsForCourse } from '#lib/catalog/courses.js';
 
 const MAX_COURSE_LEN = 120;
 const MAX_UNIT_LEN = 200;
@@ -27,7 +26,7 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	if (typeof course !== 'string' || !course.trim()) {
 		return {
 			ok: false,
-			response: json(
+			response: Response.json(
 				{ error: 'course is required and must be a non-empty string' },
 				{ status: 400 }
 			)
@@ -38,7 +37,7 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	if (trimmedCourse.length > MAX_COURSE_LEN) {
 		return {
 			ok: false,
-			response: json(
+			response: Response.json(
 				{ error: `course must be at most ${MAX_COURSE_LEN} characters` },
 				{ status: 400 }
 			)
@@ -48,14 +47,14 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	if (!ALLOWED_COURSES.has(trimmedCourse)) {
 		return {
 			ok: false,
-			response: json({ error: 'course must be a supported AP course' }, { status: 400 })
+			response: Response.json({ error: 'course must be a supported AP course' }, { status: 400 })
 		};
 	}
 
 	if (unit !== undefined && typeof unit !== 'string') {
 		return {
 			ok: false,
-			response: json({ error: 'unit must be a string if provided' }, { status: 400 })
+			response: Response.json({ error: 'unit must be a string if provided' }, { status: 400 })
 		};
 	}
 
@@ -63,20 +62,23 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	if (formatId !== undefined && typeof formatId !== 'string') {
 		return {
 			ok: false,
-			response: json({ error: 'formatId must be a string if provided' }, { status: 400 })
+			response: Response.json({ error: 'formatId must be a string if provided' }, { status: 400 })
 		};
 	}
 	const trimmedFormatId = typeof formatId === 'string' ? formatId.trim() : '';
 	if (trimmedFormatId.length > 80) {
 		return {
 			ok: false,
-			response: json({ error: 'formatId must be at most 80 characters' }, { status: 400 })
+			response: Response.json({ error: 'formatId must be at most 80 characters' }, { status: 400 })
 		};
 	}
 	if (trimmedUnit.length > MAX_UNIT_LEN) {
 		return {
 			ok: false,
-			response: json({ error: `unit must be at most ${MAX_UNIT_LEN} characters` }, { status: 400 })
+			response: Response.json(
+				{ error: `unit must be at most ${MAX_UNIT_LEN} characters` },
+				{ status: 400 }
+			)
 		};
 	}
 
@@ -84,13 +86,16 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		if (typeof customTopic !== 'string') {
 			return {
 				ok: false,
-				response: json({ error: 'customTopic must be a string if provided' }, { status: 400 })
+				response: Response.json(
+					{ error: 'customTopic must be a string if provided' },
+					{ status: 400 }
+				)
 			};
 		}
 		if (customTopic.trim()) {
 			return {
 				ok: false,
-				response: json(
+				response: Response.json(
 					{
 						error:
 							'customTopic is deprecated; use a course unit instead. Live custom-topic generation has been removed.'
@@ -107,14 +112,17 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 	) {
 		return {
 			ok: false,
-			response: json({ error: 'unit must be a supported course unit' }, { status: 400 })
+			response: Response.json({ error: 'unit must be a supported course unit' }, { status: 400 })
 		};
 	}
 
 	if (excludeQuestionIds !== undefined && !Array.isArray(excludeQuestionIds)) {
 		return {
 			ok: false,
-			response: json({ error: 'excludeQuestionIds must be an array if provided' }, { status: 400 })
+			response: Response.json(
+				{ error: 'excludeQuestionIds must be an array if provided' },
+				{ status: 400 }
+			)
 		};
 	}
 
@@ -123,7 +131,10 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		if (typeof id !== 'string') {
 			return {
 				ok: false,
-				response: json({ error: 'excludeQuestionIds must contain only strings' }, { status: 400 })
+				response: Response.json(
+					{ error: 'excludeQuestionIds must contain only strings' },
+					{ status: 400 }
+				)
 			};
 		}
 		const trimmed = id.trim();
@@ -131,7 +142,7 @@ export function validateQuestionRequest(body: unknown): QuestionRequestResult {
 		if (trimmed.length > MAX_QUESTION_ID_LEN) {
 			return {
 				ok: false,
-				response: json(
+				response: Response.json(
 					{ error: `question IDs must be at most ${MAX_QUESTION_ID_LEN} characters` },
 					{ status: 400 }
 				)

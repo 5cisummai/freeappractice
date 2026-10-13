@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import type { CoachPracticeQuestionToolOutput } from '$lib/agent/tools/practice';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import type { CoachPracticeQuestionToolOutput } from '#lib/agent/tools/practice.js';
 
 	let { result }: { result: CoachPracticeQuestionToolOutput } = $props();
 

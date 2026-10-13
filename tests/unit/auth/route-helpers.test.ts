@@ -5,11 +5,11 @@ const mocks = vi.hoisted(() => ({
 	getSession: vi.fn()
 }));
 
-vi.mock('$lib/auth/server', () => ({
+vi.mock('#lib/auth/server.js', () => ({
 	auth: { api: { getSession: mocks.getSession } }
 }));
 
-import { getOptionalUserId } from '$lib/auth/route-helpers.server';
+import { getOptionalUserId } from '#lib/auth/route-helpers.server.js';
 
 function eventWith(locals: App.Locals): RequestEvent {
 	return {

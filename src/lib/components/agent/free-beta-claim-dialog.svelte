@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
+	import { invalidateAuthenticatedShell } from '#lib/client/invalidate-data.js';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { toast } from 'svelte-sonner';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/components/agent/ui';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
 
 	let {
 		open = $bindable(true)

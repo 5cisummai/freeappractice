@@ -1,6 +1,6 @@
 import { and, eq, inArray, lt, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { qualityReviewJobItems } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { qualityReviewJobItems } from '#lib/server/neon/schema.js';
 import { transitionReviewItemStatus } from './transitions.js';
 
 export type ReviewItemRow = typeof qualityReviewJobItems.$inferSelect;

@@ -7,20 +7,20 @@ const mocks = vi.hoisted(() => ({
 	findRecentGradedFrqAttempts: vi.fn()
 }));
 
-vi.mock('$lib/agent/memory/service.server', () => ({
+vi.mock('#lib/agent/memory/service.server.js', () => ({
 	searchTutorMemories: mocks.searchTutorMemories
 }));
-vi.mock('$lib/agent/personalization/profile.server', () => ({
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	getTutorProfileView: mocks.getTutorProfileView
 }));
-vi.mock('$lib/users/model.server', () => ({
+vi.mock('#lib/users/model.server.js', () => ({
 	getUserProgress: mocks.getUserProgress
 }));
-vi.mock('$lib/grading/frq/storage.server', () => ({
+vi.mock('#lib/grading/frq/storage.server.js', () => ({
 	findRecentGradedFrqAttempts: mocks.findRecentGradedFrqAttempts
 }));
 
-import { buildLearningContext } from '$lib/agent/personalization/learning.server';
+import { buildLearningContext } from '#lib/agent/personalization/learning.server.js';
 
 describe('buildLearningContext', () => {
 	beforeEach(() => {

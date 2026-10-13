@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import HomeIconComponent from '@tabler/icons-svelte/icons/home-filled';
 	import BookOpenIconComponent from '@tabler/icons-svelte/icons/book-filled';
 	import BarChart3IconComponent from '@tabler/icons-svelte/icons/chart-pie-filled';
@@ -9,8 +9,8 @@
 	import ShieldIconComponent from '@tabler/icons-svelte/icons/shield-filled';
 	import UsersIconComponent from '@tabler/icons-svelte/icons/user-filled';
 	import LayersIconComponent from '@tabler/icons-svelte/icons/stack-filled';
-	import PipIcon from '$lib/components/agent/pip-icon.svelte';
-	import { Badge } from '$lib/components/ui/badge';
+	import PipIcon from '#lib/components/agent/pip-icon.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
 	import type { Component } from 'svelte';
 
 	type NavHref =

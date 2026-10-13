@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_ATTEMPT_TIME_MS, sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
+import { MAX_ATTEMPT_TIME_MS, sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
 
 describe('sanitizeAttemptTimeMs', () => {
 	it('returns 0 for non-finite or negative values', () => {

@@ -1,6 +1,9 @@
-import { hasAnalyticsConsent } from '$lib/client/analytics-consent';
-import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-import { classifyQuestionFailureFromStatus, type QuestionFailureKind } from '$lib/question-failure';
+import { hasAnalyticsConsent } from '#lib/client/analytics-consent.js';
+import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
+import {
+	classifyQuestionFailureFromStatus,
+	type QuestionFailureKind
+} from '#lib/question-failure.js';
 
 type LatencyBucket = '0-500ms' | '500-1000ms' | '1-2s' | '2-5s' | '5s+';
 export type QuestionSource = 'cached' | 'generated';

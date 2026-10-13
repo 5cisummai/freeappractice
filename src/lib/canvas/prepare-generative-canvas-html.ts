@@ -1,4 +1,4 @@
-import { LATEX_LITE_SCRIPT, LATEX_LITE_STYLE } from '$lib/canvas/latex-lite';
+import { LATEX_LITE_SCRIPT, LATEX_LITE_STYLE } from '#lib/canvas/latex-lite.js';
 
 export const MAX_GENERATIVE_CANVAS_HTML_CHARS = 300_000;
 

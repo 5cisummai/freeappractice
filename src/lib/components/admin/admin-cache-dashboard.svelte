@@ -5,17 +5,17 @@
 		CacheBucketSummary,
 		PoolQuestionType,
 		PoolRefillStatusUi
-	} from '$lib/admin/types.js';
-	import AdminCacheBucketActions from '$lib/components/admin/admin-cache-bucket-actions.svelte';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Table from '$lib/components/ui/table/index.js';
+	} from '#lib/admin/types.js';
+	import AdminCacheBucketActions from '#lib/components/admin/admin-cache-bucket-actions.svelte';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 	import { toast } from 'svelte-sonner';
 	import {
 		POOL_RETIRE_OLDEST_PERCENT,
 		poolRetireQuantityForBucket
-	} from '$lib/question-bank/pool-constants';
+	} from '#lib/question-bank/pool-constants.js';
 
 	type Props = {
 		buckets: CacheBucketSummary[];

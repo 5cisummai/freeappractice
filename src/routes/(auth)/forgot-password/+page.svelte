@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Field from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Field from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
 	import { resolve } from '$app/paths';
-	import { authClient } from '$lib/auth/client.js';
-	import { EMAIL_SEND_FAILED_MESSAGE } from '$lib/auth/resend-result';
-	import { authCallbackUrl } from '$lib/auth/urls.js';
-	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
+	import { authClient } from '#lib/auth/client.js';
+	import { EMAIL_SEND_FAILED_MESSAGE } from '#lib/auth/resend-result.js';
+	import { authCallbackUrl } from '#lib/auth/urls.js';
+	import AuthSeoHead from '#lib/components/auth/auth-seo-head.svelte';
 
 	let email = $state('');
 	let loading = $state(false);
@@ -21,7 +21,7 @@
 		try {
 			const { error } = await authClient.requestPasswordReset({
 				email,
-				redirectTo: authCallbackUrl('/reset-password')
+				redirectTo: authCallbackUrl('reset-password')
 			});
 			if (error) {
 				errorMessage = error.message ?? EMAIL_SEND_FAILED_MESSAGE;
@@ -55,7 +55,8 @@
 					If that email is registered, you'll receive a reset link within a few minutes. Check your
 					spam folder if it doesn't arrive.
 				</p>
-				<a href={resolve('/login')} class="text-sm underline underline-offset-4">Back to sign in</a>
+
+				<a href={resolve('login')} class="text-sm underline underline-offset-4">Back to sign in</a>
 			</div>
 		{:else}
 			<form onsubmit={handleSubmit}>
@@ -78,7 +79,7 @@
 							{loading ? 'Sending...' : 'Send reset link'}
 						</Button>
 						<Field.Description class="text-center">
-							<a href={resolve('/login')} class="underline underline-offset-4">Back to sign in</a>
+							<a href={resolve('login')} class="underline underline-offset-4">Back to sign in</a>
 						</Field.Description>
 					</Field.Field>
 				</Field.Group>

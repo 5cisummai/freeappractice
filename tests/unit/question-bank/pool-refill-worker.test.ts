@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PoolRefillState } from '$lib/question-bank/pool-refill-types.server';
-import { poolGenerationBudgets } from '$lib/server/neon/schema';
+import type { PoolRefillState } from '#lib/question-bank/pool-refill-types.server.js';
+import { poolGenerationBudgets } from '#lib/server/neon/schema.js';
 
 const mocks = vi.hoisted(() => {
 	const state = {
@@ -18,8 +18,8 @@ const mocks = vi.hoisted(() => {
 	};
 });
 
-vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: () => mocks.db }));
-vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({ getNeonDatabase: () => mocks.db }));
+vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({
 	countActivePoolRowsForServing: vi.fn(async (_type: string, course: string, unit: string) =>
 		mocks.state.completedBuckets.has(`${course}\u0000${unit}`) ? 1 : 0
 	),
@@ -32,7 +32,7 @@ vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
 	})),
 	isValidPoolBucket: vi.fn(() => true)
 }));
-vi.mock('$lib/question-bank/pool-capacity.server', () => ({
+vi.mock('#lib/question-bank/pool-capacity.server.js', () => ({
 	writePoolBucketBelowTarget: vi.fn(
 		async (_bucket: PoolRefillState, _target: number, write: () => Promise<unknown>) => ({
 			status: 'written',
@@ -40,7 +40,7 @@ vi.mock('$lib/question-bank/pool-capacity.server', () => ({
 		})
 	)
 }));
-vi.mock('$lib/question-bank/pool-kind-worker.server', () => ({
+vi.mock('#lib/question-bank/pool-kind-worker.server.js', () => ({
 	estimatePoolGenerationSlots: vi.fn(async () => 1),
 	generatePoolQuestion: vi.fn(async (_type: string, course: string, unit: string) => {
 		mocks.state.activeGenerations += 1;
@@ -54,18 +54,18 @@ vi.mock('$lib/question-bank/pool-kind-worker.server', () => ({
 		return { skippedDuplicate: false, generatedCount: 1 };
 	})
 }));
-vi.mock('$lib/question-bank/pool-kinds.server', () => ({
+vi.mock('#lib/question-bank/pool-kinds.server.js', () => ({
 	getPoolKindAdapter: vi.fn(() => ({ minimumGenerationHeadroomMs: 0 }))
 }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
-vi.mock('$lib/server/question-request-metrics', () => ({
+vi.mock('#lib/server/question-request-metrics.js', () => ({
 	captureQuestionPoolHealthMetric: vi.fn()
 }));
 
-import { runQuestionPoolRefillWorker } from '$lib/question-bank/pool-refill.server';
-import type { QuestionPoolConfig } from '$lib/question-bank/pool-constants';
+import { runQuestionPoolRefillWorker } from '#lib/question-bank/pool-refill.server.js';
+import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 const env: QuestionPoolConfig = {
 	mcqTarget: 1,

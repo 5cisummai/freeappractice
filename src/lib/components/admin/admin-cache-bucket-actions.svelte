@@ -1,10 +1,10 @@
 <script lang="ts">
 	import EllipsisIcon from '@tabler/icons-svelte/icons/dots';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import type { CacheBucketSummary } from '$lib/admin/types.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import type { CacheBucketSummary } from '#lib/admin/types.js';
 
 	type Props = {
 		bucket: CacheBucketSummary;

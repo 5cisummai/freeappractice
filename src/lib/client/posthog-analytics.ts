@@ -1,16 +1,24 @@
 import posthog from 'posthog-js';
-import { building, dev } from '$app/environment';
-import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$env/static/public';
-import { readAnalyticsConsent } from '$lib/client/analytics-consent';
-import type { AnalyticsConsent } from '$lib/analytics-consent';
-import { getPostHogOperationDisposition } from '$lib/client/posthog-consent-policy';
+import { building, dev } from '$app/env';
+import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$app/env/public';
+import { readAnalyticsConsent } from '#lib/client/analytics-consent.js';
+import type { AnalyticsConsent } from '#lib/analytics-consent.js';
+import { getPostHogOperationDisposition } from '#lib/client/posthog-consent-policy.js';
 
 let initialized = false;
 const MAX_PENDING_OPERATIONS = 100;
 
 type PostHogOperation =
-	| { kind: 'capture'; event: string; properties?: Record<string, unknown> }
-	| { kind: 'identify'; distinctId: string; properties?: Record<string, unknown> }
+	| {
+			kind: 'capture';
+			event: string;
+			properties?: Record<string, unknown>;
+	  }
+	| {
+			kind: 'identify';
+			distinctId: string;
+			properties?: Record<string, unknown>;
+	  }
 	| { kind: 'pageview'; url?: string }
 	| { kind: 'pageleave'; url?: string }
 	| { kind: 'exception'; error: unknown };

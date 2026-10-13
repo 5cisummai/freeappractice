@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ANALYTICS_CONSENT_KEY } from '$lib/analytics-consent';
-import { hasAnalyticsConsent } from '$lib/server/analytics-consent';
+import { ANALYTICS_CONSENT_KEY } from '#lib/analytics-consent.js';
+import { hasAnalyticsConsent } from '#lib/server/analytics-consent.js';
 
 describe('hasAnalyticsConsent', () => {
 	it('returns false without a consent cookie', () => {

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
+	import SectionIntro from '#lib/components/marketing/section-intro.svelte';
 	import ChevronLeftIcon from '@tabler/icons-svelte/icons/chevron-left';
 	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	type StudentStory = {
 		name: string;

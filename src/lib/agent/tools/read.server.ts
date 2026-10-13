@@ -2,26 +2,26 @@ import { tool } from 'ai';
 
 import { z } from 'zod';
 
-import { getCatalogFacts } from '$lib/catalog/sources';
+import { getCatalogFacts } from '#lib/catalog/sources.js';
 
-import type { AgentToolsInput } from '$lib/agent/request';
+import type { AgentToolsInput } from '#lib/agent/request.js';
 
 import {
 	getCoachActivitySummary,
 	getCoachFrqPerformance,
 	getCoachUnitDetail
-} from '$lib/agent/tools/evidence.server';
+} from '#lib/agent/tools/evidence.server.js';
 
-import { getCurrentQuestion } from '$lib/agent/personalization/context.server';
-import { courseSchema } from '$lib/agent/plans/tool-schema';
+import { getCurrentQuestion } from '#lib/agent/personalization/context.server.js';
+import { courseSchema } from '#lib/agent/plans/tool-schema.js';
 
-import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
-import { getCurrentStudyPlan } from '$lib/agent/plans/store.server';
+import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
+import { getCurrentStudyPlan } from '#lib/agent/plans/store.server.js';
 
-import type { StudyPlanView } from '$lib/agent/plans/types';
+import type { StudyPlanView } from '#lib/agent/plans/types.js';
 
-import { getUserProgress } from '$lib/users/model.server';
-import { getQuizAttemptForCoach } from '$lib/users/quiz-history.server';
+import { getUserProgress } from '#lib/users/model.server.js';
+import { getQuizAttemptForCoach } from '#lib/users/quiz-history.server.js';
 
 function studyPlanToolView(plan: StudyPlanView | null): StudyPlanView | null {
 	return plan

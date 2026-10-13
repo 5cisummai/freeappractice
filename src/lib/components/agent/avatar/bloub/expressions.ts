@@ -4,9 +4,9 @@ import {
 	EYE_W,
 	REST_GAZE,
 	type HeadGaze
-} from '$lib/components/agent/avatar/bloub/face';
-import { lerp } from '$lib/components/agent/avatar/bloub/math';
-import type { EyeCfg } from '$lib/components/agent/avatar/bloub/states';
+} from '#lib/components/agent/avatar/bloub/face.js';
+import { lerp } from '#lib/components/agent/avatar/bloub/math.js';
+import type { EyeCfg } from '#lib/components/agent/avatar/bloub/states.js';
 
 /**
  * Expression de repos du bot.

@@ -1,13 +1,13 @@
 import { DefaultChatTransport } from 'ai';
-import { apiFetch } from '$lib/client/api';
-import type { AgentUIMessage } from '$lib/agent/agent.server';
+import { apiFetch } from '#lib/client/api.js';
+import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 import {
 	MAX_AGENT_MESSAGES,
 	minimalAgentClientMessages,
 	type CoachThinkingMode,
 	type AgentContext
-} from '$lib/agent/request';
-import type { CoachComposerActionId } from '$lib/agent/personalization/composer-actions';
+} from '#lib/agent/request.js';
+import type { CoachComposerActionId } from '#lib/agent/personalization/composer-actions.js';
 
 export type AgentTransportOptions = {
 	getSessionId: () => string;

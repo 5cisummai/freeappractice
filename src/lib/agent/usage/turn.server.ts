@@ -7,12 +7,12 @@ import {
 	rollupPersonalizedUsage,
 	type PersonalizedUsageWarning,
 	type AgentUsage
-} from '$lib/agent/usage/controls.server';
+} from '#lib/agent/usage/controls.server.js';
 import {
 	millicreditsFromLanguageModelUsage,
 	WEB_SEARCH_SURCHARGE_MILLI
-} from '$lib/agent/usage/credits';
-import type { SuperAccessReason } from '$lib/billing/types';
+} from '#lib/agent/usage/credits.js';
+import type { SuperAccessReason } from '#lib/billing/types.js';
 
 export type AvailableAgentTurn = {
 	kind: 'available';

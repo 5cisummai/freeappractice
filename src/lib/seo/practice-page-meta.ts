@@ -1,5 +1,5 @@
-import { formatUnitLabel, type PracticePage } from '$lib/catalog/practice-pages.js';
-import { PRODUCTION_SITE_URL } from '$lib/site-url';
+import { formatUnitLabel, type PracticePage } from '#lib/catalog/practice-pages.js';
+import { PRODUCTION_SITE_URL } from '#lib/site-url.js';
 
 const BASE_URL = PRODUCTION_SITE_URL;
 

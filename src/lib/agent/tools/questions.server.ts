@@ -3,11 +3,11 @@ import { tool } from 'ai';
 import {
 	coachPracticeQuestionToolInputSchema,
 	coachPracticeQuestionToolOutputSchema
-} from '$lib/agent/tools/practice';
+} from '#lib/agent/tools/practice.js';
 import {
 	coachQuestionToolInputSchema,
 	coachQuestionToolOutputSchema
-} from '$lib/agent/tools/question';
+} from '#lib/agent/tools/question.js';
 
 export function createQuestionTools() {
 	return {

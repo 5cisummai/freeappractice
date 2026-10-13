@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import SignupForm from '$lib/components/auth/signup-form.svelte';
-	import AuthSeoHead from '$lib/components/auth/auth-seo-head.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
-	import { captureSignupStarted } from '$lib/client/activation-analytics';
+	import SignupForm from '#lib/components/auth/signup-form.svelte';
+	import AuthSeoHead from '#lib/components/auth/auth-seo-head.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '#lib/components/marketing/hero-badge.js';
+	import { captureSignupStarted } from '#lib/client/activation-analytics.js';
 	import Atom2FilledIcon from '@tabler/icons-svelte/icons/atom-2-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import UsersRoundIcon from '@tabler/icons-svelte/icons/users';

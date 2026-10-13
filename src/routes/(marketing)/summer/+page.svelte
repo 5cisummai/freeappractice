@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_CLASS } from '$lib/components/marketing/hero-badge.js';
-	import BackToHome from '$lib/components/layout/back-to-home.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_CLASS } from '#lib/components/marketing/hero-badge.js';
+	import BackToHome from '#lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
 	const weeklyPlan = [
@@ -30,21 +30,21 @@
 	];
 
 	type ResourcePath =
-		'/blog/which-aps-to-take' | '/blog/summer-ap-study-plan' | '/blog/science-of-studying';
+		'blog/which-aps-to-take' | 'blog/summer-ap-study-plan' | 'blog/science-of-studying';
 
 	const resources: Array<{ href: ResourcePath; title: string; description: string }> = [
 		{
-			href: '/blog/which-aps-to-take',
+			href: 'blog/which-aps-to-take',
 			title: 'Which APs should you take?',
 			description: 'Choose classes that fit your goals and schedule—not every AP on the list.'
 		},
 		{
-			href: '/blog/summer-ap-study-plan',
+			href: 'blog/summer-ap-study-plan',
 			title: 'Summer AP study plan',
 			description: 'A realistic 4-week preview schedule with daily pacing.'
 		},
 		{
-			href: '/blog/science-of-studying',
+			href: 'blog/science-of-studying',
 			title: 'The science of studying',
 			description: 'Why short, spaced practice beats cramming—especially before the school year.'
 		}
@@ -67,8 +67,11 @@
 	/>
 	<link rel="canonical" href="https://freeappractice.org/summer" />
 	<meta property="og:type" content="website" />
+
 	<meta property="og:url" content="https://freeappractice.org/summer" />
+
 	<meta property="og:title" content="Summer AP Study Guide | Free AP Practice" />
+
 	<meta
 		property="og:description"
 		content="Plan your AP year and preview Unit 1 this summer with free practice questions and study guides."
@@ -76,7 +79,9 @@
 	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
+
 	<meta name="twitter:title" content="Summer AP Study Guide | Free AP Practice" />
+
 	<meta
 		name="twitter:description"
 		content="Plan your AP year and preview Unit 1 this summer with free practice questions."
@@ -136,7 +141,8 @@
 						<p>
 							Repeat or shorten this plan to match your summer. For daily pacing and more detail,
 							see the
-							<a href={resolve('/blog/summer-ap-study-plan')}>full study plan post</a>.
+							<a href={resolve('blog/summer-ap-study-plan')}>full study plan post</a>
+							.
 						</p>
 
 						{#each weeklyPlan as item (item.week)}
@@ -200,6 +206,7 @@
 							>
 								About
 							</p>
+
 							<p class="text-xs leading-relaxed text-muted-foreground">
 								FreeAPPractice.org helps high school students plan AP classes, preview coursework
 								over the summer, and practice with instant feedback—always free.

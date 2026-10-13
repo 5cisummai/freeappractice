@@ -3,7 +3,7 @@ import type {
 	AnnotationTarget,
 	TextAnnotation,
 	TextAnnotationStyle
-} from '$lib/question-bank/mcq/types';
+} from '#lib/question-bank/mcq/types.js';
 
 export const ANNOTATION_ID_ATTR = 'data-text-annotation-id';
 export const ANNOTATION_STYLE_ATTR = 'data-text-annotation-style';

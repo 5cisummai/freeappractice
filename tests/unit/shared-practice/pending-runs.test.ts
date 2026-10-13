@@ -3,8 +3,8 @@ import {
 	PENDING_SHARED_QUIZ_STORAGE_KEY,
 	readPendingSharedQuizRuns,
 	savePendingSharedQuizRun
-} from '$lib/shared-practice/pending-runs';
-import type { PendingSharedQuizRun } from '$lib/shared-practice/types';
+} from '#lib/shared-practice/pending-runs.js';
+import type { PendingSharedQuizRun } from '#lib/shared-practice/types.js';
 
 function createStorage() {
 	const values = new Map<string, string>();

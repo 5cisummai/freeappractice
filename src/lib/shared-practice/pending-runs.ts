@@ -1,4 +1,4 @@
-import type { PendingSharedQuizRun } from '$lib/shared-practice/types';
+import type { PendingSharedQuizRun } from '#lib/shared-practice/types.js';
 
 export const PENDING_SHARED_QUIZ_STORAGE_KEY = 'freeap_pending_shared_quiz';
 const MAX_PENDING_SHARED_QUIZ_RUNS = 5;

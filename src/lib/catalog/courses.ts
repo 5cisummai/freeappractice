@@ -1,4 +1,4 @@
-import { AP_DATA, type UnifiedCourse } from '$lib/catalog/dataset';
+import { AP_DATA, type UnifiedCourse } from '#lib/catalog/dataset.js';
 
 export type ApCourse = {
 	name: string;

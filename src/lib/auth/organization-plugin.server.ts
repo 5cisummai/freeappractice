@@ -1,15 +1,15 @@
 import { APIError } from 'better-auth/api';
 import { organization } from 'better-auth/plugins';
-import { MAX_FREE_GROUP_ORGS, parseOrgType } from '$lib/auth/organization-types';
+import { MAX_FREE_GROUP_ORGS, parseOrgType } from '#lib/auth/organization-types.js';
 import {
 	canCreateGroupOrg,
 	countOwnedGroupOrgs,
 	findPersonalOrganization,
 	getOrganizationType,
 	nextShareToken
-} from '$lib/auth/organization-queries.server';
-import { sendOrganizationInvitationEmail } from '$lib/auth/email.server';
-import { getSiteUrl } from '$lib/site-url';
+} from '#lib/auth/organization-queries.server.js';
+import { sendOrganizationInvitationEmail } from '#lib/auth/email.server.js';
+import { getSiteUrl } from '#lib/site-url.js';
 
 const organizationAdditionalFields = {
 	orgType: {

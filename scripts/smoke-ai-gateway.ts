@@ -4,17 +4,17 @@
  */
 import { embed, generateText, Output, ToolLoopAgent, isStepCount } from 'ai';
 import { z } from 'zod';
-import { COACH_MODEL } from '$lib/agent/model';
-import { SIM_MODEL } from '$lib/agent/tools/simulation.server';
-import { CONVERSATION_TITLE_MODEL } from '$lib/agent/conversations/titles.server';
-import { MCQ_GENERATION_MODEL } from '$lib/question-bank/mcq/generation.server';
-import { QUESTION_QUALITY_MODEL } from '$lib/question-bank/quality/dashboard.server';
-import { MEM0_LLM_MODEL, MEM0_EMBEDDING_MODEL } from '$lib/agent/memory/service.server';
-import { TUTOR_MODEL } from '$lib/tutor/service.server';
+import { COACH_MODEL } from '#lib/agent/model.js';
+import { SIM_MODEL } from '#lib/agent/tools/simulation.server.js';
+import { CONVERSATION_TITLE_MODEL } from '#lib/agent/conversations/titles.server.js';
+import { MCQ_GENERATION_MODEL } from '#lib/question-bank/mcq/generation.server.js';
+import { QUESTION_QUALITY_MODEL } from '#lib/question-bank/quality/dashboard.server.js';
+import { MEM0_LLM_MODEL, MEM0_EMBEDDING_MODEL } from '#lib/agent/memory/service.server.js';
+import { TUTOR_MODEL } from '#lib/tutor/service.server.js';
 import {
 	AI_GATEWAY_BASE_URL,
 	requireGatewayCredential
-} from '$lib/server/gateway-credentials.server';
+} from '#lib/server/gateway-credentials.server.js';
 
 type Result = { name: string; ok: boolean; detail: string; ms: number };
 

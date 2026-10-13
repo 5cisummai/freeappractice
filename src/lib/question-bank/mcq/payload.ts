@@ -2,7 +2,7 @@ import type {
 	GeneratedQuestion,
 	QuestionOption,
 	QuestionStimulus
-} from '$lib/question-bank/mcq/types';
+} from '#lib/question-bank/mcq/types.js';
 
 export const POOL_WARMING_CODE = 'POOL_WARMING' as const;
 

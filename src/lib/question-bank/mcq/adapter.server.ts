@@ -1,11 +1,11 @@
 import { eq, sql } from 'drizzle-orm';
-import { getCourses, getUnitsForCourse } from '$lib/catalog/courses';
-import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { mcqQuestions } from '$lib/server/neon/schema';
-import { questionBucketFields } from '$lib/server/neon/jsonb';
-import { poolTargetForBucket, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
-import type { PoolKindAdapter, PoolKindBucket } from '$lib/question-bank/pool-kinds.server';
+import { getCourses, getUnitsForCourse } from '#lib/catalog/courses.js';
+import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { mcqQuestions } from '#lib/server/neon/schema.js';
+import { questionBucketFields } from '#lib/server/neon/jsonb.js';
+import { poolTargetForBucket, type QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
+import type { PoolKindAdapter, PoolKindBucket } from '#lib/question-bank/pool-kinds.server.js';
 
 function bucketKey(course: string, unit: string): string {
 	return `${course}\u0000${unit}`;

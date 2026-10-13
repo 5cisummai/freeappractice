@@ -6,8 +6,8 @@
 	import CompassIcon from '@tabler/icons-svelte/icons/compass-filled';
 	import HomeIcon from '@tabler/icons-svelte/icons/home-filled';
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import Topbar from '$lib/components/layout/topbar.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import Topbar from '#lib/components/layout/topbar.svelte';
 
 	let status = $derived(typeof page.status === 'number' ? page.status : 500);
 	let isUnauthorized = $derived(status === 401);
@@ -75,26 +75,28 @@
 		>
 			{title}
 		</h1>
-		<p class="mt-5 max-w-md text-base leading-7 text-muted-foreground sm:text-lg">
-			{description}
-		</p>
+
+		<p class="mt-5 max-w-md text-base leading-7 text-muted-foreground sm:text-lg">{description}</p>
 
 		<div class="mt-8 flex flex-col gap-3 sm:flex-row">
 			{#if isUnauthorized}
-				<Button href={resolve('/login')} size="lg" class="min-w-36">
-					Sign in <ArrowRightIcon class="size-4" aria-hidden="true" />
+				<Button href={resolve('login')} size="lg" class="min-w-36">
+					Sign in
+					<ArrowRightIcon class="size-4" aria-hidden="true" />
 				</Button>
 			{:else if isServerError}
 				<Button type="button" size="lg" class="min-w-36" onclick={retry}>
 					<RefreshCwIcon class="size-4" aria-hidden="true" /> Try again
 				</Button>
 			{:else if isForbidden}
-				<Button href={resolve('/app')} size="lg" class="min-w-36">
-					Go to dashboard <ArrowRightIcon class="size-4" aria-hidden="true" />
+				<Button href={resolve('app')} size="lg" class="min-w-36">
+					Go to dashboard
+					<ArrowRightIcon class="size-4" aria-hidden="true" />
 				</Button>
 			{:else}
-				<Button href={resolve('/subjects')} size="lg" class="min-w-36">
-					<CompassIcon class="size-4" aria-hidden="true" /> Browse subjects
+				<Button href={resolve('subjects')} size="lg" class="min-w-36">
+					<CompassIcon class="size-4" aria-hidden="true" />
+					Browse subjects
 				</Button>
 			{/if}
 			<Button href={resolve('/')} variant="outline" size="lg" class="min-w-36">

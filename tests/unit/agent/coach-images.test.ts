@@ -11,8 +11,8 @@ const mocks = vi.hoisted(() => ({
 	enabled: true,
 	query: null as unknown
 }));
-vi.mock('$lib/flags', () => ({ isCoachImagesEnabled: async () => mocks.enabled }));
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/flags.js', () => ({ isCoachImagesEnabled: async () => mocks.enabled }));
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		select: () => ({
 			from: () => ({
@@ -31,20 +31,20 @@ vi.mock('$lib/server/neon/db', () => ({
 		})
 	})
 }));
-vi.mock('$lib/agent/attachments/storage.server', () => ({
+vi.mock('#lib/agent/attachments/storage.server.js', () => ({
 	readCoachImage: mocks.read,
 	deleteCoachImage: mocks.remove
 }));
 
-import { validateCoachImage } from '$lib/agent/attachments/validation.server';
-import { coachImageUrl, COACH_IMAGE_MAX_BYTES } from '$lib/agent/attachments/images';
+import { validateCoachImage } from '#lib/agent/attachments/validation.server.js';
+import { coachImageUrl, COACH_IMAGE_MAX_BYTES } from '#lib/agent/attachments/images.js';
 import {
 	coachImageModelMessages,
 	getOwnedCoachImage,
 	inspectCoachImageTool,
 	cleanupCoachImages,
 	prepareCoachImageParts
-} from '$lib/agent/attachments/images.server';
+} from '#lib/agent/attachments/images.server.js';
 
 const id = 'ea2d389c-df43-4e24-b1d9-b8557fdbec25';
 function file(bytes: Buffer, mediaType = 'image/png') {

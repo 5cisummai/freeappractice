@@ -9,15 +9,15 @@
 		ReviewFilters,
 		ReviewJobStatus,
 		ReviewPreview
-	} from '$lib/question-bank/quality/types.js';
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import QuestionCard from '$lib/components/questions/question-card.svelte';
-	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import * as Table from '$lib/components/ui/table/index.js';
+	} from '#lib/question-bank/quality/types.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import QuestionCard from '#lib/components/questions/question-card.svelte';
+	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 
 	type Props = {
 		snapshot: QualityDashboardSnapshot;

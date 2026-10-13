@@ -1,8 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import { building } from '$app/environment';
-import { env } from '$env/dynamic/private';
-import * as schema from '$lib/server/neon/schema';
+import { building } from '$app/env';
+import { DATABASE_URL } from '$app/env/private';
+import * as schema from '#lib/server/neon/schema.js';
 
 export type NeonDatabase = NeonHttpDatabase<typeof schema>;
 export type NeonDatabaseInitObserver = (elapsedMs: number) => void;
@@ -32,7 +32,7 @@ export function getNeonDatabase(onInit?: NeonDatabaseInitObserver): NeonDatabase
 	}
 
 	const url =
-		env.DATABASE_URL?.trim() ||
+		DATABASE_URL?.trim() ||
 		(building
 			? 'postgresql://build:placeholder@build-placeholder.neon.tech/neondb?sslmode=require'
 			: undefined);

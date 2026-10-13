@@ -1,13 +1,21 @@
 import { createHmac } from 'node:crypto';
 import { Redis } from '@upstash/redis';
-import { env } from '$env/dynamic/private';
+
+import {
+	KV_REST_API_URL,
+	KV_REST_API_TOKEN,
+	VERCEL_ENV,
+	REDIS_IDENTIFIER_SECRET
+} from '$app/env/private';
 
 let redisClient: Redis | null | undefined;
 
 export function getRedisClient(): Redis | null {
 	if (redisClient !== undefined) return redisClient;
-	const url = env.KV_REST_API_URL?.trim();
-	const token = env.KV_REST_API_TOKEN?.trim();
+
+	const url = KV_REST_API_URL?.trim();
+	const token = KV_REST_API_TOKEN?.trim();
+
 	redisClient =
 		url && token
 			? new Redis({
@@ -23,7 +31,8 @@ export function getRedisClient(): Redis | null {
 }
 
 export function redisNamespace(): string {
-	const vercelEnvironment = env.VERCEL_ENV;
+	const vercelEnvironment = VERCEL_ENV;
+
 	const environment =
 		vercelEnvironment === 'production'
 			? 'prod'
@@ -34,7 +43,7 @@ export function redisNamespace(): string {
 }
 
 export function hashRedisIdentifier(value: string): string {
-	const secret = env.REDIS_IDENTIFIER_SECRET?.trim();
+	const secret = REDIS_IDENTIFIER_SECRET?.trim();
 	if (!secret) throw new Error('REDIS_IDENTIFIER_SECRET is not set');
 	return createHmac('sha256', secret).update(value).digest('base64url');
 }

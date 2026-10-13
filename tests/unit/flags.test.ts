@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('flags/sveltekit', () => ({ flag: mocks.flag }));
 vi.mock('@flags-sdk/vercel', () => ({ vercelAdapter: mocks.vercelAdapter }));
 
-import '$lib/flags';
+import '#lib/flags.js';
 
 function declaredAdapter() {
 	return mocks.flag.mock.calls[0][0].adapter as {

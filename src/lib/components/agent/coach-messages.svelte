@@ -22,32 +22,32 @@
 
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
 
-	import * as ChainOfThought from '$lib/components/ai-elements/chain-of-thought/index.js';
-	import { Shimmer } from '$lib/components/ai-elements/shimmer/index.js';
+	import * as ChainOfThought from '#lib/components/ai-elements/chain-of-thought/index.js';
+	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
 
-	import * as Message from '$lib/components/ai-elements/message/index.js';
+	import * as Message from '#lib/components/ai-elements/message/index.js';
 
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import { getCanvasHtmlOutput } from '$lib/canvas/canvas-ui';
-	import CoachCanvasPanel from '$lib/components/agent/coach-canvas-panel.svelte';
-	import { diagramDataUrl, getDiagramOutput } from '$lib/components/agent/diagram';
-	import CoachPracticeQuestionCard from '$lib/components/agent/coach-practice-question-card.svelte';
-	import CoachPracticeQuestionResult from '$lib/components/agent/coach-practice-question-result.svelte';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import { getCanvasHtmlOutput } from '#lib/canvas/canvas-ui.js';
+	import CoachCanvasPanel from '#lib/components/agent/coach-canvas-panel.svelte';
+	import { diagramDataUrl, getDiagramOutput } from '#lib/components/agent/diagram.js';
+	import CoachPracticeQuestionCard from '#lib/components/agent/coach-practice-question-card.svelte';
+	import CoachPracticeQuestionResult from '#lib/components/agent/coach-practice-question-result.svelte';
 
-	import CoachAvatar from '$lib/components/agent/coach-avatar.svelte';
+	import CoachAvatar from '#lib/components/agent/coach-avatar.svelte';
 	import {
 		COACH_AVATAR_MONTAGES,
 		COACH_AVATAR_STATES
-	} from '$lib/components/agent/avatar/avatar-state';
+	} from '#lib/components/agent/avatar/avatar-state.js';
 	import {
 		getCoachPracticeQuestionToolOutput,
 		isCoachPracticeQuestionPending,
 		type CoachPracticeQuestionToolOutput
-	} from '$lib/agent/tools/practice';
-	import type { AgentUIMessage } from '$lib/agent/agent.server';
+	} from '#lib/agent/tools/practice.js';
+	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 
-	import { cn } from '$lib/utils.js';
-	import type { ToolUIPartApproval } from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
+	import { cn } from '#lib/utils.js';
+	import type { ToolUIPartApproval } from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 
 	let {
 		messages,

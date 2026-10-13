@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseQuestionPayloadFromResponse } from '$lib/question-bank/mcq/payload';
+import { parseQuestionPayloadFromResponse } from '#lib/question-bank/mcq/payload.js';
 
 const validOptions = [
 	{ id: 'A', text: 'Three' },

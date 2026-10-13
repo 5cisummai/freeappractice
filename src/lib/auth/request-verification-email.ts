@@ -1,7 +1,7 @@
-import { authClient } from '$lib/auth/client.js';
-import { authCallbackUrlForAppPath } from '$lib/auth/urls.js';
-import { EMAIL_SEND_FAILED_MESSAGE } from '$lib/auth/resend-result';
-import { EMAIL_DELIVERY_HEADER } from '$lib/auth/email-delivery';
+import { authClient } from '#lib/auth/client.js';
+import { authCallbackUrlForAppPath } from '#lib/auth/urls.js';
+import { EMAIL_SEND_FAILED_MESSAGE } from '#lib/auth/resend-result.js';
+import { EMAIL_DELIVERY_HEADER } from '#lib/auth/email-delivery.js';
 
 export type VerificationEmailRequestResult = {
 	deliveryId: string;

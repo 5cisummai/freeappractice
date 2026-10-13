@@ -1,11 +1,11 @@
 <script lang="ts">
-	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
-	import PracticeHubNav from '$lib/components/practice/practice-hub-nav.svelte';
-	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import type { PracticePage } from '$lib/catalog/practice-pages.js';
-	import { buildPracticeBreadcrumbs } from '$lib/seo/practice-page-meta.js';
+	import PracticeRunner from '#lib/components/practice/practice-shell.svelte';
+	import PracticeHubNav from '#lib/components/practice/practice-hub-nav.svelte';
+	import PublicShell from '#lib/components/layout/public-shell.svelte';
+	import * as Accordion from '#lib/components/ui/accordion/index.js';
+	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.js';
+	import type { PracticePage } from '#lib/catalog/practice-pages.js';
+	import { buildPracticeBreadcrumbs } from '#lib/seo/practice-page-meta.js';
 
 	function getInitialSelection(practicePage: PracticePage) {
 		return {

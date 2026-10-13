@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
-	import type { PracticePage } from '$lib/catalog/practice-pages.js';
+	import type { PracticePage } from '#lib/catalog/practice-pages.js';
 	import {
 		formatUnitLabel,
 		getCoursePracticePageFor,
 		getUnitPagesForCourse
-	} from '$lib/catalog/practice-pages.js';
+	} from '#lib/catalog/practice-pages.js';
 
 	let { page }: { page: PracticePage } = $props();
 
@@ -25,7 +25,7 @@
 					{#each unitPages as unitPage (unitPage.slug)}
 						<li>
 							<a
-								href={resolve(`/practice/${unitPage.slug}`)}
+								href={resolve(`practice/${unitPage.slug}`)}
 								class="group flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40"
 							>
 								<span class="text-sm font-medium group-hover:text-primary">
@@ -52,7 +52,7 @@
 					{#each unitPages as unitPage (unitPage.slug)}
 						<li>
 							<a
-								href={resolve(`/practice/${unitPage.slug}`)}
+								href={resolve(`practice/${unitPage.slug}`)}
 								class="group flex items-center justify-between rounded-xl border px-4 py-3 transition-colors {unitPage.slug ===
 								page.slug
 									? 'border-primary/50 bg-primary/5'
@@ -74,7 +74,7 @@
 	{#if coursePage && page.type !== 'course'}
 		<section>
 			<a
-				href={resolve(`/practice/${coursePage.slug}`)}
+				href={resolve(`practice/${coursePage.slug}`)}
 				class="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
 			>
 				All {page.course} practice

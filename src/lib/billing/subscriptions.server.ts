@@ -1,18 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import Stripe from 'stripe';
-import { env } from '$env/dynamic/private';
-import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
+
+import {
+	STRIPE_SECRET_KEY,
+	STRIPE_WEBHOOK_SECRET,
+	STRIPE_SUPER_MONTHLY_PRICE_ID,
+	STRIPE_SUPER_ANNUAL_PRICE_ID
+} from '$app/env/private';
+
+import { isSuperFreeBetaEnabled } from '#lib/flags.js';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	authSubscriptions,
 	authUsers,
 	superBillingAccess,
 	superGrants,
 	tutorProfiles
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lte, or } from 'drizzle-orm';
-import { markSuperAccessStarted } from '$lib/agent/personalization/profile.server';
+import { markSuperAccessStarted } from '#lib/agent/personalization/profile.server.js';
 import {
 	FREE_PLAN_ACCESS,
 	SUPER_PAST_DUE_GRACE_MS,
@@ -21,7 +28,7 @@ import {
 	type SuperAccessReason,
 	type SuperBillingIssue,
 	type SuperBillingStatus
-} from '$lib/billing/types';
+} from '#lib/billing/types.js';
 
 export type SubscriptionMirror = {
 	userId: string;
@@ -42,7 +49,7 @@ let stripeClient: Stripe | null | undefined;
 
 export function getStripeClient(): Stripe | null {
 	if (stripeClient !== undefined) return stripeClient;
-	const secret = env.STRIPE_SECRET_KEY?.trim();
+	const secret = STRIPE_SECRET_KEY?.trim();
 	stripeClient = secret ? new Stripe(secret) : null;
 	return stripeClient;
 }
@@ -50,9 +57,9 @@ export function getStripeClient(): Stripe | null {
 export function isSuperStripeConfigured(): boolean {
 	return Boolean(
 		getStripeClient() &&
-		env.STRIPE_WEBHOOK_SECRET?.trim() &&
-		env.STRIPE_SUPER_MONTHLY_PRICE_ID?.trim() &&
-		env.STRIPE_SUPER_ANNUAL_PRICE_ID?.trim()
+		STRIPE_WEBHOOK_SECRET?.trim() &&
+		STRIPE_SUPER_MONTHLY_PRICE_ID?.trim() &&
+		STRIPE_SUPER_ANNUAL_PRICE_ID?.trim()
 	);
 }
 

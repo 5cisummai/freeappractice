@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { studyPlanToolInputSchema } from '$lib/agent/plans/tool-schema';
+import { studyPlanToolInputSchema } from '#lib/agent/plans/tool-schema.js';
 
 type JsonSchemaNode = {
 	type?: string;

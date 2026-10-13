@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { AnswerResult } from '$lib/question-bank/mcq/types';
-import type { FrqAttemptView } from '$lib/question-bank/frq/types';
+import type { AnswerResult } from '#lib/question-bank/mcq/types.js';
+import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
 
 export type CoachPracticeQuestionOption = {
 	id: string;

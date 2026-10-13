@@ -1,14 +1,17 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { getCourses } from '$lib/catalog/courses.js';
-import { isSuperFreeBetaEnabled } from '$lib/flags';
-import { getPersonalizedUsage, getPersonalizedUsageWarning } from '$lib/agent/usage/controls.server';
-import { formatCreditsFromMilli } from '$lib/agent/usage/credits';
-import { getSuperBillingView } from '$lib/billing/subscriptions.server';
-import { getPlanAccessForRequest } from '$lib/agent/access.server';
-import { hasPaidCapability, type SuperAccessReason } from '$lib/billing/types';
-import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
-import { getUserCourses, updateUserCourses } from '$lib/users/model.server.js';
+import { getCourses } from '#lib/catalog/courses.js';
+import { isSuperFreeBetaEnabled } from '#lib/flags.js';
+import {
+	getPersonalizedUsage,
+	getPersonalizedUsageWarning
+} from '#lib/agent/usage/controls.server.js';
+import { formatCreditsFromMilli } from '#lib/agent/usage/credits.js';
+import { getSuperBillingView } from '#lib/billing/subscriptions.server.js';
+import { getPlanAccessForRequest } from '#lib/agent/access.server.js';
+import { hasPaidCapability, type SuperAccessReason } from '#lib/billing/types.js';
+import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
+import { getUserCourses, updateUserCourses } from '#lib/users/model.server.js';
 
 const validCourses = new Set(getCourses().map((course) => course.name));
 

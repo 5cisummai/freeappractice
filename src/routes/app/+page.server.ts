@@ -3,11 +3,11 @@ import {
 	listOrganizationActivity,
 	listOrganizationLeaderboard,
 	listOrganizationSharedSets
-} from '$lib/auth/organization-queries.server';
-import { loadUserDashboardData } from '$lib/users/dashboard.server';
-import { authorizeFeatureRequest, getPlanAccessForRequest } from '$lib/agent/access.server';
-import { getCurrentStudyPlan } from '$lib/agent/plans/store.server';
-import { timezoneFromCookies } from '$lib/users/timezone';
+} from '#lib/auth/organization-queries.server.js';
+import { loadUserDashboardData } from '#lib/users/dashboard.server.js';
+import { authorizeFeatureRequest, getPlanAccessForRequest } from '#lib/agent/access.server.js';
+import { getCurrentStudyPlan } from '#lib/agent/plans/store.server.js';
+import { timezoneFromCookies } from '#lib/users/timezone.js';
 
 export const load: PageServerLoad = async ({ cookies, locals, parent }) => {
 	const userId = locals.userId!;

@@ -1,13 +1,13 @@
 import { and, count, eq, isNotNull, max, sql } from 'drizzle-orm';
-import { getFrqProgressForUser } from '$lib/grading/frq/attempts.server';
-import { frqAttempts, mcqAttempts, mcqQuestions } from '$lib/server/neon/schema';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { getCurrentStreak } from '$lib/users/streak.server';
-import { questionPayloadTextField } from '$lib/server/neon/jsonb';
-import { MAX_ATTEMPT_TIME_MS } from '$lib/users/attempt-time';
-import { buildProgressDataFromAttempts, mergeFrqProgress } from '$lib/users/progress.server';
-import type { IProgress } from '$lib/users/records.server';
-import type { MasteryTopic, ProgressEntry, StatsData } from '$lib/users/types';
+import { getFrqProgressForUser } from '#lib/grading/frq/attempts.server.js';
+import { frqAttempts, mcqAttempts, mcqQuestions } from '#lib/server/neon/schema.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { getCurrentStreak } from '#lib/users/streak.server.js';
+import { questionPayloadTextField } from '#lib/server/neon/jsonb.js';
+import { MAX_ATTEMPT_TIME_MS } from '#lib/users/attempt-time.js';
+import { buildProgressDataFromAttempts, mergeFrqProgress } from '#lib/users/progress.server.js';
+import type { IProgress } from '#lib/users/records.server.js';
+import type { MasteryTopic, ProgressEntry, StatsData } from '#lib/users/types.js';
 
 type OverviewRow = {
 	total: number;

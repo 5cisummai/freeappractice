@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { HistoryItem, ProgressEntry } from '$lib/users/types.js';
+import type { HistoryItem, ProgressEntry } from '#lib/users/types.js';
 import {
 	accuracyByScope,
 	buildAccuracyDays,
 	selectNextFocus,
 	stackedActivityByScope
-} from '$lib/components/progress/progress-metrics.js';
+} from '#lib/components/progress/progress-metrics.js';
 
 function topicEntry(
 	overrides: Partial<ProgressEntry> & Pick<ProgressEntry, 'topics'>

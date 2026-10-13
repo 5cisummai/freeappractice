@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ select: vi.fn() }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select })
 }));
 
-import { getUserDashboardProfile, getUserProgress, getUserCourses } from '$lib/users/model.server';
+import {
+	getUserDashboardProfile,
+	getUserProgress,
+	getUserCourses
+} from '#lib/users/model.server.js';
 
 function orderedQuery(rows: unknown[]) {
 	return { from: () => ({ where: () => ({ orderBy: async () => rows }) }) };

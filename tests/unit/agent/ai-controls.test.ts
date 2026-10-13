@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getPersonalizedUsageWarning } from '$lib/agent/usage/controls.server';
+import { getPersonalizedUsageWarning } from '#lib/agent/usage/controls.server.js';
 import {
 	SUPER_FREE_BETA_MONTHLY_CREDITS_MILLI,
 	SUPER_MONTHLY_CREDITS_MILLI
-} from '$lib/agent/usage/credits';
-import { monthlyCreditLimitMilli } from '$lib/agent/usage/credits';
+} from '#lib/agent/usage/credits.js';
+import { monthlyCreditLimitMilli } from '#lib/agent/usage/credits.js';
 
 describe('getPersonalizedUsageWarning', () => {
 	it('warns at 80% and escalates at 95% of the Super monthly credit cap', () => {

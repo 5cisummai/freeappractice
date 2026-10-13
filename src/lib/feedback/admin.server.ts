@@ -1,9 +1,9 @@
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
-import type { AdminFeedbackItem } from '$lib/admin/types';
-import type { AppFeedbackCategory } from '$lib/schemas/app-feedback';
-import type { BugReportSeverity } from '$lib/schemas/bug-report';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { appFeedback, authUsers, bugReports, questionQuality } from '$lib/server/neon/schema';
+import type { AdminFeedbackItem } from '#lib/admin/types.js';
+import type { AppFeedbackCategory } from '#lib/schemas/app-feedback.js';
+import type { BugReportSeverity } from '#lib/schemas/bug-report.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { appFeedback, authUsers, bugReports, questionQuality } from '#lib/server/neon/schema.js';
 
 const FEEDBACK_CATEGORY_SET = new Set<string>([
 	'general',

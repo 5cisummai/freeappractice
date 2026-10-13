@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { cn } from '$lib/utils.js';
+	import { cn } from '#lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { setCoachSidebar } from '$lib/components/agent/coach-context.svelte.js';
+	import { setCoachSidebar } from '#lib/components/agent/coach-context.svelte.js';
 
 	const COACH_SIDEBAR_STORAGE_KEY = 'coach-sidebar-open';
 

@@ -1,18 +1,18 @@
 type SiteNavItem = {
 	href:
 		| '/'
-		| '/subjects'
-		| '/practice-tests'
-		| '/blog'
-		| '/summer'
-		| '/stats'
-		| '/about'
-		| '/changelog'
-		| '/pricing'
-		| '/privacy'
-		| '/terms'
-		| '/login'
-		| '/signup';
+		| 'subjects'
+		| 'practice-tests'
+		| 'blog'
+		| 'summer'
+		| 'stats'
+		| 'about'
+		| 'changelog'
+		| 'pricing'
+		| 'privacy'
+		| 'terms'
+		| 'login'
+		| 'signup';
 	label: string;
 };
 
@@ -22,31 +22,31 @@ type SiteNavGroup = {
 };
 
 /** Primary links shown in the desktop and mobile topbar. */
-export const topbarNavItems: SiteNavItem[] = [{ href: '/subjects', label: 'Subjects' }];
+export const topbarNavItems: SiteNavItem[] = [{ href: 'subjects', label: 'Subjects' }];
 
 export const topbarResourceItems = [
 	{
-		href: '/about',
+		href: 'about',
 		label: 'About',
 		description: 'Learn more about Free AP Practice.'
 	},
 	{
-		href: '/blog',
+		href: 'blog',
 		label: 'Blog',
 		description: 'Study tips, guides, and AP resources.'
 	},
 	{
-		href: '/stats',
+		href: 'stats',
 		label: 'Stats',
 		description: 'See practice activity and progress.'
 	}
 ] satisfies Array<SiteNavItem & { description: string }>;
 
-export const topbarPricingItem: SiteNavItem = { href: '/pricing', label: 'Pricing' };
+export const topbarPricingItem: SiteNavItem = { href: 'pricing', label: 'Pricing' };
 
 export const topbarAuthItems: SiteNavItem[] = [
-	{ href: '/login', label: 'Sign in' },
-	{ href: '/signup', label: 'Sign up free' }
+	{ href: 'login', label: 'Sign in' },
+	{ href: 'signup', label: 'Sign up free' }
 ];
 
 /** Grouped footer navigation columns. */
@@ -54,30 +54,30 @@ export const footerNavGroups: SiteNavGroup[] = [
 	{
 		label: 'Practice',
 		items: [
-			{ href: '/subjects', label: 'Subjects' },
-			{ href: '/practice-tests', label: 'Practice Tests' },
-			{ href: '/stats', label: 'Stats' }
+			{ href: 'subjects', label: 'Subjects' },
+			{ href: 'practice-tests', label: 'Practice Tests' },
+			{ href: 'stats', label: 'Stats' }
 		]
 	},
 	{
 		label: 'Learn',
 		items: [
-			{ href: '/blog', label: 'Blog' },
-			{ href: '/summer', label: 'Summer Guide' }
+			{ href: 'blog', label: 'Blog' },
+			{ href: 'summer', label: 'Summer Guide' }
 		]
 	},
 	{
 		label: 'Company',
 		items: [
-			{ href: '/about', label: 'About' },
-			{ href: '/changelog', label: 'Changelog' }
+			{ href: 'about', label: 'About' },
+			{ href: 'changelog', label: 'Changelog' }
 		]
 	},
 	{
 		label: 'Legal',
 		items: [
-			{ href: '/privacy', label: 'Privacy' },
-			{ href: '/terms', label: 'Terms' }
+			{ href: 'privacy', label: 'Privacy' },
+			{ href: 'terms', label: 'Terms' }
 		]
 	}
 ];

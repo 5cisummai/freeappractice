@@ -1,19 +1,19 @@
 <script lang="ts">
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import QuestionCard from '$lib/components/questions/question-card.svelte';
-	import FrqSession from '$lib/components/practice/frq-session.svelte';
-	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
-	import type { AnswerResult } from '$lib/question-bank/mcq/types';
-	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
-	import { fetchCoachPracticeQuestion } from '$lib/agent/tools/practice.client';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import QuestionCard from '#lib/components/questions/question-card.svelte';
+	import FrqSession from '#lib/components/practice/frq-session.svelte';
+	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
+	import type { AnswerResult } from '#lib/question-bank/mcq/types.js';
+	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
+	import { fetchCoachPracticeQuestion } from '#lib/agent/tools/practice.client.js';
 	import {
 		buildCoachPracticeQuestionToolOutput,
 		getCoachPracticeQuestionToolInput,
 		type CoachPracticeQuestionOutput,
 		type CoachPracticeQuestionToolOutput
-	} from '$lib/agent/tools/practice';
+	} from '#lib/agent/tools/practice.js';
 
 	let {
 		input,

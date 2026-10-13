@@ -1,32 +1,32 @@
-import { auth } from '$lib/auth/server';
+import { auth } from '#lib/auth/server.js';
 import {
 	POOL_RETIRE_OLDEST_PERCENT,
 	QUESTION_POOL_CONFIG,
 	poolTargetForBucket
-} from '$lib/question-bank/pool-constants';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqQuestions, mcqQuestions, poolRefillStates } from '$lib/server/neon/schema';
-import { questionBucketFields } from '$lib/server/neon/jsonb';
+} from '#lib/question-bank/pool-constants.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqQuestions, mcqQuestions, poolRefillStates } from '#lib/server/neon/schema.js';
+import { questionBucketFields } from '#lib/server/neon/jsonb.js';
 import { and, asc, count, eq, inArray, isNull, lte, max, min, or, sql } from 'drizzle-orm';
 import {
 	listCatalogBuckets,
 	requestPoolRefill,
 	enqueueAllCatalogDeficits,
 	type PoolBucketKey
-} from '$lib/question-bank/pool-refill-queue.server';
+} from '#lib/question-bank/pool-refill-queue.server.js';
 
 import type {
 	PoolRefillQuestionType,
 	PoolRefillState as PoolRefillStateRow,
 	PoolRefillStatus
-} from '$lib/question-bank/pool-refill-types.server';
-import { getMcqGenerationCountsByCourse } from '$lib/question-bank/gen-stats.server';
-import { getQualityDashboardSnapshot } from '$lib/question-bank/quality/dashboard.server';
-import type { QualityDashboardSnapshot } from '$lib/question-bank/quality/types';
-import { getSuperAdminOverview } from '$lib/billing/admin.server';
-import { getAdminUserSuperAccess } from '$lib/billing/subscriptions.server';
-import type { SuperAdminOverview } from '$lib/billing/types';
-import { listFeedbackTabForAdmin } from '$lib/feedback/admin.server';
+} from '#lib/question-bank/pool-refill-types.server.js';
+import { getMcqGenerationCountsByCourse } from '#lib/question-bank/gen-stats.server.js';
+import { getQualityDashboardSnapshot } from '#lib/question-bank/quality/dashboard.server.js';
+import type { QualityDashboardSnapshot } from '#lib/question-bank/quality/types.js';
+import { getSuperAdminOverview } from '#lib/billing/admin.server.js';
+import { getAdminUserSuperAccess } from '#lib/billing/subscriptions.server.js';
+import type { SuperAdminOverview } from '#lib/billing/types.js';
+import { listFeedbackTabForAdmin } from '#lib/feedback/admin.server.js';
 import type {
 	AdminTab,
 	AdminFeedbackItem,
@@ -35,7 +35,7 @@ import type {
 	CacheOverview,
 	PoolQuestionType,
 	PoolRefillStatusUi
-} from '$lib/admin/types.js';
+} from '#lib/admin/types.js';
 
 /** Rough per-generation USD estimates for admin cost previews (not billing). */
 const EST_MCQ_GENERATION_USD = 0.015;

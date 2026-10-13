@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 
 	let { data } = $props();
 
@@ -28,9 +28,9 @@
 	description="Review the learning memories currently stored for your Tutor."
 >
 	<div class="space-y-5">
-		<Button href={resolve('/app/settings#super')} variant="outline" size="sm">
-			Back to settings
-		</Button>
+		<Button href={resolve('app/settings#super')} variant="outline" size="sm"
+			>Back to settings</Button
+		>
 
 		{#if data.loadError}
 			<Card.Root class="border-border/70 shadow-sm">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMcqQuestionPayload } from '$lib/question-bank/mcq/payload-schema';
+import { parseMcqQuestionPayload } from '#lib/question-bank/mcq/payload-schema.js';
 
 describe('parseMcqQuestionPayload', () => {
 	it('fills optional fields omitted by legacy JSONB rows', () => {

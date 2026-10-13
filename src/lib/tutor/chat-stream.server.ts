@@ -1,10 +1,10 @@
-import { logger } from '$lib/server/logger';
-import type { chat, chatFrq } from '$lib/tutor/service.server';
+import { logger } from '#lib/server/logger.js';
+import type { chat, chatFrq } from '#lib/tutor/service.server.js';
 import {
 	TUTOR_CHAT_STREAM_TIMEOUT_MS,
 	type FrqTutorChatRequest,
 	type TutorChatRequest
-} from '$lib/tutor/chat-request';
+} from '#lib/tutor/chat-request.js';
 
 export type TutorChatFunction = typeof chat;
 type FrqTutorChatFunction = typeof chatFrq;

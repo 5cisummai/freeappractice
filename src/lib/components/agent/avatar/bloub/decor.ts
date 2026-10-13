@@ -1,4 +1,4 @@
-import { TAU, clamp, createRng, r2 } from '$lib/components/agent/avatar/bloub/math';
+import { TAU, clamp, createRng, r2 } from '#lib/components/agent/avatar/bloub/math.js';
 
 /* ------------------------------------------------------------------ couleurs */
 

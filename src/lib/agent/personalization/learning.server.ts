@@ -1,8 +1,8 @@
-import type { TutorProfileView } from '$lib/agent/personalization/types';
-import { searchTutorMemories } from '$lib/agent/memory/service.server';
-import { findRecentGradedFrqAttempts } from '$lib/grading/frq/storage.server';
-import { getTutorProfileView } from '$lib/agent/personalization/profile.server';
-import { getUserProgress } from '$lib/users/model.server';
+import type { TutorProfileView } from '#lib/agent/personalization/types.js';
+import { searchTutorMemories } from '#lib/agent/memory/service.server.js';
+import { findRecentGradedFrqAttempts } from '#lib/grading/frq/storage.server.js';
+import { getTutorProfileView } from '#lib/agent/personalization/profile.server.js';
+import { getUserProgress } from '#lib/users/model.server.js';
 
 const MAX_FRQ_EVIDENCE_ATTEMPTS = 12;
 const MAX_FRQ_EVIDENCE_GROUPS = 5;

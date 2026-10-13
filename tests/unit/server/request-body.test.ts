@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
+import { readJsonBody, RequestBodyTooLargeError } from '#lib/server/request-body.server.js';
 
 describe('bounded JSON request bodies', () => {
 	it('parses a body within the limit', async () => {

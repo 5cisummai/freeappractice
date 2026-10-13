@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '$lib/server/neon/schema';
+import { tutorProfileClasses, tutorProfiles, tutorTargetDates } from '#lib/server/neon/schema.js';
 
 const mocks = vi.hoisted(() => ({
 	batch: vi.fn(),
@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 	writes: [] as Array<Record<string, unknown>>
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		batch: mocks.batch,
 		select: mocks.select,
@@ -20,9 +20,9 @@ vi.mock('$lib/server/neon/db', () => ({
 		insert: mocks.insert
 	})
 }));
-vi.mock('$lib/flags', () => ({ isSuperFreeBetaEnabled: vi.fn(async () => true) }));
+vi.mock('#lib/flags.js', () => ({ isSuperFreeBetaEnabled: vi.fn(async () => true) }));
 
-import { updateTutorProfile } from '$lib/agent/personalization/profile.server';
+import { updateTutorProfile } from '#lib/agent/personalization/profile.server.js';
 
 function query(kind: string, table: unknown) {
 	const value: Record<string, unknown> = { kind, table };

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { twAnimateInView, twAnimateInViewSubtle } from '$lib/tw-animate';
+	import { twAnimateInView, twAnimateInViewSubtle } from '#lib/tw-animate.js';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';

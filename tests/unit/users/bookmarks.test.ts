@@ -10,30 +10,30 @@ const mocks = vi.hoisted(() => ({
 	capturePostHogServerEvent: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		select: mocks.select,
 		execute: mocks.execute
 	})
 }));
 
-vi.mock('$lib/question-bank/mcq/repository.server', () => ({
+vi.mock('#lib/question-bank/mcq/repository.server.js', () => ({
 	getQuestionsByIds: mocks.getQuestionsByIds
 }));
 
-vi.mock('$lib/auth/route-helpers.server', () => ({
+vi.mock('#lib/auth/route-helpers.server.js', () => ({
 	withAuthedHandler:
 		(handler: (event: unknown, userId: string) => Promise<Response>) =>
 		(event: { locals?: { userId?: string } }) =>
 			handler(event, event.locals?.userId ?? 'user-1')
 }));
 
-vi.mock('$lib/server/posthog', () => ({
+vi.mock('#lib/server/posthog.js', () => ({
 	capturePostHogServerEvent: mocks.capturePostHogServerEvent
 }));
 
 import { GET, POST } from '../../../src/routes/api/me/bookmarks/+server';
-import { getBookmarkedQuestions, toggleBookmark } from '$lib/users/bookmarks.server';
+import { getBookmarkedQuestions, toggleBookmark } from '#lib/users/bookmarks.server.js';
 
 describe('bookmark persistence', () => {
 	beforeEach(() => {

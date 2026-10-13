@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import type { BlogProductCta, BlogRelatedLink } from '$lib/blog/related-links.js';
+	import type { BlogProductCta, BlogRelatedLink } from '#lib/blog/related-links.js';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 
 	let {

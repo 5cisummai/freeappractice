@@ -6,7 +6,7 @@ import {
 	isSafeMarkdownUrl,
 	normalizeFences,
 	renderRichTextHtml
-} from '$lib/content/render-rich-text';
+} from '#lib/content/render-rich-text.js';
 
 const packageJson = JSON.parse(
 	readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../../package.json'), 'utf8')

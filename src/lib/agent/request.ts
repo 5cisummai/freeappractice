@@ -1,6 +1,6 @@
 import type { LanguageModelUsage } from 'ai';
 import { z } from 'zod';
-import { coachComposerActionIds } from '$lib/agent/personalization/composer-actions';
+import { coachComposerActionIds } from '#lib/agent/personalization/composer-actions.js';
 
 export const MAX_AGENT_MESSAGES = 96;
 export const MAX_AGENT_REQUEST_BYTES = 8 * 1024 * 1024;

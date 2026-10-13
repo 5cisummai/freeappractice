@@ -5,7 +5,7 @@ import {
 	frqQuestions,
 	questionRecentTopics,
 	questionRegistry
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 
 const mocks = vi.hoisted(() => ({
 	db: {
@@ -47,7 +47,7 @@ const mocks = vi.hoisted(() => ({
 	}
 }));
 
-vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: () => mocks.db }));
+vi.mock('#lib/server/neon/db.js', () => ({ getNeonDatabase: () => mocks.db }));
 
 function builder(kind: string, table: unknown) {
 	const query: Record<string, any> = { kind, table };
@@ -87,14 +87,15 @@ function configureDatabase() {
 	}));
 }
 
-vi.mock('$lib/server/neon/schema', async () => {
-	const actual =
-		await vi.importActual<typeof import('$lib/server/neon/schema')>('$lib/server/neon/schema');
+vi.mock('#lib/server/neon/schema.js', async () => {
+	const actual = await vi.importActual<typeof import('#lib/server/neon/schema.js')>(
+		'#lib/server/neon/schema.js'
+	);
 	return actual;
 });
 
-import { createFrqQuestion } from '$lib/question-bank/frq/model.server';
-import { updateFrqAttemptGrade, type IFrqAttempt } from '$lib/grading/frq/storage.server';
+import { createFrqQuestion } from '#lib/question-bank/frq/model.server.js';
+import { updateFrqAttemptGrade, type IFrqAttempt } from '#lib/grading/frq/storage.server.js';
 
 const input = {
 	questionId: 'frq-1',

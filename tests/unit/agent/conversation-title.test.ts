@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeConversationTitle } from '$lib/agent/conversations/titles.server';
+import { sanitizeConversationTitle } from '#lib/agent/conversations/titles.server.js';
 
 describe('sanitizeConversationTitle', () => {
 	it('strips quotes, trailing periods, and extra whitespace', () => {

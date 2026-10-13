@@ -3,10 +3,10 @@
 	import { curveLinear } from 'd3-shape';
 	import { BarChart, LineChart } from 'layerchart';
 	import { MediaQuery } from 'svelte/reactivity';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import * as Empty from '$lib/components/ui/empty/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import * as Empty from '#lib/components/ui/empty/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import { resolve } from '$app/paths';
 	import ChartHoverTooltip from './chart-hover-tooltip.svelte';
 	import type { AccuracyDay } from './progress-metrics.js';
@@ -56,9 +56,10 @@
 						Answer questions on at least two days to see your accuracy chart.
 					</Empty.Description>
 				</Empty.Header>
-				<Empty.Content>
-					<Button href={resolve('/app/practice')}>Start practicing</Button>
-				</Empty.Content>
+
+				<Empty.Content
+					><Button href={resolve('app/practice')}>Start practicing</Button></Empty.Content
+				>
 			</Empty.Root>
 		{:else}
 			<div class="space-y-3">

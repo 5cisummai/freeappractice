@@ -1,21 +1,18 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { APP_LAYOUT_DEPENDENCY } from '$lib/layout-dependencies';
-import { isAdminUser } from '$lib/auth/admin.server';
-import { activeOrgUsesUserSuper, loadAppOrganizations } from '$lib/auth/organizations.server';
-import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '$lib/flags';
-import {
-	getAgeConfirmedAtForRequest,
-	getPlanAccessForRequest
-} from '$lib/agent/access.server';
-import { hasPaidCapability } from '$lib/billing/types';
-import { hasClaimedSuperFreeBeta } from '$lib/agent/personalization/profile.server';
+import { APP_LAYOUT_DEPENDENCY } from '#lib/layout-dependencies.js';
+import { isAdminUser } from '#lib/auth/admin.server.js';
+import { activeOrgUsesUserSuper, loadAppOrganizations } from '#lib/auth/organizations.server.js';
+import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '#lib/flags.js';
+import { getAgeConfirmedAtForRequest, getPlanAccessForRequest } from '#lib/agent/access.server.js';
+import { hasPaidCapability } from '#lib/billing/types.js';
+import { hasClaimedSuperFreeBeta } from '#lib/agent/personalization/profile.server.js';
 import {
 	ONBOARDING_COOKIE_NAME,
 	ONBOARDING_PENDING_COOKIE_OPTIONS,
 	readOnboardingState
-} from '$lib/onboarding.js';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/users/assistant-preferences.server';
+} from '#lib/onboarding.js';
+import { getAssistantFeaturesEnabledForRequest } from '#lib/users/assistant-preferences.server.js';
 
 export const load: LayoutServerLoad = async ({ cookies, depends, locals, request, url }) => {
 	depends(APP_LAYOUT_DEPENDENCY);

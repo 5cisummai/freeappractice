@@ -2,11 +2,11 @@
 	import { tick } from 'svelte';
 	import type { Attachment } from 'svelte/attachments';
 	import { fly } from 'svelte/transition';
-	import CoachAvatar from '$lib/components/agent/coach-avatar.svelte';
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import { COACH_AVATAR_STATES } from '$lib/components/agent/avatar/avatar-state';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/components/agent/ui';
-	import { cn } from '$lib/utils.js';
+	import CoachAvatar from '#lib/components/agent/coach-avatar.svelte';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import { COACH_AVATAR_STATES } from '#lib/components/agent/avatar/avatar-state.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
+	import { cn } from '#lib/utils.js';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';

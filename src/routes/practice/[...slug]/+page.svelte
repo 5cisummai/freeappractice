@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { afterNavigate } from '$app/navigation';
-	import PracticeLanding from '$lib/components/practice/practice-landing.svelte';
+	import PracticeLanding from '#lib/components/practice/practice-landing.svelte';
 	import {
 		buildPracticePageJsonLd,
 		buildPracticeBreadcrumbJsonLd,
 		buildPracticePageMeta,
 		buildPracticeFaqJsonLd
-	} from '$lib/seo/practice-page-meta.js';
+	} from '#lib/seo/practice-page-meta.js';
 	import type { PageData } from './$types';
-	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -32,7 +32,10 @@
 	// afterNavigate (not onMount) so SPA moves between /practice/... pages are counted.
 	// Key by page identity so remounts / same-page afterNavigate do not double-count.
 	let lastPracticeViewKey = '';
-	afterNavigate(() => {
+
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
 		const unit = 'unit' in data.page ? data.page.unit : '';
 		const key = `${data.page.type}:${data.page.course}:${unit}`;
 		if (key === lastPracticeViewKey) return;

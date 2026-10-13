@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pruneAgentModelMessages } from '$lib/agent/conversations/prune.server';
+import { pruneAgentModelMessages } from '#lib/agent/conversations/prune.server.js';
 import type { ModelMessage } from 'ai';
 
 describe('pruneAgentModelMessages', () => {

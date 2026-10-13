@@ -5,18 +5,18 @@ const mocks = vi.hoisted(() => ({
 	getQuestionsLookupMap: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ execute: mocks.execute })
 }));
 
-vi.mock('$lib/question-bank/mcq/repository.server', () => ({
+vi.mock('#lib/question-bank/mcq/repository.server.js', () => ({
 	getQuestionsLookupMap: mocks.getQuestionsLookupMap
 }));
 
 import {
 	createSharedQuiz,
 	SharedQuizValidationError
-} from '$lib/shared-practice/shared-sets.server';
+} from '#lib/shared-practice/shared-sets.server.js';
 
 const question = {
 	id: 'question-1',

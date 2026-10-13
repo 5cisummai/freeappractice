@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, gte, lt, ne, notInArray, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
-import { frqStoredPoolFilter } from '$lib/question-bank/frq/practice';
-import { FrqQuestionSchema, type FrqQuestion } from '$lib/question-bank/frq/types';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { frqStoredPoolFilter } from '#lib/question-bank/frq/practice.js';
+import { FrqQuestionSchema, type FrqQuestion } from '#lib/question-bank/frq/types.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	frqQuestions,
 	questionRecentTopics,
 	questionRegistry,
 	type FrqQuestionPayload
-} from '$lib/server/neon/schema';
-import { questionBucketFields } from '$lib/server/neon/jsonb';
-import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
+} from '#lib/server/neon/schema.js';
+import { questionBucketFields } from '#lib/server/neon/jsonb.js';
+import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 
 export interface IFrqQuestion extends FrqQuestionPayload {
 	contentHash: string;

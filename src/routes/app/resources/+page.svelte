@@ -1,23 +1,23 @@
 <script lang="ts">
-	import ResourceImageCard from '$lib/components/blog/resource-image-card.svelte';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
+	import ResourceImageCard from '#lib/components/blog/resource-image-card.svelte';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
 
 	const blogResources = [
 		{
-			href: '/blog',
+			href: 'blog',
 			label: 'Open the blog',
 			description: 'Browse all current study guides, updates, and strategy posts.',
 			coverImage:
 				'https://public.assets.freeappractice.org/marissa-grootes-flRm0z3MEoA-unsplash.jpg'
 		},
 		{
-			href: '/blog/science-of-studying',
+			href: 'blog/science-of-studying',
 			label: 'Science of Studying',
 			description: 'Research-backed strategies for spacing, retrieval, and retention.',
 			coverImage: 'https://public.assets.freeappractice.org/zoshua-colah-klbApl9mxr0-unsplash.jpg'
 		},
 		{
-			href: '/blog/summer-ap-study-plan',
+			href: 'blog/summer-ap-study-plan',
 			label: 'Summer AP Study Plan',
 			description:
 				'How to preview AP classes over the summer with light daily work — without burning out.',

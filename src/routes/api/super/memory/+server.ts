@@ -1,31 +1,35 @@
-import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import {
 	deleteAllTutorMemories,
 	getTutorMemoryPublicId,
 	isTutorMemoryConfigured,
 	listTutorMemories
-} from '$lib/agent/memory/service.server';
-import { authorizeFeatureRequest } from '$lib/agent/access.server';
-import { isSuperMemoryEnabled } from '$lib/flags';
-import { getTutorProfileView, markMemoryDisclosureSeen } from '$lib/agent/personalization/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
+} from '#lib/agent/memory/service.server.js';
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
+import { isSuperMemoryEnabled } from '#lib/flags.js';
+import {
+	getTutorProfileView,
+	markMemoryDisclosureSeen
+} from '#lib/agent/personalization/profile.server.js';
+import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
 
 async function requireMemoryAccess(
 	event: Parameters<typeof GET>[0],
 	userId: string
 ): Promise<Response | null> {
 	const access = await authorizeFeatureRequest(event, userId, 'memory');
-	return access.allowed ? null : json({ error: access.message }, { status: access.status });
+	return access.allowed
+		? null
+		: Response.json({ error: access.message }, { status: access.status });
 }
 
 async function requireMemoryDisclosureAccess(userId: string): Promise<Response | null> {
 	if (!(await isSuperMemoryEnabled())) {
-		return json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
+		return Response.json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
 	}
 	const profile = await getTutorProfileView(userId);
 	if (!profile.ageConfirmedAt) {
-		return json(
+		return Response.json(
 			{ error: 'Confirm that you are at least 13 to use Super tutor memory.' },
 			{ status: 403 }
 		);
@@ -50,7 +54,7 @@ export const GET = withAuthedHandler(
 		if (denial) return denial;
 		const profile = await getTutorProfileViewForRequest(event.locals, userId);
 		const memories = await listTutorMemories(userId);
-		return json({
+		return Response.json({
 			memories: await Promise.all(memories.map((memory) => publicMemory(userId, memory))),
 			memory: {
 				enabled: profile.memoryEnabled,
@@ -68,7 +72,7 @@ export const POST = withAuthedHandler(
 		if (denial) return denial;
 		await markMemoryDisclosureSeen(userId);
 		const profile = await getTutorProfileView(userId);
-		return json({
+		return Response.json({
 			acknowledged: true,
 			memoryDisclosureSeenAt: profile.memoryDisclosureSeenAt,
 			memoryEnabled: profile.memoryEnabled,
@@ -86,11 +90,11 @@ export const DELETE = withAuthedHandler(
 		const denial = await requireMemoryAccess(event, userId);
 		if (denial) return denial;
 		if (!isTutorMemoryConfigured()) {
-			return json({ error: 'Tutor memory is not configured' }, { status: 503 });
+			return Response.json({ error: 'Tutor memory is not configured' }, { status: 503 });
 		}
 
 		await deleteAllTutorMemories(userId);
-		return json({ deleted: true });
+		return Response.json({ deleted: true });
 	},
 	{
 		logLabel: 'Delete all Super tutor memories error',

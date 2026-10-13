@@ -1,6 +1,6 @@
 import { asc, eq, inArray, sql } from 'drizzle-orm';
-import type { IProgress, IQuestionAttempt } from '$lib/users/records.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import type { IProgress, IQuestionAttempt } from '#lib/users/records.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	bookmarks,
 	mcqAttempts,
@@ -8,7 +8,7 @@ import {
 	userProfiles,
 	userProgress,
 	userCourses
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 
 /** Persist only the user's selected courses instead of rewriting their full profile. */
 export async function updateUserCourses(userId: string, courses: string[]): Promise<void> {

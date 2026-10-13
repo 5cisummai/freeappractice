@@ -7,10 +7,10 @@ import {
 	findFrqAttemptBySubmission,
 	findGradedFrqAttempt,
 	updateFrqAttemptGrade
-} from '$lib/grading/frq/storage.server';
-import type { IFrqAttempt } from '$lib/grading/frq/storage.server';
-import { getFrqFormat } from '$lib/question-bank/frq/profiles.server';
-import { getFrqQuestionById } from '$lib/question-bank/frq/model.server';
+} from '#lib/grading/frq/storage.server.js';
+import type { IFrqAttempt } from '#lib/grading/frq/storage.server.js';
+import { getFrqFormat } from '#lib/question-bank/frq/profiles.server.js';
+import { getFrqQuestionById } from '#lib/question-bank/frq/model.server.js';
 import {
 	FrqGradeModelOutputSchema,
 	frqPartResponse,
@@ -21,12 +21,12 @@ import {
 	type FrqGradeRequest,
 	type FrqProgressSummary,
 	type FrqQuestion
-} from '$lib/question-bank/frq/types';
-import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
-import { isDuplicateKeyError } from '$lib/question-bank/util.server';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttempts } from '$lib/server/neon/schema';
+} from '#lib/question-bank/frq/types.js';
+import { sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
+import { isDuplicateKeyError } from '#lib/question-bank/util.server.js';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqAttempts } from '#lib/server/neon/schema.js';
 import { and, count, eq, max, sql, sum } from 'drizzle-orm';
 
 export class FrqAttemptInProgressError extends Error {}

@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ANALYTICS_CONSENT_KEY } from '$lib/analytics-consent';
+import { ANALYTICS_CONSENT_KEY } from '#lib/analytics-consent.js';
 import {
 	captureFirstAnswerSubmitted,
 	captureLandingPageViewed,
 	captureUserLoggedIn,
 	persistActivationAnalyticsAfterConsent,
 	resetActivationAnalyticsForTests
-} from '$lib/client/activation-analytics';
+} from '#lib/client/activation-analytics.js';
 
 const { capturePostHogEvent } = vi.hoisted(() => ({
 	capturePostHogEvent: vi.fn()
 }));
 
-vi.mock('$lib/client/posthog-analytics', () => ({
+vi.mock('#lib/client/posthog-analytics.js', () => ({
 	capturePostHogEvent
 }));
 

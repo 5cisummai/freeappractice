@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { twAnimateInView } from '$lib/tw-animate';
+	import { twAnimateInView } from '#lib/tw-animate.js';
 
 	type HeadingLevel = 'h1' | 'h2';
 

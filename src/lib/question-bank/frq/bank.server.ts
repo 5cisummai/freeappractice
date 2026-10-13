@@ -3,10 +3,10 @@ import {
 	countActiveFrqQuestions,
 	toFrqQuestion,
 	type IFrqQuestion
-} from '$lib/question-bank/frq/model.server';
-import { toPublicFrqQuestion, type PublicFrqQuestion } from '$lib/question-bank/frq/types';
-import { QuestionBank } from '$lib/question-bank/runtime.server';
-import { scheduleBackgroundTask } from '$lib/server/background-task.server';
+} from '#lib/question-bank/frq/model.server.js';
+import { toPublicFrqQuestion, type PublicFrqQuestion } from '#lib/question-bank/frq/types.js';
+import { QuestionBank } from '#lib/question-bank/runtime.server.js';
+import { scheduleBackgroundTask } from '#lib/server/background-task.server.js';
 
 type FrqServiceResult = {
 	publicQuestion: PublicFrqQuestion;
@@ -32,7 +32,7 @@ export const frqBank = new QuestionBank<IFrqQuestion, FrqServiceResult>({
 		};
 	},
 	requestRefill: async (course, unit) => {
-		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');
+		const { requestPoolRefill } = await import('#lib/question-bank/pool-refill-queue.server.js');
 		return requestPoolRefill({ questionType: 'frq', course, unit });
 	}
 });

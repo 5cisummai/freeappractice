@@ -1,16 +1,16 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { assertCanAttachSharedSetToOrganization } from '$lib/auth/organization-queries.server';
-import { OrganizationPermissionError } from '$lib/auth/organization-types';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { authUsers, sharedPracticeSetItems, sharedPracticeSets } from '$lib/server/neon/schema';
+import { assertCanAttachSharedSetToOrganization } from '#lib/auth/organization-queries.server.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { authUsers, sharedPracticeSetItems, sharedPracticeSets } from '#lib/server/neon/schema.js';
 import {
 	getQuestionsLookupMap,
 	type StoredQuestion
-} from '$lib/question-bank/mcq/repository.server';
-import { storedQuestionToGenerated } from '$lib/question-bank/mcq/public-payload.server';
-import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
-import type { SharedQuizView } from '$lib/shared-practice/types';
+} from '#lib/question-bank/mcq/repository.server.js';
+import { storedQuestionToGenerated } from '#lib/question-bank/mcq/public-payload.server.js';
+import type { GeneratedQuestion } from '#lib/question-bank/mcq/types.js';
+import type { SharedQuizView } from '#lib/shared-practice/types.js';
 
 export const MAX_SHARED_QUIZ_ITEMS = 50;
 export const SHARED_QUIZ_TTL_MS = 90 * 24 * 60 * 60 * 1000;

@@ -7,19 +7,19 @@ const mocks = vi.hoisted(() => ({
 	listFrqQuestions: vi.fn()
 }));
 
-vi.mock('$lib/question-bank/mcq/repository.server', () => ({
+vi.mock('#lib/question-bank/mcq/repository.server.js', () => ({
 	getAllQuestions: mocks.getAllQuestions,
 	getQuestionById: mocks.getQuestionById
 }));
-vi.mock('$lib/question-bank/frq/model.server', () => ({
+vi.mock('#lib/question-bank/frq/model.server.js', () => ({
 	findFrqQuestionById: mocks.findFrqQuestionById,
 	listFrqQuestions: mocks.listFrqQuestions
 }));
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: () => ({ from: () => [] }) })
 }));
 
-import { getQuestionInventory } from '$lib/question-bank/inventory.server';
+import { getQuestionInventory } from '#lib/question-bank/inventory.server.js';
 
 describe('canonical question inventories', () => {
 	beforeEach(() => vi.clearAllMocks());

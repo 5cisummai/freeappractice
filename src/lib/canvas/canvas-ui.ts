@@ -1,4 +1,4 @@
-import type { CanvasHtmlArtifact } from '$lib/canvas/types';
+import type { CanvasHtmlArtifact } from '#lib/canvas/types.js';
 
 export function getCanvasHtmlOutput(value: unknown): CanvasHtmlArtifact | null {
 	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;

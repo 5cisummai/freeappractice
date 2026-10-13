@@ -1,8 +1,8 @@
 import { generateText } from 'ai';
 import { and, eq, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { conversations } from '$lib/server/neon/schema';
-import { logger } from '$lib/server/logger';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { conversations } from '#lib/server/neon/schema.js';
+import { logger } from '#lib/server/logger.js';
 import type { ConversationSurface } from './store.server';
 export const CONVERSATION_TITLE_MODEL = 'openai/gpt-6-luna';
 

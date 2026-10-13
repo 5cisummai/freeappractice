@@ -1,10 +1,10 @@
 export const TUTOR_MODEL = 'openai/gpt-6-luna';
 import { generateText, streamText } from 'ai';
 
-import { logger } from '$lib/server/logger';
-import type { FrqAttemptView, FrqQuestion } from '$lib/question-bank/frq/types';
-import { getQuestionById, type StoredQuestion } from '$lib/question-bank/mcq/repository.server';
-import { DEMO_TUTOR_QUESTION, isDemoTutorQuestionId } from '$lib/tutor/demo-question';
+import { logger } from '#lib/server/logger.js';
+import type { FrqAttemptView, FrqQuestion } from '#lib/question-bank/frq/types.js';
+import { getQuestionById, type StoredQuestion } from '#lib/question-bank/mcq/repository.server.js';
+import { DEMO_TUTOR_QUESTION, isDemoTutorQuestionId } from '#lib/tutor/demo-question.js';
 
 export interface TutorMessage {
 	role: 'user' | 'assistant';

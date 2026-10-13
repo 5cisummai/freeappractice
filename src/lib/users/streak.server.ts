@@ -1,6 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttempts, mcqAttempts } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqAttempts, mcqAttempts } from '#lib/server/neon/schema.js';
 
 function localDayKey(date: Date, timeZone: string): string {
 	return new Intl.DateTimeFormat('en-CA', {

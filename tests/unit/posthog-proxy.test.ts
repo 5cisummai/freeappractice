@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
+import { createPostHogProxyRequestInit } from '#lib/server/posthog-proxy.js';
 
 test('PostHog proxy drops credentials and hop-by-hop headers', () => {
 	const request = new Request('https://freeappractice.com/ingest/e/', {

@@ -4,7 +4,7 @@ import {
 	hashRedisIdentifier,
 	redisNamespace,
 	withRedisTimeout
-} from '$lib/redis/server';
+} from '#lib/redis/server.js';
 
 export type BugReportRateLimitDecision = {
 	allowed: boolean;

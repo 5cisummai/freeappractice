@@ -3,53 +3,32 @@
  * Usage: bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/...
  */
 import { plugin } from 'bun';
+import { variables } from '../src/env.ts';
 
-function privateEnvExports(): string {
-	const keys = [
-		'DATABASE_URL',
-		'AI_GATEWAY_API_KEY',
-		'VERCEL_OIDC_TOKEN',
-		'CRON_SECRET',
-		'RESEND_API_KEY',
-		'GITHUB_BUG_REPORT_TOKEN',
-		'BETTER_AUTH_SECRET',
-		'BETTER_AUTH_URL',
-		'FLAGS_SECRET',
-		'AI_GATEWAY_BASE_URL'
-	] as const;
-
-	const lines = keys.map((key) => {
-		const value = process.env[key];
-		return `export const ${key} = ${value === undefined ? 'undefined' : JSON.stringify(value)};`;
-	});
-	lines.push('export default { ' + keys.join(', ') + ' };');
-	return lines.join('\n');
+function envExports(isPublic: boolean): string {
+	const keys = Object.entries(variables)
+		.filter(([, config]) => ('public' in config && config.public === true) === isPublic)
+		.map(([key]) => key);
+	return keys
+		.map((key) => {
+			const value = process.env[key];
+			return `export const ${key} = ${value === undefined ? 'undefined' : JSON.stringify(value)};`;
+		})
+		.join('\n');
 }
 
 plugin({
 	name: 'sveltekit-env-shim',
 	setup(build) {
-		build.module('$env/static/private', () => ({
-			contents: privateEnvExports(),
+		build.module('$app/env/private', () => ({
+			contents: envExports(false),
 			loader: 'js'
 		}));
-		build.module('$env/dynamic/private', () => ({
-			contents: `export const env = process.env;`,
+		build.module('$app/env/public', () => ({
+			contents: envExports(true),
 			loader: 'js'
 		}));
-		build.module('$env/static/public', () => ({
-			contents: `
-				export const PUBLIC_POSTHOG_PROJECT_TOKEN = process.env.PUBLIC_POSTHOG_PROJECT_TOKEN;
-				export const PUBLIC_POSTHOG_HOST = process.env.PUBLIC_POSTHOG_HOST;
-				export const PUBLIC_GOOGLE_CLIENT_ID = process.env.PUBLIC_GOOGLE_CLIENT_ID;
-			`,
-			loader: 'js'
-		}));
-		build.module('$env/dynamic/public', () => ({
-			contents: `export const env = process.env;`,
-			loader: 'js'
-		}));
-		build.module('$app/environment', () => ({
+		build.module('$app/env', () => ({
 			contents: `export const browser = false; export const building = false; export const dev = true; export const version = 'script';`,
 			loader: 'js'
 		}));

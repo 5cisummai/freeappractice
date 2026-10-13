@@ -1,12 +1,11 @@
-import { json } from '@sveltejs/kit';
 import {
 	getPracticeHistoryPage,
 	parseHistorySort,
 	parseHistoryKind,
 	parseHistoryResult
-} from '$lib/users/history.server';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isFrqPracticeEnabled } from '$lib/flags';
+} from '#lib/users/history.server.js';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { isFrqPracticeEnabled } from '#lib/flags.js';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
@@ -36,7 +35,7 @@ export const GET = withAuthedHandler(
 			filters,
 			includeFrq: frqEnabled
 		});
-		return json({
+		return Response.json({
 			items: pageResult.items,
 			total: pageResult.total,
 			page: pageResult.page,

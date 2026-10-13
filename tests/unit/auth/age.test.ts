@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isAtLeastAge, isValidBirthDate } from '$lib/auth/age';
+import { isAtLeastAge, isValidBirthDate } from '#lib/auth/age.js';
 
 describe('age validation', () => {
 	afterEach(() => {

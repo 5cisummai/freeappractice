@@ -8,22 +8,24 @@ const appEnv = vi.hoisted(() => ({
 	dev: false
 }));
 
-vi.mock('$env/dynamic/public', () => ({
-	env: publicEnv
+vi.mock('$app/env/public', () => ({
+	get PUBLIC_BASE_URL() {
+		return publicEnv.PUBLIC_BASE_URL;
+	}
 }));
 
-vi.mock('$app/environment', () => ({
+vi.mock('$app/env', () => ({
 	get dev() {
 		return appEnv.dev;
 	}
 }));
 
 vi.mock('$app/paths', () => ({
-	resolve: (path: string) => path
+	resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`)
 }));
 
-import { ACCOUNT_DELETED_QUERY, accountDeletedHomeUrl, authCallbackUrl } from '$lib/auth/urls';
-import { PRODUCTION_SITE_URL, getSiteUrl } from '$lib/site-url';
+import { ACCOUNT_DELETED_QUERY, accountDeletedHomeUrl, authCallbackUrl } from '#lib/auth/urls.js';
+import { PRODUCTION_SITE_URL, getSiteUrl } from '#lib/site-url.js';
 
 describe('getSiteUrl', () => {
 	beforeEach(() => {
@@ -54,8 +56,8 @@ describe('authCallbackUrl', () => {
 	});
 
 	it('builds absolute callback URLs', () => {
-		expect(authCallbackUrl('/app')).toBe('https://example.com/app');
-		expect(authCallbackUrl('/login')).toBe('https://example.com/login');
+		expect(authCallbackUrl('app')).toBe('https://example.com/app');
+		expect(authCallbackUrl('login')).toBe('https://example.com/login');
 	});
 });
 

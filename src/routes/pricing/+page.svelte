@@ -1,6 +1,6 @@
 <script lang="ts">
-	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
+	import PublicShell from '#lib/components/layout/public-shell.svelte';
+	import PricingSection from '#lib/components/marketing/pricing-section.svelte';
 
 	let { data } = $props();
 </script>

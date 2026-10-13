@@ -1,5 +1,5 @@
-import { apiFetch, readJsonOrNull } from '$lib/client/api.js';
-import type { McqAnswerBody } from '$lib/question-bank/mcq/types.js';
+import { apiFetch, readJsonOrNull } from '#lib/client/api.js';
+import type { McqAnswerBody } from '#lib/question-bank/mcq/types.js';
 
 const MAX_CACHED_HISTORY_QUESTIONS = 100;
 const questionCache = new Map<string, Promise<McqAnswerBody>>();

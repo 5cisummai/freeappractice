@@ -6,13 +6,28 @@ const env = vi.hoisted(() => ({
 	AI_GATEWAY_BASE_URL: undefined as string | undefined
 }));
 
-vi.mock('$env/dynamic/private', () => ({ env }));
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	get AI_GATEWAY_API_KEY() {
+		return env.AI_GATEWAY_API_KEY;
+	},
+	get VERCEL_OIDC_TOKEN() {
+		return env.VERCEL_OIDC_TOKEN;
+	},
+	get AI_GATEWAY_BASE_URL() {
+		return env.AI_GATEWAY_BASE_URL;
+	}
+}));
 
-import { AI_GATEWAY_BASE_URL, isGatewayCredentialConfigured, requireGatewayCredential } from '$lib/server/gateway-credentials.server';
-import { COACH_MODEL } from '$lib/agent/model';
-import { MCQ_GENERATION_MODEL } from '$lib/question-bank/mcq/generation.server';
-import { MEM0_EMBEDDING_MODEL } from '$lib/agent/memory/service.server';
-import { SIM_MODEL } from '$lib/agent/tools/simulation.server';
+import {
+	AI_GATEWAY_BASE_URL,
+	isGatewayCredentialConfigured,
+	requireGatewayCredential
+} from '#lib/server/gateway-credentials.server.js';
+import { COACH_MODEL } from '#lib/agent/model.js';
+import { MCQ_GENERATION_MODEL } from '#lib/question-bank/mcq/generation.server.js';
+import { MEM0_EMBEDDING_MODEL } from '#lib/agent/memory/service.server.js';
+import { SIM_MODEL } from '#lib/agent/tools/simulation.server.js';
 
 describe('AI Gateway wiring', () => {
 	beforeEach(() => {

@@ -1,33 +1,35 @@
-import { scheduleBackgroundTask } from '$lib/server/background-task.server';
-import { hasAnalyticsConsent } from '$lib/server/analytics-consent';
+import { scheduleBackgroundTask } from '#lib/server/background-task.server.js';
+import { hasAnalyticsConsent } from '#lib/server/analytics-consent.js';
 import {
 	fallbackConversationTitle,
 	updateAutomaticTitle
-} from '$lib/agent/conversations/titles.server';
-import { summarizeConversation } from '$lib/agent/conversations/summary.server';
+} from '#lib/agent/conversations/titles.server.js';
+import { summarizeConversation } from '#lib/agent/conversations/summary.server.js';
 /**
  * Super turn runtime: owns request lifecycle, context assembly, persistence,
  * quota/lock cleanup, and UI streaming around the pure ToolLoopAgent.
  */
 import { consumeStream, createAgentUIStreamResponse, type LanguageModelUsage } from 'ai';
 import type { RequestEvent } from '@sveltejs/kit';
-import { json } from '@sveltejs/kit';
-import { addTutorMemoryExchange, isTutorMemoryAvailable } from '$lib/agent/memory/service.server';
-import { SIM_MODEL } from '$lib/agent/tools/simulation.server';
-import { logger } from '$lib/server/logger';
-import { acquireCoachLock, releaseLock, refreshLock } from '$lib/agent/usage/controls.server';
-import type { SuperAccessReason } from '$lib/billing/types';
+import {
+	addTutorMemoryExchange,
+	isTutorMemoryAvailable
+} from '#lib/agent/memory/service.server.js';
+import { SIM_MODEL } from '#lib/agent/tools/simulation.server.js';
+import { logger } from '#lib/server/logger.js';
+import { acquireCoachLock, releaseLock, refreshLock } from '#lib/agent/usage/controls.server.js';
+import type { SuperAccessReason } from '#lib/billing/types.js';
 import {
 	addLanguageModelUsage,
 	createEmptyLanguageModelUsage,
 	formatCreditsFromMilli,
 	monthlyCreditLimitMilli,
 	usdFromLanguageModelUsage
-} from '$lib/agent/usage/credits';
-import { createAgent, type AgentUIMessage } from '$lib/agent/agent.server';
-import { buildAgentContext } from '$lib/agent/personalization/context.server';
-import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
-import { startAgentTurn } from '$lib/agent/usage/turn.server';
+} from '#lib/agent/usage/credits.js';
+import { createAgent, type AgentUIMessage } from '#lib/agent/agent.server.js';
+import { buildAgentContext } from '#lib/agent/personalization/context.server.js';
+import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
+import { startAgentTurn } from '#lib/agent/usage/turn.server.js';
 
 import {
 	isAgentToolContinuation,
@@ -36,11 +38,11 @@ import {
 	type CoachThinkingMode,
 	type AgentContext,
 	type AgentRequest
-} from '$lib/agent/request';
+} from '#lib/agent/request.js';
 import {
 	buildAgentUiMessages,
 	reconstructApprovalContinuationMessage
-} from '$lib/agent/conversations/history.server';
+} from '#lib/agent/conversations/history.server.js';
 import {
 	appendConversationMessage,
 	ensureConversation,
@@ -50,16 +52,16 @@ import {
 	linkCoachAuditsToAssistantMessage,
 	markConversationMessageStreaming,
 	type ConversationMessage
-} from '$lib/agent/conversations/store.server';
-import { coachComposerActionInstructions } from '$lib/agent/personalization/composer-actions';
-import { timezoneFromCookies } from '$lib/users/timezone';
+} from '#lib/agent/conversations/store.server.js';
+import { coachComposerActionInstructions } from '#lib/agent/personalization/composer-actions.js';
+import { timezoneFromCookies } from '#lib/users/timezone.js';
 import {
 	prepareCoachImageParts,
 	linkCoachImage,
 	coachImageModelMessages,
 	coachImageManifest
-} from '$lib/agent/attachments/images.server';
-import { CoachImageError } from '$lib/agent/attachments/validation.server';
+} from '#lib/agent/attachments/images.server.js';
+import { CoachImageError } from '#lib/agent/attachments/validation.server.js';
 
 const AGENT_REQUEST_TIMEOUT_MS = 55_000;
 
@@ -102,7 +104,7 @@ export type AgentStreamOptions = {
 };
 
 function rateLimitedResponse(retryAt: number | null): Response {
-	return json(
+	return Response.json(
 		{ error: 'Too many personalized AI requests. Please try again shortly.', retryAt },
 		retryAt
 			? {
@@ -134,7 +136,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 	const clientMessages = messages;
 	const isContinuation = isAgentToolContinuation(clientMessages);
 	if (isContinuation && !requestedConversationId) {
-		return json(
+		return Response.json(
 			{ error: 'A conversation is required to continue that practice question.' },
 			{ status: 400 }
 		);
@@ -144,7 +146,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 	if (personalizedTurn.kind === 'rate-limited')
 		return rateLimitedResponse(personalizedTurn.retryAt);
 	if (personalizedTurn.kind === 'exhausted') {
-		return json(
+		return Response.json(
 			{
 				error: `Your ${formatCreditsFromMilli(monthlyCreditLimitMilli(accessReason))} Coach credits for this month have been used.`
 			},
@@ -154,7 +156,10 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 
 	const lock = await acquireCoachLock(userId);
 	if (!lock) {
-		return json({ error: 'Another personalized AI request is still running.' }, { status: 409 });
+		return Response.json(
+			{ error: 'Another personalized AI request is still running.' },
+			{ status: 409 }
+		);
 	}
 
 	let cleanedUp = false;
@@ -187,7 +192,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 			!isContinuation
 		) {
 			await cleanup();
-			return json({ error: 'The Super Agent needs a student message.' }, { status: 400 });
+			return Response.json({ error: 'The Super Agent needs a student message.' }, { status: 400 });
 		}
 
 		const profile = await getTutorProfileViewForRequest(event.locals, userId);
@@ -258,7 +263,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 			if (!lastAssistant) {
 				await cleanup();
 				const continuationError = 'Pip could not continue that practice question.';
-				return json({ error: continuationError }, { status: 409 });
+				return Response.json({ error: continuationError }, { status: 409 });
 			}
 			const storedToolPart = findContinuationToolPart(lastAssistant.parts, [
 				'input-available',
@@ -272,7 +277,10 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 				clientToolPart.toolCallId !== storedToolPart.toolCallId
 			) {
 				await cleanup();
-				return json({ error: 'That practice question is no longer pending.' }, { status: 409 });
+				return Response.json(
+					{ error: 'That practice question is no longer pending.' },
+					{ status: 409 }
+				);
 			}
 			if (
 				storedToolPart.state === 'approval-requested' ||
@@ -283,7 +291,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 					: undefined;
 				if (!continuationMessage) {
 					await cleanup();
-					return json({ error: 'That approval is no longer pending.' }, { status: 409 });
+					return Response.json({ error: 'That approval is no longer pending.' }, { status: 409 });
 				}
 			}
 			assistantMessageId = lastAssistant.id;
@@ -474,15 +482,16 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 			);
 		}
 		await cleanup();
-		if (error instanceof CoachImageError) return json({ error: error.message }, { status: 400 });
+		if (error instanceof CoachImageError)
+			return Response.json({ error: error.message }, { status: 400 });
 		if (error instanceof ConversationAccessError) {
-			return json({ error: error.message }, { status: error.status });
+			return Response.json({ error: error.message }, { status: error.status });
 		}
 		if (messages.some((message) => message.parts.some((part) => part.type === 'file'))) {
 			logger.error('Coach image request failed', {
 				errorType: error instanceof Error ? error.name : 'UnknownError'
 			});
-			return json(
+			return Response.json(
 				{ error: 'Coach could not process that image. Please try again.' },
 				{ status: 500 }
 			);

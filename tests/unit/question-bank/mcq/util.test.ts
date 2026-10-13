@@ -3,7 +3,7 @@ import {
 	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError
-} from '$lib/question-bank/util.server';
+} from '#lib/question-bank/util.server.js';
 
 describe('computeContentHash', () => {
 	it('normalizes whitespace and case before hashing', () => {

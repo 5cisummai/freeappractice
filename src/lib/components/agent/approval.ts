@@ -1,7 +1,7 @@
 import type {
 	ToolUIPartApproval,
 	ToolUIPartState
-} from '$lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
+} from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 
 export type ApprovalToolPart = {
 	type?: string;

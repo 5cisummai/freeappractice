@@ -4,11 +4,14 @@ const privateEnv = vi.hoisted(() => ({
 	BETTER_AUTH_ADMIN_USER_IDS: '' as string | undefined
 }));
 
-vi.mock('$env/dynamic/private', () => ({
-	env: privateEnv
+vi.mock('$app/env/private', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	get BETTER_AUTH_ADMIN_USER_IDS() {
+		return privateEnv.BETTER_AUTH_ADMIN_USER_IDS;
+	}
 }));
 
-import { getAdminUserIds, isAdminUser } from '$lib/auth/admin.server';
+import { getAdminUserIds, isAdminUser } from '#lib/auth/admin.server.js';
 
 describe('admin helpers', () => {
 	beforeEach(() => {

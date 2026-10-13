@@ -28,21 +28,21 @@ vi.mock('ai', async (load) => ({
 	...(await load<typeof import('ai')>()),
 	generateText: mocks.generateText
 }));
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ select: mocks.select, update: mocks.update })
 }));
-vi.mock('$lib/agent/conversations/store.server', async (load) => ({
-	...(await load<typeof import('$lib/agent/conversations/store.server')>()),
+vi.mock('#lib/agent/conversations/store.server.js', async (load) => ({
+	...(await load<typeof import('#lib/agent/conversations/store.server.js')>()),
 	getOwnedConversation: mocks.owned
 }));
 
-import { summarizeConversation } from '$lib/agent/conversations/summary.server';
-import { updateAutomaticTitle } from '$lib/agent/conversations/titles.server';
+import { summarizeConversation } from '#lib/agent/conversations/summary.server.js';
+import { updateAutomaticTitle } from '#lib/agent/conversations/titles.server.js';
 import {
 	getAgentHistory,
 	renameOwnedConversation,
 	type OwnedConversation
-} from '$lib/agent/conversations/store.server';
+} from '#lib/agent/conversations/store.server.js';
 
 const dialect = new PgDialect();
 function query(value: unknown) {

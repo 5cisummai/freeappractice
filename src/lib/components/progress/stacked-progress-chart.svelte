@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { BarChart } from 'layerchart';
 	import { MediaQuery } from 'svelte/reactivity';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import type { HistoryItem } from '$lib/users/types.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Chart from '#lib/components/ui/chart/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import type { HistoryItem } from '#lib/users/types.js';
 	import AccuracyOverTimeChart from './accuracy-over-time-chart.svelte';
 	import {
 		ALL_COURSES,

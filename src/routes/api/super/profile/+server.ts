@@ -1,9 +1,8 @@
-import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isTutorMemoryConfigured } from '$lib/agent/memory/service.server';
-import { updateTutorProfile } from '$lib/agent/personalization/profile.server';
-import { getTutorProfileViewForRequest } from '$lib/agent/access.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { isTutorMemoryConfigured } from '#lib/agent/memory/service.server.js';
+import { updateTutorProfile } from '#lib/agent/personalization/profile.server.js';
+import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
 
 const MAX_SELECTED_CLASSES = 20;
 const MAX_TARGET_DATES = 20;
@@ -42,13 +41,13 @@ const profilePatchSchema = z
 	.strict();
 
 function validationError(message: string, details?: string[]): Response {
-	return json({ error: message, ...(details ? { details } : {}) }, { status: 400 });
+	return Response.json({ error: message, ...(details ? { details } : {}) }, { status: 400 });
 }
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
 		const profile = await getTutorProfileViewForRequest(event.locals, userId);
-		return json({
+		return Response.json({
 			profile,
 			memory: {
 				enabled: profile.memoryEnabled,
@@ -78,7 +77,7 @@ export const PATCH = withAuthedHandler(
 		}
 
 		const profile = await updateTutorProfile(userId, parsed.data);
-		return json({ profile });
+		return Response.json({ profile });
 	},
 	{
 		logLabel: 'Update Super tutor profile error',

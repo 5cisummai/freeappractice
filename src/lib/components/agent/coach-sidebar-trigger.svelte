@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import PipIcon from '$lib/components/agent/pip-icon.svelte';
-	import { cn } from '$lib/utils.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import PipIcon from '#lib/components/agent/pip-icon.svelte';
+	import { cn } from '#lib/utils.js';
 	import type { ComponentProps } from 'svelte';
-	import { useCoachSidebar } from '$lib/components/agent/coach-context.svelte.js';
+	import { useCoachSidebar } from '#lib/components/agent/coach-context.svelte.js';
 
 	let {
 		class: className,

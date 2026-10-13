@@ -6,10 +6,10 @@ import {
 	type EmailDeliveryStatus,
 	type EmailDeliveryType,
 	isEmailDeliveryId
-} from '$lib/auth/email-delivery';
-import { logger } from '$lib/server/logger';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { emailDeliveries, resendWebhookEvents } from '$lib/server/neon/schema';
+} from '#lib/auth/email-delivery.js';
+import { logger } from '#lib/server/logger.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { emailDeliveries, resendWebhookEvents } from '#lib/server/neon/schema.js';
 
 const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
 	get: (_target, property) => {

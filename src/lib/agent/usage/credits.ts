@@ -1,5 +1,5 @@
 import type { LanguageModelUsage } from 'ai';
-import type { SuperAccessReason } from '$lib/billing/types';
+import type { SuperAccessReason } from '#lib/billing/types.js';
 
 /** Display/API: 25 credits per USD. */
 export const CREDITS_PER_USD = 25;

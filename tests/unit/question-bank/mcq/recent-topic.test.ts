@@ -10,11 +10,11 @@ const mocks = vi.hoisted(() => ({
 	limit: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ insert: mocks.insert, select: mocks.select })
 }));
 
-import { getRecentTopics, recordRecentTopic } from '$lib/question-bank/recent-topic.server';
+import { getRecentTopics, recordRecentTopic } from '#lib/question-bank/recent-topic.server.js';
 
 describe('recent question topics', () => {
 	beforeEach(() => {

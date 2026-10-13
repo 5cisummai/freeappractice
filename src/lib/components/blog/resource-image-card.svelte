@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_COMPACT_CLASS } from '$lib/components/marketing/hero-badge.js';
-	import { buttonVariants } from '$lib/components/ui/button/button.svelte';
-	import { cn } from '$lib/utils';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_COMPACT_CLASS } from '#lib/components/marketing/hero-badge.js';
+	import { buttonVariants } from '#lib/components/ui/button/button.svelte';
+	import { cn } from '#lib/utils.js';
 	import ArrowUpRightIcon from '@tabler/icons-svelte/icons/arrow-up-right';
 
 	let {
@@ -83,7 +83,7 @@
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	{:else}
 		<a
-			href={resolve(href as '/blog' | '/blog/science-of-studying' | '/blog/summer-ap-study-plan')}
+			href={resolve(href as 'blog' | 'blog/science-of-studying' | 'blog/summer-ap-study-plan')}
 			class="flex h-full flex-col"
 		>
 			{@render cardContent()}

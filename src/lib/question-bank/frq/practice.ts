@@ -1,5 +1,5 @@
-import { AP_DATA } from '$lib/catalog/dataset';
-import { getUnitsForCourse, resolveEffectiveUnit } from '$lib/catalog/courses';
+import { AP_DATA } from '#lib/catalog/dataset.js';
+import { getUnitsForCourse, resolveEffectiveUnit } from '#lib/catalog/courses.js';
 
 export const FRQ_ALL_UNITS = 'All Units';
 
