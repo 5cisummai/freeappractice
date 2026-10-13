@@ -106,10 +106,10 @@ Pick models by host and task weight.
 
 ### Codex
 
-| Task weight | Model                  |
-| ----------- | ---------------------- |
-| Harder      |  6.1 Sol, low/light effort |
-| Easier      | 6 Luna, high effort            |
+| Task weight | Model                     |
+| ----------- | ------------------------- |
+| Harder      | 6.1 Sol, low/light effort |
+| Easier      | 6 Luna, high effort       |
 
 ---
 

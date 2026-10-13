@@ -1,4 +1,4 @@
-# Update 1.9.6: Practice, understand, challenge a friend
+# Update 1.9.8: Practice, understand, challenge a friend
 
 ## Goal
 
