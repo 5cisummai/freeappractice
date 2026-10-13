@@ -5,6 +5,18 @@
 
 	const changelog = [
 		{
+			version: '1.9.7',
+			date: 'October 12, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Privacy Policy explains that optional analytics consent also controls Coach usage attribution through Vercel AI Gateway'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.6',
 			date: 'October 10, 2026',
 			sections: [
@@ -1550,7 +1562,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 10, 2026"
+			meta="Last Updated: October 12, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

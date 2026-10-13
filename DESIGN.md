@@ -18,11 +18,11 @@ Canonical visual language for marketing, auth, and the authenticated app. Tokens
 
 ### Font families
 
-| Role | Token / class | Face | Use for |
-| --- | --- | --- | --- |
-| Body & UI | `font-sans` (default on `html`) | **Open Runde** | Labels, buttons, nav, body UI |
-| Display | `font-display` | **DM Sans Variable** | Page titles, section titles, marketing headlines |
-| Reading / exam | `font-serif` | **Noto Serif** | Question stems, FRQ prompts, long-form article body |
+| Role           | Token / class                   | Face                 | Use for                                             |
+| -------------- | ------------------------------- | -------------------- | --------------------------------------------------- |
+| Body & UI      | `font-sans` (default on `html`) | **Open Runde**       | Labels, buttons, nav, body UI                       |
+| Display        | `font-display`                  | **DM Sans Variable** | Page titles, section titles, marketing headlines    |
+| Reading / exam | `font-serif`                    | **Noto Serif**       | Question stems, FRQ prompts, long-form article body |
 
 Defined in `src/routes/layout.css`:
 
@@ -34,17 +34,17 @@ Defined in `src/routes/layout.css`:
 
 ### Heading scale
 
-| Level | Usage | Classes |
-| --- | --- | --- |
-| **Hero (h1)** | Landing / campaign heroes | `font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance sm:text-5xl lg:text-[3.5rem]` |
-| **Page (h1)** | Marketing utility + `PublicPageHero` | `font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl` |
-| **App page (h1)** | `PageShell` | `font-display text-3xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl` |
-| **Section (h2)** | Major sections / `SectionIntro` | `font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl` |
-| **Subsection (h3)** | Cards, FAQ triggers | `text-base font-semibold` or `font-display text-xl font-medium tracking-tight sm:text-2xl` |
-| **Body lead** | Hero / section intro | `text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8` with `max-w-xl`–`max-w-2xl` |
-| **Body** | Paragraphs, accordion | `text-base leading-7` |
-| **Exam copy** | Stems, choices, FRQ | `font-serif text-[0.925rem] leading-7 text-foreground/80` |
-| **Small / meta** | Dates, captions, footer | `text-sm text-muted-foreground` or `text-xs` |
+| Level               | Usage                                | Classes                                                                                                           |
+| ------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **Hero (h1)**       | Landing / campaign heroes            | `font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance sm:text-5xl lg:text-[3.5rem]` |
+| **Page (h1)**       | Marketing utility + `PublicPageHero` | `font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl`            |
+| **App page (h1)**   | `PageShell`                          | `font-display text-3xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl`                        |
+| **Section (h2)**    | Major sections / `SectionIntro`      | `font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl`                         |
+| **Subsection (h3)** | Cards, FAQ triggers                  | `text-base font-semibold` or `font-display text-xl font-medium tracking-tight sm:text-2xl`                        |
+| **Body lead**       | Hero / section intro                 | `text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8` with `max-w-xl`–`max-w-2xl`                   |
+| **Body**            | Paragraphs, accordion                | `text-base leading-7`                                                                                             |
+| **Exam copy**       | Stems, choices, FRQ                  | `font-serif text-[0.925rem] leading-7 text-foreground/80`                                                         |
+| **Small / meta**    | Dates, captions, footer              | `text-sm text-muted-foreground` or `text-xs`                                                                      |
 
 ### Emphasis patterns
 
@@ -69,22 +69,22 @@ All colors use **OKLCH** CSS variables (shadcn/ui + brand). Source of truth: `sr
 
 ### Brand
 
-| Token | Value | Purpose |
-| --- | --- | --- |
+| Token             | Value                    | Purpose                                                            |
+| ----------------- | ------------------------ | ------------------------------------------------------------------ |
 | `--brand-primary` | `oklch(0.546 0.235 262)` | Primary blue-violet; drives `--primary`, `--ring`, sidebar primary |
 
 ### Semantic tokens
 
-| Token | Light | Dark | Purpose |
-| --- | --- | --- | --- |
-| `--background` | White | Midnight-tinted near-black | Page canvas |
-| `--foreground` | Near-black | Near-white | Primary text |
-| `--primary` | Brand | Brand | CTAs, links, focus rings |
-| `--muted` / `--muted-foreground` | Cool gray | Cool gray | Secondary surfaces & text |
-| `--card` / `--border` | White / light gray | Lifted surface / soft white border | Cards, dividers |
-| `--accent` | Soft blue wash | Deeper blue wash | Subtle highlights |
-| `--destructive` | Red | Lighter red | Errors |
-| `--sidebar*` | Near-white rail | Darker rail | App sidebar |
+| Token                            | Light              | Dark                               | Purpose                   |
+| -------------------------------- | ------------------ | ---------------------------------- | ------------------------- |
+| `--background`                   | White              | Midnight-tinted near-black         | Page canvas               |
+| `--foreground`                   | Near-black         | Near-white                         | Primary text              |
+| `--primary`                      | Brand              | Brand                              | CTAs, links, focus rings  |
+| `--muted` / `--muted-foreground` | Cool gray          | Cool gray                          | Secondary surfaces & text |
+| `--card` / `--border`            | White / light gray | Lifted surface / soft white border | Cards, dividers           |
+| `--accent`                       | Soft blue wash     | Deeper blue wash                   | Subtle highlights         |
+| `--destructive`                  | Red                | Lighter red                        | Errors                    |
+| `--sidebar*`                     | Near-white rail    | Darker rail                        | App sidebar               |
 
 Dark mode is applied via `.dark` on `<html>` (`mode-watcher`). Dark surfaces are intentionally **inset**: cards sit slightly above a darker sidebar rail.
 
@@ -109,12 +109,12 @@ Feedback states:
 
 Paid / Coach surfaces use shared utilities in `layout.css`:
 
-| Utility / class | Role |
-| --- | --- |
-| `super-tier-gradient` | Soft violet → fuchsia → cyan wash |
-| `super-text-gradient` | Gradient clipped text |
+| Utility / class              | Role                                       |
+| ---------------------------- | ------------------------------------------ |
+| `super-tier-gradient`        | Soft violet → fuchsia → cyan wash          |
+| `super-text-gradient`        | Gradient clipped text                      |
 | `super-tier-gradient-button` | CTA chrome (`SUPER_GRADIENT_BUTTON_CLASS`) |
-| `super-tier-gradient-fab` | Floating action treatment |
+| `super-tier-gradient-fab`    | Floating action treatment                  |
 
 Do not invent alternate Super gradients; reuse these.
 
@@ -142,13 +142,13 @@ Do not invent alternate Super gradients; reuse these.
 
 ### Content width
 
-| Context | Max width | Horizontal padding |
-| --- | --- | --- |
-| Landing sections | `max-w-7xl` | `px-5 sm:px-8 lg:px-10` |
-| Standard marketing | `max-w-6xl`–`max-w-7xl` | `px-5 sm:px-8` |
-| Hero copy column | `max-w-3xl` (centered) | — |
-| FAQ / narrow content | `max-w-3xl` | — |
-| App `PageShell` | `max-w-6xl` | `px-5 sm:px-8 lg:px-10` |
+| Context              | Max width               | Horizontal padding      |
+| -------------------- | ----------------------- | ----------------------- |
+| Landing sections     | `max-w-7xl`             | `px-5 sm:px-8 lg:px-10` |
+| Standard marketing   | `max-w-6xl`–`max-w-7xl` | `px-5 sm:px-8`          |
+| Hero copy column     | `max-w-3xl` (centered)  | —                       |
+| FAQ / narrow content | `max-w-3xl`             | —                       |
+| App `PageShell`      | `max-w-6xl`             | `px-5 sm:px-8 lg:px-10` |
 
 ### Vertical rhythm
 
@@ -258,12 +258,12 @@ Homepage hero uses `HalftoneBackground` (`@devmischief/shaders-svelte` HalftoneC
 
 Shared helpers in `src/lib/tw-animate.ts` (tw-animate-css + CSS view timelines):
 
-| Export | When |
-| --- | --- |
-| `twAnimateIn` | Above-the-fold / page-load enter |
-| `twAnimateInView` | Below-the-fold section enter |
-| `twAnimateInViewSubtle` | Dense grids |
-| `twAnimateInViewZoom` | Interactive blocks |
+| Export                  | When                             |
+| ----------------------- | -------------------------------- |
+| `twAnimateIn`           | Above-the-fold / page-load enter |
+| `twAnimateInView`       | Below-the-fold section enter     |
+| `twAnimateInViewSubtle` | Dense grids                      |
+| `twAnimateInViewZoom`   | Interactive blocks               |
 
 Prefer these class strings over custom JS intersection observers. Respect reduced motion at the OS level.
 
@@ -273,23 +273,23 @@ Prefer these class strings over custom JS intersection observers. Respect reduce
 
 Reuse these components:
 
-| Component | Path | When to use |
-| --- | --- | --- |
-| `PublicShell` | `#lib/components/layout/public-shell.svelte` | Public chrome wrapper |
-| `Topbar` | `#lib/components/layout/topbar.svelte` | Via `PublicShell` |
-| `SiteFooter` | `#lib/components/layout/site-footer.svelte` | Via `PublicShell` |
-| `PublicPageHero` | `#lib/components/marketing/public-page-hero.svelte` | Utility marketing pages |
-| `SectionIntro` | `#lib/components/marketing/section-intro.svelte` | Section title + lead + optional actions |
-| `BackToHome` | `#lib/components/layout/back-to-home.svelte` | Secondary pages with back nav |
-| `LandingHero` | `#lib/components/marketing/landing-hero.svelte` | Homepage only |
-| `UnlimitedSection` | `#lib/components/marketing/unlimited-section.svelte` | Landing product proof |
-| `SuperSection` | `#lib/components/marketing/super-section.svelte` | Landing Super pitch |
-| `StudyTeamSection` | `#lib/components/marketing/study-team-section.svelte` | Landing org / team |
-| `AspiringStudentsSection` | `#lib/components/marketing/aspiring-students-section.svelte` | Landing social proof |
-| `PricingSection` / `PricingCards` | `#lib/components/marketing/pricing-*.svelte` | Pricing |
-| `BottomCtaSection` | `#lib/components/marketing/bottom-cta-section.svelte` | Closing CTA |
-| `PageShell` | `#lib/components/layout/page-shell.svelte` | Authenticated app pages |
-| `PracticeRunner` / practice shell | `#lib/components/practice/*` | Live practice embeds |
+| Component                         | Path                                                         | When to use                             |
+| --------------------------------- | ------------------------------------------------------------ | --------------------------------------- |
+| `PublicShell`                     | `#lib/components/layout/public-shell.svelte`                 | Public chrome wrapper                   |
+| `Topbar`                          | `#lib/components/layout/topbar.svelte`                       | Via `PublicShell`                       |
+| `SiteFooter`                      | `#lib/components/layout/site-footer.svelte`                  | Via `PublicShell`                       |
+| `PublicPageHero`                  | `#lib/components/marketing/public-page-hero.svelte`          | Utility marketing pages                 |
+| `SectionIntro`                    | `#lib/components/marketing/section-intro.svelte`             | Section title + lead + optional actions |
+| `BackToHome`                      | `#lib/components/layout/back-to-home.svelte`                 | Secondary pages with back nav           |
+| `LandingHero`                     | `#lib/components/marketing/landing-hero.svelte`              | Homepage only                           |
+| `UnlimitedSection`                | `#lib/components/marketing/unlimited-section.svelte`         | Landing product proof                   |
+| `SuperSection`                    | `#lib/components/marketing/super-section.svelte`             | Landing Super pitch                     |
+| `StudyTeamSection`                | `#lib/components/marketing/study-team-section.svelte`        | Landing org / team                      |
+| `AspiringStudentsSection`         | `#lib/components/marketing/aspiring-students-section.svelte` | Landing social proof                    |
+| `PricingSection` / `PricingCards` | `#lib/components/marketing/pricing-*.svelte`                 | Pricing                                 |
+| `BottomCtaSection`                | `#lib/components/marketing/bottom-cta-section.svelte`        | Closing CTA                             |
+| `PageShell`                       | `#lib/components/layout/page-shell.svelte`                   | Authenticated app pages                 |
+| `PracticeRunner` / practice shell | `#lib/components/practice/*`                                 | Live practice embeds                    |
 
 ### FAQ block
 
@@ -342,11 +342,11 @@ Use Tailwind v4 linear helpers: `bg-linear-to-*` (not legacy `bg-gradient-to-*`)
 
 ## App vs. marketing
 
-| Surface | Shell | Density | Notes |
-| --- | --- | --- | --- |
-| Marketing | `PublicShell` | Airy | Display type, softened borders, section motion |
-| App (`src/routes/app/`) | Sidebar + `PageShell` | Utilitarian | Same tokens; display titles already via `PageShell` |
-| Auth (`src/routes/(auth)/`) | Minimal centered | Focused | No Topbar/Footer; keep brand tokens |
+| Surface                     | Shell                 | Density     | Notes                                               |
+| --------------------------- | --------------------- | ----------- | --------------------------------------------------- |
+| Marketing                   | `PublicShell`         | Airy        | Display type, softened borders, section motion      |
+| App (`src/routes/app/`)     | Sidebar + `PageShell` | Utilitarian | Same tokens; display titles already via `PageShell` |
+| Auth (`src/routes/(auth)/`) | Minimal centered      | Focused     | No Topbar/Footer; keep brand tokens                 |
 
 When refreshing app pages, reuse marketing **tokens and typography**, not marketing atmosphere (no halftone, no landing-only section components).
 
@@ -360,13 +360,13 @@ Long-form content (blog, summer guides) uses the `.prose` class defined in `layo
 
 ## Reference implementations
 
-| Page | Route | Notes |
-| --- | --- | --- |
-| Landing (canonical) | `/` | Halftone hero, live practice embed, section stack |
-| Rich marketing | `/about`, `/summer`, `/super`, `/blog` | Custom heroes, cards, display type |
-| Utility marketing | `/subjects`, `/stats`, `/privacy`, `/changelog` | `PublicPageHero` + `BackToHome` where needed |
-| Practice hub | `/practice/*` | Practice landing + question flow |
-| App home | `/app` | `PageShell` + denser product UI |
+| Page                | Route                                           | Notes                                             |
+| ------------------- | ----------------------------------------------- | ------------------------------------------------- |
+| Landing (canonical) | `/`                                             | Halftone hero, live practice embed, section stack |
+| Rich marketing      | `/about`, `/summer`, `/super`, `/blog`          | Custom heroes, cards, display type                |
+| Utility marketing   | `/subjects`, `/stats`, `/privacy`, `/changelog` | `PublicPageHero` + `BackToHome` where needed      |
+| Practice hub        | `/practice/*`                                   | Practice landing + question flow                  |
+| App home            | `/app`                                          | `PageShell` + denser product UI                   |
 
 When in doubt: match `/` for **tokens, type, and spacing**; match `/about` or `/super` for **multi-section marketing layouts**; match `/app` for **product density**.
 
