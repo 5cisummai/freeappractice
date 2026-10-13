@@ -19,7 +19,8 @@ export default defineConfig({
 					sentrySvelteKit({
 						org: 'free-ap-practice',
 						project: 'javascript-sveltekit',
-						authToken: process.env.SENTRY_AUTH_TOKEN
+						authToken: process.env.SENTRY_AUTH_TOKEN,
+						telemetry: false
 					}),
 					tailwindcss()
 				]),
