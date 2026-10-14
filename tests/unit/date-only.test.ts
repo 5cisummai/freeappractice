@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateOnly } from '$lib/date-only';
+import { formatDateOnly } from '#lib/date-only.js';
 
 describe('formatDateOnly', () => {
 	it('preserves the calendar day in local time', () => {

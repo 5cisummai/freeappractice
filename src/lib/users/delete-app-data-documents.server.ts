@@ -1,5 +1,5 @@
 import { inArray } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	coachAudits,
 	frqAttempts,
@@ -9,8 +9,8 @@ import {
 	superGrants,
 	superUsageRollups,
 	tutorProfiles
-} from '$lib/server/neon/schema';
-import { deleteUserProfiles } from '$lib/users/model.server';
+} from '#lib/server/neon/schema.js';
+import { deleteUserProfiles } from '#lib/users/model.server.js';
 
 /** Delete all application-owned rows for the supplied users. */
 export async function deleteAppDataDocuments(userIds: string[]): Promise<void> {

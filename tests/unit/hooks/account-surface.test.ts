@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
+import { isAccountSurface, isAgeGateExempt } from '#lib/auth/account-surface.server.js';
 
 describe('account surface routing', () => {
 	it('limits the age gate to app pages and account APIs', () => {

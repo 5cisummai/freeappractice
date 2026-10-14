@@ -6,10 +6,11 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
+import oxlint from 'eslint-plugin-oxlint';
 
 const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
-// Serializable subset for ESLint only — full svelte.config.js has functions that break --cache.
+// Serializable subset for ESLint only — the sveltekit() options in vite.config.ts have functions that break --cache.
 const eslintSvelteConfig = {
 	compilerOptions: { runes: true }
 };
@@ -44,9 +45,8 @@ export default defineConfig(
 			'src/lib/question-bank/pool-refill.server.ts',
 			'src/lib/question-bank/recent-topic.server.ts',
 			'src/lib/server/neon/model.ts',
-			'src/lib/super/models.server.ts',
-			'src/lib/super/profile.server.ts',
-			'src/lib/super/study-plan.server.ts',
+			'src/lib/agent/personalization/profile.server.ts',
+			'src/lib/agent/plans/store.server.ts',
 			'src/lib/users/model.server.ts'
 		],
 		rules: {
@@ -63,5 +63,18 @@ export default defineConfig(
 				svelteConfig: eslintSvelteConfig
 			}
 		}
+	},
+	// Keep full template-aware checks for Svelte components; Oxlint owns JS/TS rules.
+	...oxlint
+		.buildFromOxlintConfigFile('./.oxlintrc.json')
+		.filter((config) => config.rules)
+		.map((config) => ({
+			...config,
+			ignores: [...(config.ignores ?? []), '**/*.svelte']
+		})),
+	{
+		files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
+		// Oxlint reads the existing ESLint disable comments for migrated rules.
+		linterOptions: { reportUnusedDisableDirectives: 'off' }
 	}
 );

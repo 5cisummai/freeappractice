@@ -5,7 +5,7 @@ import {
 	requestMcqQuestion,
 	requestMcqQuestions,
 	requestMcqQuiz
-} from '$lib/question-bank/request.client';
+} from '#lib/question-bank/request.client.js';
 
 afterEach(() => {
 	vi.unstubAllGlobals();

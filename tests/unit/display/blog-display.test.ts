@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBlogDate, getBlogAuthor, getBlogCategory } from '$lib/blog-display';
+import { formatBlogDate, getBlogAuthor, getBlogCategory } from '#lib/blog-display.js';
 
 describe('blog-display', () => {
 	it('formats ISO dates and falls back for null', () => {

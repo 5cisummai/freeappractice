@@ -1,17 +1,17 @@
-import { apiFetch } from '$lib/client/api.js';
+import { apiFetch } from '#lib/client/api.js';
 import {
 	captureFirstAnswerSubmitted,
 	captureQuestionRequestFailed,
 	captureQuestionRequestSucceeded,
 	QuestionRequestError
-} from '$lib/client/activation-analytics';
-import { capturePostHogEvent } from '$lib/client/posthog-analytics';
-import { resolveEffectiveUnit } from '$lib/catalog/ap-courses';
+} from '#lib/client/activation-analytics.js';
+import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
+import { resolveEffectiveUnit } from '#lib/catalog/courses.js';
 import {
 	PoolWarmingError,
 	requestMcqQuestion,
 	requestMcqQuestionById
-} from '$lib/question-bank/request.client';
+} from '#lib/question-bank/request.client.js';
 import type {
 	AddTextAnnotationInput,
 	AnswerResult,
@@ -21,7 +21,7 @@ import type {
 	QuestionFeedbackReason,
 	QuestionLoadReason,
 	TextAnnotation
-} from '$lib/question-bank/mcq/types';
+} from '#lib/question-bank/mcq/types.js';
 import { SvelteSet } from 'svelte/reactivity';
 
 const MAX_SEEN_QUESTION_IDS = 100;

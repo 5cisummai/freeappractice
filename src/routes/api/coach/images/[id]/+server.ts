@@ -1,13 +1,12 @@
-import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getOwnedCoachImage } from '$lib/super/coach-images.server';
-import { readCoachImage, type CoachImageStore } from '$lib/super/coach-image-storage.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { getOwnedCoachImage } from '#lib/agent/attachments/images.server.js';
+import { readCoachImage, type CoachImageStore } from '#lib/agent/attachments/storage.server.js';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
 		const row = await getOwnedCoachImage(userId, event.params.id ?? '');
 		if (!row)
-			return json(
+			return Response.json(
 				{ error: 'Image not found' },
 				{ status: 404, headers: { 'Cache-Control': 'private, no-store' } }
 			);

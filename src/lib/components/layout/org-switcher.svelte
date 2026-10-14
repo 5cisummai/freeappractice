@@ -1,21 +1,21 @@
 <script lang="ts">
-	import { invalidateAppLayout } from '$lib/client/invalidate-data.js';
-	import { authClient } from '$lib/auth/client.js';
+	import { invalidateAppLayout } from '#lib/client/invalidate-data.js';
+	import { authClient } from '#lib/auth/client.js';
 	import {
 		MAX_FREE_GROUP_ORGS,
 		orgAvatarClass,
 		orgAvatarLetter,
 		slugifyOrgName,
 		type UserOrganization
-	} from '$lib/auth/organization-types';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Field, FieldGroup, FieldLabel } from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Spinner } from '$lib/components/ui/spinner/index.js';
+	} from '#lib/auth/organization-types.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Field, FieldGroup, FieldLabel } from '#lib/components/ui/field/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import SelectorIcon from '@tabler/icons-svelte/icons/selector';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy-filled';

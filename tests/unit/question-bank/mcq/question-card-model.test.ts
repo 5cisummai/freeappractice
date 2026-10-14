@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	quizQuestionCardModel,
 	unlimitedQuestionCardModel
-} from '$lib/question-bank/question-card-model';
+} from '#lib/question-bank/question-card-model.js';
 
 describe('question card delivery models', () => {
 	it('adapts unlimited delivery into the shared card model', () => {

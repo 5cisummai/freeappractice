@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
 	getAgeConfirmedAt: vi.fn()
 }));
 
-vi.mock('$lib/super/profile.server', () => ({
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	getTutorProfileView: mocks.getTutorProfileView,
 	getAgeConfirmedAt: mocks.getAgeConfirmedAt
 }));
@@ -13,7 +13,7 @@ vi.mock('$lib/super/profile.server', () => ({
 import {
 	getAgeConfirmedAtForRequest,
 	getTutorProfileViewForRequest
-} from '$lib/super/feature-access.server';
+} from '#lib/agent/access.server.js';
 
 describe('request-local tutor profile cache', () => {
 	beforeEach(() => {

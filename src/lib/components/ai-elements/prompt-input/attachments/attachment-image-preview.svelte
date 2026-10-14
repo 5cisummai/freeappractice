@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as AspectRatio from '$lib/components/ui/aspect-ratio/index.js';
-	import * as Dialog from '$lib/components/ui/dialog';
+	import * as AspectRatio from '#lib/components/ui/aspect-ratio/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
 	import { getAttachmentsContext } from '../context/attachments.svelte.js';
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	import type { PromptInputAttachment } from '../context/types.js';
 
 	interface Props {

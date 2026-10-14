@@ -6,10 +6,10 @@
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import SendHorizontalIcon from '@tabler/icons-svelte/icons/send-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 	import { toast } from 'svelte-sonner';
 
 	type ChatMessage = {

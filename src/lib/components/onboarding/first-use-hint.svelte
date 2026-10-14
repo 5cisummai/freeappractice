@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import { hasSeenUiHint, markUiHintSeen, type UiHintId } from '$lib/client/ui-hints.svelte.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import { hasSeenUiHint, markUiHintSeen, type UiHintId } from '#lib/client/ui-hints.svelte.js';
 
 	type Props = {
 		id: UiHintId;

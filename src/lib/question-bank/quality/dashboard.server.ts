@@ -1,15 +1,16 @@
+export const QUESTION_QUALITY_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { desc, eq, sql } from 'drizzle-orm';
-import { QUESTION_QUALITY_MODEL } from '$lib/ai/ai-models-config';
-import { getNeonDatabase } from '$lib/server/neon/db';
+
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	questionFeedback,
 	questionQuality,
 	questionRegistry,
 	qualityReviewJobs
-} from '$lib/server/neon/schema';
-import { isDuplicateKeyError } from '$lib/question-bank/util.server';
-import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
+} from '#lib/server/neon/schema.js';
+import { isDuplicateKeyError } from '#lib/question-bank/util.server.js';
+import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
 import { ensureQuestionQuality, type ReviewJobDocument } from './models.server.js';
 import { feedbackSummaryFromCounts } from './rules.js';
 import type {

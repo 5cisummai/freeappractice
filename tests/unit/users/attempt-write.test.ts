@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ execute: vi.fn() }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ execute: mocks.execute })
 }));
 
-import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
+import { persistQuestionAttempt } from '#lib/users/attempt-write.server.js';
 
 const attempt = {
 	questionId: 'question-1',

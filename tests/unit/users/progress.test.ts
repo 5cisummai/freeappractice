@@ -3,9 +3,9 @@ import {
 	buildProgressData,
 	findOrCreateProgressEntry,
 	mergeFrqProgress
-} from '$lib/users/progress.server';
-import type { IProgress } from '$lib/users/records.server';
-import type { IUserProfile } from '$lib/users/model.server';
+} from '#lib/users/progress.server.js';
+import type { IProgress } from '#lib/users/records.server.js';
+import type { IUserProfile } from '#lib/users/model.server.js';
 
 describe('findOrCreateProgressEntry', () => {
 	it('returns an existing entry for the same class and unit', () => {

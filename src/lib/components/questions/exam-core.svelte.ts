@@ -9,7 +9,7 @@ import type {
 	ExamStatus,
 	GeneratedQuestion,
 	StartExamInput
-} from '$lib/question-bank/mcq/types';
+} from '#lib/question-bank/mcq/types.js';
 
 const DEFAULT_MAX_QUESTION_COUNT = 50;
 const DEFAULT_MAX_CONCURRENT_FILL = 4;

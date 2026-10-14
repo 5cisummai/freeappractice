@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildFrqGrade } from '$lib/grading/frq/attempts.server';
+import { buildFrqGrade } from '#lib/grading/frq/attempts.server.js';
 import {
 	FrqGradeRequestSchema,
 	FrqQuestionSchema,
 	toPublicFrqQuestion
-} from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/types.js';
 
 function validQuestion() {
 	return {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidPoolBucket } from '$lib/question-bank/pool-refill-queue.server';
+import { isValidPoolBucket } from '#lib/question-bank/pool-refill-queue.server.js';
 
 describe('pool refill bucket validation', () => {
 	it('accepts only catalog course and unit buckets', () => {

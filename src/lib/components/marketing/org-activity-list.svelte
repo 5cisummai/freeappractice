@@ -3,7 +3,7 @@
 		orgAvatarClass,
 		orgAvatarLetter,
 		type OrganizationActivityItem
-	} from '$lib/auth/organization-types';
+	} from '#lib/auth/organization-types.js';
 
 	let { items, preview = false }: { items: OrganizationActivityItem[]; preview?: boolean } =
 		$props();

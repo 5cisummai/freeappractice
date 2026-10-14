@@ -11,7 +11,7 @@ import LandmarkIcon from '@tabler/icons-svelte/icons/building-bank';
 import LanguagesIcon from '@tabler/icons-svelte/icons/language';
 import LeafIcon from '@tabler/icons-svelte/icons/leaf-filled';
 import type { Component } from 'svelte';
-import { getCourses } from '$lib/catalog/ap-courses.js';
+import { getCourses } from '#lib/catalog/courses.js';
 
 type CourseIcon = Component<{ class?: string }>;
 

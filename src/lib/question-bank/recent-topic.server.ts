@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, ne } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { questionRecentTopics } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { questionRecentTopics } from '#lib/server/neon/schema.js';
 
 const DEFAULT_WINDOW = 20;
 type QuestionKind = 'mcq' | 'frq';

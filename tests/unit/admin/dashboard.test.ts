@@ -9,34 +9,34 @@ const mocks = vi.hoisted(() => ({
 	listFeedbackTabForAdmin: vi.fn()
 }));
 
-vi.mock('$lib/auth/server', () => ({ auth: { api: { listUsers: mocks.listUsers } } }));
-vi.mock('$lib/server/db', () => ({ connectDb: mocks.connectDb }));
-vi.mock('$lib/question-bank/gen-stats.server', () => ({
+vi.mock('#lib/auth/server.js', () => ({ auth: { api: { listUsers: mocks.listUsers } } }));
+vi.mock('#lib/server/db', () => ({ connectDb: mocks.connectDb }));
+vi.mock('#lib/question-bank/gen-stats.server.js', () => ({
 	getMcqGenerationCountsByCourse: vi.fn(async () => ({}))
 }));
-vi.mock('$lib/question-bank/quality/dashboard.server', () => ({
+vi.mock('#lib/question-bank/quality/dashboard.server.js', () => ({
 	getQualityDashboardSnapshot: mocks.getQualityDashboardSnapshot
 }));
-vi.mock('$lib/super/admin.server', () => ({
+vi.mock('#lib/billing/admin.server.js', () => ({
 	getSuperAdminOverview: mocks.getSuperAdminOverview
 }));
-vi.mock('$lib/super/billing.server', () => ({
+vi.mock('#lib/billing/subscriptions.server.js', () => ({
 	getAdminUserSuperAccess: mocks.getAdminUserSuperAccess
 }));
-vi.mock('$lib/feedback/admin.server', () => ({
+vi.mock('#lib/feedback/admin.server.js', () => ({
 	listFeedbackTabForAdmin: mocks.listFeedbackTabForAdmin
 }));
-vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
+vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({
 	listCatalogBuckets: vi.fn(() => []),
 	requestPoolRefill: vi.fn(),
 	enqueueAllCatalogDeficits: vi.fn()
 }));
-vi.mock('$lib/question-bank/pool-constants', () => ({
+vi.mock('#lib/question-bank/pool-constants.js', () => ({
 	QUESTION_POOL_CONFIG: { mcqTarget: 10, frqTarget: 2 },
 	poolTargetForBucket: vi.fn(() => 10)
 }));
 
-import { getAdminDashboardData } from '$lib/admin/dashboard.server';
+import { getAdminDashboardData } from '#lib/admin/dashboard.server.js';
 
 const baseOptions = {
 	headers: new Headers(),

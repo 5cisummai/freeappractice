@@ -4,13 +4,13 @@ const mocks = vi.hoisted(() => ({
 	execute: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({
 		execute: mocks.execute
 	})
 }));
 
-import { getPracticeHistoryPage } from '$lib/users/history.server';
+import { getPracticeHistoryPage } from '#lib/users/history.server.js';
 
 describe('getPracticeHistoryPage', () => {
 	beforeEach(() => {

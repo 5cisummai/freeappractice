@@ -2,26 +2,26 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import FullQuestion from '$lib/components/questions/full-question.svelte';
-	import { presentedStemFromMcq } from '$lib/components/questions/presented-question.js';
-	import { createExamCore } from '$lib/components/questions/exam-core.svelte.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { resolveEffectiveUnit } from '$lib/catalog/ap-courses.js';
-	import { requestMcqQuestion, requestMcqQuiz } from '$lib/question-bank/request.client.js';
-	import { createTextAnnotation } from '$lib/components/questions/text-annotation-dom.js';
+	import EmptyState from '#lib/components/app/empty-state.svelte';
+	import FullQuestion from '#lib/components/questions/full-question.svelte';
+	import { presentedStemFromMcq } from '#lib/components/questions/presented-question.js';
+	import { createExamCore } from '#lib/components/questions/exam-core.svelte.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { resolveEffectiveUnit } from '#lib/catalog/courses.js';
+	import { requestMcqQuestion, requestMcqQuiz } from '#lib/question-bank/request.client.js';
+	import { createTextAnnotation } from '#lib/components/questions/text-annotation-dom.js';
 	import type {
 		AddTextAnnotationInput,
 		ExamSnapshot,
 		GeneratedQuestion,
 		TextAnnotation
-	} from '$lib/question-bank/mcq/types.js';
-	import { savePendingSharedQuizRun } from '$lib/shared-practice/pending-runs.js';
-	import type { PendingSharedQuizRun } from '$lib/shared-practice/types.js';
+	} from '#lib/question-bank/mcq/types.js';
+	import { savePendingSharedQuizRun } from '#lib/shared-practice/pending-runs.js';
+	import type { PendingSharedQuizRun } from '#lib/shared-practice/types.js';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy';
 	import ShareIcon from '@tabler/icons-svelte/icons/share';
@@ -120,9 +120,11 @@
 		if (organization.role !== 'owner' && organization.role !== 'admin') return null;
 		return organization.id as string;
 	});
+
 	const claimSignupHref = $derived(
-		`${resolve('/signup')}?redirect=${encodeURIComponent(resolve('/app'))}`
+		`${resolve('signup')}?redirect=${encodeURIComponent(resolve('app'))}`
 	);
+
 	const quizTitle = $derived(
 		title ??
 			(selectedUnit
@@ -140,6 +142,7 @@
 	const currentStruck = $derived(
 		currentQuestionId ? (struckByQuestionId[currentQuestionId] ?? []) : []
 	);
+
 	const currentAnnotations = $derived([
 		...(currentQuestionId ? (annotationsByQuestionId[currentQuestionId] ?? []) : []),
 		...(currentStimulusId ? (annotationsByStimulusId[currentStimulusId] ?? []) : [])
@@ -184,7 +187,8 @@
 		]
 			.filter(Boolean)
 			.join('\n');
-		return `${resolve('/app/coach')}?q=${encodeURIComponent(prompt)}`;
+
+		return `${resolve('app/coach')}?q=${encodeURIComponent(prompt)}`;
 	});
 
 	function setGenerating(value: boolean): void {

@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { listOrganizationSharedSets } from '$lib/auth/organization-queries.server';
+import { listOrganizationSharedSets } from '#lib/auth/organization-queries.server.js';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const { activeOrganization } = await parent();

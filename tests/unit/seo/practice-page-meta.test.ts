@@ -4,8 +4,8 @@ import {
 	buildPracticeBreadcrumbs,
 	buildPracticePageJsonLd,
 	buildPracticePageMeta
-} from '$lib/seo/practice-page-meta';
-import { getPageBySlug } from '$lib/catalog/practice-pages';
+} from '#lib/seo/practice-page-meta.js';
+import { getPageBySlug } from '#lib/catalog/practice-pages.js';
 
 describe('practice page SEO helpers', () => {
 	const page = getPageBySlug('ap-biology');

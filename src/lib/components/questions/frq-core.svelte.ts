@@ -1,25 +1,25 @@
-import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-import { QuestionRequestError } from '$lib/client/activation-analytics';
-import { capturePostHogEvent } from '$lib/client/posthog-analytics.js';
-import { resolveEffectiveUnit } from '$lib/catalog/ap-courses';
-import { FRQ_ALL_UNITS, frqPracticeFor } from '$lib/question-bank/frq/practice';
+import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+import { QuestionRequestError } from '#lib/client/activation-analytics.js';
+import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
+import { resolveEffectiveUnit } from '#lib/catalog/courses.js';
+import { FRQ_ALL_UNITS, frqPracticeFor } from '#lib/question-bank/frq/practice.js';
 import {
 	parseFrqLatestDraft,
 	parseFrqQuestionDraft,
 	serializeFrqLatestDraft,
 	serializeFrqQuestionDraft
-} from '$lib/question-bank/frq/draft.client.js';
+} from '#lib/question-bank/frq/draft.client.js';
 import {
 	frqResponseIds,
 	type FrqAttemptView,
 	type FrqGrade,
 	type PublicFrqQuestion
-} from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/types.js';
 import {
 	PoolWarmingError,
 	requestFrqQuestion,
 	requestFrqQuestionById
-} from '$lib/question-bank/request.client';
+} from '#lib/question-bank/request.client.js';
 
 const MAX_SEEN_QUESTION_IDS = 100;
 const MAX_POOL_WARMING_AUTO_RETRIES = 3;

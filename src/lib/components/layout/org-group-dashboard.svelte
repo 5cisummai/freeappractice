@@ -5,16 +5,16 @@
 	import FlameIcon from '@tabler/icons-svelte/icons/flame-filled';
 	import TrophyIcon from '@tabler/icons-svelte/icons/trophy-filled';
 	import UsersIcon from '@tabler/icons-svelte/icons/users';
-	import OrgActivityList from '$lib/components/marketing/org-activity-list.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import OrgActivityList from '#lib/components/marketing/org-activity-list.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import {
 		orgAvatarClass,
 		orgAvatarLetter,
 		type OrganizationActivityItem,
 		type OrganizationLeaderboardEntry,
 		type OrganizationSharedSet
-	} from '$lib/auth/organization-types';
+	} from '#lib/auth/organization-types.js';
 
 	let {
 		orgActivity = [],
@@ -27,7 +27,7 @@
 	} = $props();
 
 	function sharedSetHref(slug: string): string {
-		return `${resolve('/app/practice')}?shared=${encodeURIComponent(slug)}`;
+		return `${resolve('app/practice')}?shared=${encodeURIComponent(slug)}`;
 	}
 </script>
 

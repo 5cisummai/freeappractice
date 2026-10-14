@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { resolve } from '$app/paths';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import CopyIcon from '@tabler/icons-svelte/icons/copy';
@@ -10,13 +10,13 @@
 		type OrganizationActivityItem,
 		type OrganizationLeaderboardEntry,
 		type OrganizationSharedSet
-	} from '$lib/auth/organization-types';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
-	import OrgActivityList from '$lib/components/marketing/org-activity-list.svelte';
-	import { getSiteUrl } from '$lib/site-url';
-	import { twAnimateInViewSubtle } from '$lib/tw-animate';
+	} from '#lib/auth/organization-types.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import SectionIntro from '#lib/components/marketing/section-intro.svelte';
+	import OrgActivityList from '#lib/components/marketing/org-activity-list.svelte';
+	import { getSiteUrl } from '#lib/site-url.js';
+	import { twAnimateInViewSubtle } from '#lib/tw-animate.js';
 	import { toast } from 'svelte-sonner';
 
 	const mockActivity: OrganizationActivityItem[] = [
@@ -140,7 +140,7 @@
 				</p>
 			{/snippet}
 		</SectionIntro>
-		<Button href={resolve('/signup')}>
+		<Button href={resolve('signup')}>
 			Create a study group
 			<ArrowRightIcon data-icon="inline-end" />
 		</Button>
@@ -257,16 +257,16 @@
 									<tr>
 										<td class="px-5 py-3">
 											<div class="flex items-center gap-3">
-												<span class="w-5 text-xs font-medium text-muted-foreground tabular-nums">
-													{index + 1}
-												</span>
+												<span class="w-5 text-xs font-medium text-muted-foreground tabular-nums"
+													>{index + 1}</span
+												>
+
 												<span
 													class="flex size-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold {orgAvatarClass(
 														entry.userId
-													)}"
+													)}">{orgAvatarLetter(entry.name)}</span
 												>
-													{orgAvatarLetter(entry.name)}
-												</span>
+
 												<span class="font-medium">{entry.name}</span>
 											</div>
 										</td>

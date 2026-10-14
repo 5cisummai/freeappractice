@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { cn } from '#lib/utils.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import { getAttachmentsContext } from '../context/attachments.svelte.js';
 	import { getPromptInputProvider } from '../context/provider.svelte.js';
 	import { getPromptInputTextRegistration } from '../context/text-registration.svelte.js';

@@ -7,15 +7,15 @@
 	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
 	import ClockIcon from '@tabler/icons-svelte/icons/clock';
 	import FlameIcon from '@tabler/icons-svelte/icons/flame-filled';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
-	import OrgGroupDashboard from '$lib/components/layout/org-group-dashboard.svelte';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import type { StudyTask } from '$lib/super/types';
-	import type { ProgressEntry, StatsData } from '$lib/users/types.js';
-	import { onboardingCourses } from '$lib/onboarding-courses.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import EmptyState from '#lib/components/app/empty-state.svelte';
+	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
+	import OrgGroupDashboard from '#lib/components/layout/org-group-dashboard.svelte';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import type { StudyTask } from '#lib/agent/plans/types.js';
+	import type { ProgressEntry, StatsData } from '#lib/users/types.js';
+	import { onboardingCourses } from '#lib/onboarding-courses.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
 	const SUBJECT_PROGRESS_GOAL = 100;
@@ -51,7 +51,6 @@
 	const hasActivity = $derived(
 		(statsData?.overview.totalQuestions ?? 0) > 0 || (statsData?.overview.frqSubmissions ?? 0) > 0
 	);
-
 	const answeredByCourse = $derived(
 		new Map((statsData?.courseBreakdown ?? []).map((entry) => [entry.course, entry.total]))
 	);
@@ -90,7 +89,7 @@
 					shown,
 					percent,
 					lastPracticedAt,
-					href: `${resolve('/app/practice')}?course=${encodeURIComponent(name)}`
+					href: `${resolve('app/practice')}?course=${encodeURIComponent(name)}`
 				};
 			})
 			.filter((course): course is NonNullable<typeof course> => course !== null)
@@ -180,7 +179,7 @@
 						My plan
 					</h2>
 					<a
-						href={resolve('/app/plan')}
+						href={resolve('app/plan')}
 						class="text-sm font-medium text-primary underline-offset-4 hover:underline"
 					>
 						View plan
@@ -190,7 +189,7 @@
 					<Card.Content class="p-4 text-sm text-muted-foreground sm:p-5">
 						This plan has no tasks yet.
 						<a
-							href={resolve('/app/plan')}
+							href={resolve('app/plan')}
 							class="font-medium text-primary underline-offset-4 hover:underline"
 						>
 							View plan
@@ -206,7 +205,7 @@
 						My plan
 					</h2>
 					<a
-						href={resolve('/app/plan')}
+						href={resolve('app/plan')}
 						class="text-sm font-medium text-primary underline-offset-4 hover:underline"
 					>
 						View plan
@@ -223,7 +222,7 @@
 							<p class="text-sm text-muted-foreground">
 								All tasks complete.
 								<a
-									href={resolve('/app/plan')}
+									href={resolve('app/plan')}
 									class="font-medium text-primary underline-offset-4 hover:underline"
 								>
 									View plan
@@ -265,7 +264,7 @@
 
 										{#if isFirstIncomplete}
 											<Button
-												href={task.practiceHref ?? resolve('/app/plan')}
+												href={task.practiceHref ?? resolve('app/plan')}
 												size="sm"
 												class="shrink-0 rounded-full px-3"
 											>
@@ -301,7 +300,7 @@
 							<p class="text-sm text-muted-foreground">Ask Pip to build your weekly plan</p>
 						</div>
 						<Button
-							href={resolve('/app/coach?q=Help%20me%20create%20a%20study%20plan')}
+							href={resolve('app/coach?q=Help%20me%20create%20a%20study%20plan')}
 							size="sm"
 							class="shrink-0"
 						>
@@ -408,7 +407,7 @@
 	{#if courseCards.length > 0 && recommendation}
 		{#if planAccess?.plan !== 'super'}
 			<a
-				href={resolve('/pricing')}
+				href={resolve('pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
 				<span><span class="font-medium">Super:</span> Pip and personalized study plans.</span>
@@ -422,7 +421,7 @@
 					Your courses
 				</h2>
 				<a
-					href={resolve('/app/settings#practice')}
+					href={resolve('app/settings#practice')}
 					class="text-sm font-medium text-primary underline-offset-4 hover:underline"
 				>
 					Manage courses
@@ -435,7 +434,7 @@
 						{@const CourseIcon = course.icon}
 						{@const hasPracticed = Boolean(course.lastPracticedAt)}
 						<a
-							href={resolve(`/app/practice?course=${encodeURIComponent(course.name)}`)}
+							href={resolve(`app/practice?course=${encodeURIComponent(course.name)}`)}
 							class="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40"
 						>
 							<div
@@ -494,7 +493,7 @@
 	{:else}
 		{#if planAccess?.plan !== 'super'}
 			<a
-				href={resolve('/pricing')}
+				href={resolve('pricing')}
 				class="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 text-sm transition-colors hover:bg-primary/10"
 			>
 				<span><span class="font-medium">Super:</span> Pip and personalized study plans.</span>
@@ -508,7 +507,7 @@
 			imageUrl={lightbulbImage}
 		>
 			{#snippet button()}
-				<Button href={resolve('/app/onboarding?reset=1')} variant="outline">Choose courses</Button>
+				<Button href={resolve('app/onboarding?reset=1')} variant="outline">Choose courses</Button>
 			{/snippet}
 		</EmptyState>
 	{/if}

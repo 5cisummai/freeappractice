@@ -1,5 +1,5 @@
-import { listPublishedBlogEntries } from '$lib/blog/service.server';
-import { getBlogAuthor } from '$lib/blog-display';
+import { listPublishedBlogEntries } from '#lib/blog/service.server.js';
+import { getBlogAuthor } from '#lib/blog-display.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

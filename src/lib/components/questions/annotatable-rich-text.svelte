@@ -1,18 +1,18 @@
 <script lang="ts">
-	import RichText from '$lib/components/content/rich-text.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import type {
 		AddTextAnnotationInput,
 		AnnotationTarget,
 		TextAnnotation
-	} from '$lib/question-bank/mcq/types';
+	} from '#lib/question-bank/mcq/types.js';
 	import {
 		applyAnnotationsToDom,
 		filterAnnotationsForTarget,
 		findAnnotationIdFromNode,
 		getSelectionOffsets
-	} from '$lib/components/questions/text-annotation-dom.js';
-	import { cn } from '$lib/utils.js';
+	} from '#lib/components/questions/text-annotation-dom.js';
+	import { cn } from '#lib/utils.js';
 	import HighlighterIcon from '@tabler/icons-svelte/icons/highlight';
 
 	let {

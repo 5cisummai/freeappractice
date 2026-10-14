@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyAccountCreationMethod } from '$lib/auth/analytics';
+import { classifyAccountCreationMethod } from '#lib/auth/analytics.js';
 
 describe('classifyAccountCreationMethod', () => {
 	it.each([

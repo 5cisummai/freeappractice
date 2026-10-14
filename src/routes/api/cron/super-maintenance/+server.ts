@@ -1,22 +1,31 @@
-import { env } from '$env/dynamic/private';
-import { json } from '@sveltejs/kit';
+import { CRON_SECRET } from '$app/env/private';
 import type { RequestHandler } from './$types';
-import { isAuthorizedCronRequest } from '$lib/auth/cron-auth';
-import { logger } from '$lib/server/logger';
-import { runSuperMaintenance } from '$lib/super/maintenance.server';
+import { isAuthorizedCronRequest } from '#lib/auth/cron-auth.js';
+import { logger } from '#lib/server/logger.js';
+import { runAgentRetention } from '#lib/agent/memory/maintenance.server.js';
+import { runBillingMaintenance } from '#lib/billing/maintenance.server.js';
+import { runPendingAccountCleanup } from '#lib/users/account-cleanup.server.js';
 
 export const config = { maxDuration: 60 };
 
 export const GET: RequestHandler = async ({ request }) => {
-	if (!isAuthorizedCronRequest(request, env.CRON_SECRET)) {
-		return json({ message: 'Unauthorized' }, { status: 401 });
+	if (!isAuthorizedCronRequest(request, CRON_SECRET)) {
+		return Response.json({ message: 'Unauthorized' }, { status: 401 });
 	}
 	try {
-		const maintenance = await runSuperMaintenance();
+		const expiredGrantsRemoved = await runBillingMaintenance();
+		const retention = await runAgentRetention();
+		const accountCleanup = await runPendingAccountCleanup();
+		const maintenance = {
+			...retention,
+			expiredGrantsRemoved,
+			cleanupCompleted: retention.cleanupCompleted + accountCleanup.cleanupCompleted,
+			cleanupRetried: retention.cleanupRetried + accountCleanup.cleanupRetried
+		};
 		logger.info('[cron/super-maintenance] run complete', maintenance);
-		return json({ maintenance });
+		return Response.json({ maintenance });
 	} catch (error) {
 		logger.error('[cron/super-maintenance] run failed', { error });
-		return json({ error: 'Super maintenance failed' }, { status: 500 });
+		return Response.json({ error: 'Super maintenance failed' }, { status: 500 });
 	}
 };

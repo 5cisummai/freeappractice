@@ -1,4 +1,4 @@
-import type { AnswerResult, GeneratedQuestion } from '$lib/question-bank/mcq/types';
+import type { AnswerResult, GeneratedQuestion } from '#lib/question-bank/mcq/types.js';
 
 export type QuestionCardModel = {
 	selectedCourse: string;

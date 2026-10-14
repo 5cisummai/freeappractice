@@ -1,19 +1,21 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getFrqAttemptForUser } from '$lib/grading/frq/attempts.server';
-import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { getFrqAttemptForUser } from '#lib/grading/frq/attempts.server.js';
+import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const gated = await requireFrqPracticeEnabled();
 		if (gated) return gated;
-		const notFound = json({ error: 'Written-response attempt not found' }, { status: 404 });
+		const notFound = Response.json(
+			{ error: 'Written-response attempt not found' },
+			{ status: 404 }
+		);
 		const attemptId = event.params.id;
 		if (!attemptId) return notFound;
 		const attempt = await getFrqAttemptForUser(userId, attemptId);
 		if (!attempt) return notFound;
-		return json({ attempt });
+		return Response.json({ attempt });
 	},
 	{ logLabel: 'FRQ attempt lookup error', errorMessage: 'Failed to load written-response attempt' }
 );

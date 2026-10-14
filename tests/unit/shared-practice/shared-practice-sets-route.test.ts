@@ -7,9 +7,9 @@ const mocks = vi.hoisted(() => ({
 	loggerError: vi.fn()
 }));
 
-vi.mock('$lib/shared-practice/shared-sets.server', async () => {
-	const actual = await vi.importActual<typeof import('$lib/shared-practice/shared-sets.server')>(
-		'$lib/shared-practice/shared-sets.server'
+vi.mock('#lib/shared-practice/shared-sets.server.js', async () => {
+	const actual = await vi.importActual<typeof import('#lib/shared-practice/shared-sets.server.js')>(
+		'#lib/shared-practice/shared-sets.server.js'
 	);
 	return {
 		...actual,
@@ -17,19 +17,19 @@ vi.mock('$lib/shared-practice/shared-sets.server', async () => {
 	};
 });
 
-vi.mock('$lib/shared-practice/rate-limit.server', () => ({
+vi.mock('#lib/shared-practice/rate-limit.server.js', () => ({
 	limitSharedPracticeSetCreation: mocks.limitSharedPracticeSetCreation
 }));
 
-vi.mock('$lib/site-url', () => ({
+vi.mock('#lib/site-url.js', () => ({
 	getSiteUrl: mocks.getSiteUrl
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { error: mocks.loggerError, info: vi.fn(), warn: vi.fn(), debug: vi.fn() }
 }));
 
-import { SharedQuizValidationError } from '$lib/shared-practice/shared-sets.server';
+import { SharedQuizValidationError } from '#lib/shared-practice/shared-sets.server.js';
 import { POST } from '../../../src/routes/api/shared-practice-sets/+server';
 
 function post(body: unknown, userId?: string) {

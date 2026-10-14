@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import {
 		FieldGroup,
 		Field,
 		FieldLabel,
 		FieldDescription,
 		FieldSeparator
-	} from '$lib/components/ui/field/index.js';
+	} from '#lib/components/ui/field/index.js';
 	import { resolve } from '$app/paths';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { cn } from '$lib/utils.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { cn } from '#lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { goto } from '$app/navigation';
-	import { authClient } from '$lib/auth/client.js';
-	import { requestVerificationEmail } from '$lib/auth/request-verification-email.js';
-	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '$lib/auth/urls.js';
+	import { authClient } from '#lib/auth/client.js';
+	import { requestVerificationEmail } from '#lib/auth/request-verification-email.js';
+	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '#lib/auth/urls.js';
 	import { page } from '$app/state';
-	import GoogleLogo from '$lib/components/auth/google-logo.svelte';
-	import { captureUserLoggedIn } from '$lib/client/activation-analytics';
-	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
+	import GoogleLogo from '#lib/components/auth/google-logo.svelte';
+	import { captureUserLoggedIn } from '#lib/client/activation-analytics.js';
+	import { identifyPostHogUser } from '#lib/client/posthog-analytics.js';
 
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
 
@@ -63,8 +63,9 @@
 			}
 			captureUserLoggedIn('email');
 			// Dynamic /app/... return path from the invite (and other) login redirects.
+			// goto rejects paths that don't match a route, so fall back to the app home.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
-			goto(redirectPath);
+			goto(redirectPath).catch(() => goto(resolve('app')));
 		} catch {
 			errorMessage = 'Network error. Please try again.';
 		} finally {
@@ -99,7 +100,7 @@
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
 				callbackURL: googleCallback.toString(),
-				errorCallbackURL: authCallbackUrl('/login')
+				errorCallbackURL: authCallbackUrl('login')
 			});
 			if (error) {
 				const message = error.message ?? '';
@@ -170,7 +171,7 @@
 						<div class="flex items-center">
 							<FieldLabel for="password-{id}">Password</FieldLabel>
 							<a
-								href={resolve('/forgot-password')}
+								href={resolve('forgot-password')}
 								class="ms-auto text-sm underline-offset-4 hover:underline"
 							>
 								Forgot your password?
@@ -189,8 +190,10 @@
 							{loading ? 'Signing in...' : 'Login'}
 						</Button>
 						<FieldDescription class="text-center">
-							Don't have an account? <a
-								href={resolve(`/signup?redirect=${encodeURIComponent(redirectPath)}`)}
+							Don't have an account?
+
+							<a
+								href={resolve(`signup?redirect=${encodeURIComponent(redirectPath)}`)}
 								class="underline underline-offset-4">Sign up</a
 							>
 						</FieldDescription>
@@ -200,10 +203,14 @@
 		</Card.Content>
 	</Card.Root>
 	<FieldDescription class="px-6 text-center">
-		By clicking continue, you agree to our <a
-			href={resolve('/terms')}
-			class="underline underline-offset-4">Terms of Service</a
-		>
-		and <a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
+		By clicking continue, you agree to our
+
+		<a href={resolve('terms')} class="underline underline-offset-4">Terms of Service</a>
+
+		and
+
+		<a href={resolve('privacy')} class="underline underline-offset-4">Privacy Policy</a>
+
+		.
 	</FieldDescription>
 </div>

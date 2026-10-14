@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { cn } from '#lib/utils.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import type { ComponentProps, Snippet } from 'svelte';
 
 	type Props = Omit<ComponentProps<typeof DropdownMenu.Item>, 'children'> & {

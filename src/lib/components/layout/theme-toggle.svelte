@@ -4,10 +4,10 @@
 	import LaptopIcon from '@tabler/icons-svelte/icons/device-laptop';
 	import { onMount } from 'svelte';
 	import { userPrefersMode } from 'mode-watcher';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import { DEFAULT_THEME, themeController, type Theme } from '$lib/client/theme.svelte.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { DEFAULT_THEME, themeController, type Theme } from '#lib/client/theme.svelte.js';
 	import type { ClassValue } from 'svelte/elements';
 
 	let {

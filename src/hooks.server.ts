@@ -1,13 +1,12 @@
 import * as Sentry from '@sentry/sveltekit';
-import type { Handle, HandleServerError } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
-import { auth } from '$lib/auth/server';
-import { logger } from '$lib/server/logger';
-import { getAllowedOrigins } from '$lib/auth/trusted-origins.server';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { createPostHogProxyRequestInit } from '$lib/server/posthog-proxy';
-import { env } from '$env/dynamic/private';
-import { building, dev } from '$app/environment';
+import { sequence, type Handle, type HandleServerError } from '@sveltejs/kit/hooks';
+import { auth } from '#lib/auth/server.js';
+import { logger } from '#lib/server/logger.js';
+import { getAllowedOrigins } from '#lib/auth/trusted-origins.server.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
+import { createPostHogProxyRequestInit } from '#lib/server/posthog-proxy.js';
+import { FLAGS_SECRET } from '$app/env/private';
+import { building, dev } from '$app/env';
 import { createHandle } from 'flags/sveltekit';
 import {
 	stimulusQuestionsEnabled,
@@ -19,15 +18,15 @@ import {
 	superCoachEnabled,
 	superMemoryEnabled,
 	superFreeBetaEnabled
-} from '$lib/flags';
-import { isSuperStripeConfigured } from '$lib/super/billing.server';
-import { isAccountSurface, isAgeGateExempt } from '$lib/auth/account-surface.server';
-import { getAgeConfirmedAtForRequest } from '$lib/super/feature-access.server';
-import { limitApiRequests } from '$lib/server/api-rate-limit.server';
+} from '#lib/flags.js';
+import { isSuperStripeConfigured } from '#lib/billing/subscriptions.server.js';
+import { isAccountSurface, isAgeGateExempt } from '#lib/auth/account-surface.server.js';
+import { getAgeConfirmedAtForRequest } from '#lib/agent/access.server.js';
+import { limitApiRequests } from '#lib/server/api-rate-limit.server.js';
 import {
 	shouldSkipGlobalApiRateLimit,
 	shouldSkipSessionLookup
-} from '$lib/server/request-policy.server';
+} from '#lib/server/request-policy.server.js';
 
 // ── Security headers ────────────────────────────────────────
 const SECURITY_HEADERS: Record<string, string> = {
@@ -207,12 +206,16 @@ const appHandle: Handle = async ({ event, resolve }) => {
 				}
 			);
 		}
+
 		if (!(await isSuperCheckoutEnabled())) {
 			return new Response(
 				JSON.stringify({ error: 'New Super checkout is temporarily unavailable.' }),
 				{
 					status: 503,
-					headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+					headers: {
+						'Content-Type': 'application/json',
+						'Cache-Control': 'no-store'
+					}
 				}
 			);
 		}
@@ -286,10 +289,10 @@ const appHandle: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(
 	Sentry.sentryHandle(),
-	...(!building && env.FLAGS_SECRET
+	...(!building && FLAGS_SECRET
 		? [
 				createHandle({
-					secret: env.FLAGS_SECRET,
+					secret: FLAGS_SECRET,
 					flags: {
 						frqPracticeEnabled,
 						coachImagesEnabled,
@@ -307,13 +310,11 @@ export const handle = sequence(
 );
 
 export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
-	async ({ error, event, status, message }) => {
-		if (status === 404 && event.url.pathname === '/json/version') return;
+	async ({ kind, error, event }) => {
+		if (kind !== 'unknown') return;
 
 		logger.error('Unhandled server error', {
 			error,
-			status,
-			message,
 			method: event.request.method,
 			path: event.url.pathname
 		});
@@ -323,14 +324,9 @@ export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
 			event: 'server_error',
 			properties: {
 				error_type: error instanceof Error ? error.name : 'UnknownError',
-				status,
+				status: 500,
 				path: event.url.pathname
 			}
 		});
-
-		return {
-			message,
-			status
-		};
 	}
 );

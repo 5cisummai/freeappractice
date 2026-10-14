@@ -1,8 +1,8 @@
-import type { HistoryItem, HistorySummary, QuestionAttempt } from '$lib/users/types';
+import type { HistoryItem, HistorySummary, QuestionAttempt } from '#lib/users/types.js';
 import { sql, type SQL } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttempts, mcqAttempts, quizAttempts } from '$lib/server/neon/schema';
-import { FRQ_PASS_THRESHOLD } from '$lib/users/history-constants';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqAttempts, mcqAttempts, quizAttempts } from '#lib/server/neon/schema.js';
+import { FRQ_PASS_THRESHOLD } from '#lib/users/history-constants.js';
 
 type PracticeHistoryPageResult = {
 	items: HistoryItem[];

@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { questionQuality, qualityReviewJobItems } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { questionQuality, qualityReviewJobItems } from '#lib/server/neon/schema.js';
 
 const COSTED_ITEM_STATUSES = ['final', 'awaiting_human'] as const;
 

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { and, count, desc, eq, gt, gte, inArray, isNull, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { getCurrentMcqStreaksForUsers } from '$lib/users/streak.server';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { getCurrentMcqStreaksForUsers } from '#lib/users/streak.server.js';
 import {
 	authMembers,
 	authOrganizations,
@@ -10,7 +10,7 @@ import {
 	quizAttempts,
 	sharedPracticeSets,
 	userProgress
-} from '$lib/server/neon/schema';
+} from '#lib/server/neon/schema.js';
 import {
 	MAX_FREE_GROUP_ORGS,
 	OrganizationPermissionError,
@@ -25,7 +25,7 @@ import {
 	type OrganizationSharedSet,
 	type OrgType,
 	type UserOrganization
-} from '$lib/auth/organization-types';
+} from '#lib/auth/organization-types.js';
 
 export type OrganizationMember = {
 	memberId: string;

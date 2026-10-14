@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq } from 'drizzle-orm';
-import type { FrqGrade } from '$lib/question-bank/frq/types';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqAttempts } from '$lib/server/neon/schema';
+import type { FrqGrade } from '#lib/question-bank/frq/types.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqAttempts } from '#lib/server/neon/schema.js';
 
 export interface IFrqAttempt {
 	id: string;

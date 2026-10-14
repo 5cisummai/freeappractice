@@ -6,11 +6,11 @@ const mocks = vi.hoisted(() => ({
 	where: vi.fn()
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => ({ batch: mocks.batch, delete: mocks.delete })
 }));
 
-import { clearPracticeDataForUser } from '$lib/users/clear-practice-data.server';
+import { clearPracticeDataForUser } from '#lib/users/clear-practice-data.server.js';
 
 describe('clearPracticeDataForUser', () => {
 	beforeEach(() => {

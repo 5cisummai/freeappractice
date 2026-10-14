@@ -11,21 +11,21 @@ const { getQuestion, capturePathQuestionRequestMetric, limitQuestionPoolRequests
 	})
 );
 
-vi.mock('$lib/question-bank/mcq/bank.server', () => ({ mcqBank: { get: getQuestion } }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/question-bank/mcq/bank.server.js', () => ({ mcqBank: { get: getQuestion } }));
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
-vi.mock('$app/environment', () => ({ dev: true }));
-vi.mock('$lib/server/question-request-metrics', async () => {
-	const actual = await vi.importActual<typeof import('$lib/server/question-request-metrics')>(
-		'$lib/server/question-request-metrics'
+vi.mock('$app/env', () => ({ dev: true }));
+vi.mock('#lib/server/question-request-metrics.js', async () => {
+	const actual = await vi.importActual<typeof import('#lib/server/question-request-metrics.js')>(
+		'#lib/server/question-request-metrics.js'
 	);
 	return {
 		...actual,
 		capturePathQuestionRequestMetric
 	};
 });
-vi.mock('$lib/server/api-rate-limit.server', () => ({ limitQuestionPoolRequests }));
+vi.mock('#lib/server/api-rate-limit.server.js', () => ({ limitQuestionPoolRequests }));
 
 import { POST } from '../../../../src/routes/api/question/+server';
 

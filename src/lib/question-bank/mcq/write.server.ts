@@ -4,7 +4,7 @@ import {
 	createCanonicalMcqQuestion,
 	newPoolRandomKey,
 	type IQuestion
-} from '$lib/question-bank/mcq/repository.server';
+} from '#lib/question-bank/mcq/repository.server.js';
 import {
 	generateAPQuestion,
 	generateAPStimulusSet,
@@ -13,22 +13,22 @@ import {
 	type APQuestionData,
 	type GenerateResult,
 	type GenerateStimulusSetResult
-} from '$lib/question-bank/mcq/generation.server';
-import { validateExamfigDiagram } from '$lib/ai/examfig.server';
-import { logger } from '$lib/server/logger';
-import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
+} from '#lib/question-bank/mcq/generation.server.js';
+import { validateExamfigDiagram } from '#lib/diagrams/validation.server.js';
+import { logger } from '#lib/server/logger.js';
+import { getRecentTopics } from '#lib/question-bank/recent-topic.server.js';
 import {
 	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError
-} from '$lib/question-bank/util.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { resolveQuestionMainTopic } from '$lib/question-bank/main-topic';
+} from '#lib/question-bank/util.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 import {
 	getStimulusPolicy,
 	isStimulusPolicyEnabledForUnit
-} from '$lib/question-bank/mcq/stimulus-policy';
-import { isStimulusQuestionsEnabled } from '$lib/flags';
+} from '#lib/question-bank/mcq/stimulus-policy.js';
+import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 
 export class QuestionGenerationError extends Error {
 	constructor(message: string) {

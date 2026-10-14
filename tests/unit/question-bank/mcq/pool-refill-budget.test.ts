@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { poolGenerationBudgets, poolRefillStates } from '$lib/server/neon/schema';
+import { poolGenerationBudgets, poolRefillStates } from '#lib/server/neon/schema.js';
 
 const mocks = vi.hoisted(() => ({
 	db: { insert: vi.fn(), update: vi.fn(), select: vi.fn() },
@@ -8,8 +8,8 @@ const mocks = vi.hoisted(() => ({
 	budgetGenerations: 0
 }));
 
-vi.mock('$lib/server/neon/db', () => ({ getNeonDatabase: () => mocks.db }));
-vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({ getNeonDatabase: () => mocks.db }));
+vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({
 	countActivePoolRows: vi.fn(async () => 0),
 	getPoolRefillHealthCounts: vi.fn(async () => ({
 		emptyObserved: 0,
@@ -19,7 +19,7 @@ vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({
 		oldestRequestedAt: null
 	}))
 }));
-vi.mock('$lib/question-bank/pool-capacity.server', () => ({
+vi.mock('#lib/question-bank/pool-capacity.server.js', () => ({
 	writePoolBucketBelowTarget: vi.fn(
 		async (_bucket: unknown, _target: number, write: () => Promise<unknown>) => ({
 			status: 'written',
@@ -27,12 +27,12 @@ vi.mock('$lib/question-bank/pool-capacity.server', () => ({
 		})
 	)
 }));
-vi.mock('$lib/question-bank/mcq/write.server', () => ({ generateQuestionForPool: vi.fn() }));
-vi.mock('$lib/question-bank/frq/generation.server', () => ({ generateAndPersistFrq: vi.fn() }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/question-bank/mcq/write.server.js', () => ({ generateQuestionForPool: vi.fn() }));
+vi.mock('#lib/question-bank/frq/generation.server.js', () => ({ generateAndPersistFrq: vi.fn() }));
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
-vi.mock('$lib/server/question-request-metrics', () => ({
+vi.mock('#lib/server/question-request-metrics.js', () => ({
 	captureQuestionPoolHealthMetric: vi.fn()
 }));
 
@@ -41,9 +41,9 @@ import {
 	releaseDailyGenerationBudget,
 	reserveDailyGenerationBudget,
 	tryAcquireRefillLease
-} from '$lib/question-bank/pool-refill.server';
-import type { PoolRefillState } from '$lib/question-bank/pool-refill-types.server';
-import type { QuestionPoolConfig } from '$lib/question-bank/pool-constants';
+} from '#lib/question-bank/pool-refill.server.js';
+import type { PoolRefillState } from '#lib/question-bank/pool-refill-types.server.js';
+import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 function query(kind: string, table: unknown) {
 	const value: Record<string, any> = { kind, table };

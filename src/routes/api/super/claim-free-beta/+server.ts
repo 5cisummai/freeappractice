@@ -1,21 +1,23 @@
-import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { getPlanAccessForRequest } from '$lib/super/feature-access.server';
-import { claimSuperFreeBeta, SuperFreeBetaUnavailableError } from '$lib/super/profile.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { getPlanAccessForRequest } from '#lib/agent/access.server.js';
+import {
+	claimSuperFreeBeta,
+	SuperFreeBetaUnavailableError
+} from '#lib/agent/personalization/profile.server.js';
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {
 		try {
 			const claim = await claimSuperFreeBeta(userId);
 			const planAccess = await getPlanAccessForRequest(event.locals, userId);
-			return json({
+			return Response.json({
 				claimed: true,
 				claimedAt: claim.claimedAt,
 				planAccess
 			});
 		} catch (error) {
 			if (error instanceof SuperFreeBetaUnavailableError) {
-				return json({ error: error.message }, { status: 410 });
+				return Response.json({ error: error.message }, { status: 410 });
 			}
 			throw error;
 		}

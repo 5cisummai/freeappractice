@@ -5,7 +5,7 @@ import {
 	isResendWebhook,
 	shouldSkipGlobalApiRateLimit,
 	shouldSkipSessionLookup
-} from '$lib/server/request-policy.server';
+} from '#lib/server/request-policy.server.js';
 
 describe('request policy', () => {
 	it('treats anonymous MCQ fetch as one hot path', () => {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { cn } from '$lib/utils';
+	import { cn } from '#lib/utils.js';
 	import { getChainOfThoughtContext } from './chain-of-thought-context.svelte.js';
-	import { CollapsibleTrigger } from '$lib/components/ui/collapsible/index.js';
+	import { CollapsibleTrigger } from '#lib/components/ui/collapsible/index.js';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import type { Snippet } from 'svelte';
 

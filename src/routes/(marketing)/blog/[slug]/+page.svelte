@@ -1,11 +1,11 @@
 <script lang="ts">
 	import 'highlight.js/styles/github.min.css';
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
-	import BlogRelatedLinks from '$lib/components/blog/blog-related-links.svelte';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
+	import BlogRelatedLinks from '#lib/components/blog/blog-related-links.svelte';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { formatBlogDate } from '$lib/blog-display';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { formatBlogDate } from '#lib/blog-display.js';
 	import ArrowLeftIcon from '@tabler/icons-svelte/icons/arrow-left';
 
 	let { data }: { data: PageData } = $props();
@@ -29,7 +29,9 @@
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content={`https://freeappractice.org/blog/${data.post.slug}`} />
 	<meta name="twitter:title" content={data.post.title} />
+
 	<meta name="twitter:description" content={data.post.excerpt} />
+
 	<meta
 		name="twitter:image"
 		content={data.post.coverImage ? data.post.coverImage : 'https://freeappractice.org/logo.png'}
@@ -40,10 +42,10 @@
 	<main id="main-content" class="flex-1">
 		<div class="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8 lg:py-16">
 			<article class="w-full min-w-0">
-				<Button variant="ghost" href={resolve('/blog')} class="mb-8">
-					<ArrowLeftIcon class="size-4" />
-					All posts
-				</Button>
+				<Button variant="ghost" href={resolve('blog')} class="mb-8"
+					><ArrowLeftIcon class="size-4" />All posts</Button
+				>
+
 				{#if data.post.coverImage}
 					<img
 						src={data.post.coverImage}
@@ -70,7 +72,7 @@
 
 				<div class="mt-8 border-t border-border/70 pt-8">
 					<a
-						href={resolve('/blog')}
+						href={resolve('blog')}
 						class="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 					>
 						<svg
@@ -82,10 +84,9 @@
 							stroke-width="2"
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							aria-hidden="true"
+							aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg
 						>
-							<path d="m15 18-6-6 6-6" />
-						</svg>
+
 						Back to Blog
 					</a>
 				</div>

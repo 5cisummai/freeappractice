@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import QuestionCard from '$lib/components/questions/question-card.svelte';
-	import QuestionSelector from '$lib/components/questions/question-selector.svelte';
-	import type { AnswerResult, TutorMode } from '$lib/question-bank/mcq/types';
-	import type { FrqAttemptView } from '$lib/question-bank/frq/types';
-	import type { SharedQuizView } from '$lib/shared-practice/types';
-	import { captureGenerateClicked } from '$lib/client/activation-analytics';
-	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
-	import LazyComponent from '$lib/components/app/lazy-component.svelte';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import { Badge } from '$lib/components/ui/badge';
-	import { cn } from '$lib/utils.js';
-	import { unlimitedQuestionCardModel } from '$lib/question-bank/question-card-model';
+	import QuestionCard from '#lib/components/questions/question-card.svelte';
+	import QuestionSelector from '#lib/components/questions/question-selector.svelte';
+	import type { AnswerResult, TutorMode } from '#lib/question-bank/mcq/types.js';
+	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
+	import type { SharedQuizView } from '#lib/shared-practice/types.js';
+	import { captureGenerateClicked } from '#lib/client/activation-analytics.js';
+	import { createLazyComponentLoader } from '#lib/client/lazy-component.js';
+	import LazyComponent from '#lib/components/app/lazy-component.svelte';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { cn } from '#lib/utils.js';
+	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
 
 	export type PracticeMode = 'unlimited' | 'graded' | 'frq';
 	export type PracticeInitialState = {
@@ -93,10 +93,10 @@
 	let expandedSelectorOpen = $state(false);
 	let cardExpanded = $state(false);
 	const loadQuizSession = createLazyComponentLoader(
-		() => import('$lib/components/practice/quiz-session.svelte')
+		() => import('#lib/components/practice/quiz-session.svelte')
 	);
 	const loadFrqSession = createLazyComponentLoader(
-		() => import('$lib/components/practice/frq-session.svelte')
+		() => import('#lib/components/practice/frq-session.svelte')
 	);
 
 	const sharedQuiz = $derived(quiz.sharedQuiz ?? null);

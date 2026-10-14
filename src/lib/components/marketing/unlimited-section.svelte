@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { performanceBarClass, performanceTextClass } from '$lib/components/app/performance.js';
-	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
-	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
-	import { twAnimateInViewSubtle } from '$lib/tw-animate';
-	import { DEMO_TUTOR_QUESTION } from '$lib/tutor/demo-question';
+	import { performanceBarClass, performanceTextClass } from '#lib/components/app/performance.js';
+	import TutorWidget from '#lib/components/questions/tutor-widget.svelte';
+	import SectionIntro from '#lib/components/marketing/section-intro.svelte';
+	import { twAnimateInViewSubtle } from '#lib/tw-animate.js';
+	import { DEMO_TUTOR_QUESTION } from '#lib/tutor/demo-question.js';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import TargetIcon from '@tabler/icons-svelte/icons/target';
 	import TrendingUpIcon from '@tabler/icons-svelte/icons/trending-up';

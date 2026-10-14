@@ -107,22 +107,22 @@ The goal is straightforward: make AP prep feel faster, more personalized, and mo
 | `bun check`               | Type-check with `svelte-check`             |
 | `bun test:unit`           | Run Vitest unit tests                      |
 | `bun run db:apply`        | Apply committed Drizzle migrations to Neon |
-| `bun lint` / `bun format` | ESLint and Prettier                        |
+| `bun lint` / `bun format` | Oxlint, ESLint (Svelte), and Prettier      |
 
 ## Environment variables
 
 Copy `.env.example` to `.env`. Required for a working local setup:
 
-| Variable             | Purpose                                                                        |
-| -------------------- | ------------------------------------------------------------------------------ |
-| `DATABASE_URL`       | Neon PostgreSQL connection string used by Drizzle over HTTPS                   |
-| `BETTER_AUTH_SECRET` | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`) |
-| `BETTER_AUTH_URL`    | App base URL for auth callbacks (e.g. `http://localhost:5173`)                 |
-| `OPEN_AI_KEY`        | API key for the configured provider (any value works for local LM Studio)      |
-| `OPENAI_BASE_URL`    | OpenAI-compatible API base URL (defaults to `https://api.openai.com/v1`)       |
+| Variable              | Purpose                                                                          |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | Neon PostgreSQL connection string used by Drizzle over HTTPS                     |
+| `BETTER_AUTH_SECRET`  | Session signing secret (min 32 chars; generate with `openssl rand -base64 32`)   |
+| `BETTER_AUTH_URL`     | App base URL for auth callbacks (e.g. `http://localhost:5173`)                   |
+| `AI_GATEWAY_API_KEY`  | Vercel AI Gateway API key (or use `VERCEL_OIDC_TOKEN` on linked Vercel projects) |
+| `AI_GATEWAY_BASE_URL` | Optional; defaults to `https://ai-gateway.vercel.sh/v1`                          |
 
-Model choices for every AI use case are plain exported constants in
-`src/lib/ai/ai-models-config.ts`.
+Model choices are owned by their domains: agent, tutor, question generation,
+grading, memory, and quality review. SDK callers use provider/model identifiers directly.
 
 Commonly needed for full functionality:
 
@@ -141,7 +141,7 @@ Commonly needed for full functionality:
 
 Super is disabled until Stripe credentials and both price IDs are present. Configure `STRIPE_SECRET_KEY`,
 `STRIPE_WEBHOOK_SECRET`, `STRIPE_SUPER_MONTHLY_PRICE_ID`, `STRIPE_SUPER_ANNUAL_PRICE_ID`,
-`DATABASE_URL`, `OPEN_AI_KEY`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
+`DATABASE_URL`, `AI_GATEWAY_API_KEY` (or OIDC), `KV_REST_API_URL`, `KV_REST_API_TOKEN`, and
 `REDIS_IDENTIFIER_SECRET` in Vercel before enabling the Super Flags. Enable the pgvector
 extension and apply the Drizzle migrations to each Neon database before enabling memory.
 
@@ -153,10 +153,8 @@ to Better Auth's `/api/auth/stripe/webhook` route and enable at least `checkout.
 `invoice.finalization_failed`. Configure Stripe Tax registrations before enabling automatic tax. The app
 enables automatic tax and does not enable promotion codes.
 
-Tutor memory uses the Mem0 OSS SDK with OpenAI extraction/embeddings and an Upstash Vector index. The app
-keeps Development, Preview, and Production memories isolated inside the shared index with deployment-scoped
-namespaces and metadata. Connect the Upstash Vector integration to all three Vercel environments and pull the variables locally
-with `vercel env pull .env.development.local --environment=development` when setting up a new machine.
+Tutor memory uses the Mem0 OSS SDK with AI Gateway extraction/embeddings and Neon pgvector storage. The app
+keeps Development, Preview, and Production memories isolated with deployment-scoped table names and metadata.
 
 Upstash Redis is limited to fast, disposable control-plane data: rate limits, monthly AI-turn reservations,
 single-flight locks, idempotency keys, and 30-minute Coach approvals. Upstash Vector stores optional tutor
@@ -177,19 +175,10 @@ Each chat permits 50 images and each account 500; deleting chats frees storage.
 Chat/account deletion preserves attachment paths for retryable cleanup in the Super
 maintenance job. Failed, unattached uploads are eligible for cleanup after one hour.
 
-### Local AI with LM Studio
+### AI Gateway
 
-To run question generation and tutoring against a local model instead of OpenAI:
-
-1. Start LM Studio and load a model with the local server enabled (default `http://localhost:1234/v1`).
-2. Set in `.env`:
-
-   ```env
-   OPENAI_BASE_URL=http://localhost:1234/v1
-   OPEN_AI_KEY=lm-studio
-   ```
-
-   Set the model identifier shown in LM Studio in `src/lib/ai/ai-models-config.ts`.
+Model traffic goes through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway). Set
+`AI_GATEWAY_API_KEY` locally (or pull OIDC via `vercel env pull`). Model slugs live alongside each domain’s implementation as `provider/model` strings (for example `openai/gpt-6-luna`).
 
 ## API overview
 
@@ -242,7 +231,7 @@ The in-app bug report form creates GitHub Issues in this repository via the GitH
 Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
-2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `OPEN_AI_KEY`). Runtime only — the Vercel build does not need database access.
+2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `AI_GATEWAY_API_KEY` or rely on Vercel OIDC). Runtime only — the Vercel build does not need database access.
 3. Add `DATABASE_URL` (and `STAGING_DATABASE_URL` if you use the `staging` branch) as GitHub Actions secrets. Pushes to `main` / `staging` run `bun run db:apply` in CI before Vercel bundles the app.
 4. Vercel runs `bun run build` (`vite build`) via the default SvelteKit integration.
 

@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import NavMain from '$lib/components/layout/nav-main.svelte';
-	import NavUser from '$lib/components/layout/nav-user.svelte';
-	import OrgSwitcher from '$lib/components/layout/org-switcher.svelte';
-	import FeedbackDialog from '$lib/components/layout/feedback-dialog.svelte';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import NavMain from '#lib/components/layout/nav-main.svelte';
+	import NavUser from '#lib/components/layout/nav-user.svelte';
+	import OrgSwitcher from '#lib/components/layout/org-switcher.svelte';
+	import FeedbackDialog from '#lib/components/layout/feedback-dialog.svelte';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 
 	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
 	import UsersGroupIcon from '@tabler/icons-svelte/icons/users-group';
 	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
-	import type { UserOrganization } from '$lib/auth/organization-types';
+	import type { UserOrganization } from '#lib/auth/organization-types.js';
 
 	const COMMUNITY_DISCORD_URL = 'https://discord.gg/6PpCq8P57';
 
@@ -33,7 +33,7 @@
 	const showMembers = $derived(activeOrganization?.orgType === 'group');
 
 	function isSettingsActive(): boolean {
-		const resolved = resolve('/app/settings');
+		const resolved = resolve('app/settings');
 		return page.url.pathname === resolved || page.url.pathname.startsWith(`${resolved}/`);
 	}
 </script>
@@ -44,14 +44,16 @@
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton size="lg" tooltipContent="Free AP Practice">
 					{#snippet child({ props })}
-						<a href={resolve('/app')} {...props}>
+						<a href={resolve('app')} {...props}>
 							<img src="/logo.png" alt="Logo" class="size-7 rounded-sm" />
+
 							<span class="font-semibold tracking-tight">Free AP Practice</span>
 						</a>
 					{/snippet}
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
+
 		<OrgSwitcher {organizations} {activeOrganization} {ownedGroupCount} />
 	</Sidebar.Header>
 
@@ -69,7 +71,7 @@
 				>
 					{#snippet child({ props })}
 						<a
-							href={resolve('/app/settings')}
+							href={resolve('app/settings')}
 							aria-current={isSettingsActive() ? 'page' : undefined}
 							{...props}
 						>

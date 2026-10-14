@@ -1,6 +1,6 @@
 <script lang="ts">
 	import GraduationCapIcon from '@tabler/icons-svelte/icons/school-filled';
-	import Signature from '$lib/components/marketing/signature.svelte';
+	import Signature from '#lib/components/marketing/signature.svelte';
 
 	const socialLinks = [
 		{

@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 
 	let {
 		freeAction,
@@ -52,9 +52,9 @@
 		{#if freeAction}
 			{@render freeAction()}
 		{:else}
-			<Button href={resolve('/app/practice')} variant="outline" class="mt-8 w-full">
-				Keep practicing free
-			</Button>
+			<Button href={resolve('app/practice')} variant="outline" class="mt-8 w-full"
+				>Keep practicing free</Button
+			>
 		{/if}
 	</article>
 
@@ -89,9 +89,9 @@
 		{#if superAction}
 			{@render superAction()}
 		{:else}
-			<Button href={resolve('/app/super/setup')} class="mt-8 w-full">
-				Choose Super <ArrowRightIcon class="size-4" />
-			</Button>
+			<Button href={resolve('app/super/setup')} class="mt-8 w-full"
+				>Choose Super <ArrowRightIcon class="size-4" /></Button
+			>
 		{/if}
 	</article>
 </div>

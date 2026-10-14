@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { privacy } from '#lib/client/privacy.svelte.js';
+	import { Button } from '#lib/components/ui/button/index.js';
 </script>
 
 {#if privacy.initialized && privacy.analyticsConsent === null}
@@ -16,7 +16,10 @@
 		</p>
 		<p id="analytics-consent-desc" class="mt-1.5 text-sm text-muted-foreground">
 			Optional analytics help improve the product. Change anytime in Settings.
-			<a href={resolve('/privacy')} class="underline underline-offset-4">Privacy Policy</a>.
+
+			<a href={resolve('privacy')} class="underline underline-offset-4">Privacy Policy</a>
+
+			.
 		</p>
 		<div class="mt-4 flex flex-wrap gap-2">
 			<Button

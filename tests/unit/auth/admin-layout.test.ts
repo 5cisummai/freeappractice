@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const isAdminUser = vi.hoisted(() => vi.fn());
 
-vi.mock('$lib/auth/admin.server', () => ({ isAdminUser }));
+vi.mock('#lib/auth/admin.server.js', () => ({ isAdminUser }));
 
 import { load } from '../../../src/routes/app/admin/+layout.server';
 

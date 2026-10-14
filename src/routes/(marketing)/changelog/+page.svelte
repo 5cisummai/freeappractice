@@ -1,9 +1,21 @@
 <script lang="ts">
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
-	import BackToHome from '$lib/components/layout/back-to-home.svelte';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
+	import BackToHome from '#lib/components/layout/back-to-home.svelte';
 	import { resolve } from '$app/paths';
 
 	const changelog = [
+		{
+			version: '1.9.7',
+			date: 'October 12, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Privacy Policy explains that optional analytics consent also controls Coach usage attribution through Vercel AI Gateway'
+					]
+				}
+			]
+		},
 		{
 			version: '1.9.6',
 			date: 'October 10, 2026',
@@ -706,7 +718,7 @@
 					title: 'Reliability',
 					items: [
 						'Hardened Super lifecycle handling, memory retention cleanup, and personalization controls',
-						'Added stronger rate limiting and per-turn reservation for Super AI requests'
+						'Added stronger rate limiting and per-turn usage for Super AI requests'
 					]
 				}
 			]
@@ -1103,14 +1115,8 @@
 			version: '1.3.5',
 			date: 'April 24, 2026',
 			sections: [
-				{
-					title: 'New Features',
-					items: ['Added AP Spanish support']
-				},
-				{
-					title: 'Fixes',
-					items: ['Bug fixes']
-				},
+				{ title: 'New Features', items: ['Added AP Spanish support'] },
+				{ title: 'Fixes', items: ['Bug fixes'] },
 				{
 					title: 'Security',
 					items: [
@@ -1556,7 +1562,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 10, 2026"
+			meta="Last Updated: October 12, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
@@ -1596,16 +1602,16 @@
 			</p>
 			<ul class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
 				<li>
-					<a href={resolve('/subjects')} class="underline-offset-2 hover:underline">Subjects</a>
+					<a href={resolve('subjects')} class="underline-offset-2 hover:underline">Subjects</a>
 				</li>
 				<li>
-					<a href={resolve('/summer')} class="underline-offset-2 hover:underline">Summer guide</a>
+					<a href={resolve('summer')} class="underline-offset-2 hover:underline">Summer guide</a>
 				</li>
 				<li>
-					<a href={resolve('/stats')} class="underline-offset-2 hover:underline">Stats</a>
+					<a href={resolve('stats')} class="underline-offset-2 hover:underline">Stats</a>
 				</li>
 				<li>
-					<a href={resolve('/blog')} class="underline-offset-2 hover:underline">Blog</a>
+					<a href={resolve('blog')} class="underline-offset-2 hover:underline">Blog</a>
 				</li>
 			</ul>
 		</section>

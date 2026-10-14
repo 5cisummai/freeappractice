@@ -15,22 +15,28 @@ const {
 	requestPoolRefill: vi.fn(),
 	resolveQuizUnits: vi.fn(),
 	validateQuestionRequest: vi.fn(),
-	QuizPoolWarmingError: class extends Error {}
+	QuizPoolWarmingError: class extends Error {
+		availableCount: number;
+		constructor(message?: string, availableCount = 0) {
+			super(message);
+			this.availableCount = availableCount;
+		}
+	}
 }));
 
-vi.mock('$lib/catalog/question-request.server', () => ({ validateQuestionRequest }));
-vi.mock('$lib/server/api-rate-limit.server', () => ({ limitQuestionPoolRequests }));
-vi.mock('$lib/flags', () => ({ isStimulusQuestionsEnabled }));
-vi.mock('$lib/question-bank/mcq/quiz-assembler.server', () => ({
+vi.mock('#lib/question-bank/request.server.js', () => ({ validateQuestionRequest }));
+vi.mock('#lib/server/api-rate-limit.server.js', () => ({ limitQuestionPoolRequests }));
+vi.mock('#lib/flags.js', () => ({ isStimulusQuestionsEnabled }));
+vi.mock('#lib/question-bank/mcq/quiz-assembler.server.js', () => ({
 	assembleMcqQuiz,
 	QuizPoolWarmingError,
 	resolveQuizUnits
 }));
-vi.mock('$lib/question-bank/pool-refill-queue.server', () => ({ requestPoolRefill }));
-vi.mock('$lib/question-bank/mcq/public-payload.server', () => ({
+vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({ requestPoolRefill }));
+vi.mock('#lib/question-bank/mcq/public-payload.server.js', () => ({
 	generatedQuestionToMcqAnswerBody: vi.fn()
 }));
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
@@ -55,7 +61,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 	});
 
 	it('does not enqueue a refill for an anonymous pool miss', async () => {
-		assembleMcqQuiz.mockRejectedValueOnce(new QuizPoolWarmingError('warming'));
+		assembleMcqQuiz.mockRejectedValueOnce(new QuizPoolWarmingError('warming', 0));
 
 		const response = await POST({
 			request: new Request('http://localhost/api/question/quiz', {
@@ -72,7 +78,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 	});
 
 	it('allows an authenticated pool miss to enqueue a refill', async () => {
-		assembleMcqQuiz.mockRejectedValueOnce(new QuizPoolWarmingError('warming'));
+		assembleMcqQuiz.mockRejectedValueOnce(new QuizPoolWarmingError('warming', 0));
 		requestPoolRefill.mockResolvedValue(undefined);
 
 		const response = await POST({
@@ -91,5 +97,31 @@ describe('POST /api/question/quiz refill authorization', () => {
 			unit: 'Unit 1'
 		});
 		expect((await response.json()).refillRequested).toBe(true);
+	});
+
+	it('returns 400 INSUFFICIENT_QUESTIONS when the pool has some but not enough', async () => {
+		assembleMcqQuiz.mockRejectedValueOnce(
+			new QuizPoolWarmingError(
+				'Not enough active questions are available for a 40-question quiz. Maximum available: 12.',
+				12
+			)
+		);
+
+		const response = await POST({
+			request: new Request('http://localhost/api/question/quiz', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ course: 'AP Biology', unit: 'Unit 1', count: 40 })
+			}),
+			locals: { userId: undefined }
+		} as Parameters<typeof POST>[0]);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toMatchObject({
+			code: 'INSUFFICIENT_QUESTIONS',
+			availableCount: 12,
+			refillRequested: false
+		});
+		expect(response.headers.get('Retry-After')).toBeNull();
 	});
 });

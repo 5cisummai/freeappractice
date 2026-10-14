@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
-	import HalftoneBackground from '$lib/components/marketing/halftone-background.svelte';
-	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { HERO_BADGE_LINK_CLASS } from '$lib/components/marketing/hero-badge.js';
+	import HalftoneBackground from '#lib/components/marketing/halftone-background.svelte';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import { HERO_BADGE_LINK_CLASS } from '#lib/components/marketing/hero-badge.js';
 	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
 
 	let { children }: { children?: Snippet } = $props();
@@ -16,6 +16,7 @@
 	<div class="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
 		<HalftoneBackground />
 	</div>
+
 	<div
 		class="pointer-events-none absolute inset-0 z-1 bg-linear-to-b from-background/65 via-background/25 to-background/15"
 		aria-hidden="true"
@@ -23,7 +24,7 @@
 
 	<div class="relative z-10 flex w-full max-w-5xl flex-col items-center">
 		<div class="flex max-w-3xl flex-col items-center space-y-6 text-center">
-			<Badge href={`${resolve('/signup')}?sims=1`} variant="outline" class={HERO_BADGE_LINK_CLASS}>
+			<Badge href={`${resolve('signup')}?sims=1`} variant="outline" class={HERO_BADGE_LINK_CLASS}>
 				Learn with Physics and Math Sims
 				<ChevronRightIcon class="size-4" />
 			</Badge>
@@ -43,7 +44,7 @@
 							stroke="currentColor"
 							stroke-width="2.6"
 							stroke-linecap="round"
-						/>
+						></path>
 					</svg>
 				</span>
 				Two Clicks. No Signup.

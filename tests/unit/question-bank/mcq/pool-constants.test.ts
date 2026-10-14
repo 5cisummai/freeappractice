@@ -10,7 +10,7 @@ import {
 	preferredMcqTarget,
 	resolveMcqTarget,
 	type QuestionPoolConfig
-} from '$lib/question-bank/pool-constants';
+} from '#lib/question-bank/pool-constants.js';
 
 describe('question pool constants', () => {
 	it('loads JSON defaults', () => {

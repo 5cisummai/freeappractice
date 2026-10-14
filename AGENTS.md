@@ -6,7 +6,7 @@ Read this before changing anything. These rules override vague defaults.
 
 ## What this project is
 
-- **Stack**: TypeScript, Bun, SvelteKit
+- **Stack**: TypeScript, Bun, SvelteKit **V3**
 - **Tooling**: Prettier, ESLint, Tailwind CSS, Vercel adapter, MCP
 - **Product**: A free AP exam-practice app with MCQ/FRQ practice, progress and history, Coach, tutoring, study plans, and optional Super features
 
@@ -14,18 +14,18 @@ Treat this as a focused product surface, not a playground for framework experime
 
 ## Repository map
 
-| Area                                             | Primary ownership                                                          |
-| ------------------------------------------------ | -------------------------------------------------------------------------- |
-| `src/routes`                                     | SvelteKit pages, layouts, and thin HTTP boundaries                         |
-| `src/lib/question-bank`                          | Canonical question serving, generation, bank metadata, quality, and refill |
-| `src/lib/grading/frq`                            | FRQ attempt persistence and grading workflows                              |
-| `src/lib/users`, `src/lib/auth`                  | Accounts, attempts, progress, history, and bookmarks                       |
-| `src/lib/super`, `src/lib/tutor`, `src/lib/mem0` | Coach, tutor personalization, study plans, billing, and memory             |
-| `src/lib/question-bank/quality`, `src/lib/admin` | Review jobs and operational dashboards                                     |
-| `src/lib/server/neon`                            | Drizzle schema and the Neon database client                                |
-| `scripts`                                        | Operations and database maintenance tooling                                |
+| Area                                                | Primary ownership                                                          |
+| --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `src/routes`                                        | SvelteKit pages, layouts, and thin HTTP boundaries                         |
+| `src/lib/question-bank`                             | Canonical question serving, generation, bank metadata, quality, and refill |
+| `src/lib/grading/frq`                               | FRQ attempt persistence and grading workflows                              |
+| `src/lib/users`, `src/lib/auth`                     | Accounts, attempts, progress, history, and bookmarks                       |
+| `src/lib/agent`, `src/lib/tutor`, `src/lib/billing` | Coach agent, standard Tutor, study plans, learning memory, and billing     |
+| `src/lib/question-bank/quality`, `src/lib/admin`    | Review jobs and operational dashboards                                     |
+| `src/lib/server/neon`                               | Drizzle schema and the Neon database client                                |
+| `scripts`                                           | Operations and database maintenance tooling                                |
 
-Neon PostgreSQL is the only application database. Domain functions call Drizzle directly; there is no compatibility model or MongoDB runtime dependency.
+Neon PostgreSQL is the only application database. Domain functions call Drizzle directly
 
 ## Drizzle migrations
 
@@ -106,10 +106,10 @@ Pick models by host and task weight.
 
 ### Codex
 
-| Task weight | Model                  |
-| ----------- | ---------------------- |
-| Harder      | 5.6 Luna, xhigh effort |
-| Easier      | high effort            |
+| Task weight | Model                     |
+| ----------- | ------------------------- |
+| Harder      | 6.1 Sol, low/light effort |
+| Easier      | 6 Luna, high effort       |
 
 ---
 

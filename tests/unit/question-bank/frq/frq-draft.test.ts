@@ -6,8 +6,8 @@ import {
 	parseFrqQuestionDraft,
 	serializeFrqLatestDraft,
 	serializeFrqQuestionDraft
-} from '$lib/question-bank/frq/draft.client';
-import type { PublicFrqQuestion } from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/draft.client.js';
+import type { PublicFrqQuestion } from '#lib/question-bank/frq/types.js';
 
 const now = Date.parse('2026-08-09T12:00:00.000Z');
 const question: PublicFrqQuestion = {

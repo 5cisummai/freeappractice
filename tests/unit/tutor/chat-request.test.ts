@@ -3,7 +3,7 @@ import {
 	MAX_TUTOR_CHAT_HISTORY_MESSAGES,
 	MAX_TUTOR_CHAT_PROMPT_CHARACTERS,
 	tutorChatRequestSchema
-} from '$lib/tutor/chat-request';
+} from '#lib/tutor/chat-request.js';
 
 const validRequest = {
 	questionId: 'c8f3048f-1681-47f2-b1db-e912655275d0',

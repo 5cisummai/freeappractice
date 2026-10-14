@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import type { BugReportContext } from '$lib/question-bank/mcq/types.js';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import { NativeSelect } from '$lib/components/ui/native-select/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import type { BugReportContext } from '#lib/question-bank/mcq/types.js';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { NativeSelect } from '#lib/components/ui/native-select/index.js';
+	import { Textarea } from '#lib/components/ui/textarea/index.js';
 	import {
 		bugReportSchema,
 		type BugReportPayload,
 		type BugReportSeverity
-	} from '$lib/schemas/bug-report';
+	} from '#lib/schemas/bug-report.js';
 
 	type BugReportForm = {
 		title: string;

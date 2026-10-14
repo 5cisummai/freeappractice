@@ -2,21 +2,22 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import PublicShell from '$lib/components/layout/public-shell.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
-	import LazyComponent from '$lib/components/app/lazy-component.svelte';
+	import PublicShell from '#lib/components/layout/public-shell.svelte';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { createLazyComponentLoader } from '#lib/client/lazy-component.js';
+	import LazyComponent from '#lib/components/app/lazy-component.svelte';
 
 	let { data } = $props();
 
 	const startHref = $derived(
 		data.isAuthenticated
-			? `${resolve('/app/practice')}?shared=${encodeURIComponent(data.sharedQuiz?.slug ?? '')}`
+			? `${resolve('app/practice')}?shared=${encodeURIComponent(data.sharedQuiz?.slug ?? '')}`
 			: `${page.url.pathname}?start=1`
 	);
+
 	const loadPracticeRunner = createLazyComponentLoader(
-		() => import('$lib/components/practice/practice-shell.svelte')
+		() => import('#lib/components/practice/practice-shell.svelte')
 	);
 </script>
 

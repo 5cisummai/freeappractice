@@ -1,6 +1,6 @@
 <script lang="ts">
-	import TutorWidget from '$lib/components/questions/tutor-widget.svelte';
-	import type { TutorMode } from '$lib/question-bank/mcq/types.js';
+	import TutorWidget from '#lib/components/questions/tutor-widget.svelte';
+	import type { TutorMode } from '#lib/question-bank/mcq/types.js';
 
 	type QuestionTutorProps = {
 		tutorMode?: TutorMode;

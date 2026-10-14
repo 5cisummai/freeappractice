@@ -1,5 +1,5 @@
-import { matchesPublicMarketingPath } from '$lib/routes/public-marketing';
-import { isEmailDeliveryId } from '$lib/auth/email-delivery';
+import { matchesPublicMarketingPath } from '#lib/routes/public-marketing.js';
+import { isEmailDeliveryId } from '#lib/auth/email-delivery.js';
 
 const RESEND_WEBHOOK_PATH = '/api/webhooks/resend';
 const EMAIL_DELIVERY_STATUS_PREFIX = '/api/email-delivery/';

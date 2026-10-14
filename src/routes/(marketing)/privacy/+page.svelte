@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PublicPageHero from '$lib/components/marketing/public-page-hero.svelte';
+	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
 	import { resolve } from '$app/paths';
 </script>
 
@@ -25,7 +25,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Privacy Policy" meta="Last Updated: October 11, 2026" />
+		<PublicPageHero title="Privacy Policy" meta="Last Updated: October 12, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-8 text-base leading-7">
 			<section>
@@ -46,8 +46,8 @@
 					<li>
 						<strong>Account and sign-in data:</strong> name, email address, password hash, account timestamps,
 						and identifiers supplied through Google sign-in. OAuth tokens are stored by the authentication
-						system in encrypted form when needed for account linking. Session records may include IP
-						address and user agent.
+						system in encrypted form when needed for account linking. Session records may include IP address
+						and user agent.
 					</li>
 					<li>
 						<strong>Practice data:</strong> AP class and unit selections, answers, correctness, timing,
@@ -113,18 +113,20 @@
 					<li>
 						Usage information such as page visits, feature interactions, and authentication state
 					</li>
+
 					<li>
 						Security, reliability, performance, and error information collected through Vercel,
 						Sentry, and application logs
 					</li>
 					<li>
-						<strong>When optional analytics are enabled:</strong> product analytics events, feature usage,
-						a pseudonymous account identifier after sign-in, client-side errors, and masked session-replay
-						data collected through PostHog
+						<strong>When optional analytics are enabled:</strong>
+						product analytics events, feature usage, a pseudonymous account identifier after sign-in,
+						client-side errors, and masked session-replay data collected through PostHog
 					</li>
 					<li>
-						Aggregate page-view and performance signals from Vercel Analytics and Speed Insights, and
-						browser analytics beacons from Cloudflare Web Analytics when that integration is enabled
+						Aggregate page-view and performance signals from Vercel Analytics and Speed Insights,
+						and browser analytics beacons from Cloudflare Web Analytics when that integration is
+						enabled
 					</li>
 				</ul>
 				<h3 class="mt-4 text-lg font-medium">2.3 Information Stored Locally in Your Browser</h3>
@@ -223,18 +225,28 @@
 				</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
 					<li>
+						<strong>Vercel AI Gateway (opt-in user attribution):</strong> when you accept optional analytics,
+						we attach your internal account identifier and a Coach feature tag to Coach model requests
+						so we can analyze per-account request counts, token usage, and AI costs to manage costs and
+						improve the product. These reporting fields do not include your name, email address, or conversation
+						text. The identifier can be linked to your account and is not anonymous. Without consent,
+						we omit these reporting fields; ordinary Gateway processing, usage measurement, and operational
+						logs still apply. Withdrawing consent stops attribution on future requests from that browser
+						and does not erase prior reports.
+					</li>
+					<li>
 						<strong>Vercel Analytics and Speed Insights:</strong> always-on, cookieless page views and
 						performance-related signals
 					</li>
 					<li>
-						<strong>Cloudflare Web Analytics:</strong> aggregate browser analytics beacons when that
-						integration is enabled in production
+						<strong>Cloudflare Web Analytics:</strong> aggregate browser analytics beacons when that integration
+						is enabled in production
 					</li>
 					<li>
 						<strong>PostHog (opt-in):</strong> product analytics, feature usage, masked session replay,
 						client-side error tracking, and a pseudonymous account identifier after sign-in. Detailed
-						events are sent through a first-party proxy host; rejected consent still permits limited
-						cookieless page-view measurement
+						events are sent through a first-party proxy host; rejected consent still permits limited cookieless
+						page-view measurement
 					</li>
 					<li>
 						<strong>Sentry:</strong> production error and performance monitoring, which may receive error,
@@ -273,21 +285,34 @@
 						<strong>PostHog:</strong> optional product analytics, error tracking, and session replay
 					</li>
 					<li>
-						<strong>Vercel:</strong> hosting, deployment infrastructure, cookieless analytics, private Blob
-						storage for Coach image attachments, and related infrastructure
+						<strong>Vercel:</strong> hosting, deployment infrastructure, cookieless analytics, private
+						Blob storage for Coach image attachments, AI Gateway request processing and usage reporting,
+						and related infrastructure
 					</li>
 					<li>
-						<strong>Cloudflare:</strong> Web Analytics beacons when enabled, and static-asset delivery when
-						a Cloudflare asset host is used
+						<strong>Cloudflare:</strong> Web Analytics beacons when enabled, and static-asset delivery
+						when a Cloudflare asset host is used
 					</li>
-					<li><strong>Sentry:</strong> production error and performance monitoring</li>
+
 					<li>
-						<strong>Stripe:</strong> payment processing, tax calculation, and subscription management
+						<strong>Sentry:</strong>
+						production error and performance monitoring
 					</li>
-					<li><strong>Mem0:</strong> optional pseudonymous tutor-memory storage</li>
+
 					<li>
-						<strong>Upstash:</strong> short-lived rate-limit, usage, approval, and request-control data, and
-						vector storage used for optional tutor memory
+						<strong>Stripe:</strong>
+						payment processing, tax calculation, and subscription management
+					</li>
+
+					<li>
+						<strong>Mem0:</strong>
+						optional pseudonymous tutor-memory storage
+					</li>
+
+					<li>
+						<strong>Upstash:</strong>
+						short-lived rate-limit, usage, approval, and request-control data, and vector storage used
+						for optional tutor memory
 					</li>
 				</ul>
 				<p class="mt-2">
@@ -312,17 +337,19 @@
 						Durable Super conversation messages and Coach audit records are retained while needed
 						for Super continuity and are removed with the account.
 					</li>
+
 					<li>
 						Tutor memory is scheduled for deletion after up to 90 days when Super access ends.
 					</li>
+
 					<li>
 						Rate limits, usage counters, locks, idempotency keys, and other Redis controls are
 						short-lived and expire automatically.
 					</li>
 					<li>
-						Server logs, monitoring records, emails, billing records, backups, and bug reports
-						follow the retention practices of the relevant operator or provider; we do not currently
-						publish one fixed period for all of them.
+						Server logs, AI Gateway usage reports, monitoring records, emails, billing records,
+						backups, and bug reports follow the retention practices of the relevant operator or
+						provider; we do not currently publish one fixed period for all of them.
 					</li>
 				</ul>
 				<p class="mt-2">
@@ -344,10 +371,10 @@
 				<p>
 					Depending on your location, you may have rights to access, correct, delete, or receive a
 					copy of personal information, and to object to or limit certain processing. You can change
-					optional PostHog consent in Settings, disable tutor memory, delete memories, clear
-					practice data, or request account deletion. Contact us to exercise a right or ask for
-					help; we may need to verify the request and may retain information where law or security
-					requires it.
+					optional analytics consent in Settings, which also controls Coach user attribution in AI
+					Gateway for that browser, disable tutor memory, delete memories, clear practice data, or
+					request account deletion. Contact us to exercise a right or ask for help; we may need to
+					verify the request and may retain information where law or security requires it.
 				</p>
 			</section>
 
@@ -394,7 +421,10 @@
 				</p>
 				<p class="mt-4">
 					See also our
-					<a href={resolve('/terms')} class="underline underline-offset-4">Terms of Service</a>.
+
+					<a href={resolve('terms')} class="underline underline-offset-4">Terms of Service</a>
+
+					.
 				</p>
 			</section>
 		</div>

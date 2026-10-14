@@ -1,6 +1,6 @@
-import { json, type RequestEvent, type RequestHandler } from '@sveltejs/kit';
-import { auth } from '$lib/auth/server';
-import { logger } from '$lib/server/logger';
+import { type RequestEvent, type RequestHandler } from '@sveltejs/kit';
+import { auth } from '#lib/auth/server.js';
+import { logger } from '#lib/server/logger.js';
 
 type AuthedHandler = (event: RequestEvent, userId: string) => Promise<Response>;
 
@@ -46,7 +46,7 @@ export function withAuthedHandler(
 		} catch (err) {
 			if (err instanceof Response) return err;
 			logger.error(options.logLabel, { error: err });
-			return json({ error: options.errorMessage }, { status: 500 });
+			return Response.json({ error: options.errorMessage }, { status: 500 });
 		}
 	};
 }

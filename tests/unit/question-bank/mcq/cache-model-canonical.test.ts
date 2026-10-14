@@ -7,17 +7,17 @@ const mocks = vi.hoisted(() => ({
 	}
 }));
 
-vi.mock('$lib/server/neon/db', () => ({
+vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: () => mocks.database
 }));
 
-vi.mock('$lib/server/neon/schema', () => ({
+vi.mock('#lib/server/neon/schema.js', () => ({
 	mcqQuestions: { name: 'mcqQuestions' },
 	questionRecentTopics: { name: 'questionRecentTopics' },
 	questionRegistry: { questionId: 'questionRegistry.questionId', name: 'questionRegistry' }
 }));
 
-import { createCanonicalMcqQuestion } from '$lib/question-bank/mcq/repository.server';
+import { createCanonicalMcqQuestion } from '#lib/question-bank/mcq/repository.server.js';
 
 const sampleQuestion = {
 	questionId: 'mcq-1',

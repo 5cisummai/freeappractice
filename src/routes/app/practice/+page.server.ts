@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
-import { isFrqPracticeEnabled } from '$lib/flags';
-import { getFrqCourseNames } from '$lib/question-bank/frq/profiles.server';
-import { resolveSharedQuiz } from '$lib/shared-practice/shared-sets.server';
+import { isFrqPracticeEnabled } from '#lib/flags.js';
+import { getFrqCourseNames } from '#lib/question-bank/frq/profiles.server.js';
+import { resolveSharedQuiz } from '#lib/shared-practice/shared-sets.server.js';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const sharedSlug = url.searchParams.get('shared')?.trim() ?? '';

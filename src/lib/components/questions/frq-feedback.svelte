@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index.js';
-	import type { FrqGrade } from '$lib/question-bank/frq/types';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import type { FrqGrade } from '#lib/question-bank/frq/types.js';
 
 	type Props = {
 		grade: FrqGrade;

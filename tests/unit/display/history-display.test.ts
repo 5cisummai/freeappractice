@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTimeTaken } from '$lib/history-display';
+import { formatTimeTaken } from '#lib/history-display.js';
 
 describe('formatTimeTaken', () => {
 	it('formats seconds and minutes', () => {

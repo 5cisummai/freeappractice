@@ -31,7 +31,7 @@ The report intentionally omits unit descriptions, topic lists, and focus keyword
 | `src/lib/question-bank/frq/types.ts`                                               | FRQ schema version, materials/sections/rubric structure, limits, and validation rules.                           |
 | `src/lib/question-bank/frq/profiles.server.ts`                                     | The three currently enabled app FRQ profiles and explicit disabled status for the other courses.                 |
 | `src/lib/server/neon/schema/content.ts`                                            | Neon tables, JSONB payload locations, and the distinction between content rows and this static catalog artifact. |
-| `src/lib/ap-knowledge/catalog.ts`                                                  | Explicit alignment records for AP Physics 2, AP Statistics, and AP Spanish Language catalog overrides.           |
+| `src/lib/catalog/sources.ts`                                                       | Explicit alignment records for AP Physics 2, AP Statistics, and AP Spanish Language catalog overrides.           |
 
 ## Cross-course official exam rules
 
@@ -88,7 +88,7 @@ Official framework labels: Unit 1: Chemistry of Life; Unit 2: Cells; Unit 3: Cel
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: concept explanation; visual representations; questions and methods; representing and describing data; statistical tests and data analysis; argumentation.
 Official sources: [AP Biology course page](https://apcentral.collegeboard.org/courses/ap-biology); [AP Biology exam page](https://apcentral.collegeboard.org/courses/ap-biology/exam); [AP Biology Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-biology-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -214,7 +214,7 @@ Official framework labels: Unit 1: Atomic Structure and Properties; Unit 2: Comp
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: models and representations; question and method; representing data and phenomena; model analysis; mathematical routines; argumentation.
 Official sources: [AP Chemistry course page](https://apcentral.collegeboard.org/courses/ap-chemistry); [AP Chemistry exam page](https://apcentral.collegeboard.org/courses/ap-chemistry/exam); [AP Chemistry Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-chemistry-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -351,7 +351,7 @@ Official framework labels: Unit 1: Kinematics; Unit 2: Force and Translational D
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: creating representations; mathematical routines; scientific questioning and argumentation.
 Official sources: [AP Physics 1: Algebra-Based course page](https://apcentral.collegeboard.org/courses/ap-physics-1); [AP Physics 1: Algebra-Based exam page](https://apcentral.collegeboard.org/courses/ap-physics-1/exam); [AP Physics 1: Algebra-Based Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-physics-1-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -476,7 +476,7 @@ Official framework labels: Unit 9: Thermodynamics; Unit 10: Electric Force, Fiel
 Official framework alignment: official-current-framework-differs-from-app-base-catalog.
 Skills: creating representations; mathematical routines; scientific questioning and argumentation.
 Official sources: [AP Physics 2: Algebra-Based course page](https://apcentral.collegeboard.org/courses/ap-physics-2); [AP Physics 2: Algebra-Based exam page](https://apcentral.collegeboard.org/courses/ap-physics-2/exam); [AP Physics 2: Algebra-Based Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-physics-2-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -589,7 +589,7 @@ Official framework labels: Unit 1: Kinematics; Unit 2: Force and Translational D
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: mathematical modeling; physical representations; experimental design and analysis; qualitative and quantitative translation.
 Official sources: [AP Physics C: Mechanics course page](https://apcentral.collegeboard.org/courses/ap-physics-c-mechanics); [AP Physics C: Mechanics exam page](https://apcentral.collegeboard.org/courses/ap-physics-c-mechanics/exam); [AP Physics C: Mechanics Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-physics-c-mechanics-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -701,7 +701,7 @@ Official framework labels: Unit 8: Electric Charges, Fields, and Gauss's Law; Un
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: mathematical modeling; physical representations; experimental design and analysis; qualitative and quantitative translation.
 Official sources: [AP Physics C: Electricity and Magnetism course page](https://apcentral.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism); [AP Physics C: Electricity and Magnetism exam page](https://apcentral.collegeboard.org/courses/ap-physics-c-electricity-and-magnetism/exam); [AP Physics C: Electricity and Magnetism Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-physics-c-electricity-and-magnetism-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -802,7 +802,7 @@ Official framework labels: Unit 1: The Living World: Ecosystems; Unit 2: The Liv
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: concept explanation; visual representations; text analysis; scientific experiments; data analysis; mathematical routines; environmental solutions.
 Official sources: [AP Environmental Science course page](https://apcentral.collegeboard.org/courses/ap-environmental-science); [AP Environmental Science exam page](https://apcentral.collegeboard.org/courses/ap-environmental-science/exam); [AP Environmental Science Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-environmental-science-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -939,7 +939,7 @@ Official framework labels: Unit 1: Limits and Continuity; Unit 2: Differentiatio
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: mathematical processes; equivalent representations; justification and communication; modeling and interpretation.
 Official sources: [AP Calculus AB course page](https://apcentral.collegeboard.org/courses/ap-calculus-ab); [AP Calculus AB exam page](https://apcentral.collegeboard.org/courses/ap-calculus-ab/exam); [AP Calculus AB Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-calculus-ab-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1068,7 +1068,7 @@ Official framework labels: Unit 1: Limits and Continuity; Unit 2: Differentiatio
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: mathematical processes; equivalent representations; justification and communication; modeling and interpretation.
 Official sources: [AP Calculus BC course page](https://apcentral.collegeboard.org/courses/ap-calculus-bc); [AP Calculus BC exam page](https://apcentral.collegeboard.org/courses/ap-calculus-bc/exam); [AP Calculus BC Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-calculus-bc-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1221,7 +1221,7 @@ Official framework labels: Unit 1: Exploring One-Variable Data and Collecting Da
 Official framework alignment: official-current-framework-differs-from-app-base-catalog.
 Skills: selecting statistical methods; describing distributions and relationships; collecting data; probability and simulation; inference and communication.
 Official sources: [AP Statistics course page](https://apcentral.collegeboard.org/courses/ap-statistics); [AP Statistics exam page](https://apcentral.collegeboard.org/courses/ap-statistics/exam); [AP Statistics Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-statistics-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1349,7 +1349,7 @@ Official framework labels: Unit 1: Polynomial and Rational Functions; Unit 2: Ex
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: modeling; equivalent representations; mathematical reasoning; communication and interpretation.
 Official sources: [AP Precalculus course page](https://apcentral.collegeboard.org/courses/ap-precalculus); [AP Precalculus exam page](https://apcentral.collegeboard.org/courses/ap-precalculus/exam); [AP Precalculus Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-precalculus-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1424,7 +1424,7 @@ Official framework labels: Unit 1: Using Objects and Methods; Unit 2: Selection 
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: data abstraction; algorithms and program development; code analysis; object-oriented design; testing and debugging.
 Official sources: [AP Computer Science A course page](https://apcentral.collegeboard.org/courses/ap-computer-science-a); [AP Computer Science A exam page](https://apcentral.collegeboard.org/courses/ap-computer-science-a/exam); [AP Computer Science A Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-computer-science-a-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1501,7 +1501,7 @@ Official framework labels: Big Idea 1: Creative Development; Big Idea 2: Data; B
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: creative development; data; algorithms and programming; computer systems and networks; impact of computing.
 Official sources: [AP Computer Science Principles course page](https://apcentral.collegeboard.org/courses/ap-computer-science-principles); [AP Computer Science Principles exam page](https://apcentral.collegeboard.org/courses/ap-computer-science-principles/exam); [AP Computer Science Principles Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-computer-science-principles-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1590,7 +1590,7 @@ Official framework labels: Unit 1: The Rhetorical Situation; Unit 2: Rhetorical 
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: rhetorical situation analysis; claims and evidence; reasoning and organization; style and revision; synthesis and argumentation.
 Official sources: [AP English Language and Composition course page](https://apcentral.collegeboard.org/courses/ap-english-language-and-composition); [AP English Language and Composition exam page](https://apcentral.collegeboard.org/courses/ap-english-language-and-composition/exam); [AP English Language and Composition Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-english-language-and-composition-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1719,7 +1719,7 @@ Official framework labels: Unit 1: Short Fiction I; Unit 2: Poetry I; Unit 3: Lo
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: literary analysis; evidence and commentary; interpretation; comparative and thematic reasoning; written argument.
 Official sources: [AP English Literature and Composition course page](https://apcentral.collegeboard.org/courses/ap-english-literature-and-composition); [AP English Literature and Composition exam page](https://apcentral.collegeboard.org/courses/ap-english-literature-and-composition/exam); [AP English Literature and Composition Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-english-literature-and-composition-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1847,7 +1847,7 @@ Official framework labels: Unit 1: Period 1: 1491–1607; Unit 2: Period 2: 1607
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: developments and processes; sourcing and situation; claims and evidence; contextualization; making connections; argumentation.
 Official sources: [AP United States History course page](https://apcentral.collegeboard.org/courses/ap-united-states-history); [AP United States History exam page](https://apcentral.collegeboard.org/courses/ap-united-states-history/exam); [AP United States History Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-us-history-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information); [AP History Exam Updates](https://apcentral.collegeboard.org/courses/ap-history-exam-updates).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -1980,7 +1980,7 @@ Official framework labels: Unit 1: The Global Tapestry; Unit 2: Networks of Exch
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: developments and processes; sourcing and situation; claims and evidence; contextualization; making connections; argumentation.
 Official sources: [AP World History: Modern course page](https://apcentral.collegeboard.org/courses/ap-world-history); [AP World History: Modern exam page](https://apcentral.collegeboard.org/courses/ap-world-history/exam); [AP World History: Modern Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-world-history-modern-course-and-exam-description-effective-fall-2026.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information); [AP History Exam Updates](https://apcentral.collegeboard.org/courses/ap-history-exam-updates).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2113,7 +2113,7 @@ Official framework labels: Unit 1: Renaissance and Exploration; Unit 2: Age of R
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: developments and processes; sourcing and situation; claims and evidence; contextualization; making connections; argumentation.
 Official sources: [AP European History course page](https://apcentral.collegeboard.org/courses/ap-european-history); [AP European History exam page](https://apcentral.collegeboard.org/courses/ap-european-history/exam); [AP European History Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-european-history-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information); [AP History Exam Updates](https://apcentral.collegeboard.org/courses/ap-history-exam-updates).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2246,7 +2246,7 @@ Official framework labels: Unit 1: Foundations of American Democracy; Unit 2: In
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: concept application; quantitative analysis; qualitative analysis; visual analysis; argumentation; foundational-document reasoning.
 Official sources: [AP United States Government and Politics course page](https://apcentral.collegeboard.org/courses/ap-united-states-government-and-politics); [AP United States Government and Politics exam page](https://apcentral.collegeboard.org/courses/ap-united-states-government-and-politics/exam); [AP United States Government and Politics Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-us-government-and-politics-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2330,7 +2330,7 @@ Official framework labels: Unit 1: Political Systems, Regimes, and Governments; 
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: concept application; quantitative analysis; comparative analysis; argumentation; political systems reasoning.
 Official sources: [AP Comparative Government and Politics course page](https://apcentral.collegeboard.org/courses/ap-comparative-government-and-politics); [AP Comparative Government and Politics exam page](https://apcentral.collegeboard.org/courses/ap-comparative-government-and-politics/exam); [AP Comparative Government and Politics Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-comparative-government-and-politics-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2415,7 +2415,7 @@ Official framework labels: Unit 1: Biological Bases of Behavior; Unit 2: Cogniti
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: concept application; research methods and scientific investigation; data analysis; argumentation and evidence.
 Official sources: [AP Psychology course page](https://apcentral.collegeboard.org/courses/ap-psychology); [AP Psychology exam page](https://apcentral.collegeboard.org/courses/ap-psychology/exam); [AP Psychology Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-psychology-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2499,7 +2499,7 @@ Official framework labels: Unit 1: Thinking Geographically; Unit 2: Population a
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: geographic concepts and processes; spatial relationships; data and map analysis; geographic models; scale analysis.
 Official sources: [AP Human Geography course page](https://apcentral.collegeboard.org/courses/ap-human-geography); [AP Human Geography exam page](https://apcentral.collegeboard.org/courses/ap-human-geography/exam); [AP Human Geography Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-human-geography-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2606,7 +2606,7 @@ Official framework labels: Unit 1: Basic Economic Concepts; Unit 2: Economic Ind
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: economic concepts and principles; model and graph interpretation; numerical analysis; assertion and explanation.
 Official sources: [AP Macroeconomics course page](https://apcentral.collegeboard.org/courses/ap-macroeconomics); [AP Macroeconomics exam page](https://apcentral.collegeboard.org/courses/ap-macroeconomics/exam); [AP Macroeconomics Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-macroeconomics-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2701,7 +2701,7 @@ Official framework labels: Unit 1: Basic Economic Concepts; Unit 2: Supply and D
 Official framework alignment: course-level-unit-sequence-aligned.
 Skills: economic concepts and principles; model and graph interpretation; numerical analysis; assertion and explanation.
 Official sources: [AP Microeconomics course page](https://apcentral.collegeboard.org/courses/ap-microeconomics); [AP Microeconomics exam page](https://apcentral.collegeboard.org/courses/ap-microeconomics/exam); [AP Microeconomics Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-microeconomics-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2796,7 +2796,7 @@ Official framework labels: Unit 1: Families and Communities; Unit 2: Language an
 Official framework alignment: official-current-framework-differs-from-app-base-catalog.
 Skills: interpretive communication; interpersonal communication; presentational communication; cultural comparison; research and source use.
 Official sources: [AP Spanish Language and Culture course page](https://apcentral.collegeboard.org/courses/ap-spanish-language-and-culture); [AP Spanish Language and Culture exam page](https://apcentral.collegeboard.org/courses/ap-spanish-language-and-culture/exam); [AP Spanish Language and Culture Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-spanish-language-and-culture-course-and-exam-description.pdf); [AP Exams Calculator Policy](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/exam-policies/calculator-policy); [Reference Information for Specific AP Exams](https://apcentral.collegeboard.org/exam-administration-ordering-scores/administering-exams/subject-specific/reference-information).
-App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/ap-knowledge/catalog.ts`.
+App sources: `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/data/ap-classes-data-08212026.json`; `src/lib/catalog/sources.ts`.
 
 #### Exam details
 
@@ -2972,7 +2972,7 @@ The other 22 courses have official written-response or performance components wh
 
 Status: **has-app-catalog-differences**. The app contains an explicit knowledge-catalog override that differs from the base catalog file.
 
-- knowledge-catalog-override in `src/lib/ap-knowledge/catalog.ts`.
+- knowledge-catalog-override in `src/lib/catalog/sources.ts`.
   - App base labels: Unit 9: Thermodynamics; Unit 10: Electric Force, Field, and Potential; Unit 11: Electric Circuits; Unit 12: Magnetism and Electromagnetism; Unit 13: Electromagnetic Induction; Unit 14: Geometric Optics; Unit 15: Waves, Sound, and Physical Optics
   - Knowledge-catalog labels: Unit 9: Thermodynamics; Unit 10: Electric Force, Field, and Potential; Unit 11: Electric Circuits; Unit 12: Magnetism and Electromagnetism; Unit 13: Geometric Optics; Unit 14: Waves, Sound, and Physical Optics; Unit 15: Modern Physics
 
@@ -2980,7 +2980,7 @@ Status: **has-app-catalog-differences**. The app contains an explicit knowledge-
 
 Status: **has-app-catalog-differences**. The app contains an explicit knowledge-catalog override that differs from the base catalog file.
 
-- knowledge-catalog-override in `src/lib/ap-knowledge/catalog.ts`.
+- knowledge-catalog-override in `src/lib/catalog/sources.ts`.
   - App base labels: Unit 1: Exploring One-Variable Data; Unit 2: Exploring Two-Variable Data; Unit 3: Collecting Data; Unit 4: Probability, Random Variables, and Probability Distributions; Unit 5: Sampling Distributions; Unit 6: Inference for Categorical Data: Proportions; Unit 7: Inference for Quantitative Data: Means; Unit 8: Inference for Categorical Data: Chi-Square; Unit 9: Inference for Quantitative Data: Slopes
   - Knowledge-catalog labels: Unit 1: Exploring One-Variable Data and Collecting Data; Unit 2: Probability, Random Variables, and Probability Distributions; Unit 3: Inference for Categorical Data: Proportions; Unit 4: Inference for Quantitative Data: Means; Unit 5: Regression Analysis
 
@@ -2988,7 +2988,7 @@ Status: **has-app-catalog-differences**. The app contains an explicit knowledge-
 
 Status: **has-app-catalog-differences**. The app contains an explicit knowledge-catalog override that differs from the base catalog file.
 
-- knowledge-catalog-override in `src/lib/ap-knowledge/catalog.ts`.
+- knowledge-catalog-override in `src/lib/catalog/sources.ts`.
   - App base labels: Unit 1: Families and Communities; Unit 2: Personal and Public Identities; Unit 3: Beauty and Aesthetics; Unit 4: Science and Technology; Unit 5: Contemporary Life; Unit 6: Global Challenges
   - Knowledge-catalog labels: Unit 1: Families and Communities; Unit 2: Language and Culture; Unit 3: Art and Creativity; Unit 4: Science and Technology; Unit 5: Contemporary Life; Unit 6: Global Contexts
 
@@ -3021,7 +3021,7 @@ Every source ID referenced by the JSON resolves to an entry below. Official Coll
 | `app-frq-types`                                      | Free AP Practice | app-source                  | frq-schema; frq-rubric-rules; frq-response-limits                      | `src/lib/question-bank/frq/types.ts`                                                                                                                                                       |
 | `app-frq-profiles`                                   | Free AP Practice | app-source                  | app-frq-support; frq-generation-guidance; frq-grading-guidance         | `src/lib/question-bank/frq/profiles.server.ts`                                                                                                                                             |
 | `app-neon-content-schema`                            | Free AP Practice | app-source                  | question-storage; jsonb-question-payloads                              | `src/lib/server/neon/schema/content.ts`                                                                                                                                                    |
-| `app-ap-knowledge-catalog`                           | Free AP Practice | app-source                  | knowledge-catalog-overrides; official-source-links                     | `src/lib/ap-knowledge/catalog.ts`                                                                                                                                                          |
+| `app-ap-knowledge-catalog`                           | Free AP Practice | app-source                  | knowledge-catalog-overrides; official-source-links                     | `src/lib/catalog/sources.ts`                                                                                                                                                               |
 | `cb-course-ap-biology`                               | College Board    | course-page                 | course-overview; course-framework; unit-list; unit-weighting; ced-link | [AP Biology course page](https://apcentral.collegeboard.org/courses/ap-biology)                                                                                                            |
 | `cb-exam-ap-biology`                                 | College Board    | exam-page                   | exam-format; exam-timing; exam-weighting; frq-types; calculator-policy | [AP Biology exam page](https://apcentral.collegeboard.org/courses/ap-biology/exam)                                                                                                         |
 | `cb-ced-ap-biology`                                  | College Board    | course-and-exam-description | course-framework; unit-topics; unit-weighting; skills; exam-task-types | [AP Biology Course and Exam Description](https://apcentral.collegeboard.org/media/pdf/ap-biology-course-and-exam-description.pdf)                                                          |

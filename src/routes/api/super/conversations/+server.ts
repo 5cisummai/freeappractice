@@ -1,12 +1,11 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { listOwnedConversations } from '$lib/super/conversations.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { listOwnedConversations } from '#lib/agent/conversations/store.server.js';
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (_event, userId) => {
 		const items = await listOwnedConversations(userId, 'coach');
-		return json({
+		return Response.json({
 			conversations: items.map((conversation) => ({
 				...conversation,
 				lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,

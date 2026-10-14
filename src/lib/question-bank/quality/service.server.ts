@@ -1,14 +1,24 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { and, asc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
-import { getNeonDatabase } from '$lib/server/neon/db';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	questionQualityAudits,
 	qualityReviewJobItems,
 	questionRegistry
-} from '$lib/server/neon/schema';
-import { env } from '$env/dynamic/private';
-import { logger } from '$lib/server/logger';
-import { getQuestionInventory } from '$lib/question-bank/inventory.server';
+} from '#lib/server/neon/schema.js';
+
+import {
+	QUESTION_QUALITY_CONFIDENCE_THRESHOLD,
+	QUESTION_QUALITY_BATCH_SIZE,
+	QUESTION_QUALITY_MAX_QUEUED_TOKENS,
+	QUESTION_QUALITY_BATCH_INPUT_USD_PER_MILLION,
+	QUESTION_QUALITY_BATCH_OUTPUT_USD_PER_MILLION,
+	QUESTION_QUALITY_MAX_OUTPUT_TOKENS,
+	QUESTION_QUALITY_REASONING_EFFORT
+} from '$app/env/private';
+
+import { logger } from '#lib/server/logger.js';
+import { getQuestionInventory } from '#lib/question-bank/inventory.server.js';
 import { getCompletedReviewCost } from './cost.server.js';
 import { modelName, toJobSummary } from './dashboard.server.js';
 import {
@@ -65,7 +75,9 @@ import {
 	parseAssessmentText,
 	requiresWebSearchForQuestion
 } from './rubric.server.js';
+
 import { estimateCostUsd, feedbackSummaryFromCounts, shouldRequireHumanReview } from './rules.js';
+
 import {
 	QUESTION_QUALITY_RUBRIC_VERSION,
 	type QualityJobSummary,
@@ -127,31 +139,28 @@ function nextItemStatus(
 }
 
 function confidenceThreshold(): number {
-	const value = Number(env.QUESTION_QUALITY_CONFIDENCE_THRESHOLD || '0.85');
+	const value = Number(QUESTION_QUALITY_CONFIDENCE_THRESHOLD || '0.85');
 	return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.85;
 }
 
 function batchSize(): number {
-	const value = Number.parseInt(env.QUESTION_QUALITY_BATCH_SIZE || '100', 10);
+	const value = Number.parseInt(QUESTION_QUALITY_BATCH_SIZE || '100', 10);
 	const configured = Number.isFinite(value) ? Math.min(1_000, Math.max(1, value)) : 100;
-	const queuedTokenCeiling = Number.parseInt(
-		env.QUESTION_QUALITY_MAX_QUEUED_TOKENS || '250000',
-		10
-	);
+	const queuedTokenCeiling = Number.parseInt(QUESTION_QUALITY_MAX_QUEUED_TOKENS || '250000', 10);
 	const tokenLimited = Math.max(1, Math.floor(queuedTokenCeiling / 2_500));
 	return Math.min(configured, tokenLimited);
 }
 
 function inputPrice(): number {
-	return Number(env.QUESTION_QUALITY_BATCH_INPUT_USD_PER_MILLION || '0.625');
+	return Number(QUESTION_QUALITY_BATCH_INPUT_USD_PER_MILLION || '0.625');
 }
 
 function outputPrice(): number {
-	return Number(env.QUESTION_QUALITY_BATCH_OUTPUT_USD_PER_MILLION || '3.75');
+	return Number(QUESTION_QUALITY_BATCH_OUTPUT_USD_PER_MILLION || '3.75');
 }
 
 function maxOutputTokens(): number {
-	const value = Number.parseInt(env.QUESTION_QUALITY_MAX_OUTPUT_TOKENS || '800', 10);
+	const value = Number.parseInt(QUESTION_QUALITY_MAX_OUTPUT_TOKENS || '800', 10);
 	return Number.isFinite(value) ? Math.max(100, value) : 800;
 }
 
@@ -462,7 +471,7 @@ async function submitNextBatch(jobId: string): Promise<void> {
 					questionId: item.questionId,
 					question: question as unknown as Record<string, unknown>,
 					model: job.model,
-					reasoningEffort: env.QUESTION_QUALITY_REASONING_EFFORT || 'medium'
+					reasoningEffort: QUESTION_QUALITY_REASONING_EFFORT || 'medium'
 				});
 				const lineBytes = Buffer.byteLength(line) + 1;
 				if (batchBytes + lineBytes > MAX_BATCH_FILE_BYTES) {
@@ -620,7 +629,10 @@ async function updateQualityFromBatchLine(
 						}
 					: {})
 			},
-			{ requireUnassessed: true, ...(human.required ? {} : { requireHumanReview: false }) }
+			{
+				requireUnassessed: true,
+				...(human.required ? {} : { requireHumanReview: false })
+			}
 		);
 		if (qualityWrite.modifiedCount) {
 			await appendQualityAudit({

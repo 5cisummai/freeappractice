@@ -1,12 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
-import { frqBucketUnits, frqPracticeFor } from '$lib/question-bank/frq/practice';
-import { countActiveFrqQuestions } from '$lib/question-bank/frq/model.server';
-import { getFrqCourseNames } from '$lib/question-bank/frq/profiles.server';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { frqQuestions } from '$lib/server/neon/schema';
-import { questionBucketFields } from '$lib/server/neon/jsonb';
-import { poolTargetForBucket, type QuestionPoolConfig } from '$lib/question-bank/pool-constants';
-import type { PoolKindAdapter, PoolKindBucket } from '$lib/question-bank/pool-kinds.server';
+import { frqBucketUnits, frqPracticeFor } from '#lib/question-bank/frq/practice.js';
+import { countActiveFrqQuestions } from '#lib/question-bank/frq/model.server.js';
+import { getFrqCourseNames } from '#lib/question-bank/frq/profiles.server.js';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { frqQuestions } from '#lib/server/neon/schema.js';
+import { questionBucketFields } from '#lib/server/neon/jsonb.js';
+import { poolTargetForBucket, type QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
+import type { PoolKindAdapter, PoolKindBucket } from '#lib/question-bank/pool-kinds.server.js';
 
 function bucketKey(course: string, unit: string): string {
 	return `${course}\u0000${unit}`;

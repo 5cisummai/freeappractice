@@ -1,16 +1,16 @@
-import { generateAndPersistFrq } from '$lib/question-bank/frq/generation.server';
-import { frqPracticeFor, FRQ_ALL_UNITS } from '$lib/question-bank/frq/practice';
+import { generateAndPersistFrq } from '#lib/question-bank/frq/generation.server.js';
+import { frqPracticeFor, FRQ_ALL_UNITS } from '#lib/question-bank/frq/practice.js';
 import {
 	generateQuestionForPool,
 	generateStimulusSetForPool
-} from '$lib/question-bank/mcq/write.server';
-import { countActiveMcqQuestions } from '$lib/question-bank/mcq/repository.server';
+} from '#lib/question-bank/mcq/write.server.js';
+import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
 import {
 	getStimulusPolicy,
 	isStimulusPolicyEnabledForUnit
-} from '$lib/question-bank/mcq/stimulus-policy';
-import { isStimulusQuestionsEnabled } from '$lib/flags';
-import type { PoolRefillQuestionType } from '$lib/question-bank/pool-refill-types.server';
+} from '#lib/question-bank/mcq/stimulus-policy.js';
+import { isStimulusQuestionsEnabled } from '#lib/flags.js';
+import type { PoolRefillQuestionType } from '#lib/question-bank/pool-refill-types.server.js';
 
 type GenerationResult = { skippedDuplicate?: boolean; generatedCount?: number };
 

@@ -1,10 +1,9 @@
-import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { isCoachImagesEnabled } from '$lib/flags';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { isCoachImagesEnabled } from '#lib/flags.js';
 
 export const GET = withAuthedHandler(
 	async () =>
-		json(
+		Response.json(
 			{ enabled: await isCoachImagesEnabled() },
 			{ headers: { 'Cache-Control': 'private, no-store' } }
 		),

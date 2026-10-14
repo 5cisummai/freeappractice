@@ -1,10 +1,9 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { FrqAttemptInProgressError, gradeFrqAttempt } from '$lib/grading/frq/attempts.server';
-import { requireFrqPracticeEnabled } from '$lib/question-bank/frq/gate.server';
-import { FrqGradeRequestSchema } from '$lib/question-bank/frq/types';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { FrqAttemptInProgressError, gradeFrqAttempt } from '#lib/grading/frq/attempts.server.js';
+import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
+import { FrqGradeRequestSchema } from '#lib/question-bank/frq/types.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 
 export const config = { maxDuration: 60 };
 
@@ -15,7 +14,7 @@ export const POST: RequestHandler = withAuthedHandler(
 		if (gated) return gated;
 		const parsed = FrqGradeRequestSchema.safeParse(await event.request.json());
 		if (!parsed.success) {
-			return json(
+			return Response.json(
 				{ error: parsed.error.issues[0]?.message ?? 'Invalid written response' },
 				{ status: 400 }
 			);
@@ -34,10 +33,10 @@ export const POST: RequestHandler = withAuthedHandler(
 					percentage: attempt.grade.percentage
 				}
 			});
-			return json({ attempt });
+			return Response.json({ attempt });
 		} catch (error) {
 			if (error instanceof FrqAttemptInProgressError) {
-				return json({ error: error.message }, { status: 409 });
+				return Response.json({ error: error.message }, { status: 409 });
 			}
 			capturePostHogServerEvent(event.request, {
 				distinctId: userId,

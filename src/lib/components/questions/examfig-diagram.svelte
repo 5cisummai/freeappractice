@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { renderExamfigDiagram } from '$lib/diagrams/examfig';
+	import { renderExamfigDiagram } from '#lib/diagrams/examfig.js';
 
 	let {
 		spec,

@@ -1,25 +1,25 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { invalidateAuthenticatedShell } from '$lib/client/invalidate-data.js';
+	import { invalidateAuthenticatedShell } from '#lib/client/invalidate-data.js';
 	import { onMount } from 'svelte';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import { Switch } from '$lib/components/ui/switch/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { authClient } from '$lib/auth/client.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { accountActions } from '$lib/client/settings.svelte.js';
-	import { themeController } from '$lib/client/theme.svelte.js';
-	import { resetUiHints } from '$lib/client/ui-hints.svelte.js';
-	import { resetPostHogUser } from '$lib/client/posthog-analytics';
-	import { onboardingCourseGroups } from '$lib/onboarding-courses.js';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	const APP_VERSION = '1.9.6';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Switch } from '#lib/components/ui/switch/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import { authClient } from '#lib/auth/client.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import { privacy } from '#lib/client/privacy.svelte.js';
+	import { accountActions } from '#lib/client/settings.svelte.js';
+	import { themeController } from '#lib/client/theme.svelte.js';
+	import { resetUiHints } from '#lib/client/ui-hints.svelte.js';
+	import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
+	import { onboardingCourseGroups } from '#lib/onboarding-courses.js';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
+	const APP_VERSION = '1.9.7';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
@@ -166,7 +166,7 @@
 		billingBusy = true;
 		try {
 			const { data: portal, error } = await authClient.subscription.billingPortal({
-				returnUrl: `${window.location.origin}${resolve('/app/settings')}`,
+				returnUrl: `${window.location.origin}${resolve('app/settings')}`,
 				disableRedirect: true
 			});
 			if (error || !portal?.url)
@@ -289,10 +289,8 @@
 						type="button"
 						variant="destructive"
 						size="sm"
-						onclick={() => (clearPracticeOpen = true)}
+						onclick={() => (clearPracticeOpen = true)}>Clear</Button
 					>
-						Clear
-					</Button>
 				</div>
 			</div>
 		</Tabs.Content>
@@ -418,7 +416,7 @@
 							{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
 						</Button>
 					{:else if data.planAccess.plan !== 'super' && !data.billing?.billingIssue}
-						<Button type="button" variant="outline" size="sm" href={resolve('/pricing')}
+						<Button type="button" variant="outline" size="sm" href={resolve('pricing')}
 							>Upgrade</Button
 						>
 					{/if}
@@ -480,7 +478,8 @@
 							currently stored for your Tutor.
 						</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/app/settings/memory')}
+
+					<Button type="button" variant="outline" size="sm" href={resolve('app/settings/memory')}
 						>View memories</Button
 					>
 				</div>
@@ -496,14 +495,9 @@
 							Show the course selection screen again so you can test the onboarding flow.
 						</p>
 					</div>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						href={resolve('/app/onboarding?reset=1')}
+					<Button type="button" variant="outline" size="sm" href={resolve('app/onboarding?reset=1')}
+						>Reset</Button
 					>
-						Reset
-					</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 flex-1 space-y-0.5">
@@ -566,10 +560,8 @@
 						type="button"
 						variant="destructive"
 						size="sm"
-						onclick={() => (deleteAccountOpen = true)}
+						onclick={() => (deleteAccountOpen = true)}>Delete</Button
 					>
-						Delete
-					</Button>
 				</div>
 			</div>
 		</Tabs.Content>
@@ -588,23 +580,25 @@
 						<p class="text-sm font-medium text-foreground">Privacy Policy</p>
 						<p class="text-sm text-muted-foreground">How we handle your data.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/privacy')}>View</Button>
+
+					<Button type="button" variant="outline" size="sm" href={resolve('privacy')}>View</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">Terms of Service</p>
 						<p class="text-sm text-muted-foreground">The rules for using this site.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/terms')}>View</Button>
+
+					<Button type="button" variant="outline" size="sm" href={resolve('terms')}>View</Button>
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">Changelog</p>
 						<p class="text-sm text-muted-foreground">What changed in recent releases.</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('/changelog')}>
-						View
-					</Button>
+
+					<Button type="button" variant="outline" size="sm" href={resolve('changelog')}>View</Button
+					>
 				</div>
 			</div>
 		</Tabs.Content>

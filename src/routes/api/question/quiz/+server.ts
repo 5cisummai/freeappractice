@@ -1,17 +1,16 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { validateQuestionRequest } from '$lib/catalog/question-request.server';
-import { limitQuestionPoolRequests } from '$lib/server/api-rate-limit.server';
-import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
-import { isStimulusQuestionsEnabled } from '$lib/flags';
+import { validateQuestionRequest } from '#lib/question-bank/request.server.js';
+import { limitQuestionPoolRequests } from '#lib/server/api-rate-limit.server.js';
+import { readJsonBody, RequestBodyTooLargeError } from '#lib/server/request-body.server.js';
+import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 import {
 	assembleMcqQuiz,
 	QuizPoolWarmingError,
 	resolveQuizUnits
-} from '$lib/question-bank/mcq/quiz-assembler.server';
-import { generatedQuestionToMcqAnswerBody } from '$lib/question-bank/mcq/public-payload.server';
-import { requestPoolRefill } from '$lib/question-bank/pool-refill-queue.server';
-import { logger } from '$lib/server/logger';
+} from '#lib/question-bank/mcq/quiz-assembler.server.js';
+import { generatedQuestionToMcqAnswerBody } from '#lib/question-bank/mcq/public-payload.server.js';
+import { requestPoolRefill } from '#lib/question-bank/pool-refill-queue.server.js';
+import { logger } from '#lib/server/logger.js';
 
 export const config = { maxDuration: 15 };
 
@@ -55,7 +54,7 @@ export const POST: RequestHandler = async (event) => {
 				1,
 				Math.ceil(Math.max(0, (rateLimit.retryAt ?? Date.now()) - Date.now()) / 1000)
 			);
-			return json(
+			return Response.json(
 				{ error: 'Too many requests', retryAfterSeconds },
 				{ status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
 			);
@@ -65,7 +64,7 @@ export const POST: RequestHandler = async (event) => {
 			requestBody = await readJsonBody(request, MAX_REQUEST_BYTES);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
-				return json({ error: 'Request body is too large' }, { status: 413 });
+				return Response.json({ error: 'Request body is too large' }, { status: 413 });
 			}
 			throw error;
 		}
@@ -77,11 +76,11 @@ export const POST: RequestHandler = async (event) => {
 		const validated = validateQuestionRequest(record);
 		if (!validated.ok) return validated.response;
 		if (record.count !== undefined && typeof record.count !== 'number') {
-			return json({ error: 'count must be an integer' }, { status: 400 });
+			return Response.json({ error: 'count must be an integer' }, { status: 400 });
 		}
 		const count = record.count === undefined ? 10 : record.count;
 		if (!Number.isInteger(count) || count < 1 || count > MAX_QUIZ_COUNT) {
-			return json(
+			return Response.json(
 				{ error: `count must be an integer from 1 to ${MAX_QUIZ_COUNT}` },
 				{ status: 400 }
 			);
@@ -90,7 +89,7 @@ export const POST: RequestHandler = async (event) => {
 		try {
 			requestedUnitRange = parseUnitRange(record.unitRange);
 		} catch (error) {
-			return json(
+			return Response.json(
 				{ error: error instanceof Error ? error.message : 'Invalid unitRange' },
 				{ status: 400 }
 			);
@@ -107,7 +106,7 @@ export const POST: RequestHandler = async (event) => {
 			{ globalFlagEnabled }
 		);
 
-		return json({
+		return Response.json({
 			questions: result.questions.map((question) => ({
 				answer: generatedQuestionToMcqAnswerBody(question),
 				provider: 'cache',
@@ -133,7 +132,20 @@ export const POST: RequestHandler = async (event) => {
 					logger.warn('Quiz pool refill request failed', { course, unit, refillError });
 				}
 			}
-			return json(
+			// Some questions exist but not enough for the requested count → client error.
+			// Empty pool stays 503 POOL_WARMING so clients can retry while refill runs.
+			if (error.availableCount > 0) {
+				return Response.json(
+					{
+						code: 'INSUFFICIENT_QUESTIONS',
+						error: error.message,
+						refillRequested,
+						availableCount: error.availableCount
+					},
+					{ status: 400 }
+				);
+			}
+			return Response.json(
 				{
 					code: 'POOL_WARMING',
 					error: error.message,
@@ -145,6 +157,6 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 		logger.error('Quiz assembly failed', { error });
-		return json({ error: 'Failed to assemble quiz' }, { status: 500 });
+		return Response.json({ error: 'Failed to assemble quiz' }, { status: 500 });
 	}
 };

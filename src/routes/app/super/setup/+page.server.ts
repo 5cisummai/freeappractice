@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 import {
 	ONBOARDING_INTENT_COOKIE_MAX_AGE,
 	ONBOARDING_INTENT_COOKIE_NAME
-} from '$lib/onboarding.js';
+} from '#lib/onboarding.js';
 
 export const load: PageServerLoad = async ({ cookies, url }) => {
 	cookies.set(ONBOARDING_INTENT_COOKIE_NAME, 'super', {

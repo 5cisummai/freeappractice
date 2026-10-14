@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getCourses } from '$lib/catalog/ap-courses';
+import { getCourses } from '#lib/catalog/courses.js';
 import {
 	buildMcqGenerationPrompt,
 	buildStimulusSetGenerationPrompt,
 	getUnitContextData
-} from '$lib/question-bank/mcq/generation.server';
+} from '#lib/question-bank/mcq/generation.server.js';
 
 describe('MCQ unit context (exact catalog keys)', () => {
 	it('covers every unified AP course and unit exactly once', () => {

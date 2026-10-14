@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import SuperLandingSection from '$lib/components/marketing/super-landing-section.svelte';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '$lib/super/ui';
-	import { twAnimateIn, twAnimateInView } from '$lib/tw-animate';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import SuperLandingSection from '#lib/components/marketing/super-landing-section.svelte';
+	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
+	import { twAnimateIn, twAnimateInView } from '#lib/tw-animate.js';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 
 	let { data } = $props();
 
-	const signupHref = `${resolve('/signup')}?super=1`;
+	const signupHref = `${resolve('signup')}?super=1`;
 </script>
 
 <svelte:head>
@@ -20,8 +20,11 @@
 	/>
 	<link rel="canonical" href="https://freeappractice.org/super" />
 	<meta property="og:type" content="website" />
+
 	<meta property="og:url" content="https://freeappractice.org/super" />
+
 	<meta property="og:title" content="Super | Personalized AP Coach" />
+
 	<meta
 		property="og:description"
 		content="Free MCQ and FRQ tutoring, plus AI Coach and weekly study plans with Super."
@@ -67,7 +70,7 @@
 						</Button>
 					{:else}
 						<Button
-							href={resolve('/pricing')}
+							href={resolve('pricing')}
 							size="lg"
 							class="rounded-full px-7 {SUPER_GRADIENT_BUTTON_CLASS}"
 						>
@@ -75,9 +78,10 @@
 							<ArrowRightIcon class="size-4" />
 						</Button>
 					{/if}
-					<Button href={resolve('/signup')} variant="outline" size="lg" class="rounded-full px-6">
-						Start practicing free
-					</Button>
+
+					<Button href={resolve('signup')} variant="outline" size="lg" class="rounded-full px-6"
+						>Start practicing free</Button
+					>
 				</div>
 			</div>
 		</section>
@@ -128,7 +132,7 @@
 					</Button>
 				{:else}
 					<Button
-						href={resolve('/pricing')}
+						href={resolve('pricing')}
 						size="lg"
 						class="rounded-full px-7 {SUPER_GRADIENT_BUTTON_CLASS}"
 					>
@@ -136,9 +140,10 @@
 						<ArrowRightIcon class="size-4" />
 					</Button>
 				{/if}
-				<Button href={resolve('/subjects')} variant="outline" size="lg" class="rounded-full px-6">
-					Browse subjects
-				</Button>
+
+				<Button href={resolve('subjects')} variant="outline" size="lg" class="rounded-full px-6"
+					>Browse subjects</Button
+				>
 			</div>
 		</section>
 	</div>

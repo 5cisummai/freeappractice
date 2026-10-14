@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildMcqPoolBatchLine } from '$lib/question-bank/mcq/batch-line';
-import { apQuestionJsonSchema } from '$lib/question-bank/mcq/generation.server';
-import { generatedFrqJsonSchema } from '$lib/question-bank/frq/generation.server';
-import { buildFrqPoolBatchLine } from '$lib/question-bank/frq/pool-batch-line';
+import { buildMcqPoolBatchLine } from '#lib/question-bank/mcq/batch-line.js';
+import { apQuestionJsonSchema } from '#lib/question-bank/mcq/generation.server.js';
+import { generatedFrqJsonSchema } from '#lib/question-bank/frq/generation.server.js';
+import { buildFrqPoolBatchLine } from '#lib/question-bank/frq/pool-batch-line.js';
 
 describe('buildMcqPoolBatchLine', () => {
 	it('emits OpenAI Batch /v1/responses JSONL with strict ap_question schema', () => {

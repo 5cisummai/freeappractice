@@ -1,17 +1,16 @@
-import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { readJsonBody } from '$lib/server/request-body.server';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { readJsonBody } from '#lib/server/request-body.server.js';
 import { waitUntil } from '@vercel/functions';
-import { cleanupCoachImages } from '$lib/super/coach-images.server';
+import { cleanupCoachImages } from '#lib/agent/attachments/images.server.js';
 import {
 	ConversationAccessError,
 	deleteOwnedConversation,
 	getConversationMessages,
 	getOwnedConversation,
 	renameOwnedConversation
-} from '$lib/super/conversations.server';
+} from '#lib/agent/conversations/store.server.js';
 
 const renameConversationSchema = z
 	.object({
@@ -22,11 +21,11 @@ const renameConversationSchema = z
 export const GET: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const conversationId = event.params.id;
-		if (!conversationId) return json({ error: 'Conversation not found' }, { status: 404 });
+		if (!conversationId) return Response.json({ error: 'Conversation not found' }, { status: 404 });
 		const conversation = await getOwnedConversation(userId, conversationId);
-		if (!conversation) return json({ error: 'Conversation not found' }, { status: 404 });
+		if (!conversation) return Response.json({ error: 'Conversation not found' }, { status: 404 });
 		const messages = await getConversationMessages(userId, conversationId);
-		return json({
+		return Response.json({
 			id: conversation.id,
 			surface: conversation.surface,
 			context: conversation.context,
@@ -45,24 +44,25 @@ export const GET: RequestHandler = withAuthedHandler(
 export const PATCH: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const conversationId = event.params.id;
-		if (!conversationId) return json({ error: 'Conversation not found' }, { status: 404 });
+		if (!conversationId) return Response.json({ error: 'Conversation not found' }, { status: 404 });
 
 		let body: unknown;
 		try {
 			body = await readJsonBody(event.request, 4 * 1024);
 		} catch {
-			return json({ error: 'Invalid conversation update' }, { status: 400 });
+			return Response.json({ error: 'Invalid conversation update' }, { status: 400 });
 		}
 
 		const parsed = renameConversationSchema.safeParse(body);
-		if (!parsed.success) return json({ error: 'Invalid conversation update' }, { status: 400 });
+		if (!parsed.success)
+			return Response.json({ error: 'Invalid conversation update' }, { status: 400 });
 
 		try {
 			const title = await renameOwnedConversation(userId, conversationId, parsed.data.title);
-			return json({ id: conversationId, title });
+			return Response.json({ id: conversationId, title });
 		} catch (error) {
 			if (error instanceof ConversationAccessError) {
-				return json({ error: error.message }, { status: error.status });
+				return Response.json({ error: error.message }, { status: error.status });
 			}
 			throw error;
 		}
@@ -73,15 +73,15 @@ export const PATCH: RequestHandler = withAuthedHandler(
 export const DELETE: RequestHandler = withAuthedHandler(
 	async (event, userId) => {
 		const conversationId = event.params.id;
-		if (!conversationId) return json({ error: 'Conversation not found' }, { status: 404 });
+		if (!conversationId) return Response.json({ error: 'Conversation not found' }, { status: 404 });
 
 		try {
 			await deleteOwnedConversation(userId, conversationId);
 			waitUntil(cleanupCoachImages(new Date(), userId));
-			return json({ ok: true });
+			return Response.json({ ok: true });
 		} catch (error) {
 			if (error instanceof ConversationAccessError) {
-				return json({ error: error.message }, { status: error.status });
+				return Response.json({ error: error.message }, { status: error.status });
 			}
 			throw error;
 		}

@@ -1,37 +1,39 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getOptionalUserId } from '$lib/auth/route-helpers.server';
-import { resolveTutorQuestion } from '$lib/tutor/service.server';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { logger } from '$lib/server/logger';
-import { limitGenericTutor } from '$lib/super/ai-controls.server';
-import { readJsonBody, RequestBodyTooLargeError } from '$lib/server/request-body.server';
-import { createTutorChatStream } from '$lib/tutor/chat-stream.server';
-import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '$lib/tutor/chat-request';
-import { tutorRateLimitedResponse } from '$lib/tutor/response-utils.server';
-import { chat } from '$lib/tutor/service.server';
-import { getAssistantFeaturesEnabledForRequest } from '$lib/super/assistant.server';
+import { getOptionalUserId } from '#lib/auth/route-helpers.server.js';
+import { resolveTutorQuestion } from '#lib/tutor/service.server.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
+import { logger } from '#lib/server/logger.js';
+import { limitGenericTutor } from '#lib/tutor/rate-limit.server.js';
+import { readJsonBody, RequestBodyTooLargeError } from '#lib/server/request-body.server.js';
+import { createTutorChatStream } from '#lib/tutor/chat-stream.server.js';
+import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '#lib/tutor/chat-request.js';
+import { tutorRateLimitedResponse } from '#lib/tutor/response-utils.server.js';
+import { chat } from '#lib/tutor/service.server.js';
+import { getAssistantFeaturesEnabledForRequest } from '#lib/users/assistant-preferences.server.js';
 
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;
 	try {
 		const userId = await getOptionalUserId(event);
 		if (userId && !(await getAssistantFeaturesEnabledForRequest(event.locals, userId))) {
-			return json({ error: 'Assistant features are disabled for this account.' }, { status: 403 });
+			return Response.json(
+				{ error: 'Assistant features are disabled for this account.' },
+				{ status: 403 }
+			);
 		}
 		let body: unknown;
 		try {
 			body = await readJsonBody(request, MAX_TUTOR_CHAT_REQUEST_BYTES);
 		} catch (error) {
 			if (error instanceof RequestBodyTooLargeError) {
-				return json({ error: 'Tutor chat request is too large' }, { status: 413 });
+				return Response.json({ error: 'Tutor chat request is too large' }, { status: 413 });
 			}
-			return json({ error: 'Tutor chat request must be valid JSON' }, { status: 400 });
+			return Response.json({ error: 'Tutor chat request must be valid JSON' }, { status: 400 });
 		}
 
 		const result = tutorChatRequestSchema.safeParse(body);
 		if (!result.success) {
-			return json(
+			return Response.json(
 				{
 					error: 'Invalid tutor chat request',
 					details: result.error.issues.map((issue) => issue.message)
@@ -41,7 +43,7 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		const question = await resolveTutorQuestion(result.data.questionId);
-		if (!question) return json({ error: 'Question not found' }, { status: 404 });
+		if (!question) return Response.json({ error: 'Question not found' }, { status: 404 });
 
 		const rate = await limitGenericTutor(request, userId);
 		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
@@ -85,6 +87,6 @@ export const POST: RequestHandler = async (event) => {
 		});
 	} catch (error) {
 		logger.error('Tutor chat error', { error });
-		return json({ error: 'Failed to start tutor chat' }, { status: 500 });
+		return Response.json({ error: 'Failed to start tutor chat' }, { status: 500 });
 	}
 };

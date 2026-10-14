@@ -2,19 +2,19 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { authClient } from '$lib/auth/client.js';
-	import { captureLandingPageViewed } from '$lib/client/activation-analytics';
-	import PracticeRunner from '$lib/components/practice/practice-shell.svelte';
-	import { twAnimateInView } from '$lib/tw-animate';
-	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import AspiringStudentsSection from '$lib/components/marketing/aspiring-students-section.svelte';
-	import BottomCtaSection from '$lib/components/marketing/bottom-cta-section.svelte';
-	import LandingHero from '$lib/components/marketing/landing-hero.svelte';
-	import UnlimitedSection from '$lib/components/marketing/unlimited-section.svelte';
-	import SuperSection from '$lib/components/marketing/super-section.svelte';
-	import StudyTeamSection from '$lib/components/marketing/study-team-section.svelte';
-	import PricingSection from '$lib/components/marketing/pricing-section.svelte';
-	import PublicShell from '$lib/components/layout/public-shell.svelte';
+	import { authClient } from '#lib/auth/client.js';
+	import { captureLandingPageViewed } from '#lib/client/activation-analytics.js';
+	import PracticeRunner from '#lib/components/practice/practice-shell.svelte';
+	import { twAnimateInView } from '#lib/tw-animate.js';
+	import * as Accordion from '#lib/components/ui/accordion/index.js';
+	import AspiringStudentsSection from '#lib/components/marketing/aspiring-students-section.svelte';
+	import BottomCtaSection from '#lib/components/marketing/bottom-cta-section.svelte';
+	import LandingHero from '#lib/components/marketing/landing-hero.svelte';
+	import UnlimitedSection from '#lib/components/marketing/unlimited-section.svelte';
+	import SuperSection from '#lib/components/marketing/super-section.svelte';
+	import StudyTeamSection from '#lib/components/marketing/study-team-section.svelte';
+	import PricingSection from '#lib/components/marketing/pricing-section.svelte';
+	import PublicShell from '#lib/components/layout/public-shell.svelte';
 
 	let { data } = $props();
 
@@ -87,6 +87,7 @@
 			}))
 		})
 	);
+
 	const homeFaqJsonLdMarkup = $derived(
 		'<script type="application/ld+json">' + homeFaqJsonLd + '</' + 'script>'
 	);
@@ -97,7 +98,7 @@
 			.getSession()
 			.then(({ data }) => {
 				if (data?.session) {
-					void goto(resolve('/app'), { replaceState: true });
+					void goto(resolve('app'), { replace: true });
 				}
 			})
 			.catch(() => {
@@ -108,7 +109,9 @@
 
 <svelte:head>
 	<title>Free AP Practice | The Fastest Way to Practice AP Online</title>
+
 	<meta name="title" content="Free AP Practice | The Fastest Way to Practice AP Online" />
+
 	<meta
 		name="description"
 		content="The fastest free AP practice on the internet: pick a subject and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
@@ -133,8 +136,11 @@
 	<link rel="canonical" href="https://freeappractice.org/" />
 
 	<meta property="og:type" content="website" />
+
 	<meta property="og:url" content="https://freeappractice.org/" />
+
 	<meta property="og:title" content="Free AP Practice | Start Practicing in 2 Clicks" />
+
 	<meta
 		property="og:description"
 		content="The fastest way to practice AP online: pick a subject, start practicing, get instant feedback. Free, unlimited, no signup across 20+ subjects."
@@ -150,13 +156,18 @@
 	<meta property="og:locale" content="en_US" />
 
 	<meta name="twitter:card" content="summary_large_image" />
+
 	<meta name="twitter:url" content="https://freeappractice.org/" />
+
 	<meta name="twitter:title" content="Free AP Practice | 2 Clicks, No Signup" />
+
 	<meta
 		name="twitter:description"
 		content="Fastest free AP practice online: pick a subject, start practicing, get instant feedback. Unlimited questions across 20+ subjects."
 	/>
+
 	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
+
 	<meta
 		name="twitter:image:alt"
 		content="FreeAPPractice.org – fastest free AP practice, 2 clicks to start"
@@ -184,9 +195,9 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.9.6",
+			"softwareVersion": "1.9.7",
 			"datePublished": "2025-12-12",
-			"dateModified": "2026-10-10",
+			"dateModified": "2026-10-12",
 			"inLanguage": "en-US",
 			"isAccessibleForFree": true,
 			"educationalUse": [

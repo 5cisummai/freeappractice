@@ -1,8 +1,8 @@
-import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
-import { persistQuestionAttempt } from '$lib/users/attempt-write.server';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
-import { getQuestionById } from '$lib/question-bank/mcq/repository.server';
-import type { IQuestionAttempt } from '$lib/users/records.server';
+import { sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
+import { persistQuestionAttempt } from '#lib/users/attempt-write.server.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
+import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
+import type { IQuestionAttempt } from '#lib/users/records.server.js';
 
 const ANSWER_CHOICES = new Set(['A', 'B', 'C', 'D']);
 

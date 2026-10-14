@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createLazyComponentLoader } from '$lib/client/lazy-component';
+import { createLazyComponentLoader } from '#lib/client/lazy-component.js';
 
 describe('createLazyComponentLoader', () => {
 	it('shares an in-flight import and caches the loaded component', async () => {

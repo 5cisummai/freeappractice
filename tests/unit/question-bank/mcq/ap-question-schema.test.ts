@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
 	assertOpenAiCompatibleObjectSchema,
 	findOpenAiOptionalPropertyPaths
-} from '$lib/ai/openai-structured-schema';
+} from '#lib/question-bank/mcq/structured-schema.js';
 import {
 	apQuestionSchema,
 	apStimulusSetSchema,
 	apStimulusSetJsonSchema,
 	parseGeneratedApStimulusSet,
 	parseGeneratedApQuestion
-} from '$lib/question-bank/mcq/generation.server';
+} from '#lib/question-bank/mcq/generation.server.js';
 
 describe('apQuestionSchema OpenAI structured-output compatibility', () => {
 	it('keeps every property required for OpenAI structured outputs', () => {

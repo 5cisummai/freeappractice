@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { invalidateAppRoute } from '$lib/client/invalidate-data.js';
+	import { invalidateAppRoute } from '#lib/client/invalidate-data.js';
 	import { resolve } from '$app/paths';
-	import { getCoursePresentation } from '$lib/onboarding-courses.js';
-	import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-	import EmptyState from '$lib/components/app/empty-state.svelte';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { getCoursePresentation } from '#lib/onboarding-courses.js';
+	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+	import EmptyState from '#lib/components/app/empty-state.svelte';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import EllipsisVerticalIcon from '@tabler/icons-svelte/icons/dots-vertical';
 	import { toast } from 'svelte-sonner';
@@ -24,7 +24,7 @@
 	let targetMaterial = $state<(typeof data.materials)[number] | null>(null);
 
 	function practiceHref(slug: string): string {
-		return `${resolve('/app/practice')}?shared=${encodeURIComponent(slug)}`;
+		return `${resolve('app/practice')}?shared=${encodeURIComponent(slug)}`;
 	}
 
 	function openRemove(material: (typeof data.materials)[number]) {
@@ -140,9 +140,9 @@
 			imageUrl={materialsImage}
 		>
 			{#snippet button()}
-				<Button href={resolve('/app/practice')} variant="outline" class="rounded-full">
-					Go to practice
-				</Button>
+				<Button href={resolve('app/practice')} variant="outline" class="rounded-full"
+					>Go to practice</Button
+				>
 			{/snippet}
 		</EmptyState>
 	{/if}

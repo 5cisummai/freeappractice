@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { getCourses } from '$lib/catalog/ap-courses';
-	import { frqPracticeFor } from '$lib/question-bank/frq/practice';
-	import { getFocusedPracticeHref } from '$lib/catalog/practice-pages';
+	import { getCourses } from '#lib/catalog/courses.js';
+	import { frqPracticeFor } from '#lib/question-bank/frq/practice.js';
+	import { getFocusedPracticeHref } from '#lib/catalog/practice-pages.js';
 	import { tick } from 'svelte';
 	import BugIcon from '@tabler/icons-svelte/icons/bug-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
@@ -11,17 +11,17 @@
 	import RotateCcwIcon from '@tabler/icons-svelte/icons/rotate-2';
 	import ShareIcon from '@tabler/icons-svelte/icons/share';
 	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
-	import BugReportDialog from '$lib/components/questions/bug-report-dialog.svelte';
-	import FirstUseHint from '$lib/components/onboarding/first-use-hint.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import { Slider } from '$lib/components/ui/slider/index.js';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import { cn } from '$lib/utils.js';
-	import { capturePracticeSelectorUsed } from '$lib/client/activation-analytics';
-	import { capturePostHogEvent } from '$lib/client/posthog-analytics';
+	import BugReportDialog from '#lib/components/questions/bug-report-dialog.svelte';
+	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { Input } from '#lib/components/ui/input/index.js';
+	import { Label } from '#lib/components/ui/label/index.js';
+	import { Slider } from '#lib/components/ui/slider/index.js';
+	import * as Command from '#lib/components/ui/command/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
+	import { cn } from '#lib/utils.js';
+	import { capturePracticeSelectorUsed } from '#lib/client/activation-analytics.js';
+	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 
 	type QuestionSelectorProps = {
 		selectedCourse?: string;

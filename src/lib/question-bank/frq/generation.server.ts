@@ -1,20 +1,21 @@
+export const FRQ_GENERATION_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { zodSchema } from 'ai';
 import { z } from 'zod';
-import { FRQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
-import { structuredObject } from '$lib/ai/service.server';
-import { AP_DATA } from '$lib/data/ap-data';
+
+import { generateText, Output } from 'ai';
+import { AP_DATA } from '#lib/catalog/dataset.js';
 import {
 	FRQ_SCOPE_SENTENCE,
 	frqPracticeFor,
 	resolveFrqPoolRequest
-} from '$lib/question-bank/frq/practice';
+} from '#lib/question-bank/frq/practice.js';
 import {
 	type FrqFormatRecord,
 	type FrqFixedPart,
 	selectFrqFormat
-} from '$lib/question-bank/frq/profiles.server';
-import { createFrqQuestion, newFrqPoolRandomKey } from '$lib/question-bank/frq/model.server';
+} from '#lib/question-bank/frq/profiles.server.js';
+import { createFrqQuestion, newFrqPoolRandomKey } from '#lib/question-bank/frq/model.server.js';
 import {
 	FRQ_SCHEMA_VERSION,
 	FrqMaterialSchema,
@@ -23,14 +24,14 @@ import {
 	type FrqPart,
 	type FrqQuestion,
 	type PublicFrqQuestion
-} from '$lib/question-bank/frq/types';
+} from '#lib/question-bank/frq/types.js';
 import {
 	assertNoNullCharacters,
 	computeContentHash,
 	isDuplicateKeyError
-} from '$lib/question-bank/util.server';
-import { getRecentTopics } from '$lib/question-bank/recent-topic.server';
-import { logger } from '$lib/server/logger';
+} from '#lib/question-bank/util.server.js';
+import { getRecentTopics } from '#lib/question-bank/recent-topic.server.js';
+import { logger } from '#lib/server/logger.js';
 
 const RECENT_TOPICS_WINDOW = 20;
 
@@ -269,15 +270,12 @@ async function generateFrq(
 	formatId?: string
 ): Promise<FrqQuestion> {
 	const prompt = buildFrqGenerationPrompt(course, unit, recentTopics, formatId);
-	const { parsed } = await structuredObject({
-		callName: 'generateFrqQuestion',
+	const { output: parsed } = await generateText({
 		model: FRQ_GENERATION_MODEL,
-		system: prompt.system,
-		user: prompt.user,
-		schema: GeneratedFrqSchema,
-		schemaName: 'frq_question',
-		reasoningEffort: 'high',
-		logContext: { course, unit, formatId: prompt.format.formatId }
+		instructions: prompt.system,
+		prompt: prompt.user,
+		output: Output.object({ schema: GeneratedFrqSchema, name: 'frq_question' }),
+		providerOptions: { openai: { forceReasoning: true, reasoningEffort: 'high' } }
 	});
 	return parseGeneratedFrq(course, unit, parsed, prompt.format.formatId);
 }

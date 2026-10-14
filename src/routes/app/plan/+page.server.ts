@@ -1,12 +1,12 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { authorizeFeatureRequest } from '$lib/super/feature-access.server';
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
 import {
 	completeStudyTask,
 	getCurrentStudyPlan,
 	StudyPlanConflictError,
 	StudyPlansLockedError
-} from '$lib/super/study-plan.server';
+} from '#lib/agent/plans/store.server.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.userId!;

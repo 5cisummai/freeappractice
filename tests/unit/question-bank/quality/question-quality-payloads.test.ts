@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	feedbackRequestSchema,
 	questionQualityRequestSchema
-} from '$lib/question-bank/quality/payloads';
+} from '#lib/question-bank/quality/payloads.js';
 
 describe('question quality request validation', () => {
 	it('accepts known actions with bounded fields', () => {

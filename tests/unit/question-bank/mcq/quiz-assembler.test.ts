@@ -4,16 +4,17 @@ const { findActiveQuestionsForQuizMock } = vi.hoisted(() => ({
 	findActiveQuestionsForQuizMock: vi.fn()
 }));
 
-vi.mock('$lib/server/logger', () => ({
+vi.mock('#lib/server/logger.js', () => ({
 	logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-vi.mock('$lib/question-bank/mcq/repository.server', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/question-bank/mcq/repository.server')>();
+vi.mock('#lib/question-bank/mcq/repository.server.js', async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import('#lib/question-bank/mcq/repository.server.js')>();
 	return { ...actual, findActiveQuestionsForQuiz: findActiveQuestionsForQuizMock };
 });
 
-vi.mock('$lib/question-bank/mcq/stimulus-policy', () => ({
+vi.mock('#lib/question-bank/mcq/stimulus-policy.js', () => ({
 	isStimulusPolicyEnabledForUnit: (
 		policy: { setsEnabled: boolean; enabledUnits?: string[] },
 		unit?: string
@@ -46,8 +47,8 @@ vi.mock('$lib/question-bank/mcq/stimulus-policy', () => ({
 	})
 }));
 
-import { assembleMcqQuiz } from '$lib/question-bank/mcq/quiz-assembler.server';
-import { logger } from '$lib/server/logger';
+import { assembleMcqQuiz } from '#lib/question-bank/mcq/quiz-assembler.server.js';
+import { logger } from '#lib/server/logger.js';
 
 function question(id: string, position?: number) {
 	return {

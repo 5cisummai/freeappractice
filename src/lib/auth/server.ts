@@ -4,41 +4,48 @@ import { oneTap } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { waitUntil } from '@vercel/functions';
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import { getRequestEvent } from '$app/server';
-import { env } from '$env/dynamic/private';
+
+import {
+	BETTER_AUTH_SECRET,
+	BETTER_AUTH_URL,
+	GOOGLE_CLIENT_ID,
+	GOOGLE_CLIENT_SECRET
+} from '$app/env/private';
+
 import bcrypt from 'bcryptjs';
-import { getNeonDatabase } from '$lib/server/neon/db';
-import { betterAuthSchema } from '$lib/server/neon/schema';
+import { getNeonDatabase } from '#lib/server/neon/db.js';
+import { betterAuthSchema } from '#lib/server/neon/schema.js';
 import {
 	sendChangeEmailConfirmationEmail,
 	sendConfirmationEmail,
 	sendDeleteAccountEmail,
 	sendExistingUserSignupEmail,
 	sendResetEmail
-} from '$lib/auth/email.server';
-import { getEmailDeliveryContext } from '$lib/server/email-delivery.server';
-import { createUserProfile } from '$lib/users/model.server';
-import { deleteAppDataDocuments } from '$lib/users/delete-app-data-documents.server';
+} from '#lib/auth/email.server.js';
+import { getEmailDeliveryContext } from '#lib/server/email-delivery.server.js';
+import { createUserProfile } from '#lib/users/model.server.js';
+import { deleteAppDataDocuments } from '#lib/users/delete-app-data-documents.server.js';
 import {
 	prepareAccountDeletion,
 	processAccountDeletionCleanup
-} from '$lib/super/account-cleanup.server';
-import { createSuperStripePlugin } from '$lib/super/stripe-plugin.server';
-import { getTrustedOrigins } from '$lib/auth/trusted-origins.server';
-import { getAdminUserIds } from '$lib/auth/admin.server';
+} from '#lib/users/account-cleanup.server.js';
+import { createSuperStripePlugin } from '#lib/billing/stripe-plugin.server.js';
+import { getTrustedOrigins } from '#lib/auth/trusted-origins.server.js';
+import { getAdminUserIds } from '#lib/auth/admin.server.js';
 import {
 	isPasswordWithinLimit,
 	MAX_PASSWORD_LENGTH,
 	MIN_PASSWORD_LENGTH,
 	PASSWORD_LENGTH_ERROR
-} from '$lib/auth/password-policy';
-import { classifyAccountCreationMethod } from '$lib/auth/analytics';
-import { captureAnonymousServerMetric } from '$lib/server/posthog';
-import { createOrganizationPlugin } from '$lib/auth/organization-plugin.server';
-import { ensurePersonalOrganization } from '$lib/auth/organization-queries.server';
-import { limitNameLength } from '$lib/auth/name-policy';
-import { ONBOARDING_COOKIE_NAME, ONBOARDING_PENDING_COOKIE_OPTIONS } from '$lib/onboarding.js';
+} from '#lib/auth/password-policy.js';
+import { classifyAccountCreationMethod } from '#lib/auth/analytics.js';
+import { captureAnonymousServerMetric } from '#lib/server/posthog.js';
+import { createOrganizationPlugin } from '#lib/auth/organization-plugin.server.js';
+import { ensurePersonalOrganization } from '#lib/auth/organization-queries.server.js';
+import { limitNameLength } from '#lib/auth/name-policy.js';
+import { ONBOARDING_COOKIE_NAME, ONBOARDING_PENDING_COOKIE_OPTIONS } from '#lib/onboarding.js';
 
 const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
 	get: (_target, property) => {
@@ -49,8 +56,9 @@ const db = new Proxy({} as ReturnType<typeof getNeonDatabase>, {
 });
 
 const authSecret =
-	env.BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
-const authBaseUrl = env.BETTER_AUTH_URL;
+	BETTER_AUTH_SECRET ?? (building ? 'build-time-placeholder-secret-min-32-chars' : undefined);
+
+const authBaseUrl = BETTER_AUTH_URL;
 const superStripePlugin = createSuperStripePlugin();
 
 export const auth = betterAuth({
@@ -213,12 +221,13 @@ export const auth = betterAuth({
 			});
 		}
 	},
+
 	socialProviders:
-		env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+		GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
 			? {
 					google: {
-						clientId: env.GOOGLE_CLIENT_ID,
-						clientSecret: env.GOOGLE_CLIENT_SECRET
+						clientId: GOOGLE_CLIENT_ID,
+						clientSecret: GOOGLE_CLIENT_SECRET
 					}
 				}
 			: undefined,
@@ -234,10 +243,8 @@ export const auth = betterAuth({
 		}
 	},
 	plugins: [
-		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
-		admin({
-			adminUserIds: getAdminUserIds()
-		}),
+		...(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
+		admin({ adminUserIds: getAdminUserIds() }),
 		createOrganizationPlugin(),
 		...(superStripePlugin ? [superStripePlugin] : []),
 		sveltekitCookies(getRequestEvent)

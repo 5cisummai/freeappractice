@@ -1,13 +1,13 @@
-import { isStimulusQuestionsEnabled } from '$lib/flags';
+import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 import {
 	countActiveMcqQuestions,
 	findCachedQuestionByPool,
 	findCachedQuestionsByPool,
 	type McqPoolQuestion
-} from '$lib/question-bank/mcq/repository.server';
-import { copyStimulusFields, type McqAnswerBody } from '$lib/question-bank/mcq/types';
-import { QuestionBank } from '$lib/question-bank/runtime.server';
-import { scheduleBackgroundTask } from '$lib/server/background-task.server';
+} from '#lib/question-bank/mcq/repository.server.js';
+import { copyStimulusFields, type McqAnswerBody } from '#lib/question-bank/mcq/types.js';
+import { QuestionBank } from '#lib/question-bank/runtime.server.js';
+import { scheduleBackgroundTask } from '#lib/server/background-task.server.js';
 
 type CachedResult = {
 	answer: McqAnswerBody;
@@ -75,7 +75,7 @@ export const mcqBank = new QuestionBank<McqPoolQuestion, CachedResult>({
 		unit: doc.unit
 	}),
 	requestRefill: async (course, unit) => {
-		const { requestPoolRefill } = await import('$lib/question-bank/pool-refill-queue.server');
+		const { requestPoolRefill } = await import('#lib/question-bank/pool-refill-queue.server.js');
 		return requestPoolRefill({ questionType: 'mcq', course: course, unit });
 	}
 });

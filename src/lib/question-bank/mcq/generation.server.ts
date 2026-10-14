@@ -1,16 +1,27 @@
+import { logger } from '#lib/server/logger.js';
+import {
+	NoObjectGeneratedError,
+	NoOutputGeneratedError,
+	Output,
+	isStepCount,
+	ToolLoopAgent,
+	type ToolSet
+} from 'ai';
+
+export const MCQ_GENERATION_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { AP_DATA } from '$lib/data/ap-data';
-import { MCQ_GENERATION_MODEL } from '$lib/ai/ai-models-config';
-import { EXAMFIG_DIAGRAM_SKILL } from '$lib/ai/examfig-skill';
-import { structuredObject } from '$lib/ai/service.server';
-import { examfigTools } from '$lib/ai/tools/examfig.server';
-import { validateExamfigDiagram } from '$lib/ai/examfig.server';
-import { assertOpenAiCompatibleObjectSchema } from '$lib/ai/openai-structured-schema';
+import { AP_DATA } from '#lib/catalog/dataset.js';
+
+import { EXAMFIG_DIAGRAM_SKILL } from '#lib/question-bank/mcq/diagram-prompt.js';
+
+import { examfigTools } from '#lib/question-bank/mcq/diagram-tools.server.js';
+import { validateExamfigDiagram } from '#lib/diagrams/validation.server.js';
+import { assertOpenAiCompatibleObjectSchema } from '#lib/question-bank/mcq/structured-schema.js';
 import {
 	getStimulusPolicy,
 	isStimulusPolicyEnabledForUnit
-} from '$lib/question-bank/mcq/stimulus-policy';
+} from '#lib/question-bank/mcq/stimulus-policy.js';
 
 /**
  * MCQ generation: prompts, structured AI calls, and generation metrics.
@@ -367,7 +378,7 @@ async function generateAPQuestionBody(opts: {
 	const diagramsEnabled = opts.diagramsEnabled === true;
 	const { system, user } = buildMcqGenerationPrompt({ ...opts, diagramsEnabled });
 
-	const result = await structuredObject({
+	const result = await generateMcqObject({
 		callName: 'generateAPQuestion',
 		model: MCQ_GENERATION_MODEL,
 		system,
@@ -423,7 +434,7 @@ export async function generateAPStimulusSet(opts: {
 		...opts,
 		allowedDiagramTypes: profile.diagramTypes
 	});
-	const result = await structuredObject({
+	const result = await generateMcqObject({
 		callName: 'generateAPStimulusSet',
 		model: MCQ_GENERATION_MODEL,
 		system,
@@ -493,4 +504,87 @@ export async function generateAPQuestion(opts: {
 			persistenceMs: 0
 		}
 	};
+}
+
+const STRUCTURED_OUTPUT_STEP_LIMIT = 10;
+const STRUCTURED_OUTPUT_FINAL_STEP = STRUCTURED_OUTPUT_STEP_LIMIT - 1;
+
+type StructuredObjectParams<T> = {
+	callName: string;
+	model: string;
+	system: string;
+	user: string;
+	schema: z.ZodType<T>;
+	schemaName: string;
+	reasoningEffort?: 'low' | 'medium' | 'high';
+	logContext?: Record<string, unknown>;
+	tools?: ToolSet;
+};
+
+/** Structured object generation with shared logging and failure shaping. */
+async function generateMcqObject<T>(
+	opts: StructuredObjectParams<T>
+): Promise<{ parsed: T; model: string }> {
+	const { callName, model, system, user, schema, schemaName, reasoningEffort, logContext, tools } =
+		opts;
+	const doneAiCall = logger.aiCall(callName, model, logContext);
+	let stepsCompleted = 0;
+	try {
+		const agent = new ToolLoopAgent({
+			model: model,
+			instructions: system,
+			...(tools ? { tools } : {}),
+			stopWhen: isStepCount(STRUCTURED_OUTPUT_STEP_LIMIT),
+			prepareStep: ({ stepNumber }) =>
+				stepNumber >= STRUCTURED_OUTPUT_FINAL_STEP
+					? { activeTools: [], toolChoice: 'none' as const }
+					: undefined,
+			output: Output.object({ name: schemaName, schema }),
+			providerOptions: {
+				openai: {
+					forceReasoning: true,
+					...(reasoningEffort != null && { reasoningEffort })
+				}
+			},
+			onStepEnd: ({ finishReason, rawFinishReason, toolCalls, usage }) => {
+				stepsCompleted += 1;
+				logger.info(`[ai] ${callName} step ${stepsCompleted} finished`, {
+					...logContext,
+					model,
+					finishReason,
+					rawFinishReason,
+					toolNames: toolCalls.map((call) => call.toolName),
+					inputTokens: usage.inputTokens,
+					outputTokens: usage.outputTokens
+				});
+			}
+		});
+		const result = await agent.generate({ prompt: user });
+		if (!result.output) throw new Error('No parsed output from structured response');
+		doneAiCall({
+			promptTokens: result.usage.inputTokens,
+			completionTokens: result.usage.outputTokens
+		});
+		return { parsed: result.output, model };
+	} catch (err) {
+		if (NoObjectGeneratedError.isInstance(err)) {
+			logger.error(`[ai] ${callName} failed — no object generated`, {
+				...logContext,
+				model,
+				error: 'No structured object generated'
+			});
+			throw new Error('No parsed output from structured response', { cause: err });
+		}
+		if (NoOutputGeneratedError.isInstance(err)) {
+			logger.error(`[ai] ${callName} failed — no final output generated`, {
+				...logContext,
+				model,
+				stepsCompleted,
+				error: err
+			});
+			throw new Error('No final output from structured response', { cause: err });
+		}
+		logger.error(`[ai] ${callName} failed`, { ...logContext, model, error: err });
+		throw err;
+	}
 }

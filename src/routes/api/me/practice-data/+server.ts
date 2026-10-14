@@ -1,7 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { clearPracticeDataForUser } from '$lib/users/clear-practice-data.server';
-import { capturePostHogServerEvent } from '$lib/server/posthog';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { clearPracticeDataForUser } from '#lib/users/clear-practice-data.server.js';
+import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 
 export const DELETE = withAuthedHandler(
 	async (event, userId) => {
@@ -12,7 +11,7 @@ export const DELETE = withAuthedHandler(
 			event: 'practice_data_cleared'
 		});
 
-		return json({ message: 'Practice data cleared' });
+		return Response.json({ message: 'Practice data cleared' });
 	},
 	{ logLabel: 'Clear practice data error', errorMessage: 'Failed to clear practice data' }
 );

@@ -7,12 +7,12 @@
 		getCoreRowModel,
 		getSortedRowModel
 	} from '@tanstack/table-core';
-	import type { AdminUserRow } from '$lib/admin/types.js';
+	import type { AdminUserRow } from '#lib/admin/types.js';
 	import { createAdminUsersColumns } from './admin-users-columns.js';
-	import * as Table from '$lib/components/ui/table/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { FlexRender, createSvelteTable } from '$lib/components/ui/data-table/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import { FlexRender, createSvelteTable } from '#lib/components/ui/data-table/index.js';
 
 	type Props = {
 		data: AdminUserRow[];

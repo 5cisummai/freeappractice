@@ -1,37 +1,37 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { afterNavigate, replaceState } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import AppSidebar from '$lib/components/layout/app-sidebar.svelte';
-	import CoachSidebarProvider from '$lib/components/super/coach-sidebar-provider.svelte';
-	import CoachSidebarRoot from '$lib/components/super/coach-sidebar.svelte';
-	import CoachSidebarTrigger from '$lib/components/super/coach-sidebar-trigger.svelte';
-	import FreeBetaClaimDialog from '$lib/components/super/free-beta-claim-dialog.svelte';
-	import ThemeToggle from '$lib/components/layout/theme-toggle.svelte';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.js';
-	import { setCoachPageToolbar } from '$lib/components/super/coach-context.svelte.js';
+	import AppSidebar from '#lib/components/layout/app-sidebar.svelte';
+	import CoachSidebarProvider from '#lib/components/agent/coach-sidebar-provider.svelte';
+	import CoachSidebarRoot from '#lib/components/agent/coach-sidebar.svelte';
+	import CoachSidebarTrigger from '#lib/components/agent/coach-sidebar-trigger.svelte';
+	import FreeBetaClaimDialog from '#lib/components/agent/free-beta-claim-dialog.svelte';
+	import ThemeToggle from '#lib/components/layout/theme-toggle.svelte';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { SidebarTrigger } from '#lib/components/ui/sidebar/index.js';
+	import { setCoachPageToolbar } from '#lib/components/agent/coach-context.svelte.js';
 	import {
 		captureAuthenticatedStudentReturnedIfNeeded,
 		captureSignupCompleted,
 		captureUserLoggedIn
-	} from '$lib/client/activation-analytics';
-	import { identifyPostHogUser } from '$lib/client/posthog-analytics';
-	import { apiFetch } from '$lib/client/api.js';
-	import { createLazyComponentLoader } from '$lib/client/lazy-component.js';
-	import LazyComponent from '$lib/components/app/lazy-component.svelte';
+	} from '#lib/client/activation-analytics.js';
+	import { identifyPostHogUser } from '#lib/client/posthog-analytics.js';
+	import { apiFetch } from '#lib/client/api.js';
+	import { createLazyComponentLoader } from '#lib/client/lazy-component.js';
+	import LazyComponent from '#lib/components/app/lazy-component.svelte';
 	import {
 		recordPendingSharedQuizRunFailure,
 		readPendingSharedQuizRuns,
 		removePendingSharedQuizRun
-	} from '$lib/shared-practice/pending-runs.js';
+	} from '#lib/shared-practice/pending-runs.js';
 
 	let { data, children } = $props();
 	const coachPageToolbar = setCoachPageToolbar();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
 	const isCoachPage = $derived.by(() => {
-		const coachHref = resolve('/app/coach');
+		const coachHref = resolve('app/coach');
 		return page.url.pathname === coachHref || page.url.pathname.startsWith(`${coachHref}/`);
 	});
 	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
@@ -39,16 +39,20 @@
 	let layoutMounted = $state(false);
 	let coachSidebarOpen = $state(false);
 	const loadCoachShell = createLazyComponentLoader(
-		() => import('$lib/components/super/coach-shell.svelte')
+		() => import('#lib/components/agent/coach-shell.svelte')
 	);
 
 	function stripAuthQueryParam(param: 'signup' | 'login') {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (!url.searchParams.has(param)) return;
 		url.searchParams.delete(param);
 		// Pathname is the current resolved app route; only the query string changes.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
+		goto(`${url.pathname}${url.search}${url.hash}`, {
+			shallow: true,
+			replace: true,
+			state: page.state
+		});
 	}
 
 	onMount(() => {
@@ -73,7 +77,8 @@
 		}
 	});
 
-	afterNavigate(() => {
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
 		if (!data.user) return;
 
 		if (page.url.searchParams.get('signup') === 'google') {

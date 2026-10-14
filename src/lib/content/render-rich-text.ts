@@ -1,7 +1,7 @@
 import katex from 'katex';
 import { Marked, type Token } from 'marked';
 import hljs from 'highlight.js';
-import { escapeHtml } from '$lib/escape-html';
+import { escapeHtml } from '#lib/escape-html.js';
 
 /** Allowlist for markdown link/image URLs (same policy as blog markdown). */
 export function isSafeMarkdownUrl(url: string): boolean {

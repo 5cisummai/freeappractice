@@ -1,9 +1,12 @@
-import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
-import { isAdminUser } from '$lib/auth/admin.server';
-import { withAuthedHandler } from '$lib/auth/route-helpers.server';
-import { createSuperGrant, getSuperAdminOverview, revokeSuperGrant } from '$lib/super/admin.server';
+import { isAdminUser } from '#lib/auth/admin.server.js';
+import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import {
+	createSuperGrant,
+	getSuperAdminOverview,
+	revokeSuperGrant
+} from '#lib/billing/admin.server.js';
 
 const grantSchema = z
 	.object({
@@ -17,14 +20,16 @@ const grantSchema = z
 const revokeSchema = z.object({ grantId: z.string().trim().min(1).max(100) }).strict();
 
 function requireAdmin(user: { id: string }): Response | null {
-	return isAdminUser(user) ? null : json({ error: 'Admin access required' }, { status: 403 });
+	return isAdminUser(user)
+		? null
+		: Response.json({ error: 'Admin access required' }, { status: 403 });
 }
 
 export const GET: RequestHandler = withAuthedHandler(
 	async (event) => {
 		const denial = requireAdmin(event.locals.user!);
 		if (denial) return denial;
-		return json(await getSuperAdminOverview());
+		return Response.json(await getSuperAdminOverview());
 	},
 	{ logLabel: 'Get Super admin overview error', errorMessage: 'Failed to load Super admin data' }
 );
@@ -34,13 +39,13 @@ export const POST: RequestHandler = withAuthedHandler(
 		const denial = requireAdmin(event.locals.user!);
 		if (denial) return denial;
 		const parsed = grantSchema.safeParse(await event.request.json().catch(() => null));
-		if (!parsed.success) return json({ error: 'Invalid Super grant' }, { status: 400 });
+		if (!parsed.success) return Response.json({ error: 'Invalid Super grant' }, { status: 400 });
 		const startsAt = new Date(parsed.data.startsAt);
 		const expiresAt = new Date(parsed.data.expiresAt);
 		if (expiresAt <= startsAt)
-			return json({ error: 'The grant must expire after it starts' }, { status: 400 });
+			return Response.json({ error: 'The grant must expire after it starts' }, { status: 400 });
 
-		return json({
+		return Response.json({
 			grant: await createSuperGrant({
 				...parsed.data,
 				startsAt,
@@ -57,11 +62,11 @@ export const DELETE: RequestHandler = withAuthedHandler(
 		const denial = requireAdmin(event.locals.user!);
 		if (denial) return denial;
 		const parsed = revokeSchema.safeParse(await event.request.json().catch(() => null));
-		if (!parsed.success) return json({ error: 'Invalid grant' }, { status: 400 });
+		if (!parsed.success) return Response.json({ error: 'Invalid grant' }, { status: 400 });
 		const revoked = await revokeSuperGrant(parsed.data.grantId);
 		return revoked
-			? json({ revoked: true })
-			: json({ error: 'Active grant not found' }, { status: 404 });
+			? Response.json({ revoked: true })
+			: Response.json({ error: 'Active grant not found' }, { status: 404 });
 	},
 	{ logLabel: 'Revoke Super grant error', errorMessage: 'Failed to revoke Super grant' }
 );

@@ -4,14 +4,14 @@
 	import BadgeCheckIcon from '@tabler/icons-svelte/icons/badge';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import MessageSquareIcon from '@tabler/icons-svelte/icons/message-filled';
-	import PageShell from '$lib/components/layout/page-shell.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import AdminUsersDataTable from '$lib/components/admin/admin-users-data-table.svelte';
-	import AdminCacheDashboard from '$lib/components/admin/admin-cache-dashboard.svelte';
-	import AdminQualityDashboard from '$lib/components/admin/admin-quality-dashboard.svelte';
-	import AdminSuperDashboard from '$lib/components/admin/admin-super-dashboard.svelte';
-	import AdminFeedbackDashboard from '$lib/components/admin/admin-feedback-dashboard.svelte';
-	import type { AdminTab } from '$lib/admin/types.js';
+	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import AdminUsersDataTable from '#lib/components/admin/admin-users-data-table.svelte';
+	import AdminCacheDashboard from '#lib/components/admin/admin-cache-dashboard.svelte';
+	import AdminQualityDashboard from '#lib/components/admin/admin-quality-dashboard.svelte';
+	import AdminSuperDashboard from '#lib/components/admin/admin-super-dashboard.svelte';
+	import AdminFeedbackDashboard from '#lib/components/admin/admin-feedback-dashboard.svelte';
+	import type { AdminTab } from '#lib/admin/types.js';
 	import { resolve } from '$app/paths';
 
 	let { data } = $props();
@@ -29,7 +29,7 @@
 		if (tab === 'users' && data.search) params.push(`search=${encodeURIComponent(data.search)}`);
 		const currentPage = Math.floor(data.offset / data.limit) + 1;
 		if (tab === 'users' && currentPage > 1) params.push(`page=${currentPage}`);
-		return `${resolve('/app/admin')}?${params.join('&')}`;
+		return `${resolve('app/admin')}?${params.join('&')}`;
 	}
 </script>
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { twAnimateInView } from '$lib/tw-animate';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import { twAnimateInView } from '#lib/tw-animate.js';
 </script>
 
 <section class="mx-auto w-full max-w-7xl {twAnimateInView}" aria-labelledby="bottom-cta-heading">
@@ -15,7 +15,7 @@
 			</h2>
 
 			<div class="mt-8 flex items-center justify-center">
-				<Button href={resolve('/signup')} size="lg" variant="default">Sign up free</Button>
+				<Button href={resolve('signup')} size="lg" variant="default">Sign up free</Button>
 			</div>
 		</div>
 	</div>

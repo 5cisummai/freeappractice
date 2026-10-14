@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isAuthorizedCronRequest } from '$lib/auth/cron-auth';
-import { isPasswordWithinLimit } from '$lib/auth/password-policy';
+import { isAuthorizedCronRequest } from '#lib/auth/cron-auth.js';
+import { isPasswordWithinLimit } from '#lib/auth/password-policy.js';
 
 describe('isAuthorizedCronRequest', () => {
 	it('rejects when CRON_SECRET is missing', () => {

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { createTutorChatStream, type TutorChatFunction } from '$lib/tutor/chat-stream.server';
-import type { TutorChatRequest } from '$lib/tutor/chat-request';
+import { createTutorChatStream, type TutorChatFunction } from '#lib/tutor/chat-stream.server.js';
+import type { TutorChatRequest } from '#lib/tutor/chat-request.js';
 
 const payload: TutorChatRequest = {
 	questionId: 'c8f3048f-1681-47f2-b1db-e912655275d0',

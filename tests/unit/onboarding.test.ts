@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readOnboardingState, serializeCompletedOnboarding } from '$lib/onboarding';
+import { readOnboardingState, serializeCompletedOnboarding } from '#lib/onboarding.js';
 
 describe('onboarding state', () => {
 	it('round-trips completed goals', () => {

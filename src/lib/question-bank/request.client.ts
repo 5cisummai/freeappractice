@@ -1,16 +1,16 @@
-import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api';
+import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 import {
 	QuestionRequestError,
 	questionSourceFromCachedFlag,
 	type QuestionSource
-} from '$lib/client/activation-analytics';
+} from '#lib/client/activation-analytics.js';
 import {
 	isPoolWarmingResponse,
 	parseQuestionPayloadFromResponse,
 	type QuestionApiResponse
-} from '$lib/question-bank/mcq/payload';
-import type { PublicFrqQuestion } from '$lib/question-bank/frq/types';
-import type { GeneratedQuestion } from '$lib/question-bank/mcq/types';
+} from '#lib/question-bank/mcq/payload.js';
+import type { PublicFrqQuestion } from '#lib/question-bank/frq/types.js';
+import type { GeneratedQuestion } from '#lib/question-bank/mcq/types.js';
 
 export class PoolWarmingError extends QuestionRequestError {
 	readonly retryAfterSeconds: number;

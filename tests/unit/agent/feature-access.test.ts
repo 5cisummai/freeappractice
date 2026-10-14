@@ -1,0 +1,117 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+	isSuperCoachEnabled: vi.fn(),
+	isSuperMemoryEnabled: vi.fn(),
+	getPlanAccess: vi.fn(),
+	getStripeClient: vi.fn(() => null),
+	getTutorProfileView: vi.fn(),
+	getAgeConfirmedAt: vi.fn(),
+	getAssistantFeaturesEnabledForRequest: vi.fn()
+}));
+
+vi.mock('#lib/flags.js', () => ({
+	isSuperCoachEnabled: mocks.isSuperCoachEnabled,
+	isSuperMemoryEnabled: mocks.isSuperMemoryEnabled
+}));
+vi.mock('#lib/billing/subscriptions.server.js', () => ({
+	getPlanAccess: mocks.getPlanAccess,
+	getStripeClient: mocks.getStripeClient
+}));
+vi.mock('#lib/agent/personalization/profile.server.js', () => ({
+	getTutorProfileView: mocks.getTutorProfileView,
+	getAgeConfirmedAt: mocks.getAgeConfirmedAt
+}));
+vi.mock('#lib/users/assistant-preferences.server.js', () => ({
+	getAssistantFeaturesEnabledForRequest: mocks.getAssistantFeaturesEnabledForRequest
+}));
+
+import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
+
+const profile = {
+	ageConfirmedAt: '2026-08-04T00:00:00.000Z'
+};
+
+describe('authorizeFeatureRequest', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.isSuperCoachEnabled.mockResolvedValue(true);
+		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
+		mocks.getPlanAccess.mockResolvedValue({
+			plan: 'super',
+			accessReason: 'subscription'
+		});
+		mocks.getTutorProfileView.mockResolvedValue(profile);
+		mocks.getAgeConfirmedAt.mockResolvedValue(new Date(profile.ageConfirmedAt));
+		mocks.getAssistantFeaturesEnabledForRequest.mockResolvedValue(true);
+	});
+
+	it('checks the kill switch before billing', async () => {
+		mocks.isSuperCoachEnabled.mockResolvedValue(false);
+		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'coach');
+
+		expect(result).toMatchObject({
+			allowed: false,
+			status: 503,
+			code: 'feature_disabled'
+		});
+		expect(mocks.getPlanAccess).not.toHaveBeenCalled();
+	});
+
+	it('denies unpaid access without reading the profile', async () => {
+		mocks.getPlanAccess.mockResolvedValue({ plan: 'free', accessReason: null });
+		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'studyPlans');
+
+		expect(result).toMatchObject({
+			allowed: false,
+			status: 403,
+			code: 'subscription_required',
+			message: 'Super subscription required'
+		});
+		expect(mocks.getTutorProfileView).not.toHaveBeenCalled();
+		expect(mocks.getAgeConfirmedAt).not.toHaveBeenCalled();
+	});
+
+	it('denies disabled assistant features before billing, but leaves memory management available', async () => {
+		mocks.getAssistantFeaturesEnabledForRequest.mockResolvedValue(false);
+		const coach = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'coach');
+		expect(coach).toMatchObject({
+			allowed: false,
+			status: 403,
+			code: 'assistant_disabled',
+			message: 'Assistant features are disabled for this account.'
+		});
+		expect(mocks.getPlanAccess).not.toHaveBeenCalled();
+
+		const memory = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'memory');
+		expect(memory).toMatchObject({ allowed: true });
+	});
+
+	it('uses the exact common age denial without loading the profile', async () => {
+		mocks.getAgeConfirmedAt.mockResolvedValue(null);
+		const result = await authorizeFeatureRequest({ locals: {} }, 'user-1', 'coach');
+
+		expect(result).toEqual({
+			allowed: false,
+			status: 403,
+			code: 'age_required',
+			message: 'You must be at least 13 to use Super features.'
+		});
+		expect(mocks.getTutorProfileView).not.toHaveBeenCalled();
+	});
+
+	it('returns resolved facts to the implementation', async () => {
+		const locals = {};
+		const result = await authorizeFeatureRequest({ locals }, 'user-1', 'studyPlans');
+
+		expect(result).toMatchObject({
+			allowed: true,
+			userId: 'user-1',
+			planAccess: { plan: 'super' },
+			profile
+		});
+		expect(mocks.getPlanAccess).toHaveBeenCalledWith('user-1');
+		expect(mocks.getAgeConfirmedAt).toHaveBeenCalledWith('user-1');
+		expect(mocks.getTutorProfileView).toHaveBeenCalledWith('user-1');
+	});
+});

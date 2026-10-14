@@ -14,7 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import type { FrqGrade } from '$lib/question-bank/frq/types';
+import type { FrqGrade } from '#lib/question-bank/frq/types.js';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
 

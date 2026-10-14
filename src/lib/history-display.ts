@@ -1,4 +1,4 @@
-import { sanitizeAttemptTimeMs } from '$lib/users/attempt-time';
+import { sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
 	dateStyle: 'medium',

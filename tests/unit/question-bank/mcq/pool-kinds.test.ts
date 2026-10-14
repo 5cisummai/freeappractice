@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { QUESTION_POOL_CONFIG } from '$lib/question-bank/pool-constants';
-import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '$lib/question-bank/pool-kinds.server';
+import { QUESTION_POOL_CONFIG } from '#lib/question-bank/pool-constants.js';
+import { getPoolKindAdapter, POOL_QUESTION_TYPES } from '#lib/question-bank/pool-kinds.server.js';
 
 describe('question pool kind adapters', () => {
 	it('registers only the existing MCQ and FRQ kinds', () => {

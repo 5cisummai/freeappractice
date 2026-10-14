@@ -258,7 +258,7 @@ flowchart TD
 
 `POST /api/question` skips `auth.api.getSession` in hooks (public MCQ hot path). FRQ and `/api/me/*` still resolve the session; FRQ also uses `withAuthedHandler`.
 
-Canonical site origin for emails, sitemaps, and discovery lives in `$lib/site-url.ts`. Auth callbacks use `$lib/auth/urls.ts` (`authCallbackUrl`). Authenticated API routes use `withAuthedHandler` in `$lib/auth/route-helpers.server.ts`.
+Canonical site origin for emails, sitemaps, and discovery lives in `#lib/site-url.ts`. Auth callbacks use `$lib/auth/urls.ts` (`authCallbackUrl`). Authenticated API routes use `withAuthedHandler` in `$lib/auth/route-helpers.server.ts`.
 
 ---
 
@@ -327,7 +327,7 @@ Practice serve paths never call the LLM or read S3 for the question body — onl
 
 `QuestionShell` is a thin public MCQ-only wrapper around `PracticeShell`. MCQ answer/load/experiment state lives in `createQuestionCardSession` (`question-card-session.svelte.ts`); markup stays in `question-card.svelte`.
 
-Practice page catalog + SEO live in `$lib/catalog` and `$lib/components/practice`.
+Practice page catalog + SEO live in `#lib/catalog` and `$lib/components/practice`.
 
 ---
 

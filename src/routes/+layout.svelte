@@ -1,12 +1,12 @@
 <script lang="ts">
 	import './layout.css';
-	import GoogleOneTapPrompt from '$lib/components/auth/google-one-tap-prompt.svelte';
-	import AnalyticsConsentBanner from '$lib/components/layout/analytics-consent-banner.svelte';
-	import { privacy } from '$lib/client/privacy.svelte.js';
-	import { afterNavigate, beforeNavigate, replaceState } from '$app/navigation';
+	import GoogleOneTapPrompt from '#lib/components/auth/google-one-tap-prompt.svelte';
+	import AnalyticsConsentBanner from '#lib/components/layout/analytics-consent-banner.svelte';
+	import { privacy } from '#lib/client/privacy.svelte.js';
+	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { invalidateAppSubtree } from '$lib/client/invalidate-data.js';
-	import { DEFAULT_THEME } from '$lib/client/theme.svelte.js';
+	import { invalidateAppSubtree } from '#lib/client/invalidate-data.js';
+	import { DEFAULT_THEME } from '#lib/client/theme.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
@@ -14,31 +14,59 @@
 		parseTimezone,
 		TIMEZONE_COOKIE_MAX_AGE,
 		TIMEZONE_COOKIE_NAME
-	} from '$lib/users/timezone';
+	} from '#lib/users/timezone.js';
 
-	import { capturePostHogPageleave, capturePostHogPageview } from '$lib/client/posthog-analytics';
-	import { ACCOUNT_DELETED_QUERY } from '$lib/auth/urls.js';
-	import { Toaster } from '$lib/components/ui/sonner/index.js';
+	import {
+		capturePostHogPageleave,
+		capturePostHogPageview
+	} from '#lib/client/posthog-analytics.js';
+	import { ACCOUNT_DELETED_QUERY } from '#lib/auth/urls.js';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
 	import { toast } from 'svelte-sonner';
+	import { inject, pageview } from '@vercel/analytics';
+	import { injectSpeedInsights } from '@vercel/speed-insights';
 
 	let { children } = $props();
+	let vercelAnalyticsLoaded = false;
+	let speedInsights: ReturnType<typeof injectSpeedInsights> = null;
 
-	beforeNavigate(({ from }) => {
+	beforeNavigate(({ from, shallow, type }) => {
+		if (shallow && type === 'goto') return;
 		if (from?.url.href) capturePostHogPageleave(from.url.href);
 	});
 
-	afterNavigate(({ to }) => {
+	afterNavigate(({ to, shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
+		// Use the generic SDKs: the installed SvelteKit integrations still import $app/stores.
+		if (!vercelAnalyticsLoaded) {
+			const options = {
+				framework: 'sveltekit',
+				basePath: import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH
+			};
+			const config = import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG;
+			inject({ ...options, disableAutoTrack: true }, config);
+			speedInsights = injectSpeedInsights({ ...options, route: to?.route.id }, config);
+			vercelAnalyticsLoaded = true;
+		}
+		if (to?.route.id) {
+			pageview({ route: to.route.id, path: to.url.pathname });
+			speedInsights?.setRoute(to.route.id);
+		}
 		capturePostHogPageview(to?.url.href);
 	});
 
 	function notifyAccountDeletedIfNeeded() {
 		if (page.url.searchParams.get(ACCOUNT_DELETED_QUERY) !== '1') return;
 		toast.success('Account deleted successfully');
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		url.searchParams.delete(ACCOUNT_DELETED_QUERY);
 		// Pathname is the current resolved route; only the query string changes.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		replaceState(`${url.pathname}${url.search}${url.hash}`, page.state);
+		goto(`${url.pathname}${url.search}${url.hash}`, {
+			shallow: true,
+			replace: true,
+			state: page.state
+		});
 	}
 
 	onMount(() => {

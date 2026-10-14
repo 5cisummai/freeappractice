@@ -1,7 +1,7 @@
 <script lang="ts">
-	import PricingCards from '$lib/components/marketing/pricing-cards.svelte';
-	import SectionIntro from '$lib/components/marketing/section-intro.svelte';
-	import { twAnimateInView } from '$lib/tw-animate';
+	import PricingCards from '#lib/components/marketing/pricing-cards.svelte';
+	import SectionIntro from '#lib/components/marketing/section-intro.svelte';
+	import { twAnimateInView } from '#lib/tw-animate.js';
 
 	let { asPage = false }: { asPage?: boolean } = $props();
 </script>

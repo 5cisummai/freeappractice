@@ -1,10 +1,10 @@
-import { invalidateAppLayout, invalidateAppSubtree } from '$lib/client/invalidate-data.js';
+import { invalidateAppLayout, invalidateAppSubtree } from '#lib/client/invalidate-data.js';
 import { toast } from 'svelte-sonner';
-import { authClient } from '$lib/auth/client.js';
-import { accountDeletedHomeUrl, authCallbackUrl } from '$lib/auth/urls.js';
-import { resetPostHogUser } from '$lib/client/posthog-analytics';
-import { apiFetch, getResponseMessage, readJsonOrNull } from '$lib/client/api.js';
-import { MAX_NAME_LENGTH } from '$lib/auth/name-policy';
+import { authClient } from '#lib/auth/client.js';
+import { accountDeletedHomeUrl, authCallbackUrl } from '#lib/auth/urls.js';
+import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
+import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
+import { MAX_NAME_LENGTH } from '#lib/auth/name-policy.js';
 
 type AccountUser = {
 	name: string;
@@ -44,7 +44,7 @@ class AccountActions {
 			if (email !== user.email) {
 				const { error } = await authClient.changeEmail({
 					newEmail: email,
-					callbackURL: authCallbackUrl('/app/settings')
+					callbackURL: authCallbackUrl('app/settings')
 				});
 				if (error) throw new Error(error.message ?? 'Failed to update email');
 				toast.success('Check your current inbox to approve the email change.');

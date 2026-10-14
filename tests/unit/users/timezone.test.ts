@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TIMEZONE_COOKIE_NAME, parseTimezone, timezoneFromCookies } from '$lib/users/timezone';
+import { TIMEZONE_COOKIE_NAME, parseTimezone, timezoneFromCookies } from '#lib/users/timezone.js';
 
 describe('parseTimezone', () => {
 	it('accepts valid IANA timezones', () => {
