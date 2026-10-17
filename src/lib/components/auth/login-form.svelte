@@ -64,7 +64,6 @@
 			captureUserLoggedIn('email');
 			// Dynamic /app/... return path from the invite (and other) login redirects.
 			// goto rejects paths that don't match a route, so fall back to the app home.
-			// eslint-disable-next-line svelte/no-navigation-without-resolve
 			goto(redirectPath).catch(() => goto(resolve('app')));
 		} catch {
 			errorMessage = 'Network error. Please try again.';

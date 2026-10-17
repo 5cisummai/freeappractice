@@ -14,7 +14,9 @@ import {
 	qualityReviewJobCandidates,
 	qualityReviewJobItems,
 	qualityReviewJobs,
-	questionQuality
+	questionQuality,
+	mcqQuestions,
+	frqQuestions
 } from '#lib/server/neon/schema.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 
@@ -144,11 +146,36 @@ export async function updateQuestionQuality(
 	if (options.requireHumanReview !== undefined) {
 		conditions.push(eq(questionQuality.needsHumanReview, options.requireHumanReview));
 	}
-	const rows = await getNeonDatabase()
+	const db = getNeonDatabase();
+	const qualityUpdate = db
 		.update(questionQuality)
 		.set(values as typeof questionQuality.$inferInsert)
 		.where(and(...conditions))
 		.returning({ questionId: questionQuality.questionId });
+	// Persist the verdict and retire its serving rows atomically, including AI decisions.
+	// Check the persisted verdict so a rejected guarded write cannot retire a good question.
+	const badQuestionIds = db
+		.select({ questionId: questionQuality.questionId })
+		.from(questionQuality)
+		.where(
+			and(eq(questionQuality.questionId, questionId), eq(questionQuality.finalVerdict, 'bad'))
+		);
+	const rows =
+		values.finalVerdict === 'bad'
+			? (
+					await db.batch([
+						qualityUpdate,
+						db
+							.update(mcqQuestions)
+							.set({ active: false })
+							.where(inArray(mcqQuestions.questionId, badQuestionIds)),
+						db
+							.update(frqQuestions)
+							.set({ active: false })
+							.where(inArray(frqQuestions.questionId, badQuestionIds))
+					])
+				)[0]
+			: await qualityUpdate;
 	return { matchedCount: rows.length, modifiedCount: rows.length };
 }
 

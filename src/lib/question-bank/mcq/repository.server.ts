@@ -398,9 +398,7 @@ export async function findActiveQuestionsForQuiz(input: {
 	const units = [...new Set(input.units.map((unit) => unit.trim()).filter(Boolean))];
 	if (!units.length) return [];
 	const excludeQuestionIds = [
-		...new Set(
-			(input.excludeQuestionIds ?? []).map((id) => id.trim()).filter(Boolean)
-		)
+		...new Set((input.excludeQuestionIds ?? []).map((id) => id.trim()).filter(Boolean))
 	];
 	const db = getNeonDatabase();
 	const qualityPredicate = sql`not exists (
@@ -429,9 +427,7 @@ export async function findActiveQuestionsForQuiz(input: {
 		eq(courseField, input.course),
 		inArray(unitField, units),
 		qualityPredicate,
-		excludeQuestionIds.length
-			? notInArray(mcqQuestions.questionId, excludeQuestionIds)
-			: undefined
+		excludeQuestionIds.length ? notInArray(mcqQuestions.questionId, excludeQuestionIds) : undefined
 	);
 	const requested = Math.max(1, Math.floor(input.limit ?? 50));
 	const windowSize = Math.min(200, requested * 4);
