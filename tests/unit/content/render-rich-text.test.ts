@@ -114,7 +114,11 @@ describe('renderRichTextHtml', () => {
 		const html = renderRichTextHtml('```js\n/* first\nsecond */\nconst x = 1;\n```', {
 			blocks: true
 		});
-		const lines = [...html.matchAll(/<span class="rich-code-line">([\s\S]*?)<\/span>\n?(?=<span class="rich-code-line">|<\/code>)/g)];
+		const lines = [
+			...html.matchAll(
+				/<span class="rich-code-line">([\s\S]*?)<\/span>\n?(?=<span class="rich-code-line">|<\/code>)/g
+			)
+		];
 		expect(lines).toHaveLength(3);
 		for (const [, line] of lines) {
 			const opens = (line!.match(/<span/g) ?? []).length;

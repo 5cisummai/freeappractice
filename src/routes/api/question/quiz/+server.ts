@@ -32,10 +32,7 @@ function parseQuestionIdList(value: unknown, field: string): string[] | Response
 	const ids: string[] = [];
 	for (const entry of value) {
 		if (typeof entry !== 'string' || !entry.trim()) {
-			return Response.json(
-				{ error: `${field} must contain non-empty strings` },
-				{ status: 400 }
-			);
+			return Response.json({ error: `${field} must contain non-empty strings` }, { status: 400 });
 		}
 		ids.push(entry.trim());
 	}

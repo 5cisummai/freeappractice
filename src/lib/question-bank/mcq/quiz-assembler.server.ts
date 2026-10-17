@@ -272,19 +272,15 @@ export async function assembleMcqQuiz(
 ): Promise<QuizAssemblyResult> {
 	const requestedCount = Math.min(50, Math.max(1, Math.floor(input.count)));
 	const focusQuestionIds = [
-		...new Set(
-			(input.focusQuestionIds ?? []).map((id) => id.trim()).filter(Boolean)
-		)
+		...new Set((input.focusQuestionIds ?? []).map((id) => id.trim()).filter(Boolean))
 	];
 	const focusMode = focusQuestionIds.length > 0;
 	const policy = getStimulusPolicy(input.course);
 	let units = resolveQuizUnits(input.course, input.unit, input.unitRange);
 	let excludeQuestionIds = [
-		...new Set(
-			(input.excludeQuestionIds ?? []).map((id) => id.trim()).filter(Boolean)
-		)
+		...new Set((input.excludeQuestionIds ?? []).map((id) => id.trim()).filter(Boolean))
 	];
-	let missedTopics = new Set<string>();
+	const missedTopics = new Set<string>();
 
 	if (focusMode) {
 		const missedQuestions = await findCachedQuestions(focusQuestionIds);

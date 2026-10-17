@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import EmptyState from '#lib/components/app/empty-state.svelte';
@@ -135,7 +136,7 @@
 				const missedTopicSet = new Set(
 					followUp.missedTopics.map((topic) => topic.trim().toLowerCase()).filter(Boolean)
 				);
-				const improvedTopics = new Set<string>();
+				const improvedTopics = new SvelteSet<string>();
 				for (let index = 0; index < exam.questions.length; index += 1) {
 					const question = exam.questions[index];
 					const answer = exam.answers[index];
@@ -182,8 +183,8 @@
 		const missedTopicSet = new Set(
 			followUp.missedTopics.map((topic) => topic.trim().toLowerCase()).filter(Boolean)
 		);
-		const improved = new Set<string>();
-		const stillNeeds = new Set<string>();
+		const improved = new SvelteSet<string>();
+		const stillNeeds = new SvelteSet<string>();
 		for (let index = 0; index < exam.questions.length; index += 1) {
 			const question = exam.questions[index];
 			const answer = exam.answers[index];
@@ -327,9 +328,7 @@
 		const session = options?.keepFollowUp ? followUp : null;
 		resetLocalSessionState(!options?.keepFollowUp);
 		if (session) followUp = session;
-		const quizCount = session
-			? Math.min(5, Math.max(3, session.missedIds.length))
-			: count;
+		const quizCount = session ? Math.min(5, Math.max(3, session.missedIds.length)) : count;
 		setGenerating(true);
 		try {
 			await exam.start({
@@ -730,7 +729,9 @@
 				</div>
 
 				{#if followUpRecap && followUp}
-					<div class="space-y-4 rounded-xl border border-border/70 bg-muted/30 px-4 py-4 text-left text-sm">
+					<div
+						class="space-y-4 rounded-xl border border-border/70 bg-muted/30 px-4 py-4 text-left text-sm"
+					>
 						<div class="space-y-1">
 							<p class="font-medium text-foreground">Recap</p>
 							<p class="text-muted-foreground">
@@ -788,7 +789,9 @@
 											</span>
 											<ChevronDownIcon class="size-4 shrink-0 opacity-60" />
 										</Collapsible.Trigger>
-										<Collapsible.Content class="space-y-2 border-x border-b border-border/60 bg-background px-3 py-3 text-left">
+										<Collapsible.Content
+											class="space-y-2 border-x border-b border-border/60 bg-background px-3 py-3 text-left"
+										>
 											<p class="text-muted-foreground">
 												Your answer:
 												<span class="font-medium text-foreground"
@@ -872,12 +875,15 @@
 							>Practice this unit</Button
 						>
 					{:else}
-						<Button class="w-full sm:w-auto" onclick={() => void startQuiz()}>Try another quiz</Button
+						<Button class="w-full sm:w-auto" onclick={() => void startQuiz()}
+							>Try another quiz</Button
 						>
 					{/if}
 					{#if showFixMyMistakes}
-						<Button variant="secondary" class="w-full sm:w-auto" onclick={() => startFixMyMistakes()}
-							>Fix my mistakes</Button
+						<Button
+							variant="secondary"
+							class="w-full sm:w-auto"
+							onclick={() => startFixMyMistakes()}>Fix my mistakes</Button
 						>
 					{/if}
 					{#if showSignupPrompt}
