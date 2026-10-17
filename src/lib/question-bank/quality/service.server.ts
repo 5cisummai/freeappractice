@@ -782,6 +782,10 @@ export async function recordHumanDecision(opts: {
 	await ensureQuestionQuality(opts.questionId);
 	const existing = await getQuestionQuality(opts.questionId);
 	if (existing?.state === 'final' && existing.finalVerdict === opts.verdict) {
+		// Reapplying a legacy bad decision must also retire its serving row.
+		if (opts.verdict === 'bad') {
+			await updateQuestionQuality(opts.questionId, { finalVerdict: 'bad' });
+		}
 		return;
 	}
 	const nextState =

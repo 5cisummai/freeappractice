@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { drizzle } from 'drizzle-orm/neon-http';
 
 const mocks = vi.hoisted(() => ({
 	batch: vi.fn(),
@@ -19,12 +20,52 @@ vi.mock('#lib/server/neon/db.js', () => ({
 import {
 	createReviewJob,
 	getReviewJob,
+	updateQuestionQuality,
 	updateReviewJob
 } from '#lib/question-bank/quality/models.server.js';
 
 describe('question quality persistence functions', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+	});
+
+	it('atomically deactivates both serving pools when saving a bad verdict', async () => {
+		const db = drizzle('postgresql://test:test@localhost/test');
+		mocks.update.mockImplementation(db.update.bind(db));
+		mocks.select.mockImplementation(db.select.bind(db));
+		mocks.batch.mockResolvedValue([[{ questionId: 'question-1' }], [], []]);
+
+		await expect(
+			updateQuestionQuality(
+				'question-1',
+				{ finalVerdict: 'bad' },
+				{
+					requireUnassessed: true,
+					requireHumanReview: false
+				}
+			)
+		).resolves.toEqual({ matchedCount: 1, modifiedCount: 1 });
+
+		const queries = mocks.batch.mock.calls[0]![0].map(
+			(query: { toSQL(): { sql: string; params: unknown[] } }) => query.toSQL()
+		);
+		expect(queries).toHaveLength(3);
+		expect(queries[0].sql).toContain('"ai_assessment" is null');
+		for (const [index, table] of ['mcq_questions', 'frq_questions'].entries()) {
+			const query = queries[index + 1];
+			expect(query.sql).toContain(`update "content"."${table}" set "active"`);
+			expect(query.sql).toContain('select "question_id" from "content"."question_quality"');
+			expect(query.sql).toContain('"final_verdict" =');
+			expect(query.params).toEqual([false, 'question-1', 'bad']);
+		}
+	});
+
+	it('does not reactivate retired questions when a verdict changes to good', async () => {
+		const returning = vi.fn().mockResolvedValue([{ questionId: 'question-1' }]);
+		mocks.update.mockReturnValue({ set: () => ({ where: () => ({ returning }) }) });
+		await updateQuestionQuality('question-1', { finalVerdict: 'good' });
+		expect(mocks.update).toHaveBeenCalledOnce();
+		expect(mocks.batch).not.toHaveBeenCalled();
 	});
 
 	it('creates the review parent and children in one ordered database batch', async () => {
