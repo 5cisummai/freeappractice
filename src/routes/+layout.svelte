@@ -23,11 +23,11 @@
 	import { ACCOUNT_DELETED_QUERY } from '#lib/auth/urls.js';
 	import { Toaster } from '#lib/components/ui/sonner/index.js';
 	import { toast } from 'svelte-sonner';
-	import { inject, pageview } from '@vercel/analytics';
+	import { inject } from '@vercel/analytics';
 	import { injectSpeedInsights } from '@vercel/speed-insights';
 
 	let { children } = $props();
-	let vercelAnalyticsLoaded = false;
+	let speedInsightsLoaded = false;
 	let speedInsights: ReturnType<typeof injectSpeedInsights> = null;
 
 	beforeNavigate(({ from, shallow, type }) => {
@@ -39,18 +39,16 @@
 		if (shallow && type === 'goto') return;
 
 		// Use the generic SDKs: the installed SvelteKit integrations still import $app/stores.
-		if (!vercelAnalyticsLoaded) {
+		if (!speedInsightsLoaded) {
 			const options = {
 				framework: 'sveltekit',
 				basePath: import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH
 			};
 			const config = import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG;
-			inject({ ...options, disableAutoTrack: true }, config);
 			speedInsights = injectSpeedInsights({ ...options, route: to?.route.id }, config);
-			vercelAnalyticsLoaded = true;
+			speedInsightsLoaded = true;
 		}
 		if (to?.route.id) {
-			pageview({ route: to.route.id, path: to.url.pathname });
 			speedInsights?.setRoute(to.route.id);
 		}
 		capturePostHogPageview(to?.url.href);
@@ -70,6 +68,14 @@
 	}
 
 	onMount(() => {
+		inject(
+			{
+				framework: 'sveltekit',
+				disableAutoTrack: false,
+				basePath: import.meta.env.VITE_VERCEL_OBSERVABILITY_BASEPATH
+			},
+			import.meta.env.VITE_VERCEL_OBSERVABILITY_CLIENT_CONFIG
+		);
 		notifyAccountDeletedIfNeeded();
 		privacy.init();
 
