@@ -111,20 +111,46 @@ export function requestMcqQuestion(
 	});
 }
 
+export type McqQuizRequestOptions = {
+	focusQuestionIds?: string[];
+	excludeQuestionIds?: string[];
+};
+
+export type McqQuizRequestResult = {
+	questions: GeneratedQuestion[];
+	focusMatchedCount?: number;
+};
+
 /** Load an entire MCQ quiz in one request so shared-stimulus sets remain intact. */
 export async function requestMcqQuiz(
 	course: string,
 	unit: string,
 	count: number,
-	unitRange?: readonly number[]
-): Promise<GeneratedQuestion[]> {
+	unitRange?: readonly number[],
+	options?: McqQuizRequestOptions
+): Promise<McqQuizRequestResult> {
 	try {
 		const response = await apiFetch('/api/question/quiz', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ course, unit, count, unitRange })
+			body: JSON.stringify({
+				course,
+				unit,
+				count,
+				unitRange,
+				...(options?.focusQuestionIds?.length
+					? { focusQuestionIds: options.focusQuestionIds }
+					: {}),
+				...(options?.excludeQuestionIds?.length
+					? { excludeQuestionIds: options.excludeQuestionIds }
+					: {})
+			})
 		});
-		const payload = await readJsonOrNull<QuestionApiResponse>(response);
+		const payload = await readJsonOrNull<
+			QuestionApiResponse & {
+				metrics?: { focusMatchedCount?: number };
+			}
+		>(response);
 		if (isPoolWarmingResponse(payload)) {
 			throw new PoolWarmingError(
 				payload.error || 'Question pool is warming up. Please retry shortly.',
@@ -137,7 +163,7 @@ export async function requestMcqQuiz(
 				response.ok ? null : response.status
 			);
 		}
-		return payload.questions.map((entry) => {
+		const questions = payload.questions.map((entry) => {
 			if (!entry || typeof entry !== 'object')
 				throw new Error('Quiz response contained an invalid question.');
 			const item = entry as Record<string, unknown>;
@@ -147,6 +173,11 @@ export async function requestMcqQuiz(
 				questionId: typeof item.questionId === 'string' ? item.questionId : undefined
 			});
 		});
+		const focusMatchedCount =
+			typeof payload.metrics?.focusMatchedCount === 'number'
+				? payload.metrics.focusMatchedCount
+				: undefined;
+		return { questions, focusMatchedCount };
 	} catch (error) {
 		if (error instanceof QuestionRequestError) throw error;
 		throw new QuestionRequestError(

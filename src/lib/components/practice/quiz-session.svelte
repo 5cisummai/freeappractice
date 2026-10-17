@@ -12,7 +12,11 @@
 	import * as Popover from '#lib/components/ui/popover/index.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import { resolveEffectiveUnit } from '#lib/catalog/courses.js';
+	import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 	import { requestMcqQuestion, requestMcqQuiz } from '#lib/question-bank/request.client.js';
+	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
 	import { createTextAnnotation } from '#lib/components/questions/text-annotation-dom.js';
 	import type {
 		AddTextAnnotationInput,
@@ -75,6 +79,14 @@
 	let annotationsByStimulusId = $state<Record<string, TextAnnotation[]>>({});
 	let stimulusScrollTopById = $state<Record<string, number>>({});
 	let lastSnapshot = $state<ExamSnapshot | null>(null);
+	let followUp = $state<{
+		missedIds: string[];
+		allIds: string[];
+		missedTopics: string[];
+		originalScore: string;
+		matched: number;
+	} | null>(null);
+	let recapOpenByIndex = $state<Record<number, boolean>>({});
 	let lastRequestVersion = 0;
 	let lastSelectionKey = '';
 
@@ -89,19 +101,58 @@
 			return result.question;
 		},
 		loadQuestions: async (requestedCount) => {
-			const questions = await requestMcqQuiz(
+			const session = followUp;
+			const result = await requestMcqQuiz(
 				selectedCourse,
 				selectedUnit,
 				requestedCount,
-				unitRange
+				unitRange,
+				session
+					? {
+							focusQuestionIds: session.missedIds,
+							excludeQuestionIds: session.allIds
+						}
+					: undefined
 			);
-			if (questions.some((question) => !question.correctAnswer)) {
+			if (session && result.focusMatchedCount !== undefined) {
+				followUp = { ...session, matched: result.focusMatchedCount };
+				capturePostHogEvent('fix_mistakes_started', {
+					course: selectedCourse,
+					unit: selectedUnit || 'All Units',
+					missedCount: session.missedIds.length,
+					requestedCount,
+					focusMatchedCount: result.focusMatchedCount
+				});
+			}
+			if (result.questions.some((question) => !question.correctAnswer)) {
 				throw new Error('Quiz service returned a question without an answer key.');
 			}
-			return questions;
+			return result.questions;
 		},
 		onComplete: (snapshot) => {
 			lastSnapshot = snapshot;
+			if (followUp) {
+				const missedTopicSet = new Set(
+					followUp.missedTopics.map((topic) => topic.trim().toLowerCase()).filter(Boolean)
+				);
+				const improvedTopics = new Set<string>();
+				for (let index = 0; index < exam.questions.length; index += 1) {
+					const question = exam.questions[index];
+					const answer = exam.answers[index];
+					if (!question || answer?.isCorrect !== true) continue;
+					const label = resolveQuestionMainTopic(question.mainTopic, question.topicsCovered)
+						.trim()
+						.toLowerCase();
+					if (label && missedTopicSet.has(label)) improvedTopics.add(label);
+				}
+				capturePostHogEvent('fix_mistakes_completed', {
+					course: selectedCourse,
+					unit: selectedUnit || 'All Units',
+					correct: exam.correctCount,
+					total: exam.requestedCount,
+					improvedTopicCount: improvedTopics.size
+				});
+			}
 			if (page.data.userId) {
 				if (persistHistory || sharedSlug) void persistQuizHistory(snapshot);
 				return;
@@ -112,8 +163,42 @@
 
 	const isSharedQuiz = $derived(Boolean(sharedSlug));
 	const canShareQuiz = $derived(
-		!isSharedQuiz && exam.requestedCount > 0 && exam.loadedCount === exam.requestedCount
+		!followUp &&
+			!isSharedQuiz &&
+			exam.requestedCount > 0 &&
+			exam.loadedCount === exam.requestedCount
 	);
+	const showFixMyMistakes = $derived(
+		followUp === null &&
+			exam.incorrectCount + exam.unansweredCount > 0 &&
+			exam.status === 'complete'
+	);
+	const followUpRecap = $derived(followUp !== null && exam.status === 'complete');
+
+	const followUpTopicAnalysis = $derived.by(() => {
+		if (!followUpRecap || !followUp) {
+			return { improved: [] as string[], stillNeedsPractice: [] as string[] };
+		}
+		const missedTopicSet = new Set(
+			followUp.missedTopics.map((topic) => topic.trim().toLowerCase()).filter(Boolean)
+		);
+		const improved = new Set<string>();
+		const stillNeeds = new Set<string>();
+		for (let index = 0; index < exam.questions.length; index += 1) {
+			const question = exam.questions[index];
+			const answer = exam.answers[index];
+			if (!question) continue;
+			const label = resolveQuestionMainTopic(question.mainTopic, question.topicsCovered);
+			const normalized = label.trim().toLowerCase();
+			if (!normalized || !missedTopicSet.has(normalized)) continue;
+			if (answer?.isCorrect === true) improved.add(label);
+			else if (answer?.isCorrect === false || !answer) stillNeeds.add(label);
+		}
+		return {
+			improved: [...improved],
+			stillNeedsPractice: [...stillNeeds]
+		};
+	});
 	const groupOrganizationId = $derived.by(() => {
 		const organization = page.data.activeOrganization;
 		if (!organization || organization.orgType !== 'group') return null;
@@ -196,7 +281,7 @@
 		isGenerating = value;
 	}
 
-	function resetLocalSessionState(): void {
+	function resetLocalSessionState(clearFollowUp = true): void {
 		historyStatus = 'idle';
 		historyError = '';
 		shareStatus = '';
@@ -211,6 +296,8 @@
 		annotationsByStimulusId = {};
 		stimulusScrollTopById = {};
 		lastSnapshot = null;
+		recapOpenByIndex = {};
+		if (clearFollowUp) followUp = null;
 	}
 
 	function exitQuiz(): void {
@@ -235,14 +322,19 @@
 		return `${selectedCourse}::${selectedUnit}::${unitRange?.join(',') ?? ''}`;
 	}
 
-	async function startQuiz(): Promise<void> {
+	async function startQuiz(options?: { keepFollowUp?: boolean }): Promise<void> {
 		if (!enabled || !selectedCourse) return;
-		resetLocalSessionState();
+		const session = options?.keepFollowUp ? followUp : null;
+		resetLocalSessionState(!options?.keepFollowUp);
+		if (session) followUp = session;
+		const quizCount = session
+			? Math.min(5, Math.max(3, session.missedIds.length))
+			: count;
 		setGenerating(true);
 		try {
 			await exam.start({
-				count,
-				questions: initialQuestions?.length ? initialQuestions : undefined,
+				count: quizCount,
+				questions: !session && initialQuestions?.length ? initialQuestions : undefined,
 				meta: {
 					course: selectedCourse,
 					unit: selectedUnit || 'All Units',
@@ -252,6 +344,64 @@
 		} finally {
 			setGenerating(false);
 		}
+	}
+
+	function collectMissedQuestionIds(): string[] {
+		return exam.questions.flatMap((question, index) => {
+			const id = question?.questionId?.trim();
+			if (!id) return [];
+			const answer = exam.answers[index];
+			if (answer && answer.isCorrect !== false) return [];
+			return [id];
+		});
+	}
+
+	function collectAllQuestionIds(): string[] {
+		return exam.questions.flatMap((question) => {
+			const id = question?.questionId?.trim();
+			return id ? [id] : [];
+		});
+	}
+
+	function startFixMyMistakes(): void {
+		const missedIds = collectMissedQuestionIds();
+		if (!missedIds.length) return;
+		const missedTopics = [
+			...new Set(
+				exam.questions.flatMap((question, index) => {
+					const answer = exam.answers[index];
+					if (answer && answer.isCorrect !== false) return [];
+					const topic = resolveQuestionMainTopic(question?.mainTopic, question?.topicsCovered);
+					return topic.trim() ? [topic.trim()] : [];
+				})
+			)
+		];
+		followUp = {
+			missedIds,
+			allIds: collectAllQuestionIds(),
+			missedTopics,
+			originalScore: `${exam.correctCount}/${exam.requestedCount} (${exam.scorePercent}%)`,
+			matched: 0
+		};
+		void startQuiz({ keepFollowUp: true });
+	}
+
+	function startPracticeUnitFromRecap(): void {
+		capturePostHogEvent('fix_mistakes_next_step', {
+			course: selectedCourse,
+			unit: selectedUnit || 'All Units',
+			action: 'practice_unit'
+		});
+		followUp = null;
+		void startQuiz();
+	}
+
+	function openCoachFromRecap(): void {
+		capturePostHogEvent('fix_mistakes_next_step', {
+			course: selectedCourse,
+			unit: selectedUnit || 'All Units',
+			action: 'coach'
+		});
 	}
 
 	async function persistQuizHistory(snapshot: ExamSnapshot): Promise<void> {
@@ -556,7 +706,9 @@
 					{exam.errorMessage || 'Please try again in a moment.'}
 				</p>
 				<div class="flex flex-wrap justify-center gap-2">
-					<Button onclick={() => void startQuiz()}>Try again</Button>
+					<Button onclick={() => void startQuiz({ keepFollowUp: Boolean(followUp) })}
+						>Try again</Button
+					>
 					<Button variant="outline" onclick={requestExit}>Leave quiz</Button>
 				</div>
 			{/if}
@@ -568,7 +720,7 @@
 			<div class="mx-auto w-full max-w-lg space-y-6">
 				<div class="space-y-2">
 					<p class="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-						Quiz complete
+						{followUpRecap ? 'Follow-up complete' : 'Quiz complete'}
 					</p>
 					<p class="font-display text-6xl font-medium tracking-tight text-foreground">
 						{exam.correctCount}
@@ -577,7 +729,90 @@
 					<p class="text-sm text-muted-foreground">{exam.scorePercent}% correct</p>
 				</div>
 
-				<div class="grid grid-cols-3 divide-x divide-border border-y border-border py-4">
+				{#if followUpRecap && followUp}
+					<div class="space-y-4 rounded-xl border border-border/70 bg-muted/30 px-4 py-4 text-left text-sm">
+						<div class="space-y-1">
+							<p class="font-medium text-foreground">Recap</p>
+							<p class="text-muted-foreground">
+								Original quiz: {followUp.originalScore}.
+								{#if followUp.missedTopics.length}
+									Missed topics: {followUp.missedTopics.join(', ')}.
+								{/if}
+							</p>
+							<p class="text-muted-foreground">
+								Follow-up: {exam.correctCount}/{exam.requestedCount} ({exam.scorePercent}%).
+							</p>
+							<p class="text-muted-foreground">
+								{followUp.matched} of {exam.requestedCount} questions matched the topics you missed; the
+								rest came from the same units.
+							</p>
+							<p class="text-muted-foreground">
+								A few correct answers is a good sign, not proof of mastery.
+							</p>
+						</div>
+						{#if followUpTopicAnalysis.improved.length}
+							<p class="text-emerald-700 dark:text-emerald-400">
+								<span class="font-medium">Improved:</span>
+								{followUpTopicAnalysis.improved.join(', ')}
+							</p>
+						{/if}
+						{#if followUpTopicAnalysis.stillNeedsPractice.length}
+							<p class="text-amber-800 dark:text-amber-300">
+								<span class="font-medium">Still needs practice:</span>
+								{followUpTopicAnalysis.stillNeedsPractice.join(', ')}
+							</p>
+						{/if}
+						<div class="space-y-2 pt-1">
+							<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+								Question breakdown
+							</p>
+							{#each exam.questions as question, index (question?.questionId ?? index)}
+								{#if question}
+									{@const answer = exam.answers[index]}
+									<Collapsible.Root
+										open={recapOpenByIndex[index] ?? false}
+										onOpenChange={(open) => {
+											recapOpenByIndex = { ...recapOpenByIndex, [index]: open };
+										}}
+									>
+										<Collapsible.Trigger
+											class="flex w-full items-center justify-between gap-2 rounded-md border border-border/60 bg-background px-3 py-2 text-left hover:bg-muted/50"
+										>
+											<span class="font-medium text-foreground">
+												Question {index + 1}
+												{#if answer?.isCorrect === true}
+													<span class="text-emerald-600 dark:text-emerald-400">· Correct</span>
+												{:else}
+													<span class="text-red-600 dark:text-red-400">· Missed</span>
+												{/if}
+											</span>
+											<ChevronDownIcon class="size-4 shrink-0 opacity-60" />
+										</Collapsible.Trigger>
+										<Collapsible.Content class="space-y-2 border-x border-b border-border/60 bg-background px-3 py-3 text-left">
+											<p class="text-muted-foreground">
+												Your answer:
+												<span class="font-medium text-foreground"
+													>{answer?.selectedAnswer ?? 'Unanswered'}</span
+												>
+												· Correct:
+												<span class="font-medium text-foreground">{question.correctAnswer}</span>
+											</p>
+											{#if question.explanation}
+												<RichText
+													text={question.explanation}
+													blocks
+													class="text-sm leading-6 text-foreground/90"
+												/>
+											{/if}
+										</Collapsible.Content>
+									</Collapsible.Root>
+								{/if}
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<div class="grid grid-cols-3 py-4">
 					<div class="space-y-1 px-3">
 						<p class="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
 							{exam.correctCount}
@@ -632,17 +867,37 @@
 				{/if}
 
 				<div class="flex flex-wrap justify-center gap-2">
-					<Button class="w-full sm:w-auto" onclick={() => void startQuiz()}>Try another quiz</Button
-					>
+					{#if followUpRecap}
+						<Button class="w-full sm:w-auto" onclick={() => startPracticeUnitFromRecap()}
+							>Practice this unit</Button
+						>
+					{:else}
+						<Button class="w-full sm:w-auto" onclick={() => void startQuiz()}>Try another quiz</Button
+						>
+					{/if}
+					{#if showFixMyMistakes}
+						<Button variant="secondary" class="w-full sm:w-auto" onclick={() => startFixMyMistakes()}
+							>Fix my mistakes</Button
+						>
+					{/if}
 					{#if showSignupPrompt}
 						<Button href={claimSignupHref} variant="outline" class="w-full sm:w-auto"
 							>Sign up to save</Button
 						>
 					{/if}
 					{#if persistHistory && showCoachReview}
-						<Button href={coachReviewHref} variant="outline" class="w-full sm:w-auto"
-							>Review with Pip</Button
-						>
+						{#if followUpRecap}
+							<Button
+								href={coachReviewHref}
+								variant="outline"
+								class="w-full sm:w-auto"
+								onclick={() => openCoachFromRecap()}>Review with Pip</Button
+							>
+						{:else}
+							<Button href={coachReviewHref} variant="outline" class="w-full sm:w-auto"
+								>Review with Pip</Button
+							>
+						{/if}
 					{/if}
 					{#if canShareQuiz || shareUrl}
 						{@render shareMenu('w-full sm:w-auto')}

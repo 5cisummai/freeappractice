@@ -1,5 +1,5 @@
 <script lang="ts">
-	import 'highlight.js/styles/github.min.css';
+	import 'highlight.js/styles/rose-pine-dawn.min.css';
 	import PublicPageHero from '#lib/components/marketing/public-page-hero.svelte';
 	import BlogRelatedLinks from '#lib/components/blog/blog-related-links.svelte';
 	import type { PageData } from './$types';

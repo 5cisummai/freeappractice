@@ -1,6 +1,8 @@
 import { getUnitsForCourse } from '#lib/catalog/courses.js';
+import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 import {
 	findActiveQuestionsForQuiz,
+	findCachedQuestions,
 	storedQuestionFromPayload,
 	type IQuestion
 } from '#lib/question-bank/mcq/repository.server.js';
@@ -18,6 +20,8 @@ export type QuizAssemblyInput = {
 	unit?: string;
 	unitRange?: readonly number[];
 	count: number;
+	focusQuestionIds?: string[];
+	excludeQuestionIds?: string[];
 };
 
 export type QuizAssemblyMetrics = {
@@ -31,6 +35,7 @@ export type QuizAssemblyMetrics = {
 	truncatedSetCount: number;
 	policyEnabled: boolean;
 	globalFlagEnabled: boolean;
+	focusMatchedCount?: number;
 };
 
 export type QuizAssemblyResult = {
@@ -227,59 +232,150 @@ function takeFromBlock(block: QuizBlock, capacity: number): IQuestion[] {
 	return block.children.slice(start, start + take);
 }
 
+function normalizeTopicLabel(value: string): string {
+	return value.trim().toLowerCase();
+}
+
+function questionTopicLabels(question: IQuestion): string[] {
+	const main = normalizeTopicLabel(
+		resolveQuestionMainTopic(question.mainTopic, question.topicsCovered)
+	);
+	const labels = main ? [main] : [];
+	const covered = question.topicsCovered?.trim();
+	if (covered) labels.push(normalizeTopicLabel(covered));
+	return [...new Set(labels.filter(Boolean))];
+}
+
+function questionMatchesMissedTopics(question: IQuestion, missedTopics: Set<string>): boolean {
+	const labels = questionTopicLabels(question);
+	if (labels.some((label) => missedTopics.has(label))) return true;
+	const covered = question.topicsCovered?.trim().toLowerCase();
+	if (!covered) return false;
+	for (const missed of missedTopics) {
+		if (covered.includes(missed)) return true;
+	}
+	return false;
+}
+
+function blockMatchesTopics(block: QuizBlock, missedTopics: Set<string>): boolean {
+	const questions = block.kind === 'set' ? block.children : [block.question];
+	return questions.some((question) => questionMatchesMissedTopics(question, missedTopics));
+}
+
+function countTopicMatchedQuestions(questions: IQuestion[], missedTopics: Set<string>): number {
+	return questions.filter((question) => questionMatchesMissedTopics(question, missedTopics)).length;
+}
+
 export async function assembleMcqQuiz(
 	input: QuizAssemblyInput,
 	options: { globalFlagEnabled: boolean }
 ): Promise<QuizAssemblyResult> {
-	const count = Math.min(50, Math.max(1, Math.floor(input.count)));
+	const requestedCount = Math.min(50, Math.max(1, Math.floor(input.count)));
+	const focusQuestionIds = [
+		...new Set(
+			(input.focusQuestionIds ?? []).map((id) => id.trim()).filter(Boolean)
+		)
+	];
+	const focusMode = focusQuestionIds.length > 0;
 	const policy = getStimulusPolicy(input.course);
-	const units = resolveQuizUnits(input.course, input.unit, input.unitRange);
+	let units = resolveQuizUnits(input.course, input.unit, input.unitRange);
+	let excludeQuestionIds = [
+		...new Set(
+			(input.excludeQuestionIds ?? []).map((id) => id.trim()).filter(Boolean)
+		)
+	];
+	let missedTopics = new Set<string>();
+
+	if (focusMode) {
+		const missedQuestions = await findCachedQuestions(focusQuestionIds);
+		const missedUnits = [
+			...new Set(missedQuestions.map((question) => question.unit.trim()).filter(Boolean))
+		];
+		if (missedUnits.length) {
+			const allowed = new Set(units);
+			units = missedUnits.filter((unit) => !allowed.size || allowed.has(unit));
+			if (!units.length) units = missedUnits;
+		}
+		for (const question of missedQuestions) {
+			for (const label of questionTopicLabels(question)) missedTopics.add(label);
+		}
+		excludeQuestionIds = [...new Set([...excludeQuestionIds, ...focusQuestionIds])];
+	}
+
 	const stimulusTargetEnabled =
 		options.globalFlagEnabled && units.some((unit) => isStimulusPolicyEnabledForUnit(policy, unit));
 	const rows = await findActiveQuestionsForQuiz({
 		course: input.course,
 		units,
-		limit: count
+		limit: focusMode ? Math.max(requestedCount, 50) : requestedCount,
+		excludeQuestionIds: excludeQuestionIds.length ? excludeQuestionIds : undefined
 	});
-	const blocks = buildBlocks(rows, options.globalFlagEnabled, policy);
-	const availableCount = blocks.reduce(
+	const allBlocks = buildBlocks(rows, options.globalFlagEnabled, policy);
+	const matchedBlocks = focusMode
+		? allBlocks.filter((block) => blockMatchesTopics(block, missedTopics))
+		: allBlocks;
+	const unmatchedBlocks = focusMode
+		? allBlocks.filter((block) => !blockMatchesTopics(block, missedTopics))
+		: [];
+	const availableCount = allBlocks.reduce(
 		(sum, block) => sum + (block.kind === 'set' ? block.children.length : 1),
 		0
 	);
+	const targetCount = focusMode ? Math.min(requestedCount, availableCount) : requestedCount;
 	const targetStimulusQuestions = stimulusTargetEnabled
-		? Math.round((count * policy.quizTargetQuestionPercent) / 100)
+		? Math.round((targetCount * policy.quizTargetQuestionPercent) / 100)
 		: 0;
-	const remainingBlocks = [...blocks];
 	const selected: IQuestion[] = [];
 	let stimulusQuestionCount = 0;
 	let stimulusSetCount = 0;
 	let truncatedSetCount = 0;
 
-	while (selected.length < count && remainingBlocks.length) {
-		const block = chooseBlock(
-			remainingBlocks,
-			count - selected.length,
-			stimulusQuestionCount,
-			targetStimulusQuestions
-		);
-		if (!block) break;
-		const blockIndex = remainingBlocks.indexOf(block);
-		remainingBlocks.splice(blockIndex, 1);
-		const taken = takeFromBlock(block, count - selected.length);
-		selected.push(...taken);
-		if (block.kind === 'set') {
-			stimulusSetCount += 1;
-			stimulusQuestionCount += taken.length;
-			if (taken.length < block.children.length) truncatedSetCount += 1;
+	const fillFromBlocks = (sourceBlocks: QuizBlock[]) => {
+		const remainingBlocks = [...sourceBlocks];
+		while (selected.length < targetCount && remainingBlocks.length) {
+			const block = chooseBlock(
+				remainingBlocks,
+				targetCount - selected.length,
+				stimulusQuestionCount,
+				targetStimulusQuestions
+			);
+			if (!block) break;
+			const blockIndex = remainingBlocks.indexOf(block);
+			remainingBlocks.splice(blockIndex, 1);
+			const taken = takeFromBlock(block, targetCount - selected.length);
+			selected.push(...taken);
+			if (block.kind === 'set') {
+				stimulusSetCount += 1;
+				stimulusQuestionCount += taken.length;
+				if (taken.length < block.children.length) truncatedSetCount += 1;
+			}
 		}
-	}
+	};
 
-	if (selected.length < count) {
+	// Prefer topic-matched blocks; only then fill from the same units.
+	fillFromBlocks(matchedBlocks);
+	if (selected.length < targetCount) fillFromBlocks(unmatchedBlocks);
+
+	if (selected.length === 0) {
 		throw new QuizPoolWarmingError(
-			`Not enough active questions are available for a ${count}-question quiz. Maximum available: ${availableCount}.`,
+			focusMode
+				? 'No follow-up questions are available from the missed units right now.'
+				: `Not enough active questions are available for a ${requestedCount}-question quiz. Maximum available: ${availableCount}.`,
 			availableCount
 		);
 	}
+
+	if (!focusMode && selected.length < requestedCount) {
+		throw new QuizPoolWarmingError(
+			`Not enough active questions are available for a ${requestedCount}-question quiz. Maximum available: ${availableCount}.`,
+			availableCount
+		);
+	}
+
+	const count = selected.length;
+	const focusMatchedCount = focusMode
+		? countTopicMatchedQuestions(selected, missedTopics)
+		: undefined;
 
 	const stimulusTargetDeviation = stimulusQuestionCount - targetStimulusQuestions;
 	logger.info('Quiz stimulus target deviation', {
@@ -294,7 +390,7 @@ export async function assembleMcqQuiz(
 	return {
 		questions: selected.map(toGenerated),
 		metrics: {
-			requestedCount: count,
+			requestedCount: focusMode ? requestedCount : count,
 			selectedCount: selected.length,
 			stimulusTargetQuestionCount: targetStimulusQuestions,
 			stimulusTargetDeviation,
@@ -303,7 +399,8 @@ export async function assembleMcqQuiz(
 			discreteQuestionCount: selected.length - stimulusQuestionCount,
 			truncatedSetCount,
 			policyEnabled: stimulusTargetEnabled,
-			globalFlagEnabled: options.globalFlagEnabled
+			globalFlagEnabled: options.globalFlagEnabled,
+			...(focusMatchedCount !== undefined ? { focusMatchedCount } : {})
 		}
 	};
 }

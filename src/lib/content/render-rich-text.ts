@@ -90,6 +90,30 @@ const languageLabels: Record<string, string> = {
 	yml: 'YAML'
 };
 
+/** Split highlighted HTML into lines, closing and reopening spans that cross line breaks. */
+function splitHighlightedLines(html: string): string[] {
+	const lines: string[] = [];
+	const openSpans: string[] = [];
+	let current = '';
+	for (const token of html.match(/<span[^>]*>|<\/span>|\n|[^<\n]+|</g) ?? []) {
+		if (token === '\n') {
+			lines.push(current + '</span>'.repeat(openSpans.length));
+			current = openSpans.join('');
+		} else if (token.startsWith('<span')) {
+			openSpans.push(token);
+			current += token;
+		} else if (token === '</span>') {
+			openSpans.pop();
+			current += token;
+		} else {
+			current += token;
+		}
+	}
+	lines.push(current);
+	if (lines.length > 1 && lines[lines.length - 1]!.replace(/<[^>]*>/g, '') === '') lines.pop();
+	return lines;
+}
+
 function createCodeRenderer(blocks: boolean): RenderCodeBlock {
 	return (code, lang) => {
 		const rawCode = decodeEntities(code);
@@ -113,24 +137,29 @@ function createCodeRenderer(blocks: boolean): RenderCodeBlock {
 			languageLabels[languageCode] ?? languageCode.charAt(0).toUpperCase() + languageCode.slice(1);
 		const safeLanguageCode = escapeHtml(languageCode);
 		const safeLanguageLabel = escapeHtml(languageLabel);
-		return `<div class="rich-code-block" data-rich-code-block data-language="${safeLanguageCode}">
+		const lines = splitHighlightedLines(highlighted);
+		const numberedCode = lines
+			.map((line) => `<span class="rich-code-line">${line}</span>`)
+			.join('\n');
+		return `<div class="rich-code-block group" data-rich-code-block data-language="${safeLanguageCode}">
 	<div class="rich-code-toolbar">
-		<div class="rich-code-heading">
-			<span class="rich-code-icon" aria-hidden="true">&lt;/&gt;</span>
-			<span class="rich-code-language">${safeLanguageLabel}</span>
-		</div>
+		<span class="rich-code-language">${safeLanguageLabel}</span>
 		<div class="rich-code-actions">
-			<button type="button" class="rich-code-action" data-rich-code-action="copy" aria-label="Copy code" title="Copy code">
-				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-				<span class="sr-only">Copy code</span>
+			<button type="button" class="rich-code-action rich-code-action-icon" data-rich-code-action="expand" aria-label="Expand code" title="Expand">
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="M9 21H3v-6"/><path d="m3 21 7-7"/></svg>
+				<span class="sr-only">Expand</span>
 			</button>
-			<button type="button" class="rich-code-action" data-rich-code-action="download" aria-label="Download code" title="Download code">
+			<button type="button" class="rich-code-action rich-code-action-icon" data-rich-code-action="copy" aria-label="Copy code" title="Copy">
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+				<span class="sr-only">Copy</span>
+			</button>
+			<button type="button" class="rich-code-action rich-code-action-icon" data-rich-code-action="download" aria-label="Download code" title="Download">
 				<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
-				<span class="sr-only">Download code</span>
+				<span class="sr-only">Download</span>
 			</button>
 		</div>
 	</div>
-	<pre><code class="hljs${langClass}">${highlighted}</code></pre>
+	<pre class="rich-code-pre" data-digits="${String(lines.length).length}"><code class="hljs${langClass}">${numberedCode}</code></pre>
 </div>\n`;
 	};
 }

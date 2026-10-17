@@ -117,8 +117,8 @@ describe('question request transport', () => {
 		);
 		vi.stubGlobal('fetch', fetchMock);
 
-		const questions = await requestMcqQuiz('AP Biology', '', 2, [0, 2]);
-		expect(questions.map((question) => question.questionId)).toEqual(['mcq-1', 'q-2']);
+		const result = await requestMcqQuiz('AP Biology', '', 2, [0, 2]);
+		expect(result.questions.map((question) => question.questionId)).toEqual(['mcq-1', 'q-2']);
 		expect(fetchMock).toHaveBeenCalledWith(
 			'/api/question/quiz',
 			expect.objectContaining({ body: expect.stringContaining('"count":2') })

@@ -98,7 +98,29 @@ describe('renderRichTextHtml', () => {
 		expect(html).toContain('data-language="typescript"');
 		expect(html).toContain('data-rich-code-action="copy"');
 		expect(html).toContain('data-rich-code-action="download"');
+		expect(html).toContain('data-rich-code-action="expand"');
 		expect(html).toContain('>TypeScript</span>');
+		expect(html).not.toContain('rich-code-action-label');
+		expect(html).toContain('class="rich-code-line"');
+	});
+
+	it('wraps each fenced code line so line numbers align', () => {
+		const html = renderRichTextHtml('```text\none\ntwo\nthree\n```', { blocks: true });
+		expect(html.match(/class="rich-code-line"/g)).toHaveLength(3);
+		expect(html).toContain('data-digits="1"');
+	});
+
+	it('keeps highlight spans balanced when a token spans lines', () => {
+		const html = renderRichTextHtml('```js\n/* first\nsecond */\nconst x = 1;\n```', {
+			blocks: true
+		});
+		const lines = [...html.matchAll(/<span class="rich-code-line">([\s\S]*?)<\/span>\n?(?=<span class="rich-code-line">|<\/code>)/g)];
+		expect(lines).toHaveLength(3);
+		for (const [, line] of lines) {
+			const opens = (line!.match(/<span/g) ?? []).length;
+			const closes = (line!.match(/<\/span>/g) ?? []).length;
+			expect(opens).toBe(closes);
+		}
 	});
 
 	it('renders inline and block math via KaTeX wrappers', () => {

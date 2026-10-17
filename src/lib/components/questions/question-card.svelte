@@ -284,6 +284,7 @@
 				{#each core.currentQuestion.rightPanel.content as paragraph, i (`r-${i}`)}
 					<AnnotatableRichText
 						text={paragraph}
+						blocks
 						target={{ kind: 'prompt', paragraphIndex: i }}
 						annotations={core.textAnnotations}
 						disabled={core.hasCheckedAnswer}
@@ -295,6 +296,7 @@
 		{:else}
 			<AnnotatableRichText
 				text={core.currentQuestion?.prompt ?? ''}
+				blocks
 				target={{ kind: 'prompt', paragraphIndex: 0 }}
 				annotations={core.textAnnotations}
 				disabled={core.hasCheckedAnswer}
@@ -421,6 +423,7 @@
 													{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 														<AnnotatableRichText
 															text={paragraph}
+															blocks
 															target={{ kind: 'stimulus', paragraphIndex: i }}
 															annotations={core.textAnnotations}
 															disabled={core.hasCheckedAnswer}
@@ -484,6 +487,7 @@
 											{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-m-${i}`)}
 												<AnnotatableRichText
 													text={paragraph}
+													blocks
 													target={{ kind: 'stimulus', paragraphIndex: i }}
 													annotations={core.textAnnotations}
 													disabled={core.hasCheckedAnswer}
@@ -630,6 +634,7 @@
 				</Dialog.Header>
 				<RichText
 					text={core.currentQuestion.explanation}
+					blocks
 					class="mt-2 text-sm leading-6 text-foreground/90"
 				/>
 				<Dialog.Footer class="mt-6 sm:justify-end">

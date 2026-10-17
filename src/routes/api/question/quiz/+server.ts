@@ -16,6 +16,31 @@ export const config = { maxDuration: 15 };
 
 const MAX_REQUEST_BYTES = 16 * 1024;
 const MAX_QUIZ_COUNT = 50;
+const MAX_QUESTION_ID_LIST = 50;
+
+function parseQuestionIdList(value: unknown, field: string): string[] | Response {
+	if (value === undefined || value === null) return [];
+	if (!Array.isArray(value)) {
+		return Response.json({ error: `${field} must be an array of strings` }, { status: 400 });
+	}
+	if (value.length > MAX_QUESTION_ID_LIST) {
+		return Response.json(
+			{ error: `${field} must contain at most ${MAX_QUESTION_ID_LIST} entries` },
+			{ status: 400 }
+		);
+	}
+	const ids: string[] = [];
+	for (const entry of value) {
+		if (typeof entry !== 'string' || !entry.trim()) {
+			return Response.json(
+				{ error: `${field} must contain non-empty strings` },
+				{ status: 400 }
+			);
+		}
+		ids.push(entry.trim());
+	}
+	return ids;
+}
 
 function parseUnitRange(value: unknown): readonly number[] | undefined {
 	if (value === undefined || value === null) return undefined;
@@ -95,13 +120,20 @@ export const POST: RequestHandler = async (event) => {
 			);
 		}
 
+		const focusQuestionIds = parseQuestionIdList(record.focusQuestionIds, 'focusQuestionIds');
+		if (focusQuestionIds instanceof Response) return focusQuestionIds;
+		const excludeQuestionIds = parseQuestionIdList(record.excludeQuestionIds, 'excludeQuestionIds');
+		if (excludeQuestionIds instanceof Response) return excludeQuestionIds;
+
 		const globalFlagEnabled = await isStimulusQuestionsEnabled();
 		const result = await assembleMcqQuiz(
 			{
 				course: validated.value.course,
 				unit: validated.value.unit,
 				unitRange: requestedUnitRange,
-				count
+				count,
+				...(focusQuestionIds.length ? { focusQuestionIds } : {}),
+				...(excludeQuestionIds.length ? { excludeQuestionIds } : {})
 			},
 			{ globalFlagEnabled }
 		);

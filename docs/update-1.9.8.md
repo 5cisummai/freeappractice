@@ -4,28 +4,9 @@
 
 Make practice more interactive, help students learn from mistakes, and give them a simple reason to share Free AP Practice with a friend. This update builds on the existing Coach canvas and practice flows with four improvements.
 
-This document describes the general product direction. It is not a detailed implementation specification, and the features below are planned rather than shipped.
+This document describes the general product direction. It is not a detailed implementation specification, and the features below are planned rather than shipped..
 
-## 1. Sim challenges
-
-Turn Coach's Physics and Math Sims into short learning challenges instead of only interactive demonstrations.
-
-### Student experience
-
-1. Coach presents a simulation and asks the student to predict an outcome.
-2. The student changes a variable and runs the simulation.
-3. The student explains what happened, and Coach connects the result to the underlying concept.
-
-For example: “Keep launch speed fixed. What happens to the range when you change the launch angle from 30° to 45°?” The student predicts, tries it, and discusses the result.
-
-### Initial scope
-
-- Start with a few well-defined physics and math challenges using the existing canvas.
-- Keep the prediction, experiment, and explanation together in the Coach conversation.
-- Make controls and instructions clear on both mobile and desktop.
-- Let students retry and explore without making every interaction a graded assessment.
-
-Success means students can complete a coherent challenge and understand how changing a variable affects the result.
+1. canceled
 
 ## 2. “Fix my mistakes” mini-quizzes
 

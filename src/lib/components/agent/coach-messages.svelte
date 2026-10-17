@@ -520,7 +520,7 @@
 			{/each}
 			{#each message.parts as part, index (`text-${message.id}-${index}`)}
 				{#if part.type === 'text' && part.text.trim()}
-					<Message.Content class="text-md max-w-3xl leading-7">
+					<Message.Content class="text-md w-full max-w-3xl min-w-0 leading-7">
 						<RichText
 							text={part.text}
 							blocks

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import 'katex/dist/katex.min.css';
-	import 'highlight.js/styles/github.min.css';
+	import 'highlight.js/styles/rose-pine-dawn.min.css';
 	import { renderRichTextHtml, type RichTextCitation } from '#lib/content/render-rich-text.js';
 	import { toast } from 'svelte-sonner';
 
@@ -80,6 +80,18 @@
 		setTimeout(() => URL.revokeObjectURL(url), 0);
 	}
 
+	async function expandCodeBlock(codeBlock: HTMLElement): Promise<void> {
+		if (document.fullscreenElement === codeBlock) {
+			await document.exitFullscreen();
+			return;
+		}
+		if (typeof codeBlock.requestFullscreen === 'function') {
+			await codeBlock.requestFullscreen();
+			return;
+		}
+		toast.error('Fullscreen is not supported in this browser.');
+	}
+
 	async function handleCodeAction(event: MouseEvent): Promise<void> {
 		if (!blocks || !(event.target instanceof Element)) return;
 		const button = event.target.closest<HTMLButtonElement>('[data-rich-code-action]');
@@ -98,30 +110,25 @@
 				toast.success('Code copied.');
 				button.setAttribute('aria-label', 'Copied');
 				button.setAttribute('title', 'Copied');
+				setTimeout(() => {
+					if (!button.isConnected) return;
+					button.setAttribute('aria-label', originalLabel);
+					button.setAttribute('title', originalLabel);
+				}, 1200);
 			} else if (action === 'download') {
 				downloadCode(code, language);
 				toast.success('Code downloaded.');
-				button.setAttribute('aria-label', 'Downloaded');
-				button.setAttribute('title', 'Downloaded');
-			} else {
-				return;
+			} else if (action === 'expand') {
+				await expandCodeBlock(codeBlock);
 			}
-			setTimeout(() => {
-				if (button.isConnected) {
-					button.setAttribute('aria-label', originalLabel);
-					button.setAttribute('title', originalLabel);
-				}
-			}, 1200);
 		} catch {
-			toast.error(action === 'copy' ? 'Could not copy the code.' : 'Could not download the code.');
-			button.setAttribute('aria-label', 'Action failed');
-			button.setAttribute('title', 'Action failed');
-			setTimeout(() => {
-				if (button.isConnected) {
-					button.setAttribute('aria-label', originalLabel);
-					button.setAttribute('title', originalLabel);
-				}
-			}, 1200);
+			const message =
+				action === 'copy'
+					? 'Could not copy the code.'
+					: action === 'download'
+						? 'Could not download the code.'
+						: 'Could not expand the code.';
+			toast.error(message);
 		}
 	}
 
@@ -133,15 +140,20 @@
 
 	const richTextClass = [
 		'rich-text',
+		'max-w-full',
+		'min-w-0',
 		'[&_p]:mb-2',
 		'[&_p:last-child]:mb-0',
 		'[&_pre]:my-2',
+		'[&_pre]:max-w-full',
 		'[&_pre]:overflow-x-auto',
 		'[&_pre]:rounded-lg',
 		'[&_pre]:p-0',
 		'[&_pre]:text-[0.8125rem]',
 		'[&_pre]:leading-relaxed',
 		'[&_pre_code.hljs]:rounded-[inherit]',
+		'[&_pre_code.hljs]:!bg-transparent',
+		'[&_code.hljs]:!bg-transparent',
 		'[&_code]:font-mono',
 		'[&_code]:text-[0.8125rem]',
 		'[&_code:not(pre_code)]:rounded',
@@ -220,43 +232,72 @@
 		'[&_.math-inline]:inline',
 		'[&_.katex-display]:m-0',
 		'[&_.rich-code-block]:my-3',
+		'[&_.rich-code-block]:w-full',
+		'[&_.rich-code-block]:max-w-full',
+		'[&_.rich-code-block]:min-w-0',
 		'[&_.rich-code-block]:overflow-hidden',
-		'[&_.rich-code-block]:rounded-2xl',
+		'[&_.rich-code-block]:rounded-xl',
 		'[&_.rich-code-block]:border',
-		'[&_.rich-code-block]:border-border/60',
-		'[&_.rich-code-block]:bg-muted/60',
-		'[&_.rich-code-block]:px-4',
-		'[&_.rich-code-block]:py-3',
+		'[&_.rich-code-block]:border-border/70',
+		'[&_.rich-code-block]:bg-background',
+		'[&_.rich-code-block]:shadow-sm',
+		'[&_.rich-code-block:fullscreen]:m-0',
+		'[&_.rich-code-block:fullscreen]:flex',
+		'[&_.rich-code-block:fullscreen]:h-screen',
+		'[&_.rich-code-block:fullscreen]:w-screen',
+		'[&_.rich-code-block:fullscreen]:flex-col',
+		'[&_.rich-code-block:fullscreen]:rounded-none',
 		'[&_.rich-code-toolbar]:flex',
+		'[&_.rich-code-toolbar]:min-w-0',
 		'[&_.rich-code-toolbar]:items-center',
 		'[&_.rich-code-toolbar]:justify-between',
 		'[&_.rich-code-toolbar]:gap-2',
-		'[&_.rich-code-toolbar]:mb-3',
-		'[&_.rich-code-heading]:flex',
-		'[&_.rich-code-heading]:items-center',
-		'[&_.rich-code-heading]:gap-3',
-		'[&_.rich-code-icon]:font-mono',
-		'[&_.rich-code-icon]:text-sm',
-		'[&_.rich-code-icon]:font-semibold',
-		'[&_.rich-code-icon]:text-muted-foreground',
-		'[&_.rich-code-language]:font-mono',
+		'[&_.rich-code-toolbar]:border-b',
+		'[&_.rich-code-toolbar]:border-border/60',
+		'[&_.rich-code-toolbar]:bg-background',
+		'[&_.rich-code-toolbar]:px-4',
+		'[&_.rich-code-toolbar]:py-2.5',
+		'[&_.rich-code-language]:min-w-0',
+		'[&_.rich-code-language]:truncate',
 		'[&_.rich-code-language]:text-sm',
+		'[&_.rich-code-language]:font-medium',
 		'[&_.rich-code-language]:tracking-normal',
 		'[&_.rich-code-language]:text-muted-foreground',
 		'[&_.rich-code-actions]:flex',
+		'[&_.rich-code-actions]:shrink-0',
 		'[&_.rich-code-actions]:items-center',
-		'[&_.rich-code-actions]:gap-0.5',
+		'[&_.rich-code-actions]:gap-1',
+		'[&_.rich-code-action]:inline-flex',
+		'[&_.rich-code-action]:items-center',
+		'[&_.rich-code-action]:gap-1.5',
 		'[&_.rich-code-action]:rounded-md',
-		'[&_.rich-code-action]:p-1.5',
+		'[&_.rich-code-action]:px-2',
+		'[&_.rich-code-action]:py-1',
+		'[&_.rich-code-action]:text-sm',
 		'[&_.rich-code-action]:font-medium',
 		'[&_.rich-code-action]:text-muted-foreground',
 		'[&_.rich-code-action:hover]:bg-background',
 		'[&_.rich-code-action:hover]:text-foreground',
 		'[&_.rich-code-action_svg]:size-4',
-		'[&_.rich-code-block_pre]:m-0',
-		'[&_.rich-code-block_pre]:rounded-none',
-		'[&_.rich-code-block_pre]:bg-transparent',
-		'[&_.rich-code-block_pre]:p-0'
+		'[&_.rich-code-action-icon]:px-1.5',
+		'[&_.rich-code-action-label]:leading-none',
+		'[&_pre.rich-code-pre]:m-0',
+		'[&_pre.rich-code-pre]:min-w-0',
+		'[&_pre.rich-code-pre]:flex-1',
+		'[&_pre.rich-code-pre]:overflow-x-auto',
+		'[&_pre.rich-code-pre]:rounded-none',
+		'[&_pre.rich-code-pre]:bg-transparent',
+		'[&_pre.rich-code-pre]:py-4',
+		'[&_pre.rich-code-pre]:pr-4',
+		'[&_pre.rich-code-pre]:pl-3',
+		'[&_pre.rich-code-pre]:font-mono',
+		'[&_pre.rich-code-pre]:text-[0.8125rem]',
+		'[&_pre.rich-code-pre]:leading-[1.6]',
+		'[&_pre.rich-code-pre_code.hljs]:bg-transparent',
+		'[&_pre.rich-code-pre_code.hljs]:p-0',
+		'[&_pre.rich-code-pre_code.hljs]:font-[inherit]',
+		'[&_pre.rich-code-pre_code.hljs]:text-[length:inherit]',
+		'[&_pre.rich-code-pre_code.hljs]:leading-[inherit]'
 	].join(' ');
 </script>
 
