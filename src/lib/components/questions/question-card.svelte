@@ -312,7 +312,7 @@
 			{@attach portalToBody(expanded)}
 			class={cn(
 				expanded
-					? 'fixed inset-0 z-50 flex h-dvh min-h-0 flex-col overflow-hidden bg-background p-3 sm:p-4'
+					? 'fixed inset-0 z-40 flex h-dvh min-h-0 flex-col overflow-hidden bg-background p-3 sm:p-4'
 					: 'contents'
 			)}
 		>
@@ -617,20 +617,25 @@
 				showCloseButton={true}
 			>
 				<Dialog.Header class="gap-2 text-left">
+					{@const isCorrect =
+						core.checkedSelection === core.currentQuestion.correctAnswer}
+					{@const showCorrectAnswer =
+						Boolean(core.currentQuestion.correctAnswer) && !isCorrect}
 					<Dialog.Title>
-						{core.checkedSelection === core.currentQuestion.correctAnswer
-							? 'Correct!'
-							: 'Review Explanation'}
+						{isCorrect ? 'Correct!' : 'Review Explanation'}
 					</Dialog.Title>
-					<Dialog.Description class={core.currentQuestion.correctAnswer ? undefined : 'sr-only'}>
-						{#if core.currentQuestion.correctAnswer}
+					{#if showCorrectAnswer}
+						<Dialog.Description>
 							Correct answer:
-							<span class="font-semibold text-foreground">{core.currentQuestion.correctAnswer}</span
+							<span class="font-semibold text-foreground"
+								>{core.currentQuestion.correctAnswer}</span
 							>
-						{:else}
+						</Dialog.Description>
+					{:else}
+						<Dialog.Description class="sr-only">
 							Detailed explanation for this question.
-						{/if}
-					</Dialog.Description>
+						</Dialog.Description>
+					{/if}
 				</Dialog.Header>
 				<RichText
 					text={core.currentQuestion.explanation}
