@@ -1,6 +1,10 @@
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { FrqAttemptInProgressError, gradeFrqAttempt } from '#lib/grading/frq/attempts.server.js';
+import {
+	frqGradeRateLimitedResponse,
+	limitFrqGrading
+} from '#lib/grading/frq/rate-limit.server.js';
 import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
 import { FrqGradeRequestSchema } from '#lib/question-bank/frq/types.js';
 import { capturePostHogServerEvent } from '#lib/server/posthog.js';
@@ -19,6 +23,8 @@ export const POST: RequestHandler = withAuthedHandler(
 				{ status: 400 }
 			);
 		}
+		const rate = await limitFrqGrading(userId, parsed.data.questionId);
+		if (!rate.allowed) return frqGradeRateLimitedResponse(rate.retryAt);
 		try {
 			const attempt = await gradeFrqAttempt(userId, parsed.data);
 			capturePostHogServerEvent(event.request, {
