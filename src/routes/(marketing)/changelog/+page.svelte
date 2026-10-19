@@ -5,6 +5,25 @@
 
 	const changelog = [
 		{
+			version: '1.9.9',
+			date: 'October 19, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Practice and quizzes no longer serve questions marked as low quality, including related stimulus-set items when the shared passage or set is the problem'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: [
+						'Free Response grading limits how often you can submit so scoring stays available under heavy use',
+						'Guest Tutor chat is more protective when rate limiting is temporarily unavailable'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.8',
 			date: 'October 18, 2026',
 			sections: [
@@ -1581,7 +1600,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 18, 2026"
+			meta="Last Updated: October 19, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

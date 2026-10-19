@@ -39,17 +39,17 @@ Choose subagent models based on the host and task complexity. Delegate focused, 
 
 ### Cursor
 
-| Task weight | Model |
-| --- | --- |
-| Hard | Grok 4.5 (high) |
-| Light | Composer 2.5 |
+| Task weight | Model           |
+| ----------- | --------------- |
+| Hard        | Grok 4.5 (high) |
+| Light       | Composer 2.5    |
 
 ### Codex
 
-| Task weight | Model |
-| --- | --- |
-| Hard | 6.1 Sol (low/light effort) |
-| Light | 6 Luna (high effort) |
+| Task weight | Model                      |
+| ----------- | -------------------------- |
+| Hard        | 6.1 Sol (low/light effort) |
+| Light       | 6 Luna (high effort)       |
 
 Use the configured models when available. Otherwise, choose the closest suitable alternative.
 

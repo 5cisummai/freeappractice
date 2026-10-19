@@ -12,11 +12,11 @@ Canonical visual language for marketing, auth, and the app. Tokens live in `src/
 
 ## Typography
 
-| Role | Class | Face | Use |
-| --- | --- | --- | --- |
-| Body & UI | `font-sans` (default) | Open Runde | Labels, buttons, nav, body |
-| Display | `font-display` | DM Sans Variable | Page/section titles, marketing headlines |
-| Reading / exam | `font-serif` | Noto Serif | Question stems, FRQ prompts, article body |
+| Role           | Class                 | Face             | Use                                       |
+| -------------- | --------------------- | ---------------- | ----------------------------------------- |
+| Body & UI      | `font-sans` (default) | Open Runde       | Labels, buttons, nav, body                |
+| Display        | `font-display`        | DM Sans Variable | Page/section titles, marketing headlines  |
+| Reading / exam | `font-serif`          | Noto Serif       | Question stems, FRQ prompts, article body |
 
 ```css
 --font-sans: 'Open Runde', sans-serif;
@@ -26,17 +26,17 @@ Canonical visual language for marketing, auth, and the app. Tokens live in `src/
 
 ### Heading scale
 
-| Level | Classes |
-| --- | --- |
-| Hero h1 | `font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance sm:text-5xl lg:text-[3.5rem]` |
-| Marketing page h1 | `font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl` |
-| App page h1 | `font-display text-3xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl` |
-| Section h2 | `font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl` |
-| Subsection h3 | `text-base font-semibold` or `font-display text-xl font-medium tracking-tight sm:text-2xl` |
-| Body lead | `text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8` + `max-w-xl`–`max-w-2xl` |
-| Body | `text-base leading-7` |
-| Exam copy | `font-serif text-[0.925rem] leading-7 text-foreground/80` |
-| Meta | `text-sm text-muted-foreground` or `text-xs` |
+| Level             | Classes                                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Hero h1           | `font-display text-[2.15rem] leading-[1.15] font-medium tracking-tight text-balance sm:text-5xl lg:text-[3.5rem]` |
+| Marketing page h1 | `font-display text-4xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl`            |
+| App page h1       | `font-display text-3xl leading-[1.12] font-medium tracking-tight text-balance sm:text-4xl`                        |
+| Section h2        | `font-display text-3xl leading-tight font-medium tracking-tight text-balance sm:text-4xl`                         |
+| Subsection h3     | `text-base font-semibold` or `font-display text-xl font-medium tracking-tight sm:text-2xl`                        |
+| Body lead         | `text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8` + `max-w-xl`–`max-w-2xl`                      |
+| Body              | `text-base leading-7`                                                                                             |
+| Exam copy         | `font-serif text-[0.925rem] leading-7 text-foreground/80`                                                         |
+| Meta              | `text-sm text-muted-foreground` or `text-xs`                                                                      |
 
 **Emphasis:** primary keyword underline `underline decoration-primary/70 decoration-2 underline-offset-4`; links `underline underline-offset-2` (or `4` in dense UI); `text-balance` on multi-line headings; landing hero only may use an SVG hand-drawn accent under a key word.
 
@@ -46,16 +46,16 @@ Canonical visual language for marketing, auth, and the app. Tokens live in `src/
 
 OKLCH tokens in `src/routes/layout.css` (shadcn + brand). Dark mode via `.dark` on `<html>` (`mode-watcher`). Cards sit slightly above a darker sidebar rail in dark mode.
 
-| Token | Purpose |
-| --- | --- |
+| Token                                      | Purpose                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------- |
 | `--brand-primary` `oklch(0.546 0.235 262)` | Brand blue-violet; drives `--primary`, `--ring`, sidebar primary |
-| `--background` / `--foreground` | Page canvas / primary text |
-| `--primary` | CTAs, links, focus rings |
-| `--muted` / `--muted-foreground` | Secondary surfaces & text |
-| `--card` / `--border` | Cards, dividers |
-| `--accent` | Subtle highlights |
-| `--destructive` | Errors |
-| `--sidebar*` | App sidebar rail |
+| `--background` / `--foreground`            | Page canvas / primary text                                       |
+| `--primary`                                | CTAs, links, focus rings                                         |
+| `--muted` / `--muted-foreground`           | Secondary surfaces & text                                        |
+| `--card` / `--border`                      | Cards, dividers                                                  |
+| `--accent`                                 | Subtle highlights                                                |
+| `--destructive`                            | Errors                                                           |
+| `--sidebar*`                               | App sidebar rail                                                 |
 
 **Feature-card tints:** `bg-sky-100 dark:bg-sky-950/50`, `bg-amber-50 dark:bg-amber-950/40`, `bg-emerald-100 dark:bg-emerald-950/50`, `bg-violet-100 dark:bg-violet-950/50`, `bg-rose-100 dark:bg-rose-950/50`.
 
@@ -65,18 +65,18 @@ OKLCH tokens in `src/routes/layout.css` (shadcn + brand). Dark mode via `.dark` 
 
 ## Spacing & layout
 
-| Shell | Pattern |
-| --- | --- |
-| Marketing | `PublicShell` → `<main id="main-content">` (marketing layout already wraps) |
-| App | Sidebar + `PageShell` (`max-w-6xl`, `px-5 sm:px-8 lg:px-10`, `py-10 sm:py-12`) |
-| Auth | Centered `#main-content`; no Topbar/Footer |
+| Shell     | Pattern                                                                        |
+| --------- | ------------------------------------------------------------------------------ |
+| Marketing | `PublicShell` → `<main id="main-content">` (marketing layout already wraps)    |
+| App       | Sidebar + `PageShell` (`max-w-6xl`, `px-5 sm:px-8 lg:px-10`, `py-10 sm:py-12`) |
+| Auth      | Centered `#main-content`; no Topbar/Footer                                     |
 
-| Context | Max width | Padding |
-| --- | --- | --- |
-| Landing sections | `max-w-7xl` | `px-5 sm:px-8 lg:px-10` |
-| Standard marketing | `max-w-6xl`–`max-w-7xl` | `px-5 sm:px-8` |
-| Hero / FAQ / narrow | `max-w-3xl` | — |
-| App `PageShell` | `max-w-6xl` | `px-5 sm:px-8 lg:px-10` |
+| Context             | Max width               | Padding                 |
+| ------------------- | ----------------------- | ----------------------- |
+| Landing sections    | `max-w-7xl`             | `px-5 sm:px-8 lg:px-10` |
+| Standard marketing  | `max-w-6xl`–`max-w-7xl` | `px-5 sm:px-8`          |
+| Hero / FAQ / narrow | `max-w-3xl`             | —                       |
+| App `PageShell`     | `max-w-6xl`             | `px-5 sm:px-8 lg:px-10` |
 
 **Vertical rhythm:** landing stack `space-y-20 lg:space-y-24`, outer `pt-24 pb-12 lg:pt-32 lg:pb-16`; inner marketing `py-14 sm:py-20`; sections `space-y-8`–`space-y-10`; app `space-y-8` in `PageShell`.
 
@@ -84,12 +84,12 @@ OKLCH tokens in `src/routes/layout.css` (shadcn + brand). Dark mode via `.dark` 
 
 ## Surfaces
 
-| Pattern | Classes |
-| --- | --- |
-| Marketing card | `rounded-3xl border border-border bg-card p-6|p-7 marketing-card-shadow` |
+| Pattern             | Classes                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| Marketing card      | `rounded-3xl border border-border bg-card p-6                                             | p-7 marketing-card-shadow` |
 | Hero practice embed | `rounded-xl border border-border/70 bg-card/45 shadow-md shadow-black/5 backdrop-blur-md` |
-| Standard card | `rounded-2xl border border-border bg-card` |
-| Interactive row | `rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted/40 transition-colors` |
+| Standard card       | `rounded-2xl border border-border bg-card`                                                |
+| Interactive row     | `rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted/40 transition-colors`   |
 
 Prefer softened borders on marketing UI (`border-border/60`–`/70`).
 
@@ -113,26 +113,26 @@ shadcn `Button` (`src/lib/components/ui/button`).
 
 **Motion helpers** (`src/lib/tw-animate.ts`):
 
-| Export | When |
-| --- | --- |
-| `twAnimateIn` | Above-the-fold / page-load |
-| `twAnimateInView` | Below-the-fold sections |
-| `twAnimateInViewSubtle` | Dense grids |
-| `twAnimateInViewZoom` | Interactive blocks |
+| Export                  | When                       |
+| ----------------------- | -------------------------- |
+| `twAnimateIn`           | Above-the-fold / page-load |
+| `twAnimateInView`       | Below-the-fold sections    |
+| `twAnimateInViewSubtle` | Dense grids                |
+| `twAnimateInViewZoom`   | Interactive blocks         |
 
 Prefer these over custom intersection observers.
 
 ## Components
 
-| Component | When |
-| --- | --- |
-| `PublicShell` / `Topbar` / `SiteFooter` | Public chrome |
-| `PublicPageHero` | Utility marketing pages |
-| `SectionIntro` | Section title + lead + optional actions |
-| `BackToHome` | Secondary pages |
-| `LandingHero`, `UnlimitedSection`, `SuperSection`, `StudyTeamSection`, `AspiringStudentsSection`, `PricingSection`/`PricingCards`, `BottomCtaSection` | Landing sections |
-| `PageShell` | Authenticated app pages |
-| `PracticeRunner` / `practice/*` | Live practice embeds |
+| Component                                                                                                                                             | When                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `PublicShell` / `Topbar` / `SiteFooter`                                                                                                               | Public chrome                           |
+| `PublicPageHero`                                                                                                                                      | Utility marketing pages                 |
+| `SectionIntro`                                                                                                                                        | Section title + lead + optional actions |
+| `BackToHome`                                                                                                                                          | Secondary pages                         |
+| `LandingHero`, `UnlimitedSection`, `SuperSection`, `StudyTeamSection`, `AspiringStudentsSection`, `PricingSection`/`PricingCards`, `BottomCtaSection` | Landing sections                        |
+| `PageShell`                                                                                                                                           | Authenticated app pages                 |
+| `PracticeRunner` / `practice/*`                                                                                                                       | Live practice embeds                    |
 
 Paths under `#lib/components/{layout,marketing,practice}/`.
 
@@ -165,11 +165,11 @@ Timing: page enter ~700ms `ease-out` fade+rise; micro-interactions 150–300ms. 
 
 ## App vs marketing
 
-| Surface | Shell | Density | Notes |
-| --- | --- | --- | --- |
-| Marketing | `PublicShell` | Airy | Display type, softened borders, section motion |
-| App (`/app`) | Sidebar + `PageShell` | Utilitarian | Same tokens; no marketing atmosphere |
-| Auth | Minimal centered | Focused | No Topbar/Footer; keep brand tokens |
+| Surface      | Shell                 | Density     | Notes                                          |
+| ------------ | --------------------- | ----------- | ---------------------------------------------- |
+| Marketing    | `PublicShell`         | Airy        | Display type, softened borders, section motion |
+| App (`/app`) | Sidebar + `PageShell` | Utilitarian | Same tokens; no marketing atmosphere           |
+| Auth         | Minimal centered      | Focused     | No Topbar/Footer; keep brand tokens            |
 
 Reuse marketing **tokens and typography** in the app — not halftone or landing-only section components.
 
@@ -179,13 +179,13 @@ Long-form (blog, guides): `.prose` in `layout.css`. Exam-style reading outside p
 
 ## Reference pages
 
-| Page | Route | Match for |
-| --- | --- | --- |
-| Landing | `/` | Tokens, type, spacing, halftone + section stack |
-| Rich marketing | `/about`, `/summer`, `/super`, `/blog` | Multi-section layouts |
-| Utility marketing | `/subjects`, `/stats`, `/privacy`, `/changelog` | `PublicPageHero` + `BackToHome` |
-| Practice | `/practice/*` | Practice flow |
-| App home | `/app` | Product density |
+| Page              | Route                                           | Match for                                       |
+| ----------------- | ----------------------------------------------- | ----------------------------------------------- |
+| Landing           | `/`                                             | Tokens, type, spacing, halftone + section stack |
+| Rich marketing    | `/about`, `/summer`, `/super`, `/blog`          | Multi-section layouts                           |
+| Utility marketing | `/subjects`, `/stats`, `/privacy`, `/changelog` | `PublicPageHero` + `BackToHome`                 |
+| Practice          | `/practice/*`                                   | Practice flow                                   |
+| App home          | `/app`                                          | Product density                                 |
 
 When unsure: `/` for tokens/type/spacing; `/about` or `/super` for multi-section marketing; `/app` for product density.
 
