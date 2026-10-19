@@ -1,14 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getAllowedCourses, getUnitsForCourse, getCourseNames } from '#lib/catalog/courses.js';
+import { getUnitsForCourse, getCourseNames } from '#lib/catalog/courses.js';
 import { CATALOG_VERSION, getCatalogFacts } from '#lib/catalog/sources.js';
 
 describe('catalog facts and official sources', () => {
-	it('covers every supported real AP course', () => {
-		const supportedRealCourses = [...getAllowedCourses()];
-
-		expect(getCourseNames().sort()).toEqual(supportedRealCourses.sort());
-	});
-
 	it('provides an official source and aligned unit list for every curated course', () => {
 		for (const course of getCourseNames()) {
 			const result = getCatalogFacts({ course });

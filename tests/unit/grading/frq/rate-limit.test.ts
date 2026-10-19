@@ -31,29 +31,26 @@ describe('limitFrqGrading', () => {
 		mocks.limit.mockResolvedValue({ success: true, reset: 0 });
 	});
 
-	it('applies the per-user window then the per-question cooldown', async () => {
-		mocks.limit
-			.mockResolvedValueOnce({ success: true, reset: 0 })
-			.mockResolvedValueOnce({ success: false, reset: 456_000 });
-
-		await expect(limitFrqGrading('user-1', 'question-1')).resolves.toEqual({
-			allowed: false,
-			retryAt: 456_000,
-			degraded: false
-		});
-		expect(mocks.limit).toHaveBeenNthCalledWith(1, 'user:user-1');
-		expect(mocks.limit).toHaveBeenNthCalledWith(2, 'user:user-1:q:question-1');
-	});
-
-	it('stops at the per-user window without checking the question cooldown', async () => {
+	it('enforces the per-user window before the per-question cooldown', async () => {
 		mocks.limit.mockResolvedValueOnce({ success: false, reset: 123_000 });
-
 		await expect(limitFrqGrading('user-1', 'question-1')).resolves.toEqual({
 			allowed: false,
 			retryAt: 123_000,
 			degraded: false
 		});
 		expect(mocks.limit).toHaveBeenCalledTimes(1);
+		expect(mocks.limit).toHaveBeenCalledWith('user:user-1');
+
+		mocks.limit.mockReset();
+		mocks.limit
+			.mockResolvedValueOnce({ success: true, reset: 0 })
+			.mockResolvedValueOnce({ success: false, reset: 456_000 });
+		await expect(limitFrqGrading('user-1', 'question-1')).resolves.toEqual({
+			allowed: false,
+			retryAt: 456_000,
+			degraded: false
+		});
+		expect(mocks.limit).toHaveBeenNthCalledWith(2, 'user:user-1:q:question-1');
 	});
 
 	it('fails closed when Redis is unavailable', async () => {

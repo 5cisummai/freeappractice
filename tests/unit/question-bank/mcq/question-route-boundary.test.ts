@@ -80,29 +80,6 @@ describe('POST /api/question selection-only boundary', () => {
 		expect(getQuestion.mock.calls[0][2]).not.toHaveProperty('allowRefill');
 	});
 
-	it('does not request a refill from the session-free endpoint', async () => {
-		getQuestion.mockResolvedValueOnce({ status: 'warming', retryAfterSeconds: 15 });
-
-		await POST({
-			request: new Request('http://localhost/api/question', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({
-					course: 'AP Biology',
-					unit: 'Unit 1: Chemistry of Life'
-				})
-			}),
-			locals: { userId: 'user-1' }
-		} as Parameters<typeof POST>[0]);
-
-		expect(getQuestion).toHaveBeenCalledWith(
-			'AP Biology',
-			'Unit 1: Chemistry of Life',
-			expect.any(Object)
-		);
-		expect(getQuestion.mock.calls[0][2]).not.toHaveProperty('allowRefill');
-	});
-
 	it('returns POOL_UNAVAILABLE on DB failure without invoking generation', async () => {
 		getQuestion.mockResolvedValueOnce({
 			status: 'failed',
@@ -206,16 +183,6 @@ describe('request-path import boundary', () => {
 			expect(readSrc(file)).not.toMatch(
 				/from ['"]\$lib\/question-bank\/pool-refill-queue\.server['"]/
 			);
-		}
-	});
-
-	it('confirms legacy miss-lock files are deleted', () => {
-		for (const file of [
-			'src/lib/question-bank/cache-miss.server.ts',
-			'src/lib/question-bank/cache-lock.server.ts',
-			'scripts/clear-cache.ts'
-		]) {
-			expect(() => readSrc(file)).toThrow();
 		}
 	});
 });

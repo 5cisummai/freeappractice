@@ -34,24 +34,16 @@ describe('limitGenericTutor', () => {
 		mocks.limit.mockResolvedValue({ success: true, reset: 0 });
 	});
 
-	it('fails closed for anonymous callers when Redis is unavailable', async () => {
+	it('fails closed for anonymous callers and open for signed-in when Redis is down', async () => {
 		mocks.getRedisClient.mockReturnValue(null);
+		const request = new Request('https://app.test/api/tutor/chat');
 
-		await expect(
-			limitGenericTutor(new Request('https://app.test/api/tutor/chat'), undefined)
-		).resolves.toEqual({
+		await expect(limitGenericTutor(request, undefined)).resolves.toEqual({
 			allowed: false,
 			retryAt: null,
 			degraded: true
 		});
-	});
-
-	it('fails open for signed-in callers when Redis is unavailable', async () => {
-		mocks.getRedisClient.mockReturnValue(null);
-
-		await expect(
-			limitGenericTutor(new Request('https://app.test/api/tutor/chat'), 'user-1')
-		).resolves.toEqual({
+		await expect(limitGenericTutor(request, 'user-1')).resolves.toEqual({
 			allowed: true,
 			retryAt: null,
 			degraded: true

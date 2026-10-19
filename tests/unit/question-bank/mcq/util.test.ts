@@ -25,13 +25,10 @@ describe('isDuplicateKeyError', () => {
 });
 
 describe('assertNoNullCharacters', () => {
-	it('rejects nested strings containing U+0000 before JSONB persistence', () => {
+	it('rejects U+0000 and allows ordinary LaTeX', () => {
 		expect(() =>
 			assertNoNullCharacters({ explanation: 'charge and $\u0000pi$ bonding' }, 'stimulus')
 		).toThrow('stimulus.explanation contains an unsupported null character');
-	});
-
-	it('allows ordinary LaTeX backslashes', () => {
 		expect(() =>
 			assertNoNullCharacters({ explanation: String.raw`charge and $\pi$ bonding` })
 		).not.toThrow();
