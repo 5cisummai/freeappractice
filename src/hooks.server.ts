@@ -20,6 +20,7 @@ import {
 	superFreeBetaEnabled
 } from '#lib/flags.js';
 import { isSuperStripeConfigured } from '#lib/billing/subscriptions.server.js';
+import { isIgnoredSentryError } from '#lib/sentry-ignore.js';
 import { isAccountSurface, isAgeGateExempt } from '#lib/auth/account-surface.server.js';
 import { getAgeConfirmedAtForRequest } from '#lib/agent/access.server.js';
 import { limitApiRequests } from '#lib/server/api-rate-limit.server.js';
@@ -312,6 +313,7 @@ export const handle = sequence(
 export const handleError: HandleServerError = Sentry.handleErrorWithSentry(
 	async ({ kind, error, event }) => {
 		if (kind !== 'unknown') return;
+		if (isIgnoredSentryError(error)) return;
 
 		logger.error('Unhandled server error', {
 			error,
