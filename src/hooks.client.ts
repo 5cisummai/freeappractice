@@ -2,6 +2,7 @@ import type { HandleClientError } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { initPostHogAnalytics, capturePostHogException } from '#lib/client/posthog-analytics.js';
 import { sentryEnabled, sentryOptions } from '#lib/sentry-config.js';
+import { isIgnoredSentryError } from '#lib/sentry-ignore.js';
 
 const CHUNK_RELOAD_AT_KEY = 'chunk-reload-at';
 const CHUNK_RELOAD_WINDOW_MS = 10_000;
@@ -55,6 +56,7 @@ export async function init() {
 
 export const handleError: HandleClientError = Sentry.handleErrorWithSentry(({ kind, error }) => {
 	if (kind !== 'unknown') return;
+	if (isIgnoredSentryError(error)) return;
 	if (isDynamicImportFailure(error) && reloadOnceForChunkFailure()) return;
 
 	capturePostHogException(error);
