@@ -617,18 +617,15 @@
 				showCloseButton={true}
 			>
 				<Dialog.Header class="gap-2 text-left">
-					{@const isCorrect =
-						core.checkedSelection === core.currentQuestion.correctAnswer}
-					{@const showCorrectAnswer =
-						Boolean(core.currentQuestion.correctAnswer) && !isCorrect}
+					{@const isCorrect = core.checkedSelection === core.currentQuestion.correctAnswer}
+					{@const showCorrectAnswer = Boolean(core.currentQuestion.correctAnswer) && !isCorrect}
 					<Dialog.Title>
 						{isCorrect ? 'Correct!' : 'Review Explanation'}
 					</Dialog.Title>
 					{#if showCorrectAnswer}
 						<Dialog.Description>
 							Correct answer:
-							<span class="font-semibold text-foreground"
-								>{core.currentQuestion.correctAnswer}</span
+							<span class="font-semibold text-foreground">{core.currentQuestion.correctAnswer}</span
 							>
 						</Dialog.Description>
 					{:else}

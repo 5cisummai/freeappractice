@@ -5,6 +5,25 @@
 
 	const changelog = [
 		{
+			version: '1.9.8',
+			date: 'October 18, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'After a practice quiz, use Fix my mistakes for a short follow-up quiz on the topics you missed, with a recap of what improved'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Rich text code blocks are easier to read and use, including expand to fullscreen plus clearer copy and download actions',
+						'Explanation dialogs stack correctly, and the Correct answer label stays hidden when you already got the question right'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.7',
 			date: 'October 12, 2026',
 			sections: [
@@ -1562,7 +1581,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 12, 2026"
+			meta="Last Updated: October 18, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
