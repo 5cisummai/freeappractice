@@ -1,5 +1,6 @@
+import type { ErrorEvent, EventHint } from '@sentry/core';
 import { building, dev } from '$app/env';
-import { sentryIgnoreErrors } from '#lib/sentry-ignore.js';
+import { isUnresolvableStackOverflowEvent, sentryIgnoreErrors } from '#lib/sentry-ignore.js';
 
 const sentryEnabled = !dev && !building;
 
@@ -8,7 +9,11 @@ export const sentryOptions = {
 	enabled: sentryEnabled,
 	tracesSampleRate: 1,
 	enableLogs: true,
-	ignoreErrors: sentryIgnoreErrors
+	ignoreErrors: sentryIgnoreErrors,
+	beforeSend(event: ErrorEvent, hint: EventHint) {
+		if (isUnresolvableStackOverflowEvent(event, hint.originalException)) return null;
+		return event;
+	}
 };
 
 export { sentryEnabled };
