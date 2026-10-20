@@ -34,6 +34,7 @@ describe('isIgnoredSentryError', () => {
 			"undefined is not an object (evaluating 'window.webkit.messageHandlers')"
 		);
 		expect(sentryIgnoreErrors).toContain('Delay was aborted');
+		expect(sentryIgnoreErrors).toContain('Load failed');
 	});
 
 	it('drops Vercel AI SDK abort-during-retry-wait noise', () => {
@@ -48,5 +49,21 @@ describe('isIgnoredSentryError', () => {
 		expect(isIgnoredSentryError(new DOMException('The operation was aborted', 'AbortError'))).toBe(
 			false
 		);
+	});
+
+	it('drops Safari fetch Load failed noise', () => {
+		expect(isIgnoredSentryError(new TypeError('Load failed'))).toBe(true);
+	});
+
+	it('drops the Safari fetch failure when Sentry prefixes the type', () => {
+		expect(isIgnoredSentryError('TypeError: Load failed')).toBe(true);
+	});
+
+	it('keeps Chrome fetch and first-party Failed to fetch messages', () => {
+		expect(isIgnoredSentryError(new TypeError('Failed to fetch'))).toBe(false);
+		expect(isIgnoredSentryError(new TypeError('Failed to fetch dynamically imported module'))).toBe(
+			false
+		);
+		expect(isIgnoredSentryError(new Error('Failed to fetch bookmarks'))).toBe(false);
 	});
 });

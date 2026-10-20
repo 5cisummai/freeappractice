@@ -5,7 +5,9 @@
 export const sentryIgnoreErrors: Array<string | RegExp> = [
 	"undefined is not an object (evaluating 'window.webkit.messageHandlers')",
 	// Vercel AI SDK delay() when a stream/request abort hits a retry wait.
-	'Delay was aborted'
+	'Delay was aborted',
+	// Safari/WebKit TypeError for failed fetch(), aborted requests, and some loads.
+	'Load failed'
 ];
 
 export function sentryErrorMessage(error: unknown): string {
