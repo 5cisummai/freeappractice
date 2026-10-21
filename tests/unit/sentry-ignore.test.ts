@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isIgnoredSentryError, sentryIgnoreErrors } from '#lib/sentry-ignore.js';
+import {
+	dynamicImportFailureMessages,
+	isDynamicImportFailure,
+	isIgnoredSentryError,
+	sentryIgnoreErrors
+} from '#lib/sentry-ignore.js';
 
 describe('isIgnoredSentryError', () => {
 	it('drops iOS WebView webkit messageHandlers noise in Error and string forms', () => {
@@ -42,5 +47,54 @@ describe('isIgnoredSentryError', () => {
 		expect(isIgnoredSentryError(new DOMException('The operation was aborted', 'AbortError'))).toBe(
 			false
 		);
+	});
+
+	it('drops Firefox dynamic import chunk-load failures', () => {
+		expect(
+			isIgnoredSentryError(
+				new TypeError(
+					'error loading dynamically imported module: https://freeappractice.org/_app/immutable/chunks/-RYKOsq12.js'
+				)
+			)
+		).toBe(true);
+		expect(
+			isDynamicImportFailure(
+				new TypeError(
+					'error loading dynamically imported module: https://freeappractice.org/_app/immutable/chunks/-RYKOsq12.js'
+				)
+			)
+		).toBe(true);
+	});
+
+	it('drops the Firefox chunk-load message when Sentry prefixes the type', () => {
+		expect(
+			isIgnoredSentryError(
+				'TypeError: error loading dynamically imported module: https://freeappractice.org/_app/immutable/chunks/-RYKOsq12.js'
+			)
+		).toBe(true);
+	});
+
+	it('drops unique Chrome and Safari module-load phrases', () => {
+		expect(
+			isIgnoredSentryError(
+				new TypeError(
+					'Failed to fetch dynamically imported module: https://freeappractice.org/_app/immutable/chunks/x.js'
+				)
+			)
+		).toBe(true);
+		expect(isIgnoredSentryError(new TypeError('Importing a module script failed'))).toBe(true);
+	});
+
+	it('keeps Chrome Failed to fetch and first-party fetch errors', () => {
+		expect(isIgnoredSentryError(new TypeError('Failed to fetch'))).toBe(false);
+		expect(isDynamicImportFailure(new TypeError('Failed to fetch'))).toBe(false);
+		expect(isIgnoredSentryError(new Error('Failed to fetch bookmarks'))).toBe(false);
+		expect(isIgnoredSentryError(new TypeError('Load failed'))).toBe(false);
+	});
+
+	it('exports the unique dynamic-import ignore substrings', () => {
+		for (const message of dynamicImportFailureMessages) {
+			expect(sentryIgnoreErrors).toContain(message);
+		}
 	});
 });
