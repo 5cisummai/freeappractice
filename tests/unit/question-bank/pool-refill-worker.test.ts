@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PoolRefillState } from '#lib/question-bank/pool-refill-types.server.js';
-import { poolGenerationBudgets } from '#lib/server/neon/schema.js';
+import { poolGenerationBudgets, poolRefillStates } from '#lib/server/neon/schema.js';
 
 const mocks = vi.hoisted(() => {
 	const state = {
@@ -9,11 +9,12 @@ const mocks = vi.hoisted(() => {
 		candidates: [] as PoolRefillState[],
 		generationBudgetUsed: 0,
 		lastLease: null as PoolRefillState | null,
-		maxConcurrentGenerations: 0
+		maxConcurrentGenerations: 0,
+		idleUpdates: 0
 	};
 
 	return {
-		db: { insert: vi.fn(), update: vi.fn(), select: vi.fn() },
+		db: { insert: vi.fn(), update: vi.fn(), select: vi.fn(), execute: vi.fn() },
 		state
 	};
 });
@@ -65,6 +66,7 @@ vi.mock('#lib/server/question-request-metrics.js', () => ({
 }));
 
 import { runQuestionPoolRefillWorker } from '#lib/question-bank/pool-refill.server.js';
+import { isValidPoolBucket } from '#lib/question-bank/pool-refill-queue.server.js';
 import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 const env: QuestionPoolConfig = {
@@ -101,6 +103,16 @@ function makeJob(index: number): PoolRefillState {
 	};
 }
 
+function asRunningLease(candidate: PoolRefillState): PoolRefillState {
+	return {
+		...candidate,
+		status: 'running',
+		leaseOwner: 'worker-test',
+		leaseExpiresAt: new Date(),
+		attempts: candidate.attempts + 1
+	};
+}
+
 function configureDatabase() {
 	mocks.state.activeGenerations = 0;
 	mocks.state.completedBuckets.clear();
@@ -108,6 +120,7 @@ function configureDatabase() {
 	mocks.state.generationBudgetUsed = 0;
 	mocks.state.lastLease = null;
 	mocks.state.maxConcurrentGenerations = 0;
+	mocks.state.idleUpdates = 0;
 
 	mocks.db.insert.mockImplementation(() => ({
 		values: () => ({ onConflictDoNothing: async () => undefined })
@@ -118,33 +131,31 @@ function configureDatabase() {
 			query.where = () => query;
 			query.orderBy = () => query;
 			query.limit = async () =>
-				table === poolGenerationBudgets
-					? [{ generations: mocks.state.generationBudgetUsed }]
-					: mocks.state.candidates.length > 0
-						? [mocks.state.candidates[0]]
-						: [];
+				table === poolGenerationBudgets ? [{ generations: mocks.state.generationBudgetUsed }] : [];
 			return query;
 		}
 	}));
+	mocks.db.execute.mockImplementation(async () => {
+		const claimed = mocks.state.candidates.splice(0, 40).map(asRunningLease);
+		mocks.state.lastLease = claimed.at(-1) ?? null;
+		return { rows: claimed };
+	});
 	mocks.db.update.mockImplementation((table: unknown) => {
 		const query: Record<string, unknown> = {};
-		query.set = () => query;
+		query.set = (values: { lastError?: string | null }) => {
+			if (
+				table === poolRefillStates &&
+				values.lastError === 'Cancelled invalid catalog pool bucket'
+			) {
+				mocks.state.idleUpdates += 1;
+			}
+			return query;
+		};
 		query.where = () => query;
 		query.returning = async () => {
 			if (table === poolGenerationBudgets) {
 				mocks.state.generationBudgetUsed += 1;
 				return [{ dayKey: 'test-day' }];
-			}
-
-			if (mocks.state.candidates.length > 0) {
-				const candidate = mocks.state.candidates.shift()!;
-				mocks.state.lastLease = {
-					...candidate,
-					status: 'running',
-					leaseOwner: 'worker-test',
-					leaseExpiresAt: new Date(),
-					attempts: candidate.attempts + 1
-				};
 			}
 			return mocks.state.lastLease ? [mocks.state.lastLease] : [];
 		};
@@ -168,5 +179,22 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.generated).toBe(8);
 		expect(summary.budgetRemaining).toBe(0);
 		expect(mocks.state.maxConcurrentGenerations).toBe(8);
+		expect(mocks.db.execute).toHaveBeenCalledOnce();
+	});
+
+	it('idles invalid catalog buckets without blocking valid jobs', async () => {
+		vi.mocked(isValidPoolBucket).mockImplementation(
+			(bucket: { course: string; unit: string }) => bucket.unit !== 'Unit 1'
+		);
+
+		const summary = await runQuestionPoolRefillWorker(env, {
+			owner: 'worker-test',
+			startedAt: Date.now()
+		});
+
+		expect(summary.processed).toBe(8);
+		expect(summary.generated).toBe(7);
+		expect(mocks.state.idleUpdates).toBe(1);
+		expect(mocks.db.execute).toHaveBeenCalledTimes(2);
 	});
 });
