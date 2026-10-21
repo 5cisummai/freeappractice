@@ -51,13 +51,20 @@ describe('question quality persistence functions', () => {
 		);
 		expect(queries).toHaveLength(3);
 		expect(queries[0].sql).toContain('"ai_assessment" is null');
-		for (const [index, table] of ['mcq_questions', 'frq_questions'].entries()) {
-			const query = queries[index + 1];
-			expect(query.sql).toContain(`update "content"."${table}" set "active"`);
-			expect(query.sql).toContain('select "question_id" from "content"."question_quality"');
-			expect(query.sql).toContain('"final_verdict" =');
-			expect(query.params).toEqual([false, 'question-1', 'bad']);
-		}
+
+		const mcqRetire = queries[1];
+		expect(mcqRetire.sql).toContain('update "content"."mcq_questions" set "active"');
+		expect(mcqRetire.sql).toContain('final_verdict');
+		expect(mcqRetire.sql).toContain('stimulusId');
+		expect(mcqRetire.sql).toContain("'stimulus'");
+		expect(mcqRetire.sql).toContain("'set'");
+		expect(mcqRetire.params).toEqual([false, 'question-1', 'question-1']);
+
+		const frqRetire = queries[2];
+		expect(frqRetire.sql).toContain('update "content"."frq_questions" set "active"');
+		expect(frqRetire.sql).toContain('select "question_id" from "content"."question_quality"');
+		expect(frqRetire.sql).toContain('"final_verdict" =');
+		expect(frqRetire.params).toEqual([false, 'question-1', 'bad']);
 	});
 
 	it('does not reactivate retired questions when a verdict changes to good', async () => {

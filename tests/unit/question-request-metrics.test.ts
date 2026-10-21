@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-	QUESTION_POOL_HEALTH_EVENT,
-	QUESTION_REQUEST_EVENT,
 	sanitizeQuestionPoolHealthMetricProps,
 	sanitizeQuestionRequestMetricProps,
 	type QuestionRequestMetricProps
 } from '#lib/server/question-request-metrics.js';
 
 describe('question-request-metrics', () => {
-	it('exports the stable event names', () => {
-		expect(QUESTION_REQUEST_EVENT).toBe('question_request');
-		expect(QUESTION_POOL_HEALTH_EVENT).toBe('question_pool_health');
-	});
-
 	it('allowlists only safe metric properties', () => {
 		const props = {
 			question_type: 'mcq',

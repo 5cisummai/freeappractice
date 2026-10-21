@@ -11,7 +11,6 @@ describe('account surface routing', () => {
 		expect(isAccountSurface('/api/question/feedback')).toBe(true);
 		expect(isAccountSurface('/api/orgs/invite-link')).toBe(true);
 		expect(isAccountSurface('/api/shared-practice-sets')).toBe(true);
-
 		expect(isAccountSurface('/practice/ap-biology')).toBe(false);
 		expect(isAccountSurface('/api/question')).toBe(false);
 		expect(isAccountSurface('/api/cron/question-pool')).toBe(false);

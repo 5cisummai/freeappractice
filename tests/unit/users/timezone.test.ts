@@ -2,13 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { TIMEZONE_COOKIE_NAME, parseTimezone, timezoneFromCookies } from '#lib/users/timezone.js';
 
 describe('parseTimezone', () => {
-	it('accepts valid IANA timezones', () => {
+	it('accepts valid IANA timezones and rejects invalid values', () => {
 		expect(parseTimezone('America/Los_Angeles')).toBe('America/Los_Angeles');
 		expect(parseTimezone('  UTC  ')).toBe('UTC');
 		expect(parseTimezone(encodeURIComponent('Europe/Paris'))).toBe('Europe/Paris');
-	});
-
-	it('rejects missing, oversized, or invalid values', () => {
 		expect(parseTimezone(undefined)).toBeUndefined();
 		expect(parseTimezone('')).toBeUndefined();
 		expect(parseTimezone('Not/A_Zone')).toBeUndefined();

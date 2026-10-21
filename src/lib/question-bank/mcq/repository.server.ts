@@ -11,6 +11,7 @@ import { questionBucketFields } from '#lib/server/neon/jsonb.js';
 import { parseMcqQuestionPayload } from '#lib/question-bank/mcq/payload-schema.js';
 import { copyStimulusFields } from '#lib/question-bank/mcq/types.js';
 import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
+import { mcqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 
 export interface IQuestion extends McqQuestionPayload {
 	questionId: string;
@@ -164,6 +165,7 @@ function poolLookupPredicates(input: {
 		eq(courseField, input.course),
 		eq(unitField, input.unit),
 		eq(mcqQuestions.active, true),
+		mcqServableQualityPredicate(),
 		input.fromPivot === 'after'
 			? gte(mcqQuestions.randomKey, input.pivot)
 			: lt(mcqQuestions.randomKey, input.pivot)
@@ -219,7 +221,12 @@ export async function countActiveMcqQuestions(
 	unit: string,
 	allowStimulusQuestions = true
 ): Promise<number> {
-	const predicates = [eq(courseField, course), eq(unitField, unit), eq(mcqQuestions.active, true)];
+	const predicates = [
+		eq(courseField, course),
+		eq(unitField, unit),
+		eq(mcqQuestions.active, true),
+		mcqServableQualityPredicate()
+	];
 	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
@@ -401,32 +408,11 @@ export async function findActiveQuestionsForQuiz(input: {
 		...new Set((input.excludeQuestionIds ?? []).map((id) => id.trim()).filter(Boolean))
 	];
 	const db = getNeonDatabase();
-	const qualityPredicate = sql`not exists (
-					select 1
-					from content.question_quality own_quality
-					where own_quality.question_id = ${mcqQuestions.questionId}
-					  and own_quality.final_verdict = 'bad'
-				)
-				and (
-					${mcqQuestions.data}->>'stimulusId' is null
-					or not exists (
-						select 1
-						from content.question_quality shared_quality
-						join content.mcq_questions shared_question
-						  on shared_question.question_id = shared_quality.question_id
-						where shared_quality.final_verdict = 'bad'
-						  and coalesce(
-							shared_quality.ai_assessment->>'failure_scope',
-							shared_quality.ai_assessment->>'failureScope'
-						  ) in ('stimulus', 'set')
-						  and shared_question.data->>'stimulusId' = ${mcqQuestions.data}->>'stimulusId'
-					)
-				)`;
 	const bucketPredicate = and(
 		eq(mcqQuestions.active, true),
 		eq(courseField, input.course),
 		inArray(unitField, units),
-		qualityPredicate,
+		mcqServableQualityPredicate(),
 		excludeQuestionIds.length ? notInArray(mcqQuestions.questionId, excludeQuestionIds) : undefined
 	);
 	const requested = Math.max(1, Math.floor(input.limit ?? 50));

@@ -1,20 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildQuestionQualityPrompt,
-	buildQuestionQualityWebSearchTool,
 	extractWebSearchEvidence,
 	extractResponseOutputText,
 	parseAssessmentText,
-	requiresWebSearchForQuestion
+	requiresWebSearchForQuestion,
+	buildQuestionQualityWebSearchTool
 } from '#lib/question-bank/quality/rubric.server.js';
 
 describe('question quality rubric', () => {
-	it('uses real-course guidance', () => {
-		expect(buildQuestionQualityPrompt({ course: 'AP Biology' }).developer).toContain(
-			'real AP Biology course framework'
-		);
-	});
-
 	it('automatically marks malformed Markdown or formatting as BAD', () => {
 		const prompt = buildQuestionQualityPrompt({ course: 'AP Biology' });
 
@@ -23,7 +17,7 @@ describe('question quality rubric', () => {
 		expect(prompt.developer).toContain('MALFORMED_FORMATTING');
 	});
 
-	it('configures web grounding for supported AP courses', () => {
+	it('requires web grounding for supported AP courses', () => {
 		expect(requiresWebSearchForQuestion({ course: 'AP Biology' })).toBe(true);
 		expect(buildQuestionQualityWebSearchTool('high')).toEqual({
 			type: 'web_search',

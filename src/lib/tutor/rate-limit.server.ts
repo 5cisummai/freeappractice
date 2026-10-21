@@ -31,6 +31,10 @@ export async function limitGenericTutor(request: Request, userId?: string) {
 			degraded: false
 		};
 	} catch {
+		// Anonymous traffic must fail closed during Redis incidents; signed-in can degrade open.
+		if (!userId) {
+			return { allowed: false, retryAt: null, degraded: true };
+		}
 		return { allowed: true, retryAt: null, degraded: true };
 	}
 }

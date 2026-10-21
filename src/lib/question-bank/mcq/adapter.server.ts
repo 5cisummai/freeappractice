@@ -1,6 +1,7 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { getCourses, getUnitsForCourse } from '#lib/catalog/courses.js';
 import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
+import { mcqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { mcqQuestions } from '#lib/server/neon/schema.js';
 import { questionBucketFields } from '#lib/server/neon/jsonb.js';
@@ -30,7 +31,7 @@ async function countActiveByBucket(): Promise<Map<string, number>> {
 			count: sql<number>`count(*)`
 		})
 		.from(mcqQuestions)
-		.where(eq(mcqQuestions.active, true))
+		.where(and(eq(mcqQuestions.active, true), mcqServableQualityPredicate()))
 		.groupBy(course, unit);
 	return new Map(rows.map((row) => [bucketKey(row.course, row.unit), Number(row.count)]));
 }
