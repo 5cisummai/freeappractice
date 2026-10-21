@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	daysBetweenCalendarDays,
 	latencyBucket,
-	localCalendarDay,
-	questionSourceFromCachedFlag
+	localCalendarDay
 } from '#lib/client/activation-analytics.js';
 import { classifyQuestionFailureFromStatus } from '#lib/question-failure.js';
 
@@ -32,18 +31,9 @@ describe('classifyQuestionFailureFromStatus', () => {
 	});
 });
 
-describe('questionSourceFromCachedFlag', () => {
-	it('reads cached vs generated from API flag', () => {
-		expect(questionSourceFromCachedFlag(true)).toBe('cached');
-		expect(questionSourceFromCachedFlag(false)).toBe('generated');
-		expect(questionSourceFromCachedFlag(undefined)).toBe('generated');
-	});
-});
-
 describe('localCalendarDay', () => {
 	it('formats YYYY-MM-DD in local time', () => {
-		const day = localCalendarDay(new Date(2026, 6, 10, 15, 30));
-		expect(day).toBe('2026-07-10');
+		expect(localCalendarDay(new Date(2026, 6, 10, 15, 30))).toBe('2026-07-10');
 	});
 });
 

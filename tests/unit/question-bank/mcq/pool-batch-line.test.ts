@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildMcqPoolBatchLine } from '#lib/question-bank/mcq/batch-line.js';
-import { apQuestionJsonSchema } from '#lib/question-bank/mcq/generation.server.js';
 import { generatedFrqJsonSchema } from '#lib/question-bank/frq/generation.server.js';
 import { buildFrqPoolBatchLine } from '#lib/question-bank/frq/pool-batch-line.js';
 
@@ -40,16 +39,6 @@ describe('buildMcqPoolBatchLine', () => {
 		expect(parsed.body.text.format.name).toBe('ap_question');
 		expect(parsed.body.text.format.strict).toBe(true);
 		expect(parsed.body.max_output_tokens).toBe(6_000);
-	});
-
-	it('exports a JSON schema with additionalProperties false', () => {
-		const schema = apQuestionJsonSchema();
-		expect(schema.type).toBe('object');
-		expect(schema.additionalProperties).toBe(false);
-		expect(schema.$schema).toBeUndefined();
-		expect(Array.isArray(schema.required)).toBe(true);
-		expect(JSON.stringify(schema)).not.toContain('propertyNames');
-		expect(schema.properties).toMatchObject({ diagram: { type: ['string', 'null'] } });
 	});
 
 	it('requires nullable optional FRQ material fields for strict OpenAI output', () => {

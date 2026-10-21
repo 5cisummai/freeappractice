@@ -12,6 +12,7 @@ import {
 } from '#lib/server/neon/schema.js';
 import { questionBucketFields } from '#lib/server/neon/jsonb.js';
 import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
+import { frqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 
 export interface IFrqQuestion extends FrqQuestionPayload {
 	contentHash: string;
@@ -34,7 +35,8 @@ export async function countActiveFrqQuestions(course: string, unit: string): Pro
 	const predicates = [
 		eq(courseField, course),
 		eq(unitField, filter.unit),
-		eq(frqQuestions.active, true)
+		eq(frqQuestions.active, true),
+		frqServableQualityPredicate()
 	];
 	if (filter.formatId) predicates.push(eq(formatField, filter.formatId));
 	const [row] = await getNeonDatabase()
@@ -78,6 +80,7 @@ export async function findFrqQuestionByPool(input: {
 		eq(courseField, input.course),
 		eq(unitField, filter.unit),
 		ne(frqQuestions.active, false),
+		frqServableQualityPredicate(),
 		input.fromPivot === 'after'
 			? gte(frqQuestions.randomKey, input.pivot)
 			: lt(frqQuestions.randomKey, input.pivot)

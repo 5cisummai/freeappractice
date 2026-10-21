@@ -95,6 +95,9 @@ jobs:
       - name: Apply database migrations
         run: bun run db:apply
 
+      - name: Retire bad-quality questions from serving pool
+        run: bun run db:backfill-retire-bad-quality
+
   build:
     name: Build
     runs-on: ubuntu-latest
