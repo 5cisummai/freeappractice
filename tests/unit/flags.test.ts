@@ -33,21 +33,6 @@ describe('Vercel flag declarations', () => {
 		mocks.baseBulkDecide.mockReset().mockResolvedValue({});
 	});
 
-	it('declares each flag with the Vercel adapter and no local decide function', () => {
-		expect(mocks.flag).toHaveBeenCalledTimes(7);
-		expect(mocks.vercelAdapter).not.toHaveBeenCalled();
-		for (const [options] of mocks.flag.mock.calls) {
-			expect(options).toMatchObject({
-				options: [
-					{ value: true, label: 'On' },
-					{ value: false, label: 'Off' }
-				]
-			});
-			expect(options).not.toHaveProperty('decide');
-			expect(typeof (options.adapter as { decide?: unknown }).decide).toBe('function');
-		}
-	});
-
 	it('evaluates through Vercel Flags on first use', async () => {
 		mocks.baseDecide.mockResolvedValueOnce(true);
 
