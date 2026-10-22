@@ -1,10 +1,18 @@
 import { AP_DATA, type UnifiedCourse } from '#lib/catalog/dataset.js';
 
+const courseByName = new Map(AP_DATA.courses.map((course) => [course.name, course] as const));
+
 export type ApCourse = {
 	name: string;
 	semester1: string[];
 	semester2: string[];
 };
+
+/** Courses with MCQ practice enabled in the app catalog. */
+export function isMcqPracticeCourse(course: string): boolean {
+	const match = courseByName.get(course);
+	return match?.app.practice.mcq.enabled === true;
+}
 
 function appUnitLabels(course: UnifiedCourse, semester: 1 | 2): string[] {
 	return course.units.filter((unit) => unit.app.semester === semester).map((unit) => unit.label);
@@ -29,7 +37,7 @@ export function getUnitsForCourse(course: string): string[] {
 }
 
 export function getAllowedCourses(): Set<string> {
-	return new Set(getCourseNames());
+	return new Set(getCourseNames().filter(isMcqPracticeCourse));
 }
 
 /** When "All Units" is selected (unit === ''), pick a random real unit for the course. */

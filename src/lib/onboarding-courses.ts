@@ -177,6 +177,7 @@ function descriptionForCourse(name: string): string {
 	if (course.includes('computer science'))
 		return 'Programming, algorithms, and computing concepts.';
 	if (course.includes('english')) return 'Reading, writing, and critical analysis.';
+	if (course.includes('art history')) return 'Visual analysis across cultures, periods, and the required 250 works.';
 	if (course.includes('history')) return 'Historical thinking across eras and regions.';
 	if (course.includes('government')) return 'Political systems, institutions, and policy.';
 	if (course.includes('psychology')) return 'Behavior, cognition, and research methods.';
@@ -201,7 +202,7 @@ function colorForCourse(name: string): CourseColor {
 		return 'indigo';
 	if (course.includes('computer science')) return 'cyan';
 	if (course.includes('english')) return 'purple';
-	if (course.includes('history')) return 'amber';
+	if (course.includes('art history') || course.includes('history')) return 'amber';
 	if (course.includes('government')) return 'teal';
 	if (course.includes('psychology') || course.includes('human geography')) return 'rose';
 	if (course.includes('economics')) return 'orange';
@@ -236,7 +237,8 @@ const SUBJECT_GROUPS = [
 	{ label: 'English', matches: (name: string) => /english/i.test(name) },
 	{
 		label: 'History & Social Science',
-		matches: (name: string) => /history|government|psychology|human geography|economics/i.test(name)
+		matches: (name: string) =>
+			/history|art history|government|psychology|human geography|economics/i.test(name)
 	},
 	{ label: 'World Languages', matches: (name: string) => /spanish/i.test(name) },
 	{ label: 'Other', matches: () => true }

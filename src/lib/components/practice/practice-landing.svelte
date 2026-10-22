@@ -63,29 +63,26 @@
 					</Breadcrumb.List>
 				</Breadcrumb.Root>
 
-				<div class="space-y-3 text-center">
+				<div class="text-center">
 					<h1
 						class="font-display text-3xl leading-[1.15] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl"
 					>
 						{practicePage.seo.h1}
 					</h1>
-					{#if practicePage.seo.subtitle}
-						<p class="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-							{practicePage.seo.subtitle}
-						</p>
-					{/if}
 				</div>
 			</section>
 
-			<section class="mx-auto max-w-250">
-				{#key `${practicePage.course}:${practicePage.type}:${practicePage.unit ?? ''}`}
-					<PracticeRunner
-						{initial}
-						presentation="hero"
-						capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
-						quiz={{ persistHistory: false }}
-					/>
-				{/key}
+			<section class="mx-auto max-w-250" aria-label="Practice">
+				{#if practicePage.layout?.practiceShell !== 'hidden'}
+					{#key `${practicePage.course}:${practicePage.type}:${practicePage.unit ?? ''}`}
+						<PracticeRunner
+							{initial}
+							presentation="hero"
+							capabilities={{ tutorMode: assistantFeaturesEnabled ? 'free' : 'hidden' }}
+							quiz={{ persistHistory: false }}
+						/>
+					{/key}
+				{/if}
 			</section>
 
 			<section class="mx-auto max-w-3xl pt-20">
