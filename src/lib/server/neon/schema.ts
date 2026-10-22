@@ -3,6 +3,7 @@ export * from './schema/app';
 export * from './schema/content';
 export * from './schema/ops';
 export * from './schema/memory';
+export * from './schema/ap-art-history';
 
 import {
 	authAccounts,
