@@ -2,7 +2,10 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { poolRefillStates } from '#lib/server/neon/schema.js';
 import { isStimulusQuestionsEnabled } from '#lib/flags.js';
-import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
+import {
+	countActiveMcqQuestions,
+	countActiveMcqQuestionsByBucket
+} from '#lib/question-bank/mcq/repository.server.js';
 import { getPoolKindAdapter } from '#lib/question-bank/pool-kinds.server.js';
 import type { PoolRefillQuestionType } from '#lib/question-bank/pool-refill-types.server.js';
 
@@ -23,10 +26,32 @@ export async function countActivePoolRowsForServing(
 	course: string,
 	unit: string
 ): Promise<number> {
-	if (questionType === 'mcq') {
-		return countActiveMcqQuestions(course, unit, await isStimulusQuestionsEnabled());
+	switch (questionType) {
+		case 'mcq':
+			return countActiveMcqQuestions(course, unit, await isStimulusQuestionsEnabled());
+		case 'frq':
+			return countActivePoolRows(questionType, course, unit);
+		default: {
+			const _exhaustive: never = questionType;
+			return _exhaustive;
+		}
 	}
-	return countActivePoolRows(questionType, course, unit);
+}
+
+/** Grouped serving counts for every catalog bucket of one question type. */
+export async function countActivePoolRowsForServingByBucket(
+	questionType: PoolRefillQuestionType
+): Promise<Map<string, number>> {
+	switch (questionType) {
+		case 'mcq':
+			return countActiveMcqQuestionsByBucket(await isStimulusQuestionsEnabled());
+		case 'frq':
+			return countActivePoolRowsByBucket(questionType);
+		default: {
+			const _exhaustive: never = questionType;
+			return _exhaustive;
+		}
+	}
 }
 
 /** Load active counts for every bucket in one grouped query for ops reconciliation. */
