@@ -24,6 +24,11 @@ vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({
 	countActivePoolRowsForServing: vi.fn(async (_type: string, course: string, unit: string) =>
 		mocks.state.completedBuckets.has(`${course}\u0000${unit}`) ? 1 : 0
 	),
+	countActivePoolRowsForServingByBucket: vi.fn(async () => {
+		const counts = new Map<string, number>();
+		for (const key of mocks.state.completedBuckets) counts.set(key, 1);
+		return counts;
+	}),
 	getPoolRefillHealthCounts: vi.fn(async () => ({
 		emptyObserved: 0,
 		failedJobs: 0,
@@ -66,7 +71,11 @@ vi.mock('#lib/server/question-request-metrics.js', () => ({
 }));
 
 import { runQuestionPoolRefillWorker } from '#lib/question-bank/pool-refill.server.js';
-import { isValidPoolBucket } from '#lib/question-bank/pool-refill-queue.server.js';
+import {
+	countActivePoolRowsForServingByBucket,
+	isValidPoolBucket
+} from '#lib/question-bank/pool-refill-queue.server.js';
+import { generatePoolQuestion } from '#lib/question-bank/pool-kind-worker.server.js';
 import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 const env: QuestionPoolConfig = {
@@ -196,5 +205,21 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.generated).toBe(7);
 		expect(mocks.state.idleUpdates).toBe(1);
 		expect(mocks.db.execute).toHaveBeenCalledTimes(2);
+	});
+
+	it('releases already-full claimed jobs in one statement', async () => {
+		vi.mocked(countActivePoolRowsForServingByBucket).mockResolvedValue(
+			new Map(Array.from({ length: 8 }, (_, index) => [`AP Biology\u0000Unit ${index + 1}`, 1]))
+		);
+
+		const summary = await runQuestionPoolRefillWorker(env, {
+			owner: 'worker-test',
+			startedAt: Date.now()
+		});
+
+		expect(summary.processed).toBe(8);
+		expect(summary.generated).toBe(0);
+		expect(generatePoolQuestion).not.toHaveBeenCalled();
+		expect(mocks.db.execute).toHaveBeenCalledTimes(3);
 	});
 });
