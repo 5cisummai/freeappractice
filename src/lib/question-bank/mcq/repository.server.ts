@@ -216,23 +216,44 @@ export function newPoolRandomKey(): number {
 	return Math.random();
 }
 
+function servingPredicates(allowStimulusQuestions: boolean) {
+	const predicates = [eq(mcqQuestions.active, true), mcqServableQualityPredicate()];
+	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
+	return predicates;
+}
+
 export async function countActiveMcqQuestions(
 	course: string,
 	unit: string,
 	allowStimulusQuestions = true
 ): Promise<number> {
-	const predicates = [
-		eq(courseField, course),
-		eq(unitField, unit),
-		eq(mcqQuestions.active, true),
-		mcqServableQualityPredicate()
-	];
-	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(mcqQuestions)
-		.where(and(...predicates));
+		.where(
+			and(
+				eq(courseField, course),
+				eq(unitField, unit),
+				...servingPredicates(allowStimulusQuestions)
+			)
+		);
 	return Number(row?.count ?? 0);
+}
+
+/** Grouped serving counts for every MCQ bucket. Used to avoid per-job COUNT queries. */
+export async function countActiveMcqQuestionsByBucket(
+	allowStimulusQuestions = true
+): Promise<Map<string, number>> {
+	const rows = await getNeonDatabase()
+		.select({
+			course: courseField,
+			unit: unitField,
+			count: sql<number>`count(*)`
+		})
+		.from(mcqQuestions)
+		.where(and(...servingPredicates(allowStimulusQuestions)))
+		.groupBy(courseField, unitField);
+	return new Map(rows.map((row) => [`${row.course}\u0000${row.unit}`, Number(row.count)]));
 }
 
 function fromRow(row: typeof mcqQuestions.$inferSelect): IQuestion {

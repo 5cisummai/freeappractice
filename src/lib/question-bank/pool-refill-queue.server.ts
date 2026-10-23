@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, isNull, lte, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { getMcqGenerationCountsByCourse } from '#lib/question-bank/gen-stats.server.js';
 import { getUnitsForCourse } from '#lib/catalog/courses.js';
 import { frqBucketUnits } from '#lib/question-bank/frq/practice.js';
@@ -7,6 +7,7 @@ import {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
 	countActivePoolRowsForServing,
+	countActivePoolRowsForServingByBucket,
 	getPoolRefillHealthCounts
 } from '#lib/question-bank/pool-counts.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
@@ -57,6 +58,7 @@ export {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
 	countActivePoolRowsForServing,
+	countActivePoolRowsForServingByBucket,
 	getPoolRefillHealthCounts
 };
 
@@ -170,109 +172,218 @@ export async function requestPoolRefill(
 		);
 }
 
-/**
- * Full-catalog count + enqueue. Expensive (N+1). Use from admin/ops, not every cron tick.
- */
-export async function reconcilePoolRefillJobs(
-	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
-): Promise<{ reconciled: number; enqueued: number }> {
-	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
-	let reconciled = 0;
-	let enqueued = 0;
+type CatalogRefillSnapshot = PoolBucketKey & {
+	id: string;
+	target: number;
+	observedCount: number;
+};
 
+function catalogBucketKey(bucket: PoolBucketKey): string {
+	return `${bucket.course}\u0000${bucket.unit}`;
+}
+
+function refillSnapshotPayload(rows: CatalogRefillSnapshot[]): string {
+	return JSON.stringify(
+		rows.map((row) => ({
+			id: row.id,
+			questionType: row.questionType,
+			course: row.course,
+			unit: row.unit,
+			target: row.target,
+			observedCount: row.observedCount
+		}))
+	);
+}
+
+function incomingRefillSnapshots(rows: CatalogRefillSnapshot[]) {
+	return sql`
+		SELECT *
+		FROM jsonb_to_recordset(${refillSnapshotPayload(rows)}::jsonb) AS row(
+			"id" text,
+			"questionType" text,
+			"course" text,
+			"unit" text,
+			"target" integer,
+			"observedCount" integer
+		)
+	`;
+}
+
+async function listCatalogRefillSnapshots(
+	env: QuestionPoolConfig
+): Promise<CatalogRefillSnapshot[]> {
+	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
+	const snapshots: CatalogRefillSnapshot[] = [];
 	for (const questionType of POOL_QUESTION_TYPES) {
 		const adapter = getPoolKindAdapter(questionType);
 		const observedByBucket = await countActivePoolRowsByBucket(questionType);
 		for (const bucket of listCatalogBuckets(questionType)) {
-			const target = adapter.targetFor({
-				course: bucket.course,
-				generationCountsByCourse,
-				config: env
+			const normalized = normalizePoolBucket(bucket);
+			snapshots.push({
+				id: randomUUID(),
+				...normalized,
+				target: adapter.targetFor({
+					course: normalized.course,
+					generationCountsByCourse,
+					config: env
+				}),
+				observedCount: observedByBucket.get(catalogBucketKey(normalized)) ?? 0
 			});
-			const observedCount = observedByBucket.get(`${bucket.course}\u0000${bucket.unit}`) ?? 0;
-			reconciled += 1;
-			await getNeonDatabase()
-				.insert(poolRefillStates)
-				.values({
-					id: randomUUID(),
-					questionType,
-					course: bucket.course,
-					unit: bucket.unit,
-					target,
-					observedCount,
-					status: 'idle',
-					attempts: 0,
-					generatedCount: 0,
-					requestedAt: new Date(),
-					leaseOwner: null,
-					leaseExpiresAt: null
-				})
-				.onConflictDoUpdate({
-					target: [poolRefillStates.questionType, poolRefillStates.course, poolRefillStates.unit],
-					set: { target, observedCount, updatedAt: new Date() }
-				});
-
-			if (isBelowLowWater(observedCount, target, env.lowWaterRatio)) {
-				await requestPoolRefill(bucket, env, generationCountsByCourse, observedCount);
-				enqueued += 1;
-			} else if (observedCount >= target) {
-				const now = new Date();
-				await getNeonDatabase()
-					.update(poolRefillStates)
-					.set({
-						status: 'idle',
-						leaseOwner: null,
-						leaseExpiresAt: null,
-						lastError: null,
-						nextAttemptAt: null,
-						updatedAt: now
-					})
-					.where(
-						and(
-							eq(poolRefillStates.questionType, questionType),
-							eq(poolRefillStates.course, bucket.course),
-							eq(poolRefillStates.unit, bucket.unit),
-							or(
-								inArray(poolRefillStates.status, ['pending', 'failed', 'budget_exhausted']),
-								and(
-									eq(poolRefillStates.status, 'running'),
-									isNull(poolRefillStates.leaseExpiresAt)
-								),
-								and(
-									eq(poolRefillStates.status, 'running'),
-									lte(poolRefillStates.leaseExpiresAt, now)
-								)
-							)
-						)
-					);
-			}
 		}
 	}
+	return snapshots;
+}
 
-	return { reconciled, enqueued };
+async function upsertRefillSnapshots(
+	rows: CatalogRefillSnapshot[],
+	now: Date,
+	opts: { touchRequestedAt: boolean }
+): Promise<void> {
+	if (!rows.length) return;
+	const incoming = incomingRefillSnapshots(rows);
+	const insertColumns = sql`
+		INSERT INTO ${poolRefillStates} (
+			id,
+			question_type,
+			course,
+			unit,
+			status,
+			target,
+			observed_count,
+			requested_at,
+			attempts,
+			generated_count,
+			lease_owner,
+			lease_expires_at,
+			created_at,
+			updated_at
+		)
+		SELECT
+			"id",
+			"questionType",
+			course,
+			unit,
+			'idle',
+			target,
+			"observedCount",
+			${now},
+			0,
+			0,
+			NULL,
+			NULL,
+			${now},
+			${now}
+		FROM (${incoming}) AS incoming
+	`;
+	if (opts.touchRequestedAt) {
+		await getNeonDatabase().execute(sql`
+			${insertColumns}
+			ON CONFLICT (question_type, course, unit) DO UPDATE
+			SET
+				target = EXCLUDED.target,
+				observed_count = EXCLUDED.observed_count,
+				requested_at = EXCLUDED.requested_at,
+				updated_at = EXCLUDED.updated_at
+		`);
+		return;
+	}
+	await getNeonDatabase().execute(sql`
+		${insertColumns}
+		ON CONFLICT (question_type, course, unit) DO UPDATE
+		SET
+			target = EXCLUDED.target,
+			observed_count = EXCLUDED.observed_count,
+			updated_at = EXCLUDED.updated_at
+	`);
+}
+
+async function promotePendingRefillSnapshots(
+	rows: CatalogRefillSnapshot[],
+	now: Date
+): Promise<void> {
+	if (!rows.length) return;
+	await getNeonDatabase().execute(sql`
+		UPDATE ${poolRefillStates} AS target
+		SET
+			status = 'pending',
+			target = incoming.target,
+			observed_count = incoming."observedCount",
+			requested_at = ${now},
+			next_attempt_at = ${now},
+			last_error = NULL,
+			lease_owner = NULL,
+			lease_expires_at = NULL,
+			updated_at = ${now}
+		FROM (${incomingRefillSnapshots(rows)}) AS incoming
+		WHERE target.question_type = incoming."questionType"
+			AND target.course = incoming.course
+			AND target.unit = incoming.unit
+			AND (
+				target.status IN ('idle', 'failed', 'budget_exhausted', 'pending')
+				OR (
+					target.status = 'running'
+					AND (target.lease_expires_at IS NULL OR target.lease_expires_at <= ${now})
+				)
+			)
+	`);
+}
+
+async function idleAtTargetRefillSnapshots(
+	rows: CatalogRefillSnapshot[],
+	now: Date
+): Promise<void> {
+	if (!rows.length) return;
+	await getNeonDatabase().execute(sql`
+		UPDATE ${poolRefillStates} AS target
+		SET
+			status = 'idle',
+			lease_owner = NULL,
+			lease_expires_at = NULL,
+			last_error = NULL,
+			next_attempt_at = NULL,
+			updated_at = ${now}
+		FROM (${incomingRefillSnapshots(rows)}) AS incoming
+		WHERE target.question_type = incoming."questionType"
+			AND target.course = incoming.course
+			AND target.unit = incoming.unit
+			AND (
+				target.status IN ('pending', 'failed', 'budget_exhausted')
+				OR (
+					target.status = 'running'
+					AND (target.lease_expires_at IS NULL OR target.lease_expires_at <= ${now})
+				)
+			)
+	`);
+}
+
+/**
+ * Full-catalog count + enqueue. Two grouped counts plus a constant number of
+ * upsert/promote statements. Use from admin/ops, not every cron tick.
+ */
+export async function reconcilePoolRefillJobs(
+	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
+): Promise<{ reconciled: number; enqueued: number }> {
+	const snapshots = await listCatalogRefillSnapshots(env);
+	const now = new Date();
+	const belowLowWater = snapshots.filter((row) =>
+		isBelowLowWater(row.observedCount, row.target, env.lowWaterRatio)
+	);
+	const atTarget = snapshots.filter((row) => row.observedCount >= row.target);
+	await upsertRefillSnapshots(snapshots, now, { touchRequestedAt: false });
+	await promotePendingRefillSnapshots(belowLowWater, now);
+	await idleAtTargetRefillSnapshots(atTarget, now);
+	return { reconciled: snapshots.length, enqueued: belowLowWater.length };
 }
 
 /** Enqueue every catalog bucket still below target (post-backfill stage 2). */
 export async function enqueueAllCatalogDeficits(
 	env: QuestionPoolConfig = QUESTION_POOL_CONFIG
 ): Promise<number> {
-	const generationCountsByCourse = await getMcqGenerationCountsByCourse();
-	let enqueued = 0;
-	for (const questionType of POOL_QUESTION_TYPES) {
-		const adapter = getPoolKindAdapter(questionType);
-		const observedByBucket = await countActivePoolRowsByBucket(questionType);
-		for (const bucket of listCatalogBuckets(questionType)) {
-			const target = adapter.targetFor({
-				course: bucket.course,
-				generationCountsByCourse,
-				config: env
-			});
-			const observedCount = observedByBucket.get(`${bucket.course}\u0000${bucket.unit}`) ?? 0;
-			if (observedCount < target) {
-				await requestPoolRefill(bucket, env, generationCountsByCourse, observedCount);
-				enqueued += 1;
-			}
-		}
-	}
-	return enqueued;
+	const belowTarget = (await listCatalogRefillSnapshots(env)).filter(
+		(row) => row.observedCount < row.target
+	);
+	const now = new Date();
+	await upsertRefillSnapshots(belowTarget, now, { touchRequestedAt: true });
+	await promotePendingRefillSnapshots(belowTarget, now);
+	return belowTarget.length;
 }
