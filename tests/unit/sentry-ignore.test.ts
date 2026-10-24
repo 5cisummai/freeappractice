@@ -43,4 +43,26 @@ describe('isIgnoredSentryError', () => {
 			false
 		);
 	});
+
+	it('drops Chrome fetch Failed to fetch noise', () => {
+		expect(isIgnoredSentryError(new TypeError('Failed to fetch'))).toBe(true);
+	});
+
+	it('drops the Chrome fetch failure when Sentry prefixes the type', () => {
+		expect(isIgnoredSentryError('TypeError: Failed to fetch')).toBe(true);
+	});
+
+	it('keeps module-load and first-party Failed to fetch messages', () => {
+		expect(isIgnoredSentryError(new TypeError('Failed to fetch dynamically imported module'))).toBe(
+			false
+		);
+		expect(
+			isIgnoredSentryError(
+				new TypeError('Failed to fetch dynamically imported module: https://example.com/chunk.js')
+			)
+		).toBe(false);
+		expect(isIgnoredSentryError(new Error('Failed to fetch bookmarks'))).toBe(false);
+		expect(isIgnoredSentryError(new Error('Failed to fetch statistics'))).toBe(false);
+		expect(isIgnoredSentryError(new Error('Failed to fetch Super tutor profile'))).toBe(false);
+	});
 });
