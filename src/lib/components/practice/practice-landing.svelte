@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ApArtHistoryPracticeShell from '#lib/components/ap-art-history/ap-art-history-practice-shell.svelte';
 	import PracticeRunner from '#lib/components/practice/practice-shell.svelte';
 	import PracticeHubNav from '#lib/components/practice/practice-hub-nav.svelte';
 	import PublicShell from '#lib/components/layout/public-shell.svelte';
@@ -73,7 +74,9 @@
 			</section>
 
 			<section class="mx-auto max-w-250" aria-label="Practice">
-				{#if practicePage.layout?.practiceShell !== 'hidden'}
+				{#if practicePage.slug === 'ap-art-history'}
+					<ApArtHistoryPracticeShell presentation="hero" />
+				{:else if practicePage.layout?.practiceShell !== 'hidden'}
 					{#key `${practicePage.course}:${practicePage.type}:${practicePage.unit ?? ''}`}
 						<PracticeRunner
 							{initial}
