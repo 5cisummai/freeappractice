@@ -34,10 +34,28 @@ export type CoachPracticeQuestionOutput = {
 	diagramSpec?: Record<string, unknown>;
 };
 
+export const COACH_PRACTICE_QUESTION_MAX_AUTO_RETRIES = 3;
+
 export const coachPracticeQuestionToolInputSchema = z.object({
-	course: z.string().trim().min(1).max(100),
-	unit: z.string().trim().min(1).max(200).optional(),
-	mode: z.enum(['mcq', 'frq']).default('mcq')
+	course: z
+		.string()
+		.trim()
+		.min(1)
+		.max(100)
+		.describe('Exact app-facing AP course name from the catalog.'),
+	unit: z
+		.string()
+		.trim()
+		.min(1)
+		.max(200)
+		.optional()
+		.describe(
+			'Optional exact full unit title from the catalog, including the "Unit N:" prefix. Omit to pick any unit.'
+		),
+	mode: z
+		.enum(['mcq', 'frq'])
+		.default('mcq')
+		.describe('mcq for multiple choice or frq for a written response.')
 });
 
 export type CoachPracticeQuestionToolInput = z.infer<typeof coachPracticeQuestionToolInputSchema>;
@@ -147,8 +165,25 @@ export function buildCoachPracticeQuestionToolOutput(input: {
 }
 
 export function isCoachPracticeQuestionPending(part: { type?: string; state?: string }): boolean {
-	return (
-		part.type === 'tool-give_practice_question' &&
-		(part.state === 'input-available' || part.state === 'input-streaming')
-	);
+	return part.type === 'tool-give_practice_question' && part.state === 'input-available';
+}
+
+export function coachPracticeQuestionRequestKey(
+	input: CoachPracticeQuestionToolInput | null | undefined
+): string {
+	if (!input) return '';
+	return JSON.stringify([input.course, input.unit ?? '', input.mode]);
+}
+
+export function getCoachPracticeQuestionRetryDelayMs(
+	retryAfterSeconds: number | undefined
+): number | null {
+	if (
+		typeof retryAfterSeconds !== 'number' ||
+		!Number.isFinite(retryAfterSeconds) ||
+		retryAfterSeconds <= 0
+	) {
+		return null;
+	}
+	return Math.max(1, Math.floor(retryAfterSeconds)) * 1000;
 }

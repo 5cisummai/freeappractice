@@ -28,7 +28,10 @@ vi.mock('#lib/server/neon/db.js', () => ({
 	getNeonDatabase: mocks.getNeonDatabase
 }));
 
-import { giveCoachPracticeQuestion } from '#lib/agent/tools/practice.server.js';
+import {
+	giveCoachPracticeQuestion,
+	resolveCoachPracticeQuestionCatalog
+} from '#lib/agent/tools/practice.server.js';
 
 describe('giveCoachPracticeQuestion', () => {
 	beforeEach(() => {
@@ -67,7 +70,10 @@ describe('giveCoachPracticeQuestion', () => {
 		});
 
 		await expect(
-			giveCoachPracticeQuestion('user-1', { course: 'AP Physics 1', unit: 'Unit 1' })
+			giveCoachPracticeQuestion('user-1', {
+				course: 'AP Physics 1',
+				unit: 'Unit 1: Kinematics'
+			})
 		).resolves.toMatchObject({
 			kind: 'practice_question',
 			mode: 'mcq',
@@ -78,7 +84,88 @@ describe('giveCoachPracticeQuestion', () => {
 			practiceHref: '/app/practice?course=AP+Physics+1&unit=Unit+1&questionId=mcq-1',
 			options: expect.arrayContaining([{ id: 'A', label: 'A', text: 'Speed with direction' }])
 		});
+		expect(mocks.mcqBankGet).toHaveBeenCalledWith(
+			'AP Physics 1',
+			'Unit 1: Kinematics',
+			expect.objectContaining({ allowRefill: true })
+		);
 		expect(mocks.getQuestionById).not.toHaveBeenCalled();
+	});
+
+	it('maps a unit title without the Unit N prefix to the catalog unit', async () => {
+		mocks.mcqBankGet.mockResolvedValue({
+			status: 'found',
+			result: {
+				questionId: 'mcq-2',
+				course: 'AP Human Geography',
+				unit: 'Unit 2: Population and Migration Patterns and Processes',
+				answer: {
+					question: 'What is a refugee?',
+					optionA: 'A',
+					optionB: 'B',
+					optionC: 'C',
+					optionD: 'D'
+				}
+			}
+		});
+
+		await giveCoachPracticeQuestion('user-1', {
+			course: 'AP Human Geography',
+			unit: 'Population and Migration Patterns and Processes'
+		});
+
+		expect(mocks.mcqBankGet).toHaveBeenCalledWith(
+			'AP Human Geography',
+			'Unit 2: Population and Migration Patterns and Processes',
+			expect.objectContaining({ allowRefill: true })
+		);
+	});
+
+	it('returns a client error for unknown courses and units without retryAfterSeconds', async () => {
+		await expect(giveCoachPracticeQuestion('user-1', { course: 'AP' })).resolves.toEqual({
+			error: '"AP" is not a supported AP course. Use the exact catalog course name.'
+		});
+		await expect(
+			giveCoachPracticeQuestion('user-1', {
+				course: 'AP Human Geography',
+				unit: 'Unit 2: Population and'
+			})
+		).resolves.toEqual({
+			error:
+				'"Unit 2: Population and" is not a unit in AP Human Geography. Use the full catalog title, including the "Unit N:" prefix.'
+		});
+		expect(mocks.mcqBankGet).not.toHaveBeenCalled();
+		expect(mocks.frqBankGet).not.toHaveBeenCalled();
+	});
+
+	it('resolves All Units to a catalog unit instead of an invalid pool bucket', () => {
+		vi.spyOn(Math, 'random').mockReturnValue(0);
+		expect(
+			resolveCoachPracticeQuestionCatalog({
+				course: 'AP Human Geography',
+				mode: 'mcq'
+			})
+		).toEqual({
+			ok: true,
+			course: 'AP Human Geography',
+			unit: 'Unit 1: Thinking Geographically',
+			mode: 'mcq'
+		});
+		vi.restoreAllMocks();
+	});
+
+	it('still reports pool warming with retryAfterSeconds for a valid catalog unit', async () => {
+		mocks.mcqBankGet.mockResolvedValue({ status: 'warming', retryAfterSeconds: 15 });
+
+		await expect(
+			giveCoachPracticeQuestion('user-1', {
+				course: 'AP Human Geography',
+				unit: 'Unit 2: Population and Migration Patterns and Processes'
+			})
+		).resolves.toEqual({
+			error: 'Question pool is warming up. Please try again shortly.',
+			retryAfterSeconds: 15
+		});
 	});
 
 	it('returns an inline FRQ card payload', async () => {
@@ -109,7 +196,7 @@ describe('giveCoachPracticeQuestion', () => {
 		await expect(
 			giveCoachPracticeQuestion('user-1', {
 				course: 'AP Biology',
-				unit: 'Unit 2',
+				unit: 'Unit 2: Cells',
 				mode: 'frq'
 			})
 		).resolves.toMatchObject({
