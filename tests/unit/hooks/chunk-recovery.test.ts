@@ -1,0 +1,82 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HandleClientError } from '@sveltejs/kit/hooks';
+
+const mocks = vi.hoisted(() => ({
+	captureSentry: vi.fn(),
+	capturePostHog: vi.fn(),
+	reload: vi.fn(),
+	getItem: vi.fn(),
+	setItem: vi.fn()
+}));
+
+vi.mock('@sentry/sveltekit', () => ({
+	init: vi.fn(),
+	handleErrorWithSentry:
+		(handler: HandleClientError): HandleClientError =>
+		(input) => {
+			if (input.kind === 'unknown') mocks.captureSentry(input.error);
+			return handler(input);
+		}
+}));
+vi.mock('#lib/client/posthog-analytics.js', () => ({
+	initPostHogAnalytics: vi.fn(),
+	capturePostHogException: mocks.capturePostHog
+}));
+vi.mock('#lib/sentry-config.js', () => ({ sentryEnabled: false, sentryOptions: {} }));
+
+async function handle(error: Error) {
+	const { handleError } = await import('../../../src/hooks.client.js');
+	return handleError({ kind: 'unknown', error } as Parameters<HandleClientError>[0]);
+}
+
+beforeEach(() => {
+	vi.resetModules();
+	vi.resetAllMocks();
+	vi.stubGlobal('window', { location: { reload: mocks.reload }, addEventListener: vi.fn() });
+	vi.stubGlobal('sessionStorage', { getItem: mocks.getItem, setItem: mocks.setItem });
+});
+afterEach(() => vi.unstubAllGlobals());
+
+describe('client chunk recovery', () => {
+	it.each([
+		'Failed to fetch dynamically imported module: /_app/immutable/chunks/x.js',
+		'Importing a module script failed',
+		'error loading dynamically imported module: /_app/immutable/chunks/x.js'
+	])('attempts a reload before reporting %s', async (message) => {
+		await handle(new TypeError(message));
+		expect(mocks.reload).toHaveBeenCalledOnce();
+		expect(mocks.captureSentry).not.toHaveBeenCalled();
+		expect(mocks.capturePostHog).not.toHaveBeenCalled();
+	});
+
+	it('reports a repeated failure inside the reload window', async () => {
+		mocks.getItem.mockReturnValue(String(Date.now()));
+		const error = new TypeError('error loading dynamically imported module: /_app/x.js');
+		await handle(error);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+	});
+
+	it('reports the failure if session storage blocks recovery', async () => {
+		mocks.setItem.mockImplementation(() => {
+			throw new Error('Storage blocked');
+		});
+		const error = new TypeError('Importing a module script failed');
+		await handle(error);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+	});
+
+	it.each(['Failed to fetch', 'Load failed', 'Cannot read properties of undefined'])(
+		'reports %s',
+		async (message) => {
+			const error = new TypeError(message);
+			await handle(error);
+			expect(mocks.reload).not.toHaveBeenCalled();
+			expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+			expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+		}
+	);
+});

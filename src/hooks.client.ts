@@ -54,10 +54,21 @@ export async function init() {
 	initPostHogAnalytics();
 }
 
-export const handleError: HandleClientError = Sentry.handleErrorWithSentry(({ kind, error }) => {
+const reportError: HandleClientError = Sentry.handleErrorWithSentry(({ kind, error }) => {
 	if (kind !== 'unknown') return;
 	if (isIgnoredSentryError(error)) return;
-	if (isDynamicImportFailure(error) && reloadOnceForChunkFailure()) return;
 
 	capturePostHogException(error);
 });
+
+export const handleError: HandleClientError = (input) => {
+	// Decide recovery before Sentry's wrapper captures the exception.
+	if (
+		input.kind === 'unknown' &&
+		isDynamicImportFailure(input.error) &&
+		reloadOnceForChunkFailure()
+	) {
+		return;
+	}
+	return reportError(input);
+};
