@@ -46,7 +46,7 @@ export async function fetchCoachPracticeQuestion(
 			};
 		}
 		return payload.question;
-	} catch (error) {
+	} catch {
 		if (options.signal?.aborted) {
 			return { error: 'Could not load a practice question. Check your connection and try again.' };
 		}
