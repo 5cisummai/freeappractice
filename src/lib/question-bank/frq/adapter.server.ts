@@ -1,5 +1,9 @@
-import { and, eq, sql } from 'drizzle-orm';
-import { frqBucketUnits, frqPracticeFor } from '#lib/question-bank/frq/practice.js';
+import { and, eq, or, sql } from 'drizzle-orm';
+import {
+	frqBucketUnits,
+	frqPracticeFor,
+	frqStoredPoolFilter
+} from '#lib/question-bank/frq/practice.js';
 import { countActiveFrqQuestions } from '#lib/question-bank/frq/model.server.js';
 import { getFrqCourseNames } from '#lib/question-bank/frq/profiles.server.js';
 import { frqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
@@ -19,9 +23,24 @@ function listBuckets(): PoolKindBucket[] {
 	);
 }
 
-async function countActiveByBucket(): Promise<Map<string, number>> {
-	const { course, unit } = questionBucketFields(frqQuestions.data);
+async function countActiveByBucket(
+	buckets?: Array<{ course: string; unit: string }>
+): Promise<Map<string, number>> {
+	const fields = questionBucketFields(frqQuestions.data);
+	const { course, unit } = fields;
 	const formatId = sql<string>`${frqQuestions.data} ->> 'formatId'`;
+	const bucketFilter = buckets?.length
+		? or(
+				...buckets.map((bucket) => {
+					const stored = frqStoredPoolFilter(bucket.course, bucket.unit);
+					return and(
+						eq(fields.course, bucket.course),
+						eq(fields.unit, stored.unit),
+						...(stored.formatId ? [eq(formatId, stored.formatId)] : [])
+					);
+				})
+			)
+		: undefined;
 	const rows = await getNeonDatabase()
 		.select({
 			course,
@@ -30,7 +49,13 @@ async function countActiveByBucket(): Promise<Map<string, number>> {
 			count: sql<number>`count(*)`
 		})
 		.from(frqQuestions)
-		.where(and(eq(frqQuestions.active, true), frqServableQualityPredicate()))
+		.where(
+			and(
+				eq(frqQuestions.active, true),
+				frqServableQualityPredicate(),
+				...(bucketFilter ? [bucketFilter] : [])
+			)
+		)
 		.groupBy(course, unit, formatId);
 	const counts = new Map<string, number>();
 	for (const row of rows) {

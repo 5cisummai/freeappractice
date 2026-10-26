@@ -10,6 +10,7 @@ import {
 import { getPoolKindAdapter } from '#lib/question-bank/pool-kinds.server.js';
 import {
 	countActivePoolRowsForServing,
+	countActivePoolRowsForServingByBucket,
 	getPoolRefillHealthCounts,
 	isValidPoolBucket,
 	type PoolBucketKey
@@ -443,7 +444,7 @@ async function idleInvalidRefillJobs(
 export async function processRefillJob(
 	doc: PoolRefillStateRow,
 	env: QuestionPoolConfig,
-	opts: { maxGenerations: number; deadlineMs: number }
+	opts: { maxGenerations: number; deadlineMs: number; observedCount?: number }
 ): Promise<{
 	generated: number;
 	skippedDuplicates: number;
@@ -462,18 +463,18 @@ export async function processRefillJob(
 
 	let lease = doc;
 	let reservedSlotsForAttempt = 0;
+	let observedCount = opts.observedCount;
 	try {
 		while (budgetUsed < opts.maxGenerations) {
 			const remainingMs = opts.deadlineMs - Date.now();
 			if (remainingMs < getPoolKindAdapter(bucket.questionType).minimumGenerationHeadroomMs) break;
 
-			const observedCount = await countActivePoolRowsForServing(
-				bucket.questionType,
-				bucket.course,
-				bucket.unit
-			);
-			if (observedCount >= lease.target) {
-				await releaseLeaseSuccess(lease, observedCount, generated);
+			const currentCount =
+				observedCount ??
+				(await countActivePoolRowsForServing(bucket.questionType, bucket.course, bucket.unit));
+			observedCount = undefined;
+			if (currentCount >= lease.target) {
+				await releaseLeaseSuccess(lease, currentCount, generated);
 				return {
 					generated,
 					skippedDuplicates,
@@ -554,12 +555,12 @@ export async function processRefillJob(
 			}
 		}
 
-		const observedCount = await countActivePoolRowsForServing(
+		const latestCount = await countActivePoolRowsForServing(
 			bucket.questionType,
 			bucket.course,
 			bucket.unit
 		);
-		await releaseLeaseSuccess(lease, observedCount, generated);
+		await releaseLeaseSuccess(lease, latestCount, generated);
 		return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: false };
 	} catch (error) {
 		if (reservedSlotsForAttempt > 0) await releaseDailyGenerationBudget(reservedSlotsForAttempt);
@@ -570,6 +571,63 @@ export async function processRefillJob(
 		await releaseLeaseFailure(lease, error, env);
 		return { generated, skippedDuplicates, budgetUsed, failed: true, budgetHit: false };
 	}
+}
+
+function jobServingKey(job: PoolRefillStateRow): string {
+	return `${job.questionType}\u0000${job.course}\u0000${job.unit}`;
+}
+
+async function loadServingCountsForJobs(jobs: PoolRefillStateRow[]): Promise<Map<string, number>> {
+	const counts = new Map<string, number>();
+	const questionTypes = new Set(jobs.map((job) => job.questionType));
+	for (const questionType of questionTypes) {
+		const byBucket = await countActivePoolRowsForServingByBucket(
+			questionType,
+			jobs.filter((job) => job.questionType === questionType)
+		);
+		for (const [bucketKey, count] of byBucket) {
+			counts.set(`${questionType}\u0000${bucketKey}`, count);
+		}
+	}
+	return counts;
+}
+
+async function releaseAtTargetJobs(
+	jobs: Array<{ doc: PoolRefillStateRow; observedCount: number }>
+): Promise<void> {
+	if (!jobs.length) return;
+	const now = new Date();
+	await getNeonDatabase().execute(sql`
+		UPDATE ${poolRefillStates} AS target
+		SET
+			status = 'idle',
+			observed_count = incoming."observedCount",
+			lease_owner = NULL,
+			lease_expires_at = NULL,
+			last_error = NULL,
+			last_success_at = ${now},
+			next_attempt_at = NULL,
+			requested_at = incoming."requestedAt",
+			updated_at = ${now}
+		FROM (
+			SELECT *
+			FROM jsonb_to_recordset(${JSON.stringify(
+				jobs.map(({ doc, observedCount }) => ({
+					id: doc.id,
+					leaseOwner: doc.leaseOwner,
+					observedCount,
+					requestedAt: doc.requestedAt.toISOString()
+				}))
+			)}::jsonb) AS row(
+				"id" text,
+				"leaseOwner" text,
+				"observedCount" integer,
+				"requestedAt" timestamptz
+			)
+		) AS incoming
+		WHERE target.id = incoming.id
+			AND target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"
+	`);
 }
 
 export async function runQuestionPoolRefillWorker(
@@ -584,8 +642,8 @@ export async function runQuestionPoolRefillWorker(
 	const deadlineMs = startedAt + env.workerTimeBudgetMs;
 	const owner = opts?.owner ?? randomUUID();
 
-	// Claim/generate first. Full-catalog reconcile (`bun run pool:reconcile`) is N+1 and
-	// belongs to ops — not every scheduled cron run.
+	// Claim/generate first. Full-catalog reconcile (`bun run pool:reconcile`) still
+	// walks every catalog bucket and belongs to ops — not every scheduled cron run.
 	let processed = 0;
 	let generated = 0;
 	let skippedDuplicates = 0;
@@ -624,11 +682,23 @@ export async function runQuestionPoolRefillWorker(
 		processed += jobs.length + invalidCount;
 		if (!jobs.length) continue;
 
+		const servingCounts = await loadServingCountsForJobs(jobs);
+		const atTarget: Array<{ doc: PoolRefillStateRow; observedCount: number }> = [];
+		const due: Array<{ job: PoolRefillStateRow; observedCount: number }> = [];
+		for (const job of jobs) {
+			const observedCount = servingCounts.get(jobServingKey(job)) ?? 0;
+			if (observedCount >= job.target) atTarget.push({ doc: job, observedCount });
+			else due.push({ job, observedCount });
+		}
+		if (atTarget.length) await releaseAtTargetJobs(atTarget);
+		if (!due.length) continue;
+
 		const results = await Promise.allSettled(
-			jobs.map((job) =>
+			due.map(({ job, observedCount }) =>
 				processRefillJob(job, env, {
 					maxGenerations: budgetRemaining,
-					deadlineMs
+					deadlineMs,
+					observedCount
 				})
 			)
 		);

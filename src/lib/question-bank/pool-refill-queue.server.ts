@@ -7,6 +7,7 @@ import {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
 	countActivePoolRowsForServing,
+	countActivePoolRowsForServingByBucket,
 	getPoolRefillHealthCounts
 } from '#lib/question-bank/pool-counts.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
@@ -57,6 +58,7 @@ export {
 	countActivePoolRows,
 	countActivePoolRowsByBucket,
 	countActivePoolRowsForServing,
+	countActivePoolRowsForServingByBucket,
 	getPoolRefillHealthCounts
 };
 

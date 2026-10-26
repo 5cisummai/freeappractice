@@ -14,7 +14,9 @@ export type PoolKindAdapter = {
 	minimumGenerationHeadroomMs: number;
 	listBuckets: () => PoolKindBucket[];
 	countActive: (course: string, unit: string) => Promise<number>;
-	countActiveByBucket: () => Promise<Map<string, number>>;
+	countActiveByBucket: (
+		buckets?: Array<{ course: string; unit: string }>
+	) => Promise<Map<string, number>>;
 	targetFor: (input: {
 		course: string;
 		generationCountsByCourse?: Record<string, number>;

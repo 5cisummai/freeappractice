@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, not, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, not, notInArray, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	mcqQuestions,
@@ -216,23 +216,50 @@ export function newPoolRandomKey(): number {
 	return Math.random();
 }
 
+function servingPredicates(allowStimulusQuestions: boolean) {
+	const predicates = [eq(mcqQuestions.active, true), mcqServableQualityPredicate()];
+	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
+	return predicates;
+}
+
 export async function countActiveMcqQuestions(
 	course: string,
 	unit: string,
 	allowStimulusQuestions = true
 ): Promise<number> {
-	const predicates = [
-		eq(courseField, course),
-		eq(unitField, unit),
-		eq(mcqQuestions.active, true),
-		mcqServableQualityPredicate()
-	];
-	if (!allowStimulusQuestions) predicates.push(not(stimulusContentPredicate));
 	const [row] = await getNeonDatabase()
 		.select({ count: sql<number>`count(*)` })
 		.from(mcqQuestions)
-		.where(and(...predicates));
+		.where(
+			and(
+				eq(courseField, course),
+				eq(unitField, unit),
+				...servingPredicates(allowStimulusQuestions)
+			)
+		);
 	return Number(row?.count ?? 0);
+}
+
+/** Grouped serving counts for the requested MCQ buckets. */
+export async function countActiveMcqQuestionsByBucket(
+	allowStimulusQuestions = true,
+	buckets?: Array<{ course: string; unit: string }>
+): Promise<Map<string, number>> {
+	const bucketFilter = buckets?.length
+		? or(...buckets.map(({ course, unit }) => and(eq(courseField, course), eq(unitField, unit))))
+		: undefined;
+	const rows = await getNeonDatabase()
+		.select({
+			course: courseField,
+			unit: unitField,
+			count: sql<number>`count(*)`
+		})
+		.from(mcqQuestions)
+		.where(
+			and(...servingPredicates(allowStimulusQuestions), ...(bucketFilter ? [bucketFilter] : []))
+		)
+		.groupBy(courseField, unitField);
+	return new Map(rows.map((row) => [`${row.course}\u0000${row.unit}`, Number(row.count)]));
 }
 
 function fromRow(row: typeof mcqQuestions.$inferSelect): IQuestion {
