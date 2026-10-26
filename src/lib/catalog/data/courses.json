@@ -5,8 +5,8 @@
 	"generatedAt": "2026-08-21T00:00:00Z",
 	"asOf": "2026-08-21",
 	"scope": {
-		"appCourseCount": 25,
-		"appUnitCount": 179,
+		"appCourseCount": 26,
+		"appUnitCount": 189,
 		"includesAllCurrentlySupportedAppCourses": true,
 		"questionInstancesIncluded": false,
 		"questionInstancesStorage": "Neon PostgreSQL JSONB; see questionBank",
@@ -1139,6 +1139,36 @@
 				"exam-task-types"
 			],
 			"notes": "The linked CED is the authority for exhaustive learning objectives and essential knowledge statements."
+		},
+		{
+			"id": "cb-course-ap-art-history",
+			"publisher": "College Board",
+			"title": "AP Art History course page",
+			"url": "https://apcentral.collegeboard.org/courses/ap-art-history",
+			"sourceType": "course-page",
+			"official": true,
+			"accessedAt": "2026-10-22",
+			"supports": ["course-overview", "course-framework", "ced-link"]
+		},
+		{
+			"id": "cb-exam-ap-art-history",
+			"publisher": "College Board",
+			"title": "AP Art History exam page",
+			"url": "https://apcentral.collegeboard.org/courses/ap-art-history/exam",
+			"sourceType": "exam-page",
+			"official": true,
+			"accessedAt": "2026-10-22",
+			"supports": ["exam-overview", "exam-format"]
+		},
+		{
+			"id": "cb-ced-ap-art-history",
+			"publisher": "College Board",
+			"title": "AP Art History Course and Exam Description",
+			"url": "https://apcentral.collegeboard.org/media/pdf/ap-art-history-course-and-exam-description.pdf",
+			"sourceType": "ced",
+			"official": true,
+			"accessedAt": "2026-10-22",
+			"supports": ["required-works", "content-areas", "exam-description"]
 		}
 	],
 	"globalRules": {
@@ -1189,7 +1219,7 @@
 		"generalScoring": [
 			"Multiple-choice raw score is based on correct responses.",
 			"Free-response and performance work are scored with course-specific criteria.",
-			"Component scores are combined and converted to a 1–5 AP score using College Board standard-setting processes."
+			"Component scores are combined and converted to a 1\u20135 AP score using College Board standard-setting processes."
 		],
 		"generalSources": [
 			"cb-exam-timing-structure",
@@ -1374,7 +1404,7 @@
 							"durationMinutes": 90,
 							"weightPercent": 50,
 							"questionTypes": ["discrete", "stimulus-set"],
-							"notes": ["Stimulus sets typically contain 4–5 related questions."]
+							"notes": ["Stimulus sets typically contain 4\u20135 related questions."]
 						},
 						{
 							"id": "free-response",
@@ -1432,7 +1462,7 @@
 				]
 			},
 			"generation": {
-				"courseGuidance": "Frame questions around experimental or data-based scenarios; emphasize evolution/natural selection evidence, energy transfer, cell communication, and gene expression/regulation. Use correct biology terminology and simple quantitative tools (chi-square, Hardy–Weinberg reasoning) without heavy math. Avoid anatomy trivia not in the framework. Avoid Chemistry and physics equations and instead focus on biological concepts.",
+				"courseGuidance": "Frame questions around experimental or data-based scenarios; emphasize evolution/natural selection evidence, energy transfer, cell communication, and gene expression/regulation. Use correct biology terminology and simple quantitative tools (chi-square, Hardy\u2013Weinberg reasoning) without heavy math. Avoid anatomy trivia not in the framework. Avoid Chemistry and physics equations and instead focus on biological concepts.",
 				"mcq": {
 					"exactUnitLookup": true,
 					"unitContextSource": "app-unit-descriptions",
@@ -2177,8 +2207,8 @@
 							{
 								"id": "ap-biology-unit-7-topic-2",
 								"number": 2,
-								"title": "Hardy–Weinberg equilibrium and application",
-								"description": "Hardy–Weinberg equilibrium and application",
+								"title": "Hardy\u2013Weinberg equilibrium and application",
+								"description": "Hardy\u2013Weinberg equilibrium and application",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -2194,7 +2224,7 @@
 							"Natural selection",
 							"Populations",
 							"Allele frequencies",
-							"Hardy–Weinberg equilibrium",
+							"Hardy\u2013Weinberg equilibrium",
 							"Genetic drift",
 							"Gene flow",
 							"Mutation",
@@ -2225,7 +2255,7 @@
 								"Natural selection",
 								"Populations",
 								"Allele frequencies",
-								"Hardy–Weinberg equilibrium",
+								"Hardy\u2013Weinberg equilibrium",
 								"Genetic drift",
 								"Gene flow",
 								"Mutation",
@@ -2233,7 +2263,7 @@
 							],
 							"constraints": [
 								"Natural selection, genetic drift, gene flow, mutation",
-								"Hardy–Weinberg equilibrium and application",
+								"Hardy\u2013Weinberg equilibrium and application",
 								"Speciation processes and evolutionary trees"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -2442,7 +2472,7 @@
 				]
 			},
 			"generation": {
-				"courseGuidance": "Use particulate representations and balanced units; emphasize stoichiometry, thermodynamics, equilibrium, kinetics, electrochemistry, and acid–base behavior. Distinguish strong vs weak electrolytes and typical lab/graph interpretations; avoid organic mechanisms and graduate-level quantum details.",
+				"courseGuidance": "Use particulate representations and balanced units; emphasize stoichiometry, thermodynamics, equilibrium, kinetics, electrochemistry, and acid\u2013base behavior. Distinguish strong vs weak electrolytes and typical lab/graph interpretations; avoid organic mechanisms and graduate-level quantum details.",
 				"mcq": {
 					"exactUnitLookup": true,
 					"unitContextSource": "app-unit-descriptions",
@@ -2760,8 +2790,8 @@
 							{
 								"id": "ap-chemistry-unit-4-topic-2",
 								"number": 2,
-								"title": "Limiting reagent, percent yield, reaction classification (redox, acid–base, precipitation)",
-								"description": "Limiting reagent, percent yield, reaction classification (redox, acid–base, precipitation)",
+								"title": "Limiting reagent, percent yield, reaction classification (redox, acid\u2013base, precipitation)",
+								"description": "Limiting reagent, percent yield, reaction classification (redox, acid\u2013base, precipitation)",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -2805,7 +2835,7 @@
 							],
 							"constraints": [
 								"Balancing chemical equations, reaction stoichiometry",
-								"Limiting reagent, percent yield, reaction classification (redox, acid–base, precipitation)"
+								"Limiting reagent, percent yield, reaction classification (redox, acid\u2013base, precipitation)"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -2929,8 +2959,8 @@
 							{
 								"id": "ap-chemistry-unit-6-topic-3",
 								"number": 3,
-								"title": "Hess’s Law and enthalpy of formation",
-								"description": "Hess’s Law and enthalpy of formation",
+								"title": "Hess\u2019s Law and enthalpy of formation",
+								"description": "Hess\u2019s Law and enthalpy of formation",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -2973,7 +3003,7 @@
 							"constraints": [
 								"Endothermic vs exothermic processes, enthalpy changes",
 								"Calorimetry and heat capacity calculations",
-								"Hess’s Law and enthalpy of formation"
+								"Hess\u2019s Law and enthalpy of formation"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -2993,7 +3023,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Chemical equilibrium concepts, equilibrium constants, Le Chatelier’s principle.",
+						"description": "Chemical equilibrium concepts, equilibrium constants, Le Chatelier\u2019s principle.",
 						"topicGroups": [
 							{
 								"id": "ap-chemistry-unit-7-topic-1",
@@ -3012,8 +3042,8 @@
 							{
 								"id": "ap-chemistry-unit-7-topic-3",
 								"number": 3,
-								"title": "Le Chatelier’s principle and shifts in equilibrium",
-								"description": "Le Chatelier’s principle and shifts in equilibrium",
+								"title": "Le Chatelier\u2019s principle and shifts in equilibrium",
+								"description": "Le Chatelier\u2019s principle and shifts in equilibrium",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -3054,7 +3084,7 @@
 							"constraints": [
 								"Equilibrium constant expressions (Kc, Kp)",
 								"Solving equilibrium problems, ICE tables",
-								"Le Chatelier’s principle and shifts in equilibrium"
+								"Le Chatelier\u2019s principle and shifts in equilibrium"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -3074,7 +3104,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Acid–base theories, pH/pOH calculations, titrations, buffers, and polyprotic species.",
+						"description": "Acid\u2013base theories, pH/pOH calculations, titrations, buffers, and polyprotic species.",
 						"topicGroups": [
 							{
 								"id": "ap-chemistry-unit-8-topic-1",
@@ -3086,8 +3116,8 @@
 							{
 								"id": "ap-chemistry-unit-8-topic-2",
 								"number": 2,
-								"title": "Buffer systems and Henderson–Hasselbalch equation",
-								"description": "Buffer systems and Henderson–Hasselbalch equation",
+								"title": "Buffer systems and Henderson\u2013Hasselbalch equation",
+								"description": "Buffer systems and Henderson\u2013Hasselbalch equation",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -3138,7 +3168,7 @@
 							],
 							"constraints": [
 								"Strong vs weak acids/bases, pH and pOH calculations",
-								"Buffer systems and Henderson–Hasselbalch equation",
+								"Buffer systems and Henderson\u2013Hasselbalch equation",
 								"Titration curves and equivalence point analysis"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -3178,8 +3208,8 @@
 							{
 								"id": "ap-chemistry-unit-9-topic-3",
 								"number": 3,
-								"title": "Calculations of cell potential and Faraday’s laws (basic)",
-								"description": "Calculations of cell potential and Faraday’s laws (basic)",
+								"title": "Calculations of cell potential and Faraday\u2019s laws (basic)",
+								"description": "Calculations of cell potential and Faraday\u2019s laws (basic)",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -3224,7 +3254,7 @@
 							"constraints": [
 								"Entropy and Gibbs free energy; relationship to equilibrium",
 								"Electrochemical cells: cell notation, standard reduction potentials",
-								"Calculations of cell potential and Faraday’s laws (basic)"
+								"Calculations of cell potential and Faraday\u2019s laws (basic)"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -3407,7 +3437,7 @@
 							"Displacement",
 							"Velocity",
 							"Acceleration",
-							"Kinematic equations (v = v0 + a t; Δx = v0 t + 1/2 a t^2; v^2 = v0^2 + 2 a Δx)",
+							"Kinematic equations (v = v0 + a t; \u0394x = v0 t + 1/2 a t^2; v^2 = v0^2 + 2 a \u0394x)",
 							"Constant acceleration (uniform a)",
 							"Projectile motion",
 							"Circular motion",
@@ -3437,7 +3467,7 @@
 								"Displacement",
 								"Velocity",
 								"Acceleration",
-								"Kinematic equations (v = v0 + a t; Δx = v0 t + 1/2 a t^2; v^2 = v0^2 + 2 a Δx)",
+								"Kinematic equations (v = v0 + a t; \u0394x = v0 t + 1/2 a t^2; v^2 = v0^2 + 2 a \u0394x)",
 								"Constant acceleration (uniform a)",
 								"Projectile motion",
 								"Circular motion",
@@ -3467,13 +3497,13 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Newton’s laws, free-body diagrams, friction, circular motion, and dynamics of systems.",
+						"description": "Newton\u2019s laws, free-body diagrams, friction, circular motion, and dynamics of systems.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-1-unit-2-topic-1",
 								"number": 1,
-								"title": "Newton’s three laws of motion",
-								"description": "Newton’s three laws of motion",
+								"title": "Newton\u2019s three laws of motion",
+								"description": "Newton\u2019s three laws of motion",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -3535,7 +3565,7 @@
 								"Free body diagrams"
 							],
 							"constraints": [
-								"Newton’s three laws of motion",
+								"Newton\u2019s three laws of motion",
 								"Free-body diagrams and solving force problems",
 								"Friction (static and kinetic), tension, normal force",
 								"Circular motion and centripetal acceleration"
@@ -3558,7 +3588,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Work–energy theorem, kinetic/potential energy, conservation of energy, and power calculations.",
+						"description": "Work\u2013energy theorem, kinetic/potential energy, conservation of energy, and power calculations.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-1-unit-3-topic-1",
@@ -3884,7 +3914,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Simple harmonic motion, pendulums, and mass–spring systems.",
+						"description": "Simple harmonic motion, pendulums, and mass\u2013spring systems.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-1-unit-7-topic-1",
@@ -3896,8 +3926,8 @@
 							{
 								"id": "ap-physics-1-unit-7-topic-2",
 								"number": 2,
-								"title": "Period and frequency of mass–spring systems and pendulums",
-								"description": "Period and frequency of mass–spring systems and pendulums",
+								"title": "Period and frequency of mass\u2013spring systems and pendulums",
+								"description": "Period and frequency of mass\u2013spring systems and pendulums",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -3944,7 +3974,7 @@
 							],
 							"constraints": [
 								"Simple harmonic motion equations and energy in oscillators",
-								"Period and frequency of mass–spring systems and pendulums",
+								"Period and frequency of mass\u2013spring systems and pendulums",
 								"Damping and qualitative behavior"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -3977,15 +4007,15 @@
 							{
 								"id": "ap-physics-1-unit-8-topic-2",
 								"number": 2,
-								"title": "Archimedes’ principle and buoyant force",
-								"description": "Archimedes’ principle and buoyant force",
+								"title": "Archimedes\u2019 principle and buoyant force",
+								"description": "Archimedes\u2019 principle and buoyant force",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
 								"id": "ap-physics-1-unit-8-topic-3",
 								"number": 3,
-								"title": "Continuity equation and Bernoulli’s principle (qualitative)",
-								"description": "Continuity equation and Bernoulli’s principle (qualitative)",
+								"title": "Continuity equation and Bernoulli\u2019s principle (qualitative)",
+								"description": "Continuity equation and Bernoulli\u2019s principle (qualitative)",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -4027,8 +4057,8 @@
 							],
 							"constraints": [
 								"Pressure and hydrostatic laws",
-								"Archimedes’ principle and buoyant force",
-								"Continuity equation and Bernoulli’s principle (qualitative)"
+								"Archimedes\u2019 principle and buoyant force",
+								"Continuity equation and Bernoulli\u2019s principle (qualitative)"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -4141,7 +4171,7 @@
 						"The 42-question/85-minute multiple-choice and 95-minute free-response structure is effective beginning with the May 2027 exam."
 					],
 					"updatesFor2026_27": [
-						"The CED contains minor course-convention clarifications for 2026–27."
+						"The CED contains minor course-convention clarifications for 2026\u201327."
 					],
 					"sourceIds": [
 						"cb-exam-ap-physics-2",
@@ -4263,13 +4293,13 @@
 						"canonicalLabelStatus": "app-only-label-not-in-current-official-framework",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Electrostatics: Coulomb’s law, electric field and potential, and superposition.",
+						"description": "Electrostatics: Coulomb\u2019s law, electric field and potential, and superposition.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-2-unit-10-topic-1",
 								"number": 1,
-								"title": "Coulomb’s law and electric field calculations",
-								"description": "Coulomb’s law and electric field calculations",
+								"title": "Coulomb\u2019s law and electric field calculations",
+								"description": "Coulomb\u2019s law and electric field calculations",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -4310,7 +4340,7 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Coulomb’s law and electric field calculations",
+								"Coulomb\u2019s law and electric field calculations",
 								"Electric potential and potential energy of charge configurations",
 								"Conductors and insulators (qualitative)"
 							],
@@ -4332,13 +4362,13 @@
 						"canonicalLabelStatus": "app-only-label-not-in-current-official-framework",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "DC circuit analysis: current, resistance, Ohm’s law, series and parallel networks.",
+						"description": "DC circuit analysis: current, resistance, Ohm\u2019s law, series and parallel networks.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-2-unit-11-topic-1",
 								"number": 1,
-								"title": "Ohm’s law, Kirchhoff’s rules (basic)",
-								"description": "Ohm’s law, Kirchhoff’s rules (basic)",
+								"title": "Ohm\u2019s law, Kirchhoff\u2019s rules (basic)",
+								"description": "Ohm\u2019s law, Kirchhoff\u2019s rules (basic)",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -4379,7 +4409,7 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Ohm’s law, Kirchhoff’s rules (basic)",
+								"Ohm\u2019s law, Kirchhoff\u2019s rules (basic)",
 								"Series and parallel resistor networks",
 								"Capacitors in circuits (qualitative and basic quantitative)"
 							],
@@ -4413,8 +4443,8 @@
 							{
 								"id": "ap-physics-2-unit-12-topic-2",
 								"number": 2,
-								"title": "Biot–Savart and right-hand rule (qualitative use)",
-								"description": "Biot–Savart and right-hand rule (qualitative use)",
+								"title": "Biot\u2013Savart and right-hand rule (qualitative use)",
+								"description": "Biot\u2013Savart and right-hand rule (qualitative use)",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -4449,7 +4479,7 @@
 							"keywords": [],
 							"constraints": [
 								"Magnetic field of currents, force on moving charges",
-								"Biot–Savart and right-hand rule (qualitative use)",
+								"Biot\u2013Savart and right-hand rule (qualitative use)",
 								"Electromagnetic induction overview (Faraday, Lenz)"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -4470,7 +4500,7 @@
 						"canonicalLabelStatus": "app-only-label-not-in-current-official-framework",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Algebra-based treatment of electromagnetic induction: induced emf, magnetic flux, Faraday’s law, Lenz’s law, and basic applications in generators, transformers, and induction-related circuit behavior.",
+						"description": "Algebra-based treatment of electromagnetic induction: induced emf, magnetic flux, Faraday\u2019s law, Lenz\u2019s law, and basic applications in generators, transformers, and induction-related circuit behavior.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-2-unit-13-topic-1",
@@ -4482,8 +4512,8 @@
 							{
 								"id": "ap-physics-2-unit-13-topic-2",
 								"number": 2,
-								"title": "Faraday’s law and Lenz’s law (direction of induced current)",
-								"description": "Faraday’s law and Lenz’s law (direction of induced current)",
+								"title": "Faraday\u2019s law and Lenz\u2019s law (direction of induced current)",
+								"description": "Faraday\u2019s law and Lenz\u2019s law (direction of induced current)",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -4510,8 +4540,8 @@
 						],
 						"focusKeywords": [
 							"Magnetic flux",
-							"Faraday’s law",
-							"Lenz’s law",
+							"Faraday\u2019s law",
+							"Lenz\u2019s law",
 							"Induced emf",
 							"Transformers",
 							"Generators"
@@ -4538,15 +4568,15 @@
 							"enabled": true,
 							"keywords": [
 								"Magnetic flux",
-								"Faraday’s law",
-								"Lenz’s law",
+								"Faraday\u2019s law",
+								"Lenz\u2019s law",
 								"Induced emf",
 								"Transformers",
 								"Generators"
 							],
 							"constraints": [
 								"Magnetic flux and changes that induce emf",
-								"Faraday’s law and Lenz’s law (direction of induced current)",
+								"Faraday\u2019s law and Lenz\u2019s law (direction of induced current)",
 								"Motional emf and simple generator models",
 								"Transformers and energy transfer in ideal cases",
 								"Qualitative applications of induction in circuits and devices"
@@ -4574,8 +4604,8 @@
 							{
 								"id": "ap-physics-2-unit-14-topic-1",
 								"number": 1,
-								"title": "Law of reflection and refraction (Snell’s law)",
-								"description": "Law of reflection and refraction (Snell’s law)",
+								"title": "Law of reflection and refraction (Snell\u2019s law)",
+								"description": "Law of reflection and refraction (Snell\u2019s law)",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -4616,7 +4646,7 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Law of reflection and refraction (Snell’s law)",
+								"Law of reflection and refraction (Snell\u2019s law)",
 								"Lens and mirror equations, magnification",
 								"Ray tracing for simple systems"
 							],
@@ -4925,13 +4955,13 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Newton’s laws applied with calculus; forces, center of mass, circular motion, and gravitation.",
+						"description": "Newton\u2019s laws applied with calculus; forces, center of mass, circular motion, and gravitation.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-mechanics-unit-2-topic-1",
 								"number": 1,
-								"title": "Newton’s laws in calculus form, free-body diagrams",
-								"description": "Newton’s laws in calculus form, free-body diagrams",
+								"title": "Newton\u2019s laws in calculus form, free-body diagrams",
+								"description": "Newton\u2019s laws in calculus form, free-body diagrams",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -4969,7 +4999,7 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Newton’s laws in calculus form, free-body diagrams",
+								"Newton\u2019s laws in calculus form, free-body diagrams",
 								"Systems and center of mass, gravitation, circular dynamics"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -4990,7 +5020,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Work–energy theorem, potential energy functions, and conservation principles using calculus.",
+						"description": "Work\u2013energy theorem, potential energy functions, and conservation principles using calculus.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-mechanics-unit-3-topic-1",
@@ -5002,8 +5032,8 @@
 							{
 								"id": "ap-physics-c-mechanics-unit-3-topic-2",
 								"number": 2,
-								"title": "Gravitational/elastic potential energy and work–energy relationships",
-								"description": "Gravitational/elastic potential energy and work–energy relationships",
+								"title": "Gravitational/elastic potential energy and work\u2013energy relationships",
+								"description": "Gravitational/elastic potential energy and work\u2013energy relationships",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -5035,7 +5065,7 @@
 							"keywords": [],
 							"constraints": [
 								"Work integrals, conservative forces, energy conservation",
-								"Gravitational/elastic potential energy and work–energy relationships"
+								"Gravitational/elastic potential energy and work\u2013energy relationships"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -5156,13 +5186,13 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Rotational kinematics and dynamics with calculus: torque, moment of inertia, angular momentum, and Newton’s second law for rotation.",
+						"description": "Rotational kinematics and dynamics with calculus: torque, moment of inertia, angular momentum, and Newton\u2019s second law for rotation.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-mechanics-unit-5-topic-1",
 								"number": 1,
-								"title": "Rotational kinematics (θ, ω, α) and calculus relationships",
-								"description": "Rotational kinematics (θ, ω, α) and calculus relationships",
+								"title": "Rotational kinematics (\u03b8, \u03c9, \u03b1) and calculus relationships",
+								"description": "Rotational kinematics (\u03b8, \u03c9, \u03b1) and calculus relationships",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -5175,8 +5205,8 @@
 							{
 								"id": "ap-physics-c-mechanics-unit-5-topic-3",
 								"number": 3,
-								"title": "Newton’s second law for rotation",
-								"description": "Newton’s second law for rotation",
+								"title": "Newton\u2019s second law for rotation",
+								"description": "Newton\u2019s second law for rotation",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -5233,9 +5263,9 @@
 								"Angular momentum"
 							],
 							"constraints": [
-								"Rotational kinematics (θ, ω, α) and calculus relationships",
+								"Rotational kinematics (\u03b8, \u03c9, \u03b1) and calculus relationships",
 								"Torque and moment of inertia",
-								"Newton’s second law for rotation",
+								"Newton\u2019s second law for rotation",
 								"Rolling without slipping as a dynamics constraint",
 								"Angular momentum of a rigid body"
 							],
@@ -5257,7 +5287,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Energy and momentum methods for rotating and rolling systems: rotational kinetic energy, work–energy with torque, and conservation of angular momentum.",
+						"description": "Energy and momentum methods for rotating and rolling systems: rotational kinetic energy, work\u2013energy with torque, and conservation of angular momentum.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-mechanics-unit-6-topic-1",
@@ -5298,7 +5328,7 @@
 						"focusKeywords": [
 							"Rotational kinetic energy",
 							"Angular momentum conservation",
-							"Work–energy theorem",
+							"Work\u2013energy theorem",
 							"Rolling",
 							"Torque work"
 						],
@@ -5329,7 +5359,7 @@
 							"keywords": [
 								"Rotational kinetic energy",
 								"Angular momentum conservation",
-								"Work–energy theorem",
+								"Work\u2013energy theorem",
 								"Rolling",
 								"Torque work"
 							],
@@ -5370,8 +5400,8 @@
 							{
 								"id": "ap-physics-c-mechanics-unit-7-topic-2",
 								"number": 2,
-								"title": "Mass–spring systems and simple pendulums",
-								"description": "Mass–spring systems and simple pendulums",
+								"title": "Mass\u2013spring systems and simple pendulums",
+								"description": "Mass\u2013spring systems and simple pendulums",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -5433,7 +5463,7 @@
 							],
 							"constraints": [
 								"SHM differential equation and solutions",
-								"Mass–spring systems and simple pendulums",
+								"Mass\u2013spring systems and simple pendulums",
 								"Energy in oscillatory systems",
 								"Period, frequency, and phase",
 								"Restoring forces and small-angle approximations"
@@ -5535,7 +5565,7 @@
 					"referenceMaterials": ["equation sheet and reference information"],
 					"assessmentNotes": ["The 2027 structure is effective beginning with the May 2027 exam."],
 					"updatesFor2026_27": [
-						"The CED contains minor course-convention clarifications for 2026–27."
+						"The CED contains minor course-convention clarifications for 2026\u201327."
 					],
 					"sourceIds": [
 						"cb-exam-ap-physics-c-electricity-and-magnetism",
@@ -5559,7 +5589,7 @@
 				]
 			},
 			"generation": {
-				"courseGuidance": "Calculus-based: line/surface integrals and derivatives are appropriate. Emphasize Gauss’s/Ampère’s laws, potential/field relationships, RC transients, induction (Faraday/Lenz), and field superposition. Use vector notation and units; avoid optics/modern physics which belong to Physics 2.",
+				"courseGuidance": "Calculus-based: line/surface integrals and derivatives are appropriate. Emphasize Gauss\u2019s/Amp\u00e8re\u2019s laws, potential/field relationships, RC transients, induction (Faraday/Lenz), and field superposition. Use vector notation and units; avoid optics/modern physics which belong to Physics 2.",
 				"mcq": {
 					"exactUnitLookup": true,
 					"unitContextSource": "app-unit-descriptions",
@@ -5589,13 +5619,13 @@
 						"canonicalLabelStatus": "app-only-label-not-in-current-official-framework",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Coulomb’s law, electric field computations, and application of Gauss’s Law to symmetric charge distributions.",
+						"description": "Coulomb\u2019s law, electric field computations, and application of Gauss\u2019s Law to symmetric charge distributions.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-eandm-unit-8-topic-1",
 								"number": 1,
-								"title": "Coulomb’s law and superposition for point charges",
-								"description": "Coulomb’s law and superposition for point charges",
+								"title": "Coulomb\u2019s law and superposition for point charges",
+								"description": "Coulomb\u2019s law and superposition for point charges",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -5608,8 +5638,8 @@
 							{
 								"id": "ap-physics-c-eandm-unit-8-topic-3",
 								"number": 3,
-								"title": "Electric flux and Gauss’s Law applications",
-								"description": "Electric flux and Gauss’s Law applications",
+								"title": "Electric flux and Gauss\u2019s Law applications",
+								"description": "Electric flux and Gauss\u2019s Law applications",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -5640,9 +5670,9 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Coulomb’s law and superposition for point charges",
+								"Coulomb\u2019s law and superposition for point charges",
 								"Electric field of continuous charge distributions (calculus-based)",
-								"Electric flux and Gauss’s Law applications"
+								"Electric flux and Gauss\u2019s Law applications"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -5797,8 +5827,8 @@
 							{
 								"id": "ap-physics-c-eandm-unit-11-topic-1",
 								"number": 1,
-								"title": "Current, resistance, Ohm’s law; RC circuits and transient analysis",
-								"description": "Current, resistance, Ohm’s law; RC circuits and transient analysis",
+								"title": "Current, resistance, Ohm\u2019s law; RC circuits and transient analysis",
+								"description": "Current, resistance, Ohm\u2019s law; RC circuits and transient analysis",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -5836,7 +5866,7 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Current, resistance, Ohm’s law; RC circuits and transient analysis",
+								"Current, resistance, Ohm\u2019s law; RC circuits and transient analysis",
 								"Series and parallel circuits and energy calculations"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -5857,7 +5887,7 @@
 						"canonicalLabelStatus": "app-only-label-not-in-current-official-framework",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Magnetic forces on charges and currents, fields from currents, and Ampère/Biot–Savart laws.",
+						"description": "Magnetic forces on charges and currents, fields from currents, and Amp\u00e8re/Biot\u2013Savart laws.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-eandm-unit-12-topic-1",
@@ -5869,8 +5899,8 @@
 							{
 								"id": "ap-physics-c-eandm-unit-12-topic-2",
 								"number": 2,
-								"title": "Magnetic field of a long straight wire, loop; Biot–Savart and Ampère’s Law (applications)",
-								"description": "Magnetic field of a long straight wire, loop; Biot–Savart and Ampère’s Law (applications)",
+								"title": "Magnetic field of a long straight wire, loop; Biot\u2013Savart and Amp\u00e8re\u2019s Law (applications)",
+								"description": "Magnetic field of a long straight wire, loop; Biot\u2013Savart and Amp\u00e8re\u2019s Law (applications)",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -5902,7 +5932,7 @@
 							"keywords": [],
 							"constraints": [
 								"Lorentz force on moving charges, force on current-carrying wires",
-								"Magnetic field of a long straight wire, loop; Biot–Savart and Ampère’s Law (applications)"
+								"Magnetic field of a long straight wire, loop; Biot\u2013Savart and Amp\u00e8re\u2019s Law (applications)"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -5922,13 +5952,13 @@
 						"canonicalLabelStatus": "app-only-label-not-in-current-official-framework",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Faraday’s Law, Lenz’s Law, inductance, and basic AC/DC induction phenomena.",
+						"description": "Faraday\u2019s Law, Lenz\u2019s Law, inductance, and basic AC/DC induction phenomena.",
 						"topicGroups": [
 							{
 								"id": "ap-physics-c-eandm-unit-13-topic-1",
 								"number": 1,
-								"title": "Faraday’s Law of induction, induced emf, Lenz’s Law",
-								"description": "Faraday’s Law of induction, induced emf, Lenz’s Law",
+								"title": "Faraday\u2019s Law of induction, induced emf, Lenz\u2019s Law",
+								"description": "Faraday\u2019s Law of induction, induced emf, Lenz\u2019s Law",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -5966,7 +5996,7 @@
 							"enabled": true,
 							"keywords": [],
 							"constraints": [
-								"Faraday’s Law of induction, induced emf, Lenz’s Law",
+								"Faraday\u2019s Law of induction, induced emf, Lenz\u2019s Law",
 								"Inductance, LR circuits, and energy in magnetic fields"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -6070,7 +6100,7 @@
 					"referenceMaterials": ["reference information in Bluebook"],
 					"assessmentNotes": ["All responses are submitted in Bluebook."],
 					"updatesFor2026_27": [
-						"The 2026–27 clarification document says course content does not change."
+						"The 2026\u201327 clarification document says course content does not change."
 					],
 					"sourceIds": [
 						"cb-exam-ap-environmental-science",
@@ -6821,7 +6851,7 @@
 						"At least two free-response questions incorporate a real-world context or scenario."
 					],
 					"updatesFor2026_27": [
-						"Minor 2026–27 clarifications; updated question count and timing effective May 2027."
+						"Minor 2026\u201327 clarifications; updated question count and timing effective May 2027."
 					],
 					"sourceIds": [
 						"cb-exam-ap-calculus-ab",
@@ -7308,8 +7338,8 @@
 							{
 								"id": "ap-calculus-ab-unit-5-topic-3",
 								"number": 3,
-								"title": "Mean Value Theorem and Rolle’s Theorem",
-								"description": "Mean Value Theorem and Rolle’s Theorem",
+								"title": "Mean Value Theorem and Rolle\u2019s Theorem",
+								"description": "Mean Value Theorem and Rolle\u2019s Theorem",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -7368,7 +7398,7 @@
 							"constraints": [
 								"Critical points, local/global extrema",
 								"First and second derivative tests",
-								"Mean Value Theorem and Rolle’s Theorem",
+								"Mean Value Theorem and Rolle\u2019s Theorem",
 								"Sketching graphs using limits, derivatives, asymptotes, and concavity",
 								"Applications to optimization problems"
 							],
@@ -7758,7 +7788,7 @@
 						"At least two free-response questions incorporate a real-world context or scenario."
 					],
 					"updatesFor2026_27": [
-						"Minor 2026–27 clarifications; updated question count and timing effective May 2027."
+						"Minor 2026\u201327 clarifications; updated question count and timing effective May 2027."
 					],
 					"sourceIds": [
 						"cb-exam-ap-calculus-bc",
@@ -8296,8 +8326,8 @@
 							{
 								"id": "ap-calculus-bc-unit-9-topic-2",
 								"number": 2,
-								"title": "Polar coordinates: r(θ), area and slope in polar",
-								"description": "Polar coordinates: r(θ), area and slope in polar",
+								"title": "Polar coordinates: r(\u03b8), area and slope in polar",
+								"description": "Polar coordinates: r(\u03b8), area and slope in polar",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -8336,7 +8366,7 @@
 							"keywords": [],
 							"constraints": [
 								"Parametric equations: derivatives, arc length, area",
-								"Polar coordinates: r(θ), area and slope in polar",
+								"Polar coordinates: r(\u03b8), area and slope in polar",
 								"Vector-valued functions, velocity and acceleration in parametric form"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -8525,9 +8555,9 @@
 					],
 					"calculatorPolicy": "permitted",
 					"referenceMaterials": ["reference information in Bluebook"],
-					"assessmentNotes": ["The course and exam were revised for the 2026–27 school year."],
+					"assessmentNotes": ["The course and exam were revised for the 2026\u201327 school year."],
 					"updatesFor2026_27": [
-						"Use the revised 2026–27 CED and exam information; do not rely on the prior nine-unit framework."
+						"Use the revised 2026\u201327 CED and exam information; do not rely on the prior nine-unit framework."
 					],
 					"sourceIds": [
 						"cb-exam-ap-statistics",
@@ -8552,7 +8582,7 @@
 				]
 			},
 			"generation": {
-				"courseGuidance": "Always keep answers in context of the study. State conditions (randomization, independence, normal/large n) before inference; use correct symbols (p, μ, \\hat{p}, \\bar{x}), hypotheses, and interpretations of p-values/intervals. No calculus; rely on AP-approved inference procedures and clear communication of conclusions.",
+				"courseGuidance": "Always keep answers in context of the study. State conditions (randomization, independence, normal/large n) before inference; use correct symbols (p, \u03bc, \\hat{p}, \\bar{x}), hypotheses, and interpretations of p-values/intervals. No calculus; rely on AP-approved inference procedures and clear communication of conclusions.",
 				"mcq": {
 					"exactUnitLookup": true,
 					"unitContextSource": "app-unit-descriptions",
@@ -9482,7 +9512,7 @@
 						"The 2027 structure updates the question counts and timing for the exam."
 					],
 					"updatesFor2026_27": [
-						"Minor 2026–27 clarifications; updated question count, FRQ 1/2 structure, and timing effective May 2027."
+						"Minor 2026\u201327 clarifications; updated question count, FRQ 1/2 structure, and timing effective May 2027."
 					],
 					"sourceIds": [
 						"cb-exam-ap-precalculus",
@@ -10286,8 +10316,8 @@
 							{
 								"id": "ap-computer-science-a-unit-4-topic-5",
 								"number": 5,
-								"title": "Text files and datasets (added in 2025–26 revisions)",
-								"description": "Text files and datasets (added in 2025–26 revisions)",
+								"title": "Text files and datasets (added in 2025\u201326 revisions)",
+								"description": "Text files and datasets (added in 2025\u201326 revisions)",
 								"sourceIds": ["app-unit-descriptions"]
 							}
 						],
@@ -10322,7 +10352,7 @@
 								"ArrayList and other collection usage patterns",
 								"Searching and sorting basics (selection, insertion, simple sorts)",
 								"Traversing and manipulating collections; iteration patterns",
-								"Text files and datasets (added in 2025–26 revisions)"
+								"Text files and datasets (added in 2025\u201326 revisions)"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
 						},
@@ -10923,7 +10953,7 @@
 							"durationMinutes": 60,
 							"weightPercent": 45,
 							"questionTypes": ["reading-analysis", "writing-revision"],
-							"notes": ["Five sets: 23–25 reading questions and 20–22 writing questions."]
+							"notes": ["Five sets: 23\u201325 reading questions and 20\u201322 writing questions."]
 						},
 						{
 							"id": "free-response",
@@ -12864,9 +12894,9 @@
 				{
 					"id": "ap-us-history-unit-1",
 					"number": 1,
-					"label": "Unit 1: Period 1: 1491–1607",
+					"label": "Unit 1: Period 1: 1491\u20131607",
 					"official": {
-						"canonicalLabel": "Unit 1: Period 1: 1491–1607",
+						"canonicalLabel": "Unit 1: Period 1: 1491\u20131607",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
@@ -12948,13 +12978,13 @@
 				{
 					"id": "ap-us-history-unit-2",
 					"number": 2,
-					"label": "Unit 2: Period 2: 1607–1754",
+					"label": "Unit 2: Period 2: 1607\u20131754",
 					"official": {
-						"canonicalLabel": "Unit 2: Period 2: 1607–1754",
+						"canonicalLabel": "Unit 2: Period 2: 1607\u20131754",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "British colonial development and imperial competition, 1607–1754.",
+						"description": "British colonial development and imperial competition, 1607\u20131754.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-2-topic-1",
@@ -13032,13 +13062,13 @@
 				{
 					"id": "ap-us-history-unit-3",
 					"number": 3,
-					"label": "Unit 3: Period 3: 1754–1800",
+					"label": "Unit 3: Period 3: 1754\u20131800",
 					"official": {
-						"canonicalLabel": "Unit 3: Period 3: 1754–1800",
+						"canonicalLabel": "Unit 3: Period 3: 1754\u20131800",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Revolutionary era and early republic, 1754–1800.",
+						"description": "Revolutionary era and early republic, 1754\u20131800.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-3-topic-1",
@@ -13116,13 +13146,13 @@
 				{
 					"id": "ap-us-history-unit-4",
 					"number": 4,
-					"label": "Unit 4: Period 4: 1800–1848",
+					"label": "Unit 4: Period 4: 1800\u20131848",
 					"official": {
-						"canonicalLabel": "Unit 4: Period 4: 1800–1848",
+						"canonicalLabel": "Unit 4: Period 4: 1800\u20131848",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Expansion, market change, and reform in the early 19th century, 1800–1848.",
+						"description": "Expansion, market change, and reform in the early 19th century, 1800\u20131848.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-4-topic-1",
@@ -13200,13 +13230,13 @@
 				{
 					"id": "ap-us-history-unit-5",
 					"number": 5,
-					"label": "Unit 5: Period 5: 1844–1877",
+					"label": "Unit 5: Period 5: 1844\u20131877",
 					"official": {
-						"canonicalLabel": "Unit 5: Period 5: 1844–1877",
+						"canonicalLabel": "Unit 5: Period 5: 1844\u20131877",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Sectional conflict, Civil War, and Reconstruction, 1844–1877.",
+						"description": "Sectional conflict, Civil War, and Reconstruction, 1844\u20131877.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-5-topic-1",
@@ -13284,13 +13314,13 @@
 				{
 					"id": "ap-us-history-unit-6",
 					"number": 6,
-					"label": "Unit 6: Period 6: 1865–1898",
+					"label": "Unit 6: Period 6: 1865\u20131898",
 					"official": {
-						"canonicalLabel": "Unit 6: Period 6: 1865–1898",
+						"canonicalLabel": "Unit 6: Period 6: 1865\u20131898",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Industrialization, migration, and Gilded Age transformations, 1865–1898.",
+						"description": "Industrialization, migration, and Gilded Age transformations, 1865\u20131898.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-6-topic-1",
@@ -13368,13 +13398,13 @@
 				{
 					"id": "ap-us-history-unit-7",
 					"number": 7,
-					"label": "Unit 7: Period 7: 1890–1945",
+					"label": "Unit 7: Period 7: 1890\u20131945",
 					"official": {
-						"canonicalLabel": "Unit 7: Period 7: 1890–1945",
+						"canonicalLabel": "Unit 7: Period 7: 1890\u20131945",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Progressivism, global conflict, and economic crisis, 1890–1945.",
+						"description": "Progressivism, global conflict, and economic crisis, 1890\u20131945.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-7-topic-1",
@@ -13452,13 +13482,13 @@
 				{
 					"id": "ap-us-history-unit-8",
 					"number": 8,
-					"label": "Unit 8: Period 8: 1945–1980",
+					"label": "Unit 8: Period 8: 1945\u20131980",
 					"official": {
-						"canonicalLabel": "Unit 8: Period 8: 1945–1980",
+						"canonicalLabel": "Unit 8: Period 8: 1945\u20131980",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Cold War America, domestic change, and social movements, 1945–1980.",
+						"description": "Cold War America, domestic change, and social movements, 1945\u20131980.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-8-topic-1",
@@ -13536,13 +13566,13 @@
 				{
 					"id": "ap-us-history-unit-9",
 					"number": 9,
-					"label": "Unit 9: Period 9: 1980–Present",
+					"label": "Unit 9: Period 9: 1980\u2013Present",
 					"official": {
-						"canonicalLabel": "Unit 9: Period 9: 1980–Present",
+						"canonicalLabel": "Unit 9: Period 9: 1980\u2013Present",
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Late 20th-century to contemporary U.S. developments, 1980–present.",
+						"description": "Late 20th-century to contemporary U.S. developments, 1980\u2013present.",
 						"topicGroups": [
 							{
 								"id": "ap-us-history-unit-9-topic-1",
@@ -13933,7 +13963,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "State formation and cultural developments across major regions c. 1200–1450.",
+						"description": "State formation and cultural developments across major regions c. 1200\u20131450.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-1-topic-1",
@@ -14017,7 +14047,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Transregional networks linking Afro-Eurasia and beyond c. 1200–1450.",
+						"description": "Transregional networks linking Afro-Eurasia and beyond c. 1200\u20131450.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-2-topic-1",
@@ -14101,7 +14131,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Gunpowder empires and imperial governance c. 1450–1750.",
+						"description": "Gunpowder empires and imperial governance c. 1450\u20131750.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-3-topic-1",
@@ -14185,7 +14215,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Maritime empires and global exchange c. 1450–1750.",
+						"description": "Maritime empires and global exchange c. 1450\u20131750.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-4-topic-1",
@@ -14269,7 +14299,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Atlantic revolutions and industrial transformation c. 1750–1900.",
+						"description": "Atlantic revolutions and industrial transformation c. 1750\u20131900.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-5-topic-1",
@@ -14281,8 +14311,8 @@
 							{
 								"id": "ap-world-history-unit-5-topic-2",
 								"number": 2,
-								"title": "Industrialization’s economic and social consequences",
-								"description": "Industrialization’s economic and social consequences",
+								"title": "Industrialization\u2019s economic and social consequences",
+								"description": "Industrialization\u2019s economic and social consequences",
 								"sourceIds": ["app-unit-descriptions"]
 							},
 							{
@@ -14332,7 +14362,7 @@
 							],
 							"constraints": [
 								"Political revolutions and their ideological foundations",
-								"Industrialization’s economic and social consequences",
+								"Industrialization\u2019s economic and social consequences",
 								"Responses to imperialism and changing global power"
 							],
 							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
@@ -14353,7 +14383,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Industrial-era imperialism, migration, and social change c. 1750–1900.",
+						"description": "Industrial-era imperialism, migration, and social change c. 1750\u20131900.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-6-topic-1",
@@ -14437,7 +14467,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "World wars, mass violence, and ideological conflict c. 1900–present.",
+						"description": "World wars, mass violence, and ideological conflict c. 1900\u2013present.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-7-topic-1",
@@ -14521,7 +14551,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Cold War competition and decolonization c. 1900–present.",
+						"description": "Cold War competition and decolonization c. 1900\u2013present.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-8-topic-1",
@@ -14605,7 +14635,7 @@
 						"canonicalLabelStatus": "matched-by-unit-number",
 						"contentProvenance": "app-unit-descriptions",
 						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
-						"description": "Contemporary globalization and transnational challenges c. 1900–present.",
+						"description": "Contemporary globalization and transnational challenges c. 1900\u2013present.",
 						"topicGroups": [
 							{
 								"id": "ap-world-history-unit-9-topic-1",
@@ -15687,8 +15717,8 @@
 					],
 					"calculatorPolicy": "not applicable",
 					"referenceMaterials": ["required foundational documents and source materials"],
-					"assessmentNotes": ["The 2026–27 CED adds four required foundational documents."],
-					"updatesFor2026_27": ["Use the updated foundational-document list for 2026–27."],
+					"assessmentNotes": ["The 2026\u201327 CED adds four required foundational documents."],
+					"updatesFor2026_27": ["Use the updated foundational-document list for 2026\u201327."],
 					"sourceIds": [
 						"cb-exam-ap-united-states-government-and-politics",
 						"cb-ced-ap-united-states-government-and-politics",
@@ -16222,7 +16252,7 @@
 								"qualitative-analysis-set"
 							],
 							"notes": [
-								"Usually 40–44 individual questions, three quantitative sets, and two qualitative sets."
+								"Usually 40\u201344 individual questions, three quantitative sets, and two qualitative sets."
 							]
 						},
 						{
@@ -17331,7 +17361,7 @@
 							"weightPercent": 50,
 							"questionTypes": ["individual", "stimulus-set"],
 							"notes": [
-								"Approximately 30%–40% reference stimulus material, including maps, tables, charts, graphs, images, infographics, and landscapes."
+								"Approximately 30%\u201340% reference stimulus material, including maps, tables, charts, graphs, images, infographics, and landscapes."
 							]
 						},
 						{
@@ -19483,7 +19513,7 @@
 								"project-question-and-answer",
 								"argumentative-essay"
 							],
-							"notes": ["The official section time is 65–70 minutes."],
+							"notes": ["The official section time is 65\u201370 minutes."],
 							"parts": [
 								{
 									"id": "project-presentation",
@@ -19538,7 +19568,7 @@
 					"calculatorPolicy": "not applicable",
 					"referenceMaterials": ["student project materials and source prompts"],
 					"assessmentNotes": [
-						"The 2026–27 revision moves the exam to Bluebook and includes a project that prepares students for two speaking tasks."
+						"The 2026\u201327 revision moves the exam to Bluebook and includes a project that prepares students for two speaking tasks."
 					],
 					"updatesFor2026_27": [
 						"World language exams transition to digital delivery beginning May 2027; PPR submission is due before the exam."
@@ -19631,7 +19661,7 @@
 							"La familia",
 							"Las comunidades",
 							"Las tradiciones",
-							"La ciudadanía",
+							"La ciudadan\u00eda",
 							"Las costumbres",
 							"Las relaciones interpersonales"
 						],
@@ -19660,7 +19690,7 @@
 								"La familia",
 								"Las comunidades",
 								"Las tradiciones",
-								"La ciudadanía",
+								"La ciudadan\u00eda",
 								"Las costumbres",
 								"Las relaciones interpersonales"
 							],
@@ -19725,7 +19755,7 @@
 							"La autoestima",
 							"El nacionalismo",
 							"La identidad cultural",
-							"Los héroes"
+							"Los h\u00e9roes"
 						],
 						"weightRangePercent": null,
 						"sourceIds": [
@@ -19754,7 +19784,7 @@
 								"La autoestima",
 								"El nacionalismo",
 								"La identidad cultural",
-								"Los héroes"
+								"Los h\u00e9roes"
 							],
 							"constraints": [
 								"Self-image, identity formation, and personal beliefs",
@@ -19814,7 +19844,7 @@
 						"focusKeywords": [
 							"El arte",
 							"La arquitectura",
-							"La música",
+							"La m\u00fasica",
 							"La literatura",
 							"La moda",
 							"Las artes visuales"
@@ -19843,7 +19873,7 @@
 							"keywords": [
 								"El arte",
 								"La arquitectura",
-								"La música",
+								"La m\u00fasica",
 								"La literatura",
 								"La moda",
 								"Las artes visuales"
@@ -19904,12 +19934,12 @@
 							}
 						],
 						"focusKeywords": [
-							"La tecnología",
+							"La tecnolog\u00eda",
 							"La ciencia",
-							"La innovación",
-							"El acceso a la tecnología",
-							"Los efectos de la tecnología",
-							"Los descubrimientos científicos"
+							"La innovaci\u00f3n",
+							"El acceso a la tecnolog\u00eda",
+							"Los efectos de la tecnolog\u00eda",
+							"Los descubrimientos cient\u00edficos"
 						],
 						"weightRangePercent": null,
 						"sourceIds": [
@@ -19933,12 +19963,12 @@
 						"mcq": {
 							"enabled": true,
 							"keywords": [
-								"La tecnología",
+								"La tecnolog\u00eda",
 								"La ciencia",
-								"La innovación",
-								"El acceso a la tecnología",
-								"Los efectos de la tecnología",
-								"Los descubrimientos científicos"
+								"La innovaci\u00f3n",
+								"El acceso a la tecnolog\u00eda",
+								"Los efectos de la tecnolog\u00eda",
+								"Los descubrimientos cient\u00edficos"
 							],
 							"constraints": [
 								"Impact of technology on communication and daily life",
@@ -19996,7 +20026,7 @@
 							}
 						],
 						"focusKeywords": [
-							"La educación",
+							"La educaci\u00f3n",
 							"Las carreras profesionales",
 							"El entretenimiento",
 							"Los viajes",
@@ -20025,7 +20055,7 @@
 						"mcq": {
 							"enabled": true,
 							"keywords": [
-								"La educación",
+								"La educaci\u00f3n",
 								"Las carreras profesionales",
 								"El entretenimiento",
 								"Los viajes",
@@ -20179,6 +20209,772 @@
 				"app-unit-descriptions",
 				"app-practice-pages",
 				"app-ap-knowledge-catalog"
+			]
+		},
+		{
+			"id": "ap-art-history",
+			"name": "AP Art History",
+			"app": {
+				"supported": true,
+				"knowledgeCatalogOverride": null,
+				"practice": {
+					"mcq": {
+						"enabled": false
+					},
+					"frq": {
+						"enabled": false,
+						"profileId": null
+					},
+					"coursePageId": "ap-art-history"
+				}
+			},
+			"official": {
+				"name": "AP Art History",
+				"category": "arts",
+				"framework": {
+					"unitCount": 10,
+					"alignment": "course-level-unit-sequence-aligned",
+					"sourceIds": ["cb-ced-ap-art-history", "cb-course-ap-art-history"],
+					"unitLabelsSource": "appUnits"
+				},
+				"exam": {
+					"officialName": "AP Art History",
+					"category": "arts",
+					"coursePageSlug": "ap-art-history",
+					"examPageSlug": "ap-art-history",
+					"deliveryMode": "fully-digital",
+					"totalDurationMinutes": 180,
+					"sections": [
+						{
+							"id": "multiple-choice",
+							"label": "Section I: Multiple Choice",
+							"questionCount": 80,
+							"durationMinutes": 60,
+							"weightPercent": 50,
+							"questionTypes": ["image-based", "stimulus-set"]
+						},
+						{
+							"id": "free-response",
+							"label": "Section II: Free Response",
+							"questionCount": 6,
+							"durationMinutes": 120,
+							"weightPercent": 50,
+							"questionTypes": ["long-essay", "short-essay", "comparison"]
+						}
+					],
+					"skills": [
+						"visual analysis",
+						"contextualization",
+						"comparison of works",
+						"art-historical argumentation"
+					],
+					"calculatorPolicy": "not applicable",
+					"referenceMaterials": ["image set works from the CED"],
+					"assessmentNotes": [
+						"AAQ and EBQ tasks are source-based and scored with point-based criteria."
+					],
+					"sourceIds": [
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"cb-calculator-policy",
+						"cb-reference-information"
+					]
+				},
+				"skills": [
+					"visual analysis",
+					"contextualization",
+					"comparison of works",
+					"art-historical argumentation"
+				],
+				"sourceIds": [
+					"cb-course-ap-art-history",
+					"cb-exam-ap-art-history",
+					"cb-ced-ap-art-history",
+					"cb-calculator-policy",
+					"cb-reference-information"
+				]
+			},
+			"generation": {
+				"courseGuidance": "Emphasize visual analysis, contextualization, and comparison using the required 250 works. Use art-historical vocabulary and evidence from the work; avoid unsupported attribution claims.",
+				"mcq": {
+					"exactUnitLookup": true,
+					"unitContextSource": "app-unit-descriptions",
+					"strictUnitScope": true,
+					"avoidCrossUnitConcepts": true,
+					"preferApplicationOverMemorization": true,
+					"useRealWorldOrExperimentalContexts": true,
+					"plausibleDistractors": true,
+					"avoidAllOrNoneOfTheAbove": true,
+					"varyCognitiveLevel": ["recall", "application", "analysis", "evaluation"],
+					"latexDelimiters": ["$...$", "$$...$$"],
+					"output": "JSON only",
+					"biologySpecialCalibration": false,
+					"enabled": false
+				},
+				"frq": {
+					"enabled": false,
+					"unsupportedByAppReason": "AP Art History uses image-set study tools separate from the MCQ question bank."
+				}
+			},
+			"units": [
+				{
+					"id": "ap-art-history-unit-1",
+					"number": 1,
+					"label": "Content Area 1: 1. Global Prehistory, 30,000\u2013500 B.C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 1: 1. Global Prehistory, 30,000\u2013500 B.C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 1: 1. Global Prehistory, 30,000\u2013500 B.C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-1-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 1,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-2",
+					"number": 2,
+					"label": "Content Area 2: 2. Ancient Mediterranean, 3500 B.C.E.\u2013300 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 2: 2. Ancient Mediterranean, 3500 B.C.E.\u2013300 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 2: 2. Ancient Mediterranean, 3500 B.C.E.\u2013300 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-2-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 1,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-3",
+					"number": 3,
+					"label": "Content Area 3: 3. Early Europe and Colonial Americas, 200\u20131750 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 3: 3. Early Europe and Colonial Americas, 200\u20131750 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 3: 3. Early Europe and Colonial Americas, 200\u20131750 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-3-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 1,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-4",
+					"number": 4,
+					"label": "Content Area 4: 4. Later Europe and Americas, 1750\u20131980 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 4: 4. Later Europe and Americas, 1750\u20131980 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 4: 4. Later Europe and Americas, 1750\u20131980 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-4-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 1,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-5",
+					"number": 5,
+					"label": "Content Area 5: 5. Indigenous Americas, 1000 B.C.E.\u20131980 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 5: 5. Indigenous Americas, 1000 B.C.E.\u20131980 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 5: 5. Indigenous Americas, 1000 B.C.E.\u20131980 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-5-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 1,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-6",
+					"number": 6,
+					"label": "Content Area 6: 6. Africa, 1100\u20131980 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 6: 6. Africa, 1100\u20131980 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 6: 6. Africa, 1100\u20131980 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-6-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 2,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-7",
+					"number": 7,
+					"label": "Content Area 7: 7. West and Central Asia, 500 B.C.E.\u20131980 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 7: 7. West and Central Asia, 500 B.C.E.\u20131980 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 7: 7. West and Central Asia, 500 B.C.E.\u20131980 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-7-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 2,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-8",
+					"number": 8,
+					"label": "Content Area 8: 8. South, East, and Southeast Asia, 300 B.C.E.\u20131980 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 8: 8. South, East, and Southeast Asia, 300 B.C.E.\u20131980 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 8: 8. South, East, and Southeast Asia, 300 B.C.E.\u20131980 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-8-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 2,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-9",
+					"number": 9,
+					"label": "Content Area 9: 9. The Pacific, 700\u20131980 C.E.",
+					"official": {
+						"canonicalLabel": "Content Area 9: 9. The Pacific, 700\u20131980 C.E.",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 9: 9. The Pacific, 700\u20131980 C.E..",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-9-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 2,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				},
+				{
+					"id": "ap-art-history-unit-10",
+					"number": 10,
+					"label": "Content Area 10: 10. Global Contemporary, 1980 C.E. to Present",
+					"official": {
+						"canonicalLabel": "Content Area 10: 10. Global Contemporary, 1980 C.E. to Present",
+						"canonicalLabelStatus": "matched-by-unit-number",
+						"contentProvenance": "app-unit-descriptions",
+						"coverageNote": "The topic groups and keywords below are the app's paraphrased generation context, not a verbatim copy of the College Board CED. The linked CED remains the authority for exhaustive learning objectives and essential knowledge statements.",
+						"description": "Required works and visual analysis skills for Content Area 10: 10. Global Contemporary, 1980 C.E. to Present.",
+						"topicGroups": [
+							{
+								"id": "ap-art-history-unit-10-topic-1",
+								"number": 1,
+								"title": "Required works from the CED image set",
+								"description": "Required works from the CED image set",
+								"sourceIds": ["app-unit-descriptions"]
+							}
+						],
+						"focusKeywords": ["visual analysis", "contextualization", "comparison"],
+						"weightRangePercent": null,
+						"sourceIds": [
+							"cb-course-ap-art-history",
+							"cb-ced-ap-art-history",
+							"app-unit-descriptions"
+						]
+					},
+					"sources": [
+						"cb-course-ap-art-history",
+						"cb-exam-ap-art-history",
+						"cb-ced-ap-art-history",
+						"app-unit-descriptions",
+						"app-practice-pages"
+					],
+					"app": {
+						"semester": 2,
+						"practicePageId": null
+					},
+					"generation": {
+						"mcq": {
+							"enabled": false,
+							"keywords": [
+								"Neurons and neurotransmitters",
+								"Central nervous system",
+								"Endocrine system",
+								"Brain structures",
+								"Neuroplasticity",
+								"Genetics and behavior"
+							],
+							"constraints": [
+								"Neural communication and major neurotransmitter functions",
+								"Brain regions and associated cognitive/behavioral roles",
+								"Genetic and environmental influences on behavior"
+							],
+							"sourceIds": ["app-unit-descriptions", "app-mcq-generation"]
+						},
+						"frq": {
+							"officiallyAssessed": true,
+							"appEnabled": false,
+							"sourceIds": ["app-frq-profiles", "cb-exam-ap-psychology"],
+							"enabled": false
+						}
+					}
+				}
+			],
+			"alignment": {
+				"status": "aligned",
+				"notes": [
+					"Content areas follow the CED image-set structure; MCQ practice is not enabled in the app yet."
+				],
+				"differences": [],
+				"sourceIds": ["app-ap-classes", "app-practice-pages"]
+			},
+			"sources": [
+				"cb-course-ap-art-history",
+				"cb-exam-ap-art-history",
+				"cb-ced-ap-art-history",
+				"cb-calculator-policy",
+				"cb-reference-information",
+				"app-ap-classes",
+				"app-unit-descriptions",
+				"app-practice-pages"
 			]
 		}
 	]

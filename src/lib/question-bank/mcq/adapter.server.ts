@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { getCourses, getUnitsForCourse } from '#lib/catalog/courses.js';
+import { getCourses, getUnitsForCourse, isMcqPracticeCourse } from '#lib/catalog/courses.js';
 import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
 import { mcqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
@@ -13,13 +13,14 @@ function bucketKey(course: string, unit: string): string {
 }
 
 function listBuckets(): PoolKindBucket[] {
-	return getCourses().flatMap((course) =>
-		getUnitsForCourse(course.name).map((unit) => ({
+	return getCourses().flatMap((course) => {
+		if (!isMcqPracticeCourse(course.name)) return [];
+		return getUnitsForCourse(course.name).map((unit) => ({
 			questionType: 'mcq' as const,
 			course: course.name,
 			unit
-		}))
-	);
+		}));
+	});
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {

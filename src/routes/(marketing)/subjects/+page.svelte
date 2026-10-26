@@ -5,9 +5,9 @@
 	import BackToHome from '#lib/components/layout/back-to-home.svelte';
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import { resolve } from '$app/paths';
-	import { getCoursePracticePages } from '#lib/catalog/practice-pages.js';
+	import { getSubjectsBrowsePracticePages } from '#lib/catalog/practice-pages.js';
 
-	const subjects = getCoursePracticePages();
+	const subjects = getSubjectsBrowsePracticePages();
 
 	onMount(() => {
 		void updated.check().then((isUpdated) => {

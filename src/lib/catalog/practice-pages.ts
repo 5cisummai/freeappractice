@@ -20,11 +20,16 @@ type PracticePageFaqItem = {
 	answer: string;
 };
 
+export type PracticePageLayout = {
+	practiceShell?: 'default' | 'hidden';
+};
+
 export type PracticePage = {
 	slug: string;
 	type: 'course' | 'unit';
 	course: string;
 	unit?: string;
+	layout?: PracticePageLayout;
 	seo: {
 		title: string;
 		description: string;
@@ -104,15 +109,23 @@ const PRACTICE_PAGES = PRACTICE_PAGES_DATA.pages.map((page) => {
 	if (page.unitId && !unit) throw new Error(`Unknown practice page unit: ${page.unitId}`);
 	const pageType: PracticeFaqPageType = page.type === 'unit' ? 'unit' : 'course';
 
+	const faq =
+		page.faq?.map((item) => ({
+			id: `${pageType}-${item.id}`,
+			question: item.question,
+			answer: item.answer
+		})) ?? buildPracticePageFaq(pageType, course.name, unit);
+
 	return {
 		slug: page.id,
 		type: pageType,
 		course: course.name,
 		...(unit ? { unit: unit.label } : {}),
+		...(page.layout ? { layout: page.layout } : {}),
 		seo: page.seo,
 		article: page.article,
 		links: page.links,
-		faq: buildPracticePageFaq(pageType, course.name, unit)
+		faq
 	};
 });
 
@@ -245,10 +258,56 @@ export function getAllPageSlugs(): string[] {
 	return pages.map((page) => page.slug);
 }
 
+/** Rough enrollment / student-interest order for browse pages (not alphabetical). */
+const COURSE_POPULARITY_SLUG_ORDER = [
+	'ap-biology',
+	'ap-us-history',
+	'ap-english-language',
+	'ap-psychology',
+	'ap-world-history',
+	'ap-chemistry',
+	'ap-calculus-ab',
+	'ap-statistics',
+	'ap-physics-1',
+	'ap-environmental-science',
+	'ap-computer-science-principles',
+	'ap-human-geography',
+	'ap-spanish-language',
+	'ap-english-literature',
+	'ap-us-government',
+	'ap-calculus-bc',
+	'ap-computer-science-a',
+	'ap-macroeconomics',
+	'ap-microeconomics',
+	'ap-european-history',
+	'ap-art-history',
+	'ap-physics-c-mechanics',
+	'ap-physics-2',
+	'ap-physics-c-em',
+	'ap-precalculus',
+	'ap-comparative-government'
+] as const;
+
+const coursePopularityRank = new Map<string, number>(
+	COURSE_POPULARITY_SLUG_ORDER.map((slug, index) => [slug, index])
+);
+
+function compareCoursePagesByPopularity(a: PracticePage, b: PracticePage): number {
+	const aRank = coursePopularityRank.get(a.slug) ?? Number.MAX_SAFE_INTEGER;
+	const bRank = coursePopularityRank.get(b.slug) ?? Number.MAX_SAFE_INTEGER;
+	if (aRank !== bRank) return aRank - bRank;
+	return a.course.localeCompare(b.course);
+}
+
 export function getCoursePracticePages(): PracticePage[] {
 	return pages
 		.filter((page) => page.type === 'course')
 		.sort((a, b) => a.course.localeCompare(b.course));
+}
+
+/** Course hubs for the public subjects browse page, ordered by typical AP popularity. */
+export function getSubjectsBrowsePracticePages(): PracticePage[] {
+	return pages.filter((page) => page.type === 'course').sort(compareCoursePagesByPopularity);
 }
 
 export function getSitemapPriority(page: PracticePage): string {
