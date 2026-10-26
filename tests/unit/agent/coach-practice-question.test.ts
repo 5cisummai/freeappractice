@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { getCourseNames, getUnitsForCourse } from '#lib/catalog/courses.js';
 import {
 	buildCoachPracticeQuestionToolOutput,
+	coachPracticeQuestionRequestKey,
 	getCoachPracticeQuestionToolInput,
-	getCoachPracticeQuestionToolOutput
+	getCoachPracticeQuestionToolOutput,
+	isCoachPracticeQuestionPending
 } from '#lib/agent/tools/practice.js';
 import { isAgentToolContinuation, lastAgentUserText } from '#lib/agent/request.js';
 
@@ -11,14 +14,69 @@ describe('coach practice question tool helpers', () => {
 		expect(
 			getCoachPracticeQuestionToolInput({
 				course: 'AP Physics 1',
-				unit: 'Unit 1',
+				unit: 'Unit 1: Kinematics',
 				mode: 'mcq'
 			})
 		).toEqual({
 			course: 'AP Physics 1',
-			unit: 'Unit 1',
+			unit: 'Unit 1: Kinematics',
 			mode: 'mcq'
 		});
+	});
+
+	it('treats only complete tool input as mountable', () => {
+		expect(
+			isCoachPracticeQuestionPending({
+				type: 'tool-give_practice_question',
+				state: 'input-available'
+			})
+		).toBe(true);
+		expect(
+			isCoachPracticeQuestionPending({
+				type: 'tool-give_practice_question',
+				state: 'input-streaming'
+			})
+		).toBe(false);
+		expect(
+			isCoachPracticeQuestionPending({
+				type: 'tool-give_practice_question',
+				state: 'output-available'
+			})
+		).toBe(false);
+	});
+
+	it('keeps the fetch key stable across object identity changes', () => {
+		const first = getCoachPracticeQuestionToolInput({
+			course: 'AP Human Geography',
+			unit: 'Unit 2: Population and Migration Patterns and Processes',
+			mode: 'mcq'
+		});
+		const second = getCoachPracticeQuestionToolInput({
+			course: 'AP Human Geography',
+			unit: 'Unit 2: Population and Migration Patterns and Processes',
+			mode: 'mcq'
+		});
+
+		expect(first).not.toBe(second);
+		expect(coachPracticeQuestionRequestKey(first)).toBe(coachPracticeQuestionRequestKey(second));
+		expect(coachPracticeQuestionRequestKey(first)).not.toBe(
+			coachPracticeQuestionRequestKey({
+				...first!,
+				unit: 'Unit 3: Cultural Patterns and Processes'
+			})
+		);
+	});
+
+	it('can uniquely map catalog unit titles after stripping a Unit N prefix', () => {
+		const prefix = /^(?:Unit|Big Idea) \d+:\s+/;
+		for (const course of getCourseNames()) {
+			const titles = new Map<string, string>();
+			for (const unit of getUnitsForCourse(course)) {
+				const title = unit.replace(prefix, '');
+				expect(titles.has(title)).toBe(false);
+				titles.set(title, unit);
+			}
+		}
 	});
 
 	it('builds answered MCQ tool output without the correct answer', () => {

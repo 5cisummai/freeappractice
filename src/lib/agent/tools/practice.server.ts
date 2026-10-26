@@ -1,4 +1,9 @@
 import { and, desc, eq } from 'drizzle-orm';
+import {
+	getAllowedCourses,
+	getUnitsForCourse,
+	resolveEffectiveUnit
+} from '#lib/catalog/courses.js';
 import { getFrqCourseProfile } from '#lib/question-bank/frq/profiles.server.js';
 import { resolveFrqPoolRequest } from '#lib/question-bank/frq/practice.js';
 import { mcqBank } from '#lib/question-bank/mcq/bank.server.js';
@@ -7,8 +12,49 @@ import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqAttempts, mcqAttempts } from '#lib/server/neon/schema.js';
 import {
 	buildCoachPracticeHref,
-	type CoachPracticeQuestionOutput
+	type CoachPracticeQuestionOutput,
+	type CoachPracticeQuestionToolInput
 } from '#lib/agent/tools/practice.js';
+
+const UNIT_TITLE_PREFIX = /^(?:Unit|Big Idea) \d+:\s+/;
+const ALL_UNITS_LABEL = 'All Units';
+
+export function resolveCoachPracticeQuestionCatalog(
+	input: CoachPracticeQuestionToolInput
+): { ok: true; course: string; unit: string; mode: 'mcq' | 'frq' } | { ok: false; error: string } {
+	const course = input.course.trim();
+	const mode = input.mode ?? 'mcq';
+	if (!getAllowedCourses().has(course)) {
+		return {
+			ok: false,
+			error: `"${course}" is not a supported AP course. Use the exact catalog course name.`
+		};
+	}
+
+	const units = getUnitsForCourse(course);
+	const requested = input.unit?.trim() ?? '';
+	if (!requested || requested === ALL_UNITS_LABEL) {
+		const unit = resolveEffectiveUnit(course, '');
+		if (!unit) {
+			return { ok: false, error: `No units are available for ${course}.` };
+		}
+		return { ok: true, course, unit, mode };
+	}
+
+	if (units.includes(requested)) {
+		return { ok: true, course, unit: requested, mode };
+	}
+
+	const mapped = units.filter((label) => label.replace(UNIT_TITLE_PREFIX, '') === requested);
+	if (mapped.length === 1) {
+		return { ok: true, course, unit: mapped[0]!, mode };
+	}
+
+	return {
+		ok: false,
+		error: `"${requested}" is not a unit in ${course}. Use the full catalog title, including the "Unit N:" prefix.`
+	};
+}
 
 const MAX_EXCLUDED_QUESTION_IDS = 50;
 
@@ -83,9 +129,16 @@ export async function giveCoachPracticeQuestion(
 		mode?: 'mcq' | 'frq';
 	}
 ): Promise<CoachPracticeQuestionOutput | { error: string; retryAfterSeconds?: number }> {
-	const mode = input.mode ?? 'mcq';
-	const course = input.course.trim();
-	const unit = input.unit?.trim() ?? '';
+	const resolved = resolveCoachPracticeQuestionCatalog({
+		course: input.course,
+		unit: input.unit,
+		mode: input.mode ?? 'mcq'
+	});
+	if (!resolved.ok) {
+		return { error: resolved.error };
+	}
+
+	const { course, unit, mode } = resolved;
 	const excludeQuestionIds = await getRecentQuestionIds(userId, course, mode);
 
 	if (mode === 'frq') {
