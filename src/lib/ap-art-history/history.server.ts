@@ -12,7 +12,9 @@ export type ApArtHistoryApiHistoryInput = {
 	durationMs: number;
 };
 
-export async function recordApArtHistoryApiRequest(input: ApArtHistoryApiHistoryInput): Promise<void> {
+export async function recordApArtHistoryApiRequest(
+	input: ApArtHistoryApiHistoryInput
+): Promise<void> {
 	const db = getNeonDatabase();
 	const at = new Date();
 	await db.insert(apArtHistoryApiHistory).values({

@@ -177,7 +177,8 @@ function descriptionForCourse(name: string): string {
 	if (course.includes('computer science'))
 		return 'Programming, algorithms, and computing concepts.';
 	if (course.includes('english')) return 'Reading, writing, and critical analysis.';
-	if (course.includes('art history')) return 'Visual analysis across cultures, periods, and the required 250 works.';
+	if (course.includes('art history'))
+		return 'Visual analysis across cultures, periods, and the required 250 works.';
 	if (course.includes('history')) return 'Historical thinking across eras and regions.';
 	if (course.includes('government')) return 'Political systems, institutions, and policy.';
 	if (course.includes('psychology')) return 'Behavior, cognition, and research methods.';

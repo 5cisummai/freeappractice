@@ -25,10 +25,7 @@ export class ApArtHistoryRequestError extends Error {
 	}
 }
 
-async function parseJsonResponse<T>(
-	response: Response,
-	fallbackError: string
-): Promise<T> {
+async function parseJsonResponse<T>(response: Response, fallbackError: string): Promise<T> {
 	const payload = await readJsonOrNull<T & { error?: string }>(response);
 	if (!response.ok || !payload) {
 		throw new ApArtHistoryRequestError(
@@ -72,9 +69,7 @@ export async function fetchApArtHistoryWorks(
 	return parseJsonResponse<ApArtHistoryWorkListResponse>(response, 'Failed to load works.');
 }
 
-export async function fetchApArtHistoryWorkByNumber(
-	number: number
-): Promise<ApArtHistoryWorkRow> {
+export async function fetchApArtHistoryWorkByNumber(number: number): Promise<ApArtHistoryWorkRow> {
 	const response = await apiFetch(`/api/ap-art-history/image-set/${number}`);
 	return parseJsonResponse<ApArtHistoryWorkRow>(response, 'Failed to load work.');
 }

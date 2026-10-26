@@ -86,7 +86,9 @@ export function parseApArtHistoryCsv(text: string): ApArtHistoryWorkRow[] {
 	for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
 		const fields = parseCsvLine(lines[lineIndex]);
 		if (fields.length !== CSV_HEADERS.length) {
-			throw new Error(`Row ${lineIndex + 1}: expected ${CSV_HEADERS.length} fields, got ${fields.length}`);
+			throw new Error(
+				`Row ${lineIndex + 1}: expected ${CSV_HEADERS.length} fields, got ${fields.length}`
+			);
 		}
 		const number = parseInt(fields[0], 10);
 		const imageCount = parseInt(fields[11], 10);

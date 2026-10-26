@@ -4,10 +4,7 @@ import { recordApArtHistoryApiRequestBestEffort } from '#lib/ap-art-history/hist
 export const AP_ART_HISTORY_CACHE_CONTROL =
 	'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
 
-export function jsonWithApArtHistoryCache(
-	body: unknown,
-	init?: { status?: number }
-): Response {
+export function jsonWithApArtHistoryCache(body: unknown, init?: { status?: number }): Response {
 	return Response.json(body, {
 		status: init?.status ?? 200,
 		headers: { 'Cache-Control': AP_ART_HISTORY_CACHE_CONTROL }

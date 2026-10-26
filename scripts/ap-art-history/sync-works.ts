@@ -7,10 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { syncApArtHistoryWorksFromCsvText } from '../../src/lib/ap-art-history/sync-works.server.ts';
 
-const defaultCsvPath = resolve(
-	process.cwd(),
-	'docs/research/ap-art-history-250-image-set.csv'
-);
+const defaultCsvPath = resolve(process.cwd(), 'docs/research/ap-art-history-250-image-set.csv');
 
 async function main() {
 	const csvPath = process.argv[2]?.trim() || defaultCsvPath;

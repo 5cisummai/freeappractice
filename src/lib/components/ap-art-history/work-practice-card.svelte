@@ -89,7 +89,9 @@
 						/>
 					{/if}
 				{/key}
-				<figcaption class="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+				<figcaption
+					class="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground"
+				>
 					<span>College Board official image set</span>
 					<a
 						href={core.work.collegeBoardSource}

@@ -1,3 +1,4 @@
+import { SvelteSet } from 'svelte/reactivity';
 import {
 	fetchApArtHistoryWorkByNumber,
 	fetchApArtHistoryWorks,
@@ -75,12 +76,12 @@ export function createWorkPracticeCore(opts: WorkPracticeCoreOpts) {
 
 		try {
 			const list = await fetchApArtHistoryWorks({ contentArea, limit: 250, page: 1 });
-			const exclude = new Set(seenWorkNumbers);
+			const exclude = new SvelteSet(seenWorkNumbers);
 			let next = pickRandomWork(list.items, exclude);
 
 			if (!next && list.total > 0) {
 				const full = await fetchApArtHistoryWorks({ contentArea, limit: 250, page: 1 });
-				next = pickRandomWork(full.items, new Set());
+				next = pickRandomWork(full.items, new SvelteSet<number>());
 			}
 
 			if (!next) {
