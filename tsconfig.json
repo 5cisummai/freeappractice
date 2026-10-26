@@ -17,5 +17,6 @@
 		"scripts/**/*.js",
 		"scripts/**/*.ts",
 		"scripts/**/*.svelte"
-	]
+	],
+	"exclude": ["node_modules", ".svelte-kit", "dist", "build"]
 }

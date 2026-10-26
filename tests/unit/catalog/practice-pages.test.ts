@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { getFocusedPracticeHref } from '#lib/catalog/practice-pages.js';
+import {
+	getCoursePracticePages,
+	getFocusedPracticeHref,
+	getSubjectsBrowsePracticePages
+} from '#lib/catalog/practice-pages.js';
+
+describe('getSubjectsBrowsePracticePages', () => {
+	it('includes every course hub and leads with high-enrollment subjects', () => {
+		const alpha = getCoursePracticePages().map((page) => page.slug);
+		const popular = getSubjectsBrowsePracticePages().map((page) => page.slug);
+		expect(popular).toHaveLength(alpha.length);
+		expect(new Set(popular)).toEqual(new Set(alpha));
+		expect(popular.slice(0, 6)).toEqual([
+			'ap-biology',
+			'ap-us-history',
+			'ap-english-language',
+			'ap-psychology',
+			'ap-world-history',
+			'ap-chemistry'
+		]);
+	});
+});
 
 describe('getFocusedPracticeHref', () => {
 	it('uses the canonical class practice page when no unit is selected', () => {

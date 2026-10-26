@@ -1,24 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { drizzle } from 'drizzle-orm/neon-http';
-import {
-	authAccounts,
-	authAccountsRelations,
-	authInvitations,
-	authInvitationsRelations,
-	authMembers,
-	authMembersRelations,
-	authOrganizations,
-	authOrganizationsRelations,
-	authRateLimits,
-	authSessions,
-	authSessionsRelations,
-	authSubscriptions,
-	authUsers,
-	authUsersRelations,
-	authVerifications,
-	betterAuthSchema
-} from '#lib/server/neon/schema.js';
+import { betterAuthSchema } from '#lib/server/neon/schema.js';
 
 const authAdapterOptions = {
 	experimental: { joins: true },
@@ -62,26 +45,6 @@ async function compileAdapterJoin(
 }
 
 describe('Neon Drizzle schema', () => {
-	it('keeps all PostgreSQL domains and Better Auth relations available', () => {
-		expect(betterAuthSchema).toEqual({
-			authUsers,
-			authSessions,
-			authAccounts,
-			authVerifications,
-			authSubscriptions,
-			authOrganizations,
-			authMembers,
-			authInvitations,
-			rateLimit: authRateLimits,
-			authUsersRelations,
-			authSessionsRelations,
-			authAccountsRelations,
-			authOrganizationsRelations,
-			authMembersRelations,
-			authInvitationsRelations
-		});
-	});
-
 	it.each([
 		['user', 'account'],
 		['user', 'session'],

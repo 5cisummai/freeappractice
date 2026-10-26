@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { poolGenerationBudgets, poolRefillStates } from '#lib/server/neon/schema.js';
 import type { PoolRefillState as PoolRefillStateRow } from '#lib/question-bank/pool-refill-types.server.js';
@@ -35,7 +35,61 @@ export type RefillRunSummary = {
 
 const MAX_ATTEMPTS = 8;
 const MAX_CONCURRENT_REFILL_JOBS = 40;
-const MAX_CLAIM_ATTEMPTS = 32;
+
+type ClaimedRefillJobRow = {
+	id: string;
+	questionType: PoolRefillStateRow['questionType'];
+	course: string;
+	unit: string;
+	status: PoolRefillStateRow['status'];
+	target: number;
+	observedCount: number;
+	requestedAt: Date | string;
+	leaseOwner: string | null;
+	leaseExpiresAt: Date | string | null;
+	attempts: number;
+	generatedCount: number;
+	lastError: string | null;
+	nextAttemptAt: Date | string | null;
+	lastSuccessAt: Date | string | null;
+	createdAt: Date | string;
+	updatedAt: Date | string;
+};
+
+function asClaimedRefillJob(row: ClaimedRefillJobRow): PoolRefillStateRow {
+	return {
+		id: row.id,
+		questionType: row.questionType,
+		course: row.course,
+		unit: row.unit,
+		status: row.status,
+		target: Number(row.target),
+		observedCount: Number(row.observedCount),
+		requestedAt: new Date(row.requestedAt),
+		leaseOwner: row.leaseOwner,
+		leaseExpiresAt: row.leaseExpiresAt ? new Date(row.leaseExpiresAt) : null,
+		attempts: Number(row.attempts),
+		generatedCount: Number(row.generatedCount),
+		lastError: row.lastError,
+		nextAttemptAt: row.nextAttemptAt ? new Date(row.nextAttemptAt) : null,
+		lastSuccessAt: row.lastSuccessAt ? new Date(row.lastSuccessAt) : null,
+		createdAt: new Date(row.createdAt),
+		updatedAt: new Date(row.updatedAt)
+	};
+}
+
+function claimableRefillSql(now: Date, questionType?: PoolBucketKey['questionType']) {
+	return sql`
+		${questionType ? sql`${poolRefillStates.questionType} = ${questionType}` : sql`true`}
+		AND ${poolRefillStates.status} IN ('pending', 'failed', 'budget_exhausted', 'running')
+		AND (${poolRefillStates.nextAttemptAt} IS NULL OR ${poolRefillStates.nextAttemptAt} <= ${now})
+		AND (
+			${poolRefillStates.status} <> 'running'
+			OR ${poolRefillStates.leaseExpiresAt} IS NULL
+			OR ${poolRefillStates.leaseExpiresAt} <= ${now}
+		)
+	`;
+}
 
 async function captureRefillHealth(summary: RefillRunSummary): Promise<void> {
 	const now = Date.now();
@@ -306,65 +360,84 @@ async function generateOne(
 	};
 }
 
-async function claimNextRefillJob(
+/**
+ * Claim up to `limit` due refill jobs in one statement.
+ * Sequential SELECT … LIMIT 1 + lease UPDATE loops trip Sentry's N+1 detector
+ * once Neon HTTP queries are traced as `db` spans.
+ */
+async function claimNextRefillJobs(
 	questionType: PoolBucketKey['questionType'] | undefined,
 	owner: string,
-	env: QuestionPoolConfig
-): Promise<{ kind: 'none' | 'invalid' | 'claimed'; lease?: PoolRefillStateRow }> {
-	for (let attempt = 0; attempt < MAX_CLAIM_ATTEMPTS; attempt += 1) {
-		const now = new Date();
-		const candidateRows = await getNeonDatabase()
-			.select()
-			.from(poolRefillStates)
-			.where(
-				and(
-					questionType ? eq(poolRefillStates.questionType, questionType) : sql`true`,
-					or(
-						eq(poolRefillStates.status, 'pending'),
-						eq(poolRefillStates.status, 'failed'),
-						eq(poolRefillStates.status, 'budget_exhausted'),
-						eq(poolRefillStates.status, 'running')
-					),
-					or(isNull(poolRefillStates.nextAttemptAt), lte(poolRefillStates.nextAttemptAt, now)),
-					or(
-						ne(poolRefillStates.status, 'running'),
-						isNull(poolRefillStates.leaseExpiresAt),
-						lte(poolRefillStates.leaseExpiresAt, now)
-					)
-				)
-			)
-			.orderBy(asc(poolRefillStates.requestedAt))
-			.limit(1);
-		const candidate = candidateRows[0] as PoolRefillStateRow | undefined;
+	env: QuestionPoolConfig,
+	limit: number
+): Promise<PoolRefillStateRow[]> {
+	if (limit <= 0) return [];
+	const now = new Date();
+	const leaseExpiresAt = new Date(now.getTime() + env.leaseTtlMs);
+	const result = await getNeonDatabase().execute<ClaimedRefillJobRow>(sql`
+		WITH picked AS MATERIALIZED (
+			SELECT ${poolRefillStates.id}
+			FROM ${poolRefillStates}
+			WHERE ${claimableRefillSql(now, questionType)}
+			ORDER BY ${poolRefillStates.requestedAt} ASC
+			LIMIT ${limit}
+			FOR UPDATE SKIP LOCKED
+		)
+		UPDATE ${poolRefillStates} AS target
+		SET
+			status = 'running',
+			lease_owner = ${owner},
+			lease_expires_at = ${leaseExpiresAt},
+			last_error = NULL,
+			attempts = target.attempts + 1,
+			updated_at = ${now}
+		FROM picked
+		WHERE target.id = picked.id
+		RETURNING
+			target.id,
+			target.question_type AS "questionType",
+			target.course,
+			target.unit,
+			target.status,
+			target.target,
+			target.observed_count AS "observedCount",
+			target.requested_at AS "requestedAt",
+			target.lease_owner AS "leaseOwner",
+			target.lease_expires_at AS "leaseExpiresAt",
+			target.attempts,
+			target.generated_count AS "generatedCount",
+			target.last_error AS "lastError",
+			target.next_attempt_at AS "nextAttemptAt",
+			target.last_success_at AS "lastSuccessAt",
+			target.created_at AS "createdAt",
+			target.updated_at AS "updatedAt"
+	`);
+	return result.rows.map(asClaimedRefillJob);
+}
 
-		if (!candidate) return { kind: 'none' };
-
-		if (!isValidPoolBucket(candidate)) {
-			await getNeonDatabase()
-				.update(poolRefillStates)
-				.set({
-					status: 'idle',
-					leaseOwner: null,
-					leaseExpiresAt: null,
-					nextAttemptAt: null,
-					lastError: 'Cancelled invalid catalog pool bucket',
-					updatedAt: new Date()
-				})
-				.where(eq(poolRefillStates.id, candidate.id));
-			return { kind: 'invalid' };
-		}
-
-		const leased = await tryAcquireRefillLease(
-			{
-				questionType: candidate.questionType,
-				course: candidate.course,
-				unit: candidate.unit
-			},
-			{ owner, leaseTtlMs: env.leaseTtlMs }
-		);
-		if (leased) return { kind: 'claimed', lease: leased };
+async function idleInvalidRefillJobs(
+	rows: PoolRefillStateRow[]
+): Promise<{ valid: PoolRefillStateRow[]; invalidCount: number }> {
+	const valid: PoolRefillStateRow[] = [];
+	const invalidIds: string[] = [];
+	for (const row of rows) {
+		if (isValidPoolBucket(row)) valid.push(row);
+		else invalidIds.push(row.id);
 	}
-	return { kind: 'none' };
+	if (invalidIds.length > 0) {
+		await getNeonDatabase()
+			.update(poolRefillStates)
+			.set({
+				status: 'idle',
+				leaseOwner: null,
+				leaseExpiresAt: null,
+				nextAttemptAt: null,
+				lastError: 'Cancelled invalid catalog pool bucket',
+				updatedAt: new Date()
+			})
+			.where(inArray(poolRefillStates.id, invalidIds));
+	}
+	return { valid, invalidCount: invalidIds.length };
 }
 
 export async function processRefillJob(
@@ -536,22 +609,20 @@ export async function runQuestionPoolRefillWorker(
 	// The daily budget is the generation limit. The worker's deadline below remains
 	// the serverless safety boundary for a single invocation.
 	while (budgetRemaining > 0 && Date.now() < deadlineMs) {
-		const jobs: PoolRefillStateRow[] = [];
-		let noWork = false;
-		while (jobs.length < MAX_CONCURRENT_REFILL_JOBS) {
-			const claimed = await claimNextRefillJob(opts?.questionType, owner, env);
-			if (claimed.kind === 'none') {
-				noWork = true;
-				break;
-			}
-			processed += 1;
-			if (claimed.kind === 'claimed' && claimed.lease) jobs.push(claimed.lease);
-		}
-
-		if (!jobs.length) {
-			if (noWork) stoppedReason = processed > 0 ? 'complete' : 'no_work';
+		const claimedRows = await claimNextRefillJobs(
+			opts?.questionType,
+			owner,
+			env,
+			MAX_CONCURRENT_REFILL_JOBS
+		);
+		if (!claimedRows.length) {
+			stoppedReason = processed > 0 ? 'complete' : 'no_work';
 			break;
 		}
+
+		const { valid: jobs, invalidCount } = await idleInvalidRefillJobs(claimedRows);
+		processed += jobs.length + invalidCount;
+		if (!jobs.length) continue;
 
 		const results = await Promise.allSettled(
 			jobs.map((job) =>

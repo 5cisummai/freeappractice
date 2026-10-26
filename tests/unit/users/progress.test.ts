@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-	buildProgressData,
-	findOrCreateProgressEntry,
-	mergeFrqProgress
-} from '#lib/users/progress.server.js';
+import { findOrCreateProgressEntry, mergeFrqProgress } from '#lib/users/progress.server.js';
 import type { IProgress } from '#lib/users/records.server.js';
-import type { IUserProfile } from '#lib/users/model.server.js';
 
 describe('findOrCreateProgressEntry', () => {
 	it('returns an existing entry for the same class and unit', () => {
@@ -37,36 +32,6 @@ describe('findOrCreateProgressEntry', () => {
 			totalAttempts: 0,
 			correctAttempts: 0
 		});
-	});
-});
-
-describe('buildProgressData', () => {
-	it('maps profile progress into API entries', () => {
-		const lastAttemptAt = new Date('2026-07-01T00:00:00.000Z');
-		const user = {
-			progress: [
-				{
-					course: 'AP Biology',
-					unit: 'Unit 1',
-					completed: false,
-					mastery: 50,
-					totalAttempts: 4,
-					correctAttempts: 2,
-					lastAttemptAt
-				}
-			]
-		} as IUserProfile;
-
-		expect(buildProgressData(user)).toEqual([
-			{
-				course: 'AP Biology',
-				unit: 'Unit 1',
-				totalAttempts: 4,
-				correctAttempts: 2,
-				mastery: 50,
-				lastAttemptAt: lastAttemptAt.toISOString()
-			}
-		]);
 	});
 });
 

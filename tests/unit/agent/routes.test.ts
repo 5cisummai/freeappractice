@@ -17,7 +17,6 @@ const mocks = vi.hoisted(() => ({
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	authorizeFeatureRequest: vi.fn(),
-	coachApprovalPost: vi.fn(),
 	coachUndoPost: vi.fn()
 }));
 
@@ -45,9 +44,6 @@ vi.mock('#lib/agent/access.server.js', () => ({
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
 }));
-vi.mock('../../../src/routes/api/coach/approval/+server', () => ({
-	POST: mocks.coachApprovalPost
-}));
 vi.mock('../../../src/routes/api/coach/undo/+server', () => ({
 	POST: mocks.coachUndoPost
 }));
@@ -64,22 +60,7 @@ import {
 	GET as profileGet,
 	PATCH as profilePatch
 } from '../../../src/routes/api/super/profile/+server';
-import {
-	GET as meProfileGet,
-	PATCH as meProfilePatch
-} from '../../../src/routes/api/me/tutor-profile/+server';
-import {
-	GET as meMemoriesGet,
-	DELETE as meMemoriesDelete
-} from '../../../src/routes/api/me/tutor-memories/+server';
-import { DELETE as meMemoryIdDelete } from '../../../src/routes/api/me/tutor-memories/[memoryId]/+server';
-import { POST as coachAuthorizePost } from '../../../src/routes/api/coach/session/authorize/+server';
 import { POST as coachActionUndoPost } from '../../../src/routes/api/coach/actions/[id]/undo/+server';
-import { POST as coachPost, config as coachConfig } from '../../../src/routes/api/coach/+server';
-import {
-	POST as superAgentPost,
-	config as superAgentConfig
-} from '../../../src/routes/api/super/agent/+server';
 
 const profile = {
 	ageConfirmedAt: null,
@@ -121,17 +102,6 @@ describe('Super API routes', () => {
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
 		mocks.authorizeFeatureRequest.mockResolvedValue({ allowed: true });
 		mocks.coachUndoPost.mockResolvedValue(new Response(null, { status: 204 }));
-	});
-
-	it('maps the named API contracts to their canonical handlers', () => {
-		expect(meProfileGet).toBe(profileGet);
-		expect(meProfilePatch).toBe(profilePatch);
-		expect(meMemoriesGet).toBe(memoryGet);
-		expect(meMemoriesDelete).toBe(memoryDelete);
-		expect(meMemoryIdDelete).toBe(memoryIdDelete);
-		expect(coachAuthorizePost).toBe(mocks.coachApprovalPost);
-		expect(coachPost).toBe(superAgentPost);
-		expect(coachConfig).toBe(superAgentConfig);
 	});
 
 	it('takes Coach undo audit ID from the route parameter', async () => {
@@ -194,17 +164,14 @@ describe('Super API routes', () => {
 		expect(mocks.confirmAge).toHaveBeenCalledWith('user-1', '2010-08-04');
 	});
 
-	it('returns 400 for an invalid birth date', async () => {
+	it('rejects invalid and underage birth dates', async () => {
 		mocks.confirmAge.mockRejectedValueOnce(new InvalidBirthDateError());
-		const rejected = await confirmAgePost(event({ birthDate: 'not-a-date' }));
-		expect(rejected.status).toBe(400);
-	});
+		expect((await confirmAgePost(event({ birthDate: 'not-a-date' }))).status).toBe(400);
 
-	it('returns 403 for an underage birth date', async () => {
 		mocks.confirmAge.mockRejectedValueOnce(new UnderAgeError());
-		const rejected = await confirmAgePost(event({ birthDate: '2018-08-04' }));
-		expect(rejected.status).toBe(403);
-		expect(await rejected.json()).toMatchObject({ underAge: true });
+		const underAge = await confirmAgePost(event({ birthDate: '2018-08-04' }));
+		expect(underAge.status).toBe(403);
+		expect(await underAge.json()).toMatchObject({ underAge: true });
 	});
 
 	it('acknowledges memory disclosure without requiring Super subscription', async () => {

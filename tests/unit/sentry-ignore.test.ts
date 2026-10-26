@@ -7,15 +7,12 @@ import {
 } from '#lib/sentry-ignore.js';
 
 describe('isIgnoredSentryError', () => {
-	it('drops iOS WebView webkit messageHandlers noise', () => {
+	it('drops iOS WebView webkit messageHandlers noise in Error and string forms', () => {
 		expect(
 			isIgnoredSentryError(
 				new TypeError("undefined is not an object (evaluating 'window.webkit.messageHandlers')")
 			)
 		).toBe(true);
-	});
-
-	it('drops the same noise when Sentry prefixes the type', () => {
 		expect(
 			isIgnoredSentryError(
 				"TypeError: undefined is not an object (evaluating 'window.webkit.messageHandlers')"
@@ -23,13 +20,10 @@ describe('isIgnoredSentryError', () => {
 		).toBe(true);
 	});
 
-	it('keeps first-party TypeErrors', () => {
+	it('keeps first-party and non-error values', () => {
 		expect(
 			isIgnoredSentryError(new TypeError("Cannot read properties of undefined (reading 'foo')"))
 		).toBe(false);
-	});
-
-	it('keeps empty and non-error values', () => {
 		expect(isIgnoredSentryError(undefined)).toBe(false);
 		expect(isIgnoredSentryError({ message: 'not an error' })).toBe(false);
 	});

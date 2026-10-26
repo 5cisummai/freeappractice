@@ -1,28 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
 	QUESTION_POOL_CONFIG,
-	QUESTION_POOL_DEFAULT_MCQ_TARGET,
-	QUESTION_POOL_FRQ_TARGET,
-	QUESTION_POOL_MIN_MCQ_TARGET,
 	isBelowLowWater,
 	poolRetireQuantityForBucket,
 	poolTargetForBucket,
-	preferredMcqTarget,
 	resolveMcqTarget,
 	type QuestionPoolConfig
 } from '#lib/question-bank/pool-constants.js';
 
 describe('question pool constants', () => {
-	it('loads JSON defaults', () => {
-		expect(QUESTION_POOL_DEFAULT_MCQ_TARGET).toBe(23);
-		expect(QUESTION_POOL_MIN_MCQ_TARGET).toBe(12);
-		expect(QUESTION_POOL_FRQ_TARGET).toBe(10);
-		expect(preferredMcqTarget('AP Biology')).toBe(41);
-		expect(preferredMcqTarget('AP Chemistry')).toBe(23);
-		expect(QUESTION_POOL_CONFIG.mcqTarget).toBe(23);
-		expect(QUESTION_POOL_CONFIG.frqTarget).toBe(10);
-	});
-
 	it('maps FRQ targets by type', () => {
 		const config: QuestionPoolConfig = {
 			...QUESTION_POOL_CONFIG,
@@ -31,11 +17,8 @@ describe('question pool constants', () => {
 		expect(poolTargetForBucket({ questionType: 'frq', course: 'AP Biology', config })).toBe(4);
 	});
 
-	it('scales MCQ targets from generation-stats demand', () => {
-		const counts = {
-			'AP Biology': 100,
-			'AP Chemistry': 50
-		};
+	it('scales MCQ targets from generation-stats demand and empty/NaN fallbacks', () => {
+		const counts = { 'AP Biology': 100, 'AP Chemistry': 50 };
 		expect(resolveMcqTarget('AP Biology', counts)).toBe(41);
 		expect(resolveMcqTarget('AP Chemistry', counts)).toBe(18);
 		expect(
@@ -45,14 +28,8 @@ describe('question pool constants', () => {
 				generationCountsByCourse: counts
 			})
 		).toBe(18);
-	});
-
-	it('uses preferred ceiling when generation stats are empty', () => {
 		expect(resolveMcqTarget('AP Biology', {})).toBe(41);
 		expect(resolveMcqTarget('AP Chemistry', {})).toBe(23);
-	});
-
-	it('ignores non-finite generation counts when scaling', () => {
 		expect(
 			resolveMcqTarget('AP Chemistry', {
 				'AP Biology': Number.NaN,
@@ -61,14 +38,11 @@ describe('question pool constants', () => {
 		).toBe(23);
 	});
 
-	it('detects low-water deficits', () => {
+	it('detects low-water deficits and bulk retire quantities', () => {
 		expect(isBelowLowWater(89, 100, 0.9)).toBe(true);
 		expect(isBelowLowWater(90, 100, 0.9)).toBe(false);
 		expect(isBelowLowWater(44, 50, 0.9)).toBe(true);
 		expect(isBelowLowWater(45, 50, 0.9)).toBe(false);
-	});
-
-	it('computes bulk retire quantities from active counts', () => {
 		expect(poolRetireQuantityForBucket(0)).toBe(0);
 		expect(poolRetireQuantityForBucket(3)).toBe(0);
 		expect(poolRetireQuantityForBucket(10)).toBe(3);

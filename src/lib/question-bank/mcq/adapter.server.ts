@@ -1,6 +1,7 @@
-import { eq, sql } from 'drizzle-orm';
-import { getCourses, getUnitsForCourse } from '#lib/catalog/courses.js';
+import { and, eq, sql } from 'drizzle-orm';
+import { getCourses, getUnitsForCourse, isMcqPracticeCourse } from '#lib/catalog/courses.js';
 import { countActiveMcqQuestions } from '#lib/question-bank/mcq/repository.server.js';
+import { mcqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { mcqQuestions } from '#lib/server/neon/schema.js';
 import { questionBucketFields } from '#lib/server/neon/jsonb.js';
@@ -12,13 +13,14 @@ function bucketKey(course: string, unit: string): string {
 }
 
 function listBuckets(): PoolKindBucket[] {
-	return getCourses().flatMap((course) =>
-		getUnitsForCourse(course.name).map((unit) => ({
+	return getCourses().flatMap((course) => {
+		if (!isMcqPracticeCourse(course.name)) return [];
+		return getUnitsForCourse(course.name).map((unit) => ({
 			questionType: 'mcq' as const,
 			course: course.name,
 			unit
-		}))
-	);
+		}));
+	});
 }
 
 async function countActiveByBucket(): Promise<Map<string, number>> {
@@ -30,7 +32,7 @@ async function countActiveByBucket(): Promise<Map<string, number>> {
 			count: sql<number>`count(*)`
 		})
 		.from(mcqQuestions)
-		.where(eq(mcqQuestions.active, true))
+		.where(and(eq(mcqQuestions.active, true), mcqServableQualityPredicate()))
 		.groupBy(course, unit);
 	return new Map(rows.map((row) => [bucketKey(row.course, row.unit), Number(row.count)]));
 }

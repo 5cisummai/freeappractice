@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, inArray, isNotNull, isNull, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import type {
 	AiQualityAssessment,
 	FeedbackSummary,
@@ -154,6 +154,7 @@ export async function updateQuestionQuality(
 		.returning({ questionId: questionQuality.questionId });
 	// Persist the verdict and retire its serving rows atomically, including AI decisions.
 	// Check the persisted verdict so a rejected guarded write cannot retire a good question.
+	// Stimulus/set failures also retire sibling MCQs that share the same stimulusId.
 	const badQuestionIds = db
 		.select({ questionId: questionQuality.questionId })
 		.from(questionQuality)
@@ -168,7 +169,28 @@ export async function updateQuestionQuality(
 						db
 							.update(mcqQuestions)
 							.set({ active: false })
-							.where(inArray(mcqQuestions.questionId, badQuestionIds)),
+							.where(
+								sql`${mcqQuestions.questionId} in (
+									select q.question_id
+									from content.question_quality q
+									where q.question_id = ${questionId}
+									  and q.final_verdict = 'bad'
+									union
+									select sibling.question_id
+									from content.mcq_questions target
+									join content.question_quality q
+									  on q.question_id = target.question_id
+									join content.mcq_questions sibling
+									  on sibling.data->>'stimulusId' = target.data->>'stimulusId'
+									 and nullif(btrim(target.data->>'stimulusId'), '') is not null
+									where target.question_id = ${questionId}
+									  and q.final_verdict = 'bad'
+									  and coalesce(
+										q.ai_assessment->>'failure_scope',
+										q.ai_assessment->>'failureScope'
+									  ) in ('stimulus', 'set')
+								)`
+							),
 						db
 							.update(frqQuestions)
 							.set({ active: false })

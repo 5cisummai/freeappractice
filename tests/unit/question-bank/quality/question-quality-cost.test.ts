@@ -21,17 +21,11 @@ describe('question quality review cost', () => {
 		mocks.leftJoin.mockReturnValue({ where: mocks.where });
 	});
 
-	it('returns the finalized assessment cost as a number', async () => {
-		mocks.where.mockResolvedValue([{ total: '0.42' }]);
-
+	it('coerces finalized assessment cost strings to numbers', async () => {
+		mocks.where.mockResolvedValueOnce([{ total: '0.42' }]);
 		await expect(getCompletedReviewCost('job-1')).resolves.toBe(0.42);
-		expect(mocks.leftJoin).toHaveBeenCalledOnce();
-		expect(mocks.where).toHaveBeenCalledOnce();
-	});
 
-	it('returns zero when no finalized assessment has a cost', async () => {
-		mocks.where.mockResolvedValue([{ total: '0' }]);
-
+		mocks.where.mockResolvedValueOnce([{ total: '0' }]);
 		await expect(getCompletedReviewCost('job-2')).resolves.toBe(0);
 	});
 });

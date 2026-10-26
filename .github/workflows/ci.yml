@@ -95,6 +95,10 @@ jobs:
       - name: Apply database migrations
         run: bun run db:apply
 
+      # From here, add any backfill scripts that need to run on prod.
+      - name: Sync AP Art History image set
+        run: bun run db:sync-ap-art-history
+
   build:
     name: Build
     runs-on: ubuntu-latest

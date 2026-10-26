@@ -1,7 +1,8 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { frqBucketUnits, frqPracticeFor } from '#lib/question-bank/frq/practice.js';
 import { countActiveFrqQuestions } from '#lib/question-bank/frq/model.server.js';
 import { getFrqCourseNames } from '#lib/question-bank/frq/profiles.server.js';
+import { frqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqQuestions } from '#lib/server/neon/schema.js';
 import { questionBucketFields } from '#lib/server/neon/jsonb.js';
@@ -29,7 +30,7 @@ async function countActiveByBucket(): Promise<Map<string, number>> {
 			count: sql<number>`count(*)`
 		})
 		.from(frqQuestions)
-		.where(eq(frqQuestions.active, true))
+		.where(and(eq(frqQuestions.active, true), frqServableQualityPredicate()))
 		.groupBy(course, unit, formatId);
 	const counts = new Map<string, number>();
 	for (const row of rows) {
