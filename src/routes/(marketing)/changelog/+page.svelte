@@ -5,6 +5,25 @@
 
 	const changelog = [
 		{
+			version: '1.10.0',
+			date: 'October 25, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'AP Art History practice covers the required 250 works: choose a content area, identify the title, artist or location, date, and medium, then check your answers against the official identifiers'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Art History answer checking accepts minor typos, reordered words, selected alternate titles, and combined artist and location answers while keeping dates and eras accurate',
+						'AP Art History has a dedicated subject hub with official study resources, and subject browsing puts commonly studied courses first'
+					]
+				}
+			]
+		},
+		{
 			version: '1.9.9',
 			date: 'October 19, 2026',
 			sections: [
@@ -1600,7 +1619,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 19, 2026"
+			meta="Last Updated: October 25, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

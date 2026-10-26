@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, inArray, lt, not, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, not, notInArray, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	mcqQuestions,
@@ -240,10 +240,14 @@ export async function countActiveMcqQuestions(
 	return Number(row?.count ?? 0);
 }
 
-/** Grouped serving counts for every MCQ bucket. Used to avoid per-job COUNT queries. */
+/** Grouped serving counts for the requested MCQ buckets. */
 export async function countActiveMcqQuestionsByBucket(
-	allowStimulusQuestions = true
+	allowStimulusQuestions = true,
+	buckets?: Array<{ course: string; unit: string }>
 ): Promise<Map<string, number>> {
+	const bucketFilter = buckets?.length
+		? or(...buckets.map(({ course, unit }) => and(eq(courseField, course), eq(unitField, unit))))
+		: undefined;
 	const rows = await getNeonDatabase()
 		.select({
 			course: courseField,
@@ -251,7 +255,9 @@ export async function countActiveMcqQuestionsByBucket(
 			count: sql<number>`count(*)`
 		})
 		.from(mcqQuestions)
-		.where(and(...servingPredicates(allowStimulusQuestions)))
+		.where(
+			and(...servingPredicates(allowStimulusQuestions), ...(bucketFilter ? [bucketFilter] : []))
+		)
 		.groupBy(courseField, unitField);
 	return new Map(rows.map((row) => [`${row.course}\u0000${row.unit}`, Number(row.count)]));
 }

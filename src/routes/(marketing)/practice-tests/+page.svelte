@@ -3,11 +3,11 @@
 	import BookOpenCheckIcon from '@tabler/icons-svelte/icons/book-filled';
 	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import { resolve } from '$app/paths';
-	import { getCoursePracticePages } from '#lib/catalog/practice-pages.js';
+	import { getSubjectsBrowsePracticePages } from '#lib/catalog/practice-pages.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { HERO_BADGE_CLASS } from '#lib/components/marketing/hero-badge.js';
 
-	const subjects = getCoursePracticePages();
+	const subjects = getSubjectsBrowsePracticePages();
 
 	const officialResources = [
 		{

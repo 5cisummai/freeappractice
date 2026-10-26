@@ -1,4 +1,4 @@
-import { getCourses, getUnitsForCourse } from '#lib/catalog/courses.js';
+import { getCourses, getUnitsForCourse, isMcqPracticeCourse } from '#lib/catalog/courses.js';
 import {
 	countActiveMcqQuestions,
 	countActiveMcqQuestionsByBucket
@@ -7,13 +7,14 @@ import { poolTargetForBucket, type QuestionPoolConfig } from '#lib/question-bank
 import type { PoolKindAdapter, PoolKindBucket } from '#lib/question-bank/pool-kinds.server.js';
 
 function listBuckets(): PoolKindBucket[] {
-	return getCourses().flatMap((course) =>
-		getUnitsForCourse(course.name).map((unit) => ({
+	return getCourses().flatMap((course) => {
+		if (!isMcqPracticeCourse(course.name)) return [];
+		return getUnitsForCourse(course.name).map((unit) => ({
 			questionType: 'mcq' as const,
 			course: course.name,
 			unit
-		}))
-	);
+		}));
+	});
 }
 
 /** MCQ catalog, storage counters, and target metadata. */
@@ -22,7 +23,7 @@ export const mcqPoolKind: PoolKindAdapter = {
 	minimumGenerationHeadroomMs: 10_000,
 	listBuckets,
 	countActive: countActiveMcqQuestions,
-	countActiveByBucket: () => countActiveMcqQuestionsByBucket(true),
+	countActiveByBucket: (buckets) => countActiveMcqQuestionsByBucket(true, buckets),
 	targetFor: (input: {
 		course: string;
 		generationCountsByCourse?: Record<string, number>;

@@ -581,7 +581,10 @@ async function loadServingCountsForJobs(jobs: PoolRefillStateRow[]): Promise<Map
 	const counts = new Map<string, number>();
 	const questionTypes = new Set(jobs.map((job) => job.questionType));
 	for (const questionType of questionTypes) {
-		const byBucket = await countActivePoolRowsForServingByBucket(questionType);
+		const byBucket = await countActivePoolRowsForServingByBucket(
+			questionType,
+			jobs.filter((job) => job.questionType === questionType)
+		);
 		for (const [bucketKey, count] of byBucket) {
 			counts.set(`${questionType}\u0000${bucketKey}`, count);
 		}

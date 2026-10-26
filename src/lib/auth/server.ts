@@ -1,6 +1,7 @@
+import * as nativeAuthEnv from '$app/env/private';
 import { betterAuth } from 'better-auth/minimal';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
-import { oneTap } from 'better-auth/plugins';
+import { oneTap, bearer } from 'better-auth/plugins';
 import { admin } from 'better-auth/plugins/admin';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { waitUntil } from '@vercel/functions';
@@ -222,15 +223,29 @@ export const auth = betterAuth({
 		}
 	},
 
-	socialProviders:
-		GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
+	socialProviders: {
+		...(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
 			? {
 					google: {
-						clientId: GOOGLE_CLIENT_ID,
+						clientId: nativeAuthEnv.GOOGLE_IOS_CLIENT_ID
+							? [GOOGLE_CLIENT_ID, nativeAuthEnv.GOOGLE_IOS_CLIENT_ID]
+							: GOOGLE_CLIENT_ID,
 						clientSecret: GOOGLE_CLIENT_SECRET
 					}
 				}
-			: undefined,
+			: {}),
+		...(nativeAuthEnv.APPLE_CLIENT_ID &&
+		nativeAuthEnv.APPLE_CLIENT_SECRET &&
+		nativeAuthEnv.APPLE_APP_BUNDLE_IDENTIFIER
+			? {
+					apple: {
+						clientId: nativeAuthEnv.APPLE_CLIENT_ID,
+						clientSecret: nativeAuthEnv.APPLE_CLIENT_SECRET,
+						appBundleIdentifier: nativeAuthEnv.APPLE_APP_BUNDLE_IDENTIFIER
+					}
+				}
+			: {})
+	},
 	advanced: {
 		ipAddress: {
 			// Prefer Vercel's single-value client IP; multi-hop XFF is untrusted without CIDRs.
@@ -243,6 +258,7 @@ export const auth = betterAuth({
 		}
 	},
 	plugins: [
+		bearer(),
 		...(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET ? [oneTap()] : []),
 		admin({ adminUserIds: getAdminUserIds() }),
 		createOrganizationPlugin(),

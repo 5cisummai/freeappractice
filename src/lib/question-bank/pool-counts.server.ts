@@ -38,15 +38,17 @@ export async function countActivePoolRowsForServing(
 	}
 }
 
-/** Grouped serving counts for every catalog bucket of one question type. */
+/** Grouped serving counts for the requested buckets of one question type. */
 export async function countActivePoolRowsForServingByBucket(
-	questionType: PoolRefillQuestionType
+	questionType: PoolRefillQuestionType,
+	buckets: Array<{ course: string; unit: string }>
 ): Promise<Map<string, number>> {
+	if (!buckets.length) return new Map();
 	switch (questionType) {
 		case 'mcq':
-			return countActiveMcqQuestionsByBucket(await isStimulusQuestionsEnabled());
+			return countActiveMcqQuestionsByBucket(await isStimulusQuestionsEnabled(), buckets);
 		case 'frq':
-			return countActivePoolRowsByBucket(questionType);
+			return getPoolKindAdapter(questionType).countActiveByBucket(buckets);
 		default: {
 			const _exhaustive: never = questionType;
 			return _exhaustive;

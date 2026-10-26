@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getCourses } from '#lib/catalog/courses.js';
+	import { getCourses, isMcqPracticeCourse } from '#lib/catalog/courses.js';
 	import { frqPracticeFor } from '#lib/question-bank/frq/practice.js';
 	import { getFocusedPracticeHref } from '#lib/catalog/practice-pages.js';
 	import { tick } from 'svelte';
@@ -56,7 +56,7 @@
 	}: QuestionSelectorProps = $props();
 
 	const courses = $derived.by(() => {
-		const catalog = getCourses();
+		const catalog = getCourses().filter((course) => isMcqPracticeCourse(course.name));
 		if (!allowedCourses?.length) return catalog;
 		const allowed = new Set(allowedCourses);
 		return catalog.filter((course) => allowed.has(course.name));

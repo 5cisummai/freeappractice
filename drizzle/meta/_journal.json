@@ -29,6 +29,20 @@
       "when": 1790799836737,
       "tag": "0003_slippery_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792703975851,
+      "tag": "0004_zippy_namora",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792704340768,
+      "tag": "0005_reset_super_usage_credits_milli",
+      "breakpoints": true
     }
   ]
 }

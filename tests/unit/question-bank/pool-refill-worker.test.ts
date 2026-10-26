@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import type { PoolRefillState } from '#lib/question-bank/pool-refill-types.server.js';
 import { poolGenerationBudgets, poolRefillStates } from '#lib/server/neon/schema.js';
 
@@ -175,6 +176,7 @@ function configureDatabase() {
 describe('question pool refill worker concurrency', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(isValidPoolBucket).mockImplementation(() => true);
 		configureDatabase();
 	});
 
@@ -221,5 +223,16 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.generated).toBe(0);
 		expect(generatePoolQuestion).not.toHaveBeenCalled();
 		expect(mocks.db.execute).toHaveBeenCalledTimes(3);
+		const [, countedBuckets] = vi.mocked(countActivePoolRowsForServingByBucket).mock.calls[0];
+		expect(countedBuckets).toHaveLength(8);
+		expect(countedBuckets.map(({ course, unit }) => `${course}\u0000${unit}`)).toEqual(
+			Array.from({ length: 8 }, (_, index) => `AP Biology\u0000Unit ${index + 1}`)
+		);
+		const queries = mocks.db.execute.mock.calls.map(([query]) => new PgDialect().sqlToQuery(query));
+		const releaseQuery = queries.find((query) => query.sql.includes('IS NOT DISTINCT FROM'));
+		expect(releaseQuery?.sql).toContain(
+			'target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"'
+		);
+		expect(JSON.stringify(releaseQuery?.params)).toContain('worker-test');
 	});
 });

@@ -72,7 +72,10 @@ export default defineConfig({
 						'https://*.googleapis.com',
 						'https://*.gstatic.com',
 						'https://www.google.com',
-						'https://lh3.googleusercontent.com'
+						'https://lh3.googleusercontent.com',
+						'https://apcentral.collegeboard.org',
+						'https://apstudents.collegeboard.org',
+						'https://*.collegeboard.org'
 					],
 					'connect-src': [
 						'self',
@@ -84,7 +87,13 @@ export default defineConfig({
 						'https://us.posthog.com',
 						'https://o4511759649472512.ingest.us.sentry.io'
 					],
-					'frame-src': ['self', 'https://accounts.google.com'],
+					'frame-src': [
+						'self',
+						'https://accounts.google.com',
+						'https://apcentral.collegeboard.org',
+						'https://apstudents.collegeboard.org',
+						'https://*.collegeboard.org'
+					],
 					'worker-src': ['self', 'blob:'],
 					'base-uri': ['self'],
 					'form-action': ['self'],
