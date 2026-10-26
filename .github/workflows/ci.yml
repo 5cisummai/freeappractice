@@ -95,8 +95,9 @@ jobs:
       - name: Apply database migrations
         run: bun run db:apply
 
-      - name: Retire bad-quality questions from serving pool
-        run: bun run db:backfill-retire-bad-quality
+      # From here, add any backfill scripts that need to run on prod.
+      - name: Sync AP Art History image set
+        run: bun run db:sync-ap-art-history
 
   build:
     name: Build

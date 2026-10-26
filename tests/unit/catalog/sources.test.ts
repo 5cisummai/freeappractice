@@ -129,7 +129,7 @@ describe('catalog facts and official sources', () => {
 		expect(result.kind).toBe('catalog');
 		if (result.kind !== 'catalog') throw new Error('Expected catalog knowledge');
 		expect(result.catalogVersion).toBe(CATALOG_VERSION);
-		expect(result.courses).toHaveLength(25);
+		expect(result.courses).toHaveLength(26);
 	});
 
 	it('fails safely for unsupported courses and units', () => {
