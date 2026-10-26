@@ -12,8 +12,6 @@
 	import {
 		buildCoachPracticeQuestionToolOutput,
 		coachPracticeQuestionRequestKey,
-		COACH_PRACTICE_QUESTION_MAX_AUTO_RETRIES,
-		getCoachPracticeQuestionRetryDelayMs,
 		getCoachPracticeQuestionToolInput,
 		type CoachPracticeQuestionOutput,
 		type CoachPracticeQuestionToolInput,
@@ -69,20 +67,12 @@
 	async function loadQuestion(
 		inputSnapshot: CoachPracticeQuestionToolInput,
 		generation: number,
-		signal: AbortSignal,
-		attempt = 0
+		signal: AbortSignal
 	): Promise<void> {
 		try {
 			const result = await fetchCoachPracticeQuestion(inputSnapshot, { signal });
 			if (generation !== loadGeneration || signal.aborted) return;
 			if ('error' in result) {
-				const retryDelayMs = getCoachPracticeQuestionRetryDelayMs(result.retryAfterSeconds);
-				if (retryDelayMs !== null && attempt < COACH_PRACTICE_QUESTION_MAX_AUTO_RETRIES) {
-					await waitForRetry(retryDelayMs, signal);
-					if (generation !== loadGeneration || signal.aborted) return;
-					await loadQuestion(inputSnapshot, generation, signal, attempt + 1);
-					return;
-				}
 				loadError = result.error;
 				return;
 			}
@@ -92,21 +82,6 @@
 			if (generation !== loadGeneration || signal.aborted) return;
 			loadError = 'Could not load a practice question. Check your connection and try again.';
 		}
-	}
-
-	function waitForRetry(delayMs: number, signal: AbortSignal): Promise<void> {
-		return new Promise((resolve) => {
-			const timeoutId = setTimeout(resolve, delayMs);
-			const onAbort = () => {
-				clearTimeout(timeoutId);
-				resolve();
-			};
-			if (signal.aborted) {
-				onAbort();
-				return;
-			}
-			signal.addEventListener('abort', onAbort, { once: true });
-		});
 	}
 
 	async function finish(output: CoachPracticeQuestionToolOutput): Promise<void> {

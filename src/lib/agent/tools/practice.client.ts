@@ -17,13 +17,6 @@ export type FetchCoachPracticeQuestionOptions = {
 	timeoutMs?: number;
 };
 
-function isAbortError(error: unknown): boolean {
-	return (
-		(error instanceof DOMException && error.name === 'AbortError') ||
-		(error instanceof Error && error.name === 'AbortError')
-	);
-}
-
 function retryAfterSecondsFrom(payload: PracticeQuestionResponse | null): number | undefined {
 	const value = payload?.retryAfterSeconds;
 	if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return undefined;
@@ -57,7 +50,7 @@ export async function fetchCoachPracticeQuestion(
 		if (options.signal?.aborted) {
 			return { error: 'Could not load a practice question. Check your connection and try again.' };
 		}
-		if (isAbortError(error)) {
+		if (signal.aborted && signal.reason instanceof Error && signal.reason.name === 'TimeoutError') {
 			return { error: 'The practice question took too long to load. Try again.' };
 		}
 		return { error: 'Could not load a practice question. Check your connection and try again.' };

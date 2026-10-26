@@ -3,7 +3,6 @@ import { getCourseNames, getUnitsForCourse } from '#lib/catalog/courses.js';
 import {
 	buildCoachPracticeQuestionToolOutput,
 	coachPracticeQuestionRequestKey,
-	getCoachPracticeQuestionRetryDelayMs,
 	getCoachPracticeQuestionToolInput,
 	getCoachPracticeQuestionToolOutput,
 	isCoachPracticeQuestionPending
@@ -66,14 +65,6 @@ describe('coach practice question tool helpers', () => {
 				unit: 'Unit 3: Cultural Patterns and Processes'
 			})
 		);
-	});
-
-	it('only auto-retries when the server provides a positive retry delay', () => {
-		expect(getCoachPracticeQuestionRetryDelayMs(2.8)).toBe(2000);
-		expect(getCoachPracticeQuestionRetryDelayMs(15)).toBe(15_000);
-		expect(getCoachPracticeQuestionRetryDelayMs(undefined)).toBeNull();
-		expect(getCoachPracticeQuestionRetryDelayMs(0)).toBeNull();
-		expect(getCoachPracticeQuestionRetryDelayMs(Number.NaN)).toBeNull();
 	});
 
 	it('can uniquely map catalog unit titles after stripping a Unit N prefix', () => {

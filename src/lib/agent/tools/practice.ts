@@ -34,8 +34,6 @@ export type CoachPracticeQuestionOutput = {
 	diagramSpec?: Record<string, unknown>;
 };
 
-export const COACH_PRACTICE_QUESTION_MAX_AUTO_RETRIES = 3;
-
 export const coachPracticeQuestionToolInputSchema = z.object({
 	course: z
 		.string()
@@ -173,17 +171,4 @@ export function coachPracticeQuestionRequestKey(
 ): string {
 	if (!input) return '';
 	return JSON.stringify([input.course, input.unit ?? '', input.mode]);
-}
-
-export function getCoachPracticeQuestionRetryDelayMs(
-	retryAfterSeconds: number | undefined
-): number | null {
-	if (
-		typeof retryAfterSeconds !== 'number' ||
-		!Number.isFinite(retryAfterSeconds) ||
-		retryAfterSeconds <= 0
-	) {
-		return null;
-	}
-	return Math.max(1, Math.floor(retryAfterSeconds)) * 1000;
 }

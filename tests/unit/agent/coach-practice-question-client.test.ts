@@ -87,13 +87,13 @@ describe('fetchCoachPracticeQuestion', () => {
 		});
 	});
 
-	it('times out hung requests', async () => {
+	it('reports a timeout using AbortSignal.timeout() native TimeoutError reason', async () => {
 		vi.stubGlobal(
 			'fetch',
 			vi.fn((_url: string, init?: RequestInit) => {
 				return new Promise<Response>((_resolve, reject) => {
 					init?.signal?.addEventListener('abort', () => {
-						reject(new DOMException('Aborted', 'AbortError'));
+						reject(init.signal?.reason);
 					});
 				});
 			})
