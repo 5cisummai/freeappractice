@@ -275,7 +275,7 @@
 				<LazyComponent
 					load={loadQuizSession}
 					pending="Loading quiz…"
-					error="Quiz could not be loaded."
+					error="Couldn't load the quiz player."
 				>
 					{#snippet children(QuizSession)}
 						<QuizSession
