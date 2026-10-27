@@ -79,4 +79,20 @@ describe('client chunk recovery', () => {
 			expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
 		}
 	);
+
+	it("reloads before reporting SvelteKit missing route-node 'component' crashes", async () => {
+		await handle(new TypeError("Cannot read properties of undefined (reading 'component')"));
+		expect(mocks.reload).toHaveBeenCalledOnce();
+		expect(mocks.captureSentry).not.toHaveBeenCalled();
+		expect(mocks.capturePostHog).not.toHaveBeenCalled();
+	});
+
+	it('reports a repeated missing-component crash inside the reload window', async () => {
+		mocks.getItem.mockReturnValue(String(Date.now()));
+		const error = new TypeError("Cannot read properties of undefined (reading 'component')");
+		await handle(error);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+	});
 });
