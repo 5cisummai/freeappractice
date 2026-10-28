@@ -83,6 +83,7 @@
 		"@better-auth/drizzle-adapter": "1.6.30",
 		"@better-auth/stripe": "1.6.30",
 		"@devmischief/shaders-svelte": "^0.0.9",
+		"@paper-design/shaders": "^0.0.76",
 		"@examfig/charts": "^0.2.0",
 		"@examfig/core": "^0.2.0",
 		"@examfig/science": "^0.2.0",
