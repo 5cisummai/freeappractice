@@ -18,6 +18,7 @@
         "@fontsource/noto-serif": "^5.3.0",
         "@fontsource/open-runde": "^5.3.0",
         "@neondatabase/serverless": "^1.1.0",
+        "@paper-design/shaders": "^0.0.76",
         "@sentry/sveltekit": "^11.7.0",
         "@tabler/icons-svelte": "^3.46.0",
         "@tanstack/table-core": "^8.21.3",
