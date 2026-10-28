@@ -160,7 +160,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 				elapsedMs >= timeLimitMs &&
 				(status === 'active' || status === 'review')
 			) {
-				void submit();
+				void submit(true);
 			}
 		}, TIMER_TICK_MS);
 	}
@@ -204,10 +204,10 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		requestedCount = count;
 	}
 
-	function beginTiming(limitMs: number | null | undefined): void {
+	function beginTiming(limitMs: number | null | undefined, savedStart?: number): void {
 		const now = Date.now();
-		startedAtMs = now;
-		startedAtIso = toIsoTimestamp(now);
+		startedAtMs = savedStart ?? now;
+		startedAtIso = toIsoTimestamp(startedAtMs);
 		completedAtIso = '';
 		timeLimitMs = limitMs ?? null;
 		isPaused = false;
@@ -391,7 +391,8 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			questions = fixedQuestions;
 			loadingCount = 0;
 			status = 'active';
-			beginTiming(input.timeLimitMs);
+			beginTiming(input.timeLimitMs, input.startedAtMs);
+			input.initialSelections?.forEach((selection, index) => setDraft(index, selection));
 			return;
 		}
 
@@ -416,7 +417,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 				questions = loadedQuestions.slice(0, targetCount);
 				loadingCount = 0;
 				status = 'active';
-				beginTiming(input.timeLimitMs);
+				beginTiming(input.timeLimitMs, input.startedAtMs);
 				return;
 			}
 			const firstQuestion = await loadQuestionViaLoader([]);
@@ -430,7 +431,7 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 
 			loadingCount = Math.max(0, targetCount - 1);
 			status = 'active';
-			beginTiming(input.timeLimitMs);
+			beginTiming(input.timeLimitMs, input.startedAtMs);
 
 			if (targetCount > 1) {
 				void fillIndexes(
@@ -568,8 +569,11 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 		timerNowMs = Date.now();
 	}
 
-	async function submit(): Promise<void> {
-		if (!canSubmit || status === 'complete') return;
+	async function submit(expired = false): Promise<void> {
+		if (status !== 'active' && status !== 'review') return;
+		if (!expired && !canSubmit) return;
+		// Discard pending question loads once the section is closed.
+		runToken += 1;
 
 		const finalAnswers = buildFinalAnswers();
 		answers = finalAnswers;

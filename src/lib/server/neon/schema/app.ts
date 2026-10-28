@@ -163,6 +163,13 @@ export const examAttempts = appSchema.table(
 		course: text('course').notNull(),
 		sections: jsonb('sections').$type<ExamSection[]>().notNull(),
 		responses: jsonb('responses').$type<Record<string, string>>().notNull().default({}),
+		sectionIndex: integer('section_index').notNull().default(0),
+		sectionStartedAt: timestamp('section_started_at', { withTimezone: true, mode: 'date' }),
+		sectionCompletedAt: jsonb('section_completed_at')
+			.$type<(string | null)[]>()
+			.notNull()
+			.default([]),
+		grading: jsonb('grading').$type<Record<string, unknown>>().notNull().default({}),
 		status: text('status').notNull().default('in_progress'),
 		revision: integer('revision').notNull().default(0),
 		score: jsonb('score').$type<Record<string, unknown>>(),

@@ -1,6 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
-import { startExamSchema } from '#lib/exams/session.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { examAttempts } from '#lib/server/neon/schema.js';
 
@@ -24,19 +23,10 @@ export const GET = withAuthedHandler(
 	{ logLabel: 'Exam history error', errorMessage: 'Failed to load exam history' }
 );
 
+// Exam creation is enabled only after trusted blueprint and question assembly exist.
 export const POST = withAuthedHandler(
-	async (event, userId) => {
-		const input = startExamSchema.safeParse(await event.request.json().catch(() => null));
-		if (!input.success) return Response.json({ error: 'Invalid exam structure.' }, { status: 400 });
-		const [attempt] = await getNeonDatabase()
-			.insert(examAttempts)
-			.values({
-				id: crypto.randomUUID(),
-				userId,
-				...input.data
-			})
-			.returning();
-		return Response.json({ attempt }, { status: 201 });
+	async () => {
+		return Response.json({ error: 'Full-length exams are not available yet.' }, { status: 503 });
 	},
 	{ logLabel: 'Exam start error', errorMessage: 'Failed to start exam' }
 );
