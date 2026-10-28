@@ -33,25 +33,25 @@ function usage(partial: {
 }
 
 describe('usage credits', () => {
-	it('prices GPT-6.1-sol independently and combines its cost with Luna', () => {
+	it('prices GPT-6.1-terra independently and combines its cost with Luna', () => {
 		const sim = usage({
 			inputTokens: 100_000,
 			outputTokens: 10_000,
 			totalTokens: 110_000,
 			noCacheTokens: 100_000
 		});
-		const simUsd = usdFromLanguageModelUsage(sim, 'openai/gpt-6.1-sol');
-		expect(simUsd).toBeCloseTo(0.3);
+		const simUsd = usdFromLanguageModelUsage(sim, 'openai/gpt-6.1-terra');
+		expect(simUsd).toBeCloseTo(0.15);
 		const coach = usage({
 			inputTokens: 100_000,
 			outputTokens: 10_000,
 			totalTokens: 110_000,
 			noCacheTokens: 100_000
 		});
-		expect(millicreditsFromLanguageModelUsage(coach, simUsd)).toBe(7_875);
+		expect(millicreditsFromLanguageModelUsage(coach, simUsd)).toBe(4_125);
 	});
 
-	it('applies GPT-6.1-sol cache rates and long-context pricing', () => {
+	it('applies GPT-6.1-terra cache rates and long-context pricing', () => {
 		const sample = usage({
 			inputTokens: 300_000,
 			outputTokens: 10_000,
@@ -60,8 +60,8 @@ describe('usage credits', () => {
 			cacheReadTokens: 100_000,
 			cacheWriteTokens: 100_000
 		});
-		expect(usdFromLanguageModelUsage(sample, 'openai/gpt-6.1-sol')).toBeCloseTo(
-			0.4 + 0.02 + 0.5 + 0.15
+		expect(usdFromLanguageModelUsage(sample, 'openai/gpt-6.1-terra')).toBeCloseTo(
+			0.2 + 0.01 + 0.25 + 0.075
 		);
 	});
 
