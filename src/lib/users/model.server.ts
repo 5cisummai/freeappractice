@@ -5,6 +5,7 @@ import {
 	bookmarks,
 	mcqAttempts,
 	quizAttempts,
+	examAttempts,
 	userProfiles,
 	userProgress,
 	userCourses
@@ -123,6 +124,7 @@ export async function deleteUserProfiles(userIds: string[]): Promise<void> {
 		db.delete(userProgress).where(inArray(userProgress.userId, userIds)),
 		db.delete(mcqAttempts).where(inArray(mcqAttempts.userId, userIds)),
 		db.delete(quizAttempts).where(inArray(quizAttempts.userId, userIds)),
+		db.delete(examAttempts).where(inArray(examAttempts.userId, userIds)),
 		db.delete(bookmarks).where(inArray(bookmarks.userId, userIds)),
 		db.delete(userProfiles).where(inArray(userProfiles.userId, userIds))
 	]);

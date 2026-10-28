@@ -43,6 +43,13 @@
       "when": 1792704340768,
       "tag": "0005_reset_super_usage_credits_milli",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793157438720,
+      "tag": "0006_typical_toxin",
+      "breakpoints": true
     }
   ]
 }

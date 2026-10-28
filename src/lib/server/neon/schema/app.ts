@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { ExamSection } from '#lib/exams/session.js';
 import type { FrqGrade } from '#lib/question-bank/frq/types.js';
 import { authOrganizations, authUsers } from './auth';
 import { createdAt, updatedAt } from './common';
@@ -149,6 +150,29 @@ export const mcqAttempts = appSchema.table(
 		index('mcq_attempts_user_attempted_idx').on(table.userId, table.attemptedAt),
 		index('mcq_attempts_question_idx').on(table.questionId),
 		index('mcq_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
+	]
+);
+
+export const examAttempts = appSchema.table(
+	'exam_attempts',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		course: text('course').notNull(),
+		sections: jsonb('sections').$type<ExamSection[]>().notNull(),
+		responses: jsonb('responses').$type<Record<string, string>>().notNull().default({}),
+		status: text('status').notNull().default('in_progress'),
+		revision: integer('revision').notNull().default(0),
+		score: jsonb('score').$type<Record<string, unknown>>(),
+		startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+		submittedAt: timestamp('submitted_at', { withTimezone: true, mode: 'date' }),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		check('exam_attempts_status_check', sql`${table.status} IN ('in_progress', 'submitted')`),
+		index('exam_attempts_user_started_idx').on(table.userId, table.startedAt)
 	]
 );
 
