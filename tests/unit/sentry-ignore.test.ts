@@ -19,13 +19,41 @@ describe('isIgnoredSentryError', () => {
 		expect(
 			isIgnoredSentryError(new TypeError("Cannot read properties of undefined (reading 'foo')"))
 		).toBe(false);
+		expect(
+			isIgnoredSentryError(
+				new TypeError("undefined is not an object (evaluating 'someNode.component')")
+			)
+		).toBe(false);
 		expect(isIgnoredSentryError(undefined)).toBe(false);
 		expect(isIgnoredSentryError({ message: 'not an error' })).toBe(false);
+	});
+
+	it('drops Firefox iOS reader-mode window.__firefox__.reader noise in Error and string forms', () => {
+		expect(
+			isIgnoredSentryError(
+				new TypeError("undefined is not an object (evaluating 'window.__firefox__.reader')")
+			)
+		).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				"TypeError: undefined is not an object (evaluating 'window.__firefox__.reader')"
+			)
+		).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				new TypeError(
+					"undefined is not an object (evaluating 'window.__firefox__.reader.checkReadability')"
+				)
+			)
+		).toBe(true);
 	});
 
 	it('exports the exact Sentry ignoreErrors substring', () => {
 		expect(sentryIgnoreErrors).toContain(
 			"undefined is not an object (evaluating 'window.webkit.messageHandlers')"
+		);
+		expect(sentryIgnoreErrors).toContain(
+			"undefined is not an object (evaluating 'window.__firefox__.reader"
 		);
 		expect(sentryIgnoreErrors).toContain('Delay was aborted');
 	});
