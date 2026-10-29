@@ -8,6 +8,6 @@ Generate and apply:
 
 1. `bun run db:generate` — write SQL under `drizzle/` from schema changes.
 2. Review the generated migration.
-3. `bun run db:apply` — apply committed SQL to `DATABASE_URL` (locally, or automatically on push to `main` / `staging` via CI).
+3. `bun run db:apply` — apply committed SQL to `DATABASE_URL` (locally, or automatically on push to `main` / `staging` via CI). CI then runs idempotent data backfills. See [database migrations](../docs/database-migrations.md) for the rewritten-0002 checksum exception.
 
 The history through release 1.9.4 is consolidated into one generated baseline. See [baseline adoption and recovery](../docs/database-migrations.md) before applying it to an existing database.
