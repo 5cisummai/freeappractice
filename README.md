@@ -232,7 +232,7 @@ Deploy to [Vercel](https://vercel.com/) as a SvelteKit app:
 
 1. Connect the repository to Vercel.
 2. Set production environment variables (at minimum `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `AI_GATEWAY_API_KEY` or rely on Vercel OIDC). Runtime only — the Vercel build does not need database access.
-3. Add `DATABASE_URL` (and `STAGING_DATABASE_URL` if you use the `staging` branch) as GitHub Actions secrets. Pushes to `main` / `staging` run `bun run db:apply` in CI before Vercel bundles the app.
+3. Add `DATABASE_URL` (and `STAGING_DATABASE_URL` if you use the `staging` branch) as GitHub Actions secrets. Pushes to `main` / `staging` run `bun run db:apply` and then idempotent data backfills (including AP Art History works) in CI. Vercel still builds independently; a failed migrate job is visible in GitHub Actions and must be fixed before production schema is current.
 4. Vercel runs `bun run build` (`vite build`) via the default SvelteKit integration.
 
 `BETTER_AUTH_URL` and `PUBLIC_BASE_URL` must match your production domain. If you change hosting, update the SvelteKit adapter and these notes together.

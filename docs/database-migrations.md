@@ -10,6 +10,14 @@ The runner verifies every pre-baseline migration against `scripts/neon-baseline-
 
 If any historical migration is missing or its checksum differs, adoption fails. Use the release 1.9.4 checkout and its original `bun run db:apply` to finish the old history first, investigating any checksum mismatch rather than changing the ledger to bypass it. Old migrations and their snapshots remain available in Git at the commit above.
 
+## Rewritten applied SQL
+
+The runner refuses to continue when an already-applied file's checksum does not match git, so later migrations never run. `0002_super_usage_credits_milli.sql` is the exception: production applied the ALTER + millicredit reset from commit `476de76a`, then git restored the file to DDL-only and moved the reset to `0005`. The runner accepts that historical checksum, updates the recorded digest, and continues.
+
+`0005_reset_super_usage_credits_milli.sql` is a no-op (`SELECT 1`). The reset already ran on production as part of the old `0002` file; re-running `UPDATE ... SET credits_milli = 0` would wipe credits accumulated since then. Fresh databases default `credits_milli` to 0.
+
+Pushes to `main` / `staging` apply pending SQL, then run idempotent data backfills (AP Art History works today). Add further backfills in `.github/workflows/ci.yml` below `db:apply`.
+
 ## Empty databases
 
 The runner executes the generated baseline and records its checksum in the same transaction. A second run skips it. An existing schema without a migration ledger is not automatically adopted; the baseline transaction fails on existing objects rather than dropping or replacing them.
