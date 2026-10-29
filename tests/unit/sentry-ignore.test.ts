@@ -28,6 +28,8 @@ describe('isIgnoredSentryError', () => {
 			"undefined is not an object (evaluating 'window.webkit.messageHandlers')"
 		);
 		expect(sentryIgnoreErrors).toContain('Delay was aborted');
+		expect(sentryIgnoreErrors).toContain("Can't find variable: __firefox__");
+		expect(sentryIgnoreErrors).toContain('__firefox__ is not defined');
 	});
 
 	it('drops Vercel AI SDK abort-during-retry-wait noise', () => {
@@ -40,6 +42,19 @@ describe('isIgnoredSentryError', () => {
 
 	it('keeps other AbortErrors', () => {
 		expect(isIgnoredSentryError(new DOMException('The operation was aborted', 'AbortError'))).toBe(
+			false
+		);
+	});
+
+	it('drops Firefox-for-iOS __firefox__ injection noise in Error and string forms', () => {
+		expect(isIgnoredSentryError(new ReferenceError("Can't find variable: __firefox__"))).toBe(true);
+		expect(isIgnoredSentryError("ReferenceError: Can't find variable: __firefox__")).toBe(true);
+		expect(isIgnoredSentryError(new ReferenceError('__firefox__ is not defined'))).toBe(true);
+		expect(isIgnoredSentryError('ReferenceError: __firefox__ is not defined')).toBe(true);
+	});
+
+	it('keeps first-party Safari missing-variable errors', () => {
+		expect(isIgnoredSentryError(new ReferenceError("Can't find variable: practiceSession"))).toBe(
 			false
 		);
 	});
