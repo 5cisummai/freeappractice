@@ -67,8 +67,7 @@ export function usdFromLanguageModelUsage(
 
 	const base = MODEL_PRICING[model];
 	const longContext =
-		(model === 'openai/gpt-6.1-sol' || model === 'openai/gpt-6.1-terra') &&
-		inputTokens >= 272_001;
+		(model === 'openai/gpt-6.1-sol' || model === 'openai/gpt-6.1-terra') && inputTokens >= 272_001;
 	const inputMultiplier = longContext ? 2 : 1;
 	const outputMultiplier = longContext ? 1.5 : 1;
 
