@@ -3,7 +3,7 @@
  *
  * Full-catalog reconcile: refresh target/observedCount on every bucket, enqueue
  * low-water deficits, and idle stale pending jobs that are already at target.
- * Expensive (N+1) — ops only, not cron.
+ * Full-catalog count + bulk upsert. Ops only, not cron.
  *
  *   bun run pool:reconcile
  */
