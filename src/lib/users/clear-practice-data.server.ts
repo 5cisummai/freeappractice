@@ -5,6 +5,7 @@ import {
 	frqAttempts,
 	mcqAttempts,
 	quizAttempts,
+	examAttempts,
 	userProgress
 } from '#lib/server/neon/schema.js';
 
@@ -18,6 +19,7 @@ export async function clearPracticeDataForUser(userId: string): Promise<void> {
 		db.delete(userProgress).where(eq(userProgress.userId, userId)),
 		db.delete(mcqAttempts).where(eq(mcqAttempts.userId, userId)),
 		db.delete(quizAttempts).where(eq(quizAttempts.userId, userId)),
+		db.delete(examAttempts).where(eq(examAttempts.userId, userId)),
 		db.delete(bookmarks).where(eq(bookmarks.userId, userId)),
 		db.delete(frqAttempts).where(eq(frqAttempts.userId, userId))
 	]);

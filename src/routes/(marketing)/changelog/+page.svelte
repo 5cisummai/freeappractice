@@ -5,6 +5,22 @@
 
 	const changelog = [
 		{
+			version: '1.10.1',
+			date: 'October 31, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Exam sessions support timed multiple-choice and free-response sections, save your answers as you work, and show results after submission'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Coach practice questions recover more reliably from loading failures']
+				}
+			]
+		},
+		{
 			version: '1.10.0',
 			date: 'October 25, 2026',
 			sections: [
@@ -1619,7 +1635,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 25, 2026"
+			meta="Last Updated: October 31, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

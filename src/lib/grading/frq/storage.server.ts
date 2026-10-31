@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lt } from 'drizzle-orm';
 import type { FrqGrade } from '#lib/question-bank/frq/types.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqAttempts } from '#lib/server/neon/schema.js';
@@ -143,6 +143,25 @@ export async function deleteFrqAttemptIfGrading(attemptId: string): Promise<numb
 		.where(and(eq(frqAttempts.id, attemptId), eq(frqAttempts.status, 'grading')))
 		.returning({ id: frqAttempts.id });
 	return rows.length;
+}
+
+/** Reclaim only abandoned claims; a live grading request has a 60-second budget. */
+export async function deleteStaleFrqGradingClaim(
+	userId: string,
+	attemptId: string
+): Promise<boolean> {
+	const rows = await getNeonDatabase()
+		.delete(frqAttempts)
+		.where(
+			and(
+				eq(frqAttempts.id, attemptId),
+				eq(frqAttempts.userId, userId),
+				eq(frqAttempts.status, 'grading'),
+				lt(frqAttempts.updatedAt, new Date(Date.now() - 5 * 60_000))
+			)
+		)
+		.returning({ id: frqAttempts.id });
+	return rows.length === 1;
 }
 
 export async function deleteFrqAttemptsForUser(userId: string): Promise<number> {

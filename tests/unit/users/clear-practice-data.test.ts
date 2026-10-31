@@ -20,6 +20,7 @@ describe('clearPracticeDataForUser', () => {
 			.mockReturnValueOnce({ kind: 'progress' })
 			.mockReturnValueOnce({ kind: 'mcq-attempts' })
 			.mockReturnValueOnce({ kind: 'quiz-attempts' })
+			.mockReturnValueOnce({ kind: 'exam-attempts' })
 			.mockReturnValueOnce({ kind: 'bookmarks' })
 			.mockReturnValueOnce({ kind: 'frq-attempts' });
 		mocks.batch.mockResolvedValue([]);
@@ -32,6 +33,7 @@ describe('clearPracticeDataForUser', () => {
 			{ kind: 'progress' },
 			{ kind: 'mcq-attempts' },
 			{ kind: 'quiz-attempts' },
+			{ kind: 'exam-attempts' },
 			{ kind: 'bookmarks' },
 			{ kind: 'frq-attempts' }
 		]);

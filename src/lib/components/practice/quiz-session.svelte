@@ -46,6 +46,13 @@
 		sharedSlug?: string;
 		title?: string;
 		onExit?: () => void;
+		examSection?: {
+			startedAtMs: number;
+			timeLimitMs: number | null;
+			selections: Array<string | null>;
+			onChange: (index: number, value: string | null) => void;
+			onComplete: () => void;
+		};
 	};
 
 	let {
@@ -61,7 +68,8 @@
 		initialQuestions = null,
 		sharedSlug = '',
 		title,
-		onExit
+		onExit,
+		examSection
 	}: QuizSessionProps = $props();
 
 	let mounted = $state(false);
@@ -131,6 +139,10 @@
 			return result.questions;
 		},
 		onComplete: (snapshot) => {
+			if (examSection) {
+				examSection.onComplete();
+				return;
+			}
 			lastSnapshot = snapshot;
 			if (followUp) {
 				const missedTopicSet = new Set(
@@ -334,6 +346,9 @@
 			await exam.start({
 				count: quizCount,
 				questions: !session && initialQuestions?.length ? initialQuestions : undefined,
+				startedAtMs: examSection?.startedAtMs,
+				timeLimitMs: examSection?.timeLimitMs,
+				initialSelections: examSection?.selections,
 				meta: {
 					course: selectedCourse,
 					unit: selectedUnit || 'All Units',
@@ -713,6 +728,8 @@
 			{/if}
 		</Card.Content>
 	</Card.Root>
+{:else if exam.status === 'complete' && examSection}
+	<p class="p-6 text-sm text-muted-foreground">Saving section…</p>
 {:else if exam.status === 'complete'}
 	<Card.Root class="border-border/70 bg-card/95 shadow-sm">
 		<Card.Content class="space-y-8 px-6 py-10 text-center sm:px-10">
@@ -927,6 +944,7 @@
 			reviewTitle={quizTitle}
 			navItems={exam.navItems}
 			elapsedMs={exam.elapsedMs}
+			remainingMs={exam.remainingMs}
 			submitDisabled={!exam.canSubmit}
 			onGoTo={(index) => exam.exitReviewTo(index)}
 			onSubmit={() => void exam.submit()}
@@ -963,11 +981,15 @@
 		onRemoveTextAnnotation={removeTextAnnotation}
 		navItems={exam.navItems}
 		elapsedMs={exam.elapsedMs}
+		remainingMs={exam.remainingMs}
 		isLastQuestion={exam.isLastQuestion}
 		nextDisabled={exam.isLastQuestion ? !exam.canFinish : !exam.nextQuestionReady}
 		prevDisabled={exam.currentIndex === 0}
 		nextActionLabel={nextLabel}
-		onSelect={(id) => exam.setDraftCurrent(id)}
+		onSelect={(id) => {
+			exam.setDraftCurrent(id);
+			examSection?.onChange(exam.currentIndex, id);
+		}}
 		onToggleFlag={() => exam.toggleFlag()}
 		onToggleStrike={toggleStrike}
 		onPrev={() => exam.prev()}

@@ -23,6 +23,17 @@
 		onSkipped?: () => void;
 		onExit?: () => void;
 		nextAfterGrade?: boolean;
+		examSection?: {
+			responses: Record<string, string>;
+			remainingMs: number | null;
+			onChange: (responses: Record<string, string>) => void;
+			onNext: () => void;
+			onPrevious: () => void;
+			onGoTo: (index: number) => void;
+			onFinish: () => void;
+			index: number;
+			count: number;
+		};
 	};
 
 	let {
@@ -36,7 +47,8 @@
 		onGraded,
 		onSkipped,
 		onExit,
-		nextAfterGrade = true
+		nextAfterGrade = true,
+		examSection
 	}: FrqSessionProps = $props();
 
 	let mounted = $state(false);
@@ -51,19 +63,22 @@
 		getPresetQuestionId: () => presetQuestionId,
 		getMounted: () => mounted,
 		getOnGraded: () => onGraded,
-		getOnSkip: () => onSkipped
+		getOnSkip: () => onSkipped,
+		getIsExam: () => Boolean(examSection),
+		getExamResponses: () => examSection?.responses,
+		onExamResponse: (responses) => examSection?.onChange(responses)
 	});
 
 	const overlayOpen = $derived(requestVersion > 0 && Boolean(core.question));
-	const navItems = $derived.by((): ExamNavItem[] => [
-		{
-			index: 0,
+	const navItems = $derived.by((): ExamNavItem[] =>
+		Array.from({ length: examSection?.count ?? 1 }, (_, index) => ({
+			index,
 			loaded: true,
-			answered: core.hasResponse || Boolean(core.grade),
-			flagged,
+			answered: index === (examSection?.index ?? 0) && (core.hasResponse || Boolean(core.grade)),
+			flagged: index === (examSection?.index ?? 0) && flagged,
 			failed: false
-		}
-	]);
+		}))
+	);
 
 	$effect(() => {
 		core.syncRequestVersion();
@@ -142,24 +157,33 @@
 	{@const question = core.question}
 	<FullQuestion
 		stem={presentedStemFromFrq(question)}
-		questionNumber={1}
-		totalQuestions={1}
+		questionNumber={examSection ? examSection.index + 1 : 1}
+		totalQuestions={examSection?.count ?? 1}
 		title="Free Response"
 		reviewTitle="Free Response"
 		{stage}
 		{flagged}
 		{navItems}
 		elapsedMs={core.elapsedMs}
-		isLastQuestion
-		prevDisabled
-		nextActionLabel="Review"
-		submitDisabled={!core.hasResponse || core.isGrading || Boolean(core.grade)}
+		remainingMs={examSection?.remainingMs}
+		isLastQuestion={examSection ? examSection.index === examSection.count - 1 : true}
+		prevDisabled={!examSection || examSection.index === 0}
+		nextActionLabel={examSection && examSection.index < examSection.count - 1 ? 'Next' : 'Review'}
+		submitDisabled={examSection
+			? false
+			: !core.hasResponse || core.isGrading || Boolean(core.grade)}
 		onToggleFlag={() => (flagged = !flagged)}
-		onPrev={() => {}}
-		onNext={enterReview}
-		onGoTo={exitReviewTo}
+		onPrev={() => examSection?.onPrevious()}
+		onNext={() =>
+			examSection && examSection.index < examSection.count - 1
+				? examSection.onNext()
+				: enterReview()}
+		onGoTo={(index) => {
+			if (examSection) examSection.onGoTo(index);
+			else exitReviewTo(index);
+		}}
 		onEnterReview={enterReview}
-		onSubmit={() => void handleReviewSubmit()}
+		onSubmit={() => (examSection ? examSection.onFinish() : void handleReviewSubmit())}
 		onClose={handleClose}
 	>
 		{#snippet response()}
@@ -180,18 +204,23 @@
 		{/snippet}
 
 		{#snippet actions()}
-			<div class="flex flex-wrap justify-end gap-2">
-				<Button variant="outline" onclick={handleSkip} disabled={core.isGrading}>Skip</Button>
-				{#if core.grade}
-					{#if nextAfterGrade}
-						<Button onclick={handleNextQuestion}>Next question</Button>
+			{#if !examSection}
+				<div class="flex flex-wrap justify-end gap-2">
+					<Button variant="outline" onclick={handleSkip} disabled={core.isGrading}>Skip</Button>
+					{#if core.grade}
+						{#if nextAfterGrade}
+							<Button onclick={handleNextQuestion}>Next question</Button>
+						{/if}
+					{:else}
+						<Button
+							onclick={() => void core.submit()}
+							disabled={!core.hasResponse || core.isGrading}
+						>
+							{core.isGrading ? 'Grading…' : 'Submit for feedback'}
+						</Button>
 					{/if}
-				{:else}
-					<Button onclick={() => void core.submit()} disabled={!core.hasResponse || core.isGrading}>
-						{core.isGrading ? 'Grading…' : 'Submit for feedback'}
-					</Button>
-				{/if}
-			</div>
+				</div>
+			{/if}
 		{/snippet}
 
 		{#snippet tools()}

@@ -120,6 +120,8 @@ export type StartExamInput = {
 	count: number;
 	questions?: GeneratedQuestion[];
 	timeLimitMs?: number | null;
+	startedAtMs?: number;
+	initialSelections?: Array<string | null>;
 	meta?: ExamMeta;
 };
 

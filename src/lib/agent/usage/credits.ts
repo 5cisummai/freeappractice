@@ -32,6 +32,12 @@ const MODEL_PRICING = {
 		cacheRead: 0.000_000_1,
 		cacheWrite: 0.000_002_5,
 		output: 0.000_01
+	},
+	'openai/gpt-6.1-terra': {
+		input: 0.000_001,
+		cacheRead: 0.000_000_05,
+		cacheWrite: 0.000_001_25,
+		output: 0.000_005
 	}
 } as const;
 type PricedModel = keyof typeof MODEL_PRICING;
@@ -60,7 +66,8 @@ export function usdFromLanguageModelUsage(
 	const noCache = details?.noCacheTokens ?? Math.max(0, inputTokens - cacheRead - cacheWrite);
 
 	const base = MODEL_PRICING[model];
-	const longContext = model === 'openai/gpt-6.1-sol' && inputTokens >= 272_001;
+	const longContext =
+		(model === 'openai/gpt-6.1-sol' || model === 'openai/gpt-6.1-terra') && inputTokens >= 272_001;
 	const inputMultiplier = longContext ? 2 : 1;
 	const outputMultiplier = longContext ? 1.5 : 1;
 

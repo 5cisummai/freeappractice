@@ -34,6 +34,9 @@ export type FrqCoreOpts = {
 	getMounted: () => boolean;
 	getOnGraded?: () => ((attempt: FrqAttemptView) => void) | undefined;
 	getOnSkip?: () => (() => void) | undefined;
+	getExamResponses?: () => Record<string, string> | undefined;
+	getIsExam?: () => boolean;
+	onExamResponse?: (responses: Record<string, string>) => void;
 };
 
 type GradeResponse = { attempt?: FrqAttemptView; error?: string };
@@ -167,7 +170,8 @@ export function createFrqCore(opts: FrqCoreOpts) {
 	function updateResponse(sectionId: string, value: string): void {
 		responses[sectionId] = value;
 		responses = { ...responses };
-		saveDraft();
+		if (opts.getIsExam?.()) opts.onExamResponse?.({ ...responses });
+		else saveDraft();
 	}
 
 	async function loadQuestion(options: { isAutoWarmingRetry?: boolean } = {}): Promise<void> {
@@ -211,7 +215,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 			if (presetId) consumedPresetQuestionId = presetId;
 			if (result.exclusionsReset) seenQuestionIds = [];
 			question = result.question;
-			responses = restoreDraft(result.question);
+			responses = opts.getExamResponses?.() ?? restoreDraft(result.question);
 			startTimer();
 			isPoolWarming = false;
 			poolWarmingAutoAttempts = 0;
@@ -332,7 +336,7 @@ export function createFrqCore(opts: FrqCoreOpts) {
 		const version = opts.getRequestVersion();
 		if (version === 0 || version === lastLoadedRequestVersion) return;
 		lastLoadedRequestVersion = version;
-		if (!restoreLatestDraft()) void loadQuestion();
+		if (opts.getIsExam?.() || !restoreLatestDraft()) void loadQuestion();
 	}
 
 	function destroy(): void {

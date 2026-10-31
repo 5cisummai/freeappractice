@@ -1,4 +1,4 @@
-export const SIM_MODEL = 'openai/gpt-6.1-sol';
+export const SIM_MODEL = 'openai/gpt-6.1-terra';
 
 import { generateText, tool } from 'ai';
 import type { CanvasHtmlArtifact } from '#lib/canvas/types.js';
@@ -25,7 +25,7 @@ export function createSimulationTools(input: AgentToolsInput) {
 					model: SIM_MODEL,
 					// Explicit mode without breakpoints avoids caching these one-shot briefs.
 					providerOptions: {
-						openai: { reasoningEffort: 'low', promptCacheOptions: { mode: 'explicit' } }
+						openai: { reasoningEffort: 'medium', promptCacheOptions: { mode: 'explicit' } }
 					},
 					abortSignal,
 					maxOutputTokens: 8_000,
