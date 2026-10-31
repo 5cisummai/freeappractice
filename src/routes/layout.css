@@ -90,6 +90,50 @@
 	--sidebar-ring: var(--brand-primary);
 }
 
+.halloween {
+	--radius: 0.4rem;
+	--brand-primary: oklch(0.53 0.19 42);
+	--background: oklch(0.955 0.022 305);
+	--foreground: oklch(0.22 0.045 305);
+	--card: oklch(0.995 0.004 305);
+	--card-foreground: var(--foreground);
+	--popover: var(--card);
+	--popover-foreground: var(--foreground);
+	--secondary: oklch(0.91 0.035 305);
+	--secondary-foreground: var(--foreground);
+	--muted: var(--secondary);
+	--muted-foreground: oklch(0.46 0.04 305);
+	--accent: oklch(0.92 0.065 65);
+	--accent-foreground: oklch(0.28 0.07 42);
+	--border: oklch(0.81 0.045 305);
+	--input: var(--border);
+	--sidebar: oklch(0.915 0.04 305);
+	--sidebar-foreground: var(--foreground);
+	--sidebar-accent: var(--accent);
+	--sidebar-accent-foreground: var(--accent-foreground);
+	--sidebar-border: var(--border);
+}
+
+.halloween.dark {
+	--brand-primary: oklch(0.77 0.18 55);
+	--primary-foreground: oklch(0.17 0.025 305);
+	--sidebar-primary-foreground: var(--primary-foreground);
+	--background: oklch(0.155 0.03 305);
+	--foreground: oklch(0.97 0.01 305);
+	--card: oklch(0.215 0.035 305);
+	--popover: oklch(0.235 0.035 305);
+	--secondary: oklch(0.27 0.04 305);
+	--muted: var(--secondary);
+	--muted-foreground: oklch(0.76 0.025 305);
+	--accent: oklch(0.31 0.065 305);
+	--accent-foreground: oklch(0.91 0.085 65);
+	--border: oklch(0.38 0.045 305);
+	--input: oklch(0.43 0.045 305);
+	--sidebar: oklch(0.125 0.025 305);
+	--sidebar-accent: var(--accent);
+	--sidebar-border: var(--border);
+}
+
 @theme inline {
 	--font-sans: 'Open Runde', sans-serif;
 	--font-display: 'DM Sans Variable', sans-serif;
