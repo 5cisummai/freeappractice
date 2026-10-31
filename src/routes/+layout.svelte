@@ -6,7 +6,7 @@
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { invalidateAppSubtree } from '#lib/client/invalidate-data.js';
-	import { DEFAULT_THEME } from '#lib/client/theme.svelte.js';
+	import { DEFAULT_THEME, themeController } from '#lib/client/theme.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
 	import { mountVercelToolbar } from '@vercel/toolbar/vite';
 	import { onMount } from 'svelte';
@@ -68,6 +68,7 @@
 	}
 
 	onMount(() => {
+		themeController.initHalloween();
 		inject(
 			{
 				framework: 'sveltekit',

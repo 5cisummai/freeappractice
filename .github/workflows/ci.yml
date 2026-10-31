@@ -92,12 +92,24 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Require DATABASE_URL
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL (or STAGING_DATABASE_URL on staging) is not set in GitHub Actions secrets." >&2
+            exit 1
+          fi
+          echo "DATABASE_URL is set. Applying migrations, then idempotent backfills."
+
       - name: Apply database migrations
         run: bun run db:apply
 
-      # From here, add any backfill scripts that need to run on prod.
+      # Data backfills run after db:apply so schema/tables exist first.
+      # Each step must be idempotent (safe on every deploy). There is no
+      # continue-on-error, so a failure fails the job and is visible in CI logs.
       - name: Sync AP Art History image set
         run: bun run db:sync-ap-art-history
+      # Add other required backfills here
 
   build:
     name: Build

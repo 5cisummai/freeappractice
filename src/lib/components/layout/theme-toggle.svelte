@@ -98,3 +98,14 @@
 		</DropdownMenu.Group>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
+
+<Button
+	variant="ghost"
+	size="icon"
+	aria-label="Halloween theme"
+	aria-pressed={themeController.halloween}
+	title="Halloween theme"
+	onclick={() => themeController.setHalloween(!themeController.halloween)}
+>
+	<span aria-hidden="true" class="text-lg">🎃</span>
+</Button>
