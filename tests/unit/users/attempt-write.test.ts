@@ -1,9 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ execute: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+	execute: vi.fn(),
+	select: vi.fn(),
+	from: vi.fn(),
+	where: vi.fn(),
+	limit: vi.fn()
+}));
 
 vi.mock('#lib/server/neon/db.js', () => ({
-	getNeonDatabase: () => ({ execute: mocks.execute })
+	getNeonDatabase: () => ({
+		execute: mocks.execute,
+		select: mocks.select
+	})
 }));
 
 import { persistQuestionAttempt } from '#lib/users/attempt-write.server.js';
@@ -19,7 +28,13 @@ const attempt = {
 };
 
 describe('persistQuestionAttempt', () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.select.mockReturnValue({ from: mocks.from });
+		mocks.from.mockReturnValue({ where: mocks.where });
+		mocks.where.mockReturnValue({ limit: mocks.limit });
+		mocks.limit.mockResolvedValue([]);
+	});
 
 	it('returns the atomic insert and progress result', async () => {
 		mocks.execute.mockResolvedValue({

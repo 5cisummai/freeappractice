@@ -72,8 +72,12 @@ describe('bookmarks API', () => {
 
 	it('returns hydrated bookmarks from GET', async () => {
 		const bookmarks = [{ id: 'question-1' }];
+		mocks.orderBy.mockResolvedValue([{ questionId: 'question-1' }]);
 		mocks.getQuestionsByIds.mockResolvedValue(bookmarks);
-		const response = await GET({ locals: { userId: 'user-1' } } as never);
+		const response = await GET({
+			locals: { userId: 'user-1' },
+			url: new URL('http://localhost/api/me/bookmarks')
+		} as never);
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ bookmarks });

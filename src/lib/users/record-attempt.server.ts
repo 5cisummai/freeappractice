@@ -6,10 +6,7 @@ import {
 import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
 import type { IQuestionAttempt } from '#lib/users/records.server.js';
-import {
-	requirePracticeSession,
-	resolvePracticeContext
-} from '#lib/users/practice-context.server.js';
+import { requirePracticeSession } from '#lib/users/practice-context.server.js';
 import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 
 const ANSWER_CHOICES = new Set(['A', 'B', 'C', 'D']);

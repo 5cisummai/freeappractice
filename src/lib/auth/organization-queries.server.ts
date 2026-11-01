@@ -555,7 +555,9 @@ type OrganizationActivityCursor = {
 	id: string;
 };
 
-function decodeOrganizationActivityCursor(value: string | undefined): OrganizationActivityCursor | null {
+function decodeOrganizationActivityCursor(
+	value: string | undefined
+): OrganizationActivityCursor | null {
 	if (!value) return null;
 	try {
 		const decoded = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as unknown;
@@ -577,6 +579,16 @@ function decodeOrganizationActivityCursor(value: string | undefined): Organizati
 
 function encodeOrganizationActivityCursor(cursor: OrganizationActivityCursor): string {
 	return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
+}
+
+export async function listOrganizationActivity(
+	userId: string,
+	organizationId: string
+): Promise<OrganizationActivityItem[]> {
+	const page = await listOrganizationActivityPage(userId, organizationId, {
+		limit: ORG_ACTIVITY_LIMIT
+	});
+	return page.items;
 }
 
 export async function listOrganizationActivityPage(
@@ -617,16 +629,16 @@ export async function listOrganizationActivityPage(
 		.where(
 			and(
 				eq(practiceActivityAudiences.organizationId, organizationId),
-					gte(practiceActivityEvents.completedAt, cutoff),
-					cursor
-						? or(
-								lt(practiceActivityEvents.completedAt, new Date(cursor.completedAt)),
-								and(
-									eq(practiceActivityEvents.completedAt, new Date(cursor.completedAt)),
-									lt(practiceActivityEvents.id, cursor.id)
-								)
+				gte(practiceActivityEvents.completedAt, cutoff),
+				cursor
+					? or(
+							lt(practiceActivityEvents.completedAt, new Date(cursor.completedAt)),
+							and(
+								eq(practiceActivityEvents.completedAt, new Date(cursor.completedAt)),
+								lt(practiceActivityEvents.id, cursor.id)
 							)
-						: undefined
+						)
+					: undefined
 			)
 		)
 		.orderBy(desc(practiceActivityEvents.completedAt))

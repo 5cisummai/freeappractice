@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ cookies, locals, parent: getParent 
 		studyPlanAccessPromise,
 		studyPlanPromise,
 		showOrgFeatures && activeOrganization
-			? listOrganizationActivity(activeOrganization.id)
+			? listOrganizationActivity(userId, activeOrganization.id)
 			: Promise.resolve([]),
 		showOrgFeatures && activeOrganization
 			? listOrganizationSharedSets(activeOrganization.id)

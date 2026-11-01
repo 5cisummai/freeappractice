@@ -74,11 +74,11 @@ CREATE TABLE "app"."practice_sessions" (
 	CONSTRAINT "practice_sessions_status_check" CHECK ("app"."practice_sessions"."status" IN ('open', 'completed', 'cancelled'))
 );
 --> statement-breakpoint
-ALTER TABLE "app"."shared_practice_sets" DROP CONSTRAINT "shared_practice_sets_organization_id_organizations_id_fk";
+ALTER TABLE "app"."shared_practice_sets" DROP CONSTRAINT IF EXISTS "shared_practice_sets_organization_id_organizations_id_fk";
 --> statement-breakpoint
-DROP INDEX "app"."frq_attempts_user_submission_uq";--> statement-breakpoint
-ALTER TABLE "app"."bookmarks" DROP CONSTRAINT "bookmarks_user_id_question_id_pk";--> statement-breakpoint
-ALTER TABLE "app"."user_progress" DROP CONSTRAINT "user_progress_user_id_course_unit_pk";--> statement-breakpoint
+DROP INDEX IF EXISTS "app"."frq_attempts_user_submission_uq";--> statement-breakpoint
+ALTER TABLE "app"."bookmarks" DROP CONSTRAINT IF EXISTS "bookmarks_user_id_question_id_pk";--> statement-breakpoint
+ALTER TABLE "app"."user_progress" DROP CONSTRAINT IF EXISTS "user_progress_user_id_course_unit_pk";--> statement-breakpoint
 ALTER TABLE "app"."bookmarks" ADD COLUMN "id" text PRIMARY KEY DEFAULT gen_random_uuid()::text NOT NULL;--> statement-breakpoint
 ALTER TABLE "app"."bookmarks" ADD COLUMN "organization_id" text;--> statement-breakpoint
 ALTER TABLE "app"."exam_attempts" ADD COLUMN "organization_id" text;--> statement-breakpoint

@@ -10,17 +10,16 @@ import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 export const GET = withAuthedHandler(
 	async (event, userId) => {
 		const organizationId = event.url.searchParams.get('organizationId');
-		let context = { organizationId: null as string | null };
 		try {
-			context = await resolvePracticeContext(userId, organizationId);
+			const context = await resolvePracticeContext(userId, organizationId);
+			const questions = await getBookmarkedQuestions(userId, context);
+			return Response.json({ bookmarks: questions });
 		} catch (error) {
 			if (error instanceof OrganizationPermissionError) {
 				return Response.json({ error: error.message }, { status: 403 });
 			}
 			throw error;
 		}
-		const questions = await getBookmarkedQuestions(userId, context);
-		return Response.json({ bookmarks: questions });
 	},
 	{ logLabel: 'Get bookmarks error', errorMessage: 'Failed to fetch bookmarks' }
 );

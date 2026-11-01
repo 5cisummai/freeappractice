@@ -1,9 +1,8 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { examAttempts } from '#lib/server/neon/schema.js';
 import { resolveRequestPracticeContext } from '#lib/users/practice-context.server.js';
-import { sql } from 'drizzle-orm';
 
 export const GET = withAuthedHandler(
 	async (_event, userId) => {
