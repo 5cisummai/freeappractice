@@ -5,6 +5,19 @@
 
 	const changelog = [
 		{
+			version: '1.10.3',
+			date: 'November 1, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Study group activity feeds only include practice shared by members who have opted in',
+						'The standard theme returns after Halloween, with a clearer mobile navigation button and updated error page styling'
+					]
+				}
+			]
+		},
+		{
 			version: '1.10.2',
 			date: 'October 31, 2026',
 			sections: [
@@ -1647,7 +1660,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: October 31, 2026"
+			meta="Last Updated: November 1, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
