@@ -19,63 +19,6 @@ function delay(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function lockBucket(bucket: PoolBucketKey): PoolBucketKey {
-	return {
-		questionType: bucket.questionType,
-		course: bucket.course,
-		unit: bucket.unit
-	};
-}
-
-function lockKey(bucket: PoolBucketKey): string {
-	return `${bucket.questionType}\u0000${bucket.course}\u0000${bucket.unit}`;
-}
-
-function uniqueLockBuckets(buckets: PoolBucketKey[]): PoolBucketKey[] {
-	const seen = new Set<string>();
-	const unique: PoolBucketKey[] = [];
-	for (const bucket of buckets) {
-		const key = lockKey(bucket);
-		if (seen.has(key)) continue;
-		seen.add(key);
-		unique.push(lockBucket(bucket));
-	}
-	return unique;
-}
-
-function matchLockBuckets(buckets: PoolBucketKey[]) {
-	const matches = buckets.map((bucket) =>
-		and(
-			eq(poolBucketWriteLocks.questionType, bucket.questionType),
-			eq(poolBucketWriteLocks.course, bucket.course),
-			eq(poolBucketWriteLocks.unit, bucket.unit)
-		)
-	);
-	const first = matches[0];
-	if (!first) return eq(poolBucketWriteLocks.id, '');
-	if (matches.length === 1) return first;
-	return or(first, ...matches.slice(1));
-}
-
-async function ensureLockRows(buckets: PoolBucketKey[]): Promise<void> {
-	if (!buckets.length) return;
-	try {
-		await getNeonDatabase()
-			.insert(poolBucketWriteLocks)
-			.values(
-				buckets.map((bucket) => ({
-					id: randomUUID(),
-					...bucket,
-					leaseOwner: null,
-					leaseExpiresAt: null
-				}))
-			)
-			.onConflictDoNothing();
-	} catch (error) {
-		if (!isDuplicateKeyError(error)) throw error;
-	}
-}
-
 /**
  * Serialize the final target check and write for one class/unit bucket.
  * Every LLM refill and batch collector uses this guard, so concurrent writers
@@ -86,9 +29,49 @@ export async function writePoolBucketBelowTarget<T>(
 	target: number,
 	write: () => Promise<T>
 ): Promise<CapacityResult<T>> {
+	const key = {
+		questionType: bucket.questionType,
+		course: bucket.course,
+		unit: bucket.unit
+	};
 	const owner = randomUUID();
-	const acquired = await acquirePoolBucketWriteLocks([bucket], owner);
-	if (!acquired.length)
+	const db = getNeonDatabase();
+	try {
+		await db
+			.insert(poolBucketWriteLocks)
+			.values({ id: randomUUID(), ...key, leaseOwner: null, leaseExpiresAt: null })
+			.onConflictDoNothing();
+	} catch (error) {
+		if (!isDuplicateKeyError(error)) throw error;
+	}
+
+	let acquired = false;
+	for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {
+		const now = new Date();
+		const lock = await db
+			.update(poolBucketWriteLocks)
+			.set({ leaseOwner: owner, leaseExpiresAt: new Date(now.getTime() + LOCK_TTL_MS) })
+			.where(
+				and(
+					eq(poolBucketWriteLocks.questionType, key.questionType),
+					eq(poolBucketWriteLocks.course, key.course),
+					eq(poolBucketWriteLocks.unit, key.unit),
+					or(
+						isNull(poolBucketWriteLocks.leaseOwner),
+						isNull(poolBucketWriteLocks.leaseExpiresAt),
+						lte(poolBucketWriteLocks.leaseExpiresAt, now)
+					)
+				)
+			)
+			.returning({ id: poolBucketWriteLocks.id });
+		if (lock.length) {
+			acquired = true;
+			break;
+		}
+		await delay(LOCK_RETRY_MS);
+	}
+
+	if (!acquired)
 		throw new Error(`Timed out waiting for the ${bucket.questionType} pool write lock`);
 
 	try {
@@ -100,66 +83,16 @@ export async function writePoolBucketBelowTarget<T>(
 		if (activeCount >= target) return { status: 'at_target', activeCount };
 		return { status: 'written', value: await write() };
 	} finally {
-		await releasePoolBucketWriteLocks(acquired, owner);
-	}
-}
-
-export async function acquirePoolBucketWriteLocks(
-	buckets: PoolBucketKey[],
-	owner: string
-): Promise<PoolBucketKey[]> {
-	const unique = uniqueLockBuckets(buckets);
-	if (!unique.length) return [];
-
-	await ensureLockRows(unique);
-
-	const acquired = new Map<string, PoolBucketKey>();
-	for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt += 1) {
-		const remaining = unique.filter((bucket) => !acquired.has(lockKey(bucket)));
-		if (!remaining.length) break;
-
-		const now = new Date();
-		const rows = await getNeonDatabase()
+		await db
 			.update(poolBucketWriteLocks)
-			.set({ leaseOwner: owner, leaseExpiresAt: new Date(now.getTime() + LOCK_TTL_MS) })
+			.set({ leaseOwner: null, leaseExpiresAt: null })
 			.where(
 				and(
-					matchLockBuckets(remaining),
-					or(
-						isNull(poolBucketWriteLocks.leaseOwner),
-						isNull(poolBucketWriteLocks.leaseExpiresAt),
-						lte(poolBucketWriteLocks.leaseExpiresAt, now)
-					)
+					eq(poolBucketWriteLocks.questionType, key.questionType),
+					eq(poolBucketWriteLocks.course, key.course),
+					eq(poolBucketWriteLocks.unit, key.unit),
+					eq(poolBucketWriteLocks.leaseOwner, owner)
 				)
-			)
-			.returning({
-				questionType: poolBucketWriteLocks.questionType,
-				course: poolBucketWriteLocks.course,
-				unit: poolBucketWriteLocks.unit
-			});
-		for (const row of rows) {
-			const bucket = lockBucket({
-				questionType: row.questionType as PoolBucketKey['questionType'],
-				course: row.course,
-				unit: row.unit
-			});
-			acquired.set(lockKey(bucket), bucket);
-		}
-		if (acquired.size === unique.length) break;
-		await delay(LOCK_RETRY_MS);
+			);
 	}
-
-	return [...acquired.values()];
-}
-
-export async function releasePoolBucketWriteLocks(
-	buckets: PoolBucketKey[],
-	owner: string
-): Promise<void> {
-	const unique = uniqueLockBuckets(buckets);
-	if (!unique.length) return;
-	await getNeonDatabase()
-		.update(poolBucketWriteLocks)
-		.set({ leaseOwner: null, leaseExpiresAt: null })
-		.where(and(matchLockBuckets(unique), eq(poolBucketWriteLocks.leaseOwner, owner)));
 }

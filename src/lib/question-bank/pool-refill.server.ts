@@ -16,11 +16,7 @@ import {
 	isValidPoolBucket,
 	type PoolBucketKey
 } from '#lib/question-bank/pool-refill-queue.server.js';
-import {
-	acquirePoolBucketWriteLocks,
-	releasePoolBucketWriteLocks,
-	writePoolBucketBelowTarget
-} from '#lib/question-bank/pool-capacity.server.js';
+import { writePoolBucketBelowTarget } from '#lib/question-bank/pool-capacity.server.js';
 import {
 	QUESTION_POOL_CONFIG,
 	type QuestionPoolConfig
@@ -418,20 +414,11 @@ async function releaseLeasesBudgetExhausted(
 async function generateOne(
 	bucket: PoolBucketKey,
 	target: number,
-	reservedSlots?: number,
-	opts?: { holdWriteLock?: boolean }
+	reservedSlots?: number
 ): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean; generatedCount: number }> {
-	const write = () =>
-		generatePoolQuestion(bucket.questionType, bucket.course, bucket.unit, target, reservedSlots);
-	if (opts?.holdWriteLock) {
-		const value = await write();
-		return {
-			skippedDuplicate: Boolean(value.skippedDuplicate),
-			skippedAtTarget: false,
-			generatedCount: value.generatedCount ?? 1
-		};
-	}
-	const guarded = await writePoolBucketBelowTarget(bucket, target, write);
+	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
+		generatePoolQuestion(bucket.questionType, bucket.course, bucket.unit, target, reservedSlots)
+	);
 	if (guarded.status === 'at_target') {
 		return { skippedDuplicate: false, skippedAtTarget: true, generatedCount: 0 };
 	}
@@ -529,7 +516,6 @@ export async function processRefillJob(
 		maxGenerations: number;
 		deadlineMs: number;
 		observedCount?: number;
-		holdWriteLock?: boolean;
 		initialReservedSlots?: number;
 		leaseAlreadyRenewed?: boolean;
 	}
@@ -623,9 +609,7 @@ export async function processRefillJob(
 				}
 			}
 
-			const result = await generateOne(bucket, lease.target, reservedSlots, {
-				holdWriteLock: opts.holdWriteLock
-			});
+			const result = await generateOne(bucket, lease.target, reservedSlots);
 			if (result.skippedAtTarget) {
 				await releaseDailyGenerationBudget(reservedSlots);
 				reservedSlotsForAttempt = 0;
@@ -734,12 +718,11 @@ async function releaseAtTargetJobs(
 type PreparedDueRefillJob = {
 	job: PoolRefillStateRow;
 	observedCount: number;
-	holdWriteLock: boolean;
 	initialReservedSlots: number;
 };
 
 async function allocateDueRefillBudget(
-	live: Array<{ job: PoolRefillStateRow; observedCount: number; holdWriteLock: boolean }>,
+	live: Array<{ job: PoolRefillStateRow; observedCount: number }>,
 	env: QuestionPoolConfig,
 	budgetRemaining: number
 ): Promise<PreparedDueRefillJob[]> {
@@ -767,51 +750,30 @@ async function allocateDueRefillBudget(
 	return ready;
 }
 
+/**
+ * Batch pre-LLM work only: one lease renew + grouped slot estimates + one budget reserve.
+ * Do not hold pool write locks across generate — each job still takes its own lock inside
+ * `writePoolBucketBelowTarget` around the final count-and-write.
+ */
 async function prepareDueRefillJobs(
 	due: Array<{ job: PoolRefillStateRow; observedCount: number }>,
 	env: QuestionPoolConfig,
-	budgetRemaining: number,
-	lockOwner: string
-): Promise<{ ready: PreparedDueRefillJob[]; acquiredLocks: PoolBucketKey[] }> {
-	const acquiredLocks = await acquirePoolBucketWriteLocks(
-		due.map(({ job }) => job),
-		lockOwner
-	);
-	const acquiredKeys = new Set(acquiredLocks.map(jobServingKey));
-	const lockedDue = due.filter(({ job }) => acquiredKeys.has(jobServingKey(job)));
-	const unlockedDue = due.filter(({ job }) => !acquiredKeys.has(jobServingKey(job)));
-
-	const lockedCounts = await loadServingCountsForJobs(lockedDue.map(({ job }) => job));
-	const lockedFull: Array<{ doc: PoolRefillStateRow; observedCount: number }> = [];
-	const lockedGenerate: Array<{ job: PoolRefillStateRow; observedCount: number }> = [];
-	for (const item of lockedDue) {
-		const observedCount = lockedCounts.get(jobServingKey(item.job)) ?? 0;
-		if (observedCount >= item.job.target) lockedFull.push({ doc: item.job, observedCount });
-		else lockedGenerate.push({ ...item, observedCount });
-	}
-	if (lockedFull.length) await releaseAtTargetJobs(lockedFull);
-
-	const generate = [
-		...lockedGenerate.map((item) => ({ ...item, holdWriteLock: true })),
-		...unlockedDue.map((item) => ({ ...item, holdWriteLock: false }))
-	];
-	if (!generate.length) return { ready: [], acquiredLocks };
+	budgetRemaining: number
+): Promise<PreparedDueRefillJob[]> {
+	if (!due.length) return [];
 
 	const renewed = await renewRefillLeases(
-		generate.map(({ job }) => job),
+		due.map(({ job }) => job),
 		env.leaseTtlMs
 	);
 	const renewedById = new Map(renewed.map((row) => [row.id, row]));
-	const live = generate.flatMap((item) => {
+	const live = due.flatMap((item) => {
 		const job = renewedById.get(item.job.id);
-		return job ? [{ ...item, job }] : [];
+		return job ? [{ job, observedCount: item.observedCount }] : [];
 	});
-	if (!live.length) return { ready: [], acquiredLocks };
+	if (!live.length) return [];
 
-	return {
-		ready: await allocateDueRefillBudget(live, env, budgetRemaining),
-		acquiredLocks
-	};
+	return allocateDueRefillBudget(live, env, budgetRemaining);
 }
 
 export async function runQuestionPoolRefillWorker(
@@ -877,38 +839,31 @@ export async function runQuestionPoolRefillWorker(
 		if (atTarget.length) await releaseAtTargetJobs(atTarget);
 		if (!due.length) continue;
 
-		let acquiredLocks: PoolBucketKey[] = [];
-		try {
-			const prepared = await prepareDueRefillJobs(due, env, budgetRemaining, owner);
-			acquiredLocks = prepared.acquiredLocks;
-			if (prepared.ready.length) {
-				const results = await Promise.allSettled(
-					prepared.ready.map(({ job, observedCount, holdWriteLock, initialReservedSlots }) =>
-						processRefillJob(job, env, {
-							maxGenerations: budgetRemaining,
-							deadlineMs,
-							observedCount,
-							holdWriteLock,
-							initialReservedSlots,
-							leaseAlreadyRenewed: true
-						})
-					)
-				);
-				for (const result of results) {
-					if (result.status === 'rejected') {
-						failed += 1;
-						logger.error('[pool-refill] parallel job failed outside worker boundary', {
-							error: result.reason
-						});
-						continue;
-					}
-					generated += result.value.generated;
-					skippedDuplicates += result.value.skippedDuplicates;
-					if (result.value.failed) failed += 1;
+		const prepared = await prepareDueRefillJobs(due, env, budgetRemaining);
+		if (prepared.length) {
+			const results = await Promise.allSettled(
+				prepared.map(({ job, observedCount, initialReservedSlots }) =>
+					processRefillJob(job, env, {
+						maxGenerations: budgetRemaining,
+						deadlineMs,
+						observedCount,
+						initialReservedSlots,
+						leaseAlreadyRenewed: true
+					})
+				)
+			);
+			for (const result of results) {
+				if (result.status === 'rejected') {
+					failed += 1;
+					logger.error('[pool-refill] parallel job failed outside worker boundary', {
+						error: result.reason
+					});
+					continue;
 				}
+				generated += result.value.generated;
+				skippedDuplicates += result.value.skippedDuplicates;
+				if (result.value.failed) failed += 1;
 			}
-		} finally {
-			await releasePoolBucketWriteLocks(acquiredLocks, owner);
 		}
 
 		budgetRemaining = await getDailyBudgetRemaining(env);

@@ -47,9 +47,7 @@ vi.mock('#lib/question-bank/pool-capacity.server.js', () => ({
 			status: 'written',
 			value: await write()
 		})
-	),
-	acquirePoolBucketWriteLocks: vi.fn(async (buckets: PoolRefillState[]) => buckets),
-	releasePoolBucketWriteLocks: vi.fn(async () => undefined)
+	)
 }));
 vi.mock('#lib/question-bank/pool-kind-worker.server.js', () => ({
 	estimatePoolGenerationSlots: vi.fn(async () => 1),
@@ -83,10 +81,7 @@ import {
 	countActivePoolRowsForServingByBucket,
 	isValidPoolBucket
 } from '#lib/question-bank/pool-refill-queue.server.js';
-import {
-	acquirePoolBucketWriteLocks,
-	releasePoolBucketWriteLocks
-} from '#lib/question-bank/pool-capacity.server.js';
+import { writePoolBucketBelowTarget } from '#lib/question-bank/pool-capacity.server.js';
 import {
 	estimatePoolGenerationSlotsForJobs,
 	generatePoolQuestion
@@ -266,20 +261,16 @@ describe('question pool refill worker concurrency', () => {
 		expect(JSON.stringify(releaseQuery?.params)).toContain('worker-test');
 	});
 
-	it('prepares due jobs with one lock acquire, slot estimate, and lease renew', async () => {
+	it('batches slot estimates and first-wave budget without holding write locks across generate', async () => {
 		const summary = await runQuestionPoolRefillWorker(env, {
 			owner: 'worker-test',
 			startedAt: Date.now()
 		});
 
 		expect(summary.generated).toBe(8);
-		expect(acquirePoolBucketWriteLocks).toHaveBeenCalledOnce();
-		expect(releasePoolBucketWriteLocks).toHaveBeenCalledOnce();
 		expect(estimatePoolGenerationSlotsForJobs).toHaveBeenCalledOnce();
 		expect(vi.mocked(estimatePoolGenerationSlotsForJobs).mock.calls[0]?.[0]).toHaveLength(8);
-		expect(acquirePoolBucketWriteLocks).toHaveBeenCalledWith(
-			expect.arrayContaining([expect.objectContaining({ unit: 'Unit 1' })]),
-			'worker-test'
-		);
+		expect(writePoolBucketBelowTarget).toHaveBeenCalledTimes(8);
+		expect(mocks.state.maxConcurrentGenerations).toBe(8);
 	});
 });
