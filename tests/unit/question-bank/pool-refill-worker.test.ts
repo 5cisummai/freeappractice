@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => {
 		activeGenerations: 0,
 		completedBuckets: new Set<string>(),
 		candidates: [] as PoolRefillState[],
+		claimed: [] as PoolRefillState[],
 		generationBudgetUsed: 0,
+		pendingBudgetDelta: 1,
 		lastLease: null as PoolRefillState | null,
 		maxConcurrentGenerations: 0,
 		idleUpdates: 0
@@ -49,6 +51,9 @@ vi.mock('#lib/question-bank/pool-capacity.server.js', () => ({
 }));
 vi.mock('#lib/question-bank/pool-kind-worker.server.js', () => ({
 	estimatePoolGenerationSlots: vi.fn(async () => 1),
+	estimatePoolGenerationSlotsForJobs: vi.fn(
+		async (jobs: Array<{ id: string }>) => new Map(jobs.map((job) => [job.id, 1]))
+	),
 	generatePoolQuestion: vi.fn(async (_type: string, course: string, unit: string) => {
 		mocks.state.activeGenerations += 1;
 		mocks.state.maxConcurrentGenerations = Math.max(
@@ -76,7 +81,11 @@ import {
 	countActivePoolRowsForServingByBucket,
 	isValidPoolBucket
 } from '#lib/question-bank/pool-refill-queue.server.js';
-import { generatePoolQuestion } from '#lib/question-bank/pool-kind-worker.server.js';
+import { writePoolBucketBelowTarget } from '#lib/question-bank/pool-capacity.server.js';
+import {
+	estimatePoolGenerationSlotsForJobs,
+	generatePoolQuestion
+} from '#lib/question-bank/pool-kind-worker.server.js';
 import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 const env: QuestionPoolConfig = {
@@ -127,7 +136,9 @@ function configureDatabase() {
 	mocks.state.activeGenerations = 0;
 	mocks.state.completedBuckets.clear();
 	mocks.state.candidates = Array.from({ length: 8 }, (_, index) => makeJob(index + 1));
+	mocks.state.claimed = [];
 	mocks.state.generationBudgetUsed = 0;
+	mocks.state.pendingBudgetDelta = 1;
 	mocks.state.lastLease = null;
 	mocks.state.maxConcurrentGenerations = 0;
 	mocks.state.idleUpdates = 0;
@@ -147,27 +158,41 @@ function configureDatabase() {
 	}));
 	mocks.db.execute.mockImplementation(async () => {
 		const claimed = mocks.state.candidates.splice(0, 40).map(asRunningLease);
+		mocks.state.claimed = claimed;
 		mocks.state.lastLease = claimed.at(-1) ?? null;
 		return { rows: claimed };
 	});
 	mocks.db.update.mockImplementation((table: unknown) => {
 		const query: Record<string, unknown> = {};
-		query.set = (values: { lastError?: string | null }) => {
+		query.set = (values: { lastError?: string | null; generations?: unknown }) => {
 			if (
 				table === poolRefillStates &&
 				values.lastError === 'Cancelled invalid catalog pool bucket'
 			) {
 				mocks.state.idleUpdates += 1;
 			}
+			if (table === poolGenerationBudgets && values.generations != null) {
+				try {
+					const amount = Number(
+						new PgDialect().sqlToQuery(values.generations as never).params.at(-1)
+					);
+					if (Number.isFinite(amount) && amount > 0) {
+						mocks.state.pendingBudgetDelta = amount;
+					}
+				} catch {
+					mocks.state.pendingBudgetDelta = 1;
+				}
+			}
 			return query;
 		};
 		query.where = () => query;
 		query.returning = async () => {
 			if (table === poolGenerationBudgets) {
-				mocks.state.generationBudgetUsed += 1;
+				mocks.state.generationBudgetUsed += mocks.state.pendingBudgetDelta ?? 1;
+				mocks.state.pendingBudgetDelta = 1;
 				return [{ dayKey: 'test-day' }];
 			}
-			return mocks.state.lastLease ? [mocks.state.lastLease] : [];
+			return mocks.state.claimed;
 		};
 		return query;
 	});
@@ -210,7 +235,7 @@ describe('question pool refill worker concurrency', () => {
 	});
 
 	it('releases already-full claimed jobs in one statement', async () => {
-		vi.mocked(countActivePoolRowsForServingByBucket).mockResolvedValue(
+		vi.mocked(countActivePoolRowsForServingByBucket).mockResolvedValueOnce(
 			new Map(Array.from({ length: 8 }, (_, index) => [`AP Biology\u0000Unit ${index + 1}`, 1]))
 		);
 
@@ -234,5 +259,18 @@ describe('question pool refill worker concurrency', () => {
 			'target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"'
 		);
 		expect(JSON.stringify(releaseQuery?.params)).toContain('worker-test');
+	});
+
+	it('batches slot estimates and first-wave budget without holding write locks across generate', async () => {
+		const summary = await runQuestionPoolRefillWorker(env, {
+			owner: 'worker-test',
+			startedAt: Date.now()
+		});
+
+		expect(summary.generated).toBe(8);
+		expect(estimatePoolGenerationSlotsForJobs).toHaveBeenCalledOnce();
+		expect(vi.mocked(estimatePoolGenerationSlotsForJobs).mock.calls[0]?.[0]).toHaveLength(8);
+		expect(writePoolBucketBelowTarget).toHaveBeenCalledTimes(8);
+		expect(mocks.state.maxConcurrentGenerations).toBe(8);
 	});
 });

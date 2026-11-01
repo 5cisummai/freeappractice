@@ -5,6 +5,7 @@ import { poolGenerationBudgets, poolRefillStates } from '#lib/server/neon/schema
 import type { PoolRefillState as PoolRefillStateRow } from '#lib/question-bank/pool-refill-types.server.js';
 import {
 	estimatePoolGenerationSlots,
+	estimatePoolGenerationSlotsForJobs,
 	generatePoolQuestion
 } from '#lib/question-bank/pool-kind-worker.server.js';
 import { getPoolKindAdapter } from '#lib/question-bank/pool-kinds.server.js';
@@ -223,18 +224,43 @@ async function renewRefillLease(
 	doc: PoolRefillStateRow,
 	leaseTtlMs: number
 ): Promise<PoolRefillStateRow> {
-	if (!doc.leaseOwner) throw new Error('Refill lease has no owner');
-	const leaseExpiresAt = new Date(Date.now() + leaseTtlMs);
-	const rows = await getNeonDatabase()
-		.update(poolRefillStates)
-		.set({ leaseExpiresAt, updatedAt: new Date() })
-		.where(and(eq(poolRefillStates.id, doc.id), eq(poolRefillStates.leaseOwner, doc.leaseOwner)))
-		.returning();
-	const updated = rows[0] as PoolRefillStateRow | undefined;
+	const renewed = await renewRefillLeases([doc], leaseTtlMs);
+	const updated = renewed[0];
 	if (!updated) {
 		throw new Error('Lost refill lease while generating');
 	}
 	return updated;
+}
+
+async function renewRefillLeases(
+	docs: PoolRefillStateRow[],
+	leaseTtlMs: number
+): Promise<PoolRefillStateRow[]> {
+	const owned = docs.filter((doc) => doc.leaseOwner);
+	if (!owned.length) return [];
+	const owner = owned[0]?.leaseOwner;
+	if (!owner || owned.some((doc) => doc.leaseOwner !== owner)) {
+		const renewed: PoolRefillStateRow[] = [];
+		for (const doc of owned) {
+			renewed.push(...(await renewRefillLeases([doc], leaseTtlMs)));
+		}
+		return renewed;
+	}
+	const leaseExpiresAt = new Date(Date.now() + leaseTtlMs);
+	const rows = await getNeonDatabase()
+		.update(poolRefillStates)
+		.set({ leaseExpiresAt, updatedAt: new Date() })
+		.where(
+			and(
+				inArray(
+					poolRefillStates.id,
+					owned.map((doc) => doc.id)
+				),
+				eq(poolRefillStates.leaseOwner, owner)
+			)
+		)
+		.returning();
+	return rows as PoolRefillStateRow[];
 }
 
 export async function tryAcquireRefillLease(
@@ -343,6 +369,48 @@ async function releaseLeaseFailure(
 		.where(and(eq(poolRefillStates.id, doc.id), eq(poolRefillStates.leaseOwner, doc.leaseOwner)));
 }
 
+function budgetExhaustedBackoffMs(attempts: number, env: QuestionPoolConfig): number {
+	return Math.min(env.retryDelayMs * 2 ** Math.max(0, attempts - 1), 60 * 60_000);
+}
+
+async function releaseLeasesBudgetExhausted(
+	docs: PoolRefillStateRow[],
+	env: QuestionPoolConfig
+): Promise<void> {
+	if (!docs.length) return;
+	const now = new Date();
+	await getNeonDatabase().execute(sql`
+		UPDATE ${poolRefillStates} AS target
+		SET
+			status = 'budget_exhausted',
+			lease_owner = NULL,
+			lease_expires_at = NULL,
+			last_error = incoming.error,
+			next_attempt_at = incoming."nextAttemptAt",
+			updated_at = ${now}
+		FROM (
+			SELECT *
+			FROM jsonb_to_recordset(${JSON.stringify(
+				docs.map((doc) => ({
+					id: doc.id,
+					leaseOwner: doc.leaseOwner,
+					error: 'Daily LLM generation budget exhausted',
+					nextAttemptAt: new Date(
+						now.getTime() + budgetExhaustedBackoffMs(doc.attempts, env)
+					).toISOString()
+				}))
+			)}::jsonb) AS row(
+				"id" text,
+				"leaseOwner" text,
+				"error" text,
+				"nextAttemptAt" timestamptz
+			)
+		) AS incoming
+		WHERE target.id = incoming.id
+			AND target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"
+	`);
+}
+
 async function generateOne(
 	bucket: PoolBucketKey,
 	target: number,
@@ -444,7 +512,13 @@ async function idleInvalidRefillJobs(
 export async function processRefillJob(
 	doc: PoolRefillStateRow,
 	env: QuestionPoolConfig,
-	opts: { maxGenerations: number; deadlineMs: number; observedCount?: number }
+	opts: {
+		maxGenerations: number;
+		deadlineMs: number;
+		observedCount?: number;
+		initialReservedSlots?: number;
+		leaseAlreadyRenewed?: boolean;
+	}
 ): Promise<{
 	generated: number;
 	skippedDuplicates: number;
@@ -464,6 +538,7 @@ export async function processRefillJob(
 	let lease = doc;
 	let reservedSlotsForAttempt = 0;
 	let observedCount = opts.observedCount;
+	let initialReservedSlots = opts.initialReservedSlots;
 	try {
 		while (budgetUsed < opts.maxGenerations) {
 			const remainingMs = opts.deadlineMs - Date.now();
@@ -484,12 +559,14 @@ export async function processRefillJob(
 				};
 			}
 
-			const requestedSlots = await estimatePoolGenerationSlots(
-				bucket.questionType,
-				bucket.course,
-				bucket.unit,
-				lease.target
-			);
+			const requestedSlots =
+				initialReservedSlots ??
+				(await estimatePoolGenerationSlots(
+					bucket.questionType,
+					bucket.course,
+					bucket.unit,
+					lease.target
+				));
 			if (budgetUsed + requestedSlots > opts.maxGenerations) {
 				if (budgetUsed === 0) {
 					await releaseLeaseFailure(
@@ -502,26 +579,34 @@ export async function processRefillJob(
 				}
 				break;
 			}
-			const reservedSlots = await reserveDailyGenerationBudget(env, requestedSlots);
-			if (reservedSlots < requestedSlots) {
-				if (reservedSlots > 0) await releaseDailyGenerationBudget(reservedSlots);
-				await releaseLeaseFailure(
-					lease,
-					new Error('Daily LLM generation budget exhausted'),
-					env,
-					'budget_exhausted'
-				);
-				return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: true };
+			let reservedSlots: number;
+			if (initialReservedSlots != null) {
+				reservedSlots = initialReservedSlots;
+				initialReservedSlots = undefined;
+			} else {
+				reservedSlots = await reserveDailyGenerationBudget(env, requestedSlots);
+				if (reservedSlots < requestedSlots) {
+					if (reservedSlots > 0) await releaseDailyGenerationBudget(reservedSlots);
+					await releaseLeaseFailure(
+						lease,
+						new Error('Daily LLM generation budget exhausted'),
+						env,
+						'budget_exhausted'
+					);
+					return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: true };
+				}
 			}
 			reservedSlotsForAttempt = reservedSlots;
 
 			// Keep the lease alive across multi-gen FRQ work (high reasoning latency).
-			try {
-				lease = await renewRefillLease(lease, env.leaseTtlMs);
-			} catch (leaseError) {
-				await releaseDailyGenerationBudget(reservedSlots);
-				reservedSlotsForAttempt = 0;
-				throw leaseError;
+			if (!opts.leaseAlreadyRenewed || budgetUsed > 0) {
+				try {
+					lease = await renewRefillLease(lease, env.leaseTtlMs);
+				} catch (leaseError) {
+					await releaseDailyGenerationBudget(reservedSlots);
+					reservedSlotsForAttempt = 0;
+					throw leaseError;
+				}
 			}
 
 			const result = await generateOne(bucket, lease.target, reservedSlots);
@@ -573,7 +658,7 @@ export async function processRefillJob(
 	}
 }
 
-function jobServingKey(job: PoolRefillStateRow): string {
+function jobServingKey(job: PoolBucketKey): string {
 	return `${job.questionType}\u0000${job.course}\u0000${job.unit}`;
 }
 
@@ -628,6 +713,67 @@ async function releaseAtTargetJobs(
 		WHERE target.id = incoming.id
 			AND target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"
 	`);
+}
+
+type PreparedDueRefillJob = {
+	job: PoolRefillStateRow;
+	observedCount: number;
+	initialReservedSlots: number;
+};
+
+async function allocateDueRefillBudget(
+	live: Array<{ job: PoolRefillStateRow; observedCount: number }>,
+	env: QuestionPoolConfig,
+	budgetRemaining: number
+): Promise<PreparedDueRefillJob[]> {
+	const slotEstimates = await estimatePoolGenerationSlotsForJobs(live.map(({ job }) => job));
+	const wanted = live.reduce(
+		(sum, item) => sum + Math.max(1, slotEstimates.get(item.job.id) ?? 1),
+		0
+	);
+	const reserved =
+		wanted > 0 ? await reserveDailyGenerationBudget(env, Math.min(wanted, budgetRemaining)) : 0;
+	let remaining = reserved;
+	const ready: PreparedDueRefillJob[] = [];
+	const exhausted: PoolRefillStateRow[] = [];
+	for (const item of live) {
+		const slots = Math.max(1, slotEstimates.get(item.job.id) ?? 1);
+		if (slots > remaining) {
+			exhausted.push(item.job);
+			continue;
+		}
+		remaining -= slots;
+		ready.push({ ...item, initialReservedSlots: slots });
+	}
+	if (remaining > 0) await releaseDailyGenerationBudget(remaining);
+	if (exhausted.length) await releaseLeasesBudgetExhausted(exhausted, env);
+	return ready;
+}
+
+/**
+ * Batch pre-LLM work only: one lease renew + grouped slot estimates + one budget reserve.
+ * Do not hold pool write locks across generate — each job still takes its own lock inside
+ * `writePoolBucketBelowTarget` around the final count-and-write.
+ */
+async function prepareDueRefillJobs(
+	due: Array<{ job: PoolRefillStateRow; observedCount: number }>,
+	env: QuestionPoolConfig,
+	budgetRemaining: number
+): Promise<PreparedDueRefillJob[]> {
+	if (!due.length) return [];
+
+	const renewed = await renewRefillLeases(
+		due.map(({ job }) => job),
+		env.leaseTtlMs
+	);
+	const renewedById = new Map(renewed.map((row) => [row.id, row]));
+	const live = due.flatMap((item) => {
+		const job = renewedById.get(item.job.id);
+		return job ? [{ job, observedCount: item.observedCount }] : [];
+	});
+	if (!live.length) return [];
+
+	return allocateDueRefillBudget(live, env, budgetRemaining);
 }
 
 export async function runQuestionPoolRefillWorker(
@@ -693,26 +839,31 @@ export async function runQuestionPoolRefillWorker(
 		if (atTarget.length) await releaseAtTargetJobs(atTarget);
 		if (!due.length) continue;
 
-		const results = await Promise.allSettled(
-			due.map(({ job, observedCount }) =>
-				processRefillJob(job, env, {
-					maxGenerations: budgetRemaining,
-					deadlineMs,
-					observedCount
-				})
-			)
-		);
-		for (const result of results) {
-			if (result.status === 'rejected') {
-				failed += 1;
-				logger.error('[pool-refill] parallel job failed outside worker boundary', {
-					error: result.reason
-				});
-				continue;
+		const prepared = await prepareDueRefillJobs(due, env, budgetRemaining);
+		if (prepared.length) {
+			const results = await Promise.allSettled(
+				prepared.map(({ job, observedCount, initialReservedSlots }) =>
+					processRefillJob(job, env, {
+						maxGenerations: budgetRemaining,
+						deadlineMs,
+						observedCount,
+						initialReservedSlots,
+						leaseAlreadyRenewed: true
+					})
+				)
+			);
+			for (const result of results) {
+				if (result.status === 'rejected') {
+					failed += 1;
+					logger.error('[pool-refill] parallel job failed outside worker boundary', {
+						error: result.reason
+					});
+					continue;
+				}
+				generated += result.value.generated;
+				skippedDuplicates += result.value.skippedDuplicates;
+				if (result.value.failed) failed += 1;
 			}
-			generated += result.value.generated;
-			skippedDuplicates += result.value.skippedDuplicates;
-			if (result.value.failed) failed += 1;
 		}
 
 		budgetRemaining = await getDailyBudgetRemaining(env);
