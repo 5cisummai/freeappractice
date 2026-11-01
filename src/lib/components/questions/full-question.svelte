@@ -120,6 +120,7 @@
 
 	let menuOpen = $state(false);
 	let eliminatorActive = $state(false);
+	let submitting = $state(false);
 	let stimulusScrollNode = $state<HTMLElement | null>(null);
 	const isMobile = new IsMobile();
 	const isReviewStage = $derived(stage === 'review');
@@ -670,10 +671,14 @@
 						<Button
 							variant="default"
 							size="sm"
-							disabled={submitDisabled || !onSubmit}
-							onclick={() => onSubmit?.()}
+							disabled={submitDisabled || submitting || !onSubmit}
+							onclick={() => {
+								if (submitting || submitDisabled || !onSubmit) return;
+								submitting = true;
+								onSubmit();
+							}}
 						>
-							Submit quiz
+							{submitting ? 'Submitting…' : 'Submit quiz'}
 						</Button>
 					{:else}
 						{#if onPrev}
