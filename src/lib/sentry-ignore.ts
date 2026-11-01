@@ -29,3 +29,12 @@ export function isIgnoredSentryError(error: unknown): boolean {
 		typeof pattern === 'string' ? message.includes(pattern) : pattern.test(message)
 	);
 }
+
+/** SvelteKit reads `.component` on an undefined route node during a stale or raced navigation. */
+export function isSvelteKitMissingComponentError(error: unknown): boolean {
+	const message = sentryErrorMessage(error);
+	return (
+		message.includes("Cannot read properties of undefined (reading 'component')") ||
+		message.includes("Cannot read property 'component' of undefined")
+	);
+}
