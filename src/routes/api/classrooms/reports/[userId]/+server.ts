@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
@@ -13,6 +13,8 @@ import {
 	quizAttemptQuestions,
 	quizAttempts
 } from '#lib/server/neon/schema.js';
+
+const STUDENT_REPORT_DETAIL_LIMIT = 200;
 
 export const GET = withAuthedHandler(
 	async (event, teacherId) => {
@@ -52,25 +54,33 @@ export const GET = withAuthedHandler(
 				.from(mcqAttempts)
 				.where(
 					and(eq(mcqAttempts.organizationId, organizationId), eq(mcqAttempts.userId, studentId))
-				),
+				)
+				.orderBy(desc(mcqAttempts.attemptedAt))
+				.limit(STUDENT_REPORT_DETAIL_LIMIT),
 			db
 				.select()
 				.from(frqAttempts)
 				.where(
 					and(eq(frqAttempts.organizationId, organizationId), eq(frqAttempts.userId, studentId))
-				),
+				)
+				.orderBy(desc(frqAttempts.createdAt))
+				.limit(STUDENT_REPORT_DETAIL_LIMIT),
 			db
 				.select()
 				.from(quizAttempts)
 				.where(
 					and(eq(quizAttempts.organizationId, organizationId), eq(quizAttempts.userId, studentId))
-				),
+				)
+				.orderBy(desc(quizAttempts.completedAt))
+				.limit(STUDENT_REPORT_DETAIL_LIMIT),
 			db
 				.select()
 				.from(examAttempts)
 				.where(
 					and(eq(examAttempts.organizationId, organizationId), eq(examAttempts.userId, studentId))
 				)
+				.orderBy(desc(examAttempts.startedAt))
+				.limit(STUDENT_REPORT_DETAIL_LIMIT)
 		]);
 		const quizIds = quizzes.map((quiz) => quiz.id);
 		const quizQuestions = quizIds.length

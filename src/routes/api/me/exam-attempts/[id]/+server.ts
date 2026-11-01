@@ -118,7 +118,7 @@ export const PATCH = withAuthedHandler(
 				course: attempt.course,
 				unit: 'Exam',
 				scorePercent: null,
-				questionsAnswered: Object.keys(attempt.responses ?? {}).length,
+				questionsAnswered: 0,
 				correctQuestions: 0,
 				completedAt: attempt.submittedAt ?? new Date()
 			});

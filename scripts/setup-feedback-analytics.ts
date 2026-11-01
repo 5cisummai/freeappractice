@@ -34,7 +34,14 @@ const audit = `DO $$ BEGIN
  WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%'
  AND c.relkind IN ('r','p','v','m','f') AND (
  (has_table_privilege(current_user,c.oid,'SELECT') AND NOT (n.nspname='feedback_analytics' AND c.relname IN ('feedback','bug_reports')))
- OR has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))) THEN
+ OR has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+ OR EXISTS (
+  SELECT 1 FROM pg_attribute a
+  WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped AND (
+   (has_column_privilege(current_user,c.oid,a.attname,'SELECT') AND NOT (n.nspname='feedback_analytics' AND c.relname IN ('feedback','bug_reports')))
+   OR has_column_privilege(current_user,c.oid,a.attname,'INSERT')
+   OR has_column_privilege(current_user,c.oid,a.attname,'UPDATE')
+   OR has_column_privilege(current_user,c.oid,a.attname,'REFERENCES'))))) THEN
  RAISE EXCEPTION 'Importer inherits access outside approved read-only views'; END IF;
  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname NOT LIKE 'pg_%' AND has_schema_privilege(current_user,oid,'CREATE')) THEN
  RAISE EXCEPTION 'Importer inherits schema CREATE access'; END IF;

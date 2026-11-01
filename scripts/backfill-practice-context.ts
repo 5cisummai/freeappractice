@@ -43,8 +43,8 @@ for (const attempt of candidates) {
 		}))
 	);
 	const sessionId = randomUUID();
-	await db.transaction(async (tx) => {
-		await tx.insert(practiceSessions).values({
+	await db.batch([
+		db.insert(practiceSessions).values({
 			id: sessionId,
 			userId: attempt.userId,
 			organizationId: null,
@@ -54,11 +54,11 @@ for (const attempt of candidates) {
 			startedAt: attempt.startedAt,
 			completedAt: attempt.submittedAt,
 			questionRefs
-		});
-		await tx
+		}),
+		db
 			.update(examAttempts)
 			.set({ practiceSessionId: sessionId, updatedAt: new Date() })
-			.where(and(eq(examAttempts.id, attempt.id), isNull(examAttempts.practiceSessionId)));
-	});
+			.where(and(eq(examAttempts.id, attempt.id), isNull(examAttempts.practiceSessionId)))
+	]);
 }
 console.log(`Backfilled ${candidates.length} legacy exam sessions. Re-run until candidates=0.`);
