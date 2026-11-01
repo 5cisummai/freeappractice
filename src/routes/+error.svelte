@@ -57,7 +57,7 @@
 >
 	<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
 		<div
-			class="absolute top-0 left-1/2 h-96 w-[min(80vw,48rem)] -translate-x-1/2 rounded-full bg-primary/8 blur-3xl"
+			class="absolute bottom-0 left-1/2 h-96 w-[min(80vw,48rem)] -translate-x-1/2 rounded-full bg-primary/8 blur-3xl"
 		></div>
 	</div>
 
