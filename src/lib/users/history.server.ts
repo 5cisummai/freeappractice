@@ -3,6 +3,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqAttempts, mcqAttempts, quizAttempts } from '#lib/server/neon/schema.js';
 import { FRQ_PASS_THRESHOLD } from '#lib/users/history-constants.js';
+import type { PracticeContext } from '#lib/users/practice-context.server.js';
 
 type PracticeHistoryPageResult = {
 	items: HistoryItem[];
@@ -109,7 +110,8 @@ export function parseHistorySort(
 
 export async function getPracticeHistoryPage(
 	userId: string,
-	options: HistoryQueryOptions
+	options: HistoryQueryOptions,
+	context: PracticeContext = { organizationId: null }
 ): Promise<PracticeHistoryPageResult> {
 	const {
 		page,
@@ -136,11 +138,13 @@ export async function getPracticeHistoryPage(
 	const searchText = search?.trim();
 	const commonConditions = (columns: {
 		userId: unknown;
+		organizationId: unknown;
 		course: unknown;
 		unit: unknown;
 		attemptedAt: unknown;
 	}): SQL[] => [
 		sql`${columns.userId} = ${userId}`,
+		sql`${columns.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`,
 		...(course ? [sql`${columns.course} = ${course}`] : []),
 		...(filters.unit ? [sql`${columns.unit} = ${filters.unit}`] : []),
 		...(searchText
@@ -188,6 +192,7 @@ export async function getPracticeHistoryPage(
 			sql`${frqAttempts.status} = 'graded'`,
 			...commonConditions({
 				userId: frqAttempts.userId,
+				organizationId: frqAttempts.organizationId,
 				course: frqAttempts.course,
 				unit: frqAttempts.unit,
 				attemptedAt: frqAttempts.createdAt
@@ -227,6 +232,7 @@ export async function getPracticeHistoryPage(
 		const conditions = [
 			...commonConditions({
 				userId: quizAttempts.userId,
+				organizationId: quizAttempts.organizationId,
 				course: quizAttempts.course,
 				unit: quizAttempts.unit,
 				attemptedAt: quizAttempts.completedAt
@@ -368,14 +374,19 @@ export async function getPracticeHistoryPage(
 
 export async function getProgressHistory(
 	userId: string,
-	options: { from: string; includeFrq: boolean }
+	options: { from: string; includeFrq: boolean },
+	context: PracticeContext = { organizationId: null }
 ): Promise<HistoryItem[]> {
-	const page = await getPracticeHistoryPage(userId, {
-		page: 1,
-		limit: PROGRESS_HISTORY_LIMIT,
-		sort: { field: 'attemptedAt', direction: 'desc' },
-		filters: { from: options.from },
-		includeFrq: options.includeFrq
-	});
+	const page = await getPracticeHistoryPage(
+		userId,
+		{
+			page: 1,
+			limit: PROGRESS_HISTORY_LIMIT,
+			sort: { field: 'attemptedAt', direction: 'desc' },
+			filters: { from: options.from },
+			includeFrq: options.includeFrq
+		},
+		context
+	);
 	return page.items;
 }

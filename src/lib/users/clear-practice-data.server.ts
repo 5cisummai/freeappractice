@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
 	bookmarks,
@@ -6,7 +6,10 @@ import {
 	mcqAttempts,
 	quizAttempts,
 	examAttempts,
-	userProgress
+	userProgress,
+	practiceActivityEvents,
+	practiceSessions,
+	seenQuestions
 } from '#lib/server/neon/schema.js';
 
 /**
@@ -16,11 +19,28 @@ import {
 export async function clearPracticeDataForUser(userId: string): Promise<void> {
 	const db = getNeonDatabase();
 	await db.batch([
-		db.delete(userProgress).where(eq(userProgress.userId, userId)),
-		db.delete(mcqAttempts).where(eq(mcqAttempts.userId, userId)),
-		db.delete(quizAttempts).where(eq(quizAttempts.userId, userId)),
-		db.delete(examAttempts).where(eq(examAttempts.userId, userId)),
-		db.delete(bookmarks).where(eq(bookmarks.userId, userId)),
-		db.delete(frqAttempts).where(eq(frqAttempts.userId, userId))
+		db
+			.delete(userProgress)
+			.where(and(eq(userProgress.userId, userId), isNull(userProgress.organizationId))),
+		db
+			.delete(mcqAttempts)
+			.where(and(eq(mcqAttempts.userId, userId), isNull(mcqAttempts.organizationId))),
+		db
+			.delete(quizAttempts)
+			.where(and(eq(quizAttempts.userId, userId), isNull(quizAttempts.organizationId))),
+		db
+			.delete(examAttempts)
+			.where(and(eq(examAttempts.userId, userId), isNull(examAttempts.organizationId))),
+		db.delete(bookmarks).where(and(eq(bookmarks.userId, userId), isNull(bookmarks.organizationId))),
+		db
+			.delete(frqAttempts)
+			.where(and(eq(frqAttempts.userId, userId), isNull(frqAttempts.organizationId))),
+		db
+			.delete(practiceSessions)
+			.where(and(eq(practiceSessions.userId, userId), isNull(practiceSessions.organizationId))),
+		db.delete(practiceActivityEvents).where(eq(practiceActivityEvents.userId, userId)),
+		db
+			.delete(seenQuestions)
+			.where(and(eq(seenQuestions.userId, userId), isNull(seenQuestions.organizationId)))
 	]);
 }

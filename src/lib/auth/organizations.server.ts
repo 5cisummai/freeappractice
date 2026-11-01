@@ -3,6 +3,7 @@ import {
 	ensurePersonalOrganization,
 	ensureOrganizationShareToken,
 	getOrganizationTypeForUser,
+	hasClassroomCreationGrant,
 	listUserOrganizations
 } from '#lib/auth/organization-queries.server.js';
 import {
@@ -15,6 +16,7 @@ export type AppOrganizationsPayload = {
 	organizations: UserOrganization[];
 	activeOrganization: UserOrganization | null;
 	ownedGroupCount: number;
+	canCreateClassroom: boolean;
 };
 
 function ownedGroupCount(organizations: UserOrganization[]): number {
@@ -28,6 +30,7 @@ export async function loadAppOrganizations(
 ): Promise<AppOrganizationsPayload> {
 	await ensurePersonalOrganization(userId);
 	const organizations = await listUserOrganizations(userId);
+	const canCreateClassroom = await hasClassroomCreationGrant(userId);
 	const personal = organizations.find((org) => org.orgType === 'personal') ?? organizations[0];
 	const activeFromSession = activeOrganizationId
 		? organizations.find((org) => org.id === activeOrganizationId)
@@ -41,14 +44,16 @@ export async function loadAppOrganizations(
 		return {
 			organizations,
 			activeOrganization: personal,
-			ownedGroupCount: ownedGroupCount(organizations)
+			ownedGroupCount: ownedGroupCount(organizations),
+			canCreateClassroom
 		};
 	}
 
 	return {
 		organizations,
 		activeOrganization: activeFromSession ?? personal ?? null,
-		ownedGroupCount: ownedGroupCount(organizations)
+		ownedGroupCount: ownedGroupCount(organizations),
+		canCreateClassroom
 	};
 }
 

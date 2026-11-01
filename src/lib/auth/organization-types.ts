@@ -94,6 +94,23 @@ export function isShareToken(value: string): boolean {
 
 export const PERSONAL_ORG_NAME = 'My Space';
 
+export function organizationTypeLabel(orgType: OrgType): string {
+	switch (orgType) {
+		case 'personal':
+			return 'Personal';
+		case 'group':
+			return 'Study group';
+		case 'school':
+			return 'Classroom';
+		case 'enterprise':
+			return 'Enterprise';
+		default: {
+			const exhaustive: never = orgType;
+			return exhaustive;
+		}
+	}
+}
+
 export function personalOrgSlug(userId: string): string {
 	const compact = userId.toLowerCase().replace(/[^a-z0-9-]/g, '');
 	return `u-${compact || 'user'}`;

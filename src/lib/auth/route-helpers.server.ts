@@ -1,6 +1,7 @@
 import { type RequestEvent, type RequestHandler } from '@sveltejs/kit';
 import { auth } from '#lib/auth/server.js';
 import { logger } from '#lib/server/logger.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 
 type AuthedHandler = (event: RequestEvent, userId: string) => Promise<Response>;
 
@@ -45,6 +46,9 @@ export function withAuthedHandler(
 			return await handler(event, userId);
 		} catch (err) {
 			if (err instanceof Response) return err;
+			if (err instanceof OrganizationPermissionError) {
+				return Response.json({ error: err.message }, { status: 403 });
+			}
 			logger.error(options.logLabel, { error: err });
 			return Response.json({ error: options.errorMessage }, { status: 500 });
 		}

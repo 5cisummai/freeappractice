@@ -6,6 +6,7 @@ import {
 } from '#lib/users/history.server.js';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { isFrqPracticeEnabled } from '#lib/flags.js';
+import { resolveRequestPracticeContext } from '#lib/users/practice-context.server.js';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
@@ -26,15 +27,20 @@ export const GET = withAuthedHandler(
 		);
 
 		const frqEnabled = await isFrqPracticeEnabled();
-		const pageResult = await getPracticeHistoryPage(userId, {
-			page,
-			limit,
-			course,
-			search,
-			sort,
-			filters,
-			includeFrq: frqEnabled
-		});
+		const context = await resolveRequestPracticeContext(event.locals, userId);
+		const pageResult = await getPracticeHistoryPage(
+			userId,
+			{
+				page,
+				limit,
+				course,
+				search,
+				sort,
+				filters,
+				includeFrq: frqEnabled
+			},
+			context
+		);
 		return Response.json({
 			items: pageResult.items,
 			total: pageResult.total,

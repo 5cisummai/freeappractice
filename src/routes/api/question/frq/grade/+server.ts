@@ -8,6 +8,7 @@ import {
 import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
 import { FrqGradeRequestSchema } from '#lib/question-bank/frq/types.js';
 import { capturePostHogServerEvent } from '#lib/server/posthog.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 
 export const config = { maxDuration: 60 };
 
@@ -43,6 +44,9 @@ export const POST: RequestHandler = withAuthedHandler(
 		} catch (error) {
 			if (error instanceof FrqAttemptInProgressError) {
 				return Response.json({ error: error.message }, { status: 409 });
+			}
+			if (error instanceof OrganizationPermissionError) {
+				return Response.json({ error: error.message }, { status: 403 });
 			}
 			capturePostHogServerEvent(event.request, {
 				distinctId: userId,

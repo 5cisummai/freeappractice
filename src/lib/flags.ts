@@ -58,6 +58,21 @@ export const frqPracticeEnabled = vercelFlag(
 	false
 );
 
+/** Classroom availability gate; it never replaces membership authorization. */
+export const classroomPracticeEnabled = vercelFlag(
+	'classroom-practice',
+	'Enable isolated classroom practice for approved teachers',
+	false
+);
+
+export async function isClassroomPracticeEnabled(): Promise<boolean> {
+	try {
+		return Boolean(await classroomPracticeEnabled());
+	} catch {
+		return false;
+	}
+}
+
 export async function isFrqPracticeEnabled(): Promise<boolean> {
 	try {
 		return Boolean(await frqPracticeEnabled());

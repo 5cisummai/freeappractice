@@ -20,6 +20,7 @@ import {
 import { requireFrqPracticeEnabled } from '#lib/question-bank/frq/gate.server.js';
 import { getFrqQuestionById } from '#lib/question-bank/frq/model.server.js';
 import { frqTotalPoints, FrqGradeRequestSchema } from '#lib/question-bank/frq/types.js';
+import { assertPracticeContextAccess } from '#lib/users/practice-context.server.js';
 
 export const config = { maxDuration: 60 };
 
@@ -44,6 +45,7 @@ export const GET = withAuthedHandler(
 			.where(and(eq(examAttempts.id, id), eq(examAttempts.userId, userId)))
 			.limit(1);
 		if (!attempt) return Response.json({ error: 'Not found.' }, { status: 404 });
+		await assertPracticeContextAccess(userId, { organizationId: attempt.organizationId });
 		if (attempt.status !== 'submitted')
 			return Response.json({ error: 'Exam is not submitted.' }, { status: 409 });
 		const sections = await Promise.all(
@@ -94,6 +96,7 @@ export const POST = withAuthedHandler(
 			.where(and(eq(examAttempts.id, id), eq(examAttempts.userId, userId)))
 			.limit(1);
 		if (!attempt) return Response.json({ error: 'Not found.' }, { status: 404 });
+		await assertPracticeContextAccess(userId, { organizationId: attempt.organizationId });
 		if (attempt.status !== 'submitted')
 			return Response.json({ error: 'Exam is not submitted.' }, { status: 409 });
 		const item = attempt.sections
@@ -125,14 +128,19 @@ export const POST = withAuthedHandler(
 				questionId: item.questionId,
 				submissionId: submissionId(id, item.id),
 				responses,
-				timeTakenMs: 0
+				timeTakenMs: 0,
+				practiceSessionId: attempt.practiceSessionId ?? undefined
 			});
 			if (!request.success)
 				return Response.json({ error: 'Invalid saved response.' }, { status: 400 });
 			try {
-				const existing = await findFrqAttemptBySubmission(userId, request.data.submissionId);
+				const existing = await findFrqAttemptBySubmission(
+					userId,
+					request.data.submissionId,
+					attempt.organizationId
+				);
 				if (existing?.status === 'graded') {
-					result = (await getFrqAttemptForUser(userId, existing.id))?.grade;
+					result = (await getFrqAttemptForUser(userId, existing.id, attempt.organizationId))?.grade;
 					if (!result) throw new Error('Graded response unavailable');
 				} else {
 					if (existing && !(await deleteStaleFrqGradingClaim(userId, existing.id))) {

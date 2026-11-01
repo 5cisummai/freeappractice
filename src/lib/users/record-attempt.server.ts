@@ -1,8 +1,16 @@
 import { sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
-import { persistQuestionAttempt } from '#lib/users/attempt-write.server.js';
+import {
+	AttemptContextConflictError,
+	persistQuestionAttempt
+} from '#lib/users/attempt-write.server.js';
 import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
 import type { IQuestionAttempt } from '#lib/users/records.server.js';
+import {
+	requirePracticeSession,
+	resolvePracticeContext
+} from '#lib/users/practice-context.server.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 
 const ANSWER_CHOICES = new Set(['A', 'B', 'C', 'D']);
 
@@ -26,8 +34,33 @@ export async function recordQuestionAttempt(
 ): Promise<RecordAttemptResult> {
 	const { questionId, selectedAnswer, timeTakenMs } = body;
 	const attemptId = typeof body.attemptId === 'string' ? body.attemptId.trim() : '';
+	const practiceSessionId =
+		typeof body.practiceSessionId === 'string' ? body.practiceSessionId.trim() : '';
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
+
+	let context = { organizationId: null as string | null };
+	let sessionCourse: string | null = null;
+	if (practiceSessionId) {
+		try {
+			const session = await requirePracticeSession(userId, practiceSessionId);
+			if (session.mode !== 'mcq' && session.mode !== 'quiz') {
+				return { status: 400, body: { error: 'This session cannot record an MCQ answer.' } };
+			}
+			context = { organizationId: session.organizationId };
+			sessionCourse = session.course;
+		} catch (error) {
+			if (error instanceof OrganizationPermissionError) {
+				return { status: 403, body: { error: error.message } };
+			}
+			throw error;
+		}
+	} else if (body.organizationId !== undefined && body.organizationId !== null) {
+		return {
+			status: 400,
+			body: { error: 'A practice session is required for classroom practice.' }
+		};
+	}
 
 	if (!normalizedQuestionId) {
 		return {
@@ -60,6 +93,12 @@ export async function recordQuestionAttempt(
 	if (!course || !normalizedUnit) {
 		return { status: 422, body: { error: 'Question metadata is missing class or unit' } };
 	}
+	if (sessionCourse && course !== sessionCourse) {
+		return {
+			status: 400,
+			body: { error: 'This question is outside the practice session course.' }
+		};
+	}
 
 	const wasCorrect = letter === question.correctAnswer;
 	const attempt: IQuestionAttempt = {
@@ -72,7 +111,18 @@ export async function recordQuestionAttempt(
 		attemptedAt: new Date()
 	};
 
-	const progress = await persistQuestionAttempt(userId, attempt, attemptId || undefined);
+	let progress: Awaited<ReturnType<typeof persistQuestionAttempt>>;
+	try {
+		progress = await persistQuestionAttempt(userId, attempt, attemptId || undefined, {
+			context,
+			practiceSessionId: practiceSessionId || undefined
+		});
+	} catch (error) {
+		if (error instanceof AttemptContextConflictError) {
+			return { status: 400, body: { error: error.message } };
+		}
+		throw error;
+	}
 
 	if (progress.newlyRecorded)
 		capturePostHogServerEvent(request, {

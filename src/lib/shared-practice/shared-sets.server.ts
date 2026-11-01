@@ -1,6 +1,9 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { assertCanAttachSharedSetToOrganization } from '#lib/auth/organization-queries.server.js';
+import {
+	assertCanAttachSharedSetToOrganization,
+	getOrganizationTypeForUser
+} from '#lib/auth/organization-queries.server.js';
 import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { authUsers, sharedPracticeSetItems, sharedPracticeSets } from '#lib/server/neon/schema.js';
@@ -190,6 +193,23 @@ export async function resolveSharedQuiz(slug: string): Promise<SharedQuizResolve
 	return quiz ? { status: 'ready', quiz } : { status: 'unavailable' };
 }
 
+export async function resolveSharedQuizForUser(
+	slug: string,
+	userId: string | null,
+	activeOrganizationId: string | null
+): Promise<SharedQuizResolveResult> {
+	const result = await resolveSharedQuiz(slug);
+	if (result.status !== 'ready') return result;
+	const set = await findSet(slug);
+	if (!set?.organizationId) return result;
+	if (!userId) return { status: 'unavailable' };
+	const orgType = await getOrganizationTypeForUser(set.organizationId, userId);
+	if (!orgType || (orgType === 'school' && activeOrganizationId !== set.organizationId)) {
+		return { status: 'unavailable' };
+	}
+	return result;
+}
+
 async function getSharedSetById(setId: string): Promise<SharedSetRow | null> {
 	const [set] = await getNeonDatabase()
 		.select()
@@ -255,7 +275,11 @@ export async function detachSharedQuizFromOrganization(input: {
 		);
 }
 
-export async function getSharedQuizForCompletion(slug: string): Promise<
+export async function getSharedQuizForCompletion(
+	slug: string,
+	userId?: string,
+	activeOrganizationId?: string | null
+): Promise<
 	| {
 			status: 'ready';
 			id: string;
@@ -265,7 +289,9 @@ export async function getSharedQuizForCompletion(slug: string): Promise<
 	  }
 	| { status: 'missing' | 'expired' | 'revoked' | 'unavailable' }
 > {
-	const result = await resolveSharedQuiz(slug);
+	const result = userId
+		? await resolveSharedQuizForUser(slug, userId, activeOrganizationId ?? null)
+		: await resolveSharedQuiz(slug);
 	if (result.status !== 'ready') return result;
 	return {
 		status: 'ready',
