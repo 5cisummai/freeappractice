@@ -10,6 +10,7 @@ import {
 	userProgress,
 	userCourses
 } from '#lib/server/neon/schema.js';
+import type { PracticeContext } from '#lib/users/practice-context.server.js';
 
 /** Persist only the user's selected courses instead of rewriting their full profile. */
 export async function updateUserCourses(userId: string, courses: string[]): Promise<void> {
@@ -68,11 +69,17 @@ export async function getUserCourses(userId: string): Promise<string[]> {
 	return rows.map((row) => row.course);
 }
 
-export async function getUserProgress(userId: string): Promise<IProgress[]> {
+export async function getUserProgress(
+	userId: string,
+	context: PracticeContext = { organizationId: null }
+): Promise<IProgress[]> {
 	const rows = await getNeonDatabase()
 		.select()
 		.from(userProgress)
-		.where(eq(userProgress.userId, userId));
+		.where(
+			sql`${userProgress.userId} = ${userId}
+				AND ${userProgress.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`
+		);
 	return rows.map((row) => ({
 		course: row.course,
 		unit: row.unit,
@@ -89,7 +96,8 @@ export type UserDashboardProfile = Pick<IUserProfile, 'courses' | 'progress' | '
 
 /** Read the small profile base used by dashboard aggregate queries. */
 export async function getUserDashboardProfile(
-	userId: string
+	userId: string,
+	context: PracticeContext = { organizationId: null }
 ): Promise<UserDashboardProfile | null> {
 	const db = getNeonDatabase();
 	const [profiles, courses, progress] = await Promise.all([
@@ -101,7 +109,7 @@ export async function getUserDashboardProfile(
 			.where(eq(userProfiles.userId, userId))
 			.limit(1),
 		getUserCourses(userId),
-		getUserProgress(userId)
+		getUserProgress(userId, context)
 	]);
 	const profile = profiles[0];
 	if (!profile) return null;

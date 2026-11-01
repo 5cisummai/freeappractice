@@ -8,6 +8,7 @@ import { MAX_ATTEMPT_TIME_MS } from '#lib/users/attempt-time.js';
 import { buildProgressDataFromAttempts, mergeFrqProgress } from '#lib/users/progress.server.js';
 import type { IProgress } from '#lib/users/records.server.js';
 import type { MasteryTopic, ProgressEntry, StatsData } from '#lib/users/types.js';
+import type { PracticeContext } from '#lib/users/practice-context.server.js';
 
 type OverviewRow = {
 	total: number;
@@ -41,7 +42,8 @@ export async function getDashboardStats(
 	userId: string,
 	memberSince: Date,
 	timeZone = 'UTC',
-	includeFrq = true
+	includeFrq = true,
+	context: PracticeContext = { organizationId: null }
 ): Promise<StatsData> {
 	const db = getNeonDatabase();
 	const recentCutoff = new Date(Date.now() - 7 * 86_400_000);
@@ -63,7 +65,12 @@ export async function getDashboardStats(
 			)::int`
 		})
 		.from(mcqAttempts)
-		.where(eq(mcqAttempts.userId, userId));
+		.where(
+			and(
+				eq(mcqAttempts.userId, userId),
+				sql`${mcqAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`
+			)
+		);
 	const mcqCoursesPromise = db
 		.select({
 			course: mcqAttempts.course,
@@ -74,7 +81,12 @@ export async function getDashboardStats(
 			), 0)`
 		})
 		.from(mcqAttempts)
-		.where(eq(mcqAttempts.userId, userId))
+		.where(
+			and(
+				eq(mcqAttempts.userId, userId),
+				sql`${mcqAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`
+			)
+		)
 		.groupBy(mcqAttempts.course);
 	const frqOverviewPromise: Promise<FrqOverviewRow[]> = includeFrq
 		? db
@@ -87,7 +99,13 @@ export async function getDashboardStats(
 					)::int`
 				})
 				.from(frqAttempts)
-				.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
+				.where(
+					and(
+						eq(frqAttempts.userId, userId),
+						eq(frqAttempts.status, 'graded'),
+						sql`${frqAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`
+					)
+				)
 		: Promise.resolve([]);
 	const frqCoursesPromise: Promise<FrqCourseRow[]> = includeFrq
 		? db
@@ -97,7 +115,13 @@ export async function getDashboardStats(
 					totalPercentage: sql<number>`coalesce(sum(${frqAttempts.percentage}), 0)`
 				})
 				.from(frqAttempts)
-				.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
+				.where(
+					and(
+						eq(frqAttempts.userId, userId),
+						eq(frqAttempts.status, 'graded'),
+						sql`${frqAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`
+					)
+				)
 				.groupBy(frqAttempts.course)
 		: Promise.resolve([]);
 
@@ -106,7 +130,7 @@ export async function getDashboardStats(
 		mcqCoursesPromise,
 		frqOverviewPromise,
 		frqCoursesPromise,
-		getCurrentStreak(userId, timeZone, includeFrq)
+		getCurrentStreak(userId, timeZone, includeFrq, context.organizationId)
 	]);
 	const mcq: OverviewRow = mcqRows[0] ?? {
 		total: 0,
@@ -189,7 +213,8 @@ type RecentAttemptRow = {
 export async function getDashboardProgress(
 	userId: string,
 	progress: IProgress[],
-	includeFrq = true
+	includeFrq = true,
+	context: PracticeContext = { organizationId: null }
 ): Promise<ProgressEntry[]> {
 	const db = getNeonDatabase();
 	const recentAttemptsPromise = db.execute<RecentAttemptRow>(sql`
@@ -206,6 +231,7 @@ export async function getDashboardProgress(
 			FROM ${mcqAttempts}
 			WHERE ${mcqAttempts.userId} = ${userId}
 				AND ${mcqAttempts.wasCorrect} IS NOT NULL
+				AND ${mcqAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}
 		)
 		SELECT "course", unit, "wasCorrect", "attemptedAt"
 		FROM ranked
@@ -228,6 +254,7 @@ export async function getDashboardProgress(
 		.where(
 			and(
 				eq(mcqAttempts.userId, userId),
+				sql`${mcqAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`,
 				isNotNull(topicsCovered),
 				sql`trim(${topicsCovered}) <> ''`
 			)
@@ -236,7 +263,7 @@ export async function getDashboardProgress(
 	const [recentResult, topicRows, frqProgress] = await Promise.all([
 		recentAttemptsPromise,
 		topicsPromise,
-		includeFrq ? getFrqProgressForUser(userId) : Promise.resolve([])
+		includeFrq ? getFrqProgressForUser(userId, context.organizationId) : Promise.resolve([])
 	]);
 	const withRecent = buildProgressDataFromAttempts(
 		progress,

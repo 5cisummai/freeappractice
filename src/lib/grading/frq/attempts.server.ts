@@ -28,6 +28,15 @@ import { logger } from '#lib/server/logger.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqAttempts } from '#lib/server/neon/schema.js';
 import { and, count, eq, max, sql, sum } from 'drizzle-orm';
+import {
+	finishPracticeSession,
+	getPracticeSessionForUser,
+	requirePracticeSession,
+	type PracticeContext
+} from '#lib/users/practice-context.server.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
+import { publishPersonalPracticeActivity } from '#lib/auth/organization-queries.server.js';
+import { FRQ_PASS_THRESHOLD } from '#lib/users/history-constants.js';
 
 export class FrqAttemptInProgressError extends Error {}
 
@@ -62,7 +71,8 @@ type ClaimResult =
 async function claimSubmission(
 	userId: string,
 	request: FrqGradeRequest,
-	question: FrqQuestion
+	question: FrqQuestion,
+	context: PracticeContext
 ): Promise<ClaimResult> {
 	try {
 		const attempt = await createFrqAttempt({
@@ -74,12 +84,18 @@ async function claimSubmission(
 			formatId: question.formatId,
 			responses: request.responses,
 			status: 'grading',
-			timeTakenMs: sanitizeAttemptTimeMs(request.timeTakenMs)
+			timeTakenMs: sanitizeAttemptTimeMs(request.timeTakenMs),
+			context,
+			practiceSessionId: request.practiceSessionId ?? null
 		});
 		return { status: 'claimed', attempt };
 	} catch (error) {
 		if (!isDuplicateKeyError(error)) throw error;
-		const existing = await findFrqAttemptBySubmission(userId, request.submissionId);
+		const existing = await findFrqAttemptBySubmission(
+			userId,
+			request.submissionId,
+			context.organizationId
+		);
 		if (!existing) throw error;
 		if (existing.status === 'graded') return { status: 'graded', view: toAttemptView(existing) };
 		throw new FrqAttemptInProgressError('This response is already being graded');
@@ -138,8 +154,23 @@ export async function gradeFrqAttempt(
 		'Score each stored part as an integer from 0 through that part’s points.';
 	validateResponseKeys(question, request.responses);
 
-	const claim = await claimSubmission(userId, request, question);
-	if (claim.status === 'graded') return claim.view;
+	let context: PracticeContext = { organizationId: null };
+	if (request.practiceSessionId) {
+		const session = await getPracticeSessionForUser(userId, request.practiceSessionId, 'frq');
+		context = { organizationId: session.organizationId };
+		if (session.course && session.course !== question.course) {
+			throw new OrganizationPermissionError('This FRQ is outside the practice session course.');
+		}
+	}
+
+	const claim = await claimSubmission(userId, request, question, context);
+	if (claim.status === 'graded') {
+		const session = request.practiceSessionId
+			? await getPracticeSessionForUser(userId, request.practiceSessionId, 'frq')
+			: null;
+		if (session?.status === 'open') await finishPracticeSession(userId, request.practiceSessionId!);
+		return claim.view;
+	}
 	const attempt = claim.attempt;
 	const model = FRQ_GRADING_MODEL;
 
@@ -172,7 +203,24 @@ export async function gradeFrqAttempt(
 		await updateFrqAttemptGrade(attempt, grade, model);
 		attempt.status = 'graded';
 		attempt.grade = grade;
+		if (!attempt.organizationId) {
+			await publishPersonalPracticeActivity({
+				userId,
+				sourceType: 'frq',
+				sourceId: attempt.id,
+				course: attempt.course,
+				unit: attempt.unit,
+				scorePercent: grade.percentage,
+				questionsAnswered: 1,
+				correctQuestions: grade.percentage >= FRQ_PASS_THRESHOLD ? 1 : 0,
+				completedAt: attempt.createdAt
+			});
+		}
 		attempt.gradingModel = model;
+		const session = request.practiceSessionId
+			? await getPracticeSessionForUser(userId, request.practiceSessionId, 'frq')
+			: null;
+		if (session?.status === 'open') await finishPracticeSession(userId, request.practiceSessionId!);
 		return toAttemptView(attempt);
 	} catch (error) {
 		try {
@@ -194,13 +242,17 @@ export async function gradeFrqAttempt(
 
 export async function getFrqAttemptForUser(
 	userId: string,
-	attemptId: string
+	attemptId: string,
+	organizationId: string | null = null
 ): Promise<FrqAttemptView | null> {
-	const attempt = await findGradedFrqAttempt(userId, attemptId);
+	const attempt = await findGradedFrqAttempt(userId, attemptId, organizationId);
 	return attempt ? toAttemptView(attempt) : null;
 }
 
-export async function getFrqProgressForUser(userId: string): Promise<FrqProgressSummary[]> {
+export async function getFrqProgressForUser(
+	userId: string,
+	organizationId: string | null = null
+): Promise<FrqProgressSummary[]> {
 	const rows = await getNeonDatabase()
 		.select({
 			course: frqAttempts.course,
@@ -211,7 +263,13 @@ export async function getFrqProgressForUser(userId: string): Promise<FrqProgress
 			lastAttemptAt: max(frqAttempts.createdAt)
 		})
 		.from(frqAttempts)
-		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.status, 'graded')))
+		.where(
+			and(
+				eq(frqAttempts.userId, userId),
+				eq(frqAttempts.status, 'graded'),
+				sql`${frqAttempts.organizationId} IS NOT DISTINCT FROM ${organizationId}`
+			)
+		)
 		.groupBy(frqAttempts.course, frqAttempts.unit);
 	return rows.map((row) => {
 		const pointsEarned = Number(row.pointsEarned);

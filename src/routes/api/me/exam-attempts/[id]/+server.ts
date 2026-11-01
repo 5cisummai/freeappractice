@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { examAttempts } from '#lib/server/neon/schema.js';
+import {
+	assertPracticeContextAccess,
+	requirePracticeSession
+} from '#lib/users/practice-context.server.js';
+import { publishPersonalPracticeActivity } from '#lib/auth/organization-queries.server.js';
 
 const notFound = () => Response.json({ error: 'Exam attempt not found.' }, { status: 404 });
 const conflict = () =>
@@ -27,6 +32,8 @@ export const GET = withAuthedHandler(
 			.from(examAttempts)
 			.where(and(eq(examAttempts.id, id), eq(examAttempts.userId, userId)))
 			.limit(1);
+		if (attempt)
+			await assertPracticeContextAccess(userId, { organizationId: attempt.organizationId });
 		return attempt ? Response.json({ attempt, serverTime: new Date().toISOString() }) : notFound();
 	},
 	{ logLabel: 'Exam lookup error', errorMessage: 'Failed to load exam' }
@@ -45,6 +52,9 @@ export const PATCH = withAuthedHandler(
 			.where(and(eq(examAttempts.id, id), eq(examAttempts.userId, userId)))
 			.limit(1);
 		if (!current) return notFound();
+		if (current.practiceSessionId)
+			await requirePracticeSession(userId, current.practiceSessionId, 'exam');
+		else await assertPracticeContextAccess(userId, { organizationId: current.organizationId });
 		if (current.status !== 'in_progress' || current.revision !== input.data.revision)
 			return conflict();
 		const section = current.sections[current.sectionIndex];
@@ -100,6 +110,19 @@ export const PATCH = withAuthedHandler(
 				)
 			)
 			.returning();
+		if (attempt && final && !attempt.organizationId) {
+			await publishPersonalPracticeActivity({
+				userId,
+				sourceType: 'exam',
+				sourceId: attempt.id,
+				course: attempt.course,
+				unit: 'Exam',
+				scorePercent: null,
+				questionsAnswered: Object.keys(attempt.responses).length,
+				correctQuestions: 0,
+				completedAt: attempt.submittedAt ?? new Date()
+			});
+		}
 		return attempt ? Response.json({ attempt, serverTime: new Date().toISOString() }) : conflict();
 	},
 	{ logLabel: 'Exam save error', errorMessage: 'Failed to save exam' }

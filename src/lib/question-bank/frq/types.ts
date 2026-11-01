@@ -158,6 +158,7 @@ export const FrqGradeRequestSchema = z
 	.object({
 		questionId: z.string().uuid(),
 		submissionId: z.string().uuid(),
+		practiceSessionId: z.string().uuid().optional(),
 		responses: z.record(z.string(), z.string().max(MAX_FRQ_PART_RESPONSE_CHARS)),
 		timeTakenMs: z.number().finite().optional().default(0)
 	})

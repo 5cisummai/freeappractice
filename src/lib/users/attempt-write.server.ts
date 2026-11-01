@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { mcqAttempts, userProgress } from '#lib/server/neon/schema.js';
+import type { PracticeContext } from '#lib/users/practice-context.server.js';
 import type { IQuestionAttempt } from '#lib/users/records.server.js';
 
 export type PersistedProgress = {
@@ -11,15 +12,51 @@ export type PersistedProgress = {
 	newlyRecorded: boolean;
 };
 
+export class AttemptContextConflictError extends Error {
+	constructor() {
+		super('This attempt ID is already used by another user or practice context.');
+		this.name = 'AttemptContextConflictError';
+	}
+}
+
+export type PersistQuestionAttemptOptions = {
+	context?: PracticeContext;
+	practiceSessionId?: string;
+};
+
 /** Store one MCQ attempt and update counters exactly once for a stable attempt ID. */
 export async function persistQuestionAttempt(
 	userId: string,
 	attempt: IQuestionAttempt,
-	attemptId: string = randomUUID()
+	attemptId: string = randomUUID(),
+	options: PersistQuestionAttemptOptions = {}
 ): Promise<PersistedProgress> {
 	const db = getNeonDatabase();
+	const organizationId = options.context?.organizationId ?? null;
+	const [existing] = await db
+		.select({
+			userId: mcqAttempts.userId,
+			organizationId: mcqAttempts.organizationId,
+			practiceSessionId: mcqAttempts.practiceSessionId
+		})
+		.from(mcqAttempts)
+		.where(sql`${mcqAttempts.id} = ${attemptId}`)
+		.limit(1);
+	if (
+		existing &&
+		(existing.userId !== userId ||
+			existing.organizationId !== organizationId ||
+			existing.practiceSessionId !== (options.practiceSessionId ?? null))
+	) {
+		throw new AttemptContextConflictError();
+	}
 	const attemptDelta = attempt.wasCorrect === undefined ? 0 : 1;
 	const correctDelta = attempt.wasCorrect ? 1 : 0;
+	const progressConflict = organizationId
+		? sql`ON CONFLICT (organization_id, user_id, course, unit)
+			WHERE organization_id IS NOT NULL DO UPDATE SET`
+		: sql`ON CONFLICT (user_id, course, unit)
+			WHERE organization_id IS NULL DO UPDATE SET`;
 	const result = await db.execute<{
 		mastery: number;
 		totalAttempts: number;
@@ -28,12 +65,13 @@ export async function persistQuestionAttempt(
 	}>(sql`
 		WITH inserted AS (
 			INSERT INTO ${mcqAttempts} (
-				id, user_id, question_id, course, unit, selected_answer, was_correct,
-				time_taken_ms, attempted_at, created_at
+				id, user_id, organization_id, practice_session_id, question_id, course, unit,
+				selected_answer, was_correct, time_taken_ms, attempted_at, created_at
 			)
 			VALUES (
-				${attemptId}, ${userId}, ${attempt.questionId}, ${attempt.course}, ${attempt.unit},
-				${attempt.selectedAnswer}, ${attempt.wasCorrect},
+				${attemptId}, ${userId}, ${organizationId}, ${options.practiceSessionId ?? null},
+				${attempt.questionId}, ${attempt.course}, ${attempt.unit}, ${attempt.selectedAnswer},
+				${attempt.wasCorrect},
 				${attempt.timeTakenMs ?? null}, ${attempt.attemptedAt}, ${attempt.attemptedAt}
 			)
 			ON CONFLICT (id) DO NOTHING
@@ -41,15 +79,15 @@ export async function persistQuestionAttempt(
 		),
 		progress AS (
 			INSERT INTO ${userProgress} (
-				user_id, course, unit, mastery, total_attempts, correct_attempts,
-				last_attempt_at, updated_at
+				user_id, organization_id, course, unit, mastery, total_attempts,
+				correct_attempts, last_attempt_at, updated_at
 			)
 			SELECT
-				${userId}, ${attempt.course}, ${attempt.unit},
+				${userId}, ${organizationId}, ${attempt.course}, ${attempt.unit},
 				${attemptDelta ? correctDelta * 100 : 0}, ${attemptDelta}, ${correctDelta},
 				${attempt.attemptedAt}, ${attempt.attemptedAt}
 			FROM inserted
-			ON CONFLICT (user_id, course, unit) DO UPDATE SET
+			${progressConflict}
 				total_attempts = ${userProgress.totalAttempts} + EXCLUDED.total_attempts,
 				correct_attempts = ${userProgress.correctAttempts} + EXCLUDED.correct_attempts,
 				mastery = CASE
@@ -69,6 +107,7 @@ export async function persistQuestionAttempt(
 			SELECT mastery, total_attempts, correct_attempts
 			FROM ${userProgress}
 			WHERE user_id = ${userId}
+				AND organization_id IS NOT DISTINCT FROM ${organizationId}
 				AND course = ${attempt.course}
 				AND unit = ${attempt.unit}
 				AND NOT EXISTS (SELECT 1 FROM inserted)

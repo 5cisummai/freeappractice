@@ -6,6 +6,14 @@ import { sanitizeAttemptTimeMs } from '#lib/users/attempt-time.js';
 import { persistQuestionAttempt } from '#lib/users/attempt-write.server.js';
 import { getSharedQuizForCompletion } from '#lib/shared-practice/shared-sets.server.js';
 import { quizAttemptQuestions, quizAttempts } from '#lib/server/neon/schema.js';
+import {
+	finishPracticeSession,
+	getPracticeSessionForUser,
+	requirePracticeSession,
+	type PracticeContext
+} from '#lib/users/practice-context.server.js';
+import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
+import { publishPersonalPracticeActivity } from '#lib/auth/organization-queries.server.js';
 
 const MAX_QUIZ_COUNT = 50;
 const MAX_QUIZ_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -15,6 +23,8 @@ const ANSWER_LETTERS = new Set(['A', 'B', 'C', 'D']);
 type QuizAttemptInput = {
 	quizId?: unknown;
 	sharedSlug?: unknown;
+	practiceSessionId?: unknown;
+	organizationId?: unknown;
 	course?: unknown;
 	unit?: unknown;
 	startedAt?: unknown;
@@ -40,7 +50,7 @@ export type PersistQuizAttemptResult =
 				scorePercent: number;
 			};
 	  }
-	| { status: 400 | 404 | 422; body: { error: string } };
+	| { status: 400 | 403 | 404 | 422; body: { error: string } };
 
 export type CoachQuizAttempt = {
 	quizId: string;
@@ -137,6 +147,7 @@ export async function persistQuizAttempt(
 	const input = body as QuizAttemptInput;
 	const quizId = asTrimmedString(input.quizId);
 	const sharedSlug = asTrimmedString(input.sharedSlug);
+	const practiceSessionId = asTrimmedString(input.practiceSessionId);
 	const course = sharedSlug ? '' : asTrimmedString(input.course);
 	const unit = sharedSlug ? 'All Units' : asTrimmedString(input.unit) || 'All Units';
 	const items = parseQuizQuestions(input.items);
@@ -151,7 +162,32 @@ export async function persistQuizAttempt(
 		return { status: 400, body: { error: 'A quiz must include between 1 and 50 questions.' } };
 	}
 
-	const sharedQuiz = sharedSlug ? await getSharedQuizForCompletion(sharedSlug) : null;
+	let context: PracticeContext = { organizationId: null };
+	let sessionCourse: string | null = null;
+	let sessionStatus: 'open' | 'completed' | 'cancelled' | null = null;
+	let existingAttempt = false;
+	if (practiceSessionId) {
+		try {
+			const session = await getPracticeSessionForUser(userId, practiceSessionId, 'quiz');
+			context = { organizationId: session.organizationId };
+			sessionCourse = session.course;
+			sessionStatus = session.status;
+		} catch (error) {
+			if (error instanceof OrganizationPermissionError) {
+				return { status: 403, body: { error: error.message } };
+			}
+			throw error;
+		}
+	} else if (input.organizationId !== undefined && input.organizationId !== null) {
+		return {
+			status: 400,
+			body: { error: 'A practice session is required for classroom practice.' }
+		};
+	}
+
+	const sharedQuiz = sharedSlug
+		? await getSharedQuizForCompletion(sharedSlug, userId, context.organizationId)
+		: null;
 	if (sharedQuiz && sharedQuiz.status !== 'ready') {
 		return { status: 404, body: { error: 'This shared quiz is no longer available.' } };
 	}
@@ -170,13 +206,18 @@ export async function persistQuizAttempt(
 	const resolvedApClass = sharedQuiz?.status === 'ready' ? sharedQuiz.course : course;
 	const resolvedUnit = sharedQuiz?.status === 'ready' ? sharedQuiz.unit : unit;
 	const expectedSharedPracticeSetId = sharedQuiz?.status === 'ready' ? sharedQuiz.id : null;
+	if (sessionCourse && resolvedApClass !== sessionCourse) {
+		return { status: 400, body: { error: 'This quiz is outside the practice session course.' } };
+	}
 
 	const db = getNeonDatabase();
 	if (quizId) {
 		const [existing] = await db
 			.select({
 				userId: quizAttempts.userId,
-				sharedPracticeSetId: quizAttempts.sharedPracticeSetId
+				sharedPracticeSetId: quizAttempts.sharedPracticeSetId,
+				organizationId: quizAttempts.organizationId,
+				practiceSessionId: quizAttempts.practiceSessionId
 			})
 			.from(quizAttempts)
 			.where(eq(quizAttempts.id, quizId))
@@ -184,9 +225,18 @@ export async function persistQuizAttempt(
 		if (existing && existing.userId !== userId) {
 			return { status: 400, body: { error: 'Invalid quiz ID.' } };
 		}
-		if (existing && existing.sharedPracticeSetId !== expectedSharedPracticeSetId) {
+		if (
+			existing &&
+			(existing.sharedPracticeSetId !== expectedSharedPracticeSetId ||
+				existing.organizationId !== context.organizationId ||
+				existing.practiceSessionId !== (practiceSessionId || null))
+		) {
 			return { status: 400, body: { error: 'Invalid quiz ID.' } };
 		}
+		existingAttempt = Boolean(existing);
+	}
+	if (practiceSessionId && sessionStatus !== 'open' && !existingAttempt) {
+		return { status: 409, body: { error: 'This practice session has already been completed.' } };
 	}
 
 	const questionMap = await getQuestionsLookupMap(items.map((item) => item.questionId));
@@ -218,6 +268,8 @@ export async function persistQuizAttempt(
 		.values({
 			id: persistedQuizId,
 			userId,
+			organizationId: context.organizationId,
+			practiceSessionId: practiceSessionId || null,
 			course: resolvedApClass,
 			unit: resolvedUnit,
 			requestedCount: items.length,
@@ -237,7 +289,9 @@ export async function persistQuizAttempt(
 		const [existing] = await db
 			.select({
 				userId: quizAttempts.userId,
-				sharedPracticeSetId: quizAttempts.sharedPracticeSetId
+				sharedPracticeSetId: quizAttempts.sharedPracticeSetId,
+				organizationId: quizAttempts.organizationId,
+				practiceSessionId: quizAttempts.practiceSessionId
 			})
 			.from(quizAttempts)
 			.where(eq(quizAttempts.id, persistedQuizId))
@@ -245,10 +299,13 @@ export async function persistQuizAttempt(
 		if (
 			!existing ||
 			existing.userId !== userId ||
-			existing.sharedPracticeSetId !== expectedSharedPracticeSetId
+			existing.sharedPracticeSetId !== expectedSharedPracticeSetId ||
+			existing.organizationId !== context.organizationId ||
+			existing.practiceSessionId !== (practiceSessionId || null)
 		) {
 			return { status: 400, body: { error: 'Invalid quiz ID.' } };
 		}
+		existingAttempt = true;
 	}
 
 	const questionInsert = db
@@ -285,10 +342,27 @@ export async function persistQuizAttempt(
 						timeTakenMs: item.timeTakenMs ?? undefined,
 						attemptedAt: completedAt
 					},
-					stableQuestionAttemptId(persistedQuizId, item.position)
+					stableQuestionAttemptId(persistedQuizId, item.position),
+					{ context, practiceSessionId: practiceSessionId || undefined }
 				);
 			})
 		);
+	}
+	if (!context.organizationId) {
+		await publishPersonalPracticeActivity({
+			userId,
+			sourceType: 'quiz',
+			sourceId: persistedQuizId,
+			course: resolvedApClass,
+			unit: resolvedUnit,
+			scorePercent,
+			questionsAnswered: answeredCount,
+			correctQuestions: correctCount,
+			completedAt
+		});
+	}
+	if (practiceSessionId && sessionStatus === 'open') {
+		await finishPracticeSession(userId, practiceSessionId);
 	}
 	return {
 		status: 200,

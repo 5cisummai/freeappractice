@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, lt } from 'drizzle-orm';
+import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import type { FrqGrade } from '#lib/question-bank/frq/types.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqAttempts } from '#lib/server/neon/schema.js';
+import type { PracticeContext } from '#lib/users/practice-context.server.js';
 
 export interface IFrqAttempt {
 	id: string;
 	userId: string;
+	organizationId: string | null;
+	practiceSessionId: string | null;
 	submissionId: string;
 	questionId: string;
 	course: string;
@@ -28,6 +31,8 @@ function toAttempt(row: typeof frqAttempts.$inferSelect): IFrqAttempt {
 	return {
 		id: row.id,
 		userId: row.userId,
+		organizationId: row.organizationId,
+		practiceSessionId: row.practiceSessionId,
 		submissionId: row.submissionId,
 		questionId: row.questionId,
 		course: row.course,
@@ -49,12 +54,26 @@ function toAttempt(row: typeof frqAttempts.$inferSelect): IFrqAttempt {
 export async function createFrqAttempt(
 	input: Omit<
 		IFrqAttempt,
-		'id' | 'createdAt' | 'updatedAt' | 'grade' | 'pointsEarned' | 'pointsAvailable' | 'percentage'
-	>
+		| 'id'
+		| 'createdAt'
+		| 'updatedAt'
+		| 'grade'
+		| 'pointsEarned'
+		| 'pointsAvailable'
+		| 'percentage'
+		| 'organizationId'
+		| 'practiceSessionId'
+	> & { context?: PracticeContext; practiceSessionId?: string | null }
 ): Promise<IFrqAttempt> {
+	const { context, practiceSessionId, ...attemptInput } = input;
 	const rows = await getNeonDatabase()
 		.insert(frqAttempts)
-		.values({ id: randomUUID(), ...input })
+		.values({
+			id: randomUUID(),
+			...attemptInput,
+			organizationId: context?.organizationId ?? null,
+			practiceSessionId: practiceSessionId ?? null
+		})
 		.returning();
 	if (!rows[0]) throw new Error('FRQ attempt insert returned no row');
 	return toAttempt(rows[0]);
@@ -62,19 +81,27 @@ export async function createFrqAttempt(
 
 export async function findFrqAttemptBySubmission(
 	userId: string,
-	submissionId: string
+	submissionId: string,
+	organizationId: string | null = null
 ): Promise<IFrqAttempt | null> {
 	const rows = await getNeonDatabase()
 		.select()
 		.from(frqAttempts)
-		.where(and(eq(frqAttempts.userId, userId), eq(frqAttempts.submissionId, submissionId)))
+		.where(
+			and(
+				eq(frqAttempts.userId, userId),
+				eq(frqAttempts.submissionId, submissionId),
+				sql`${frqAttempts.organizationId} IS NOT DISTINCT FROM ${organizationId}`
+			)
+		)
 		.limit(1);
 	return rows[0] ? toAttempt(rows[0]) : null;
 }
 
 export async function findGradedFrqAttempt(
 	userId: string,
-	attemptId: string
+	attemptId: string,
+	organizationId: string | null = null
 ): Promise<IFrqAttempt | null> {
 	const rows = await getNeonDatabase()
 		.select()
@@ -83,7 +110,8 @@ export async function findGradedFrqAttempt(
 			and(
 				eq(frqAttempts.id, attemptId),
 				eq(frqAttempts.userId, userId),
-				eq(frqAttempts.status, 'graded')
+				eq(frqAttempts.status, 'graded'),
+				sql`${frqAttempts.organizationId} IS NOT DISTINCT FROM ${organizationId}`
 			)
 		)
 		.limit(1);
@@ -98,7 +126,8 @@ export type RecentGradedFrqAttemptQuery = {
 
 export async function findRecentGradedFrqAttempts(
 	userId: string,
-	options: number | RecentGradedFrqAttemptQuery = 8
+	options: number | RecentGradedFrqAttemptQuery = 8,
+	organizationId: string | null = null
 ): Promise<IFrqAttempt[]> {
 	const normalized = typeof options === 'number' ? { limit: options } : options;
 	const limit = Math.min(Math.max(normalized.limit ?? 8, 1), 20);
@@ -109,6 +138,7 @@ export async function findRecentGradedFrqAttempts(
 			and(
 				eq(frqAttempts.userId, userId),
 				eq(frqAttempts.status, 'graded'),
+				sql`${frqAttempts.organizationId} IS NOT DISTINCT FROM ${organizationId}`,
 				normalized.course ? eq(frqAttempts.course, normalized.course) : undefined,
 				normalized.unit ? eq(frqAttempts.unit, normalized.unit) : undefined
 			)

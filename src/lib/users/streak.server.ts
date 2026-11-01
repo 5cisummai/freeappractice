@@ -19,18 +19,30 @@ function localDayEnd(day: SQL, timeZone: string): SQL {
 	return sql`(((${day})::date + 1)::timestamp AT TIME ZONE ${timeZone})`;
 }
 
-function hasMcqActivity(userId: SQL, day: SQL, timeZone: string): SQL {
+function hasMcqActivity(
+	userId: SQL,
+	day: SQL,
+	timeZone: string,
+	organizationId: string | null = null
+): SQL {
 	return sql`EXISTS (
 		SELECT 1
 		FROM ${mcqAttempts}
 		WHERE ${mcqAttempts.userId} = ${userId}
 			AND ${mcqAttempts.attemptedAt} >= ${localDayStart(day, timeZone)}
 			AND ${mcqAttempts.attemptedAt} < ${localDayEnd(day, timeZone)}
+			AND ${mcqAttempts.organizationId} IS NOT DISTINCT FROM ${organizationId}
 	)`;
 }
 
-function hasActivity(userId: SQL, day: SQL, timeZone: string, includeFrq: boolean): SQL {
-	const mcqActivity = hasMcqActivity(userId, day, timeZone);
+function hasActivity(
+	userId: SQL,
+	day: SQL,
+	timeZone: string,
+	includeFrq: boolean,
+	organizationId: string | null
+): SQL {
+	const mcqActivity = hasMcqActivity(userId, day, timeZone, organizationId);
 	if (!includeFrq) return mcqActivity;
 	return sql`(
 		${mcqActivity}
@@ -41,6 +53,7 @@ function hasActivity(userId: SQL, day: SQL, timeZone: string, includeFrq: boolea
 				AND ${frqAttempts.status} = 'graded'
 				AND ${frqAttempts.createdAt} >= ${localDayStart(day, timeZone)}
 				AND ${frqAttempts.createdAt} < ${localDayEnd(day, timeZone)}
+				AND ${frqAttempts.organizationId} IS NOT DISTINCT FROM ${organizationId}
 		)
 	)`;
 }
@@ -52,7 +65,8 @@ function hasActivity(userId: SQL, day: SQL, timeZone: string, includeFrq: boolea
 export async function getCurrentStreak(
 	userId: string,
 	timeZone: string,
-	includeFrq: boolean
+	includeFrq: boolean,
+	organizationId: string | null = null
 ): Promise<number> {
 	const today = localDayKey(new Date(), timeZone);
 	const user = sql`${userId}`;
@@ -62,8 +76,8 @@ export async function getCurrentStreak(
 	const result = await getNeonDatabase().execute<{ streak: number }>(sql`
 		WITH RECURSIVE anchor AS (
 			SELECT CASE
-				WHEN ${hasActivity(user, todayDay, timeZone, includeFrq)} THEN ${today}::date
-				WHEN ${hasActivity(user, yesterday, timeZone, includeFrq)} THEN ${today}::date - 1
+				WHEN ${hasActivity(user, todayDay, timeZone, includeFrq, organizationId)} THEN ${today}::date
+				WHEN ${hasActivity(user, yesterday, timeZone, includeFrq, organizationId)} THEN ${today}::date - 1
 				ELSE NULL::date
 			END AS day
 		),
@@ -72,7 +86,7 @@ export async function getCurrentStreak(
 			UNION ALL
 			SELECT streak_days.day - 1
 			FROM streak_days
-			WHERE ${hasActivity(user, previousStreakDay, timeZone, includeFrq)}
+			WHERE ${hasActivity(user, previousStreakDay, timeZone, includeFrq, organizationId)}
 		)
 		SELECT count(*)::int AS streak FROM streak_days
 	`);
@@ -82,7 +96,8 @@ export async function getCurrentStreak(
 /** Compute MCQ streaks for a group without scanning every historical attempt. */
 export async function getCurrentMcqStreaksForUsers(
 	userIds: string[],
-	timeZone: string
+	timeZone: string,
+	organizationId: string | null = null
 ): Promise<Array<{ userId: string; currentStreak: number }>> {
 	if (userIds.length === 0) return [];
 	const today = localDayKey(new Date(), timeZone);
@@ -102,8 +117,8 @@ export async function getCurrentMcqStreaksForUsers(
 		anchors(user_id, anchor_day) AS (
 			SELECT requested_users.user_id,
 				CASE
-					WHEN ${hasMcqActivity(requestedUser, todayDay, timeZone)} THEN ${today}::date
-					WHEN ${hasMcqActivity(requestedUser, yesterday, timeZone)} THEN ${today}::date - 1
+					WHEN ${hasMcqActivity(requestedUser, todayDay, timeZone, organizationId)} THEN ${today}::date
+					WHEN ${hasMcqActivity(requestedUser, yesterday, timeZone, organizationId)} THEN ${today}::date - 1
 					ELSE NULL::date
 				END
 			FROM requested_users
@@ -115,7 +130,7 @@ export async function getCurrentMcqStreaksForUsers(
 			UNION ALL
 			SELECT streak_days.user_id, streak_days.day - 1
 			FROM streak_days
-			WHERE ${hasMcqActivity(streakUser, previousStreakDay, timeZone)}
+			WHERE ${hasMcqActivity(streakUser, previousStreakDay, timeZone, organizationId)}
 		)
 		SELECT user_id AS "userId", count(*)::int AS "currentStreak"
 		FROM streak_days

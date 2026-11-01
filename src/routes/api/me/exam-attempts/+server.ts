@@ -2,9 +2,12 @@ import { desc, eq } from 'drizzle-orm';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { examAttempts } from '#lib/server/neon/schema.js';
+import { resolveRequestPracticeContext } from '#lib/users/practice-context.server.js';
+import { sql } from 'drizzle-orm';
 
 export const GET = withAuthedHandler(
 	async (_event, userId) => {
+		const context = await resolveRequestPracticeContext(_event.locals, userId);
 		const attempts = await getNeonDatabase()
 			.select({
 				id: examAttempts.id,
@@ -15,7 +18,10 @@ export const GET = withAuthedHandler(
 				score: examAttempts.score
 			})
 			.from(examAttempts)
-			.where(eq(examAttempts.userId, userId))
+			.where(
+				sql`${examAttempts.userId} = ${userId}
+					AND ${examAttempts.organizationId} IS NOT DISTINCT FROM ${context.organizationId}`
+			)
 			.orderBy(desc(examAttempts.startedAt))
 			.limit(100);
 		return Response.json({ attempts });

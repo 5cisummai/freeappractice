@@ -130,6 +130,44 @@ export const userCourses = appSchema.table(
 	(table) => [primaryKey({ columns: [table.userId, table.course] })]
 );
 
+export type PracticeSessionQuestionReference = {
+	questionId: string;
+	questionType: 'mcq' | 'frq';
+};
+
+export const practiceSessions = appSchema.table(
+	'practice_sessions',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
+		mode: text('mode').notNull(),
+		course: text('course'),
+		status: text('status').notNull().default('open'),
+		startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+		completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }),
+		questionRefs: jsonb('question_refs')
+			.$type<PracticeSessionQuestionReference[]>()
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		check('practice_sessions_mode_check', sql`${table.mode} IN ('mcq', 'quiz', 'frq', 'exam')`),
+		check(
+			'practice_sessions_status_check',
+			sql`${table.status} IN ('open', 'completed', 'cancelled')`
+		),
+		index('practice_sessions_user_started_idx').on(table.userId, table.startedAt),
+		index('practice_sessions_org_started_idx').on(table.organizationId, table.startedAt)
+	]
+);
+
 export const mcqAttempts = appSchema.table(
 	'mcq_attempts',
 	{
@@ -137,6 +175,12 @@ export const mcqAttempts = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
+		practiceSessionId: text('practice_session_id').references(() => practiceSessions.id, {
+			onDelete: 'set null'
+		}),
 		questionId: text('question_id').notNull(),
 		course: text('course').notNull(),
 		unit: text('unit').notNull(),
@@ -148,6 +192,8 @@ export const mcqAttempts = appSchema.table(
 	},
 	(table) => [
 		index('mcq_attempts_user_attempted_idx').on(table.userId, table.attemptedAt),
+		index('mcq_attempts_org_attempted_idx').on(table.organizationId, table.attemptedAt),
+		index('mcq_attempts_session_idx').on(table.practiceSessionId),
 		index('mcq_attempts_question_idx').on(table.questionId),
 		index('mcq_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
 	]
@@ -160,6 +206,12 @@ export const examAttempts = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
+		practiceSessionId: text('practice_session_id').references(() => practiceSessions.id, {
+			onDelete: 'set null'
+		}),
 		course: text('course').notNull(),
 		sections: jsonb('sections').$type<ExamSection[]>().notNull(),
 		responses: jsonb('responses').$type<Record<string, string>>().notNull().default({}),
@@ -179,6 +231,8 @@ export const examAttempts = appSchema.table(
 	},
 	(table) => [
 		check('exam_attempts_status_check', sql`${table.status} IN ('in_progress', 'submitted')`),
+		index('exam_attempts_org_started_idx').on(table.organizationId, table.startedAt),
+		index('exam_attempts_session_idx').on(table.practiceSessionId),
 		index('exam_attempts_user_started_idx').on(table.userId, table.startedAt)
 	]
 );
@@ -190,6 +244,12 @@ export const quizAttempts = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
+		practiceSessionId: text('practice_session_id').references(() => practiceSessions.id, {
+			onDelete: 'set null'
+		}),
 		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		requestedCount: integer('requested_count').notNull(),
@@ -208,6 +268,8 @@ export const quizAttempts = appSchema.table(
 	},
 	(table) => [
 		index('quiz_attempts_user_completed_idx').on(table.userId, table.completedAt),
+		index('quiz_attempts_org_completed_idx').on(table.organizationId, table.completedAt),
+		index('quiz_attempts_session_idx').on(table.practiceSessionId),
 		index('quiz_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
 	]
 );
@@ -222,7 +284,7 @@ export const sharedPracticeSets = appSchema.table(
 			onDelete: 'set null'
 		}),
 		organizationId: text('organization_id').references(() => authOrganizations.id, {
-			onDelete: 'set null'
+			onDelete: 'cascade'
 		}),
 		title: text('title').notNull(),
 		course: text('course').notNull(),
@@ -285,9 +347,15 @@ export const quizAttemptQuestions = appSchema.table(
 export const userProgress = appSchema.table(
 	'user_progress',
 	{
+		id: text('id')
+			.primaryKey()
+			.default(sql`gen_random_uuid()::text`),
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
 		course: text('course').notNull(),
 		unit: text('unit').notNull(),
 		completed: boolean('completed').notNull().default(false),
@@ -299,7 +367,12 @@ export const userProgress = appSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		primaryKey({ columns: [table.userId, table.course, table.unit] }),
+		uniqueIndex('user_progress_personal_uq')
+			.on(table.userId, table.course, table.unit)
+			.where(sql`${table.organizationId} IS NULL`),
+		uniqueIndex('user_progress_classroom_uq')
+			.on(table.organizationId, table.userId, table.course, table.unit)
+			.where(sql`${table.organizationId} IS NOT NULL`),
 		check('user_progress_mastery_range', sql`${table.mastery} >= 0 AND ${table.mastery} <= 100`)
 	]
 );
@@ -307,13 +380,26 @@ export const userProgress = appSchema.table(
 export const bookmarks = appSchema.table(
 	'bookmarks',
 	{
+		id: text('id')
+			.primaryKey()
+			.default(sql`gen_random_uuid()::text`),
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
 		questionId: text('question_id').notNull(),
 		createdAt: createdAt()
 	},
-	(table) => [primaryKey({ columns: [table.userId, table.questionId] })]
+	(table) => [
+		uniqueIndex('bookmarks_personal_uq')
+			.on(table.userId, table.questionId)
+			.where(sql`${table.organizationId} IS NULL`),
+		uniqueIndex('bookmarks_classroom_uq')
+			.on(table.organizationId, table.userId, table.questionId)
+			.where(sql`${table.organizationId} IS NOT NULL`)
+	]
 );
 
 export const frqAttempts = appSchema.table(
@@ -323,6 +409,12 @@ export const frqAttempts = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
+		practiceSessionId: text('practice_session_id').references(() => practiceSessions.id, {
+			onDelete: 'set null'
+		}),
 		submissionId: text('submission_id').notNull(),
 		questionId: text('question_id').notNull(),
 		course: text('course').notNull(),
@@ -340,7 +432,13 @@ export const frqAttempts = appSchema.table(
 		updatedAt: updatedAt()
 	},
 	(table) => [
-		uniqueIndex('frq_attempts_user_submission_uq').on(table.userId, table.submissionId),
+		uniqueIndex('frq_attempts_personal_submission_uq')
+			.on(table.userId, table.submissionId)
+			.where(sql`${table.organizationId} IS NULL`),
+		uniqueIndex('frq_attempts_classroom_submission_uq')
+			.on(table.organizationId, table.userId, table.submissionId)
+			.where(sql`${table.organizationId} IS NOT NULL`),
+		index('frq_attempts_org_created_idx').on(table.organizationId, table.createdAt),
 		index('frq_attempts_user_created_idx').on(table.userId, table.createdAt),
 		index('frq_attempts_user_course_unit_idx').on(table.userId, table.course, table.unit)
 	]
@@ -618,6 +716,9 @@ export const seenQuestions = appSchema.table(
 		userId: text('user_id')
 			.notNull()
 			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id').references(() => authOrganizations.id, {
+			onDelete: 'cascade'
+		}),
 		contentHash: text('content_hash').notNull(),
 		questionType: text('question_type').notNull(),
 		course: text('course').notNull(),
@@ -626,6 +727,131 @@ export const seenQuestions = appSchema.table(
 	},
 	(table) => [
 		index('seen_questions_user_seen_idx').on(table.userId, table.seenAt),
+		index('seen_questions_org_seen_idx').on(table.organizationId, table.seenAt),
 		index('seen_questions_user_hash_idx').on(table.userId, table.contentHash)
+	]
+);
+
+export const organizationActivityPreferences = appSchema.table(
+	'organization_activity_preferences',
+	{
+		organizationId: text('organization_id')
+			.notNull()
+			.references(() => authOrganizations.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		enabled: boolean('enabled').notNull().default(false),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		primaryKey({ columns: [table.organizationId, table.userId] }),
+		index('organization_activity_preferences_user_idx').on(table.userId)
+	]
+);
+
+export const practiceActivityEvents = appSchema.table(
+	'practice_activity_events',
+	{
+		id: text('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		sourceType: text('source_type').notNull(),
+		sourceId: text('source_id').notNull(),
+		course: text('course').notNull(),
+		unit: text('unit').notNull(),
+		scorePercent: integer('score_percent'),
+		questionsAnswered: integer('questions_answered').notNull(),
+		correctQuestions: integer('correct_questions').notNull(),
+		completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }).notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		check(
+			'practice_activity_events_source_type_check',
+			sql`${table.sourceType} IN ('quiz', 'exam', 'frq')`
+		),
+		uniqueIndex('practice_activity_events_source_uq').on(table.sourceType, table.sourceId),
+		index('practice_activity_events_completed_idx').on(table.completedAt)
+	]
+);
+
+export const practiceActivityAudiences = appSchema.table(
+	'practice_activity_audiences',
+	{
+		eventId: text('event_id')
+			.notNull()
+			.references(() => practiceActivityEvents.id, { onDelete: 'cascade' }),
+		organizationId: text('organization_id')
+			.notNull()
+			.references(() => authOrganizations.id, { onDelete: 'cascade' }),
+		createdAt: createdAt()
+	},
+	(table) => [
+		primaryKey({ columns: [table.eventId, table.organizationId] }),
+		index('practice_activity_audiences_org_idx').on(table.organizationId, table.createdAt)
+	]
+);
+
+export const classroomCreationGrants = appSchema.table(
+	'classroom_creation_grants',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		grantedBy: text('granted_by').notNull(),
+		grantedAt: timestamp('granted_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+		revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		primaryKey({ columns: [table.userId] }),
+		index('classroom_creation_grants_active_idx')
+			.on(table.userId)
+			.where(sql`${table.revokedAt} IS NULL`)
+	]
+);
+
+export const classroomCourses = appSchema.table(
+	'classroom_courses',
+	{
+		organizationId: text('organization_id')
+			.notNull()
+			.references(() => authOrganizations.id, { onDelete: 'cascade' }),
+		course: text('course').notNull(),
+		position: integer('position').notNull().default(0),
+		createdAt: createdAt()
+	},
+	(table) => [
+		primaryKey({ columns: [table.organizationId, table.course] }),
+		index('classroom_courses_order_idx').on(table.organizationId, table.position)
+	]
+);
+
+export const classroomEnrollmentHistory = appSchema.table(
+	'classroom_enrollment_history',
+	{
+		id: text('id').primaryKey(),
+		organizationId: text('organization_id')
+			.notNull()
+			.references(() => authOrganizations.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => authUsers.id, { onDelete: 'cascade' }),
+		role: text('role').notNull(),
+		joinedAt: timestamp('joined_at', { withTimezone: true, mode: 'date' }).notNull(),
+		leftAt: timestamp('left_at', { withTimezone: true, mode: 'date' }),
+		createdAt: createdAt()
+	},
+	(table) => [
+		check(
+			'classroom_enrollment_history_role_check',
+			sql`${table.role} IN ('owner', 'admin', 'member')`
+		),
+		index('classroom_enrollment_history_org_user_idx').on(table.organizationId, table.userId),
+		index('classroom_enrollment_history_org_left_idx').on(table.organizationId, table.leftAt)
 	]
 );

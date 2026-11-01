@@ -1,15 +1,21 @@
 import { randomBytes } from 'node:crypto';
-import { and, count, desc, eq, gt, gte, inArray, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gt, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
-import { getCurrentMcqStreaksForUsers } from '#lib/users/streak.server.js';
 import {
 	authMembers,
 	authOrganizations,
 	authUsers,
+	classroomCourses,
+	classroomCreationGrants,
+	classroomEnrollmentHistory,
+	examAttempts,
+	frqAttempts,
 	mcqAttempts,
+	organizationActivityPreferences,
+	practiceActivityAudiences,
+	practiceActivityEvents,
 	quizAttempts,
-	sharedPracticeSets,
-	userProgress
+	sharedPracticeSets
 } from '#lib/server/neon/schema.js';
 import {
 	MAX_FREE_GROUP_ORGS,
@@ -34,6 +40,23 @@ export type OrganizationMember = {
 	email: string | null;
 	image: string | null;
 	role: OrganizationRole;
+};
+
+export type ClassroomReportRow = {
+	userId: string;
+	name: string;
+	email: string;
+	role: OrganizationRole;
+	current: boolean;
+	mcqAttempts: number;
+	mcqCorrect: number;
+	mcqAccuracyPercent: number | null;
+	unitsPracticed: number;
+	quizAttempts: number;
+	quizAveragePercent: number | null;
+	frqAttempts: number;
+	frqAveragePercent: number | null;
+	examAttempts: number;
 };
 
 const ORG_ACTIVITY_LIMIT = 3;
@@ -65,6 +88,232 @@ export async function countOwnedGroupOrgs(userId: string): Promise<number> {
 
 export async function canCreateGroupOrg(userId: string): Promise<boolean> {
 	return (await countOwnedGroupOrgs(userId)) < MAX_FREE_GROUP_ORGS;
+}
+
+export async function hasClassroomCreationGrant(userId: string): Promise<boolean> {
+	const [row] = await getNeonDatabase()
+		.select({ userId: classroomCreationGrants.userId })
+		.from(classroomCreationGrants)
+		.where(
+			and(eq(classroomCreationGrants.userId, userId), isNull(classroomCreationGrants.revokedAt))
+		)
+		.limit(1);
+	return Boolean(row);
+}
+
+export async function grantClassroomCreationAccess(
+	userId: string,
+	grantedBy: string
+): Promise<void> {
+	const now = new Date();
+	await getNeonDatabase()
+		.insert(classroomCreationGrants)
+		.values({ userId, grantedBy, grantedAt: now, revokedAt: null, createdAt: now, updatedAt: now })
+		.onConflictDoUpdate({
+			target: classroomCreationGrants.userId,
+			set: { grantedBy, grantedAt: now, revokedAt: null, updatedAt: now }
+		});
+}
+
+export async function revokeClassroomCreationAccess(userId: string): Promise<boolean> {
+	const rows = await getNeonDatabase()
+		.update(classroomCreationGrants)
+		.set({ revokedAt: new Date(), updatedAt: new Date() })
+		.where(
+			and(eq(classroomCreationGrants.userId, userId), isNull(classroomCreationGrants.revokedAt))
+		)
+		.returning({ userId: classroomCreationGrants.userId });
+	return rows.length > 0;
+}
+
+export async function listClassroomCreationAccess(): Promise<
+	Array<{ userId: string; email: string; name: string; grantedBy: string; grantedAt: Date }>
+> {
+	return getNeonDatabase()
+		.select({
+			userId: classroomCreationGrants.userId,
+			email: authUsers.email,
+			name: authUsers.name,
+			grantedBy: classroomCreationGrants.grantedBy,
+			grantedAt: classroomCreationGrants.grantedAt
+		})
+		.from(classroomCreationGrants)
+		.innerJoin(authUsers, eq(classroomCreationGrants.userId, authUsers.id))
+		.where(isNull(classroomCreationGrants.revokedAt))
+		.orderBy(desc(classroomCreationGrants.grantedAt));
+}
+
+export async function getVerifiedUserByEmail(
+	email: string
+): Promise<{ id: string; emailVerified: boolean } | null> {
+	const [row] = await getNeonDatabase()
+		.select({ id: authUsers.id, emailVerified: authUsers.emailVerified })
+		.from(authUsers)
+		.where(eq(authUsers.email, email.trim().toLowerCase()))
+		.limit(1);
+	return row ?? null;
+}
+
+export async function setOrganizationActivitySharing(
+	userId: string,
+	organizationId: string,
+	enabled: boolean
+): Promise<void> {
+	const membership = await getOrganizationTypeForUser(organizationId, userId);
+	if (membership !== 'group') {
+		throw new OrganizationPermissionError('Activity sharing is only available for study groups.');
+	}
+	const db = getNeonDatabase();
+	await db
+		.insert(organizationActivityPreferences)
+		.values({
+			organizationId,
+			userId,
+			enabled,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		})
+		.onConflictDoUpdate({
+			target: [
+				organizationActivityPreferences.organizationId,
+				organizationActivityPreferences.userId
+			],
+			set: { enabled, updatedAt: new Date() }
+		});
+	if (!enabled) {
+		await db.delete(practiceActivityAudiences).where(
+			and(
+				eq(practiceActivityAudiences.organizationId, organizationId),
+				sql`${practiceActivityAudiences.eventId} IN (
+						SELECT ${practiceActivityEvents.id}
+						FROM ${practiceActivityEvents}
+						WHERE ${practiceActivityEvents.userId} = ${userId}
+					)`
+			)
+		);
+	}
+}
+
+export async function getOrganizationActivitySharing(
+	userId: string,
+	organizationId: string
+): Promise<boolean> {
+	if ((await getOrganizationTypeForUser(organizationId, userId)) !== 'group') {
+		throw new OrganizationPermissionError('Activity sharing is only available for study groups.');
+	}
+	const [row] = await getNeonDatabase()
+		.select({ enabled: organizationActivityPreferences.enabled })
+		.from(organizationActivityPreferences)
+		.where(
+			and(
+				eq(organizationActivityPreferences.organizationId, organizationId),
+				eq(organizationActivityPreferences.userId, userId)
+			)
+		)
+		.limit(1);
+	return row?.enabled ?? false;
+}
+
+export async function listClassroomCourses(organizationId: string): Promise<string[]> {
+	const rows = await getNeonDatabase()
+		.select({ course: classroomCourses.course })
+		.from(classroomCourses)
+		.where(eq(classroomCourses.organizationId, organizationId))
+		.orderBy(classroomCourses.position, classroomCourses.course);
+	return rows.map((row) => row.course);
+}
+
+export async function setClassroomCourses(
+	userId: string,
+	organizationId: string,
+	courses: string[]
+): Promise<void> {
+	const membership = (await listUserOrganizations(userId)).find((org) => org.id === organizationId);
+	if (
+		!membership ||
+		membership.orgType !== 'school' ||
+		(membership.role !== 'owner' && membership.role !== 'admin')
+	) {
+		throw new OrganizationPermissionError('Only classroom teachers can update classroom courses.');
+	}
+	const normalized = [...new Set(courses.map((course) => course.trim()).filter(Boolean))].slice(
+		0,
+		20
+	);
+	const db = getNeonDatabase();
+	await db.transaction(async (tx) => {
+		await tx.delete(classroomCourses).where(eq(classroomCourses.organizationId, organizationId));
+		if (normalized.length) {
+			await tx.insert(classroomCourses).values(
+				normalized.map((course, position) => ({
+					organizationId,
+					course,
+					position
+				}))
+			);
+		}
+	});
+}
+
+export type PublishPracticeActivityInput = {
+	userId: string;
+	sourceType: 'quiz' | 'exam' | 'frq';
+	sourceId: string;
+	course: string;
+	unit: string;
+	scorePercent: number | null;
+	questionsAnswered: number;
+	correctQuestions: number;
+	completedAt: Date;
+};
+
+/**
+ * Publish only personal completions. The event and all current enabled
+ * audiences are written in one database transaction.
+ */
+export async function publishPersonalPracticeActivity(
+	input: PublishPracticeActivityInput
+): Promise<void> {
+	const db = getNeonDatabase();
+	await db.transaction(async (tx) => {
+		const [event] = await tx
+			.insert(practiceActivityEvents)
+			.values({ id: crypto.randomUUID(), ...input })
+			.onConflictDoNothing({
+				target: [practiceActivityEvents.sourceType, practiceActivityEvents.sourceId]
+			})
+			.returning({ id: practiceActivityEvents.id });
+		if (!event) return;
+		const audiences = await tx
+			.select({ organizationId: organizationActivityPreferences.organizationId })
+			.from(organizationActivityPreferences)
+			.innerJoin(
+				authMembers,
+				and(
+					eq(authMembers.organizationId, organizationActivityPreferences.organizationId),
+					eq(authMembers.userId, organizationActivityPreferences.userId)
+				)
+			)
+			.innerJoin(
+				authOrganizations,
+				and(
+					eq(authOrganizations.id, organizationActivityPreferences.organizationId),
+					eq(authOrganizations.orgType, 'group')
+				)
+			)
+			.where(
+				and(
+					eq(organizationActivityPreferences.userId, input.userId),
+					eq(organizationActivityPreferences.enabled, true)
+				)
+			);
+		if (audiences.length) {
+			await tx
+				.insert(practiceActivityAudiences)
+				.values(audiences.map((audience) => ({ eventId: event.id, ...audience })))
+				.onConflictDoNothing();
+		}
+	});
 }
 
 export async function findPersonalOrganization(userId: string): Promise<UserOrganization | null> {
@@ -157,45 +406,255 @@ export async function listOrganizationMembers(
 	return members;
 }
 
-export async function listOrganizationActivity(
-	organizationId: string
-): Promise<OrganizationActivityItem[]> {
-	const memberRows = await getNeonDatabase()
-		.select({ userId: authMembers.userId })
-		.from(authMembers)
-		.where(eq(authMembers.organizationId, organizationId));
-	const userIds = memberRows.map((member) => member.userId);
-	if (userIds.length === 0) return [];
+export async function listClassroomReport(
+	organizationId: string,
+	options: { page?: number; limit?: number; course?: string; from?: Date; to?: Date } = {}
+): Promise<{ rows: ClassroomReportRow[]; total: number; page: number; limit: number }> {
+	const orgType = await getOrganizationType(organizationId);
+	if (orgType !== 'school') {
+		throw new OrganizationPermissionError('Classroom reports are only available for classrooms.');
+	}
+	const currentMembers = await listOrganizationMembers(organizationId);
+	const historyRows = await getNeonDatabase()
+		.select({
+			userId: classroomEnrollmentHistory.userId,
+			role: classroomEnrollmentHistory.role,
+			leftAt: classroomEnrollmentHistory.leftAt
+		})
+		.from(classroomEnrollmentHistory)
+		.where(eq(classroomEnrollmentHistory.organizationId, organizationId));
+	const userIds = [
+		...new Set(historyRows.map((row) => row.userId).concat(currentMembers.map((row) => row.userId)))
+	];
+	if (!userIds.length) return { rows: [], total: 0, page: 1, limit: options.limit ?? 50 };
+	const users = await getNeonDatabase()
+		.select({ id: authUsers.id, name: authUsers.name, email: authUsers.email })
+		.from(authUsers)
+		.where(inArray(authUsers.id, userIds));
+	const currentByUser = new Map(currentMembers.map((member) => [member.userId, member]));
+	const userById = new Map(users.map((user) => [user.id, user]));
+	const mcqRows = await getNeonDatabase()
+		.select({
+			userId: mcqAttempts.userId,
+			attempts: count(),
+			correct: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} = true)::int`,
+			units: sql<number>`count(distinct ${mcqAttempts.course} || chr(0) || ${mcqAttempts.unit})::int`
+		})
+		.from(mcqAttempts)
+		.where(
+			and(
+				eq(mcqAttempts.organizationId, organizationId),
+				inArray(mcqAttempts.userId, userIds),
+				options.course ? eq(mcqAttempts.course, options.course) : undefined,
+				options.from ? gte(mcqAttempts.attemptedAt, options.from) : undefined,
+				options.to ? sql`${mcqAttempts.attemptedAt} <= ${options.to}` : undefined
+			)
+		)
+		.groupBy(mcqAttempts.userId);
+	const [quizRows, frqRows, examRows] = await Promise.all([
+		getNeonDatabase()
+			.select({
+				userId: quizAttempts.userId,
+				attempts: count(),
+				average: sql<number>`round(avg(${quizAttempts.scorePercent}))::int`
+			})
+			.from(quizAttempts)
+			.where(
+				and(
+					eq(quizAttempts.organizationId, organizationId),
+					inArray(quizAttempts.userId, userIds),
+					options.course ? eq(quizAttempts.course, options.course) : undefined,
+					options.from ? gte(quizAttempts.completedAt, options.from) : undefined,
+					options.to ? sql`${quizAttempts.completedAt} <= ${options.to}` : undefined
+				)
+			)
+			.groupBy(quizAttempts.userId),
+		getNeonDatabase()
+			.select({
+				userId: frqAttempts.userId,
+				attempts: count(),
+				average: sql<number>`round(avg(${frqAttempts.percentage}))::int`
+			})
+			.from(frqAttempts)
+			.where(
+				and(
+					eq(frqAttempts.organizationId, organizationId),
+					eq(frqAttempts.status, 'graded'),
+					inArray(frqAttempts.userId, userIds),
+					options.course ? eq(frqAttempts.course, options.course) : undefined,
+					options.from ? gte(frqAttempts.createdAt, options.from) : undefined,
+					options.to ? sql`${frqAttempts.createdAt} <= ${options.to}` : undefined
+				)
+			)
+			.groupBy(frqAttempts.userId),
+		getNeonDatabase()
+			.select({ userId: examAttempts.userId, attempts: count() })
+			.from(examAttempts)
+			.where(
+				and(
+					eq(examAttempts.organizationId, organizationId),
+					eq(examAttempts.status, 'submitted'),
+					inArray(examAttempts.userId, userIds),
+					options.course ? eq(examAttempts.course, options.course) : undefined,
+					options.from ? gte(examAttempts.submittedAt, options.from) : undefined,
+					options.to ? sql`${examAttempts.submittedAt} <= ${options.to}` : undefined
+				)
+			)
+			.groupBy(examAttempts.userId)
+	]);
+	const mcqByUser = new Map(mcqRows.map((row) => [row.userId, row]));
+	const quizByUser = new Map(quizRows.map((row) => [row.userId, row]));
+	const frqByUser = new Map(frqRows.map((row) => [row.userId, row]));
+	const examByUser = new Map(examRows.map((row) => [row.userId, row]));
+	const rows = userIds
+		.map((userId) => {
+			const user = userById.get(userId);
+			if (!user) return null;
+			const mcq = mcqByUser.get(userId);
+			const quiz = quizByUser.get(userId);
+			const frq = frqByUser.get(userId);
+			const exam = examByUser.get(userId);
+			const current = currentByUser.get(userId);
+			const role = asRole(
+				current?.role ?? historyRows.find((row) => row.userId === userId)?.role ?? 'member'
+			);
+			const mcqAttempts = Number(mcq?.attempts ?? 0);
+			return {
+				userId,
+				name: user.name,
+				email: user.email,
+				role,
+				current: Boolean(current),
+				mcqAttempts,
+				mcqCorrect: Number(mcq?.correct ?? 0),
+				mcqAccuracyPercent:
+					mcqAttempts > 0 ? Math.round((Number(mcq?.correct ?? 0) / mcqAttempts) * 100) : null,
+				unitsPracticed: Number(mcq?.units ?? 0),
+				quizAttempts: Number(quiz?.attempts ?? 0),
+				quizAveragePercent: quiz ? Number(quiz.average) : null,
+				frqAttempts: Number(frq?.attempts ?? 0),
+				frqAveragePercent: frq ? Number(frq.average) : null,
+				examAttempts: Number(exam?.attempts ?? 0)
+			};
+		})
+		.filter((row): row is ClassroomReportRow => Boolean(row))
+		.filter((row) => row.role === 'member')
+		.sort((left, right) => left.name.localeCompare(right.name));
+	const page = Math.max(options.page ?? 1, 1);
+	const limit = Math.min(Math.max(options.limit ?? 50, 1), 200);
+	return { rows: rows.slice((page - 1) * limit, page * limit), total: rows.length, page, limit };
+}
 
+export type OrganizationActivityPage = {
+	items: OrganizationActivityItem[];
+	nextCursor: string | null;
+};
+
+type OrganizationActivityCursor = {
+	completedAt: string;
+	id: string;
+};
+
+function decodeOrganizationActivityCursor(value: string | undefined): OrganizationActivityCursor | null {
+	if (!value) return null;
+	try {
+		const decoded = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as unknown;
+		if (!decoded || typeof decoded !== 'object') throw new Error('Invalid cursor.');
+		const cursor = decoded as Record<string, unknown>;
+		if (
+			typeof cursor.completedAt !== 'string' ||
+			Number.isNaN(new Date(cursor.completedAt).getTime()) ||
+			typeof cursor.id !== 'string' ||
+			!cursor.id
+		) {
+			throw new Error('Invalid cursor.');
+		}
+		return { completedAt: cursor.completedAt, id: cursor.id };
+	} catch {
+		throw new Error('Invalid activity cursor.');
+	}
+}
+
+function encodeOrganizationActivityCursor(cursor: OrganizationActivityCursor): string {
+	return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
+}
+
+export async function listOrganizationActivityPage(
+	userId: string,
+	organizationId: string,
+	options: { cursor?: string; limit?: number } = {}
+): Promise<OrganizationActivityPage> {
+	if ((await getOrganizationTypeForUser(organizationId, userId)) !== 'group') {
+		throw new OrganizationPermissionError('Activity feeds are only available for study groups.');
+	}
 	const cutoff = new Date(Date.now() - ORG_ACTIVITY_WINDOW_MS);
+	const cursor = decodeOrganizationActivityCursor(options.cursor);
+	const limit = Math.min(Math.max(options.limit ?? 20, 1), 50);
 	const rows = await getNeonDatabase()
 		.select({
-			id: quizAttempts.id,
-			userId: quizAttempts.userId,
+			id: practiceActivityEvents.id,
+			userId: practiceActivityEvents.userId,
 			userName: authUsers.name,
-			course: quizAttempts.course,
-			unit: quizAttempts.unit,
-			scorePercent: quizAttempts.scorePercent,
-			quizTitle: sharedPracticeSets.title,
-			completedAt: quizAttempts.completedAt
+			course: practiceActivityEvents.course,
+			unit: practiceActivityEvents.unit,
+			scorePercent: practiceActivityEvents.scorePercent,
+			quizTitle: sql<string | null>`NULL`,
+			completedAt: practiceActivityEvents.completedAt
 		})
-		.from(quizAttempts)
-		.innerJoin(authUsers, eq(quizAttempts.userId, authUsers.id))
-		.leftJoin(sharedPracticeSets, eq(quizAttempts.sharedPracticeSetId, sharedPracticeSets.id))
-		.where(and(inArray(quizAttempts.userId, userIds), gte(quizAttempts.completedAt, cutoff)))
-		.orderBy(desc(quizAttempts.completedAt))
-		.limit(ORG_ACTIVITY_LIMIT);
+		.from(practiceActivityAudiences)
+		.innerJoin(
+			practiceActivityEvents,
+			eq(practiceActivityAudiences.eventId, practiceActivityEvents.id)
+		)
+		.innerJoin(
+			authMembers,
+			and(
+				eq(authMembers.organizationId, practiceActivityAudiences.organizationId),
+				eq(authMembers.userId, practiceActivityEvents.userId)
+			)
+		)
+		.innerJoin(authUsers, eq(practiceActivityEvents.userId, authUsers.id))
+		.where(
+			and(
+				eq(practiceActivityAudiences.organizationId, organizationId),
+					gte(practiceActivityEvents.completedAt, cutoff),
+					cursor
+						? or(
+								lt(practiceActivityEvents.completedAt, new Date(cursor.completedAt)),
+								and(
+									eq(practiceActivityEvents.completedAt, new Date(cursor.completedAt)),
+									lt(practiceActivityEvents.id, cursor.id)
+								)
+							)
+						: undefined
+			)
+		)
+		.orderBy(desc(practiceActivityEvents.completedAt))
+		.limit(limit + 1);
 
-	return rows.map((row) => ({
+	const hasNextPage = rows.length > limit;
+	const pageRows = hasNextPage ? rows.slice(0, limit) : rows;
+	const items = pageRows.map((row) => ({
 		id: row.id,
 		userId: row.userId,
 		userName: row.userName,
 		course: row.course,
 		unit: row.unit,
-		scorePercent: row.scorePercent,
+		scorePercent: row.scorePercent ?? 0,
 		quizTitle: row.quizTitle,
 		completedAt: row.completedAt.toISOString()
 	}));
+	const last = pageRows.at(-1);
+	return {
+		items,
+		nextCursor:
+			hasNextPage && last
+				? encodeOrganizationActivityCursor({
+						completedAt: last.completedAt.toISOString(),
+						id: last.id
+					})
+				: null
+	};
 }
 
 export async function getOrganizationType(organizationId: string): Promise<OrgType | null> {
@@ -320,9 +779,9 @@ export async function assertCanAttachSharedSetToOrganization(
 	organizationId: string
 ): Promise<void> {
 	const orgType = await getOrganizationTypeForUser(organizationId, userId);
-	if (orgType !== 'group') {
+	if (orgType !== 'group' && orgType !== 'school') {
 		throw new OrganizationPermissionError(
-			'Organization quizzes are only available for group organizations.'
+			'Organization quizzes are only available for groups and classrooms.'
 		);
 	}
 
@@ -338,6 +797,7 @@ export async function assertCanAttachSharedSetToOrganization(
 export async function listOrganizationSharedSets(
 	organizationId: string
 ): Promise<OrganizationSharedSet[]> {
+	const orgType = await getOrganizationType(organizationId);
 	const now = new Date();
 	const rows = await getNeonDatabase()
 		.select({
@@ -382,7 +842,10 @@ export async function listOrganizationSharedSets(
 				.where(
 					and(
 						inArray(quizAttempts.sharedPracticeSetId, setIds),
-						inArray(quizAttempts.userId, memberUserIds)
+						inArray(quizAttempts.userId, memberUserIds),
+						sql`${quizAttempts.organizationId} IS NOT DISTINCT FROM ${
+							orgType === 'school' ? organizationId : null
+						}`
 					)
 				)
 				.groupBy(quizAttempts.sharedPracticeSetId)
@@ -415,54 +878,85 @@ export async function listOrganizationLeaderboard(
 	const members = await listOrganizationMembers(organizationId);
 	if (members.length === 0) return [];
 
-	const userIds = members.map((member) => member.userId);
 	const recentCutoff = new Date(Date.now() - 7 * 86_400_000);
 
-	const [statsRows, unitsRows, streakResult] = await Promise.all([
-		getNeonDatabase()
-			.select({
-				userId: mcqAttempts.userId,
-				questionsLast7Days: sql<number>`count(*) FILTER (
-					WHERE ${mcqAttempts.wasCorrect} IS NOT NULL
-						AND ${mcqAttempts.attemptedAt} >= ${recentCutoff}
-				)::int`,
-				totalAttempts: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} IS NOT NULL)::int`,
-				correctAttempts: sql<number>`count(*) FILTER (WHERE ${mcqAttempts.wasCorrect} = true)::int`
-			})
-			.from(mcqAttempts)
-			.where(inArray(mcqAttempts.userId, userIds))
-			.groupBy(mcqAttempts.userId),
-		getNeonDatabase()
-			.select({
-				userId: userProgress.userId,
-				unitsPracticed: count()
-			})
-			.from(userProgress)
-			.where(and(inArray(userProgress.userId, userIds), gt(userProgress.totalAttempts, 0)))
-			.groupBy(userProgress.userId),
-		getCurrentMcqStreaksForUsers(userIds, timeZone)
-	]);
-
-	const statsMap = new Map(statsRows.map((row) => [row.userId, row]));
-	const unitsMap = new Map(unitsRows.map((row) => [row.userId, Number(row.unitsPracticed)]));
-	const streakMap = new Map(streakResult.map((row) => [row.userId, row.currentStreak]));
+	const eventRows = await getNeonDatabase()
+		.select({
+			userId: practiceActivityEvents.userId,
+			completedAt: practiceActivityEvents.completedAt,
+			course: practiceActivityEvents.course,
+			unit: practiceActivityEvents.unit,
+			questionsAnswered: practiceActivityEvents.questionsAnswered,
+			correctQuestions: practiceActivityEvents.correctQuestions
+		})
+		.from(practiceActivityAudiences)
+		.innerJoin(
+			practiceActivityEvents,
+			eq(practiceActivityAudiences.eventId, practiceActivityEvents.id)
+		)
+		.innerJoin(
+			authMembers,
+			and(
+				eq(authMembers.organizationId, practiceActivityAudiences.organizationId),
+				eq(authMembers.userId, practiceActivityEvents.userId)
+			)
+		)
+		.where(
+			and(
+				eq(practiceActivityAudiences.organizationId, organizationId),
+				gte(practiceActivityEvents.completedAt, recentCutoff)
+			)
+		);
+	const eventsByUser = new Map<string, typeof eventRows>();
+	for (const row of eventRows) {
+		const events = eventsByUser.get(row.userId) ?? [];
+		events.push(row);
+		eventsByUser.set(row.userId, events);
+	}
 
 	const entries: OrganizationLeaderboardEntry[] = members.map((member) => {
-		const stats = statsMap.get(member.userId);
-		const totalAttempts = stats?.totalAttempts ?? 0;
+		const events = eventsByUser.get(member.userId) ?? [];
+		const totalAttempts = events.reduce((total, event) => total + event.questionsAnswered, 0);
+		const correctAttempts = events.reduce((total, event) => total + event.correctQuestions, 0);
+		const units = new Set(events.map((event) => `${event.course}\u0000${event.unit}`));
+		const days = new Set(
+			events.map((event) =>
+				new Intl.DateTimeFormat('en-CA', {
+					timeZone,
+					year: 'numeric',
+					month: '2-digit',
+					day: '2-digit'
+				}).format(event.completedAt)
+			)
+		);
+		let currentStreak = 0;
+		const cursor = new Date();
+		while (
+			days.has(
+				new Intl.DateTimeFormat('en-CA', {
+					timeZone,
+					year: 'numeric',
+					month: '2-digit',
+					day: '2-digit'
+				}).format(cursor)
+			)
+		) {
+			currentStreak += 1;
+			cursor.setUTCDate(cursor.getUTCDate() - 1);
+		}
 		const accuracyPercent =
-			totalAttempts >= LEADERBOARD_MIN_ACCURACY_ATTEMPTS && stats
-				? Math.round((stats.correctAttempts / totalAttempts) * 100)
+			totalAttempts >= LEADERBOARD_MIN_ACCURACY_ATTEMPTS
+				? Math.round((correctAttempts / totalAttempts) * 100)
 				: null;
 
 		return {
 			userId: member.userId,
 			name: member.name,
 			image: member.image,
-			questionsLast7Days: stats?.questionsLast7Days ?? 0,
+			questionsLast7Days: totalAttempts,
 			accuracyPercent,
-			unitsPracticed: unitsMap.get(member.userId) ?? 0,
-			currentStreak: streakMap.get(member.userId) ?? 0
+			unitsPracticed: units.size,
+			currentStreak
 		};
 	});
 
