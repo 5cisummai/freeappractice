@@ -275,7 +275,7 @@
 			<DropdownMenu.Separator />
 			<DropdownMenu.Item disabled={!canCreate} onclick={openCreate}>
 				<PlusIcon />
-				create group
+				Create group
 			</DropdownMenu.Item>
 			{#if !canCreate}
 				<p class="px-2 pb-1 text-xs text-muted-foreground">

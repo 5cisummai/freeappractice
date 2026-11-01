@@ -87,7 +87,7 @@
 				onclick={() => (mobileOpen = !mobileOpen)}
 				variant="ghost"
 				size="icon"
-				class="block sm:hidden"
+				class="sm:hidden"
 				aria-label="Toggle navigation"
 				aria-expanded={mobileOpen}
 				aria-controls="mobile-navigation"
