@@ -17,6 +17,10 @@ const PRODUCTION_APPLIED_0002 = `ALTER TABLE "app"."super_usage_rollups" RENAME 
 UPDATE "app"."super_usage_rollups" SET "credits_milli" = 0;
 `;
 
+const PRODUCTION_APPLIED_0005 = `-- Legacy values were message counts, not millicredits; reset before exposing as credits.
+UPDATE "app"."super_usage_rollups" SET "credits_milli" = 0;
+`;
+
 function createMemoryExecutor(initialLedger: Record<string, string> = {}) {
 	const ledger = new Map(Object.entries(initialLedger));
 	const executed: string[] = [];
@@ -77,6 +81,20 @@ describe('Neon migration checksum matching', () => {
 				checksum(current)
 			)
 		).toBe('mismatch');
+	});
+
+	it('accepts the production checksum of rewritten 0005', async () => {
+		const current = await readFile('drizzle/0005_reset_super_usage_credits_milli.sql', 'utf8');
+		expect(checksum(PRODUCTION_APPLIED_0005)).toBe(
+			HISTORICAL_APPLIED_CHECKSUMS['0005_reset_super_usage_credits_milli'][0]
+		);
+		expect(
+			matchAppliedChecksum(
+				'0005_reset_super_usage_credits_milli',
+				checksum(PRODUCTION_APPLIED_0005),
+				checksum(current)
+			)
+		).toBe('historical');
 	});
 
 	it('rejects a rewritten applied file that has no historical alias', () => {

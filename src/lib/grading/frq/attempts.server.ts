@@ -31,7 +31,6 @@ import { and, count, eq, max, sql, sum } from 'drizzle-orm';
 import {
 	finishPracticeSession,
 	getPracticeSessionForUser,
-	requirePracticeSession,
 	type PracticeContext
 } from '#lib/users/practice-context.server.js';
 import { OrganizationPermissionError } from '#lib/auth/organization-types.js';

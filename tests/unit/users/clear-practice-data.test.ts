@@ -22,11 +22,14 @@ describe('clearPracticeDataForUser', () => {
 			.mockReturnValueOnce({ kind: 'quiz-attempts' })
 			.mockReturnValueOnce({ kind: 'exam-attempts' })
 			.mockReturnValueOnce({ kind: 'bookmarks' })
-			.mockReturnValueOnce({ kind: 'frq-attempts' });
+			.mockReturnValueOnce({ kind: 'frq-attempts' })
+			.mockReturnValueOnce({ kind: 'practice-sessions' })
+			.mockReturnValueOnce({ kind: 'practice-activity-events' })
+			.mockReturnValueOnce({ kind: 'seen-questions' });
 		mocks.batch.mockResolvedValue([]);
 	});
 
-	it('clears every practice table in one database batch', async () => {
+	it('clears personal practice tables in one database batch', async () => {
 		await clearPracticeDataForUser('student-1');
 
 		expect(mocks.batch).toHaveBeenCalledWith([
@@ -35,7 +38,10 @@ describe('clearPracticeDataForUser', () => {
 			{ kind: 'quiz-attempts' },
 			{ kind: 'exam-attempts' },
 			{ kind: 'bookmarks' },
-			{ kind: 'frq-attempts' }
+			{ kind: 'frq-attempts' },
+			{ kind: 'practice-sessions' },
+			{ kind: 'practice-activity-events' },
+			{ kind: 'seen-questions' }
 		]);
 	});
 });

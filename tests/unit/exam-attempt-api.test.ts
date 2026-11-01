@@ -1,11 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ row: null as unknown, updated: null as unknown, set: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+	row: null as unknown,
+	updated: null as unknown,
+	set: vi.fn(),
+	publishPersonalPracticeActivity: vi.fn()
+}));
 vi.mock('#lib/auth/route-helpers.server.js', () => ({
 	withAuthedHandler:
 		(handler: (event: unknown, userId: string) => unknown) =>
 		(event: { locals: { userId: string } }) =>
 			handler(event, event.locals.userId)
+}));
+vi.mock('#lib/users/practice-context.server.js', () => ({
+	assertPracticeContextAccess: vi.fn(),
+	requirePracticeSession: vi.fn()
+}));
+vi.mock('#lib/auth/organization-queries.server.js', () => ({
+	publishPersonalPracticeActivity: mocks.publishPersonalPracticeActivity
 }));
 vi.mock('#lib/server/neon/schema.js', () => ({
 	examAttempts: { id: {}, userId: {}, status: {}, revision: {} }
@@ -57,7 +69,14 @@ describe('exam section saves', () => {
 			sections: [section],
 			responses: {}
 		};
-		mocks.updated = { id: 'exam' };
+		mocks.updated = {
+			id: 'exam',
+			course: 'AP Biology',
+			organizationId: null,
+			responses: {},
+			submittedAt: new Date()
+		};
+		mocks.publishPersonalPracticeActivity.mockResolvedValue(undefined);
 	});
 	it('saves answers for the active section', async () => {
 		const response = await PATCH(event({ action: 'save', revision: 0, responses: { q: 'A' } }));

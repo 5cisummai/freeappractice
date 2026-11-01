@@ -9,7 +9,6 @@ import { quizAttemptQuestions, quizAttempts } from '#lib/server/neon/schema.js';
 import {
 	finishPracticeSession,
 	getPracticeSessionForUser,
-	requirePracticeSession,
 	type PracticeContext
 } from '#lib/users/practice-context.server.js';
 import { OrganizationPermissionError } from '#lib/auth/organization-types.js';
@@ -50,7 +49,12 @@ export type PersistQuizAttemptResult =
 				scorePercent: number;
 			};
 	  }
-	| { status: 400 | 403 | 404 | 422; body: { error: string } };
+	| { status: 400 | 403 | 404 | 409 | 422; body: { error: string } };
+
+function asPracticeSessionStatus(value: string): 'open' | 'completed' | 'cancelled' {
+	if (value === 'open' || value === 'completed' || value === 'cancelled') return value;
+	throw new Error('Invalid practice session status.');
+}
 
 export type CoachQuizAttempt = {
 	quizId: string;
@@ -171,7 +175,7 @@ export async function persistQuizAttempt(
 			const session = await getPracticeSessionForUser(userId, practiceSessionId, 'quiz');
 			context = { organizationId: session.organizationId };
 			sessionCourse = session.course;
-			sessionStatus = session.status;
+			sessionStatus = asPracticeSessionStatus(session.status);
 		} catch (error) {
 			if (error instanceof OrganizationPermissionError) {
 				return { status: 403, body: { error: error.message } };
@@ -305,7 +309,6 @@ export async function persistQuizAttempt(
 		) {
 			return { status: 400, body: { error: 'Invalid quiz ID.' } };
 		}
-		existingAttempt = true;
 	}
 
 	const questionInsert = db

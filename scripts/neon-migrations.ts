@@ -42,6 +42,9 @@ export type ApplyMigrationsResult = {
 export const HISTORICAL_APPLIED_CHECKSUMS: Readonly<Record<string, readonly string[]>> = {
 	'0002_super_usage_credits_milli': [
 		'4817b49135c6caec48ea8f7381b64a889ec859b933aa00ec2179bd87e0b73b16'
+	],
+	'0005_reset_super_usage_credits_milli': [
+		'29bc875f3902da37d6cd55f891f0b6fe4c41dec2b6357367ccaeea1dcb733a72'
 	]
 };
 
