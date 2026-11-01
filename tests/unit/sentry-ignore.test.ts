@@ -19,6 +19,11 @@ describe('isIgnoredSentryError', () => {
 		expect(
 			isIgnoredSentryError(new TypeError("Cannot read properties of undefined (reading 'foo')"))
 		).toBe(false);
+		expect(
+			isIgnoredSentryError(
+				new TypeError("undefined is not an object (evaluating 'someNode.component')")
+			)
+		).toBe(false);
 		expect(isIgnoredSentryError(undefined)).toBe(false);
 		expect(isIgnoredSentryError({ message: 'not an error' })).toBe(false);
 	});
@@ -28,6 +33,11 @@ describe('isIgnoredSentryError', () => {
 			"undefined is not an object (evaluating 'window.webkit.messageHandlers')"
 		);
 		expect(sentryIgnoreErrors).toContain('Delay was aborted');
+		expect(sentryIgnoreErrors).toContain("Can't find variable: __firefox__");
+		expect(sentryIgnoreErrors).toContain('__firefox__ is not defined');
+		expect(sentryIgnoreErrors).toContain(
+			"undefined is not an object (evaluating 'window.__firefox__.reader"
+		);
 	});
 
 	it('drops Vercel AI SDK abort-during-retry-wait noise', () => {
@@ -42,5 +52,38 @@ describe('isIgnoredSentryError', () => {
 		expect(isIgnoredSentryError(new DOMException('The operation was aborted', 'AbortError'))).toBe(
 			false
 		);
+	});
+
+	it('drops Firefox-for-iOS __firefox__ injection noise in Error and string forms', () => {
+		expect(isIgnoredSentryError(new ReferenceError("Can't find variable: __firefox__"))).toBe(true);
+		expect(isIgnoredSentryError("ReferenceError: Can't find variable: __firefox__")).toBe(true);
+		expect(isIgnoredSentryError(new ReferenceError('__firefox__ is not defined'))).toBe(true);
+		expect(isIgnoredSentryError('ReferenceError: __firefox__ is not defined')).toBe(true);
+	});
+
+	it('keeps first-party Safari missing-variable errors', () => {
+		expect(isIgnoredSentryError(new ReferenceError("Can't find variable: practiceSession"))).toBe(
+			false
+		);
+	});
+
+	it('drops Firefox iOS reader-mode window.__firefox__.reader noise in Error and string forms', () => {
+		expect(
+			isIgnoredSentryError(
+				new TypeError("undefined is not an object (evaluating 'window.__firefox__.reader')")
+			)
+		).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				"TypeError: undefined is not an object (evaluating 'window.__firefox__.reader')"
+			)
+		).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				new TypeError(
+					"undefined is not an object (evaluating 'window.__firefox__.reader.checkReadability')"
+				)
+			)
+		).toBe(true);
 	});
 });
