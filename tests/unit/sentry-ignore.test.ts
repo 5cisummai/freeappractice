@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isIgnoredSentryError, sentryIgnoreErrors } from '#lib/sentry-ignore.js';
+import {
+	isIgnoredSentryError,
+	isSvelteKitMissingComponentError,
+	sentryIgnoreErrors
+} from '#lib/sentry-ignore.js';
 
 describe('isIgnoredSentryError', () => {
 	it('drops iOS WebView webkit messageHandlers noise in Error and string forms', () => {
@@ -85,5 +89,44 @@ describe('isIgnoredSentryError', () => {
 				)
 			)
 		).toBe(true);
+	});
+});
+
+describe('isSvelteKitMissingComponentError', () => {
+	it('matches the Chromium SvelteKit route-node crash', () => {
+		expect(
+			isSvelteKitMissingComponentError(
+				new TypeError("Cannot read properties of undefined (reading 'component')")
+			)
+		).toBe(true);
+		expect(
+			isSvelteKitMissingComponentError(
+				"TypeError: Cannot read properties of undefined (reading 'component')"
+			)
+		).toBe(true);
+		expect(
+			isSvelteKitMissingComponentError(
+				new TypeError("Cannot read property 'component' of undefined")
+			)
+		).toBe(true);
+	});
+
+	it('does not treat the crash as ignoreErrors noise', () => {
+		expect(
+			isIgnoredSentryError(
+				new TypeError("Cannot read properties of undefined (reading 'component')")
+			)
+		).toBe(false);
+	});
+
+	it('keeps other undefined property reads', () => {
+		expect(
+			isSvelteKitMissingComponentError(
+				new TypeError("Cannot read properties of undefined (reading 'foo')")
+			)
+		).toBe(false);
+		expect(
+			isSvelteKitMissingComponentError(new TypeError('Cannot read properties of undefined'))
+		).toBe(false);
 	});
 });
