@@ -5,6 +5,18 @@
 
 	const changelog = [
 		{
+			version: '1.10.2',
+			date: 'October 31, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'New accounts join the Free AP Practice mailing list after their email is verified'
+					]
+				}
+			]
+		},
+		{
 			version: '1.10.1',
 			date: 'October 31, 2026',
 			sections: [

@@ -25,6 +25,7 @@ import {
 	sendExistingUserSignupEmail,
 	sendResetEmail
 } from '#lib/auth/email.server.js';
+import { syncResendContact } from '#lib/auth/contacts.server.js';
 import { getEmailDeliveryContext } from '#lib/server/email-delivery.server.js';
 import { createUserProfile } from '#lib/users/model.server.js';
 import { deleteAppDataDocuments } from '#lib/users/delete-app-data-documents.server.js';
@@ -92,6 +93,7 @@ export const auth = betterAuth({
 				after: async (user, context) => {
 					await createUserProfile(user.id);
 					await ensurePersonalOrganization(user.id);
+					if (user.emailVerified) waitUntil(syncResendContact(user));
 					// Mark every new account for onboarding via httpOnly cookie.
 					// Covers email signup, Google OAuth, and One Tap through one Better Auth hook.
 					try {
@@ -216,7 +218,8 @@ export const auth = betterAuth({
 				getEmailDeliveryContext(request, 'verification')
 			);
 		},
-		afterEmailVerification: async () => {
+		afterEmailVerification: async (user) => {
+			waitUntil(syncResendContact(user));
 			captureAnonymousServerMetric('account_email_verified', {
 				source: 'better_auth'
 			});

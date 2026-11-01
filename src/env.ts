@@ -36,6 +36,7 @@ export const variables = defineEnvVars({
 	BETTER_AUTH_ADMIN_USER_IDS: { schema: optional },
 	PUBLIC_GOOGLE_CLIENT_ID: { public: true, static: true },
 	RESEND_API_KEY: { static: true },
+	RESEND_SIGNUP_SEGMENT_ID: { schema: optional },
 	RESEND_FROM: { schema: optional },
 	BETTER_AUTH_SECRET: { schema: optional },
 	BETTER_AUTH_URL: { schema: optional },
