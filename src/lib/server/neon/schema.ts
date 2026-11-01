@@ -4,6 +4,7 @@ export * from './schema/content';
 export * from './schema/ops';
 export * from './schema/memory';
 export * from './schema/ap-art-history';
+export * from './schema/feedback-analytics';
 
 import {
 	authAccounts,
