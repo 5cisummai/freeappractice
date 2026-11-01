@@ -128,8 +128,7 @@ export const POST = withAuthedHandler(
 				questionId: item.questionId,
 				submissionId: submissionId(id, item.id),
 				responses,
-				timeTakenMs: 0,
-				practiceSessionId: attempt.practiceSessionId ?? undefined
+				timeTakenMs: 0
 			});
 			if (!request.success)
 				return Response.json({ error: 'Invalid saved response.' }, { status: 400 });
@@ -148,7 +147,11 @@ export const POST = withAuthedHandler(
 					}
 					const rate = await limitFrqGrading(userId, item.questionId);
 					if (!rate.allowed) return frqGradeRateLimitedResponse(rate.retryAt);
-					result = (await gradeFrqAttempt(userId, request.data)).grade;
+					result = (
+						await gradeFrqAttempt(userId, request.data, {
+							organizationId: attempt.organizationId
+						})
+					).grade;
 				}
 			} catch (error) {
 				if (error instanceof FrqAttemptInProgressError)

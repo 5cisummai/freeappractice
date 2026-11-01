@@ -145,7 +145,8 @@ export function buildFrqGrade(
 
 export async function gradeFrqAttempt(
 	userId: string,
-	request: FrqGradeRequest
+	request: FrqGradeRequest,
+	providedContext: PracticeContext = { organizationId: null }
 ): Promise<FrqAttemptView> {
 	const question = await getFrqQuestionById(request.questionId);
 	const gradingGuidance =
@@ -153,7 +154,7 @@ export async function gradeFrqAttempt(
 		'Score each stored part as an integer from 0 through that part’s points.';
 	validateResponseKeys(question, request.responses);
 
-	let context: PracticeContext = { organizationId: null };
+	let context = providedContext;
 	if (request.practiceSessionId) {
 		const session = await getPracticeSessionForUser(userId, request.practiceSessionId, 'frq');
 		context = { organizationId: session.organizationId };

@@ -36,6 +36,53 @@ const organizationAdditionalFields = {
 	}
 };
 
+async function assertSchoolMemberEligibility(
+	user: { id: string; emailVerified?: boolean | null },
+	role: string
+): Promise<void> {
+	if (!user.emailVerified) {
+		throw new APIError('BAD_REQUEST', {
+			message: 'Classroom members must have verified email addresses.'
+		});
+	}
+	if (role !== 'member' && !(await hasClassroomCreationGrant(user.id))) {
+		throw new APIError('FORBIDDEN', {
+			message: 'Classroom teachers need classroom creation access.'
+		});
+	}
+}
+
+async function recordOrganizationMemberJoin(
+	org: { id: string; orgType?: unknown },
+	member: { userId: string; role: string }
+): Promise<void> {
+	const orgType = parseOrgType(org.orgType);
+	if (orgType !== 'school' && orgType !== 'group') return;
+	const db = getNeonDatabase();
+	const now = new Date();
+	if (orgType === 'school') {
+		await db.insert(classroomEnrollmentHistory).values({
+			id: crypto.randomUUID(),
+			organizationId: org.id,
+			userId: member.userId,
+			role: member.role,
+			joinedAt: now
+		});
+	}
+	if (orgType === 'group') {
+		await db
+			.insert(organizationActivityPreferences)
+			.values({
+				organizationId: org.id,
+				userId: member.userId,
+				enabled: false,
+				createdAt: now,
+				updatedAt: now
+			})
+			.onConflictDoNothing();
+	}
+}
+
 export function createOrganizationPlugin() {
 	return organization({
 		allowUserToCreateOrganization: async (user) =>
@@ -151,16 +198,13 @@ export function createOrganizationPlugin() {
 					});
 				}
 				if (orgType === 'school') {
-					if (!user.emailVerified) {
-						throw new APIError('BAD_REQUEST', {
-							message: 'Classroom members must have verified email addresses.'
-						});
-					}
-					if (member.role !== 'member' && !(await hasClassroomCreationGrant(user.id))) {
-						throw new APIError('FORBIDDEN', {
-							message: 'Classroom teachers need classroom creation access.'
-						});
-					}
+					await assertSchoolMemberEligibility(user, member.role);
+				}
+			},
+			beforeAcceptInvitation: async ({ organization: org, invitation, user }) => {
+				const orgType = parseOrgType(org.orgType) ?? (await getOrganizationType(org.id));
+				if (orgType === 'school') {
+					await assertSchoolMemberEligibility(user, invitation.role);
 				}
 			},
 			beforeRemoveMember: async ({ organization: org }) => {
@@ -181,31 +225,10 @@ export function createOrganizationPlugin() {
 				}
 			},
 			afterAddMember: async ({ organization: org, member }) => {
-				const orgType = parseOrgType(org.orgType);
-				if (orgType !== 'school' && orgType !== 'group') return;
-				const db = getNeonDatabase();
-				const now = new Date();
-				if (orgType === 'school') {
-					await db.insert(classroomEnrollmentHistory).values({
-						id: crypto.randomUUID(),
-						organizationId: org.id,
-						userId: member.userId,
-						role: member.role,
-						joinedAt: now
-					});
-				}
-				if (orgType === 'group') {
-					await db
-						.insert(organizationActivityPreferences)
-						.values({
-							organizationId: org.id,
-							userId: member.userId,
-							enabled: false,
-							createdAt: now,
-							updatedAt: now
-						})
-						.onConflictDoNothing();
-				}
+				await recordOrganizationMemberJoin(org, member);
+			},
+			afterAcceptInvitation: async ({ organization: org, member }) => {
+				await recordOrganizationMemberJoin(org, member);
 			},
 			afterUpdateMemberRole: async ({ organization: org, member }) => {
 				if (parseOrgType(org.orgType) !== 'school') return;

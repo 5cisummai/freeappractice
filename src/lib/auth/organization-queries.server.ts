@@ -241,18 +241,23 @@ export async function setClassroomCourses(
 		20
 	);
 	const db = getNeonDatabase();
-	await db.transaction(async (tx) => {
-		await tx.delete(classroomCourses).where(eq(classroomCourses.organizationId, organizationId));
-		if (normalized.length) {
-			await tx.insert(classroomCourses).values(
-				normalized.map((course, position) => ({
-					organizationId,
-					course,
-					position
-				}))
-			);
-		}
-	});
+	const deleteCourses = db
+		.delete(classroomCourses)
+		.where(eq(classroomCourses.organizationId, organizationId));
+	if (!normalized.length) {
+		await deleteCourses;
+		return;
+	}
+	await db.batch([
+		deleteCourses,
+		db.insert(classroomCourses).values(
+			normalized.map((course, position) => ({
+				organizationId,
+				course,
+				position
+			}))
+		)
+	]);
 }
 
 export type PublishPracticeActivityInput = {
@@ -269,51 +274,55 @@ export type PublishPracticeActivityInput = {
 
 /**
  * Publish only personal completions. The event and all current enabled
- * audiences are written in one database transaction.
+ * audiences are written in one SQL statement.
  */
 export async function publishPersonalPracticeActivity(
 	input: PublishPracticeActivityInput
 ): Promise<void> {
-	const db = getNeonDatabase();
-	await db.transaction(async (tx) => {
-		const [event] = await tx
-			.insert(practiceActivityEvents)
-			.values({ id: crypto.randomUUID(), ...input })
-			.onConflictDoNothing({
-				target: [practiceActivityEvents.sourceType, practiceActivityEvents.sourceId]
-			})
-			.returning({ id: practiceActivityEvents.id });
-		if (!event) return;
-		const audiences = await tx
-			.select({ organizationId: organizationActivityPreferences.organizationId })
-			.from(organizationActivityPreferences)
-			.innerJoin(
-				authMembers,
-				and(
-					eq(authMembers.organizationId, organizationActivityPreferences.organizationId),
-					eq(authMembers.userId, organizationActivityPreferences.userId)
-				)
+	const eventId = crypto.randomUUID();
+	await getNeonDatabase().execute(sql`
+		WITH inserted AS (
+			INSERT INTO ${practiceActivityEvents} (
+				id,
+				user_id,
+				source_type,
+				source_id,
+				course,
+				unit,
+				score_percent,
+				questions_answered,
+				correct_questions,
+				completed_at
 			)
-			.innerJoin(
-				authOrganizations,
-				and(
-					eq(authOrganizations.id, organizationActivityPreferences.organizationId),
-					eq(authOrganizations.orgType, 'group')
-				)
+			VALUES (
+				${eventId},
+				${input.userId},
+				${input.sourceType},
+				${input.sourceId},
+				${input.course},
+				${input.unit},
+				${input.scorePercent},
+				${input.questionsAnswered},
+				${input.correctQuestions},
+				${input.completedAt}
 			)
-			.where(
-				and(
-					eq(organizationActivityPreferences.userId, input.userId),
-					eq(organizationActivityPreferences.enabled, true)
-				)
-			);
-		if (audiences.length) {
-			await tx
-				.insert(practiceActivityAudiences)
-				.values(audiences.map((audience) => ({ eventId: event.id, ...audience })))
-				.onConflictDoNothing();
-		}
-	});
+			ON CONFLICT (source_type, source_id) DO NOTHING
+			RETURNING id
+		)
+		INSERT INTO ${practiceActivityAudiences} (event_id, organization_id)
+		SELECT inserted.id, ${organizationActivityPreferences.organizationId}
+		FROM inserted
+		INNER JOIN ${organizationActivityPreferences}
+			ON ${organizationActivityPreferences.userId} = ${input.userId}
+			AND ${organizationActivityPreferences.enabled} = true
+		INNER JOIN ${authMembers}
+			ON ${authMembers.organizationId} = ${organizationActivityPreferences.organizationId}
+			AND ${authMembers.userId} = ${organizationActivityPreferences.userId}
+		INNER JOIN ${authOrganizations}
+			ON ${authOrganizations.id} = ${organizationActivityPreferences.organizationId}
+			AND ${authOrganizations.orgType} = 'group'
+		ON CONFLICT DO NOTHING
+	`);
 }
 
 export async function findPersonalOrganization(userId: string): Promise<UserOrganization | null> {
@@ -641,7 +650,7 @@ export async function listOrganizationActivityPage(
 					: undefined
 			)
 		)
-		.orderBy(desc(practiceActivityEvents.completedAt))
+		.orderBy(desc(practiceActivityEvents.completedAt), desc(practiceActivityEvents.id))
 		.limit(limit + 1);
 
 	const hasNextPage = rows.length > limit;
@@ -891,39 +900,58 @@ export async function listOrganizationLeaderboard(
 	if (members.length === 0) return [];
 
 	const recentCutoff = new Date(Date.now() - 7 * 86_400_000);
+	const dayKey = sql<string>`to_char((${practiceActivityEvents.completedAt} AT TIME ZONE ${timeZone}), 'YYYY-MM-DD')`;
+	const audienceMembership = and(
+		eq(authMembers.organizationId, practiceActivityAudiences.organizationId),
+		eq(authMembers.userId, practiceActivityEvents.userId)
+	);
 
-	const eventRows = await getNeonDatabase()
-		.select({
-			userId: practiceActivityEvents.userId,
-			completedAt: practiceActivityEvents.completedAt,
-			course: practiceActivityEvents.course,
-			unit: practiceActivityEvents.unit,
-			questionsAnswered: practiceActivityEvents.questionsAnswered,
-			correctQuestions: practiceActivityEvents.correctQuestions
-		})
-		.from(practiceActivityAudiences)
-		.innerJoin(
-			practiceActivityEvents,
-			eq(practiceActivityAudiences.eventId, practiceActivityEvents.id)
-		)
-		.innerJoin(
-			authMembers,
-			and(
-				eq(authMembers.organizationId, practiceActivityAudiences.organizationId),
-				eq(authMembers.userId, practiceActivityEvents.userId)
+	const [eventRows, streakDayRows] = await Promise.all([
+		getNeonDatabase()
+			.select({
+				userId: practiceActivityEvents.userId,
+				completedAt: practiceActivityEvents.completedAt,
+				course: practiceActivityEvents.course,
+				unit: practiceActivityEvents.unit,
+				questionsAnswered: practiceActivityEvents.questionsAnswered,
+				correctQuestions: practiceActivityEvents.correctQuestions
+			})
+			.from(practiceActivityAudiences)
+			.innerJoin(
+				practiceActivityEvents,
+				eq(practiceActivityAudiences.eventId, practiceActivityEvents.id)
 			)
-		)
-		.where(
-			and(
-				eq(practiceActivityAudiences.organizationId, organizationId),
-				gte(practiceActivityEvents.completedAt, recentCutoff)
+			.innerJoin(authMembers, audienceMembership)
+			.where(
+				and(
+					eq(practiceActivityAudiences.organizationId, organizationId),
+					gte(practiceActivityEvents.completedAt, recentCutoff)
+				)
+			),
+		getNeonDatabase()
+			.selectDistinct({
+				userId: practiceActivityEvents.userId,
+				day: dayKey
+			})
+			.from(practiceActivityAudiences)
+			.innerJoin(
+				practiceActivityEvents,
+				eq(practiceActivityAudiences.eventId, practiceActivityEvents.id)
 			)
-		);
+			.innerJoin(authMembers, audienceMembership)
+			.where(eq(practiceActivityAudiences.organizationId, organizationId))
+	]);
 	const eventsByUser = new Map<string, typeof eventRows>();
 	for (const row of eventRows) {
 		const events = eventsByUser.get(row.userId) ?? [];
 		events.push(row);
 		eventsByUser.set(row.userId, events);
+	}
+	const daysByUser = new Map<string, Set<string>>();
+	for (const row of streakDayRows) {
+		const days = daysByUser.get(row.userId) ?? new Set<string>();
+		days.add(row.day);
+		daysByUser.set(row.userId, days);
 	}
 
 	const entries: OrganizationLeaderboardEntry[] = members.map((member) => {
@@ -931,16 +959,7 @@ export async function listOrganizationLeaderboard(
 		const totalAttempts = events.reduce((total, event) => total + event.questionsAnswered, 0);
 		const correctAttempts = events.reduce((total, event) => total + event.correctQuestions, 0);
 		const units = new Set(events.map((event) => `${event.course}\u0000${event.unit}`));
-		const days = new Set(
-			events.map((event) =>
-				new Intl.DateTimeFormat('en-CA', {
-					timeZone,
-					year: 'numeric',
-					month: '2-digit',
-					day: '2-digit'
-				}).format(event.completedAt)
-			)
-		);
+		const days = daysByUser.get(member.userId) ?? new Set<string>();
 		let currentStreak = 0;
 		const cursor = new Date();
 		while (

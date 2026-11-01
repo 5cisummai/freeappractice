@@ -24,9 +24,13 @@ export const GET = withAuthedHandler(
 			const date = new Date(value);
 			return Number.isNaN(date.getTime()) ? undefined : date;
 		};
+		const parsePositiveInt = (value: string | null, fallback: number): number => {
+			const parsed = Number.parseInt(value ?? '', 10);
+			return Number.isFinite(parsed) ? parsed : fallback;
+		};
 		const report = await listClassroomReport(organizationId, {
-			page: Number(event.url.searchParams.get('page') ?? 1),
-			limit: Number(event.url.searchParams.get('limit') ?? 50),
+			page: parsePositiveInt(event.url.searchParams.get('page'), 1),
+			limit: parsePositiveInt(event.url.searchParams.get('limit'), 50),
 			course: event.url.searchParams.get('course')?.trim() || undefined,
 			from: parseDate(event.url.searchParams.get('from')),
 			to: parseDate(event.url.searchParams.get('to'))
