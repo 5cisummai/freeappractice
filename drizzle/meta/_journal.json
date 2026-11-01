@@ -57,6 +57,13 @@
       "when": 1793159778191,
       "tag": "0007_third_kitty_pryde",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793470778146,
+      "tag": "0008_giant_baron_zemo",
+      "breakpoints": true
     }
   ]
 }

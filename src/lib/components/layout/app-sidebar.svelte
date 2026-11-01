@@ -8,7 +8,7 @@
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 
 	import SettingsIcon from '@tabler/icons-svelte/icons/settings-filled';
-	import UsersGroupIcon from '@tabler/icons-svelte/icons/users-group';
+	import BrandDiscordIcon from '@tabler/icons-svelte/icons/brand-discord';
 	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import type { UserOrganization } from '#lib/auth/organization-types.js';
 
@@ -87,7 +87,7 @@
 					{#snippet child({ props })}
 						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 						<a href={COMMUNITY_DISCORD_URL} target="_blank" rel="noopener noreferrer" {...props}>
-							<UsersGroupIcon />
+							<BrandDiscordIcon />
 							<span>Community</span>
 							<ExternalLinkIcon class="ml-auto size-3.5 text-muted-foreground" aria-hidden="true" />
 						</a>
