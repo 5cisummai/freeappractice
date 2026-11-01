@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { themeController } from '#lib/client/theme.svelte.js';
 	import { HalftoneCMYK } from '@devmischief/shaders-svelte';
 
 	let isDark = $state(false);
@@ -27,17 +26,11 @@
 		height="100%"
 		{image}
 		class="absolute inset-0 size-full"
-		colorBack={themeController.halloween
-			? isDark
-				? '#160d20'
-				: '#faf0e5'
-			: isDark
-				? '#080b14'
-				: '#fbfaf4'}
-		colorC={themeController.halloween ? '#ea580c' : '#2563eb'}
-		colorM={themeController.halloween ? '#7c3aed' : '#8b5cf6'}
-		colorY={themeController.halloween ? '#f59e0b' : '#f4b740'}
-		colorK={themeController.halloween ? '#3b164f' : '#1e3a8a'}
+		colorBack={isDark ? '#080b14' : '#fbfaf4'}
+		colorC="#2563eb"
+		colorM="#8b5cf6"
+		colorY="#f4b740"
+		colorK="#1e3a8a"
 		type="ink"
 		size={0.12}
 		gridNoise={0.08}
@@ -55,12 +48,6 @@
 	/>
 
 	{#snippet failed()}
-		{#if themeController.halloween}
-			<div
-				class="size-full bg-linear-to-br from-orange-300 via-orange-100 to-purple-300 dark:from-orange-950 dark:via-purple-950 dark:to-slate-950"
-			></div>
-		{:else}
-			<img src={image} alt="" class="size-full object-cover" />
-		{/if}
+		<img src={image} alt="" class="size-full object-cover" />
 	{/snippet}
 </svelte:boundary>
