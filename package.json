@@ -86,7 +86,7 @@
 		"@examfig/charts": "^0.2.0",
 		"@examfig/core": "^0.2.0",
 		"@examfig/science": "^0.2.0",
-		"@flags-sdk/vercel": "^1.4.7",
+		"@flags-sdk/vercel": "^1.6.0",
 		"@fontsource-variable/dm-sans": "^5.3.0",
 		"@fontsource/noto-serif": "^5.3.0",
 		"@fontsource/open-runde": "^5.3.0",
