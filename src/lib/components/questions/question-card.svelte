@@ -657,7 +657,7 @@
 						{/snippet}
 					</Dialog.Close>
 				</Dialog.Footer>
-				<div class="mt-8 border-t border-border/50 pt-3">
+				<div class="mt-8 pt-3">
 					{#if core.questionFeedbackReason}
 						<p class="mt-1.5 text-xs text-muted-foreground/70">
 							Thanks, this helps improve future questions.
