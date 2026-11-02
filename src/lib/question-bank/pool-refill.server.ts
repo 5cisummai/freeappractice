@@ -414,11 +414,20 @@ async function releaseLeasesBudgetExhausted(
 async function generateOne(
 	bucket: PoolBucketKey,
 	target: number,
-	reservedSlots?: number
+	reservedSlots?: number,
+	opts?: { skipCapacityLock?: boolean }
 ): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean; generatedCount: number }> {
-	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
-		generatePoolQuestion(bucket.questionType, bucket.course, bucket.unit, target, reservedSlots)
-	);
+	const write = () =>
+		generatePoolQuestion(bucket.questionType, bucket.course, bucket.unit, target, reservedSlots);
+	if (opts?.skipCapacityLock) {
+		const value = await write();
+		return {
+			skippedDuplicate: Boolean(value.skippedDuplicate),
+			skippedAtTarget: false,
+			generatedCount: value.generatedCount ?? 1
+		};
+	}
+	const guarded = await writePoolBucketBelowTarget(bucket, target, write);
 	if (guarded.status === 'at_target') {
 		return { skippedDuplicate: false, skippedAtTarget: true, generatedCount: 0 };
 	}
@@ -509,6 +518,15 @@ async function idleInvalidRefillJobs(
 	return { valid, invalidCount: invalidIds.length };
 }
 
+type RefillJobResult = {
+	generated: number;
+	skippedDuplicates: number;
+	budgetUsed: number;
+	failed: boolean;
+	budgetHit: boolean;
+	lease: PoolRefillStateRow;
+};
+
 export async function processRefillJob(
 	doc: PoolRefillStateRow,
 	env: QuestionPoolConfig,
@@ -518,14 +536,10 @@ export async function processRefillJob(
 		observedCount?: number;
 		initialReservedSlots?: number;
 		leaseAlreadyRenewed?: boolean;
+		deferLeaseRelease?: boolean;
+		skipCapacityLock?: boolean;
 	}
-): Promise<{
-	generated: number;
-	skippedDuplicates: number;
-	budgetUsed: number;
-	failed: boolean;
-	budgetHit: boolean;
-}> {
+): Promise<RefillJobResult> {
 	let generated = 0;
 	let skippedDuplicates = 0;
 	let budgetUsed = 0;
@@ -539,6 +553,10 @@ export async function processRefillJob(
 	let reservedSlotsForAttempt = 0;
 	let observedCount = opts.observedCount;
 	let initialReservedSlots = opts.initialReservedSlots;
+	const finish = (result: Omit<RefillJobResult, 'lease'>): RefillJobResult => ({
+		...result,
+		lease
+	});
 	try {
 		while (budgetUsed < opts.maxGenerations) {
 			const remainingMs = opts.deadlineMs - Date.now();
@@ -547,16 +565,17 @@ export async function processRefillJob(
 			const currentCount =
 				observedCount ??
 				(await countActivePoolRowsForServing(bucket.questionType, bucket.course, bucket.unit));
-			observedCount = undefined;
 			if (currentCount >= lease.target) {
-				await releaseLeaseSuccess(lease, currentCount, generated);
-				return {
+				if (!opts.deferLeaseRelease) {
+					await releaseLeaseSuccess(lease, currentCount, generated);
+				}
+				return finish({
 					generated,
 					skippedDuplicates,
 					budgetUsed,
 					failed: false,
 					budgetHit: false
-				};
+				});
 			}
 
 			const requestedSlots =
@@ -575,7 +594,13 @@ export async function processRefillJob(
 						env,
 						'budget_exhausted'
 					);
-					return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: true };
+					return finish({
+						generated,
+						skippedDuplicates,
+						budgetUsed,
+						failed: false,
+						budgetHit: true
+					});
 				}
 				break;
 			}
@@ -593,7 +618,13 @@ export async function processRefillJob(
 						env,
 						'budget_exhausted'
 					);
-					return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: true };
+					return finish({
+						generated,
+						skippedDuplicates,
+						budgetUsed,
+						failed: false,
+						budgetHit: true
+					});
 				}
 			}
 			reservedSlotsForAttempt = reservedSlots;
@@ -609,23 +640,27 @@ export async function processRefillJob(
 				}
 			}
 
-			const result = await generateOne(bucket, lease.target, reservedSlots);
+			const result = await generateOne(bucket, lease.target, reservedSlots, {
+				skipCapacityLock: opts.skipCapacityLock
+			});
 			if (result.skippedAtTarget) {
 				await releaseDailyGenerationBudget(reservedSlots);
 				reservedSlotsForAttempt = 0;
-				const latestCount = await countActivePoolRowsForServing(
-					bucket.questionType,
-					bucket.course,
-					bucket.unit
-				);
-				await releaseLeaseSuccess(lease, latestCount, generated);
-				return {
+				if (!opts.deferLeaseRelease) {
+					const latestCount = await countActivePoolRowsForServing(
+						bucket.questionType,
+						bucket.course,
+						bucket.unit
+					);
+					await releaseLeaseSuccess(lease, latestCount, generated);
+				}
+				return finish({
 					generated,
 					skippedDuplicates,
 					budgetUsed,
 					failed: false,
 					budgetHit: false
-				};
+				});
 			}
 			const consumedSlots = result.skippedDuplicate ? 1 : Math.max(1, result.generatedCount);
 			budgetUsed += consumedSlots;
@@ -635,18 +670,22 @@ export async function processRefillJob(
 			reservedSlotsForAttempt = 0;
 			if (result.skippedDuplicate) {
 				skippedDuplicates += 1;
+				observedCount = currentCount;
 			} else {
 				generated += result.generatedCount;
+				observedCount = currentCount + result.generatedCount;
 			}
 		}
 
-		const latestCount = await countActivePoolRowsForServing(
-			bucket.questionType,
-			bucket.course,
-			bucket.unit
-		);
-		await releaseLeaseSuccess(lease, latestCount, generated);
-		return { generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: false };
+		if (!opts.deferLeaseRelease) {
+			const latestCount = await countActivePoolRowsForServing(
+				bucket.questionType,
+				bucket.course,
+				bucket.unit
+			);
+			await releaseLeaseSuccess(lease, latestCount, generated);
+		}
+		return finish({ generated, skippedDuplicates, budgetUsed, failed: false, budgetHit: false });
 	} catch (error) {
 		if (reservedSlotsForAttempt > 0) await releaseDailyGenerationBudget(reservedSlotsForAttempt);
 		logger.error('[pool-refill] generation failed', {
@@ -654,7 +693,7 @@ export async function processRefillJob(
 			error
 		});
 		await releaseLeaseFailure(lease, error, env);
-		return { generated, skippedDuplicates, budgetUsed, failed: true, budgetHit: false };
+		return finish({ generated, skippedDuplicates, budgetUsed, failed: true, budgetHit: false });
 	}
 }
 
@@ -677,36 +716,48 @@ async function loadServingCountsForJobs(jobs: PoolRefillStateRow[]): Promise<Map
 	return counts;
 }
 
-async function releaseAtTargetJobs(
-	jobs: Array<{ doc: PoolRefillStateRow; observedCount: number }>
+async function releaseLeasesGenerated(
+	jobs: Array<{ doc: PoolRefillStateRow; observedCount: number; generatedDelta: number }>
 ): Promise<void> {
 	if (!jobs.length) return;
 	const now = new Date();
 	await getNeonDatabase().execute(sql`
 		UPDATE ${poolRefillStates} AS target
 		SET
-			status = 'idle',
+			status = CASE
+				WHEN incoming."observedCount" >= target.target THEN 'idle'
+				ELSE 'pending'
+			END,
 			observed_count = incoming."observedCount",
 			lease_owner = NULL,
 			lease_expires_at = NULL,
 			last_error = NULL,
 			last_success_at = ${now},
-			next_attempt_at = NULL,
-			requested_at = incoming."requestedAt",
+			next_attempt_at = CASE
+				WHEN incoming."observedCount" >= target.target THEN NULL
+				ELSE ${now}
+			END,
+			requested_at = CASE
+				WHEN incoming."observedCount" >= target.target THEN incoming."requestedAt"
+				ELSE ${now}
+			END,
+			generated_count = target.generated_count + incoming."generatedDelta",
 			updated_at = ${now}
 		FROM (
 			SELECT *
 			FROM jsonb_to_recordset(${JSON.stringify(
-				jobs.map(({ doc, observedCount }) => ({
+				jobs.map(({ doc, observedCount, generatedDelta }) => ({
 					id: doc.id,
 					leaseOwner: doc.leaseOwner,
 					observedCount,
+					generatedDelta,
 					requestedAt: doc.requestedAt.toISOString()
 				}))
 			)}::jsonb) AS row(
 				"id" text,
 				"leaseOwner" text,
 				"observedCount" integer,
+				"generatedDelta" integer,
 				"requestedAt" timestamptz
 			)
 		) AS incoming
@@ -752,8 +803,8 @@ async function allocateDueRefillBudget(
 
 /**
  * Batch pre-LLM work only: one lease renew + grouped slot estimates + one budget reserve.
- * Do not hold pool write locks across generate — each job still takes its own lock inside
- * `writePoolBucketBelowTarget` around the final count-and-write.
+ * The leased cron path generates without per-job write locks; batch collectors still
+ * serialize the final persist through `writePoolBucketBelowTarget`.
  */
 async function prepareDueRefillJobs(
 	due: Array<{ job: PoolRefillStateRow; observedCount: number }>,
@@ -829,30 +880,47 @@ export async function runQuestionPoolRefillWorker(
 		if (!jobs.length) continue;
 
 		const servingCounts = await loadServingCountsForJobs(jobs);
-		const atTarget: Array<{ doc: PoolRefillStateRow; observedCount: number }> = [];
-		const due: Array<{ job: PoolRefillStateRow; observedCount: number }> = [];
+		const atTarget: Array<{
+			doc: PoolRefillStateRow;
+			observedCount: number;
+			generatedDelta: number;
+		}> = [];
+		let due: Array<{ job: PoolRefillStateRow; observedCount: number }> = [];
 		for (const job of jobs) {
 			const observedCount = servingCounts.get(jobServingKey(job)) ?? 0;
-			if (observedCount >= job.target) atTarget.push({ doc: job, observedCount });
+			if (observedCount >= job.target)
+				atTarget.push({ doc: job, observedCount, generatedDelta: 0 });
 			else due.push({ job, observedCount });
 		}
-		if (atTarget.length) await releaseAtTargetJobs(atTarget);
-		if (!due.length) continue;
+		if (atTarget.length) await releaseLeasesGenerated(atTarget);
 
-		const prepared = await prepareDueRefillJobs(due, env, budgetRemaining);
-		if (prepared.length) {
+		const generatedDeltaById = new Map<string, number>();
+		while (due.length && budgetRemaining > 0 && Date.now() < deadlineMs) {
+			const prepared = await prepareDueRefillJobs(due, env, budgetRemaining);
+			if (!prepared.length) {
+				due = [];
+				break;
+			}
+
 			const results = await Promise.allSettled(
 				prepared.map(({ job, observedCount, initialReservedSlots }) =>
 					processRefillJob(job, env, {
-						maxGenerations: budgetRemaining,
+						maxGenerations: initialReservedSlots,
 						deadlineMs,
 						observedCount,
 						initialReservedSlots,
-						leaseAlreadyRenewed: true
+						leaseAlreadyRenewed: true,
+						deferLeaseRelease: true,
+						skipCapacityLock: true
 					})
 				)
 			);
-			for (const result of results) {
+
+			const succeeded: PoolRefillStateRow[] = [];
+			for (const [index, result] of results.entries()) {
+				const preparedJob = prepared[index];
+				if (!preparedJob) continue;
+				const job = preparedJob.job;
 				if (result.status === 'rejected') {
 					failed += 1;
 					logger.error('[pool-refill] parallel job failed outside worker boundary', {
@@ -862,14 +930,60 @@ export async function runQuestionPoolRefillWorker(
 				}
 				generated += result.value.generated;
 				skippedDuplicates += result.value.skippedDuplicates;
-				if (result.value.failed) failed += 1;
+				if (result.value.failed || result.value.budgetHit) {
+					if (result.value.failed) failed += 1;
+					continue;
+				}
+				succeeded.push(result.value.lease);
+				generatedDeltaById.set(
+					job.id,
+					(generatedDeltaById.get(job.id) ?? 0) + result.value.generated
+				);
 			}
+
+			if (!succeeded.length) {
+				due = [];
+				break;
+			}
+
+			const latestCounts = await loadServingCountsForJobs(succeeded);
+			const finished: Array<{
+				doc: PoolRefillStateRow;
+				observedCount: number;
+				generatedDelta: number;
+			}> = [];
+			const stillDue: Array<{ job: PoolRefillStateRow; observedCount: number }> = [];
+			for (const job of succeeded) {
+				const observedCount = latestCounts.get(jobServingKey(job)) ?? 0;
+				if (observedCount >= job.target) {
+					finished.push({
+						doc: job,
+						observedCount,
+						generatedDelta: generatedDeltaById.get(job.id) ?? 0
+					});
+					generatedDeltaById.delete(job.id);
+				} else {
+					stillDue.push({ job, observedCount });
+				}
+			}
+			if (finished.length) await releaseLeasesGenerated(finished);
+			due = stillDue;
+
+			budgetRemaining = await getDailyBudgetRemaining(env);
+			if (budgetRemaining <= 0) stoppedReason = 'daily_budget';
+			else if (Date.now() >= deadlineMs) stoppedReason = 'time_budget';
+			else stoppedReason = 'complete';
 		}
 
-		budgetRemaining = await getDailyBudgetRemaining(env);
-		if (budgetRemaining <= 0) stoppedReason = 'daily_budget';
-		else if (Date.now() >= deadlineMs) stoppedReason = 'time_budget';
-		else stoppedReason = 'complete';
+		if (due.length) {
+			await releaseLeasesGenerated(
+				due.map(({ job, observedCount }) => ({
+					doc: job,
+					observedCount,
+					generatedDelta: generatedDeltaById.get(job.id) ?? 0
+				}))
+			);
+		}
 	}
 
 	if (budgetRemaining <= 0) stoppedReason = 'daily_budget';
