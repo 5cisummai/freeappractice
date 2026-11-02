@@ -578,13 +578,7 @@
 			{/if}
 		</button>
 		{#if showFirstUseHint}
-			<FirstUseHint
-				id="tutor-widget"
-				anchorId="ai-tutor-trigger"
-				text="Ask the Tutor about this question."
-				side="top"
-				align="end"
-			/>
+			<FirstUseHint id="tutor-widget" anchorId="ai-tutor-trigger" side="top" align="end" />
 		{/if}
 	</div>
 {/if}

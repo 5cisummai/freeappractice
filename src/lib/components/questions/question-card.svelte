@@ -22,6 +22,7 @@
 	import { portalToBody } from '#lib/components/questions/portal-to-body.svelte.js';
 	import { createQuestionCore } from '#lib/components/questions/question-core.svelte.js';
 	import QuestionTutor from '#lib/components/questions/question-tutor.svelte';
+	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
 	import type { BugReportContext, QuestionCardProps } from '#lib/question-bank/mcq/types.js';
 	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
 	import ArrowsMaximizeIcon from '@tabler/icons-svelte/icons/arrows-maximize';
@@ -513,7 +514,7 @@
 						>
 							<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 								{#if showUtilityActions && !core.hasCheckedAnswer}
-									<div class="flex flex-wrap gap-2">
+									<div id="question-tools-hint-target" class="flex flex-wrap gap-2">
 										<Button
 											variant="ghost"
 											size="sm"
@@ -590,6 +591,16 @@
 		</div>
 	</Popover.Root>
 
+	{#if showFirstUseHint && showUtilityActions}
+		<FirstUseHint
+			id="question-tools"
+			anchorId="question-tools-hint-target"
+			active={Boolean(core.currentQuestion && !core.hasCheckedAnswer)}
+			skipWhenInactive={core.hasCheckedAnswer}
+			side="top"
+			align="start"
+		/>
+	{/if}
 	{#if core.currentQuestion && !quizMode && !expanded && tutorMode !== 'hidden'}
 		{#key core.currentQuestion.questionId ?? core.currentQuestion.prompt}
 			<QuestionTutor
