@@ -24,10 +24,9 @@ const COACH_TEXT_EXTENSIONS: Record<string, CoachTextMediaType> = {
 	'.json': 'application/json'
 };
 
-export const COACH_TEXT_ACCEPT = [
-	...COACH_TEXT_TYPES,
-	...Object.keys(COACH_TEXT_EXTENSIONS)
-].join(',');
+export const COACH_TEXT_ACCEPT = [...COACH_TEXT_TYPES, ...Object.keys(COACH_TEXT_EXTENSIONS)].join(
+	','
+);
 
 export function isCoachTextMediaType(mediaType: unknown): mediaType is CoachTextMediaType {
 	return typeof mediaType === 'string' && COACH_TEXT_TYPE_SET.has(mediaType);
@@ -48,7 +47,10 @@ export function resolveCoachTextMediaType(part: {
 	return coachTextMediaTypeFromFilename(part.filename);
 }
 
-export function sanitizeCoachTextFilename(filename: unknown, mediaType: CoachTextMediaType): string {
+export function sanitizeCoachTextFilename(
+	filename: unknown,
+	mediaType: CoachTextMediaType
+): string {
 	const raw = typeof filename === 'string' ? filename.trim() : '';
 	const base = raw.replace(/[/\\]/g, '').slice(0, 200);
 	if (base && coachTextMediaTypeFromFilename(base)) return base;

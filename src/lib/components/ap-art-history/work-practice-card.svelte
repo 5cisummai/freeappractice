@@ -93,6 +93,8 @@
 					class="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground"
 				>
 					<span>College Board official image set</span>
+					<!-- External College Board CED URL; not an app route. -->
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
 					<a
 						href={core.work.collegeBoardSource}
 						target="_blank"
@@ -101,6 +103,7 @@
 					>
 						CED identifier
 					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				</figcaption>
 			</figure>
 

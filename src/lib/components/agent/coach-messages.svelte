@@ -48,10 +48,7 @@
 		type CoachPracticeQuestionOutput
 	} from '#lib/agent/tools/practice.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
-	import {
-		isCoachTextMediaType,
-		resolveCoachTextMediaType
-	} from '#lib/agent/attachments/text.js';
+	import { isCoachTextMediaType, resolveCoachTextMediaType } from '#lib/agent/attachments/text.js';
 
 	import { cn } from '#lib/utils.js';
 	import type { ToolUIPartApproval } from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';

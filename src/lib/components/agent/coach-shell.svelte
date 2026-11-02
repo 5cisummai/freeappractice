@@ -34,7 +34,10 @@
 	import CoachConversationMenu from '#lib/components/agent/coach-conversation-menu.svelte';
 	import CoachAvatar from '#lib/components/agent/coach-avatar.svelte';
 
-	import { type CoachPracticeQuestionToolOutput, type CoachPracticeQuestionOutput } from '#lib/agent/tools/practice.js';
+	import {
+		type CoachPracticeQuestionToolOutput,
+		type CoachPracticeQuestionOutput
+	} from '#lib/agent/tools/practice.js';
 	import { persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 	import { createAgentTransport } from '#lib/agent/transport.js';

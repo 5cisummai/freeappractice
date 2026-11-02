@@ -83,11 +83,7 @@ export function validateCoachTextFile(part: Record<string, unknown>): CoachTextF
 	if (match[2].length > Math.ceil(COACH_TEXT_MAX_BYTES / 3) * 4)
 		throw new CoachImageError('Text files must be 100 KB or smaller.');
 	const bytes = Buffer.from(match[2], 'base64');
-	if (
-		!bytes.length ||
-		bytes.length > COACH_TEXT_MAX_BYTES ||
-		bytes.toString('base64') !== match[2]
-	)
+	if (!bytes.length || bytes.length > COACH_TEXT_MAX_BYTES || bytes.toString('base64') !== match[2])
 		throw new CoachImageError('Invalid text file or file larger than 100 KB.');
 	if (bytes.includes(0)) throw new CoachImageError('Text files must be valid UTF-8 text.');
 	let text: string;

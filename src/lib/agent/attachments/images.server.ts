@@ -98,10 +98,7 @@ export async function prepareCoachImageParts(
 				url: textFile.url,
 				filename: textFile.filename
 			});
-		} else if (
-			typeof file.mediaType === 'string' &&
-			COACH_IMAGE_TYPE_SET.has(file.mediaType)
-		) {
+		} else if (typeof file.mediaType === 'string' && COACH_IMAGE_TYPE_SET.has(file.mediaType)) {
 			const [total] = await getNeonDatabase()
 				.select({ count: count() })
 				.from(coachImages)

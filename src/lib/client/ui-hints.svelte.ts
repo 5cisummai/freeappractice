@@ -3,10 +3,7 @@ const UI_HINTS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const UI_HINTS_COOKIE_VERSION = 'v1';
 
 export type UiHintId =
-	| 'dashboard-practice'
-	| 'practice-selector'
-	| 'question-tools'
-	| 'tutor-widget';
+	'dashboard-practice' | 'practice-selector' | 'question-tools' | 'tutor-widget';
 
 export const FIRST_USE_HINT_ORDER: readonly UiHintId[] = [
 	'dashboard-practice',

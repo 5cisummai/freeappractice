@@ -279,8 +279,12 @@ export async function giveCoachPracticeQuestion(
 		return { error: 'Could not load a practice question right now.' };
 	}
 
-	const { answer, questionId: selectedQuestionId, course: resolvedCourse, unit: resolvedUnit } =
-		outcome.result;
+	const {
+		answer,
+		questionId: selectedQuestionId,
+		course: resolvedCourse,
+		unit: resolvedUnit
+	} = outcome.result;
 	return mcqCoachOutput({
 		questionId: selectedQuestionId,
 		course: resolvedCourse,

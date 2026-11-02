@@ -41,10 +41,7 @@ import {
 	validateCoachTextFile
 } from '#lib/agent/attachments/validation.server.js';
 import { coachImageUrl, COACH_IMAGE_MAX_BYTES } from '#lib/agent/attachments/images.js';
-import {
-	COACH_TEXT_MAX_BYTES,
-	COACH_TEXT_MAX_CHARS
-} from '#lib/agent/attachments/text.js';
+import { COACH_TEXT_MAX_BYTES, COACH_TEXT_MAX_CHARS } from '#lib/agent/attachments/text.js';
 import {
 	coachImageModelMessages,
 	getOwnedCoachImage,
@@ -127,7 +124,9 @@ describe('Coach text file validation', () => {
 			filename: 'scores.csv',
 			text: 'a,b\n1,2\n'
 		});
-		expect(csv.url).toBe(`data:text/csv;base64,${Buffer.from('a,b\n1,2\n', 'utf8').toString('base64')}`);
+		expect(csv.url).toBe(
+			`data:text/csv;base64,${Buffer.from('a,b\n1,2\n', 'utf8').toString('base64')}`
+		);
 	});
 	it('resolves type from filename when the data URL is octet-stream', () => {
 		const bytes = Buffer.from('# hello', 'utf8');
@@ -150,7 +149,9 @@ describe('Coach text file validation', () => {
 			)
 		).toThrow(/100 KB/);
 		expect(() =>
-			validateCoachTextFile(textFile('x'.repeat(COACH_TEXT_MAX_CHARS + 1), 'text/plain', 'note.txt'))
+			validateCoachTextFile(
+				textFile('x'.repeat(COACH_TEXT_MAX_CHARS + 1), 'text/plain', 'note.txt')
+			)
 		).toThrow(/characters/);
 	});
 	it('stores text attachments inline and expands them for the model', async () => {

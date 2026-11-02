@@ -47,6 +47,7 @@
 		if (!url.searchParams.has(param)) return;
 		url.searchParams.delete(param);
 		// Pathname is the current resolved app route; only the query string changes.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- pathname comes from the current page URL
 		goto(`${url.pathname}${url.search}${url.hash}`, {
 			shallow: true,
 			replace: true,

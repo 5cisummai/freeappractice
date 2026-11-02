@@ -8,7 +8,7 @@
 	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
 	import type { AnswerResult } from '#lib/question-bank/mcq/types.js';
 	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
-	import { fetchCoachPracticeQuestion, persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
+	import { fetchCoachPracticeQuestion } from '#lib/agent/tools/practice.client.js';
 	import {
 		buildCoachPracticeQuestionToolOutput,
 		coachPracticeQuestionRequestKey,
@@ -91,12 +91,7 @@
 			}
 			question = result;
 			requestVersion += 1;
-			if (
-				toolCallId &&
-				conversationId &&
-				onAssigned &&
-				persistedQuestionId !== result.questionId
-			) {
+			if (toolCallId && conversationId && onAssigned && persistedQuestionId !== result.questionId) {
 				const persisted = await onAssigned(result);
 				if (persisted) persistedQuestionId = result.questionId;
 			}

@@ -60,6 +60,7 @@
 		const url = new URL(page.url.href);
 		url.searchParams.delete(ACCOUNT_DELETED_QUERY);
 		// Pathname is the current resolved route; only the query string changes.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- pathname comes from the current page URL
 		goto(`${url.pathname}${url.search}${url.hash}`, {
 			shallow: true,
 			replace: true,
