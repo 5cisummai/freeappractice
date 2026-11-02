@@ -12,7 +12,7 @@
 	import ExternalLinkIcon from '@tabler/icons-svelte/icons/external-link-filled';
 	import type { UserOrganization } from '#lib/auth/organization-types.js';
 
-	const COMMUNITY_DISCORD_URL = 'https://discord.gg/6PpCq8P57';
+	const COMMUNITY_DISCORD_URL = 'https://discord.gg/wXWrhEGz5';
 
 	let {
 		isAdmin,
