@@ -75,7 +75,6 @@ export const auth = betterAuth({
 		transaction: false
 	}),
 	trustedOrigins: getTrustedOrigins(),
-	experimental: { joins: true },
 	rateLimit: {
 		enabled: true,
 		storage: 'database',
@@ -250,6 +249,10 @@ export const auth = betterAuth({
 			: {})
 	},
 	advanced: {
+		database: {
+			// Better Auth 1.7 moved joins out of experimental.
+			joins: true
+		},
 		ipAddress: {
 			// Prefer Vercel's single-value client IP; multi-hop XFF is untrusted without CIDRs.
 			ipAddressHeaders: ['x-real-ip', 'x-forwarded-for']

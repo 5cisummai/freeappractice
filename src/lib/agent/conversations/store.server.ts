@@ -358,6 +358,69 @@ export async function finalizeConversationMessage(
 		.where(eq(conversations.id, message.conversationId));
 }
 
+function isPracticeQuestionToolPart(part: unknown, toolCallId: string): boolean {
+	if (!part || typeof part !== 'object' || Array.isArray(part)) return false;
+	const record = part as Record<string, unknown>;
+	return (
+		record.type === 'tool-give_practice_question' &&
+		record.toolCallId === toolCallId &&
+		(record.state === 'input-available' || record.state === 'input-streaming')
+	);
+}
+
+export async function assignCoachPracticeQuestionToToolPart(
+	userId: string,
+	input: {
+		conversationId: string;
+		toolCallId: string;
+		assignedQuestion: unknown;
+	}
+): Promise<void> {
+	const toolCallId = input.toolCallId.trim();
+	if (!toolCallId) throw new ConversationAccessError('Tool call id is required.', 400);
+
+	const [conversation] = await getNeonDatabase()
+		.select({ id: conversations.id })
+		.from(conversations)
+		.where(and(eq(conversations.id, input.conversationId), eq(conversations.userId, userId)))
+		.limit(1);
+	if (!conversation) throw new ConversationAccessError('Conversation not found.', 404);
+
+	const rows = await getNeonDatabase()
+		.select({
+			id: conversationMessages.id,
+			parts: conversationMessages.parts,
+			position: conversationMessages.position
+		})
+		.from(conversationMessages)
+		.where(
+			and(
+				eq(conversationMessages.conversationId, input.conversationId),
+				eq(conversationMessages.role, 'assistant')
+			)
+		)
+		.orderBy(desc(conversationMessages.position));
+
+	for (const row of rows) {
+		const parts = Array.isArray(row.parts) ? row.parts : [];
+		let matched = false;
+		const nextParts = parts.map((part) => {
+			if (!isPracticeQuestionToolPart(part, toolCallId)) return part;
+			matched = true;
+			return { ...(part as Record<string, unknown>), assignedQuestion: input.assignedQuestion };
+		});
+		if (!matched) continue;
+
+		await getNeonDatabase()
+			.update(conversationMessages)
+			.set({ parts: nextParts, updatedAt: new Date() })
+			.where(eq(conversationMessages.id, row.id));
+		return;
+	}
+
+	throw new ConversationAccessError('That practice question is no longer pending.', 409);
+}
+
 export async function linkCoachAuditToConversation(
 	userId: string,
 	auditId: string,

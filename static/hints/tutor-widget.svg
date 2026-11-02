@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" width="800" height="640" font-family="Inter, system-ui, -apple-system, sans-serif">
+  <rect width="800" height="640" fill="#ffffff"/>
+
+  <!-- Faded question behind -->
+  <text x="40" y="64" font-size="22" font-weight="600" fill="#d4d4d8">Question 14</text>
+  <rect x="40" y="112" width="380" height="12" rx="6" fill="#f4f4f5"/>
+  <rect x="40" y="134" width="340" height="12" rx="6" fill="#f4f4f5"/>
+  <rect x="40" y="156" width="300" height="12" rx="6" fill="#f4f4f5"/>
+
+  <!-- Tutor panel -->
+  <rect x="440" y="120" width="320" height="380" rx="16" fill="#ffffff" stroke="#e4e4e7"/>
+  <text x="464" y="160" font-size="16" font-weight="600" fill="#18181b">Tutor</text>
+  <text x="732" y="160" font-size="18" text-anchor="end" fill="#71717a">&#215;</text>
+  <line x1="440" y1="180" x2="760" y2="180" stroke="#e4e4e7"/>
+
+  <!-- Assistant message -->
+  <rect x="464" y="200" width="250" height="64" rx="12" fill="#f4f4f5"/>
+  <text x="480" y="228" font-size="14" fill="#18181b">Want a hint on this one?</text>
+  <text x="480" y="248" font-size="13" fill="#71717a">Think about where ATP is made.</text>
+
+  <!-- User message -->
+  <rect x="574" y="290" width="186" height="36" rx="12" fill="#2563eb"/>
+  <text x="588" y="313" font-size="14" fill="#ffffff">Explain step 2</text>
+
+  <!-- Input -->
+  <rect x="464" y="436" width="272" height="40" rx="20" fill="#ffffff" stroke="#e4e4e7"/>
+  <text x="484" y="461" font-size="14" fill="#a1a1aa">Ask about this question&#8230;</text>
+
+  <!-- Launcher with highlight ring -->
+  <circle cx="720" cy="540" r="34" fill="none" stroke="#2563eb" stroke-opacity="0.25" stroke-width="6"/>
+  <circle cx="720" cy="540" r="24" fill="#2563eb"/>
+  <rect x="708" y="532" width="24" height="16" rx="4" fill="none" stroke="#ffffff" stroke-width="2"/>
+  <path d="M714 548 l4 4 l0 -4" fill="#ffffff"/>
+  <line x1="712" y1="539" x2="728" y2="539" stroke="#ffffff" stroke-width="2"/>
+</svg>

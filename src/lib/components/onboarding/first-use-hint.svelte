@@ -1,48 +1,90 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import * as Popover from '#lib/components/ui/popover/index.js';
-	import { hasSeenUiHint, markUiHintSeen, type UiHintId } from '#lib/client/ui-hints.svelte.js';
+	import {
+		getActiveFirstUseHintId,
+		getFirstUseHintQueueRevision,
+		hasSeenUiHint,
+		markUiHintSeen,
+		type UiHintId
+	} from '#lib/client/ui-hints.svelte.js';
+	import { getFirstUseHintContent } from '#lib/onboarding/first-use-hint-content.js';
+	import HintCard from '#lib/components/onboarding/hint-card.svelte';
 
 	type Props = {
 		id: UiHintId;
 		anchorId: string;
-		text: string;
+		active?: boolean;
+		skipWhenInactive?: boolean;
+		description?: string;
 		side?: 'top' | 'right' | 'bottom' | 'left';
 		align?: 'start' | 'center' | 'end';
 	};
 
-	let { id, anchorId, text, side = 'bottom', align = 'center' }: Props = $props();
+	let {
+		id,
+		anchorId,
+		active = true,
+		skipWhenInactive = false,
+		description: descriptionOverride,
+		side = 'bottom',
+		align = 'center'
+	}: Props = $props();
+
+	const content = $derived(getFirstUseHintContent(id));
+	const description = $derived(descriptionOverride ?? content.description);
+
 	let open = $state(false);
 
 	function close(): void {
+		if (!open) return;
 		open = false;
+		if (!hasSeenUiHint(id)) {
+			markUiHintSeen(id);
+		}
 	}
 
-	onMount(() => {
-		const anchor = document.getElementById(anchorId);
-		if (!anchor || hasSeenUiHint(id)) return;
+	$effect(() => {
+		void getFirstUseHintQueueRevision();
 
-		markUiHintSeen(id);
+		if (hasSeenUiHint(id) || getActiveFirstUseHintId() !== id) {
+			open = false;
+			return;
+		}
+
+		if (!active) {
+			if (skipWhenInactive && getActiveFirstUseHintId() === id) {
+				markUiHintSeen(id);
+			}
+			open = false;
+			return;
+		}
+
+		const anchor = document.getElementById(anchorId);
+		if (!anchor) {
+			open = false;
+			return;
+		}
+
 		open = true;
 
-		anchor.addEventListener('click', close, true);
-		return () => anchor.removeEventListener('click', close, true);
+		const onAnchorClick = () => close();
+		anchor.addEventListener('click', onAnchorClick, true);
+		return () => anchor.removeEventListener('click', onAnchorClick, true);
 	});
 </script>
 
 <Popover.Root bind:open>
 	{#if open}
-		<Popover.Content
+		<HintCard
 			customAnchor={`#${anchorId}`}
 			{side}
 			{align}
 			sideOffset={8}
 			trapFocus={false}
 			onInteractOutside={close}
-			aria-label="Helpful tip"
-			class="w-auto max-w-[min(18rem,calc(100vw-2rem))] gap-0 rounded-lg px-3 py-2 text-sm leading-5 shadow-lg"
-		>
-			{text}
-		</Popover.Content>
+			aria-label={content.title}
+			title={content.title}
+			{description}
+		/>
 	{/if}
 </Popover.Root>

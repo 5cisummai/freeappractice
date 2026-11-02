@@ -94,6 +94,7 @@
 			const emailSentHref = `${resolve('email-sent')}?${emailSentQuery}`;
 
 			// The base path is resolved above; only the encoded query string is appended.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolve() applied to route base
 			goto(emailSentHref);
 		} catch {
 			errorMessage = 'Network error. Please try again.';

@@ -195,7 +195,7 @@
 			},
 			"browserRequirements": "Requires JavaScript",
 			"operatingSystem": "Any",
-			"softwareVersion": "1.10.3",
+			"softwareVersion": "1.10.4",
 			"datePublished": "2025-12-12",
 			"dateModified": "2026-11-01",
 			"inLanguage": "en-US",

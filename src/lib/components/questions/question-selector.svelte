@@ -262,7 +262,7 @@
 				<FirstUseHint
 					id="practice-selector"
 					anchorId="practice-class-hint-target"
-					text={taskControl
+					description={taskControl
 						? 'Choose your AP class first, then pick a task.'
 						: 'Choose your AP class first, then pick a unit.'}
 					align="start"

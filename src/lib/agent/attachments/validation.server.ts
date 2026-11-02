@@ -4,8 +4,22 @@ import {
 	COACH_IMAGE_MAX_DIMENSION,
 	COACH_IMAGE_MAX_PIXELS
 } from '#lib/agent/attachments/images.js';
+import {
+	COACH_TEXT_MAX_BYTES,
+	COACH_TEXT_MAX_CHARS,
+	type CoachTextMediaType,
+	resolveCoachTextMediaType,
+	sanitizeCoachTextFilename
+} from '#lib/agent/attachments/text.js';
 
 export class CoachImageError extends Error {}
+
+export type CoachTextFile = {
+	mediaType: CoachTextMediaType;
+	filename: string;
+	text: string;
+	url: string;
+};
 
 export async function validateCoachImage(part: Record<string, unknown>): Promise<Buffer> {
 	const match =
@@ -48,4 +62,41 @@ export async function validateCoachImage(part: Record<string, unknown>): Promise
 			'Use a valid still image, up to 8192 pixels per side and 16 megapixels.'
 		);
 	}
+}
+
+export function validateCoachTextFile(part: Record<string, unknown>): CoachTextFile {
+	const mediaType = resolveCoachTextMediaType(part);
+	if (!mediaType) throw new CoachImageError('Use a TXT, Markdown, CSV, TSV, or JSON file.');
+	const match =
+		typeof part.url === 'string' &&
+		/^data:([^;,]*?)(?:;charset=utf-8)?;base64,([A-Za-z0-9+/]+={0,2})$/i.exec(part.url);
+	if (!match) throw new CoachImageError('Use a TXT, Markdown, CSV, TSV, or JSON file.');
+	const dataTypeRaw = match[1].toLowerCase();
+	const dataType =
+		!dataTypeRaw || dataTypeRaw === 'application/octet-stream'
+			? null
+			: resolveCoachTextMediaType({ mediaType: dataTypeRaw, filename: part.filename });
+	if (dataTypeRaw && !dataType && dataTypeRaw !== 'application/octet-stream')
+		throw new CoachImageError('Use a TXT, Markdown, CSV, TSV, or JSON file.');
+	if (dataType && dataType !== mediaType)
+		throw new CoachImageError('Use a TXT, Markdown, CSV, TSV, or JSON file.');
+	if (match[2].length > Math.ceil(COACH_TEXT_MAX_BYTES / 3) * 4)
+		throw new CoachImageError('Text files must be 100 KB or smaller.');
+	const bytes = Buffer.from(match[2], 'base64');
+	if (!bytes.length || bytes.length > COACH_TEXT_MAX_BYTES || bytes.toString('base64') !== match[2])
+		throw new CoachImageError('Invalid text file or file larger than 100 KB.');
+	if (bytes.includes(0)) throw new CoachImageError('Text files must be valid UTF-8 text.');
+	let text: string;
+	try {
+		text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+	} catch {
+		throw new CoachImageError('Text files must be valid UTF-8 text.');
+	}
+	if (text.length > COACH_TEXT_MAX_CHARS)
+		throw new CoachImageError(
+			`Text files must be ${COACH_TEXT_MAX_CHARS.toLocaleString()} characters or fewer.`
+		);
+	const filename = sanitizeCoachTextFilename(part.filename, mediaType);
+	const url = `data:${mediaType};base64,${Buffer.from(text, 'utf8').toString('base64')}`;
+	return { mediaType, filename, text, url };
 }

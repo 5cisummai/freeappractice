@@ -17,6 +17,23 @@ export type FetchCoachPracticeQuestionOptions = {
 	timeoutMs?: number;
 };
 
+export async function persistCoachPracticeQuestionAssignment(input: {
+	conversationId: string;
+	toolCallId: string;
+	assignedQuestion: CoachPracticeQuestionOutput;
+}): Promise<boolean> {
+	try {
+		const response = await apiFetch('/api/coach/practice-question/assign', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(input)
+		});
+		return response.ok;
+	} catch {
+		return false;
+	}
+}
+
 function retryAfterSecondsFrom(payload: PracticeQuestionResponse | null): number | undefined {
 	const value = payload?.retryAfterSeconds;
 	if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return undefined;
@@ -24,7 +41,7 @@ function retryAfterSecondsFrom(payload: PracticeQuestionResponse | null): number
 }
 
 export async function fetchCoachPracticeQuestion(
-	input: CoachPracticeQuestionToolInput,
+	input: CoachPracticeQuestionToolInput & { questionId?: string },
 	options: FetchCoachPracticeQuestionOptions = {}
 ): Promise<CoachPracticeQuestionOutput | { error: string; retryAfterSeconds?: number }> {
 	const timeoutMs = options.timeoutMs ?? COACH_PRACTICE_QUESTION_TIMEOUT_MS;

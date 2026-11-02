@@ -362,13 +362,6 @@
 							></div>
 						</div>
 					</div>
-
-					<FirstUseHint
-						id="dashboard-practice"
-						anchorId="dashboard-practice-hint-target"
-						text="Start here. Choose a course and begin practicing."
-						align="start"
-					/>
 				</div>
 
 				<div class="flex shrink-0 flex-col items-end gap-4 self-stretch max-sm:w-full">
@@ -391,6 +384,12 @@
 					</div>
 				</div>
 			</div>
+			<FirstUseHint
+				id="dashboard-practice"
+				anchorId="dashboard-practice-hint-target"
+				side="bottom"
+				align="end"
+			/>
 		</section>
 	{/if}
 

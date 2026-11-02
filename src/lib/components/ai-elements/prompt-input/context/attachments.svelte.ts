@@ -94,13 +94,16 @@ export class AttachmentsContext {
 			.split(',')
 			.map((pattern) => pattern.trim())
 			.filter(Boolean);
+		const name = file.name.toLowerCase();
 
 		return patterns.some((pattern) => {
+			if (pattern.startsWith('.')) {
+				return name.endsWith(pattern.toLowerCase());
+			}
 			if (pattern.endsWith('/*')) {
 				return file.type.startsWith(pattern.slice(0, -1));
 			}
-
-			return file.type === pattern;
+			return Boolean(file.type) && file.type === pattern;
 		});
 	};
 
@@ -153,7 +156,7 @@ export class AttachmentsContext {
 				id: crypto.randomUUID(),
 				file,
 				previewUrl: URL.createObjectURL(file),
-				mediaType: file.type,
+				mediaType: file.type || mediaTypeFromFilename(file.name),
 				filename: file.name
 			});
 		}
@@ -199,6 +202,32 @@ export class AttachmentsContext {
 		this.attachments = [];
 		this.fileInputRef = null;
 	};
+}
+
+function mediaTypeFromFilename(filename: string): string {
+	const extension = /\.[^.]+$/u.exec(filename.trim().toLowerCase())?.[0];
+	switch (extension) {
+		case '.txt':
+			return 'text/plain';
+		case '.md':
+		case '.markdown':
+			return 'text/markdown';
+		case '.csv':
+			return 'text/csv';
+		case '.tsv':
+			return 'text/tab-separated-values';
+		case '.json':
+			return 'application/json';
+		case '.png':
+			return 'image/png';
+		case '.jpg':
+		case '.jpeg':
+			return 'image/jpeg';
+		case '.webp':
+			return 'image/webp';
+		default:
+			return '';
+	}
 }
 
 const ATTACHMENTS_CONTEXT_KEY = Symbol('attachments');

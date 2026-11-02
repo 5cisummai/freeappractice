@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Badge } from '#lib/components/ui/badge/index.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
 	import type { CoachPracticeQuestionToolOutput } from '#lib/agent/tools/practice.js';
 
 	let { result }: { result: CoachPracticeQuestionToolOutput } = $props();
@@ -20,7 +21,7 @@
 		<Badge variant="secondary">{statusLabel}</Badge>
 		<span class="text-sm text-muted-foreground">{result.course} · {result.unit}</span>
 	</div>
-	<p class="mt-2 text-sm leading-6 text-foreground/90">{result.prompt}</p>
+	<RichText text={result.prompt} blocks class="mt-2 text-sm leading-6 text-foreground/90" />
 	{#if result.status === 'answered' && result.mode === 'mcq' && result.selectedAnswer}
 		<p class="mt-2 text-sm text-muted-foreground">
 			Your answer: {result.selectedAnswer}

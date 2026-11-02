@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" width="800" height="640" font-family="Inter, system-ui, -apple-system, sans-serif">
+  <rect width="800" height="640" fill="#ffffff"/>
+
+  <!-- Header -->
+  <text x="40" y="64" font-size="22" font-weight="600" fill="#18181b">Question 14</text>
+  <rect x="604" y="40" width="36" height="36" rx="8" fill="none" stroke="#e4e4e7"/>
+  <rect x="650" y="40" width="36" height="36" rx="8" fill="none" stroke="#e4e4e7"/>
+  <rect x="696" y="40" width="36" height="36" rx="8" fill="none" stroke="#e4e4e7"/>
+
+  <!-- Prompt -->
+  <rect x="40" y="112" width="720" height="12" rx="6" fill="#e4e4e7"/>
+  <rect x="40" y="134" width="690" height="12" rx="6" fill="#e4e4e7"/>
+  <rect x="40" y="156" width="520" height="12" rx="6" fill="#e4e4e7"/>
+
+  <!-- Choices -->
+  <rect x="40" y="200" width="720" height="56" rx="12" fill="#ffffff" stroke="#e4e4e7"/>
+  <text x="64" y="234" font-size="16" fill="#18181b">A.  Light-dependent reactions</text>
+
+  <rect x="40" y="268" width="720" height="56" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="64" y="302" font-size="16" font-weight="500" fill="#18181b">B.  Calvin cycle</text>
+
+  <rect x="40" y="336" width="720" height="56" rx="12" fill="#ffffff" stroke="#e4e4e7"/>
+  <text x="64" y="370" font-size="16" fill="#18181b">C.  Glycolysis</text>
+
+  <rect x="40" y="404" width="720" height="56" rx="12" fill="#ffffff" stroke="#e4e4e7"/>
+  <text x="64" y="438" font-size="16" fill="#18181b">D.  Krebs cycle</text>
+
+  <!-- Footer -->
+  <line x1="0" y1="500" x2="800" y2="500" stroke="#e4e4e7"/>
+  <text x="56" y="552" font-size="14" fill="#71717a">Skip</text>
+  <text x="134" y="552" font-size="14" fill="#71717a">I haven't learned this yet</text>
+  <text x="364" y="552" font-size="14" fill="#71717a">Report a bug</text>
+
+  <!-- Highlight around tool row -->
+  <rect x="32" y="528" width="456" height="48" rx="10" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="6 5"/>
+
+  <rect x="600" y="530" width="160" height="44" rx="8" fill="#18181b"/>
+  <text x="680" y="558" font-size="15" font-weight="500" text-anchor="middle" fill="#ffffff">Check Answer</text>
+</svg>

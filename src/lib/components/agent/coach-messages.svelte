@@ -21,6 +21,7 @@
 	import ThumbUpIcon from '@tabler/icons-svelte/icons/thumb-up';
 
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
+	import PaperclipIcon from '@tabler/icons-svelte/icons/paperclip';
 
 	import * as ChainOfThought from '#lib/components/ai-elements/chain-of-thought/index.js';
 	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
@@ -41,10 +42,13 @@
 	} from '#lib/components/agent/avatar/avatar-state.js';
 	import {
 		getCoachPracticeQuestionToolOutput,
+		getCoachPracticeQuestionAssignment,
 		isCoachPracticeQuestionPending,
-		type CoachPracticeQuestionToolOutput
+		type CoachPracticeQuestionToolOutput,
+		type CoachPracticeQuestionOutput
 	} from '#lib/agent/tools/practice.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+	import { isCoachTextMediaType, resolveCoachTextMediaType } from '#lib/agent/attachments/text.js';
 
 	import { cn } from '#lib/utils.js';
 	import type { ToolUIPartApproval } from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
@@ -58,7 +62,9 @@
 		copyMessage,
 		toggleMessageFeedback,
 		openNotHelpfulFeedback,
-		submitPracticeQuestionResult
+		submitPracticeQuestionResult,
+		conversationId,
+		persistPracticeQuestionAssignment
 	}: {
 		messages: AgentUIMessage[];
 		streaming: boolean;
@@ -71,6 +77,11 @@
 		submitPracticeQuestionResult: (
 			id: string,
 			output: CoachPracticeQuestionToolOutput
+		) => Promise<boolean>;
+		conversationId?: string;
+		persistPracticeQuestionAssignment?: (
+			toolCallId: string,
+			assignedQuestion: CoachPracticeQuestionOutput
 		) => Promise<boolean>;
 	} = $props();
 	function messageFeedback(id: string) {
@@ -345,6 +356,13 @@
 			? (value as Record<string, unknown>)
 			: {};
 	}
+
+	function isCoachTextFilePart(
+		part: AgentUIMessage['parts'][number]
+	): part is Extract<AgentUIMessage['parts'][number], { type: 'file' }> {
+		if (part.type !== 'file') return false;
+		return isCoachTextMediaType(part.mediaType) || resolveCoachTextMediaType(part) !== null;
+	}
 </script>
 
 {#each messages as message, messageIndex (message.id)}
@@ -365,6 +383,13 @@
 							alt="Your attachment"
 							class="mt-2 max-h-72 max-w-full rounded-xl object-contain"
 						/>
+					{:else if isCoachTextFilePart(part)}
+						<span
+							class="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1 text-sm text-muted-foreground"
+						>
+							<PaperclipIcon class="size-3.5 shrink-0" aria-hidden="true" />
+							<span class="truncate">{part.filename?.trim() || 'Attached file'}</span>
+						</span>
 					{/if}
 				{/each}
 			</Message.Content>
@@ -428,15 +453,6 @@
 								</figcaption>
 							{/if}
 						</figure>
-					{/if}
-					{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(toolPart.output)}
-					{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId}
-						<CoachPracticeQuestionCard
-							input={toolPart.input}
-							onResolve={(output) => submitPracticeQuestionResult(toolPart.toolCallId!, output)}
-						/>
-					{:else if practiceQuestionResult}
-						<CoachPracticeQuestionResult result={practiceQuestionResult} />
 					{/if}
 				{/if}
 			{/each}
@@ -509,6 +525,27 @@
 					</ChainOfThought.Content>
 				</ChainOfThought.Root>
 			{/if}
+			{#each message.parts as part, index (`practice-${message.id}-${index}`)}
+				{@const toolPart = getToolPart(part)}
+				{#if toolPart?.type === 'tool-give_practice_question'}
+					{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(toolPart.output)}
+					{@const assignedQuestion = getCoachPracticeQuestionAssignment(toolPart)}
+					{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId}
+						<CoachPracticeQuestionCard
+							input={toolPart.input}
+							toolCallId={toolPart.toolCallId}
+							{conversationId}
+							{assignedQuestion}
+							onAssigned={persistPracticeQuestionAssignment
+								? (question) => persistPracticeQuestionAssignment(toolPart.toolCallId!, question)
+								: undefined}
+							onResolve={(output) => submitPracticeQuestionResult(toolPart.toolCallId!, output)}
+						/>
+					{:else if practiceQuestionResult}
+						<CoachPracticeQuestionResult result={practiceQuestionResult} />
+					{/if}
+				{/if}
+			{/each}
 			{#each message.parts as part, index (`canvas-${message.id}-${index}`)}
 				{@const toolPart = getToolPart(part)}
 				{#if toolPart && (toolPart.type === 'tool-open_physics_sim' || toolPart.type === 'tool-open_math_explorer')}

@@ -5,6 +5,31 @@
 
 	const changelog = [
 		{
+			version: '1.10.4',
+			date: 'November 1, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Coach can attach TXT, Markdown, CSV, TSV, and JSON files when file input is enabled',
+						'First-use guidance uses HintCard popovers with a short queued tour on Home, practice, question tools, and Tutor'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Tutor chat shows a clearer Thinking state and uses the shared message layout',
+						'Coach practice question follow-ups render with rich text formatting',
+						'Community Discord links open the current invite'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Coach practice questions stay available more reliably after reloads']
+				}
+			]
+		},
+		{
 			version: '1.10.3',
 			date: 'November 1, 2026',
 			sections: [

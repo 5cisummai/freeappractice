@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" width="800" height="640" font-family="Inter, system-ui, -apple-system, sans-serif">
+  <rect width="800" height="640" fill="#ffffff"/>
+
+  <!-- Top bar -->
+  <rect x="0" y="0" width="800" height="64" fill="#fafafa"/>
+  <line x1="0" y1="64" x2="800" y2="64" stroke="#e4e4e7"/>
+  <text x="32" y="40" font-size="18" font-weight="600" fill="#18181b">Home</text>
+  <circle cx="724" cy="32" r="10" fill="#f97316"/>
+  <text x="742" y="38" font-size="16" font-weight="600" fill="#18181b">7</text>
+
+  <!-- Greeting -->
+  <text x="32" y="128" font-size="28" font-weight="600" fill="#18181b">Good afternoon, Ajay</text>
+  <text x="32" y="156" font-size="15" fill="#71717a">Pick up where you left off.</text>
+
+  <!-- Recommendation card -->
+  <rect x="32" y="180" width="736" height="290" rx="16" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="64" y="220" font-size="12" font-weight="600" letter-spacing="1" fill="#2563eb">RECOMMENDED</text>
+  <text x="64" y="262" font-size="28" font-weight="600" fill="#18181b">AP Biology</text>
+  <text x="64" y="292" font-size="14" fill="#71717a">38% complete &#183; 38 / 100 questions</text>
+
+  <rect x="64" y="312" width="420" height="8" rx="4" fill="#dbeafe"/>
+  <rect x="64" y="312" width="160" height="8" rx="4" fill="#2563eb"/>
+
+  <rect x="64" y="354" width="208" height="46" rx="23" fill="#2563eb"/>
+  <text x="168" y="382" font-size="15" font-weight="500" text-anchor="middle" fill="#ffffff">Start practicing  &#8594;</text>
+
+  <rect x="604" y="226" width="48" height="48" rx="12" fill="#ffffff" stroke="#bfdbfe"/>
+  <path d="M618 240 h20 v20 h-20 z" fill="none" stroke="#2563eb" stroke-width="2"/>
+
+  <!-- Plan section -->
+  <rect x="32" y="496" width="736" height="112" rx="16" fill="#fafafa" stroke="#e4e4e7"/>
+  <text x="64" y="532" font-size="16" font-weight="600" fill="#18181b">Today's plan</text>
+  <rect x="64" y="552" width="320" height="10" rx="5" fill="#e4e4e7"/>
+  <rect x="64" y="572" width="260" height="10" rx="5" fill="#e4e4e7"/>
+  <rect x="604" y="540" width="132" height="36" rx="8" fill="#ffffff" stroke="#e4e4e7"/>
+  <text x="670" y="563" font-size="13" font-weight="500" text-anchor="middle" fill="#18181b">View plan</text>
+</svg>
