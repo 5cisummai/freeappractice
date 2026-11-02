@@ -34,7 +34,8 @@
 	import CoachConversationMenu from '#lib/components/agent/coach-conversation-menu.svelte';
 	import CoachAvatar from '#lib/components/agent/coach-avatar.svelte';
 
-	import { type CoachPracticeQuestionToolOutput } from '#lib/agent/tools/practice.js';
+	import { type CoachPracticeQuestionToolOutput, type CoachPracticeQuestionOutput } from '#lib/agent/tools/practice.js';
+	import { persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 	import { createAgentTransport } from '#lib/agent/transport.js';
 	import {
@@ -434,6 +435,33 @@
 		}
 	}
 
+	async function persistPracticeQuestionAssignment(
+		toolCallId: string,
+		assignedQuestion: CoachPracticeQuestionOutput
+	): Promise<boolean> {
+		if (!conversationId || !toolCallId) return false;
+		const ok = await persistCoachPracticeQuestionAssignment({
+			conversationId,
+			toolCallId,
+			assignedQuestion
+		});
+		if (!ok) return false;
+		coach.messages = coach.messages.map((message) => ({
+			...message,
+			parts: message.parts.map((part) => {
+				if (
+					part.type === 'tool-give_practice_question' &&
+					part.toolCallId === toolCallId &&
+					part.state === 'input-available'
+				) {
+					return { ...part, assignedQuestion };
+				}
+				return part;
+			})
+		}));
+		return true;
+	}
+
 	async function submitCoachQuestionResult(
 		toolCallId: string,
 		output: CoachQuestionToolOutput
@@ -658,6 +686,8 @@
 								{toggleMessageFeedback}
 								{openNotHelpfulFeedback}
 								{submitPracticeQuestionResult}
+								conversationId={conversationId || undefined}
+								{persistPracticeQuestionAssignment}
 							/>
 							{#if showThinkingIndicator}
 								<Message.Root from="assistant" class="max-w-3xl">

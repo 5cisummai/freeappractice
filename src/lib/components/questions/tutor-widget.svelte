@@ -8,6 +8,9 @@
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import RichText from '#lib/components/content/rich-text.svelte';
 	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
+	import * as Message from '#lib/components/ai-elements/message/index.js';
+	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
+	import { cn } from '#lib/utils.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 	import { toast } from 'svelte-sonner';
@@ -433,7 +436,7 @@
 	<div class="flex shrink-0 items-center justify-between border-border px-4 py-3">
 		<div class="flex items-center gap-2">
 			<SparklesIcon class="h-4 w-4" />
-			<span id="{uid}-title" class="text-sm font-semibold">AI Tutor</span>
+			<span id="{uid}-title" class="text-sm font-semibold">Tutor</span>
 		</div>
 		{#if !embedded}
 			<button
@@ -456,27 +459,31 @@
 			</div>
 		{/if}
 		{#each messages as message, i (message.id)}
-			<div class={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-				{#if message.role === 'user'}
-					<div
-						class="ph-mask-pii max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground"
-					>
+			<Message.Root
+				from={message.role}
+				class={cn(
+					'ph-mask-pii w-full max-w-full min-w-0',
+					message.role === 'user' && 'max-w-[92%]'
+				)}
+			>
+				<Message.Content
+					class={cn(
+						message.role === 'user' && 'text-sm leading-5',
+						message.role === 'assistant' && 'max-w-[95%] text-sm leading-6'
+					)}
+				>
+					{#if message.role === 'user'}
 						{message.content}
-					</div>
-				{:else}
-					<div class="ph-mask-pii max-w-[90%] text-sm text-foreground/90">
-						{#if message.content}
-							<RichText text={message.content} blocks />
-						{:else if isStreaming && i === messages.length - 1}
-							<span class="inline-flex gap-1 text-muted-foreground">
-								<span class="animate-bounce" style="animation-delay: 0ms">·</span>
-								<span class="animate-bounce" style="animation-delay: 100ms">·</span>
-								<span class="animate-bounce" style="animation-delay: 200ms">·</span>
-							</span>
-						{/if}
-					</div>
-				{/if}
-			</div>
+					{:else if message.content}
+						<RichText text={message.content} blocks />
+					{:else if isStreaming && i === messages.length - 1}
+						<span class="inline-flex items-center gap-2" role="status" aria-live="polite">
+							<Shimmer as="span" content_length={10}>Thinking…</Shimmer>
+							<span class="sr-only">Tutor is thinking</span>
+						</span>
+					{/if}
+				</Message.Content>
+			</Message.Root>
 		{/each}
 	</div>
 
@@ -484,7 +491,7 @@
 		<div
 			class={[
 				'relative flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2',
-				embedded ? 'origin-bottom shadow-lg ring-1 ring-foreground/10' : 'shadow-sm'
+				embedded ? 'origin-bottom shadow-lg ring-1 ring-foreground/10' : 'shadow-xs'
 			]}
 		>
 			<textarea

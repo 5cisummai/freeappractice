@@ -3,6 +3,7 @@ import { getCourseNames, getUnitsForCourse } from '#lib/catalog/courses.js';
 import {
 	buildCoachPracticeQuestionToolOutput,
 	coachPracticeQuestionRequestKey,
+	getCoachPracticeQuestionAssignment,
 	getCoachPracticeQuestionToolInput,
 	getCoachPracticeQuestionToolOutput,
 	isCoachPracticeQuestionPending
@@ -59,12 +60,34 @@ describe('coach practice question tool helpers', () => {
 
 		expect(first).not.toBe(second);
 		expect(coachPracticeQuestionRequestKey(first)).toBe(coachPracticeQuestionRequestKey(second));
+		expect(coachPracticeQuestionRequestKey(first, 'call-1')).not.toBe(
+			coachPracticeQuestionRequestKey(first, 'call-2')
+		);
 		expect(coachPracticeQuestionRequestKey(first)).not.toBe(
 			coachPracticeQuestionRequestKey({
 				...first!,
 				unit: 'Unit 3: Cultural Patterns and Processes'
 			})
 		);
+	});
+
+	it('reads a stored assignment from a pending tool part', () => {
+		const assigned = {
+			kind: 'practice_question',
+			mode: 'mcq',
+			questionId: 'mcq-1',
+			course: 'AP Physics 1',
+			unit: 'Unit 1',
+			practiceHref: '/app/practice',
+			prompt: 'Prompt'
+		};
+		expect(
+			getCoachPracticeQuestionAssignment({
+				type: 'tool-give_practice_question',
+				state: 'input-available',
+				assignedQuestion: assigned
+			})
+		).toEqual(assigned);
 	});
 
 	it('can uniquely map catalog unit titles after stripping a Unit N prefix', () => {

@@ -41,8 +41,10 @@
 	} from '#lib/components/agent/avatar/avatar-state.js';
 	import {
 		getCoachPracticeQuestionToolOutput,
+		getCoachPracticeQuestionAssignment,
 		isCoachPracticeQuestionPending,
-		type CoachPracticeQuestionToolOutput
+		type CoachPracticeQuestionToolOutput,
+		type CoachPracticeQuestionOutput
 	} from '#lib/agent/tools/practice.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 
@@ -58,7 +60,9 @@
 		copyMessage,
 		toggleMessageFeedback,
 		openNotHelpfulFeedback,
-		submitPracticeQuestionResult
+		submitPracticeQuestionResult,
+		conversationId,
+		persistPracticeQuestionAssignment
 	}: {
 		messages: AgentUIMessage[];
 		streaming: boolean;
@@ -71,6 +75,11 @@
 		submitPracticeQuestionResult: (
 			id: string,
 			output: CoachPracticeQuestionToolOutput
+		) => Promise<boolean>;
+		conversationId?: string;
+		persistPracticeQuestionAssignment?: (
+			toolCallId: string,
+			assignedQuestion: CoachPracticeQuestionOutput
 		) => Promise<boolean>;
 	} = $props();
 	function messageFeedback(id: string) {
@@ -429,15 +438,6 @@
 							{/if}
 						</figure>
 					{/if}
-					{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(toolPart.output)}
-					{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId}
-						<CoachPracticeQuestionCard
-							input={toolPart.input}
-							onResolve={(output) => submitPracticeQuestionResult(toolPart.toolCallId!, output)}
-						/>
-					{:else if practiceQuestionResult}
-						<CoachPracticeQuestionResult result={practiceQuestionResult} />
-					{/if}
 				{/if}
 			{/each}
 			{#if activities.length}
@@ -509,6 +509,27 @@
 					</ChainOfThought.Content>
 				</ChainOfThought.Root>
 			{/if}
+			{#each message.parts as part, index (`practice-${message.id}-${index}`)}
+				{@const toolPart = getToolPart(part)}
+				{#if toolPart?.type === 'tool-give_practice_question'}
+					{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(toolPart.output)}
+					{@const assignedQuestion = getCoachPracticeQuestionAssignment(toolPart)}
+					{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId}
+						<CoachPracticeQuestionCard
+							input={toolPart.input}
+							toolCallId={toolPart.toolCallId}
+							{conversationId}
+							{assignedQuestion}
+							onAssigned={persistPracticeQuestionAssignment
+								? (question) => persistPracticeQuestionAssignment(toolPart.toolCallId!, question)
+								: undefined}
+							onResolve={(output) => submitPracticeQuestionResult(toolPart.toolCallId!, output)}
+						/>
+					{:else if practiceQuestionResult}
+						<CoachPracticeQuestionResult result={practiceQuestionResult} />
+					{/if}
+				{/if}
+			{/each}
 			{#each message.parts as part, index (`canvas-${message.id}-${index}`)}
 				{@const toolPart = getToolPart(part)}
 				{#if toolPart && (toolPart.type === 'tool-open_physics_sim' || toolPart.type === 'tool-open_math_explorer')}

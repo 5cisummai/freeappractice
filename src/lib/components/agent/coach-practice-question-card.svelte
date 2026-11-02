@@ -8,7 +8,7 @@
 	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
 	import type { AnswerResult } from '#lib/question-bank/mcq/types.js';
 	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
-	import { fetchCoachPracticeQuestion } from '#lib/agent/tools/practice.client.js';
+	import { fetchCoachPracticeQuestion, persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
 	import {
 		buildCoachPracticeQuestionToolOutput,
 		coachPracticeQuestionRequestKey,
@@ -20,24 +20,37 @@
 
 	let {
 		input,
-		onResolve
+		toolCallId,
+		conversationId,
+		assignedQuestion = null,
+		onResolve,
+		onAssigned
 	}: {
 		input: unknown;
+		toolCallId?: string;
+		conversationId?: string;
+		assignedQuestion?: CoachPracticeQuestionOutput | null;
 		onResolve: (output: CoachPracticeQuestionToolOutput) => Promise<boolean>;
+		onAssigned?: (assignedQuestion: CoachPracticeQuestionOutput) => Promise<boolean>;
 	} = $props();
 
 	const toolInput = $derived(getCoachPracticeQuestionToolInput(input));
-	const requestKey = $derived(coachPracticeQuestionRequestKey(toolInput));
+	const requestKey = $derived(coachPracticeQuestionRequestKey(toolInput, toolCallId));
 	let question = $state<CoachPracticeQuestionOutput | null>(null);
 	let loadError = $state('');
 	let resolved = $state(false);
 	let requestVersion = $state(0);
 	let loadGeneration = 0;
 	let activeController: AbortController | null = null;
-
-	const modeLabel = $derived(question?.mode === 'frq' ? 'Written response' : 'Multiple choice');
+	let persistedQuestionId = $state<string | null>(null);
 
 	$effect(() => {
+		const assigned = untrack(() => assignedQuestion);
+		if (assigned) {
+			question = assigned;
+			loadError = '';
+			return;
+		}
 		startLoad(
 			requestKey,
 			untrack(() => toolInput)
@@ -78,6 +91,15 @@
 			}
 			question = result;
 			requestVersion += 1;
+			if (
+				toolCallId &&
+				conversationId &&
+				onAssigned &&
+				persistedQuestionId !== result.questionId
+			) {
+				const persisted = await onAssigned(result);
+				if (persisted) persistedQuestionId = result.questionId;
+			}
 		} catch {
 			if (generation !== loadGeneration || signal.aborted) return;
 			loadError = 'Could not load a practice question. Check your connection and try again.';
@@ -129,7 +151,6 @@
 			<span class="text-sm text-muted-foreground">
 				{question.course} · {question.unit}
 			</span>
-			<span class="text-xs text-muted-foreground">{modeLabel}</span>
 		{/if}
 	</div>
 

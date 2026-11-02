@@ -9,7 +9,8 @@ const practiceQuestionRequestSchema = z
 	.object({
 		course: z.string().trim().min(1).max(100),
 		unit: z.string().trim().min(1).max(200).optional(),
-		mode: z.enum(['mcq', 'frq']).default('mcq')
+		mode: z.enum(['mcq', 'frq']).default('mcq'),
+		questionId: z.string().trim().min(1).max(128).optional()
 	})
 	.strict();
 
