@@ -360,7 +360,9 @@
 			: {};
 	}
 
-	function isCoachTextFilePart(part: AgentUIMessage['parts'][number]): boolean {
+	function isCoachTextFilePart(
+		part: AgentUIMessage['parts'][number]
+	): part is Extract<AgentUIMessage['parts'][number], { type: 'file' }> {
 		if (part.type !== 'file') return false;
 		return isCoachTextMediaType(part.mediaType) || resolveCoachTextMediaType(part) !== null;
 	}
