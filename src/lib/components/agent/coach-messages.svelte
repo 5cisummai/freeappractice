@@ -21,6 +21,7 @@
 	import ThumbUpIcon from '@tabler/icons-svelte/icons/thumb-up';
 
 	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
+	import PaperclipIcon from '@tabler/icons-svelte/icons/paperclip';
 
 	import * as ChainOfThought from '#lib/components/ai-elements/chain-of-thought/index.js';
 	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
@@ -47,6 +48,10 @@
 		type CoachPracticeQuestionOutput
 	} from '#lib/agent/tools/practice.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+	import {
+		isCoachTextMediaType,
+		resolveCoachTextMediaType
+	} from '#lib/agent/attachments/text.js';
 
 	import { cn } from '#lib/utils.js';
 	import type { ToolUIPartApproval } from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
@@ -354,6 +359,11 @@
 			? (value as Record<string, unknown>)
 			: {};
 	}
+
+	function isCoachTextFilePart(part: AgentUIMessage['parts'][number]): boolean {
+		if (part.type !== 'file') return false;
+		return isCoachTextMediaType(part.mediaType) || resolveCoachTextMediaType(part) !== null;
+	}
 </script>
 
 {#each messages as message, messageIndex (message.id)}
@@ -374,6 +384,13 @@
 							alt="Your attachment"
 							class="mt-2 max-h-72 max-w-full rounded-xl object-contain"
 						/>
+					{:else if isCoachTextFilePart(part)}
+						<span
+							class="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1 text-sm text-muted-foreground"
+						>
+							<PaperclipIcon class="size-3.5 shrink-0" aria-hidden="true" />
+							<span class="truncate">{part.filename?.trim() || 'Attached file'}</span>
+						</span>
 					{/if}
 				{/each}
 			</Message.Content>

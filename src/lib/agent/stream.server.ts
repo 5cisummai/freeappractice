@@ -204,7 +204,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 				? {
 						title: incomingUserText
 							? fallbackConversationTitle(incomingUserText, surface)
-							: 'Image discussion',
+							: 'Attachment discussion',
 						automaticTitlePending: Boolean(incomingUserText)
 					}
 				: {})
@@ -488,11 +488,11 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 			return Response.json({ error: error.message }, { status: error.status });
 		}
 		if (messages.some((message) => message.parts.some((part) => part.type === 'file'))) {
-			logger.error('Coach image request failed', {
+			logger.error('Coach attachment request failed', {
 				errorType: error instanceof Error ? error.name : 'UnknownError'
 			});
 			return Response.json(
-				{ error: 'Coach could not process that image. Please try again.' },
+				{ error: 'Coach could not process that attachment. Please try again.' },
 				{ status: 500 }
 			);
 		}

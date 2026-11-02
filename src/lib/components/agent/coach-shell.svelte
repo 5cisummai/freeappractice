@@ -137,11 +137,19 @@
 					message.id === lastUser.id
 						? {
 								...message,
-								parts: message.parts.map((part) =>
-									part.type === 'file'
-										? { type: 'file' as const, mediaType: 'image/webp', url: coachImageUrl(id) }
-										: part
-								)
+								parts: message.parts.map((part) => {
+									if (part.type !== 'file') return part;
+									const isImage =
+										part.url.startsWith('data:image/') ||
+										part.url.startsWith('/api/coach/images/') ||
+										part.mediaType.startsWith('image/');
+									if (!isImage) return part;
+									return {
+										type: 'file' as const,
+										mediaType: 'image/webp',
+										url: coachImageUrl(id)
+									};
+								})
 							}
 						: message
 				);
@@ -496,6 +504,7 @@
 				text: message,
 				...(imageInputEnabled && files?.length ? { files } : {})
 			});
+			attachments = [];
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Pip is unavailable right now.');
 		} finally {

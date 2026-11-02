@@ -36,8 +36,15 @@ vi.mock('#lib/agent/attachments/storage.server.js', () => ({
 	deleteCoachImage: mocks.remove
 }));
 
-import { validateCoachImage } from '#lib/agent/attachments/validation.server.js';
+import {
+	validateCoachImage,
+	validateCoachTextFile
+} from '#lib/agent/attachments/validation.server.js';
 import { coachImageUrl, COACH_IMAGE_MAX_BYTES } from '#lib/agent/attachments/images.js';
+import {
+	COACH_TEXT_MAX_BYTES,
+	COACH_TEXT_MAX_CHARS
+} from '#lib/agent/attachments/text.js';
 import {
 	coachImageModelMessages,
 	getOwnedCoachImage,
@@ -47,8 +54,16 @@ import {
 } from '#lib/agent/attachments/images.server.js';
 
 const id = 'ea2d389c-df43-4e24-b1d9-b8557fdbec25';
-function file(bytes: Buffer, mediaType = 'image/png') {
-	return { type: 'file', mediaType, url: `data:${mediaType};base64,${bytes.toString('base64')}` };
+function file(bytes: Buffer, mediaType = 'image/png', filename?: string) {
+	return {
+		type: 'file',
+		mediaType,
+		url: `data:${mediaType};base64,${bytes.toString('base64')}`,
+		...(filename ? { filename } : {})
+	};
+}
+function textFile(text: string, mediaType = 'text/plain', filename = 'note.txt') {
+	return file(Buffer.from(text, 'utf8'), mediaType, filename);
 }
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -99,8 +114,65 @@ describe('Coach image validation', () => {
 			.toBuffer();
 		await expect(validateCoachImage(file(jpeg))).rejects.toThrow();
 		await expect(prepareCoachImageParts('user', 'chat', [file(jpeg), file(jpeg)])).rejects.toThrow(
-			'one image'
+			'one file'
 		);
+	});
+});
+
+describe('Coach text file validation', () => {
+	it('accepts utf-8 text adjacent files and normalizes the data URL', () => {
+		const csv = validateCoachTextFile(textFile('a,b\n1,2\n', 'text/csv', 'scores.csv'));
+		expect(csv).toMatchObject({
+			mediaType: 'text/csv',
+			filename: 'scores.csv',
+			text: 'a,b\n1,2\n'
+		});
+		expect(csv.url).toBe(`data:text/csv;base64,${Buffer.from('a,b\n1,2\n', 'utf8').toString('base64')}`);
+	});
+	it('resolves type from filename when the data URL is octet-stream', () => {
+		const bytes = Buffer.from('# hello', 'utf8');
+		const part = {
+			type: 'file',
+			mediaType: 'text/markdown',
+			filename: 'notes.md',
+			url: `data:application/octet-stream;base64,${bytes.toString('base64')}`
+		};
+		expect(validateCoachTextFile(part).mediaType).toBe('text/markdown');
+	});
+	it('rejects binary, oversized, and unsupported text uploads', () => {
+		expect(() => validateCoachTextFile(textFile('ok', 'text/html', 'x.html'))).toThrow(/TXT/);
+		expect(() =>
+			validateCoachTextFile(file(Buffer.from([0, 1, 2]), 'text/plain', 'note.txt'))
+		).toThrow(/UTF-8/);
+		expect(() =>
+			validateCoachTextFile(
+				file(Buffer.alloc(COACH_TEXT_MAX_BYTES + 1, 97), 'text/plain', 'note.txt')
+			)
+		).toThrow(/100 KB/);
+		expect(() =>
+			validateCoachTextFile(textFile('x'.repeat(COACH_TEXT_MAX_CHARS + 1), 'text/plain', 'note.txt'))
+		).toThrow(/characters/);
+	});
+	it('stores text attachments inline and expands them for the model', async () => {
+		const prepared = await prepareCoachImageParts('user', 'chat', [
+			textFile('unit 3 review', 'text/plain', 'review.txt')
+		]);
+		expect(prepared.upload).toBeUndefined();
+		expect(prepared.savedParts).toEqual([
+			{
+				type: 'file',
+				mediaType: 'text/plain',
+				filename: 'review.txt',
+				url: `data:text/plain;base64,${Buffer.from('unit 3 review', 'utf8').toString('base64')}`
+			}
+		]);
+		const model = coachImageModelMessages([
+			{ id: 'msg', role: 'user', parts: prepared.savedParts }
+		]);
+		expect(model[0].parts[0]).toEqual({
+			type: 'text',
+			text: 'Attached file "review.txt" (text/plain):\n\nunit 3 review'
+		});
 	});
 });
 

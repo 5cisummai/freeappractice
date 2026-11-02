@@ -2,7 +2,10 @@
 	import { onMount, tick, type Component } from 'svelte';
 
 	import type { ChatStatus, FileUIPart } from 'ai';
-	import { COACH_IMAGE_MAX_BYTES, COACH_IMAGE_TYPES } from '#lib/agent/attachments/images.js';
+	import {
+		COACH_ATTACHMENT_ACCEPT,
+		COACH_ATTACHMENT_MAX_BYTES
+	} from '#lib/agent/attachments/images.js';
 
 	import BarChart3Icon from '@tabler/icons-svelte/icons/chart-pie-filled';
 	import Atom2FilledIcon from '@tabler/icons-svelte/icons/atom-2-filled';
@@ -138,9 +141,9 @@
 	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
 	onSubmit={({ text, files }) => send(text, files)}
 	bind:attachments
-	accept={imageInputEnabled ? COACH_IMAGE_TYPES.join(',') : 'application/x-disabled'}
+	accept={imageInputEnabled ? COACH_ATTACHMENT_ACCEPT : 'application/x-disabled'}
 	maxFiles={imageInputEnabled ? 1 : 0}
-	maxFileSize={COACH_IMAGE_MAX_BYTES}
+	maxFileSize={COACH_ATTACHMENT_MAX_BYTES}
 	onError={({ message }) => toast.error(message)}
 	clearOnSubmit={false}
 >
@@ -192,7 +195,7 @@
 					sideOffset={8}
 					class="w-[min(18rem,calc(100vw-2rem))] p-1"
 				>
-					{#if imageInputEnabled}<PromptInput.ActionAddAttachments label="Add image" />{/if}
+					{#if imageInputEnabled}<PromptInput.ActionAddAttachments label="Add file" />{/if}
 					{#each ['physics-sim', 'study-plan'] as const as actionId (actionId)}
 						{@const Icon = coachActionIcons[actionId]}
 						{@const selected = selectedCoachActionIds.includes(actionId)}

@@ -203,9 +203,13 @@
 
 		let files = await Promise.all(
 			attachments.map(async (attachment) => {
-				let url = attachment.remoteUrl
-					? attachment.remoteUrl
-					: await convertFileToDataUrl(attachment.file);
+				let file = attachment.file;
+				if (attachment.mediaType && attachment.mediaType !== attachment.file.type) {
+					file = new File([attachment.file], attachment.filename || attachment.file.name, {
+						type: attachment.mediaType
+					});
+				}
+				let url = attachment.remoteUrl ? attachment.remoteUrl : await convertFileToDataUrl(file);
 
 				return {
 					type: 'file' as const,

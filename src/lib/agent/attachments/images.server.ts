@@ -5,8 +5,12 @@ import { z } from 'zod';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { coachImages } from '#lib/server/neon/schema.js';
 import { isCoachImagesEnabled } from '#lib/flags.js';
-import { coachImageId, coachImageUrl } from '#lib/agent/attachments/images.js';
-import { CoachImageError, validateCoachImage } from '#lib/agent/attachments/validation.server.js';
+import { COACH_IMAGE_TYPES, coachImageId, coachImageUrl } from '#lib/agent/attachments/images.js';
+import {
+	CoachImageError,
+	validateCoachImage,
+	validateCoachTextFile
+} from '#lib/agent/attachments/validation.server.js';
 import {
 	coachImageStore,
 	putCoachImage,
@@ -14,7 +18,20 @@ import {
 	deleteCoachImage,
 	type CoachImageStore
 } from '#lib/agent/attachments/storage.server.js';
+import { isCoachTextMediaType, resolveCoachTextMediaType } from '#lib/agent/attachments/text.js';
 import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+
+const COACH_IMAGE_TYPE_SET = new Set<string>(COACH_IMAGE_TYPES);
+
+function decodeCoachTextDataUrl(url: string): string | null {
+	const match = /^data:([^;,]+)(?:;charset=utf-8)?;base64,([A-Za-z0-9+/]+={0,2})$/i.exec(url);
+	if (!match || !isCoachTextMediaType(match[1].toLowerCase())) return null;
+	try {
+		return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(match[2], 'base64'));
+	} catch {
+		return null;
+	}
+}
 
 export async function getOwnedCoachImage(userId: string, id: string, conversationId?: string) {
 	const [row] = await getNeonDatabase()
@@ -55,20 +72,36 @@ export async function prepareCoachImageParts(
 	parts: Record<string, unknown>[]
 ) {
 	const files = parts.filter((part) => part.type === 'file');
-	if (files.length > 1) throw new CoachImageError('Attach one image per message.');
+	if (files.length > 1) throw new CoachImageError('Attach one file per message.');
 	const savedParts: AgentUIMessage['parts'] = parts
 		.filter((part) => part.type === 'text' && typeof part.text === 'string')
 		.map((part) => ({ type: 'text', text: part.text as string }));
 	let upload: { id: string; bytes: Buffer } | undefined;
 	if (files.length) {
 		if (!(await isCoachImagesEnabled()))
-			throw new CoachImageError('Coach image input is currently unavailable.');
-		const existingId = coachImageId(files[0].url);
+			throw new CoachImageError('Coach file input is currently unavailable.');
+		const file = files[0];
+		const existingId = coachImageId(file.url);
+		const textMediaType = resolveCoachTextMediaType({
+			mediaType: file.mediaType,
+			filename: file.filename
+		});
 		if (existingId) {
 			if (!(await getOwnedCoachImage(userId, existingId, conversationId)))
 				throw new CoachImageError('Image unavailable in this chat.');
 			savedParts.push({ type: 'file', mediaType: 'image/webp', url: coachImageUrl(existingId) });
-		} else {
+		} else if (textMediaType) {
+			const textFile = validateCoachTextFile(file);
+			savedParts.push({
+				type: 'file',
+				mediaType: textFile.mediaType,
+				url: textFile.url,
+				filename: textFile.filename
+			});
+		} else if (
+			typeof file.mediaType === 'string' &&
+			COACH_IMAGE_TYPE_SET.has(file.mediaType)
+		) {
 			const [total] = await getNeonDatabase()
 				.select({ count: count() })
 				.from(coachImages)
@@ -81,7 +114,7 @@ export async function prepareCoachImageParts(
 				.where(and(eq(coachImages.userId, userId), eq(coachImages.conversationId, conversationId)));
 			if (chatTotal.count >= 50)
 				throw new CoachImageError('Start a new chat to upload more images.');
-			const bytes = await validateCoachImage(files[0]);
+			const bytes = await validateCoachImage(file);
 			const id = randomUUID();
 			const store = coachImageStore();
 			const pathname = `coach-images/${id}.webp`;
@@ -103,6 +136,10 @@ export async function prepareCoachImageParts(
 				.where(eq(coachImages.id, id));
 			upload = { id, bytes };
 			savedParts.push({ type: 'file', mediaType: 'image/webp', url: coachImageUrl(id) });
+		} else {
+			throw new CoachImageError(
+				'Use a PNG, JPEG, WebP image, or a TXT, Markdown, CSV, TSV, or JSON file.'
+			);
 		}
 	}
 	return { savedParts, upload };
@@ -126,7 +163,7 @@ export async function linkCoachImage(
 		);
 }
 
-/** Only a newly uploaded image is hydrated; older images become inspectable references. */
+/** Newly uploaded images are hydrated; older images become inspectable references. Text files expand inline. */
 export function coachImageModelMessages(
 	messages: AgentUIMessage[],
 	upload?: { id: string; bytes: Buffer }
@@ -135,6 +172,18 @@ export function coachImageModelMessages(
 		...message,
 		parts: message.parts.map((part) => {
 			if (part.type !== 'file') return part;
+			if (isCoachTextMediaType(part.mediaType)) {
+				const text = decodeCoachTextDataUrl(part.url);
+				const filename =
+					'filename' in part && typeof part.filename === 'string' && part.filename
+						? part.filename
+						: 'attachment';
+				if (!text) return { type: 'text', text: `[Attached file unavailable: ${filename}]` };
+				return {
+					type: 'text',
+					text: `Attached file "${filename}" (${part.mediaType}):\n\n${text}`
+				};
+			}
 			const id = coachImageId(part.url);
 			if (!id) return { type: 'text', text: '[Image unavailable]' };
 			if (upload?.id === id)
