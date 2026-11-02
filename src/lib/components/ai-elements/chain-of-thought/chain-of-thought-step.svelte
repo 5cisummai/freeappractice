@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { cn } from '#lib/utils.js';
-	import { type Icon as IconType } from '@lucide/svelte';
+	import type { LucideIcon } from '@lucide/svelte';
 	import DotIcon from '@lucide/svelte/icons/dot';
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 
 	interface ChainOfThoughtStepProps extends HTMLAttributes<HTMLDivElement> {
-		icon?: typeof IconType;
+		icon?: LucideIcon;
 		label?: string;
 		description?: string;
 		status?: 'complete' | 'active' | 'pending';

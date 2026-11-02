@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { betterAuthSchema } from '#lib/server/neon/schema.js';
 
 const authAdapterOptions = {
-	experimental: { joins: true },
+	advanced: { database: { joins: true } },
 	user: { modelName: 'authUsers' },
 	account: { modelName: 'authAccounts' },
 	session: { modelName: 'authSessions' },

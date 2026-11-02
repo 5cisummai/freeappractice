@@ -34,7 +34,11 @@
 	import CoachConversationMenu from '#lib/components/agent/coach-conversation-menu.svelte';
 	import CoachAvatar from '#lib/components/agent/coach-avatar.svelte';
 
-	import { type CoachPracticeQuestionToolOutput } from '#lib/agent/tools/practice.js';
+	import {
+		type CoachPracticeQuestionToolOutput,
+		type CoachPracticeQuestionOutput
+	} from '#lib/agent/tools/practice.js';
+	import { persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 	import { createAgentTransport } from '#lib/agent/transport.js';
 	import {
@@ -136,11 +140,19 @@
 					message.id === lastUser.id
 						? {
 								...message,
-								parts: message.parts.map((part) =>
-									part.type === 'file'
-										? { type: 'file' as const, mediaType: 'image/webp', url: coachImageUrl(id) }
-										: part
-								)
+								parts: message.parts.map((part) => {
+									if (part.type !== 'file') return part;
+									const isImage =
+										part.url.startsWith('data:image/') ||
+										part.url.startsWith('/api/coach/images/') ||
+										part.mediaType.startsWith('image/');
+									if (!isImage) return part;
+									return {
+										type: 'file' as const,
+										mediaType: 'image/webp',
+										url: coachImageUrl(id)
+									};
+								})
 							}
 						: message
 				);
@@ -434,6 +446,33 @@
 		}
 	}
 
+	async function persistPracticeQuestionAssignment(
+		toolCallId: string,
+		assignedQuestion: CoachPracticeQuestionOutput
+	): Promise<boolean> {
+		if (!conversationId || !toolCallId) return false;
+		const ok = await persistCoachPracticeQuestionAssignment({
+			conversationId,
+			toolCallId,
+			assignedQuestion
+		});
+		if (!ok) return false;
+		coach.messages = coach.messages.map((message) => ({
+			...message,
+			parts: message.parts.map((part) => {
+				if (
+					part.type === 'tool-give_practice_question' &&
+					part.toolCallId === toolCallId &&
+					part.state === 'input-available'
+				) {
+					return { ...part, assignedQuestion };
+				}
+				return part;
+			})
+		}));
+		return true;
+	}
+
 	async function submitCoachQuestionResult(
 		toolCallId: string,
 		output: CoachQuestionToolOutput
@@ -468,6 +507,7 @@
 				text: message,
 				...(imageInputEnabled && files?.length ? { files } : {})
 			});
+			attachments = [];
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Pip is unavailable right now.');
 		} finally {
@@ -658,6 +698,8 @@
 								{toggleMessageFeedback}
 								{openNotHelpfulFeedback}
 								{submitPracticeQuestionResult}
+								conversationId={conversationId || undefined}
+								{persistPracticeQuestionAssignment}
 							/>
 							{#if showThinkingIndicator}
 								<Message.Root from="assistant" class="max-w-3xl">

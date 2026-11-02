@@ -166,9 +166,18 @@ export function isCoachPracticeQuestionPending(part: { type?: string; state?: st
 	return part.type === 'tool-give_practice_question' && part.state === 'input-available';
 }
 
+export function getCoachPracticeQuestionAssignment(
+	part: unknown
+): CoachPracticeQuestionOutput | null {
+	if (!part || typeof part !== 'object' || Array.isArray(part)) return null;
+	const record = part as Record<string, unknown>;
+	return getCoachPracticeQuestionOutput(record.assignedQuestion);
+}
+
 export function coachPracticeQuestionRequestKey(
-	input: CoachPracticeQuestionToolInput | null | undefined
+	input: CoachPracticeQuestionToolInput | null | undefined,
+	toolCallId?: string | null
 ): string {
 	if (!input) return '';
-	return JSON.stringify([input.course, input.unit ?? '', input.mode]);
+	return JSON.stringify([input.course, input.unit ?? '', input.mode, toolCallId ?? '']);
 }

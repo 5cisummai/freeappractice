@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAuthenticatedShell } from '#lib/client/invalidate-data.js';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
+	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import { toast } from 'svelte-sonner';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -14,6 +15,12 @@
 	} = $props();
 
 	let claiming = $state(false);
+
+	const superFeatures = [
+		'AI Coach personalized to your practice',
+		'Weekly study plans you approve with Coach',
+		'Unlimited practice and Tutor stay free'
+	] as const;
 
 	async function claimOffer() {
 		if (claiming) return;
@@ -38,18 +45,25 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-md" showCloseButton={!claiming}>
 		<Dialog.Header>
-			<div
-				class="mx-auto mb-1 flex size-12 items-center justify-center rounded-full border border-violet-300/50 super-tier-gradient text-violet-700 shadow-sm shadow-violet-500/10 dark:text-violet-300"
-			>
-				<SparklesIcon class="size-5" />
-			</div>
 			<Dialog.Title class="text-center font-display text-xl tracking-tight sm:text-2xl">
 				Claim your free Super offer
 			</Dialog.Title>
-			<Dialog.Description class="text-center text-sm leading-6">
-				Unlock Pip and personalized weekly study plans. Tutoring stays free for everyone.
+			<Dialog.Description class="sr-only">
+				Unlock Pip, weekly study plans, and personalized Coach. Practice and tutoring stay free.
 			</Dialog.Description>
 		</Dialog.Header>
+
+		<ul class="flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
+			{#each superFeatures as feature (feature)}
+				<li class="flex gap-2.5">
+					<CheckIcon
+						class="mt-0.5 size-4 shrink-0 text-violet-600 dark:text-violet-400"
+						aria-hidden="true"
+					/>
+					<span>{feature}</span>
+				</li>
+			{/each}
+		</ul>
 
 		<Dialog.Footer class="sm:justify-center">
 			<Button

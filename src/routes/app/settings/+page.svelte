@@ -5,11 +5,13 @@
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Popover from '#lib/components/ui/popover/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Switch } from '#lib/components/ui/switch/index.js';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
 	import PageShell from '#lib/components/layout/page-shell.svelte';
+	import HintCard from '#lib/components/onboarding/hint-card.svelte';
 	import { authClient } from '#lib/auth/client.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import { privacy } from '#lib/client/privacy.svelte.js';
@@ -19,7 +21,7 @@
 	import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
 	import { onboardingCourseGroups } from '#lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
-	const APP_VERSION = '1.10.3';
+	const APP_VERSION = '1.10.4';
 	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
@@ -114,7 +116,7 @@
 
 	function resetProductHints() {
 		resetUiHints();
-		toast.success('First-use hints will show again.');
+		toast.success('First-use hints reset. Open Practice to see them again.');
 	}
 
 	async function handleDeleteAccount() {
@@ -501,9 +503,31 @@
 				</div>
 				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
 					<div class="min-w-0 flex-1 space-y-0.5">
+						<p class="text-sm font-medium text-foreground">Preview hint card</p>
+						<p class="text-sm text-muted-foreground">
+							Open the feature hint popover to check layout and copy.
+						</p>
+					</div>
+					<Popover.Root>
+						<Popover.Trigger>
+							{#snippet child({ props })}
+								<Button type="button" variant="outline" size="sm" {...props}>Show hint card</Button>
+							{/snippet}
+						</Popover.Trigger>
+						<HintCard
+							side="bottom"
+							align="end"
+							sideOffset={8}
+							title="Pick your course"
+							description="Choose your AP class first, then pick a unit or task."
+						/>
+					</Popover.Root>
+				</div>
+				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
+					<div class="min-w-0 flex-1 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Reset first-use hints</p>
 						<p class="text-sm text-muted-foreground">
-							Show the small tips for the dashboard, practice selector, question tools, and Tutor
+							Show the small tips for the home page, practice selector, question tools, and Tutor
 							again.
 						</p>
 					</div>

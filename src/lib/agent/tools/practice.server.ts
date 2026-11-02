@@ -8,6 +8,9 @@ import { getFrqCourseProfile } from '#lib/question-bank/frq/profiles.server.js';
 import { resolveFrqPoolRequest } from '#lib/question-bank/frq/practice.js';
 import { mcqBank } from '#lib/question-bank/mcq/bank.server.js';
 import { frqBank } from '#lib/question-bank/frq/bank.server.js';
+import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
+import { getFrqQuestionById } from '#lib/question-bank/frq/model.server.js';
+import { toPublicFrqQuestion } from '#lib/question-bank/frq/types.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { frqAttempts, mcqAttempts } from '#lib/server/neon/schema.js';
 import {
@@ -121,14 +124,96 @@ function mcqCoachOutput(input: {
 	};
 }
 
+async function coachPracticeQuestionFromId(
+	input: {
+		course: string;
+		unit?: string;
+		mode?: 'mcq' | 'frq';
+	},
+	questionId: string
+): Promise<CoachPracticeQuestionOutput | { error: string }> {
+	const resolved = resolveCoachPracticeQuestionCatalog({
+		course: input.course,
+		unit: input.unit,
+		mode: input.mode ?? 'mcq'
+	});
+	if (!resolved.ok) {
+		return { error: resolved.error };
+	}
+
+	const { course, unit, mode } = resolved;
+
+	try {
+		if (mode === 'frq') {
+			if (!getFrqCourseProfile(course)) {
+				return { error: 'Written-response practice is not available for this course.' };
+			}
+			const question = await getFrqQuestionById(questionId);
+			if (question.course !== course) {
+				return { error: 'That practice question is no longer available.' };
+			}
+			const publicQuestion = toPublicFrqQuestion(questionId, question);
+			return {
+				kind: 'practice_question',
+				mode: 'frq',
+				questionId,
+				course: publicQuestion.course,
+				unit: publicQuestion.unit,
+				practiceHref: buildCoachPracticeHref({
+					course: publicQuestion.course,
+					unit: publicQuestion.unit,
+					mode: 'frq',
+					questionId
+				}),
+				topic: publicQuestion.topicsCovered,
+				prompt: publicQuestion.prompt,
+				sections: publicQuestion.parts.map((part) => ({
+					label: part.label,
+					prompt: part.prompt
+				})),
+				materials: publicQuestion.materials.map((material) => ({
+					title: material.title,
+					content: material.content
+				}))
+			};
+		}
+
+		const stored = await getQuestionById(questionId);
+		if (stored.course && stored.course !== course) {
+			return { error: 'That practice question is no longer available.' };
+		}
+		return mcqCoachOutput({
+			questionId: stored.id,
+			course: stored.course ?? course,
+			unit: stored.unit ?? unit,
+			prompt: stored.question,
+			optionA: stored.optionA,
+			optionB: stored.optionB,
+			optionC: stored.optionC,
+			optionD: stored.optionD,
+			topicsCovered: stored.topicsCovered,
+			hasDiagram: stored.hasDiagram,
+			diagramSpec: stored.diagramSpec ?? null
+		});
+	} catch {
+		return { error: 'That practice question is no longer available.' };
+	}
+}
+
 export async function giveCoachPracticeQuestion(
 	userId: string,
 	input: {
 		course: string;
 		unit?: string;
 		mode?: 'mcq' | 'frq';
+		questionId?: string;
 	}
 ): Promise<CoachPracticeQuestionOutput | { error: string; retryAfterSeconds?: number }> {
+	const questionId = input.questionId?.trim();
+	if (questionId) {
+		return coachPracticeQuestionFromId(input, questionId);
+	}
+
 	const resolved = resolveCoachPracticeQuestionCatalog({
 		course: input.course,
 		unit: input.unit,
@@ -194,9 +279,14 @@ export async function giveCoachPracticeQuestion(
 		return { error: 'Could not load a practice question right now.' };
 	}
 
-	const { answer, questionId, course: resolvedCourse, unit: resolvedUnit } = outcome.result;
+	const {
+		answer,
+		questionId: selectedQuestionId,
+		course: resolvedCourse,
+		unit: resolvedUnit
+	} = outcome.result;
 	return mcqCoachOutput({
-		questionId,
+		questionId: selectedQuestionId,
 		course: resolvedCourse,
 		unit: resolvedUnit || unit || 'All Units',
 		prompt: answer.question,

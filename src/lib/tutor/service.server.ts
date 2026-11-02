@@ -59,7 +59,7 @@ export async function getGreeting(question: string): Promise<string> {
 		const { text, usage } = await generateText({
 			model: TUTOR_MODEL,
 			instructions:
-				'You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.',
+				'Your name is Tutor. You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.',
 			messages: [{ role: 'user', content: `The current question is: ${question}` }],
 			maxOutputTokens: 150
 		});
@@ -98,7 +98,7 @@ export async function* chat(opts: {
 		? `\nAnswer Choices:\nA. ${answerChoices.A}\nB. ${answerChoices.B}\nC. ${answerChoices.C}\nD. ${answerChoices.D}`
 		: '';
 
-	const system = `You are a helpful AP exam tutor. You're helping a student understand a specific practice question.
+	const system = `Your name is Tutor. You are a helpful AP exam tutor. You're helping a student understand a specific practice question.
 
 Course: ${course || 'AP Course'}
 Unit: ${unit || 'N/A'}
@@ -153,7 +153,7 @@ export async function* chatFrq(opts: {
 			].join('\n')
 		: 'The student has not submitted this response yet.';
 	const system = [
-		'You are a helpful AP written-response tutor.',
+		'Your name is Tutor. You are a helpful AP written-response tutor.',
 		'',
 		'Course: ' + question.course,
 		'Unit: ' + question.unit,

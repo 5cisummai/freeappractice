@@ -5,12 +5,14 @@ const UI_HINTS_COOKIE_VERSION = 'v1';
 export type UiHintId =
 	'dashboard-practice' | 'practice-selector' | 'question-tools' | 'tutor-widget';
 
-const UI_HINT_IDS: ReadonlySet<UiHintId> = new Set([
+export const FIRST_USE_HINT_ORDER: readonly UiHintId[] = [
 	'dashboard-practice',
 	'practice-selector',
 	'question-tools',
 	'tutor-widget'
-]);
+];
+
+const UI_HINT_IDS: ReadonlySet<UiHintId> = new Set(FIRST_USE_HINT_ORDER);
 
 function readDismissedHints(): Set<UiHintId> {
 	if (typeof document === 'undefined') return new Set();
@@ -52,10 +54,28 @@ export function hasSeenUiHint(id: UiHintId): boolean {
 	return readDismissedHints().has(id);
 }
 
+export function getActiveFirstUseHintId(): UiHintId | null {
+	for (const id of FIRST_USE_HINT_ORDER) {
+		if (!hasSeenUiHint(id)) return id;
+	}
+	return null;
+}
+
+let firstUseHintQueueRevision = $state(0);
+
+export function getFirstUseHintQueueRevision(): number {
+	return firstUseHintQueueRevision;
+}
+
+function bumpFirstUseHintQueue(): void {
+	firstUseHintQueueRevision += 1;
+}
+
 export function markUiHintSeen(id: UiHintId): void {
 	const hints = readDismissedHints();
 	hints.add(id);
 	writeDismissedHints(hints);
+	bumpFirstUseHintQueue();
 }
 
 export function resetUiHints(): void {
@@ -63,4 +83,5 @@ export function resetUiHints(): void {
 
 	const secure = window.location.protocol === 'https:' ? '; Secure' : '';
 	document.cookie = `${UI_HINTS_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax${secure}`;
+	bumpFirstUseHintQueue();
 }
