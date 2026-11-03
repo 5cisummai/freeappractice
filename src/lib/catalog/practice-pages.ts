@@ -1,7 +1,6 @@
-import practicePagesDataset from './data/practice-pages.json';
-import { AP_DATA, type UnifiedUnit } from './dataset';
+import { AP_DATA, getCourses, getUnitsForCourse, type UnifiedUnit } from './courses.js';
 
-import { getCourses, getUnitsForCourse } from './courses';
+import practicePagesDataset from './data/practice-pages.json';
 
 const PRACTICE_PAGES_DATA = practicePagesDataset;
 

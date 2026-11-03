@@ -6,7 +6,7 @@ import { parseArgs } from 'node:util';
 import { neon } from '@neondatabase/serverless';
 import { Output, ToolLoopAgent } from 'ai';
 import { z } from 'zod';
-import { AP_DATA } from '../src/lib/catalog/dataset';
+import { AP_DATA } from '../src/lib/catalog/courses';
 import {
 	ChoiceExplanationsSchema,
 	DifficultySchema,

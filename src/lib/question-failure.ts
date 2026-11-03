@@ -1,4 +1,4 @@
-/** Shared failure taxonomy for question request analytics (client + server). */
+/** Shared failure taxonomy for question request analytics (client + tests). */
 export type QuestionFailureKind = 'validation' | 'generation' | 'busy' | 'network' | 'unknown';
 
 /** Map an HTTP status from a question API response to a failure kind. */

@@ -1,4 +1,4 @@
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 import type { ProgressEntry, StatsData } from '#lib/users/types.js';
 
 /** Home subject cards measure progress toward this many MCQ attempts. */

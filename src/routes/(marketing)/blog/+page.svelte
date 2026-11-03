@@ -62,7 +62,7 @@
 							publishedAt={post.publishedAt}
 							createdAt={post.createdAt}
 							coverImage={post.coverImage}
-							tags={post.tags}
+							category={post.category}
 						/>
 					</li>
 				{/each}

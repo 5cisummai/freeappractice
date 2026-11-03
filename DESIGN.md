@@ -118,7 +118,6 @@ shadcn `Button` (`src/lib/components/ui/button`).
 | `twAnimateIn`           | Above-the-fold / page-load |
 | `twAnimateInView`       | Below-the-fold sections    |
 | `twAnimateInViewSubtle` | Dense grids                |
-| `twAnimateInViewZoom`   | Interactive blocks         |
 
 Prefer these over custom intersection observers.
 

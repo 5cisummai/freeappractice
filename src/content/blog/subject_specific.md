@@ -4,6 +4,11 @@ excerpt: How AP Bio, APUSH, Calc, Lang, Chem, and Psych each reward different pr
 summary: Subject-by-subject AP prep guidance so you can study for each exam according to the skills it actually rewards.
 published: true
 date: 2026-03-31
+category: Exam Prep
+relatedSlugs: stop-studying-harder, science-of-studying
+ctaHref: subjects
+ctaLabel: Open subject hubs
+ctaDescription: Jump to AP-specific practice pages for each course.
 coverImage: https://public.assets.freeappractice.org/alexander-kaufmann-F-2jfXs2INI-unsplash.jpg
 ---
 

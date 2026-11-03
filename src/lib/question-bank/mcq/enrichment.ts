@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 
 export const DifficultySchema = z.enum(['easy', 'medium', 'hard']);
 export const ChoiceExplanationsSchema = z.object({

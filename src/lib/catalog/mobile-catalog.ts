@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 import { getCourses, isMcqPracticeCourse } from '#lib/catalog/courses.js';
 
 export type MobileCatalogUnit = {

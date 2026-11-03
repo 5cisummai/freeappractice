@@ -19,7 +19,7 @@ import {
 export const MCQ_GENERATION_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 
 import { EXAMFIG_DIAGRAM_SKILL } from '#lib/question-bank/mcq/diagram-prompt.js';
 

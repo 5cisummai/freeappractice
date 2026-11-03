@@ -1,5 +1,5 @@
 import { getCourseNames } from '#lib/catalog/courses.js';
-import { AP_DATA, type UnifiedCourse } from '#lib/catalog/dataset.js';
+import { AP_DATA, type UnifiedCourse } from '#lib/catalog/courses.js';
 
 type CatalogCourseSummary = {
 	course: string;

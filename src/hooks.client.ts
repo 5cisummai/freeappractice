@@ -1,7 +1,7 @@
 import type { HandleClientError } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { initPostHogAnalytics, capturePostHogException } from '#lib/client/posthog-analytics.js';
-import { sentryEnabled, sentryOptions } from '#lib/sentry-config.js';
+import { sentryEnabled, sentryOptions } from '#lib/sentry-ignore.js';
 import {
 	isIgnoredSentryError,
 	isSvelteKitMissingComponentError,

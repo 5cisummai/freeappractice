@@ -23,7 +23,7 @@ vi.mock('#lib/client/posthog-analytics.js', () => ({
 	initPostHogAnalytics: vi.fn(),
 	capturePostHogException: mocks.capturePostHog
 }));
-vi.mock('#lib/sentry-config.js', () => ({ sentryEnabled: true, sentryOptions: {} }));
+vi.mock('#lib/sentry-ignore.js', () => ({ sentryEnabled: true, sentryOptions: {} }));
 
 async function loadHooks() {
 	return import('../../../src/hooks.client.js');

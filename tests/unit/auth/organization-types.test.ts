@@ -8,7 +8,7 @@ import {
 	PERSONAL_ORG_NAME,
 	slugifyOrgName
 } from '#lib/auth/organization-types.js';
-import { safeAppPath } from '#lib/auth/app-path.js';
+import { safeAppPath } from '#lib/auth/safe-app-path.js';
 
 describe('organization types', () => {
 	it('parses known org types and sharing rules', () => {
