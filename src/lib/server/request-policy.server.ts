@@ -22,11 +22,17 @@ export function isEmailDeliveryStatus(method: string, pathname: string): boolean
 	);
 }
 
+/** Public mobile/web catalog snapshot — cacheable without a session. */
+export function isPublicCatalogFetch(method: string, pathname: string): boolean {
+	return method === 'GET' && pathname === '/api/catalog/courses';
+}
+
 export function shouldSkipSessionLookup(method: string, pathname: string): boolean {
 	if (
 		isAnonymousMcqFetch(method, pathname) ||
 		isResendWebhook(method, pathname) ||
-		isEmailDeliveryStatus(method, pathname)
+		isEmailDeliveryStatus(method, pathname) ||
+		isPublicCatalogFetch(method, pathname)
 	)
 		return true;
 	return method === 'GET' && matchesPublicMarketingPath(pathname);

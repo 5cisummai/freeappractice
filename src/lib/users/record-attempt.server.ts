@@ -36,6 +36,9 @@ export async function recordQuestionAttempt(
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
+	// Attempts without a practice session always use the personal namespace.
+	// Classroom practice requires an authorized practiceSessionId; the session
+	// active organization alone cannot switch attempt writes to classroom data.
 	let context = { organizationId: null as string | null };
 	let sessionCourse: string | null = null;
 	if (practiceSessionId) {

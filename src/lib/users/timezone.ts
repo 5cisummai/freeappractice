@@ -26,3 +26,11 @@ export function timezoneFromCookies(cookies: {
 }): string | undefined {
 	return parseTimezone(cookies.get(TIMEZONE_COOKIE_NAME));
 }
+
+/** Prefer an explicit client timezone header, then the browser timezone cookie. */
+export function timezoneFromRequest(
+	request: Request,
+	cookies: { get: (name: string) => string | undefined }
+): string | undefined {
+	return parseTimezone(request.headers.get('x-timezone')) ?? timezoneFromCookies(cookies);
+}

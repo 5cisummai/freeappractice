@@ -8,7 +8,8 @@ import type { PracticeContext } from '#lib/users/practice-context.server.js';
 export async function loadUserDashboardData(
 	userId: string,
 	cookies: Cookies,
-	context: PracticeContext = { organizationId: null }
+	context: PracticeContext = { organizationId: null },
+	timeZone?: string
 ) {
 	const [frqEnabled, user] = await Promise.all([
 		isFrqPracticeEnabled(),
@@ -16,7 +17,13 @@ export async function loadUserDashboardData(
 	]);
 
 	const [stats, progress] = await Promise.all([
-		getDashboardStats(userId, user.createdAt, timezoneFromCookies(cookies), frqEnabled, context),
+		getDashboardStats(
+			userId,
+			user.createdAt,
+			timeZone ?? timezoneFromCookies(cookies),
+			frqEnabled,
+			context
+		),
 		getDashboardProgress(userId, user.progress, frqEnabled, context)
 	]);
 

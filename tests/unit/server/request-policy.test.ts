@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	isAnonymousMcqFetch,
 	isEmailDeliveryStatus,
+	isPublicCatalogFetch,
 	isResendWebhook,
 	shouldSkipGlobalApiRateLimit,
 	shouldSkipSessionLookup
@@ -42,5 +43,11 @@ describe('request policy', () => {
 		expect(shouldSkipSessionLookup('GET', '/pricing')).toBe(true);
 		expect(shouldSkipSessionLookup('GET', '/app')).toBe(false);
 		expect(shouldSkipSessionLookup('GET', '/login')).toBe(false);
+	});
+
+	it('skips session lookup for the public catalog snapshot', () => {
+		expect(isPublicCatalogFetch('GET', '/api/catalog/courses')).toBe(true);
+		expect(shouldSkipSessionLookup('GET', '/api/catalog/courses')).toBe(true);
+		expect(isPublicCatalogFetch('POST', '/api/catalog/courses')).toBe(false);
 	});
 });

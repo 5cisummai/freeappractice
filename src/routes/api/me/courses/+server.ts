@@ -2,12 +2,24 @@ import { z } from 'zod';
 import { getCourses } from '#lib/catalog/courses.js';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { readJsonBody, RequestBodyTooLargeError } from '#lib/server/request-body.server.js';
-import { updateUserCourses } from '#lib/users/model.server.js';
+import { getUserCourses, updateUserCourses } from '#lib/users/model.server.js';
+import { buildSelectedCourseEntries } from '#lib/users/home-dashboard.server.js';
 
 const validCourses = new Set(getCourses().map((course) => course.name));
 const coursesSchema = z.object({
 	courses: z.array(z.string()).min(1).max(validCourses.size)
 });
+
+/** Selected courses in saved order, including courses with no practice activity. */
+export const GET = withAuthedHandler(
+	async (_event, userId) => {
+		const courses = await getUserCourses(userId);
+		return Response.json({
+			courses: buildSelectedCourseEntries(courses)
+		});
+	},
+	{ logLabel: 'Get selected courses error', errorMessage: 'Failed to load your courses' }
+);
 
 export const POST = withAuthedHandler(
 	async (event, userId) => {
@@ -28,7 +40,10 @@ export const POST = withAuthedHandler(
 
 		const courses = [...new Set(parsed.data.courses)];
 		await updateUserCourses(userId, courses);
-		return Response.json({ courses });
+		return Response.json({
+			courses,
+			selectedCourses: buildSelectedCourseEntries(courses)
+		});
 	},
 	{ logLabel: 'Save onboarding courses error', errorMessage: 'Failed to save your courses' }
 );
