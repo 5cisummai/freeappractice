@@ -4,6 +4,14 @@ High-level overview of how the app is structured, how requests flow, and how the
 
 ---
 
+## Shared business functions for web and mobile
+
+Web loaders/actions and mobile API routes call exported business functions in the existing domain folders. Those functions enforce resource permissions and business rules, access Drizzle directly, and return data or domain outcomes. Wrappers establish the authenticated user, parse requests, map outcomes to HTTP/form feedback, and handle cookies, redirects, streaming, and request analytics.
+
+Use explicit IDs and values rather than passing a Request or SvelteKit event into ordinary business functions. Keep HTTP status codes in wrappers. Existing auth and streaming adapters may remain transport-specific. Extract meaningful operations and repeated rules; leave small, single-use presentation and request parsing inline. No service classes, repository layers, or generic domain framework are needed.
+
+See the [web/mobile map](mobile-business-logic-map.md) for the complete server-entry inventory and mobile read endpoints.
+
 ## 1. System overview
 
 ```mermaid

@@ -1,20 +1,5 @@
-import { and, desc, eq, inArray } from 'drizzle-orm';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
-import { getNeonDatabase } from '#lib/server/neon/db.js';
-import {
-	getOrganizationTypeForUser,
-	listUserOrganizations
-} from '#lib/auth/organization-queries.server.js';
-import {
-	classroomEnrollmentHistory,
-	examAttempts,
-	frqAttempts,
-	mcqAttempts,
-	quizAttemptQuestions,
-	quizAttempts
-} from '#lib/server/neon/schema.js';
-
-const STUDENT_REPORT_DETAIL_LIMIT = 200;
+import { getStudentReportDetail } from '#lib/auth/student-report.server.js';
 
 export const GET = withAuthedHandler(
 	async (event, teacherId) => {
@@ -23,73 +8,13 @@ export const GET = withAuthedHandler(
 		if (!organizationId || !studentId) {
 			return Response.json({ error: 'organizationId and userId are required.' }, { status: 400 });
 		}
-		if ((await getOrganizationTypeForUser(organizationId, teacherId)) !== 'school') {
-			return Response.json({ error: 'Classroom membership is required.' }, { status: 403 });
-		}
-		const teacher = (await listUserOrganizations(teacherId)).find(
-			(org) => org.id === organizationId
-		);
-		if (!teacher || (teacher.role !== 'owner' && teacher.role !== 'admin')) {
-			return Response.json({ error: 'Teacher access is required.' }, { status: 403 });
-		}
-		const [enrollment] = await getNeonDatabase()
-			.select({ id: classroomEnrollmentHistory.id })
-			.from(classroomEnrollmentHistory)
-			.where(
-				and(
-					eq(classroomEnrollmentHistory.organizationId, organizationId),
-					eq(classroomEnrollmentHistory.userId, studentId)
-				)
-			)
-			.limit(1);
-		if (!enrollment)
+		const result = await getStudentReportDetail(organizationId, teacherId, studentId);
+		if ('error' in result)
 			return Response.json(
-				{ error: 'Student is not enrolled in this classroom.' },
-				{ status: 404 }
+				{ error: result.error },
+				{ status: result.reason === 'student_not_found' ? 404 : 403 }
 			);
-		const db = getNeonDatabase();
-		const [mcq, frq, quizzes, exams] = await Promise.all([
-			db
-				.select()
-				.from(mcqAttempts)
-				.where(
-					and(eq(mcqAttempts.organizationId, organizationId), eq(mcqAttempts.userId, studentId))
-				)
-				.orderBy(desc(mcqAttempts.attemptedAt))
-				.limit(STUDENT_REPORT_DETAIL_LIMIT),
-			db
-				.select()
-				.from(frqAttempts)
-				.where(
-					and(eq(frqAttempts.organizationId, organizationId), eq(frqAttempts.userId, studentId))
-				)
-				.orderBy(desc(frqAttempts.createdAt))
-				.limit(STUDENT_REPORT_DETAIL_LIMIT),
-			db
-				.select()
-				.from(quizAttempts)
-				.where(
-					and(eq(quizAttempts.organizationId, organizationId), eq(quizAttempts.userId, studentId))
-				)
-				.orderBy(desc(quizAttempts.completedAt))
-				.limit(STUDENT_REPORT_DETAIL_LIMIT),
-			db
-				.select()
-				.from(examAttempts)
-				.where(
-					and(eq(examAttempts.organizationId, organizationId), eq(examAttempts.userId, studentId))
-				)
-				.orderBy(desc(examAttempts.startedAt))
-				.limit(STUDENT_REPORT_DETAIL_LIMIT)
-		]);
-		const quizIds = quizzes.map((quiz) => quiz.id);
-		const quizQuestions = quizIds.length
-			? await db
-					.select()
-					.from(quizAttemptQuestions)
-					.where(inArray(quizAttemptQuestions.quizAttemptId, quizIds))
-			: [];
-		return Response.json({ studentId, mcq, frq, quizzes, quizQuestions, exams });
+		return Response.json(result.data);
 	},
 	{ logLabel: 'Classroom report detail error', errorMessage: 'Failed to load student report' }
 );

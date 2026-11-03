@@ -1,15 +1,12 @@
-import type { Cookies } from '@sveltejs/kit';
 import { isFrqPracticeEnabled } from '#lib/flags.js';
 import { getUserDashboardProfileOrFail } from '#lib/users/profile.server.js';
 import { getDashboardProgress, getDashboardStats } from '#lib/users/dashboard-queries.server.js';
-import { timezoneFromCookies } from '#lib/users/timezone.js';
 import type { PracticeContext } from '#lib/users/practice-context.server.js';
 
 export async function loadUserDashboardData(
 	userId: string,
-	cookies: Cookies,
-	context: PracticeContext = { organizationId: null },
-	timeZone?: string
+	timeZone: string | undefined,
+	context: PracticeContext = { organizationId: null }
 ) {
 	const [frqEnabled, user] = await Promise.all([
 		isFrqPracticeEnabled(),
@@ -17,13 +14,7 @@ export async function loadUserDashboardData(
 	]);
 
 	const [stats, progress] = await Promise.all([
-		getDashboardStats(
-			userId,
-			user.createdAt,
-			timeZone ?? timezoneFromCookies(cookies),
-			frqEnabled,
-			context
-		),
+		getDashboardStats(userId, user.createdAt, timeZone, frqEnabled, context),
 		getDashboardProgress(userId, user.progress, frqEnabled, context)
 	]);
 

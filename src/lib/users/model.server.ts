@@ -1,4 +1,5 @@
 import { asc, eq, inArray, sql } from 'drizzle-orm';
+import { selectValidCourses } from '#lib/users/course-selection.js';
 import type { IProgress, IQuestionAttempt } from '#lib/users/records.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import {
@@ -14,6 +15,9 @@ import type { PracticeContext } from '#lib/users/practice-context.server.js';
 
 /** Persist only the user's selected courses instead of rewriting their full profile. */
 export async function updateUserCourses(userId: string, courses: string[]): Promise<void> {
+	const validatedCourses = selectValidCourses(courses, true);
+	if (!validatedCourses) throw new Error('Invalid course selection');
+	courses = validatedCourses;
 	const db = getNeonDatabase();
 	const updateProfile = db
 		.update(userProfiles)

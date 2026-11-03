@@ -23,7 +23,7 @@ export const GET = withAuthedHandler(
 		const context = await resolveApiPracticeContext(event, userId);
 		const timeZone = timezoneFromRequest(event.request, event.cookies);
 
-		const dashboardPromise = loadUserDashboardData(userId, event.cookies, context, timeZone);
+		const dashboardPromise = loadUserDashboardData(userId, timeZone, context);
 		const planAccessPromise = getPlanAccessForRequest(event.locals, userId);
 		const studyPlanAccessPromise = authorizeFeatureRequest(event, userId, 'studyPlans');
 		const studyPlanPromise = studyPlanAccessPromise.then((access) =>

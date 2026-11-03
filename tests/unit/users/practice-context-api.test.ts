@@ -53,7 +53,7 @@ describe('resolveApiPracticeContext', () => {
 			resolveApiPracticeContext(
 				{
 					url: new URL('https://example.com/api/me/stats?practiceNamespace=classroom'),
-					locals: { session: null }
+					locals: { session: undefined }
 				},
 				'user-1'
 			)

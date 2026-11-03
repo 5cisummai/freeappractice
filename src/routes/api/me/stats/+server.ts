@@ -7,7 +7,7 @@ export const GET = withAuthedHandler(
 	async (event, userId) => {
 		const context = await resolveApiPracticeContext(event, userId);
 		const timeZone = timezoneFromRequest(event.request, event.cookies);
-		const { stats } = await loadUserDashboardData(userId, event.cookies, context, timeZone);
+		const { stats } = await loadUserDashboardData(userId, timeZone, context);
 		return Response.json(stats);
 	},
 	{ logLabel: 'Stats error', errorMessage: 'Failed to fetch statistics' }
