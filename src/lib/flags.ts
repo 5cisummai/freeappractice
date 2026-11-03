@@ -125,11 +125,6 @@ function superKillSwitch(key: string, description: string) {
 
 /** Kill switches only. Plan access always comes from durable billing/grant records. */
 export const superCheckoutEnabled = superKillSwitch('super-checkout', 'Allow new Super checkouts');
-export const superCoachEnabled = superKillSwitch('super-coach', 'Allow the Super AI Coach');
-export const superMemoryEnabled = superKillSwitch(
-	'super-memory',
-	'Allow Mem0-backed Super tutor memory'
-);
 async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>): Promise<boolean> {
 	try {
 		return Boolean(await feature());
@@ -139,18 +134,7 @@ async function readSuperKillSwitch(feature: ReturnType<typeof superKillSwitch>):
 }
 
 export const isSuperCheckoutEnabled = () => readSuperKillSwitch(superCheckoutEnabled);
-export const isSuperCoachEnabled = () => readSuperKillSwitch(superCoachEnabled);
-export const isSuperMemoryEnabled = () => readSuperKillSwitch(superMemoryEnabled);
-
-export const coachImagesEnabled = vercelFlag(
-	'coach-images',
-	'Allow private image input in Coach',
-	false
-);
-export async function isCoachImagesEnabled(): Promise<boolean> {
-	try {
-		return Boolean(await coachImagesEnabled());
-	} catch {
-		return false;
-	}
-}
+// Established features are always enabled; billing and authorization still apply.
+export const isSuperCoachEnabled = async (): Promise<boolean> => true;
+export const isSuperMemoryEnabled = async (): Promise<boolean> => true;
+export const isCoachImagesEnabled = async (): Promise<boolean> => true;

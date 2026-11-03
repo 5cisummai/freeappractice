@@ -10,6 +10,7 @@
 	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 	import { Toggle } from '#lib/components/ui/toggle/index.js';
 	import BugReportDialog from '#lib/components/questions/bug-report-dialog.svelte';
+	import DesmosCalculator from '#lib/components/questions/desmos-calculator.svelte';
 	import McqAnswerChoices from '#lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '#lib/components/questions/question-card-skeleton.svelte';
 	import EmptyState from '#lib/components/app/empty-state.svelte';
@@ -18,15 +19,17 @@
 	import * as Resizable from '#lib/components/ui/resizable/index.js';
 	import { cn } from '#lib/utils.js';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
-	import { measureLongQuestion } from '#lib/components/questions/question-card-dom.js';
+	import { measureLongQuestion, withTooltipTriggerClick } from '#lib/components/questions/question-card-dom.js';
 	import { portalToBody } from '#lib/components/questions/portal-to-body.svelte.js';
 	import { createQuestionCore } from '#lib/components/questions/question-core.svelte.js';
 	import QuestionTutor from '#lib/components/questions/question-tutor.svelte';
 	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
 	import type { BugReportContext, QuestionCardProps } from '#lib/question-bank/mcq/types.js';
+	import { getSubjectCalculator } from '#lib/question-bank/mcq/subject-calculator.js';
 	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
 	import ArrowsMaximizeIcon from '@tabler/icons-svelte/icons/arrows-maximize';
 	import ArrowsMinimizeIcon from '@tabler/icons-svelte/icons/arrows-minimize';
+	import CalculatorIcon from '@tabler/icons-svelte/icons/calculator-filled';
 	import StrikethroughIcon from '@tabler/icons-svelte/icons/strikethrough';
 	import ExamfigDiagram from '#lib/components/questions/examfig-diagram.svelte';
 	import { IsMobile } from '#lib/hooks/is-mobile.svelte.js';
@@ -91,6 +94,10 @@
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let controlsTriggerRef = $state<HTMLElement | null>(null);
 	let eliminatorActive = $state(false);
+	let calculatorOpen = $state(false);
+
+	const calculatorType = $derived(getSubjectCalculator(selectedCourse));
+	const hasCalculator = $derived(calculatorType !== 'none');
 
 	const core = createQuestionCore({
 		getSelectedCourse: () => selectedCourse,
@@ -215,6 +222,10 @@
 		if (!mounted || version === 0 || version === lastLoadedRequestVersion) return;
 		lastLoadedRequestVersion = version;
 		void core.loadQuestion();
+	});
+
+	$effect(() => {
+		if (!hasCalculator) calculatorOpen = false;
 	});
 </script>
 
@@ -342,6 +353,30 @@
 								<div class="flex items-center gap-1">
 									{#if headerActions}
 										{@render headerActions()}
+									{/if}
+									{#if hasCalculator}
+										<Tooltip.Root>
+											<Tooltip.Trigger>
+												{#snippet child({ props })}
+													<Button
+														{...props}
+														variant="ghost"
+														size="icon"
+														class={cn(
+															'h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground',
+															calculatorOpen && 'bg-muted/60 text-foreground'
+														)}
+														aria-label="Open Calculator"
+														onclick={withTooltipTriggerClick(props, () => {
+															calculatorOpen = !calculatorOpen;
+														})}
+													>
+														<CalculatorIcon class="size-4" />
+													</Button>
+												{/snippet}
+											</Tooltip.Trigger>
+											<Tooltip.Content>Open Calculator</Tooltip.Content>
+										</Tooltip.Root>
 									{/if}
 									{#if canUseEliminator}
 										<Tooltip.Root>
@@ -620,6 +655,10 @@
 		{selectedCourse}
 		{selectedUnit}
 	/>
+
+	{#if calculatorOpen && calculatorType !== 'none'}
+		<DesmosCalculator type={calculatorType} onClose={() => (calculatorOpen = false)} />
+	{/if}
 
 	{#if !quizMode && core.currentQuestion?.explanation}
 		<Dialog.Root open={core.showExplanation} onOpenChange={(open) => core.setShowExplanation(open)}>
