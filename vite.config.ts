@@ -7,11 +7,14 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { vercelToolbar } from '@vercel/toolbar/plugins/vite';
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const isVitest = Boolean(process.env.VITEST);
+const devTunnelHost = loadEnv('development', rootDir, '').VITE_DEV_TUNNEL_HOST;
 
 export default defineConfig({
+	server: { allowedHosts: devTunnelHost ? [devTunnelHost] : [] },
 	plugins: [
 		...(isVitest
 			? []

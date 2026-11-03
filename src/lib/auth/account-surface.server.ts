@@ -32,6 +32,7 @@ export function isAgeGateExempt(pathname: string): boolean {
 	return (
 		pathname.startsWith('/api/auth/') ||
 		pathname === '/api/me/courses' ||
+		pathname === '/app/mobile-auth' ||
 		pathname === '/api/super/confirm-age' ||
 		matchesPath(pathname, '/app/onboarding') ||
 		matchesPath(pathname, '/app/confirm-age')

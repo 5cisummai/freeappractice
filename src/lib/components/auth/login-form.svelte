@@ -62,6 +62,10 @@
 				identifyPostHogUser(data.user.id);
 			}
 			captureUserLoggedIn('email');
+			if (redirectPath === '/app/mobile-auth') {
+				window.location.assign(resolve('app/mobile-auth'));
+				return;
+			}
 			// Dynamic /app/... return path from the invite (and other) login redirects.
 			// goto rejects paths that don't match a route, so fall back to the app home.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve -- redirectPath is a validated app path

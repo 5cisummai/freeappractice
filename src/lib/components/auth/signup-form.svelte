@@ -46,7 +46,7 @@
 		return url.toString();
 	});
 	const googleNewUserCallbackURL = $derived(
-		redirectPath.startsWith('/app/invite/')
+		redirectPath.startsWith('/app/invite/') || redirectPath === '/app/mobile-auth'
 			? `${getSiteUrl()}${redirectPath}${redirectPath.includes('?') ? '&' : '?'}signup=google`
 			: `${authCallbackUrl('app')}?signup=google`
 	);
