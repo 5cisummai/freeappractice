@@ -1,15 +1,10 @@
 export const TUTOR_MODEL = 'openai/gpt-6-luna';
-import { generateText, streamText } from 'ai';
+import { generateText } from 'ai';
 
 import { logger } from '#lib/server/logger.js';
 import type { FrqAttemptView, FrqQuestion } from '#lib/question-bank/frq/types.js';
 import { getQuestionById, type StoredQuestion } from '#lib/question-bank/mcq/repository.server.js';
 import { DEMO_TUTOR_QUESTION, isDemoTutorQuestionId } from '#lib/tutor/demo-question.js';
-
-export interface TutorMessage {
-	role: 'user' | 'assistant';
-	content: string;
-}
 
 /** Resolve a practice question for Tutor, including the landing-page demo row. */
 export async function resolveTutorQuestion(questionId: string): Promise<StoredQuestion | null> {
@@ -17,88 +12,20 @@ export async function resolveTutorQuestion(questionId: string): Promise<StoredQu
 	return getQuestionById(questionId).catch(() => null);
 }
 
-async function* streamTutorResponse(
-	operation: string,
-	opts: {
-		system: string;
-		conversationHistory: TutorMessage[];
-		userMessage: string;
-		signal?: AbortSignal;
-	},
-	logMeta?: Record<string, unknown>
-): AsyncGenerator<string> {
-	const { system, conversationHistory, userMessage, signal } = opts;
-	const doneAiCall = logger.aiCall(operation, TUTOR_MODEL, logMeta);
-	try {
-		const result = streamText({
-			model: TUTOR_MODEL,
-			instructions: system,
-			messages: [...conversationHistory, { role: 'user', content: userMessage }],
-			maxOutputTokens: 500,
-			abortSignal: signal
-		});
-
-		let chunks = 0;
-		for await (const chunk of result.textStream) {
-			chunks++;
-			yield chunk;
-		}
-		doneAiCall({ chunks });
-	} catch (err) {
-		const aborted = signal?.aborted || (err instanceof Error && err.name === 'AbortError');
-		if (!aborted) {
-			logger.error(`[ai] ${operation} failed`, { model: TUTOR_MODEL, error: err });
-		}
-		throw err;
-	}
-}
-
-export async function getGreeting(question: string): Promise<string> {
-	const doneAiCall = logger.aiCall('getGreeting', TUTOR_MODEL);
-	try {
-		const { text, usage } = await generateText({
-			model: TUTOR_MODEL,
-			instructions:
-				'Your name is Tutor. You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.',
-			messages: [{ role: 'user', content: `The current question is: ${question}` }],
-			maxOutputTokens: 150
-		});
-		doneAiCall({ completionTokens: usage.outputTokens });
-		return text || "Hi! I'm here to help you understand this question.";
-	} catch (err) {
-		logger.error('[ai] getGreeting failed', { model: TUTOR_MODEL, error: err });
-		throw err;
-	}
-}
-
-export async function* chat(opts: {
+export function buildMcqTutorSystem(opts: {
 	question: string;
 	correctAnswer: string;
 	explanation: string;
 	course: string;
 	unit: string;
 	answerChoices: { A: string; B: string; C: string; D: string } | null;
-	conversationHistory: TutorMessage[];
-	userMessage: string;
-	signal?: AbortSignal;
-}): AsyncGenerator<string> {
-	const {
-		question,
-		correctAnswer,
-		explanation,
-		course,
-		unit,
-		answerChoices,
-		conversationHistory,
-		userMessage,
-		signal
-	} = opts;
-
+}): string {
+	const { question, correctAnswer, explanation, course, unit, answerChoices } = opts;
 	const choicesText = answerChoices
 		? `\nAnswer Choices:\nA. ${answerChoices.A}\nB. ${answerChoices.B}\nC. ${answerChoices.C}\nD. ${answerChoices.D}`
 		: '';
 
-	const system = `Your name is Tutor. You are a helpful AP exam tutor. You're helping a student understand a specific practice question.
+	return `Your name is Tutor. You are a helpful AP exam tutor. You're helping a student understand a specific practice question.
 
 Course: ${course || 'AP Course'}
 Unit: ${unit || 'N/A'}
@@ -117,22 +44,13 @@ Your role:
 - Keep responses brief (2-3 sentences max) unless the student asks for more detail
 
 Important: do NOT at any point give the answer to the question. Instead, guide the student to think critically.`;
-
-	yield* streamTutorResponse(
-		'chat',
-		{ system, conversationHistory, userMessage, signal },
-		{ historyLength: conversationHistory.length }
-	);
 }
 
-export async function* chatFrq(opts: {
+export function buildFrqTutorSystem(opts: {
 	question: FrqQuestion;
 	attempt: FrqAttemptView | null;
-	conversationHistory: TutorMessage[];
-	userMessage: string;
-	signal?: AbortSignal;
-}): AsyncGenerator<string> {
-	const { question, attempt, conversationHistory, userMessage, signal } = opts;
+}): string {
+	const { question, attempt } = opts;
 	const materialsText = question.materials
 		.map((material) => (material.title ? material.title + ': ' : '') + material.content)
 		.join('\n');
@@ -152,7 +70,8 @@ export async function* chatFrq(opts: {
 				'Overall feedback: ' + attempt.grade.overallFeedback
 			].join('\n')
 		: 'The student has not submitted this response yet.';
-	const system = [
+
+	return [
 		'Your name is Tutor. You are a helpful AP written-response tutor.',
 		'',
 		'Course: ' + question.course,
@@ -166,10 +85,22 @@ export async function* chatFrq(opts: {
 	]
 		.filter(Boolean)
 		.join('\n');
+}
 
-	yield* streamTutorResponse(
-		'chatFrq',
-		{ system, conversationHistory, userMessage, signal },
-		{ historyLength: conversationHistory.length, course: question.course }
-	);
+export async function getGreeting(question: string): Promise<string> {
+	const doneAiCall = logger.aiCall('getGreeting', TUTOR_MODEL);
+	try {
+		const { text, usage } = await generateText({
+			model: TUTOR_MODEL,
+			instructions:
+				'Your name is Tutor. You are a friendly AP exam tutor. Greet the student and let them know you can help them understand the current question. Keep it very brief (1-2 sentences). NEVER give the answer to the question, but guide the student to think critically.',
+			messages: [{ role: 'user', content: `The current question is: ${question}` }],
+			maxOutputTokens: 150
+		});
+		doneAiCall({ completionTokens: usage.outputTokens });
+		return text || "Hi! I'm here to help you understand this question.";
+	} catch (err) {
+		logger.error('[ai] getGreeting failed', { model: TUTOR_MODEL, error: err });
+		throw err;
+	}
 }
