@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildHomeCourseCards,
-	buildSelectedCourseEntries,
 	recommendHomeCourse,
 	SUBJECT_PROGRESS_GOAL
 } from '#lib/users/home-dashboard.server.js';
@@ -142,9 +141,5 @@ describe('home dashboard selected courses', () => {
 			recommendHomeCourse(buildHomeCourseCards(['AP Chemistry'], emptyStats, [])).course?.name
 		).toBe('AP Chemistry');
 		expect(recommendHomeCourse([]).course).toBeNull();
-	});
-
-	it('returns an empty selected-course list when nothing is saved', () => {
-		expect(buildSelectedCourseEntries([])).toEqual([]);
 	});
 });

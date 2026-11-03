@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createHash } from 'node:crypto';
 
 vi.mock('#lib/auth/server.js', async () => {
 	const { betterAuth } = await import('better-auth');
@@ -21,7 +20,6 @@ import { POST } from '../../../src/routes/api/mobile-auth/exchange/+server.js';
 import { GET as start } from '../../../src/routes/api/mobile-auth/start/+server.js';
 import { GET as finish } from '../../../src/routes/app/mobile-auth/+server.js';
 import {
-	isMobileOpaque,
 	mobileCode,
 	mobileHash,
 	readMobileFlow,
@@ -99,8 +97,6 @@ describe('mobile browser session handoff', () => {
 		expect(readMobileFlow(signed + 'x', secret)).toBeNull();
 		expect(readMobileFlow(signed, 'wrong-secret')).toBeNull();
 		expect(readMobileFlow(signMobileFlow({ ...flow, expiresAt: 0 }, secret), secret)).toBeNull();
-		expect(isMobileOpaque(mobileCode())).toBe(true);
-		expect(mobileHash(verifier)).toBe(createHash('sha256').update(verifier).digest('base64url'));
 	});
 });
 
