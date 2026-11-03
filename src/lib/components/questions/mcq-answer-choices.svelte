@@ -4,6 +4,7 @@
 		QuestionOption,
 		TextAnnotation
 	} from '#lib/question-bank/mcq/types.js';
+	import RichText from '#lib/components/content/rich-text.svelte';
 	import AnnotatableRichText from '#lib/components/questions/annotatable-rich-text.svelte';
 	import { ANNOTATION_ID_ATTR } from '#lib/components/questions/text-annotation-dom.js';
 	import { cn } from '#lib/utils.js';
@@ -11,6 +12,7 @@
 
 	let {
 		options,
+		choiceExplanations = null,
 		selectedOption = null,
 		struckOptionIds,
 		hasCheckedAnswer = false,
@@ -28,6 +30,7 @@
 		eliminatorActive = false
 	}: {
 		options: QuestionOption[];
+		choiceExplanations?: Record<string, string> | null;
 		selectedOption?: string | null;
 		struckOptionIds?: ReadonlySet<string> | string[];
 		hasCheckedAnswer?: boolean;
@@ -233,5 +236,10 @@
 				</button>
 			{/if}
 		</div>
+		{#if showFeedback && hasCheckedAnswer && choiceExplanations?.[option.id]}
+			<div class="px-3 pb-3 text-sm leading-6 text-foreground/90">
+				<RichText text={choiceExplanations[option.id]} blocks />
+			</div>
+		{/if}
 	{/each}
 </div>

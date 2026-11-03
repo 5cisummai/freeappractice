@@ -1,3 +1,4 @@
+import { normalizeMcqEnrichment, type McqEnrichment } from '#lib/question-bank/mcq/enrichment.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
@@ -65,16 +66,18 @@ export type CoachQuizAttempt = {
 	correctCount: number;
 	incorrectCount: number;
 	scorePercent: number;
-	questions: Array<{
-		position: number;
-		questionId: string;
-		prompt: string | null;
-		options: Record<string, string> | null;
-		selectedAnswer: string | null;
-		correctAnswer: string | null;
-		wasCorrect: boolean | null;
-		explanation: string | null;
-	}>;
+	questions: Array<
+		McqEnrichment & {
+			position: number;
+			questionId: string;
+			prompt: string | null;
+			options: Record<string, string> | null;
+			selectedAnswer: string | null;
+			correctAnswer: string | null;
+			wasCorrect: boolean | null;
+			explanation: string | null;
+		}
+	>;
 };
 
 function asTrimmedString(value: unknown): string {
@@ -446,7 +449,8 @@ export async function getQuizAttemptForCoach(
 				selectedAnswer: item.selectedAnswer,
 				correctAnswer: question?.correctAnswer ?? null,
 				wasCorrect: item.wasCorrect,
-				explanation: question?.explanation.slice(0, 1800) ?? null
+				explanation: question?.explanation.slice(0, 1800) ?? null,
+				...normalizeMcqEnrichment(question ?? {})
 			};
 		})
 	};

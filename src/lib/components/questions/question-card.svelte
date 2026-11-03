@@ -19,7 +19,10 @@
 	import * as Resizable from '#lib/components/ui/resizable/index.js';
 	import { cn } from '#lib/utils.js';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
-	import { measureLongQuestion, withTooltipTriggerClick } from '#lib/components/questions/question-card-dom.js';
+	import {
+		measureLongQuestion,
+		withTooltipTriggerClick
+	} from '#lib/components/questions/question-card-dom.js';
 	import { portalToBody } from '#lib/components/questions/portal-to-body.svelte.js';
 	import { createQuestionCore } from '#lib/components/questions/question-core.svelte.js';
 	import QuestionTutor from '#lib/components/questions/question-tutor.svelte';
@@ -180,6 +183,7 @@
 	}
 
 	function openExplanation(): void {
+		if (core.currentQuestion?.choiceExplanations) return;
 		core.setShowExplanation(true);
 		capturePostHogEvent('explanation_viewed', {
 			question_id: core.currentQuestion?.questionId,
@@ -190,6 +194,27 @@
 			is_correct: core.answerResult?.isCorrect
 		});
 	}
+
+	const trackedInlineQuestions = new WeakSet<object>();
+	$effect(() => {
+		const question = core.currentQuestion;
+		if (
+			!quizMode &&
+			core.hasCheckedAnswer &&
+			question?.choiceExplanations &&
+			!trackedInlineQuestions.has(question)
+		) {
+			trackedInlineQuestions.add(question);
+			capturePostHogEvent('explanation_viewed', {
+				question_id: question.questionId,
+				course: selectedCourse,
+				unit: selectedUnit,
+				topic: question.topic,
+				source: question.source,
+				is_correct: core.answerResult?.isCorrect
+			});
+		}
+	});
 
 	const showQuestionSkeleton = $derived(
 		!core.currentQuestion &&
@@ -273,6 +298,7 @@
 	{#snippet mcqChoices(compact = false)}
 		<McqAnswerChoices
 			options={core.currentQuestion?.options ?? []}
+			choiceExplanations={core.currentQuestion?.choiceExplanations}
 			{selectedOption}
 			struckOptionIds={core.optionMarks.struckOptionIds}
 			hasCheckedAnswer={core.hasCheckedAnswer}
@@ -588,7 +614,7 @@
 								</div>
 							{/if}
 							<div class="flex gap-2">
-								{#if !quizMode && core.hasCheckedAnswer && core.currentQuestion?.explanation}
+								{#if !quizMode && core.hasCheckedAnswer && (core.currentQuestion?.explanation || core.currentQuestion?.choiceExplanations)}
 									<Button variant="outline" onclick={openExplanation}>
 										{showExplanationLabel}
 									</Button>
@@ -660,7 +686,33 @@
 		<DesmosCalculator type={calculatorType} onClose={() => (calculatorOpen = false)} />
 	{/if}
 
-	{#if !quizMode && core.currentQuestion?.explanation}
+	{#if !quizMode && core.hasCheckedAnswer && core.currentQuestion?.choiceExplanations}
+		<div class="mt-3 flex flex-wrap gap-1">
+			{#if core.questionFeedbackReason}
+				<p class="text-xs text-muted-foreground">Thanks, this helps improve future questions.</p>
+			{:else}
+				<Button
+					variant="ghost"
+					size="xs"
+					onclick={() => core.submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
+				>
+				<Button
+					variant="ghost"
+					size="xs"
+					onclick={() => core.submitQuestionFeedback('question_unclear')}
+					>Question is unclear</Button
+				>
+				<Button
+					variant="ghost"
+					size="xs"
+					onclick={() => core.submitQuestionFeedback('explanation_unclear')}
+					>Explanation is unclear</Button
+				>
+			{/if}
+		</div>
+	{/if}
+
+	{#if !quizMode && core.currentQuestion?.explanation && !core.currentQuestion?.choiceExplanations}
 		<Dialog.Root open={core.showExplanation} onOpenChange={(open) => core.setShowExplanation(open)}>
 			<Dialog.Content
 				class="max-h-[min(85vh,40rem)] w-full max-w-2xl gap-0 overflow-y-auto sm:max-w-2xl"

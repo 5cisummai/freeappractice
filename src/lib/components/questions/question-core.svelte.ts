@@ -320,7 +320,11 @@ export function createQuestionCore(opts: QuestionCoreOpts) {
 			completeResult.isCorrect ? 'correct' : 'incorrect'
 		);
 
-		if (opts.getAutoShowExplanation() && currentQuestion?.explanation) {
+		if (
+			opts.getAutoShowExplanation() &&
+			currentQuestion?.explanation &&
+			!currentQuestion.choiceExplanations
+		) {
 			showExplanation = true;
 		}
 	}

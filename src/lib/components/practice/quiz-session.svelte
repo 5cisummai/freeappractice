@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import EmptyState from '#lib/components/app/empty-state.svelte';
+	import McqAnswerChoices from '#lib/components/questions/mcq-answer-choices.svelte';
 	import FullQuestion from '#lib/components/questions/full-question.svelte';
 	import { presentedStemFromMcq } from '#lib/components/questions/presented-question.js';
 	import { createExamCore } from '#lib/components/questions/exam-core.svelte.js';
@@ -54,6 +55,8 @@
 			onComplete: () => void;
 		};
 	};
+
+	const trackedExplanationQuestions = new WeakSet<object>();
 
 	let {
 		selectedCourse,
@@ -791,6 +794,19 @@
 										open={recapOpenByIndex[index] ?? false}
 										onOpenChange={(open) => {
 											recapOpenByIndex = { ...recapOpenByIndex, [index]: open };
+											if (
+												open &&
+												question.choiceExplanations &&
+												!trackedExplanationQuestions.has(question)
+											) {
+												trackedExplanationQuestions.add(question);
+												capturePostHogEvent('explanation_viewed', {
+													question_id: question.questionId,
+													topic: question.topic,
+													source: question.source,
+													is_correct: answer?.isCorrect
+												});
+											}
 										}}
 									>
 										<Collapsible.Trigger
@@ -817,7 +833,17 @@
 												· Correct:
 												<span class="font-medium text-foreground">{question.correctAnswer}</span>
 											</p>
-											{#if question.explanation}
+											{#if question.choiceExplanations}
+												<McqAnswerChoices
+													options={question.options}
+													choiceExplanations={question.choiceExplanations}
+													hasCheckedAnswer
+													showFeedback
+													correctAnswer={question.correctAnswer}
+													selectedOption={answer?.selectedAnswer}
+													onSelect={() => {}}
+												/>
+											{:else if question.explanation}
 												<RichText
 													text={question.explanation}
 													blocks

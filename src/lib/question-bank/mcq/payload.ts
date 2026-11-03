@@ -1,3 +1,4 @@
+import { normalizeMcqEnrichment } from './enrichment.js';
 import type {
 	GeneratedQuestion,
 	QuestionOption,
@@ -177,6 +178,7 @@ function normalizeQuestionPayload(
 		options,
 		correctAnswer: extractCorrectLetter(obj.correctAnswer ?? obj.answer),
 		explanation: String(obj.explanation ?? obj.rationale ?? '').trim() || undefined,
+		...normalizeMcqEnrichment(obj),
 		diagramSpec,
 		hasDiagram: Boolean(diagramSpec) || obj.hasDiagram === true,
 		stimulus: parsedStimulus,
