@@ -34,8 +34,8 @@ const studyTaskSchema = z
 			.describe('Time allotted for this task, in whole minutes from 5 to 30.'),
 		practiceHref: z
 			.string()
-			.startsWith('/app/practice')
 			.max(500)
+			.regex(/^\/app\/practice/, 'Must begin with /app/practice')
 			.nullable()
 			.describe('In-app practice URL beginning with /app/practice, or null when unavailable.')
 	})
