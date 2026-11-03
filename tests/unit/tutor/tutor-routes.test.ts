@@ -53,9 +53,7 @@ import { POST as tutorFrqPost } from '../../../src/routes/api/tutor/frq/+server'
 const sessionId = 'c8f3048f-1681-47f2-b1db-e912655275d0';
 const questionId = 'd8f3048f-1681-47f2-b1db-e912655275d1';
 
-const tutorMessages = [
-	{ id: '1', role: 'user', parts: [{ type: 'text', text: 'Help' }] }
-];
+const tutorMessages = [{ id: '1', role: 'user', parts: [{ type: 'text', text: 'Help' }] }];
 
 const superBody = {
 	sessionId,

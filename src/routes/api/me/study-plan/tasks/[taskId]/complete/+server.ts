@@ -40,7 +40,7 @@ export const POST = withAuthedHandler(
 			);
 		}
 
-		let body: unknown = {};
+		let body: unknown;
 		try {
 			const raw = await readJsonBody(event.request, 1024);
 			body = raw ?? {};

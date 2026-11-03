@@ -144,7 +144,9 @@ function parseProductCtaHref(value: string | undefined): BlogProductCta['href'] 
 	return undefined;
 }
 
-function resolveProductCta(parsed: Pick<ParsedMarkdownPost, 'ctaHref' | 'ctaLabel' | 'ctaDescription'>): BlogProductCta {
+function resolveProductCta(
+	parsed: Pick<ParsedMarkdownPost, 'ctaHref' | 'ctaLabel' | 'ctaDescription'>
+): BlogProductCta {
 	const href = parseProductCtaHref(parsed.ctaHref);
 	const label = parsed.ctaLabel?.trim();
 	const description = parsed.ctaDescription?.trim();
@@ -190,8 +192,7 @@ function listMarkdownPosts(): BlogEntry[] {
 		const publishedAt = parsed.publishedAt ?? new Date();
 
 		const tags = parsed.tags ?? [];
-		const category =
-			parsed.category?.trim() || tags[0]?.trim() || DEFAULT_BLOG_CATEGORY;
+		const category = parsed.category?.trim() || tags[0]?.trim() || DEFAULT_BLOG_CATEGORY;
 		const author = parsed.author?.trim() || DEFAULT_BLOG_AUTHOR;
 
 		drafts.push({

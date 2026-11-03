@@ -44,10 +44,7 @@
 				height: Math.max(MIN_PANEL_HEIGHT, height)
 			};
 		}
-		const maxW = Math.min(
-			viewportWidth - 2 * VIEWPORT_MARGIN,
-			viewportWidth - x - VIEWPORT_MARGIN
-		);
+		const maxW = Math.min(viewportWidth - 2 * VIEWPORT_MARGIN, viewportWidth - x - VIEWPORT_MARGIN);
 		const maxH = Math.min(
 			viewportHeight - 2 * VIEWPORT_MARGIN,
 			viewportHeight - y - VIEWPORT_MARGIN
@@ -215,7 +212,7 @@
 
 	<button
 		type="button"
-		class="absolute right-0 bottom-0 z-20 flex h-5 w-5 cursor-se-resize items-end justify-end p-0.5 touch-none"
+		class="absolute right-0 bottom-0 z-20 flex h-5 w-5 cursor-se-resize touch-none items-end justify-end p-0.5"
 		aria-label="Resize calculator"
 		onpointerdown={onResizePointerDown}
 		onpointermove={onResizePointerMove}

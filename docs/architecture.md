@@ -21,18 +21,18 @@ flowchart TD
     Domains --> Billing[Stripe]
 ```
 
-| Location | Responsibility |
-| --- | --- |
-| `src/routes` | Marketing pages, authenticated product pages, loaders, actions, APIs, and cron/webhook entry points |
-| `src/lib/auth` | Better Auth, session helpers, organization membership, classroom eligibility, and mobile sign-in handoff |
-| `src/lib/catalog` | Course data, source provenance, practice pages, and mobile catalog views |
-| `src/lib/question-bank` | MCQ/FRQ inventory, serving, generation, refill, and quality review |
-| `src/lib/grading/frq` | FRQ submissions and grading |
-| `src/lib/users` | Profiles, attempts, practice sessions, progress, history, and practice context |
-| `src/lib/agent` | Coach, conversations, attachments, tools, study plans, memory, and usage controls |
-| `src/lib/tutor` | Question-specific tutoring |
-| `src/lib/billing` | Super access, subscriptions, grants, and billing maintenance |
-| `src/lib/server/neon` | Database adapter and Drizzle schemas |
+| Location                | Responsibility                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/routes`            | Marketing pages, authenticated product pages, loaders, actions, APIs, and cron/webhook entry points      |
+| `src/lib/auth`          | Better Auth, session helpers, organization membership, classroom eligibility, and mobile sign-in handoff |
+| `src/lib/catalog`       | Course data, source provenance, practice pages, and mobile catalog views                                 |
+| `src/lib/question-bank` | MCQ/FRQ inventory, serving, generation, refill, and quality review                                       |
+| `src/lib/grading/frq`   | FRQ submissions and grading                                                                              |
+| `src/lib/users`         | Profiles, attempts, practice sessions, progress, history, and practice context                           |
+| `src/lib/agent`         | Coach, conversations, attachments, tools, study plans, memory, and usage controls                        |
+| `src/lib/tutor`         | Question-specific tutoring                                                                               |
+| `src/lib/billing`       | Super access, subscriptions, grants, and billing maintenance                                             |
+| `src/lib/server/neon`   | Database adapter and Drizzle schemas                                                                     |
 
 Domain functions enforce business rules and resource permissions and access Drizzle directly. Route wrappers resolve identity, parse inputs, map outcomes to HTTP/form responses, and handle cookies, streaming, and request analytics. Keep ordinary domain functions independent of a SvelteKit request event where practical. See the [web/mobile business logic map](mobile-business-logic-map.md) for the detailed endpoint inventory.
 
@@ -81,19 +81,19 @@ Coach image bytes use private Vercel Blob storage in production. Local developme
 
 ## Persistence and integrations
 
-| Store or service | Role |
-| --- | --- |
-| Neon `auth` | Accounts, sessions, organizations, memberships, invitations, and subscription records |
-| Neon `app` | User activity, profiles, conversations, plans, billing access, attachment metadata, and feedback |
-| Neon `content` | Question library, quality workflows, and generation statistics |
-| Neon `ops` | Durable refill coordination, generation budgets, and cleanup jobs |
-| Neon public memory tables | Environment-scoped Mem0 vectors, payloads, and entities |
-| Neon `feedback_analytics` | Restricted views exported for feedback reporting |
-| Vercel Blob | Private Coach images; public AP Art History reference images use a separate store |
-| Upstash Redis | Short-lived API, tutor, and agent controls |
-| AI Gateway | Question generation, grading, Tutor/Coach responses, and memory model calls |
-| Stripe / Resend | Billing and transactional email |
-| PostHog / Sentry | Product analytics, operational metrics, and error monitoring |
+| Store or service          | Role                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| Neon `auth`               | Accounts, sessions, organizations, memberships, invitations, and subscription records            |
+| Neon `app`                | User activity, profiles, conversations, plans, billing access, attachment metadata, and feedback |
+| Neon `content`            | Question library, quality workflows, and generation statistics                                   |
+| Neon `ops`                | Durable refill coordination, generation budgets, and cleanup jobs                                |
+| Neon public memory tables | Environment-scoped Mem0 vectors, payloads, and entities                                          |
+| Neon `feedback_analytics` | Restricted views exported for feedback reporting                                                 |
+| Vercel Blob               | Private Coach images; public AP Art History reference images use a separate store                |
+| Upstash Redis             | Short-lived API, tutor, and agent controls                                                       |
+| AI Gateway                | Question generation, grading, Tutor/Coach responses, and memory model calls                      |
+| Stripe / Resend           | Billing and transactional email                                                                  |
+| PostHog / Sentry          | Product analytics, operational metrics, and error monitoring                                     |
 
 Schema definitions are under `src/lib/server/neon/schema/`. Do not assume a database schema name from a feature name; use the exported table definition.
 

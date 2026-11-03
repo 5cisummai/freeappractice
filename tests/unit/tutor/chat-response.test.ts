@@ -23,7 +23,9 @@ describe('createTutorStreamResponse', () => {
 		convertToModelMessagesMock.mockResolvedValue([{ role: 'user', content: 'Help' }]);
 		toUIMessageStreamMock.mockReturnValue(uiStream);
 
-		const messages = [{ id: '1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Help' }] }];
+		const messages = [
+			{ id: '1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Help' }] }
+		];
 		await createTutorStreamResponse({
 			operation: 'chat',
 			system: 'system prompt',

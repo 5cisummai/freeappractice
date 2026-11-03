@@ -45,7 +45,9 @@ export const tutorChatRequestSchema = z
 	})
 	.strict()
 	.superRefine((value, context) => {
-		if (tutorPromptCharacters(value.messages, value.questionId) > MAX_TUTOR_CHAT_PROMPT_CHARACTERS) {
+		if (
+			tutorPromptCharacters(value.messages, value.questionId) > MAX_TUTOR_CHAT_PROMPT_CHARACTERS
+		) {
 			context.addIssue({
 				code: 'custom',
 				message: 'Tutor chat context is too large'
