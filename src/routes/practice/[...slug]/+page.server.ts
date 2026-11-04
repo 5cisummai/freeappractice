@@ -5,6 +5,7 @@ import {
 	getTopicPracticeRedirect,
 	getTopicRedirectSlugs
 } from '#lib/catalog/practice-pages.js';
+import { getSeoSampleQuestionsForPage } from '#lib/seo/sample-questions.server.js';
 import type { PageServerLoad } from './$types';
 
 export function entries() {
@@ -21,5 +22,5 @@ export const load: PageServerLoad = ({ params }) => {
 	if (!page) {
 		error(404, 'Practice page not found');
 	}
-	return { page };
+	return { page, sampleQuestions: getSeoSampleQuestionsForPage(page) };
 };

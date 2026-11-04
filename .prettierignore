@@ -7,3 +7,4 @@ bun.lockb
 # Miscellaneous
 /static/
 /drizzle/meta/
+/src/lib/seo/data/unit-sample-questions.json

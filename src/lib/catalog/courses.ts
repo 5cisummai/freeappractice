@@ -1,4 +1,4 @@
-import { AP_DATA, type UnifiedCourse } from '#lib/catalog/dataset.js';
+import { AP_DATA, type UnifiedCourse } from './dataset.js';
 
 const courseByName = new Map(AP_DATA.courses.map((course) => [course.name, course] as const));
 
