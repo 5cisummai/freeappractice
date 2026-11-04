@@ -13,7 +13,15 @@ export const sentryIgnoreErrors: Array<string | RegExp> = [
 	// Firefox for iOS reader-mode script evaluates window.__firefox__.reader
 	// before the injected private global exists (Mozilla bug 1394296).
 	// Truncated before the closing quote so `.reader` and `.reader.checkReadability` both match.
-	"undefined is not an object (evaluating 'window.__firefox__.reader"
+	"undefined is not an object (evaluating 'window.__firefox__.reader",
+	// Browser ResizeObserver "loop" notification. Engines fire this as
+	// window.onerror when a callback mutates layout in the same frame and
+	// remaining observations are deferred. Not an application crash.
+	// https://crbug.com/809574
+	'ResizeObserver loop limit exceeded',
+	// Chromium 84+ / Safari wording. Truncated before the trailing period
+	// so both punctuated and unpunctuated titles match.
+	'ResizeObserver loop completed with undelivered notifications'
 ];
 
 export function sentryErrorMessage(error: unknown): string {
