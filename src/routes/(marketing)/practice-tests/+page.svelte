@@ -33,9 +33,9 @@
 	const jsonLd = JSON.stringify({
 		'@context': 'https://schema.org',
 		'@type': 'CollectionPage',
-		name: 'Free AP Practice Tests & Questions',
+		name: 'AP Practice Tests by Course and Unit',
 		description:
-			'Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required.',
+			'Free AP practice tests for every unit of Bio, Calc AB/BC, APUSH, Chem, Lang, Psych and 20 more. Unlimited AP-style questions with explanations.',
 		url: 'https://freeappractice.org/practice-tests',
 		isAccessibleForFree: true,
 		mainEntity: {
@@ -53,10 +53,10 @@
 </script>
 
 <svelte:head>
-	<title>Free AP Practice Tests & Questions</title>
+	<title>AP Practice Tests by Unit: Free MCQs for 26 Courses</title>
 	<meta
 		name="description"
-		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
+		content="Free AP practice tests for every unit of Bio, Calc AB/BC, APUSH, Chem, Lang, Psych and 20 more. Unlimited AP-style questions with explanations."
 	/>
 	<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
 	<link rel="canonical" href="https://freeappractice.org/practice-tests" />
@@ -64,21 +64,21 @@
 
 	<meta property="og:url" content="https://freeappractice.org/practice-tests" />
 
-	<meta property="og:title" content="Free AP Practice Tests & Questions" />
+	<meta property="og:title" content="AP Practice Tests by Unit: Free MCQs for 26 Courses" />
 
 	<meta
 		property="og:description"
-		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
+		content="Free AP practice tests for every unit of Bio, Calc AB/BC, APUSH, Chem, Lang, Psych and 20 more. Unlimited AP-style questions with explanations."
 	/>
 	<meta property="og:image" content="https://freeappractice.org/logo.png" />
 	<meta property="og:site_name" content="FreeAPPractice.org" />
 	<meta name="twitter:card" content="summary_large_image" />
 
-	<meta name="twitter:title" content="Free AP Practice Tests & Questions" />
+	<meta name="twitter:title" content="AP Practice Tests by Unit: Free MCQs for 26 Courses" />
 
 	<meta
 		name="twitter:description"
-		content="Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no signup required."
+		content="Free AP practice tests for every unit of Bio, Calc AB/BC, APUSH, Chem, Lang, Psych and 20 more. Unlimited AP-style questions with explanations."
 	/>
 	<meta name="twitter:image" content="https://freeappractice.org/logo.png" />
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -92,12 +92,12 @@
 			<h1
 				class="font-display text-4xl leading-[1.1] font-medium tracking-tight text-balance sm:text-5xl lg:text-6xl"
 			>
-				Free AP Practice Tests & Questions
+				AP Practice Tests by Course and Unit
 			</h1>
 
 			<p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-				Practice AP-style multiple-choice questions by course and unit. Free, unlimited, and no
-				signup required.
+				Free AP practice tests for every unit of Bio, Calc AB/BC, APUSH, Chem, Lang, Psych and 20
+				more. Unlimited AP-style questions with explanations.
 			</p>
 			<div class="mt-8 flex flex-wrap justify-center gap-3">
 				<a

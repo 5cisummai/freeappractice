@@ -6,7 +6,7 @@
 	import * as Accordion from '#lib/components/ui/accordion/index.js';
 	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.js';
 	import type { PracticePage } from '#lib/catalog/practice-pages.js';
-	import { buildPracticeBreadcrumbs } from '#lib/seo/practice-page-meta.js';
+	import { buildPracticeBreadcrumbs, buildPracticePageMeta } from '#lib/seo/practice-page-meta.js';
 
 	function getInitialSelection(practicePage: PracticePage) {
 		return {
@@ -22,6 +22,7 @@
 	}: { page: PracticePage; showPricing?: boolean; assistantFeaturesEnabled?: boolean } = $props();
 
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
+	const heading = $derived(buildPracticePageMeta(practicePage).h1);
 	const initial = $derived(getInitialSelection(practicePage));
 
 	function linkRel(kind: (typeof practicePage.links)[number]['kind']): string | undefined {
@@ -68,7 +69,7 @@
 					<h1
 						class="font-display text-3xl leading-[1.15] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl"
 					>
-						{practicePage.seo.h1}
+						{heading}
 					</h1>
 				</div>
 			</section>

@@ -9,5 +9,12 @@
 			"path": "/api/cron/super-maintenance",
 			"schedule": "30 3 * * *"
 		}
+	],
+	"redirects": [
+		{
+			"source": "/practice",
+			"destination": "/practice-tests",
+			"statusCode": 301
+		}
 	]
 }
