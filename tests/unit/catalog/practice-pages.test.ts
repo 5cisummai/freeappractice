@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+	formatUnitShortLabel,
+	getAllPageSlugs,
+	getBrowseCoursesWithUnits,
 	getCoursePracticePages,
 	getFocusedPracticeHref,
+	getPageBySlug,
 	getSubjectsBrowsePracticePages
 } from '#lib/catalog/practice-pages.js';
 
@@ -19,6 +23,28 @@ describe('getSubjectsBrowsePracticePages', () => {
 			'ap-world-history',
 			'ap-chemistry'
 		]);
+	});
+});
+
+describe('getBrowseCoursesWithUnits', () => {
+	it('links every course hub and unit practice page', () => {
+		const browse = getBrowseCoursesWithUnits();
+		const hrefs = new Set(
+			browse.flatMap((course) => [course.href, ...course.units.map((unit) => unit.href)])
+		);
+		const expected = new Set(getAllPageSlugs().map((slug) => `/practice/${slug}`));
+		expect(hrefs).toEqual(expected);
+		expect(browse.map((course) => course.slug)).toEqual(
+			getSubjectsBrowsePracticePages().map((page) => page.slug)
+		);
+	});
+});
+
+describe('formatUnitShortLabel', () => {
+	it('uses the unit number from the slug', () => {
+		const page = getPageBySlug('ap-biology/unit-1');
+		expect(page).not.toBeNull();
+		expect(formatUnitShortLabel(page!)).toBe('Unit 1');
 	});
 });
 

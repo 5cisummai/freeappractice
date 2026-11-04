@@ -222,6 +222,41 @@ export function formatUnitLabel(page: PracticePage): string {
 	return page.seo.h1;
 }
 
+export function formatUnitShortLabel(page: PracticePage): string {
+	const slugMatch = page.slug.match(/\/unit-(\d+)$/);
+	if (slugMatch) return `Unit ${slugMatch[1]}`;
+	const labelMatch = page.unit?.match(/^(Unit|Big Idea)\s+\d+/i);
+	if (labelMatch) return labelMatch[0];
+	return formatUnitLabel(page);
+}
+
+export type BrowsePracticeCourse = {
+	course: string;
+	slug: string;
+	href: string;
+	units: Array<{
+		slug: string;
+		href: string;
+		shortLabel: string;
+		label: string;
+	}>;
+};
+
+/** Course hubs with every unit page, ordered for public browse/SEO link lists. */
+export function getBrowseCoursesWithUnits(): BrowsePracticeCourse[] {
+	return getSubjectsBrowsePracticePages().map((page) => ({
+		course: page.course,
+		slug: page.slug,
+		href: getPracticePageHref(page),
+		units: getUnitPagesForCourse(page.course).map((unitPage) => ({
+			slug: unitPage.slug,
+			href: getPracticePageHref(unitPage),
+			shortLabel: formatUnitShortLabel(unitPage),
+			label: formatUnitLabel(unitPage)
+		}))
+	}));
+}
+
 export function getCoursePracticePageByCourse(course: string): PracticePage | null {
 	return pages.find((page) => page.type === 'course' && page.course === course) ?? null;
 }
