@@ -1,3 +1,4 @@
+import { assertMcqSubtopic, normalizeMcqEnrichment } from './enrichment.js';
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import {
@@ -90,6 +91,9 @@ function buildHotPoolDoc(opts: {
 	| 'optionD'
 	| 'correctAnswer'
 	| 'explanation'
+	| 'difficulty'
+	| 'subtopicId'
+	| 'choiceExplanations'
 	| 'randomKey'
 	| 'active'
 > {
@@ -110,6 +114,7 @@ function buildHotPoolDoc(opts: {
 		optionD: answer.optionD,
 		correctAnswer: answer.correctAnswer,
 		explanation: answer.explanation,
+		...normalizeMcqEnrichment(answer),
 		randomKey: opts.randomKey ?? newPoolRandomKey(),
 		active: opts.active ?? true
 	};
@@ -291,6 +296,7 @@ export async function persistStimulusSetToPool(
 	};
 	const count = parsed.questions.length;
 	const rows = parsed.questions.map((child, index) => {
+		assertMcqSubtopic(course, unit, child.subtopicId);
 		const questionId = randomUUID();
 		const topicsCovered = child.topicsCovered.trim();
 		const mainTopic = resolveQuestionMainTopic(child.mainTopic, topicsCovered) || 'Generated topic';
@@ -316,6 +322,7 @@ export async function persistStimulusSetToPool(
 				optionD: child.optionD,
 				correctAnswer: child.correctAnswer,
 				explanation: child.explanation,
+				...normalizeMcqEnrichment(child),
 				stimulus,
 				stimulusId,
 				stimulusPosition: index,

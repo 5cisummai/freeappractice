@@ -1,15 +1,15 @@
 import type { RequestHandler } from './$types';
 import { getOptionalUserId } from '#lib/auth/route-helpers.server.js';
-import { resolveTutorQuestion } from '#lib/tutor/service.server.js';
+import { buildMcqTutorSystem, resolveTutorQuestion } from '#lib/tutor/service.server.js';
 import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 import { logger } from '#lib/server/logger.js';
 import { limitGenericTutor } from '#lib/tutor/rate-limit.server.js';
 import { readJsonBody, RequestBodyTooLargeError } from '#lib/server/request-body.server.js';
-import { createTutorChatStream } from '#lib/tutor/chat-stream.server.js';
+import { createTutorStreamResponse } from '#lib/tutor/chat-response.server.js';
 import { MAX_TUTOR_CHAT_REQUEST_BYTES, tutorChatRequestSchema } from '#lib/tutor/chat-request.js';
 import { tutorRateLimitedResponse } from '#lib/tutor/response-utils.server.js';
-import { chat } from '#lib/tutor/service.server.js';
 import { getAssistantFeaturesEnabledForRequest } from '#lib/users/assistant-preferences.server.js';
+import type { UIMessage } from 'ai';
 
 export const POST: RequestHandler = async (event) => {
 	const { request } = event;
@@ -48,19 +48,21 @@ export const POST: RequestHandler = async (event) => {
 		const rate = await limitGenericTutor(request, userId);
 		if (!rate.allowed) return tutorRateLimitedResponse(rate.retryAt);
 
+		const userTurns = result.data.messages.filter((message) => message.role === 'user').length;
 		capturePostHogServerEvent(request, {
 			distinctId: userId ?? 'anonymous',
 			event: 'tutor_chat_started',
 			properties: {
 				course: question.course,
 				unit: question.unit,
-				has_prior_conversation: result.data.conversationHistory.length > 0,
+				has_prior_conversation: userTurns > 1,
 				personalized: false
 			}
 		});
 
-		const stream = createTutorChatStream(
-			{
+		return createTutorStreamResponse({
+			operation: 'chat',
+			system: buildMcqTutorSystem({
 				question: question.question,
 				correctAnswer: question.correctAnswer,
 				explanation: question.explanation,
@@ -72,15 +74,11 @@ export const POST: RequestHandler = async (event) => {
 					C: question.optionC,
 					D: question.optionD
 				}
-			},
-			result.data,
-			request.signal,
-			{ chatImpl: chat }
-		);
-
-		return new Response(stream, {
+			}),
+			messages: result.data.messages as UIMessage[],
+			signal: request.signal,
+			logMeta: { historyLength: result.data.messages.length },
 			headers: {
-				'Content-Type': 'text/event-stream',
 				'Cache-Control': 'no-cache',
 				Connection: 'keep-alive'
 			}

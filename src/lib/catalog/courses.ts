@@ -1,4 +1,9 @@
-import { AP_DATA, type UnifiedCourse } from '#lib/catalog/dataset.js';
+import dataset from './data/courses.json';
+
+export const AP_DATA = dataset;
+export type ApData = typeof AP_DATA;
+export type UnifiedCourse = ApData['courses'][number];
+export type UnifiedUnit = UnifiedCourse['units'][number];
 
 const courseByName = new Map(AP_DATA.courses.map((course) => [course.name, course] as const));
 

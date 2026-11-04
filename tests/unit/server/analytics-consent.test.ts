@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANALYTICS_CONSENT_KEY } from '#lib/analytics-consent.js';
+import { ANALYTICS_CONSENT_KEY } from '#lib/client/analytics-consent.js';
 import { hasAnalyticsConsent } from '#lib/server/analytics-consent.js';
 
 describe('hasAnalyticsConsent', () => {

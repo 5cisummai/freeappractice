@@ -1,4 +1,5 @@
 import { getUnitsForCourse } from '#lib/catalog/courses.js';
+import { requestPoolRefill } from '#lib/question-bank/pool-refill-queue.server.js';
 import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 import {
 	findActiveQuestionsForQuiz,
@@ -84,6 +85,21 @@ export function resolveQuizUnits(
 	const start = Math.min(Math.max(Math.trunc(unitRange?.[0] ?? 0), 0), maxIndex);
 	const end = Math.min(Math.max(Math.trunc(unitRange?.[1] ?? maxIndex), 0), maxIndex);
 	return units.slice(Math.min(start, end), Math.max(start, end) + 1);
+}
+
+export async function requestQuizRefill(
+	course: string,
+	unit: string,
+	unitRange?: readonly number[]
+): Promise<boolean> {
+	const units = resolveQuizUnits(course, unit, unitRange);
+	if (!units.length) return false;
+	const results = await Promise.allSettled(
+		units.map((refillUnit) =>
+			requestPoolRefill({ questionType: 'mcq', course: course, unit: refillUnit })
+		)
+	);
+	return results.some((result) => result.status === 'fulfilled');
 }
 
 function toGenerated(question: IQuestion): GeneratedQuestion {

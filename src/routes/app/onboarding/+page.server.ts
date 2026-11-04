@@ -2,26 +2,21 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	ONBOARDING_COOKIE_NAME,
-	ONBOARDING_GOALS,
 	ONBOARDING_INTENT_COOKIE_MAX_AGE,
 	ONBOARDING_INTENT_COOKIE_NAME,
 	ONBOARDING_PENDING_COOKIE_OPTIONS,
-	type OnboardingGoal,
 	readOnboardingState,
 	readOnboardingIntent,
 	serializeCompletedOnboarding
 } from '#lib/onboarding.js';
-import { getCourses } from '#lib/catalog/courses.js';
-import { getUserCourses, updateUserCourses } from '#lib/users/model.server.js';
+import { completeOnboarding } from '#lib/users/onboarding.server.js';
+import { getUserCourses } from '#lib/users/model.server.js';
 import { getSuperBillingView, isSuperStripeConfigured } from '#lib/billing/subscriptions.server.js';
 import {
 	getPlanAccessForRequest,
 	getTutorProfileViewForRequest
 } from '#lib/agent/access.server.js';
 import { isSuperCheckoutEnabled, isSuperFreeBetaEnabled } from '#lib/flags.js';
-
-const validCourses = new Set(getCourses().map((course) => course.name));
-const validGoals = new Set<string>(ONBOARDING_GOALS);
 
 export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 	const currentState = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME));
@@ -99,23 +94,13 @@ export const load: PageServerLoad = async ({ cookies, url, locals }) => {
 export const actions: Actions = {
 	default: async ({ cookies, request, locals }) => {
 		const formData = await request.formData();
-		const courses = formData
-			.getAll('courses')
-			.filter((course): course is string => typeof course === 'string' && validCourses.has(course));
-		const goals = formData
-			.getAll('goals')
-			.filter((goal): goal is OnboardingGoal => typeof goal === 'string' && validGoals.has(goal));
+		const result = await completeOnboarding(locals.userId!, {
+			courses: formData.getAll('courses'),
+			goals: formData.getAll('goals')
+		});
+		if (!result.ok) return fail(400, { error: result.error });
 
-		if (courses.length === 0) {
-			return fail(400, { error: 'Choose at least one course to continue.' });
-		}
-		if (goals.length === 0) {
-			return fail(400, { error: 'Choose at least one goal to continue.' });
-		}
-
-		await updateUserCourses(locals.userId!, courses);
-
-		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(goals), {
+		cookies.set(ONBOARDING_COOKIE_NAME, serializeCompletedOnboarding(result.state.goals), {
 			...ONBOARDING_PENDING_COOKIE_OPTIONS
 		});
 		cookies.delete(ONBOARDING_INTENT_COOKIE_NAME, { path: '/' });

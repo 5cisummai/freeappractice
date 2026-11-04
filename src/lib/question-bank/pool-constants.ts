@@ -4,7 +4,7 @@
  * Targets are refill floors (generate until ≥ target), not caps — surplus stays active.
  */
 
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 
 const poolTargets = AP_DATA.questionBank.mcq.poolRules;
 

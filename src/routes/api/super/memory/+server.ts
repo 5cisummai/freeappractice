@@ -1,12 +1,12 @@
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import {
 	deleteAllTutorMemories,
-	getTutorMemoryPublicId,
+	getMemoryDisclosureDenial,
+	publicTutorMemory,
 	isTutorMemoryConfigured,
 	listTutorMemories
 } from '#lib/agent/memory/service.server.js';
 import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
-import { isSuperMemoryEnabled } from '#lib/flags.js';
 import {
 	getTutorProfileView,
 	markMemoryDisclosureSeen
@@ -23,31 +23,6 @@ async function requireMemoryAccess(
 		: Response.json({ error: access.message }, { status: access.status });
 }
 
-async function requireMemoryDisclosureAccess(userId: string): Promise<Response | null> {
-	if (!(await isSuperMemoryEnabled())) {
-		return Response.json({ error: 'Tutor memory is temporarily unavailable.' }, { status: 503 });
-	}
-	const profile = await getTutorProfileView(userId);
-	if (!profile.ageConfirmedAt) {
-		return Response.json(
-			{ error: 'Confirm that you are at least 13 to use Super tutor memory.' },
-			{ status: 403 }
-		);
-	}
-	return null;
-}
-
-async function publicMemory(
-	userId: string,
-	memory: { id: string; text: string; createdAt: string | null }
-) {
-	return {
-		id: await getTutorMemoryPublicId(userId, memory.id),
-		text: memory.text,
-		createdAt: memory.createdAt
-	};
-}
-
 export const GET = withAuthedHandler(
 	async (event, userId) => {
 		const denial = await requireMemoryAccess(event, userId);
@@ -55,7 +30,7 @@ export const GET = withAuthedHandler(
 		const profile = await getTutorProfileViewForRequest(event.locals, userId);
 		const memories = await listTutorMemories(userId);
 		return Response.json({
-			memories: await Promise.all(memories.map((memory) => publicMemory(userId, memory))),
+			memories: await Promise.all(memories.map((memory) => publicTutorMemory(userId, memory))),
 			memory: {
 				enabled: profile.memoryEnabled,
 				configured: isTutorMemoryConfigured(),
@@ -68,8 +43,12 @@ export const GET = withAuthedHandler(
 
 export const POST = withAuthedHandler(
 	async (_event, userId) => {
-		const denial = await requireMemoryDisclosureAccess(userId);
-		if (denial) return denial;
+		const denial = await getMemoryDisclosureDenial(userId);
+		if (denial)
+			return Response.json(
+				{ error: denial.error },
+				{ status: denial.reason === 'unavailable' ? 503 : 403 }
+			);
 		await markMemoryDisclosureSeen(userId);
 		const profile = await getTutorProfileView(userId);
 		return Response.json({

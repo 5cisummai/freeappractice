@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getUnitsForCourse } from '#lib/catalog/courses.js';
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 import {
 	buildFrqGenerationPrompt,
 	parseGeneratedFrq

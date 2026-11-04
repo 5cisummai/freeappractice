@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { ROOT_LAYOUT_DEPENDENCY } from '#lib/layout-dependencies.js';
+import { ROOT_LAYOUT_DEPENDENCY } from '#lib/client/invalidate-data.js';
 import { isSuperFreeBetaEnabled } from '#lib/flags.js';
 import { getAssistantFeaturesEnabledForRequest } from '#lib/users/assistant-preferences.server.js';
 

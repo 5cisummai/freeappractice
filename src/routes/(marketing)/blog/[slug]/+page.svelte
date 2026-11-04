@@ -5,7 +5,7 @@
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import { formatBlogDate } from '#lib/blog-display.js';
+	import { formatBlogDate } from '#lib/blog/format.js';
 	import ArrowLeftIcon from '@tabler/icons-svelte/icons/arrow-left';
 
 	let { data }: { data: PageData } = $props();

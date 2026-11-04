@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const { findActiveQuestionsForQuizMock } = vi.hoisted(() => ({
-	findActiveQuestionsForQuizMock: vi.fn()
+const { findActiveQuestionsForQuizMock, refillMock } = vi.hoisted(() => ({
+	findActiveQuestionsForQuizMock: vi.fn(),
+	refillMock: vi.fn()
+}));
+
+vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({
+	requestPoolRefill: refillMock
 }));
 
 vi.mock('#lib/server/logger.js', () => ({
@@ -47,7 +52,10 @@ vi.mock('#lib/question-bank/mcq/stimulus-policy.js', () => ({
 	})
 }));
 
-import { assembleMcqQuiz } from '#lib/question-bank/mcq/quiz-assembler.server.js';
+import {
+	assembleMcqQuiz,
+	requestQuizRefill
+} from '#lib/question-bank/mcq/quiz-assembler.server.js';
 import { logger } from '#lib/server/logger.js';
 
 function question(id: string, position?: number) {
@@ -160,5 +168,16 @@ describe('assembleMcqQuiz', () => {
 				stimulusTargetDeviation: 1
 			})
 		);
+	});
+});
+
+describe('requestQuizRefill', () => {
+	it('reports success when at least one refill request succeeds', async () => {
+		refillMock
+			.mockReset()
+			.mockRejectedValueOnce(new Error('queue unavailable'))
+			.mockResolvedValue(undefined);
+		expect(await requestQuizRefill('AP Biology', '', [0, 1])).toBe(true);
+		expect(refillMock).toHaveBeenCalledTimes(2);
 	});
 });

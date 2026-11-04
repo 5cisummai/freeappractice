@@ -1,3 +1,4 @@
+import { type McqEnrichment } from './enrichment.js';
 import type { Snippet } from 'svelte';
 import type { QuestionCardModel } from '#lib/question-bank/question-card-model.js';
 
@@ -190,7 +191,7 @@ export type BugReportContext = {
 	hasStimulus: boolean;
 };
 
-export type McqAnswerBody = {
+export type McqAnswerBody = McqEnrichment & {
 	question: string;
 	optionA: string;
 	optionB: string;
@@ -208,7 +209,7 @@ export type McqAnswerBody = {
 	stimulusQuestionCount?: number | null;
 };
 
-export type GeneratedQuestion = {
+export type GeneratedQuestion = McqEnrichment & {
 	questionId?: string;
 	topic?: string;
 	mainTopic?: string;

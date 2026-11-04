@@ -5,34 +5,49 @@ export const MAX_TUTOR_CHAT_PROMPT_CHARACTERS = 16_000;
 export const MAX_TUTOR_CHAT_HISTORY_MESSAGES = 12;
 export const TUTOR_CHAT_STREAM_TIMEOUT_MS = 30_000;
 
-const boundedText = (field: string, max: number) =>
-	z.string().trim().min(1, `${field} is required`).max(max, `${field} is too long`);
+const tutorUiMessagePartSchema = z.looseObject({
+	type: z.string().min(1).max(100),
+	text: z.string().max(2_000).optional()
+});
 
-const tutorMessageSchema = z
-	.object({
-		role: z.enum(['user', 'assistant']),
-		content: boundedText('Conversation message', 2_000)
-	})
-	.strict();
+const tutorUiMessageSchema = z.looseObject({
+	id: z.string().max(200).optional(),
+	role: z.enum(['user', 'assistant', 'system']),
+	parts: z.array(tutorUiMessagePartSchema).min(1).max(24)
+});
+
+function tutorPromptCharacters(
+	messages: z.infer<typeof tutorUiMessageSchema>[],
+	questionId: string,
+	attemptId = ''
+): number {
+	let total = questionId.length + attemptId.length;
+	for (const message of messages) {
+		for (const part of message.parts) {
+			if (part.type === 'text' && typeof part.text === 'string') {
+				total += part.text.length;
+			}
+		}
+	}
+	return total;
+}
 
 export const tutorChatRequestSchema = z
 	.object({
 		questionId: z.string().uuid(),
-		conversationHistory: z
-			.array(tutorMessageSchema)
-			.max(MAX_TUTOR_CHAT_HISTORY_MESSAGES, 'Conversation history is too long')
-			.optional()
-			.default([]),
-		message: boundedText('Message', 2_000)
+		messages: z
+			.array(tutorUiMessageSchema)
+			.min(1, 'Tutor chat needs at least one message')
+			.max(MAX_TUTOR_CHAT_HISTORY_MESSAGES + 2, 'Conversation history is too long'),
+		id: z.string().max(200).optional(),
+		trigger: z.string().max(100).optional(),
+		messageId: z.string().max(200).optional()
 	})
 	.strict()
 	.superRefine((value, context) => {
-		const promptCharacters =
-			value.questionId.length +
-			value.conversationHistory.reduce((total, item) => total + item.content.length, 0) +
-			value.message.length;
-
-		if (promptCharacters > MAX_TUTOR_CHAT_PROMPT_CHARACTERS) {
+		if (
+			tutorPromptCharacters(value.messages, value.questionId) > MAX_TUTOR_CHAT_PROMPT_CHARACTERS
+		) {
 			context.addIssue({
 				code: 'custom',
 				message: 'Tutor chat context is too large'
@@ -55,22 +70,20 @@ export const frqTutorChatRequestSchema = z
 			.regex(/^[a-f\d]{24}$/i, 'Attempt ID is invalid')
 			.optional()
 			.default(''),
-		conversationHistory: z
-			.array(tutorMessageSchema)
-			.max(MAX_TUTOR_CHAT_HISTORY_MESSAGES, 'Conversation history is too long')
-			.optional()
-			.default([]),
-		message: boundedText('Message', 2_000)
+		messages: z
+			.array(tutorUiMessageSchema)
+			.min(1, 'Tutor chat needs at least one message')
+			.max(MAX_TUTOR_CHAT_HISTORY_MESSAGES + 2, 'Conversation history is too long'),
+		id: z.string().max(200).optional(),
+		trigger: z.string().max(100).optional(),
+		messageId: z.string().max(200).optional()
 	})
 	.strict()
 	.superRefine((value, context) => {
-		const promptCharacters =
-			value.questionId.length +
-			value.attemptId.length +
-			value.conversationHistory.reduce((total, item) => total + item.content.length, 0) +
-			value.message.length;
-
-		if (promptCharacters > MAX_TUTOR_CHAT_PROMPT_CHARACTERS) {
+		if (
+			tutorPromptCharacters(value.messages, value.questionId, value.attemptId) >
+			MAX_TUTOR_CHAT_PROMPT_CHARACTERS
+		) {
 			context.addIssue({
 				code: 'custom',
 				message: 'Tutor chat context is too large'

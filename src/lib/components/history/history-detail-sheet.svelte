@@ -3,7 +3,7 @@
 	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 	import type { HistoryItem } from '#lib/users/types.js';
 	import type { FrqAttemptView } from '#lib/question-bank/frq/types.js';
-	import { formatAttemptDate, formatTimeTaken } from '#lib/history-display.js';
+	import { formatAttemptDate, formatTimeTaken } from '#lib/components/history/history-format.js';
 	import { apiFetch, readJsonOrNull } from '#lib/client/api.js';
 	import { getHistoryMcqQuestion } from '#lib/users/history-question.client.js';
 	import RichText from '#lib/components/content/rich-text.svelte';

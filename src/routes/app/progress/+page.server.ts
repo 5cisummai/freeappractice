@@ -9,12 +9,13 @@ export const load: PageServerLoad = async ({ cookies, locals, parent }) => {
 	const userId = locals.userId!;
 	const { activeOrganization } = await parent();
 	const context = await resolvePracticeContext(userId, activeOrganization?.id);
-	const dashboard = await loadUserDashboardData(userId, cookies, context);
+	const timeZone = timezoneFromCookies(cookies);
+	const dashboard = await loadUserDashboardData(userId, timeZone, context);
 	try {
 		const historyItems = await getProgressHistory(
 			userId,
 			{
-				from: historyFromParam(MAX_HISTORY_DAYS, timezoneFromCookies(cookies)),
+				from: historyFromParam(MAX_HISTORY_DAYS, timeZone),
 				includeFrq: dashboard.frqEnabled
 			},
 			context

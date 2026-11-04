@@ -11,12 +11,9 @@ import { createHandle } from 'flags/sveltekit';
 import {
 	stimulusQuestionsEnabled,
 	frqPracticeEnabled,
-	coachImagesEnabled,
 	isSuperFreeBetaEnabled,
 	isSuperCheckoutEnabled,
 	superCheckoutEnabled,
-	superCoachEnabled,
-	superMemoryEnabled,
 	superFreeBetaEnabled
 } from '#lib/flags.js';
 import { isSuperStripeConfigured } from '#lib/billing/subscriptions.server.js';
@@ -75,6 +72,17 @@ function postProcessResponse(
 				'public, s-maxage=60, stale-while-revalidate=60'
 			);
 		}
+	}
+
+	if (event.url.pathname.startsWith('/desmos-sandbox')) {
+		const csp = response.headers.get('Content-Security-Policy');
+		if (csp) {
+			const patched = csp
+				.replace(/(script-src\s)/, "$1'unsafe-eval' ")
+				.replace(/frame-ancestors\s+'none'/, "frame-ancestors 'self'");
+			response.headers.set('Content-Security-Policy', patched);
+		}
+		response.headers.set('X-Frame-Options', 'SAMEORIGIN');
 	}
 
 	if (event.url.pathname.startsWith('/api/')) {
@@ -296,12 +304,9 @@ export const handle = sequence(
 					secret: FLAGS_SECRET,
 					flags: {
 						frqPracticeEnabled,
-						coachImagesEnabled,
 						stimulusQuestionsEnabled,
 						superFreeBetaEnabled,
-						superCheckoutEnabled,
-						superCoachEnabled,
-						superMemoryEnabled
+						superCheckoutEnabled
 					}
 				}) as Handle
 			]

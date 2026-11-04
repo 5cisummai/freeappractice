@@ -2,8 +2,7 @@ import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
-import { claimIdempotencyKey, RedisRequiredError } from '#lib/agent/usage/controls.server.js';
-import { undoCoachAudit } from '#lib/agent/tools/undo.server.js';
+import { requestCoachUndo } from '#lib/agent/tools/undo.server.js';
 
 const undoSchema = z.object({ auditId: z.string().regex(/^[a-f\d]{24}$/i) }).strict();
 
@@ -14,24 +13,16 @@ export const POST: RequestHandler = withAuthedHandler(
 		const parsed = undoSchema.safeParse(await event.request.json().catch(() => null));
 		if (!parsed.success)
 			return Response.json({ error: 'Invalid Coach undo request' }, { status: 400 });
-		const idempotencyKey = event.request.headers.get('idempotency-key')?.trim();
-		if (!idempotencyKey || idempotencyKey.length > 200) {
-			return Response.json({ error: 'An idempotency key is required.' }, { status: 400 });
+		const result = await requestCoachUndo(
+			userId,
+			parsed.data.auditId,
+			event.request.headers.get('idempotency-key')?.trim()
+		);
+		if (result.reason) {
+			const statuses = { invalid_key: 400, duplicate: 409, not_found: 404, unavailable: 503 };
+			return Response.json({ error: result.error }, { status: statuses[result.reason] });
 		}
-		try {
-			if (!(await claimIdempotencyKey(userId, `coach-undo:${idempotencyKey}`))) {
-				return Response.json({ error: 'This Coach undo was already requested.' }, { status: 409 });
-			}
-			const undone = await undoCoachAudit(userId, parsed.data.auditId);
-			return undone
-				? Response.json({ undone: true })
-				: Response.json({ error: 'Coach change was not found' }, { status: 404 });
-		} catch (error) {
-			if (error instanceof RedisRequiredError) {
-				return Response.json({ error: 'Coach undo is temporarily unavailable.' }, { status: 503 });
-			}
-			throw error;
-		}
+		return Response.json(result);
 	},
 	{ logLabel: 'Coach undo error', errorMessage: 'Failed to undo Coach change' }
 );

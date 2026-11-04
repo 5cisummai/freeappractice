@@ -10,6 +10,7 @@
 	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 	import { Toggle } from '#lib/components/ui/toggle/index.js';
 	import BugReportDialog from '#lib/components/questions/bug-report-dialog.svelte';
+	import DesmosCalculator from '#lib/components/questions/desmos-calculator.svelte';
 	import McqAnswerChoices from '#lib/components/questions/mcq-answer-choices.svelte';
 	import QuestionCardSkeleton from '#lib/components/questions/question-card-skeleton.svelte';
 	import EmptyState from '#lib/components/app/empty-state.svelte';
@@ -18,15 +19,20 @@
 	import * as Resizable from '#lib/components/ui/resizable/index.js';
 	import { cn } from '#lib/utils.js';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
-	import { measureLongQuestion } from '#lib/components/questions/question-card-dom.js';
+	import {
+		measureLongQuestion,
+		withTooltipTriggerClick
+	} from '#lib/components/questions/question-card-dom.js';
 	import { portalToBody } from '#lib/components/questions/portal-to-body.svelte.js';
 	import { createQuestionCore } from '#lib/components/questions/question-core.svelte.js';
 	import QuestionTutor from '#lib/components/questions/question-tutor.svelte';
 	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
 	import type { BugReportContext, QuestionCardProps } from '#lib/question-bank/mcq/types.js';
+	import { getSubjectCalculator } from '#lib/question-bank/mcq/subject-calculator.js';
 	import SlidersHorizontalIcon from '@tabler/icons-svelte/icons/adjustments-horizontal';
 	import ArrowsMaximizeIcon from '@tabler/icons-svelte/icons/arrows-maximize';
 	import ArrowsMinimizeIcon from '@tabler/icons-svelte/icons/arrows-minimize';
+	import CalculatorIcon from '@tabler/icons-svelte/icons/calculator-filled';
 	import StrikethroughIcon from '@tabler/icons-svelte/icons/strikethrough';
 	import ExamfigDiagram from '#lib/components/questions/examfig-diagram.svelte';
 	import { IsMobile } from '#lib/hooks/is-mobile.svelte.js';
@@ -91,6 +97,10 @@
 	let bugReportContext = $state<BugReportContext | null>(null);
 	let controlsTriggerRef = $state<HTMLElement | null>(null);
 	let eliminatorActive = $state(false);
+	let calculatorOpen = $state(false);
+
+	const calculatorType = $derived(getSubjectCalculator(selectedCourse));
+	const hasCalculator = $derived(calculatorType !== 'none');
 
 	const core = createQuestionCore({
 		getSelectedCourse: () => selectedCourse,
@@ -173,6 +183,7 @@
 	}
 
 	function openExplanation(): void {
+		if (core.currentQuestion?.choiceExplanations) return;
 		core.setShowExplanation(true);
 		capturePostHogEvent('explanation_viewed', {
 			question_id: core.currentQuestion?.questionId,
@@ -183,6 +194,27 @@
 			is_correct: core.answerResult?.isCorrect
 		});
 	}
+
+	const trackedInlineQuestions = new WeakSet<object>();
+	$effect(() => {
+		const question = core.currentQuestion;
+		if (
+			!quizMode &&
+			core.hasCheckedAnswer &&
+			question?.choiceExplanations &&
+			!trackedInlineQuestions.has(question)
+		) {
+			trackedInlineQuestions.add(question);
+			capturePostHogEvent('explanation_viewed', {
+				question_id: question.questionId,
+				course: selectedCourse,
+				unit: selectedUnit,
+				topic: question.topic,
+				source: question.source,
+				is_correct: core.answerResult?.isCorrect
+			});
+		}
+	});
 
 	const showQuestionSkeleton = $derived(
 		!core.currentQuestion &&
@@ -215,6 +247,10 @@
 		if (!mounted || version === 0 || version === lastLoadedRequestVersion) return;
 		lastLoadedRequestVersion = version;
 		void core.loadQuestion();
+	});
+
+	$effect(() => {
+		if (!hasCalculator) calculatorOpen = false;
 	});
 </script>
 
@@ -262,6 +298,7 @@
 	{#snippet mcqChoices(compact = false)}
 		<McqAnswerChoices
 			options={core.currentQuestion?.options ?? []}
+			choiceExplanations={core.currentQuestion?.choiceExplanations}
 			{selectedOption}
 			struckOptionIds={core.optionMarks.struckOptionIds}
 			hasCheckedAnswer={core.hasCheckedAnswer}
@@ -342,6 +379,30 @@
 								<div class="flex items-center gap-1">
 									{#if headerActions}
 										{@render headerActions()}
+									{/if}
+									{#if hasCalculator}
+										<Tooltip.Root>
+											<Tooltip.Trigger>
+												{#snippet child({ props })}
+													<Button
+														{...props}
+														variant="ghost"
+														size="icon"
+														class={cn(
+															'h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground',
+															calculatorOpen && 'bg-muted/60 text-foreground'
+														)}
+														aria-label="Open Calculator"
+														onclick={withTooltipTriggerClick(props, () => {
+															calculatorOpen = !calculatorOpen;
+														})}
+													>
+														<CalculatorIcon class="size-4" />
+													</Button>
+												{/snippet}
+											</Tooltip.Trigger>
+											<Tooltip.Content>Open Calculator</Tooltip.Content>
+										</Tooltip.Root>
 									{/if}
 									{#if canUseEliminator}
 										<Tooltip.Root>
@@ -553,7 +614,7 @@
 								</div>
 							{/if}
 							<div class="flex gap-2">
-								{#if !quizMode && core.hasCheckedAnswer && core.currentQuestion?.explanation}
+								{#if !quizMode && core.hasCheckedAnswer && (core.currentQuestion?.explanation || core.currentQuestion?.choiceExplanations)}
 									<Button variant="outline" onclick={openExplanation}>
 										{showExplanationLabel}
 									</Button>
@@ -621,7 +682,37 @@
 		{selectedUnit}
 	/>
 
-	{#if !quizMode && core.currentQuestion?.explanation}
+	{#if calculatorOpen && calculatorType !== 'none'}
+		<DesmosCalculator type={calculatorType} onClose={() => (calculatorOpen = false)} />
+	{/if}
+
+	{#if !quizMode && core.hasCheckedAnswer && core.currentQuestion?.choiceExplanations}
+		<div class="mt-3 flex flex-wrap gap-1">
+			{#if core.questionFeedbackReason}
+				<p class="text-xs text-muted-foreground">Thanks, this helps improve future questions.</p>
+			{:else}
+				<Button
+					variant="ghost"
+					size="xs"
+					onclick={() => core.submitQuestionFeedback('answer_incorrect')}>Answer is wrong</Button
+				>
+				<Button
+					variant="ghost"
+					size="xs"
+					onclick={() => core.submitQuestionFeedback('question_unclear')}
+					>Question is unclear</Button
+				>
+				<Button
+					variant="ghost"
+					size="xs"
+					onclick={() => core.submitQuestionFeedback('explanation_unclear')}
+					>Explanation is unclear</Button
+				>
+			{/if}
+		</div>
+	{/if}
+
+	{#if !quizMode && core.currentQuestion?.explanation && !core.currentQuestion?.choiceExplanations}
 		<Dialog.Root open={core.showExplanation} onOpenChange={(open) => core.setShowExplanation(open)}>
 			<Dialog.Content
 				class="max-h-[min(85vh,40rem)] w-full max-w-2xl gap-0 overflow-y-auto sm:max-w-2xl"

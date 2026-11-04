@@ -1,4 +1,4 @@
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 
 export type StimulusMode = 'text' | 'diagram' | 'mixed';
 export type StimulusProfile = {

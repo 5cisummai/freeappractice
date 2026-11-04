@@ -5,11 +5,10 @@ const mocks = vi.hoisted(() => ({
 	getAssistantFeaturesEnabledForRequest: vi.fn(),
 	resolveTutorQuestion: vi.fn(),
 	limitGenericTutor: vi.fn(),
-	createTutorChatStream: vi.fn(),
+	createTutorStreamResponse: vi.fn(),
 	getFrqQuestionById: vi.fn(),
 	getFrqCourseProfile: vi.fn(),
 	getFrqAttemptForUser: vi.fn(),
-	createFrqTutorChatStream: vi.fn(),
 	requireFrqPracticeEnabled: vi.fn()
 }));
 
@@ -24,15 +23,14 @@ vi.mock('#lib/users/assistant-preferences.server.js', () => ({
 }));
 vi.mock('#lib/tutor/service.server.js', () => ({
 	resolveTutorQuestion: mocks.resolveTutorQuestion,
-	chat: vi.fn(),
-	chatFrq: vi.fn()
+	buildMcqTutorSystem: vi.fn(() => 'system'),
+	buildFrqTutorSystem: vi.fn(() => 'system')
 }));
 vi.mock('#lib/tutor/rate-limit.server.js', () => ({
 	limitGenericTutor: mocks.limitGenericTutor
 }));
-vi.mock('#lib/tutor/chat-stream.server.js', () => ({
-	createTutorChatStream: mocks.createTutorChatStream,
-	createFrqTutorChatStream: mocks.createFrqTutorChatStream
+vi.mock('#lib/tutor/chat-response.server.js', () => ({
+	createTutorStreamResponse: mocks.createTutorStreamResponse
 }));
 vi.mock('#lib/question-bank/frq/model.server.js', () => ({
 	getFrqQuestionById: mocks.getFrqQuestionById
@@ -55,6 +53,8 @@ import { POST as tutorFrqPost } from '../../../src/routes/api/tutor/frq/+server'
 const sessionId = 'c8f3048f-1681-47f2-b1db-e912655275d0';
 const questionId = 'd8f3048f-1681-47f2-b1db-e912655275d1';
 
+const tutorMessages = [{ id: '1', role: 'user', parts: [{ type: 'text', text: 'Help' }] }];
+
 const superBody = {
 	sessionId,
 	context: {
@@ -72,6 +72,7 @@ beforeEach(() => {
 	mocks.getAssistantFeaturesEnabledForRequest.mockResolvedValue(true);
 	mocks.limitGenericTutor.mockResolvedValue({ allowed: true, retryAt: null });
 	mocks.requireFrqPracticeEnabled.mockResolvedValue(null);
+	mocks.createTutorStreamResponse.mockResolvedValue(new Response(null, { status: 200 }));
 });
 
 describe('generic tutor routes', () => {
@@ -86,7 +87,7 @@ describe('generic tutor routes', () => {
 		} as Parameters<typeof tutorChatPost>[0]);
 
 		expect(response.status).toBe(400);
-		expect(mocks.createTutorChatStream).not.toHaveBeenCalled();
+		expect(mocks.createTutorStreamResponse).not.toHaveBeenCalled();
 	});
 
 	it('rejects Super Agent bodies on /api/tutor/frq', async () => {
@@ -106,7 +107,7 @@ describe('generic tutor routes', () => {
 		} as Parameters<typeof tutorFrqPost>[0]);
 
 		expect(response.status).toBe(400);
-		expect(mocks.createFrqTutorChatStream).not.toHaveBeenCalled();
+		expect(mocks.createTutorStreamResponse).not.toHaveBeenCalled();
 	});
 
 	it('accepts generic tutor chat bodies', async () => {
@@ -121,15 +122,13 @@ describe('generic tutor routes', () => {
 			optionC: 'c',
 			optionD: 'd'
 		});
-		mocks.createTutorChatStream.mockReturnValue(new ReadableStream());
 
 		const response = await tutorChatPost({
 			request: new Request('https://app.test/api/tutor/chat', {
 				method: 'POST',
 				body: JSON.stringify({
 					questionId,
-					message: 'Help',
-					conversationHistory: []
+					messages: tutorMessages
 				}),
 				headers: { 'content-type': 'application/json' }
 			}),
@@ -137,7 +136,7 @@ describe('generic tutor routes', () => {
 		} as Parameters<typeof tutorChatPost>[0]);
 
 		expect(response.status).toBe(200);
-		expect(mocks.createTutorChatStream).toHaveBeenCalled();
+		expect(mocks.createTutorStreamResponse).toHaveBeenCalled();
 	});
 });
 
@@ -154,35 +153,33 @@ describe('standard tutoring for every plan', () => {
 			optionC: 'c',
 			optionD: 'd'
 		});
-		mocks.createTutorChatStream.mockReturnValue(new ReadableStream());
 		const response = await tutorChatPost({
 			request: new Request('https://app.test/api/tutor/chat', {
 				method: 'POST',
-				body: JSON.stringify({ questionId, message: 'Help', conversationHistory: [] }),
+				body: JSON.stringify({ questionId, messages: tutorMessages }),
 				headers: { 'content-type': 'application/json' }
 			}),
 			locals: { planAccess: Promise.resolve({ plan }) }
 		} as Parameters<typeof tutorChatPost>[0]);
 		expect(response.status).toBe(200);
 		expect(mocks.limitGenericTutor).toHaveBeenCalledWith(expect.any(Request), 'user-1');
-		expect(mocks.createTutorChatStream.mock.calls[0][0]).not.toHaveProperty(
+		expect(mocks.createTutorStreamResponse.mock.calls[0][0]).not.toHaveProperty(
 			'personalizationContext'
 		);
 	});
 	it.each(['free', 'super'])('uses standard FRQ tutoring for a %s user', async (plan) => {
 		mocks.getFrqQuestionById.mockResolvedValue({ id: questionId, course: 'AP Biology' });
 		mocks.getFrqCourseProfile.mockReturnValue({});
-		mocks.createFrqTutorChatStream.mockReturnValue(new ReadableStream());
 		const response = await tutorFrqPost({
 			request: new Request('https://app.test/api/tutor/frq', {
 				method: 'POST',
-				body: JSON.stringify({ questionId, message: 'Help', conversationHistory: [] }),
+				body: JSON.stringify({ questionId, messages: tutorMessages }),
 				headers: { 'content-type': 'application/json' }
 			}),
 			locals: { planAccess: Promise.resolve({ plan }) }
 		} as Parameters<typeof tutorFrqPost>[0]);
 		expect(response.status).toBe(200);
-		expect(mocks.createFrqTutorChatStream.mock.calls[0][0]).not.toHaveProperty(
+		expect(mocks.createTutorStreamResponse.mock.calls[0][0]).not.toHaveProperty(
 			'personalizationContext'
 		);
 	});

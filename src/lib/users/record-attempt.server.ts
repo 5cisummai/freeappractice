@@ -3,7 +3,6 @@ import {
 	AttemptContextConflictError,
 	persistQuestionAttempt
 } from '#lib/users/attempt-write.server.js';
-import { capturePostHogServerEvent } from '#lib/server/posthog.js';
 import { getQuestionById } from '#lib/question-bank/mcq/repository.server.js';
 import type { IQuestionAttempt } from '#lib/users/records.server.js';
 import { requirePracticeSession } from '#lib/users/practice-context.server.js';
@@ -17,17 +16,32 @@ function normalizeAnswerLetter(value: unknown): 'A' | 'B' | 'C' | 'D' | null {
 	return ANSWER_CHOICES.has(letter) ? (letter as 'A' | 'B' | 'C' | 'D') : null;
 }
 
+export type RecordAttemptInput = {
+	questionId?: unknown;
+	selectedAnswer?: unknown;
+	timeTakenMs?: unknown;
+	attemptId?: unknown;
+	practiceSessionId?: unknown;
+	organizationId?: unknown;
+};
+
 export type RecordAttemptResult =
 	| {
-			status: 200;
-			body: { message: string; questionId: string; mastery: number; totalAttempts: number };
+			ok: true;
+			questionId: string;
+			mastery: number;
+			totalAttempts: number;
+			newlyRecorded: boolean;
+			course: string;
+			unit: string;
+			wasCorrect: boolean;
+			timeTakenMs: number | undefined;
 	  }
-	| { status: number; body: { error: string } };
+	| { ok: false; code: 'invalid' | 'forbidden' | 'not_found' | 'invalid_metadata'; error: string };
 
 export async function recordQuestionAttempt(
 	userId: string,
-	body: Record<string, unknown>,
-	request: Request
+	body: RecordAttemptInput
 ): Promise<RecordAttemptResult> {
 	const { questionId, selectedAnswer, timeTakenMs } = body;
 	const attemptId = typeof body.attemptId === 'string' ? body.attemptId.trim() : '';
@@ -36,64 +50,75 @@ export async function recordQuestionAttempt(
 	const normalizedQuestionId = typeof questionId === 'string' ? questionId.trim() : '';
 	const elapsedTimeMs = sanitizeAttemptTimeMs(timeTakenMs);
 
+	// Attempts without a practice session always use the personal namespace.
+	// Classroom practice requires an authorized practiceSessionId; the session
+	// active organization alone cannot switch attempt writes to classroom data.
 	let context = { organizationId: null as string | null };
 	let sessionCourse: string | null = null;
 	if (practiceSessionId) {
 		try {
 			const session = await requirePracticeSession(userId, practiceSessionId);
 			if (session.mode !== 'mcq' && session.mode !== 'quiz') {
-				return { status: 400, body: { error: 'This session cannot record an MCQ answer.' } };
+				return { ok: false, code: 'invalid', error: 'This session cannot record an MCQ answer.' };
 			}
 			context = { organizationId: session.organizationId };
 			sessionCourse = session.course;
 		} catch (error) {
 			if (error instanceof OrganizationPermissionError) {
-				return { status: 403, body: { error: error.message } };
+				return { ok: false, code: 'forbidden', error: error.message };
 			}
 			throw error;
 		}
 	} else if (body.organizationId !== undefined && body.organizationId !== null) {
 		return {
-			status: 400,
-			body: { error: 'A practice session is required for classroom practice.' }
+			ok: false,
+			code: 'invalid',
+			error: 'A practice session is required for classroom practice.'
 		};
 	}
 
 	if (!normalizedQuestionId) {
 		return {
-			status: 400,
-			body: { error: 'Missing required fields: questionId and selectedAnswer' }
+			ok: false,
+			code: 'invalid',
+			error: 'Missing required fields: questionId and selectedAnswer'
 		};
 	}
 	if (
 		attemptId &&
 		!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(attemptId)
 	) {
-		return { status: 400, body: { error: 'Invalid attempt ID' } };
+		return { ok: false, code: 'invalid', error: 'Invalid attempt ID' };
 	}
 
 	const letter = normalizeAnswerLetter(selectedAnswer);
 	if (!letter) {
 		return {
-			status: 400,
-			body: { error: 'Missing required fields: questionId and selectedAnswer' }
+			ok: false,
+			code: 'invalid',
+			error: 'Missing required fields: questionId and selectedAnswer'
 		};
 	}
 
 	const question = await getQuestionById(normalizedQuestionId).catch(() => null);
 	if (!question) {
-		return { status: 404, body: { error: 'Question metadata was not found' } };
+		return { ok: false, code: 'not_found', error: 'Question metadata was not found' };
 	}
 
 	const course = typeof question.course === 'string' ? question.course.trim() : '';
 	const normalizedUnit = question.unit?.trim() ?? '';
 	if (!course || !normalizedUnit) {
-		return { status: 422, body: { error: 'Question metadata is missing class or unit' } };
+		return {
+			ok: false,
+			code: 'invalid_metadata',
+			error: 'Question metadata is missing class or unit'
+		};
 	}
 	if (sessionCourse && course !== sessionCourse) {
 		return {
-			status: 400,
-			body: { error: 'This question is outside the practice session course.' }
+			ok: false,
+			code: 'invalid',
+			error: 'This question is outside the practice session course.'
 		};
 	}
 
@@ -116,33 +141,20 @@ export async function recordQuestionAttempt(
 		});
 	} catch (error) {
 		if (error instanceof AttemptContextConflictError) {
-			return { status: 400, body: { error: error.message } };
+			return { ok: false, code: 'invalid', error: error.message };
 		}
 		throw error;
 	}
 
-	if (progress.newlyRecorded)
-		capturePostHogServerEvent(request, {
-			distinctId: userId,
-			event: 'question_attempt_recorded',
-			properties: {
-				question_id: normalizedQuestionId,
-				course: course,
-				unit: normalizedUnit,
-				was_correct: attempt.wasCorrect,
-				time_taken_ms: elapsedTimeMs,
-				mastery: progress.mastery,
-				total_attempts: progress.totalAttempts
-			}
-		});
-
 	return {
-		status: 200,
-		body: {
-			message: 'Attempt recorded successfully',
-			questionId: normalizedQuestionId,
-			mastery: progress.mastery,
-			totalAttempts: progress.totalAttempts
-		}
+		ok: true,
+		questionId: normalizedQuestionId,
+		mastery: progress.mastery,
+		totalAttempts: progress.totalAttempts,
+		newlyRecorded: progress.newlyRecorded,
+		course,
+		unit: normalizedUnit,
+		wasCorrect,
+		timeTakenMs: elapsedTimeMs
 	};
 }

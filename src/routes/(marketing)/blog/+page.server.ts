@@ -1,5 +1,4 @@
 import { listPublishedBlogEntries } from '#lib/blog/service.server.js';
-import { getBlogAuthor } from '#lib/blog-display.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
@@ -12,7 +11,8 @@ export const load: PageServerLoad = async () => {
 			excerpt: p.excerpt,
 			coverImage: p.coverImage ?? null,
 			tags: p.tags,
-			author: getBlogAuthor(p.author),
+			category: p.category,
+			author: p.author,
 			publishedAt: p.publishedAt?.toISOString() ?? null,
 			createdAt: p.createdAt.toISOString()
 		}))

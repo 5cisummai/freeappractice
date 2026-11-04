@@ -12,6 +12,40 @@ export const FIRST_USE_HINT_ORDER: readonly UiHintId[] = [
 	'tutor-widget'
 ];
 
+export type FirstUseHintContent = {
+	title: string;
+	description: string;
+};
+
+export function getFirstUseHintContent(id: UiHintId): FirstUseHintContent {
+	switch (id) {
+		case 'dashboard-practice':
+			return {
+				title: 'Start practicing',
+				description: 'Start here. Choose a course and begin practicing.'
+			};
+		case 'practice-selector':
+			return {
+				title: 'Pick your course',
+				description: 'Choose your AP class first, then pick a unit or task.'
+			};
+		case 'question-tools':
+			return {
+				title: 'Question tools',
+				description: 'Use skip, report, and other tools from here.'
+			};
+		case 'tutor-widget':
+			return {
+				title: 'Meet your Tutor',
+				description: 'Ask the Tutor about this question.'
+			};
+		default: {
+			const exhaustive: never = id;
+			return exhaustive;
+		}
+	}
+}
+
 const UI_HINT_IDS: ReadonlySet<UiHintId> = new Set(FIRST_USE_HINT_ORDER);
 
 function readDismissedHints(): Set<UiHintId> {

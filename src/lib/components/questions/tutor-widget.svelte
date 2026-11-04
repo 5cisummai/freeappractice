@@ -2,6 +2,8 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
+	import { Chat } from '@ai-sdk/svelte';
+	import { DefaultChatTransport, type UIMessage } from 'ai';
 	import MessageSquareIcon from '@tabler/icons-svelte/icons/message-filled';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
 	import SendHorizontalIcon from '@tabler/icons-svelte/icons/send-filled';
@@ -14,16 +16,6 @@
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 	import { toast } from 'svelte-sonner';
-
-	type ChatMessage = {
-		id: string;
-		role: 'user' | 'assistant';
-		content: string;
-	};
-
-	function createMessage(role: ChatMessage['role'], content: string): ChatMessage {
-		return { id: crypto.randomUUID(), role, content };
-	}
 
 	type TutorWidgetProps = {
 		course?: string;
@@ -53,15 +45,12 @@
 		"Hi! I'm here to help you understand this question. What would you like to know?";
 
 	let isOpen = $state(false);
-	let messages = $state<ChatMessage[]>([createMessage('assistant', GREETING)]);
 	let inputText = $state('');
-	let isStreaming = $state(false);
 	let lastUsageWarning = $state<number | null>(null);
 	let viewportWidth = $state(0);
 	let viewportHeight = $state(0);
-	let activeStreamController: AbortController | null = null;
-	let activeStreamId = 0;
 	let triggerEl: HTMLButtonElement | null = $state(null);
+	let requestStartedAt = 0;
 
 	// Drag state for the floating button
 	let btnX = $state(0);
@@ -79,10 +68,78 @@
 	const VIEWPORT_MARGIN = 12;
 	const DRAG_THRESHOLD = 6;
 	const PANEL_GAP = 8;
-	const STREAM_TIMEOUT_MS = 30000;
+
+	function messageText(message: UIMessage): string {
+		return message.parts
+			.filter((part) => part.type === 'text')
+			.map((part) => part.text)
+			.join('');
+	}
+
+	const tutor = new Chat<UIMessage>({
+		messages: [
+			{ id: crypto.randomUUID(), role: 'assistant', parts: [{ type: 'text', text: GREETING }] }
+		],
+		transport: new DefaultChatTransport<UIMessage>({
+			api: '/api/tutor/chat',
+			body: () => ({
+				questionId: frqQuestionId || questionId,
+				...(frqQuestionId && frqAttemptId ? { attemptId: frqAttemptId } : {})
+			}),
+			fetch: async (url, init) => {
+				const response = await apiFetch(String(url), init);
+				if (!response.ok) {
+					const payload = await readJsonOrNull<{ error?: string }>(response);
+					throw new Error(getResponseMessage(payload, 'The tutor is unavailable right now.'));
+				}
+				if (response.headers.get('X-Tutor-Personalization-Degraded') === '1') {
+					toast.message(
+						'Tutor memory is temporarily unavailable. This reply uses your current progress only.'
+					);
+				}
+				showUsageWarning(response);
+				return response;
+			},
+			prepareSendMessagesRequest: ({ body, messages, id, trigger, messageId }) => ({
+				api: frqQuestionId ? '/api/tutor/frq' : '/api/tutor/chat',
+				body: { ...body, id, messages, trigger, messageId }
+			})
+		}),
+		onError: (error) => {
+			if (!requestStartedAt) return;
+			if (error instanceof Error && error.name === 'AbortError') {
+				requestStartedAt = 0;
+				return;
+			}
+			capturePostHogEvent('tutor_response_failed', {
+				question_id: questionId || undefined,
+				course,
+				unit,
+				topic: topic || undefined,
+				failure_kind: 'request_failed',
+				response_time_ms: Date.now() - requestStartedAt
+			});
+			requestStartedAt = 0;
+			toast.error(error instanceof Error ? error.message : 'The tutor is unavailable right now.');
+		},
+		onFinish: ({ isAbort, isError }) => {
+			if (!requestStartedAt || isAbort || isError) return;
+			capturePostHogEvent('tutor_response_completed', {
+				question_id: questionId || undefined,
+				course,
+				unit,
+				topic: topic || undefined,
+				response_time_ms: Date.now() - requestStartedAt,
+				conversation_turn: tutor.messages.filter((message) => message.role === 'user').length
+			});
+			requestStartedAt = 0;
+		}
+	});
+
+	let isStreaming = $derived(tutor.status === 'submitted' || tutor.status === 'streaming');
 	const scrollTrigger = $derived.by(() => {
-		const lastMessage = messages[messages.length - 1];
-		return `${messages.length}:${lastMessage?.content.length ?? 0}`;
+		const lastMessage = tutor.messages.at(-1);
+		return `${tutor.messages.length}:${lastMessage ? messageText(lastMessage).length : 0}`;
 	});
 
 	function clamp(value: number, min: number, max: number) {
@@ -131,10 +188,7 @@
 	});
 
 	function invalidateActiveStream() {
-		activeStreamId += 1;
-		activeStreamController?.abort();
-		activeStreamController = null;
-		isStreaming = false;
+		void tutor.stop();
 	}
 
 	function portalToBody(node: HTMLElement) {
@@ -226,128 +280,11 @@
 		const text = inputText.trim();
 		if (!text || isStreaming) return;
 		inputText = '';
-
-		// Capture history before adding new messages
-		const conversationHistory = messages.map((m) => ({ role: m.role, content: m.content }));
-		messages.push(createMessage('user', text));
-		messages.push(createMessage('assistant', ''));
-		const assistantIdx = messages.length - 1;
-		const streamId = activeStreamId + 1;
-		activeStreamId = streamId;
-		const controller = new AbortController();
-		activeStreamController = controller;
-		const timeoutId = window.setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
-		const startedAt = Date.now();
-
-		isStreaming = true;
-
+		requestStartedAt = Date.now();
 		try {
-			const isFrq = Boolean(frqQuestionId);
-			const res = await apiFetch(isFrq ? '/api/tutor/frq' : '/api/tutor/chat', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				signal: controller.signal,
-				body: JSON.stringify({
-					...(isFrq
-						? {
-								questionId: frqQuestionId,
-								...(frqAttemptId ? { attemptId: frqAttemptId } : {})
-							}
-						: {
-								questionId
-							}),
-					conversationHistory,
-					message: text
-				})
-			});
-
-			if (!res.ok || !res.body) {
-				const payload = await readJsonOrNull<{ error?: string }>(res);
-				throw new Error(getResponseMessage(payload, 'The tutor is unavailable right now.'));
-			}
-			if (res.headers.get('X-Tutor-Personalization-Degraded') === '1') {
-				toast.message(
-					'Tutor memory is temporarily unavailable. This reply uses your current progress only.'
-				);
-			}
-			showUsageWarning(res);
-
-			const reader = res.body.getReader();
-			const decoder = new TextDecoder();
-			let buffer = '';
-
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done || streamId !== activeStreamId) break;
-				buffer += decoder.decode(value, { stream: true });
-				const lines = buffer.split('\n');
-				buffer = lines.pop() ?? '';
-				for (const line of lines) {
-					if (!line.startsWith('data: ')) continue;
-					const data = line.slice(6).trim();
-					if (data === '[DONE]') continue;
-					let parsed: { content?: string; error?: string; memoryUpdated?: boolean };
-					try {
-						parsed = JSON.parse(data) as {
-							content?: string;
-							error?: string;
-							memoryUpdated?: boolean;
-						};
-					} catch {
-						continue;
-					}
-					if (parsed.error) {
-						throw new Error(parsed.error);
-					}
-					if (parsed.content && streamId === activeStreamId) {
-						messages[assistantIdx].content += parsed.content;
-					}
-					if (parsed.memoryUpdated) {
-						toast.success('Tutor memory update scheduled.', {
-							action: {
-								label: 'Review',
-								onClick: () => window.location.assign('/app/settings#tutor-memory')
-							}
-						});
-					}
-				}
-			}
-
-			capturePostHogEvent('tutor_response_completed', {
-				question_id: questionId || undefined,
-				course: course,
-				unit,
-				topic: topic || undefined,
-				response_time_ms: Date.now() - startedAt,
-				conversation_turn:
-					conversationHistory.filter((message) => message.role === 'user').length + 1
-			});
-		} catch (error) {
-			if (streamId !== activeStreamId) return;
-
-			const failureKind =
-				error instanceof DOMException && error.name === 'AbortError' ? 'timeout' : 'request_failed';
-			capturePostHogEvent('tutor_response_failed', {
-				question_id: questionId || undefined,
-				course: course,
-				unit,
-				topic: topic || undefined,
-				failure_kind: failureKind,
-				response_time_ms: Date.now() - startedAt
-			});
-
-			messages[assistantIdx].content =
-				error instanceof DOMException && error.name === 'AbortError'
-					? 'The tutor response timed out. Please try again.'
-					: error instanceof Error && error.message
-						? error.message
-						: 'Sorry, something went wrong. Please try again.';
-		} finally {
-			window.clearTimeout(timeoutId);
-			if (streamId === activeStreamId) {
-				isStreaming = false;
-				activeStreamController = null;
-			}
+			await tutor.sendMessage({ text });
+		} catch {
+			// onError handles user-visible failures.
 		}
 	}
 
@@ -420,6 +357,7 @@
 
 	onDestroy(() => {
 		invalidateActiveStream();
+		void tutor.dispose();
 	});
 </script>
 
@@ -453,12 +391,13 @@
 		{@attach autoScrollMessages(scrollTrigger)}
 		class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
 	>
-		{#if messages.length === 0}
+		{#if tutor.messages.length === 0}
 			<div class="flex items-center justify-center py-6 text-sm text-muted-foreground">
 				<span>Loading...</span>
 			</div>
 		{/if}
-		{#each messages as message, i (message.id)}
+		{#each tutor.messages as message, i (message.id)}
+			{@const content = messageText(message)}
 			<Message.Root
 				from={message.role}
 				class={cn(
@@ -473,10 +412,10 @@
 					)}
 				>
 					{#if message.role === 'user'}
-						{message.content}
-					{:else if message.content}
-						<RichText text={message.content} blocks />
-					{:else if isStreaming && i === messages.length - 1}
+						{content}
+					{:else if content}
+						<RichText text={content} blocks />
+					{:else if isStreaming && i === tutor.messages.length - 1}
 						<span class="inline-flex items-center gap-2" role="status" aria-live="polite">
 							<Shimmer as="span" content_length={10}>Thinking…</Shimmer>
 							<span class="sr-only">Tutor is thinking</span>

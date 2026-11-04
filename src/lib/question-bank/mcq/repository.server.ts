@@ -1,3 +1,4 @@
+import { assertMcqSubtopic, normalizeMcqEnrichment, type McqEnrichment } from './enrichment.js';
 import { randomUUID } from 'node:crypto';
 import { and, eq, gte, inArray, lt, not, notInArray, or, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
@@ -45,6 +46,9 @@ export type McqPoolQuestion = McqQuestionPayload & {
 const jsonText = (field: string) => sql<string | null>`${mcqQuestions.data} ->> ${field}`;
 
 const poolQuestionSelection = {
+	difficulty: sql`${mcqQuestions.data}->'difficulty'`,
+	subtopicId: jsonText('subtopicId'),
+	choiceExplanations: sql`${mcqQuestions.data}->'choiceExplanations'`,
 	questionId: mcqQuestions.questionId,
 	randomKey: mcqQuestions.randomKey,
 	active: mcqQuestions.active,
@@ -115,6 +119,8 @@ function normalizePoolInt(value: unknown, minimum = 0): number | null {
 
 type McqPoolQuestionRow = Omit<
 	McqPoolQuestion,
+	| 'difficulty'
+	| 'choiceExplanations'
 	| 'correctAnswer'
 	| 'diagramSpec'
 	| 'stimulus'
@@ -122,6 +128,8 @@ type McqPoolQuestionRow = Omit<
 	| 'stimulusPosition'
 	| 'stimulusQuestionCount'
 > & {
+	difficulty: unknown;
+	choiceExplanations: unknown;
 	correctAnswer: string;
 	diagramSpec: unknown;
 	stimulus: unknown;
@@ -144,6 +152,7 @@ function poolQuestionFromRow(row: McqPoolQuestionRow): McqPoolQuestion {
 		optionD: row.optionD.trim(),
 		correctAnswer: normalizePoolCorrectAnswer(row.correctAnswer),
 		explanation: row.explanation.trim(),
+		...normalizeMcqEnrichment(row),
 		diagramSpec,
 		hasDiagram: row.hasDiagram || Boolean(diagramSpec) || Boolean(stimulus?.diagramSpec),
 		stimulus,
@@ -179,22 +188,26 @@ function poolLookupPredicates(input: {
 	return predicates;
 }
 
-export type CanonicalMcqInput = Omit<
-	IQuestion,
-	| 'unit'
-	| 'randomKey'
-	| 'active'
-	| 'hasDiagram'
-	| 'diagramSpec'
-	| 'stimulus'
-	| 'stimulusId'
-	| 'stimulusPosition'
-	| 'stimulusQuestionCount'
-	| 'mainTopic'
-	| 'topicsCovered'
-	| 'createdAt'
-	| 'updatedAt'
-> &
+export type CanonicalMcqInput = McqEnrichment &
+	Omit<
+		IQuestion,
+		| 'difficulty'
+		| 'subtopicId'
+		| 'choiceExplanations'
+		| 'unit'
+		| 'randomKey'
+		| 'active'
+		| 'hasDiagram'
+		| 'diagramSpec'
+		| 'stimulus'
+		| 'stimulusId'
+		| 'stimulusPosition'
+		| 'stimulusQuestionCount'
+		| 'mainTopic'
+		| 'topicsCovered'
+		| 'createdAt'
+		| 'updatedAt'
+	> &
 	Partial<
 		Pick<
 			IQuestion,
@@ -273,6 +286,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 	if (!questionId) throw new Error('MCQ question requires questionId');
 
 	const unit = input.unit ?? 'all-units';
+	assertMcqSubtopic(input.course, unit, input.subtopicId);
 	const topicsCovered = input.topicsCovered?.trim() ?? '';
 	const mainTopic = resolveQuestionMainTopic(input.mainTopic, topicsCovered) || 'Legacy topic';
 	const data: McqQuestionPayload = {
@@ -289,6 +303,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		optionD: input.optionD,
 		correctAnswer: input.correctAnswer,
 		explanation: input.explanation,
+		...normalizeMcqEnrichment(input),
 		stimulus: input.stimulus ?? null,
 		stimulusId: input.stimulusId ?? null,
 		stimulusPosition: input.stimulusPosition ?? null,
@@ -484,7 +499,7 @@ export async function findActiveQuestionsForQuiz(input: {
 	return [...byId.values()];
 }
 
-export interface StoredQuestion {
+export interface StoredQuestion extends McqEnrichment {
 	id: string;
 	question: string;
 	optionA: string;
@@ -523,6 +538,7 @@ export function storedQuestionFromPayload(input: {
 		optionD: data.optionD,
 		correctAnswer: data.correctAnswer,
 		explanation: data.explanation,
+		...normalizeMcqEnrichment(data),
 		course: data.course,
 		unit: data.unit,
 		mainTopic: data.mainTopic,

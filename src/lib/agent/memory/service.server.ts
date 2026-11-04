@@ -57,6 +57,28 @@ function getTutorMemoryFilters(userId: string): Record<string, string> {
 }
 
 /** Opaque per-user token used by the UI instead of exposing Mem0's memory identifier. */
+export async function getMemoryDisclosureDenial(userId: string) {
+	if (!(await isSuperMemoryEnabled())) {
+		return { error: 'Tutor memory is temporarily unavailable.', reason: 'unavailable' } as const;
+	}
+	const profile = await getTutorProfileView(userId);
+	if (!profile.ageConfirmedAt) {
+		return {
+			error: 'Confirm that you are at least 13 to use Super tutor memory.',
+			reason: 'age_unconfirmed'
+		} as const;
+	}
+	return null;
+}
+
+export async function publicTutorMemory(userId: string, memory: TutorMemory) {
+	return {
+		id: await getTutorMemoryPublicId(userId, memory.id),
+		text: memory.text,
+		createdAt: memory.createdAt
+	};
+}
+
 export async function getTutorMemoryPublicId(userId: string, memoryId: string): Promise<string> {
 	const mem0UserId = await getMem0UserId(userId);
 	return createHmac('sha256', mem0UserId).update(memoryId).digest('base64url');

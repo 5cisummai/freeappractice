@@ -4,6 +4,11 @@ excerpt: How to preview your AP classes over the summer with about 15–30 minut
 summary: A practical summer schedule for students planning or starting AP classes, with pacing that builds habits without cramming.
 published: true
 date: 2026-06-01
+category: Summer Study
+relatedSlugs: which-aps-to-take, science-of-studying
+ctaHref: summer
+ctaLabel: Summer AP study guide
+ctaDescription: Follow the full 4-week Unit 1 preview plan on our summer guide.
 coverImage: https://public.assets.freeappractice.org/brice-cooper-Qc7BB9E0lMc-unsplash.jpg
 ---
 

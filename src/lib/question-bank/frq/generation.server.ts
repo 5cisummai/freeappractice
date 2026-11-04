@@ -4,7 +4,7 @@ import { zodSchema } from 'ai';
 import { z } from 'zod';
 
 import { generateText, Output } from 'ai';
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 import {
 	FRQ_SCOPE_SENTENCE,
 	frqPracticeFor,

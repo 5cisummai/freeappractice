@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ANALYTICS_CONSENT_KEY } from '#lib/analytics-consent.js';
+import { ANALYTICS_CONSENT_KEY } from '#lib/client/analytics-consent.js';
 import {
 	captureFirstAnswerSubmitted,
 	captureLandingPageViewed,

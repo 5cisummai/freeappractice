@@ -118,6 +118,13 @@ describe('exam section saves', () => {
 			expect.objectContaining({ sectionIndex: 1, sectionStartedAt: null, status: 'in_progress' })
 		);
 	});
+	it('reports a conflict if another request updates the attempt first', async () => {
+		mocks.updated = null;
+		expect(
+			(await PATCH(event({ action: 'save', revision: 0, responses: { q: 'A' } }))).status
+		).toBe(409);
+		expect(mocks.publishPersonalPracticeActivity).not.toHaveBeenCalled();
+	});
 	it('refuses access when the owned attempt is not found', async () => {
 		mocks.row = null;
 		expect((await PATCH(event({ action: 'start', revision: 0 }))).status).toBe(404);

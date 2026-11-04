@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseQuestionPayloadFromResponse } from '#lib/question-bank/mcq/payload.js';
+import {
+	isPoolWarmingResponse,
+	POOL_WARMING_CODE,
+	parseQuestionPayloadFromResponse
+} from '#lib/question-bank/mcq/payload.js';
 
 const validOptions = [
 	{ id: 'A', text: 'Three' },
@@ -130,5 +134,20 @@ describe('parseQuestionPayloadFromResponse', () => {
 		const result = parseQuestionPayloadFromResponse(validPayload({ stimulus: {} }));
 		expect(result.hasStimulus).toBe(false);
 		expect(result.stimulus).toBeUndefined();
+	});
+});
+
+describe('isPoolWarmingResponse', () => {
+	it('accepts typed warming responses and rejects incomplete payloads', () => {
+		expect(
+			isPoolWarmingResponse({
+				code: POOL_WARMING_CODE,
+				error: 'warming',
+				retryAfterSeconds: 15
+			})
+		).toBe(true);
+		expect(isPoolWarmingResponse({ code: POOL_WARMING_CODE })).toBe(false);
+		expect(isPoolWarmingResponse({ error: 'nope' })).toBe(false);
+		expect(isPoolWarmingResponse(null)).toBe(false);
 	});
 });

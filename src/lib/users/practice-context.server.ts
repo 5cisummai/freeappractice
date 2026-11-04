@@ -55,6 +55,36 @@ export async function resolveRequestPracticeContext(
 	return resolvePracticeContext(userId, locals.session?.activeOrganizationId);
 }
 
+/**
+ * Resolve practice namespace for authenticated APIs.
+ *
+ * `practiceNamespace=personal` forces the personal namespace and ignores the
+ * session active organization. Omitting the parameter keeps session behavior.
+ * An explicit `organizationId` query still selects a classroom when authorized.
+ */
+export async function resolveApiPracticeContext(
+	input: {
+		url: URL;
+		locals: Pick<App.Locals, 'session'>;
+	},
+	userId: string
+): Promise<PracticeContext> {
+	const namespace = input.url.searchParams.get('practiceNamespace');
+	if (namespace === 'personal') {
+		return { organizationId: null };
+	}
+	if (namespace != null && namespace !== '' && namespace !== 'session') {
+		throw new OrganizationPermissionError('practiceNamespace must be "personal" or "session".');
+	}
+
+	if (input.url.searchParams.has('organizationId')) {
+		const organizationId = input.url.searchParams.get('organizationId');
+		return resolvePracticeContext(userId, organizationId?.trim() || null);
+	}
+
+	return resolveRequestPracticeContext(input.locals, userId);
+}
+
 export async function assertPracticeContextAccess(
 	userId: string,
 	context: PracticeContext

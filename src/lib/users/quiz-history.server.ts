@@ -1,3 +1,4 @@
+import { normalizeMcqEnrichment, type McqEnrichment } from '#lib/question-bank/mcq/enrichment.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
@@ -19,7 +20,7 @@ const MAX_QUIZ_DURATION_MS = 24 * 60 * 60 * 1000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ANSWER_LETTERS = new Set(['A', 'B', 'C', 'D']);
 
-type QuizAttemptInput = {
+export type QuizAttemptInput = {
 	quizId?: unknown;
 	sharedSlug?: unknown;
 	practiceSessionId?: unknown;
@@ -39,17 +40,18 @@ type QuizQuestionInput = {
 
 export type PersistQuizAttemptResult =
 	| {
-			status: 200;
-			body: {
-				message: string;
-				quizId: string;
-				requestedCount: number;
-				answeredCount: number;
-				correctCount: number;
-				scorePercent: number;
-			};
+			ok: true;
+			quizId: string;
+			requestedCount: number;
+			answeredCount: number;
+			correctCount: number;
+			scorePercent: number;
 	  }
-	| { status: 400 | 403 | 404 | 409 | 422; body: { error: string } };
+	| {
+			ok: false;
+			code: 'invalid' | 'forbidden' | 'not_found' | 'conflict' | 'invalid_metadata';
+			error: string;
+	  };
 
 function asPracticeSessionStatus(value: string): 'open' | 'completed' | 'cancelled' {
 	if (value === 'open' || value === 'completed' || value === 'cancelled') return value;
@@ -65,16 +67,18 @@ export type CoachQuizAttempt = {
 	correctCount: number;
 	incorrectCount: number;
 	scorePercent: number;
-	questions: Array<{
-		position: number;
-		questionId: string;
-		prompt: string | null;
-		options: Record<string, string> | null;
-		selectedAnswer: string | null;
-		correctAnswer: string | null;
-		wasCorrect: boolean | null;
-		explanation: string | null;
-	}>;
+	questions: Array<
+		McqEnrichment & {
+			position: number;
+			questionId: string;
+			prompt: string | null;
+			options: Record<string, string> | null;
+			selectedAnswer: string | null;
+			correctAnswer: string | null;
+			wasCorrect: boolean | null;
+			explanation: string | null;
+		}
+	>;
 };
 
 function asTrimmedString(value: unknown): string {
@@ -146,9 +150,8 @@ function stableQuestionAttemptId(quizId: string, position: number): string {
 /** Persist one completed client-side quiz and verify each answer against canonical questions. */
 export async function persistQuizAttempt(
 	userId: string,
-	body: Record<string, unknown>
+	input: QuizAttemptInput
 ): Promise<PersistQuizAttemptResult> {
-	const input = body as QuizAttemptInput;
 	const quizId = asTrimmedString(input.quizId);
 	const sharedSlug = asTrimmedString(input.sharedSlug);
 	const practiceSessionId = asTrimmedString(input.practiceSessionId);
@@ -157,13 +160,13 @@ export async function persistQuizAttempt(
 	const items = parseQuizQuestions(input.items);
 
 	if ((!course && !sharedSlug) || course.length > 120 || unit.length > 120) {
-		return { status: 400, body: { error: 'A valid class and unit are required.' } };
+		return { ok: false, code: 'invalid', error: 'A valid class and unit are required.' };
 	}
 	if (quizId && !UUID_PATTERN.test(quizId)) {
-		return { status: 400, body: { error: 'Invalid quiz ID.' } };
+		return { ok: false, code: 'invalid', error: 'Invalid quiz ID.' };
 	}
 	if (!items) {
-		return { status: 400, body: { error: 'A quiz must include between 1 and 50 questions.' } };
+		return { ok: false, code: 'invalid', error: 'A quiz must include between 1 and 50 questions.' };
 	}
 
 	let context: PracticeContext = { organizationId: null };
@@ -178,14 +181,15 @@ export async function persistQuizAttempt(
 			sessionStatus = asPracticeSessionStatus(session.status);
 		} catch (error) {
 			if (error instanceof OrganizationPermissionError) {
-				return { status: 403, body: { error: error.message } };
+				return { ok: false, code: 'forbidden', error: error.message };
 			}
 			throw error;
 		}
 	} else if (input.organizationId !== undefined && input.organizationId !== null) {
 		return {
-			status: 400,
-			body: { error: 'A practice session is required for classroom practice.' }
+			ok: false,
+			code: 'invalid',
+			error: 'A practice session is required for classroom practice.'
 		};
 	}
 
@@ -193,7 +197,7 @@ export async function persistQuizAttempt(
 		? await getSharedQuizForCompletion(sharedSlug, userId, context.organizationId)
 		: null;
 	if (sharedQuiz && sharedQuiz.status !== 'ready') {
-		return { status: 404, body: { error: 'This shared quiz is no longer available.' } };
+		return { ok: false, code: 'not_found', error: 'This shared quiz is no longer available.' };
 	}
 	if (sharedQuiz?.status === 'ready') {
 		if (
@@ -203,7 +207,11 @@ export async function persistQuizAttempt(
 					item.position !== index || item.questionId !== sharedQuiz.questionIds[index]
 			)
 		) {
-			return { status: 400, body: { error: 'The submitted quiz does not match the shared quiz.' } };
+			return {
+				ok: false,
+				code: 'invalid',
+				error: 'The submitted quiz does not match the shared quiz.'
+			};
 		}
 	}
 
@@ -211,7 +219,11 @@ export async function persistQuizAttempt(
 	const resolvedUnit = sharedQuiz?.status === 'ready' ? sharedQuiz.unit : unit;
 	const expectedSharedPracticeSetId = sharedQuiz?.status === 'ready' ? sharedQuiz.id : null;
 	if (sessionCourse && resolvedApClass !== sessionCourse) {
-		return { status: 400, body: { error: 'This quiz is outside the practice session course.' } };
+		return {
+			ok: false,
+			code: 'invalid',
+			error: 'This quiz is outside the practice session course.'
+		};
 	}
 
 	const db = getNeonDatabase();
@@ -227,7 +239,7 @@ export async function persistQuizAttempt(
 			.where(eq(quizAttempts.id, quizId))
 			.limit(1);
 		if (existing && existing.userId !== userId) {
-			return { status: 400, body: { error: 'Invalid quiz ID.' } };
+			return { ok: false, code: 'invalid', error: 'Invalid quiz ID.' };
 		}
 		if (
 			existing &&
@@ -235,20 +247,25 @@ export async function persistQuizAttempt(
 				existing.organizationId !== context.organizationId ||
 				existing.practiceSessionId !== (practiceSessionId || null))
 		) {
-			return { status: 400, body: { error: 'Invalid quiz ID.' } };
+			return { ok: false, code: 'invalid', error: 'Invalid quiz ID.' };
 		}
 		existingAttempt = Boolean(existing);
 	}
 	if (practiceSessionId && sessionStatus !== 'open' && !existingAttempt) {
-		return { status: 409, body: { error: 'This practice session has already been completed.' } };
+		return {
+			ok: false,
+			code: 'conflict',
+			error: 'This practice session has already been completed.'
+		};
 	}
 
 	const questionMap = await getQuestionsLookupMap(items.map((item) => item.questionId));
 	const missingQuestion = items.find((item) => !questionMap.has(item.questionId));
 	if (missingQuestion) {
 		return {
-			status: 404,
-			body: { error: 'One or more quiz questions are no longer available.' }
+			ok: false,
+			code: 'not_found',
+			error: 'One or more quiz questions are no longer available.'
 		};
 	}
 
@@ -307,7 +324,7 @@ export async function persistQuizAttempt(
 			existing.organizationId !== context.organizationId ||
 			existing.practiceSessionId !== (practiceSessionId || null)
 		) {
-			return { status: 400, body: { error: 'Invalid quiz ID.' } };
+			return { ok: false, code: 'invalid', error: 'Invalid quiz ID.' };
 		}
 	}
 
@@ -368,15 +385,12 @@ export async function persistQuizAttempt(
 		await finishPracticeSession(userId, practiceSessionId);
 	}
 	return {
-		status: 200,
-		body: {
-			message: 'Quiz saved to history.',
-			quizId: persistedQuizId,
-			requestedCount: items.length,
-			answeredCount,
-			correctCount,
-			scorePercent
-		}
+		ok: true,
+		quizId: persistedQuizId,
+		requestedCount: items.length,
+		answeredCount,
+		correctCount,
+		scorePercent
 	};
 }
 
@@ -446,7 +460,8 @@ export async function getQuizAttemptForCoach(
 				selectedAnswer: item.selectedAnswer,
 				correctAnswer: question?.correctAnswer ?? null,
 				wasCorrect: item.wasCorrect,
-				explanation: question?.explanation.slice(0, 1800) ?? null
+				explanation: question?.explanation.slice(0, 1800) ?? null,
+				...normalizeMcqEnrichment(question ?? {})
 			};
 		})
 	};

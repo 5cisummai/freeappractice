@@ -6,7 +6,7 @@ import {
 } from '#lib/users/history.server.js';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { isFrqPracticeEnabled } from '#lib/flags.js';
-import { resolveRequestPracticeContext } from '#lib/users/practice-context.server.js';
+import { resolveApiPracticeContext } from '#lib/users/practice-context.server.js';
 
 export const GET = withAuthedHandler(
 	async (event, userId) => {
@@ -27,7 +27,7 @@ export const GET = withAuthedHandler(
 		);
 
 		const frqEnabled = await isFrqPracticeEnabled();
-		const context = await resolveRequestPracticeContext(event.locals, userId);
+		const context = await resolveApiPracticeContext(event, userId);
 		const pageResult = await getPracticeHistoryPage(
 			userId,
 			{
