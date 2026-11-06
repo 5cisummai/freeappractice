@@ -6,8 +6,13 @@ import type { PoolRefillState as PoolRefillStateRow } from '#lib/question-bank/p
 import {
 	estimatePoolGenerationSlots,
 	estimatePoolGenerationSlotsForJobs,
-	generatePoolQuestion
+	generatePoolQuestion,
+	recentTopicBucketForPoolJob
 } from '#lib/question-bank/pool-kind-worker.server.js';
+import {
+	getRecentTopicsByBucket,
+	recentTopicBucketKey
+} from '#lib/question-bank/recent-topic.server.js';
 import { getPoolKindAdapter } from '#lib/question-bank/pool-kinds.server.js';
 import {
 	countActivePoolRowsForServing,
@@ -414,10 +419,18 @@ async function releaseLeasesBudgetExhausted(
 async function generateOne(
 	bucket: PoolBucketKey,
 	target: number,
-	reservedSlots?: number
+	reservedSlots?: number,
+	recentTopics?: string[]
 ): Promise<{ skippedDuplicate: boolean; skippedAtTarget: boolean; generatedCount: number }> {
 	const guarded = await writePoolBucketBelowTarget(bucket, target, () =>
-		generatePoolQuestion(bucket.questionType, bucket.course, bucket.unit, target, reservedSlots)
+		generatePoolQuestion(
+			bucket.questionType,
+			bucket.course,
+			bucket.unit,
+			target,
+			reservedSlots,
+			recentTopics
+		)
 	);
 	if (guarded.status === 'at_target') {
 		return { skippedDuplicate: false, skippedAtTarget: true, generatedCount: 0 };
@@ -518,6 +531,7 @@ export async function processRefillJob(
 		observedCount?: number;
 		initialReservedSlots?: number;
 		leaseAlreadyRenewed?: boolean;
+		recentTopics?: string[];
 	}
 ): Promise<{
 	generated: number;
@@ -609,7 +623,7 @@ export async function processRefillJob(
 				}
 			}
 
-			const result = await generateOne(bucket, lease.target, reservedSlots);
+			const result = await generateOne(bucket, lease.target, reservedSlots, opts.recentTopics);
 			if (result.skippedAtTarget) {
 				await releaseDailyGenerationBudget(reservedSlots);
 				reservedSlotsForAttempt = 0;
@@ -719,6 +733,7 @@ type PreparedDueRefillJob = {
 	job: PoolRefillStateRow;
 	observedCount: number;
 	initialReservedSlots: number;
+	recentTopics: string[];
 };
 
 async function allocateDueRefillBudget(
@@ -734,7 +749,11 @@ async function allocateDueRefillBudget(
 	const reserved =
 		wanted > 0 ? await reserveDailyGenerationBudget(env, Math.min(wanted, budgetRemaining)) : 0;
 	let remaining = reserved;
-	const ready: PreparedDueRefillJob[] = [];
+	const funded: Array<{
+		job: PoolRefillStateRow;
+		observedCount: number;
+		initialReservedSlots: number;
+	}> = [];
 	const exhausted: PoolRefillStateRow[] = [];
 	for (const item of live) {
 		const slots = Math.max(1, slotEstimates.get(item.job.id) ?? 1);
@@ -743,11 +762,20 @@ async function allocateDueRefillBudget(
 			continue;
 		}
 		remaining -= slots;
-		ready.push({ ...item, initialReservedSlots: slots });
+		funded.push({ ...item, initialReservedSlots: slots });
 	}
 	if (remaining > 0) await releaseDailyGenerationBudget(remaining);
 	if (exhausted.length) await releaseLeasesBudgetExhausted(exhausted, env);
-	return ready;
+	if (!funded.length) return [];
+
+	const topicBuckets = funded.map(({ job }) => recentTopicBucketForPoolJob(job));
+	const topicsByBucket = await getRecentTopicsByBucket(topicBuckets).catch(
+		() => new Map<string, string[]>()
+	);
+	return funded.map((item, index) => ({
+		...item,
+		recentTopics: topicsByBucket.get(recentTopicBucketKey(topicBuckets[index]!)) ?? []
+	}));
 }
 
 /**
@@ -842,13 +870,14 @@ export async function runQuestionPoolRefillWorker(
 		const prepared = await prepareDueRefillJobs(due, env, budgetRemaining);
 		if (prepared.length) {
 			const results = await Promise.allSettled(
-				prepared.map(({ job, observedCount, initialReservedSlots }) =>
+				prepared.map(({ job, observedCount, initialReservedSlots, recentTopics }) =>
 					processRefillJob(job, env, {
 						maxGenerations: budgetRemaining,
 						deadlineMs,
 						observedCount,
 						initialReservedSlots,
-						leaseAlreadyRenewed: true
+						leaseAlreadyRenewed: true,
+						recentTopics
 					})
 				)
 			);

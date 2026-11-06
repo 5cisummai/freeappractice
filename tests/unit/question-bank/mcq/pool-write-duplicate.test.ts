@@ -74,4 +74,38 @@ describe('generateQuestionForPool duplicate insertion', () => {
 			'pool write failed'
 		);
 	});
+
+	it('uses prefetched recent topics without a per-job lookup', async () => {
+		generateAPQuestion.mockResolvedValueOnce({
+			answer: sampleAnswer,
+			questionId: 'q-prefetched-1',
+			provider: 'openai',
+			model: 'test',
+			timing: { generationMs: 10, persistenceMs: 5 }
+		});
+		createCanonicalMcqQuestion.mockResolvedValueOnce({ questionId: 'q-prefetched-1' });
+
+		await generateQuestionForPool('AP Biology', 'Unit 1', ['Cell signaling']);
+
+		expect(getRecentTopics).not.toHaveBeenCalled();
+		expect(generateAPQuestion).toHaveBeenCalledWith(
+			expect.objectContaining({ recentTopics: ['Cell signaling'] })
+		);
+	});
+
+	it('does not refetch when the prefetched topic list is empty', async () => {
+		generateAPQuestion.mockResolvedValueOnce({
+			answer: sampleAnswer,
+			questionId: 'q-empty-1',
+			provider: 'openai',
+			model: 'test',
+			timing: { generationMs: 10, persistenceMs: 5 }
+		});
+		createCanonicalMcqQuestion.mockResolvedValueOnce({ questionId: 'q-empty-1' });
+
+		await generateQuestionForPool('AP Biology', 'Unit 1', []);
+
+		expect(getRecentTopics).not.toHaveBeenCalled();
+		expect(generateAPQuestion).toHaveBeenCalledWith(expect.objectContaining({ recentTopics: [] }));
+	});
 });

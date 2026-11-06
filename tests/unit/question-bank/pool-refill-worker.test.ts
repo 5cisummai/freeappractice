@@ -49,10 +49,30 @@ vi.mock('#lib/question-bank/pool-capacity.server.js', () => ({
 		})
 	)
 }));
+vi.mock('#lib/question-bank/recent-topic.server.js', () => ({
+	recentTopicBucketKey: (opts: { kind: string; course: string; unit: string }) =>
+		`${opts.kind}\u0000${opts.course}\u0000${opts.unit}`,
+	getRecentTopicsByBucket: vi.fn(
+		async (buckets: Array<{ kind: string; course: string; unit: string }>) =>
+			new Map(
+				buckets.map((bucket) => [
+					`${bucket.kind}\u0000${bucket.course}\u0000${bucket.unit}`,
+					['prefetched']
+				])
+			)
+	)
+}));
 vi.mock('#lib/question-bank/pool-kind-worker.server.js', () => ({
 	estimatePoolGenerationSlots: vi.fn(async () => 1),
 	estimatePoolGenerationSlotsForJobs: vi.fn(
 		async (jobs: Array<{ id: string }>) => new Map(jobs.map((job) => [job.id, 1]))
+	),
+	recentTopicBucketForPoolJob: vi.fn(
+		(job: { questionType: string; course: string; unit: string }) => ({
+			kind: job.questionType,
+			course: job.course,
+			unit: job.unit
+		})
 	),
 	generatePoolQuestion: vi.fn(async (_type: string, course: string, unit: string) => {
 		mocks.state.activeGenerations += 1;
@@ -86,6 +106,7 @@ import {
 	estimatePoolGenerationSlotsForJobs,
 	generatePoolQuestion
 } from '#lib/question-bank/pool-kind-worker.server.js';
+import { getRecentTopicsByBucket } from '#lib/question-bank/recent-topic.server.js';
 import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 const env: QuestionPoolConfig = {
@@ -247,6 +268,7 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.processed).toBe(8);
 		expect(summary.generated).toBe(0);
 		expect(generatePoolQuestion).not.toHaveBeenCalled();
+		expect(getRecentTopicsByBucket).not.toHaveBeenCalled();
 		expect(mocks.db.execute).toHaveBeenCalledTimes(3);
 		const [, countedBuckets] = vi.mocked(countActivePoolRowsForServingByBucket).mock.calls[0];
 		expect(countedBuckets).toHaveLength(8);
@@ -272,5 +294,19 @@ describe('question pool refill worker concurrency', () => {
 		expect(vi.mocked(estimatePoolGenerationSlotsForJobs).mock.calls[0]?.[0]).toHaveLength(8);
 		expect(writePoolBucketBelowTarget).toHaveBeenCalledTimes(8);
 		expect(mocks.state.maxConcurrentGenerations).toBe(8);
+	});
+
+	it('prefetches recent topics once for the generate wave', async () => {
+		const summary = await runQuestionPoolRefillWorker(env, {
+			owner: 'worker-test',
+			startedAt: Date.now()
+		});
+
+		expect(summary.generated).toBe(8);
+		expect(getRecentTopicsByBucket).toHaveBeenCalledOnce();
+		expect(vi.mocked(getRecentTopicsByBucket).mock.calls[0]?.[0]).toHaveLength(8);
+		expect(
+			vi.mocked(generatePoolQuestion).mock.calls.every((call) => call[5]?.[0] === 'prefetched')
+		).toBe(true);
 	});
 });
