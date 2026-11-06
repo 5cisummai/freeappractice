@@ -54,6 +54,15 @@ vi.mock('#lib/question-bank/pool-kind-worker.server.js', () => ({
 	estimatePoolGenerationSlotsForJobs: vi.fn(
 		async (jobs: Array<{ id: string }>) => new Map(jobs.map((job) => [job.id, 1]))
 	),
+	recentTopicBucketForPoolJob: (job: {
+		questionType: 'mcq' | 'frq';
+		course: string;
+		unit: string;
+	}) => ({
+		kind: job.questionType,
+		course: job.course,
+		unit: job.unit
+	}),
 	generatePoolQuestion: vi.fn(async (_type: string, course: string, unit: string) => {
 		mocks.state.activeGenerations += 1;
 		mocks.state.maxConcurrentGenerations = Math.max(
@@ -65,6 +74,19 @@ vi.mock('#lib/question-bank/pool-kind-worker.server.js', () => ({
 		mocks.state.completedBuckets.add(`${course}\u0000${unit}`);
 		return { skippedDuplicate: false, generatedCount: 1 };
 	})
+}));
+vi.mock('#lib/question-bank/recent-topic.server.js', () => ({
+	recentTopicBucketKey: (kind: string, course: string, unit: string) =>
+		`${kind}\u0000${course}\u0000${unit}`,
+	getRecentTopicsByBucket: vi.fn(
+		async (buckets: Array<{ kind: string; course: string; unit: string }>) =>
+			new Map(
+				buckets.map((bucket) => [
+					`${bucket.kind}\u0000${bucket.course}\u0000${bucket.unit}`,
+					['cached topic']
+				])
+			)
+	)
 }));
 vi.mock('#lib/question-bank/pool-kinds.server.js', () => ({
 	getPoolKindAdapter: vi.fn(() => ({ minimumGenerationHeadroomMs: 0 }))
@@ -78,6 +100,7 @@ vi.mock('#lib/server/question-request-metrics.js', () => ({
 
 import { runQuestionPoolRefillWorker } from '#lib/question-bank/pool-refill.server.js';
 import {
+	countActivePoolRowsForServing,
 	countActivePoolRowsForServingByBucket,
 	isValidPoolBucket
 } from '#lib/question-bank/pool-refill-queue.server.js';
@@ -86,6 +109,7 @@ import {
 	estimatePoolGenerationSlotsForJobs,
 	generatePoolQuestion
 } from '#lib/question-bank/pool-kind-worker.server.js';
+import { getRecentTopicsByBucket } from '#lib/question-bank/recent-topic.server.js';
 import type { QuestionPoolConfig } from '#lib/question-bank/pool-constants.js';
 
 const env: QuestionPoolConfig = {
@@ -119,6 +143,26 @@ function makeJob(index: number): PoolRefillState {
 		nextAttemptAt: null,
 		createdAt: now,
 		updatedAt: now
+	};
+}
+
+function executeQueries() {
+	return mocks.db.execute.mock.calls.map(([query]) => new PgDialect().sqlToQuery(query));
+}
+
+function generatedReleaseRows() {
+	const releaseQuery = executeQueries().find((query) => query.sql.includes('"generatedDelta"'));
+	const payload = releaseQuery?.params.find(
+		(param) => typeof param === 'string' && param.includes('generatedDelta')
+	);
+	return {
+		sql: releaseQuery?.sql,
+		rows: JSON.parse(typeof payload === 'string' ? payload : '[]') as Array<{
+			id: string;
+			leaseOwner: string;
+			observedCount: number;
+			generatedDelta: number;
+		}>
 	};
 }
 
@@ -156,7 +200,9 @@ function configureDatabase() {
 			return query;
 		}
 	}));
-	mocks.db.execute.mockImplementation(async () => {
+	mocks.db.execute.mockImplementation(async (query: unknown) => {
+		const sqlText = new PgDialect().sqlToQuery(query as never).sql;
+		if (!sqlText.includes('FOR UPDATE SKIP LOCKED')) return { rows: [] };
 		const claimed = mocks.state.candidates.splice(0, 40).map(asRunningLease);
 		mocks.state.claimed = claimed;
 		mocks.state.lastLease = claimed.at(-1) ?? null;
@@ -215,7 +261,7 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.generated).toBe(8);
 		expect(summary.budgetRemaining).toBe(0);
 		expect(mocks.state.maxConcurrentGenerations).toBe(8);
-		expect(mocks.db.execute).toHaveBeenCalledOnce();
+		expect(mocks.db.execute).toHaveBeenCalledTimes(2);
 	});
 
 	it('idles invalid catalog buckets without blocking valid jobs', async () => {
@@ -231,7 +277,7 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.processed).toBe(8);
 		expect(summary.generated).toBe(7);
 		expect(mocks.state.idleUpdates).toBe(1);
-		expect(mocks.db.execute).toHaveBeenCalledTimes(2);
+		expect(mocks.db.execute).toHaveBeenCalledTimes(3);
 	});
 
 	it('releases already-full claimed jobs in one statement', async () => {
@@ -253,15 +299,16 @@ describe('question pool refill worker concurrency', () => {
 		expect(countedBuckets.map(({ course, unit }) => `${course}\u0000${unit}`)).toEqual(
 			Array.from({ length: 8 }, (_, index) => `AP Biology\u0000Unit ${index + 1}`)
 		);
-		const queries = mocks.db.execute.mock.calls.map(([query]) => new PgDialect().sqlToQuery(query));
-		const releaseQuery = queries.find((query) => query.sql.includes('IS NOT DISTINCT FROM'));
-		expect(releaseQuery?.sql).toContain(
-			'target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"'
-		);
-		expect(JSON.stringify(releaseQuery?.params)).toContain('worker-test');
+		const release = generatedReleaseRows();
+		expect(release.sql).toContain('target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"');
+		expect(release.sql).toContain('target.generated_count + incoming."generatedDelta"');
+		expect(release.rows).toHaveLength(8);
+		expect(release.rows.every((row) => row.leaseOwner === 'worker-test')).toBe(true);
+		expect(release.rows.every((row) => row.generatedDelta === 0)).toBe(true);
+		expect(release.rows.every((row) => row.observedCount === 1)).toBe(true);
 	});
 
-	it('batches slot estimates and first-wave budget without holding write locks across generate', async () => {
+	it('batches post-LLM counts, recent topics, and lease releases without per-job write locks', async () => {
 		const summary = await runQuestionPoolRefillWorker(env, {
 			owner: 'worker-test',
 			startedAt: Date.now()
@@ -270,7 +317,37 @@ describe('question pool refill worker concurrency', () => {
 		expect(summary.generated).toBe(8);
 		expect(estimatePoolGenerationSlotsForJobs).toHaveBeenCalledOnce();
 		expect(vi.mocked(estimatePoolGenerationSlotsForJobs).mock.calls[0]?.[0]).toHaveLength(8);
-		expect(writePoolBucketBelowTarget).toHaveBeenCalledTimes(8);
+		expect(writePoolBucketBelowTarget).not.toHaveBeenCalled();
+		expect(countActivePoolRowsForServing).not.toHaveBeenCalled();
+		expect(countActivePoolRowsForServingByBucket).toHaveBeenCalledTimes(2);
+		expect(getRecentTopicsByBucket).toHaveBeenCalledOnce();
+		expect(vi.mocked(getRecentTopicsByBucket).mock.calls[0]?.[0]).toHaveLength(8);
+		expect(generatePoolQuestion).toHaveBeenCalledWith('mcq', 'AP Biology', 'Unit 1', 1, 1, [
+			'cached topic'
+		]);
 		expect(mocks.state.maxConcurrentGenerations).toBe(8);
+		const release = generatedReleaseRows();
+		expect(release.sql).toContain('target.generated_count + incoming."generatedDelta"');
+		expect(release.sql).toContain('target.lease_owner IS NOT DISTINCT FROM incoming."leaseOwner"');
+		expect(release.rows).toHaveLength(8);
+		expect(release.rows.every((row) => row.generatedDelta === 1)).toBe(true);
+		expect(release.rows.every((row) => row.observedCount === 1)).toBe(true);
+	});
+
+	it('releases leftover below-target jobs in one statement after the wave', async () => {
+		vi.mocked(countActivePoolRowsForServingByBucket).mockResolvedValue(new Map());
+
+		const summary = await runQuestionPoolRefillWorker(env, {
+			owner: 'worker-test',
+			startedAt: Date.now()
+		});
+
+		expect(summary.generated).toBe(8);
+		expect(summary.budgetRemaining).toBe(0);
+		const release = generatedReleaseRows();
+		expect(release.sql).toContain('WHEN incoming."observedCount" >= target.target THEN \'idle\'');
+		expect(release.rows).toHaveLength(8);
+		expect(release.rows.every((row) => row.generatedDelta === 1)).toBe(true);
+		expect(release.rows.every((row) => row.observedCount === 0)).toBe(true);
 	});
 });
