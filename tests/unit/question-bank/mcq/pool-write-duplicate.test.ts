@@ -74,4 +74,20 @@ describe('generateQuestionForPool duplicate insertion', () => {
 			'pool write failed'
 		);
 	});
+
+	it('does not fetch recent topics when a preloaded list is provided', async () => {
+		generateAPQuestion.mockResolvedValueOnce({
+			answer: sampleAnswer,
+			questionId: 'q-preload-1',
+			provider: 'openai',
+			model: 'test',
+			timing: { generationMs: 10, persistenceMs: 5 }
+		});
+		createCanonicalMcqQuestion.mockResolvedValueOnce({ questionId: 'q-preload-1' });
+
+		await generateQuestionForPool('AP Biology', 'Unit 1', []);
+
+		expect(getRecentTopics).not.toHaveBeenCalled();
+		expect(generateAPQuestion).toHaveBeenCalledWith(expect.objectContaining({ recentTopics: [] }));
+	});
 });

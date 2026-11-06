@@ -1,5 +1,9 @@
 import { generateAndPersistFrq } from '#lib/question-bank/frq/generation.server.js';
-import { frqPracticeFor, FRQ_ALL_UNITS } from '#lib/question-bank/frq/practice.js';
+import {
+	frqPracticeFor,
+	FRQ_ALL_UNITS,
+	resolveFrqPoolRequest
+} from '#lib/question-bank/frq/practice.js';
 import {
 	generateQuestionForPool,
 	generateStimulusSetForPool
@@ -15,6 +19,7 @@ import {
 } from '#lib/question-bank/mcq/stimulus-policy.js';
 import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 import type { PoolRefillQuestionType } from '#lib/question-bank/pool-refill-types.server.js';
+import type { RecentTopicBucket } from '#lib/question-bank/recent-topic.server.js';
 
 type GenerationResult = { skippedDuplicate?: boolean; generatedCount?: number };
 
@@ -22,7 +27,8 @@ async function generateMcqPoolQuestion(
 	course: string,
 	unit: string,
 	target = 0,
-	reservedSlots?: number
+	reservedSlots?: number,
+	recentTopics?: string[]
 ): Promise<GenerationResult> {
 	const childCount =
 		reservedSlots ?? (await estimatePoolGenerationSlots('mcq', course, unit, target));
@@ -34,32 +40,71 @@ async function generateMcqPoolQuestion(
 			course: course,
 			unit,
 			childCount,
-			mode
+			mode,
+			recentTopics
 		});
 		return {
 			skippedDuplicate: result.skippedDuplicate,
 			generatedCount: result.questionIds.length
 		};
 	}
-	const result = await generateQuestionForPool(course, unit);
+	const result = await generateQuestionForPool(course, unit, recentTopics);
 	return { skippedDuplicate: result.skippedDuplicate, generatedCount: 1 };
 }
 
 const generationAdapters = {
 	mcq: generateMcqPoolQuestion,
-	frq: (course: string, unit: string) =>
+	frq: (
+		course: string,
+		unit: string,
+		_target?: number,
+		_reservedSlots?: number,
+		recentTopics?: string[]
+	) =>
 		frqPracticeFor(course)?.control === 'task'
-			? generateAndPersistFrq(course, FRQ_ALL_UNITS, undefined, unit)
-			: generateAndPersistFrq(course, unit)
+			? generateAndPersistFrq(course, FRQ_ALL_UNITS, recentTopics, unit)
+			: generateAndPersistFrq(course, unit, recentTopics)
 } satisfies Record<
 	PoolRefillQuestionType,
 	(
 		course: string,
 		unit: string,
 		target?: number,
-		reservedSlots?: number
+		reservedSlots?: number,
+		recentTopics?: string[]
 	) => Promise<GenerationResult>
 >;
+
+/** Same bucket `generateAndPersistFrq` / `generateQuestionForPool` would read. */
+export function recentTopicBucketForPoolJob(job: {
+	questionType: PoolRefillQuestionType;
+	course: string;
+	unit: string;
+}): RecentTopicBucket {
+	switch (job.questionType) {
+		case 'mcq':
+			return { kind: 'mcq', course: job.course, unit: job.unit };
+		case 'frq': {
+			const practice = frqPracticeFor(job.course);
+			if (practice?.control === 'task') {
+				return { kind: 'frq', course: job.course, unit: FRQ_ALL_UNITS };
+			}
+			try {
+				return {
+					kind: 'frq',
+					course: job.course,
+					unit: resolveFrqPoolRequest(job.course, job.unit).storedUnit
+				};
+			} catch {
+				return { kind: 'frq', course: job.course, unit: job.unit };
+			}
+		}
+		default: {
+			const _exhaustive: never = job.questionType;
+			return _exhaustive;
+		}
+	}
+}
 
 /** Worker-only seam. Never import this module from request-path serving code. */
 export function generatePoolQuestion(
@@ -67,9 +112,10 @@ export function generatePoolQuestion(
 	course: string,
 	unit: string,
 	target?: number,
-	reservedSlots?: number
+	reservedSlots?: number,
+	recentTopics?: string[]
 ): Promise<GenerationResult> {
-	return generationAdapters[questionType](course, unit, target, reservedSlots);
+	return generationAdapters[questionType](course, unit, target, reservedSlots, recentTopics);
 }
 
 export function estimateMcqPoolGenerationSlots(opts: {

@@ -153,12 +153,12 @@ async function insertHotPoolDoc(
 export async function generateQuestionForPool(
 	course: string,
 	unit: string,
-	recentTopics: string[] = []
+	recentTopics?: string[]
 ): Promise<GenerateResult & { skippedDuplicate?: boolean }> {
 	const cacheUnit = unit?.trim() ?? '';
-	const topics = recentTopics.length
-		? recentTopics
-		: await getRecentTopics({ kind: 'mcq', course: course, unit: cacheUnit }).catch(() => []);
+	const topics =
+		recentTopics ??
+		(await getRecentTopics({ kind: 'mcq', course: course, unit: cacheUnit }).catch(() => []));
 	const policy = getStimulusPolicy(course);
 	const diagramsEnabled =
 		(await isStimulusQuestionsEnabled()) &&
@@ -220,9 +220,9 @@ export async function generateStimulusSetForPool(opts: {
 	) {
 		throw new QuestionGenerationError('Stimulus set does not match the course/unit policy.');
 	}
-	const topics = opts.recentTopics?.length
-		? opts.recentTopics
-		: await getRecentTopics({ kind: 'mcq', course: opts.course, unit: cacheUnit }).catch(() => []);
+	const topics =
+		opts.recentTopics ??
+		(await getRecentTopics({ kind: 'mcq', course: opts.course, unit: cacheUnit }).catch(() => []));
 	const generated = await generateAPStimulusSet({
 		...opts,
 		recentTopics: topics,
