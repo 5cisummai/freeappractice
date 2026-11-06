@@ -13,6 +13,7 @@
 			? 'Practice AP questions and study with Free AP Practice at no cost.'
 			: 'Get free AP tutoring for every question. Upgrade to Super for AI Coach and weekly study plans.'}
 	/>
+	<link rel="canonical" href="https://freeappractice.org/pricing" />
 </svelte:head>
 
 <PublicShell showPricing={!data.superFreeBetaEnabled}>

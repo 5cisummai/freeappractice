@@ -9,6 +9,7 @@ type SitemapEntry = {
 	path: string;
 	changefreq: 'daily' | 'weekly' | 'monthly';
 	priority: string;
+	lastmod?: string;
 };
 
 const entries: SitemapEntry[] = [
@@ -21,38 +22,36 @@ const entries: SitemapEntry[] = [
 	{ path: '/about', changefreq: 'weekly', priority: '0.8' },
 	{ path: '/super', changefreq: 'weekly', priority: '0.9' },
 	{ path: '/pricing', changefreq: 'weekly', priority: '0.8' },
-	{ path: '/login', changefreq: 'monthly', priority: '0.5' },
-	{ path: '/signup', changefreq: 'monthly', priority: '0.5' },
 	{ path: '/privacy', changefreq: 'monthly', priority: '0.4' },
 	{ path: '/terms', changefreq: 'monthly', priority: '0.4' }
 ];
 
 async function buildSitemapXml(baseUrl: string): Promise<string> {
-	// Add dynamic blog posts
-	const blogEntries = await listPublishedBlogEntries();
-	const dynamicEntries: SitemapEntry[] = blogEntries.map((post) => ({
+	const blogEntries: SitemapEntry[] = (await listPublishedBlogEntries()).map((post) => ({
 		path: `/blog/${post.slug}`,
 		changefreq: 'weekly',
-		priority: '0.6'
+		priority: '0.6',
+		lastmod: (post.publishedAt ?? post.createdAt).toISOString().slice(0, 10)
 	}));
 
 	const practiceEntries: SitemapEntry[] = getAllPageSlugs().map((slug) => {
 		const page = getPageBySlug(slug);
 		return {
 			path: `/practice/${slug}`,
-			changefreq: 'monthly',
+			changefreq: 'monthly' as const,
 			priority: page ? getSitemapPriority(page) : '0.7'
 		};
 	});
 
-	const allEntries = [...entries, ...dynamicEntries, ...practiceEntries];
+	const allEntries = [...entries, ...blogEntries, ...practiceEntries];
 
 	const urls = allEntries
 		.map(
-			({ path, changefreq, priority }) => `
+			({ path, changefreq, priority, lastmod }) => `
   <url>
     <loc>${baseUrl}${path}</loc>
-    <changefreq>${changefreq}</changefreq>
+${lastmod ? `    <lastmod>${lastmod}</lastmod>
+` : ''}    <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`
 		)
