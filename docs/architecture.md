@@ -1,450 +1,108 @@
-# Free AP Practice — Architecture
+# Architecture
 
-High-level overview of how the app is structured, how requests flow, and how the main features connect.
+Reviewed against the working tree on 2026-11-03. This document describes the main boundaries; the linked code owns exact behavior and configuration.
 
----
+## Application structure
 
-## 1. System overview
-
-```mermaid
-flowchart TB
-    subgraph Client["Browser — Svelte 5 + Tailwind"]
-        direction TB
-        PubUI["Public pages<br/>/, /about, /subjects, /summer,<br/>/blog, /stats, /privacy, /terms, /changelog"]
-        AuthUI["Auth pages<br/>/login, /signup, /verify-email,<br/>/forgot-password, /reset-password"]
-        PracticeSEO["SEO practice landings<br/>/practice/[...slug]"]
-        AppUI["Authenticated app /app/*<br/>dashboard · practice · progress<br/>history · resources · settings"]
-        Components["Feature UI under $lib/components<br/>PracticeShell · QuestionCard · FrqSession<br/>Tutor · Sidebar · Data tables"]
-    end
-
-    subgraph Vercel["SvelteKit on Vercel"]
-        direction TB
-        Hooks["hooks.server.ts<br/>session · PostHog proxy · CORS · security headers · logging"]
-        Pages["SSR / CSR routes<br/>+layout.server.ts guards /app"]
-        API["API routes /api/*"]
-    end
-
-    subgraph Lib["Server libraries ($lib)"]
-        AuthLib["auth/* — Better Auth + API helpers"]
-        QGen["questions/* — pool select, refill worker, Neon content"]
-        FrqLib["frq/* — FRQ select, grade, worker generation"]
-        PracticeUI["components/practice — practice runner UI"]
-        AI["ai/service.server.ts — Vercel AI SDK"]
-        TutorLib["tutor/*"]
-		UsersLib["users/* — profile, stats, progress, history, delete-app-data"]
-		Catalog["catalog/* — AP classes, practice pages, validation"]
-        BlogLib["blog/* — markdown posts"]
-        SiteUrl["site-url.ts — canonical origin"]
-    end
-
-    subgraph Data["Persistence"]
-        NeonDB[("Neon PostgreSQL<br/>Drizzle + Neon HTTPS")]
-        LegacyS3[("Legacy AWS S3<br/>import source")]
-        StaticJSON["Static data<br/>ap-classes-data-08212026.json"]
-        BlogMD["Markdown<br/>src/content/blog/*.md"]
-    end
-
-    subgraph External["External services"]
-        OpenAI["OpenAI-compatible API<br/>OpenAI or LM Studio"]
-        Resend["Resend — transactional email"]
-        Google["Google OAuth / One Tap"]
-        GitHub["GitHub Issues API<br/>bug reports"]
-    end
-
-    Client --> Hooks
-    Hooks --> Pages
-    Hooks --> API
-    Pages --> Lib
-    API --> Lib
-
-    AuthLib --> NeonDB
-    AuthLib --> Resend
-    AuthLib --> Google
-    AuthLib --> UsersLib
-    UsersLib --> NeonDB
-    UsersLib --> FrqLib
-    QGen --> NeonDB
-    QGen --> AI
-    FrqLib --> NeonDB
-    FrqLib --> AI
-    AI --> OpenAI
-    TutorLib --> AI
-    Catalog --> StaticJSON
-    BlogLib --> BlogMD
-    API --> GitHub
-
-    PracticeSEO -.->|"CTA → /app/practice?apClass&unit"| AppUI
-    PubUI -.->|"signed-in user redirected"| AppUI
-```
-
----
-
-## 2. Request lifecycle (every HTTP request)
-
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant H as hooks.server.ts
-    participant BA as Better Auth
-    participant R as Route handler
-    participant DB as Neon PostgreSQL
-
-    B->>H: HTTP request
-    H->>H: OPTIONS / favicon / PostHog proxy /api/*
-    alt POST /api/question only
-        Note over H: Skip Better Auth session lookup<br/>(public MCQ hot path)
-    else All other routes
-        H->>BA: getSession(headers)
-        BA->>DB: authSessions lookup
-        BA-->>H: session + user (or null)
-        H->>H: locals.userId / user / session
-    end
-    H->>R: resolve(event)
-    R-->>H: Response
-    H->>H: security headers, CORS, no-cache on /api
-    H-->>B: Response
-```
-
-`POST /api/question` is the only session-bypass exception. FRQ (`/api/question/frq`), `/api/me/*`, and cron/admin routes still resolve sessions or their own auth helpers.
-
----
-
-## 3. Route map
-
-```mermaid
-flowchart LR
-    subgraph Public["Public (no login)"]
-        P1["/ Landing"]
-        P2["/about · /subjects · /summer"]
-        P3["/blog · /blog/[slug]"]
-        P4["/stats"]
-        P5["/practice/[...slug]"]
-        P6["/privacy · /terms · /changelog"]
-        P7["/health · /sitemap.xml"]
-    end
-
-    subgraph AuthPages["Auth pages"]
-        A1["/login · /signup"]
-        A2["/verify-email · /email-sent"]
-        A3["/forgot-password · /reset-password"]
-    end
-
-    subgraph App["/app — session required"]
-        D["/app Dashboard"]
-        PR["/app/practice<br/>MCQ + optional FRQ"]
-        PG["/app/progress"]
-        HI["/app/history"]
-        RS["/app/resources"]
-        ST["/app/settings"]
-        AD["/app/admin"]
-    end
-
-    subgraph API["API"]
-        AUTH["/api/auth/*<br/>Better Auth"]
-        Q["/api/question<br/>/api/question/frq · /frq/grade<br/>/generation-stats"]
-        ME["/api/me/*<br/>stats · progress · history<br/>record-attempt · bookmarks<br/>frq-attempt"]
-        T["/api/tutor/chat · greeting · frq"]
-        BR["/api/bug-report"]
-        CRON["/api/cron/question-pool<br/>CRON_SECRET"]
-        ADMINQ["/api/admin/question-pool<br/>enqueue only"]
-    end
-
-    AuthPages --> AUTH
-    App --> ME
-    App --> Q
-    App --> T
-    App --> ADMINQ
-    PR --> Q
-    P4 --> Q
-    P5 --> PR
-    CRON -.->|"Vercel cron daily"| CRON
-```
-
-Public SEO landings use `QuestionShell` (MCQ-only thin wrapper over `PracticeShell`). Authenticated `/app/practice` uses `PracticeShell` with `allowFrq` when the FRQ flag is on. Admin Pool tab enqueues refill jobs only — it never generates synchronously.
-
----
-
-## 4. Question pool and generation (core feature)
-
-**Roles**
-
-| Store / path                              | Role                                                                                                                       |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Legacy S3** (`questions/`, `frqs/`)     | Optional one-time import source for older question objects; normal app paths never read or write it.                       |
-| **Neon active library**                   | Serving library: relational question rows with typed JSONB payloads and metadata, indexed random selection per class/unit. |
-| **User request path**                     | Selection only — never calls the LLM, never writes S3, never waits on a generation lock.                                   |
-| **Refill workers** (cron + admin enqueue) | Only place that generates and inserts/upserts an active Neon PostgreSQL row.                                               |
-
-Targets default to demand-scaled MCQ floors (the unified dataset's `questionBank.mcq.poolRules`: Biology preferred **41**, default preferred **23**, min **12** from generation-stats share) and **10 active FRQs** per class/unit. Refill starts below 90% of target and fills back to target. Targets are **floors, not caps**: buckets already above target are left alone (no auto-trim). Serving does not consume or delete rows.
-
-The serving and generation paths are deliberately separate. A question request performs validation, one database connection, and an indexed pool query. It does not acquire generation locks, call an LLM, or persist question content. Consequently, request telemetry records only validation, database-connect, pool-query, and total latency; generation and persistence timings belong to worker results and pool-health telemetry.
+Free AP Practice is a Bun/TypeScript application built with SvelteKit, Svelte 5, and Tailwind CSS, deployed to Vercel. Web pages and mobile HTTP APIs share domain functions. Neon PostgreSQL is the application database, accessed through Drizzle and the Neon HTTP adapter.
 
 ```mermaid
 flowchart TD
-    Start(["POST /api/question or /api/question/frq"]) --> Validate["validateQuestionRequest<br/>AP class · unit"]
-    Validate -->|invalid| Err400["400 / 410 response"]
-    Validate -->|ok| Pool["getQuestion / getFrqQuestion<br/>selection-only pool"]
-
-    Pool --> Select{"Indexed random Neon select<br/>active rows · session excludes"}
-    Select -->|hit| LoadInline["Read body from Neon<br/>typed JSONB payload + metadata"]
-    Select -->|empty| Warming["503 POOL_WARMING<br/>enqueue refill request"]
-    Select -->|db error| Unavailable["503 POOL_UNAVAILABLE<br/>no LLM fallback"]
-
-    LoadInline --> Return(["JSON payload + questionId"])
-    Warming --> RefillReq["Upsert PoolRefillState"]
-    Unavailable --> ReturnErr(["JSON error"])
-
-    Cron["Vercel cron / admin"] --> Worker["Bounded refill worker<br/>lease · daily budget"]
-    RefillReq --> Worker
-    Worker --> NeonInsert["Generate or import<br/>then insert active Neon row"]
-
-    Return --> UI["QuestionCard or FrqSession"]
-    UI --> Attempt["User answers"]
-    Attempt --> Record["MCQ: POST /api/me/record-attempt<br/>FRQ: POST /api/question/frq/grade"]
-    Record --> Profile["MCQ → relational attempt + progress rows<br/>FRQ → relational attempt + grade rows"]
+    Web[Web pages] --> Routes[SvelteKit loaders, actions, and API routes]
+    Mobile[Mobile client] --> Routes
+    Routes --> Auth[Better Auth and access checks]
+    Routes --> Domains[Domain functions]
+    Domains --> Neon[(Neon PostgreSQL)]
+    Domains --> Gateway[AI Gateway]
+    Domains --> Redis[Upstash Redis controls]
+    Domains --> Blob[Private Coach image storage]
+    Auth --> Neon
+    Auth --> Mail[Resend]
+    Domains --> Billing[Stripe]
 ```
 
-**Pool behavior notes**
+| Location                | Responsibility                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/routes`            | Marketing pages, authenticated product pages, loaders, actions, APIs, and cron/webhook entry points      |
+| `src/lib/auth`          | Better Auth, session helpers, organization membership, classroom eligibility, and mobile sign-in handoff |
+| `src/lib/catalog`       | Course data, source provenance, practice pages, and mobile catalog views                                 |
+| `src/lib/question-bank` | MCQ/FRQ inventory, serving, generation, refill, and quality review                                       |
+| `src/lib/grading/frq`   | FRQ submissions and grading                                                                              |
+| `src/lib/users`         | Profiles, attempts, practice sessions, progress, history, and practice context                           |
+| `src/lib/agent`         | Coach, conversations, attachments, tools, study plans, memory, and usage controls                        |
+| `src/lib/tutor`         | Question-specific tutoring                                                                               |
+| `src/lib/billing`       | Super access, subscriptions, grants, and billing maintenance                                             |
+| `src/lib/server/neon`   | Database adapter and Drizzle schemas                                                                     |
 
-- Signed-in and anonymous users share the same Neon serving library (per question type).
-- The browser sends current-session `excludeQuestionIds` (capped at 100). If every active ID is excluded but the bucket is non-empty, selection resets exclusions and returns a random active question.
-- Multiple users can receive the same question at the same time; rows are not claimed or deleted on serve.
-- `contentHash` (SHA-256 of normalized question text) deduplicates inserts into the library; duplicate keys during refill are skipped and counted toward the run budget.
-- Empty buckets return typed `POOL_WARMING` immediately and request asynchronous population — there is no synchronous generation fallback.
-- The final count-and-write is serialized per bucket. Workers stop writing once the configured target is reached, while any older surplus rows remain active until an explicit retirement operation.
-- **Refill leases:** warming/admin enqueue never demotes a live `running` lease to `pending`. The cron worker claims due jobs, renews the lease before each generation, and stops on per-run / daily LLM budget. Full-catalog reconcile (`bun run pool:reconcile` → `reconcilePoolRefillJobs`) bulk-upserts catalog state and is an ops tool — it is **not** run on every cron tick (the catalog walk would starve generation inside the serverless time budget).
-- Ops: `bun run pool:backfill-s3` for optional legacy imports, and `bun run pool:retire` (replaces the old clear-cache script). See [question-pool-runbook.md](./question-pool-runbook.md).
+Domain functions enforce business rules and resource permissions and access Drizzle directly. Route wrappers resolve identity, parse inputs, map outcomes to HTTP/form responses, and handle cookies, streaming, and request analytics. Keep ordinary domain functions independent of a SvelteKit request event where practical. See the [web/mobile business logic map](mobile-business-logic-map.md) for the detailed endpoint inventory.
 
-User-facing `/api/question` has **no** LLM rate limiter because it never calls the LLM. Cost controls live on the refill worker (`QUESTION_POOL_DAILY_LLM_GENERATION_BUDGET` in `src/lib/question-bank/pool-constants.ts` with atomic reserve, per-run generation cap, leases). Tutor chat remains a separate path.
+## Requests and identity
 
-This is simpler than the retired synchronous-cache design: the request interface has one responsibility (selection), the worker interface has one responsibility (population), and Neon PostgreSQL is the single canonical and serving store. Legacy S3 is not queried during normal serves. The old cache-lock, cache-miss, synchronous-generation fallback, and clear-cache paths are intentionally absent.
+[Server hooks](../src/hooks.server.ts) compose Sentry, Vercel Flags, the PostHog proxy, session resolution, API rate limiting, account age gates, response headers, and request logging. Better Auth supports web sessions and bearer authentication for native clients. The mobile handoff exchanges a single-use code plus verifier for a separate session, allowing native sign-out without ending the browser session.
 
----
+[Request policy](../src/lib/server/request-policy.server.ts) skips eager session lookup for public marketing GETs, the public course catalog, email-delivery status reads, Resend webhooks, and anonymous MCQ POSTs at `/api/question` and `/api/questions/batch`. The MCQ POSTs and Resend webhook also skip the global API limiter. Route-level authentication and authorization still apply where required; authenticated route helpers can resolve a session when hooks skipped lookup.
 
-## 5. Authentication and user profile
+Account surfaces require a stored 13+ confirmation, with explicit onboarding/auth exemptions. The app layout handles authenticated navigation and onboarding. API responses passing through the hook receive private, no-store cache headers; the public homepage has separate CDN caching rules. Inspect hooks before relying on an endpoint's cache behavior.
 
-```mermaid
-flowchart TD
-    subgraph SignUp["Sign up / sign in"]
-        Email["Email + password"]
-        Google["Google OAuth / One Tap"]
-    end
+## Question library and practice
 
-    SignUp --> BA["Better Auth /api/auth/*"]
-    BA --> AuthDB[("Neon PostgreSQL auth schema<br/>auth.users · auth.sessions<br/>auth.accounts · auth.verifications")]
-    BA --> EmailSend["Resend emails<br/>verify · reset · existing-user notice"]
-    BA --> Hook["databaseHooks.user.create.after"]
-    Hook --> Profile["ensureUserProfile → app.user_profiles row"]
+Canonical MCQ and FRQ bodies live as typed JSONB in Neon `content` tables, alongside indexed serving metadata and the question registry. Practice requests select existing inventory. They do not synchronously generate replacement questions. Empty buckets return a warming response and request asynchronous refill; database failures return an unavailable response.
 
-    subgraph Session["Most requests"]
-        Cookie["Session cookie"]
-        Cookie --> GetSession["auth.api.getSession"]
-        GetSession --> Locals["event.locals.userId"]
-    end
+Refill state, bucket write locks, leases, and generation budgets live in `ops`. Workers generate questions through AI Gateway and persist them to the library. Pool targets and budgets are defined in [pool constants](../src/lib/question-bank/pool-constants.ts) and catalog data; use those sources rather than copying target counts into documentation. Serving questions does not consume or delete library rows.
 
-    subgraph AppGuard["/app layout"]
-        Locals --> Check{session?}
-        Check -->|no| Redirect["redirect → /login"]
-        Check -->|yes| AppPages["/app/* pages"]
-    end
+MCQ attempts, quizzes, exams, FRQ responses/grades, bookmarks, and practice sessions are stored separately from question content. History and saved practice resolve question references through the canonical library. FRQ grading and question-specific tutor requests invoke AI independently of question serving.
 
-    subgraph Delete["Account cleanup"]
-        Del["deleteAppDataForUsers<br/>user/profile · attempt rows"]
-    end
+Available operational commands in `package.json` include:
 
-    Profile --> UserData["progress · MCQ/FRQ attempts<br/>bookmarks · practice experiments"]
-    BA --> Del
-```
+- `pool:fill`, `pool:reconcile`, `pool:batch-submit`, and `pool:batch-collect` for inventory operations.
+- `pool:retire` for explicit retirement, with an impact report and confirmation token.
+- `questions:preview`, `quality`, and `quality:eval` for generation previews and quality workflows.
+- `classroom:access`, `classroom:audit`, and `classroom:verify` for classroom administration and integrity checks.
 
-`POST /api/question` skips `auth.api.getSession` in hooks (public MCQ hot path). FRQ and `/api/me/*` still resolve the session; FRQ also uses `withAuthedHandler`.
+Read each command's options before running it against a database. Retiring inventory can temporarily leave affected practice buckets unavailable.
 
-Canonical site origin for emails, sitemaps, and discovery lives in `#lib/site-url.ts`. Auth callbacks use `$lib/auth/urls.ts` (`authCallbackUrl`). Authenticated API routes use `withAuthedHandler` in `$lib/auth/route-helpers.server.ts`.
+## Organizations and practice context
 
----
+Better Auth organizations represent personal spaces, study groups, and classrooms. Organization helpers validate membership and roles. Classroom creation is controlled by feature availability and creation grants, and classroom membership requires verified email.
 
-## 6. Practice session (signed-in user journey)
+[Practice context](../src/lib/users/practice-context.server.ts) determines personal versus classroom scope. Organization-aware practice rows use `organization_id`; personal practice uses a null organization ID. Group activity sharing is opt-in and has separate preferences and audience records. Shared practice sets have their own access and resolution workflows under `src/lib/shared-practice`.
 
-```mermaid
-sequenceDiagram
-    participant U as Student
-    participant App as /app/practice
-    participant PS as PracticeShell
-    participant Card as QuestionCard / FrqSession
-    participant Sess as question-card-session
-    participant API as API
-    participant AI as OpenAI / LM Studio
-    participant DB as Neon PostgreSQL
-    participant Tutor as Tutor panel
+Super access is evaluated per user and capability. Personal/group organizations can use the user's entitlement; classroom/enterprise contexts do not inherit that entitlement. Active organization selection alone is not an authorization check.
 
-    U->>App: Pick AP class + unit · optional MCQ/FRQ mode
-    App->>PS: requestVersion++
-    alt MCQ
-        PS->>Card: QuestionCard
-        Card->>Sess: loadQuestion
-        Sess->>API: POST /api/question
-        API->>DB: indexed random select from active library
-        alt hit
-            API-->>Sess: question payload
-            Sess-->>U: Render question + choices
-        else empty bucket
-            API-->>Sess: 503 POOL_WARMING
-            Sess-->>U: Warming UI · bounded auto-retry
-        end
-        opt After answer
-            U->>Sess: Check answer
-            Sess->>API: POST /api/me/record-attempt
-            API->>DB: Atomic MCQ attempt + progress update
-        end
-    else FRQ
-        PS->>Card: FrqSession
-        Card->>API: POST /api/question/frq
-        API->>DB: indexed random select from active FRQ library
-        alt hit
-            API-->>Card: FRQ payload
-        else empty bucket
-            API-->>Card: 503 POOL_WARMING
-            Card-->>U: Warming UI · bounded auto-retry
-        end
-        U->>API: POST /api/question/frq/grade
-        API->>AI: rubric grading
-        API->>DB: FrqAttempt
-    end
+## Coach, Tutor, and Super
 
-    opt Tutor
-        U->>Tutor: Ask for help
-        Tutor->>API: POST /api/tutor/greeting, /chat, or /frq
-        API->>AI: streaming tutor prompt (no answer leakage)
-        AI-->>Tutor: streamed guidance
-    end
+Tutor provides question-specific help. Coach combines streaming model responses with server tools, durable conversations, progress context, attachments, and study plans. Proposed profile and plan writes require student approval. Tool implementations enforce the allowed operations; model output alone does not authorize a write.
 
-    opt Bookmark
-        U->>API: POST /api/me/bookmarks
-        API->>DB: bookmarkedQuestions[]
-    end
-```
+AI calls use the shared [gateway credential helper](../src/lib/server/gateway-credentials.server.ts), with model selection owned by the relevant domain modules. Access checks combine feature flags, account preferences, age confirmation, organization policy, plan capabilities, and usage controls.
 
-Practice serve paths never call the LLM or read S3 for the question body — only Neon PostgreSQL. Generation happens asynchronously via `/api/cron/question-pool` (and admin enqueue). History/bookmark loads resolve canonical bodies from Neon by `questionId` when needed.
+Opt-in long-term learning memory uses Mem0 OSS with Neon PGVector through the [Neon HTTP adapter](../src/lib/agent/memory/neon-http-pgvector.server.ts). Memory tables are separated into development, preview, and production, and filtered by a per-user pseudonymous ID. Upstash Redis supports transient rate/usage controls; it is not the memory vector store.
 
-`QuestionShell` is a thin public MCQ-only wrapper around `PracticeShell`. MCQ answer/load/experiment state lives in `createQuestionCardSession` (`question-card-session.svelte.ts`); markup stays in `question-card.svelte`.
+Coach image bytes use private Vercel Blob storage in production. Local development can use an S3-compatible endpoint. Neon stores ownership and conversation/message associations. Image APIs validate ownership, and images are decoded and re-encoded before storage. Text attachments are validated and carried into the conversation flow. See [security and privacy](SECURITY_AND_PRIVACY.md) for processing and retention details.
 
-Practice page catalog + SEO live in `#lib/catalog` and `$lib/components/practice`.
+## Persistence and integrations
 
----
+| Store or service          | Role                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| Neon `auth`               | Accounts, sessions, organizations, memberships, invitations, and subscription records            |
+| Neon `app`                | User activity, profiles, conversations, plans, billing access, attachment metadata, and feedback |
+| Neon `content`            | Question library, quality workflows, and generation statistics                                   |
+| Neon `ops`                | Durable refill coordination, generation budgets, and cleanup jobs                                |
+| Neon public memory tables | Environment-scoped Mem0 vectors, payloads, and entities                                          |
+| Neon `feedback_analytics` | Restricted views exported for feedback reporting                                                 |
+| Vercel Blob               | Private Coach images; public AP Art History reference images use a separate store                |
+| Upstash Redis             | Short-lived API, tutor, and agent controls                                                       |
+| AI Gateway                | Question generation, grading, Tutor/Coach responses, and memory model calls                      |
+| Stripe / Resend           | Billing and transactional email                                                                  |
+| PostHog / Sentry          | Product analytics, operational metrics, and error monitoring                                     |
 
-## 7. Data model (Neon PostgreSQL)
+Schema definitions are under `src/lib/server/neon/schema/`. Do not assume a database schema name from a feature name; use the exported table definition.
 
-```mermaid
-erDiagram
-    AUTH_USERS ||--o{ AUTH_SESSIONS : has
-    AUTH_USERS ||--o{ AUTH_ACCOUNTS : has
-    AUTH_USERS ||--|| USER_PROFILES : "1:1 via userId"
-    AUTH_USERS ||--o{ USER_PROGRESS : has
-    AUTH_USERS ||--o{ MCQ_ATTEMPTS : has
-    AUTH_USERS ||--o{ BOOKMARKS : has
-    AUTH_USERS ||--o{ PRACTICE_EXPERIMENTS : assigned
-    AUTH_USERS ||--o{ FRQ_ATTEMPT : has
+## Deployment and maintenance
 
-    USER_PROFILES {
-        string userId PK
-        date createdAt
-    }
+Vercel serverless requests cannot rely on durable local files or shared process memory. Persist coordination and retry state in the database or the appropriate external store. Use the background-task helpers for request-lifetime work, and durable jobs for work that must survive a failed invocation.
 
-    USER_PROGRESS {
-        string userId
-        string apClass
-        string unit
-        number attempts
-        number correct
-    }
+[vercel.json](../vercel.json) schedules question-pool processing hourly and Super maintenance daily at 03:30 UTC. Maintenance handles retention and pending account cleanup. Cron handlers own authentication and execution bounds.
 
-    MCQ_ATTEMPTS {
-        string id PK
-        string userId
-        string questionId
-        boolean wasCorrect
-        date attemptedAt
-    }
+[CI](../.github/workflows/ci.yml) runs quality/build checks and applies migrations on the configured main/staging delivery paths, followed by the idempotent AP Art History CSV sync. The CSV under `docs/research/` is an operational input and must remain available. Follow the [database migration guide](database-migrations.md) for baseline adoption and schema changes.
 
-    BOOKMARKS {
-        string userId
-        string questionId
-    }
-
-    FRQ_ATTEMPT {
-        string userId
-        string questionId
-        string status
-        string id PK
-        string submissionId
-    }
-
-    FRQ_ATTEMPT_GRADE {
-        string attemptId PK
-        number pointsEarned
-        number pointsAvailable
-        number percentage
-    }
-
-    QUESTION_POOL {
-        string questionId UK
-        jsonb data
-        string contentHash UK
-        boolean active
-        number randomKey
-    }
-
-    POOL_REFILL_STATE {
-        string questionType
-        string apClass
-        string unit
-        string status
-        number target
-        number observedCount
-        string leaseOwner
-        date leaseExpiresAt
-    }
-
-    POOL_GENERATION_BUDGET {
-        string dayKey UK
-        number generations
-    }
-
-    QUESTION_RECENT_TOPICS {
-        string apClass
-        string unit
-        string topicsCovered
-    }
-
-    GEN_STATS {
-        counters for public /stats
-    }
-
-    POOL_REFILL_STATE }o--|| QUESTION_POOL : "maintains active counts"
-```
-
----
-
-## How the pieces fit together
-
-| Layer                | Role                                                                                                                                                           |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Public site**      | Marketing, blog, SEO practice pages, and generation stats — mostly static or read-only                                                                         |
-| **/app**             | Core product: MCQ (+ optional FRQ) practice, progress, history, bookmarks, settings                                                                            |
-| **Question library** | Neon PostgreSQL = canonical and serving library; legacy S3 is import-only; refill workers generate; request path is selection-only (`POOL_WARMING` when empty) |
-| **Better Auth**      | Sessions, OAuth, email verification; creates the base user-profile row on signup; `deleteAppDataForUsers` cleans related app rows on account delete            |
-| **AI layer**         | One OpenAI-compatible provider for **worker** generation, FRQ grading, and tutor chat — not for `/api/question` serves                                         |
-| **Vercel**           | Hosting, cron refill route, `waitUntil` for background auth tasks, Flags SDK, optional Analytics/Speed Insights                                                |
-
----
-
-## Latency and region co-location
-
-Question pool hits use Neon PostgreSQL over HTTPS. Choose a Neon region close to the primary Vercel deployment; cross-region RTT shows up as elevated `db_connect_ms` / `pool_query_ms` on `question_request` metrics and cannot be papered over in code.
-
-Operational checks and alert thresholds live in `[docs/question-request-metrics.md](question-request-metrics.md)`. Public MCQ `POST /api/question` skips Better Auth session lookup in `hooks.server.ts` to avoid auth round-trips on the hot path; FRQ and `/api/me/*` retain full session resolution.
-
-# Database migration status
-
-The relational target is defined under `src/lib/server/neon/` and accessed through `db.ts` with Drizzle's Neon HTTP adapter. Question bodies live in typed JSONB payloads on the canonical MCQ/FRQ rows; serving metadata and registry fields remain relational and indexed. All application and operational runtime paths use Neon PostgreSQL.
-
-The application uses Neon PostgreSQL and Drizzle directly. Domain functions issue focused Drizzle reads and writes; there is no Mongo-shaped compatibility layer.
+For analytics exports, see the [PostHog feedback integration](integrations/posthog-feedback.md). Feature rollouts use the existing Vercel Flags definitions in `src/lib/flags.ts`.

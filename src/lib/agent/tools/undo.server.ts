@@ -1,3 +1,4 @@
+import { claimIdempotencyKey, RedisRequiredError } from '#lib/agent/usage/controls.server.js';
 import { and, eq, isNull } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { coachAudits } from '#lib/server/neon/schema.js';
@@ -66,4 +67,27 @@ export async function undoCoachAudit(userId: string, auditId: string): Promise<b
 		)
 		.returning({ id: coachAudits.id });
 	return updated.length === 1;
+}
+
+export async function requestCoachUndo(
+	userId: string,
+	auditId: string,
+	idempotencyKey: string | undefined
+) {
+	if (!idempotencyKey || idempotencyKey.length > 200) {
+		return { error: 'An idempotency key is required.', reason: 'invalid_key' } as const;
+	}
+	try {
+		if (!(await claimIdempotencyKey(userId, `coach-undo:${idempotencyKey}`))) {
+			return { error: 'This Coach undo was already requested.', reason: 'duplicate' } as const;
+		}
+		return (await undoCoachAudit(userId, auditId))
+			? ({ undone: true } as const)
+			: ({ error: 'Coach change was not found', reason: 'not_found' } as const);
+	} catch (error) {
+		if (error instanceof RedisRequiredError) {
+			return { error: 'Coach undo is temporarily unavailable.', reason: 'unavailable' } as const;
+		}
+		throw error;
+	}
 }

@@ -4,6 +4,11 @@ excerpt: A direct, AP-specific study plan built around retrieval, spacing, and e
 summary: Replace vague AP prep habits with a concrete schedule and evidence-based routines that improve long-term retention.
 published: true
 date: 2026-03-31
+category: Study Skills
+relatedSlugs: science-of-studying, subject-specific
+ctaHref: subjects
+ctaLabel: Practice by subject
+ctaDescription: Turn study habits into retrieval practice by AP class.
 coverImage: https://public.assets.freeappractice.org/sayan-majhi-pkTEvaaBS-U-unsplash.jpg
 ---
 

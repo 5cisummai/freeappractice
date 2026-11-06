@@ -10,6 +10,8 @@ const inputSchema = z
 		mode: z.enum(['mcq', 'quiz', 'frq', 'exam']),
 		course: z.string().trim().min(1).max(120).nullable().optional(),
 		organizationId: z.string().trim().min(1).nullable().optional(),
+		/** Force personal namespace; ignores organizationId and session active org. */
+		practiceNamespace: z.enum(['personal', 'session']).optional(),
 		questionRefs: z
 			.array(
 				z.object({
@@ -28,7 +30,20 @@ export const POST = withAuthedHandler(
 		if (!parsed.success) {
 			return Response.json({ error: 'Invalid practice session.' }, { status: 400 });
 		}
-		const context = await resolvePracticeContext(userId, parsed.data.organizationId);
+		if (
+			parsed.data.practiceNamespace === 'personal' &&
+			parsed.data.organizationId != null &&
+			parsed.data.organizationId !== ''
+		) {
+			return Response.json(
+				{ error: 'practiceNamespace=personal cannot include organizationId.' },
+				{ status: 400 }
+			);
+		}
+		const context =
+			parsed.data.practiceNamespace === 'personal'
+				? { organizationId: null }
+				: await resolvePracticeContext(userId, parsed.data.organizationId);
 		const session = await startPracticeSession(
 			userId,
 			parsed.data.mode,

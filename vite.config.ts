@@ -7,11 +7,14 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { vercelToolbar } from '@vercel/toolbar/plugins/vite';
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const isVitest = Boolean(process.env.VITEST);
+const devTunnelHost = loadEnv('development', rootDir, '').VITE_DEV_TUNNEL_HOST;
 
 export default defineConfig({
+	server: { allowedHosts: devTunnelHost ? [devTunnelHost] : [] },
 	plugins: [
 		...(isVitest
 			? []
@@ -51,6 +54,7 @@ export default defineConfig({
 						'https://accounts.google.com',
 						'https://static.cloudflareinsights.com',
 						'https://va.vercel-scripts.com',
+						'https://www.desmos.com',
 						'unsafe-inline',
 						'https://t.freeappractice.org',
 						'blob:'
@@ -75,7 +79,8 @@ export default defineConfig({
 						'https://lh3.googleusercontent.com',
 						'https://apcentral.collegeboard.org',
 						'https://apstudents.collegeboard.org',
-						'https://*.collegeboard.org'
+						'https://*.collegeboard.org',
+						'https://www.desmos.com'
 					],
 					'connect-src': [
 						'self',
@@ -85,7 +90,8 @@ export default defineConfig({
 						'https://va.vercel-scripts.com',
 						'https://t.freeappractice.org',
 						'https://us.posthog.com',
-						'https://o4511759649472512.ingest.us.sentry.io'
+						'https://o4511759649472512.ingest.us.sentry.io',
+						'https://www.desmos.com'
 					],
 					'frame-src': [
 						'self',

@@ -7,7 +7,7 @@
 		markUiHintSeen,
 		type UiHintId
 	} from '#lib/client/ui-hints.svelte.js';
-	import { getFirstUseHintContent } from '#lib/onboarding/first-use-hint-content.js';
+	import { getFirstUseHintContent } from '#lib/client/ui-hints.svelte.js';
 	import HintCard from '#lib/components/onboarding/hint-card.svelte';
 
 	type Props = {

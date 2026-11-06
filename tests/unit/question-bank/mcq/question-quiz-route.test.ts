@@ -4,16 +4,14 @@ const {
 	assembleMcqQuiz,
 	isStimulusQuestionsEnabled,
 	limitQuestionPoolRequests,
-	requestPoolRefill,
-	resolveQuizUnits,
+	requestQuizRefill,
 	validateQuestionRequest,
 	QuizPoolWarmingError
 } = vi.hoisted(() => ({
 	assembleMcqQuiz: vi.fn(),
 	isStimulusQuestionsEnabled: vi.fn(),
 	limitQuestionPoolRequests: vi.fn(),
-	requestPoolRefill: vi.fn(),
-	resolveQuizUnits: vi.fn(),
+	requestQuizRefill: vi.fn(),
 	validateQuestionRequest: vi.fn(),
 	QuizPoolWarmingError: class extends Error {
 		availableCount: number;
@@ -30,9 +28,8 @@ vi.mock('#lib/flags.js', () => ({ isStimulusQuestionsEnabled }));
 vi.mock('#lib/question-bank/mcq/quiz-assembler.server.js', () => ({
 	assembleMcqQuiz,
 	QuizPoolWarmingError,
-	resolveQuizUnits
+	requestQuizRefill
 }));
-vi.mock('#lib/question-bank/pool-refill-queue.server.js', () => ({ requestPoolRefill }));
 vi.mock('#lib/question-bank/mcq/public-payload.server.js', () => ({
 	generatedQuestionToMcqAnswerBody: vi.fn()
 }));
@@ -52,8 +49,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 			limit: 20,
 			degraded: false
 		});
-		requestPoolRefill.mockReset();
-		resolveQuizUnits.mockReturnValue(['Unit 1']);
+		requestQuizRefill.mockReset();
 		validateQuestionRequest.mockReturnValue({
 			ok: true,
 			value: { course: 'AP Biology', unit: 'Unit 1' }
@@ -73,13 +69,13 @@ describe('POST /api/question/quiz refill authorization', () => {
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(503);
-		expect(requestPoolRefill).not.toHaveBeenCalled();
+		expect(requestQuizRefill).not.toHaveBeenCalled();
 		expect((await response.json()).refillRequested).toBe(false);
 	});
 
 	it('allows an authenticated pool miss to enqueue a refill', async () => {
 		assembleMcqQuiz.mockRejectedValueOnce(new QuizPoolWarmingError('warming', 0));
-		requestPoolRefill.mockResolvedValue(undefined);
+		requestQuizRefill.mockResolvedValue(true);
 
 		const response = await POST({
 			request: new Request('http://localhost/api/question/quiz', {
@@ -91,11 +87,7 @@ describe('POST /api/question/quiz refill authorization', () => {
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(503);
-		expect(requestPoolRefill).toHaveBeenCalledWith({
-			questionType: 'mcq',
-			course: 'AP Biology',
-			unit: 'Unit 1'
-		});
+		expect(requestQuizRefill).toHaveBeenCalledWith('AP Biology', 'Unit 1', undefined);
 		expect((await response.json()).refillRequested).toBe(true);
 	});
 

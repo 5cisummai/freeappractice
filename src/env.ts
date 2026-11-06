@@ -35,6 +35,7 @@ export const variables = defineEnvVars({
 	STRIPE_SECRET_KEY: { schema: optional },
 	BETTER_AUTH_ADMIN_USER_IDS: { schema: optional },
 	PUBLIC_GOOGLE_CLIENT_ID: { public: true, static: true },
+	PUBLIC_DESMOS_API_KEY: { public: true, static: true, schema: optional },
 	RESEND_API_KEY: { static: true },
 	RESEND_SIGNUP_SEGMENT_ID: { schema: optional },
 	RESEND_FROM: { schema: optional },

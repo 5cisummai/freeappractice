@@ -1,3 +1,4 @@
+import { enrichmentFields, normalizeMcqEnrichment } from './enrichment.js';
 import { z } from 'zod';
 import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 
@@ -18,6 +19,7 @@ export const StimulusSchema = z
 	});
 
 export const McqQuestionPayloadSchema = z.object({
+	...enrichmentFields,
 	course: z.string().trim().min(1),
 	unit: z.string().trim().min(1).default('all-units'),
 	mainTopic: z.string().trim().min(1),
@@ -140,6 +142,7 @@ export function parseMcqQuestionPayload(data: unknown): McqQuestionPayload {
 	const stimulusQuestionCount = asNullableInteger(record.stimulusQuestionCount, 1);
 
 	return McqQuestionPayloadSchema.parse({
+		...normalizeMcqEnrichment(record),
 		course: asText(record.course).trim() || 'Unknown',
 		unit: asText(record.unit).trim() || undefined,
 		topicsCovered,

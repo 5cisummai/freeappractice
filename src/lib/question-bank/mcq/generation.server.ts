@@ -1,3 +1,11 @@
+import {
+	DifficultySchema,
+	ChoiceExplanationsSchema,
+	enrichmentFields,
+	getMcqSubtopics,
+	assertMcqSubtopic,
+	DIFFICULTY_RUBRIC
+} from './enrichment.js';
 import { logger } from '#lib/server/logger.js';
 import {
 	NoObjectGeneratedError,
@@ -11,7 +19,7 @@ import {
 export const MCQ_GENERATION_MODEL = 'openai/gpt-6-luna';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { AP_DATA } from '#lib/catalog/dataset.js';
+import { AP_DATA } from '#lib/catalog/courses.js';
 
 import { EXAMFIG_DIAGRAM_SKILL } from '#lib/question-bank/mcq/diagram-prompt.js';
 
@@ -69,7 +77,7 @@ function buildUnitSections(
 	const ctx = getUnitContextData(course, unit);
 	if (!ctx) return { unitContext: '', keywordsContext: '' };
 	return {
-		unitContext: `\nUNIT FOCUS: ${unit}\n${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
+		unitContext: `\nDIFFICULTY: ${DIFFICULTY_RUBRIC}\nSUBTOPIC OPTIONS (choose one ID): ${JSON.stringify(getMcqSubtopics(course, unit).map((t) => ({ id: t.id, title: t.title })))}\nProvide a separate explanation for each answer choice, consistent with the answer key.\nUNIT FOCUS: ${unit}\n${ctx.topics.length ? `MAIN TOPIC OPTIONS (choose exactly one for the required mainTopic field): ${ctx.topics.join(', ')}\n` : ''}`,
 		keywordsContext:
 			ctx.keywords.length > 0
 				? `\nREQUIRED KEYWORDS/CONSTRAINTS: ${ctx.keywords.join('; ')}\n*** Your ${questionLabel} MUST focus ONLY on these specific keywords and topics. ***\n`
@@ -92,6 +100,9 @@ function buildDiversitySection(
 // ── Zod schemas ────────────────────────────────────────────────
 
 const APQuestionFields = {
+	difficulty: DifficultySchema,
+	subtopicId: z.string().trim().min(1),
+	choiceExplanations: ChoiceExplanationsSchema,
 	question: z
 		.string()
 		.describe(
@@ -136,6 +147,7 @@ const APQuestion = z.object({
 
 const APQuestionDataSchema = z.object({
 	...APQuestionFields,
+	...enrichmentFields,
 	diagram: z
 		.record(z.string(), z.unknown())
 		.nullable()
@@ -158,7 +170,12 @@ const APStimulusSet = z.object({
 assertOpenAiCompatibleObjectSchema(APStimulusSet, { schemaName: 'ap_stimulus_set' });
 
 export type APStimulusQuestionData = z.infer<typeof APStimulusQuestion>;
-export type APStimulusSetData = z.infer<typeof APStimulusSet>;
+export type APStimulusSetData = Omit<z.infer<typeof APStimulusSet>, 'questions'> & {
+	questions: Array<
+		Omit<z.infer<typeof APStimulusQuestion>, keyof typeof enrichmentFields> &
+			z.infer<z.ZodObject<typeof enrichmentFields>>
+	>;
+};
 
 /** Exported for OpenAI schema compatibility tests. */
 export const apQuestionSchema = APQuestion;
@@ -166,7 +183,7 @@ export const apStimulusSetSchema = APStimulusSet;
 
 /** Parse the model/batch representation and decode its JSON DiagramSpec. */
 export function parseGeneratedApQuestion(input: unknown): APQuestionData {
-	const parsed = APQuestion.parse(input);
+	const parsed = APQuestion.extend(enrichmentFields).parse(input);
 	let diagram: Record<string, unknown> | null = null;
 	if (parsed.diagram !== null) {
 		try {
@@ -182,7 +199,9 @@ export function parseGeneratedApStimulusSet(
 	input: unknown,
 	expectedChildCount?: number
 ): APStimulusSetData & { diagram: Record<string, unknown> | null } {
-	const parsed = APStimulusSet.parse(input);
+	const parsed = APStimulusSet.extend({
+		questions: z.array(APStimulusQuestion.extend(enrichmentFields)).min(1).max(5)
+	}).parse(input);
 	if (expectedChildCount !== undefined && parsed.questions.length !== expectedChildCount) {
 		throw new Error(
 			`Generated stimulus set contained ${parsed.questions.length} questions; expected ${expectedChildCount}.`
@@ -390,6 +409,7 @@ async function generateAPQuestionBody(opts: {
 		logContext: { course: opts.course, unit: opts.unit }
 	});
 	const parsed = parseGeneratedApQuestion(result.parsed);
+	assertMcqSubtopic(opts.course, opts.unit ?? 'all-units', parsed.subtopicId);
 
 	if (!diagramsEnabled) {
 		return { ...result, parsed: { ...parsed, diagram: null } };
@@ -451,6 +471,8 @@ export async function generateAPStimulusSet(opts: {
 		}
 	});
 	const parsed = parseGeneratedApStimulusSet(result.parsed, opts.childCount);
+	for (const child of parsed.questions)
+		assertMcqSubtopic(opts.course, opts.unit ?? 'all-units', child.subtopicId);
 	if (opts.mode === 'text' && parsed.diagram)
 		throw new Error('Text stimulus unexpectedly included a diagram.');
 	if (opts.mode === 'diagram' && !parsed.diagram)

@@ -31,6 +31,12 @@ vi.mock('#lib/agent/access.server.js', () => ({
 		memoryDisclosureSeenAt: null
 	})
 }));
+vi.mock('#lib/agent/attachments/images.server.js', () => ({
+	prepareCoachImageParts: vi.fn(async () => ({ savedParts: [], upload: undefined })),
+	linkCoachImage: vi.fn(),
+	coachImageModelMessages: vi.fn((messages) => messages),
+	coachImageManifest: vi.fn(async () => '')
+}));
 vi.mock('#lib/agent/usage/turn.server.js', () => ({
 	startAgentTurn: async () => ({
 		kind: 'available',

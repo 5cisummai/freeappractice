@@ -5,7 +5,7 @@
 	import { buttonVariants } from '#lib/components/ui/button/button.svelte';
 	import { cn } from '#lib/utils.js';
 
-	import { formatBlogDate, getBlogCategory } from '#lib/blog-display.js';
+	import { formatBlogDate } from '#lib/blog/format.js';
 	import ArrowUpRightIcon from '@tabler/icons-svelte/icons/arrow-up-right';
 	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-filled';
 
@@ -16,7 +16,7 @@
 		publishedAt,
 		createdAt,
 		coverImage = null,
-		tags = []
+		category
 	}: {
 		slug: string;
 		title: string;
@@ -24,11 +24,10 @@
 		publishedAt: string | null;
 		createdAt: string;
 		coverImage?: string | null;
-		tags?: string[];
+		category: string;
 	} = $props();
 
 	const dateIso = $derived(publishedAt ?? createdAt);
-	const category = $derived(getBlogCategory(slug, tags));
 </script>
 
 <article

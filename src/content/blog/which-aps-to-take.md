@@ -4,6 +4,11 @@ excerpt: AP exams are over. Here's how to decide which AP classes are actually w
 summary: A research-backed and realistic guide to choosing AP classes after exam season ends.
 published: true
 date: 2026-05-17
+category: Course Planning
+relatedSlugs: summer-ap-study-plan, science-of-studying
+ctaHref: subjects
+ctaLabel: Browse AP subjects
+ctaDescription: Preview practice hubs for every supported AP class.
 coverImage: https://public.assets.freeappractice.org/marissa-grootes-flRm0z3MEoA-unsplash.jpg
 ---
 

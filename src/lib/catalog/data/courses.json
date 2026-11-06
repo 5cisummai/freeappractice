@@ -1207,8 +1207,7 @@
 		"officialSourcesAccessedAt": "2026-08-21",
 		"officialTopicTextPolicy": "Paraphrase and link official curriculum; do not copy exam questions, passages, rubrics, or exhaustive CED prose into the artifact.",
 		"exhaustiveCedObjectivesEmbedded": false,
-		"exhaustiveCedObjectivesAuthority": "The linked course-and-exam-description source for each course.",
-		"reportPath": "docs/research/ap-exams-full-content-2026-08-21.md"
+		"exhaustiveCedObjectivesAuthority": "The linked course-and-exam-description source for each course."
 	},
 	"examFramework": {
 		"generalAssessmentTypes": [

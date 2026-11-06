@@ -1,3 +1,9 @@
+import type { BlogProductCta, BlogRelatedLink } from '#lib/blog/types.js';
+import { DEFAULT_BLOG_PRODUCT_CTA } from '#lib/blog/types.js';
+
+const DEFAULT_BLOG_AUTHOR = 'Ajay Saravanan';
+const DEFAULT_BLOG_CATEGORY = 'AP Prep';
+
 type BlogEntry = {
 	id: string;
 	title: string;
@@ -6,7 +12,10 @@ type BlogEntry = {
 	content: string;
 	coverImage?: string;
 	tags: string[];
-	author?: string;
+	category: string;
+	author: string;
+	relatedPosts: BlogRelatedLink[];
+	productCta: BlogProductCta;
 	publishedAt?: Date;
 	createdAt: Date;
 };
@@ -16,7 +25,12 @@ type ParsedMarkdownPost = {
 	excerpt?: string;
 	coverImage?: string;
 	tags?: string[];
+	category?: string;
 	author?: string;
+	relatedSlugs?: string[];
+	ctaHref?: string;
+	ctaLabel?: string;
+	ctaDescription?: string;
 	published?: boolean;
 	publishedAt?: Date;
 	content: string;
@@ -109,7 +123,12 @@ function parseMarkdownPost(raw: string): ParsedMarkdownPost {
 		excerpt: frontmatter.excerpt,
 		coverImage: frontmatter.coverimage ?? frontmatter.cover_image,
 		tags: parseTags(frontmatter.tags),
+		category: frontmatter.category,
 		author: frontmatter.author,
+		relatedSlugs: parseTags(frontmatter.relatedslugs ?? frontmatter.related_slugs),
+		ctaHref: frontmatter.ctahref ?? frontmatter.cta_href,
+		ctaLabel: frontmatter.ctalabel ?? frontmatter.cta_label,
+		ctaDescription: frontmatter.ctadescription ?? frontmatter.cta_description,
 		published: parseBoolean(frontmatter.published),
 		publishedAt: parseDate(
 			frontmatter.publisheddate ?? frontmatter.published_at ?? frontmatter.date
@@ -118,8 +137,45 @@ function parseMarkdownPost(raw: string): ParsedMarkdownPost {
 	};
 }
 
+function parseProductCtaHref(value: string | undefined): BlogProductCta['href'] | undefined {
+	if (!value) return undefined;
+	const normalized = value.trim();
+	if (normalized === 'subjects' || normalized === 'summer' || normalized === '/') return normalized;
+	return undefined;
+}
+
+function resolveProductCta(
+	parsed: Pick<ParsedMarkdownPost, 'ctaHref' | 'ctaLabel' | 'ctaDescription'>
+): BlogProductCta {
+	const href = parseProductCtaHref(parsed.ctaHref);
+	const label = parsed.ctaLabel?.trim();
+	const description = parsed.ctaDescription?.trim();
+	if (href && label && description) return { href, label, description };
+	return DEFAULT_BLOG_PRODUCT_CTA;
+}
+
+function buildRelatedPosts(
+	relatedSlugs: string[] | undefined,
+	titleBySlug: Map<string, string>
+): BlogRelatedLink[] {
+	if (!relatedSlugs?.length) return [];
+
+	return relatedSlugs
+		.map((raw) => normalizeSlug(raw))
+		.filter(Boolean)
+		.map((slug) => ({
+			href: `blog/${slug}` as const,
+			label: titleBySlug.get(slug) ?? humanizeSlug(slug)
+		}));
+}
+
 function listMarkdownPosts(): BlogEntry[] {
-	const posts: BlogEntry[] = [];
+	type BlogDraft = Omit<BlogEntry, 'relatedPosts' | 'productCta'> & {
+		relatedSlugs?: string[];
+		ctaFields: Pick<ParsedMarkdownPost, 'ctaHref' | 'ctaLabel' | 'ctaDescription'>;
+	};
+
+	const drafts: BlogDraft[] = [];
 	for (const [filePath, raw] of Object.entries(markdownFiles)) {
 		const fileName = filePath.split('/').pop() ?? '';
 		const parsed = parseMarkdownPost(raw);
@@ -135,20 +191,38 @@ function listMarkdownPosts(): BlogEntry[] {
 		const excerpt = parsed.excerpt?.trim() || summarizeMarkdown(parsed.content);
 		const publishedAt = parsed.publishedAt ?? new Date();
 
-		posts.push({
+		const tags = parsed.tags ?? [];
+		const category = parsed.category?.trim() || tags[0]?.trim() || DEFAULT_BLOG_CATEGORY;
+		const author = parsed.author?.trim() || DEFAULT_BLOG_AUTHOR;
+
+		drafts.push({
 			id: `file:${slugFromFile}`,
 			title,
 			slug: slugFromFile,
 			excerpt,
 			content: parsed.content,
 			...(parsed.coverImage ? { coverImage: parsed.coverImage } : {}),
-			tags: parsed.tags ?? [],
-			...(parsed.author ? { author: parsed.author } : {}),
+			tags,
+			category,
+			author,
+			relatedSlugs: parsed.relatedSlugs,
+			ctaFields: {
+				ctaHref: parsed.ctaHref,
+				ctaLabel: parsed.ctaLabel,
+				ctaDescription: parsed.ctaDescription
+			},
 			publishedAt,
 			createdAt: publishedAt
 		});
 	}
-	return posts;
+
+	const titleBySlug = new Map(drafts.map((post) => [post.slug, post.title] as const));
+
+	return drafts.map(({ relatedSlugs, ctaFields, ...post }) => ({
+		...post,
+		relatedPosts: buildRelatedPosts(relatedSlugs, titleBySlug),
+		productCta: resolveProductCta(ctaFields)
+	}));
 }
 
 export function listPublishedBlogEntries(): BlogEntry[] {

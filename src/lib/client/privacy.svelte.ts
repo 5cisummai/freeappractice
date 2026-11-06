@@ -1,4 +1,4 @@
-import type { AnalyticsConsent } from '#lib/analytics-consent.js';
+import type { AnalyticsConsent } from '#lib/client/analytics-consent.js';
 import {
 	clearAnalyticsConsentStorage,
 	persistAnalyticsConsent,

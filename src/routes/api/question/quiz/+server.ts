@@ -6,10 +6,9 @@ import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 import {
 	assembleMcqQuiz,
 	QuizPoolWarmingError,
-	resolveQuizUnits
+	requestQuizRefill
 } from '#lib/question-bank/mcq/quiz-assembler.server.js';
 import { generatedQuestionToMcqAnswerBody } from '#lib/question-bank/mcq/public-payload.server.js';
-import { requestPoolRefill } from '#lib/question-bank/pool-refill-queue.server.js';
 import { logger } from '#lib/server/logger.js';
 
 export const config = { maxDuration: 15 };
@@ -48,21 +47,6 @@ function parseUnitRange(value: unknown): readonly number[] | undefined {
 		throw new Error('unitRange must contain non-negative integers');
 	}
 	return range;
-}
-
-async function requestQuizRefill(
-	course: string,
-	unit: string,
-	unitRange?: readonly number[]
-): Promise<boolean> {
-	const units = resolveQuizUnits(course, unit, unitRange);
-	if (!units.length) return false;
-	const results = await Promise.allSettled(
-		units.map((refillUnit) =>
-			requestPoolRefill({ questionType: 'mcq', course: course, unit: refillUnit })
-		)
-	);
-	return results.some((result) => result.status === 'fulfilled');
 }
 
 export const POST: RequestHandler = async (event) => {

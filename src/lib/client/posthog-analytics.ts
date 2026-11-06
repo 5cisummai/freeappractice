@@ -2,7 +2,7 @@ import posthog from 'posthog-js';
 import { building, dev } from '$app/env';
 import { PUBLIC_POSTHOG_PROJECT_TOKEN } from '$app/env/public';
 import { readAnalyticsConsent } from '#lib/client/analytics-consent.js';
-import type { AnalyticsConsent } from '#lib/analytics-consent.js';
+import type { AnalyticsConsent } from '#lib/client/analytics-consent.js';
 import { getPostHogOperationDisposition } from '#lib/client/posthog-consent-policy.js';
 
 let initialized = false;

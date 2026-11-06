@@ -1,4 +1,4 @@
-import { ANALYTICS_CONSENT_KEY } from '#lib/analytics-consent.js';
+import { ANALYTICS_CONSENT_KEY } from '#lib/client/analytics-consent.js';
 
 export function hasAnalyticsConsent(request: Request): boolean {
 	const cookieHeader = request.headers.get('cookie');

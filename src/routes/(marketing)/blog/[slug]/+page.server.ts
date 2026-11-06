@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
 import { getPublishedBlogEntryBySlug, listPublishedBlogEntries } from '#lib/blog/service.server.js';
-import { getBlogProductCta, getBlogRelatedPosts } from '#lib/blog/related-links.js';
 import { renderBlogMarkdown } from '#lib/blog/render-markdown.server.js';
 import type { PageServerLoad } from './$types';
 
@@ -26,7 +25,7 @@ export const load: PageServerLoad = async ({ params }) => {
 			createdAt: post.createdAt.toISOString()
 		},
 		htmlContent,
-		relatedPosts: getBlogRelatedPosts(post.slug),
-		productCta: getBlogProductCta(post.slug)
+		relatedPosts: post.relatedPosts,
+		productCta: post.productCta
 	};
 };

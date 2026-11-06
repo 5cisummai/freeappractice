@@ -1,3 +1,4 @@
+import { normalizeMcqEnrichment } from './enrichment.js';
 import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 import {
 	countActiveMcqQuestions,
@@ -30,6 +31,9 @@ function hotPoolBodyFromDoc(
 		| 'optionD'
 		| 'correctAnswer'
 		| 'explanation'
+		| 'difficulty'
+		| 'subtopicId'
+		| 'choiceExplanations'
 		| 'mainTopic'
 		| 'topicsCovered'
 		| 'diagramSpec'
@@ -48,6 +52,7 @@ function hotPoolBodyFromDoc(
 		optionD: doc.optionD,
 		correctAnswer: doc.correctAnswer,
 		explanation: doc.explanation,
+		...normalizeMcqEnrichment(doc),
 		mainTopic: doc.mainTopic,
 		topicsCovered: doc.topicsCovered ?? '',
 		diagramSpec: doc.diagramSpec ?? null,

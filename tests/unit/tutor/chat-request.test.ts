@@ -7,23 +7,16 @@ import {
 
 const validRequest = {
 	questionId: 'c8f3048f-1681-47f2-b1db-e912655275d0',
-	conversationHistory: [{ role: 'user' as const, content: 'Give me a hint.' }],
-	message: 'Explain further.'
+	messages: [
+		{ id: '1', role: 'assistant' as const, parts: [{ type: 'text' as const, text: 'Hi' }] },
+		{ id: '2', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Explain further.' }] }
+	]
 };
 
 describe('tutorChatRequestSchema', () => {
 	it('accepts a well-formed request', () => {
 		const parsed = tutorChatRequestSchema.parse(validRequest);
-		expect(parsed.message).toBe('Explain further.');
-		expect(parsed.conversationHistory).toHaveLength(1);
-	});
-
-	it('defaults optional fields', () => {
-		const parsed = tutorChatRequestSchema.parse({
-			questionId: validRequest.questionId,
-			message: 'Help'
-		});
-		expect(parsed.conversationHistory).toEqual([]);
+		expect(parsed.messages).toHaveLength(2);
 	});
 
 	it('rejects unknown keys under strict mode', () => {
@@ -31,22 +24,24 @@ describe('tutorChatRequestSchema', () => {
 	});
 
 	it('rejects conversation history beyond the message cap', () => {
-		const conversationHistory = Array.from({ length: MAX_TUTOR_CHAT_HISTORY_MESSAGES + 1 }, () => ({
+		const messages = Array.from({ length: MAX_TUTOR_CHAT_HISTORY_MESSAGES + 3 }, (_, index) => ({
+			id: String(index),
 			role: 'user' as const,
-			content: 'hi'
+			parts: [{ type: 'text' as const, text: 'hi' }]
 		}));
-		expect(() => tutorChatRequestSchema.parse({ ...validRequest, conversationHistory })).toThrow(
-			/too long/i
-		);
+		expect(() => tutorChatRequestSchema.parse({ ...validRequest, messages })).toThrow(/too long/i);
 	});
 
 	it('rejects payloads whose prompt characters exceed the limit', () => {
 		const oversized = {
 			...validRequest,
-			conversationHistory: [
-				{ role: 'user' as const, content: 'q'.repeat(MAX_TUTOR_CHAT_PROMPT_CHARACTERS) }
-			],
-			message: 'm'
+			messages: [
+				{
+					id: '1',
+					role: 'user' as const,
+					parts: [{ type: 'text' as const, text: 'q'.repeat(MAX_TUTOR_CHAT_PROMPT_CHARACTERS) }]
+				}
+			]
 		};
 		expect(() => tutorChatRequestSchema.parse(oversized)).toThrow(/too large/i);
 	});

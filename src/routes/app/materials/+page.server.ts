@@ -1,17 +1,12 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { listOrganizationSharedSets } from '#lib/auth/organization-queries.server.js';
+import { getGroupMaterials } from '#lib/auth/group-views.server.js';
 
-export const load: PageServerLoad = async ({ parent }) => {
+export const load: PageServerLoad = async ({ parent, locals }) => {
 	const { activeOrganization } = await parent();
 	if (!activeOrganization || activeOrganization.orgType !== 'group') {
 		throw redirect(302, '/app');
 	}
 
-	const materials = await listOrganizationSharedSets(activeOrganization.id);
-
-	return {
-		materials,
-		canManageMaterials: activeOrganization.role === 'owner' || activeOrganization.role === 'admin'
-	};
+	return getGroupMaterials(locals.userId!, activeOrganization.id);
 };

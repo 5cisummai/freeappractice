@@ -1,3 +1,4 @@
+import { normalizeMcqEnrichment } from './enrichment.js';
 import type { StoredQuestion } from '#lib/question-bank/mcq/repository.server.js';
 import {
 	copyStimulusFields,
@@ -25,6 +26,7 @@ export function storedQuestionToGenerated(question: StoredQuestion): GeneratedQu
 		options,
 		correctAnswer: question.correctAnswer,
 		explanation: question.explanation,
+		...normalizeMcqEnrichment(question),
 		...(diagramSpec ? { diagramSpec } : {}),
 		hasDiagram: question.hasDiagram || Boolean(question.stimulus?.diagramSpec),
 		...copyStimulusFields(question),
@@ -47,6 +49,7 @@ export function storedQuestionToMcqAnswerBody(question: StoredQuestion): McqAnsw
 		optionD: question.optionD,
 		correctAnswer: question.correctAnswer,
 		explanation: question.explanation,
+		...normalizeMcqEnrichment(question),
 		mainTopic: question.mainTopic ?? '',
 		topicsCovered: question.topicsCovered ?? '',
 		diagramSpec: question.diagramSpec ?? null,
@@ -71,6 +74,7 @@ export function generatedQuestionToMcqAnswerBody(question: GeneratedQuestion): M
 		optionD: question.options[3]?.text ?? '',
 		correctAnswer,
 		explanation: question.explanation ?? '',
+		...normalizeMcqEnrichment(question),
 		mainTopic: question.mainTopic ?? question.topic ?? '',
 		topicsCovered: question.topicsCovered ?? '',
 		diagramSpec: question.diagramSpec ?? null,

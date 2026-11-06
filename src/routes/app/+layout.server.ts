@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { APP_LAYOUT_DEPENDENCY } from '#lib/layout-dependencies.js';
+import { APP_LAYOUT_DEPENDENCY } from '#lib/client/invalidate-data.js';
 import { isAdminUser } from '#lib/auth/admin.server.js';
 import { activeOrgUsesUserSuper, loadAppOrganizations } from '#lib/auth/organizations.server.js';
 import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '#lib/flags.js';

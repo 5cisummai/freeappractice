@@ -1,22 +1,12 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { listOrganizationMembers } from '#lib/auth/organization-queries.server.js';
+import { getGroupMembers } from '#lib/auth/group-views.server.js';
 
-export const load: PageServerLoad = async ({ parent }) => {
+export const load: PageServerLoad = async ({ parent, locals }) => {
 	const { activeOrganization } = await parent();
 	if (!activeOrganization || activeOrganization.orgType !== 'group') {
 		throw redirect(302, '/app');
 	}
 
-	const members = await listOrganizationMembers(activeOrganization.id);
-
-	return {
-		members: members.map((member) => ({
-			...member,
-			email:
-				activeOrganization.role === 'owner' || activeOrganization.role === 'admin'
-					? member.email
-					: null
-		}))
-	};
+	return { members: await getGroupMembers(locals.userId!, activeOrganization.id) };
 };

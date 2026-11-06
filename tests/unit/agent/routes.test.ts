@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHmac } from 'node:crypto';
 
 const mocks = vi.hoisted(() => ({
 	withAuthedHandler:
@@ -17,7 +18,8 @@ const mocks = vi.hoisted(() => ({
 	deleteTutorMemory: vi.fn(),
 	isSuperMemoryEnabled: vi.fn(),
 	authorizeFeatureRequest: vi.fn(),
-	coachUndoPost: vi.fn()
+	claimIdempotencyKey: vi.fn(),
+	findAudit: vi.fn()
 }));
 
 vi.mock('#lib/auth/route-helpers.server.js', () => ({
@@ -25,11 +27,13 @@ vi.mock('#lib/auth/route-helpers.server.js', () => ({
 }));
 vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	getTutorProfileView: mocks.getTutorProfileView,
+	getMem0UserId: vi.fn().mockResolvedValue('opaque-user-key'),
 	updateTutorProfile: mocks.updateTutorProfile,
 	confirmAge: mocks.confirmAge,
 	markMemoryDisclosureSeen: mocks.markMemoryDisclosureSeen
 }));
-vi.mock('#lib/agent/memory/service.server.js', () => ({
+vi.mock('#lib/agent/memory/service.server.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('#lib/agent/memory/service.server.js')>()),
 	isTutorMemoryConfigured: mocks.isTutorMemoryConfigured,
 	listTutorMemories: mocks.listTutorMemories,
 	getTutorMemoryPublicId: mocks.getTutorMemoryPublicId,
@@ -44,8 +48,14 @@ vi.mock('#lib/agent/access.server.js', () => ({
 	authorizeFeatureRequest: mocks.authorizeFeatureRequest,
 	getTutorProfileViewForRequest: mocks.getTutorProfileViewForRequest
 }));
-vi.mock('../../../src/routes/api/coach/undo/+server', () => ({
-	POST: mocks.coachUndoPost
+vi.mock('#lib/agent/usage/controls.server.js', () => ({
+	claimIdempotencyKey: mocks.claimIdempotencyKey,
+	RedisRequiredError: class RedisRequiredError extends Error {}
+}));
+vi.mock('#lib/server/neon/db.js', () => ({
+	getNeonDatabase: () => ({
+		select: () => ({ from: () => ({ where: () => ({ limit: mocks.findAudit }) }) })
+	})
 }));
 
 import { POST as confirmAgePost } from '../../../src/routes/api/super/confirm-age/+server';
@@ -61,6 +71,7 @@ import {
 	PATCH as profilePatch
 } from '../../../src/routes/api/super/profile/+server';
 import { POST as coachActionUndoPost } from '../../../src/routes/api/coach/actions/[id]/undo/+server';
+import { POST as coachUndoPost } from '../../../src/routes/api/coach/undo/+server';
 
 const profile = {
 	ageConfirmedAt: null,
@@ -79,7 +90,7 @@ function event(body?: unknown, params: Record<string, string> = {}): TestEvent {
 		request: new Request('http://localhost/api/super', {
 			method: body === undefined ? 'GET' : 'POST',
 			...(body === undefined ? {} : { body: JSON.stringify(body) }),
-			headers: { 'content-type': 'application/json' }
+			headers: { 'content-type': 'application/json', 'idempotency-key': 'undo-key' }
 		}),
 		params,
 		locals: {}
@@ -101,7 +112,8 @@ describe('Super API routes', () => {
 		mocks.resolveTutorMemoryId.mockResolvedValue('mem0-secret-id');
 		mocks.isSuperMemoryEnabled.mockResolvedValue(true);
 		mocks.authorizeFeatureRequest.mockResolvedValue({ allowed: true });
-		mocks.coachUndoPost.mockResolvedValue(new Response(null, { status: 204 }));
+		mocks.claimIdempotencyKey.mockResolvedValue(true);
+		mocks.findAudit.mockResolvedValue([]);
 	});
 
 	it('takes Coach undo audit ID from the route parameter', async () => {
@@ -112,11 +124,34 @@ describe('Super API routes', () => {
 			) as Parameters<typeof coachActionUndoPost>[0]
 		);
 
-		expect(response.status).toBe(204);
-		const forwardedEvent = mocks.coachUndoPost.mock.calls[0][0] as { request: Request };
-		expect(await forwardedEvent.request.json()).toEqual({
-			auditId: '0123456789abcdef01234567'
+		expect(response.status).toBe(404);
+		expect(mocks.authorizeFeatureRequest).toHaveBeenCalledWith(
+			expect.anything(),
+			'user-1',
+			'coach'
+		);
+		expect(mocks.claimIdempotencyKey).toHaveBeenCalledWith('user-1', 'coach-undo:undo-key');
+		expect(mocks.findAudit).toHaveBeenCalledWith(1);
+	});
+
+	it('enforces Coach access and idempotency for both undo routes', async () => {
+		mocks.authorizeFeatureRequest.mockResolvedValueOnce({
+			allowed: false,
+			message: 'Forbidden',
+			status: 403
 		});
+		const denied = await coachActionUndoPost(
+			event({}, { id: '0123456789abcdef01234567' }) as Parameters<typeof coachActionUndoPost>[0]
+		);
+		expect(denied.status).toBe(403);
+		expect(mocks.claimIdempotencyKey).not.toHaveBeenCalled();
+
+		mocks.claimIdempotencyKey.mockResolvedValue(false);
+		const duplicate = await coachUndoPost(
+			event({ auditId: '0123456789abcdef01234567' }) as Parameters<typeof coachUndoPost>[0]
+		);
+		expect(duplicate.status).toBe(409);
+		expect(mocks.findAudit).not.toHaveBeenCalled();
 	});
 
 	it('returns profile and memory status', async () => {
@@ -188,7 +223,11 @@ describe('Super API routes', () => {
 		const response = await memoryGet(event());
 		const body = await response.json();
 		expect(body.memories).toEqual([
-			{ id: 'memory-token', text: 'Prefers concise explanations.', createdAt: null }
+			{
+				id: createHmac('sha256', 'opaque-user-key').update('mem0-secret-id').digest('base64url'),
+				text: 'Prefers concise explanations.',
+				createdAt: null
+			}
 		]);
 		expect(JSON.stringify(body)).not.toContain('mem0-secret-id');
 	});

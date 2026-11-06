@@ -1,6 +1,6 @@
 import { resolve } from '$app/paths';
 import { getSiteUrl } from '#lib/site-url.js';
-import { safeAppPath } from '#lib/auth/app-path.js';
+import { safeAppPath } from '#lib/auth/safe-app-path.js';
 
 export { safeAppPath };
 

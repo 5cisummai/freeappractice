@@ -5,6 +5,24 @@
 
 	const changelog = [
 		{
+			version: '1.10.5',
+			date: 'November 3, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Desmos calculator is available again on practice question cards',
+						'Questions with per-choice explanations show the reasoning beneath each answer after checking',
+						'New study guides cover catching up in an AP class, reviewing missed questions, and practicing free responses'
+					]
+				},
+				{
+					title: 'Reliability',
+					items: ['Fixed an error that could prevent Coach from creating study plans']
+				}
+			]
+		},
+		{
 			version: '1.10.4',
 			date: 'November 1, 2026',
 			sections: [
@@ -1685,7 +1703,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: November 1, 2026"
+			meta="Last Updated: November 3, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
