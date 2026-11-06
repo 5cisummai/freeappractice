@@ -42,6 +42,10 @@ describe('isIgnoredSentryError', () => {
 		expect(sentryIgnoreErrors).toContain(
 			"undefined is not an object (evaluating 'window.__firefox__.reader"
 		);
+		expect(sentryIgnoreErrors).toContain('ResizeObserver loop limit exceeded');
+		expect(sentryIgnoreErrors).toContain(
+			'ResizeObserver loop completed with undelivered notifications'
+		);
 	});
 
 	it('drops Vercel AI SDK abort-during-retry-wait noise', () => {
@@ -89,6 +93,31 @@ describe('isIgnoredSentryError', () => {
 				)
 			)
 		).toBe(true);
+	});
+
+	it('drops ResizeObserver loop notifications in Error and string forms', () => {
+		expect(isIgnoredSentryError(new Error('ResizeObserver loop limit exceeded'))).toBe(true);
+		expect(isIgnoredSentryError('Error: ResizeObserver loop limit exceeded')).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				new Error('ResizeObserver loop completed with undelivered notifications.')
+			)
+		).toBe(true);
+		expect(
+			isIgnoredSentryError('Error: ResizeObserver loop completed with undelivered notifications.')
+		).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				new Error('ResizeObserver loop completed with undelivered notifications')
+			)
+		).toBe(true);
+	});
+
+	it('keeps first-party ResizeObserver constructor and observe failures', () => {
+		expect(isIgnoredSentryError(new TypeError("Failed to construct 'ResizeObserver'"))).toBe(false);
+		expect(
+			isIgnoredSentryError(new TypeError('ResizeObserver.observe: Argument 1 is not an object'))
+		).toBe(false);
 	});
 });
 
