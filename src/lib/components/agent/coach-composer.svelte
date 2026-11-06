@@ -138,7 +138,7 @@
 </script>
 
 <PromptInput.Root
-	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
+	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-card pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
 	onSubmit={({ text, files }) => send(text, files)}
 	bind:attachments
 	accept={imageInputEnabled ? COACH_ATTACHMENT_ACCEPT : 'application/x-disabled'}

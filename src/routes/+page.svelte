@@ -47,16 +47,16 @@
 					'Questions are written to match AP exam style and difficulty so you can practice the format you will see in class and on the exam. They are for practice and feedback, not a replacement for official College Board materials.'
 			},
 			{
-				id: 'school-starting',
-				question: 'School just started. How should I use this with my AP classes?',
+				id: 'keep-up-with-class',
+				question: 'How can I use this to keep up with my AP classes?',
 				answer:
-					'Use it to keep up with class, not to cram the whole exam. After a lecture or unit, practice a few questions in that unit so the next class starts with the gaps already visible.'
+					'Practice questions from the unit you are learning in class. Review the explanations for anything you miss, then revisit earlier units regularly to keep them fresh.'
 			},
 			{
-				id: 'choosing-classes',
-				question: 'I am still choosing which AP classes to take. Can I still use this?',
+				id: 'prepare-for-exams',
+				question: 'How can I use this to prepare for AP exams?',
 				answer:
-					'Yes. Sample Unit 1 in a couple of subjects to see which courses feel like a fit before you lock your schedule. If you want a starting point, read our guide on which APs to take before heavy practice.'
+					'Practice across the units covered in your course, review the explanations for questions you miss, and revisit those topics as your exam approaches.'
 			},
 			{
 				id: 'what-does-super-include',

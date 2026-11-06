@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { Redis } from '@upstash/redis';
+import { dev } from '$app/env';
 
 import {
 	KV_REST_API_URL,
@@ -27,6 +28,24 @@ export function getRedisClient(): Redis | null {
 					retry: false
 				})
 			: null;
+	// The local HTTP proxy uses standard Redis, which does not support Upstash's
+	// script flag. Keep the same Lua rate limiter and remove only that flag locally.
+	if (
+		dev &&
+		redisClient &&
+		url &&
+		['localhost', '127.0.0.1', '::1', '[::1]'].includes(new URL(url).hostname)
+	) {
+		redisClient = new Proxy(redisClient, {
+			get(target, property, receiver) {
+				if (property === 'eval') {
+					return (script: string, keys: string[], args: unknown[]) =>
+						target.eval(script.replace(/^#!lua flags=allow-key-locking\r?\n/, ''), keys, args);
+				}
+				return Reflect.get(target, property, receiver);
+			}
+		});
+	}
 	return redisClient;
 }
 
