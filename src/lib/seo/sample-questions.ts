@@ -1,3 +1,5 @@
+import { parseMcqQuestionPayload } from '#lib/question-bank/mcq/payload-schema.js';
+
 export const SEO_SAMPLE_QUESTION_LIMIT = 5;
 
 export const SEO_SAMPLE_OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const;
@@ -20,12 +22,11 @@ export type SeoSampleQuestionCandidate = SeoSampleQuestion & {
 	unit: string;
 	hasDiagram?: boolean;
 	stimulus?: unknown;
+	stimulusId?: string | null;
+	diagramSpec?: unknown;
 };
 
-export type SeoSampleQuestionsSnapshot = {
-	generatedAt: string;
-	questionsBySlug: Record<string, SeoSampleQuestion[]>;
-};
+export type SeoSampleQuestionsSnapshot = Record<string, string[]>;
 
 export type SeoSamplePage = {
 	slug: string;
@@ -64,13 +65,27 @@ export function sampleQuestionOptionText(
 }
 
 export function isSeoSampleQuestionEligible(candidate: SeoSampleQuestionCandidate): boolean {
-	if (candidate.hasDiagram) return false;
-	if (candidate.stimulus) return false;
-	if (!candidate.questionId.trim() || !candidate.question.trim()) return false;
+	if (candidate.hasDiagram || candidate.diagramSpec) return false;
+	if (candidate.stimulus || candidate.stimulusId) return false;
+	if (!candidate.questionId.trim() || !candidate.question.trim() || !candidate.explanation.trim())
+		return false;
 	if (!isOptionLetter(candidate.correctAnswer)) return false;
 	return SEO_SAMPLE_OPTION_LETTERS.every((letter) =>
 		sampleQuestionOptionText(candidate, letter).trim()
 	);
+}
+
+export function parseSeoSampleQuestionCandidate(
+	questionId: string,
+	data: unknown
+): SeoSampleQuestionCandidate | null {
+	try {
+		const payload = parseMcqQuestionPayload(data);
+		if (!payload.unit) return null;
+		return { ...payload, unit: payload.unit, questionId };
+	} catch {
+		return null;
+	}
 }
 
 function toSeoSampleQuestion(candidate: SeoSampleQuestionCandidate): SeoSampleQuestion {
@@ -100,8 +115,7 @@ export function selectSeoSampleQuestions(
 
 export function buildSeoSampleQuestionsSnapshot(
 	candidates: readonly SeoSampleQuestionCandidate[],
-	pages: readonly SeoSamplePage[],
-	generatedAt = new Date().toISOString()
+	pages: readonly SeoSamplePage[]
 ): SeoSampleQuestionsSnapshot {
 	const byBucket = new Map<string, SeoSampleQuestionCandidate[]>();
 	for (const candidate of candidates) {
@@ -111,23 +125,24 @@ export function buildSeoSampleQuestionsSnapshot(
 		else byBucket.set(key, [candidate]);
 	}
 
-	const questionsBySlug: Record<string, SeoSampleQuestion[]> = {};
+	const questionsBySlug: SeoSampleQuestionsSnapshot = {};
 	for (const page of pages) {
 		if (page.type !== 'unit' || !page.unit) continue;
 		const selected = selectSeoSampleQuestions(
 			byBucket.get(`${page.course}\u0000${page.unit}`) ?? []
 		);
-		if (selected.length > 0) questionsBySlug[page.slug] = selected;
+		if (selected.length > 0)
+			questionsBySlug[page.slug] = selected.map((question) => question.questionId);
 	}
 
-	return { generatedAt, questionsBySlug };
+	return questionsBySlug;
 }
 
 export function getSeoSampleQuestionsForSlug(
 	snapshot: SeoSampleQuestionsSnapshot,
 	slug: string
-): SeoSampleQuestion[] {
-	return snapshot.questionsBySlug[slug] ?? [];
+): string[] {
+	return Object.hasOwn(snapshot, slug) ? snapshot[slug]! : [];
 }
 
 export function buildSampleQuestionsJsonLd(

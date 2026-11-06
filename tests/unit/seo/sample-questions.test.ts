@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getPageBySlug } from '#lib/catalog/practice-pages.js';
+import { getAllPageSlugs, getPageBySlug } from '#lib/catalog/practice-pages.js';
 import sampleQuestionsSnapshot from '#lib/seo/data/unit-sample-questions.json';
 import {
 	buildSampleQuestionsJsonLd,
 	buildSeoSampleQuestionsSnapshot,
+	parseSeoSampleQuestionCandidate,
 	selectSeoSampleQuestions,
-	type SeoSampleQuestionCandidate,
-	type SeoSampleQuestionsSnapshot
+	type SeoSampleQuestionCandidate
 } from '#lib/seo/sample-questions.js';
 
 function candidate(
@@ -50,6 +50,19 @@ describe('selectSeoSampleQuestions', () => {
 	});
 });
 
+it.each([
+	{ passage: 'Required passage' },
+	{ diagram: { type: 'graph' } },
+	{ context: 'Required context' }
+])('excludes legacy samples requiring separate content (%j)', (legacyFields) => {
+	const parsed = parseSeoSampleQuestionCandidate('legacy', {
+		...candidate({ questionId: 'legacy' }),
+		...legacyFields
+	});
+	expect(parsed).not.toBeNull();
+	expect(selectSeoSampleQuestions([parsed!])).toEqual([]);
+});
+
 describe('buildSeoSampleQuestionsSnapshot', () => {
 	it('keys samples by unit slug and omits units with no eligible questions', () => {
 		const unitPage = getPageBySlug('ap-biology/unit-1');
@@ -68,20 +81,15 @@ describe('buildSeoSampleQuestionsSnapshot', () => {
 			[unitPage!, otherPage!]
 		);
 
-		expect(
-			snapshot.questionsBySlug['ap-biology/unit-1']?.map((question) => question.questionId)
-		).toEqual(['bio-1']);
-		expect(snapshot.questionsBySlug['ap-biology/unit-2']).toBeUndefined();
+		expect(snapshot).toEqual({ 'ap-biology/unit-1': ['bio-1'] });
 	});
 });
 
 describe('committed sample-question snapshot', () => {
 	it('covers every catalog unit page with 3 to 5 questions', () => {
-		const snapshot = sampleQuestionsSnapshot as SeoSampleQuestionsSnapshot;
-		const slugs = Object.keys(snapshot.questionsBySlug);
-		expect(slugs.length).toBeGreaterThan(100);
-		expect(slugs.every((slug) => slug.includes('/unit-'))).toBe(true);
-		for (const questions of Object.values(snapshot.questionsBySlug)) {
+		const unitSlugs = getAllPageSlugs().filter((slug) => getPageBySlug(slug)?.type === 'unit');
+		expect(Object.keys(sampleQuestionsSnapshot).sort()).toEqual(unitSlugs.sort());
+		for (const questions of Object.values(sampleQuestionsSnapshot)) {
 			expect(questions.length).toBeGreaterThanOrEqual(3);
 			expect(questions.length).toBeLessThanOrEqual(5);
 		}
