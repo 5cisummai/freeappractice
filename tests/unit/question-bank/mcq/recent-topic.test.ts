@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 
 const mocks = vi.hoisted(() => ({
 	insert: vi.fn(),
@@ -7,14 +8,19 @@ const mocks = vi.hoisted(() => ({
 	from: vi.fn(),
 	where: vi.fn(),
 	orderBy: vi.fn(),
-	limit: vi.fn()
+	limit: vi.fn(),
+	execute: vi.fn()
 }));
 
 vi.mock('#lib/server/neon/db.js', () => ({
-	getNeonDatabase: () => ({ insert: mocks.insert, select: mocks.select })
+	getNeonDatabase: () => ({ insert: mocks.insert, select: mocks.select, execute: mocks.execute })
 }));
 
-import { getRecentTopics, recordRecentTopic } from '#lib/question-bank/recent-topic.server.js';
+import {
+	getRecentTopics,
+	getRecentTopicsByBucket,
+	recordRecentTopic
+} from '#lib/question-bank/recent-topic.server.js';
 
 describe('recent question topics', () => {
 	beforeEach(() => {
@@ -46,5 +52,56 @@ describe('recent question topics', () => {
 			getRecentTopics({ kind: 'mcq', course: 'AP Biology', unit: 'Unit 4' })
 		).resolves.toEqual(['Cell signaling']);
 		expect(mocks.where).toHaveBeenCalledOnce();
+	});
+
+	it('returns immediately for an empty bucket set', async () => {
+		await expect(getRecentTopicsByBucket([])).resolves.toEqual(new Map());
+		expect(mocks.execute).not.toHaveBeenCalled();
+	});
+
+	it('loads recent topics for many buckets in one partitioned query', async () => {
+		mocks.execute.mockResolvedValueOnce({
+			rows: [
+				{
+					kind: 'mcq',
+					course: 'AP Biology',
+					unit: 'Unit 1',
+					topicsCovered: 'Photosynthesis'
+				},
+				{
+					kind: 'mcq',
+					course: 'AP Biology',
+					unit: 'Unit 1',
+					topicsCovered: 'Respiration'
+				},
+				{
+					kind: 'frq',
+					course: 'AP Biology',
+					unit: 'All Units',
+					topicsCovered: 'Evolution'
+				}
+			]
+		});
+
+		const result = await getRecentTopicsByBucket([
+			{ kind: 'mcq', course: 'AP Biology', unit: 'Unit 1' },
+			{ kind: 'mcq', course: 'AP Biology', unit: 'Unit 1' },
+			{ kind: 'frq', course: 'AP Biology', unit: 'All Units' },
+			{ kind: 'mcq', course: 'AP Biology', unit: 'Unit 2' }
+		]);
+
+		expect(mocks.execute).toHaveBeenCalledOnce();
+		const query = new PgDialect().sqlToQuery(mocks.execute.mock.calls[0][0]);
+		expect(query.sql.toLowerCase()).toContain('row_number()');
+		expect(query.sql.toLowerCase()).toContain('partition by');
+		expect(query.params).toEqual(
+			expect.arrayContaining(['mcq', 'frq', 'AP Biology', 'Unit 1', 'Unit 2', 'All Units', 20])
+		);
+		expect(result.get('mcq\u0000AP Biology\u0000Unit 1')).toEqual([
+			'Photosynthesis',
+			'Respiration'
+		]);
+		expect(result.get('frq\u0000AP Biology\u0000All Units')).toEqual(['Evolution']);
+		expect(result.get('mcq\u0000AP Biology\u0000Unit 2')).toEqual([]);
 	});
 });
