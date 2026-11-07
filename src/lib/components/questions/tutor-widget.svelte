@@ -430,7 +430,7 @@
 		<div
 			class={[
 				'relative flex items-center gap-2 rounded-3xl border border-border bg-background px-3 py-2',
-				embedded ? 'origin-bottom shadow-lg ring-1 ring-foreground/10' : 'shadow-xs'
+				embedded ? 'origin-bottom shadow-[0_12px_32px_0_rgba(0,0,0,0.02)]' : 'shadow-xs'
 			]}
 		>
 			<textarea

@@ -476,7 +476,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 		{/if}
 
 		<div
-			class="flex min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] dark:border-border"
+			class="flex min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-card pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] dark:border-border"
 		>
 			<div class="px-4">
 				<p

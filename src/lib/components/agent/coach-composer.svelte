@@ -199,15 +199,14 @@
 					{#each ['physics-sim', 'study-plan'] as const as actionId (actionId)}
 						{@const Icon = coachActionIcons[actionId]}
 						{@const selected = selectedCoachActionIds.includes(actionId)}
+						{@const action = coachComposerActions.find((item) => item.id === actionId)}
 						<PromptInput.ActionMenuItem
 							class={cn('items-center gap-2 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
 							disabled={!sessionId || streaming}
 							onSelect={() => toggleCoachAction(actionId)}
 						>
 							<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-							<span class="text-sm"
-								>{actionId === 'physics-sim' ? 'Create Simulation' : 'Study plan'}</span
-							>
+							<span class="text-sm">{action?.title}</span>
 						</PromptInput.ActionMenuItem>
 					{/each}
 				</PromptInput.ActionMenuContent>

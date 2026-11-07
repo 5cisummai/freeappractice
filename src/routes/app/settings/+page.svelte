@@ -24,6 +24,7 @@
 	import { onboardingCourseGroups } from '#lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
 	const APP_VERSION = '1.10.5';
+	import CheckIcon from '@tabler/icons-svelte/icons/check';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
@@ -209,11 +210,11 @@
 		bind:value={activeSection}
 		onValueChange={handleSectionChange}
 		orientation="vertical"
-		class="items-start gap-6 md:gap-8"
+		class="flex-col items-start gap-6 sm:flex-row md:gap-8"
 	>
 		<Tabs.List
 			variant="line"
-			class="h-fit w-36 shrink-0 sm:w-40 lg:w-44"
+			class="h-fit w-full shrink-0 sm:w-40 lg:w-44"
 			aria-label="Settings sections"
 		>
 			<Sidebar.Menu>
@@ -259,7 +260,7 @@
 											/>
 											<label
 												for={id}
-												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:grayscale-0"
+												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:grayscale-0 peer-checked:[&_.selection-check]:opacity-100"
 											>
 												<span
 													class="course-icon flex size-8 shrink-0 items-center justify-center rounded-md grayscale {course.iconClass}"
@@ -267,6 +268,10 @@
 													<CourseIcon class="size-4" />
 												</span>
 												<span class="min-w-0 flex-1 leading-tight font-medium">{course.name}</span>
+													<CheckIcon
+														class="selection-check size-4 shrink-0 text-primary opacity-0"
+														aria-hidden="true"
+													/>
 											</label>
 										</div>
 									{/each}

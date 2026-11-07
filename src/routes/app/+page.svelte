@@ -271,8 +271,8 @@
 												variant="outline"
 												class="shrink-0 px-3"
 											>
-												Start
-												<ChevronRightIcon class="size-4" aria-hidden="true" />
+												Start task
+												<ArrowRightIcon class="size-4" aria-hidden="true" />
 											</Button>
 										{/if}
 									</div>
