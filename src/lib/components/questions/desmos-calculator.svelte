@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import CalculatorIcon from '@tabler/icons-svelte/icons/calculator-filled';
 	import XIcon from '@tabler/icons-svelte/icons/x-filled';
+	import { desmosErrorHint, parseDesmosSandboxMessage } from '#lib/desmos/config.js';
 
 	type DesmosCalculatorProps = {
 		type: 'scientific' | 'graphing';
@@ -30,7 +31,8 @@
 	let viewportHeight = $state(0);
 
 	let loadError = $state(false);
-	let loadErrorMessage = $state('Could not load the Desmos calculator.');
+	let loadErrorMessage = $state('Could not load the calculator.');
+	let loadErrorHint = $state<string | null>(null);
 	let isReady = $state(false);
 
 	function clamp(value: number, min: number, max: number) {
@@ -138,13 +140,18 @@
 		window.addEventListener('resize', updateViewport);
 
 		const onMessage = (e: MessageEvent) => {
-			if (e.data?.type === 'ready') {
+			if (e.origin !== window.location.origin) return;
+			const message = parseDesmosSandboxMessage(e.data);
+			if (!message) return;
+			if (message.type === 'ready') {
 				isReady = true;
 				loadError = false;
-			} else if (e.data?.type === 'error') {
-				loadError = true;
-				loadErrorMessage = e.data.message ?? 'Could not load the Desmos calculator.';
+				loadErrorHint = null;
+				return;
 			}
+			loadError = true;
+			loadErrorMessage = message.message;
+			loadErrorHint = desmosErrorHint(message.code);
 		};
 		window.addEventListener('message', onMessage);
 
@@ -199,7 +206,9 @@
 				class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-sm text-muted-foreground"
 			>
 				<p>{loadErrorMessage}</p>
-				<p class="text-xs">Check your network connection and try again.</p>
+				{#if loadErrorHint}
+					<p class="text-xs">{loadErrorHint}</p>
+				{/if}
 			</div>
 		{:else if !isReady}
 			<div

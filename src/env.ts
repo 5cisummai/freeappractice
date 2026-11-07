@@ -35,7 +35,12 @@ export const variables = defineEnvVars({
 	STRIPE_SECRET_KEY: { schema: optional },
 	BETTER_AUTH_ADMIN_USER_IDS: { schema: optional },
 	PUBLIC_GOOGLE_CLIENT_ID: { public: true, static: true },
-	PUBLIC_DESMOS_API_KEY: { public: true, static: true, schema: optional },
+	PUBLIC_DESMOS_API_KEY: {
+		public: true,
+		schema: optional,
+		description:
+			'Desmos calculator API key. Request a hostname-scoped key at https://www.desmos.com/my-api. Public and runtime (not inlined at build); set it on Vercel for Production, Preview, and Development, then redeploy. Do not use the docs example key in production.'
+	},
 	RESEND_API_KEY: { static: true },
 	RESEND_SIGNUP_SEGMENT_ID: { schema: optional },
 	RESEND_FROM: { schema: optional },
