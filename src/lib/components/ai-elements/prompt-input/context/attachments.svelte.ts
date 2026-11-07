@@ -109,6 +109,8 @@ export class AttachmentsContext {
 
 	add = (files: File[] | FileList) => {
 		const incoming = Array.from(files);
+		if (incoming.length === 0) return;
+
 		const accepted = incoming.filter((f) => this.matchesAccept(f));
 
 		if (accepted.length === 0) {

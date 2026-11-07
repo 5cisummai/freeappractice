@@ -18,7 +18,7 @@
 	import { onboardingCourses } from '#lib/onboarding-courses.js';
 	const lightbulbImage = '/illustrations/lightbulb.png';
 
-	const SUBJECT_PROGRESS_GOAL = 100;
+	const SUBJECT_PROGRESS_GOAL = 20;
 
 	let { data } = $props();
 
@@ -33,6 +33,11 @@
 	const planAccess = $derived(data.planAccess);
 	const studyPlan = $derived(data.studyPlan);
 	const canViewStudyPlan = $derived(data.canViewStudyPlan ?? false);
+	const todaysTask = $derived(
+		studyPlan?.tasks.find(
+			(task) => task.status === 'todo' && task.date.slice(0, 10) === data.today
+		) ?? null
+	);
 	const planTaskCount = $derived(studyPlan?.tasks.length ?? 0);
 	const planCompletedCount = $derived(
 		studyPlan?.tasks.filter((task) => task.status === 'done').length ?? 0
@@ -77,10 +82,7 @@
 
 				const answered = answeredByCourse.get(name) ?? 0;
 				const shown = Math.min(answered, SUBJECT_PROGRESS_GOAL);
-				const percent = Math.min(
-					Math.floor((answered / SUBJECT_PROGRESS_GOAL) * 100),
-					SUBJECT_PROGRESS_GOAL
-				);
+				const percent = Math.min(Math.floor((answered / SUBJECT_PROGRESS_GOAL) * 100), 100);
 				const lastPracticedAt = lastMcqAtByCourse.get(name) ?? null;
 
 				return {
@@ -185,7 +187,7 @@
 						View plan
 					</a>
 				</div>
-				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+				<Card.Root class="rounded-2xl border border-border/60 py-0 ring-0">
 					<Card.Content class="p-4 text-sm text-muted-foreground sm:p-5">
 						This plan has no tasks yet.
 						<a
@@ -212,7 +214,7 @@
 					</a>
 				</div>
 
-				<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+				<Card.Root class="rounded-2xl border border-border/60 py-0 ring-0">
 					<Card.Content class="space-y-3 p-4 sm:p-5">
 						<p class="text-sm text-muted-foreground">
 							{planCompletedCount} of {planTaskCount} tasks complete
@@ -262,14 +264,15 @@
 											</p>
 										</div>
 
-										{#if isFirstIncomplete}
+										{#if isFirstIncomplete && task.id !== todaysTask?.id}
 											<Button
 												href={task.practiceHref ?? resolve('app/plan')}
 												size="sm"
-												class="shrink-0 rounded-full px-3"
+												variant="outline"
+												class="shrink-0 px-3"
 											>
-												Start
-												<ChevronRightIcon class="size-4" aria-hidden="true" />
+												Start task
+												<ArrowRightIcon class="size-4" aria-hidden="true" />
 											</Button>
 										{/if}
 									</div>
@@ -285,9 +288,7 @@
 				>
 					My plan
 				</h2>
-				<Card.Root
-					class="rounded-2xl border border-dashed border-border/80 bg-muted/20 shadow-none ring-0"
-				>
+				<Card.Root class="rounded-2xl border border-dashed border-border/80 bg-muted/20 ring-0">
 					<Card.Content
 						class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
 					>
@@ -325,7 +326,30 @@
 		</div>
 	{/snippet}
 
-	{#if courseCards.length > 0 && recommendation}
+	{#if todaysTask}
+		<section
+			class="rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-6"
+			aria-labelledby="recommendation-heading"
+		>
+			<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div class="min-w-0 space-y-2">
+					<p class="text-sm font-medium text-muted-foreground">Today's plan</p>
+					<h2
+						id="recommendation-heading"
+						class="font-display text-xl font-medium tracking-tight sm:text-2xl"
+					>
+						{taskTitle(todaysTask)}
+					</h2>
+					<p class="text-sm text-muted-foreground">
+						{todaysTask.course} · {modeLabel(todaysTask.mode)} · {todaysTask.durationMinutes} min
+					</p>
+				</div>
+				<Button href={todaysTask.practiceHref ?? resolve('app/plan')} class="w-full sm:w-auto">
+					Start task <ArrowRightIcon class="size-4" aria-hidden="true" />
+				</Button>
+			</div>
+		</section>
+	{:else if courseCards.length > 0 && recommendation}
 		{@const RecIcon = recommendation.icon}
 		{@const hasPracticedRecommendation = Boolean(recommendation.lastPracticedAt)}
 		<section
@@ -427,7 +451,7 @@
 				</a>
 			</div>
 
-			<Card.Root class="rounded-2xl border border-border/60 py-0 shadow-sm ring-0">
+			<Card.Root class="rounded-2xl border border-border/60 py-0 ring-0">
 				<div class="divide-y divide-border/70">
 					{#each courseCards as course (course.name)}
 						{@const CourseIcon = course.icon}
