@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { PUBLIC_DESMOS_API_KEY } from '$app/env/public';
 	import { onMount } from 'svelte';
+	import {
+		desmosCalculatorScriptUrl,
+		desmosSandboxError,
+		type DesmosSandboxErrorCode
+	} from '#lib/desmos/config.js';
 
 	type CalcType = 'graphing' | 'scientific';
 
@@ -11,23 +15,25 @@
 	};
 	type DesmosWindow = Window & { Desmos?: DesmosApi };
 
+	let { data } = $props();
+
 	let calcType = $state<CalcType>('graphing');
 	let calcContainer: HTMLDivElement | null = null;
 	let instance: DesmosCalculatorInstance | null = null;
 
 	function postReady() {
-		window.parent.postMessage({ type: 'ready' }, '*');
+		window.parent.postMessage({ type: 'ready' }, window.location.origin);
 	}
 
-	function postError(message: string) {
-		window.parent.postMessage({ type: 'error', message }, '*');
+	function postError(code: DesmosSandboxErrorCode) {
+		window.parent.postMessage(desmosSandboxError(code), window.location.origin);
 	}
 
 	function initCalc(type: CalcType) {
 		if (!calcContainer) return;
 		const D = (window as DesmosWindow).Desmos;
 		if (!D) {
-			postError('Desmos API not available');
+			postError('init');
 			return;
 		}
 		instance?.destroy();
@@ -46,8 +52,8 @@
 				});
 			}
 			postReady();
-		} catch (err) {
-			postError(err instanceof Error ? err.message : 'Failed to initialize Desmos');
+		} catch {
+			postError('init');
 		}
 	}
 
@@ -88,15 +94,14 @@
 			calcType = typeParam;
 		}
 
-		const apiKey = PUBLIC_DESMOS_API_KEY?.trim();
+		const apiKey = data.apiKey;
 		if (!apiKey) {
-			postError('Missing PUBLIC_DESMOS_API_KEY — add it to your .env file');
+			postError('missing_api_key');
 			return;
 		}
 
-		const src = `https://www.desmos.com/api/v1.12/calculator.js?apiKey=${encodeURIComponent(apiKey)}`;
-
 		const onMessage = (e: MessageEvent) => {
+			if (e.origin !== window.location.origin) return;
 			if (
 				e.data?.type === 'init' &&
 				(e.data.calcType === 'graphing' || e.data.calcType === 'scientific')
@@ -107,9 +112,9 @@
 		};
 		window.addEventListener('message', onMessage);
 
-		loadScript(src)
+		loadScript(desmosCalculatorScriptUrl(apiKey))
 			.then(() => initCalc(calcType))
-			.catch((err) => postError(err instanceof Error ? err.message : 'Failed to load Desmos'));
+			.catch(() => postError('script_load'));
 
 		return () => {
 			window.removeEventListener('message', onMessage);
