@@ -23,7 +23,7 @@
 	import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
 	import { onboardingCourseGroups } from '#lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
-	const APP_VERSION = '1.10.5';
+	const APP_VERSION = '1.10.6';
 	import CheckIcon from '@tabler/icons-svelte/icons/check';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
@@ -268,10 +268,10 @@
 													<CourseIcon class="size-4" />
 												</span>
 												<span class="min-w-0 flex-1 leading-tight font-medium">{course.name}</span>
-													<CheckIcon
-														class="selection-check size-4 shrink-0 text-primary opacity-0"
-														aria-hidden="true"
-													/>
+												<CheckIcon
+													class="selection-check size-4 shrink-0 text-primary opacity-0"
+													aria-hidden="true"
+												/>
 											</label>
 										</div>
 									{/each}
