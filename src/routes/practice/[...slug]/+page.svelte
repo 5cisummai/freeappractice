@@ -7,6 +7,7 @@
 		buildPracticePageMeta,
 		buildPracticeFaqJsonLd
 	} from '#lib/seo/practice-page-meta.js';
+	import { buildSampleQuestionsJsonLd } from '#lib/seo/sample-questions.js';
 	import type { PageData } from './$types';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 
@@ -25,9 +26,11 @@
 	const jsonLd = $derived(buildPracticePageJsonLd(data.page));
 	const breadcrumbJsonLd = $derived(buildPracticeBreadcrumbJsonLd(data.page));
 	const faqJsonLd = $derived(buildPracticeFaqJsonLd(data.page));
+	const quizJsonLd = $derived(buildSampleQuestionsJsonLd(data.page, data.sampleQuestions));
 	const jsonLdMarkup = $derived(buildJsonLdMarkup(jsonLd));
 	const breadcrumbJsonLdMarkup = $derived(buildJsonLdMarkup(breadcrumbJsonLd));
 	const faqJsonLdMarkup = $derived(buildJsonLdMarkup(faqJsonLd));
+	const quizJsonLdMarkup = $derived(quizJsonLd ? buildJsonLdMarkup(quizJsonLd) : '');
 
 	// afterNavigate (not onMount) so SPA moves between /practice/... pages are counted.
 	// Key by page identity so remounts / same-page afterNavigate do not double-count.
@@ -84,10 +87,15 @@
 	{@html breadcrumbJsonLdMarkup}
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html faqJsonLdMarkup}
+	{#if quizJsonLdMarkup}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html quizJsonLdMarkup}
+	{/if}
 </svelte:head>
 
 <PracticeLanding
 	page={data.page}
+	sampleQuestions={data.sampleQuestions}
 	showPricing={!data.superFreeBetaEnabled}
 	assistantFeaturesEnabled={data.assistantFeaturesEnabled}
 />

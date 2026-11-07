@@ -19,6 +19,7 @@
 		"pool:batch-submit": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/batch-submit-question-pool.ts",
 		"pool:batch-collect": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/batch-collect-question-pool.ts",
 		"pool:retire": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/retire-question-pool.ts",
+		"seo:export-samples": "bun scripts/export-seo-sample-questions.ts",
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
 		"db:apply": "bun scripts/apply-neon-migrations.ts",
 		"db:backfill-retire-bad-quality": "bun scripts/backfill-retire-bad-quality-questions.ts",

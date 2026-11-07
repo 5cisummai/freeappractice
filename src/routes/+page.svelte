@@ -11,6 +11,7 @@
 	import BottomCtaSection from '#lib/components/marketing/bottom-cta-section.svelte';
 	import LandingHero from '#lib/components/marketing/landing-hero.svelte';
 	import UnlimitedSection from '#lib/components/marketing/unlimited-section.svelte';
+	import BrowseCoursesSection from '#lib/components/marketing/browse-courses-section.svelte';
 	import SuperSection from '#lib/components/marketing/super-section.svelte';
 	import StudyTeamSection from '#lib/components/marketing/study-team-section.svelte';
 	import PricingSection from '#lib/components/marketing/pricing-section.svelte';
@@ -108,13 +109,13 @@
 </script>
 
 <svelte:head>
-	<title>Free AP Practice | The Fastest Way to Practice AP Online</title>
+	<title>Free AP Practice Tests & Questions | No Signup</title>
 
-	<meta name="title" content="Free AP Practice | The Fastest Way to Practice AP Online" />
+	<meta name="title" content="Free AP Practice Tests & Questions | No Signup" />
 
 	<meta
 		name="description"
-		content="The fastest free AP practice on the internet: pick a subject and start practicing in 2 clicks. Unlimited questions with instant feedback—no signup, no paywall."
+		content="Free AP practice questions for 26 AP courses, sorted by unit. Unlimited MCQs with instant explanations. No signup, no paywall. Start in 2 clicks."
 	/>
 	<meta
 		name="keywords"
@@ -139,7 +140,7 @@
 
 	<meta property="og:url" content="https://freeappractice.org/" />
 
-	<meta property="og:title" content="Free AP Practice | Start Practicing in 2 Clicks" />
+	<meta property="og:title" content="Free AP Practice Tests & Questions | No Signup" />
 
 	<meta
 		property="og:description"
@@ -159,7 +160,7 @@
 
 	<meta name="twitter:url" content="https://freeappractice.org/" />
 
-	<meta name="twitter:title" content="Free AP Practice | 2 Clicks, No Signup" />
+	<meta name="twitter:title" content="Free AP Practice Tests & Questions | No Signup" />
 
 	<meta
 		name="twitter:description"
@@ -298,7 +299,7 @@
 			"hasCourseInstance": {
 				"@type": "CourseInstance",
 				"courseMode": "online",
-				"courseWorkload": "PT"
+				"courseWorkload": "PT10H"
 			}
 		}
 	</script>
@@ -333,6 +334,8 @@
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 pt-24 pb-12 sm:px-8 lg:space-y-24 lg:px-10 lg:pt-32 lg:pb-16"
 		>
 			<UnlimitedSection showTutor={data.assistantFeaturesEnabled} />
+
+			<BrowseCoursesSection />
 
 			<SuperSection />
 

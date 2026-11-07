@@ -60,6 +60,22 @@ const TOPIC_PRACTICE_REDIRECTS: Record<string, string> = {
 	'ap-world-history/silk-road': 'ap-world-history/unit-2'
 };
 
+/**
+ * Course-level slug aliases → canonical course hubs.
+ * Unit suffixes are rewritten onto the canonical course when that unit exists.
+ */
+const COURSE_PRACTICE_ALIASES: Record<string, string> = {
+	'ap-world': 'ap-world-history',
+	'ap-world-history-modern': 'ap-world-history',
+	'ap-us-government-and-politics': 'ap-us-government',
+	'ap-comparative-government-and-politics': 'ap-comparative-government',
+	'ap-spanish-language-and-culture': 'ap-spanish-language',
+	'ap-english-language-and-composition': 'ap-english-language',
+	'ap-english-literature-and-composition': 'ap-english-literature'
+};
+
+const PHYSICS_C_COURSE_TARGETS = ['ap-physics-c-mechanics', 'ap-physics-c-em'] as const;
+
 const courseById = new Map(AP_DATA.courses.map((course) => [course.id, course] as const));
 const unitById = new Map(
 	AP_DATA.courses.flatMap((course) => course.units.map((unit) => [unit.id, unit] as const))
@@ -221,6 +237,41 @@ export function formatUnitLabel(page: PracticePage): string {
 	return page.seo.h1;
 }
 
+export function formatUnitShortLabel(page: PracticePage): string {
+	const slugMatch = page.slug.match(/\/unit-(\d+)$/);
+	if (slugMatch) return `Unit ${slugMatch[1]}`;
+	const labelMatch = page.unit?.match(/^(Unit|Big Idea)\s+\d+/i);
+	if (labelMatch) return labelMatch[0];
+	return formatUnitLabel(page);
+}
+
+export type BrowsePracticeCourse = {
+	course: string;
+	slug: string;
+	href: string;
+	units: Array<{
+		slug: string;
+		href: string;
+		shortLabel: string;
+		label: string;
+	}>;
+};
+
+/** Course hubs with every unit page, ordered for public browse/SEO link lists. */
+export function getBrowseCoursesWithUnits(): BrowsePracticeCourse[] {
+	return getSubjectsBrowsePracticePages().map((page) => ({
+		course: page.course,
+		slug: page.slug,
+		href: getPracticePageHref(page),
+		units: getUnitPagesForCourse(page.course).map((unitPage) => ({
+			slug: unitPage.slug,
+			href: getPracticePageHref(unitPage),
+			shortLabel: formatUnitShortLabel(unitPage),
+			label: formatUnitLabel(unitPage)
+		}))
+	}));
+}
+
 export function getCoursePracticePageByCourse(course: string): PracticePage | null {
 	return pages.find((page) => page.type === 'course' && page.course === course) ?? null;
 }
@@ -244,13 +295,59 @@ export function getPageBySlug(slugParam: string): PracticePage | null {
 	return pageBySlug.get(normalized) ?? null;
 }
 
+function rewriteAliasedPracticeSlug(normalized: string): string | null {
+	const slash = normalized.indexOf('/');
+	const courseSlug = slash === -1 ? normalized : normalized.slice(0, slash);
+	const rest = slash === -1 ? '' : normalized.slice(slash + 1);
+
+	if (courseSlug === 'ap-physics-c') {
+		if (!rest) return 'ap-physics-c-mechanics';
+		for (const target of PHYSICS_C_COURSE_TARGETS) {
+			const candidate = `${target}/${rest}`;
+			if (pageBySlug.has(candidate)) return candidate;
+		}
+		return null;
+	}
+
+	const aliasedCourse = COURSE_PRACTICE_ALIASES[courseSlug];
+	if (!aliasedCourse) return null;
+
+	const candidate = rest ? `${aliasedCourse}/${rest}` : aliasedCourse;
+	return pageBySlug.has(candidate) ? candidate : null;
+}
+
 export function getTopicPracticeRedirect(slugParam: string): string | null {
 	const normalized = slugParam.replace(/^\/+|\/+$/g, '');
-	return TOPIC_PRACTICE_REDIRECTS[normalized] ?? null;
+	if (!normalized) return null;
+
+	const topicTarget = TOPIC_PRACTICE_REDIRECTS[normalized];
+	if (topicTarget) return topicTarget;
+
+	return rewriteAliasedPracticeSlug(normalized);
 }
 
 export function getTopicRedirectSlugs(): string[] {
-	return Object.keys(TOPIC_PRACTICE_REDIRECTS);
+	const slugs = new Set(Object.keys(TOPIC_PRACTICE_REDIRECTS));
+
+	for (const [fromCourse, toCourse] of Object.entries(COURSE_PRACTICE_ALIASES)) {
+		slugs.add(fromCourse);
+		for (const page of pages) {
+			if (page.slug === toCourse || page.slug.startsWith(`${toCourse}/`)) {
+				slugs.add(`${fromCourse}${page.slug.slice(toCourse.length)}`);
+			}
+		}
+	}
+
+	slugs.add('ap-physics-c');
+	for (const target of PHYSICS_C_COURSE_TARGETS) {
+		for (const page of pages) {
+			if (page.slug === target || page.slug.startsWith(`${target}/`)) {
+				slugs.add(`ap-physics-c${page.slug.slice(target.length)}`);
+			}
+		}
+	}
+
+	return [...slugs];
 }
 
 export function getAllPageSlugs(): string[] {

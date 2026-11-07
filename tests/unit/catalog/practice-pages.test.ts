@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+	formatUnitShortLabel,
+	getAllPageSlugs,
+	getBrowseCoursesWithUnits,
 	getCoursePracticePages,
 	getFocusedPracticeHref,
-	getSubjectsBrowsePracticePages
+	getPageBySlug,
+	getSubjectsBrowsePracticePages,
+	getTopicPracticeRedirect
 } from '#lib/catalog/practice-pages.js';
 
 describe('getSubjectsBrowsePracticePages', () => {
@@ -22,6 +27,28 @@ describe('getSubjectsBrowsePracticePages', () => {
 	});
 });
 
+describe('getBrowseCoursesWithUnits', () => {
+	it('links every course hub and unit practice page', () => {
+		const browse = getBrowseCoursesWithUnits();
+		const hrefs = new Set(
+			browse.flatMap((course) => [course.href, ...course.units.map((unit) => unit.href)])
+		);
+		const expected = new Set(getAllPageSlugs().map((slug) => `/practice/${slug}`));
+		expect(hrefs).toEqual(expected);
+		expect(browse.map((course) => course.slug)).toEqual(
+			getSubjectsBrowsePracticePages().map((page) => page.slug)
+		);
+	});
+});
+
+describe('formatUnitShortLabel', () => {
+	it('uses the unit number from the slug', () => {
+		const page = getPageBySlug('ap-biology/unit-1');
+		expect(page).not.toBeNull();
+		expect(formatUnitShortLabel(page!)).toBe('Unit 1');
+	});
+});
+
 describe('getFocusedPracticeHref', () => {
 	it('uses the canonical class practice page when no unit is selected', () => {
 		expect(getFocusedPracticeHref('AP Biology')).toBe('/practice/ap-biology');
@@ -37,5 +64,26 @@ describe('getFocusedPracticeHref', () => {
 		expect(getFocusedPracticeHref('AP Biology', 'Unit 99: Not a real unit')).toBe(
 			'/practice/ap-biology'
 		);
+	});
+});
+
+describe('getTopicPracticeRedirect', () => {
+	it('keeps the original focused-topic redirects', () => {
+		expect(getTopicPracticeRedirect('ap-biology/photosynthesis')).toBe('ap-biology/unit-3');
+		expect(getTopicPracticeRedirect('ap-world-history/silk-road')).toBe('ap-world-history/unit-2');
+	});
+
+	it('rewrites known course aliases onto canonical practice pages', () => {
+		expect(getTopicPracticeRedirect('ap-world')).toBe('ap-world-history');
+		expect(getTopicPracticeRedirect('ap-world/unit-3')).toBe('ap-world-history/unit-3');
+		expect(getTopicPracticeRedirect('ap-physics-c')).toBe('ap-physics-c-mechanics');
+		expect(getTopicPracticeRedirect('ap-physics-c/unit-1')).toBe('ap-physics-c-mechanics/unit-1');
+		expect(getTopicPracticeRedirect('ap-physics-c/unit-8')).toBe('ap-physics-c-em/unit-8');
+	});
+
+	it('does not invent a redirect for unknown or invalid slugs', () => {
+		expect(getTopicPracticeRedirect('ap-calculus-ab/unit-99')).toBeNull();
+		expect(getTopicPracticeRedirect('ap-pe')).toBeNull();
+		expect(getTopicPracticeRedirect('ap-art-and-design/unit-1')).toBeNull();
 	});
 });

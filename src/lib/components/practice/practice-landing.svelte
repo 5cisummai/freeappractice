@@ -2,11 +2,13 @@
 	import ApArtHistoryPracticeShell from '#lib/components/ap-art-history/ap-art-history-practice-shell.svelte';
 	import PracticeRunner from '#lib/components/practice/practice-shell.svelte';
 	import PracticeHubNav from '#lib/components/practice/practice-hub-nav.svelte';
+	import SampleQuestions from '#lib/components/practice/sample-questions.svelte';
 	import PublicShell from '#lib/components/layout/public-shell.svelte';
 	import * as Accordion from '#lib/components/ui/accordion/index.js';
 	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.js';
 	import type { PracticePage } from '#lib/catalog/practice-pages.js';
-	import { buildPracticeBreadcrumbs } from '#lib/seo/practice-page-meta.js';
+	import { buildPracticeBreadcrumbs, buildPracticePageMeta } from '#lib/seo/practice-page-meta.js';
+	import type { SeoSampleQuestion } from '#lib/seo/sample-questions.js';
 
 	function getInitialSelection(practicePage: PracticePage) {
 		return {
@@ -17,11 +19,18 @@
 
 	let {
 		page: practicePage,
+		sampleQuestions = [],
 		showPricing = true,
 		assistantFeaturesEnabled = true
-	}: { page: PracticePage; showPricing?: boolean; assistantFeaturesEnabled?: boolean } = $props();
+	}: {
+		page: PracticePage;
+		sampleQuestions?: SeoSampleQuestion[];
+		showPricing?: boolean;
+		assistantFeaturesEnabled?: boolean;
+	} = $props();
 
 	const crumbs = $derived(buildPracticeBreadcrumbs(practicePage));
+	const heading = $derived(buildPracticePageMeta(practicePage).h1);
 	const initial = $derived(getInitialSelection(practicePage));
 
 	function linkRel(kind: (typeof practicePage.links)[number]['kind']): string | undefined {
@@ -68,7 +77,7 @@
 					<h1
 						class="font-display text-3xl leading-[1.15] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl"
 					>
-						{practicePage.seo.h1}
+						{heading}
 					</h1>
 				</div>
 			</section>
@@ -96,6 +105,8 @@
 						<p class="text-base leading-7 text-muted-foreground">{paragraph}</p>
 					{/each}
 				</article>
+
+				<SampleQuestions questions={sampleQuestions} />
 
 				{#if practicePage.faq.length > 0}
 					<section class="mt-12 space-y-4" aria-labelledby="practice-faq-heading">
